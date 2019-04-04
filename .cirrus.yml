@@ -1,3 +1,4 @@
+azure_credentials: ENCRYPTED[eba4d3d664f53c26bf65dc0efb75ee288599d29dd6ae92a293d5df5b370ed986537b29e53da5f95cdd7ddf8d5a9e4e0d]
 gcp_credentials: ENCRYPTED[987a78af29b91ce8489594c9ab3fec21845bbe5ba68294b8f6def3cf0d380830f06687a89ea69c87344c5ade369700fe]
 
 gke_container:
@@ -61,8 +62,11 @@ task:
         ./flutter/tools/gen_javadoc.py --out-dir javadoc_tmp
 
 build_windows_task:
-  windows_container:
+  azure_container_instance:
     image: gcr.io/flutter-cirrus/build-engine-image-windows:latest
+    resource_group: CirrusCI
+    region: westus
+    platform: windows
     cpu: 4
 
   env:
