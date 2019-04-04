@@ -39,7 +39,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   BOOL _initialized;
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
-  NSMutableDictionary* _ongoingTouches;
+  NSMutableSet* _ongoingTouches;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -55,7 +55,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     _engineNeedsLaunch = NO;
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
-    _ongoingTouches = [[NSMutableDictionary alloc] init];
+    _ongoingTouches = [[NSMutableSet alloc] init];
 
     [self performCommonViewControllerInitialization];
     [engine setViewController:self];
@@ -77,7 +77,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     [_engine.get() createShell:nil libraryURI:nil];
     _engineNeedsLaunch = YES;
-    _ongoingTouches = [[NSMutableDictionary alloc] init];
+    _ongoingTouches = [[NSMutableSet alloc] init];
     [self loadDefaultSplashScreenView];
     [self performCommonViewControllerInitialization];
   }
@@ -430,16 +430,42 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   TRACE_EVENT0("flutter", "viewDidDisappear");
   [self surfaceUpdated:NO];
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
-  if (_ongoingTouches.count > 0) {
-    // If the view controller is going away, we want to flush cancel all the ongoing
-    // touches to the framework so nothing gets orphaned.
-    blink::PointerData::Change cancelChange = blink::PointerData::Change::kCancel;
-    [self dispatchTouches:[NSSet setWithArray:[_ongoingTouches allValues]]
-        pointerDataChangeOverride:&cancelChange];
-    [_ongoingTouches removeAllObjects];
-  }
+  [self flushOngoingTouches];
 
   [super viewDidDisappear:animated];
+}
+
+- (void)flushOngoingTouches {
+  if (_ongoingTouches.count > 0) {
+    auto packet = std::make_unique<blink::PointerDataPacket>(_ongoingTouches.count);
+    size_t pointer_index = 0;
+    // If the view controller is going away, we want to flush cancel all the ongoing
+    // touches to the framework so nothing gets orphaned.
+    for(NSNumber* device in _ongoingTouches) {
+      // Create fake PointerData to balance out each previously started one for the framework.
+      blink::PointerData pointer_data;
+      pointer_data.Clear();
+
+      constexpr int kMicrosecondsPerSecond = 1000 * 1000;
+      // Use current time.
+      pointer_data.time_stamp = [[NSDate date] timeIntervalSince1970] * kMicrosecondsPerSecond;
+
+      pointer_data.change = blink::PointerData::Change::kCancel;
+      pointer_data.kind = blink::PointerData::DeviceKind::kTouch;
+      pointer_data.device = device.longLongValue;
+
+      // Anything we put here will be arbitrary since there are no touches.
+      pointer_data.physical_x = 0;
+      pointer_data.physical_y = 0;
+      pointer_data.pressure = 1.0;
+      pointer_data.pressure_max = 1.0;
+
+      packet->SetPointerData(pointer_index++, pointer_data);
+    }
+
+    [_ongoingTouches removeAllObjects];
+    [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+  }
 }
 
 - (void)dealloc {
@@ -545,11 +571,11 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
     // if the view controller goes away.
     switch (pointer_data.change) {
       case blink::PointerData::Change::kDown:
-        [_ongoingTouches setObject:touch forKey:deviceKey];
+        [_ongoingTouches addObject:deviceKey];
         break;
       case blink::PointerData::Change::kCancel:
       case blink::PointerData::Change::kUp:
-        [_ongoingTouches removeObjectForKey:deviceKey];
+        [_ongoingTouches removeObject:deviceKey];
         break;
       case blink::PointerData::Change::kHover:
       case blink::PointerData::Change::kMove:
