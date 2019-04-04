@@ -2,7 +2,7 @@
 # It's known that other versions such as 1809 and Windows Server 2019 won't work with this.
 #
 # Note that "\" is the escape character. Use "\\"" for windows path separator. In many cases,
-# "/"" can also be used as the separator in windows.
+# "/" can also be used as the separator in windows.
 
 FROM microsoft/windowsservercore:1803
 

@@ -69,27 +69,35 @@ build_windows_task:
   #   region: westus
   #   platform: windows
   #   cpu: 4
-  windows_container:
-    image: gcr.io/flutter-cirrus/build-engine-image-windows:latest
-    os_version: 1803
-    cpu: 4
-  # gce_instance:
-  #   image_project: flutter-cirrus
-  #   image_name: flutter-engine-windows-server-2016-core
-  #   zone: us-central1-a
-  #   cpu: 32
-  #   memory: 32Gb
-  #   disk: 50
+  # windows_container:
+  #   image: gcr.io/flutter-cirrus/build-engine-image-windows:latest
+  #   os_version: 1803
+  #   cpu: 4
+  gce_instance:
+    image_project: flutter-cirrus
+    image_name: flutter-engine-windows-server-2016-core
+    zone: us-central1-a
+    platform: windows
+    cpu: 32
+    memory: 32Gb
+    disk: 50
 
   env:
+    PATH: "c:/depot_tools;c:/MinGit/cmd;$PATH"
     ENGINE_PATH: "c:/flutter/engine/"
+
+  # robocopy can return 1 for successful copy
   gclient_sync_script: |
-    robocopy %CIRRUS_WORKING_DIR% %ENGINE_PATH%/flutter /MIR
+    robocopy %CIRRUS_WORKING_DIR% %ENGINE_PATH%/src/flutter /MIR || if %ERRORLEVEL% LEQ 1 (cmd /s /c exit /b 0)
     cd %ENGINE_PATH%/src
+    echo %PATH%
+    dir c:\depot_tools
     gclient sync
+
+  # use depot_tools' python.bat with `cmd /s /c python`.
   compile_host_script: |
     cd %ENGINE_PATH%/src
-    python flutter/tools/gn
+    cmd /s /c python flutter/tools/gn
     ninja -C out/host_debug
 
 # format_and_dart_test_task:
