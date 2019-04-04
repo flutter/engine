@@ -72,6 +72,17 @@ FLUTTER_EXPORT void FlutterDesktopSetWindowTitle(
     FlutterDesktopWindowRef flutter_window,
     const char* title);
 
+// Sets the displayed icon for |flutter_window|.
+//
+// The pixel format is 32-bit RGBA. The provided image data only needs to be
+// valid for the duration of the call to this method. Pass a nullptr to revert
+// to the default icon.
+FLUTTER_EXPORT void FlutterDesktopSetWindowIcon(
+    FlutterDesktopWindowRef flutter_window,
+    uint8_t* pixel_data,
+    int width,
+    int height);
+
 // Loops on Flutter window events until the window is closed.
 //
 // Once this function returns, FlutterDesktopWindowRef is no longer valid, and

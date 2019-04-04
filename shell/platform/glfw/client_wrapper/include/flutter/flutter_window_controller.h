@@ -67,6 +67,13 @@ class FlutterWindowController {
   // Sets the displayed title of the window.
   void SetTitle(const std::string& title);
 
+  // Sets the displayed icon for the window.
+  //
+  // The pixel format is 32-bit RGBA. The provided image data only needs to be
+  // valid for the duration of the call to this method. Pass a nullptr to revert
+  // to the default icon.
+  void SetIcon(uint8_t* pixel_data, int width, int height);
+
   // Loops on Flutter window events until the window closes.
   void RunEventLoop();
 

@@ -73,6 +73,12 @@ void FlutterWindowController::SetTitle(const std::string& title) {
   FlutterDesktopSetWindowTitle(window_, title.c_str());
 }
 
+void FlutterWindowController::SetIcon(uint8_t* pixel_data,
+                                      int width,
+                                      int height) {
+  FlutterDesktopSetWindowIcon(window_, pixel_data, width, height);
+}
+
 void FlutterWindowController::RunEventLoop() {
   if (window_) {
     FlutterDesktopRunWindowLoop(window_);

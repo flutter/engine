@@ -548,6 +548,16 @@ void FlutterDesktopSetWindowTitle(FlutterDesktopWindowRef flutter_window,
   glfwSetWindowTitle(window, title);
 }
 
+FLUTTER_EXPORT void FlutterDesktopSetWindowIcon(
+    FlutterDesktopWindowRef flutter_window,
+    uint8_t* pixel_data,
+    int width,
+    int height) {
+  GLFWwindow* window = flutter_window->window;
+  GLFWimage image = {width, height, static_cast<unsigned char*>(pixel_data)};
+  glfwSetWindowIcon(window, pixel_data ? 1 : 0, &image);
+}
+
 void FlutterDesktopRunWindowLoop(FlutterDesktopWindowRef flutter_window) {
   GLFWwindow* window = flutter_window->window;
 #ifdef __linux__
