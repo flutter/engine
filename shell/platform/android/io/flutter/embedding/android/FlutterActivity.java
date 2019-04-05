@@ -87,7 +87,15 @@ public class FlutterActivity extends FragmentActivity {
    * a {@code main()} Dart entrypoint, and displays the "/" route as Flutter's initial route.
    */
   public static Intent createDefaultIntent(@NonNull Context launchContext) {
-    return new IntentBuilder().build(launchContext);
+    return createBuilder().build(launchContext);
+  }
+
+  /**
+   * Creates an {@link IntentBuilder}, which can be used to configure an {@link Intent} to
+   * launch a {@code FlutterActivity}.
+   */
+  public static IntentBuilder createBuilder() {
+    return new IntentBuilder(FlutterActivity.class);
   }
 
   /**
@@ -95,8 +103,13 @@ public class FlutterActivity extends FragmentActivity {
    * desired configuration.
    */
   public static class IntentBuilder {
+    private final Class<? extends FlutterActivity> activityClass;
     private String dartEntrypoint = DEFAULT_DART_ENTRYPOINT;
     private String initialRoute = DEFAULT_INITIAL_ROUTE;
+
+    protected IntentBuilder(@NonNull Class<? extends FlutterActivity> activityClass) {
+      this.activityClass = activityClass;
+    }
 
     /**
      * The name of the initial Dart method to invoke, defaults to "main".
@@ -120,26 +133,12 @@ public class FlutterActivity extends FragmentActivity {
     /**
      * Creates and returns an {@link Intent} that will launch a {@code FlutterActivity} with
      * the desired configuration.
-     *
-     * Subclasses should override this method to apply additional {@link Intent} arguments.
      */
     @NonNull
     public Intent build(@NonNull Context context) {
-      return new Intent(context, getActivityClass())
+      return new Intent(context, activityClass)
           .putExtra(EXTRA_DART_ENTRYPOINT, dartEntrypoint)
           .putExtra(EXTRA_INITIAL_ROUTE, initialRoute);
-    }
-
-    /**
-     * Returns the specific {@code FlutterActivity} class that should be launched
-     * by this {@code IntentBuilder}.
-     *
-     * {@code FlutterActivity} subclasses should subclass {@code IntentBuilder} and then override
-     * this method to return their specific {@code FlutterActivity} subclass.
-     */
-    @NonNull
-    protected Class<? extends FlutterActivity> getActivityClass() {
-      return FlutterActivity.class;
     }
   }
 

@@ -220,6 +220,10 @@ public class FlutterFragment extends Fragment {
     setArguments(new Bundle());
   }
 
+  public void prepareForNavigation() {
+    flutterView.setAlpha(0.0f);
+  }
+
   /**
    * The {@link FlutterEngine} that backs the Flutter content presented by this {@code Fragment}.
    *
@@ -262,10 +266,10 @@ public class FlutterFragment extends Fragment {
 
   /**
    * Obtains a reference to a FlutterEngine to back this {@code FlutterFragment}.
-   *
+   * <p>
    * First, the {@link FragmentActivity} that owns this {@code FlutterFragment} is
    * given the opportunity to provide a {@link FlutterEngine} as a {@link FlutterEngineProvider}.
-   *
+   * <p>
    * If the owning {@link FragmentActivity} does not implement {@link FlutterEngineProvider}, or
    * chooses to return {@code null}, then a new {@link FlutterEngine} is instantiated. Subclasses
    * may override this method to provide a {@link FlutterEngine} of choice.
@@ -578,15 +582,26 @@ public class FlutterFragment extends Fragment {
 
   /**
    * Provides a {@link FlutterEngine} instance to be used by a {@code FlutterFragment}.
-   *
-   * {@code FlutterEngineProvider} can be implemented by the {@link FragmentActivity} that
-   * owns this {@code FlutterFragment}.
+   * <p>
+   * {@link FlutterEngine} instances require significant time to warm up. Therefore, a developer
+   * might choose to hold onto an existing {@link FlutterEngine} and connect it to various
+   * {@link FlutterActivity}s and/or {@code FlutterFragments}.
+   * <p>
+   * If the {@link FragmentActivity} that owns this {@code FlutterFragment} implements
+   * {@code FlutterEngineProvider}, that {@link FlutterActivity} will be given an opportunity
+   * to provide a {@link FlutterEngine} instead of the {@code FlutterFragment} creating a
+   * new one. The {@link FragmentActivity} can provide an existing, pre-warmed {@link FlutterEngine},
+   * if desired.
+   * <p>
+   * See {@link #setupFlutterEngine()} for more information.
    */
   public interface FlutterEngineProvider {
     /**
      * Returns the {@link FlutterEngine} that should be used by a child {@code FlutterFragment}.
-     *
-     * This method may return a new {@link FlutterEngine}, or an existing, cached {@link FlutterEngine}.
+     * <p>
+     * This method may return a new {@link FlutterEngine}, an existing, cached {@link FlutterEngine},
+     * or null to express that the {@code FlutterEngineProvider} would like the {@code FlutterFragment}
+     * to provide its own {@code FlutterEngine} instance.
      */
     @Nullable
     FlutterEngine getFlutterEngine(@NonNull Context context);
