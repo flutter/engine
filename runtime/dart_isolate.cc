@@ -537,19 +537,28 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
     *error = strdup(
         "Could not access VM data to initialize isolates. This may be because "
         "the VM has initialized shutdown on another thread already.");
+    FML_DLOG(ERROR) << *error;
     return nullptr;
   }
 
   const auto& settings = vm_data->GetSettings();
 
   if (!settings.enable_observatory) {
-    FML_DLOG(INFO) << "Observatory is disabled.";
+    *error = strdup("Observatory is disabled.");
+    FML_DLOG(ERROR) << *error;
     return nullptr;
   }
 
-  blink::TaskRunners null_task_runners(
-      "io.flutter." DART_VM_SERVICE_ISOLATE_NAME, nullptr, nullptr, nullptr,
-      nullptr);
+  auto service_task_runner = vm_data->GetServiceTaskRunner();
+  if (!service_task_runner) {
+    *error = strdup("Could not access the service task runner.");
+    FML_DLOG(ERROR) << *error;
+    return nullptr;
+  }
+
+  blink::TaskRunners service_task_runners(
+      "io.flutter." DART_VM_SERVICE_ISOLATE_NAME, service_task_runner,
+      service_task_runner, service_task_runner, service_task_runner);
 
   flags->load_vmservice_library = true;
 
@@ -558,7 +567,7 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
           vm_data->GetSettings(),         // settings
           vm_data->GetIsolateSnapshot(),  // isolate snapshot
           vm_data->GetSharedSnapshot(),   // shared snapshot
-          null_task_runners,              // task runners
+          service_task_runners,           // task runners
           nullptr,                        // window
           {},                             // snapshot delegate
           {},                             // IO Manager
@@ -590,9 +599,11 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
   if (auto service_protocol = DartVMRef::GetServiceProtocol()) {
     service_protocol->ToggleHooks(true);
   } else {
-    FML_DLOG(ERROR)
-        << "Could not acquire the service protocol handlers. This might be "
-           "because the VM has already begun teardown on another thread.";
+    *error = strdup(
+        "Could not acquire the service protocol handlers. This might be "
+        "because the VM has already begun teardown on another thread.");
+    FML_DLOG(ERROR) << *error;
+    return nullptr;
   }
 
   return service_isolate->isolate();

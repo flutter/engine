@@ -422,6 +422,8 @@ DartVM::~DartVM() {
     Dart_ExitIsolate();
   }
 
+  ShutdownAllIsolates();
+
   char* result = Dart_Cleanup();
 
   dart::bin::CleanupDartIo();

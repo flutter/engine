@@ -49,6 +49,19 @@ std::shared_ptr<const DartVMData> DartVMData::Create(
       ));
 }
 
+static std::unique_ptr<fml::Thread> CreateServiceProtocolThread(
+    const Settings& settings) {
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE) || \
+    (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE)
+  return nullptr;
+#else
+  if (!settings.enable_observatory) {
+    return nullptr;
+  }
+  return std::make_unique<fml::Thread>("io.flutter.service");
+#endif
+}
+
 DartVMData::DartVMData(Settings settings,
                        fml::RefPtr<const DartSnapshot> vm_snapshot,
                        fml::RefPtr<const DartSnapshot> isolate_snapshot,
@@ -56,7 +69,8 @@ DartVMData::DartVMData(Settings settings,
     : settings_(settings),
       vm_snapshot_(vm_snapshot),
       isolate_snapshot_(isolate_snapshot),
-      shared_snapshot_(shared_snapshot) {}
+      shared_snapshot_(shared_snapshot),
+      service_protocol_thread_(CreateServiceProtocolThread(settings_)) {}
 
 DartVMData::~DartVMData() = default;
 
@@ -74,6 +88,13 @@ fml::RefPtr<const DartSnapshot> DartVMData::GetIsolateSnapshot() const {
 
 fml::RefPtr<const DartSnapshot> DartVMData::GetSharedSnapshot() const {
   return shared_snapshot_;
+}
+
+fml::RefPtr<fml::TaskRunner> DartVMData::GetServiceTaskRunner() const {
+  if (!service_protocol_thread_) {
+    return nullptr;
+  }
+  return service_protocol_thread_->GetTaskRunner();
 }
 
 }  // namespace blink

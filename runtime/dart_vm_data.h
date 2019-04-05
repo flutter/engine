@@ -6,6 +6,7 @@
 #define FLUTTER_RUNTIME_DART_VM_DATA_H_
 
 #include "flutter/fml/macros.h"
+#include "flutter/fml/thread.h"
 #include "flutter/runtime/dart_snapshot.h"
 
 namespace blink {
@@ -28,11 +29,15 @@ class DartVMData {
 
   fml::RefPtr<const DartSnapshot> GetSharedSnapshot() const;
 
+  // The task runner for the service protocol running in non-release modes.
+  fml::RefPtr<fml::TaskRunner> GetServiceTaskRunner() const;
+
  private:
   const Settings settings_;
   const fml::RefPtr<const DartSnapshot> vm_snapshot_;
   const fml::RefPtr<const DartSnapshot> isolate_snapshot_;
   const fml::RefPtr<const DartSnapshot> shared_snapshot_;
+  const std::unique_ptr<fml::Thread> service_protocol_thread_;
 
   DartVMData(Settings settings,
              fml::RefPtr<const DartSnapshot> vm_snapshot,
