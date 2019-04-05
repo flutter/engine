@@ -5,7 +5,6 @@
 package io.flutter.embedding.android;
 
 import android.content.Context;
-import android.graphics.PixelFormat;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -13,7 +12,11 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
+import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 
 /**
  * Paints a Flutter UI on a {@link android.view.Surface}.
@@ -37,6 +40,8 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
   private boolean isAttachedToFlutterRenderer = false;
   @Nullable
   private FlutterRenderer flutterRenderer;
+  @NonNull
+  private Set<OnFirstFrameRenderedListener> onFirstFrameRenderedListeners = new HashSet<>();
 
   // Connects the {@code Surface} beneath this {@code SurfaceView} with Flutter's native code.
   // Callbacks are received by this Object and then those messages are forwarded to our
@@ -91,10 +96,6 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
     // Grab a reference to our underlying Surface and register callbacks with that Surface so we
     // can monitor changes and forward those changes on to native Flutter code.
     getHolder().addCallback(surfaceCallback);
-
-    // Set this SurfaceView's PixelFormat to TRANSPARENT so that there is no initial black rectangle
-    // visible for a brief period of time before the alpha is set to zero.
-    getHolder().setFormat(PixelFormat.TRANSPARENT);
 
     // Keep this SurfaceView transparent until Flutter has a frame ready to render. This avoids
     // displaying a black rectangle in our place.
@@ -182,11 +183,33 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
     flutterRenderer.surfaceDestroyed();
   }
 
+  /**
+   * Adds the given {@code listener} to this {@code FlutterSurfaceView}, to be notified upon Flutter's
+   * first rendered frame.
+   */
+  @Override
+  public void addOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
+    onFirstFrameRenderedListeners.add(listener);
+  }
+
+  /**
+   * Removes the given {@code listener}, which was previously added with
+   * {@link #addOnFirstFrameRenderedListener(OnFirstFrameRenderedListener)}.
+   */
+  @Override
+  public void removeOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
+    onFirstFrameRenderedListeners.remove(listener);
+  }
+
   @Override
   public void onFirstFrameRendered() {
     // TODO(mattcarroll): decide where this method should live and what it needs to do.
     Log.d(TAG, "onFirstFrameRendered()");
     // Now that a frame is ready to display, take this SurfaceView from transparent to opaque.
     setAlpha(1.0f);
+
+    for (OnFirstFrameRenderedListener listener : onFirstFrameRenderedListeners) {
+      listener.onFirstFrameRendered();
+    }
   }
 }
