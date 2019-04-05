@@ -80,7 +80,7 @@ class PaintRecord {
 
   double x_start() const { return x_start_; }
   double x_end() const { return x_end_; }
-  double GetRunWidth() const;
+  double GetRunWidth() const { return x_end_ - x_start_; }
 
   const PlaceholderRun* GetPlaceholderRun() const { return placeholder_run_; }
 

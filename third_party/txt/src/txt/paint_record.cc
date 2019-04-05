@@ -101,11 +101,4 @@ void PaintRecord::SetOffset(SkPoint pt) {
   offset_ = pt;
 }
 
-double PaintRecord::GetRunWidth() const {
-  if (placeholder_run_ != nullptr) {
-    return placeholder_run_->width;
-  }
-  return x_end_ - x_start_;
-}
-
 }  // namespace txt

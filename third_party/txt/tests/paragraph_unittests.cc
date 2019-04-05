@@ -485,6 +485,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderGetRectsParagraph)) {
   ASSERT_TRUE(Snapshot());
 }
 
+#ifdef !(_WIN32 || _WIN64)
 // Tests if manually inserted 0xFFFC characters are replaced to 0xFFFD in order
 // to not interfere with the placeholder box layout.
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholder0xFFFCParagraph)) {
@@ -579,6 +580,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholder0xFFFCParagraph)) {
 
   ASSERT_TRUE(Snapshot());
 }
+#endif
 
 TEST_F(ParagraphTest, SimpleRedParagraph) {
   const char* text = "I am RED";

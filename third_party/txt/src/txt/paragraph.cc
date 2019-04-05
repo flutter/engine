@@ -864,7 +864,8 @@ void Paragraph::Layout(double width, bool force) {
           paint_records.emplace_back(
               run.style(), SkPoint::Make(run_x_offset + justify_x_offset, 0),
               builder.make(), metrics, line_number, record_x_pos.start,
-              record_x_pos.end, run.is_ghost(), run.placeholder_run());
+              record_x_pos.start + run.placeholder_run()->width, run.is_ghost(),
+              run.placeholder_run());
           run_x_offset += run.placeholder_run()->width;
         } else {
           // paint_records.emplace_back(
