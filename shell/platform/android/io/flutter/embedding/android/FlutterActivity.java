@@ -15,6 +15,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -82,6 +83,14 @@ public class FlutterActivity extends FragmentActivity {
   private FlutterFragment flutterFragment;
 
   /**
+   * Creates an {@link Intent} that launches a {@code FlutterActivity}, which executes
+   * a {@code main()} Dart entrypoint, and displays the "/" route as Flutter's initial route.
+   */
+  public static Intent createDefaultIntent(@NonNull Context launchContext) {
+    return new IntentBuilder().build(launchContext);
+  }
+
+  /**
    * Builder to create an {@code Intent} that launches a {@code FlutterActivity} with the
    * desired configuration.
    */
@@ -108,16 +117,35 @@ public class FlutterActivity extends FragmentActivity {
       return this;
     }
 
+    /**
+     * Creates and returns an {@link Intent} that will launch a {@code FlutterActivity} with
+     * the desired configuration.
+     *
+     * Subclasses should override this method to apply additional {@link Intent} arguments.
+     */
     @NonNull
     public Intent build(@NonNull Context context) {
-      return new Intent(context, FlutterActivity.class)
+      return new Intent(context, getActivityClass())
           .putExtra(EXTRA_DART_ENTRYPOINT, dartEntrypoint)
           .putExtra(EXTRA_INITIAL_ROUTE, initialRoute);
+    }
+
+    /**
+     * Returns the specific {@code FlutterActivity} class that should be launched
+     * by this {@code IntentBuilder}.
+     *
+     * {@code FlutterActivity} subclasses should subclass {@code IntentBuilder} and then override
+     * this method to return their specific {@code FlutterActivity} subclass.
+     */
+    @NonNull
+    protected Class<? extends FlutterActivity> getActivityClass() {
+      return FlutterActivity.class;
     }
   }
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
+    Log.d(TAG, "onCreate()");
     super.onCreate(savedInstanceState);
     setContentView(createFragmentContainer());
     configureStatusBarForFullscreenFlutterExperience();

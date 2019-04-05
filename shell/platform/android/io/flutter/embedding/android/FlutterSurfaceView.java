@@ -5,6 +5,7 @@
 package io.flutter.embedding.android;
 
 import android.content.Context;
+import android.graphics.PixelFormat;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -45,6 +46,8 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
     public void surfaceCreated(SurfaceHolder holder) {
       Log.d(TAG, "SurfaceHolder.Callback.surfaceCreated()");
       isSurfaceAvailableForRendering = true;
+
+      holder.setFormat(PixelFormat.RGBA_8888);
 
       if (isAttachedToFlutterRenderer) {
         Log.d(TAG, "Already attached to renderer. Notifying of surface creation.");
