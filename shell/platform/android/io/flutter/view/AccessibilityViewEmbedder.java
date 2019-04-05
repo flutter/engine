@@ -37,7 +37,7 @@ import java.util.Map;
  * for the virtual accessibility node IDs in the platform view's tree. Internally this class maintains a bidirectional
  * mapping between `flutterId`s and the corresponding platform view and `originId`.
  */
-class AccessibilityViewEmbedder {
+final class AccessibilityViewEmbedder {
     private static final String TAG = "AccessibilityBridge";
 
     private final ReflectionAccessors reflectionAccessors;
@@ -51,11 +51,10 @@ class AccessibilityViewEmbedder {
     // Maps a platform view and originId to a corresponding flutterID.
     private final Map<ViewAndId, Integer> originToFlutterId;
 
-    // Maps the flutterId of an accessibility node to the screen bounds of
-    // the root semantic node for the embedded view.
+    // Maps an embedded view to it's screen bounds.
     // This is used to translate the coordinates of the accessibility node subtree to the main display's coordinate
     // system.
-    private final SparseArray<Rect> flutterIdToDisplayBounds;
+    private final Map<View, Rect> embeddedViewToDisplayBounds;
 
     private int nextFlutterId;
 
@@ -64,8 +63,8 @@ class AccessibilityViewEmbedder {
         flutterIdToOrigin = new SparseArray<>();
         this.rootAccessibilityView = rootAccessibiiltyView;
         nextFlutterId = firstVirtualNodeId;
-        flutterIdToDisplayBounds = new SparseArray<>();
         originToFlutterId = new HashMap<>();
+        embeddedViewToDisplayBounds = new HashMap<>();
     }
 
     /**
@@ -80,10 +79,9 @@ class AccessibilityViewEmbedder {
         if (originPackedId == null) {
             return null;
         }
+        embeddedViewToDisplayBounds.put(embeddedView, displayBounds);
         int originId = ReflectionAccessors.getVirtualNodeId(originPackedId);
-        flutterIdToOrigin.put(flutterId, new ViewAndId(embeddedView, originId));
-        flutterIdToDisplayBounds.put(flutterId, displayBounds);
-        originToFlutterId.put(new ViewAndId(embeddedView, originId), flutterId);
+        cacheVirtualIdMappings(embeddedView, originId, flutterId);
         return convertToFlutterNode(originNode, flutterId, embeddedView);
     }
 
@@ -94,6 +92,13 @@ class AccessibilityViewEmbedder {
     public AccessibilityNodeInfo createAccessibilityNodeInfo(int flutterId) {
         ViewAndId origin = flutterIdToOrigin.get(flutterId);
         if (origin == null) {
+            return null;
+        }
+        if (!embeddedViewToDisplayBounds.containsKey(origin.view)) {
+            // This might happen if the embedded view is sending accessibility event before the first Flutter semantics
+            // tree was sent to the accessibility bridge. In this case we don't return a node as we do not know the
+            // bounds yet.
+            // https://github.com/flutter/flutter/issues/30068
             return null;
         }
         AccessibilityNodeProvider provider = origin.view.getAccessibilityNodeProvider();
@@ -127,11 +132,11 @@ class AccessibilityViewEmbedder {
         result.setSource(rootAccessibilityView, flutterId);
         result.setClassName(originNode.getClassName());
 
-        Rect displayBounds = flutterIdToDisplayBounds.get(flutterId);
+        Rect displayBounds = embeddedViewToDisplayBounds.get(embeddedView);
 
         copyAccessibilityFields(originNode, result);
         setFlutterNodesTranslateBounds(originNode, displayBounds, result);
-        addChildrenToFlutterNode(originNode, embeddedView, displayBounds, result);
+        addChildrenToFlutterNode(originNode, embeddedView, result);
         setFlutterNodeParent(originNode, embeddedView, result);
 
         return result;
@@ -157,7 +162,6 @@ class AccessibilityViewEmbedder {
     private void addChildrenToFlutterNode(
             @NonNull AccessibilityNodeInfo originNode,
             @NonNull View embeddedView,
-            @NonNull Rect displayBounds,
             @NonNull AccessibilityNodeInfo resultNode
     ) {
         for (int i = 0; i < originNode.getChildCount(); i++) {
@@ -172,12 +176,19 @@ class AccessibilityViewEmbedder {
                 childFlutterId = originToFlutterId.get(origin);
             } else {
                 childFlutterId = nextFlutterId++;
-                originToFlutterId.put(origin, childFlutterId);
-                flutterIdToOrigin.put(childFlutterId, origin);
-                flutterIdToDisplayBounds.put(childFlutterId, displayBounds);
+                cacheVirtualIdMappings(embeddedView, originId, childFlutterId);
             }
             resultNode.addChild(rootAccessibilityView, childFlutterId);
         }
+    }
+
+    // Caches a bidirectional mapping of (embeddedView, originId)<-->flutterId.
+    // Where originId is a virtual node ID in the embeddedView's tree, and flutterId is the ID
+    // of the corresponding node in the Flutter virtual accessibility nodes tree.
+    private void cacheVirtualIdMappings(@NonNull View embeddedView, int originId, int flutterId) {
+        ViewAndId origin = new ViewAndId(embeddedView, originId);
+        originToFlutterId.put(origin, flutterId);
+        flutterIdToOrigin.put(flutterId, origin);
     }
 
     private void setFlutterNodesTranslateBounds(
@@ -265,7 +276,8 @@ class AccessibilityViewEmbedder {
         int originVirtualId = ReflectionAccessors.getVirtualNodeId(originPackedId);
         Integer flutterId = originToFlutterId.get(new ViewAndId(embeddedView, originVirtualId));
         if (flutterId == null) {
-            return false;
+            flutterId = nextFlutterId++;
+            cacheVirtualIdMappings(embeddedView, originVirtualId, flutterId);
         }
         translatedEvent.setSource(rootAccessibilityView, flutterId);
         translatedEvent.setClassName(event.getClassName());
@@ -333,7 +345,7 @@ class AccessibilityViewEmbedder {
         if (origin == null) {
             return false;
         }
-        Rect displayBounds = flutterIdToDisplayBounds.get(rootFlutterId);
+        Rect displayBounds = embeddedViewToDisplayBounds.get(origin.view);
         int pointerCount = event.getPointerCount();
         MotionEvent.PointerProperties[] pointerProperties = new MotionEvent.PointerProperties[pointerCount];
         MotionEvent.PointerCoords[] pointerCoords = new MotionEvent.PointerCoords[pointerCount];
@@ -407,25 +419,28 @@ class AccessibilityViewEmbedder {
             Method getParentNodeId = null;
             Method getRecordSourceNodeId = null;
             Method getChildId = null;
-            try {
-                getSourceNodeId = AccessibilityNodeInfo.class.getMethod("getSourceNodeId");
-            } catch (NoSuchMethodException e) {
-                Log.w(TAG, "can't invoke AccessibilityNodeInfo#getSourceNodeId with reflection");
-            }
-            try {
-                getParentNodeId = AccessibilityNodeInfo.class.getMethod("getParentNodeId");
-            } catch (NoSuchMethodException e) {
-                Log.w(TAG, "can't invoke getParentNodeId with reflection");
-            }
-            try {
-                getRecordSourceNodeId = AccessibilityRecord.class.getMethod("getSourceNodeId");
-            } catch (NoSuchMethodException e) {
-                Log.w(TAG, "can't invoke AccessibiiltyRecord#getSourceNodeId with reflection");
-            }
-            try {
-                getChildId = AccessibilityNodeInfo.class.getMethod("getChildId", int.class);
-            } catch (NoSuchMethodException e) {
-                Log.w(TAG, "can't invoke getChildId with reflection");
+            // Reflection access is not allowed starting Android P.
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
+                try {
+                    getSourceNodeId = AccessibilityNodeInfo.class.getMethod("getSourceNodeId");
+                } catch (NoSuchMethodException e) {
+                    Log.w(TAG, "can't invoke AccessibilityNodeInfo#getSourceNodeId with reflection");
+                }
+                try {
+                    getParentNodeId = AccessibilityNodeInfo.class.getMethod("getParentNodeId");
+                } catch (NoSuchMethodException e) {
+                    Log.w(TAG, "can't invoke getParentNodeId with reflection");
+                }
+                try {
+                    getRecordSourceNodeId = AccessibilityRecord.class.getMethod("getSourceNodeId");
+                } catch (NoSuchMethodException e) {
+                    Log.w(TAG, "can't invoke AccessibiiltyRecord#getSourceNodeId with reflection");
+                }
+                try {
+                    getChildId = AccessibilityNodeInfo.class.getMethod("getChildId", int.class);
+                } catch (NoSuchMethodException e) {
+                    Log.w(TAG, "can't invoke getChildId with reflection");
+                }
             }
             this.getSourceNodeId = getSourceNodeId;
             this.getParentNodeId = getParentNodeId;

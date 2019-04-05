@@ -14,10 +14,14 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/embedder/tests/embedder_test_resolver.h"
+#include "flutter/testing/test_dart_native_resolver.h"
 
 namespace shell {
 namespace testing {
+
+using SemanticsNodeCallback = std::function<void(const FlutterSemanticsNode*)>;
+using SemanticsActionCallback =
+    std::function<void(const FlutterSemanticsCustomAction*)>;
 
 class EmbedderContext {
  public:
@@ -39,6 +43,11 @@ class EmbedderContext {
 
   void AddNativeCallback(const char* name, Dart_NativeFunction function);
 
+  void SetSemanticsNodeCallback(SemanticsNodeCallback update_semantics_node);
+
+  void SetSemanticsCustomActionCallback(
+      SemanticsActionCallback semantics_custom_action);
+
  private:
   // This allows the builder to access the hooks.
   friend class EmbedderConfigBuilder;
@@ -49,9 +58,17 @@ class EmbedderContext {
   std::unique_ptr<fml::Mapping> isolate_snapshot_data_;
   std::unique_ptr<fml::Mapping> isolate_snapshot_instructions_;
   std::vector<fml::closure> isolate_create_callbacks_;
-  std::shared_ptr<EmbedderTestResolver> native_resolver_;
+  std::shared_ptr<::testing::TestDartNativeResolver> native_resolver_;
+  SemanticsNodeCallback update_semantics_node_callback_;
+  SemanticsActionCallback update_semantics_custom_action_callback_;
 
   static VoidCallback GetIsolateCreateCallbackHook();
+
+  static FlutterUpdateSemanticsNodeCallback
+  GetUpdateSemanticsNodeCallbackHook();
+
+  static FlutterUpdateSemanticsCustomActionCallback
+  GetUpdateSemanticsCustomActionCallbackHook();
 
   void FireIsolateCreateCallbacks();
 

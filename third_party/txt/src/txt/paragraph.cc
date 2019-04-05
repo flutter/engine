@@ -857,18 +857,24 @@ void Paragraph::Layout(double width, bool force) {
 
         SkFontMetrics metrics;
         font.getMetrics(&metrics);
+        Range<double> record_x_pos(
+            glyph_positions.front().x_pos.start - run_x_offset,
+            glyph_positions.back().x_pos.end - run_x_offset);
         if (run.is_placeholder_run()) {
           paint_records.emplace_back(
               run.style(), SkPoint::Make(run_x_offset + justify_x_offset, 0),
-              builder.make(), metrics, line_number,
-              run.placeholder_run()->width + justify_x_offset_delta,
-              run.is_ghost(), run.placeholder_run());
+              builder.make(), metrics, line_number, record_x_pos.start,
+              record_x_pos.end, run.is_ghost(), run.placeholder_run());
           run_x_offset += run.placeholder_run()->width;
         } else {
+          // paint_records.emplace_back(
+          //     run.style(), SkPoint::Make(run_x_offset + justify_x_offset, 0),
+          //     builder.make(), metrics, line_number,
+          //     layout.getAdvance() + justify_x_offset_delta, run.is_ghost());
           paint_records.emplace_back(
               run.style(), SkPoint::Make(run_x_offset + justify_x_offset, 0),
-              builder.make(), metrics, line_number,
-              layout.getAdvance() + justify_x_offset_delta, run.is_ghost());
+              builder.make(), metrics, line_number, record_x_pos.start,
+              record_x_pos.end, run.is_ghost());
         }
         justify_x_offset += justify_x_offset_delta;
 
@@ -1173,7 +1179,7 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
                        record.style().decoration_thickness_multiplier);
 
   SkPoint record_offset = base_offset + record.offset();
-  SkScalar x = record_offset.x();
+  SkScalar x = record_offset.x() + record.x_start();
   SkScalar y = record_offset.y();
 
   // Setup the decorations.
@@ -1299,8 +1305,8 @@ void Paragraph::PaintBackground(SkCanvas* canvas,
     return;
 
   const SkFontMetrics& metrics = record.metrics();
-  SkRect rect(SkRect::MakeLTRB(0, metrics.fAscent, record.GetRunWidth(),
-                               metrics.fDescent));
+  SkRect rect(SkRect::MakeLTRB(record.x_start(), metrics.fAscent,
+                               record.x_end(), metrics.fDescent));
   rect.offset(base_offset + record.offset());
   canvas->drawRect(rect, record.style().background);
 }
