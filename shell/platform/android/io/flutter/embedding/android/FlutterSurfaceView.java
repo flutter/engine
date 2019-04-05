@@ -5,6 +5,7 @@
 package io.flutter.embedding.android;
 
 import android.content.Context;
+import android.graphics.PixelFormat;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -90,6 +91,10 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
     // Grab a reference to our underlying Surface and register callbacks with that Surface so we
     // can monitor changes and forward those changes on to native Flutter code.
     getHolder().addCallback(surfaceCallback);
+
+    // Set this SurfaceView's PixelFormat to TRANSPARENT so that there is no initial black rectangle
+    // visible for a brief period of time before the alpha is set to zero.
+    getHolder().setFormat(PixelFormat.TRANSPARENT);
 
     // Keep this SurfaceView transparent until Flutter has a frame ready to render. This avoids
     // displaying a black rectangle in our place.
