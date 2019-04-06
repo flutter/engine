@@ -20,7 +20,15 @@ namespace txt {
 
 PlaceholderRun::PlaceholderRun() {}
 
-PlaceholderRun::PlaceholderRun(double width, double height, double baseline)
-    : width(width), height(height), baseline(baseline) {}
+PlaceholderRun::PlaceholderRun(double width,
+                               double height,
+                               PlaceholderAlignment alignment,
+                               Baseline baseline,
+                               double baseline_offset)
+    : width(width),
+      height(height),
+      alignment(alignment),
+      baseline(baseline),
+      baseline_offset(baseline_offset) {}
 
 }  // namespace txt

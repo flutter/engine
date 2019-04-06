@@ -93,13 +93,15 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderParagraph)) {
 
   builder.AddText(u16_text);
 
-  txt::PlaceholderRun placeholder_run(50, 50, 0);
+  txt::PlaceholderRun placeholder_run(50, 50, PlaceholderAlignment::kBaseline,
+                                      Baseline::kAlphabetic, 0);
   builder.AddPlaceholder(placeholder_run);
 
   builder.AddText(u16_text);
 
   builder.AddPlaceholder(placeholder_run);
-  txt::PlaceholderRun placeholder_run2(5, 50, 50);
+  txt::PlaceholderRun placeholder_run2(5, 50, PlaceholderAlignment::kBaseline,
+                                       Baseline::kAlphabetic, 50);
   builder.AddPlaceholder(placeholder_run2);
   builder.AddPlaceholder(placeholder_run);
   builder.AddPlaceholder(placeholder_run2);
@@ -216,8 +218,10 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderBreakParagraph)) {
 
   builder.AddText(u16_text);
 
-  txt::PlaceholderRun placeholder_run(50, 50, 50);
-  txt::PlaceholderRun placeholder_run2(25, 25, 12.5);
+  txt::PlaceholderRun placeholder_run(50, 50, PlaceholderAlignment::kBaseline,
+                                      Baseline::kAlphabetic, 50);
+  txt::PlaceholderRun placeholder_run2(25, 25, PlaceholderAlignment::kBaseline,
+                                       Baseline::kAlphabetic, 12.5);
   builder.AddPlaceholder(placeholder_run);
   builder.AddPlaceholder(placeholder_run);
   builder.AddPlaceholder(placeholder_run);
@@ -369,8 +373,10 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderGetRectsParagraph)) {
 
   builder.AddText(u16_text);
 
-  txt::PlaceholderRun placeholder_run(50, 50, 50);
-  txt::PlaceholderRun placeholder_run2(5, 20, 10);
+  txt::PlaceholderRun placeholder_run(50, 50, PlaceholderAlignment::kBaseline,
+                                      Baseline::kAlphabetic, 50);
+  txt::PlaceholderRun placeholder_run2(5, 20, PlaceholderAlignment::kBaseline,
+                                       Baseline::kAlphabetic, 10);
   builder.AddPlaceholder(placeholder_run);
   builder.AddPlaceholder(placeholder_run);
   builder.AddPlaceholder(placeholder_run);
@@ -485,7 +491,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderGetRectsParagraph)) {
   ASSERT_TRUE(Snapshot());
 }
 
-#if OS_LINUX
+#if !is_win
 // Tests if manually inserted 0xFFFC characters are replaced to 0xFFFD in order
 // to not interfere with the placeholder box layout.
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholder0xFFFCParagraph)) {
@@ -522,7 +528,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholder0xFFFCParagraph)) {
   builder.AddText(u16_text);
   truth_text.insert(truth_text.end(), u16_text2.begin(), u16_text2.end());
 
-  txt::PlaceholderRun placeholder_run(50, 50, 25);
+  txt::PlaceholderRun placeholder_run(50, 50, PlaceholderAlignment::kBaseline,
+                                      Baseline::kAlphabetic, 25);
   builder.AddPlaceholder(placeholder_run);
   truth_text.push_back(0xFFFC);
 

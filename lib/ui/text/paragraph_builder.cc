@@ -433,8 +433,12 @@ Dart_Handle ParagraphBuilder::addText(const std::u16string& text) {
 
 Dart_Handle ParagraphBuilder::addPlaceholder(double width,
                                              double height,
-                                             double baseline) {
-  txt::PlaceholderRun placeholder_run(width, height, baseline);
+                                             unsigned alignment,
+                                             unsigned baseline,
+                                             double baseline_offset) {
+  txt::PlaceholderRun placeholder_run(
+      width, height, static_cast<txt::PlaceholderAlignment>(alignment),
+      static_cast<txt::Baseline>(baseline), baseline_offset);
 
   m_paragraphBuilder->AddPlaceholder(placeholder_run);
 

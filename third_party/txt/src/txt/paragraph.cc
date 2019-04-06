@@ -952,22 +952,47 @@ void Paragraph::Layout(double width, bool force) {
                                    const PlaceholderRun* placeholder_run) {
       if (!strut.force_strut) {
         double ascent =
-            placeholder_run == nullptr
-                ? (-metrics.fAscent + metrics.fLeading / 2) * style.height
-                : placeholder_run->baseline;
-        max_ascent = std::max(ascent, max_ascent);
-
+            (-metrics.fAscent + metrics.fLeading / 2) * style.height;
         double descent =
-            placeholder_run == nullptr
-                ? (metrics.fDescent + metrics.fLeading / 2) * style.height
-                : placeholder_run->height - placeholder_run->baseline;
+            (metrics.fDescent + metrics.fLeading / 2) * style.height;
+
+        if (placeholder_run != nullptr) {
+          switch (placeholder_run->alignment) {
+            case PlaceholderAlignment::kBaseline: {
+              ascent = placeholder_run->baseline_offset;
+              descent =
+                  placeholder_run->height - placeholder_run->baseline_offset;
+              break;
+            }
+            case PlaceholderAlignment::kAboveBaseline: {
+              break;
+            }
+            case PlaceholderAlignment::kBelowBaseline: {
+              break;
+            }
+            case PlaceholderAlignment::kTop: {
+              descent = placeholder_run->height - ascent;
+              break;
+            }
+            case PlaceholderAlignment::kBottom: {
+              ascent = placeholder_run->height - descent;
+              break;
+            }
+            case PlaceholderAlignment::kMiddle: {
+              ascent = placeholder_run->height / 2;
+              descent = placeholder_run->height / 2;
+              break;
+            }
+          }
+        }
+        max_ascent = std::max(ascent, max_ascent);
         max_descent = std::max(descent, max_descent);
       }
 
-      max_unscaled_ascent =
-          std::max(placeholder_run == nullptr ? -metrics.fAscent
-                                              : placeholder_run->baseline,
-                   max_unscaled_ascent);
+      max_unscaled_ascent = std::max(placeholder_run == nullptr
+                                         ? -metrics.fAscent
+                                         : placeholder_run->baseline_offset,
+                                     max_unscaled_ascent);
     };
     for (const PaintRecord& paint_record : paint_records) {
       update_line_metrics(paint_record.metrics(), paint_record.style(),
@@ -1372,9 +1397,9 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
 
     if (run.placeholder_run !=
         nullptr) {  // Use inline placeholder size as height.
-      top = baseline - run.placeholder_run->baseline;
+      top = baseline - run.placeholder_run->baseline_offset;
       bottom = baseline + run.placeholder_run->height -
-               run.placeholder_run->baseline;
+               run.placeholder_run->baseline_offset;
     }
 
     max_line = std::max(run.line_number, max_line);
@@ -1624,9 +1649,9 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForPlaceholders() const {
 
     if (run.placeholder_run !=
         nullptr) {  // Use inline placeholder size as height.
-      top = baseline - run.placeholder_run->baseline;
+      top = baseline - run.placeholder_run->baseline_offset;
       bottom = baseline + run.placeholder_run->height -
-               run.placeholder_run->baseline;
+               run.placeholder_run->baseline_offset;
     }
 
     // Calculate left and right.

@@ -19,6 +19,37 @@
 
 namespace txt {
 
+/// Where to vertically align the placeholder relative to the surrounding text.
+enum class PlaceholderAlignment {
+  /// Match the baseline of the placeholder with the baseline.
+  kBaseline,
+
+  /// Align the bottom edge of the placeholder with the baseline such that the
+  /// placeholder sits on top of the baseline.
+  kAboveBaseline,
+
+  /// Align the top edge of the placeholder with the baseline specified in
+  /// such that the placeholder hangs below the baseline.
+  kBelowBaseline,
+
+  /// Align the top edge of the placeholder with the top edge of the font.
+  /// When the placeholder is very tall, the extra space will hang from
+  /// the top and extend through the bottom of the line.
+  kTop,
+
+  /// Align the bottom edge of the placeholder with the top edge of the font.
+  /// When the placeholder is very tall, the extra space will rise from
+  /// the bottom and extend through the top of the line.
+  kBottom,
+
+  /// Align the middle of the placeholder with the baseline. When the
+  /// placeholder is very tall, the extra space will grow equally from
+  /// the top and bottom of the line.
+  kMiddle,
+};
+
+enum class Baseline { kAlphabetic, kIdeographic };
+
 // Represents the metrics required to fully define a rect that will fit a
 // placeholder.
 //
@@ -29,6 +60,11 @@ class PlaceholderRun {
  public:
   double width = 0;
   double height = 0;
+
+  PlaceholderAlignment alignment;
+
+  Baseline baseline;
+
   // Distance from the top edge of the rect to the baseline position. This
   // baseline will be aligned against the alphabetic baseline of the surrounding
   // text.
@@ -37,11 +73,15 @@ class PlaceholderRun {
   // small or negative values will cause the rect to be positioned underneath
   // the line. When baseline == height, the bottom edge of the rect will rest on
   // the alphabetic baseline.
-  double baseline = 0;
+  double baseline_offset = 0;
 
   PlaceholderRun();
 
-  PlaceholderRun(double width, double height, double baseline);
+  PlaceholderRun(double width,
+                 double height,
+                 PlaceholderAlignment alignment,
+                 Baseline baseline,
+                 double baseline_offset);
 };
 
 }  // namespace txt

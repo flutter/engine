@@ -61,7 +61,11 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
   // Internally, this method adds a single object replacement character (0xFFFC)
   // and emplaces a new PlaceholderRun instance to the vector of inline
   // placeholders.
-  Dart_Handle addPlaceholder(double width, double height, double baseline);
+  Dart_Handle addPlaceholder(double width,
+                             double height,
+                             unsigned alignment,
+                             unsigned baseline,
+                             double baseline_offset);
 
   fml::RefPtr<Paragraph> build();
 

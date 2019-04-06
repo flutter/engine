@@ -1287,6 +1287,35 @@ enum BoxWidthStyle {
     max,
 }
 
+/// Where to vertically align the placeholder relative to the surrounding text.
+enum PlaceholderAlignment {
+  /// Match the baseline of the placeholder with the baseline.
+  baseline,
+
+  /// Align the bottom edge of the placeholder with the baseline such that the
+  /// placeholder sits on top of the baseline.
+  aboveBaseline,
+
+  /// Align the top edge of the placeholder with the baseline specified in
+  /// such that the placeholder hangs below the baseline.
+  belowBaseline,
+
+  /// Align the top edge of the placeholder with the top edge of the font.
+  /// When the placeholder is very tall, the extra space will hang from
+  /// the top and extend through the bottom of the line.
+  top,
+
+  /// Align the bottom edge of the placeholder with the top edge of the font.
+  /// When the placeholder is very tall, the extra space will rise from
+  /// the bottom and extend through the top of the line.
+  bottom,
+
+  /// Align the middle of the placeholder with the baseline. When the
+  /// placeholder is very tall, the extra space will grow equally from
+  /// the top and bottom of the line.
+  middle,
+}
+
 /// A paragraph of text.
 ///
 /// A paragraph retains the size and position of each glyph in the text and can
@@ -1544,11 +1573,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// as the text. This means any content drawn on top of the space reserved by
   /// the placeholder will be drawn over the decoration, possibly obscuring the
   /// decoration.
-  void addPlaceholder(double width, double height, double baseline) {
-    _addPlaceholder(width, height, baseline);
+  void addPlaceholder(double width, double height, PlaceholderAlignment alignment, TextBaseline baseline, double baselineOffset) {
+    _addPlaceholder(width, height, alignment.index, baseline.index, baselineOffset);
     _placeholderCount++;
   }
-  String _addPlaceholder(double width, double height, double baseline) native 'ParagraphBuilder_addPlaceholder';
+  String _addPlaceholder(double width, double height, int alignment, int baseline, double baselineOffset) native 'ParagraphBuilder_addPlaceholder';
 
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.
