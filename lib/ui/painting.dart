@@ -4015,7 +4015,11 @@ typedef _Callbacker<T> = String Function(_Callback<T> callback);
 /// Return a [String] to cause an [Exception] to be synchronously thrown with
 /// that string as a message.
 ///
-/// If the callback is called with null, the future completes with an error.
+/// If the callback is called with null, the future completes with an error. If
+/// null is returned before the method has completed, then a synchronous error
+/// will be thrown instead. This prevents errors from being propagated through
+/// the current Zone's uncaught exception handler when they are thrown before
+/// an error listener can be added to the Completer.
 ///
 /// Example usage:
 ///
@@ -4031,15 +4035,20 @@ typedef _Callbacker<T> = String Function(_Callback<T> callback);
 /// }
 /// ```
 Future<T> _futurize<T>(_Callbacker<T> callbacker) {
-  final Completer<T> completer = new Completer<T>.sync();
+  bool isSync = true;
+  final Completer<T> completer = Completer<T>.sync();
   final String error = callbacker((T t) {
-    if (t == null) {
-      completer.completeError(new Exception('operation failed'));
+    if (t == null && !isSync) {
+      completer.completeError(Exception('operation failed'));
+    } else if (t == null && isSync) {
+      throw Exception('operation failed');
     } else {
       completer.complete(t);
     }
   });
-  if (error != null)
-    throw new Exception(error);
+  if (error != null) {
+    throw Exception(error);
+  }
+  isSync = false;
   return completer.future;
 }
