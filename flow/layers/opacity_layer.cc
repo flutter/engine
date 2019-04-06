@@ -22,8 +22,9 @@ void OpacityLayer::EnsureSingleChild() {
   auto new_child = std::make_shared<flow::TransformLayer>();
 
   // Be careful: SkMatrix's default constructor doesn't initialize the matrix to
-  // identity. Hence we have to explicitly call SkMatrix::MakeTrans(0, 0).
-  SkMatrix identity = SkMatrix::MakeTrans(0, 0);
+  // identity. Hence we have to explicitly call SkMatrix::setIdentity.
+  SkMatrix identity;
+  identity.setIdentity();
 
   new_child->set_transform(identity);
   for (auto& child : layers()) {
