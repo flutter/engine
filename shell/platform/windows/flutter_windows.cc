@@ -1,0 +1,270 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#include "flutter/shell/platform/windows/public/flutter_windows.h"
+
+#include <assert.h>
+#include <algorithm>
+#include <chrono>
+#include <cstdlib>
+#include <iostream>
+#include <vector>
+
+#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
+#include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
+#include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/flutter_window.h"
+#include "flutter/shell/platform/windows/key_event_handler.h"
+#include "flutter/shell/platform/windows/keyboard_hook_handler.h"
+#include "flutter/shell/platform/windows/platform_handler.h"
+#include "flutter/shell/platform/windows/text_input_plugin.h"
+#include "flutter/shell/platform/windows/window_state.h"
+
+static_assert(FLUTTER_ENGINE_VERSION == 1, "");
+
+// Converts a FlutterPlatformMessage to an equivalent FlutterDesktopMessage.
+static FlutterDesktopMessage ConvertToDesktopMessage(
+    const FlutterPlatformMessage& engine_message) {
+  FlutterDesktopMessage message = {};
+  message.struct_size = sizeof(message);
+  message.channel = engine_message.channel;
+  message.message = engine_message.message;
+  message.message_size = engine_message.message_size;
+  message.response_handle = engine_message.response_handle;
+  return message;
+}
+
+// The Flutter Engine calls out to this function when new platform messages are
+// available
+static void WindowsOnFlutterPlatformMessage(
+    const FlutterPlatformMessage* engine_message,
+    void* user_data) {
+  if (engine_message->struct_size != sizeof(FlutterPlatformMessage)) {
+    std::cerr << "Invalid message size received. Expected: "
+              << sizeof(FlutterPlatformMessage) << " but received "
+              << engine_message->struct_size << std::endl;
+    return;
+  }
+
+  flutter::FlutterWindow* window =
+      reinterpret_cast<flutter::FlutterWindow*>(user_data);
+
+  auto message = ConvertToDesktopMessage(*engine_message);
+  window->HandleMessage(message,
+                        [window] {  // TODO Clear event callbacks
+                        },
+                        [window] {  // TODO assign event callbacks
+                        });
+}
+
+// Spins up an instance of the Flutter Engine.
+//
+// This function launches the Flutter Engine in a background thread, supplying
+// the necessary callbacks for rendering within a win32window (if one is
+// provided).
+//
+// Returns a caller-owned pointer to the engine.
+static FlutterEngine RunFlutterEngine(flutter::FlutterWindow* window,
+                                      const char* assets_path,
+                                      const char* icu_data_path,
+                                      const char** arguments,
+                                      size_t arguments_count) {
+  // FlutterProjectArgs is expecting a full argv, so when processing it for
+  // flags the first item is treated as the executable and ignored. Add a dummy
+  // value so that all provided arguments are used.
+  std::vector<const char*> argv = {"placeholder"};
+  if (arguments_count > 0) {
+    argv.insert(argv.end(), &arguments[0], &arguments[arguments_count]);
+  }
+
+  window->CreateRenderSurface();
+
+  FlutterRendererConfig config = {};
+
+  // Provide the necessary callbacks for rendering within a win32 window.
+  config.type = kOpenGL;
+  config.open_gl.struct_size = sizeof(config.open_gl);
+  config.open_gl.make_current = [](void* userData) -> bool {
+    auto host = static_cast<flutter::FlutterWindow*>(userData);
+    return host->MakeCurrent();
+  };
+  config.open_gl.clear_current = [](void* userData) -> bool {
+    auto host = static_cast<flutter::FlutterWindow*>(userData);
+    return host->ClearContext();
+  };
+  config.open_gl.present = [](void* userData) -> bool {
+    auto host = static_cast<flutter::FlutterWindow*>(userData);
+    return host->SwapBuffers();
+  };
+  config.open_gl.fbo_callback = [](void* userData) -> uint32_t { return 0; };
+  config.open_gl.gl_proc_resolver = [](void* userData,
+                                       const char* what) -> void* {
+    return eglGetProcAddress(what);
+  };
+
+  FlutterProjectArgs args = {};
+  args.struct_size = sizeof(FlutterProjectArgs);
+  args.assets_path = assets_path;
+  args.icu_data_path = icu_data_path;
+  args.command_line_argc = static_cast<int>(argv.size());
+  args.command_line_argv = &argv[0];
+  args.platform_message_callback = WindowsOnFlutterPlatformMessage;
+  // args.custom_task_runners = custom_task_runners; TODO
+
+  FlutterEngine engine = nullptr;
+  auto result =
+      FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config, &args, window, &engine);
+  if (result != kSuccess || engine == nullptr) {
+    std::cerr << "Failed to start Flutter engine: error " << result
+              << std::endl;
+    return nullptr;
+  }
+
+  return engine;
+}
+
+bool FlutterDesktopInit() {
+  return true;
+}
+
+void FlutterDesktopTerminate() {}
+
+FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
+    int initial_width,
+    int initial_height,
+    const char* title,
+    const char* assets_path,
+    const char* icu_data_path,
+    const char** arguments,
+    size_t argument_count) {
+  auto win = std::make_unique<flutter::FlutterWindow>(
+      title, 10, 10, initial_width, initial_height);
+
+  flutter::FlutterWindow* window = win.get();
+
+  auto engine = RunFlutterEngine(window, assets_path, icu_data_path, arguments,
+                                 argument_count);
+
+  if (engine == nullptr) {
+    return nullptr;
+  }
+
+  auto state = window->SetState(engine);
+  state->window = std::move(win);
+
+  // Trigger an initial size callback to send size information to Flutter.
+  window->OnResize();
+
+  return state;
+}
+
+void FlutterDesktopDestroyWindow(FlutterDesktopWindowControllerRef controller) {
+  FlutterEngineShutdown(controller->engine);
+  delete controller;
+}
+
+void FlutterDesktopWindowSetHoverEnabled(FlutterDesktopWindowRef flutter_window,
+                                         bool enabled) {
+  // todo either implement or remove once embedder project has moved
+}
+
+void FlutterDesktopWindowSetTitle(FlutterDesktopWindowRef flutter_window,
+                                  const char* title) {
+  // todo either implement or remove
+}
+
+void FlutterDesktopWindowSetIcon(FlutterDesktopWindowRef flutter_window,
+                                 uint8_t* pixel_data,
+                                 int width,
+                                 int height) {
+  // todo either implement or remove
+}
+
+void FlutterDesktopRunWindowLoop(FlutterDesktopWindowControllerRef controller) {
+  controller->window->FlutterMessageLoop();
+
+  FlutterEngineShutdown(controller->engine);
+  delete controller;
+}
+
+FlutterDesktopWindowRef FlutterDesktopGetWindow(
+    FlutterDesktopWindowControllerRef controller) {
+  // Currently, one registrar acts as the registrar for all plugins, so the
+  // name is ignored. It is part of the API to reduce churn in the future when
+  // aligning more closely with the Flutter registrar system.
+
+  return controller->window_wrapper.get();
+}
+
+FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(
+    FlutterDesktopWindowControllerRef controller,
+    const char* plugin_name) {
+  // Currently, one registrar acts as the registrar for all plugins, so the
+  // name is ignored. It is part of the API to reduce churn in the future when
+  // aligning more closely with the Flutter registrar system.
+
+  return controller->window->GetRegistrar();
+}
+
+FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,
+                                                const char* icu_data_path,
+                                                const char** arguments,
+                                                size_t argument_count) {
+  auto engine = RunFlutterEngine(nullptr, assets_path, icu_data_path, arguments,
+                                 argument_count);
+  if (engine == nullptr) {
+    return nullptr;
+  }
+  auto engine_state = new FlutterDesktopEngineState();
+  engine_state->engine = engine;
+  return engine_state;
+}
+
+bool FlutterDesktopShutDownEngine(FlutterDesktopEngineRef engine_ref) {
+  std::cout << "Shutting down flutter engine process." << std::endl;
+  auto result = FlutterEngineShutdown(engine_ref->engine);
+  delete engine_ref;
+  return (result == kSuccess);
+}
+
+void FlutterDesktopRegistrarEnableInputBlocking(
+    FlutterDesktopPluginRegistrarRef registrar,
+    const char* channel) {
+  registrar->messenger->dispatcher->EnableInputBlockingForChannel(channel);
+}
+
+FlutterDesktopMessengerRef FlutterDesktopRegistrarGetMessenger(
+    FlutterDesktopPluginRegistrarRef registrar) {
+  return registrar->messenger.get();
+}
+
+void FlutterDesktopMessengerSend(FlutterDesktopMessengerRef messenger,
+                                 const char* channel,
+                                 const uint8_t* message,
+                                 const size_t message_size) {
+  FlutterPlatformMessage platform_message = {
+      sizeof(FlutterPlatformMessage),
+      channel,
+      message,
+      message_size,
+  };
+
+  FlutterEngineSendPlatformMessage(messenger->engine, &platform_message);
+}
+
+void FlutterDesktopMessengerSendResponse(
+    FlutterDesktopMessengerRef messenger,
+    const FlutterDesktopMessageResponseHandle* handle,
+    const uint8_t* data,
+    size_t data_length) {
+  FlutterEngineSendPlatformMessageResponse(messenger->engine, handle, data,
+                                           data_length);
+}
+
+void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
+                                        const char* channel,
+                                        FlutterDesktopMessageCallback callback,
+                                        void* user_data) {
+  messenger->dispatcher->SetMessageCallback(channel, callback, user_data);
+}

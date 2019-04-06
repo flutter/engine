@@ -126,7 +126,11 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '778935c9452dde04e246b986d6b92bbaaed142f2',
+
+
+  #'src': 'https://github.com/flutter/buildroot.git' + '@' + '778935c9452dde04e246b986d6b92bbaaed142f2',
+
+  'src': 'https://github.com/clarkezone/buildroot.git' + '@' + '0532999f7f38e4b09bcadd953b86f618671b67d8',
 
    # Fuchsia compatibility
    #
@@ -404,6 +408,12 @@ deps = {
 
    'src/third_party/swiftshader':
    Var('swiftshader_git') + '/SwiftShader.git' + '@' + '95b1db9619fb0f5f232c09995bc00729273f74ee',
+   
+   'src/third_party/swiftshader':
+   Var('swiftshader_git') + '/SwiftShader.git' + '@' + '95b1db9619fb0f5f232c09995bc00729273f74ee',
+
+   'src/third_party/angle':
+   Var('github_git') + '/google/angle.git' + '@' + '2d0a9acb05511a8fdaf0cd27d0da22599516a68b',
 
   'src/third_party/pkg/when':
    Var('dart_git') + '/when.git' + '@' + '0.2.0',
