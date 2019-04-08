@@ -90,10 +90,6 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
     // Grab a reference to our underlying Surface and register callbacks with that Surface so we
     // can monitor changes and forward those changes on to native Flutter code.
     getHolder().addCallback(surfaceCallback);
-
-    // Keep this SurfaceView transparent until Flutter has a frame ready to render. This avoids
-    // displaying a black rectangle in our place.
-    setAlpha(0.0f);
   }
 
   /**
@@ -140,9 +136,6 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
         disconnectSurfaceFromRenderer();
       }
 
-      // Make the SurfaceView invisible to avoid showing a black rectangle.
-      setAlpha(0.0f);
-
       flutterRenderer = null;
       isAttachedToFlutterRenderer = false;
     } else {
@@ -181,7 +174,5 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
   public void onFirstFrameRendered() {
     // TODO(mattcarroll): decide where this method should live and what it needs to do.
     Log.d(TAG, "onFirstFrameRendered()");
-    // Now that a frame is ready to display, take this SurfaceView from transparent to opaque.
-    setAlpha(1.0f);
   }
 }

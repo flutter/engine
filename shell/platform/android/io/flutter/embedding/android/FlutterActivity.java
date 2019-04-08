@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -17,13 +16,10 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.FrameLayout;
 
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
-import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.FlutterMain;
 
 /**
@@ -64,16 +60,12 @@ public class FlutterActivity extends FragmentActivity {
   private static final String TAG = "FlutterActivity";
 
   // Meta-data arguments, processed from manifest XML.
-  protected static final String DART_ENTRYPOINT_META_DATA_KEY = "io.flutter.Entrypoint";
-  protected static final String INITIAL_ROUTE_META_DATA_KEY = "io.flutter.InitialRoute";
+  private static final String DART_ENTRYPOINT_META_DATA_KEY = "io.flutter.Entrypoint";
+  private static final String INITIAL_ROUTE_META_DATA_KEY = "io.flutter.InitialRoute";
 
   // Intent extra arguments.
-  protected static final String EXTRA_DART_ENTRYPOINT = "dart_entrypoint";
-  protected static final String EXTRA_INITIAL_ROUTE = "initial_route";
-
-  // Default configuration.
-  protected static final String DEFAULT_DART_ENTRYPOINT = "main";
-  protected static final String DEFAULT_INITIAL_ROUTE = "/";
+  public static final String EXTRA_DART_ENTRYPOINT = "dart_entrypoint";
+  public static final String EXTRA_INITIAL_ROUTE = "initial_route";
 
   // FlutterFragment management.
   private static final String TAG_FLUTTER_FRAGMENT = "flutter_fragment";
@@ -81,56 +73,11 @@ public class FlutterActivity extends FragmentActivity {
   private static final int FRAGMENT_CONTAINER_ID = 609893468; // random number
   private FlutterFragment flutterFragment;
 
-  /**
-   * Builder to create an {@code Intent} that launches a {@code FlutterActivity} with the
-   * desired configuration.
-   */
-  public static class IntentBuilder {
-    private String dartEntrypoint = DEFAULT_DART_ENTRYPOINT;
-    private String initialRoute = DEFAULT_INITIAL_ROUTE;
-
-    /**
-     * The name of the initial Dart method to invoke, defaults to "main".
-     */
-    @NonNull
-    public IntentBuilder dartEntrypoint(@NonNull String dartEntrypoint) {
-      this.dartEntrypoint = dartEntrypoint;
-      return this;
-    }
-
-    /**
-     * The initial route that a Flutter app will render in this {@link FlutterFragment},
-     * defaults to "/".
-     */
-    @NonNull
-    public IntentBuilder initialRoute(@NonNull String initialRoute) {
-      this.initialRoute = initialRoute;
-      return this;
-    }
-
-    @NonNull
-    public Intent build(@NonNull Context context) {
-      return new Intent(context, FlutterActivity.class)
-          .putExtra(EXTRA_DART_ENTRYPOINT, dartEntrypoint)
-          .putExtra(EXTRA_INITIAL_ROUTE, initialRoute);
-    }
-  }
-
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(createFragmentContainer());
-    configureStatusBarForFullscreenFlutterExperience();
     ensureFlutterFragmentCreated();
-  }
-
-  private void configureStatusBarForFullscreenFlutterExperience() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      Window window = getWindow();
-      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-      window.setStatusBarColor(0x40000000);
-      window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
-    }
   }
 
   /**
@@ -178,13 +125,12 @@ public class FlutterActivity extends FragmentActivity {
    */
   @NonNull
   protected FlutterFragment createFlutterFragment() {
-    return new FlutterFragment.Builder()
-        .dartEntrypoint(getDartEntrypoint())
-        .initialRoute(getInitialRoute())
-        .appBundlePath(getAppBundlePath())
-        .flutterShellArgs(FlutterShellArgs.fromIntent(getIntent()))
-        .renderMode(FlutterView.RenderMode.surface)
-        .build();
+    return FlutterFragment.newInstance(
+        getDartEntrypoint(),
+        getInitialRoute(),
+        getAppBundlePath(),
+        FlutterShellArgs.fromIntent(getIntent())
+    );
   }
 
   @Override
@@ -270,7 +216,7 @@ public class FlutterActivity extends FragmentActivity {
    * <p>
    * Subclasses may override this method to directly control the Dart entrypoint.
    */
-  @NonNull
+  @Nullable
   protected String getDartEntrypoint() {
     if (getIntent().hasExtra(EXTRA_DART_ENTRYPOINT)) {
       return getIntent().getStringExtra(EXTRA_DART_ENTRYPOINT);
@@ -282,10 +228,9 @@ public class FlutterActivity extends FragmentActivity {
           PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES
       );
       Bundle metadata = activityInfo.metaData;
-      String desiredDartEntrypoint = metadata != null ? metadata.getString(DART_ENTRYPOINT_META_DATA_KEY) : null;
-      return desiredDartEntrypoint != null ? desiredDartEntrypoint : DEFAULT_DART_ENTRYPOINT;
+      return metadata != null ? metadata.getString(DART_ENTRYPOINT_META_DATA_KEY) : null;
     } catch (PackageManager.NameNotFoundException e) {
-      return DEFAULT_DART_ENTRYPOINT;
+      return null;
     }
   }
 
@@ -306,7 +251,7 @@ public class FlutterActivity extends FragmentActivity {
    * <p>
    * Subclasses may override this method to directly control the initial route.
    */
-  @NonNull
+  @Nullable
   protected String getInitialRoute() {
     if (getIntent().hasExtra(EXTRA_INITIAL_ROUTE)) {
       return getIntent().getStringExtra(EXTRA_INITIAL_ROUTE);
@@ -318,10 +263,9 @@ public class FlutterActivity extends FragmentActivity {
           PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES
       );
       Bundle metadata = activityInfo.metaData;
-      String desiredInitialRoute = metadata != null ? metadata.getString(INITIAL_ROUTE_META_DATA_KEY) : null;
-      return desiredInitialRoute != null ? desiredInitialRoute : DEFAULT_INITIAL_ROUTE;
+      return metadata != null ? metadata.getString(INITIAL_ROUTE_META_DATA_KEY) : null;
     } catch (PackageManager.NameNotFoundException e) {
-      return DEFAULT_INITIAL_ROUTE;
+      return null;
     }
   }
 
