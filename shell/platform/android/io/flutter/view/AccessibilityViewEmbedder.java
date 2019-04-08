@@ -51,10 +51,11 @@ class AccessibilityViewEmbedder {
     // Maps a platform view and originId to a corresponding flutterID.
     private final Map<ViewAndId, Integer> originToFlutterId;
 
-    // Maps an embedded view to it's screen bounds.
+    // Maps the flutterId of an accessibility node to the screen bounds of
+    // the root semantic node for the embedded view.
     // This is used to translate the coordinates of the accessibility node subtree to the main display's coordinate
     // system.
-    private final Map<View, Rect> embeddedViewToDisplayBounds;
+    private final SparseArray<Rect> flutterIdToDisplayBounds;
 
     private int nextFlutterId;
 
@@ -63,8 +64,8 @@ class AccessibilityViewEmbedder {
         flutterIdToOrigin = new SparseArray<>();
         this.rootAccessibilityView = rootAccessibiiltyView;
         nextFlutterId = firstVirtualNodeId;
+        flutterIdToDisplayBounds = new SparseArray<>();
         originToFlutterId = new HashMap<>();
-        embeddedViewToDisplayBounds = new HashMap<>();
     }
 
     /**
@@ -79,9 +80,10 @@ class AccessibilityViewEmbedder {
         if (originPackedId == null) {
             return null;
         }
-        embeddedViewToDisplayBounds.put(embeddedView, displayBounds);
         int originId = ReflectionAccessors.getVirtualNodeId(originPackedId);
-        cacheVirtualIdMappings(embeddedView, originId, flutterId);
+        flutterIdToOrigin.put(flutterId, new ViewAndId(embeddedView, originId));
+        flutterIdToDisplayBounds.put(flutterId, displayBounds);
+        originToFlutterId.put(new ViewAndId(embeddedView, originId), flutterId);
         return convertToFlutterNode(originNode, flutterId, embeddedView);
     }
 
@@ -92,13 +94,6 @@ class AccessibilityViewEmbedder {
     public AccessibilityNodeInfo createAccessibilityNodeInfo(int flutterId) {
         ViewAndId origin = flutterIdToOrigin.get(flutterId);
         if (origin == null) {
-            return null;
-        }
-        if (!embeddedViewToDisplayBounds.containsKey(origin.view)) {
-            // This might happen if the embedded view is sending accessibility event before the first Flutter semantics
-            // tree was sent to the accessibility bridge. In this case we don't return a node as we do not know the
-            // bounds yet.
-            // https://github.com/flutter/flutter/issues/30068
             return null;
         }
         AccessibilityNodeProvider provider = origin.view.getAccessibilityNodeProvider();
@@ -132,7 +127,7 @@ class AccessibilityViewEmbedder {
         result.setSource(rootAccessibilityView, flutterId);
         result.setClassName(originNode.getClassName());
 
-        Rect displayBounds = embeddedViewToDisplayBounds.get(embeddedView);
+        Rect displayBounds = flutterIdToDisplayBounds.get(flutterId);
 
         copyAccessibilityFields(originNode, result);
         setFlutterNodesTranslateBounds(originNode, displayBounds, result);
@@ -177,19 +172,12 @@ class AccessibilityViewEmbedder {
                 childFlutterId = originToFlutterId.get(origin);
             } else {
                 childFlutterId = nextFlutterId++;
-                cacheVirtualIdMappings(embeddedView, originId, childFlutterId);
+                originToFlutterId.put(origin, childFlutterId);
+                flutterIdToOrigin.put(childFlutterId, origin);
+                flutterIdToDisplayBounds.put(childFlutterId, displayBounds);
             }
             resultNode.addChild(rootAccessibilityView, childFlutterId);
         }
-    }
-
-    // Caches a bidirectional mapping of (embeddedView, originId)<-->flutterId.
-    // Where originId is a virtual node ID in the embeddedView's tree, and flutterId is the ID
-    // of the corresponding node in the Flutter virtual accessibility nodes tree.
-    private void cacheVirtualIdMappings(@NonNull View embeddedView, int originId, int flutterId) {
-        ViewAndId origin = new ViewAndId(embeddedView, originId);
-        originToFlutterId.put(origin, flutterId);
-        flutterIdToOrigin.put(flutterId, origin);
     }
 
     private void setFlutterNodesTranslateBounds(
@@ -277,8 +265,7 @@ class AccessibilityViewEmbedder {
         int originVirtualId = ReflectionAccessors.getVirtualNodeId(originPackedId);
         Integer flutterId = originToFlutterId.get(new ViewAndId(embeddedView, originVirtualId));
         if (flutterId == null) {
-            flutterId = nextFlutterId++;
-            cacheVirtualIdMappings(embeddedView, originVirtualId, flutterId);
+            return false;
         }
         translatedEvent.setSource(rootAccessibilityView, flutterId);
         translatedEvent.setClassName(event.getClassName());
@@ -346,7 +333,7 @@ class AccessibilityViewEmbedder {
         if (origin == null) {
             return false;
         }
-        Rect displayBounds = embeddedViewToDisplayBounds.get(origin.view);
+        Rect displayBounds = flutterIdToDisplayBounds.get(rootFlutterId);
         int pointerCount = event.getPointerCount();
         MotionEvent.PointerProperties[] pointerProperties = new MotionEvent.PointerProperties[pointerCount];
         MotionEvent.PointerCoords[] pointerCoords = new MotionEvent.PointerCoords[pointerCount];
