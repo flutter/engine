@@ -346,7 +346,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         if (!isAttached())
             return null;
         getHolder().removeCallback(mSurfaceCallback);
-        mNativeView.detachFromFlutterView();
+        mNativeView.detach();
 
         FlutterNativeView view = mNativeView;
         mNativeView = null;
