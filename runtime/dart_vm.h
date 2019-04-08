@@ -38,6 +38,8 @@ class DartVM : public fml::RefCountedThreadSafe<DartVM> {
 
   static bool IsRunningPrecompiledCode();
 
+  static bool IsKernelMapping(const fml::FileMapping* mapping);
+
   const Settings& GetSettings() const;
 
   const DartSnapshot& GetVMSnapshot() const;
