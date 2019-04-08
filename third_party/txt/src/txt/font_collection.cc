@@ -200,7 +200,8 @@ std::shared_ptr<minikin::FontFamily> FontCollection::FindFontFamilyInManagers(
 std::shared_ptr<minikin::FontFamily> FontCollection::CreateMinikinFontFamily(
     const sk_sp<SkFontMgr>& manager,
     const std::string& family_name) {
-  TRACE_EVENT0("flutter", "FontCollection::CreateMinikinFontFamily");
+  TRACE_EVENT1("flutter", "FontCollection::CreateMinikinFontFamily",
+               "family_name", family_name.c_str());
   sk_sp<SkFontStyleSet> font_style_set(
       manager->matchFamily(family_name.c_str()));
   if (font_style_set == nullptr || font_style_set->count() == 0) {
@@ -229,8 +230,8 @@ std::shared_ptr<minikin::FontFamily> FontCollection::CreateMinikinFontFamily(
     minikin_fonts.emplace_back(std::move(minikin_font));
   }
 
-  TRACE_EVENT1("flutter", "minikin::FontFamily",
-      "MinikinFontsCount", std::to_string(minikin_fonts.size()).c_str());
+  TRACE_EVENT1("flutter", "minikin::FontFamily", "MinikinFontsCount",
+               std::to_string(minikin_fonts.size()).c_str());
   return std::make_shared<minikin::FontFamily>(std::move(minikin_fonts));
 }
 
