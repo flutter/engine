@@ -888,8 +888,6 @@ FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
-  TRACE_EVENT0("flutter", "FlutterEngineOnVsync");
-
   auto start_time = fml::TimePoint::FromEpochDelta(
       fml::TimeDelta::FromNanoseconds(frame_start_time_nanos));
 
