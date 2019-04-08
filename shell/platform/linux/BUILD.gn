@@ -2,21 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-assert(is_linux)
-
 group("linux") {
-  deps = [
-    ":flutter_linux",
-    "$flutter_root/shell/platform/glfw:publish_headers_glfw",
-    "$flutter_root/shell/platform/common/cpp/client_wrapper:publish_wrapper",
-    "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
-  ]
-}
+  testonly = true
 
-shared_library("flutter_linux") {
   deps = [
-    "$flutter_root/shell/platform/glfw:flutter_glfw",
+    "$flutter_root/shell/testing",
   ]
-
-  public_configs = [ "$flutter_root:config" ]
 }
