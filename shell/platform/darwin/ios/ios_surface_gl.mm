@@ -9,10 +9,10 @@
 
 namespace shell {
 
-IOSSurfaceGL::IOSSurfaceGL(std::shared_ptr<IOSGLContext> context,
-                           fml::scoped_nsobject<CAEAGLLayer> layer,
+IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
                            FlutterPlatformViewsController* platform_views_controller)
-    : IOSSurface(platform_views_controller), context_(context) {
+    : IOSSurface(platform_views_controller) {
+  context_ = std::make_shared<IOSGLContext>();
   render_target_ = context_->CreateRenderTarget(std::move(layer));
 }
 
@@ -29,7 +29,7 @@ bool IOSSurfaceGL::IsValid() const {
 }
 
 bool IOSSurfaceGL::ResourceContextMakeCurrent() {
-  return context_->ResourceMakeCurrent();
+  return render_target_->IsValid() ? context_->ResourceMakeCurrent() : false;
 }
 
 void IOSSurfaceGL::UpdateStorageSizeIfNecessary() {
