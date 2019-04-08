@@ -9,8 +9,6 @@
 
 namespace flow {
 
-// Be careful that SkMatrix's default constructor doesn't initialize the matrix
-// at all. Hence |set_transform| must be called with an initialized SkMatrix.
 class TransformLayer : public ContainerLayer {
  public:
   TransformLayer();
