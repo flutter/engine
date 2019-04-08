@@ -120,7 +120,9 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
         flushAllViews();
     }
 
-    @Override
+    /**
+     * Returns the embedded view with id, or null if no view with this id is registered.
+     */
     public View getPlatformViewById(Integer id) {
         VirtualDisplayController controller = vdControllers.get(id);
         if (controller == null) {
