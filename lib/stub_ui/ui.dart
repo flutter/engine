@@ -9,14 +9,13 @@
 /// This library exposes the lowest-level services that Flutter frameworks use
 /// to bootstrap applications, such as classes for driving the input, graphics
 /// text, layout, and rendering subsystems.
-library ui;
+library dart.ui;
 
-//import 'dart:_internal' hide Symbol; // ignore: import_internal_library, unused_import
+import 'dart:_internal' hide Symbol; // ignore: import_internal_library, unused_import
 import 'dart:async';
 import 'dart:collection' as collection;
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'dart:html'; // ignore: unused_import
 import 'dart:io'; // ignore: unused_import
 import 'dart:isolate' show SendPort;
 import 'dart:math' as math;

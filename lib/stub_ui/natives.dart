@@ -4,7 +4,7 @@
 
 // TODO(dnfield): remove unused_element ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
-part of ui;
+part of dart.ui;
 
 // A service protocol extension to schedule a frame to be rendered into the
 // window.
