@@ -461,11 +461,8 @@ public class FlutterJNI {
 
   @UiThread
   public void dispatchEmptyPlatformMessage(String channel, int responseId) {
-    if (isAttached()) {
-      nativeDispatchEmptyPlatformMessage(nativePlatformViewId, channel, responseId);
-    } else {
-      Log.w(TAG, "Tried to send a platform message to Flutter, but FlutterJNI was detached from native C++. Could not send. Channel: " + channel + ". Response ID: " + responseId);
-    }
+    ensureAttachedToNative();
+    nativeDispatchEmptyPlatformMessage(nativePlatformViewId, channel, responseId);
   }
 
   // Send an empty platform message to Dart.
@@ -477,17 +474,14 @@ public class FlutterJNI {
 
   @UiThread
   public void dispatchPlatformMessage(String channel, ByteBuffer message, int position, int responseId) {
-    if (isAttached()) {
-      nativeDispatchPlatformMessage(
-          nativePlatformViewId,
-          channel,
-          message,
-          position,
-          responseId
-      );
-    } else {
-      Log.w(TAG, "Tried to send a platform message to Flutter, but FlutterJNI was detached from native C++. Could not send. Channel: " + channel + ". Response ID: " + responseId);
-    }
+    ensureAttachedToNative();
+    nativeDispatchPlatformMessage(
+        nativePlatformViewId,
+        channel,
+        message,
+        position,
+        responseId
+    );
   }
 
   // Send a data-carrying platform message to Dart.
