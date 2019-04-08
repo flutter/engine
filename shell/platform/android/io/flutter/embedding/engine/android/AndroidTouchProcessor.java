@@ -150,9 +150,7 @@ public class AndroidTouchProcessor {
     // Mouse hover support is not implemented for API < 18.
     boolean isPointerEvent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2
         && event.isFromSource(InputDevice.SOURCE_CLASS_POINTER);
-    boolean isMovementEvent = (event.getActionMasked() == MotionEvent.ACTION_HOVER_MOVE
-        || event.getActionMasked() == MotionEvent.ACTION_SCROLL);
-    if (!isPointerEvent || !isMovementEvent) {
+    if (!isPointerEvent || event.getActionMasked() != MotionEvent.ACTION_HOVER_MOVE) {
       return false;
     }
 
@@ -183,9 +181,7 @@ public class AndroidTouchProcessor {
 
     int pointerKind = getPointerDeviceTypeForToolType(event.getToolType(pointerIndex));
 
-    int signalKind = event.getActionMasked() == MotionEvent.ACTION_SCROLL
-        ? PointerSignalKind.SCROLL
-        : PointerSignalKind.NONE;
+    int signalKind = PointerSignalKind.NONE;
 
     long timeStamp = event.getEventTime() * 1000; // Convert from milliseconds to microseconds.
 
@@ -246,13 +242,8 @@ public class AndroidTouchProcessor {
 
     packet.putLong(pointerData); // platformData
 
-    if (signalKind == PointerSignalKind.SCROLL) {
-      packet.putDouble(-event.getAxisValue(MotionEvent.AXIS_HSCROLL)); // scroll_delta_x
-      packet.putDouble(-event.getAxisValue(MotionEvent.AXIS_VSCROLL)); // scroll_delta_y
-    } else {
-      packet.putDouble(0.0);  // scroll_delta_x
-      packet.putDouble(0.0);  // scroll_delta_x
-    }
+    packet.putDouble(0.0); // scroll_delta_x
+    packet.putDouble(0.0); // scroll_delta_y
   }
 
   @PointerChange
@@ -277,9 +268,6 @@ public class AndroidTouchProcessor {
     }
     if (maskedAction == MotionEvent.ACTION_CANCEL) {
       return PointerChange.CANCEL;
-    }
-    if (maskedAction == MotionEvent.ACTION_SCROLL) {
-      return PointerChange.HOVER;
     }
     return -1;
   }
