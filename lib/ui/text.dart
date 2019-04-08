@@ -1289,15 +1289,18 @@ enum BoxWidthStyle {
 
 /// Where to vertically align the placeholder relative to the surrounding text.
 enum PlaceholderAlignment {
-  /// Match the baseline of the placeholder with the baseline.
+  /// Match the baseline of the placeholder with the baseline. The [TextBaseline] to
+  /// use must be non-null be specified when using this alignment mode.
   baseline,
 
   /// Align the bottom edge of the placeholder with the baseline such that the
-  /// placeholder sits on top of the baseline.
+  /// placeholder sits on top of the baseline. The [TextBaseline] to
+  /// use must be non-null be specified when using this alignment mode.
   aboveBaseline,
 
   /// Align the top edge of the placeholder with the baseline specified in
-  /// such that the placeholder hangs below the baseline.
+  /// such that the placeholder hangs below the baseline. The [TextBaseline]
+  /// to use must be non-null be specified when using this alignment mode.
   belowBaseline,
 
   /// Align the top edge of the placeholder with the top edge of the font.
@@ -1310,7 +1313,7 @@ enum PlaceholderAlignment {
   /// the bottom and extend through the top of the line.
   bottom,
 
-  /// Align the middle of the placeholder with the baseline. When the
+  /// Align the middle of the placeholder with the middle of the text. When the
   /// placeholder is very tall, the extra space will grow equally from
   /// the top and bottom of the line.
   middle,
@@ -1538,6 +1541,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// Adds the given text to the paragraph.
   ///
   /// The text will be styled according to the current stack of text styles.
+  ///
+  /// When adding 0xFFFC codepoints instances of 0xFFFC passed in through this
+  /// methid will be replaced with 0xFFFD if at least one placeholder is added.
+  /// This replacement does not happen if no placeholders are added. See
+  /// [addPlaceholder] for details.
   void addText(String text) {
     final String error = _addText(text);
     if (error != null)
@@ -1550,34 +1558,61 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// The paragraph will contain a rectangular space with no text of the dimensions
   /// specified.
   ///
-  /// The [width] and [height] parameters specify the size of the rectangle, and
-  /// [baseline] indicates the distance of the alphabetic baseline from the top of
-  /// of the rectangle. This determines how the rectangle is aligned to the
-  /// surrounding text.
+  /// The [width] and [height] parameters specify the size of the placeholder rectangle.
   ///
-  /// For example, to make a 50x50 empty rectangle 'hole' that sits completely on
-  /// top of the alphabetic baseline, pass in `addPlaceholder(50, 50, 50)`. For
-  /// a box that is vertically centered on the alphabetic baseline, pass in
-  /// `addPlaceholder(50, 50, 25);`.
+  /// The [alignment] parameter specifies how the placeholder rectangle will be vertically
+  /// aligned with the surrounding text. When [PlaceholderAlignment.baseline],
+  /// [PlaceholderAlignment.aboveBaseline], and [PlaceholderAlignment.belowBaseline]
+  /// alignment modes are used, the baseline needs to be set with the [baseline].
+  /// When using [PlaceholderAlignment.baseline], [baselineOffset] indicates the distance
+  /// of the baseline down from the top of of the rectangle. The default [baselineOffset]
+  /// is the [height].
+  ///
+  /// Examples:
+  /// * For a 30x50 placeholder with the bottom edge aligned with the bottom of the text, use:
+  /// `addPlaceholder(30, 50, PlaceholderAlignment.bottom);`
+  /// * For a 30x50 placeholder that is vertically centered around the text, use:
+  /// `addPlaceholder(30, 50, PlaceholderAlignment.middle);`.
+  /// * For a 30x50 placeholder that sits completely on top of the alphabetic baseline, use:
+  /// `addPlaceholder(30, 50, PlaceholderAlignment.aboveBaseline, baseline: TextBaseline.alphabetic)`.
+  /// * For a 30x50 placeholder with 40 pixels above and 10 pixels below the alphabetic baseline, use:
+  /// `addPlaceholder(30, 50, PlaceholderAlignment.baseline, baseline: TextBaseline.alphabetic, baselineOffset: 40)`.
   ///
   /// Lines are permitted to break around each placeholder.
   ///
   /// Decorations will be drawn based on the font defined in the most recently
-  /// pushed TextStyle. Since placeholders are sized completely separately from
-  /// the rest of the text, the positions of the decorations are unlikely to
-  /// line up as expected. To hide or manually adjust decorations to fit, a text
-  /// style with the desired decoration behavior should be pushed before adding a
-  /// placeholder.
+  /// pushed TextStyle. The decorations are drawn as if unicode text were present
+  /// in the placeholder space, and will draw the same regardless of the height and
+  /// alignment of the placeholder. To hide or manually adjust decorations to fit,
+  /// a text style with the desired decoration behavior should be pushed before
+  /// adding a placeholder.
   ///
   /// Any decorations drawn through a placeholder will exist on the same canvas/layer
   /// as the text. This means any content drawn on top of the space reserved by
   /// the placeholder will be drawn over the decoration, possibly obscuring the
   /// decoration.
-  void addPlaceholder(double width, double height, PlaceholderAlignment alignment, TextBaseline baseline, double baselineOffset) {
-    _addPlaceholder(width, height, alignment.index, baseline.index, baselineOffset);
+  ///
+  /// Placeholders are represented by a unicode 0xFFFC "object replacement character"
+  /// in the text buffer. For each placeholder, one object replacement character is
+  /// added on to the text buffer. When 0xFFFC codepoints are passed in as part of
+  /// the text in [addText], then the non-placeholder instances of 0xFFFC will be
+  /// replaced with 0xFFFD instead. This replacement does not happen if no
+  /// placeholders are added.
+  void addPlaceholder(double width, double height, PlaceholderAlignment alignment, {
+    double baselineOffset,
+    TextBaseline baseline
+  }) {
+    // Require a baseline to be specified if using a baseline-based alignment.
+    assert((alignment == PlaceholderAlignment.aboveBaseline ||
+            alignment == PlaceholderAlignment.belowBaseline ||
+            alignment == PlaceholderAlignment.baseline) ? baseline != null : true);
+    // Default the baselineOffset to height if null. This will place the placeholder
+    // fully above the baseline, similar to [PlaceholderAlignment.aboveBaseline].
+    baselineOffset = baselineOffset ?? height;
+    _addPlaceholder(width, height, alignment.index, baselineOffset, baseline.index);
     _placeholderCount++;
   }
-  String _addPlaceholder(double width, double height, int alignment, int baseline, double baselineOffset) native 'ParagraphBuilder_addPlaceholder';
+  String _addPlaceholder(double width, double height, int alignment, double baselineOffset, int baseline) native 'ParagraphBuilder_addPlaceholder';
 
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.

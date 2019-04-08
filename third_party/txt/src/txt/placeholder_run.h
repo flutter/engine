@@ -42,7 +42,7 @@ enum class PlaceholderAlignment {
   /// the bottom and extend through the top of the line.
   kBottom,
 
-  /// Align the middle of the placeholder with the baseline. When the
+  /// Align the middle of the placeholder with the middle of the text. When the
   /// placeholder is very tall, the extra space will grow equally from
   /// the top and bottom of the line.
   kMiddle,

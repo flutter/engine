@@ -6,6 +6,7 @@
 #define FLUTTER_LIB_UI_TEXT_PARAGRAPH_BUILDER_H_
 
 #include <memory>
+
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/paint.h"
 #include "flutter/lib/ui/text/paragraph.h"
@@ -64,8 +65,8 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
   Dart_Handle addPlaceholder(double width,
                              double height,
                              unsigned alignment,
-                             unsigned baseline,
-                             double baseline_offset);
+                             double baseline_offset,
+                             unsigned baseline);
 
   fml::RefPtr<Paragraph> build();
 

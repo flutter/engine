@@ -965,9 +965,13 @@ void Paragraph::Layout(double width, bool force) {
               break;
             }
             case PlaceholderAlignment::kAboveBaseline: {
+              ascent = placeholder_run->height;
+              descent = 0;
               break;
             }
             case PlaceholderAlignment::kBelowBaseline: {
+              descent = placeholder_run->height;
+              ascent = 0;
               break;
             }
             case PlaceholderAlignment::kTop: {
