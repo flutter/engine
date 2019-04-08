@@ -14,6 +14,7 @@ TEST(DartVM, SimpleInitialization) {
   auto vm = DartVM::ForProcess(settings);
   ASSERT_TRUE(vm);
   ASSERT_EQ(vm, DartVM::ForProcess(settings));
+  ASSERT_FALSE(DartVM::IsRunningPrecompiledCode());
 }
 
 TEST(DartVM, SimpleIsolateNameServer) {

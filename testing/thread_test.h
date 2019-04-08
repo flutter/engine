@@ -22,10 +22,8 @@ class ThreadTest : public Test {
   fml::RefPtr<fml::TaskRunner> GetThreadTaskRunner();
 
  protected:
-  // |testing::Test|
   void SetUp() override;
 
-  // |testing::Test|
   void TearDown() override;
 
  private:
