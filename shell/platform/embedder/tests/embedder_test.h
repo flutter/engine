@@ -7,8 +7,9 @@
 
 #include <memory>
 
+#include "flutter/fml/file.h"
 #include "flutter/fml/macros.h"
-#include "flutter/shell/platform/embedder/tests/embedder_context.h"
+#include "flutter/fml/mapping.h"
 #include "flutter/testing/testing.h"
 
 namespace shell {
@@ -22,10 +23,21 @@ class EmbedderTest : public ::testing::Test {
 
   std::string GetFixturesDirectory() const;
 
-  EmbedderContext& GetEmbedderContext();
+  std::string GetAssetsPath() const;
+
+  const fml::Mapping* GetVMSnapshotData() const;
+
+  const fml::Mapping* GetVMSnapshotInstructions() const;
+
+  const fml::Mapping* GetIsolateSnapshotData() const;
+
+  const fml::Mapping* GetIsolateSnapshotInstructions() const;
 
  private:
-  std::unique_ptr<EmbedderContext> embedder_context_;
+  std::unique_ptr<fml::Mapping> vm_snapshot_data_;
+  std::unique_ptr<fml::Mapping> vm_snapshot_instructions_;
+  std::unique_ptr<fml::Mapping> isolate_snapshot_data_;
+  std::unique_ptr<fml::Mapping> isolate_snapshot_instructions_;
 
   // |testing::Test|
   void SetUp() override;
