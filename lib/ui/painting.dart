@@ -1523,7 +1523,7 @@ class _ImageInfo {
 ///
 /// See also:
 ///
-///  * [Image](https://api.flutter.dev/flutter/widgets/Image-class.html), the class in the [widgets] library.
+///  * [Image], the class in the [widgets] library that encapsulates this class.
 ///
 @pragma('vm:entry-point')
 class Image extends NativeFieldWrapperClass2 {
@@ -2686,7 +2686,7 @@ Float32List _encodeTwoPoints(Offset pointA, Offset pointB) {
 ///
 /// See also:
 ///
-///  * [Gradient](https://api.flutter.dev/flutter/painting/Gradient-class.html), the class in the [painting] library.
+///  * [Gradient], the class in the [painting] library that encapsulates this class.
 ///
 class Gradient extends Shader {
 
