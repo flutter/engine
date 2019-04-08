@@ -92,10 +92,7 @@ void _updateUserSettingsData(String jsonData) {
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateLifecycleState(String state) {
-  // We do not update the state if the state has already been used to initialize
-  // the lifecycleState.
-  if (!window._initialLifecycleStateAccessed)
-    window._initialLifecycleState = state;
+  window._initialLifecycleState ??= state;
 }
 
 
