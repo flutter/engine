@@ -419,7 +419,7 @@ static bool InvokeMainEntrypoint(Dart_Handle user_entrypoint_function) {
 }
 
 FML_WARN_UNUSED_RESULT
-bool DartIsolate::Run(const std::string& entrypoint_name, fml::closure on_run) {
+bool DartIsolate::Run(const std::string& entrypoint_name) {
   TRACE_EVENT0("flutter", "DartIsolate::Run");
   if (phase_ != Phase::Ready) {
     return false;
@@ -436,17 +436,12 @@ bool DartIsolate::Run(const std::string& entrypoint_name, fml::closure on_run) {
 
   phase_ = Phase::Running;
   FML_DLOG(INFO) << "New isolate is in the running state.";
-
-  if (on_run) {
-    on_run();
-  }
   return true;
 }
 
 FML_WARN_UNUSED_RESULT
 bool DartIsolate::RunFromLibrary(const std::string& library_name,
-                                 const std::string& entrypoint_name,
-                                 fml::closure on_run) {
+                                 const std::string& entrypoint_name) {
   TRACE_EVENT0("flutter", "DartIsolate::RunFromLibrary");
   if (phase_ != Phase::Ready) {
     return false;
@@ -464,10 +459,6 @@ bool DartIsolate::RunFromLibrary(const std::string& library_name,
 
   phase_ = Phase::Running;
   FML_DLOG(INFO) << "New isolate is in the running state.";
-
-  if (on_run) {
-    on_run();
-  }
   return true;
 }
 

@@ -10,8 +10,7 @@
 namespace blink {
 namespace testing {
 
-RuntimeTest::RuntimeTest()
-    : native_resolver_(std::make_shared<::testing::TestDartNativeResolver>()) {}
+RuntimeTest::RuntimeTest() = default;
 
 RuntimeTest::~RuntimeTest() = default;
 
@@ -71,17 +70,6 @@ void RuntimeTest::SetSnapshotsAndAssets(Settings& settings) {
   }
 }
 
-Settings RuntimeTest::CreateSettingsForFixture() {
-  Settings settings;
-  settings.task_observer_add = [](intptr_t, fml::closure) {};
-  settings.task_observer_remove = [](intptr_t) {};
-  settings.root_isolate_create_callback = [this]() {
-    native_resolver_->SetNativeResolverForIsolate();
-  };
-  SetSnapshotsAndAssets(settings);
-  return settings;
-}
-
 // |testing::ThreadTest|
 void RuntimeTest::SetUp() {
   assets_dir_ = fml::OpenDirectory(::testing::GetFixturesPath(), false,
@@ -93,11 +81,6 @@ void RuntimeTest::SetUp() {
 void RuntimeTest::TearDown() {
   ThreadTest::TearDown();
   assets_dir_.reset();
-}
-
-void RuntimeTest::AddNativeCallback(std::string name,
-                                    Dart_NativeFunction callback) {
-  native_resolver_->AddNativeCallback(std::move(name), callback);
 }
 
 }  // namespace testing

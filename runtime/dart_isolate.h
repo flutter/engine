@@ -74,12 +74,11 @@ class DartIsolate : public UIDartState {
                                    bool last_piece = true);
 
   FML_WARN_UNUSED_RESULT
-  bool Run(const std::string& entrypoint, fml::closure on_run = nullptr);
+  bool Run(const std::string& entrypoint);
 
   FML_WARN_UNUSED_RESULT
   bool RunFromLibrary(const std::string& library_name,
-                      const std::string& entrypoint,
-                      fml::closure on_run = nullptr);
+                      const std::string& entrypoint);
 
   FML_WARN_UNUSED_RESULT
   bool Shutdown();
