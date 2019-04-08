@@ -11,23 +11,35 @@
 
 namespace shell {
 
-static fml::RefPtr<AndroidContextGL> CreateResourceLoadingContext() {
+static fml::RefPtr<AndroidContextGL> GlobalResourceLoadingContext() {
+  // AndroidSurfaceGL instances are only ever created on the platform thread. So
+  // there is no need to lock here.
+
+  static fml::RefPtr<AndroidContextGL> global_context;
+
+  if (global_context) {
+    return global_context;
+  }
+
   auto environment = fml::MakeRefCounted<AndroidEnvironmentGL>();
+
   if (!environment->IsValid()) {
     return nullptr;
   }
 
   auto context = fml::MakeRefCounted<AndroidContextGL>(environment);
+
   if (!context->IsValid()) {
     return nullptr;
   }
 
-  return context;
+  global_context = context;
+  return global_context;
 }
 
 AndroidSurfaceGL::AndroidSurfaceGL() {
   // Acquire the offscreen context.
-  offscreen_context_ = CreateResourceLoadingContext();
+  offscreen_context_ = GlobalResourceLoadingContext();
 
   if (!offscreen_context_ || !offscreen_context_->IsValid()) {
     offscreen_context_ = nullptr;
