@@ -50,15 +50,14 @@ void FlutterDesktopTerminate() {
 
 FlutterDesktopWindowRef FlutterDesktopCreateWindow(int initial_width,
                                                    int initial_height,
-                                                   const char* title,
                                                    const char* assets_path,
                                                    const char* icu_data_path,
                                                    const char** arguments,
                                                    size_t argument_count) {
   if (s_stub_implementation) {
-    return s_stub_implementation->CreateWindow(
-        initial_width, initial_height, title, assets_path, icu_data_path,
-        arguments, argument_count);
+    return s_stub_implementation->CreateWindow(initial_width, initial_height,
+                                               assets_path, icu_data_path,
+                                               arguments, argument_count);
   }
   return nullptr;
 }
@@ -67,22 +66,6 @@ void FlutterDesktopSetHoverEnabled(FlutterDesktopWindowRef flutter_window,
                                    bool enabled) {
   if (s_stub_implementation) {
     s_stub_implementation->SetHoverEnabled(enabled);
-  }
-}
-
-void FlutterDesktopSetWindowTitle(FlutterDesktopWindowRef flutter_window,
-                                  const char* title) {
-  if (s_stub_implementation) {
-    s_stub_implementation->SetWindowTitle(title);
-  }
-}
-
-void FlutterDesktopSetWindowIcon(FlutterDesktopWindowRef flutter_window,
-                                 uint8_t* pixel_data,
-                                 int width,
-                                 int height) {
-  if (s_stub_implementation) {
-    s_stub_implementation->SetWindowIcon(pixel_data, width, height);
   }
 }
 

@@ -38,7 +38,6 @@ class StubFlutterGlfwApi {
   // Called for FlutterDesktopCreateWindow.
   virtual FlutterDesktopWindowRef CreateWindow(int initial_width,
                                                int initial_height,
-                                               const char* title,
                                                const char* assets_path,
                                                const char* icu_data_path,
                                                const char** arguments,
@@ -46,14 +45,8 @@ class StubFlutterGlfwApi {
     return nullptr;
   }
 
-  // Called for FlutterDesktopSetHoverEnabled.
+  // Called for FlutterDesktopSetHoverEnabled
   virtual void SetHoverEnabled(bool enabled) {}
-
-  // Called for FlutterDesktopSetWindowTitle.
-  virtual void SetWindowTitle(const char* title) {}
-
-  //  Called for FlutterDesktopSetWindowIcon.
-  virtual void SetWindowIcon(uint8_t* pixel_data, int width, int height) {}
 
   // Called for FlutterDesktopRunWindowLoop.
   virtual void RunWindowLoop() {}

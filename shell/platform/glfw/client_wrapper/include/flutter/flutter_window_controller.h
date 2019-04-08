@@ -46,7 +46,6 @@ class FlutterWindowController {
   // Only one Flutter window can exist at a time; see constructor comment.
   bool CreateWindow(int width,
                     int height,
-                    const std::string& title,
                     const std::string& assets_path,
                     const std::vector<std::string>& arguments);
 
@@ -63,16 +62,6 @@ class FlutterWindowController {
   // engine, rather than only tracking the mouse while the button is pressed.
   // Defaults to off.
   void SetHoverEnabled(bool enabled);
-
-  // Sets the displayed title of the window.
-  void SetTitle(const std::string& title);
-
-  // Sets the displayed icon for the window.
-  //
-  // The pixel format is 32-bit RGBA. The provided image data only needs to be
-  // valid for the duration of the call to this method. Pass a nullptr to revert
-  // to the default icon.
-  void SetIcon(uint8_t* pixel_data, int width, int height);
 
   // Loops on Flutter window events until the window closes.
   void RunEventLoop();
