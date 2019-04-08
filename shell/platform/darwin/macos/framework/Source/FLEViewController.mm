@@ -16,6 +16,12 @@ static NSString* const kICUBundlePath = @"icudtl.dat";
 
 static const int kDefaultWindowFramebuffer = 0;
 
+// Android KeyEvent constants from https://developer.android.com/reference/android/view/KeyEvent
+static const int kAndroidMetaStateShift = 1 << 0;
+static const int kAndroidMetaStateAlt = 1 << 1;
+static const int kAndroidMetaStateCtrl = 1 << 12;
+static const int kAndroidMetaStateMeta = 1 << 16;
+
 #pragma mark - Private interface declaration.
 
 /**
@@ -470,12 +476,14 @@ static void CommonInit(FLEViewController* controller) {
 
 - (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type {
   [_keyEventChannel sendMessage:@{
-    @"keymap" : @"macos",
+    @"keymap" : @"android",
     @"type" : type,
     @"keyCode" : @(event.keyCode),
-    @"modifiers" : @(event.modifierFlags),
-    @"characters" : event.characters,
-    @"charactersIgnoringModifiers" : event.charactersIgnoringModifiers,
+    @"metaState" :
+        @(((event.modifierFlags & NSEventModifierFlagShift) ? kAndroidMetaStateShift : 0) |
+          ((event.modifierFlags & NSEventModifierFlagOption) ? kAndroidMetaStateAlt : 0) |
+          ((event.modifierFlags & NSEventModifierFlagControl) ? kAndroidMetaStateCtrl : 0) |
+          ((event.modifierFlags & NSEventModifierFlagCommand) ? kAndroidMetaStateMeta : 0))
   }];
 }
 
