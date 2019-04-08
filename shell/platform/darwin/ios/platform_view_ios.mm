@@ -50,8 +50,7 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
 
     if (accessibility_bridge_) {
       accessibility_bridge_.reset(
-          new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
-                                  [owner_controller.get() platformViewsController]));
+          new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this));
     }
     // Do not call `NotifyCreated()` here - let FlutterViewController take care
     // of that when its Viewport is sized.  If `NotifyCreated()` is called here,
@@ -97,8 +96,7 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
   }
   if (enabled && !accessibility_bridge_) {
     accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
-        static_cast<FlutterView*>(owner_controller_.get().view), this,
-        [owner_controller_.get() platformViewsController]);
+        static_cast<FlutterView*>(owner_controller_.get().view), this);
   } else if (!enabled && accessibility_bridge_) {
     accessibility_bridge_.reset();
   }
