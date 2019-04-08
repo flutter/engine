@@ -13,11 +13,7 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
-import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 
 /**
  * Paints a Flutter UI on a {@link SurfaceTexture}.
@@ -41,8 +37,6 @@ public class FlutterTextureView extends TextureView implements FlutterRenderer.R
   private boolean isAttachedToFlutterRenderer = false;
   @Nullable
   private FlutterRenderer flutterRenderer;
-  @NonNull
-  private Set<OnFirstFrameRenderedListener> onFirstFrameRenderedListeners = new HashSet<>();
 
   // Connects the {@code SurfaceTexture} beneath this {@code TextureView} with Flutter's native code.
   // Callbacks are received by this Object and then those messages are forwarded to our
@@ -187,31 +181,9 @@ public class FlutterTextureView extends TextureView implements FlutterRenderer.R
     flutterRenderer.surfaceDestroyed();
   }
 
-  /**
-   * Adds the given {@code listener} to this {@code FlutterTextureView}, to be notified upon Flutter's
-   * first rendered frame.
-   */
-  @Override
-  public void addOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
-    onFirstFrameRenderedListeners.add(listener);
-  }
-
-  /**
-   * Removes the given {@code listener}, which was previously added with
-   * {@link #addOnFirstFrameRenderedListener(OnFirstFrameRenderedListener)}.
-   */
-  @Override
-  public void removeOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
-    onFirstFrameRenderedListeners.remove(listener);
-  }
-
   @Override
   public void onFirstFrameRendered() {
     // TODO(mattcarroll): decide where this method should live and what it needs to do.
     Log.d(TAG, "onFirstFrameRendered()");
-
-    for (OnFirstFrameRenderedListener listener : onFirstFrameRenderedListeners) {
-      listener.onFirstFrameRendered();
-    }
   }
 }

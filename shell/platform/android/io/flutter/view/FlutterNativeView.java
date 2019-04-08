@@ -14,7 +14,6 @@ import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.FlutterRenderer.RenderSurface;
-import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 import io.flutter.plugin.common.*;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -200,12 +199,6 @@ public class FlutterNativeView implements BinaryMessenger {
             }
             mFlutterView.onFirstFrame();
         }
-
-        @Override
-        public void addOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {}
-
-        @Override
-        public void removeOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {}
     }
 
     private final class EngineLifecycleListenerImpl implements EngineLifecycleListener {
