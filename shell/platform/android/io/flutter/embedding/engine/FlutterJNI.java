@@ -10,7 +10,6 @@ import android.graphics.SurfaceTexture;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
-import android.util.Log;
 import android.view.Surface;
 
 import java.nio.ByteBuffer;
@@ -495,11 +494,8 @@ public class FlutterJNI {
 
   @UiThread
   public void invokePlatformMessageEmptyResponseCallback(int responseId) {
-    if (isAttached()) {
-      nativeInvokePlatformMessageEmptyResponseCallback(nativePlatformViewId, responseId);
-    } else {
-      Log.w(TAG, "Tried to send a platform message response, but FlutterJNI was detached from native C++. Could not send. Response ID: " + responseId);
-    }
+    ensureAttachedToNative();
+    nativeInvokePlatformMessageEmptyResponseCallback(nativePlatformViewId, responseId);
   }
 
   // Send an empty response to a platform message received from Dart.
@@ -510,16 +506,13 @@ public class FlutterJNI {
 
   @UiThread
   public void invokePlatformMessageResponseCallback(int responseId, ByteBuffer message, int position) {
-    if (isAttached()) {
-      nativeInvokePlatformMessageResponseCallback(
-          nativePlatformViewId,
-          responseId,
-          message,
-          position
-      );
-    } else {
-      Log.w(TAG, "Tried to send a platform message response, but FlutterJNI was detached from native C++. Could not send. Response ID: " + responseId);
-    }
+    ensureAttachedToNative();
+    nativeInvokePlatformMessageResponseCallback(
+        nativePlatformViewId,
+        responseId,
+        message,
+        position
+    );
   }
 
   // Send a data-carrying response to a platform message received from Dart.
