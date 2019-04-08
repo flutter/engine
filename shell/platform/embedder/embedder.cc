@@ -40,6 +40,9 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/platform_view_embedder.h"
 
+const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
+const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
+
 #define SAFE_ACCESS(pointer, member, default_value)                      \
   ([=]() {                                                               \
     if (offsetof(std::remove_pointer<decltype(pointer)>::type, member) + \
