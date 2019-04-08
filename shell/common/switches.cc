@@ -276,9 +276,6 @@ blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));
 #endif
 
-  settings.dump_skp_on_shader_compilation =
-      command_line.HasOption(FlagForSwitch(Switch::DumpSkpOnShaderCompilation));
-
   return settings;
 }
 
