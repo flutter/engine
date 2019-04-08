@@ -19,7 +19,6 @@ class VirtualDisplayController {
 
     public static VirtualDisplayController create(
             Context context,
-            AccessibilityEventsDelegate accessibilityEventsDelegate,
             PlatformViewFactory viewFactory,
             TextureRegistry.SurfaceTextureEntry textureEntry,
             int width,
@@ -46,11 +45,10 @@ class VirtualDisplayController {
         }
 
         return new VirtualDisplayController(
-                context, accessibilityEventsDelegate, virtualDisplay, viewFactory, surface, textureEntry, viewId, createParams);
+                context, virtualDisplay, viewFactory, surface, textureEntry, viewId, createParams);
     }
 
     private final Context mContext;
-    private final AccessibilityEventsDelegate mAccessibilityEventsDelegate;
     private final int mDensityDpi;
     private final TextureRegistry.SurfaceTextureEntry mTextureEntry;
     private VirtualDisplay mVirtualDisplay;
@@ -60,7 +58,6 @@ class VirtualDisplayController {
 
     private VirtualDisplayController(
             Context context,
-            AccessibilityEventsDelegate accessibilityEventsDelegate,
             VirtualDisplay virtualDisplay,
             PlatformViewFactory viewFactory,
             Surface surface,
@@ -68,14 +65,13 @@ class VirtualDisplayController {
             int viewId,
             Object createParams
     ) {
-        mContext = context;
-        mAccessibilityEventsDelegate = accessibilityEventsDelegate;
         mTextureEntry = textureEntry;
         mSurface = surface;
+        mContext = context;
         mVirtualDisplay = virtualDisplay;
         mDensityDpi = context.getResources().getDisplayMetrics().densityDpi;
         mPresentation = new SingleViewPresentation(
-                context, mVirtualDisplay.getDisplay(), viewFactory, accessibilityEventsDelegate, viewId, createParams);
+                context, mVirtualDisplay.getDisplay(), viewFactory, viewId, createParams);
         mPresentation.show();
     }
 
@@ -125,7 +121,7 @@ class VirtualDisplayController {
             public void onViewDetachedFromWindow(View v) {}
         });
 
-        mPresentation = new SingleViewPresentation(mContext, mVirtualDisplay.getDisplay(), mAccessibilityEventsDelegate, presentationState);
+        mPresentation = new SingleViewPresentation(mContext, mVirtualDisplay.getDisplay(), presentationState);
         mPresentation.show();
     }
 
