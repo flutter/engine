@@ -32,7 +32,6 @@
 }
 
 - (void)reshape {
-  [super reshape];
   [_reshapeListener viewDidReshape:self];
 }
 
