@@ -1,4 +1,4 @@
-package io.flutter.embedding.android;
+package io.flutter.embedding.engine.android;
 
 import android.os.Build;
 import android.support.annotation.IntDef;
@@ -164,9 +164,7 @@ public class AndroidTouchProcessor {
 
     // ACTION_HOVER_MOVE always applies to a single pointer only.
     addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, packet);
-    if (packet.position() % (POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD) != 0) {
-      throw new AssertionError("Packet position is not on field boundary.");
-    }
+    assert(packet.position() % (POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD) != 0);
     renderer.dispatchPointerDataPacket(packet, packet.position());
     return true;
   }
