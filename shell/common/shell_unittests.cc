@@ -83,10 +83,8 @@ static bool ValidateShell(Shell* shell) {
   return true;
 }
 
-TEST(ShellTest, InitializeWithInvalidThreads) {
-  blink::Settings settings = {};
-  settings.task_observer_add = [](intptr_t, fml::closure) {};
-  settings.task_observer_remove = [](intptr_t) {};
+TEST_F(ShellTest, InitializeWithInvalidThreads) {
+  blink::Settings settings = CreateSettingsForFixture();
   blink::TaskRunners task_runners("test", nullptr, nullptr, nullptr, nullptr);
   auto shell = Shell::Create(
       std::move(task_runners), settings,
@@ -100,10 +98,8 @@ TEST(ShellTest, InitializeWithInvalidThreads) {
   ASSERT_FALSE(shell);
 }
 
-TEST(ShellTest, InitializeWithDifferentThreads) {
-  blink::Settings settings = {};
-  settings.task_observer_add = [](intptr_t, fml::closure) {};
-  settings.task_observer_remove = [](intptr_t) {};
+TEST_F(ShellTest, InitializeWithDifferentThreads) {
+  blink::Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(
       "io.flutter.test." + ::testing::GetCurrentTestName() + ".",
       ThreadHost::Type::Platform | ThreadHost::Type::GPU |
@@ -125,10 +121,8 @@ TEST(ShellTest, InitializeWithDifferentThreads) {
   ASSERT_TRUE(ValidateShell(shell.get()));
 }
 
-TEST(ShellTest, InitializeWithSingleThread) {
-  blink::Settings settings = {};
-  settings.task_observer_add = [](intptr_t, fml::closure) {};
-  settings.task_observer_remove = [](intptr_t) {};
+TEST_F(ShellTest, InitializeWithSingleThread) {
+  blink::Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(
       "io.flutter.test." + ::testing::GetCurrentTestName() + ".",
       ThreadHost::Type::Platform);
@@ -147,10 +141,8 @@ TEST(ShellTest, InitializeWithSingleThread) {
   ASSERT_TRUE(ValidateShell(shell.get()));
 }
 
-TEST(ShellTest, InitializeWithSingleThreadWhichIsTheCallingThread) {
-  blink::Settings settings = {};
-  settings.task_observer_add = [](intptr_t, fml::closure) {};
-  settings.task_observer_remove = [](intptr_t) {};
+TEST_F(ShellTest, InitializeWithSingleThreadWhichIsTheCallingThread) {
+  blink::Settings settings = CreateSettingsForFixture();
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   blink::TaskRunners task_runners("test", task_runner, task_runner, task_runner,
@@ -167,10 +159,9 @@ TEST(ShellTest, InitializeWithSingleThreadWhichIsTheCallingThread) {
   ASSERT_TRUE(ValidateShell(shell.get()));
 }
 
-TEST(ShellTest, InitializeWithMultipleThreadButCallingThreadAsPlatformThread) {
-  blink::Settings settings = {};
-  settings.task_observer_add = [](intptr_t, fml::closure) {};
-  settings.task_observer_remove = [](intptr_t) {};
+TEST_F(ShellTest,
+       InitializeWithMultipleThreadButCallingThreadAsPlatformThread) {
+  blink::Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(
       "io.flutter.test." + ::testing::GetCurrentTestName() + ".",
       ThreadHost::Type::GPU | ThreadHost::Type::IO | ThreadHost::Type::UI);
@@ -192,10 +183,8 @@ TEST(ShellTest, InitializeWithMultipleThreadButCallingThreadAsPlatformThread) {
   ASSERT_TRUE(ValidateShell(shell.get()));
 }
 
-TEST(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
-  blink::Settings settings = {};
-  settings.task_observer_add = [](intptr_t, fml::closure) {};
-  settings.task_observer_remove = [](intptr_t) {};
+TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
+  blink::Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(
       "io.flutter.test." + ::testing::GetCurrentTestName() + ".",
       ThreadHost::Type::Platform | ThreadHost::Type::IO | ThreadHost::Type::UI);
@@ -218,9 +207,7 @@ TEST(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
   ASSERT_TRUE(ValidateShell(shell.get()));
 }
 
-using ShellFixtureTest = ShellTest;
-
-TEST_F(ShellFixtureTest, FixturesAreFunctional) {
+TEST_F(ShellTest, FixturesAreFunctional) {
   const auto settings = CreateSettingsForFixture();
   auto shell = Shell::Create(
       GetTaskRunnersForFixture(), settings,
