@@ -1,6 +1,5 @@
 package io.flutter.embedding.engine.android;
 
-import android.os.Build;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.view.InputDevice;
@@ -37,6 +36,7 @@ public class AndroidTouchProcessor {
     int UP = 6;
   }
 
+
   // Must match the PointerDeviceKind enum in pointer.dart.
   @IntDef({
       PointerDeviceKind.TOUCH,
@@ -53,24 +53,10 @@ public class AndroidTouchProcessor {
     int UNKNOWN = 4;
   }
 
-  // Must match the PointerSignalKind enum in pointer.dart.
-  @IntDef({
-      PointerSignalKind.NONE,
-      PointerSignalKind.SCROLL,
-      PointerSignalKind.UNKNOWN
-  })
-  private @interface PointerSignalKind {
-    int NONE = 0;
-    int SCROLL = 1;
-    int UNKNOWN = 2;
-  }
-
   // Must match the unpacking code in hooks.dart.
-  private static final int POINTER_DATA_FIELD_COUNT = 24;
+  // TODO(mattcarroll): Update with additional fields for scroll wheel support
+  private static final int POINTER_DATA_FIELD_COUNT = 21;
   private static final int BYTES_PER_FIELD = 8;
-
-  // This value must match the value in framework's platform_view.dart.
-  // This flag indicates whether the original Android pointer events were batched together.
   private static final int POINTER_DATA_FLAG_BATCHED = 1;
 
   @NonNull
@@ -128,42 +114,11 @@ public class AndroidTouchProcessor {
     }
 
     // Verify that the packet is the expected size.
-    if (packet.position() % (POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD) != 0) {
-      throw new AssertionError("Packet position is not on field boundary");
-    }
+    assert packet.position() % (POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD) == 0;
 
     // Send the packet to Flutter.
     renderer.dispatchPointerDataPacket(packet, packet.position());
 
-    return true;
-  }
-
-  /**
-   * Sends the given generic {@link MotionEvent} data to Flutter in a format that Flutter
-   * understands.
-   *
-   * Generic motion events include joystick movement, mouse hover, track pad touches, scroll wheel
-   * movements, etc.
-   */
-  public boolean onGenericMotionEvent(MotionEvent event) {
-    // Method isFromSource is only available in API 18+ (Jelly Bean MR2)
-    // Mouse hover support is not implemented for API < 18.
-    boolean isPointerEvent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2
-        && event.isFromSource(InputDevice.SOURCE_CLASS_POINTER);
-    if (!isPointerEvent || event.getActionMasked() != MotionEvent.ACTION_HOVER_MOVE) {
-      return false;
-    }
-
-    int pointerChange = getPointerChangeForAction(event.getActionMasked());
-    ByteBuffer packet = ByteBuffer.allocateDirect(
-        event.getPointerCount() * POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD
-    );
-    packet.order(ByteOrder.LITTLE_ENDIAN);
-
-    // ACTION_HOVER_MOVE always applies to a single pointer only.
-    addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, packet);
-    assert(packet.position() % (POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD) != 0);
-    renderer.dispatchPointerDataPacket(packet, packet.position());
     return true;
   }
 
@@ -181,14 +136,11 @@ public class AndroidTouchProcessor {
 
     int pointerKind = getPointerDeviceTypeForToolType(event.getToolType(pointerIndex));
 
-    int signalKind = PointerSignalKind.NONE;
-
     long timeStamp = event.getEventTime() * 1000; // Convert from milliseconds to microseconds.
 
     packet.putLong(timeStamp); // time_stamp
     packet.putLong(pointerChange); // change
     packet.putLong(pointerKind); // kind
-    packet.putLong(signalKind); // signal_kind
     packet.putLong(event.getPointerId(pointerIndex)); // device
     packet.putDouble(event.getX(pointerIndex)); // physical_x
     packet.putDouble(event.getY(pointerIndex)); // physical_y
@@ -240,10 +192,7 @@ public class AndroidTouchProcessor {
       packet.putDouble(0.0); // tilt
     }
 
-    packet.putLong(pointerData); // platformData
-
-    packet.putDouble(0.0); // scroll_delta_x
-    packet.putDouble(0.0); // scroll_delta_y
+    packet.putLong(pointerData);
   }
 
   @PointerChange
