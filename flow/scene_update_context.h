@@ -80,17 +80,11 @@ class SceneUpdateContext {
       return entity_node_ptr_;
     }
 
-    scenic::ShapeNode& shape_node() { return *shape_node_ptr_; }
-    std::unique_ptr<scenic::ShapeNode>& shape_node_ptr() {
-      return shape_node_ptr_;
-    }
-
    private:
     SceneUpdateContext& context_;
     Entity* const previous_entity_;
 
     std::unique_ptr<scenic::EntityNode> entity_node_ptr_;
-    std::unique_ptr<scenic::ShapeNode> shape_node_ptr_;
   };
 
   class Clip : public Entity {
@@ -208,7 +202,6 @@ class SceneUpdateContext {
   // surface (and thus the entity_node) will be retained for that layer to
   // improve the performance.
   void CreateFrame(std::unique_ptr<scenic::EntityNode> entity_node,
-                   std::unique_ptr<scenic::ShapeNode> shape_node,
                    const SkRRect& rrect,
                    SkColor color,
                    const SkRect& paint_bounds,
