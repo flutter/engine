@@ -98,12 +98,21 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
         mTextureRegistry = null;
     }
 
-    @Override
+    /**
+     * Attaches an accessibility bridge for this platform views controller.
+     *
+     * Accessibility events sent by platform views that belonging to this controller will be
+     * dispatched to this accessibility bridge.
+     */
     public void attachAccessibilityBridge(AccessibilityBridge accessibilityBridge) {
         this.accessibilityBridge = accessibilityBridge;
     }
 
-    @Override
+    /**
+     * Detaches the current accessibility bridge.
+     *
+     * Any accessibility events sent by platform views belonging to this controller will be ignored.
+     */
     public void detachAccessibiltyBridge() {
         this.accessibilityBridge = null;
     }

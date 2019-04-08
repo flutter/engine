@@ -668,6 +668,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
             getContext().getContentResolver(),
             platformViewsController
         );
+        platformViewsController.attachAccessibilityBridge(mAccessibilityNodeProvider);
         mAccessibilityNodeProvider.setOnAccessibilityChangeListener(onAccessibilityChangeListener);
 
         resetWillNotDraw(
@@ -680,6 +681,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
 
+        getPluginRegistry().getPlatformViewsController().detachAccessibiltyBridge();
         mAccessibilityNodeProvider.release();
         mAccessibilityNodeProvider = null;
     }
