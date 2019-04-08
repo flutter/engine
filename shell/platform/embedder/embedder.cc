@@ -50,16 +50,15 @@ extern const intptr_t kPlatformStrongDillSize;
     return static_cast<decltype(pointer->member)>((default_value));      \
   })()
 
-static FlutterEngineResult LogEmbedderError(FlutterEngineResult code,
-                                            const char* name,
-                                            const char* function) {
-  FML_LOG(ERROR) << "Returning error '" << name << "' (" << code
-                 << ") from Flutter Embedder API call to '" << __FUNCTION__
-                 << "'.";
-  return code;
-}
-
-#define LOG_EMBEDDER_ERROR(code) LogEmbedderError(code, #code, __FUNCTION__)
+#define LOG_EMBEDDER_ERROR(code)                                      \
+  ({                                                                  \
+    do {                                                              \
+      FML_LOG(ERROR) << "Returning error '" << #code << "' (" << code \
+                     << ") from Flutter Embedder API call to '"       \
+                     << __FUNCTION__ << "'.";                         \
+    } while (0);                                                      \
+    (code);                                                           \
+  })
 
 static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
   if (config->type != kOpenGL) {
