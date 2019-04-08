@@ -22,7 +22,6 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     SetAssetsPath();
     SetSnapshots();
     SetIsolateCreateCallbackHook();
-    SetSemanticsCallbackHooks();
   }
 }
 
@@ -62,13 +61,6 @@ void EmbedderConfigBuilder::SetSnapshots() {
 void EmbedderConfigBuilder::SetIsolateCreateCallbackHook() {
   project_args_.root_isolate_create_callback =
       EmbedderContext::GetIsolateCreateCallbackHook();
-}
-
-void EmbedderConfigBuilder::SetSemanticsCallbackHooks() {
-  project_args_.update_semantics_node_callback =
-      EmbedderContext::GetUpdateSemanticsNodeCallbackHook();
-  project_args_.update_semantics_custom_action_callback =
-      EmbedderContext::GetUpdateSemanticsCustomActionCallbackHook();
 }
 
 void EmbedderConfigBuilder::SetDartEntrypoint(std::string entrypoint) {
