@@ -43,7 +43,6 @@ import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.plugin.common.*;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
-import io.flutter.plugin.platform.PlatformViewsController;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -661,15 +660,12 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
 
-        PlatformViewsController platformViewsController = getPluginRegistry().getPlatformViewsController();
         mAccessibilityNodeProvider = new AccessibilityBridge(
             this,
             new AccessibilityChannel(dartExecutor, getFlutterNativeView().getFlutterJNI()),
             (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE),
-            getContext().getContentResolver(),
-            platformViewsController
+            getContext().getContentResolver()
         );
-        platformViewsController.attachAccessibilityBridge(mAccessibilityNodeProvider);
         mAccessibilityNodeProvider.setOnAccessibilityChangeListener(onAccessibilityChangeListener);
 
         resetWillNotDraw(
@@ -682,7 +678,6 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
 
-        getPluginRegistry().getPlatformViewsController().detachAccessibiltyBridge();
         mAccessibilityNodeProvider.release();
         mAccessibilityNodeProvider = null;
     }
