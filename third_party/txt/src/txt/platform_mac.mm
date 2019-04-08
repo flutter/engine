@@ -24,8 +24,4 @@ std::string GetDefaultFontFamily() {
   }
 }
 
-sk_sp<SkFontMgr> GetDefaultFontManager() {
-  return SkFontMgr::RefDefault();
-}
-
 }  // namespace txt

@@ -8,13 +8,9 @@
 #include <string>
 #include "flutter/fml/macros.h"
 
-#include "third_party/skia/include/core/SkFontMgr.h"
-
 namespace txt {
 
 std::string GetDefaultFontFamily();
-
-sk_sp<SkFontMgr> GetDefaultFontManager();
 
 }  // namespace txt
 

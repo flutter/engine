@@ -10,8 +10,4 @@ std::string GetDefaultFontFamily() {
   return "sans-serif";
 }
 
-sk_sp<SkFontMgr> GetDefaultFontManager() {
-  return SkFontMgr::RefDefault();
-}
-
 }  // namespace txt
