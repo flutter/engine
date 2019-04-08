@@ -21,8 +21,6 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.WindowInsets;
 import android.view.WindowManager;
-import android.view.accessibility.AccessibilityManager;
-import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.FrameLayout;
@@ -33,9 +31,7 @@ import java.util.Locale;
 
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
-import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
-import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.VsyncWaiter;
 
 /**
@@ -85,18 +81,9 @@ public class FlutterView extends FrameLayout {
   private AndroidKeyProcessor androidKeyProcessor;
   @Nullable
   private AndroidTouchProcessor androidTouchProcessor;
-  @Nullable
-  private AccessibilityBridge accessibilityBridge;
 
   // Directly implemented View behavior that communicates with Flutter.
   private final FlutterRenderer.ViewportMetrics viewportMetrics = new FlutterRenderer.ViewportMetrics();
-
-  private final AccessibilityBridge.OnAccessibilityChangeListener onAccessibilityChangeListener = new AccessibilityBridge.OnAccessibilityChangeListener() {
-    @Override
-    public void onAccessibilityChanged(boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled) {
-      resetWillNotDraw(isAccessibilityEnabled, isTouchExplorationEnabled);
-    }
-  };
 
   /**
    * Constructs a {@code FlutterSurfaceView} programmatically, without any XML attributes.
@@ -370,35 +357,17 @@ public class FlutterView extends FrameLayout {
       return super.onHoverEvent(event);
     }
 
-    boolean handled = accessibilityBridge.onAccessibilityHoverEvent(event);
-    if (!handled) {
-      // TODO(ianh): Expose hover events to the platform,
-      // implementing ADD, REMOVE, etc.
-    }
-    return handled;
+    // TODO(mattcarroll): hook up to accessibility.
+    return false;
   }
   //-------- End: Process UI I/O that Flutter cares about. ---------
 
   //-------- Start: Accessibility -------
-  @Override
-  public AccessibilityNodeProvider getAccessibilityNodeProvider() {
-    if (accessibilityBridge != null && accessibilityBridge.isAccessibilityEnabled()) {
-      return accessibilityBridge;
-    } else {
-      // TODO(goderbauer): when a11y is off this should return a one-off snapshot of
-      // the a11y
-      // tree.
-      return null;
-    }
-  }
-
-  // TODO(mattcarroll): Confer with Ian as to why we need this method. Delete if possible, otherwise add comments.
-  private void resetWillNotDraw(boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled) {
-    if (!flutterEngine.getRenderer().isSoftwareRenderingEnabled()) {
-      setWillNotDraw(!(isAccessibilityEnabled || isTouchExplorationEnabled));
-    } else {
-      setWillNotDraw(false);
-    }
+  /**
+   * No-op. Placeholder so that the containing Fragment can call through, but not yet implemented.
+   */
+  public void updateAccessibilityFeatures() {
+    // TODO(mattcarroll): bring in accessibility code from old FlutterView.
   }
   //-------- End: Accessibility ---------
 
@@ -443,17 +412,6 @@ public class FlutterView extends FrameLayout {
         textInputPlugin
     );
     androidTouchProcessor = new AndroidTouchProcessor(this.flutterEngine.getRenderer());
-    accessibilityBridge = new AccessibilityBridge(
-        this,
-        flutterEngine.getAccessibilityChannel(),
-        (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE),
-        getContext().getContentResolver()
-    );
-    accessibilityBridge.setOnAccessibilityChangeListener(onAccessibilityChangeListener);
-    resetWillNotDraw(
-        accessibilityBridge.isAccessibilityEnabled(),
-        accessibilityBridge.isTouchExplorationEnabled()
-    );
 
     // Inform the Android framework that it should retrieve a new InputConnection
     // now that an engine is attached.

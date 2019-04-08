@@ -110,7 +110,7 @@ public class FlutterEngine {
     // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if possible.
     this.renderer = new FlutterRenderer(flutterJNI);
 
-    accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
+    accessibilityChannel = new AccessibilityChannel(dartExecutor);
     keyEventChannel = new KeyEventChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);

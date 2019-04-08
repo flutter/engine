@@ -662,7 +662,8 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
         mAccessibilityNodeProvider = new AccessibilityBridge(
             this,
-            new AccessibilityChannel(dartExecutor, getFlutterNativeView().getFlutterJNI()),
+            getFlutterNativeView().getFlutterJNI(),
+            new AccessibilityChannel(dartExecutor),
             (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE),
             getContext().getContentResolver()
         );
