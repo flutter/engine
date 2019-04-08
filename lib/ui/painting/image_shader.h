@@ -29,8 +29,8 @@ class ImageShader : public Shader {
   static fml::RefPtr<ImageShader> Create();
 
   void initWithImage(CanvasImage* image,
-                     SkTileMode tmx,
-                     SkTileMode tmy,
+                     SkShader::TileMode tmx,
+                     SkShader::TileMode tmy,
                      const tonic::Float64List& matrix4);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);

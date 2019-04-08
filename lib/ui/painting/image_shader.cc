@@ -35,8 +35,8 @@ fml::RefPtr<ImageShader> ImageShader::Create() {
 }
 
 void ImageShader::initWithImage(CanvasImage* image,
-                                SkTileMode tmx,
-                                SkTileMode tmy,
+                                SkShader::TileMode tmx,
+                                SkShader::TileMode tmy,
                                 const tonic::Float64List& matrix4) {
   if (!image) {
     Dart_ThrowException(
