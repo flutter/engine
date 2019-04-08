@@ -5,7 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_H_
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_H_
 
-#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -14,7 +13,6 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/embedder/tests/embedder_test_resolver.h"
 
 namespace shell {
 namespace testing {
@@ -37,8 +35,6 @@ class EmbedderContext {
 
   void AddIsolateCreateCallback(fml::closure closure);
 
-  void AddNativeCallback(const char* name, Dart_NativeFunction function);
-
  private:
   // This allows the builder to access the hooks.
   friend class EmbedderConfigBuilder;
@@ -49,13 +45,10 @@ class EmbedderContext {
   std::unique_ptr<fml::Mapping> isolate_snapshot_data_;
   std::unique_ptr<fml::Mapping> isolate_snapshot_instructions_;
   std::vector<fml::closure> isolate_create_callbacks_;
-  std::shared_ptr<EmbedderTestResolver> native_resolver_;
 
   static VoidCallback GetIsolateCreateCallbackHook();
 
   void FireIsolateCreateCallbacks();
-
-  void SetNativeResolver();
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderContext);
 };

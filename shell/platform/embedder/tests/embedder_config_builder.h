@@ -48,8 +48,6 @@ class EmbedderConfigBuilder {
 
   void SetIsolateCreateCallbackHook();
 
-  void SetDartEntrypoint(std::string entrypoint);
-
   UniqueEngine LaunchEngine() const;
 
  private:
@@ -57,7 +55,6 @@ class EmbedderConfigBuilder {
   FlutterProjectArgs project_args_ = {};
   FlutterRendererConfig renderer_config_ = {};
   FlutterSoftwareRendererConfig software_renderer_config_ = {};
-  std::string dart_entrypoint_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderConfigBuilder);
 };
