@@ -205,12 +205,12 @@ void TraceEventFlowEnd0(TraceArg category_group, TraceArg name, TraceIDArg id);
 
 class ScopedInstantEnd {
  public:
-  ScopedInstantEnd(const char* str) : label_(str) {}
+  ScopedInstantEnd(std::string str) : label_(std::move(str)) {}
 
-  ~ScopedInstantEnd() { TraceEventEnd(label_); }
+  ~ScopedInstantEnd() { TraceEventEnd(label_.c_str()); }
 
  private:
-  const char* label_;
+  const std::string label_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ScopedInstantEnd);
 };
