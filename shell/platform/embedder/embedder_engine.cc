@@ -10,7 +10,7 @@
 namespace shell {
 
 EmbedderEngine::EmbedderEngine(
-    std::unique_ptr<EmbedderThreadHost> thread_host,
+    ThreadHost thread_host,
     blink::TaskRunners task_runners,
     blink::Settings settings,
     Shell::CreateCallback<PlatformView> on_create_platform_view,
@@ -23,11 +23,7 @@ EmbedderEngine::EmbedderEngine(
                            on_create_platform_view,
                            on_create_rasterizer)),
       external_texture_callback_(external_texture_callback) {
-  if (!shell_) {
-    return;
-  }
-
-  is_valid_ = true;
+  is_valid_ = shell_ != nullptr;
 }
 
 EmbedderEngine::~EmbedderEngine() = default;
@@ -214,14 +210,6 @@ bool EmbedderEngine::PostRenderThreadTask(fml::closure task) {
 
   shell_->GetTaskRunners().GetGPUTaskRunner()->PostTask(task);
   return true;
-}
-
-bool EmbedderEngine::RunTask(const FlutterTask* task) {
-  if (!IsValid() || task == nullptr) {
-    return false;
-  }
-  return thread_host_->PostTask(reinterpret_cast<int64_t>(task->runner),
-                                task->task);
 }
 
 }  // namespace shell

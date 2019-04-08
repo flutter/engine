@@ -6,7 +6,6 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_ENGINE_H_
 
 #include <memory>
-#include <unordered_map>
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
@@ -14,7 +13,6 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
-#include "flutter/shell/platform/embedder/embedder_thread_host.h"
 
 namespace shell {
 
@@ -22,7 +20,7 @@ namespace shell {
 // instance of the Flutter engine.
 class EmbedderEngine {
  public:
-  EmbedderEngine(std::unique_ptr<EmbedderThreadHost> thread_host,
+  EmbedderEngine(ThreadHost thread_host,
                  blink::TaskRunners task_runners,
                  blink::Settings settings,
                  Shell::CreateCallback<PlatformView> on_create_platform_view,
@@ -67,10 +65,8 @@ class EmbedderEngine {
 
   bool PostRenderThreadTask(fml::closure task);
 
-  bool RunTask(const FlutterTask* task);
-
  private:
-  const std::unique_ptr<EmbedderThreadHost> thread_host_;
+  const ThreadHost thread_host_;
   std::unique_ptr<Shell> shell_;
   const EmbedderExternalTextureGL::ExternalTextureCallback
       external_texture_callback_;
