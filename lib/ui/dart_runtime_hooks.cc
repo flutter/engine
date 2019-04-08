@@ -60,15 +60,11 @@ void DartRuntimeHooks::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({BUILTIN_NATIVE_LIST(REGISTER_FUNCTION)});
 }
 
-static void PropagateIfError(Dart_Handle result) {
-  if (Dart_IsError(result)) {
-    Dart_PropagateError(result);
-  }
-}
-
 static Dart_Handle GetFunction(Dart_Handle builtin_library, const char* name) {
   Dart_Handle getter_name = ToDart(name);
-  return Dart_Invoke(builtin_library, getter_name, 0, nullptr);
+  Dart_Handle closure = Dart_Invoke(builtin_library, getter_name, 0, nullptr);
+  DART_CHECK_VALID(closure);
+  return closure;
 }
 
 static void InitDartInternal(Dart_Handle builtin_library, bool is_ui_isolate) {
@@ -76,26 +72,24 @@ static void InitDartInternal(Dart_Handle builtin_library, bool is_ui_isolate) {
 
   Dart_Handle internal_library = Dart_LookupLibrary(ToDart("dart:_internal"));
 
-  Dart_Handle result =
-      Dart_SetField(internal_library, ToDart("_printClosure"), print);
-  PropagateIfError(result);
+  DART_CHECK_VALID(
+      Dart_SetField(internal_library, ToDart("_printClosure"), print));
 
   if (is_ui_isolate) {
     // Call |_setupHooks| to configure |VMLibraryHooks|.
     Dart_Handle method_name = Dart_NewStringFromCString("_setupHooks");
-    result = Dart_Invoke(builtin_library, method_name, 0, NULL);
-    PropagateIfError(result);
+    DART_CHECK_VALID(Dart_Invoke(builtin_library, method_name, 0, NULL))
   }
 
   Dart_Handle setup_hooks = Dart_NewStringFromCString("_setupHooks");
 
   Dart_Handle io_lib = Dart_LookupLibrary(ToDart("dart:io"));
-  result = Dart_Invoke(io_lib, setup_hooks, 0, NULL);
-  PropagateIfError(result);
+  DART_CHECK_VALID(io_lib);
+  DART_CHECK_VALID(Dart_Invoke(io_lib, setup_hooks, 0, NULL));
 
   Dart_Handle isolate_lib = Dart_LookupLibrary(ToDart("dart:isolate"));
-  result = Dart_Invoke(isolate_lib, setup_hooks, 0, NULL);
-  PropagateIfError(result);
+  DART_CHECK_VALID(isolate_lib);
+  DART_CHECK_VALID(Dart_Invoke(isolate_lib, setup_hooks, 0, NULL));
 }
 
 static void InitDartCore(Dart_Handle builtin, const std::string& script_uri) {
@@ -103,9 +97,8 @@ static void InitDartCore(Dart_Handle builtin, const std::string& script_uri) {
   Dart_Handle get_base_url =
       Dart_Invoke(io_lib, ToDart("_getUriBaseClosure"), 0, NULL);
   Dart_Handle core_library = Dart_LookupLibrary(ToDart("dart:core"));
-  Dart_Handle result =
-      Dart_SetField(core_library, ToDart("_uriBaseClosure"), get_base_url);
-  PropagateIfError(result);
+  DART_CHECK_VALID(
+      Dart_SetField(core_library, ToDart("_uriBaseClosure"), get_base_url));
 }
 
 static void InitDartAsync(Dart_Handle builtin_library, bool is_ui_isolate) {
@@ -121,31 +114,31 @@ static void InitDartAsync(Dart_Handle builtin_library, bool is_ui_isolate) {
   }
   Dart_Handle async_library = Dart_LookupLibrary(ToDart("dart:async"));
   Dart_Handle set_schedule_microtask = ToDart("_setScheduleImmediateClosure");
-  Dart_Handle result = Dart_Invoke(async_library, set_schedule_microtask, 1,
-                                   &schedule_microtask);
-  PropagateIfError(result);
+  DART_CHECK_VALID(Dart_Invoke(async_library, set_schedule_microtask, 1,
+                               &schedule_microtask));
 }
 
 static void InitDartIO(Dart_Handle builtin_library,
                        const std::string& script_uri) {
   Dart_Handle io_lib = Dart_LookupLibrary(ToDart("dart:io"));
+  DART_CHECK_VALID(io_lib);
   Dart_Handle platform_type =
       Dart_GetType(io_lib, ToDart("_Platform"), 0, nullptr);
+  DART_CHECK_VALID(platform_type);
   if (!script_uri.empty()) {
-    Dart_Handle result = Dart_SetField(platform_type, ToDart("_nativeScript"),
-                                       ToDart(script_uri));
-    PropagateIfError(result);
+    DART_CHECK_VALID(Dart_SetField(platform_type, ToDart("_nativeScript"),
+                                   ToDart(script_uri)));
   }
   Dart_Handle locale_closure =
       GetFunction(builtin_library, "_getLocaleClosure");
-  Dart_Handle result =
-      Dart_SetField(platform_type, ToDart("_localeClosure"), locale_closure);
-  PropagateIfError(result);
+  DART_CHECK_VALID(
+      Dart_SetField(platform_type, ToDart("_localeClosure"), locale_closure));
 }
 
 void DartRuntimeHooks::Install(bool is_ui_isolate,
                                const std::string& script_uri) {
   Dart_Handle builtin = Dart_LookupLibrary(ToDart("dart:ui"));
+  DART_CHECK_VALID(builtin);
   InitDartInternal(builtin, is_ui_isolate);
   InitDartCore(builtin, script_uri);
   InitDartAsync(builtin, is_ui_isolate);
@@ -249,7 +242,7 @@ void ScheduleMicrotask(Dart_NativeArguments args) {
 static std::string GetFunctionLibraryUrl(Dart_Handle closure) {
   if (Dart_IsClosure(closure)) {
     closure = Dart_ClosureFunction(closure);
-    PropagateIfError(closure);
+    DART_CHECK_VALID(closure);
   }
 
   if (!Dart_IsFunction(closure)) {
@@ -263,7 +256,7 @@ static std::string GetFunctionLibraryUrl(Dart_Handle closure) {
   }
   if (Dart_IsLibrary(owner)) {
     url = Dart_LibraryUrl(owner);
-    PropagateIfError(url);
+    DART_CHECK_VALID(url);
   }
   return DartConverter<std::string>::FromDart(url);
 }
@@ -273,7 +266,7 @@ static std::string GetFunctionClassName(Dart_Handle closure) {
 
   if (Dart_IsClosure(closure)) {
     closure = Dart_ClosureFunction(closure);
-    PropagateIfError(closure);
+    DART_CHECK_VALID(closure);
   }
 
   if (!Dart_IsFunction(closure)) {
@@ -282,13 +275,13 @@ static std::string GetFunctionClassName(Dart_Handle closure) {
 
   bool is_static = false;
   result = Dart_FunctionIsStatic(closure, &is_static);
-  PropagateIfError(result);
+  DART_CHECK_VALID(result);
   if (!is_static) {
     return "";
   }
 
   result = Dart_FunctionOwner(closure);
-  PropagateIfError(result);
+  DART_CHECK_VALID(result);
 
   if (Dart_IsLibrary(result) || !Dart_IsInstance(result)) {
     return "";
@@ -297,9 +290,11 @@ static std::string GetFunctionClassName(Dart_Handle closure) {
 }
 
 static std::string GetFunctionName(Dart_Handle func) {
+  DART_CHECK_VALID(func);
+
   if (Dart_IsClosure(func)) {
     func = Dart_ClosureFunction(func);
-    PropagateIfError(func);
+    DART_CHECK_VALID(func);
   }
 
   if (!Dart_IsFunction(func)) {
@@ -308,13 +303,16 @@ static std::string GetFunctionName(Dart_Handle func) {
 
   bool is_static = false;
   Dart_Handle result = Dart_FunctionIsStatic(func, &is_static);
-  PropagateIfError(result);
+  DART_CHECK_VALID(result);
   if (!is_static) {
     return "";
   }
 
   result = Dart_FunctionName(func);
-  PropagateIfError(result);
+  if (Dart_IsError(result)) {
+    Dart_PropagateError(result);
+    return "";
+  }
 
   return DartConverter<std::string>::FromDart(result);
 }

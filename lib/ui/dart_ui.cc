@@ -104,11 +104,8 @@ void DartUI::InitForIsolate(bool is_root_isolate) {
   auto get_native_function =
       is_root_isolate ? GetNativeFunction : GetNativeFunctionSecondary;
   auto get_symbol = is_root_isolate ? GetSymbol : GetSymbolSecondary;
-  Dart_Handle result = Dart_SetNativeResolver(
-      Dart_LookupLibrary(ToDart("dart:ui")), get_native_function, get_symbol);
-  if (Dart_IsError(result)) {
-    Dart_PropagateError(result);
-  }
+  DART_CHECK_VALID(Dart_SetNativeResolver(Dart_LookupLibrary(ToDart("dart:ui")),
+                                          get_native_function, get_symbol));
 }
 
 }  // namespace blink
