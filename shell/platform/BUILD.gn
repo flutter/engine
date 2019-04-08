@@ -12,9 +12,7 @@ group("platform") {
       "android",
     ]
   } else if (is_linux) {
-    deps = [
-      "linux",
-    ]
+    deps = []
   } else if (is_win) {
     deps = [
       "windows",
