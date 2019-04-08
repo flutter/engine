@@ -26,31 +26,27 @@ PaintRecord::PaintRecord(TextStyle style,
                          sk_sp<SkTextBlob> text,
                          SkFontMetrics metrics,
                          size_t line,
-                         double x_start,
-                         double x_end,
+                         double run_width,
                          bool is_ghost)
     : style_(style),
       offset_(offset),
       text_(std::move(text)),
       metrics_(metrics),
       line_(line),
-      x_start_(x_start),
-      x_end_(x_end),
+      run_width_(run_width),
       is_ghost_(is_ghost) {}
 
 PaintRecord::PaintRecord(TextStyle style,
                          sk_sp<SkTextBlob> text,
                          SkFontMetrics metrics,
                          size_t line,
-                         double x_start,
-                         double x_end,
+                         double run_width,
                          bool is_ghost)
     : style_(style),
       text_(std::move(text)),
       metrics_(metrics),
       line_(line),
-      x_start_(x_start),
-      x_end_(x_end),
+      run_width_(run_width),
       is_ghost_(is_ghost) {}
 
 PaintRecord::PaintRecord(PaintRecord&& other) {
@@ -59,9 +55,7 @@ PaintRecord::PaintRecord(PaintRecord&& other) {
   text_ = std::move(other.text_);
   metrics_ = other.metrics_;
   line_ = other.line_;
-  x_start_ = other.x_start_;
-  x_end_ = other.x_end_;
-  is_ghost_ = other.is_ghost_;
+  run_width_ = other.run_width_, is_ghost_ = other.is_ghost_;
 }
 
 PaintRecord& PaintRecord::operator=(PaintRecord&& other) {
@@ -70,8 +64,7 @@ PaintRecord& PaintRecord::operator=(PaintRecord&& other) {
   text_ = std::move(other.text_);
   metrics_ = other.metrics_;
   line_ = other.line_;
-  x_start_ = other.x_start_;
-  x_end_ = other.x_end_;
+  run_width_ = other.run_width_;
   is_ghost_ = other.is_ghost_;
   return *this;
 }
