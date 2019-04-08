@@ -10,7 +10,6 @@
 #include <mutex>
 
 #include "flutter/common/task_runners.h"
-#include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/fml/time/time_point.h"
 
 namespace shell {
@@ -51,7 +50,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
 
  private:
   std::mutex callback_mutex_;
-  Callback callback_ FML_GUARDED_BY(callback_mutex_);
+  Callback callback_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiter);
 };
