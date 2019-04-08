@@ -4,12 +4,6 @@
 
 import("$flutter_root/common/config.gni")
 
-# Whether to build the dartdevc sdk, libraries, and source files
-# required for the flutter web sdk.
-declare_args() {
-  full_dart_sdk = false  
-}
-
 group("flutter") {
   testonly = true
 
@@ -29,13 +23,8 @@ group("flutter") {
       public_deps += [
         "$flutter_root/frontend_server",
         "//third_party/dart:create_sdk",
+        "$flutter_root/web_sdk",
       ]
-
-      if (full_dart_sdk) {
-        public_deps += [
-          "$flutter_root/web_sdk",
-        ]
-      }
     }
   }
 
