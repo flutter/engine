@@ -980,7 +980,7 @@ void Paragraph::Layout(double width, bool force) {
               break;
             }
             case PlaceholderAlignment::kMiddle: {
-              double mid = (ascent + descent) / 2;
+              double mid = (ascent - descent) / 2;
               ascent = mid + placeholder_run->height / 2;
               descent = -mid + placeholder_run->height / 2;
               break;
