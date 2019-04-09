@@ -52,7 +52,7 @@ class PaintRecord {
               double x_start,
               double x_end,
               bool is_ghost,
-              const PlaceholderRun* placeholder_run);
+              PlaceholderRun* placeholder_run);
 
   PaintRecord(TextStyle style,
               sk_sp<SkTextBlob> text,
@@ -82,7 +82,7 @@ class PaintRecord {
   double x_end() const { return x_end_; }
   double GetRunWidth() const { return x_end_ - x_start_; }
 
-  const PlaceholderRun* GetPlaceholderRun() const { return placeholder_run_; }
+  PlaceholderRun* GetPlaceholderRun() const { return placeholder_run_; }
 
   bool isGhost() const { return is_ghost_; }
 
@@ -105,7 +105,7 @@ class PaintRecord {
   // Stores the corresponding PlaceholderRun that the record corresponds to.
   // When this is nullptr, then the record is of normal text and does not
   // represent an inline placeholder.
-  const PlaceholderRun* placeholder_run_ = nullptr;
+  PlaceholderRun* placeholder_run_ = nullptr;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PaintRecord);
 };

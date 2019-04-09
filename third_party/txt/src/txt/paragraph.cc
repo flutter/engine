@@ -17,6 +17,8 @@
 #include "paragraph.h"
 
 #include <hb.h>
+#include <minikin/Layout.h>
+
 #include <algorithm>
 #include <limits>
 #include <map>
@@ -24,7 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include <minikin/Layout.h>
 #include "flutter/fml/logging.h"
 #include "font_collection.h"
 #include "font_skia.h"
@@ -34,9 +35,6 @@
 #include "minikin/LayoutUtils.h"
 #include "minikin/LineBreaker.h"
 #include "minikin/MinikinFont.h"
-#include "unicode/ubidi.h"
-#include "unicode/utf16.h"
-
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkFontMetrics.h"
@@ -46,6 +44,8 @@
 #include "third_party/skia/include/core/SkTypeface.h"
 #include "third_party/skia/include/effects/SkDashPathEffect.h"
 #include "third_party/skia/include/effects/SkDiscretePathEffect.h"
+#include "unicode/ubidi.h"
+#include "unicode/utf16.h"
 
 namespace txt {
 namespace {
@@ -868,10 +868,6 @@ void Paragraph::Layout(double width, bool force) {
               run.placeholder_run());
           run_x_offset += run.placeholder_run()->width;
         } else {
-          // paint_records.emplace_back(
-          //     run.style(), SkPoint::Make(run_x_offset + justify_x_offset, 0),
-          //     builder.make(), metrics, line_number,
-          //     layout.getAdvance() + justify_x_offset_delta, run.is_ghost());
           paint_records.emplace_back(
               run.style(), SkPoint::Make(run_x_offset + justify_x_offset, 0),
               builder.make(), metrics, line_number, record_x_pos.start,
@@ -949,7 +945,7 @@ void Paragraph::Layout(double width, bool force) {
     double max_unscaled_ascent = 0;
     auto update_line_metrics = [&](const SkFontMetrics& metrics,
                                    const TextStyle& style,
-                                   const PlaceholderRun* placeholder_run) {
+                                   PlaceholderRun* placeholder_run) {
       if (!strut.force_strut) {
         double ascent =
             (-metrics.fAscent + metrics.fLeading / 2) * style.height;
@@ -964,6 +960,7 @@ void Paragraph::Layout(double width, bool force) {
                   placeholder_run->height - placeholder_run->baseline_offset;
               break;
             }
+            // TODO(garyq): implement for various baselines.
             case PlaceholderAlignment::kAboveBaseline: {
               ascent = placeholder_run->height;
               descent = 0;
@@ -983,11 +980,13 @@ void Paragraph::Layout(double width, bool force) {
               break;
             }
             case PlaceholderAlignment::kMiddle: {
-              ascent = placeholder_run->height / 2;
-              descent = placeholder_run->height / 2;
+              double mid = (ascent + descent) / 2;
+              ascent = mid + placeholder_run->height / 2;
+              descent = -mid + placeholder_run->height / 2;
               break;
             }
           }
+          placeholder_run->baseline_offset = ascent;
         }
         max_ascent = std::max(ascent, max_ascent);
         max_descent = std::max(descent, max_descent);

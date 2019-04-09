@@ -318,7 +318,7 @@ class Paragraph {
             size_t e,
             TextDirection d,
             const TextStyle& st,
-            const PlaceholderRun& placeholder)
+            PlaceholderRun& placeholder)
         : start_(s),
           end_(e),
           direction_(d),
@@ -330,7 +330,7 @@ class Paragraph {
     size_t size() const { return end_ - start_; }
     TextDirection direction() const { return direction_; }
     const TextStyle& style() const { return *style_; }
-    const PlaceholderRun* placeholder_run() const { return placeholder_run_; }
+    PlaceholderRun* placeholder_run() const { return placeholder_run_; }
     bool is_rtl() const { return direction_ == TextDirection::rtl; }
     // Tracks if the run represents trailing whitespace.
     bool is_ghost() const { return is_ghost_; }
@@ -341,7 +341,7 @@ class Paragraph {
     TextDirection direction_;
     const TextStyle* style_;
     bool is_ghost_;
-    const PlaceholderRun* placeholder_run_ = nullptr;
+    PlaceholderRun* placeholder_run_ = nullptr;
   };
 
   struct GlyphPosition {

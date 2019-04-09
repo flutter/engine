@@ -15,6 +15,7 @@
  */
 
 #include "paint_record.h"
+
 #include "flutter/fml/logging.h"
 
 namespace txt {
@@ -46,7 +47,7 @@ PaintRecord::PaintRecord(TextStyle style,
                          double x_start,
                          double x_end,
                          bool is_ghost,
-                         const PlaceholderRun* placeholder_run)
+                         PlaceholderRun* placeholder_run)
     : style_(style),
       offset_(offset),
       text_(std::move(text)),

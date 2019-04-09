@@ -1288,6 +1288,8 @@ enum BoxWidthStyle {
 }
 
 /// Where to vertically align the placeholder relative to the surrounding text.
+///
+/// Used by [ParagraphBuilder.addPlaceholder].
 enum PlaceholderAlignment {
   /// Match the baseline of the placeholder with the baseline. The [TextBaseline] to
   /// use must be non-null be specified when using this alignment mode.
@@ -1609,7 +1611,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
     // Default the baselineOffset to height if null. This will place the placeholder
     // fully above the baseline, similar to [PlaceholderAlignment.aboveBaseline].
     baselineOffset = baselineOffset ?? height;
-    _addPlaceholder(width, height, alignment.index, baselineOffset, baseline.index);
+    _addPlaceholder(width, height, alignment.index, baselineOffset, baseline == null ? null : baseline.index);
     _placeholderCount++;
   }
   String _addPlaceholder(double width, double height, int alignment, double baselineOffset, int baseline) native 'ParagraphBuilder_addPlaceholder';
