@@ -3191,6 +3191,14 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// This number cannot go below 1.
   int getSaveCount() native 'Canvas_getSaveCount';
 
+  /// Flush the operations on this canvas so far.
+  ///
+  /// This prevents Skia's GPU backend to group the operations across the flush
+  /// boundary. It's useful for [ShaderWarmUp] to force Skia's GPU backend to
+  /// warm up different shaders that may otherwise be combined by grouping the
+  /// operations together.
+  void flush() native 'Canvas_flush';
+
   /// Add a translation to the current transform, shifting the coordinate space
   /// horizontally by the first argument and vertically by the second argument.
   void translate(double dx, double dy) native 'Canvas_translate';

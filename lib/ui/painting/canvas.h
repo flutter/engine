@@ -49,6 +49,8 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
   void restore();
   int getSaveCount();
 
+  void flush();
+
   void translate(double dx, double dy);
   void scale(double sx, double sy);
   void rotate(double radians);

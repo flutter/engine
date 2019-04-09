@@ -36,6 +36,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Canvas);
   V(Canvas, saveLayer)              \
   V(Canvas, restore)                \
   V(Canvas, getSaveCount)           \
+  V(Canvas, flush)                  \
   V(Canvas, translate)              \
   V(Canvas, scale)                  \
   V(Canvas, rotate)                 \
@@ -124,6 +125,12 @@ int Canvas::getSaveCount() {
   if (!canvas_)
     return 0;
   return canvas_->getSaveCount();
+}
+
+void Canvas::flush() {
+  if (!canvas_)
+    return;
+  canvas_->flush();
 }
 
 void Canvas::translate(double dx, double dy) {
