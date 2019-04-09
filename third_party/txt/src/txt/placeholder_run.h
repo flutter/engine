@@ -17,6 +17,8 @@
 #ifndef LIB_TXT_SRC_PLACEHOLDER_RUN_H_
 #define LIB_TXT_SRC_PLACEHOLDER_RUN_H_
 
+#include "text_baseline.h"
+
 namespace txt {
 
 /// Where to vertically align the placeholder relative to the surrounding text.
@@ -48,8 +50,6 @@ enum class PlaceholderAlignment {
   kMiddle,
 };
 
-enum class Baseline { kAlphabetic, kIdeographic };
-
 // Represents the metrics required to fully define a rect that will fit a
 // placeholder.
 //
@@ -63,7 +63,7 @@ class PlaceholderRun {
 
   PlaceholderAlignment alignment;
 
-  Baseline baseline;
+  TextBaseline baseline;
 
   // Distance from the top edge of the rect to the baseline position. This
   // baseline will be aligned against the alphabetic baseline of the surrounding
@@ -80,7 +80,7 @@ class PlaceholderRun {
   PlaceholderRun(double width,
                  double height,
                  PlaceholderAlignment alignment,
-                 Baseline baseline,
+                 TextBaseline baseline,
                  double baseline_offset);
 };
 

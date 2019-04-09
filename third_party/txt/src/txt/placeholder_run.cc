@@ -23,7 +23,7 @@ PlaceholderRun::PlaceholderRun() {}
 PlaceholderRun::PlaceholderRun(double width,
                                double height,
                                PlaceholderAlignment alignment,
-                               Baseline baseline,
+                               TextBaseline baseline,
                                double baseline_offset)
     : width(width),
       height(height),

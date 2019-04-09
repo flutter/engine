@@ -14,6 +14,7 @@
 #include "flutter/third_party/txt/src/txt/font_style.h"
 #include "flutter/third_party/txt/src/txt/font_weight.h"
 #include "flutter/third_party/txt/src/txt/paragraph_style.h"
+#include "flutter/third_party/txt/src/txt/text_baseline.h"
 #include "flutter/third_party/txt/src/txt/text_decoration.h"
 #include "flutter/third_party/txt/src/txt/text_style.h"
 #include "third_party/icu/source/common/unicode/ustring.h"
@@ -438,7 +439,7 @@ Dart_Handle ParagraphBuilder::addPlaceholder(double width,
                                              unsigned baseline) {
   txt::PlaceholderRun placeholder_run(
       width, height, static_cast<txt::PlaceholderAlignment>(alignment),
-      static_cast<txt::Baseline>(baseline), baseline_offset);
+      static_cast<txt::TextBaseline>(baseline), baseline_offset);
 
   m_paragraphBuilder->AddPlaceholder(placeholder_run);
 
