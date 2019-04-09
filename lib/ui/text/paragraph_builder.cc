@@ -25,7 +25,7 @@
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
 
-namespace blink {
+namespace flutter {
 namespace {
 
 // TextStyle
@@ -277,7 +277,7 @@ ParagraphBuilder::ParagraphBuilder(
       UIDartState::Current()->window()->client()->GetFontCollection();
   m_paragraphBuilder = std::make_unique<txt::ParagraphBuilder>(
       style, font_collection.GetFontCollection());
-}  // namespace blink
+}  // namespace flutter
 
 ParagraphBuilder::~ParagraphBuilder() = default;
 
@@ -450,4 +450,4 @@ fml::RefPtr<Paragraph> ParagraphBuilder::build() {
   return Paragraph::Create(m_paragraphBuilder->Build());
 }
 
-}  // namespace blink
+}  // namespace flutter

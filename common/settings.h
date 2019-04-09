@@ -16,7 +16,7 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
 
-namespace blink {
+namespace flutter {
 
 using TaskObserverAdd =
     std::function<void(intptr_t /* key */, fml::closure /* callback */)>;
@@ -29,6 +29,8 @@ using UnhandledExceptionCallback =
 // callback that generates the mapping from these paths.
 // https://github.com/flutter/flutter/issues/26783
 using MappingCallback = std::function<std::unique_ptr<fml::Mapping>(void)>;
+using MappingsCallback =
+    std::function<std::vector<std::unique_ptr<const fml::Mapping>>(void)>;
 
 struct Settings {
   Settings();
@@ -53,8 +55,10 @@ struct Settings {
   MappingCallback dart_library_sources_kernel;
 
   std::string application_library_path;
-  std::string application_kernel_asset;
-  std::string application_kernel_list_asset;
+
+  std::string application_kernel_asset;       // deprecated
+  std::string application_kernel_list_asset;  // deprecated
+  MappingsCallback application_kernels;
 
   std::string temp_directory_path;
   std::vector<std::string> dart_flags;
@@ -85,6 +89,18 @@ struct Settings {
   // Font settings
   bool use_test_fonts = false;
 
+  // All shells in the process share the same VM. The last shell to shutdown
+  // should typically shut down the VM as well. However, applications depend on
+  // the behavior of "warming-up" the VM by creating a shell that does not do
+  // anything. This used to work earlier when the VM could not be shut down (and
+  // hence never was). Shutting down the VM now breaks such assumptions in
+  // existing embedders. To keep this behavior consistent and allow existing
+  // embedders the chance to migrate, this flag defaults to true. Any shell
+  // launched with this flag set to true will leak the VM in the process. There
+  // is no way to shut down the VM once such a shell has been started. All
+  // shells in the platform (via their embedding APIs) should cooperate to make
+  // sure this flag is never set if they want the VM to shutdown and free all
+  // associated resources.
   bool leak_vm = true;
 
   // Engine settings
@@ -129,6 +145,6 @@ struct Settings {
   std::string ToString() const;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_COMMON_SETTINGS_H_

@@ -15,6 +15,7 @@
 #include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
@@ -53,7 +54,7 @@ extern const uint8_t* observatory_assets_archive;
 }  // namespace observatory
 }  // namespace dart
 
-namespace blink {
+namespace flutter {
 
 // Arguments passed to the Dart VM in all configurations.
 static const char* kDartLanguageArgs[] = {
@@ -384,14 +385,15 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     // the very first frame gives us a good idea about Flutter's startup time.
     // Use a duration event so about:tracing will consider this event when
     // deciding the earliest event to use as time 0.
-    if (blink::engine_main_enter_ts != 0) {
-      Dart_TimelineEvent("FlutterEngineMainEnter",     // label
-                         blink::engine_main_enter_ts,  // timestamp0
-                         blink::engine_main_enter_ts,  // timestamp1_or_async_id
-                         Dart_Timeline_Event_Duration,  // event type
-                         0,                             // argument_count
-                         nullptr,                       // argument_names
-                         nullptr                        // argument_values
+    if (flutter::engine_main_enter_ts != 0) {
+      Dart_TimelineEvent(
+          "FlutterEngineMainEnter",       // label
+          flutter::engine_main_enter_ts,  // timestamp0
+          flutter::engine_main_enter_ts,  // timestamp1_or_async_id
+          Dart_Timeline_Event_Duration,   // event type
+          0,                              // argument_count
+          nullptr,                        // argument_names
+          nullptr                         // argument_values
       );
     }
   }
@@ -450,4 +452,54 @@ std::shared_ptr<IsolateNameServer> DartVM::GetIsolateNameServer() const {
   return isolate_name_server_;
 }
 
-}  // namespace blink
+size_t DartVM::GetIsolateCount() const {
+  std::lock_guard<std::mutex> lock(active_isolates_mutex_);
+  return active_isolates_.size();
+}
+
+void DartVM::ShutdownAllIsolates() {
+  std::set<std::shared_ptr<DartIsolate>> isolates_to_shutdown;
+  // We may be shutting down isolates on the current thread. Shutting down the
+  // isolate calls the shutdown callback which removes the entry from the
+  // active isolate. The lock must be obtained to mutate that entry. To avoid a
+  // deadlock, collect the isolate is a seprate collection.
+  {
+    std::lock_guard<std::mutex> lock(active_isolates_mutex_);
+    for (const auto& active_isolate : active_isolates_) {
+      if (auto task_runner = active_isolate->GetMessageHandlingTaskRunner()) {
+        isolates_to_shutdown.insert(active_isolate);
+      }
+    }
+  }
+
+  fml::CountDownLatch latch(isolates_to_shutdown.size());
+
+  for (const auto& isolate : isolates_to_shutdown) {
+    fml::TaskRunner::RunNowOrPostTask(
+        isolate->GetMessageHandlingTaskRunner(), [&latch, isolate]() {
+          if (!isolate || !isolate->Shutdown()) {
+            FML_LOG(ERROR) << "Could not shutdown isolate.";
+          }
+          latch.CountDown();
+        });
+  }
+  latch.Wait();
+}
+
+void DartVM::RegisterActiveIsolate(std::shared_ptr<DartIsolate> isolate) {
+  if (!isolate) {
+    return;
+  }
+  std::lock_guard<std::mutex> lock(active_isolates_mutex_);
+  active_isolates_.insert(isolate);
+}
+
+void DartVM::UnregisterActiveIsolate(std::shared_ptr<DartIsolate> isolate) {
+  if (!isolate) {
+    return;
+  }
+  std::lock_guard<std::mutex> lock(active_isolates_mutex_);
+  active_isolates_.erase(isolate);
+}
+
+}  // namespace flutter

@@ -5,6 +5,7 @@
 package io.flutter.embedding.android;
 
 import android.content.Context;
+import android.graphics.PixelFormat;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -12,7 +13,11 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
+import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 
 /**
  * Paints a Flutter UI on a {@link android.view.Surface}.
@@ -32,10 +37,13 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.RenderSurface {
   private static final String TAG = "FlutterSurfaceView";
 
+  private final boolean renderTransparently;
   private boolean isSurfaceAvailableForRendering = false;
   private boolean isAttachedToFlutterRenderer = false;
   @Nullable
   private FlutterRenderer flutterRenderer;
+  @NonNull
+  private Set<OnFirstFrameRenderedListener> onFirstFrameRenderedListeners = new HashSet<>();
 
   // Connects the {@code Surface} beneath this {@code SurfaceView} with Flutter's native code.
   // Callbacks are received by this Object and then those messages are forwarded to our
@@ -74,19 +82,39 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
   /**
    * Constructs a {@code FlutterSurfaceView} programmatically, without any XML attributes.
    */
-  public FlutterSurfaceView(Context context) {
-    this(context, null);
+  public FlutterSurfaceView(@NonNull Context context) {
+    this(context, null, false);
+  }
+
+  /**
+   * Constructs a {@code FlutterSurfaceView} programmatically, without any XML attributes, and
+   * with control over whether or not this {@code FlutterSurfaceView} renders with transparency.
+   */
+  public FlutterSurfaceView(@NonNull Context context, boolean renderTransparently) {
+    this(context, null, renderTransparently);
   }
 
   /**
    * Constructs a {@code FlutterSurfaceView} in an XML-inflation-compliant manner.
    */
-  public FlutterSurfaceView(Context context, AttributeSet attrs) {
+  public FlutterSurfaceView(@NonNull Context context, @NonNull AttributeSet attrs) {
+    this(context, attrs, false);
+  }
+
+  private FlutterSurfaceView(@NonNull Context context, @Nullable AttributeSet attrs, boolean renderTransparently) {
     super(context, attrs);
+    this.renderTransparently = renderTransparently;
     init();
   }
 
   private void init() {
+    // If transparency is desired then we'll enable a transparent pixel format and place
+    // our Window above everything else to get transparent background rendering.
+    if (renderTransparently) {
+      getHolder().setFormat(PixelFormat.TRANSPARENT);
+      setZOrderOnTop(true);
+    }
+
     // Grab a reference to our underlying Surface and register callbacks with that Surface so we
     // can monitor changes and forward those changes on to native Flutter code.
     getHolder().addCallback(surfaceCallback);
@@ -177,11 +205,33 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
     flutterRenderer.surfaceDestroyed();
   }
 
+  /**
+   * Adds the given {@code listener} to this {@code FlutterSurfaceView}, to be notified upon Flutter's
+   * first rendered frame.
+   */
+  @Override
+  public void addOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
+    onFirstFrameRenderedListeners.add(listener);
+  }
+
+  /**
+   * Removes the given {@code listener}, which was previously added with
+   * {@link #addOnFirstFrameRenderedListener(OnFirstFrameRenderedListener)}.
+   */
+  @Override
+  public void removeOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
+    onFirstFrameRenderedListeners.remove(listener);
+  }
+
   @Override
   public void onFirstFrameRendered() {
     // TODO(mattcarroll): decide where this method should live and what it needs to do.
     Log.d(TAG, "onFirstFrameRendered()");
     // Now that a frame is ready to display, take this SurfaceView from transparent to opaque.
     setAlpha(1.0f);
+
+    for (OnFirstFrameRenderedListener listener : onFirstFrameRenderedListeners) {
+      listener.onFirstFrameRendered();
+    }
   }
 }

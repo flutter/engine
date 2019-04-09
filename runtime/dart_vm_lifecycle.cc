@@ -6,14 +6,14 @@
 
 #include <mutex>
 
-namespace blink {
+namespace flutter {
 
 // We need to explicitly put the constructor and destructor of the DartVM in the
 // critical section. All accesses (not just const members) to the global VM
 // object weak pointer are behind this mutex.
 static std::mutex gVMMutex;
 static std::weak_ptr<DartVM> gVM FML_GUARDED_BY(gVMMutex);
-static std::shared_ptr<DartVM> gVMLeak FML_GUARDED_BY(gVMMutex);
+static std::shared_ptr<DartVM>* gVMLeak FML_GUARDED_BY(gVMMutex);
 
 // We are going to be modifying more than just the control blocks of the
 // following weak pointers (in the |Create| case where an old VM could not be
@@ -88,7 +88,7 @@ DartVMRef DartVMRef::Create(Settings settings,
   gVM = vm;
 
   if (settings.leak_vm) {
-    gVMLeak = vm;
+    gVMLeak = new std::shared_ptr<DartVM>(vm);
   }
 
   return DartVMRef{std::move(vm)};
@@ -114,4 +114,11 @@ std::shared_ptr<IsolateNameServer> DartVMRef::GetIsolateNameServer() {
   return gVMIsolateNameServer.lock();
 }
 
-}  // namespace blink
+DartVM* DartVMRef::GetRunningVM() {
+  std::lock_guard<std::mutex> lock(gVMMutex);
+  auto vm = gVM.lock().get();
+  FML_CHECK(vm) << "Caller assumed VM would be running when it wasn't";
+  return vm;
+}
+
+}  // namespace flutter

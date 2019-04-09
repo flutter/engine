@@ -1,4 +1,4 @@
-Signature: 71fc8d0d1ecce72de33ca2aa449ab4a7
+Signature: 293260562f31775ed60f21797690a327
 
 UNUSED LICENSES:
 
@@ -2038,6 +2038,7 @@ FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/debugger/sample.s
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/externs.js
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/fonts/NotoMono-Regular.ttf
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/gpu.js
+FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/helper.js
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/karma.conf.js
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/package.json
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/ready.js
@@ -2682,6 +2683,7 @@ FILE: ../../../third_party/skia/src/sksl/sksl.inc
 FILE: ../../../third_party/skia/src/sksl/sksl_fp.inc
 FILE: ../../../third_party/skia/src/sksl/sksl_frag.inc
 FILE: ../../../third_party/skia/src/sksl/sksl_geom.inc
+FILE: ../../../third_party/skia/src/sksl/sksl_mixer.inc
 FILE: ../../../third_party/skia/src/sksl/sksl_pipeline.inc
 FILE: ../../../third_party/skia/src/sksl/sksl_vert.inc
 ----------------------------------------------------------------------------------------------------
@@ -4561,6 +4563,7 @@ FILE: ../../../third_party/skia/gm/mixercolorfilter.cpp
 FILE: ../../../third_party/skia/gm/overdrawcanvas.cpp
 FILE: ../../../third_party/skia/gm/samplelocations.cpp
 FILE: ../../../third_party/skia/gm/skbug_8664.cpp
+FILE: ../../../third_party/skia/gm/skbug_8955.cpp
 FILE: ../../../third_party/skia/include/core/SkMixer.h
 FILE: ../../../third_party/skia/include/core/SkTileMode.h
 FILE: ../../../third_party/skia/include/gpu/GrContextThreadSafeProxy.h
@@ -5782,6 +5785,7 @@ FILE: ../../../third_party/skia/docs/examples/Text_Skew_X.cpp
 FILE: ../../../third_party/skia/docs/examples/Typeface_Methods.cpp
 FILE: ../../../third_party/skia/docs/examples/Xor.cpp
 FILE: ../../../third_party/skia/gm/crbug_918512.cpp
+FILE: ../../../third_party/skia/src/gpu/GrPersistentCacheUtils.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2019 Google LLC.
 

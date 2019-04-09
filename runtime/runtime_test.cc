@@ -7,7 +7,7 @@
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/testing/testing.h"
 
-namespace blink {
+namespace flutter {
 namespace testing {
 
 RuntimeTest::RuntimeTest()
@@ -68,6 +68,13 @@ void RuntimeTest::SetSnapshotsAndAssets(Settings& settings) {
         return GetMapping(assets_dir_, "isolate_snapshot_instr", true);
       };
     }
+  } else {
+    settings.application_kernels = [this]() {
+      std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
+      kernel_mappings.emplace_back(
+          GetMapping(assets_dir_, "kernel_blob.bin", false));
+      return kernel_mappings;
+    };
   }
 }
 
@@ -101,4 +108,4 @@ void RuntimeTest::AddNativeCallback(std::string name,
 }
 
 }  // namespace testing
-}  // namespace blink
+}  // namespace flutter

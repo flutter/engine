@@ -117,6 +117,8 @@ FILE: ../../../flutter/flow/skia_gpu_object.cc
 FILE: ../../../flutter/flow/skia_gpu_object.h
 FILE: ../../../flutter/flow/texture.cc
 FILE: ../../../flutter/flow/texture.h
+FILE: ../../../flutter/flow/view_holder.cc
+FILE: ../../../flutter/flow/view_holder.h
 FILE: ../../../flutter/flutter_kernel_transformers/lib/track_widget_constructor_locations.dart
 FILE: ../../../flutter/fml/arraysize.h
 FILE: ../../../flutter/fml/base32.cc
@@ -374,6 +376,7 @@ FILE: ../../../flutter/lib/ui/window/window.h
 FILE: ../../../flutter/runtime/dart_isolate.cc
 FILE: ../../../flutter/runtime/dart_isolate.h
 FILE: ../../../flutter/runtime/dart_isolate_unittests.cc
+FILE: ../../../flutter/runtime/dart_lifecycle_unittests.cc
 FILE: ../../../flutter/runtime/dart_service_isolate.cc
 FILE: ../../../flutter/runtime/dart_service_isolate.h
 FILE: ../../../flutter/runtime/dart_service_isolate_unittests.cc
@@ -407,6 +410,7 @@ FILE: ../../../flutter/shell/common/animator.cc
 FILE: ../../../flutter/shell/common/animator.h
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
+FILE: ../../../flutter/shell/common/fixtures/main.dart
 FILE: ../../../flutter/shell/common/io_manager.cc
 FILE: ../../../flutter/shell/common/io_manager.h
 FILE: ../../../flutter/shell/common/isolate_configuration.cc
@@ -422,6 +426,8 @@ FILE: ../../../flutter/shell/common/run_configuration.h
 FILE: ../../../flutter/shell/common/shell.cc
 FILE: ../../../flutter/shell/common/shell.h
 FILE: ../../../flutter/shell/common/shell_benchmarks.cc
+FILE: ../../../flutter/shell/common/shell_test.cc
+FILE: ../../../flutter/shell/common/shell_test.h
 FILE: ../../../flutter/shell/common/shell_unittests.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.h

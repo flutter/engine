@@ -32,9 +32,13 @@
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/logging/dart_error.h"
 
+#if defined(OS_FUCHSIA)
+#include "flutter/lib/ui/compositing/scene_host.h"
+#endif
+
 using tonic::ToDart;
 
-namespace blink {
+namespace flutter {
 namespace {
 
 static tonic::DartLibraryNatives* g_natives;
@@ -85,12 +89,14 @@ void DartUI::InitForGlobal() {
     PictureRecorder::RegisterNatives(g_natives);
     Scene::RegisterNatives(g_natives);
     SceneBuilder::RegisterNatives(g_natives);
-    SceneHost::RegisterNatives(g_natives);
     SemanticsUpdate::RegisterNatives(g_natives);
     SemanticsUpdateBuilder::RegisterNatives(g_natives);
     Versions::RegisterNatives(g_natives);
     Vertices::RegisterNatives(g_natives);
     Window::RegisterNatives(g_natives);
+#if defined(OS_FUCHSIA)
+    SceneHost::RegisterNatives(g_natives);
+#endif
 
     // Secondary isolates do not provide UI-related APIs.
     g_natives_secondary = new tonic::DartLibraryNatives();
@@ -111,4 +117,4 @@ void DartUI::InitForIsolate(bool is_root_isolate) {
   }
 }
 
-}  // namespace blink
+}  // namespace flutter

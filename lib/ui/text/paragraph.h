@@ -17,7 +17,7 @@ namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 
 class Paragraph : public RefCountedDartWrappable<Paragraph> {
   DEFINE_WRAPPERTYPEINFO();
@@ -60,6 +60,6 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
   explicit Paragraph(std::unique_ptr<txt::Paragraph> paragraph);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_TEXT_PARAGRAPH_H_
