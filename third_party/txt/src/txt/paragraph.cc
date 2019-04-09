@@ -938,6 +938,7 @@ void Paragraph::Layout(double width, bool force) {
         inline_placeholder_code_unit_runs_.end(),
         line_inline_placeholder_code_unit_runs.begin(),
         line_inline_placeholder_code_unit_runs.end());
+
     // Calculate the amount to advance in the y direction. This is done by
     // computing the maximum ascent and descent with respect to the strut.
     double max_ascent = strut.ascent + strut.half_leading;
@@ -953,22 +954,39 @@ void Paragraph::Layout(double width, bool force) {
             (metrics.fDescent + metrics.fLeading / 2) * style.height;
 
         if (placeholder_run != nullptr) {
-          switch (placeholder_run->alignment) {
-            case PlaceholderAlignment::kBaseline: {
-              ascent = placeholder_run->baseline_offset;
-              descent =
-                  placeholder_run->height - placeholder_run->baseline_offset;
+          // Calculate how much to shift the ascent and descent to account
+          // for the baseline choice.
+          //
+          // TODO(garyq): implement for various baselines. Currently only
+          // supports for alphabetic and ideographic
+          double baseline_adjustment = 0;
+          switch (placeholder_run->baseline) {
+            case TextBaseline::kAlphabetic: {
+              baseline_adjustment = 0;
               break;
             }
-            // TODO(garyq): implement for various baselines.
+            case TextBaseline::kIdeographic: {
+              baseline_adjustment = -descent / 2;
+              break;
+            }
+          }
+          // Convert the ascent and descent from the font's to the placeholder
+          // rect's.
+          switch (placeholder_run->alignment) {
+            case PlaceholderAlignment::kBaseline: {
+              ascent = baseline_adjustment + placeholder_run->baseline_offset;
+              descent = -baseline_adjustment + placeholder_run->height -
+                        placeholder_run->baseline_offset;
+              break;
+            }
             case PlaceholderAlignment::kAboveBaseline: {
-              ascent = placeholder_run->height;
-              descent = 0;
+              ascent = baseline_adjustment + placeholder_run->height;
+              descent = -baseline_adjustment;
               break;
             }
             case PlaceholderAlignment::kBelowBaseline: {
-              descent = placeholder_run->height;
-              ascent = 0;
+              descent = baseline_adjustment + placeholder_run->height;
+              ascent = -baseline_adjustment;
               break;
             }
             case PlaceholderAlignment::kTop: {
