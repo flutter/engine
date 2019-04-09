@@ -16,6 +16,6 @@ public final class PathUtils {
     }
 
     public static String getCacheDirectory(Context applicationContext) {
-        return applicationContext.getCacheDir().getPath();
+        return applicationContext.getCodeCacheDir().getPath();
     }
 }
