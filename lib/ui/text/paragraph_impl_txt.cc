@@ -82,7 +82,7 @@ std::vector<TextBox> ParagraphImplTxt::getRectsForPlaceholders() {
       m_paragraph->GetRectsForPlaceholders();
   for (const txt::Paragraph::TextBox& box : boxes) {
     result.emplace_back(box.rect,
-                        static_cast<blink::TextDirection>(box.direction));
+                        static_cast<flutter::TextDirection>(box.direction));
   }
   return result;
 }
