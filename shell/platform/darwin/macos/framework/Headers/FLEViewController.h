@@ -4,10 +4,10 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "FLETexture.h"
 #import "FLEOpenGLContextHandling.h"
 #import "FLEPluginRegistrar.h"
 #import "FLEReshapeListener.h"
+#import "FLETexture.h"
 
 #if defined(FLUTTER_FRAMEWORK)
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterBinaryMessenger.h"
@@ -36,8 +36,10 @@ typedef NS_ENUM(NSInteger, FlutterMouseTrackingMode) {
  * Flutter engine in non-interactive mode, or with a drawable Flutter canvas.
  */
 FLUTTER_EXPORT
-@interface FLEViewController
-    : NSViewController <FlutterBinaryMessenger, FLEPluginRegistrar, FLEReshapeListener, FLETextureRegistrar>
+@interface FLEViewController : NSViewController <FlutterBinaryMessenger,
+                                                 FLEPluginRegistrar,
+                                                 FLEReshapeListener,
+                                                 FLETextureRegistrar>
 
 /**
  * The view this controller manages when launched in interactive mode (headless set to false). Must

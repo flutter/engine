@@ -35,7 +35,7 @@ static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
 
 - (BOOL)populateTextureWidth:(size_t)width
                       height:(size_t)height
-                     texture:(FlutterOpenGLTexture *)texture {
+                     texture:(FlutterOpenGLTexture*)texture {
   if (_fleTexture == NULL) {
     return NO;
   }
@@ -51,8 +51,8 @@ static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
   if (_textureCache == NULL) {
     CGLContextObj context = [NSOpenGLContext currentContext].CGLContextObj;
     CGLPixelFormatObj format = CGLGetPixelFormat(context);
-    if (CVOpenGLTextureCacheCreate(kCFAllocatorDefault, NULL, context, format,
-                                   NULL, &_textureCache) != kCVReturnSuccess) {
+    if (CVOpenGLTextureCacheCreate(kCFAllocatorDefault, NULL, context, format, NULL,
+                                   &_textureCache) != kCVReturnSuccess) {
       NSLog(@"Could not create texture cache.");
       CVPixelBufferRelease(_pixelBuffer);
       return NO;
@@ -63,9 +63,8 @@ static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
   CVOpenGLTextureCacheFlush(_textureCache, 0);
 
   CVOpenGLTextureRef openGLTexture = NULL;
-  if (CVOpenGLTextureCacheCreateTextureFromImage(
-          kCFAllocatorDefault, _textureCache, _pixelBuffer, NULL,
-          &openGLTexture) != kCVReturnSuccess) {
+  if (CVOpenGLTextureCacheCreateTextureFromImage(kCFAllocatorDefault, _textureCache, _pixelBuffer,
+                                                 NULL, &openGLTexture) != kCVReturnSuccess) {
     CVPixelBufferRelease(_pixelBuffer);
     return NO;
   }

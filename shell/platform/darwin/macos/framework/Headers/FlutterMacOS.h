@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "FLETexture.h"
 #import "FLEOpenGLContextHandling.h"
 #import "FLEPlugin.h"
 #import "FLEPluginRegistrar.h"
 #import "FLEReshapeListener.h"
+#import "FLETexture.h"
 #import "FLEView.h"
 #import "FLEViewController.h"
 #import "FlutterBinaryMessenger.h"

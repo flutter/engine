@@ -24,7 +24,7 @@
  */
 - (BOOL)populateTextureWidth:(size_t)width
                       height:(size_t)height
-                     texture:(nonnull FlutterOpenGLTexture *)texture;
+                     texture:(nonnull FlutterOpenGLTexture*)texture;
 
 /**
  * The texture id.

@@ -3,13 +3,13 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FLEViewController.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FLEViewController_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FLEExternalTextureGL.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FLEReshapeListener.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FLEView.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FLEExternalTextureGL.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FLETextInputPlugin.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FLEViewController_Internal.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
 static NSString* const kICUBundlePath = @"icudtl.dat";
@@ -147,7 +147,8 @@ static bool OnMakeResourceCurrent(FLEViewController* controller) {
 }
 
 static bool OnAcquireExternalTexture(FLEViewController* controller,
-                                     int64_t texture_identifier, size_t width,
+                                     int64_t texture_identifier,
+                                     size_t width,
                                      size_t height,
                                      FlutterOpenGLTexture* texture) {
   return [controller populateTextureWithIdentifier:texture_identifier
@@ -197,7 +198,7 @@ static bool HeadlessOnMakeResourceCurrent(FLEViewController* controller) {
   FlutterBasicMessageChannel* _keyEventChannel;
 
   // A mapping of external textures.
-  NSMutableDictionary<NSNumber *, FLEExternalTextureGL *> *_textures;
+  NSMutableDictionary<NSNumber*, FLEExternalTextureGL*>* _textures;
 }
 
 @dynamic view;
@@ -393,7 +394,8 @@ static void CommonInit(FLEViewController* controller) {
         .open_gl.present = (BoolCallback)OnPresent,
         .open_gl.fbo_callback = (UIntCallback)OnFBO,
         .open_gl.make_resource_current = (BoolCallback)OnMakeResourceCurrent,
-        .open_gl.gl_external_texture_frame_callback = (TextureFrameCallback)OnAcquireExternalTexture};
+        .open_gl.gl_external_texture_frame_callback =
+            (TextureFrameCallback)OnAcquireExternalTexture};
     return config;
   }
 }
@@ -412,14 +414,11 @@ static void CommonInit(FLEViewController* controller) {
                                 width:(size_t)width
                                height:(size_t)height
                               texture:(FlutterOpenGLTexture*)texture {
-  return [_textures[@(textureId)] populateTextureWidth:width
-                                                height:height
-                                               texture:texture];
+  return [_textures[@(textureId)] populateTextureWidth:width height:height texture:texture];
 }
 
 - (int64_t)registerTexture:(id<FLETexture>)texture {
-  FLEExternalTextureGL* fleTexture =
-      [[FLEExternalTextureGL alloc] initWithFLETexture:texture];
+  FLEExternalTextureGL* fleTexture = [[FLEExternalTextureGL alloc] initWithFLETexture:texture];
   int64_t textureId = [fleTexture textureId];
   FlutterEngineRegisterExternalTexture(_engine, textureId);
   _textures[@(textureId)] = fleTexture;
@@ -569,7 +568,7 @@ static void CommonInit(FLEViewController* controller) {
 }
 
 - (id<FLETextureRegistrar>)textures {
-    return self;
+  return self;
 }
 
 - (void)addMethodCallDelegate:(nonnull id<FLEPlugin>)delegate
