@@ -628,7 +628,7 @@ public class FlutterView extends FrameLayout {
    */
   public enum TransparencyMode {
     /**
-     * Renders a {@code FlutterView} without any transparency. This effects {@code FlutterView}s in
+     * Renders a {@code FlutterView} without any transparency. This affects {@code FlutterView}s in
      * {@link RenderMode#surface} by introducing a base color of black, and places the
      * {@link FlutterSurfaceView}'s {@code Window} behind all other content.
      * <p>
@@ -639,7 +639,7 @@ public class FlutterView extends FrameLayout {
      */
     opaque,
     /**
-     * Renders a {@code FlutterView} with transparency. This effects {@code FlutterView}s in
+     * Renders a {@code FlutterView} with transparency. This affects {@code FlutterView}s in
      * {@link RenderMode#surface} by allowing background transparency, and places the
      * {@link FlutterSurfaceView}'s {@code Window} on top of all other content.
      * <p>
