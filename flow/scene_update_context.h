@@ -11,7 +11,6 @@
 
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/raster_cache_key.h"
-#include "flutter/fml/build_config.h"
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
@@ -22,8 +21,6 @@
 namespace flow {
 
 class Layer;
-class ExportNodeHolder;
-class ExportNode;
 
 class SceneUpdateContext {
  public:
@@ -80,19 +77,17 @@ class SceneUpdateContext {
       return entity_node_ptr_;
     }
 
+    scenic::ShapeNode& shape_node() { return *shape_node_ptr_; }
+    std::unique_ptr<scenic::ShapeNode>& shape_node_ptr() {
+      return shape_node_ptr_;
+    }
+
    private:
     SceneUpdateContext& context_;
     Entity* const previous_entity_;
 
     std::unique_ptr<scenic::EntityNode> entity_node_ptr_;
-  };
-
-  class Clip : public Entity {
-   public:
-    Clip(SceneUpdateContext& context,
-         scenic::Shape& shape,
-         const SkRect& shape_bounds);
-    ~Clip();
+    std::unique_ptr<scenic::ShapeNode> shape_node_ptr_;
   };
 
   class Transform : public Entity {
@@ -133,10 +128,17 @@ class SceneUpdateContext {
     Layer* layer_;
   };
 
+  class Clip : public Entity {
+   public:
+    Clip(SceneUpdateContext& context,
+         scenic::Shape& shape,
+         const SkRect& shape_bounds);
+    ~Clip() = default;
+  };
+
   SceneUpdateContext(scenic::Session* session,
                      SurfaceProducer* surface_producer);
-
-  ~SceneUpdateContext();
+  ~SceneUpdateContext() = default;
 
   scenic::Session* session() { return session_; }
 
@@ -147,18 +149,6 @@ class SceneUpdateContext {
     metrics_ = std::move(metrics);
   }
   const fuchsia::ui::gfx::MetricsPtr& metrics() const { return metrics_; }
-
-  void AddChildScene(ExportNode* export_node,
-                     SkPoint offset,
-                     bool hit_testable);
-
-  // Adds reference to |export_node| so we can call export_node->Dispose() in
-  // our destructor. Caller is responsible for calling RemoveExportNode() before
-  // |export_node| is destroyed.
-  void AddExportNode(ExportNode* export_node);
-
-  // Removes reference to |export_node|.
-  void RemoveExportNode(ExportNode* export_node);
 
   // TODO(chinmaygarde): This method must submit the surfaces as soon as paint
   // tasks are done. However, given that there is no support currently for
@@ -202,6 +192,7 @@ class SceneUpdateContext {
   // surface (and thus the entity_node) will be retained for that layer to
   // improve the performance.
   void CreateFrame(std::unique_ptr<scenic::EntityNode> entity_node,
+                   std::unique_ptr<scenic::ShapeNode> shape_node,
                    const SkRRect& rrect,
                    SkColor color,
                    const SkRect& paint_bounds,
@@ -235,9 +226,6 @@ class SceneUpdateContext {
   fuchsia::ui::gfx::MetricsPtr metrics_;
 
   std::vector<PaintTask> paint_tasks_;
-
-  // Save ExportNodes so we can dispose them in our destructor.
-  std::set<ExportNode*> export_nodes_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SceneUpdateContext);
 };

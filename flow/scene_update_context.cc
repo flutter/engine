@@ -4,41 +4,11 @@
 
 #include "flutter/flow/scene_update_context.h"
 
-#include "flutter/flow/export_node.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/matrix_decomposition.h"
 #include "flutter/fml/trace_event.h"
 
 namespace flow {
-
-SceneUpdateContext::SceneUpdateContext(scenic::Session* session,
-                                       SurfaceProducer* surface_producer)
-    : session_(session), surface_producer_(surface_producer) {
-  FML_DCHECK(surface_producer_ != nullptr);
-}
-
-SceneUpdateContext::~SceneUpdateContext() {
-  // Release Mozart session resources for all ExportNodes.
-  for (auto export_node : export_nodes_) {
-    export_node->Dispose(false);
-  }
-};
-
-void SceneUpdateContext::AddChildScene(ExportNode* export_node,
-                                       SkPoint offset,
-                                       bool hit_testable) {
-  FML_DCHECK(top_entity_);
-
-  export_node->Bind(*this, top_entity_->entity_node(), offset, hit_testable);
-}
-
-void SceneUpdateContext::AddExportNode(ExportNode* export_node) {
-  export_nodes_.insert(export_node);  // Might already have been added.
-}
-
-void SceneUpdateContext::RemoveExportNode(ExportNode* export_node) {
-  export_nodes_.erase(export_node);
-}
 
 // Helper function to generate clip planes for a scenic::EntityNode.
 static void SetEntityNodeClipPlanes(scenic::EntityNode* entity_node,
@@ -79,8 +49,15 @@ static void SetEntityNodeClipPlanes(scenic::EntityNode* entity_node,
   entity_node->SetClipPlanes(std::move(clip_planes));
 }
 
+SceneUpdateContext::SceneUpdateContext(scenic::Session* session,
+                                       SurfaceProducer* surface_producer)
+    : session_(session), surface_producer_(surface_producer) {
+  FML_DCHECK(surface_producer_ != nullptr);
+}
+
 void SceneUpdateContext::CreateFrame(
     std::unique_ptr<scenic::EntityNode> entity_node,
+    std::unique_ptr<scenic::ShapeNode> shape_node,
     const SkRRect& rrect,
     SkColor color,
     const SkRect& paint_bounds,
@@ -108,13 +85,10 @@ void SceneUpdateContext::CreateFrame(
       rrect.radii(SkRRect::kLowerRight_Corner).x(),  // bottom_right_radius
       rrect.radii(SkRRect::kLowerLeft_Corner).x()    // bottom_left_radius
   );
-  scenic::ShapeNode shape_node(session_);
-  shape_node.SetShape(shape);
-  shape_node.SetTranslation(shape_bounds.width() * 0.5f + shape_bounds.left(),
-                            shape_bounds.height() * 0.5f + shape_bounds.top(),
-                            0.f);
-  // TODO(SCN-1274): AddPart() and SetClip() will be deleted.
-  entity_node->AddPart(shape_node);
+  shape_node->SetShape(shape);
+  shape_node->SetTranslation(shape_bounds.width() * 0.5f + shape_bounds.left(),
+                             shape_bounds.height() * 0.5f + shape_bounds.top(),
+                             0.f);
 
   // Check whether the painted layers will be visible.
   if (paint_bounds.isEmpty() || !paint_bounds.intersects(shape_bounds))
@@ -122,7 +96,7 @@ void SceneUpdateContext::CreateFrame(
 
   // Check whether a solid color will suffice.
   if (paint_layers.empty()) {
-    SetShapeColor(shape_node, color);
+    SetShapeColor(*shape_node, color);
     return;
   }
 
@@ -130,29 +104,8 @@ void SceneUpdateContext::CreateFrame(
   const float scale_x = ScaleX();
   const float scale_y = ScaleY();
 
-  // If the painted area only covers a portion of the frame then we can
-  // reduce the texture size by drawing just that smaller area.
-  SkRect inner_bounds = shape_bounds;
-  inner_bounds.intersect(paint_bounds);
-  if (inner_bounds != shape_bounds && rrect.contains(inner_bounds)) {
-    SetShapeColor(shape_node, color);
-
-    scenic::Rectangle inner_shape(session_, inner_bounds.width(),
-                                  inner_bounds.height());
-    scenic::ShapeNode inner_node(session_);
-    inner_node.SetShape(inner_shape);
-    inner_node.SetTranslation(inner_bounds.width() * 0.5f + inner_bounds.left(),
-                              inner_bounds.height() * 0.5f + inner_bounds.top(),
-                              0.f);
-    entity_node->AddPart(inner_node);
-    SetShapeTextureOrColor(inner_node, color, scale_x, scale_y, inner_bounds,
-                           std::move(paint_layers), layer,
-                           std::move(entity_node));
-    return;
-  }
-
   // Apply a texture to the whole shape.
-  SetShapeTextureOrColor(shape_node, color, scale_x, scale_y, shape_bounds,
+  SetShapeTextureOrColor(*shape_node, color, scale_x, scale_y, shape_bounds,
                          std::move(paint_layers), layer,
                          std::move(entity_node));
 }
@@ -266,6 +219,9 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
 SceneUpdateContext::Entity::Entity(SceneUpdateContext& context)
     : context_(context), previous_entity_(context.top_entity_) {
   entity_node_ptr_ = std::make_unique<scenic::EntityNode>(context.session());
+  shape_node_ptr_ = std::make_unique<scenic::ShapeNode>(context.session());
+  // TODO(SCN-1274): AddPart() and SetClip() will be deleted.
+  entity_node_ptr_->AddPart(*shape_node_ptr_);
   if (previous_entity_)
     previous_entity_->entity_node_ptr_->AddChild(*entity_node_ptr_);
   context.top_entity_ = this;
@@ -275,25 +231,6 @@ SceneUpdateContext::Entity::~Entity() {
   FML_DCHECK(context_.top_entity_ == this);
   context_.top_entity_ = previous_entity_;
 }
-
-SceneUpdateContext::Clip::Clip(SceneUpdateContext& context,
-                               scenic::Shape& shape,
-                               const SkRect& shape_bounds)
-    : Entity(context) {
-  scenic::ShapeNode shape_node(context.session());
-  shape_node.SetShape(shape);
-  shape_node.SetTranslation(shape_bounds.width() * 0.5f + shape_bounds.left(),
-                            shape_bounds.height() * 0.5f + shape_bounds.top(),
-                            0.f);
-
-  // TODO(SCN-1274): AddPart() and SetClip() will be deleted.
-  entity_node().AddPart(shape_node);
-  entity_node().SetClip(0u, true /* clip to self */);
-
-  SetEntityNodeClipPlanes(&entity_node(), shape_bounds);
-}
-
-SceneUpdateContext::Clip::~Clip() = default;
 
 SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
                                          const SkMatrix& transform)
@@ -307,7 +244,7 @@ SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
     if (decomposition.IsValid()) {
       entity_node().SetTranslation(decomposition.translation().x(),  //
                                    decomposition.translation().y(),  //
-                                   decomposition.translation().z()   //
+                                   -decomposition.translation().z()  //
       );
 
       entity_node().SetScale(decomposition.scale().x(),  //
@@ -360,7 +297,8 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
 }
 
 SceneUpdateContext::Frame::~Frame() {
-  context().CreateFrame(std::move(entity_node_ptr()), rrect_, color_,
+  context().CreateFrame(std::move(entity_node_ptr()),
+                        std::move(shape_node_ptr()), rrect_, color_,
                         paint_bounds_, std::move(paint_layers_), layer_);
 }
 
@@ -368,6 +306,19 @@ void SceneUpdateContext::Frame::AddPaintLayer(Layer* layer) {
   FML_DCHECK(layer->needs_painting());
   paint_layers_.push_back(layer);
   paint_bounds_.join(layer->paint_bounds());
+}
+
+SceneUpdateContext::Clip::Clip(SceneUpdateContext& context,
+                               scenic::Shape& shape,
+                               const SkRect& shape_bounds)
+    : Entity(context) {
+  shape_node().SetShape(shape);
+  shape_node().SetTranslation(shape_bounds.width() * 0.5f + shape_bounds.left(),
+                              shape_bounds.height() * 0.5f + shape_bounds.top(),
+                              0.f);
+  entity_node().SetClip(0u, true /* clip to self */);
+
+  SetEntityNodeClipPlanes(&entity_node(), shape_bounds);
 }
 
 }  // namespace flow

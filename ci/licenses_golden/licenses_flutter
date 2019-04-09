@@ -117,6 +117,8 @@ FILE: ../../../flutter/flow/skia_gpu_object.cc
 FILE: ../../../flutter/flow/skia_gpu_object.h
 FILE: ../../../flutter/flow/texture.cc
 FILE: ../../../flutter/flow/texture.h
+FILE: ../../../flutter/flow/view_holder.cc
+FILE: ../../../flutter/flow/view_holder.h
 FILE: ../../../flutter/flutter_kernel_transformers/lib/track_widget_constructor_locations.dart
 FILE: ../../../flutter/fml/arraysize.h
 FILE: ../../../flutter/fml/base32.cc
@@ -246,21 +248,21 @@ FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
 FILE: ../../../flutter/lib/snapshot/libraries.json
 FILE: ../../../flutter/lib/snapshot/snapshot.h
-FILE: ../../../flutter/lib/stub_ui/compositing.dart
-FILE: ../../../flutter/lib/stub_ui/geometry.dart
-FILE: ../../../flutter/lib/stub_ui/hash_codes.dart
-FILE: ../../../flutter/lib/stub_ui/hooks.dart
-FILE: ../../../flutter/lib/stub_ui/isolate_name_server.dart
-FILE: ../../../flutter/lib/stub_ui/lerp.dart
-FILE: ../../../flutter/lib/stub_ui/natives.dart
-FILE: ../../../flutter/lib/stub_ui/painting.dart
-FILE: ../../../flutter/lib/stub_ui/plugins.dart
-FILE: ../../../flutter/lib/stub_ui/pointer.dart
-FILE: ../../../flutter/lib/stub_ui/semantics.dart
-FILE: ../../../flutter/lib/stub_ui/text.dart
-FILE: ../../../flutter/lib/stub_ui/ui.dart
-FILE: ../../../flutter/lib/stub_ui/versions.dart
-FILE: ../../../flutter/lib/stub_ui/window.dart
+FILE: ../../../flutter/lib/stub_ui/lib/compositing.dart
+FILE: ../../../flutter/lib/stub_ui/lib/geometry.dart
+FILE: ../../../flutter/lib/stub_ui/lib/hash_codes.dart
+FILE: ../../../flutter/lib/stub_ui/lib/hooks.dart
+FILE: ../../../flutter/lib/stub_ui/lib/isolate_name_server.dart
+FILE: ../../../flutter/lib/stub_ui/lib/lerp.dart
+FILE: ../../../flutter/lib/stub_ui/lib/natives.dart
+FILE: ../../../flutter/lib/stub_ui/lib/painting.dart
+FILE: ../../../flutter/lib/stub_ui/lib/plugins.dart
+FILE: ../../../flutter/lib/stub_ui/lib/pointer.dart
+FILE: ../../../flutter/lib/stub_ui/lib/semantics.dart
+FILE: ../../../flutter/lib/stub_ui/lib/text.dart
+FILE: ../../../flutter/lib/stub_ui/lib/ui.dart
+FILE: ../../../flutter/lib/stub_ui/lib/versions.dart
+FILE: ../../../flutter/lib/stub_ui/lib/window.dart
 FILE: ../../../flutter/lib/ui/compositing.dart
 FILE: ../../../flutter/lib/ui/compositing/scene.cc
 FILE: ../../../flutter/lib/ui/compositing/scene.h
@@ -374,6 +376,7 @@ FILE: ../../../flutter/lib/ui/window/window.h
 FILE: ../../../flutter/runtime/dart_isolate.cc
 FILE: ../../../flutter/runtime/dart_isolate.h
 FILE: ../../../flutter/runtime/dart_isolate_unittests.cc
+FILE: ../../../flutter/runtime/dart_lifecycle_unittests.cc
 FILE: ../../../flutter/runtime/dart_service_isolate.cc
 FILE: ../../../flutter/runtime/dart_service_isolate.h
 FILE: ../../../flutter/runtime/dart_service_isolate_unittests.cc
@@ -383,6 +386,10 @@ FILE: ../../../flutter/runtime/dart_snapshot_buffer.cc
 FILE: ../../../flutter/runtime/dart_snapshot_buffer.h
 FILE: ../../../flutter/runtime/dart_vm.cc
 FILE: ../../../flutter/runtime/dart_vm.h
+FILE: ../../../flutter/runtime/dart_vm_data.cc
+FILE: ../../../flutter/runtime/dart_vm_data.h
+FILE: ../../../flutter/runtime/dart_vm_lifecycle.cc
+FILE: ../../../flutter/runtime/dart_vm_lifecycle.h
 FILE: ../../../flutter/runtime/dart_vm_unittests.cc
 FILE: ../../../flutter/runtime/embedder_resources.cc
 FILE: ../../../flutter/runtime/embedder_resources.h
@@ -391,6 +398,8 @@ FILE: ../../../flutter/runtime/runtime_controller.cc
 FILE: ../../../flutter/runtime/runtime_controller.h
 FILE: ../../../flutter/runtime/runtime_delegate.cc
 FILE: ../../../flutter/runtime/runtime_delegate.h
+FILE: ../../../flutter/runtime/runtime_test.cc
+FILE: ../../../flutter/runtime/runtime_test.h
 FILE: ../../../flutter/runtime/service_protocol.cc
 FILE: ../../../flutter/runtime/service_protocol.h
 FILE: ../../../flutter/runtime/start_up.cc
@@ -401,6 +410,7 @@ FILE: ../../../flutter/shell/common/animator.cc
 FILE: ../../../flutter/shell/common/animator.h
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
+FILE: ../../../flutter/shell/common/fixtures/main.dart
 FILE: ../../../flutter/shell/common/io_manager.cc
 FILE: ../../../flutter/shell/common/io_manager.h
 FILE: ../../../flutter/shell/common/isolate_configuration.cc
@@ -416,6 +426,8 @@ FILE: ../../../flutter/shell/common/run_configuration.h
 FILE: ../../../flutter/shell/common/shell.cc
 FILE: ../../../flutter/shell/common/shell.h
 FILE: ../../../flutter/shell/common/shell_benchmarks.cc
+FILE: ../../../flutter/shell/common/shell_test.cc
+FILE: ../../../flutter/shell/common/shell_test.h
 FILE: ../../../flutter/shell/common/shell_unittests.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.h
@@ -686,8 +698,7 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_task_runner.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_task_runner.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_thread_host.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_thread_host.h
-FILE: ../../../flutter/shell/platform/embedder/fixtures/a11y_main.dart
-FILE: ../../../flutter/shell/platform/embedder/fixtures/simple_main.dart
+FILE: ../../../flutter/shell/platform/embedder/fixtures/main.dart
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.h
 FILE: ../../../flutter/shell/platform/embedder/vsync_waiter_embedder.cc
@@ -712,6 +723,7 @@ FILE: ../../../flutter/synchronization/semaphore_unittest.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform.h
 FILE: ../../../flutter/third_party/txt/src/txt/platform_android.cc
+FILE: ../../../flutter/third_party/txt/src/txt/platform_linux.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_mac.mm
 FILE: ../../../flutter/vulkan/skia_vulkan_header.h
 FILE: ../../../flutter/vulkan/vulkan_application.cc
@@ -748,7 +760,10 @@ FILE: ../../../flutter/vulkan/vulkan_utilities.h
 FILE: ../../../flutter/vulkan/vulkan_window.cc
 FILE: ../../../flutter/vulkan/vulkan_window.h
 FILE: ../../../flutter/web_sdk/flutter_kernel_sdk.dart
+FILE: ../../../flutter/web_sdk/libraries.dart
 FILE: ../../../flutter/web_sdk/libraries.json
+FILE: ../../../flutter/web_sdk/make_combined_sdk.dart
+FILE: ../../../flutter/web_sdk/sdk_rewriter.dart
 ----------------------------------------------------------------------------------------------------
 Copyright 2013 The Flutter Authors. All rights reserved.
 

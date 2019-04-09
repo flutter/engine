@@ -15,6 +15,8 @@
 #include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/synchronization/count_down_latch.h"
+#include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/io/dart_io.h"
@@ -183,26 +185,6 @@ bool DartVM::IsRunningPrecompiledCode() {
   return Dart_IsPrecompiledRuntime();
 }
 
-bool DartVM::IsKernelMapping(const fml::FileMapping* mapping) {
-  if (mapping == nullptr) {
-    return false;
-  }
-
-  const uint8_t kKernelHeaderMagic[] = {0x90, 0xAB, 0xCD, 0xEF};
-  const size_t kKernelHeaderMagicSize = sizeof(kKernelHeaderMagic);
-
-  if (mapping->GetSize() < kKernelHeaderMagicSize) {
-    return false;
-  }
-
-  if (memcmp(kKernelHeaderMagic, mapping->GetMapping(),
-             kKernelHeaderMagicSize) != 0) {
-    return false;
-  }
-
-  return true;
-}
-
 static std::vector<const char*> ProfilingFlags(bool enable_profiling) {
 // Disable Dart's built in profiler when building a debug build. This
 // works around a race condition that would sometimes stop a crash's
@@ -239,66 +221,48 @@ static void EmbedderInformationCallback(Dart_EmbedderInformation* info) {
   info->name = "Flutter";
 }
 
-fml::RefPtr<DartVM> DartVM::ForProcess(Settings settings) {
-  return ForProcess(settings, nullptr, nullptr, nullptr);
-}
-
-static std::once_flag gVMInitialization;
-static std::mutex gVMMutex;
-static fml::RefPtr<DartVM> gVM;
-
-fml::RefPtr<DartVM> DartVM::ForProcess(
+std::shared_ptr<DartVM> DartVM::Create(
     Settings settings,
     fml::RefPtr<DartSnapshot> vm_snapshot,
     fml::RefPtr<DartSnapshot> isolate_snapshot,
-    fml::RefPtr<DartSnapshot> shared_snapshot) {
-  std::lock_guard<std::mutex> lock(gVMMutex);
-  std::call_once(gVMInitialization, [settings,          //
-                                     vm_snapshot,       //
-                                     isolate_snapshot,  //
-                                     shared_snapshot    //
-  ]() mutable {
-    if (!vm_snapshot) {
-      vm_snapshot = DartSnapshot::VMSnapshotFromSettings(settings);
-    }
-    if (!(vm_snapshot && vm_snapshot->IsValid())) {
-      FML_LOG(ERROR) << "VM snapshot must be valid.";
-      return;
-    }
-    if (!isolate_snapshot) {
-      isolate_snapshot = DartSnapshot::IsolateSnapshotFromSettings(settings);
-    }
-    if (!(isolate_snapshot && isolate_snapshot->IsValid())) {
-      FML_LOG(ERROR) << "Isolate snapshot must be valid.";
-      return;
-    }
-    if (!shared_snapshot) {
-      shared_snapshot = DartSnapshot::Empty();
-    }
-    gVM = fml::MakeRefCounted<DartVM>(settings,                     //
-                                      std::move(vm_snapshot),       //
-                                      std::move(isolate_snapshot),  //
-                                      std::move(shared_snapshot)    //
-    );
-  });
-  return gVM;
+    fml::RefPtr<DartSnapshot> shared_snapshot,
+    std::shared_ptr<IsolateNameServer> isolate_name_server) {
+  auto vm_data = DartVMData::Create(settings,                     //
+                                    std::move(vm_snapshot),       //
+                                    std::move(isolate_snapshot),  //
+                                    std::move(shared_snapshot)    //
+  );
+
+  if (!vm_data) {
+    FML_LOG(ERROR) << "Could not setup VM data to bootstrap the VM from.";
+    return {};
+  }
+
+  // Note: std::make_shared unviable due to hidden constructor.
+  return std::shared_ptr<DartVM>(
+      new DartVM(std::move(vm_data), std::move(isolate_name_server)));
 }
 
-fml::RefPtr<DartVM> DartVM::ForProcessIfInitialized() {
-  std::lock_guard<std::mutex> lock(gVMMutex);
-  return gVM;
+static std::atomic_size_t gVMLaunchCount;
+
+size_t DartVM::GetVMLaunchCount() {
+  return gVMLaunchCount;
 }
 
-DartVM::DartVM(const Settings& settings,
-               fml::RefPtr<DartSnapshot> vm_snapshot,
-               fml::RefPtr<DartSnapshot> isolate_snapshot,
-               fml::RefPtr<DartSnapshot> shared_snapshot)
-    : settings_(settings),
-      vm_snapshot_(std::move(vm_snapshot)),
-      isolate_snapshot_(std::move(isolate_snapshot)),
-      shared_snapshot_(std::move(shared_snapshot)),
-      weak_factory_(this) {
+DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
+               std::shared_ptr<IsolateNameServer> isolate_name_server)
+    : settings_(vm_data->GetSettings()),
+      vm_data_(vm_data),
+      isolate_name_server_(std::move(isolate_name_server)),
+      service_protocol_(std::make_shared<ServiceProtocol>()) {
   TRACE_EVENT0("flutter", "DartVMInitializer");
+
+  gVMLaunchCount++;
+
+  FML_DCHECK(vm_data_);
+  FML_DCHECK(isolate_name_server_);
+  FML_DCHECK(service_protocol_);
+
   FML_DLOG(INFO) << "Attempting Dart VM launch for mode: "
                  << (IsRunningPrecompiledCode() ? "AOT" : "Interpreter");
 
@@ -306,8 +270,8 @@ DartVM::DartVM(const Settings& settings,
     TRACE_EVENT0("flutter", "dart::bin::BootstrapDartIo");
     dart::bin::BootstrapDartIo();
 
-    if (!settings.temp_directory_path.empty()) {
-      dart::bin::SetSystemTempDirectory(settings.temp_directory_path.c_str());
+    if (!settings_.temp_directory_path.empty()) {
+      dart::bin::SetSystemTempDirectory(settings_.temp_directory_path.c_str());
     }
   }
 
@@ -320,7 +284,7 @@ DartVM::DartVM(const Settings& settings,
   args.push_back("--ignore-unrecognized-flags");
 
   for (auto* const profiler_flag :
-       ProfilingFlags(settings.enable_dart_profiling)) {
+       ProfilingFlags(settings_.enable_dart_profiling)) {
     args.push_back(profiler_flag);
   }
 
@@ -333,7 +297,7 @@ DartVM::DartVM(const Settings& settings,
 
   // Enable Dart assertions if we are not running precompiled code. We run non-
   // precompiled code only in the debug product mode.
-  bool enable_asserts = !settings.disable_dart_asserts;
+  bool enable_asserts = !settings_.disable_dart_asserts;
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_PROFILE || \
     FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
@@ -357,24 +321,24 @@ DartVM::DartVM(const Settings& settings,
     PushBackAll(&args, kDartAssertArgs, arraysize(kDartAssertArgs));
   }
 
-  if (settings.start_paused) {
+  if (settings_.start_paused) {
     PushBackAll(&args, kDartStartPausedArgs, arraysize(kDartStartPausedArgs));
   }
 
-  if (settings.endless_trace_buffer || settings.trace_startup) {
+  if (settings_.endless_trace_buffer || settings_.trace_startup) {
     // If we are tracing startup, make sure the trace buffer is endless so we
     // don't lose early traces.
     PushBackAll(&args, kDartEndlessTraceBufferArgs,
                 arraysize(kDartEndlessTraceBufferArgs));
   }
 
-  if (settings.trace_systrace) {
+  if (settings_.trace_systrace) {
     PushBackAll(&args, kDartSystraceTraceBufferArgs,
                 arraysize(kDartSystraceTraceBufferArgs));
     PushBackAll(&args, kDartTraceStreamsArgs, arraysize(kDartTraceStreamsArgs));
   }
 
-  if (settings.trace_startup) {
+  if (settings_.trace_startup) {
     PushBackAll(&args, kDartTraceStartupArgs, arraysize(kDartTraceStartupArgs));
   }
 
@@ -383,8 +347,8 @@ DartVM::DartVM(const Settings& settings,
   PushBackAll(&args, kDartTraceStreamsArgs, arraysize(kDartTraceStreamsArgs));
 #endif
 
-  for (size_t i = 0; i < settings.dart_flags.size(); i++)
-    args.push_back(settings.dart_flags[i].c_str());
+  for (size_t i = 0; i < settings_.dart_flags.size(); i++)
+    args.push_back(settings_.dart_flags[i].c_str());
 
   char* flags_error = Dart_SetVMFlags(args.size(), args.data());
   if (flags_error) {
@@ -394,14 +358,14 @@ DartVM::DartVM(const Settings& settings,
 
   DartUI::InitForGlobal();
 
-  Dart_SetFileModifiedCallback(&DartFileModifiedCallback);
-
   {
     TRACE_EVENT0("flutter", "Dart_Initialize");
     Dart_InitializeParams params = {};
     params.version = DART_INITIALIZE_PARAMS_CURRENT_VERSION;
-    params.vm_snapshot_data = vm_snapshot_->GetData()->GetSnapshotPointer();
-    params.vm_snapshot_instructions = vm_snapshot_->GetInstructionsIfPresent();
+    params.vm_snapshot_data =
+        vm_data_->GetVMSnapshot().GetData()->GetSnapshotPointer();
+    params.vm_snapshot_instructions =
+        vm_data_->GetVMSnapshot().GetInstructionsIfPresent();
     params.create = reinterpret_cast<decltype(params.create)>(
         DartIsolate::DartIsolateCreateCallback);
     params.shutdown = reinterpret_cast<decltype(params.shutdown)>(
@@ -433,59 +397,108 @@ DartVM::DartVM(const Settings& settings,
     }
   }
 
+  Dart_SetFileModifiedCallback(&DartFileModifiedCallback);
+
   // Allow streaming of stdout and stderr by the Dart vm.
   Dart_SetServiceStreamCallbacks(&ServiceStreamListenCallback,
                                  &ServiceStreamCancelCallback);
 
   Dart_SetEmbedderInformationCallback(&EmbedderInformationCallback);
 
-  if (settings.dart_library_sources_kernel != nullptr) {
+  if (settings_.dart_library_sources_kernel != nullptr) {
     std::unique_ptr<fml::Mapping> dart_library_sources =
-        settings.dart_library_sources_kernel();
+        settings_.dart_library_sources_kernel();
     // Set sources for dart:* libraries for debugging.
     Dart_SetDartLibrarySourcesKernel(dart_library_sources->GetMapping(),
                                      dart_library_sources->GetSize());
   }
+
+  FML_DLOG(INFO) << "New Dart VM instance created. Instance count: "
+                 << gVMLaunchCount;
 }
 
 DartVM::~DartVM() {
   if (Dart_CurrentIsolate() != nullptr) {
     Dart_ExitIsolate();
   }
+
   char* result = Dart_Cleanup();
-  if (result != nullptr) {
-    FML_LOG(ERROR) << "Could not cleanly shut down the Dart VM. Message: \""
-                   << result << "\".";
-    free(result);
-  }
+
+  dart::bin::CleanupDartIo();
+
+  FML_CHECK(result == nullptr)
+      << "Could not cleanly shut down the Dart VM. Error: \"" << result
+      << "\".";
+  free(result);
+
+  FML_DLOG(INFO) << "Dart VM instance destroyed. Instance count: "
+                 << gVMLaunchCount;
+}
+
+std::shared_ptr<const DartVMData> DartVM::GetVMData() const {
+  return vm_data_;
 }
 
 const Settings& DartVM::GetSettings() const {
   return settings_;
 }
 
-const DartSnapshot& DartVM::GetVMSnapshot() const {
-  return *vm_snapshot_.get();
-}
-
-IsolateNameServer* DartVM::GetIsolateNameServer() {
-  return &isolate_name_server_;
-}
-
-fml::RefPtr<DartSnapshot> DartVM::GetIsolateSnapshot() const {
-  return isolate_snapshot_;
-}
-
-fml::RefPtr<DartSnapshot> DartVM::GetSharedSnapshot() const {
-  return shared_snapshot_;
-}
-
-ServiceProtocol& DartVM::GetServiceProtocol() {
+std::shared_ptr<ServiceProtocol> DartVM::GetServiceProtocol() const {
   return service_protocol_;
 }
 
-fml::WeakPtr<DartVM> DartVM::GetWeakPtr() {
-  return weak_factory_.GetWeakPtr();
+std::shared_ptr<IsolateNameServer> DartVM::GetIsolateNameServer() const {
+  return isolate_name_server_;
+}
+
+size_t DartVM::GetIsolateCount() const {
+  std::lock_guard<std::mutex> lock(active_isolates_mutex_);
+  return active_isolates_.size();
+}
+
+void DartVM::ShutdownAllIsolates() {
+  std::set<std::shared_ptr<DartIsolate>> isolates_to_shutdown;
+  // We may be shutting down isolates on the current thread. Shutting down the
+  // isolate calls the shutdown callback which removes the entry from the
+  // active isolate. The lock must be obtained to mutate that entry. To avoid a
+  // deadlock, collect the isolate is a seprate collection.
+  {
+    std::lock_guard<std::mutex> lock(active_isolates_mutex_);
+    for (const auto& active_isolate : active_isolates_) {
+      if (auto task_runner = active_isolate->GetMessageHandlingTaskRunner()) {
+        isolates_to_shutdown.insert(active_isolate);
+      }
+    }
+  }
+
+  fml::CountDownLatch latch(isolates_to_shutdown.size());
+
+  for (const auto& isolate : isolates_to_shutdown) {
+    fml::TaskRunner::RunNowOrPostTask(
+        isolate->GetMessageHandlingTaskRunner(), [&latch, isolate]() {
+          if (!isolate || !isolate->Shutdown()) {
+            FML_LOG(ERROR) << "Could not shutdown isolate.";
+          }
+          latch.CountDown();
+        });
+  }
+  latch.Wait();
+}
+
+void DartVM::RegisterActiveIsolate(std::shared_ptr<DartIsolate> isolate) {
+  if (!isolate) {
+    return;
+  }
+  std::lock_guard<std::mutex> lock(active_isolates_mutex_);
+  active_isolates_.insert(isolate);
+}
+
+void DartVM::UnregisterActiveIsolate(std::shared_ptr<DartIsolate> isolate) {
+  if (!isolate) {
+    return;
+  }
+  std::lock_guard<std::mutex> lock(active_isolates_mutex_);
+  active_isolates_.erase(isolate);
 }
 
 }  // namespace blink

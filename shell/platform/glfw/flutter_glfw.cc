@@ -94,8 +94,6 @@ struct FlutterDesktopMessenger {
   shell::IncomingMessageDispatcher* dispatcher;
 };
 
-static constexpr char kDefaultWindowTitle[] = "Flutter";
-
 // Retrieves state bag for the window in question from the GLFWWindow.
 static FlutterDesktopWindowState* GetSavedWindowState(GLFWwindow* window) {
   return reinterpret_cast<FlutterDesktopWindowState*>(
@@ -155,57 +153,86 @@ static void GLFWFramebufferSizeCallback(GLFWwindow* window,
   FlutterEngineSendWindowMetricsEvent(state->engine, &event);
 }
 
-// Sends a pointer event to the Flutter engine with the given phase.
-static void SendPointerEventWithPhase(GLFWwindow* window,
-                                      FlutterPointerPhase phase,
-                                      double x,
-                                      double y) {
-  auto state = GetSavedWindowState(window);
+// Sends a pointer event to the Flutter engine based on the given data.
+//
+// Any coordinate/distance values in |event_data| should be in screen
+// coordinates; they will be adjusted to pixel values before being sent.
+static void SendPointerEventWithData(GLFWwindow* window,
+                                     const FlutterPointerEvent& event_data) {
+  auto* state = GetSavedWindowState(window);
   // If sending anything other than an add, and the pointer isn't already added,
   // synthesize an add to satisfy Flutter's expectations about events.
-  if (!state->pointer_currently_added && phase != FlutterPointerPhase::kAdd) {
-    SendPointerEventWithPhase(window, FlutterPointerPhase::kAdd, x, y);
+  if (!state->pointer_currently_added &&
+      event_data.phase != FlutterPointerPhase::kAdd) {
+    FlutterPointerEvent event = {};
+    event.phase = FlutterPointerPhase::kAdd;
+    event.x = event_data.x;
+    event.y = event_data.y;
+    SendPointerEventWithData(window, event);
   }
   // Don't double-add (e.g., if events are delivered out of order, so an add has
   // already been synthesized).
-  if (state->pointer_currently_added && phase == FlutterPointerPhase::kAdd) {
+  if (state->pointer_currently_added &&
+      event_data.phase == FlutterPointerPhase::kAdd) {
     return;
   }
 
-  FlutterPointerEvent event = {};
+  FlutterPointerEvent event = event_data;
+  // Set metadata that's always the same regardless of the event.
   event.struct_size = sizeof(event);
-  event.phase = phase;
-  event.x = x * state->window_pixels_per_screen_coordinate;
-  event.y = y * state->window_pixels_per_screen_coordinate;
   event.timestamp =
       std::chrono::duration_cast<std::chrono::microseconds>(
           std::chrono::high_resolution_clock::now().time_since_epoch())
           .count();
+  // Convert all screen coordinates to pixel coordinates.
+  event.x *= state->window_pixels_per_screen_coordinate;
+  event.y *= state->window_pixels_per_screen_coordinate;
+  event.scroll_delta_x *= state->window_pixels_per_screen_coordinate;
+  event.scroll_delta_y *= state->window_pixels_per_screen_coordinate;
+
   FlutterEngineSendPointerEvent(state->engine, &event, 1);
 
-  if (phase == FlutterPointerPhase::kAdd) {
+  if (event_data.phase == FlutterPointerPhase::kAdd) {
     state->pointer_currently_added = true;
-  } else if (phase == FlutterPointerPhase::kRemove) {
+  } else if (event_data.phase == FlutterPointerPhase::kRemove) {
     state->pointer_currently_added = false;
   }
 }
 
+// Updates |event_data| with the current location of the mouse cursor.
+static void SetEventLocationFromCursorPosition(
+    GLFWwindow* window,
+    FlutterPointerEvent* event_data) {
+  glfwGetCursorPos(window, &event_data->x, &event_data->y);
+}
+
+// Set's |event_data|'s phase to either kMove or kHover depending on the current
+// primary mouse button state.
+static void SetEventPhaseFromCursorButtonState(
+    GLFWwindow* window,
+    FlutterPointerEvent* event_data) {
+  event_data->phase =
+      glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS
+          ? FlutterPointerPhase::kMove
+          : FlutterPointerPhase::kHover;
+}
+
 // Reports the mouse entering or leaving the Flutter view.
 static void GLFWCursorEnterCallback(GLFWwindow* window, int entered) {
-  double x, y;
-  glfwGetCursorPos(window, &x, &y);
-  FlutterPointerPhase phase =
+  FlutterPointerEvent event = {};
+  event.phase =
       entered ? FlutterPointerPhase::kAdd : FlutterPointerPhase::kRemove;
-  SendPointerEventWithPhase(window, phase, x, y);
+  SetEventLocationFromCursorPosition(window, &event);
+  SendPointerEventWithData(window, event);
 }
 
 // Reports mouse movement to the Flutter engine.
 static void GLFWCursorPositionCallback(GLFWwindow* window, double x, double y) {
-  bool button_down =
-      glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
-  FlutterPointerPhase phase =
-      button_down ? FlutterPointerPhase::kMove : FlutterPointerPhase::kHover;
-  SendPointerEventWithPhase(window, phase, x, y);
+  FlutterPointerEvent event = {};
+  event.x = x;
+  event.y = y;
+  SetEventPhaseFromCursorButtonState(window, &event);
+  SendPointerEventWithData(window, event);
 }
 
 // Reports mouse button press to the Flutter engine.
@@ -219,12 +246,11 @@ static void GLFWMouseButtonCallback(GLFWwindow* window,
     return;
   }
 
-  double x, y;
-  glfwGetCursorPos(window, &x, &y);
-  FlutterPointerPhase phase = (action == GLFW_PRESS)
-                                  ? FlutterPointerPhase::kDown
-                                  : FlutterPointerPhase::kUp;
-  SendPointerEventWithPhase(window, phase, x, y);
+  FlutterPointerEvent event = {};
+  event.phase = (action == GLFW_PRESS) ? FlutterPointerPhase::kDown
+                                       : FlutterPointerPhase::kUp;
+  SetEventLocationFromCursorPosition(window, &event);
+  SendPointerEventWithData(window, event);
 
   // If mouse tracking isn't already enabled, turn it on for the duration of
   // the drag to generate kMove events.
@@ -240,6 +266,22 @@ static void GLFWMouseButtonCallback(GLFWwindow* window,
     glfwSetCursorEnterCallback(
         window, (action == GLFW_PRESS) ? nullptr : GLFWCursorEnterCallback);
   }
+}
+
+// Reports scroll wheel events to the Flutter engine.
+static void GLFWScrollCallback(GLFWwindow* window,
+                               double delta_x,
+                               double delta_y) {
+  FlutterPointerEvent event = {};
+  SetEventLocationFromCursorPosition(window, &event);
+  SetEventPhaseFromCursorButtonState(window, &event);
+  event.signal_kind = FlutterPointerSignalKind::kFlutterPointerSignalKindScroll;
+  // TODO: See if this can be queried from the OS; this value is chosen
+  // arbitrarily to get something that feels reasonable.
+  const int kScrollOffsetMultiplier = 20;
+  event.scroll_delta_x = delta_x * kScrollOffsetMultiplier;
+  event.scroll_delta_y = -delta_y * kScrollOffsetMultiplier;
+  SendPointerEventWithData(window, event);
 }
 
 // Passes character input events to registered handlers.
@@ -276,6 +318,7 @@ static void GLFWAssignEventCallbacks(GLFWwindow* window) {
   glfwSetKeyCallback(window, GLFWKeyCallback);
   glfwSetCharCallback(window, GLFWCharCallback);
   glfwSetMouseButtonCallback(window, GLFWMouseButtonCallback);
+  glfwSetScrollCallback(window, GLFWScrollCallback);
   if (GetSavedWindowState(window)->hover_tracking_enabled) {
     SetHoverCallbacksEnabled(window, true);
   }
@@ -286,6 +329,7 @@ static void GLFWClearEventCallbacks(GLFWwindow* window) {
   glfwSetKeyCallback(window, nullptr);
   glfwSetCharCallback(window, nullptr);
   glfwSetMouseButtonCallback(window, nullptr);
+  glfwSetScrollCallback(window, nullptr);
   SetHoverCallbacksEnabled(window, false);
 }
 
@@ -427,6 +471,7 @@ void FlutterDesktopTerminate() {
 
 FlutterDesktopWindowRef FlutterDesktopCreateWindow(int initial_width,
                                                    int initial_height,
+                                                   const char* title,
                                                    const char* assets_path,
                                                    const char* icu_data_path,
                                                    const char** arguments,
@@ -435,8 +480,8 @@ FlutterDesktopWindowRef FlutterDesktopCreateWindow(int initial_width,
   gtk_init(0, nullptr);
 #endif
   // Create the window.
-  auto window = glfwCreateWindow(initial_width, initial_height,
-                                 kDefaultWindowTitle, NULL, NULL);
+  auto window =
+      glfwCreateWindow(initial_width, initial_height, title, NULL, NULL);
   if (window == nullptr) {
     return nullptr;
   }
@@ -495,6 +540,21 @@ void FlutterDesktopSetHoverEnabled(FlutterDesktopWindowRef flutter_window,
                                    bool enabled) {
   flutter_window->hover_tracking_enabled = enabled;
   SetHoverCallbacksEnabled(flutter_window->window, enabled);
+}
+
+void FlutterDesktopSetWindowTitle(FlutterDesktopWindowRef flutter_window,
+                                  const char* title) {
+  GLFWwindow* window = flutter_window->window;
+  glfwSetWindowTitle(window, title);
+}
+
+void FlutterDesktopSetWindowIcon(FlutterDesktopWindowRef flutter_window,
+                                 uint8_t* pixel_data,
+                                 int width,
+                                 int height) {
+  GLFWwindow* window = flutter_window->window;
+  GLFWimage image = {width, height, static_cast<unsigned char*>(pixel_data)};
+  glfwSetWindowIcon(window, pixel_data ? 1 : 0, &image);
 }
 
 void FlutterDesktopRunWindowLoop(FlutterDesktopWindowRef flutter_window) {
