@@ -16,6 +16,7 @@ _flutter_framework_dir = "$root_out_dir/$_flutter_framework_filename"
 # the Flutter engine source root.
 _flutter_framework_headers = [
   "framework/Headers/FlutterMacOS.h",
+  "framework/Headers/FLETexture.h",
   "framework/Headers/FLEOpenGLContextHandling.h",
   "framework/Headers/FLEPlugin.h",
   "framework/Headers/FLEPluginRegistrar.h",
@@ -33,6 +34,8 @@ shared_library("create_flutter_framework_dylib") {
   output_name = "$_flutter_framework_name"
 
   sources = [
+    "framework/Source/FLEExternalTextureGL.h",
+    "framework/Source/FLEExternalTextureGL.mm",
     "framework/Source/FLETextInputModel.h",
     "framework/Source/FLETextInputModel.mm",
     "framework/Source/FLETextInputPlugin.h",

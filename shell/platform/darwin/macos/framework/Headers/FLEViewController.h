@@ -4,6 +4,7 @@
 
 #import <Cocoa/Cocoa.h>
 
+#import "FLETexture.h"
 #import "FLEOpenGLContextHandling.h"
 #import "FLEPluginRegistrar.h"
 #import "FLEReshapeListener.h"
@@ -36,7 +37,7 @@ typedef NS_ENUM(NSInteger, FlutterMouseTrackingMode) {
  */
 FLUTTER_EXPORT
 @interface FLEViewController
-    : NSViewController <FlutterBinaryMessenger, FLEPluginRegistrar, FLEReshapeListener>
+    : NSViewController <FlutterBinaryMessenger, FLEPluginRegistrar, FLEReshapeListener, FLETextureRegistrar>
 
 /**
  * The view this controller manages when launched in interactive mode (headless set to false). Must

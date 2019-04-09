@@ -32,6 +32,11 @@ FLUTTER_EXPORT
 @property(nonnull, readonly) id<FlutterBinaryMessenger> messenger;
 
 /**
+ * Returns a `FLETextureRegistry` for registering textures provided by the plugin.
+ */
+@property(nonnull, readonly) id<FLETextureRegistrar> textures;
+
+/**
  * The view displaying Flutter content.
  *
  * WARNING: If/when multiple Flutter views within the same application are supported (#98), this
