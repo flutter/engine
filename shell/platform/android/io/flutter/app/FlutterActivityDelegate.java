@@ -297,6 +297,9 @@ public final class FlutterActivityDelegate
         if (intent.getBooleanExtra("start-paused", false)) {
             args.add("--start-paused");
         }
+        if (intent.getBooleanExtra("disable-service-auth-codes", false)) {
+            args.add("--disable-service-auth-codes");
+        }
         if (intent.getBooleanExtra("use-test-fonts", false)) {
             args.add("--use-test-fonts");
         }

@@ -167,6 +167,11 @@ blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     }
   }
 
+  // Disable need for authentication codes for VM service communication, if
+  // specified.
+  settings.disable_service_auth_codes =
+      command_line.HasOption(FlagForSwitch(Switch::DisableServiceAuthCodes));
+
   // Checked mode overrides.
   settings.disable_dart_asserts =
       command_line.HasOption(FlagForSwitch(Switch::DisableDartAsserts));
