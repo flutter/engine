@@ -182,8 +182,7 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
       paint_.setColorFilter(invert_filter->makeComposed(color_filter));
     }
   } else if (uint_data[kInvertColorIndex]) {
-    paint_.setColorFilter(
-        SkColorFilters::MatrixRowMajor255(invert_colors));
+    paint_.setColorFilter(SkColorFilters::MatrixRowMajor255(invert_colors));
   } else if (uint_data[kColorFilterIndex]) {
     sk_sp<SkColorFilter> color_filter = ExtractColorFilter(uint_data, values);
     if (color_filter) {
