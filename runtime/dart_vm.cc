@@ -84,8 +84,7 @@ static const char* kDartStartPausedArgs[]{
     "--pause_isolates_on_start",
 };
 
-
-static const char* kDartDisableServiceAuthCodesArgs[] {
+static const char* kDartDisableServiceAuthCodesArgs[]{
     "--disable-service-auth-codes",
 };
 
