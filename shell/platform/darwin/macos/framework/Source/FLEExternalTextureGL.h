@@ -8,26 +8,24 @@
 #import "flutter/shell/platform/embedder/embedder.h"
 
 /**
- * Used to bridge external FLETexture objects,
- * so the implementer only needs to return the CVPixelBufferRef object,
- * which will make the interface consistent with the FlutterTexture.
+ * Used to bridge FLETexture object and handle the texture copy request.
  */
 @interface FLEExternalTextureGL : NSObject
 
 /**
- * Initializes a texture adapter with |texture|.
+ * Initializes a texture adapter with |texture| return a FLEExternalTextureGL.
  */
 - (nonnull instancetype)initWithFLETexture:(nonnull id<FLETexture>)texture;
 
 /**
- * Accept texture rendering notifications from the flutter engine.
+ * Accept texture buffer copy request from the flutter engine.
  */
 - (BOOL)populateTextureWithWidth:(size_t)width
                           height:(size_t)height
                          texture:(nonnull FlutterOpenGLTexture*)texture;
 
 /**
- * The texture id.
+ * The texture ID.
  */
 - (int64_t)textureID;
 
