@@ -16,7 +16,7 @@
 #include "flutter/shell/platform/embedder/tests/embedder_config_builder.h"
 #include "flutter/testing/testing.h"
 
-namespace shell {
+namespace flutter {
 namespace testing {
 
 using Embedder11yTest = testing::EmbedderTest;
@@ -137,7 +137,7 @@ TEST_F(Embedder11yTest, A11yTreeIsConsistent) {
 
     int64_t action_id;
     Dart_GetNativeIntegerArgument(args, 1, &action_id);
-    ASSERT_EQ(static_cast<int32_t>(blink::SemanticsAction::kTap), action_id);
+    ASSERT_EQ(static_cast<int32_t>(flutter::SemanticsAction::kTap), action_id);
 
     Dart_Handle semantic_args = Dart_GetNativeArgument(args, 2);
     int64_t data;
@@ -168,4 +168,4 @@ TEST_F(Embedder11yTest, A11yTreeIsConsistent) {
 }
 
 }  // namespace testing
-}  // namespace shell
+}  // namespace flutter

@@ -7,7 +7,7 @@
 #include "flutter/fml/task_runner.h"
 #include "flutter/fml/trace_event.h"
 
-namespace shell {
+namespace flutter {
 
 #if defined(OS_FUCHSIA)
 // In general, traces on Fuchsia are recorded across the whole system.
@@ -23,7 +23,7 @@ static constexpr const char* kVsyncTraceName = "VSYNC";
 
 static constexpr const char* kVsyncFlowName = "VsyncFlow";
 
-VsyncWaiter::VsyncWaiter(blink::TaskRunners task_runners)
+VsyncWaiter::VsyncWaiter(TaskRunners task_runners)
     : task_runners_(std::move(task_runners)) {}
 
 VsyncWaiter::~VsyncWaiter() = default;
@@ -94,4 +94,4 @@ float VsyncWaiter::GetDisplayRefreshRate() const {
   return kUnknownRefreshRateFPS;
 }
 
-}  // namespace shell
+}  // namespace flutter

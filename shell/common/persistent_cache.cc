@@ -15,7 +15,7 @@
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
 
-namespace shell {
+namespace flutter {
 
 std::string PersistentCache::cache_base_path_;
 
@@ -59,12 +59,11 @@ PersistentCache::PersistentCache(bool read_only) : is_read_only_(read_only) {
   }
 
   if (cache_base_dir.is_valid()) {
-    cache_directory_ = std::make_shared<fml::UniqueFD>(
-        CreateDirectory(cache_base_dir,
-                        {"flutter_engine", blink::GetFlutterEngineVersion(),
-                         "skia", blink::GetSkiaVersion()},
-                        read_only ? fml::FilePermission::kRead
-                                  : fml::FilePermission::kReadWrite));
+    cache_directory_ = std::make_shared<fml::UniqueFD>(CreateDirectory(
+        cache_base_dir,
+        {"flutter_engine", GetFlutterEngineVersion(), "skia", GetSkiaVersion()},
+        read_only ? fml::FilePermission::kRead
+                  : fml::FilePermission::kReadWrite));
   }
   if (!IsValid()) {
     FML_LOG(WARNING) << "Could not acquire the persistent cache directory. "
@@ -205,4 +204,4 @@ fml::RefPtr<fml::TaskRunner> PersistentCache::GetWorkerTaskRunner() const {
   return worker;
 }
 
-}  // namespace shell
+}  // namespace flutter

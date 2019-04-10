@@ -14,7 +14,7 @@
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/thread_test.h"
 
-namespace shell {
+namespace flutter {
 namespace testing {
 
 class ShellTest : public ::testing::ThreadTest {
@@ -23,9 +23,9 @@ class ShellTest : public ::testing::ThreadTest {
 
   ~ShellTest();
 
-  blink::Settings CreateSettingsForFixture();
+  Settings CreateSettingsForFixture();
 
-  blink::TaskRunners GetTaskRunnersForFixture();
+  TaskRunners GetTaskRunnersForFixture();
 
   void AddNativeCallback(std::string name, Dart_NativeFunction callback);
 
@@ -41,10 +41,10 @@ class ShellTest : public ::testing::ThreadTest {
   std::shared_ptr<::testing::TestDartNativeResolver> native_resolver_;
   std::unique_ptr<ThreadHost> thread_host_;
 
-  void SetSnapshotsAndAssets(blink::Settings& settings);
+  void SetSnapshotsAndAssets(Settings& settings);
 };
 
 }  // namespace testing
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_COMMON_SHELL_TEST_H_

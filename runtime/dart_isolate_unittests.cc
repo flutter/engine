@@ -15,12 +15,7 @@
 #include "flutter/testing/thread_test.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
 
-#define CURRENT_TEST_NAME                                           \
-  std::string {                                                     \
-    ::testing::UnitTest::GetInstance()->current_test_info()->name() \
-  }
-
-namespace blink {
+namespace flutter {
 namespace testing {
 
 using DartIsolateTest = RuntimeTest;
@@ -31,11 +26,11 @@ TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
   ASSERT_TRUE(vm_ref);
   auto vm_data = vm_ref.GetVMData();
   ASSERT_TRUE(vm_data);
-  TaskRunners task_runners(CURRENT_TEST_NAME,       //
-                           GetCurrentTaskRunner(),  //
-                           GetCurrentTaskRunner(),  //
-                           GetCurrentTaskRunner(),  //
-                           GetCurrentTaskRunner()   //
+  TaskRunners task_runners(::testing::GetCurrentTestName(),  //
+                           GetCurrentTaskRunner(),           //
+                           GetCurrentTaskRunner(),           //
+                           GetCurrentTaskRunner(),           //
+                           GetCurrentTaskRunner()            //
   );
   auto weak_isolate = DartIsolate::CreateRootIsolate(
       vm_data->GetSettings(),         // settings
@@ -60,11 +55,11 @@ TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
   ASSERT_TRUE(vm_ref);
   auto vm_data = vm_ref.GetVMData();
   ASSERT_TRUE(vm_data);
-  TaskRunners task_runners(CURRENT_TEST_NAME,       //
-                           GetCurrentTaskRunner(),  //
-                           GetCurrentTaskRunner(),  //
-                           GetCurrentTaskRunner(),  //
-                           GetCurrentTaskRunner()   //
+  TaskRunners task_runners(::testing::GetCurrentTestName(),  //
+                           GetCurrentTaskRunner(),           //
+                           GetCurrentTaskRunner(),           //
+                           GetCurrentTaskRunner(),           //
+                           GetCurrentTaskRunner()            //
   );
   auto weak_isolate = DartIsolate::CreateRootIsolate(
       vm_data->GetSettings(),         // settings
@@ -93,7 +88,7 @@ class AutoIsolateShutdown {
  public:
   AutoIsolateShutdown() = default;
 
-  AutoIsolateShutdown(std::shared_ptr<blink::DartIsolate> isolate,
+  AutoIsolateShutdown(std::shared_ptr<DartIsolate> isolate,
                       fml::RefPtr<fml::TaskRunner> runner)
       : isolate_(std::move(isolate)), runner_(std::move(runner)) {}
 
@@ -136,13 +131,13 @@ class AutoIsolateShutdown {
     return true;
   }
 
-  blink::DartIsolate* get() {
+  DartIsolate* get() {
     FML_CHECK(isolate_);
     return isolate_.get();
   }
 
  private:
-  std::shared_ptr<blink::DartIsolate> isolate_;
+  std::shared_ptr<DartIsolate> isolate_;
   fml::RefPtr<fml::TaskRunner> runner_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AutoIsolateShutdown);
@@ -159,11 +154,11 @@ static void RunDartCodeInIsolate(std::unique_ptr<AutoIsolateShutdown>& result,
     return;
   }
 
-  TaskRunners task_runners(CURRENT_TEST_NAME,  //
-                           task_runner,        //
-                           task_runner,        //
-                           task_runner,        //
-                           task_runner         //
+  TaskRunners task_runners(::testing::GetCurrentTestName(),  //
+                           task_runner,                      //
+                           task_runner,                      //
+                           task_runner,                      //
+                           task_runner                       //
   );
 
   auto vm_data = vm_ref.GetVMData();
@@ -312,4 +307,4 @@ TEST_F(DartIsolateTest, CanRegisterNativeCallback) {
 }
 
 }  // namespace testing
-}  // namespace blink
+}  // namespace flutter

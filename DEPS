@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '2f08a4043b26370aa24f713f5960433af8dd398f',
+  'skia_revision': '10bf7020aa154dfbd024df40a33c8f39e5264a47',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -52,7 +52,7 @@ vars = {
   'dart_dartdoc_tag': 'v0.28.2',
   'dart_fixnum_tag': '0.10.9',
   'dart_glob_tag': '1.1.7',
-  'dart_html_tag': '0.13.4+1',
+  'dart_html_tag': '0.14.0',
   'dart_http_multi_server_tag': '2.0.5',
   'dart_http_parser_tag': '3.1.3',
   'dart_http_retry_tag': '0.1.1',
@@ -94,7 +94,6 @@ vars = {
   'dart_test_tag': '1.3.4',
   'dart_typed_data_tag': '1.1.6',
   'dart_usage_tag': '3.4.0',
-  'dart_utf_tag': '0.9.0+5',
   'dart_watcher_rev': '0.9.7+12',
   'dart_web_socket_channel_tag': '1.0.9',
   'dart_yaml_tag': '2.1.15',
@@ -340,9 +339,6 @@ deps = {
 
   'src/third_party/dart/third_party/pkg/test':
    Var('dart_git') + '/test.git' + '@' + Var('dart_test_tag'),
-
-  'src/third_party/dart/third_party/pkg/utf':
-   Var('dart_git') + '/utf.git' + '@' + Var('dart_utf_tag'),
 
   'src/third_party/dart/third_party/pkg/usage':
    Var('dart_git') + '/usage.git' + '@' + Var('dart_usage_tag'),

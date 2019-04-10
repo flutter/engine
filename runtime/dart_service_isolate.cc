@@ -27,7 +27,7 @@
     return false;                           \
   }
 
-namespace blink {
+namespace flutter {
 namespace {
 
 static Dart_LibraryTagHandler g_embedder_tag_handler;
@@ -204,4 +204,4 @@ bool DartServiceIsolate::Startup(std::string server_ip,
   return true;
 }
 
-}  // namespace blink
+}  // namespace flutter
