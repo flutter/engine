@@ -92,6 +92,10 @@ static const int kDefaultWindowFramebuffer = 0;
  */
 - (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type;
 
+/**
+ * Forwarding texture copy request to the corresponding texture via |textureId|,
+ * |width| and |height| may be used to get a specific sized texture in the future.
+ */
 - (BOOL)populateTextureWithIdentifier:(int64_t)textureId
                                 width:(size_t)width
                                height:(size_t)height
@@ -147,6 +151,9 @@ static bool OnMakeResourceCurrent(FLEViewController* controller) {
   return true;
 }
 
+/**
+ * Dispatching the texture copy request forward to the controller.
+ */
 static bool OnAcquireExternalTexture(FLEViewController* controller,
                                      int64_t texture_identifier,
                                      size_t width,
@@ -198,7 +205,7 @@ static bool HeadlessOnMakeResourceCurrent(FLEViewController* controller) {
   // an embedding API; see Issue #47.
   FlutterBasicMessageChannel* _keyEventChannel;
 
-  // A mapping of external textures.
+  // A mapping of textureID to internal FLEExternalTextureGL adapter.
   NSMutableDictionary<NSNumber*, FLEExternalTextureGL*>* _textures;
 }
 
@@ -415,7 +422,7 @@ static void CommonInit(FLEViewController* controller) {
                                 width:(size_t)width
                                height:(size_t)height
                               texture:(FlutterOpenGLTexture*)texture {
-  return [_textures[@(textureId)] populateTextureWidth:width height:height texture:texture];
+  return [_textures[@(textureId)] populateTextureWithWidth:width height:height texture:texture];
 }
 
 - (int64_t)registerTexture:(id<FLETexture>)texture {

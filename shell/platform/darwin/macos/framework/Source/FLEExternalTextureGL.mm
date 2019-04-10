@@ -4,24 +4,23 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FLEExternalTextureGL.h"
 
-#import <AppKit/NSOpenGL.h>
-#import <CoreVideo/CVOpenGLBuffer.h>
-#import <CoreVideo/CVOpenGLTextureCache.h>
-#import <OpenGL/gl.h>
+#import <AppKit/AppKit.h>
+#import <CoreVideo/CoreVideo.h>
+#import <OpenGL/OpenGL.h>
 
 @implementation FLEExternalTextureGL {
   CVOpenGLTextureCacheRef _textureCache;
   CVPixelBufferRef _pixelBuffer;
-  id<FLETexture> _fleTexture;
+  id<FLETexture> _texture;
 }
 
-- (instancetype)initWithFLETexture:(id<FLETexture>)fleTexture {
+- (instancetype)initWithFLETexture:(id<FLETexture>)texture {
   self = [super init];
-
   if (self) {
-    _fleTexture = fleTexture;
+    _texture = texture;
+    _pixelBuffer = nil;
+    _textureCache = nil;
   }
-
   return self;
 }
 
@@ -33,22 +32,22 @@ static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
   return (NSInteger)(self);
 }
 
-- (BOOL)populateTextureWidth:(size_t)width
-                      height:(size_t)height
-                     texture:(FlutterOpenGLTexture*)texture {
-  if (_fleTexture == NULL) {
+- (BOOL)populateTextureWithWidth:(size_t)width
+                          height:(size_t)height
+                         texture:(FlutterOpenGLTexture*)texture {
+  if (!_texture) {
     return NO;
   }
 
   // Copy image buffer from external texture.
-  _pixelBuffer = [_fleTexture copyPixelBuffer:width height:height];
+  _pixelBuffer = [_texture copyPixelBuffer:width height:height];
 
-  if (_pixelBuffer == NULL) {
+  if (!_pixelBuffer) {
     return NO;
   }
 
   // Create the texture cache if necessary.
-  if (_textureCache == NULL) {
+  if (!_textureCache) {
     CGLContextObj context = [NSOpenGLContext currentContext].CGLContextObj;
     CGLPixelFormatObj format = CGLGetPixelFormat(context);
     if (CVOpenGLTextureCacheCreate(kCFAllocatorDefault, NULL, context, format, NULL,

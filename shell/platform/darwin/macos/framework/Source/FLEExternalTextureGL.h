@@ -15,16 +15,16 @@
 @interface FLEExternalTextureGL : NSObject
 
 /**
- * Initializes a texture adapter with |fleTexture|.
+ * Initializes a texture adapter with |texture|.
  */
-- (nonnull instancetype)initWithFLETexture:(nonnull id<FLETexture>)fleTexture;
+- (nonnull instancetype)initWithFLETexture:(nonnull id<FLETexture>)texture;
 
 /**
  * Accept texture rendering notifications from the flutter engine.
  */
-- (BOOL)populateTextureWidth:(size_t)width
-                      height:(size_t)height
-                     texture:(nonnull FlutterOpenGLTexture*)texture;
+- (BOOL)populateTextureWithWidth:(size_t)width
+                          height:(size_t)height
+                         texture:(nonnull FlutterOpenGLTexture*)texture;
 
 /**
  * The texture id.

@@ -3,27 +3,27 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#import <CoreVideo/CoreVideo.h>
 #import <Foundation/Foundation.h>
-#import <CoreVideo/CVPixelBuffer.h>
 
 /**
  * Implement a texture object for the FLE plugin side.
  */
-@protocol FLETexture<NSObject>
+@protocol FLETexture <NSObject>
 
 /**
  * When the texture on the platform side is ready,
  * the flutter engine will copy the texture buffer
  * using copyPixelBuffer.
  */
-- (nullable CVPixelBufferRef)copyPixelBuffer:(size_t) width height:(size_t)height;
+- (nullable CVPixelBufferRef)copyPixelBuffer:(size_t)width height:(size_t)height;
 
 @end
 
 /**
  * The protocol for an object managing registration for texture.
  */
-@protocol FLETextureRegistrar<NSObject>
+@protocol FLETextureRegistrar <NSObject>
 
 /**
  * Register a |texture| object and return a textureId.
