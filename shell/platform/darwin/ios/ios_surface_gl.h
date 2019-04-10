@@ -14,13 +14,14 @@
 
 @class CAEAGLLayer;
 
-namespace shell {
+namespace flutter {
 
 class IOSSurfaceGL : public IOSSurface,
                      public GPUSurfaceGLDelegate,
                      public flow::ExternalViewEmbedder {
  public:
-  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
+  IOSSurfaceGL(std::shared_ptr<IOSGLContext> context,
+               fml::scoped_nsobject<CAEAGLLayer> layer,
                FlutterPlatformViewsController* platform_views_controller);
 
   IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer, std::shared_ptr<IOSGLContext> context);
@@ -47,7 +48,7 @@ class IOSSurfaceGL : public IOSSurface,
 
   bool UseOffscreenSurface() const override;
 
-  // |shell::GPUSurfaceGLDelegate|
+  // |GPUSurfaceGLDelegate|
   flow::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   // |flow::ExternalViewEmbedder|
@@ -72,6 +73,6 @@ class IOSSurfaceGL : public IOSSurface,
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceGL);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SURFACE_GL_H_

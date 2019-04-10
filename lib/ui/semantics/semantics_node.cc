@@ -6,7 +6,9 @@
 
 #include <string.h>
 
-namespace blink {
+namespace flutter {
+
+constexpr int32_t kMinPlatformViewId = -1;
 
 SemanticsNode::SemanticsNode() = default;
 
@@ -22,4 +24,8 @@ bool SemanticsNode::HasFlag(SemanticsFlags flag) {
   return (flags & static_cast<int32_t>(flag)) != 0;
 }
 
-}  // namespace blink
+bool SemanticsNode::IsPlatformViewNode() const {
+  return platformViewId > kMinPlatformViewId;
+}
+
+}  // namespace flutter

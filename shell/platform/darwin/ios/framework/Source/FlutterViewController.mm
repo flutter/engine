@@ -22,6 +22,8 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
+NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
+
 @implementation FlutterViewController {
   std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
   fml::scoped_nsobject<FlutterEngine> _engine;
@@ -33,10 +35,11 @@
   fml::ScopedBlock<void (^)(void)> _flutterViewRenderedCallback;
   UIInterfaceOrientationMask _orientationPreferences;
   UIStatusBarStyle _statusBarStyle;
-  blink::ViewportMetrics _viewportMetrics;
+  flutter::ViewportMetrics _viewportMetrics;
   BOOL _initialized;
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
+  NSMutableSet<NSNumber*>* _ongoingTouches;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -52,6 +55,7 @@
     _engineNeedsLaunch = NO;
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
+    _ongoingTouches = [[NSMutableSet alloc] init];
 
     [self performCommonViewControllerInitialization];
     [engine setViewController:self];
@@ -73,6 +77,7 @@
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     [_engine.get() createShell:nil libraryURI:nil];
     _engineNeedsLaunch = YES;
+    _ongoingTouches = [[NSMutableSet alloc] init];
     [self loadDefaultSplashScreenView];
     [self performCommonViewControllerInitialization];
   }
@@ -130,12 +135,12 @@
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   [center addObserver:self
              selector:@selector(onOrientationPreferencesUpdated:)
-                 name:@(shell::kOrientationUpdateNotificationName)
+                 name:@(flutter::kOrientationUpdateNotificationName)
                object:nil];
 
   [center addObserver:self
              selector:@selector(onPreferredStatusBarStyleUpdated:)
-                 name:@(shell::kOverlayStyleUpdateNotificationName)
+                 name:@(flutter::kOverlayStyleUpdateNotificationName)
                object:nil];
 
   [center addObserver:self
@@ -425,7 +430,42 @@
   TRACE_EVENT0("flutter", "viewDidDisappear");
   [self surfaceUpdated:NO];
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
+  [self flushOngoingTouches];
+
   [super viewDidDisappear:animated];
+}
+
+- (void)flushOngoingTouches {
+  if (_ongoingTouches.count > 0) {
+    auto packet = std::make_unique<flutter::PointerDataPacket>(_ongoingTouches.count);
+    size_t pointer_index = 0;
+    // If the view controller is going away, we want to flush cancel all the ongoing
+    // touches to the framework so nothing gets orphaned.
+    for (NSNumber* device in _ongoingTouches) {
+      // Create fake PointerData to balance out each previously started one for the framework.
+      flutter::PointerData pointer_data;
+      pointer_data.Clear();
+
+      constexpr int kMicrosecondsPerSecond = 1000 * 1000;
+      // Use current time.
+      pointer_data.time_stamp = [[NSDate date] timeIntervalSince1970] * kMicrosecondsPerSecond;
+
+      pointer_data.change = flutter::PointerData::Change::kCancel;
+      pointer_data.kind = flutter::PointerData::DeviceKind::kTouch;
+      pointer_data.device = device.longLongValue;
+
+      // Anything we put here will be arbitrary since there are no touches.
+      pointer_data.physical_x = 0;
+      pointer_data.physical_y = 0;
+      pointer_data.pressure = 1.0;
+      pointer_data.pressure_max = 1.0;
+
+      packet->SetPointerData(pointer_index++, pointer_data);
+    }
+
+    [_ongoingTouches removeAllObjects];
+    [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+  }
 }
 
 - (void)dealloc {
@@ -461,38 +501,38 @@
 
 #pragma mark - Touch event handling
 
-static blink::PointerData::Change PointerDataChangeFromUITouchPhase(UITouchPhase phase) {
+static flutter::PointerData::Change PointerDataChangeFromUITouchPhase(UITouchPhase phase) {
   switch (phase) {
     case UITouchPhaseBegan:
-      return blink::PointerData::Change::kDown;
+      return flutter::PointerData::Change::kDown;
     case UITouchPhaseMoved:
     case UITouchPhaseStationary:
       // There is no EVENT_TYPE_POINTER_STATIONARY. So we just pass a move type
       // with the same coordinates
-      return blink::PointerData::Change::kMove;
+      return flutter::PointerData::Change::kMove;
     case UITouchPhaseEnded:
-      return blink::PointerData::Change::kUp;
+      return flutter::PointerData::Change::kUp;
     case UITouchPhaseCancelled:
-      return blink::PointerData::Change::kCancel;
+      return flutter::PointerData::Change::kCancel;
   }
 
-  return blink::PointerData::Change::kCancel;
+  return flutter::PointerData::Change::kCancel;
 }
 
-static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
+static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
   if (@available(iOS 9, *)) {
     switch (touch.type) {
       case UITouchTypeDirect:
       case UITouchTypeIndirect:
-        return blink::PointerData::DeviceKind::kTouch;
+        return flutter::PointerData::DeviceKind::kTouch;
       case UITouchTypeStylus:
-        return blink::PointerData::DeviceKind::kStylus;
+        return flutter::PointerData::DeviceKind::kStylus;
     }
   } else {
-    return blink::PointerData::DeviceKind::kTouch;
+    return flutter::PointerData::DeviceKind::kTouch;
   }
 
-  return blink::PointerData::DeviceKind::kTouch;
+  return flutter::PointerData::DeviceKind::kTouch;
 }
 
 // Dispatches the UITouches to the engine. Usually, the type of change of the touch is determined
@@ -500,16 +540,16 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
 // in the status bar area are available to framework code. The change type (optional) of the faked
 // touch is specified in the second argument.
 - (void)dispatchTouches:(NSSet*)touches
-    pointerDataChangeOverride:(blink::PointerData::Change*)overridden_change {
+    pointerDataChangeOverride:(flutter::PointerData::Change*)overridden_change {
   const CGFloat scale = [UIScreen mainScreen].scale;
-  auto packet = std::make_unique<blink::PointerDataPacket>(touches.count);
+  auto packet = std::make_unique<flutter::PointerDataPacket>(touches.count);
 
   size_t pointer_index = 0;
 
   for (UITouch* touch in touches) {
     CGPoint windowCoordinates = [touch locationInView:self.view];
 
-    blink::PointerData pointer_data;
+    flutter::PointerData pointer_data;
     pointer_data.Clear();
 
     constexpr int kMicrosecondsPerSecond = 1000 * 1000;
@@ -525,6 +565,27 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
 
     pointer_data.physical_x = windowCoordinates.x * scale;
     pointer_data.physical_y = windowCoordinates.y * scale;
+
+    NSNumber* deviceKey = [NSNumber numberWithLongLong:pointer_data.device];
+    // Track touches that began and not yet stopped so we can flush them
+    // if the view controller goes away.
+    switch (pointer_data.change) {
+      case flutter::PointerData::Change::kDown:
+        [_ongoingTouches addObject:deviceKey];
+        break;
+      case flutter::PointerData::Change::kCancel:
+      case flutter::PointerData::Change::kUp:
+        [_ongoingTouches removeObject:deviceKey];
+        break;
+      case flutter::PointerData::Change::kHover:
+      case flutter::PointerData::Change::kMove:
+        // We're only tracking starts and stops.
+        break;
+      case flutter::PointerData::Change::kAdd:
+      case flutter::PointerData::Change::kRemove:
+        // We don't use kAdd/kRemove.
+        break;
+    }
 
     // pressure_min is always 0.0
     if (@available(iOS 9, *)) {
@@ -691,7 +752,7 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
   dispatch_async(dispatch_get_main_queue(), ^{
     NSDictionary* info = notification.userInfo;
 
-    NSNumber* update = info[@(shell::kOrientationUpdateNotificationKey)];
+    NSNumber* update = info[@(flutter::kOrientationUpdateNotificationKey)];
 
     if (update == nil) {
       return;
@@ -720,11 +781,11 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
   auto platformView = [_engine.get() platformView];
   int32_t flags = 0;
   if (UIAccessibilityIsInvertColorsEnabled())
-    flags |= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kInvertColors);
+    flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kInvertColors);
   if (UIAccessibilityIsReduceMotionEnabled())
-    flags |= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kReduceMotion);
+    flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kReduceMotion);
   if (UIAccessibilityIsBoldTextEnabled())
-    flags |= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kBoldText);
+    flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kBoldText);
 #if TARGET_OS_SIMULATOR
   // There doesn't appear to be any way to determine whether the accessibility
   // inspector is enabled on the simulator. We conservatively always turn on the
@@ -734,7 +795,7 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
 #else
   bool enabled = UIAccessibilityIsVoiceOverRunning() || UIAccessibilityIsSwitchControlRunning();
   if (enabled)
-    flags |= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kAccessibleNavigation);
+    flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kAccessibleNavigation);
   platformView->SetSemanticsEnabled(enabled || UIAccessibilityIsSpeakScreenEnabled());
   platformView->SetAccessibilityFeatures(flags);
 #endif
@@ -893,9 +954,9 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
       if (CGRectContainsPoint(statusBarFrame, screenLoc)) {
         NSSet* statusbarTouches = [NSSet setWithObject:touch];
 
-        blink::PointerData::Change change = blink::PointerData::Change::kDown;
+        flutter::PointerData::Change change = flutter::PointerData::Change::kDown;
         [self dispatchTouches:statusbarTouches pointerDataChangeOverride:&change];
-        change = blink::PointerData::Change::kUp;
+        change = flutter::PointerData::Change::kUp;
         [self dispatchTouches:statusbarTouches pointerDataChangeOverride:&change];
         return;
       }
@@ -914,7 +975,7 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   dispatch_async(dispatch_get_main_queue(), ^{
     NSDictionary* info = notification.userInfo;
 
-    NSNumber* update = info[@(shell::kOverlayStyleUpdateNotificationKey)];
+    NSNumber* update = info[@(flutter::kOverlayStyleUpdateNotificationKey)];
 
     if (update == nil) {
       return;
@@ -931,7 +992,7 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 
 #pragma mark - Platform views
 
-- (shell::FlutterPlatformViewsController*)platformViewsController {
+- (flutter::FlutterPlatformViewsController*)platformViewsController {
   return [_engine.get() platformViewsController];
 }
 

@@ -14,6 +14,7 @@ import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
+import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.TextureRegistry;
 
 import java.nio.ByteBuffer;
@@ -31,7 +32,7 @@ import static android.view.MotionEvent.PointerProperties;
  * Each {@link io.flutter.app.FlutterPluginRegistry} has a single platform views controller.
  * A platform views controller can be attached to at most one Flutter view.
  */
-public class PlatformViewsController implements MethodChannel.MethodCallHandler {
+public class PlatformViewsController implements MethodChannel.MethodCallHandler, PlatformViewsAccessibilityDelegate {
     private static final String TAG = "PlatformViewsController";
 
     private static final String CHANNEL_NAME = "flutter/platform_views";
@@ -50,11 +51,15 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
     // The messenger used to communicate with the framework over the platform views channel.
     private BinaryMessenger mMessenger;
 
+    // The accessibility bridge to which accessibility events form the platform views will be dispatched.
+    private final AccessibilityEventsDelegate mAccessibilityEventsDelegate;
+
     private final HashMap<Integer, VirtualDisplayController> vdControllers;
 
     public PlatformViewsController() {
         mRegistry = new PlatformViewRegistryImpl();
         vdControllers = new HashMap<>();
+        mAccessibilityEventsDelegate = new AccessibilityEventsDelegate();
     }
 
     /**
@@ -94,6 +99,16 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         mTextureRegistry = null;
     }
 
+    @Override
+    public void attachAccessibilityBridge(AccessibilityBridge accessibilityBridge) {
+        mAccessibilityEventsDelegate.setAccessibilityBridge(accessibilityBridge);
+    }
+
+    @Override
+    public void detachAccessibiltyBridge() {
+        mAccessibilityEventsDelegate.setAccessibilityBridge(null);
+    }
+
     public PlatformViewRegistry getRegistry() {
         return mRegistry;
     }
@@ -104,6 +119,15 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
 
     public void onPreEngineRestart() {
         flushAllViews();
+    }
+
+    @Override
+    public View getPlatformViewById(Integer id) {
+        VirtualDisplayController controller = vdControllers.get(id);
+        if (controller == null) {
+            return null;
+        }
+        return controller.getView();
     }
 
     @Override
@@ -178,6 +202,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         TextureRegistry.SurfaceTextureEntry textureEntry = mTextureRegistry.createSurfaceTexture();
         VirtualDisplayController vdController = VirtualDisplayController.create(
                 mContext,
+                mAccessibilityEventsDelegate,
                 viewFactory,
                 textureEntry,
                 toPhysicalPixels(logicalWidth),

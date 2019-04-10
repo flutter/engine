@@ -25,9 +25,9 @@
 #include "flutter/shell/platform/android/flutter_main.h"
 
 #define ANDROID_SHELL_HOLDER \
-  (reinterpret_cast<shell::AndroidShellHolder*>(shell_holder))
+  (reinterpret_cast<AndroidShellHolder*>(shell_holder))
 
-namespace shell {
+namespace flutter {
 
 namespace {
 
@@ -166,7 +166,7 @@ static void DestroyJNI(JNIEnv* env, jobject jcaller, jlong shell_holder) {
 
 static jstring GetObservatoryUri(JNIEnv* env, jclass clazz) {
   return env->NewStringUTF(
-      blink::DartServiceIsolate::GetObservatoryUri().c_str());
+      flutter::DartServiceIsolate::GetObservatoryUri().c_str());
 }
 
 static void SurfaceCreated(JNIEnv* env,
@@ -196,8 +196,8 @@ static void SurfaceDestroyed(JNIEnv* env, jobject jcaller, jlong shell_holder) {
 }
 
 std::unique_ptr<IsolateConfiguration> CreateIsolateConfiguration(
-    const blink::AssetManager& asset_manager) {
-  if (blink::DartVM::IsRunningPrecompiledCode()) {
+    const flutter::AssetManager& asset_manager) {
+  if (flutter::DartVM::IsRunningPrecompiledCode()) {
     return IsolateConfiguration::CreateForAppSnapshot();
   }
 
@@ -207,7 +207,7 @@ std::unique_ptr<IsolateConfiguration> CreateIsolateConfiguration(
     auto blob = asset_manager.GetAsMapping(snapshot_name);
     auto delta = asset_manager.GetAsMapping("kernel_delta.bin");
     if (blob && delta) {
-      std::vector<std::unique_ptr<fml::Mapping>> kernels;
+      std::vector<std::unique_ptr<const fml::Mapping>> kernels;
       kernels.emplace_back(std::move(blob));
       kernels.emplace_back(std::move(delta));
       return IsolateConfiguration::CreateForKernelList(std::move(kernels));
@@ -236,7 +236,7 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
                                             jstring jEntrypoint,
                                             jstring jLibraryUrl,
                                             jobject jAssetManager) {
-  auto asset_manager = std::make_shared<blink::AssetManager>();
+  auto asset_manager = std::make_shared<flutter::AssetManager>();
   for (const auto& bundlepath :
        fml::jni::StringArrayToVector(env, jbundlepaths)) {
     if (bundlepath.empty()) {
@@ -247,12 +247,12 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
     // bundle or a zip asset bundle.
     const auto file_ext_index = bundlepath.rfind(".");
     if (bundlepath.substr(file_ext_index) == ".zip") {
-      asset_manager->PushBack(std::make_unique<blink::ZipAssetStore>(
+      asset_manager->PushBack(std::make_unique<flutter::ZipAssetStore>(
           bundlepath, "assets/flutter_assets"));
 
     } else {
       asset_manager->PushBack(
-          std::make_unique<blink::DirectoryAssetBundle>(fml::OpenDirectory(
+          std::make_unique<flutter::DirectoryAssetBundle>(fml::OpenDirectory(
               bundlepath.c_str(), false, fml::FilePermission::kRead)));
 
       // Use the last path component of the bundle path to determine the
@@ -262,7 +262,7 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
         auto apk_asset_dir = bundlepath.substr(
             last_slash_index + 1, bundlepath.size() - last_slash_index);
 
-        asset_manager->PushBack(std::make_unique<blink::APKAssetProvider>(
+        asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
             env,                       // jni environment
             jAssetManager,             // asset manager
             std::move(apk_asset_dir))  // apk asset dir
@@ -299,7 +299,7 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
 static jobject LookupCallbackInformation(JNIEnv* env,
                                          /* unused */ jobject,
                                          jlong handle) {
-  auto cbInfo = blink::DartCallbackCache::GetCallbackInformation(handle);
+  auto cbInfo = flutter::DartCallbackCache::GetCallbackInformation(handle);
   if (cbInfo == nullptr) {
     return nullptr;
   }
@@ -321,7 +321,7 @@ static void SetViewportMetrics(JNIEnv* env,
                                jint physicalViewInsetRight,
                                jint physicalViewInsetBottom,
                                jint physicalViewInsetLeft) {
-  const blink::ViewportMetrics metrics{
+  const flutter::ViewportMetrics metrics{
       static_cast<double>(devicePixelRatio),
       static_cast<double>(physicalWidth),
       static_cast<double>(physicalHeight),
@@ -445,7 +445,7 @@ static void DispatchPointerDataPacket(JNIEnv* env,
                                       jobject buffer,
                                       jint position) {
   uint8_t* data = static_cast<uint8_t*>(env->GetDirectBufferAddress(buffer));
-  auto packet = std::make_unique<blink::PointerDataPacket>(data, position);
+  auto packet = std::make_unique<flutter::PointerDataPacket>(data, position);
   ANDROID_SHELL_HOLDER->DispatchPointerDataPacket(std::move(packet));
 }
 
@@ -540,114 +540,112 @@ bool RegisterApi(JNIEnv* env) {
       {
           .name = "nativeAttach",
           .signature = "(Lio/flutter/embedding/engine/FlutterJNI;Z)J",
-          .fnPtr = reinterpret_cast<void*>(&shell::AttachJNI),
+          .fnPtr = reinterpret_cast<void*>(&AttachJNI),
       },
       {
           .name = "nativeDestroy",
           .signature = "(J)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::DestroyJNI),
+          .fnPtr = reinterpret_cast<void*>(&DestroyJNI),
       },
       {
           .name = "nativeRunBundleAndSnapshotFromLibrary",
           .signature = "(J[Ljava/lang/String;Ljava/lang/String;"
                        "Ljava/lang/String;Landroid/content/res/AssetManager;)V",
-          .fnPtr =
-              reinterpret_cast<void*>(&shell::RunBundleAndSnapshotFromLibrary),
+          .fnPtr = reinterpret_cast<void*>(&RunBundleAndSnapshotFromLibrary),
       },
       {
           .name = "nativeGetObservatoryUri",
           .signature = "()Ljava/lang/String;",
-          .fnPtr = reinterpret_cast<void*>(&shell::GetObservatoryUri),
+          .fnPtr = reinterpret_cast<void*>(&GetObservatoryUri),
       },
       {
           .name = "nativeDispatchEmptyPlatformMessage",
           .signature = "(JLjava/lang/String;I)V",
-          .fnPtr =
-              reinterpret_cast<void*>(&shell::DispatchEmptyPlatformMessage),
+          .fnPtr = reinterpret_cast<void*>(&DispatchEmptyPlatformMessage),
       },
       {
           .name = "nativeDispatchPlatformMessage",
           .signature = "(JLjava/lang/String;Ljava/nio/ByteBuffer;II)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::DispatchPlatformMessage),
+          .fnPtr = reinterpret_cast<void*>(&DispatchPlatformMessage),
       },
       {
           .name = "nativeInvokePlatformMessageResponseCallback",
           .signature = "(JILjava/nio/ByteBuffer;I)V",
-          .fnPtr = reinterpret_cast<void*>(
-              &shell::InvokePlatformMessageResponseCallback),
+          .fnPtr =
+              reinterpret_cast<void*>(&InvokePlatformMessageResponseCallback),
       },
       {
           .name = "nativeInvokePlatformMessageEmptyResponseCallback",
           .signature = "(JI)V",
           .fnPtr = reinterpret_cast<void*>(
-              &shell::InvokePlatformMessageEmptyResponseCallback),
+              &InvokePlatformMessageEmptyResponseCallback),
       },
 
       // Start of methods from FlutterView
       {
           .name = "nativeGetBitmap",
           .signature = "(J)Landroid/graphics/Bitmap;",
-          .fnPtr = reinterpret_cast<void*>(&shell::GetBitmap),
+          .fnPtr = reinterpret_cast<void*>(&GetBitmap),
       },
       {
           .name = "nativeSurfaceCreated",
           .signature = "(JLandroid/view/Surface;)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::SurfaceCreated),
+          .fnPtr = reinterpret_cast<void*>(&SurfaceCreated),
       },
       {
           .name = "nativeSurfaceChanged",
           .signature = "(JII)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::SurfaceChanged),
+          .fnPtr = reinterpret_cast<void*>(&SurfaceChanged),
       },
       {
           .name = "nativeSurfaceDestroyed",
           .signature = "(J)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::SurfaceDestroyed),
+          .fnPtr = reinterpret_cast<void*>(&SurfaceDestroyed),
       },
       {
           .name = "nativeSetViewportMetrics",
           .signature = "(JFIIIIIIIIII)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::SetViewportMetrics),
+          .fnPtr = reinterpret_cast<void*>(&SetViewportMetrics),
       },
       {
           .name = "nativeDispatchPointerDataPacket",
           .signature = "(JLjava/nio/ByteBuffer;I)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::DispatchPointerDataPacket),
+          .fnPtr = reinterpret_cast<void*>(&DispatchPointerDataPacket),
       },
       {
           .name = "nativeDispatchSemanticsAction",
           .signature = "(JIILjava/nio/ByteBuffer;I)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::DispatchSemanticsAction),
+          .fnPtr = reinterpret_cast<void*>(&DispatchSemanticsAction),
       },
       {
           .name = "nativeSetSemanticsEnabled",
           .signature = "(JZ)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::SetSemanticsEnabled),
+          .fnPtr = reinterpret_cast<void*>(&SetSemanticsEnabled),
       },
       {
           .name = "nativeSetAccessibilityFeatures",
           .signature = "(JI)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::SetAccessibilityFeatures),
+          .fnPtr = reinterpret_cast<void*>(&SetAccessibilityFeatures),
       },
       {
           .name = "nativeGetIsSoftwareRenderingEnabled",
           .signature = "()Z",
-          .fnPtr = reinterpret_cast<void*>(&shell::GetIsSoftwareRendering),
+          .fnPtr = reinterpret_cast<void*>(&GetIsSoftwareRendering),
       },
       {
           .name = "nativeRegisterTexture",
           .signature = "(JJLandroid/graphics/SurfaceTexture;)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::RegisterTexture),
+          .fnPtr = reinterpret_cast<void*>(&RegisterTexture),
       },
       {
           .name = "nativeMarkTextureFrameAvailable",
           .signature = "(JJ)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::MarkTextureFrameAvailable),
+          .fnPtr = reinterpret_cast<void*>(&MarkTextureFrameAvailable),
       },
       {
           .name = "nativeUnregisterTexture",
           .signature = "(JJ)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::UnregisterTexture),
+          .fnPtr = reinterpret_cast<void*>(&UnregisterTexture),
       },
   };
 
@@ -751,7 +749,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       {
           .name = "nativeLookupCallbackInformation",
           .signature = "(J)Lio/flutter/view/FlutterCallbackInformation;",
-          .fnPtr = reinterpret_cast<void*>(&shell::LookupCallbackInformation),
+          .fnPtr = reinterpret_cast<void*>(&LookupCallbackInformation),
       },
   };
 
@@ -797,4 +795,4 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
   return RegisterApi(env);
 }
 
-}  // namespace shell
+}  // namespace flutter

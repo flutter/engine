@@ -12,13 +12,13 @@
 #include "flutter/runtime/runtime_delegate.h"
 #include "third_party/tonic/dart_message_handler.h"
 
-namespace blink {
+namespace flutter {
 
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
     DartVM* p_vm,
-    fml::RefPtr<DartSnapshot> p_isolate_snapshot,
-    fml::RefPtr<DartSnapshot> p_shared_snapshot,
+    fml::RefPtr<const DartSnapshot> p_isolate_snapshot,
+    fml::RefPtr<const DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
     fml::WeakPtr<SnapshotDelegate> p_snapshot_delegate,
     fml::WeakPtr<IOManager> p_io_manager,
@@ -40,8 +40,8 @@ RuntimeController::RuntimeController(
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
     DartVM* p_vm,
-    fml::RefPtr<DartSnapshot> p_isolate_snapshot,
-    fml::RefPtr<DartSnapshot> p_shared_snapshot,
+    fml::RefPtr<const DartSnapshot> p_isolate_snapshot,
+    fml::RefPtr<const DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
     fml::WeakPtr<SnapshotDelegate> p_snapshot_delegate,
     fml::WeakPtr<IOManager> p_io_manager,
@@ -61,7 +61,7 @@ RuntimeController::RuntimeController(
       idle_notification_callback_(idle_notification_callback),
       window_data_(std::move(p_window_data)),
       root_isolate_(
-          DartIsolate::CreateRootIsolate(vm_,
+          DartIsolate::CreateRootIsolate(vm_->GetVMData()->GetSettings(),
                                          isolate_snapshot_,
                                          shared_snapshot_,
                                          task_runners_,
@@ -344,4 +344,4 @@ RuntimeController::WindowData::WindowData(const WindowData& other) = default;
 
 RuntimeController::WindowData::~WindowData() = default;
 
-}  // namespace blink
+}  // namespace flutter

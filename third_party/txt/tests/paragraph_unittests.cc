@@ -740,11 +740,13 @@ TEST_F(ParagraphTest, DecorationsParagraph) {
                           TextDecoration::kLineThrough;
   text_style.decoration_style = txt::TextDecorationStyle::kSolid;
   text_style.decoration_color = SK_ColorBLACK;
+  text_style.decoration_thickness_multiplier = 2.0;
   builder.PushStyle(text_style);
   builder.AddText("This text should be");
 
   text_style.decoration_style = txt::TextDecorationStyle::kDouble;
   text_style.decoration_color = SK_ColorBLUE;
+  text_style.decoration_thickness_multiplier = 1.0;
   builder.PushStyle(text_style);
   builder.AddText(" decorated even when");
 
@@ -755,11 +757,13 @@ TEST_F(ParagraphTest, DecorationsParagraph) {
 
   text_style.decoration_style = txt::TextDecorationStyle::kDashed;
   text_style.decoration_color = SK_ColorBLACK;
+  text_style.decoration_thickness_multiplier = 3.0;
   builder.PushStyle(text_style);
   builder.AddText(" the next line.");
 
   text_style.decoration_style = txt::TextDecorationStyle::kWavy;
   text_style.decoration_color = SK_ColorRED;
+  text_style.decoration_thickness_multiplier = 1.0;
   builder.PushStyle(text_style);
 
   builder.AddText(" Otherwise, bad things happen.");
@@ -800,6 +804,19 @@ TEST_F(ParagraphTest, DecorationsParagraph) {
   ASSERT_EQ(paragraph->records_[3].style().decoration_color, SK_ColorBLACK);
   ASSERT_EQ(paragraph->records_[4].style().decoration_color, SK_ColorBLACK);
   ASSERT_EQ(paragraph->records_[5].style().decoration_color, SK_ColorRED);
+
+  ASSERT_EQ(paragraph->records_[0].style().decoration_thickness_multiplier,
+            2.0);
+  ASSERT_EQ(paragraph->records_[1].style().decoration_thickness_multiplier,
+            1.0);
+  ASSERT_EQ(paragraph->records_[2].style().decoration_thickness_multiplier,
+            1.0);
+  ASSERT_EQ(paragraph->records_[3].style().decoration_thickness_multiplier,
+            3.0);
+  ASSERT_EQ(paragraph->records_[4].style().decoration_thickness_multiplier,
+            3.0);
+  ASSERT_EQ(paragraph->records_[5].style().decoration_thickness_multiplier,
+            1.0);
 }
 
 TEST_F(ParagraphTest, ItalicsParagraph) {
@@ -2897,10 +2914,10 @@ TEST_F(ParagraphTest, FontFallbackParagraph) {
 
   ASSERT_EQ(paragraph->records_.size(), 5ull);
   ASSERT_DOUBLE_EQ(paragraph->records_[0].GetRunWidth(), 64.19921875);
-  ASSERT_DOUBLE_EQ(paragraph->records_[1].GetRunWidth(), 167.1171875);
-  ASSERT_DOUBLE_EQ(paragraph->records_[2].GetRunWidth(), 167.1171875);
-  ASSERT_DOUBLE_EQ(paragraph->records_[3].GetRunWidth(), 90.24609375);
-  ASSERT_DOUBLE_EQ(paragraph->records_[4].GetRunWidth(), 90.24609375);
+  ASSERT_DOUBLE_EQ(paragraph->records_[1].GetRunWidth(), 139.1171875);
+  ASSERT_DOUBLE_EQ(paragraph->records_[2].GetRunWidth(), 28);
+  ASSERT_DOUBLE_EQ(paragraph->records_[3].GetRunWidth(), 62.24609375);
+  ASSERT_DOUBLE_EQ(paragraph->records_[4].GetRunWidth(), 28);
   // When a different font is resolved, then the metrics are different.
   ASSERT_TRUE(paragraph->records_[2].metrics().fTop -
                   paragraph->records_[4].metrics().fTop !=

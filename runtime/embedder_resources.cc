@@ -8,9 +8,9 @@
 
 #include "flutter/fml/logging.h"
 
-namespace blink {
+namespace flutter {
 
-using flutter::runtime::ResourcesEntry;
+using runtime::ResourcesEntry;
 
 EmbedderResources::EmbedderResources(ResourcesEntry* resources_table)
     : resources_table_(resources_table) {}
@@ -49,4 +49,4 @@ ResourcesEntry* EmbedderResources::At(int idx) {
   return nullptr;
 }
 
-}  // namespace blink
+}  // namespace flutter

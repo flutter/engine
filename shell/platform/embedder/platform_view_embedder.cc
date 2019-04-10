@@ -4,11 +4,11 @@
 
 #include "flutter/shell/platform/embedder/platform_view_embedder.h"
 
-namespace shell {
+namespace flutter {
 
 PlatformViewEmbedder::PlatformViewEmbedder(
     PlatformView::Delegate& delegate,
-    blink::TaskRunners task_runners,
+    flutter::TaskRunners task_runners,
     EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table,
     bool fbo_reset_after_present,
     PlatformDispatchTable platform_dispatch_table)
@@ -20,7 +20,7 @@ PlatformViewEmbedder::PlatformViewEmbedder(
 
 PlatformViewEmbedder::PlatformViewEmbedder(
     PlatformView::Delegate& delegate,
-    blink::TaskRunners task_runners,
+    flutter::TaskRunners task_runners,
     EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table,
     PlatformDispatchTable platform_dispatch_table)
     : PlatformView(delegate, std::move(task_runners)),
@@ -31,8 +31,8 @@ PlatformViewEmbedder::PlatformViewEmbedder(
 PlatformViewEmbedder::~PlatformViewEmbedder() = default;
 
 void PlatformViewEmbedder::UpdateSemantics(
-    blink::SemanticsNodeUpdates update,
-    blink::CustomAccessibilityActionUpdates actions) {
+    flutter::SemanticsNodeUpdates update,
+    flutter::CustomAccessibilityActionUpdates actions) {
   if (platform_dispatch_table_.update_semantics_nodes_callback != nullptr) {
     platform_dispatch_table_.update_semantics_nodes_callback(std::move(update));
   }
@@ -44,7 +44,7 @@ void PlatformViewEmbedder::UpdateSemantics(
 }
 
 void PlatformViewEmbedder::HandlePlatformMessage(
-    fml::RefPtr<blink::PlatformMessage> message) {
+    fml::RefPtr<flutter::PlatformMessage> message) {
   if (!message) {
     return;
   }
@@ -62,7 +62,7 @@ void PlatformViewEmbedder::HandlePlatformMessage(
       std::move(message));
 }
 
-// |shell::PlatformView|
+// |PlatformView|
 std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface() {
   if (embedder_surface_ == nullptr) {
     FML_LOG(ERROR) << "Embedder surface was null.";
@@ -71,7 +71,7 @@ std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface() {
   return embedder_surface_->CreateGPUSurface();
 }
 
-// |shell::PlatformView|
+// |PlatformView|
 sk_sp<GrContext> PlatformViewEmbedder::CreateResourceContext() const {
   if (embedder_surface_ == nullptr) {
     FML_LOG(ERROR) << "Embedder surface was null.";
@@ -80,7 +80,7 @@ sk_sp<GrContext> PlatformViewEmbedder::CreateResourceContext() const {
   return embedder_surface_->CreateResourceContext();
 }
 
-// |shell::PlatformView|
+// |PlatformView|
 std::unique_ptr<VsyncWaiter> PlatformViewEmbedder::CreateVSyncWaiter() {
   if (!platform_dispatch_table_.vsync_callback) {
     // Superclass implementation creates a timer based fallback.
@@ -91,4 +91,4 @@ std::unique_ptr<VsyncWaiter> PlatformViewEmbedder::CreateVSyncWaiter() {
       platform_dispatch_table_.vsync_callback, task_runners_);
 }
 
-}  // namespace shell
+}  // namespace flutter

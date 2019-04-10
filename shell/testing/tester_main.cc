@@ -21,7 +21,7 @@
 #include "flutter/shell/common/thread_host.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 
-namespace shell {
+namespace flutter {
 
 // Checks whether the engine's main Dart isolate has no pending work.  If so,
 // then exit the given message loop.
@@ -85,7 +85,7 @@ class ScriptCompletionTaskObserver {
   FML_DISALLOW_COPY_AND_ASSIGN(ScriptCompletionTaskObserver);
 };
 
-int RunTester(const blink::Settings& settings, bool run_forever) {
+int RunTester(const flutter::Settings& settings, bool run_forever) {
   const auto thread_label = "io.flutter.test";
 
   fml::MessageLoop::EnsureInitializedForCurrentThread();
@@ -93,11 +93,11 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
   auto current_task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
 
   // Setup a single threaded test runner configuration.
-  const blink::TaskRunners task_runners(thread_label,  // dart thread label
-                                        current_task_runner,  // platform
-                                        current_task_runner,  // gpu
-                                        current_task_runner,  // ui
-                                        current_task_runner   // io
+  const flutter::TaskRunners task_runners(thread_label,  // dart thread label
+                                          current_task_runner,  // platform
+                                          current_task_runner,  // gpu
+                                          current_task_runner,  // ui
+                                          current_task_runner   // io
   );
 
   Shell::CreateCallback<PlatformView> on_create_platform_view =
@@ -133,10 +133,10 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
       "\"CN\",\"\",\"\"]}";
   std::vector<uint8_t> locale_bytes(locale_json,
                                     locale_json + std::strlen(locale_json));
-  fml::RefPtr<blink::PlatformMessageResponse> response;
+  fml::RefPtr<flutter::PlatformMessageResponse> response;
   shell->GetPlatformView()->DispatchPlatformMessage(
-      fml::MakeRefCounted<blink::PlatformMessage>("flutter/localization",
-                                                  locale_bytes, response));
+      fml::MakeRefCounted<flutter::PlatformMessage>("flutter/localization",
+                                                    locale_bytes, response));
 
   std::initializer_list<fml::FileMapping::Protection> protection = {
       fml::FileMapping::Protection::kRead};
@@ -154,11 +154,11 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
     return EXIT_FAILURE;
   }
 
-  auto asset_manager = std::make_shared<blink::AssetManager>();
-  asset_manager->PushBack(std::make_unique<blink::DirectoryAssetBundle>(
+  auto asset_manager = std::make_shared<flutter::AssetManager>();
+  asset_manager->PushBack(std::make_unique<flutter::DirectoryAssetBundle>(
       fml::Duplicate(settings.assets_dir)));
   asset_manager->PushBack(
-      std::make_unique<blink::DirectoryAssetBundle>(fml::OpenDirectory(
+      std::make_unique<flutter::DirectoryAssetBundle>(fml::OpenDirectory(
           settings.assets_path.c_str(), false, fml::FilePermission::kRead)));
 
   RunConfiguration run_configuration(std::move(isolate_configuration),
@@ -186,10 +186,10 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
             reinterpret_cast<intptr_t>(&completion_observer),
             [&completion_observer]() { completion_observer.DidProcessTask(); });
         if (engine->Run(std::move(config)) !=
-            shell::Engine::RunStatus::Failure) {
+            flutter::Engine::RunStatus::Failure) {
           engine_did_run = true;
 
-          blink::ViewportMetrics metrics;
+          flutter::ViewportMetrics metrics;
           metrics.device_pixel_ratio = 3.0;
           metrics.physical_width = 2400;   // 800 at 3x resolution
           metrics.physical_height = 1800;  // 600 at 3x resolution
@@ -226,7 +226,7 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
   return completion_observer.GetExitCodeForLastError();
 }
 
-}  // namespace shell
+}  // namespace flutter
 
 int main(int argc, char* argv[]) {
   dart::bin::SetExecutableName(argv[0]);
@@ -234,12 +234,12 @@ int main(int argc, char* argv[]) {
 
   auto command_line = fml::CommandLineFromArgcArgv(argc, argv);
 
-  if (command_line.HasOption(shell::FlagForSwitch(shell::Switch::Help))) {
-    shell::PrintUsage("flutter_tester");
+  if (command_line.HasOption(flutter::FlagForSwitch(flutter::Switch::Help))) {
+    flutter::PrintUsage("flutter_tester");
     return EXIT_SUCCESS;
   }
 
-  auto settings = shell::SettingsFromCommandLine(command_line);
+  auto settings = flutter::SettingsFromCommandLine(command_line);
   if (command_line.positional_args().size() > 0) {
     // The tester may not use the switch for the main dart file path. Specifying
     // it as a positional argument instead.
@@ -251,7 +251,9 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  settings.icu_data_path = "icudtl.dat";
+  if (settings.icu_data_path.size() == 0) {
+    settings.icu_data_path = "icudtl.dat";
+  }
 
   // The tools that read logs get confused if there is a log tag specified.
   settings.log_tag = "";
@@ -264,7 +266,7 @@ int main(int argc, char* argv[]) {
     fml::MessageLoop::GetCurrent().RemoveTaskObserver(key);
   };
 
-  return shell::RunTester(
-      settings,
-      command_line.HasOption(shell::FlagForSwitch(shell::Switch::RunForever)));
+  return flutter::RunTester(
+      settings, command_line.HasOption(
+                    flutter::FlagForSwitch(flutter::Switch::RunForever)));
 }

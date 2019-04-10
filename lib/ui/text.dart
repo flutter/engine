@@ -63,7 +63,8 @@ class FontWeight {
   /// Rather than using fractional weights, the interpolation rounds to the
   /// nearest weight.
   ///
-  /// Any null values for `a` or `b` are interpreted as equivalent to [normal]
+  /// If both `a` and `b` are null, then this method will return null. Otherwise,
+  /// any null values for `a` or `b` are interpreted as equivalent to [normal]
   /// (also known as [w400]).
   ///
   /// The `t` argument represents position on the timeline, with 0.0 meaning
@@ -80,6 +81,8 @@ class FontWeight {
   /// an [AnimationController].
   static FontWeight lerp(FontWeight a, FontWeight b, double t) {
     assert(t != null);
+    if (a == null && b == null)
+      return null;
     return values[lerpDouble(a?.index ?? normal.index, b?.index ?? normal.index, t).round().clamp(0, 8)];
   }
 
@@ -265,6 +268,7 @@ Int32List _encodeTextStyle(
   TextDecoration decoration,
   Color decorationColor,
   TextDecorationStyle decorationStyle,
+  double decorationThickness,
   FontWeight fontWeight,
   FontStyle fontStyle,
   TextBaseline textBaseline,
@@ -308,46 +312,54 @@ Int32List _encodeTextStyle(
     result[0] |= 1 << 7;
     result[7] = textBaseline.index;
   }
-  if (fontFamily != null || (fontFamilyFallback != null && fontFamilyFallback.isNotEmpty)) {
+  if (decorationThickness != null) {
     result[0] |= 1 << 8;
-    // Passed separately to native.
   }
-  if (fontSize != null) {
+  if (fontFamily != null || (fontFamilyFallback != null && fontFamilyFallback.isNotEmpty)) {
     result[0] |= 1 << 9;
     // Passed separately to native.
   }
-  if (letterSpacing != null) {
+  if (fontSize != null) {
     result[0] |= 1 << 10;
     // Passed separately to native.
   }
-  if (wordSpacing != null) {
+  if (letterSpacing != null) {
     result[0] |= 1 << 11;
     // Passed separately to native.
   }
-  if (height != null) {
+  if (wordSpacing != null) {
     result[0] |= 1 << 12;
     // Passed separately to native.
   }
-  if (locale != null) {
+  if (height != null) {
     result[0] |= 1 << 13;
     // Passed separately to native.
   }
-  if (background != null) {
+  if (locale != null) {
     result[0] |= 1 << 14;
     // Passed separately to native.
   }
-  if (foreground != null) {
+  if (background != null) {
     result[0] |= 1 << 15;
     // Passed separately to native.
   }
-  if (shadows != null) {
+  if (foreground != null) {
     result[0] |= 1 << 16;
+    // Passed separately to native.
+  }
+  if (shadows != null) {
+    result[0] |= 1 << 17;
     // Passed separately to native.
   }
   return result;
 }
 
 /// An opaque object that determines the size, position, and rendering of text.
+///
+/// See also:
+///
+///  * [TextStyle](https://api.flutter.dev/flutter/painting/TextStyle-class.html), the class in the [painting] library.
+///
 class TextStyle {
   /// Creates a new TextStyle object.
   ///
@@ -355,6 +367,7 @@ class TextStyle {
   /// * `decoration`: The decorations to paint near the text (e.g., an underline).
   /// * `decorationColor`: The color in which to paint the text decorations.
   /// * `decorationStyle`: The style in which to paint the text decorations (e.g., dashed).
+  /// * `decorationThickness`: The thickness of the decoration as a muliplier on the thickness specified by the font.
   /// * `fontWeight`: The typeface thickness to use when painting the text (e.g., bold).
   /// * `fontStyle`: The typeface variant to use when drawing the letters (e.g., italics).
   /// * `fontFamily`: The name of the font to use when painting the text (e.g., Roboto). If a `fontFamilyFallback` is
@@ -370,7 +383,7 @@ class TextStyle {
   /// * `letterSpacing`: The amount of space (in logical pixels) to add between each letter.
   /// * `wordSpacing`: The amount of space (in logical pixels) to add at each sequence of white-space (i.e. between each word).
   /// * `textBaseline`: The common baseline that should be aligned between this text span and its parent text span, or, for the root text spans, with the line box.
-  /// * `height`: The height of this text span, as a multiple of the font size.
+  /// * `height`: The height of this text span, as a multiplier of the font size.
   /// * `locale`: The locale used to select region-specific glyphs.
   /// * `background`: The paint drawn as a background for the text.
   /// * `foreground`: The paint used to draw the text. If this is specified, `color` must be null.
@@ -379,6 +392,7 @@ class TextStyle {
     TextDecoration decoration,
     Color decorationColor,
     TextDecorationStyle decorationStyle,
+    double decorationThickness,
     FontWeight fontWeight,
     FontStyle fontStyle,
     TextBaseline textBaseline,
@@ -401,6 +415,7 @@ class TextStyle {
          decoration,
          decorationColor,
          decorationStyle,
+         decorationThickness,
          fontWeight,
          fontStyle,
          textBaseline,
@@ -421,6 +436,7 @@ class TextStyle {
        _letterSpacing = letterSpacing,
        _wordSpacing = wordSpacing,
        _height = height,
+       _decorationThickness = decorationThickness,
        _locale = locale,
        _background = background,
        _foreground = foreground,
@@ -433,6 +449,7 @@ class TextStyle {
   final double _letterSpacing;
   final double _wordSpacing;
   final double _height;
+  final double _decorationThickness;
   final Locale _locale;
   final Paint _background;
   final Paint _foreground;
@@ -450,6 +467,7 @@ class TextStyle {
         _letterSpacing != typedOther._letterSpacing ||
         _wordSpacing != typedOther._wordSpacing ||
         _height != typedOther._height ||
+        _decorationThickness != typedOther._decorationThickness ||
         _locale != typedOther._locale ||
         _background != typedOther._background ||
         _foreground != typedOther._foreground)
@@ -466,31 +484,33 @@ class TextStyle {
   }
 
   @override
-  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontFamilyFallback, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background, _foreground, _shadows);
+  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontFamilyFallback, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background, _foreground, _shadows, _decorationThickness);
 
   @override
   String toString() {
     return 'TextStyle('
-             'color: ${             _encoded[0] & 0x00002 == 0x00002  ? new Color(_encoded[1])                  : "unspecified"}, '
-             'decoration: ${        _encoded[0] & 0x00004 == 0x00004  ? new TextDecoration._(_encoded[2])       : "unspecified"}, '
-             'decorationColor: ${   _encoded[0] & 0x00008 == 0x00008  ? new Color(_encoded[3])                  : "unspecified"}, '
-             'decorationStyle: ${   _encoded[0] & 0x00010 == 0x00010  ? TextDecorationStyle.values[_encoded[4]] : "unspecified"}, '
-             'fontWeight: ${        _encoded[0] & 0x00020 == 0x00020  ? FontWeight.values[_encoded[5]]          : "unspecified"}, '
-             'fontStyle: ${         _encoded[0] & 0x00040 == 0x00040  ? FontStyle.values[_encoded[6]]           : "unspecified"}, '
-             'textBaseline: ${      _encoded[0] & 0x00080 == 0x00080  ? TextBaseline.values[_encoded[7]]        : "unspecified"}, '
-             'fontFamily: ${        _encoded[0] & 0x00100 == 0x00100
-                                    && _fontFamily != null            ? _fontFamily                             : "unspecified"}, '
-             'fontFamilyFallback: ${_encoded[0] & 0x00100 == 0x00100
-                                    && _fontFamilyFallback != null
-                                    && _fontFamilyFallback.isNotEmpty ? _fontFamilyFallback                     : "unspecified"}, '
-             'fontSize: ${          _encoded[0] & 0x00200 == 0x00200  ? _fontSize                               : "unspecified"}, '
-             'letterSpacing: ${     _encoded[0] & 0x00400 == 0x00400  ? "${_letterSpacing}x"                    : "unspecified"}, '
-             'wordSpacing: ${       _encoded[0] & 0x00800 == 0x00800  ? "${_wordSpacing}x"                      : "unspecified"}, '
-             'height: ${            _encoded[0] & 0x01000 == 0x01000  ? "${_height}x"                           : "unspecified"}, '
-             'locale: ${            _encoded[0] & 0x02000 == 0x02000  ? _locale                                 : "unspecified"}, '
-             'background: ${        _encoded[0] & 0x04000 == 0x04000  ? _background                             : "unspecified"}, '
-             'foreground: ${        _encoded[0] & 0x08000 == 0x08000  ? _foreground                             : "unspecified"}, '
-             'shadows: ${           _encoded[0] & 0x10000 == 0x10000  ? _shadows                                : "unspecified"}'
+             'color: ${              _encoded[0] & 0x00002 == 0x00002  ? new Color(_encoded[1])                  : "unspecified"}, '
+             'decoration: ${         _encoded[0] & 0x00004 == 0x00004  ? new TextDecoration._(_encoded[2])       : "unspecified"}, '
+             'decorationColor: ${    _encoded[0] & 0x00008 == 0x00008  ? new Color(_encoded[3])                  : "unspecified"}, '
+             'decorationStyle: ${    _encoded[0] & 0x00010 == 0x00010  ? TextDecorationStyle.values[_encoded[4]] : "unspecified"}, '
+             // The decorationThickness is not in encoded order in order to keep it near the other decoration properties.
+             'decorationThickness: ${_encoded[0] & 0x00100 == 0x00100  ? _decorationThickness                    : "unspecified"}, '
+             'fontWeight: ${         _encoded[0] & 0x00020 == 0x00020  ? FontWeight.values[_encoded[5]]          : "unspecified"}, '
+             'fontStyle: ${          _encoded[0] & 0x00040 == 0x00040  ? FontStyle.values[_encoded[6]]           : "unspecified"}, '
+             'textBaseline: ${       _encoded[0] & 0x00080 == 0x00080  ? TextBaseline.values[_encoded[7]]        : "unspecified"}, '
+             'fontFamily: ${         _encoded[0] & 0x00200 == 0x00200
+                                     && _fontFamily != null            ? _fontFamily                             : "unspecified"}, '
+             'fontFamilyFallback: ${ _encoded[0] & 0x00200 == 0x00200
+                                     && _fontFamilyFallback != null
+                                     && _fontFamilyFallback.isNotEmpty ? _fontFamilyFallback                     : "unspecified"}, '
+             'fontSize: ${           _encoded[0] & 0x00400 == 0x00400  ? _fontSize                               : "unspecified"}, '
+             'letterSpacing: ${      _encoded[0] & 0x00800 == 0x00800  ? "${_letterSpacing}x"                    : "unspecified"}, '
+             'wordSpacing: ${        _encoded[0] & 0x01000 == 0x01000  ? "${_wordSpacing}x"                      : "unspecified"}, '
+             'height: ${             _encoded[0] & 0x02000 == 0x02000  ? "${_height}x"                           : "unspecified"}, '
+             'locale: ${             _encoded[0] & 0x04000 == 0x04000  ? _locale                                 : "unspecified"}, '
+             'background: ${         _encoded[0] & 0x08000 == 0x08000  ? _background                             : "unspecified"}, '
+             'foreground: ${         _encoded[0] & 0x10000 == 0x10000  ? _foreground                             : "unspecified"}, '
+             'shadows: ${            _encoded[0] & 0x20000 == 0x20000  ? _shadows                                : "unspecified"}'
            ')';
   }
 }
@@ -598,19 +618,15 @@ class ParagraphStyle {
   ///   dropped. The width constraints are those set in the
   ///   [ParagraphConstraints] object passed to the [Paragraph.layout] method.
   ///
-  /// * `fontFamily`: The name of the font to use when painting the text (e.g.,
-  ///   Roboto).
+  /// * `fontFamily`: The name of the font family to apply when painting the text,
+  ///   in the absence of a `textStyle` being attached to the span.
   ///
-  /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting
-  ///   the text.
+  /// * `fontSize`: The fallback size of glyphs (in logical pixels) to
+  ///   use when painting the text. This is used when there is no [TextStyle].
   ///
-  /// * `height`: The minimum height of the line boxes, as a multiple of the
-  ///   font size. The lines of the paragraph will be at least
-  ///   `(height + leading) * fontSize` tall when fontSize
-  ///   is not null. When fontSize is null, there is no minimum line height. Tall
-  ///   glyphs due to baseline alignment or large [TextStyle.fontSize] may cause
-  ///   the actual line height after layout to be taller than specified here.
-  ///   [fontSize] must be provided for this property to take effect.
+  /// * `height`: The height of the spans as a multiplier of the font size. The
+  ///   fallback height to use when no height is provided in through
+  ///   [TextStyle.height].
   ///
   /// * `fontWeight`: The typeface thickness to use when painting the text
   ///   (e.g., bold).
@@ -784,6 +800,10 @@ ByteData _encodeStrut(
   return ByteData.view(data.buffer, 0,  byteCount);
 }
 
+/// See also:
+///
+///  * [StrutStyle](https://api.flutter.dev/flutter/painting/StrutStyle-class.html), the class in the [painting] library.
+///
 class StrutStyle {
   /// Creates a new StrutStyle object.
   ///
@@ -796,13 +816,13 @@ class StrutStyle {
   /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting
   ///   the text.
   ///
-  /// * `lineHeight`: The minimum height of the line boxes, as a multiple of the
-  ///   font size. The lines of the paragraph will be at least
-  ///   `(lineHeight + leading) * fontSize` tall when fontSize
-  ///   is not null. When fontSize is null, there is no minimum line height. Tall
-  ///   glyphs due to baseline alignment or large [TextStyle.fontSize] may cause
-  ///   the actual line height after layout to be taller than specified here.
-  ///   [fontSize] must be provided for this property to take effect.
+  /// * `height`: The minimum height of the line boxes, as a multiplier of the
+  ///   font size. The lines of the paragraph will be at least `(height + leading)
+  ///   * fontSize` tall when fontSize is not null. When fontSize is null, there
+  ///   is no minimum line height. Tall glyphs due to baseline alignment or large
+  ///   [TextStyle.fontSize] may cause the actual line height after layout to be
+  ///   taller than specified here. [fontSize] must be provided for this property
+  ///   to take effect.
   ///
   /// * `leading`: The minimum amount of leading between lines as a multiple of
   ///   the font size. [fontSize] must be provided for this property to take effect.
@@ -814,11 +834,11 @@ class StrutStyle {
   ///   italics).
   ///
   /// * `forceStrutHeight`: When true, the paragraph will force all lines to be exactly
-  ///   `(lineHeight + leading) * fontSize` tall from baseline to baseline.
+  ///   `(height + leading) * fontSize` tall from baseline to baseline.
   ///   [TextStyle] is no longer able to influence the line height, and any tall
   ///   glyphs may overlap with lines above. If a [fontFamily] is specified, the
   ///   total ascent of the first line will be the min of the `Ascent + half-leading`
-  ///   of the [fontFamily] and `(lineHeight + leading) * fontSize`. Otherwise, it
+  ///   of the [fontFamily] and `(height + leading) * fontSize`. Otherwise, it
   ///   will be determined by the Ascent + half-leading of the first text.
   StrutStyle({
     String fontFamily,
@@ -1396,9 +1416,28 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
       if (style._strutStyle._fontFamilyFallback != null)
         strutFontFamilies.addAll(style._strutStyle._fontFamilyFallback);
     }
-    _constructor(style._encoded, style._strutStyle?._encoded, style._fontFamily, strutFontFamilies, style._fontSize, style._height, style._ellipsis, _encodeLocale(style._locale));
+    _constructor(
+      style._encoded,
+      style._strutStyle?._encoded,
+      style._fontFamily,
+      strutFontFamilies,
+      style._fontSize,
+      style._height,
+      style._ellipsis,
+      _encodeLocale(style._locale)
+    );
   }
-  void _constructor(Int32List encoded, ByteData strutData, String fontFamily, List<dynamic> strutFontFamily, double fontSize, double height, String ellipsis, String locale) native 'ParagraphBuilder_constructor';
+
+  void _constructor(
+    Int32List encoded,
+    ByteData strutData,
+    String fontFamily,
+    List<dynamic> strutFontFamily,
+    double fontSize,
+    double height,
+    String ellipsis,
+    String locale
+  ) native 'ParagraphBuilder_constructor';
 
   /// Applies the given style to the added text until [pop] is called.
   ///
@@ -1409,9 +1448,38 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
       fullFontFamilies.add(style._fontFamily);
     if (style._fontFamilyFallback != null)
       fullFontFamilies.addAll(style._fontFamilyFallback);
-    _pushStyle(style._encoded, fullFontFamilies, style._fontSize, style._letterSpacing, style._wordSpacing, style._height, _encodeLocale(style._locale), style._background?._objects, style._background?._data, style._foreground?._objects, style._foreground?._data, Shadow._encodeShadows(style._shadows));
+    _pushStyle(
+      style._encoded,
+      fullFontFamilies,
+      style._fontSize,
+      style._letterSpacing,
+      style._wordSpacing,
+      style._height,
+      style._decorationThickness,
+      _encodeLocale(style._locale),
+      style._background?._objects,
+      style._background?._data,
+      style._foreground?._objects,
+      style._foreground?._data,
+      Shadow._encodeShadows(style._shadows)
+    );
   }
-  void _pushStyle(Int32List encoded, List<dynamic> fontFamilies, double fontSize, double letterSpacing, double wordSpacing, double height, String locale, List<dynamic> backgroundObjects, ByteData backgroundData, List<dynamic> foregroundObjects, ByteData foregroundData, ByteData shadowsData) native 'ParagraphBuilder_pushStyle';
+
+  void _pushStyle(
+    Int32List encoded,
+    List<dynamic> fontFamilies,
+    double fontSize,
+    double letterSpacing,
+    double wordSpacing,
+    double height,
+    double decorationThickness,
+    String locale,
+    List<dynamic> backgroundObjects,
+    ByteData backgroundData,
+    List<dynamic> foregroundObjects,
+    ByteData foregroundData,
+    ByteData shadowsData
+  ) native 'ParagraphBuilder_pushStyle';
 
   static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
 

@@ -9,7 +9,7 @@
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
 
-namespace blink {
+namespace flutter {
 
 static void SemanticsUpdateBuilder_constructor(Dart_NativeArguments args) {
   DartCallConstructor(&SemanticsUpdateBuilder::create, args);
@@ -41,6 +41,7 @@ void SemanticsUpdateBuilder::updateNode(
     int actions,
     int textSelectionBase,
     int textSelectionExtent,
+    int platformViewId,
     int scrollChildren,
     int scrollIndex,
     double scrollPosition,
@@ -68,6 +69,7 @@ void SemanticsUpdateBuilder::updateNode(
   node.actions = actions;
   node.textSelectionBase = textSelectionBase;
   node.textSelectionExtent = textSelectionExtent;
+  node.platformViewId = platformViewId;
   node.scrollChildren = scrollChildren;
   node.scrollIndex = scrollIndex;
   node.scrollPosition = scrollPosition;
@@ -112,4 +114,4 @@ fml::RefPtr<SemanticsUpdate> SemanticsUpdateBuilder::build() {
   return SemanticsUpdate::create(std::move(nodes_), std::move(actions_));
 }
 
-}  // namespace blink
+}  // namespace flutter

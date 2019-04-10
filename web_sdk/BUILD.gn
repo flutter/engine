@@ -1,0 +1,118 @@
+# Copyright 2019 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//third_party/dart/build/dart/dart_action.gni")
+import("//third_party/dart/utils/compile_platform.gni")
+
+sdk_dill = "$root_out_dir/flutter_web_sdk/kernel/flutter_ddc_sdk.dill"
+sdk_libraries_json = "$flutter_root/web_sdk/libraries.json"
+
+web_ui_sources = [
+  "$flutter_root/lib/stub_ui/lib/compositing.dart",
+  "$flutter_root/lib/stub_ui/lib/geometry.dart",
+  "$flutter_root/lib/stub_ui/lib/hash_codes.dart",
+  "$flutter_root/lib/stub_ui/lib/hooks.dart",
+  "$flutter_root/lib/stub_ui/lib/isolate_name_server.dart",
+  "$flutter_root/lib/stub_ui/lib/lerp.dart",
+  "$flutter_root/lib/stub_ui/lib/natives.dart",
+  "$flutter_root/lib/stub_ui/lib/painting.dart",
+  "$flutter_root/lib/stub_ui/lib/plugins.dart",
+  "$flutter_root/lib/stub_ui/lib/pointer.dart",
+  "$flutter_root/lib/stub_ui/lib/semantics.dart",
+  "$flutter_root/lib/stub_ui/lib/text.dart",
+  "$flutter_root/lib/stub_ui/lib/ui.dart",
+  "$flutter_root/lib/stub_ui/lib/versions.dart",
+  "$flutter_root/lib/stub_ui/lib/window.dart",
+]
+
+group("web_sdk") {
+  deps = [
+    ":flutter_dartdevc_kernel_sdk",
+    ":generate_web_summary_sdk",
+  ]
+}
+
+prebuilt_dart_action("web_ui_sources") {
+  inputs = web_ui_sources + [ "sdk_rewriter.dart" ]
+
+  packages = "//third_party/dart/.packages"
+  script = "sdk_rewriter.dart"
+  output_dir = rebase_path("$root_out_dir/flutter_web_sdk/lib/ui/")
+
+  args = [ "--output-dir=$output_dir" ]
+
+  outputs = [
+    "$root_out_dir/flutter_web_sdk_stamp",
+  ]
+
+  foreach(source_file, web_ui_sources) {
+    path = rebase_path(source_file)
+    args += [ "--input=$path" ]
+  }
+}
+
+copy("web_ui_library") {
+  sources = [
+    "$flutter_root/web_sdk/libraries.json",
+  ]
+
+  outputs = [
+    "$root_out_dir/flutter_web_sdk/{{source_file_part}}",
+  ]
+}
+
+prebuilt_dart_action("generate_web_summary_sdk") {
+  script = "$flutter_root/web_sdk/make_combined_sdk.dart"
+
+  inputs = [
+    "$flutter_root/web_sdk/make_combined_sdk.dart",
+    "$flutter_root/web_sdk/libraries.dart",
+  ]
+
+  packages = "//third_party/dart/.packages"
+
+  args = []
+
+  outputs = [
+    "$root_out_dir/flutter_web_sdk/js/amd/sdk.js",
+    "$root_out_dir/flutter_web_sdk/js/amd/dart_sdk.js.map",
+    "$root_out_dir/flutter_web_sdk/lib/_internal/ddc_sdk.sum",
+  ]
+
+  deps = [
+    ":web_ui_library",
+    ":web_ui_sources",
+    "//third_party/dart:create_sdk",
+  ]
+}
+
+prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
+  deps = [
+    "//third_party/dart/pkg:pkg_files_stamp",
+    "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
+    "//third_party/dart/utils/dartdevc:dartdevc_sdk_patch_stamp",
+  ]
+
+  inputs = [
+    "//third_party/dart/pkg/dev_compiler/tool/kernel_sdk.dart",
+  ]
+
+  outputs = [
+    sdk_dill,
+    "$root_out_dir/flutter_web_sdk/lib/_internal/libraries.json",
+    "$root_out_dir/flutter_web_sdk/kernel/amd/dart_sdk.js",
+    "$root_out_dir/flutter_web_sdk/kernel/amd/dart_sdk.js.map",
+  ]
+
+  script = "flutter_kernel_sdk.dart"
+  packages = "//third_party/dart/.packages"
+
+  output_path = rebase_path(sdk_dill)
+  libraries_path = rebase_path(sdk_libraries_json)
+
+  args = [
+    "--output=$output_path",
+    "--libraries=$libraries_path",
+  ]
+}

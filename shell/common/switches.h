@@ -9,7 +9,7 @@
 #ifndef SHELL_COMMON_SWITCHES_H_
 #define SHELL_COMMON_SWITCHES_H_
 
-namespace shell {
+namespace flutter {
 
 // clang-format off
 #ifndef DEF_SWITCHES_START
@@ -52,6 +52,9 @@ DEF_SWITCH(ICUSymbolPrefix,
            "icu-symbol-prefix",
            "Prefix for the symbols representing ICU data linked into the "
            "Flutter library.")
+DEF_SWITCH(ICUNativeLibPath,
+           "icu-native-lib-path",
+           "Path to the library file that exports the ICU data.")
 DEF_SWITCH(DartFlags,
            "dart-flags",
            "Flags passed directly to the Dart VM without being interpreted "
@@ -87,9 +90,6 @@ DEF_SWITCH(SkiaDeterministicRendering,
            "Skips the call to SkGraphics::Init(), thus avoiding swapping out"
            "some Skia function pointers based on available CPU features. This"
            "is used to obtain 100% deterministic behavior in Skia rendering.")
-DEF_SWITCH(EnableBlink,
-           "enable-blink",
-           "Enable Blink as the text shaping library instead of libtxt.")
 DEF_SWITCH(FLX, "flx", "Specify the FLX path.")
 DEF_SWITCH(FlutterAssetsDir,
            "flutter-assets-dir",
@@ -106,8 +106,13 @@ DEF_SWITCH(TraceStartup,
 DEF_SWITCH(TraceSkia,
            "trace-skia",
            "Trace Skia calls. This is useful when debugging the GPU threed."
-           "By default, Skia tracing is not enable to reduce the number of "
+           "By default, Skia tracing is not enabled to reduce the number of "
            "traced events")
+DEF_SWITCH(DumpSkpOnShaderCompilation,
+           "dump-skp-on-shader-compilation",
+           "Automatically dump the skp that triggers new shader compilations. "
+           "This is useful for writing custom ShaderWarmUp to reduce jank. "
+           "By default, this is not enabled to reduce the overhead. ")
 DEF_SWITCH(
     TraceSystrace,
     "trace-systrace",
@@ -143,8 +148,8 @@ void PrintUsage(const std::string& executable_name);
 
 const fml::StringView FlagForSwitch(Switch swtch);
 
-blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line);
+Settings SettingsFromCommandLine(const fml::CommandLine& command_line);
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_COMMON_SWITCHES_H_

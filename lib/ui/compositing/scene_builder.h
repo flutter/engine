@@ -6,11 +6,11 @@
 #define FLUTTER_LIB_UI_COMPOSITING_SCENE_BUILDER_H_
 
 #include <stdint.h>
+
 #include <memory>
 #include <stack>
 
 #include "flutter/lib/ui/compositing/scene.h"
-#include "flutter/lib/ui/compositing/scene_host.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/engine_layer.h"
 #include "flutter/lib/ui/painting/image_filter.h"
@@ -20,7 +20,11 @@
 #include "flutter/lib/ui/painting/shader.h"
 #include "third_party/tonic/typed_data/float64_list.h"
 
-namespace blink {
+#if defined(OS_FUCHSIA)
+#include "flutter/lib/ui/compositing/scene_host.h"
+#endif
+
+namespace flutter {
 
 class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   DEFINE_WRAPPERTYPEINFO();
@@ -83,12 +87,14 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                        double height,
                        int64_t viewId);
 
+#if defined(OS_FUCHSIA)
   void addChildScene(double dx,
                      double dy,
                      double width,
                      double height,
                      SceneHost* sceneHost,
                      bool hitTestable);
+#endif
 
   void setRasterizerTracingThreshold(uint32_t frameInterval);
 
@@ -114,6 +120,6 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   FML_DISALLOW_COPY_AND_ASSIGN(SceneBuilder);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_COMPOSITING_SCENE_BUILDER_H_

@@ -7,7 +7,7 @@
 #include "flutter/fml/trace_event.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
-namespace shell {
+namespace flutter {
 
 namespace {
 
@@ -20,7 +20,7 @@ constexpr fml::TimeDelta kNotifyIdleTaskWaitTime =
 }  // namespace
 
 Animator::Animator(Delegate& delegate,
-                   blink::TaskRunners task_runners,
+                   TaskRunners task_runners,
                    std::unique_ptr<VsyncWaiter> waiter)
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
@@ -92,7 +92,7 @@ void Animator::BeginFrame(fml::TimePoint frame_start_time,
   TRACE_EVENT0("flutter", "Animator::BeginFrame");
   while (!trace_flow_ids_.empty()) {
     uint64_t trace_flow_id = trace_flow_ids_.front();
-    TRACE_FLOW_END("flutter", "DispatchPointerDataPacket", trace_flow_id);
+    TRACE_FLOW_END("flutter", "PointerEvent", trace_flow_id);
     trace_flow_ids_.pop_front();
   }
 
@@ -233,4 +233,4 @@ void Animator::AwaitVSync() {
   delegate_.OnAnimatorNotifyIdle(dart_frame_deadline_);
 }
 
-}  // namespace shell
+}  // namespace flutter

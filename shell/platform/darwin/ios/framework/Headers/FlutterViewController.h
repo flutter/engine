@@ -23,7 +23,8 @@
  * The object passed as the sender is the `FlutterViewController` associated
  * with the update.
  */
-const NSNotificationName FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
+FLUTTER_EXPORT
+extern NSNotificationName const FlutterSemanticsUpdateNotification;
 
 /**
  * A `UIViewController` implementation for Flutter views.

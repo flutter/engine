@@ -4,6 +4,8 @@
 
 #include "flutter/shell/common/rasterizer.h"
 
+#include "flutter/shell/common/persistent_cache.h"
+
 #include <utility>
 
 #include "third_party/skia/include/core/SkEncodedImageFormat.h"
@@ -14,18 +16,18 @@
 #include "third_party/skia/include/core/SkSurfaceCharacterization.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
-namespace shell {
+namespace flutter {
 
 // The rasterizer will tell Skia to purge cached resources that have not been
 // used within this interval.
 static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
-Rasterizer::Rasterizer(blink::TaskRunners task_runners)
+Rasterizer::Rasterizer(TaskRunners task_runners)
     : Rasterizer(std::move(task_runners),
                  std::make_unique<flow::CompositorContext>()) {}
 
 Rasterizer::Rasterizer(
-    blink::TaskRunners task_runners,
+    TaskRunners task_runners,
     std::unique_ptr<flow::CompositorContext> compositor_context)
     : task_runners_(std::move(task_runners)),
       compositor_context_(std::move(compositor_context)),
@@ -39,7 +41,7 @@ fml::WeakPtr<Rasterizer> Rasterizer::GetWeakPtr() const {
   return weak_factory_.GetWeakPtr();
 }
 
-fml::WeakPtr<blink::SnapshotDelegate> Rasterizer::GetSnapshotDelegate() const {
+fml::WeakPtr<SnapshotDelegate> Rasterizer::GetSnapshotDelegate() const {
   return weak_factory_.GetWeakPtr();
 }
 
@@ -69,17 +71,16 @@ void Rasterizer::DrawLastLayerTree() {
   DrawToSurface(*last_layer_tree_);
 }
 
-void Rasterizer::Draw(
-    fml::RefPtr<flutter::Pipeline<flow::LayerTree>> pipeline) {
+void Rasterizer::Draw(fml::RefPtr<Pipeline<flow::LayerTree>> pipeline) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
 
-  flutter::Pipeline<flow::LayerTree>::Consumer consumer =
+  Pipeline<flow::LayerTree>::Consumer consumer =
       std::bind(&Rasterizer::DoDraw, this, std::placeholders::_1);
 
   // Consume as many pipeline items as possible. But yield the event loop
   // between successive tries.
   switch (pipeline->Consume(consumer)) {
-    case flutter::PipelineConsumeResult::MoreAvailable: {
+    case PipelineConsumeResult::MoreAvailable: {
       task_runners_.GetGPUTaskRunner()->PostTask(
           [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
             if (weak_this) {
@@ -150,8 +151,18 @@ void Rasterizer::DoDraw(std::unique_ptr<flow::LayerTree> layer_tree) {
     return;
   }
 
+  PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
+  persistent_cache->ResetStoredNewShaders();
+
   if (DrawToSurface(*layer_tree)) {
     last_layer_tree_ = std::move(layer_tree);
+  }
+
+  if (persistent_cache->IsDumpingSkp() &&
+      persistent_cache->StoredNewShaders()) {
+    auto screenshot =
+        ScreenshotLastLayerTree(ScreenshotType::SkiaPicture, false);
+    persistent_cache->DumpSkp(*screenshot.data);
   }
 }
 
@@ -376,4 +387,4 @@ Rasterizer::Screenshot::Screenshot(const Screenshot& other) = default;
 
 Rasterizer::Screenshot::~Screenshot() = default;
 
-}  // namespace shell
+}  // namespace flutter

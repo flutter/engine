@@ -2,17 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("$flutter_root/lib/ui/dart_ui.gni")
 import("//build/compiled_action.gni")
 import("//third_party/dart/utils/compile_platform.gni")
-
-if (is_fuchsia) {
-  import("//build/dart/dart_library.gni")
-  import("//build/dart/toolchain.gni")
-  import("//topaz/public/dart-pkg/fuchsia/sdk_ext.gni")
-  import("//topaz/public/dart-pkg/zircon/sdk_ext.gni")
-  import("//topaz/public/lib/ui/flutter/sdk_ext/sdk_ext.gni")
-}
+import("$flutter_root/common/config.gni")
+import("$flutter_root/lib/ui/dart_ui.gni")
 
 bindings_output_dir = "$root_gen_dir/sky/bindings"
 
@@ -28,7 +21,8 @@ compiled_action("generate_snapshot_bin") {
   tool = "//third_party/dart/runtime/bin:gen_snapshot"
 
   if (is_fuchsia || is_fuchsia_host) {
-    platform_kernel = "$root_out_dir/flutter_runner_patched_sdk/platform_strong.dill"
+    platform_kernel =
+        "$root_out_dir/flutter_runner_patched_sdk/platform_strong.dill"
   } else {
     platform_kernel = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
   }
@@ -62,13 +56,12 @@ compiled_action("generate_snapshot_bin") {
         rebase_path(isolate_snapshot_instructions),
   ]
 
-  if (is_debug) {
-    args += [
-      "--enable_asserts",
-    ]
+  if (is_debug && flutter_runtime_mode != "profile" &&
+      flutter_runtime_mode != "release") {
+    args += [ "--enable_asserts" ]
   }
 
-  args += [rebase_path(platform_kernel)]
+  args += [ rebase_path(platform_kernel) ]
 }
 
 # Generates an assembly file defining a given symbol with the bytes from a
@@ -227,45 +220,35 @@ source_set("snapshot") {
   deps = [
     ":isolate_snapshot_data_linkable",
     ":isolate_snapshot_instructions_linkable",
+    ":platform_strong_dill_linkable",
     ":vm_snapshot_data_linkable",
     ":vm_snapshot_instructions_linkable",
-    ":platform_strong_dill_linkable",
   ]
   sources = get_target_outputs(":isolate_snapshot_data_linkable") +
-    get_target_outputs(":isolate_snapshot_instructions_linkable") +
-    get_target_outputs(":vm_snapshot_data_linkable") +
-    get_target_outputs(":vm_snapshot_instructions_linkable") +
-    get_target_outputs(":platform_strong_dill_linkable")
-}
-
-compile_platform("non_strong_platform") {
-  single_root_scheme = "org-dartlang-sdk"
-  single_root_base = rebase_path("../../../")
-  libraries_specification_uri = "org-dartlang-sdk:///flutter/lib/snapshot/libraries.json"
-
-  outputs = [
-    "$root_out_dir/flutter_patched_sdk/platform.dill",
-    "$root_out_dir/flutter_patched_sdk/vm_outline.dill",
-  ]
-
-  args = [
-    "--target=flutter",
-    "dart:core",
-  ]
+            get_target_outputs(":isolate_snapshot_instructions_linkable") +
+            get_target_outputs(":vm_snapshot_data_linkable") +
+            get_target_outputs(":vm_snapshot_instructions_linkable") +
+            get_target_outputs(":platform_strong_dill_linkable")
 }
 
 compile_platform("strong_platform") {
   single_root_scheme = "org-dartlang-sdk"
   single_root_base = rebase_path("../../../")
-  libraries_specification_uri = "org-dartlang-sdk:///flutter/lib/snapshot/libraries.json"
+  libraries_specification_uri =
+      "org-dartlang-sdk:///flutter/lib/snapshot/libraries.json"
 
   outputs = [
     "$root_out_dir/flutter_patched_sdk/platform_strong.dill",
     "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill",
   ]
 
+  is_runtime_mode_release = flutter_runtime_mode == "release"
+  allow_causal_async_stacks = !is_runtime_mode_release
   args = [
     "--target=flutter",
+    "-Ddart.vm.product=$is_runtime_mode_release",
+    "-Ddart.developer.causal_async_stacks=$allow_causal_async_stacks",
+    "-Ddart.isVM=true",
     "dart:core",
   ]
 }
@@ -274,13 +257,12 @@ compile_platform("strong_platform") {
 if (is_fuchsia || is_fuchsia_host) {
   group("kernel_platform_files") {
     public_deps = [
-      "//topaz/runtime/flutter_runner/kernel:kernel_platform_files"
+      "//topaz/runtime/flutter_runner/kernel:kernel_platform_files",
     ]
   }
 } else {
   group("kernel_platform_files") {
     public_deps = [
-      ":non_strong_platform",
       ":strong_platform",
     ]
   }

@@ -20,7 +20,7 @@
 #undef SHELL_COMMON_SWITCHES_H_
 
 struct SwitchDesc {
-  shell::Switch sw;
+  flutter::Switch sw;
   const fml::StringView flag;
   const char* help;
 };
@@ -32,26 +32,25 @@ struct SwitchDesc {
 // clang-format off
 #define DEF_SWITCHES_START static const struct SwitchDesc gSwitchDescs[] = {
 #define DEF_SWITCH(p_swtch, p_flag, p_help) \
-  { shell::Switch:: p_swtch, p_flag, p_help },
+  { flutter::Switch:: p_swtch, p_flag, p_help },
 #define DEF_SWITCHES_END };
 // clang-format on
 
 // Include again for struct definition.
 #include "flutter/shell/common/switches.h"
 
-namespace shell {
+namespace flutter {
 
 void PrintUsage(const std::string& executable_name) {
   std::cerr << std::endl << "  " << executable_name << std::endl << std::endl;
 
   std::cerr << "Versions: " << std::endl << std::endl;
 
-  std::cerr << "Flutter Engine Version: " << blink::GetFlutterEngineVersion()
+  std::cerr << "Flutter Engine Version: " << GetFlutterEngineVersion()
             << std::endl;
-  std::cerr << "Skia Version: " << blink::GetSkiaVersion() << std::endl;
+  std::cerr << "Skia Version: " << GetSkiaVersion() << std::endl;
 
-  std::cerr << "Dart Version: " << blink::GetDartVersion() << std::endl
-            << std::endl;
+  std::cerr << "Dart Version: " << GetDartVersion() << std::endl << std::endl;
 
   std::cerr << "Available Flags:" << std::endl;
 
@@ -105,11 +104,11 @@ const fml::StringView FlagForSwitch(Switch swtch) {
 
 template <typename T>
 static bool GetSwitchValue(const fml::CommandLine& command_line,
-                           shell::Switch sw,
+                           Switch sw,
                            T* result) {
   std::string switch_string;
 
-  if (!command_line.GetOptionValue(shell::FlagForSwitch(sw), &switch_string)) {
+  if (!command_line.GetOptionValue(FlagForSwitch(sw), &switch_string)) {
     return false;
   }
 
@@ -123,19 +122,35 @@ static bool GetSwitchValue(const fml::CommandLine& command_line,
   return false;
 }
 
-std::unique_ptr<fml::Mapping> GetSymbolMapping(std::string symbol_prefix) {
-  fml::RefPtr<fml::NativeLibrary> proc_library =
+std::unique_ptr<fml::Mapping> GetSymbolMapping(std::string symbol_prefix,
+                                               std::string native_lib_path) {
+  const uint8_t* mapping;
+  intptr_t size;
+
+  auto lookup_symbol = [&mapping, &size, symbol_prefix](
+                           const fml::RefPtr<fml::NativeLibrary>& library) {
+    mapping = library->ResolveSymbol((symbol_prefix + "_start").c_str());
+    size = reinterpret_cast<intptr_t>(
+        library->ResolveSymbol((symbol_prefix + "_size").c_str()));
+  };
+
+  fml::RefPtr<fml::NativeLibrary> library =
       fml::NativeLibrary::CreateForCurrentProcess();
-  const uint8_t* mapping =
-      proc_library->ResolveSymbol((symbol_prefix + "_start").c_str());
-  const intptr_t size = reinterpret_cast<intptr_t>(
-      proc_library->ResolveSymbol((symbol_prefix + "_size").c_str()));
+  lookup_symbol(library);
+
+  if (!(mapping && size)) {
+    // Symbol lookup for the current process fails on some devices.  As a
+    // fallback, try doing the lookup based on the path to the Flutter library.
+    library = fml::NativeLibrary::Create(native_lib_path.c_str());
+    lookup_symbol(library);
+  }
+
   FML_CHECK(mapping && size) << "Unable to resolve symbols: " << symbol_prefix;
   return std::make_unique<fml::NonOwnedMapping>(mapping, size);
 }
 
-blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
-  blink::Settings settings = {};
+Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
+  Settings settings = {};
 
   // Enable Observatory
   settings.enable_observatory =
@@ -228,11 +243,13 @@ blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     command_line.GetOptionValue(FlagForSwitch(Switch::ICUDataFilePath),
                                 &settings.icu_data_path);
     if (command_line.HasOption(FlagForSwitch(Switch::ICUSymbolPrefix))) {
-      std::string icu_symbol_prefix;
+      std::string icu_symbol_prefix, native_lib_path;
       command_line.GetOptionValue(FlagForSwitch(Switch::ICUSymbolPrefix),
                                   &icu_symbol_prefix);
-      settings.icu_mapper = [icu_symbol_prefix] {
-        return GetSymbolMapping(icu_symbol_prefix);
+      command_line.GetOptionValue(FlagForSwitch(Switch::ICUNativeLibPath),
+                                  &native_lib_path);
+      settings.icu_mapper = [icu_symbol_prefix, native_lib_path] {
+        return GetSymbolMapping(icu_symbol_prefix, native_lib_path);
       };
     }
   }
@@ -258,7 +275,10 @@ blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));
 #endif
 
+  settings.dump_skp_on_shader_compilation =
+      command_line.HasOption(FlagForSwitch(Switch::DumpSkpOnShaderCompilation));
+
   return settings;
 }
 
-}  // namespace shell
+}  // namespace flutter

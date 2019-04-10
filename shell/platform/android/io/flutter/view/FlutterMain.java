@@ -6,11 +6,13 @@ package io.flutter.view;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
@@ -26,7 +28,7 @@ import java.util.*;
 public class FlutterMain {
     private static final String TAG = "FlutterMain";
 
-    // Must match values in sky::shell::switches
+    // Must match values in sky::switches
     private static final String AOT_SHARED_LIBRARY_PATH = "aot-shared-library-path";
     private static final String AOT_SNAPSHOT_PATH_KEY = "aot-snapshot-path";
     private static final String AOT_VM_SNAPSHOT_DATA_KEY = "vm-snapshot-data";
@@ -195,7 +197,12 @@ public class FlutterMain {
             sResourceExtractor.waitForCompletion();
 
             List<String> shellArgs = new ArrayList<>();
+
             shellArgs.add("--icu-symbol-prefix=_binary_icudtl_dat");
+            ApplicationInfo applicationInfo = applicationContext.getPackageManager().getApplicationInfo(
+                applicationContext.getPackageName(), PackageManager.GET_META_DATA);
+            shellArgs.add("--icu-native-lib-path=" + applicationInfo.nativeLibraryDir + File.separator + DEFAULT_LIBRARY);
+
             if (args != null) {
                 Collections.addAll(shellArgs, args);
             }
@@ -234,6 +241,41 @@ public class FlutterMain {
             Log.e(TAG, "Flutter initialization failed.", e);
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Same as {@link #ensureInitializationComplete(Context, String[])} but waiting on a background
+     * thread, then invoking {@code callback} on the {@code callbackHandler}.
+     */
+    public static void ensureInitializationCompleteAsync(
+        Context applicationContext,
+        String[] args,
+        Handler callbackHandler,
+        Runnable callback
+    ) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            throw new IllegalStateException("ensureInitializationComplete must be called on the main thread");
+        }
+        if (sSettings == null) {
+            throw new IllegalStateException("ensureInitializationComplete must be called after startInitialization");
+        }
+        if (sInitialized) {
+            return;
+        }
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                sResourceExtractor.waitForCompletion();
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        ensureInitializationComplete(applicationContext.getApplicationContext(), args);
+                        callbackHandler.post(callback);
+                    }
+                });
+            }
+        }).start();
     }
 
     private static native void nativeInit(Context context, String[] args, String bundlePath, String appStoragePath, String engineCachesPath);

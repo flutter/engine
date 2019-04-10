@@ -16,7 +16,7 @@ namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 
 class Paragraph;
 
@@ -43,6 +43,7 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
                  double letterSpacing,
                  double wordSpacing,
                  double height,
+                 double decorationThickness,
                  const std::string& locale,
                  Dart_Handle background_objects,
                  Dart_Handle background_data,
@@ -71,6 +72,6 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
   std::unique_ptr<txt::ParagraphBuilder> m_paragraphBuilder;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_TEXT_PARAGRAPH_BUILDER_H_

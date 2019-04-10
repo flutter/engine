@@ -2,10 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("$flutter_root/common/config.gni")
-import("$flutter_root/shell/config.gni")
 import("//build/config/android/config.gni")
 import("//build/config/android/rules.gni")
+import("$flutter_root/common/config.gni")
+import("$flutter_root/shell/config.gni")
 import("$flutter_root/shell/gpu/gpu.gni")
 
 shell_gpu_configuration("android_gpu_configuration") {
@@ -20,6 +20,7 @@ shared_library("flutter_shell_native") {
   output_name = "flutter"
 
   sources = [
+    "$root_build_dir/flutter_icu/icudtl.o",
     "android_context_gl.cc",
     "android_context_gl.h",
     "android_environment_gl.cc",
@@ -49,7 +50,6 @@ shared_library("flutter_shell_native") {
     "platform_view_android_jni.h",
     "vsync_waiter_android.cc",
     "vsync_waiter_android.h",
-    "$root_build_dir/flutter_icu/icudtl.o",
   ]
 
   deps = [
@@ -61,19 +61,10 @@ shared_library("flutter_shell_native") {
     "$flutter_root/fml",
     "$flutter_root/lib/ui",
     "$flutter_root/runtime",
+    "$flutter_root/runtime:libdart",
     "$flutter_root/shell/common",
     "//third_party/skia",
   ]
-  if (flutter_runtime_mode == "debug" ||
-      flutter_runtime_mode == "dynamic_profile" ||
-      flutter_runtime_mode == "dynamic_release") {
-    deps += [ "//third_party/dart/runtime:libdart_jit" ]
-  } else {
-    deps += [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
-  }
-  if (flutter_runtime_mode == "debug") {
-    deps += [ "$flutter_root/lib/snapshot" ]
-  }
 
   public_configs = [ "$flutter_root:config" ]
 
@@ -96,7 +87,7 @@ shared_library("flutter_shell_native") {
     "GLESv2",
   ]
 
-  ldflags = ["-Wl,--version-script=" + rebase_path("android_exports.lst")]
+  ldflags = [ "-Wl,--version-script=" + rebase_path("android_exports.lst") ]
 }
 
 java_library("flutter_shell_java") {
@@ -109,16 +100,16 @@ java_library("flutter_shell_java") {
     "io/flutter/app/FlutterApplication.java",
     "io/flutter/app/FlutterFragmentActivity.java",
     "io/flutter/app/FlutterPluginRegistry.java",
+    "io/flutter/embedding/android/AndroidKeyProcessor.java",
+    "io/flutter/embedding/android/AndroidTouchProcessor.java",
+    "io/flutter/embedding/android/FlutterActivity.java",
+    "io/flutter/embedding/android/FlutterFragment.java",
+    "io/flutter/embedding/android/FlutterSurfaceView.java",
+    "io/flutter/embedding/android/FlutterTextureView.java",
+    "io/flutter/embedding/android/FlutterView.java",
     "io/flutter/embedding/engine/FlutterEngine.java",
     "io/flutter/embedding/engine/FlutterJNI.java",
     "io/flutter/embedding/engine/FlutterShellArgs.java",
-    "io/flutter/embedding/engine/android/AndroidKeyProcessor.java",
-    "io/flutter/embedding/engine/android/AndroidTouchProcessor.java",
-    "io/flutter/embedding/engine/android/FlutterActivity.java",
-    "io/flutter/embedding/engine/android/FlutterFragment.java",
-    "io/flutter/embedding/engine/android/FlutterSurfaceView.java",
-    "io/flutter/embedding/engine/android/FlutterTextureView.java",
-    "io/flutter/embedding/engine/android/FlutterView.java",
     "io/flutter/embedding/engine/dart/DartExecutor.java",
     "io/flutter/embedding/engine/dart/DartMessenger.java",
     "io/flutter/embedding/engine/dart/PlatformMessageHandler.java",
@@ -153,11 +144,13 @@ java_library("flutter_shell_java") {
     "io/flutter/plugin/common/StringCodec.java",
     "io/flutter/plugin/editing/InputConnectionAdaptor.java",
     "io/flutter/plugin/editing/TextInputPlugin.java",
+    "io/flutter/plugin/platform/AccessibilityEventsDelegate.java",
     "io/flutter/plugin/platform/PlatformPlugin.java",
     "io/flutter/plugin/platform/PlatformView.java",
     "io/flutter/plugin/platform/PlatformViewFactory.java",
     "io/flutter/plugin/platform/PlatformViewRegistry.java",
     "io/flutter/plugin/platform/PlatformViewRegistryImpl.java",
+    "io/flutter/plugin/platform/PlatformViewsAccessibilityDelegate.java",
     "io/flutter/plugin/platform/PlatformViewsController.java",
     "io/flutter/plugin/platform/SingleViewPresentation.java",
     "io/flutter/plugin/platform/VirtualDisplayController.java",
@@ -165,6 +158,7 @@ java_library("flutter_shell_java") {
     "io/flutter/util/Preconditions.java",
     "io/flutter/util/Predicate.java",
     "io/flutter/view/AccessibilityBridge.java",
+    "io/flutter/view/AccessibilityViewEmbedder.java",
     "io/flutter/view/FlutterCallbackInformation.java",
     "io/flutter/view/FlutterMain.java",
     "io/flutter/view/FlutterNativeView.java",
@@ -178,17 +172,16 @@ java_library("flutter_shell_java") {
     "io/flutter/view/VsyncWaiter.java",
   ]
 
-  java_files += [
-    "$flutter_root/third_party/bsdiff/io/flutter/util/BSDiff.java",
-  ]
+  java_files +=
+      [ "$flutter_root/third_party/bsdiff/io/flutter/util/BSDiff.java" ]
 
   deps = [
-    ":android_support_v13",
+    ":android_arch_lifecycle_common",
+    ":android_arch_lifecycle_viewmodel",
     ":android_support_annotations",
     ":android_support_compat",
     ":android_support_fragment",
-    ":android_arch_lifecycle_common",
-    ":android_arch_lifecycle_viewmodel",
+    ":android_support_v13",
   ]
 
   jar_path = "$root_out_dir/flutter_java.jar"
@@ -227,7 +220,8 @@ java_prebuilt("android_arch_lifecycle_common") {
 java_prebuilt("android_arch_lifecycle_viewmodel") {
   supports_android = true
 
-  jar_path = "//third_party/android_support/android_arch_lifecycle_viewmodel.jar"
+  jar_path =
+      "//third_party/android_support/android_arch_lifecycle_viewmodel.jar"
 }
 
 action("icudtl_object") {
@@ -245,10 +239,14 @@ action("icudtl_object") {
   ]
 
   args = [
-    "--objcopy", rebase_path(android_objcopy),
-    "--input", rebase_path(icudtl_input),
-    "--output", rebase_path(icudtl_output),
-    "--arch", current_cpu,
+    "--objcopy",
+    rebase_path(android_objcopy),
+    "--input",
+    rebase_path(icudtl_input),
+    "--output",
+    rebase_path(icudtl_output),
+    "--arch",
+    current_cpu,
   ]
 }
 

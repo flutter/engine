@@ -140,16 +140,22 @@ FLUTTER_EXPORT
  * the user, or when using a Simulator. This method allows a user to turn
  * semantics on when they would not ordinarily be generated and the performance
  * overhead is not a concern, e.g. for UI testing. Note that semantics should
- * never be programatically turned off, as it would potentially disable
+ * never be programmatically turned off, as it would potentially disable
  * accessibility services an end user has requested.
  *
  * This method must only be called after launching the engine via
  * `-runWithEntrypoint:` or `-runWithEntryPoint:libraryURI`.
  *
+ * Although this method returns synchronously, it does not guarantee that a
+ * semantics tree is actually available when the method returns. It
+ * synchronously ensures that the next frame the Flutter framework creates will
+ * have a semantics tree.
+ *
  * You can subscribe to semantics updates via `NSNotificationCenter` by adding
  * an observer for the name `FlutterSemanticsUpdateNotification`.  The `object`
  * parameter will be the `FlutterViewController` associated with the semantics
- * update.
+ * update.  This will asynchronously fire after a semantics tree has actually
+ * built (which may be some time after the frame has been rendered).
  */
 - (void)ensureSemanticsEnabled;
 

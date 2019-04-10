@@ -10,9 +10,10 @@
 #include <mutex>
 
 #include "flutter/common/task_runners.h"
+#include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/fml/time/time_point.h"
 
-namespace shell {
+namespace flutter {
 
 class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
  public:
@@ -35,9 +36,9 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   friend class VsyncWaiterAndroid;
   friend class VsyncWaiterEmbedder;
 
-  const blink::TaskRunners task_runners_;
+  const TaskRunners task_runners_;
 
-  VsyncWaiter(blink::TaskRunners task_runners);
+  VsyncWaiter(TaskRunners task_runners);
 
   // Implementations are meant to override this method and arm their vsync
   // latches when in response to this invocation. On vsync, they are meant to
@@ -50,11 +51,11 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
 
  private:
   std::mutex callback_mutex_;
-  Callback callback_;
+  Callback callback_ FML_GUARDED_BY(callback_mutex_);
 
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiter);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_COMMON_VSYNC_WAITER_H_

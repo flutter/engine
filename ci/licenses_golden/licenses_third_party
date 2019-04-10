@@ -1,4 +1,4 @@
-Signature: 4a8dfa2afe659f0a6057032c092f7496
+Signature: 1ab2f2e559e655ad5cfe1e759d241b54
 
 UNUSED LICENSES:
 
@@ -4608,7 +4608,8 @@ FILE: ../../../third_party/dart/runtime/observatory/web/favicon.ico
 FILE: ../../../third_party/dart/runtime/observatory/web/index.html
 FILE: ../../../third_party/dart/runtime/observatory/web/third_party/trace_viewer_full.html
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline.html
-FILE: ../../../third_party/dart/runtime/vm/snapshot_test_in.dat
+FILE: ../../../third_party/dart/samples/ffi/sqlite/docs/lib/scenario-default.svg
+FILE: ../../../third_party/dart/samples/ffi/sqlite/docs/lib/scenario-full.svg
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/conversions_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/html_common.dart
 FILE: ../../../third_party/dart/sdk/lib/libraries.json
@@ -4968,7 +4969,6 @@ FILE: ../../../third_party/dart/runtime/vm/snapshot.cc
 FILE: ../../../third_party/dart/runtime/vm/snapshot.h
 FILE: ../../../third_party/dart/runtime/vm/snapshot_ids.h
 FILE: ../../../third_party/dart/runtime/vm/snapshot_test.cc
-FILE: ../../../third_party/dart/runtime/vm/snapshot_test.dart
 FILE: ../../../third_party/dart/runtime/vm/stack_frame.cc
 FILE: ../../../third_party/dart/runtime/vm/stack_frame_test.cc
 FILE: ../../../third_party/dart/runtime/vm/stub_code.cc
@@ -5121,6 +5121,130 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: dart
+ORIGIN: ../../../third_party/dart/runtime/bin/abi_version.h + ../../../third_party/dart/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/dart/runtime/bin/abi_version.h
+FILE: ../../../third_party/dart/runtime/bin/abi_version_in.cc
+FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension.cc
+FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension_dllmain_win.cc
+FILE: ../../../third_party/dart/runtime/bin/ffi_test_dynamic_library.cc
+FILE: ../../../third_party/dart/runtime/bin/ffi_test_functions.cc
+FILE: ../../../third_party/dart/runtime/bin/namespace_fuchsia.h
+FILE: ../../../third_party/dart/runtime/lib/ffi.cc
+FILE: ../../../third_party/dart/runtime/lib/ffi_dynamic_library.cc
+FILE: ../../../third_party/dart/runtime/lib/ffi_dynamic_library_patch.dart
+FILE: ../../../third_party/dart/runtime/lib/ffi_native_type_patch.dart
+FILE: ../../../third_party/dart/runtime/lib/ffi_patch.dart
+FILE: ../../../third_party/dart/runtime/tools/dartfuzz/dartfuzz_api_table.dart
+FILE: ../../../third_party/dart/runtime/tools/dartfuzz/gen_api_table.dart
+FILE: ../../../third_party/dart/runtime/tools/graphexplorer/graphexplorer.html
+FILE: ../../../third_party/dart/runtime/tools/graphexplorer/graphexplorer.js
+FILE: ../../../third_party/dart/runtime/vm/catch_entry_moves_test.cc
+FILE: ../../../third_party/dart/runtime/vm/class_id.h
+FILE: ../../../third_party/dart/runtime/vm/code_entry_kind.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier_arm.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier_arm64.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier_ia32.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier_x64.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/block_builder.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/flow_graph_checker.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/flow_graph_checker.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_test_helper.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_test_helper.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/slot_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/type_propagator_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/typed_data_aot_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier_arm.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier_arm64.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier_ia32.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier_x64.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/recognized_methods_list.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/relocation.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/runtime_api.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/runtime_api.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_arm.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_arm64.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_dbc.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_ia32.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_x64.cc
+FILE: ../../../third_party/dart/runtime/vm/constants_arm64.cc
+FILE: ../../../third_party/dart/runtime/vm/constants_ia32.cc
+FILE: ../../../third_party/dart/runtime/vm/constants_x64.cc
+FILE: ../../../third_party/dart/runtime/vm/frame_layout.h
+FILE: ../../../third_party/dart/runtime/vm/intrusive_dlist.h
+FILE: ../../../third_party/dart/runtime/vm/intrusive_dlist_test.cc
+FILE: ../../../third_party/dart/runtime/vm/longjump.h
+FILE: ../../../third_party/dart/runtime/vm/pointer_tagging.h
+FILE: ../../../third_party/dart/runtime/vm/static_type_exactness_state.h
+FILE: ../../../third_party/dart/runtime/vm/stub_code_list.h
+FILE: ../../../third_party/dart/runtime/vm/thread_stack_resource.cc
+FILE: ../../../third_party/dart/runtime/vm/thread_stack_resource.h
+FILE: ../../../third_party/dart/runtime/vm/thread_state.cc
+FILE: ../../../third_party/dart/runtime/vm/thread_state.h
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_arm.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_arm64.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_x64.cc
+FILE: ../../../third_party/dart/samples/ffi/coordinate.dart
+FILE: ../../../third_party/dart/samples/ffi/dylib_utils.dart
+FILE: ../../../third_party/dart/samples/ffi/sample_ffi_data.dart
+FILE: ../../../third_party/dart/samples/ffi/sample_ffi_dynamic_library.dart
+FILE: ../../../third_party/dart/samples/ffi/sample_ffi_functions.dart
+FILE: ../../../third_party/dart/samples/ffi/sample_ffi_functions_callbacks.dart
+FILE: ../../../third_party/dart/samples/ffi/sample_ffi_functions_structs.dart
+FILE: ../../../third_party/dart/samples/ffi/sample_ffi_structs.dart
+FILE: ../../../third_party/dart/samples/ffi/sqlite/example/main.dart
+FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/sqlite.dart
+FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/bindings/bindings.dart
+FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/bindings/constants.dart
+FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/bindings/signatures.dart
+FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/bindings/types.dart
+FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/collections/closable_iterator.dart
+FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/database.dart
+FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/ffi/arena.dart
+FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/ffi/cstring.dart
+FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/ffi/dylib_utils.dart
+FILE: ../../../third_party/dart/sdk/lib/ffi/annotations.dart
+FILE: ../../../third_party/dart/sdk/lib/ffi/dynamic_library.dart
+FILE: ../../../third_party/dart/sdk/lib/ffi/ffi.dart
+FILE: ../../../third_party/dart/sdk/lib/ffi/native_type.dart
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
+for details. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: dart
 ORIGIN: ../../../third_party/dart/runtime/bin/cli.cc + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/runtime/bin/cli.cc
@@ -5230,7 +5354,6 @@ FILE: ../../../third_party/dart/runtime/vm/malloc_hooks.h
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_arm.cc
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_arm64.cc
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_ia32.cc
-FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_jemalloc.cc
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_tcmalloc.cc
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_test.cc
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_unsupported.cc
@@ -5345,6 +5468,7 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/compile_type.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/loops.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/loops.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/loops_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/redundancy_elimination_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/slot.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/slot.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_pass.cc
@@ -5357,6 +5481,7 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_flow_graph
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_flow_graph_builder.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_reader.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_reader.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_scope_builder.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/constant_evaluator.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/constant_evaluator.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_fingerprints.cc
@@ -5666,108 +5791,6 @@ FILE: ../../../third_party/dart/sdk/lib/js_util/dart2js/js_util_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/vmservice/devfs.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: dart
-ORIGIN: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension.cc + ../../../third_party/dart/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension.cc
-FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension_dllmain_win.cc
-FILE: ../../../third_party/dart/runtime/bin/ffi_test_dynamic_library.cc
-FILE: ../../../third_party/dart/runtime/bin/ffi_test_functions.cc
-FILE: ../../../third_party/dart/runtime/bin/namespace_fuchsia.h
-FILE: ../../../third_party/dart/runtime/lib/ffi.cc
-FILE: ../../../third_party/dart/runtime/lib/ffi_dynamic_library.cc
-FILE: ../../../third_party/dart/runtime/lib/ffi_dynamic_library_patch.dart
-FILE: ../../../third_party/dart/runtime/lib/ffi_native_type_patch.dart
-FILE: ../../../third_party/dart/runtime/lib/ffi_patch.dart
-FILE: ../../../third_party/dart/runtime/tools/graphexplorer/graphexplorer.html
-FILE: ../../../third_party/dart/runtime/tools/graphexplorer/graphexplorer.js
-FILE: ../../../third_party/dart/runtime/vm/class_id.h
-FILE: ../../../third_party/dart/runtime/vm/code_entry_kind.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier_arm.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier_arm64.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier_ia32.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier_x64.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/backend/flow_graph_checker.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/backend/flow_graph_checker.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/backend/slot_test.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier_arm.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier_arm64.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier_ia32.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier_x64.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/recognized_methods_list.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/relocation.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/runtime_api.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/runtime_api.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_arm.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_arm64.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_dbc.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_ia32.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_x64.cc
-FILE: ../../../third_party/dart/runtime/vm/constants_x64.cc
-FILE: ../../../third_party/dart/runtime/vm/ffi_trampoline_stubs_x64.cc
-FILE: ../../../third_party/dart/runtime/vm/frame_layout.h
-FILE: ../../../third_party/dart/runtime/vm/intrusive_dlist.h
-FILE: ../../../third_party/dart/runtime/vm/intrusive_dlist_test.cc
-FILE: ../../../third_party/dart/runtime/vm/longjump.h
-FILE: ../../../third_party/dart/runtime/vm/pointer_tagging.h
-FILE: ../../../third_party/dart/runtime/vm/static_type_exactness_state.h
-FILE: ../../../third_party/dart/runtime/vm/stub_code_list.h
-FILE: ../../../third_party/dart/runtime/vm/thread_stack_resource.cc
-FILE: ../../../third_party/dart/runtime/vm/thread_stack_resource.h
-FILE: ../../../third_party/dart/runtime/vm/thread_state.cc
-FILE: ../../../third_party/dart/runtime/vm/thread_state.h
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_arm.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_arm64.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_x64.cc
-FILE: ../../../third_party/dart/samples/ffi/coordinate.dart
-FILE: ../../../third_party/dart/samples/ffi/dylib_utils.dart
-FILE: ../../../third_party/dart/samples/ffi/sample_ffi_data.dart
-FILE: ../../../third_party/dart/samples/ffi/sample_ffi_dynamic_library.dart
-FILE: ../../../third_party/dart/samples/ffi/sample_ffi_functions.dart
-FILE: ../../../third_party/dart/samples/ffi/sample_ffi_functions_callbacks.dart
-FILE: ../../../third_party/dart/samples/ffi/sample_ffi_functions_structs.dart
-FILE: ../../../third_party/dart/samples/ffi/sample_ffi_structs.dart
-FILE: ../../../third_party/dart/sdk/lib/ffi/annotations.dart
-FILE: ../../../third_party/dart/sdk/lib/ffi/dynamic_library.dart
-FILE: ../../../third_party/dart/sdk/lib/ffi/ffi.dart
-FILE: ../../../third_party/dart/sdk/lib/ffi/native_type.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -6524,6 +6547,40 @@ FILE: ../../../third_party/dart/sdk/lib/isolate/capability.dart
 FILE: ../../../third_party/dart/sdk/lib/profiler/profiler.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
+for details. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: dart
+ORIGIN: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_scope_builder.h + ../../../third_party/dart/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_scope_builder.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2019, the Dart project authors. Please see the AUTHORS file
 for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -7961,6 +8018,304 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: glfw
+ORIGIN: ../../../third_party/glfw/COPYING.txt
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/glfw/.appveyor.yml
+FILE: ../../../third_party/glfw/CMake/MacOSXBundleInfo.plist.in
+FILE: ../../../third_party/glfw/cmake_uninstall.cmake.in
+FILE: ../../../third_party/glfw/docs/Doxyfile.in
+FILE: ../../../third_party/glfw/docs/DoxygenLayout.xml
+FILE: ../../../third_party/glfw/docs/build.dox
+FILE: ../../../third_party/glfw/docs/compat.dox
+FILE: ../../../third_party/glfw/docs/compile.dox
+FILE: ../../../third_party/glfw/docs/context.dox
+FILE: ../../../third_party/glfw/docs/extra.less
+FILE: ../../../third_party/glfw/docs/footer.html
+FILE: ../../../third_party/glfw/docs/header.html
+FILE: ../../../third_party/glfw/docs/input.dox
+FILE: ../../../third_party/glfw/docs/internal.dox
+FILE: ../../../third_party/glfw/docs/intro.dox
+FILE: ../../../third_party/glfw/docs/main.dox
+FILE: ../../../third_party/glfw/docs/monitor.dox
+FILE: ../../../third_party/glfw/docs/moving.dox
+FILE: ../../../third_party/glfw/docs/news.dox
+FILE: ../../../third_party/glfw/docs/quick.dox
+FILE: ../../../third_party/glfw/docs/spaces.svg
+FILE: ../../../third_party/glfw/docs/vulkan.dox
+FILE: ../../../third_party/glfw/docs/window.dox
+FILE: ../../../third_party/glfw/include/GLFW/glfw3.h
+FILE: ../../../third_party/glfw/include/GLFW/glfw3native.h
+FILE: ../../../third_party/glfw/src/cocoa_monitor.m
+FILE: ../../../third_party/glfw/src/context.c
+FILE: ../../../third_party/glfw/src/egl_context.c
+FILE: ../../../third_party/glfw/src/egl_context.h
+FILE: ../../../third_party/glfw/src/glfw3.pc.in
+FILE: ../../../third_party/glfw/src/glfw3Config.cmake.in
+FILE: ../../../third_party/glfw/src/glx_context.c
+FILE: ../../../third_party/glfw/src/glx_context.h
+FILE: ../../../third_party/glfw/src/init.c
+FILE: ../../../third_party/glfw/src/input.c
+FILE: ../../../third_party/glfw/src/internal.h
+FILE: ../../../third_party/glfw/src/linux_joystick.c
+FILE: ../../../third_party/glfw/src/monitor.c
+FILE: ../../../third_party/glfw/src/posix_time.c
+FILE: ../../../third_party/glfw/src/posix_time.h
+FILE: ../../../third_party/glfw/src/posix_tls.c
+FILE: ../../../third_party/glfw/src/posix_tls.h
+FILE: ../../../third_party/glfw/src/vulkan.c
+FILE: ../../../third_party/glfw/src/wgl_context.c
+FILE: ../../../third_party/glfw/src/wgl_context.h
+FILE: ../../../third_party/glfw/src/win32_init.c
+FILE: ../../../third_party/glfw/src/win32_joystick.c
+FILE: ../../../third_party/glfw/src/win32_monitor.c
+FILE: ../../../third_party/glfw/src/win32_platform.h
+FILE: ../../../third_party/glfw/src/win32_time.c
+FILE: ../../../third_party/glfw/src/win32_tls.c
+FILE: ../../../third_party/glfw/src/win32_window.c
+FILE: ../../../third_party/glfw/src/x11_init.c
+FILE: ../../../third_party/glfw/src/x11_monitor.c
+FILE: ../../../third_party/glfw/src/x11_platform.h
+FILE: ../../../third_party/glfw/src/x11_window.c
+FILE: ../../../third_party/glfw/src/xkb_unicode.c
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2002-2006 Marcus Geelnard
+Copyright (c) 2006-2016 Camilla Berglund <elmindreda@glfw.org>
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would
+   be appreciated but is not required.
+
+2. Altered source versions must be plainly marked as such, and must not
+   be misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any source
+   distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: glfw
+ORIGIN: ../../../third_party/glfw/src/cocoa_init.m
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/glfw/src/cocoa_init.m
+FILE: ../../../third_party/glfw/src/cocoa_platform.h
+FILE: ../../../third_party/glfw/src/cocoa_time.c
+FILE: ../../../third_party/glfw/src/cocoa_window.m
+FILE: ../../../third_party/glfw/src/nsgl_context.h
+FILE: ../../../third_party/glfw/src/nsgl_context.m
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2009-2016 Camilla Berglund <elmindreda@glfw.org>
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would
+   be appreciated but is not required.
+
+2. Altered source versions must be plainly marked as such, and must not
+   be misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any source
+   distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: glfw
+ORIGIN: ../../../third_party/glfw/src/cocoa_joystick.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/glfw/src/cocoa_joystick.h
+FILE: ../../../third_party/glfw/src/win32_joystick.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2006-2016 Camilla Berglund <elmindreda@glfw.org>
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would
+   be appreciated but is not required.
+
+2. Altered source versions must be plainly marked as such, and must not
+   be misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any source
+   distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: glfw
+ORIGIN: ../../../third_party/glfw/src/cocoa_joystick.m
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/glfw/src/cocoa_joystick.m
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2009-2016 Camilla Berglund <elmindreda@glfw.org>
+Copyright (c) 2012 Torsten Walluhn <tw@mad-cad.net>
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would
+   be appreciated but is not required.
+
+2. Altered source versions must be plainly marked as such, and must not
+   be misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any source
+   distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: glfw
+ORIGIN: ../../../third_party/glfw/src/glfw_config.h.in
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/glfw/src/glfw_config.h.in
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2010-2016 Camilla Berglund <elmindreda@glfw.org>
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would
+   be appreciated but is not required.
+
+2. Altered source versions must be plainly marked as such, and must not
+   be misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any source
+   distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: glfw
+ORIGIN: ../../../third_party/glfw/src/linux_joystick.h
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/glfw/src/linux_joystick.h
+FILE: ../../../third_party/glfw/src/wl_init.c
+FILE: ../../../third_party/glfw/src/wl_monitor.c
+FILE: ../../../third_party/glfw/src/wl_platform.h
+FILE: ../../../third_party/glfw/src/wl_window.c
+FILE: ../../../third_party/glfw/src/xkb_unicode.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2014 Jonas Ådahl <jadahl@gmail.com>
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would
+   be appreciated but is not required.
+
+2. Altered source versions must be plainly marked as such, and must not
+   be misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any source
+   distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: glfw
+ORIGIN: ../../../third_party/glfw/src/mir_init.c
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/glfw/src/mir_init.c
+FILE: ../../../third_party/glfw/src/mir_monitor.c
+FILE: ../../../third_party/glfw/src/mir_platform.h
+FILE: ../../../third_party/glfw/src/mir_window.c
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2014-2015 Brandon Schaefer <brandon.schaefer@canonical.com>
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would
+   be appreciated but is not required.
+
+2. Altered source versions must be plainly marked as such, and must not
+   be misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any source
+   distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: glfw
+ORIGIN: ../../../third_party/glfw/src/window.c
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/glfw/src/window.c
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2002-2006 Marcus Geelnard
+Copyright (c) 2006-2016 Camilla Berglund <elmindreda@glfw.org>
+Copyright (c) 2012 Torsten Walluhn <tw@mad-cad.net>
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would
+   be appreciated but is not required.
+
+2. Altered source versions must be plainly marked as such, and must not
+   be misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any source
+   distribution.
 ====================================================================================================
 
 ====================================================================================================
@@ -18818,4 +19173,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 310
+Total license count: 319

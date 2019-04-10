@@ -12,10 +12,20 @@ group("platform") {
       "android",
     ]
   } else if (is_linux) {
-    deps = []
-  } else if (is_win || is_fuchsia) {
-    # There is no platform target on Windows. Fuchsia has its own runner
-    # implementation.
+    if (is_fuchsia_host) {
+      # The linux build is not supported as part of the Fuchsia host build.
+      deps = []
+    } else {
+      deps = [
+        "linux",
+      ]
+    }
+  } else if (is_win) {
+    deps = [
+      "windows",
+    ]
+  } else if (is_fuchsia) {
+    # Fuchsia has its own runner implementation.
     deps = []
   } else {
     assert(false, "Unknown/Unsupported platform.")

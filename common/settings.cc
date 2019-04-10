@@ -6,7 +6,7 @@
 
 #include <sstream>
 
-namespace blink {
+namespace flutter {
 
 Settings::Settings() = default;
 
@@ -33,6 +33,9 @@ std::string Settings::ToString() const {
   stream << "start_paused: " << start_paused << std::endl;
   stream << "trace_skia: " << trace_skia << std::endl;
   stream << "trace_startup: " << trace_startup << std::endl;
+  stream << "trace_systrace: " << trace_systrace << std::endl;
+  stream << "dump_skp_on_shader_compilation: " << dump_skp_on_shader_compilation
+         << std::endl;
   stream << "endless_trace_buffer: " << endless_trace_buffer << std::endl;
   stream << "enable_dart_profiling: " << enable_dart_profiling << std::endl;
   stream << "disable_dart_asserts: " << disable_dart_asserts << std::endl;
@@ -51,4 +54,4 @@ std::string Settings::ToString() const {
   return stream.str();
 }
 
-}  // namespace blink
+}  // namespace flutter

@@ -1520,6 +1520,11 @@ class _ImageInfo {
 ///
 /// To draw an [Image], use one of the methods on the [Canvas] class, such as
 /// [Canvas.drawImage].
+///
+/// See also:
+///
+///  * [Image](https://api.flutter.dev/flutter/widgets/Image-class.html), the class in the [widgets] library.
+///
 @pragma('vm:entry-point')
 class Image extends NativeFieldWrapperClass2 {
   // This class is created by the engine, and should not be instantiated
@@ -2252,7 +2257,9 @@ class PathMetricIterator implements Iterator<PathMetric> {
 /// iterator is at the contour for which they were created. It will also only be
 /// valid for the path as it was specified when [Path.computeMetrics] was called.
 /// If additional contours are added or any contours are updated, the metrics
-/// need to be recomputed.
+/// need to be recomputed. Previously created metrics will still refer to a
+/// snapshot of the path at the time they were computed, rather than to the
+/// actual metrics for the new mutations to the path.
 class PathMetric {
   PathMetric._(this._measure)
     : assert(_measure != null),
@@ -2359,9 +2366,6 @@ class _PathMeasure extends NativeFieldWrapperClass2 {
   //
   // A path can have a next contour if [Path.moveTo] was called after drawing began.
   // Return true if one exists, or false.
-  //
-  // Before Skia introduced an SkPathContourMeasureIter, this didn't work like
-  // a normal iterator.  Now it does.
   bool _nextContour() {
     final bool next = _nativeNextContour();
     if (next) {
@@ -2678,6 +2682,11 @@ Float32List _encodeTwoPoints(Offset pointA, Offset pointB) {
 ///
 /// There are several types of gradients, represented by the various constructors
 /// on this class.
+///
+/// See also:
+///
+///  * [Gradient](https://api.flutter.dev/flutter/painting/Gradient-class.html), the class in the [painting] library.
+///
 class Gradient extends Shader {
 
   void _constructor() native 'Gradient_constructor';

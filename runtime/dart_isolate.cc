@@ -14,6 +14,7 @@
 #include "flutter/lib/ui/dart_ui.h"
 #include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/runtime/dart_vm_lifecycle.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -26,12 +27,12 @@
 #include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
 
-namespace blink {
+namespace flutter {
 
 std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
-    DartVM* vm,
-    fml::RefPtr<DartSnapshot> isolate_snapshot,
-    fml::RefPtr<DartSnapshot> shared_snapshot,
+    const Settings& settings,
+    fml::RefPtr<const DartSnapshot> isolate_snapshot,
+    fml::RefPtr<const DartSnapshot> shared_snapshot,
     TaskRunners task_runners,
     std::unique_ptr<Window> window,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
@@ -50,7 +51,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
   // isolate lifecycle is entirely managed by the VM).
   auto root_embedder_data = std::make_unique<std::shared_ptr<DartIsolate>>(
       std::make_shared<DartIsolate>(
-          vm,                            // VM
+          settings,                      // settings
           std::move(isolate_snapshot),   // isolate snapshot
           std::move(shared_snapshot),    // shared snapshot
           task_runners,                  // task runners
@@ -93,9 +94,9 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
   return embedder_isolate;
 }
 
-DartIsolate::DartIsolate(DartVM* vm,
-                         fml::RefPtr<DartSnapshot> isolate_snapshot,
-                         fml::RefPtr<DartSnapshot> shared_snapshot,
+DartIsolate::DartIsolate(const Settings& settings,
+                         fml::RefPtr<const DartSnapshot> isolate_snapshot,
+                         fml::RefPtr<const DartSnapshot> shared_snapshot,
                          TaskRunners task_runners,
                          fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
                          fml::WeakPtr<IOManager> io_manager,
@@ -103,36 +104,31 @@ DartIsolate::DartIsolate(DartVM* vm,
                          std::string advisory_script_entrypoint,
                          ChildIsolatePreparer child_isolate_preparer)
     : UIDartState(std::move(task_runners),
-                  vm->GetSettings().task_observer_add,
-                  vm->GetSettings().task_observer_remove,
+                  settings.task_observer_add,
+                  settings.task_observer_remove,
                   std::move(snapshot_delegate),
                   std::move(io_manager),
                   advisory_script_uri,
                   advisory_script_entrypoint,
-                  vm->GetSettings().log_tag,
-                  vm->GetSettings().unhandled_exception_callback,
-                  vm->GetIsolateNameServer()),
-      vm_(vm),
+                  settings.log_tag,
+                  settings.unhandled_exception_callback,
+                  DartVMRef::GetIsolateNameServer()),
+      settings_(settings),
       isolate_snapshot_(std::move(isolate_snapshot)),
       shared_snapshot_(std::move(shared_snapshot)),
       child_isolate_preparer_(std::move(child_isolate_preparer)) {
   FML_DCHECK(isolate_snapshot_) << "Must contain a valid isolate snapshot.";
-
-  if (vm_ == nullptr) {
-    return;
-  }
-
   phase_ = Phase::Uninitialized;
 }
 
 DartIsolate::~DartIsolate() = default;
 
-DartIsolate::Phase DartIsolate::GetPhase() const {
-  return phase_;
+const Settings& DartIsolate::GetSettings() const {
+  return settings_;
 }
 
-DartVM* DartIsolate::GetDartVM() const {
-  return vm_;
+DartIsolate::Phase DartIsolate::GetPhase() const {
+  return phase_;
 }
 
 bool DartIsolate::Initialize(Dart_Isolate dart_isolate, bool is_root_isolate) {
@@ -166,17 +162,8 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate, bool is_root_isolate) {
 
   tonic::DartIsolateScope scope(isolate());
 
-  if (is_root_isolate) {
-    if (auto task_runner = GetTaskRunners().GetUITaskRunner()) {
-      // Isolates may not have any particular thread affinity. Only initialize
-      // the task dispatcher if a task runner is explicitly specified.
-      tonic::DartMessageHandler::TaskDispatcher dispatcher =
-          [task_runner](std::function<void()> task) {
-            task_runner->PostTask(task);
-          };
-      message_handler().Initialize(dispatcher);
-    }
-  }
+  SetMessageHandlingTaskRunner(GetTaskRunners().GetUITaskRunner(),
+                               is_root_isolate);
 
   if (tonic::LogIfError(
           Dart_SetLibraryTagHandler(tonic::DartState::HandleLibraryTag))) {
@@ -189,6 +176,23 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate, bool is_root_isolate) {
 
   phase_ = Phase::Initialized;
   return true;
+}
+
+fml::RefPtr<fml::TaskRunner> DartIsolate::GetMessageHandlingTaskRunner() const {
+  return message_handling_task_runner_;
+}
+
+void DartIsolate::SetMessageHandlingTaskRunner(
+    fml::RefPtr<fml::TaskRunner> runner,
+    bool is_root_isolate) {
+  if (!is_root_isolate || !runner) {
+    return;
+  }
+
+  message_handling_task_runner_ = runner;
+
+  message_handler().Initialize(
+      [runner](std::function<void()> task) { runner->PostTask(task); });
 }
 
 // Updating thread names here does not change the underlying OS thread names.
@@ -365,6 +369,34 @@ bool DartIsolate::PrepareForRunningFromKernel(
   return true;
 }
 
+FML_WARN_UNUSED_RESULT
+bool DartIsolate::PrepareForRunningFromKernels(
+    std::vector<std::shared_ptr<const fml::Mapping>> kernels) {
+  const auto count = kernels.size();
+  if (count == 0) {
+    return false;
+  }
+
+  for (size_t i = 0; i < count; ++i) {
+    bool last = (i == (count - 1));
+    if (!PrepareForRunningFromKernel(kernels[i], last)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+FML_WARN_UNUSED_RESULT
+bool DartIsolate::PrepareForRunningFromKernels(
+    std::vector<std::unique_ptr<const fml::Mapping>> kernels) {
+  std::vector<std::shared_ptr<const fml::Mapping>> shared_kernels;
+  for (auto& kernel : kernels) {
+    shared_kernels.emplace_back(std::move(kernel));
+  }
+  return PrepareForRunningFromKernels(shared_kernels);
+}
+
 bool DartIsolate::MarkIsolateRunnable() {
   TRACE_EVENT0("flutter", "DartIsolate::MarkIsolateRunnable");
   if (phase_ != Phase::LibrariesSetup) {
@@ -419,7 +451,7 @@ static bool InvokeMainEntrypoint(Dart_Handle user_entrypoint_function) {
 }
 
 FML_WARN_UNUSED_RESULT
-bool DartIsolate::Run(const std::string& entrypoint_name) {
+bool DartIsolate::Run(const std::string& entrypoint_name, fml::closure on_run) {
   TRACE_EVENT0("flutter", "DartIsolate::Run");
   if (phase_ != Phase::Ready) {
     return false;
@@ -436,12 +468,17 @@ bool DartIsolate::Run(const std::string& entrypoint_name) {
 
   phase_ = Phase::Running;
   FML_DLOG(INFO) << "New isolate is in the running state.";
+
+  if (on_run) {
+    on_run();
+  }
   return true;
 }
 
 FML_WARN_UNUSED_RESULT
 bool DartIsolate::RunFromLibrary(const std::string& library_name,
-                                 const std::string& entrypoint_name) {
+                                 const std::string& entrypoint_name,
+                                 fml::closure on_run) {
   TRACE_EVENT0("flutter", "DartIsolate::RunFromLibrary");
   if (phase_ != Phase::Ready) {
     return false;
@@ -459,6 +496,10 @@ bool DartIsolate::RunFromLibrary(const std::string& library_name,
 
   phase_ = Phase::Running;
   FML_DLOG(INFO) << "New isolate is in the running state.";
+
+  if (on_run) {
+    on_run();
+  }
   return true;
 }
 
@@ -479,7 +520,6 @@ bool DartIsolate::Shutdown() {
     // the isolate to shutdown as a parameter.
     FML_DCHECK(Dart_CurrentIsolate() == nullptr);
     Dart_EnterIsolate(vm_isolate);
-    shutdown_callbacks_.clear();
     Dart_ShutdownIsolate();
     FML_DCHECK(Dart_CurrentIsolate() == nullptr);
   }
@@ -487,49 +527,43 @@ bool DartIsolate::Shutdown() {
 }
 
 Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
-    const char* advisory_script_uri,
-    const char* advisory_script_entrypoint,
     const char* package_root,
     const char* package_config,
     Dart_IsolateFlags* flags,
     char** error) {
-  auto vm = DartVM::ForProcessIfInitialized();
+  auto vm_data = DartVMRef::GetVMData();
 
-  if (!vm) {
+  if (!vm_data) {
     *error = strdup(
-        "Could not resolve the VM when attempting to create the service "
-        "isolate.");
+        "Could not access VM data to initialize isolates. This may be because "
+        "the VM has initialized shutdown on another thread already.");
     return nullptr;
   }
 
-  const auto& settings = vm->GetSettings();
+  const auto& settings = vm_data->GetSettings();
 
   if (!settings.enable_observatory) {
     FML_DLOG(INFO) << "Observatory is disabled.";
     return nullptr;
   }
 
-  blink::TaskRunners null_task_runners(
-      "io.flutter." DART_VM_SERVICE_ISOLATE_NAME, nullptr, nullptr, nullptr,
-      nullptr);
+  TaskRunners null_task_runners("io.flutter." DART_VM_SERVICE_ISOLATE_NAME,
+                                nullptr, nullptr, nullptr, nullptr);
 
   flags->load_vmservice_library = true;
 
   std::weak_ptr<DartIsolate> weak_service_isolate =
       DartIsolate::CreateRootIsolate(
-          vm.get(),                  // vm
-          vm->GetIsolateSnapshot(),  // isolate snapshot
-          vm->GetSharedSnapshot(),   // shared snapshot
-          null_task_runners,         // task runners
-          nullptr,                   // window
-          {},                        // snapshot delegate
-          {},                        // IO Manager
-          advisory_script_uri == nullptr ? ""
-                                         : advisory_script_uri,  // script uri
-          advisory_script_entrypoint == nullptr
-              ? ""
-              : advisory_script_entrypoint,  // script entrypoint
-          flags                              // flags
+          vm_data->GetSettings(),         // settings
+          vm_data->GetIsolateSnapshot(),  // isolate snapshot
+          vm_data->GetSharedSnapshot(),   // shared snapshot
+          null_task_runners,              // task runners
+          nullptr,                        // window
+          {},                             // snapshot delegate
+          {},                             // IO Manager
+          DART_VM_SERVICE_ISOLATE_NAME,   // script uri
+          DART_VM_SERVICE_ISOLATE_NAME,   // script entrypoint
+          flags                           // flags
       );
 
   std::shared_ptr<DartIsolate> service_isolate = weak_service_isolate.lock();
@@ -552,7 +586,13 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
     return nullptr;
   }
 
-  vm->GetServiceProtocol().ToggleHooks(true);
+  if (auto service_protocol = DartVMRef::GetServiceProtocol()) {
+    service_protocol->ToggleHooks(true);
+  } else {
+    FML_DLOG(ERROR)
+        << "Could not acquire the service protocol handlers. This might be "
+           "because the VM has already begun teardown on another thread.";
+  }
 
   return service_isolate->isolate();
 }
@@ -573,12 +613,10 @@ Dart_Isolate DartIsolate::DartIsolateCreateCallback(
     // DART_VM_SERVICE_ISOLATE_NAME. In such cases, we just create the service
     // isolate like normal but dont hold a reference to it at all. We also start
     // this isolate since we will never again reference it from the engine.
-    return DartCreateAndStartServiceIsolate(advisory_script_uri,         //
-                                            advisory_script_entrypoint,  //
-                                            package_root,                //
-                                            package_config,              //
-                                            flags,                       //
-                                            error                        //
+    return DartCreateAndStartServiceIsolate(package_root,    //
+                                            package_config,  //
+                                            flags,           //
+                                            error            //
     );
   }
 
@@ -610,25 +648,22 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
   std::unique_ptr<std::shared_ptr<DartIsolate>> embedder_isolate(
       p_parent_embedder_isolate);
 
-  if (embedder_isolate == nullptr ||
-      (*embedder_isolate)->GetDartVM() == nullptr) {
+  if (embedder_isolate == nullptr) {
     *error =
         strdup("Parent isolate did not have embedder specific callback data.");
     FML_DLOG(ERROR) << *error;
     return {nullptr, {}};
   }
 
-  DartVM* const vm = (*embedder_isolate)->GetDartVM();
-
   if (!is_root_isolate) {
     auto* raw_embedder_isolate = embedder_isolate.release();
 
-    blink::TaskRunners null_task_runners(advisory_script_uri, nullptr, nullptr,
-                                         nullptr, nullptr);
+    TaskRunners null_task_runners(advisory_script_uri, nullptr, nullptr,
+                                  nullptr, nullptr);
 
     embedder_isolate = std::make_unique<std::shared_ptr<DartIsolate>>(
         std::make_shared<DartIsolate>(
-            vm,                                             // vm
+            (*raw_embedder_isolate)->GetSettings(),         // settings
             (*raw_embedder_isolate)->GetIsolateSnapshot(),  // isolate_snapshot
             (*raw_embedder_isolate)->GetSharedSnapshot(),   // shared_snapshot
             null_task_runners,                              // task_runners
@@ -685,6 +720,8 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
     }
   }
 
+  DartVMRef::GetRunningVM()->RegisterActiveIsolate(*embedder_isolate);
+
   // The ownership of the embedder object is controlled by the Dart VM. So the
   // only reference returned to the caller is weak.
   embedder_isolate.release();
@@ -693,7 +730,9 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
 
 // |Dart_IsolateShutdownCallback|
 void DartIsolate::DartIsolateShutdownCallback(
-    std::shared_ptr<DartIsolate>* embedder_isolate) {}
+    std::shared_ptr<DartIsolate>* embedder_isolate) {
+  embedder_isolate->get()->OnShutdownCallback();
+}
 
 // |Dart_IsolateCleanupCallback|
 void DartIsolate::DartIsolateCleanupCallback(
@@ -701,11 +740,11 @@ void DartIsolate::DartIsolateCleanupCallback(
   delete embedder_isolate;
 }
 
-fml::RefPtr<DartSnapshot> DartIsolate::GetIsolateSnapshot() const {
+fml::RefPtr<const DartSnapshot> DartIsolate::GetIsolateSnapshot() const {
   return isolate_snapshot_;
 }
 
-fml::RefPtr<DartSnapshot> DartIsolate::GetSharedSnapshot() const {
+fml::RefPtr<const DartSnapshot> DartIsolate::GetSharedSnapshot() const {
   return shared_snapshot_;
 }
 
@@ -718,6 +757,12 @@ void DartIsolate::AddIsolateShutdownCallback(fml::closure closure) {
       std::make_unique<AutoFireClosure>(std::move(closure)));
 }
 
+void DartIsolate::OnShutdownCallback() {
+  shutdown_callbacks_.clear();
+  DartVMRef::GetRunningVM()->UnregisterActiveIsolate(
+      std::static_pointer_cast<DartIsolate>(shared_from_this()));
+}
+
 DartIsolate::AutoFireClosure::AutoFireClosure(fml::closure closure)
     : closure_(std::move(closure)) {}
 
@@ -727,4 +772,4 @@ DartIsolate::AutoFireClosure::~AutoFireClosure() {
   }
 }
 
-}  // namespace blink
+}  // namespace flutter
