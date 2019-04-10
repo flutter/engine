@@ -7,6 +7,7 @@
 
 #include <map>
 #include <set>
+#include <shared_mutex>
 #include <string>
 
 #include "flutter/fml/compiler_specific.h"
@@ -74,7 +75,7 @@ class ServiceProtocol {
 
  private:
   const std::set<fml::StringView> endpoints_;
-  std::unique_ptr<fml::SharedMutex> handlers_mutex_;
+  mutable std::shared_timed_mutex handlers_mutex_;
   std::map<Handler*, fml::AtomicObject<Handler::Description>> handlers_;
 
   FML_WARN_UNUSED_RESULT
