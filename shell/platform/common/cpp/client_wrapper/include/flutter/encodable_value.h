@@ -69,47 +69,51 @@ class EncodableValue {
 
   // Creates an instance representing a string value.
   explicit EncodableValue(const char* value)
-      : string_(value), type_(ValueType::kString) {}
+      : string_(new std::string(value)), type_(ValueType::kString) {}
 
   // Creates an instance representing a string value.
   explicit EncodableValue(const std::string& value)
-      : string_(value), type_(ValueType::kString) {}
+      : string_(new std::string(value)), type_(ValueType::kString) {}
 
   // Creates an instance representing a list of bytes.
   explicit EncodableValue(std::vector<uint8_t> list)
-      : byte_list_(std::move(list)), type_(ValueType::kByteList) {}
+      : byte_list_(new std::vector<uint8_t>(std::move(list))),
+        type_(ValueType::kByteList) {}
 
   // Creates an instance representing a list of 32-bit integers.
   explicit EncodableValue(std::vector<int32_t> list)
-      : int_list_(std::move(list)), type_(ValueType::kIntList) {}
+      : int_list_(new std::vector<int32_t>(std::move(list))),
+        type_(ValueType::kIntList) {}
 
   // Creates an instance representing a list of 64-bit integers.
   explicit EncodableValue(std::vector<int64_t> list)
-      : long_list_(std::move(list)), type_(ValueType::kLongList) {}
+      : long_list_(new std::vector<int64_t>(std::move(list))),
+        type_(ValueType::kLongList) {}
 
   // Creates an instance representing a list of doubles.
   explicit EncodableValue(std::vector<double> list)
-      : double_list_(std::move(list)), type_(ValueType::kDoubleList) {}
+      : double_list_(new std::vector<double>(std::move(list))),
+        type_(ValueType::kDoubleList) {}
 
   // Creates an instance representing a list of EncodableValues.
   explicit EncodableValue(EncodableList list)
-      : list_(std::move(list)), type_(ValueType::kList) {}
+      : list_(new EncodableList(std::move(list))), type_(ValueType::kList) {}
 
   // Creates an instance representing a map from EncodableValues to
   // EncodableValues.
-  explicit EncodableValue(std::map<EncodableValue, EncodableValue> map)
-      : map_(std::move(map)), type_(ValueType::kMap) {}
+  explicit EncodableValue(EncodableMap map)
+      : map_(new EncodableMap(std::move(map))), type_(ValueType::kMap) {}
 
   // Convience constructor for creating empty collections of the core types.
   explicit EncodableValue(CollectionType type) {
     switch (type) {
       case CollectionType::kList:
         type_ = ValueType::kList;
-        new (&list_) std::vector<EncodableValue>();
+        list_ = new std::vector<EncodableValue>();
         break;
       case CollectionType::kMap:
         type_ = ValueType::kMap;
-        new (&map_) std::map<EncodableValue, EncodableValue>();
+        map_ = new std::map<EncodableValue, EncodableValue>();
         break;
     }
   }
@@ -136,25 +140,25 @@ class EncodableValue {
         double_ = other.double_;
         break;
       case ValueType::kString:
-        new (&string_) std::string(other.string_);
+        string_ = new std::string(*other.string_);
         break;
       case ValueType::kByteList:
-        new (&byte_list_) std::vector<uint8_t>(other.byte_list_);
+        byte_list_ = new std::vector<uint8_t>(*other.byte_list_);
         break;
       case ValueType::kIntList:
-        new (&int_list_) std::vector<int32_t>(other.int_list_);
+        int_list_ = new std::vector<int32_t>(*other.int_list_);
         break;
       case ValueType::kLongList:
-        new (&long_list_) std::vector<int64_t>(other.long_list_);
+        long_list_ = new std::vector<int64_t>(*other.long_list_);
         break;
       case ValueType::kDoubleList:
-        new (&double_list_) std::vector<double>(other.double_list_);
+        double_list_ = new std::vector<double>(*other.double_list_);
         break;
       case ValueType::kList:
-        new (&list_) std::vector<EncodableValue>(other.list_);
+        list_ = new std::vector<EncodableValue>(*other.list_);
         break;
       case ValueType::kMap:
-        new (&map_) std::map<EncodableValue, EncodableValue>(other.map_);
+        map_ = new std::map<EncodableValue, EncodableValue>(*other.map_);
         break;
     }
   }
@@ -194,26 +198,25 @@ class EncodableValue {
         double_ = other.double_;
         break;
       case ValueType::kString:
-        new (&string_) std::string(std::move(other.string_));
+        string_ = other.string_;
         break;
       case ValueType::kByteList:
-        new (&byte_list_) std::vector<uint8_t>(std::move(other.byte_list_));
+        byte_list_ = other.byte_list_;
         break;
       case ValueType::kIntList:
-        new (&int_list_) std::vector<int32_t>(std::move(other.int_list_));
+        int_list_ = other.int_list_;
         break;
       case ValueType::kLongList:
-        new (&long_list_) std::vector<int64_t>(std::move(other.long_list_));
+        long_list_ = other.long_list_;
         break;
       case ValueType::kDoubleList:
-        new (&double_list_) std::vector<double>(std::move(other.double_list_));
+        double_list_ = other.double_list_;
         break;
       case ValueType::kList:
-        new (&list_) std::vector<EncodableValue>(std::move(other.list_));
+        list_ = other.list_;
         break;
       case ValueType::kMap:
-        new (&map_)
-            std::map<EncodableValue, EncodableValue>(std::move(other.map_));
+        map_ = other.map_;
         break;
     }
     // Ensure that destruction doesn't run on the source of the move.
@@ -252,7 +255,7 @@ class EncodableValue {
       case ValueType::kDouble:
         return double_ < other.double_;
       case ValueType::kString:
-        return string_ < other.string_;
+        return *string_ < *other.string_;
       case ValueType::kByteList:
       case ValueType::kIntList:
       case ValueType::kLongList:
@@ -311,7 +314,7 @@ class EncodableValue {
   // It is a programming error to call this unless IsString() is true.
   const std::string& StringValue() const {
     assert(IsString());
-    return string_;
+    return *string_;
   }
 
   // Returns the byte list this object represents.
@@ -319,7 +322,7 @@ class EncodableValue {
   // It is a programming error to call this unless IsByteList() is true.
   const std::vector<uint8_t>& ByteListValue() const {
     assert(IsByteList());
-    return byte_list_;
+    return *byte_list_;
   }
 
   // Returns the byte list this object represents.
@@ -327,7 +330,7 @@ class EncodableValue {
   // It is a programming error to call this unless IsByteList() is true.
   std::vector<uint8_t>& ByteListValue() {
     assert(IsByteList());
-    return byte_list_;
+    return *byte_list_;
   }
 
   // Returns the 32-bit integer list this object represents.
@@ -335,7 +338,7 @@ class EncodableValue {
   // It is a programming error to call this unless IsIntList() is true.
   const std::vector<int32_t>& IntListValue() const {
     assert(IsIntList());
-    return int_list_;
+    return *int_list_;
   }
 
   // Returns the 32-bit integer list this object represents.
@@ -343,7 +346,7 @@ class EncodableValue {
   // It is a programming error to call this unless IsIntList() is true.
   std::vector<int32_t>& IntListValue() {
     assert(IsIntList());
-    return int_list_;
+    return *int_list_;
   }
 
   // Returns the 64-bit integer list this object represents.
@@ -351,7 +354,7 @@ class EncodableValue {
   // It is a programming error to call this unless IsLongList() is true.
   const std::vector<int64_t>& LongListValue() const {
     assert(IsLongList());
-    return long_list_;
+    return *long_list_;
   }
 
   // Returns the 64-bit integer list this object represents.
@@ -359,7 +362,7 @@ class EncodableValue {
   // It is a programming error to call this unless IsLongList() is true.
   std::vector<int64_t>& LongListValue() {
     assert(IsLongList());
-    return long_list_;
+    return *long_list_;
   }
 
   // Returns the double list this object represents.
@@ -367,7 +370,7 @@ class EncodableValue {
   // It is a programming error to call this unless IsDoubleList() is true.
   const std::vector<double>& DoubleListValue() const {
     assert(IsDoubleList());
-    return double_list_;
+    return *double_list_;
   }
 
   // Returns the double list this object represents.
@@ -375,7 +378,7 @@ class EncodableValue {
   // It is a programming error to call this unless IsDoubleList() is true.
   std::vector<double>& DoubleListValue() {
     assert(IsDoubleList());
-    return double_list_;
+    return *double_list_;
   }
 
   // Returns the list of EncodableValues this object represents.
@@ -383,7 +386,7 @@ class EncodableValue {
   // It is a programming error to call this unless IsList() is true.
   const EncodableList& ListValue() const {
     assert(IsList());
-    return list_;
+    return *list_;
   }
 
   // Returns the list of EncodableValues this object represents.
@@ -391,7 +394,7 @@ class EncodableValue {
   // It is a programming error to call this unless IsList() is true.
   EncodableList& ListValue() {
     assert(IsList());
-    return list_;
+    return *list_;
   }
 
   // Returns the map of EncodableValue : EncodableValue pairs this object
@@ -400,7 +403,7 @@ class EncodableValue {
   // It is a programming error to call this unless IsMap() is true.
   const EncodableMap& MapValue() const {
     assert(IsMap());
-    return map_;
+    return *map_;
   }
 
   // Returns the map of EncodableValue : EncodableValue pairs this object
@@ -409,7 +412,7 @@ class EncodableValue {
   // It is a programming error to call this unless IsMap() is true.
   EncodableMap& MapValue() {
     assert(IsMap());
-    return map_;
+    return *map_;
   }
 
   // Returns true if this represents a null value.
@@ -455,11 +458,6 @@ class EncodableValue {
   //
   // After calling this, type_ will alway be kNull.
   void DestroyValue() {
-    // Workaround for https://bugs.llvm.org/show_bug.cgi?id=12350
-    using std::map;
-    using std::string;
-    using std::vector;
-
     switch (type_) {
       case ValueType::kNull:
       case ValueType::kBool:
@@ -468,25 +466,25 @@ class EncodableValue {
       case ValueType::kDouble:
         break;
       case ValueType::kString:
-        string_.~string();
+        delete string_;
         break;
       case ValueType::kByteList:
-        byte_list_.~vector<uint8_t>();
+        delete byte_list_;
         break;
       case ValueType::kIntList:
-        int_list_.~vector<int32_t>();
+        delete int_list_;
         break;
       case ValueType::kLongList:
-        long_list_.~vector<int64_t>();
+        delete long_list_;
         break;
       case ValueType::kDoubleList:
-        double_list_.~vector<double>();
+        delete double_list_;
         break;
       case ValueType::kList:
-        list_.~vector<EncodableValue>();
+        delete list_;
         break;
       case ValueType::kMap:
-        map_.~map<EncodableValue, EncodableValue>();
+        delete map_;
         break;
     }
 
@@ -513,19 +511,22 @@ class EncodableValue {
   // these entries other than the one that corresponds to the current value of
   // |type_| has undefined behavior.
   //
+  // Pointers are used for the non-POD types to avoid making the overall size
+  // of the union unnecessarily large.
+  //
   // TODO: Replace this with std::variant once c++17 is available.
   union {
     bool bool_;
     int32_t int_;
     int64_t long_;
     double double_;
-    std::string string_;
-    std::vector<uint8_t> byte_list_;
-    std::vector<int32_t> int_list_;
-    std::vector<int64_t> long_list_;
-    std::vector<double> double_list_;
-    std::vector<EncodableValue> list_;
-    std::map<EncodableValue, EncodableValue> map_;
+    std::string* string_;
+    std::vector<uint8_t>* byte_list_;
+    std::vector<int32_t>* int_list_;
+    std::vector<int64_t>* long_list_;
+    std::vector<double>* double_list_;
+    std::vector<EncodableValue>* list_;
+    std::map<EncodableValue, EncodableValue>* map_;
   };
 
   // The currently active union entry.
