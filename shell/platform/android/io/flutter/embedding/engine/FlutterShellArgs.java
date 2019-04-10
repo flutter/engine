@@ -58,6 +58,8 @@ public class FlutterShellArgs {
     if (intent.getBooleanExtra(ARG_KEY_START_PAUSED, false)) {
       args.add(ARG_START_PAUSED);
     }
+    // TODO(bkonyi): when authentication codes are enabled by default, change
+    // to 'disable-service-auth-codes' instead of 'enable-service-auth-codes'.
     if (intent.getBooleanExtra(ARG_KEY_ENABLE_SERVICE_AUTH_CODES, false)) {
       args.add(ARG_ENABLE_SERVICE_AUTH_CODES);
     }
