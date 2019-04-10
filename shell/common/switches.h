@@ -96,9 +96,9 @@ DEF_SWITCH(FlutterAssetsDir,
            "Path to the Flutter assets directory.")
 DEF_SWITCH(Help, "help", "Display this help text.")
 DEF_SWITCH(LogTag, "log-tag", "Tag associated with log messages.")
-DEF_SWITCH(DisableServiceAuthCodes,
-           "disable-service-auth-codes",
-           "Disable the requirement for authentication codes for communicating"
+DEF_SWITCH(EnableServiceAuthCodes,
+           "enable-service-auth-codes",
+           "Enable the requirement for authentication codes for communicating"
            " with the VM service.")
 DEF_SWITCH(StartPaused,
            "start-paused",

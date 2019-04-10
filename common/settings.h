@@ -88,7 +88,7 @@ struct Settings {
 
   // Determines whether an authentication code is required to communicate with
   // the VM service.
-  bool disable_service_auth_codes = false;
+  bool disable_service_auth_codes = true;
 
   // Font settings
   bool use_test_fonts = false;
