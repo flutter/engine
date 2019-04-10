@@ -544,10 +544,11 @@ Int32List _encodeParagraphStyle(
   FontWeight fontWeight,
   FontStyle fontStyle,
   StrutStyle strutStyle,
+  TextWidthType widthType,
   String ellipsis,
   Locale locale,
 ) {
-  final Int32List result = new Int32List(6); // also update paragraph_builder.cc
+  final Int32List result = new Int32List(7); // also update paragraph_builder.cc
   if (textAlign != null) {
     result[0] |= 1 << 1;
     result[1] = textAlign.index;
@@ -568,28 +569,32 @@ Int32List _encodeParagraphStyle(
     result[0] |= 1 << 5;
     result[5] = maxLines;
   }
-  if (fontFamily != null) {
+  if (widthType != null) {
     result[0] |= 1 << 6;
-    // Passed separately to native.
+    result[6] = widthType.index;
   }
-  if (fontSize != null) {
+  if (fontFamily != null) {
     result[0] |= 1 << 7;
     // Passed separately to native.
   }
-  if (height != null) {
+  if (fontSize != null) {
     result[0] |= 1 << 8;
     // Passed separately to native.
   }
-  if (strutStyle != null) {
+  if (height != null) {
     result[0] |= 1 << 9;
     // Passed separately to native.
   }
-  if (ellipsis != null) {
+  if (strutStyle != null) {
     result[0] |= 1 << 10;
     // Passed separately to native.
   }
-  if (locale != null) {
+  if (ellipsis != null) {
     result[0] |= 1 << 11;
+    // Passed separately to native.
+  }
+  if (locale != null) {
+    result[0] |= 1 << 12;
     // Passed separately to native.
   }
   return result;
@@ -658,6 +663,7 @@ class ParagraphStyle {
     FontWeight fontWeight,
     FontStyle fontStyle,
     StrutStyle strutStyle,
+    TextWidthType widthType,
     String ellipsis,
     Locale locale,
   }) : _encoded = _encodeParagraphStyle(
@@ -670,6 +676,7 @@ class ParagraphStyle {
          fontWeight,
          fontStyle,
          strutStyle,
+         widthType,
          ellipsis,
          locale,
        ),
@@ -677,6 +684,7 @@ class ParagraphStyle {
        _fontSize = fontSize,
        _height = height,
        _strutStyle = strutStyle,
+       _widthType = widthType,
        _ellipsis = ellipsis,
        _locale = locale;
 
@@ -685,6 +693,7 @@ class ParagraphStyle {
   final double _fontSize;
   final double _height;
   final StrutStyle _strutStyle;
+  final TextWidthType _widthType;
   final String _ellipsis;
   final Locale _locale;
 
@@ -699,6 +708,7 @@ class ParagraphStyle {
         _fontSize != typedOther._fontSize ||
         _height != typedOther._height ||
         _strutStyle != typedOther._strutStyle ||
+        _widthType != typedOther._widthType ||
         _ellipsis != typedOther._ellipsis ||
         _locale != typedOther._locale)
      return false;
@@ -798,6 +808,19 @@ ByteData _encodeStrut(
   data.setInt8(0, bitmask);
 
   return ByteData.view(data.buffer, 0,  byteCount);
+}
+
+/// TODO(justinmc): document
+enum TextWidthType {
+  /// The width will take up as much space as is given to it. This is useful for
+  /// most common use cases, for example, a series of several paragraphs in a
+  /// column.
+  full,
+
+  /// The width will be as small as possible, even when the text wraps on to
+  /// multiple lines. For example, this is useful when wrapping text in chat
+  /// bubbles.
+  tight,
 }
 
 /// See also:

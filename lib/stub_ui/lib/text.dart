@@ -13,6 +13,19 @@ enum FontStyle {
   italic,
 }
 
+/// TODO(justinmc): document
+enum TextWidthType {
+  /// The width will take up as much space as is given to it. This is useful for
+  /// most common use cases, for example, a series of several paragraphs in a
+  /// column.
+  full,
+
+  /// The width will be as small as possible, even when the text wraps on to
+  /// multiple lines. For example, this is useful when wrapping text in chat
+  /// bubbles.
+  tight,
+}
+
 /// The thickness of the glyphs used to draw the text
 class FontWeight {
   const FontWeight._(this.index);

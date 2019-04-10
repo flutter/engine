@@ -920,7 +920,9 @@ void Paragraph::Layout(double width, bool force) {
               return a.code_units.start < b.code_units.start;
             });
 
-  width_ = max_right_ - min_left_;
+  if (paragraph_style_.width_type == TextWidthType::tight) {
+    width_ = max_right_ - min_left_;
+  }
 }
 
 double Paragraph::GetLineXOffset(double line_total_advance) {

@@ -41,6 +41,11 @@ enum class TextDirection {
   ltr,
 };
 
+enum class TextWidthType {
+  full,
+  tight,
+};
+
 class ParagraphStyle {
  public:
   // Default TextStyle. Used in GetTextStyle() to obtain the base TextStyle to
@@ -70,6 +75,7 @@ class ParagraphStyle {
   size_t max_lines = std::numeric_limits<size_t>::max();
   std::u16string ellipsis;
   std::string locale;
+  TextWidthType width_type = TextWidthType::full;
 
   // Default strategy is kBreakStrategy_Greedy. Sometimes,
   // kBreakStrategy_HighQuality will produce more desireable layouts (eg, very

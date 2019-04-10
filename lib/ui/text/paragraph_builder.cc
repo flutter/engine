@@ -72,18 +72,20 @@ const int psTextDirectionIndex = 2;
 const int psFontWeightIndex = 3;
 const int psFontStyleIndex = 4;
 const int psMaxLinesIndex = 5;
-const int psFontFamilyIndex = 6;
-const int psFontSizeIndex = 7;
-const int psHeightIndex = 8;
-const int psStrutStyleIndex = 9;
-const int psEllipsisIndex = 10;
-const int psLocaleIndex = 11;
+const int psWidthTypeIndex = 6;
+const int psFontFamilyIndex = 7;
+const int psFontSizeIndex = 8;
+const int psHeightIndex = 9;
+const int psStrutStyleIndex = 10;
+const int psEllipsisIndex = 11;
+const int psLocaleIndex = 12;
 
 const int psTextAlignMask = 1 << psTextAlignIndex;
 const int psTextDirectionMask = 1 << psTextDirectionIndex;
 const int psFontWeightMask = 1 << psFontWeightIndex;
 const int psFontStyleMask = 1 << psFontStyleIndex;
 const int psMaxLinesMask = 1 << psMaxLinesIndex;
+const int psWidthTypeMask = 1 << psWidthTypeIndex;
 const int psFontFamilyMask = 1 << psFontFamilyIndex;
 const int psFontSizeMask = 1 << psFontSizeIndex;
 const int psHeightMask = 1 << psHeightIndex;
@@ -261,6 +263,10 @@ ParagraphBuilder::ParagraphBuilder(
 
   if (mask & psMaxLinesMask) {
     style.max_lines = encoded[psMaxLinesIndex];
+  }
+
+  if (mask & psWidthTypeMask) {
+    style.width_type = static_cast<txt::TextWidthType>(encoded[psWidthTypeIndex]);
   }
 
   if (mask & psEllipsisMask) {
