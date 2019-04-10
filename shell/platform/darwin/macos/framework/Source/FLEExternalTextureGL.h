@@ -29,6 +29,6 @@
 /**
  * The texture id.
  */
-- (int64_t)textureId;
+- (int64_t)textureID;
 
 @end

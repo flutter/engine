@@ -6,7 +6,7 @@
 
 #import <AppKit/AppKit.h>
 #import <CoreVideo/CoreVideo.h>
-#import <OpenGL/OpenGL.h>
+#import <OpenGL/gl.h>
 
 @implementation FLEExternalTextureGL {
   CVOpenGLTextureCacheRef _textureCache;
@@ -28,8 +28,8 @@ static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
   CVPixelBufferRelease(pixelBuffer);
 }
 
-- (int64_t)textureId {
-  return (NSInteger)(self);
+- (int64_t)textureID {
+  return reinterpret_cast<int64_t>(self);
 }
 
 - (BOOL)populateTextureWithWidth:(size_t)width
@@ -68,10 +68,10 @@ static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
     return NO;
   }
 
-  texture->target = CVOpenGLTextureGetTarget(openGLTexture);
-  texture->name = CVOpenGLTextureGetName(openGLTexture);
-  texture->format = GL_RGBA8;
-  texture->destruction_callback = (VoidCallback)&OnGLTextureRelease;
+  texture->target = static_cast<uint32_t>(CVOpenGLTextureGetTarget(openGLTexture));
+  texture->name = static_cast<uint32_t>(CVOpenGLTextureGetName(openGLTexture));
+  texture->format = static_cast<uint32_t>(GL_RGBA8);
+  texture->destruction_callback = reinterpret_cast<VoidCallback>(&OnGLTextureRelease);
   texture->user_data = openGLTexture;
 
   CVPixelBufferRelease(_pixelBuffer);

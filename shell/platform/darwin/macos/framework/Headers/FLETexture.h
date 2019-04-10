@@ -26,18 +26,18 @@
 @protocol FLETextureRegistrar <NSObject>
 
 /**
- * Register a |texture| object and return a textureId.
+ * Register a |texture| object and return a textureID.
  */
 - (int64_t)registerTexture:(nonnull id<FLETexture>)texture;
 
 /**
  * Mark a texture buffer is ready.
  */
-- (void)textureFrameAvailable:(int64_t)textureId;
+- (void)textureFrameAvailable:(int64_t)textureID;
 
 /**
  * Unregister an existing Texture object.
  */
-- (void)unregisterTexture:(int64_t)textureId;
+- (void)unregisterTexture:(int64_t)textureID;
 
 @end

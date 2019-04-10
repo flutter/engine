@@ -93,10 +93,10 @@ static const int kDefaultWindowFramebuffer = 0;
 - (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type;
 
 /**
- * Forwarding texture copy request to the corresponding texture via |textureId|,
+ * Forwarding texture copy request to the corresponding texture via |textureID|,
  * |width| and |height| may be used to get a specific sized texture in the future.
  */
-- (BOOL)populateTextureWithIdentifier:(int64_t)textureId
+- (BOOL)populateTextureWithIdentifier:(int64_t)textureID
                                 width:(size_t)width
                                height:(size_t)height
                               texture:(FlutterOpenGLTexture*)texture;
@@ -418,28 +418,28 @@ static void CommonInit(FLEViewController* controller) {
   [_resourceContext makeCurrentContext];
 }
 
-- (BOOL)populateTextureWithIdentifier:(int64_t)textureId
+- (BOOL)populateTextureWithIdentifier:(int64_t)textureID
                                 width:(size_t)width
                                height:(size_t)height
                               texture:(FlutterOpenGLTexture*)texture {
-  return [_textures[@(textureId)] populateTextureWithWidth:width height:height texture:texture];
+  return [_textures[@(textureID)] populateTextureWithWidth:width height:height texture:texture];
 }
 
 - (int64_t)registerTexture:(id<FLETexture>)texture {
   FLEExternalTextureGL* fleTexture = [[FLEExternalTextureGL alloc] initWithFLETexture:texture];
-  int64_t textureId = [fleTexture textureId];
-  FlutterEngineRegisterExternalTexture(_engine, textureId);
-  _textures[@(textureId)] = fleTexture;
-  return textureId;
+  int64_t textureID = [fleTexture textureID];
+  FlutterEngineRegisterExternalTexture(_engine, textureID);
+  _textures[@(textureID)] = fleTexture;
+  return textureID;
 }
 
-- (void)textureFrameAvailable:(int64_t)textureId {
-  FlutterEngineMarkExternalTextureFrameAvailable(_engine, textureId);
+- (void)textureFrameAvailable:(int64_t)textureID {
+  FlutterEngineMarkExternalTextureFrameAvailable(_engine, textureID);
 }
 
-- (void)unregisterTexture:(int64_t)textureId {
-  FlutterEngineUnregisterExternalTexture(_engine, textureId);
-  [_textures removeObjectForKey:@(textureId)];
+- (void)unregisterTexture:(int64_t)textureID {
+  FlutterEngineUnregisterExternalTexture(_engine, textureID);
+  [_textures removeObjectForKey:@(textureID)];
 }
 
 - (void)handlePlatformMessage:(const FlutterPlatformMessage*)message {
