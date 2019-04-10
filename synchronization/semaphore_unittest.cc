@@ -8,17 +8,17 @@
 #include "gtest/gtest.h"
 
 TEST(SemaphoreTest, SimpleValidity) {
-  flutter::Semaphore sem(100);
+  Semaphore sem(100);
   ASSERT_TRUE(sem.IsValid());
 }
 
 TEST(SemaphoreTest, WaitOnZero) {
-  flutter::Semaphore sem(0);
+  Semaphore sem(0);
   ASSERT_FALSE(sem.TryWait());
 }
 
 TEST(SemaphoreTest, WaitOnZeroSignalThenWait) {
-  flutter::Semaphore sem(0);
+  Semaphore sem(0);
   ASSERT_FALSE(sem.TryWait());
   std::thread thread([&sem]() { sem.Signal(); });
   thread.join();
