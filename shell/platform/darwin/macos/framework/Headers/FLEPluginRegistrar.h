@@ -5,6 +5,7 @@
 #import <Cocoa/Cocoa.h>
 
 #import "FLEPlugin.h"
+#import "FLETexture.h"
 
 #if defined(FLUTTER_FRAMEWORK)
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterBinaryMessenger.h"
@@ -32,7 +33,7 @@ FLUTTER_EXPORT
 @property(nonnull, readonly) id<FlutterBinaryMessenger> messenger;
 
 /**
- * Returns a `FLETextureRegistry` for registering textures provided by the plugin.
+ * Returns a `FLETextureRegistrar` for registering textures provided by the plugin.
  */
 @property(nonnull, readonly) id<FLETextureRegistrar> textures;
 
