@@ -39,9 +39,9 @@ TEST(EncodableValueTest, Bool) {
   EncodableValue value(false);
   VerifyType(value, EncodableValue::Type::kBool);
 
-  EXPECT_EQ(value.BoolValue(), false);
+  EXPECT_FALSE(value.BoolValue());
   value = true;
-  EXPECT_EQ(value.BoolValue(), true);
+  EXPECT_TRUE(value.BoolValue());
 }
 
 TEST(EncodableValueTest, Int) {
@@ -265,8 +265,8 @@ TEST(EncodableValueTest, Comparison) {
       const auto& b = values[j];
       if (i == j) {
         // Identical objects should always be equal.
-        EXPECT_EQ(a < b, false);
-        EXPECT_EQ(b < a, false);
+        EXPECT_FALSE(a < b);
+        EXPECT_FALSE(b < a);
       } else {
         // All other comparisons should be consistent, but the direction doesn't
         // matter.
@@ -301,7 +301,7 @@ TEST(EncodableValueTest, DeepCopy) {
   };
 
   EncodableValue value(encodables);
-  ASSERT_EQ(value.IsList(), true);
+  ASSERT_TRUE(value.IsList());
 
   // Spot-check innermost collection values.
   EXPECT_EQ(value.ListValue()[0].MapValue()[EncodableValue("two")].IntValue(),
