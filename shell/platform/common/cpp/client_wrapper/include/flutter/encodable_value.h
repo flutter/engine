@@ -43,76 +43,115 @@ using EncodableMap = std::map<EncodableValue, EncodableValue>;
 //   })
 class EncodableValue {
  public:
-  // Collection types supported by the empty collection convience constructor.
-  enum class CollectionType {
-    kList,
-    kMap,
+  // Possible types for an EncodableValue to reperesent.
+  enum class Type {
+    kNull,        // A null value.
+    kBool,        // A boolean value.
+    kInt,         // A 32-bit integer.
+    kLong,        // A 64-bit integer.
+    kDouble,      // A double.
+    kString,      // A string.
+    kByteList,    // A list of bytes.
+    kIntList,     // A list of 32-bit integers.
+    kLongList,    // A list of 64-bit integers.
+    kDoubleList,  // A list of doubles.
+    kList,        // A list of EncodableValues.
+    kMap,         // A mapping from EncodableValues to EncodableValues.
   };
 
   // Creates an instance representing a null value.
   EncodableValue() {}
 
   // Creates an instance representing a bool value.
-  explicit EncodableValue(bool value) : bool_(value), type_(ValueType::kBool) {}
+  explicit EncodableValue(bool value) : bool_(value), type_(Type::kBool) {}
 
   // Creates an instance representing a 32-bit integer value.
-  explicit EncodableValue(int32_t value)
-      : int_(value), type_(ValueType::kInt) {}
+  explicit EncodableValue(int32_t value) : int_(value), type_(Type::kInt) {}
 
   // Creates an instance representing a 64-bit integer value.
-  explicit EncodableValue(int64_t value)
-      : long_(value), type_(ValueType::kLong) {}
+  explicit EncodableValue(int64_t value) : long_(value), type_(Type::kLong) {}
 
   // Creates an instance representing a double value.
   explicit EncodableValue(double value)
-      : double_(value), type_(ValueType::kDouble) {}
+      : double_(value), type_(Type::kDouble) {}
 
   // Creates an instance representing a string value.
   explicit EncodableValue(const char* value)
-      : string_(new std::string(value)), type_(ValueType::kString) {}
+      : string_(new std::string(value)), type_(Type::kString) {}
 
   // Creates an instance representing a string value.
   explicit EncodableValue(const std::string& value)
-      : string_(new std::string(value)), type_(ValueType::kString) {}
+      : string_(new std::string(value)), type_(Type::kString) {}
 
   // Creates an instance representing a list of bytes.
   explicit EncodableValue(std::vector<uint8_t> list)
       : byte_list_(new std::vector<uint8_t>(std::move(list))),
-        type_(ValueType::kByteList) {}
+        type_(Type::kByteList) {}
 
   // Creates an instance representing a list of 32-bit integers.
   explicit EncodableValue(std::vector<int32_t> list)
       : int_list_(new std::vector<int32_t>(std::move(list))),
-        type_(ValueType::kIntList) {}
+        type_(Type::kIntList) {}
 
   // Creates an instance representing a list of 64-bit integers.
   explicit EncodableValue(std::vector<int64_t> list)
       : long_list_(new std::vector<int64_t>(std::move(list))),
-        type_(ValueType::kLongList) {}
+        type_(Type::kLongList) {}
 
   // Creates an instance representing a list of doubles.
   explicit EncodableValue(std::vector<double> list)
       : double_list_(new std::vector<double>(std::move(list))),
-        type_(ValueType::kDoubleList) {}
+        type_(Type::kDoubleList) {}
 
   // Creates an instance representing a list of EncodableValues.
   explicit EncodableValue(EncodableList list)
-      : list_(new EncodableList(std::move(list))), type_(ValueType::kList) {}
+      : list_(new EncodableList(std::move(list))), type_(Type::kList) {}
 
   // Creates an instance representing a map from EncodableValues to
   // EncodableValues.
   explicit EncodableValue(EncodableMap map)
-      : map_(new EncodableMap(std::move(map))), type_(ValueType::kMap) {}
+      : map_(new EncodableMap(std::move(map))), type_(Type::kMap) {}
 
-  // Convience constructor for creating empty collections of the core types.
-  explicit EncodableValue(CollectionType type) {
-    switch (type) {
-      case CollectionType::kList:
-        type_ = ValueType::kList;
+  // Convience constructor for creating default value of the given type.
+  //
+  // Collections types will be empty, numeric types will be 0, strings will be
+  // empty, and booleans will be false. For non-collection types, prefer using
+  // the value-based constructor with an explicit value for clarity.
+  explicit EncodableValue(Type type) : type_(type) {
+    switch (type_) {
+      case Type::kNull:
+        break;
+      case Type::kBool:
+        bool_ = false;
+        break;
+      case Type::kInt:
+        int_ = 0;
+        break;
+      case Type::kLong:
+        long_ = 0;
+        break;
+      case Type::kDouble:
+        double_ = 0.0;
+        break;
+      case Type::kString:
+        string_ = new std::string();
+        break;
+      case Type::kByteList:
+        byte_list_ = new std::vector<uint8_t>();
+        break;
+      case Type::kIntList:
+        int_list_ = new std::vector<int32_t>();
+        break;
+      case Type::kLongList:
+        long_list_ = new std::vector<int64_t>();
+        break;
+      case Type::kDoubleList:
+        double_list_ = new std::vector<double>();
+        break;
+      case Type::kList:
         list_ = new std::vector<EncodableValue>();
         break;
-      case CollectionType::kMap:
-        type_ = ValueType::kMap;
+      case Type::kMap:
         map_ = new std::map<EncodableValue, EncodableValue>();
         break;
     }
@@ -125,39 +164,39 @@ class EncodableValue {
 
     type_ = other.type_;
     switch (type_) {
-      case ValueType::kNull:
+      case Type::kNull:
         break;
-      case ValueType::kBool:
+      case Type::kBool:
         bool_ = other.bool_;
         break;
-      case ValueType::kInt:
+      case Type::kInt:
         int_ = other.int_;
         break;
-      case ValueType::kLong:
+      case Type::kLong:
         long_ = other.long_;
         break;
-      case ValueType::kDouble:
+      case Type::kDouble:
         double_ = other.double_;
         break;
-      case ValueType::kString:
+      case Type::kString:
         string_ = new std::string(*other.string_);
         break;
-      case ValueType::kByteList:
+      case Type::kByteList:
         byte_list_ = new std::vector<uint8_t>(*other.byte_list_);
         break;
-      case ValueType::kIntList:
+      case Type::kIntList:
         int_list_ = new std::vector<int32_t>(*other.int_list_);
         break;
-      case ValueType::kLongList:
+      case Type::kLongList:
         long_list_ = new std::vector<int64_t>(*other.long_list_);
         break;
-      case ValueType::kDoubleList:
+      case Type::kDoubleList:
         double_list_ = new std::vector<double>(*other.double_list_);
         break;
-      case ValueType::kList:
+      case Type::kList:
         list_ = new std::vector<EncodableValue>(*other.list_);
         break;
-      case ValueType::kMap:
+      case Type::kMap:
         map_ = new std::map<EncodableValue, EncodableValue>(*other.map_);
         break;
     }
@@ -183,44 +222,44 @@ class EncodableValue {
 
     type_ = other.type_;
     switch (type_) {
-      case ValueType::kNull:
+      case Type::kNull:
         break;
-      case ValueType::kBool:
+      case Type::kBool:
         bool_ = other.bool_;
         break;
-      case ValueType::kInt:
+      case Type::kInt:
         int_ = other.int_;
         break;
-      case ValueType::kLong:
+      case Type::kLong:
         long_ = other.long_;
         break;
-      case ValueType::kDouble:
+      case Type::kDouble:
         double_ = other.double_;
         break;
-      case ValueType::kString:
+      case Type::kString:
         string_ = other.string_;
         break;
-      case ValueType::kByteList:
+      case Type::kByteList:
         byte_list_ = other.byte_list_;
         break;
-      case ValueType::kIntList:
+      case Type::kIntList:
         int_list_ = other.int_list_;
         break;
-      case ValueType::kLongList:
+      case Type::kLongList:
         long_list_ = other.long_list_;
         break;
-      case ValueType::kDoubleList:
+      case Type::kDoubleList:
         double_list_ = other.double_list_;
         break;
-      case ValueType::kList:
+      case Type::kList:
         list_ = other.list_;
         break;
-      case ValueType::kMap:
+      case Type::kMap:
         map_ = other.map_;
         break;
     }
     // Ensure that destruction doesn't run on the source of the move.
-    other.type_ = ValueType::kNull;
+    other.type_ = Type::kNull;
     return *this;
   }
 
@@ -244,24 +283,24 @@ class EncodableValue {
       return type_ < other.type_;
     }
     switch (type_) {
-      case ValueType::kNull:
+      case Type::kNull:
         return false;
-      case ValueType::kBool:
+      case Type::kBool:
         return bool_ < other.bool_;
-      case ValueType::kInt:
+      case Type::kInt:
         return int_ < other.int_;
-      case ValueType::kLong:
+      case Type::kLong:
         return long_ < other.long_;
-      case ValueType::kDouble:
+      case Type::kDouble:
         return double_ < other.double_;
-      case ValueType::kString:
+      case Type::kString:
         return *string_ < *other.string_;
-      case ValueType::kByteList:
-      case ValueType::kIntList:
-      case ValueType::kLongList:
-      case ValueType::kDoubleList:
-      case ValueType::kList:
-      case ValueType::kMap:
+      case Type::kByteList:
+      case Type::kIntList:
+      case Type::kLongList:
+      case Type::kDoubleList:
+      case Type::kList:
+      case Type::kMap:
         return this < &other;
     }
     assert(false);
@@ -416,41 +455,47 @@ class EncodableValue {
   }
 
   // Returns true if this represents a null value.
-  bool IsNull() const { return type_ == ValueType::kNull; }
+  bool IsNull() const { return type_ == Type::kNull; }
 
   // Returns true if this represents a bool value.
-  bool IsBool() const { return type_ == ValueType::kBool; }
+  bool IsBool() const { return type_ == Type::kBool; }
 
   // Returns true if this represents a 32-bit integer value.
-  bool IsInt() const { return type_ == ValueType::kInt; }
+  bool IsInt() const { return type_ == Type::kInt; }
 
   // Returns true if this represents a 64-bit integer value.
-  bool IsLong() const { return type_ == ValueType::kLong; }
+  bool IsLong() const { return type_ == Type::kLong; }
 
   // Returns true if this represents a double value.
-  bool IsDouble() const { return type_ == ValueType::kDouble; }
+  bool IsDouble() const { return type_ == Type::kDouble; }
 
   // Returns true if this represents a string value.
-  bool IsString() const { return type_ == ValueType::kString; }
+  bool IsString() const { return type_ == Type::kString; }
 
   // Returns true if this represents a list of bytes.
-  bool IsByteList() const { return type_ == ValueType::kByteList; }
+  bool IsByteList() const { return type_ == Type::kByteList; }
 
   // Returns true if this represents a list of 32-bit integers.
-  bool IsIntList() const { return type_ == ValueType::kIntList; }
+  bool IsIntList() const { return type_ == Type::kIntList; }
 
   // Returns true if this represents a list of 64-bit integers.
-  bool IsLongList() const { return type_ == ValueType::kLongList; }
+  bool IsLongList() const { return type_ == Type::kLongList; }
 
   // Returns true if this represents a list of doubles.
-  bool IsDoubleList() const { return type_ == ValueType::kDoubleList; }
+  bool IsDoubleList() const { return type_ == Type::kDoubleList; }
 
   // Returns true if this represents a list of EncodableValues.
-  bool IsList() const { return type_ == ValueType::kList; }
+  bool IsList() const { return type_ == Type::kList; }
 
   // Returns true if this represents a map of EncodableValue : EncodableValue
   // pairs.
-  bool IsMap() const { return type_ == ValueType::kMap; }
+  bool IsMap() const { return type_ == Type::kMap; }
+
+  // Returns the type this value represents.
+  //
+  // This is primarily intended for use with switch(); for individual checks,
+  // prefer an Is*() call.
+  Type type() { return type_; }
 
  private:
   // Performs any cleanup necessary for the active union value. This must be
@@ -459,53 +504,37 @@ class EncodableValue {
   // After calling this, type_ will alway be kNull.
   void DestroyValue() {
     switch (type_) {
-      case ValueType::kNull:
-      case ValueType::kBool:
-      case ValueType::kInt:
-      case ValueType::kLong:
-      case ValueType::kDouble:
+      case Type::kNull:
+      case Type::kBool:
+      case Type::kInt:
+      case Type::kLong:
+      case Type::kDouble:
         break;
-      case ValueType::kString:
+      case Type::kString:
         delete string_;
         break;
-      case ValueType::kByteList:
+      case Type::kByteList:
         delete byte_list_;
         break;
-      case ValueType::kIntList:
+      case Type::kIntList:
         delete int_list_;
         break;
-      case ValueType::kLongList:
+      case Type::kLongList:
         delete long_list_;
         break;
-      case ValueType::kDoubleList:
+      case Type::kDoubleList:
         delete double_list_;
         break;
-      case ValueType::kList:
+      case Type::kList:
         delete list_;
         break;
-      case ValueType::kMap:
+      case Type::kMap:
         delete map_;
         break;
     }
 
-    type_ = ValueType::kNull;
+    type_ = Type::kNull;
   }
-
-  // Types corresponding to entries in the anonymous union.
-  enum class ValueType {
-    kNull,
-    kBool,
-    kInt,
-    kLong,
-    kDouble,
-    kString,
-    kByteList,
-    kIntList,
-    kLongList,
-    kDoubleList,
-    kList,
-    kMap,
-  };
 
   // The anonymous union that stores the represented value. Accessing any of
   // these entries other than the one that corresponds to the current value of
@@ -530,7 +559,7 @@ class EncodableValue {
   };
 
   // The currently active union entry.
-  ValueType type_ = ValueType::kNull;
+  Type type_ = Type::kNull;
 };
 
 }  // namespace flutter
