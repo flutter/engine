@@ -18,6 +18,7 @@ _wrapper_includes = [
   "include/flutter/method_codec.h",
   "include/flutter/method_result.h",
   "include/flutter/plugin_registrar.h",
+  "include/flutter/standard_message_codec.h",
 ]
 
 # TODO: Once the wrapper API is more stable, consolidate to as few files as is
@@ -28,6 +29,7 @@ _wrapper_sources = [
   "json_message_codec.cc",
   "json_method_codec.cc",
   "plugin_registrar.cc",
+  "standard_message_codec.cc",
 ]
 
 # Client library build for internal use by the shell implementation.
@@ -76,6 +78,7 @@ executable("client_wrapper_unittests") {
     "encodable_value_unittests.cc",
     "method_call_unittests.cc",
     "plugin_registrar_unittests.cc",
+    "standard_message_codec_unittests.cc",
   ]
 
   deps = [
