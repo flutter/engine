@@ -19,4 +19,3 @@ const char* GetDartVersion() {
 }
 
 }  // namespace flutter
-
