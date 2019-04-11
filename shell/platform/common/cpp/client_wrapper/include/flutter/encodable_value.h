@@ -495,7 +495,7 @@ class EncodableValue {
   //
   // This is primarily intended for use with switch(); for individual checks,
   // prefer an Is*() call.
-  Type type() { return type_; }
+  Type type() const { return type_; }
 
  private:
   // Performs any cleanup necessary for the active union value. This must be
