@@ -1,4 +1,4 @@
-Signature: 866085660a05bb407caffc09636cbd32
+Signature: b90e9f63b0e95a81dffd2ed12098c86f
 
 UNUSED LICENSES:
 
@@ -5174,6 +5174,7 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_arm64.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_dbc.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_ia32.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_x64.cc
+FILE: ../../../third_party/dart/runtime/vm/constants_arm.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_arm64.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_ia32.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_x64.cc
