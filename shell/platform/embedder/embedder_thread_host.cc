@@ -10,6 +10,11 @@
 #include "flutter/fml/message_loop.h"
 #include "flutter/shell/platform/embedder/embedder_safe_access.h"
 
+#if OS_LINUX
+#include <sys/resource.h>
+#include <sys/syscall.h>
+#endif  // OS_LINUX
+
 namespace flutter {
 
 static fml::RefPtr<EmbedderTaskRunner> CreateEmbedderTaskRunner(
@@ -119,6 +124,22 @@ EmbedderThreadHost::CreateEmbedderManagedThreadHost(
   if (!task_runners.IsValid()) {
     return nullptr;
   }
+
+#if OS_LINUX
+  thread_host.gpu_thread->GetTaskRunner()->PostTask([]() {
+    if (setpriority(PRIO_PROCESS, syscall(__NR_gettid), -5) != 0) {
+      FML_LOG(ERROR) << "Failed to set GPU task runner priority";
+    }
+  });
+  thread_host.ui_thread->GetTaskRunner()->PostTask([]() {
+    if (setpriority(PRIO_PROCESS, syscall(__NR_gettid), -2) != 0) {
+      FML_LOG(ERROR) << "Failed to set UI task runner priority";
+    }
+  });
+  if (setpriority(PRIO_PROCESS, syscall(__NR_gettid), -2) != 0) {
+    FML_LOG(ERROR) << "Failed to set Platform task runner priority";
+  }
+#endif  // OS_LINUX
 
   std::set<fml::RefPtr<EmbedderTaskRunner>> embedder_task_runners;
   embedder_task_runners.insert(platform_task_runner);
