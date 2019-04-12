@@ -23,13 +23,16 @@ part of dart.ui;
 
 bool _rectIsValid(Rect rect) {
   assert(rect != null, 'Rect argument was null.');
-  assert(!rect._value.any((double value) => value.isNaN), 'Rect argument contained a NaN value.');
+  assert(!(rect.left.isNaN || rect.top.isNaN || rect.right.isNaN || rect.bottom.isNaN), 'Rect argument contained a NaN value.');
   return true;
 }
 
 bool _rrectIsValid(RRect rrect) {
   assert(rrect != null, 'RRect argument was null.');
-  assert(!rrect._value.any((double value) => value.isNaN), 'RRect argument contained a NaN value.');
+  assert(!(rrect.left.isNaN || rrect.top.isNaN || rrect.right.isNaN || rrect.bottom.isNaN ||
+           rrect.trRadiusX.isNaN || rrect.trRadiusY.isNaN || rrect.tlRadiusX.isNaN || rrect.tlRadiusY.isNaN ||
+           rrect.brRadiusX.isNaN || rrect.brRadiusY.isNaN || rrect.blRadiusX.isNaN || rrect.blRadiusY.isNaN),
+        'RRect argument contained a NaN value.');
   return true;
 }
 
