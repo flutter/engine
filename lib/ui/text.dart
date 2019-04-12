@@ -810,11 +810,10 @@ ByteData _encodeStrut(
   return ByteData.view(data.buffer, 0,  byteCount);
 }
 
-/// TODO(justinmc): document
+/// The different ways of considering the width of a Text widget.
 enum TextWidthType {
   /// The width will take up as much space as is given to it. This is useful for
-  /// most common use cases, for example, a series of several paragraphs in a
-  /// column.
+  /// most common use cases, like a series of several paragraphs in a column.
   full,
 
   /// The width will be as small as possible, even when the text wraps on to
