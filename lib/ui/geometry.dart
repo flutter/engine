@@ -677,6 +677,9 @@ class Rect {
   /// this rectangle.
   Size get size => new Size(width, height);
 
+  /// Whether any of the dimensions are `NaN`.
+  bool get hasNaN => left.isNaN || top.isNaN || right.isNaN || bottom.isNaN;
+
   /// A rectangle with left, top, right, and bottom edges all at zero.
   static const Rect zero = Rect.fromLTRB(0.0, 0.0, 0.0, 0.0);
 
@@ -1386,6 +1389,10 @@ class RRect {
   /// rounded rectangle.
   double get longestSide => math.max(width.abs(), height.abs());
 
+  /// Whether any of the dimensions are `NaN`.
+  bool get hasNaN => left.isNaN || top.isNaN || right.isNaN || bottom.isNaN ||
+                     trRadiusX.isNaN || trRadiusY.isNaN || tlRadiusX.isNaN || tlRadiusY.isNaN ||
+                     brRadiusX.isNaN || brRadiusY.isNaN || blRadiusX.isNaN || blRadiusY.isNaN;
 
   /// The offset to the point halfway between the left and right and the top and
   /// bottom edges of this rectangle.
