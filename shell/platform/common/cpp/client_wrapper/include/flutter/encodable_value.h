@@ -14,6 +14,8 @@
 
 namespace flutter {
 
+static_assert(sizeof(double) == 8, "EncodableValue requires a 64-bit double");
+
 class EncodableValue;
 // Convenience type aliases for list and map EncodableValue types.
 using EncodableList = std::vector<EncodableValue>;
@@ -49,12 +51,12 @@ class EncodableValue {
     kBool,        // A boolean value.
     kInt,         // A 32-bit integer.
     kLong,        // A 64-bit integer.
-    kDouble,      // A double.
+    kDouble,      // A 64-bit floating point number.
     kString,      // A string.
     kByteList,    // A list of bytes.
     kIntList,     // A list of 32-bit integers.
     kLongList,    // A list of 64-bit integers.
-    kDoubleList,  // A list of doubles.
+    kDoubleList,  // A list of 64-bit floating point numbers.
     kList,        // A list of EncodableValues.
     kMap,         // A mapping from EncodableValues to EncodableValues.
   };
@@ -71,7 +73,7 @@ class EncodableValue {
   // Creates an instance representing a 64-bit integer value.
   explicit EncodableValue(int64_t value) : long_(value), type_(Type::kLong) {}
 
-  // Creates an instance representing a double value.
+  // Creates an instance representing a 64-bit floating point value.
   explicit EncodableValue(double value)
       : double_(value), type_(Type::kDouble) {}
 
@@ -98,7 +100,7 @@ class EncodableValue {
       : long_list_(new std::vector<int64_t>(std::move(list))),
         type_(Type::kLongList) {}
 
-  // Creates an instance representing a list of doubles.
+  // Creates an instance representing a list of 64-bit floating point values.
   explicit EncodableValue(std::vector<double> list)
       : double_list_(new std::vector<double>(std::move(list))),
         type_(Type::kDoubleList) {}
