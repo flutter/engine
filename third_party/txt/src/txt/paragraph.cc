@@ -516,7 +516,9 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
   }
 }
 
-void Paragraph::ComputePlaceholder(PlaceholderRun* placeholder_run, double& ascent, double& descent) {
+void Paragraph::ComputePlaceholder(PlaceholderRun* placeholder_run,
+                                   double& ascent,
+                                   double& descent) {
   if (placeholder_run != nullptr) {
     // Calculate how much to shift the ascent and descent to account
     // for the baseline choice.
@@ -540,7 +542,7 @@ void Paragraph::ComputePlaceholder(PlaceholderRun* placeholder_run, double& asce
       case PlaceholderAlignment::kBaseline: {
         ascent = baseline_adjustment + placeholder_run->baseline_offset;
         descent = -baseline_adjustment + placeholder_run->height -
-          placeholder_run->baseline_offset;
+                  placeholder_run->baseline_offset;
         break;
       }
       case PlaceholderAlignment::kAboveBaseline: {
@@ -956,7 +958,8 @@ void Paragraph::Layout(double width, bool force) {
                               : glyph_positions.back().x_pos.end),
             line_number, metrics, run.direction(), run.placeholder_run());
         if (run.is_placeholder_run()) {
-          line_inline_placeholder_code_unit_runs.push_back(line_code_unit_runs.back());
+          line_inline_placeholder_code_unit_runs.push_back(
+              line_code_unit_runs.back());
         }
 
         min_left_ = std::min(min_left_, glyph_positions.front().x_pos.start);

@@ -436,8 +436,9 @@ class Paragraph {
 
   void SetFontCollection(std::shared_ptr<FontCollection> font_collection);
 
-  void SetInlinePlaceholders(std::vector<PlaceholderRun> inline_placeholders,
-    std::unordered_set<size_t> obj_replacement_char_indexes);
+  void SetInlinePlaceholders(
+      std::vector<PlaceholderRun> inline_placeholders,
+      std::unordered_set<size_t> obj_replacement_char_indexes);
 
   // Break the text into lines.
   bool ComputeLineBreaks();
