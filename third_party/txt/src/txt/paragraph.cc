@@ -239,9 +239,11 @@ void Paragraph::SetText(std::vector<uint16_t> text, StyledRuns runs) {
 }
 
 void Paragraph::SetInlinePlaceholders(
-    std::vector<PlaceholderRun> inline_placeholders) {
+    std::vector<PlaceholderRun> inline_placeholders,
+    std::unordered_set<size_t> obj_replacement_char_indexes) {
   needs_layout_ = true;
   inline_placeholders_ = std::move(inline_placeholders);
+  obj_replacement_char_indexes_ = std::move(obj_replacement_char_indexes);
 }
 
 bool Paragraph::ComputeLineBreaks() {
@@ -318,7 +320,9 @@ bool Paragraph::ComputeLineBreaks() {
 
       // Check if the run is an object replacement character-only run. We should
       // leave space for inline placeholder and break around it if appropriate.
-      if (run.end - run.start == 1 && text_[run.start] == objReplacementChar &&
+      if (run.end - run.start == 1 &&
+          obj_replacement_char_indexes_.count(run.start) != 0 &&
+          text_[run.start] == objReplacementChar &&
           inline_placeholder_index < inline_placeholders_.size()) {
         // Is a inline placeholder run.
         PlaceholderRun placeholder_run =
@@ -512,6 +516,62 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
   }
 }
 
+void Paragraph::ComputePlaceholder(PlaceholderRun* placeholder_run, double& ascent, double& descent) {
+  if (placeholder_run != nullptr) {
+    // Calculate how much to shift the ascent and descent to account
+    // for the baseline choice.
+    //
+    // TODO(garyq): implement for various baselines. Currently only
+    // supports for alphabetic and ideographic
+    double baseline_adjustment = 0;
+    switch (placeholder_run->baseline) {
+      case TextBaseline::kAlphabetic: {
+        baseline_adjustment = 0;
+        break;
+      }
+      case TextBaseline::kIdeographic: {
+        baseline_adjustment = -descent / 2;
+        break;
+      }
+    }
+    // Convert the ascent and descent from the font's to the placeholder
+    // rect's.
+    switch (placeholder_run->alignment) {
+      case PlaceholderAlignment::kBaseline: {
+        ascent = baseline_adjustment + placeholder_run->baseline_offset;
+        descent = -baseline_adjustment + placeholder_run->height -
+          placeholder_run->baseline_offset;
+        break;
+      }
+      case PlaceholderAlignment::kAboveBaseline: {
+        ascent = baseline_adjustment + placeholder_run->height;
+        descent = -baseline_adjustment;
+        break;
+      }
+      case PlaceholderAlignment::kBelowBaseline: {
+        descent = baseline_adjustment + placeholder_run->height;
+        ascent = -baseline_adjustment;
+        break;
+      }
+      case PlaceholderAlignment::kTop: {
+        descent = placeholder_run->height - ascent;
+        break;
+      }
+      case PlaceholderAlignment::kBottom: {
+        ascent = placeholder_run->height - descent;
+        break;
+      }
+      case PlaceholderAlignment::kMiddle: {
+        double mid = (ascent - descent) / 2;
+        ascent = mid + placeholder_run->height / 2;
+        descent = -mid + placeholder_run->height / 2;
+        break;
+      }
+    }
+    placeholder_run->baseline_offset = ascent;
+  }
+}
+
 // Implementation outline:
 //
 // -For each line:
@@ -612,6 +672,7 @@ void Paragraph::Layout(double width, bool force) {
         // The run is a placeholder run.
         if (bidi_run.size() == 1 &&
             text_[bidi_run.start()] == objReplacementChar &&
+            obj_replacement_char_indexes_.count(bidi_run.start()) != 0 &&
             placeholder_run_index < inline_placeholders_.size()) {
           line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
                                  std::min(bidi_run.end(), line_end_index),
@@ -895,9 +956,7 @@ void Paragraph::Layout(double width, bool force) {
                               : glyph_positions.back().x_pos.end),
             line_number, metrics, run.direction(), run.placeholder_run());
         if (run.is_placeholder_run()) {
-          line_inline_placeholder_code_unit_runs.insert(
-              line_inline_placeholder_code_unit_runs.end(),
-              line_code_unit_runs.end() - 1, line_code_unit_runs.end());
+          line_inline_placeholder_code_unit_runs.push_back(line_code_unit_runs.back());
         }
 
         min_left_ = std::min(min_left_, glyph_positions.front().x_pos.start);
@@ -953,59 +1012,8 @@ void Paragraph::Layout(double width, bool force) {
         double descent =
             (metrics.fDescent + metrics.fLeading / 2) * style.height;
 
-        if (placeholder_run != nullptr) {
-          // Calculate how much to shift the ascent and descent to account
-          // for the baseline choice.
-          //
-          // TODO(garyq): implement for various baselines. Currently only
-          // supports for alphabetic and ideographic
-          double baseline_adjustment = 0;
-          switch (placeholder_run->baseline) {
-            case TextBaseline::kAlphabetic: {
-              baseline_adjustment = 0;
-              break;
-            }
-            case TextBaseline::kIdeographic: {
-              baseline_adjustment = -descent / 2;
-              break;
-            }
-          }
-          // Convert the ascent and descent from the font's to the placeholder
-          // rect's.
-          switch (placeholder_run->alignment) {
-            case PlaceholderAlignment::kBaseline: {
-              ascent = baseline_adjustment + placeholder_run->baseline_offset;
-              descent = -baseline_adjustment + placeholder_run->height -
-                        placeholder_run->baseline_offset;
-              break;
-            }
-            case PlaceholderAlignment::kAboveBaseline: {
-              ascent = baseline_adjustment + placeholder_run->height;
-              descent = -baseline_adjustment;
-              break;
-            }
-            case PlaceholderAlignment::kBelowBaseline: {
-              descent = baseline_adjustment + placeholder_run->height;
-              ascent = -baseline_adjustment;
-              break;
-            }
-            case PlaceholderAlignment::kTop: {
-              descent = placeholder_run->height - ascent;
-              break;
-            }
-            case PlaceholderAlignment::kBottom: {
-              ascent = placeholder_run->height - descent;
-              break;
-            }
-            case PlaceholderAlignment::kMiddle: {
-              double mid = (ascent - descent) / 2;
-              ascent = mid + placeholder_run->height / 2;
-              descent = -mid + placeholder_run->height / 2;
-              break;
-            }
-          }
-          placeholder_run->baseline_offset = ascent;
-        }
+        ComputePlaceholder(placeholder_run, ascent, descent);
+
         max_ascent = std::max(ascent, max_ascent);
         max_descent = std::max(descent, max_descent);
       }

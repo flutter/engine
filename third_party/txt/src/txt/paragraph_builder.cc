@@ -88,21 +88,9 @@ void ParagraphBuilder::AddPlaceholder(PlaceholderRun& span) {
 std::unique_ptr<Paragraph> ParagraphBuilder::Build() {
   runs_.EndRunIfNeeded(text_.size());
 
-  // When placeholders are added, we replace all non-placeholder instances of
-  // 0xFFFC with 0xFFFD as we reserve 0xFFFC to indicate the position of
-  // placeholders.
-  if (!obj_replacement_char_indexes_.empty()) {
-    for (size_t index = 0; index < text_.size(); ++index) {
-      if (text_[index] == objReplacementChar &&
-          obj_replacement_char_indexes_.count(index) == 0) {
-        text_[index] = replacementChar;
-      }
-    }
-  }
-
   std::unique_ptr<Paragraph> paragraph = std::make_unique<Paragraph>();
   paragraph->SetText(std::move(text_), std::move(runs_));
-  paragraph->SetInlinePlaceholders(std::move(inline_placeholders_));
+  paragraph->SetInlinePlaceholders(std::move(inline_placeholders_), std::move(obj_replacement_char_indexes_));
   paragraph->SetParagraphStyle(paragraph_style_);
   paragraph->SetFontCollection(font_collection_);
   SetParagraphStyle(paragraph_style_);

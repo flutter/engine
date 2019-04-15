@@ -1543,11 +1543,6 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// Adds the given text to the paragraph.
   ///
   /// The text will be styled according to the current stack of text styles.
-  ///
-  /// When adding 0xFFFC codepoints instances of 0xFFFC passed in through this
-  /// methid will be replaced with 0xFFFD if at least one placeholder is added.
-  /// This replacement does not happen if no placeholders are added. See
-  /// [addPlaceholder] for details.
   void addText(String text) {
     final String error = _addText(text);
     if (error != null)
@@ -1596,10 +1591,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   ///
   /// Placeholders are represented by a unicode 0xFFFC "object replacement character"
   /// in the text buffer. For each placeholder, one object replacement character is
-  /// added on to the text buffer. When 0xFFFC codepoints are passed in as part of
-  /// the text in [addText], then the non-placeholder instances of 0xFFFC will be
-  /// replaced with 0xFFFD instead. This replacement does not happen if no
-  /// placeholders are added.
+  /// added on to the text buffer.
   void addPlaceholder(double width, double height, PlaceholderAlignment alignment, {
     double baselineOffset,
     TextBaseline baseline

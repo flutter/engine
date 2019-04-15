@@ -261,6 +261,10 @@ class Paragraph {
   std::vector<PlaceholderRun> inline_placeholders_;
   // The indexes of the boxes that correspond to an inline placeholder.
   std::vector<size_t> inline_placeholder_boxes_;
+  // The indexes of instances of 0xFFFC that correspond to placeholders. This is
+  // necessary since the user may pass in manually entered 0xFFFC values using
+  // AddText().
+  std::unordered_set<size_t> obj_replacement_char_indexes_;
   StyledRuns runs_;
   ParagraphStyle paragraph_style_;
   std::shared_ptr<FontCollection> font_collection_;
@@ -432,7 +436,8 @@ class Paragraph {
 
   void SetFontCollection(std::shared_ptr<FontCollection> font_collection);
 
-  void SetInlinePlaceholders(std::vector<PlaceholderRun> inline_placeholders);
+  void SetInlinePlaceholders(std::vector<PlaceholderRun> inline_placeholders,
+    std::unordered_set<size_t> obj_replacement_char_indexes);
 
   // Break the text into lines.
   bool ComputeLineBreaks();
@@ -442,6 +447,12 @@ class Paragraph {
 
   // Calculates and populates strut based on paragraph_style_ strut info.
   void ComputeStrut(StrutMetrics* strut, SkFont& font);
+
+  // Adjusts the ascent and descent based on the existence and type of
+  // placeholder. This method sets the proper metrics to achieve the different
+  // PlaceholderAlignment options.
+  void ComputePlaceholder(PlaceholderRun* placeholder_run, double& ascent,
+    double& descent);
 
   // Calculate the starting X offset of a line based on the line's width and
   // alignment.

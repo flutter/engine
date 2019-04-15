@@ -90,8 +90,7 @@ class ParagraphBuilder {
   // equal number of 0xFFFC characters and elements in this vector.
   std::vector<PlaceholderRun> inline_placeholders_;
   // The indexes of the obj replacement characters added through
-  // ParagraphBuilder::addPlaceholder(). The obj replacement characters at these
-  // indexes are exempt from conversion into 0xFFFD.
+  // ParagraphBuilder::addPlaceholder().
   std::unordered_set<size_t> obj_replacement_char_indexes_;
   std::vector<size_t> style_stack_;
   std::shared_ptr<FontCollection> font_collection_;
