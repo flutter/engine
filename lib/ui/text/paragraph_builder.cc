@@ -266,7 +266,8 @@ ParagraphBuilder::ParagraphBuilder(
   }
 
   if (mask & psWidthTypeMask) {
-    style.width_type = static_cast<txt::TextWidthType>(encoded[psWidthTypeIndex]);
+    style.width_type =
+        static_cast<txt::TextWidthType>(encoded[psWidthTypeIndex]);
   }
 
   if (mask & psEllipsisMask) {
