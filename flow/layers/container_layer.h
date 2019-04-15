@@ -19,6 +19,13 @@ class ContainerLayer : public Layer {
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
+  void set_elevation(float elevation) { elevation_ = elevation; }
+
+  float get_total_elevation() {
+    return elevation_ +
+           (parent() != nullptr ? parent()->get_total_elevation() : 0.0f);
+  }
+
 #if defined(OS_FUCHSIA)
   void UpdateScene(SceneUpdateContext& context) override;
 #endif  // defined(OS_FUCHSIA)
@@ -37,6 +44,8 @@ class ContainerLayer : public Layer {
 
   // For OpacityLayer to restructure to have a single child.
   void ClearChildren() { layers_.clear(); }
+
+  float elevation_ = 0.0f;
 
  private:
   std::vector<std::shared_ptr<Layer>> layers_;

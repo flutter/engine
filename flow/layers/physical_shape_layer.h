@@ -16,10 +16,10 @@ class PhysicalShapeLayer : public ContainerLayer {
 
   void set_path(const SkPath& path);
 
-  void set_elevation(float elevation) { elevation_ = elevation; }
   void set_color(SkColor color) { color_ = color; }
   void set_shadow_color(SkColor shadow_color) { shadow_color_ = shadow_color; }
   void set_device_pixel_ratio(SkScalar dpr) { device_pixel_ratio_ = dpr; }
+  void set_viewport_depth(float depth) { viewport_depth_ = depth; }
 
   static void DrawShadow(SkCanvas* canvas,
                          const SkPath& path,
@@ -37,7 +37,7 @@ class PhysicalShapeLayer : public ContainerLayer {
 #endif  // defined(OS_FUCHSIA)
 
  private:
-  float elevation_;
+  float viewport_depth_;
   SkColor color_;
   SkColor shadow_color_;
   SkScalar device_pixel_ratio_;
