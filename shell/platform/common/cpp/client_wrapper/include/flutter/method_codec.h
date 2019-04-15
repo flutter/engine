@@ -36,7 +36,7 @@ class MethodCodec {
 
   // Returns the MethodCall encoded in |message|, or nullptr if it cannot be
   // decoded.
-  std::unique_ptr<T> DecodeMethodCall(
+  std::unique_ptr<MethodCall<T>> DecodeMethodCall(
       const std::vector<uint8_t>& message) const {
     size_t size = message.size();
     const uint8_t* data = size > 0 ? &message[0] : nullptr;
