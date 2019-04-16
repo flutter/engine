@@ -21,10 +21,7 @@ class ContainerLayer : public Layer {
 
   void set_elevation(float elevation) { elevation_ = elevation; }
 
-  float get_total_elevation() {
-    return elevation_ +
-           (parent() != nullptr ? parent()->get_total_elevation() : 0.0f);
-  }
+  float get_total_elevation() const;
 
 #if defined(OS_FUCHSIA)
   void UpdateScene(SceneUpdateContext& context) override;
