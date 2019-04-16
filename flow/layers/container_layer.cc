@@ -49,9 +49,9 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
   }
 }
 
-float ContainerLayer::get_total_elevation() const {
+float ContainerLayer::getTotalElevation() const {
   return elevation_ +
-         (parent() != nullptr ? parent()->get_total_elevation() : 0.0f);
+         (parent() != nullptr ? parent()->getTotalElevation() : 0.0f);
 }
 
 #if defined(OS_FUCHSIA)
