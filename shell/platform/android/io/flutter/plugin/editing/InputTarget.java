@@ -11,5 +11,6 @@ public interface InputTarget {
     }
 
     View getTargetView();
+
     InputConnection createInputConnection(EditorInfo outAttrs);
 }

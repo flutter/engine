@@ -74,7 +74,7 @@ class SingleViewPresentation extends Presentation implements InputTarget.Disposa
         @Override
         public void onFocusChange(View v, boolean hasFocus) {
             mState.mFocused = hasFocus;
-            mInputDispatch.updateInputTarget(SingleViewPresentation.this, hasFocus);
+            mInputDispatch.updateInputTarget(SingleViewPresentation.this, hasFocus, true);
         }
     };
 
@@ -164,12 +164,13 @@ class SingleViewPresentation extends Presentation implements InputTarget.Disposa
             mState.mView = mViewFactory.create(context, mViewId, mCreateParams);
         }
 
+        final boolean restartFocus = mState.mFocused;
         View embeddedView = mState.mView.getView();
         embeddedView.setOnFocusChangeListener(embeddedFocusListener);
 
         mContainer.addView(embeddedView);
         mRootView = new AccessibilityDelegatingFrameLayout(getContext(), mAccessibilityEventsDelegate, embeddedView);
-        // Make the root view focusable and make it the focused view to start.
+        // Make the root view focusable
         mRootView.setFocusable(true);
         mRootView.setFocusableInTouchMode(true);
 
@@ -177,7 +178,9 @@ class SingleViewPresentation extends Presentation implements InputTarget.Disposa
         mRootView.addView(mState.mFakeWindowRootView);
         setContentView(mRootView);
 
-        if (!mState.mFocused) {
+        if (restartFocus) {
+            embeddedView.requestFocus();
+        } else {
             mRootView.requestFocus();
         }
     }
@@ -199,6 +202,10 @@ class SingleViewPresentation extends Presentation implements InputTarget.Disposa
     }
 
     public PresentationState detachState() {
+        final PlatformView platformView = getView();
+        if (platformView != null && platformView.getView() != null) {
+            platformView.getView().setOnFocusChangeListener(null);
+        }
         mContainer.removeAllViews();
         mRootView.removeAllViews();
         return mState;

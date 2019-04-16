@@ -88,6 +88,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
         mInputDispatch = inputDispatch;
         MethodChannel channel = new MethodChannel(messenger, CHANNEL_NAME, StandardMethodCodec.INSTANCE);
         channel.setMethodCallHandler(this);
+        Log.i(TAG, "attached to dispatch" + inputDispatch);
     }
 
     /**
@@ -106,9 +107,9 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
     }
 
     @Override
-    public void updateInputTarget(InputTarget target, boolean setAsTarget) {
+    public void updateInputTarget(InputTarget target, boolean setAsTarget, boolean force) {
         if (mInputDispatch != null) {
-            mInputDispatch.updateInputTarget(target, setAsTarget);
+            mInputDispatch.updateInputTarget(target, setAsTarget, force);
         }
     }
 

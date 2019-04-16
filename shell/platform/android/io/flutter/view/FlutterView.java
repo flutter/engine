@@ -388,18 +388,21 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     }
 
     @Override
-    public void updateInputTarget(InputTarget target, boolean setAsTarget) {
+    public void updateInputTarget(InputTarget target, boolean setAsTarget, boolean force) {
         InputTarget oldTarget;
         if (mInputTarget == target) {
             if (setAsTarget) {
-                // It's already set as the current target.
-                return;
+                if (!force) {
+                    return;
+                } else {
+                    oldTarget = null;
+                }
+            } else {
+                // We'll remove it as the current target, and revert to the plugin as
+                // the new target. We'll also hide the keyboard.
+                oldTarget = target;
+                mInputTarget = mTextInputPlugin;
             }
-
-            // We'll remove it as the current target, and revert to the plugin as
-            // the new target.
-            oldTarget = target;
-            mInputTarget = mTextInputPlugin;
         } else if (setAsTarget) {
             // We'll set it as the current target.
             oldTarget = mInputTarget;
@@ -419,6 +422,11 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     @Override
     public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
         return mInputTarget.createInputConnection(outAttrs);
+    }
+
+    @Override
+    public boolean checkInputConnectionProxy(View view) {
+        return true;
     }
 
     @Override

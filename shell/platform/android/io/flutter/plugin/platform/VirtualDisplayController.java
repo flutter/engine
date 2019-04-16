@@ -137,9 +137,25 @@ class VirtualDisplayController implements InputDispatch, InputTarget.Disposable 
         mPresentation.show();
     }
 
+    public void dispose() {
+        PlatformView view = mPresentation.getView();
+        mPresentation.detachState();
+        mInputDispatch.updateInputTarget(this, false, false);
+        view.dispose();
+        mVirtualDisplay.release();
+        mTextureEntry.release();
+    }
+
+    public View getView() {
+        if (mPresentation == null)
+            return null;
+        PlatformView platformView = mPresentation.getView();
+        return platformView.getView();
+    }
+
     @Override
-    public void updateInputTarget(InputTarget target, boolean setAsTarget) {
-        mInputDispatch.updateInputTarget(this, true);
+    public void updateInputTarget(InputTarget target, boolean setAsTarget, boolean force) {
+        mInputDispatch.updateInputTarget(this, setAsTarget, force);
     }
 
     @Override
@@ -155,22 +171,6 @@ class VirtualDisplayController implements InputDispatch, InputTarget.Disposable 
     @Override
     public void disposeInputConnection() {
         mPresentation.disposeInputConnection();
-    }
-
-    public void dispose() {
-        PlatformView view = mPresentation.getView();
-        mPresentation.detachState();
-        mInputDispatch.updateInputTarget(this, false);
-        view.dispose();
-        mVirtualDisplay.release();
-        mTextureEntry.release();
-    }
-
-    public View getView() {
-        if (mPresentation == null)
-            return null;
-        PlatformView platformView = mPresentation.getView();
-        return platformView.getView();
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)

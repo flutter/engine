@@ -32,6 +32,8 @@ import java.util.Locale;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
+import io.flutter.plugin.editing.InputDispatch;
+import io.flutter.plugin.editing.InputTarget;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.view.AccessibilityBridge;
 
@@ -56,7 +58,7 @@ import io.flutter.view.AccessibilityBridge;
  * See <a>https://source.android.com/devices/graphics/arch-tv#surface_or_texture</a> for more
  * information comparing {@link android.view.SurfaceView} and {@link android.view.TextureView}.
  */
-public class FlutterView extends FrameLayout {
+public class FlutterView extends FrameLayout implements InputDispatch {
   private static final String TAG = "FlutterView";
 
   // Behavior configuration of this FlutterView.
@@ -80,6 +82,8 @@ public class FlutterView extends FrameLayout {
   // existing, stateless system channels, e.g., KeyEventChannel, TextInputChannel, etc.
   @Nullable
   private TextInputPlugin textInputPlugin;
+
+  private InputTarget inputTarget;
   @Nullable
   private AndroidKeyProcessor androidKeyProcessor;
   @Nullable
@@ -308,8 +312,11 @@ public class FlutterView extends FrameLayout {
       return super.onCreateInputConnection(outAttrs);
     }
 
-    return textInputPlugin.createInputConnection(this, outAttrs);
+    return inputTarget.createInputConnection(outAttrs);
   }
+
+  @Override
+  public void updateInputTarget(InputTarget target, boolean setAsTarget, boolean force) { }
 
   /**
    * Invoked when key is released.
@@ -477,8 +484,10 @@ public class FlutterView extends FrameLayout {
     // in a way that Flutter understands.
     textInputPlugin = new TextInputPlugin(
         this,
+	this,
         this.flutterEngine.getDartExecutor()
     );
+    inputTarget = textInputPlugin;
     androidKeyProcessor = new AndroidKeyProcessor(
         this.flutterEngine.getKeyEventChannel(),
         textInputPlugin

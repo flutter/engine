@@ -182,7 +182,7 @@ public class TextInputPlugin implements InputTarget {
     }
 
     private void showTextInput(View view) {
-        mInputDispatch.updateInputTarget(this, true);
+        mInputDispatch.updateInputTarget(this, true, false);
         view.requestFocus();
         mImm.showSoftInput(view, 0);
     }
