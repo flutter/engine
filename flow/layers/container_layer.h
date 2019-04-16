@@ -26,7 +26,7 @@ class ContainerLayer : public Layer {
 
   // Returns the cumulative height of this layer. Value is computed and cached
   // during preroll.
-  float get_cached_total_elevation() const { return cached_total_elevation_; }
+  float GetTotalElevation() const;
 
 #if defined(OS_FUCHSIA)
   void UpdateScene(SceneUpdateContext& context) override;
@@ -47,10 +47,10 @@ class ContainerLayer : public Layer {
   // For OpacityLayer to restructure to have a single child.
   void ClearChildren() { layers_.clear(); }
 
-  void cacheTotalElevation();
+  void ComputeTotalElevation();
 
   float elevation_ = 0.0f;
-  float cached_total_elevation_ = 0.0f;
+  float total_elevation_ = NAN;
 
  private:
   std::vector<std::shared_ptr<Layer>> layers_;
