@@ -2,14 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// This file contains what would normally be standard_codec_serializer.cc,
+// standard_message_codec.cc, and standard_method_codec.cc. They are grouped
+// together to simplify use of the client wrapper, since the common case is
+// that any client that needs one of these files needs all three.
+
+#include "include/flutter/standard_message_codec.h"
+#include "include/flutter/standard_method_codec.h"
 #include "standard_codec_serializer.h"
 
 #include <assert.h>
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <string>
+#include <vector>
 
 namespace flutter {
+
+// ===== standard_codec_serializer.h =====
 
 namespace {
 
@@ -254,6 +265,114 @@ void StandardCodecSerializer::WriteVector(
   }
   stream->WriteBytes(reinterpret_cast<const uint8_t*>(vector.data()),
                      count * type_size);
+}
+
+// ===== standard_message_codec.h =====
+
+// static
+const StandardMessageCodec& StandardMessageCodec::GetInstance() {
+  static StandardMessageCodec sInstance;
+  return sInstance;
+}
+
+StandardMessageCodec::StandardMessageCodec() = default;
+
+StandardMessageCodec::~StandardMessageCodec() = default;
+
+std::unique_ptr<EncodableValue> StandardMessageCodec::DecodeMessageInternal(
+    const uint8_t* binary_message,
+    const size_t message_size) const {
+  StandardCodecSerializer serializer;
+  ByteBufferStreamReader stream(binary_message, message_size);
+  return std::make_unique<EncodableValue>(serializer.ReadValue(&stream));
+}
+
+std::unique_ptr<std::vector<uint8_t>>
+StandardMessageCodec::EncodeMessageInternal(
+    const EncodableValue& message) const {
+  StandardCodecSerializer serializer;
+  auto encoded = std::make_unique<std::vector<uint8_t>>();
+  ByteBufferStreamWriter stream(encoded.get());
+  serializer.WriteValue(message, &stream);
+  return encoded;
+}
+
+// ===== standard_method_codec.h =====
+
+// static
+const StandardMethodCodec& StandardMethodCodec::GetInstance() {
+  static StandardMethodCodec sInstance;
+  return sInstance;
+}
+
+std::unique_ptr<MethodCall<EncodableValue>>
+StandardMethodCodec::DecodeMethodCallInternal(const uint8_t* message,
+                                              const size_t message_size) const {
+  StandardCodecSerializer serializer;
+  ByteBufferStreamReader stream(message, message_size);
+  EncodableValue method_name = serializer.ReadValue(&stream);
+  if (!method_name.IsString()) {
+    std::cerr << "Invalid method call; method name is not a string."
+              << std::endl;
+    return nullptr;
+  }
+  auto arguments =
+      std::make_unique<EncodableValue>(serializer.ReadValue(&stream));
+  return std::make_unique<MethodCall<EncodableValue>>(method_name.StringValue(),
+                                                      std::move(arguments));
+}
+
+std::unique_ptr<std::vector<uint8_t>>
+StandardMethodCodec::EncodeMethodCallInternal(
+    const MethodCall<EncodableValue>& method_call) const {
+  StandardCodecSerializer serializer;
+  auto encoded = std::make_unique<std::vector<uint8_t>>();
+  ByteBufferStreamWriter stream(encoded.get());
+  serializer.WriteValue(EncodableValue(method_call.method_name()), &stream);
+  if (method_call.arguments()) {
+    serializer.WriteValue(*method_call.arguments(), &stream);
+  } else {
+    serializer.WriteValue(EncodableValue(), &stream);
+  }
+  return encoded;
+}
+
+std::unique_ptr<std::vector<uint8_t>>
+StandardMethodCodec::EncodeSuccessEnvelopeInternal(
+    const EncodableValue* result) const {
+  StandardCodecSerializer serializer;
+  auto encoded = std::make_unique<std::vector<uint8_t>>();
+  ByteBufferStreamWriter stream(encoded.get());
+  stream.WriteByte(0);
+  if (result) {
+    serializer.WriteValue(*result, &stream);
+  } else {
+    serializer.WriteValue(EncodableValue(), &stream);
+  }
+  return encoded;
+}
+
+std::unique_ptr<std::vector<uint8_t>>
+StandardMethodCodec::EncodeErrorEnvelopeInternal(
+    const std::string& error_code,
+    const std::string& error_message,
+    const EncodableValue* error_details) const {
+  StandardCodecSerializer serializer;
+  auto encoded = std::make_unique<std::vector<uint8_t>>();
+  ByteBufferStreamWriter stream(encoded.get());
+  stream.WriteByte(1);
+  serializer.WriteValue(EncodableValue(error_code), &stream);
+  if (error_message.empty()) {
+    serializer.WriteValue(EncodableValue(), &stream);
+  } else {
+    serializer.WriteValue(EncodableValue(error_message), &stream);
+  }
+  if (error_details) {
+    serializer.WriteValue(*error_details, &stream);
+  } else {
+    serializer.WriteValue(EncodableValue(), &stream);
+  }
+  return encoded;
 }
 
 }  // namespace flutter
