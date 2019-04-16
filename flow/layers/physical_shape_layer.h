@@ -21,6 +21,11 @@ class PhysicalShapeLayer : public ContainerLayer {
   void set_device_pixel_ratio(SkScalar dpr) { device_pixel_ratio_ = dpr; }
   void set_viewport_depth(float depth) { viewport_depth_ = depth; }
 
+  // Sets the elevation. This needs to be set before preroll because it's then
+  // cached by any children of this layer. Setting it after preroll will break
+  // their elevation calculations.
+  void set_elevation(float elevation) { elevation_ = elevation; }
+
   static void DrawShadow(SkCanvas* canvas,
                          const SkPath& path,
                          SkColor color,
@@ -37,6 +42,8 @@ class PhysicalShapeLayer : public ContainerLayer {
 #endif  // defined(OS_FUCHSIA)
 
  private:
+  float elevation_ = 0.0f;
+  float total_elevation_ = 0.0f;
   float viewport_depth_;
   SkColor color_;
   SkColor shadow_color_;
