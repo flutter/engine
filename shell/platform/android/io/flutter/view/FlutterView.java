@@ -41,6 +41,8 @@ import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.plugin.common.*;
+import io.flutter.plugin.editing.InputDispatch;
+import io.flutter.plugin.editing.InputTarget;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
@@ -53,7 +55,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * An Android view containing a Flutter app.
  */
-public class FlutterView extends SurfaceView implements BinaryMessenger, TextureRegistry {
+public class FlutterView extends SurfaceView implements BinaryMessenger, TextureRegistry, InputDispatch {
     /**
      * Interface for those objects that maintain and expose a reference to a
      * {@code FlutterView} (such as a full-screen Flutter activity).
@@ -111,6 +113,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     private final AtomicLong nextTextureId = new AtomicLong(0L);
     private FlutterNativeView mNativeView;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
+    private InputTarget mInputTarget;
 
     private final AccessibilityBridge.OnAccessibilityChangeListener onAccessibilityChangeListener = new AccessibilityBridge.OnAccessibilityChangeListener() {
         @Override
@@ -188,9 +191,11 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         PlatformPlugin platformPlugin = new PlatformPlugin(activity, platformChannel);
         addActivityLifecycleListener(platformPlugin);
         mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        mTextInputPlugin = new TextInputPlugin(this, dartExecutor);
+        mTextInputPlugin = new TextInputPlugin(this, this, dartExecutor);
         androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
         androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer);
+
+        mInputTarget = mTextInputPlugin;
 
         // Send initial platform information to Dart
         sendLocalesToDart(getResources().getConfiguration());
@@ -383,8 +388,37 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     }
 
     @Override
+    public void updateInputTarget(InputTarget target, boolean setAsTarget) {
+        InputTarget oldTarget;
+        if (mInputTarget == target) {
+            if (setAsTarget) {
+                // It's already set as the current target.
+                return;
+            }
+
+            // We'll remove it as the current target, and revert to the plugin as
+            // the new target.
+            oldTarget = target;
+            mInputTarget = mTextInputPlugin;
+        } else if (setAsTarget) {
+            // We'll set it as the current target.
+            oldTarget = mInputTarget;
+            mInputTarget = target;
+        } else {
+            // It's not the current target and we're not setting it as the new target.
+            return;
+        }
+
+        if (oldTarget instanceof InputTarget.Disposable) {
+            ((InputTarget.Disposable) oldTarget).disposeInputConnection();
+        }
+
+        mImm.restartInput(mInputTarget.getTargetView());
+    }
+
+    @Override
     public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
-        return mTextInputPlugin.createInputConnection(this, outAttrs);
+        return mInputTarget.createInputConnection(outAttrs);
     }
 
     @Override

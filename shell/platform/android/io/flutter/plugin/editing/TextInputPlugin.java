@@ -18,18 +18,18 @@ import android.view.inputmethod.InputMethodManager;
 
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
-import io.flutter.view.FlutterView;
 
 /**
  * Android implementation of the text input plugin.
  */
-public class TextInputPlugin {
+public class TextInputPlugin implements InputTarget {
     @NonNull
     private final View mView;
     @NonNull
     private final InputMethodManager mImm;
     @NonNull
     private final TextInputChannel textInputChannel;
+    private final InputDispatch mInputDispatch;
     private int mClient = 0;
     @Nullable
     private TextInputChannel.Configuration configuration;
@@ -39,8 +39,9 @@ public class TextInputPlugin {
     @Nullable
     private InputConnection lastInputConnection;
 
-    public TextInputPlugin(View view, @NonNull DartExecutor dartExecutor) {
+    public TextInputPlugin(View view, InputDispatch inputDispatch, @NonNull DartExecutor dartExecutor) {
         mView = view;
+        mInputDispatch = inputDispatch;
         mImm = (InputMethodManager) view.getContext().getSystemService(
                 Context.INPUT_METHOD_SERVICE);
 
@@ -76,6 +77,11 @@ public class TextInputPlugin {
     @NonNull
     public InputMethodManager getInputMethodManager() {
         return mImm;
+    }
+
+    @Override
+    public View getTargetView() {
+        return mView;
     }
 
     private static int inputTypeFromTextInputType(
@@ -127,7 +133,8 @@ public class TextInputPlugin {
         return textType;
     }
 
-    public InputConnection createInputConnection(View view, EditorInfo outAttrs) {
+    @Override
+    public InputConnection createInputConnection(EditorInfo outAttrs) {
         if (mClient == 0) {
             lastInputConnection = null;
             return lastInputConnection;
@@ -157,7 +164,7 @@ public class TextInputPlugin {
         outAttrs.imeOptions |= enterAction;
 
         InputConnectionAdaptor connection = new InputConnectionAdaptor(
-            view,
+            mView,
             mClient,
             textInputChannel,
             mEditable
@@ -175,6 +182,7 @@ public class TextInputPlugin {
     }
 
     private void showTextInput(View view) {
+        mInputDispatch.updateInputTarget(this, true);
         view.requestFocus();
         mImm.showSoftInput(view, 0);
     }

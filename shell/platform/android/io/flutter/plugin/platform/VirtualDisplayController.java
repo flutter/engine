@@ -12,16 +12,21 @@ import android.os.Build;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
+import io.flutter.plugin.editing.InputDispatch;
+import io.flutter.plugin.editing.InputTarget;
 import io.flutter.view.TextureRegistry;
 
 @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
-class VirtualDisplayController {
+class VirtualDisplayController implements InputDispatch, InputTarget.Disposable {
 
     public static VirtualDisplayController create(
             Context context,
             AccessibilityEventsDelegate accessibilityEventsDelegate,
             PlatformViewFactory viewFactory,
             TextureRegistry.SurfaceTextureEntry textureEntry,
+            InputDispatch inputDispatch,
             int width,
             int height,
             int viewId,
@@ -46,13 +51,14 @@ class VirtualDisplayController {
         }
 
         return new VirtualDisplayController(
-                context, accessibilityEventsDelegate, virtualDisplay, viewFactory, surface, textureEntry, viewId, createParams);
+                context, accessibilityEventsDelegate, virtualDisplay, viewFactory, surface, textureEntry, inputDispatch, viewId, createParams);
     }
 
     private final Context mContext;
     private final AccessibilityEventsDelegate mAccessibilityEventsDelegate;
     private final int mDensityDpi;
     private final TextureRegistry.SurfaceTextureEntry mTextureEntry;
+    private final InputDispatch mInputDispatch;
     private VirtualDisplay mVirtualDisplay;
     private SingleViewPresentation mPresentation;
     private Surface mSurface;
@@ -65,17 +71,19 @@ class VirtualDisplayController {
             PlatformViewFactory viewFactory,
             Surface surface,
             TextureRegistry.SurfaceTextureEntry textureEntry,
+            InputDispatch inputDispatch,
             int viewId,
             Object createParams
     ) {
         mContext = context;
         mAccessibilityEventsDelegate = accessibilityEventsDelegate;
         mTextureEntry = textureEntry;
+        mInputDispatch = inputDispatch;
         mSurface = surface;
         mVirtualDisplay = virtualDisplay;
         mDensityDpi = context.getResources().getDisplayMetrics().densityDpi;
         mPresentation = new SingleViewPresentation(
-                context, mVirtualDisplay.getDisplay(), viewFactory, accessibilityEventsDelegate, viewId, createParams);
+                context, mVirtualDisplay.getDisplay(), viewFactory, accessibilityEventsDelegate, this, viewId, createParams);
         mPresentation.show();
     }
 
@@ -125,13 +133,34 @@ class VirtualDisplayController {
             public void onViewDetachedFromWindow(View v) {}
         });
 
-        mPresentation = new SingleViewPresentation(mContext, mVirtualDisplay.getDisplay(), mAccessibilityEventsDelegate, presentationState);
+        mPresentation = new SingleViewPresentation(mContext, mVirtualDisplay.getDisplay(), mAccessibilityEventsDelegate, this, presentationState);
         mPresentation.show();
+    }
+
+    @Override
+    public void updateInputTarget(InputTarget target, boolean setAsTarget) {
+        mInputDispatch.updateInputTarget(this, true);
+    }
+
+    @Override
+    public View getTargetView() {
+        return mPresentation.getTargetView();
+    }
+
+    @Override
+    public InputConnection createInputConnection(EditorInfo outAttrs) {
+        return mPresentation.createInputConnection(outAttrs);
+    }
+
+    @Override
+    public void disposeInputConnection() {
+        mPresentation.disposeInputConnection();
     }
 
     public void dispose() {
         PlatformView view = mPresentation.getView();
         mPresentation.detachState();
+        mInputDispatch.updateInputTarget(this, false);
         view.dispose();
         mVirtualDisplay.release();
         mTextureEntry.release();

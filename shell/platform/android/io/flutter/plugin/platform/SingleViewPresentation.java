@@ -14,7 +14,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.*;
 import android.view.accessibility.AccessibilityEvent;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
 import android.widget.FrameLayout;
+import io.flutter.plugin.editing.InputDispatch;
+import io.flutter.plugin.editing.InputTarget;
 
 import java.lang.reflect.*;
 
@@ -37,7 +41,7 @@ import static android.content.Context.WINDOW_SERVICE;
  *   EmbeddedView
  */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-class SingleViewPresentation extends Presentation {
+class SingleViewPresentation extends Presentation implements InputTarget.Disposable {
 
     /*
      * When an embedded view is resized in Flutterverse we move the Android view to a new virtual display
@@ -47,6 +51,9 @@ class SingleViewPresentation extends Presentation {
     static class PresentationState {
         // The Android view we are embedding in the Flutter app.
         private PlatformView mView;
+
+        // Whether the embedded view is focused.
+        boolean mFocused = false;
 
         // The InvocationHandler for a WindowManager proxy. This is essentially the custom window manager for the
         // presentation.
@@ -60,6 +67,16 @@ class SingleViewPresentation extends Presentation {
 
     // A reference to the current accessibility bridge to which accessibility events will be delegated.
     private final AccessibilityEventsDelegate mAccessibilityEventsDelegate;
+
+    private final InputDispatch mInputDispatch;
+
+    private final View.OnFocusChangeListener embeddedFocusListener = new View.OnFocusChangeListener() {
+        @Override
+        public void onFocusChange(View v, boolean hasFocus) {
+            mState.mFocused = hasFocus;
+            mInputDispatch.updateInputTarget(SingleViewPresentation.this, hasFocus);
+        }
+    };
 
     // This is the view id assigned by the Flutter framework to the embedded view, we keep it here
     // so when we create the platform view we can tell it its view id.
@@ -87,12 +104,14 @@ class SingleViewPresentation extends Presentation {
             Display display,
             PlatformViewFactory viewFactory,
             AccessibilityEventsDelegate accessibilityEventsDelegate,
+            InputDispatch inputDispatch,
             int viewId,
             Object createParams
     ) {
         super(outerContext, display);
         mViewFactory = viewFactory;
         mAccessibilityEventsDelegate = accessibilityEventsDelegate;
+        mInputDispatch = inputDispatch;
         mViewId = viewId;
         mCreateParams = createParams;
         mState = new PresentationState();
@@ -113,11 +132,13 @@ class SingleViewPresentation extends Presentation {
             Context outerContext,
             Display display,
             AccessibilityEventsDelegate accessibilityEventsDelegate,
+            InputDispatch inputDispatch,
             PresentationState state
     ) {
         super(outerContext, display);
         mAccessibilityEventsDelegate = accessibilityEventsDelegate;
         mViewFactory = null;
+        mInputDispatch = inputDispatch;
         mState = state;
         getWindow().setFlags(
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
@@ -144,11 +165,37 @@ class SingleViewPresentation extends Presentation {
         }
 
         View embeddedView = mState.mView.getView();
+        embeddedView.setOnFocusChangeListener(embeddedFocusListener);
+
         mContainer.addView(embeddedView);
         mRootView = new AccessibilityDelegatingFrameLayout(getContext(), mAccessibilityEventsDelegate, embeddedView);
+        // Make the root view focusable and make it the focused view to start.
+        mRootView.setFocusable(true);
+        mRootView.setFocusableInTouchMode(true);
+
         mRootView.addView(mContainer);
         mRootView.addView(mState.mFakeWindowRootView);
         setContentView(mRootView);
+
+        if (!mState.mFocused) {
+            mRootView.requestFocus();
+        }
+    }
+
+    @Override
+    public View getTargetView() {
+        return mState.mView.getView();
+    }
+
+    @Override
+    public InputConnection createInputConnection(EditorInfo outAttrs) {
+        return mState.mView.getView().onCreateInputConnection(outAttrs);
+    }
+
+    @Override
+    public void disposeInputConnection() {
+        mState.mFocused = false;
+        mRootView.requestFocus();
     }
 
     public PresentationState detachState() {
