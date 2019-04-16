@@ -16,7 +16,7 @@ class TransformLayer : public ContainerLayer {
   TransformLayer();
   ~TransformLayer() override;
 
-  void set_transform(const SkMatrix& transform) { transform_ = transform; }
+  void set_transform(const SkMatrix& transform);
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
@@ -28,6 +28,9 @@ class TransformLayer : public ContainerLayer {
 
  private:
   SkMatrix transform_;
+
+  // Check whether transform_ is set and initialized.
+  bool is_set_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TransformLayer);
 };
