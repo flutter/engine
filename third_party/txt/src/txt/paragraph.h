@@ -452,8 +452,9 @@ class Paragraph {
   // Adjusts the ascent and descent based on the existence and type of
   // placeholder. This method sets the proper metrics to achieve the different
   // PlaceholderAlignment options.
-  void ComputePlaceholder(PlaceholderRun* placeholder_run, double& ascent,
-    double& descent);
+  void ComputePlaceholder(PlaceholderRun* placeholder_run,
+                          double& ascent,
+                          double& descent);
 
   // Calculate the starting X offset of a line based on the line's width and
   // alignment.
