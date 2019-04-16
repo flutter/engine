@@ -1023,6 +1023,10 @@ enum Clip {
 // constant and can't propagate into the set/get calls.
 const Endian _kFakeHostEndian = Endian.little;
 
+// Passed to [instantiateImageCodec] to tell the engine to use the source image
+// size and not to resize to the container size.
+const double _kDoNotResizeImage = -1;
+
 /// A description of the style to use when drawing on a [Canvas].
 ///
 /// Most APIs on [Canvas] take a [Paint] object to describe the style
@@ -1629,10 +1633,14 @@ class Codec {
 /// unlikely that a factor that low will be sufficient to cache all decoded
 /// frames. The default value is `25.0`.
 ///
+/// If the [size] is specified, image is resized to this. This is typically used
+/// to resize the image to the container dimensions.
+///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list, {
   double decodedCacheRatioCap = double.infinity,
+  Size size = const Size.square(_kDoNotResizeImage),
 }) {
   throw UnimplementedError();
 }

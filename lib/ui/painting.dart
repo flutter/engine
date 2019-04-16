@@ -1023,6 +1023,10 @@ enum Clip {
 // constant and can't propagate into the set/get calls.
 const Endian _kFakeHostEndian = Endian.little;
 
+// Passed to [instantiateImageCodec] to tell the engine to use the source image
+// size and not to resize to the container size.
+const double _kDoNotResizeImage = -1;
+
 /// A description of the style to use when drawing on a [Canvas].
 ///
 /// Most APIs on [Canvas] take a [Paint] object to describe the style
@@ -1650,20 +1654,28 @@ class Codec extends NativeFieldWrapperClass2 {
 /// unlikely that a factor that low will be sufficient to cache all decoded
 /// frames. The default value is `25.0`.
 ///
+/// If the [size] is specified, image is resized to this. This is typically used
+/// to resize the image to the container dimensions.
+///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list, {
   double decodedCacheRatioCap = double.infinity,
+  Size size = const Size.square(_kDoNotResizeImage),
 }) {
+  assert(size != null);
   return _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, decodedCacheRatioCap),
+    (_Callback<Codec> callback) => _instantiateImageCodec(
+        list, callback, null, decodedCacheRatioCap, size.width, size.height),
   );
 }
 
 /// Instantiates a [Codec] object for an image binary data.
 ///
 /// Returns an error message if the instantiation has failed, null otherwise.
-String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, double decodedCacheRatioCap)
+String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback,
+    _ImageInfo imageInfo, double decodedCacheRatioCap, double width,
+    double height)
   native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -1707,7 +1719,9 @@ void decodeImageFromPixels(
 ) {
   final _ImageInfo imageInfo = new _ImageInfo(width, height, format.index, rowBytes);
   final Future<Codec> codecFuture = _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCap)
+          (_Callback<Codec> callback) =>
+          _instantiateImageCodec(pixels, callback, imageInfo,
+              decodedCacheRatioCap, _kDoNotResizeImage, _kDoNotResizeImage)
   );
   codecFuture.then((Codec codec) => codec.getNextFrame())
       .then((FrameInfo frameInfo) => callback(frameInfo.image));
