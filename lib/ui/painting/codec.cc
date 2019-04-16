@@ -17,6 +17,8 @@
 #include "third_party/tonic/logging/dart_invoke.h"
 #include "third_party/tonic/typed_data/uint8_list.h"
 
+#define fuzzyEquals(x, y) (fabs(x - y) < DBL_EPSILON)
+
 using tonic::DartInvoke;
 using tonic::DartPersistentValue;
 using tonic::ToDart;
@@ -27,6 +29,9 @@ namespace {
 
 static constexpr const char* kInitCodecTraceTag = "InitCodec";
 static constexpr const char* kCodecNextFrameTraceTag = "CodecNextFrame";
+
+// This needs to be kept in sync with _kDoNotResizeImage in painting.dart
+const double kDoNotResizeImage = -1;
 
 // This must be kept in sync with the enum in painting.dart
 enum PixelFormat {
@@ -79,10 +84,79 @@ static sk_sp<SkImage> DecodeImage(fml::WeakPtr<GrContext> context,
   }
 }
 
+static bool needsResize(const double currentWidth,
+                        const double currentHeight,
+                        const double targetWidth,
+                        const double targetHeight) {
+  if (fuzzyEquals(currentWidth, kDoNotResizeImage) ||
+      fuzzyEquals(currentHeight, kDoNotResizeImage)) {
+    return false;
+  }
+  if (fuzzyEquals(currentWidth, targetWidth) &&
+      fuzzyEquals(currentHeight, targetHeight)) {
+    return false;
+  }
+  return true;
+}
+
+static sk_sp<SkImage> DecodeAndResizeImageToExactSize(
+    fml::WeakPtr<GrContext> context,
+    SkImageInfo scaledImageInfo,
+    sk_sp<SkData> buffer,
+    size_t trace_id) {
+  TRACE_FLOW_STEP("flutter", kInitCodecTraceTag, trace_id);
+  TRACE_EVENT0("flutter", "DecodeAndResizeImageToExactSize");
+
+  SkBitmap bitmap = SkBitmap();
+  if (!bitmap.tryAllocPixels(scaledImageInfo)) {
+    FML_LOG(ERROR) << "Unable to allocate bitmap.";
+    return nullptr;
+  }
+
+  // Do not create a cross context image here, since it can not be resized.
+  sk_sp<SkImage> image = SkImage::MakeFromEncoded(std::move(buffer));
+
+  if (image == nullptr || !image.get()) {
+    FML_LOG(ERROR) << "Failed to decode image.";
+    return nullptr;
+  }
+
+  if (!image->scalePixels(bitmap.pixmap(), kLow_SkFilterQuality)) {
+    FML_LOG(ERROR) << "Failed to scale pixels. Returning un-scaled image.";
+    return DecodeImage(context, buffer, trace_id);
+  }
+
+  // This indicates that we do not want a "linear blending" decode.
+  sk_sp<SkColorSpace> dstColorSpace = nullptr;
+  return SkImage::MakeCrossContextFromPixmap(context.get(), bitmap.pixmap(),
+                                             true, dstColorSpace.get(), true);
+}
+
+static sk_sp<SkImage> DecodeAndResizeImage(fml::WeakPtr<GrContext> context,
+                                           std::unique_ptr<SkCodec>& skCodec,
+                                           sk_sp<SkData> buffer,
+                                           const double targetWidth,
+                                           const double targetHeight,
+                                           size_t trace_id) {
+  const SkImageInfo imageInfo = skCodec->getInfo();
+
+  const int width = imageInfo.width();
+  const int height = imageInfo.height();
+
+  if (needsResize(width, height, targetWidth, targetHeight)) {
+    return DecodeAndResizeImageToExactSize(
+        context, imageInfo.makeWH(targetWidth, targetHeight), buffer, trace_id);
+  } else {
+    return DecodeImage(context, buffer, trace_id);
+  }
+}
+
 fml::RefPtr<Codec> InitCodec(fml::WeakPtr<GrContext> context,
                              sk_sp<SkData> buffer,
                              fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
                              const float decodedCacheRatioCap,
+                             const double width,
+                             const double height,
                              size_t trace_id) {
   TRACE_FLOW_STEP("flutter", kInitCodecTraceTag, trace_id);
   TRACE_EVENT0("blink", "InitCodec");
@@ -102,9 +176,12 @@ fml::RefPtr<Codec> InitCodec(fml::WeakPtr<GrContext> context,
     return fml::MakeRefCounted<MultiFrameCodec>(std::move(skCodec),
                                                 decodedCacheRatioCap);
   }
-  auto skImage = DecodeImage(context, buffer, trace_id);
+
+  auto skImage =
+      DecodeAndResizeImage(context, skCodec, buffer, width, height, trace_id);
+  FML_DCHECK(skImage) << "Unable to resize the image to (w, h): " << width
+                      << ", " << height << ".";
   if (!skImage) {
-    FML_LOG(ERROR) << "DecodeImage failed";
     return nullptr;
   }
   auto image = CanvasImage::Create();
@@ -152,15 +229,18 @@ void InitCodecAndInvokeCodecCallback(
     sk_sp<SkData> buffer,
     std::unique_ptr<ImageInfo> image_info,
     const float decodedCacheRatioCap,
+    const double width,
+    const double height,
     size_t trace_id) {
   fml::RefPtr<Codec> codec;
   if (image_info) {
+    // TODO (kaushikiska): think about the uncompressed case.
     codec = InitCodecUncompressed(context, std::move(buffer), *image_info,
                                   std::move(unref_queue), decodedCacheRatioCap,
                                   trace_id);
   } else {
     codec = InitCodec(context, std::move(buffer), std::move(unref_queue),
-                      decodedCacheRatioCap, trace_id);
+                      decodedCacheRatioCap, width, height, trace_id);
   }
   ui_task_runner->PostTask(
       fml::MakeCopyable([callback = std::move(callback),
@@ -281,6 +361,11 @@ void InstantiateImageCodec(Dart_NativeArguments args) {
   const float decodedCacheRatioCap =
       tonic::DartConverter<float>::FromDart(Dart_GetNativeArgument(args, 3));
 
+  double width =
+      tonic::DartConverter<double>::FromDart(Dart_GetNativeArgument(args, 4));
+  double height =
+      tonic::DartConverter<double>::FromDart(Dart_GetNativeArgument(args, 5));
+
   auto buffer = SkData::MakeWithCopy(list.data(), list.num_elements());
 
   auto* dart_state = UIDartState::Current();
@@ -293,11 +378,11 @@ void InstantiateImageCodec(Dart_NativeArguments args) {
        ui_task_runner = task_runners.GetUITaskRunner(),
        context = dart_state->GetResourceContext(),
        queue = UIDartState::Current()->GetSkiaUnrefQueue(),
-       decodedCacheRatioCap]() mutable {
+       decodedCacheRatioCap, width, height]() mutable {
         InitCodecAndInvokeCodecCallback(
             std::move(ui_task_runner), context, std::move(queue),
             std::move(callback), std::move(buffer), std::move(image_info),
-            decodedCacheRatioCap, trace_id);
+            decodedCacheRatioCap, width, height, trace_id);
       }));
 }
 
@@ -548,7 +633,7 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
 
 void Codec::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({
-      {"instantiateImageCodec", InstantiateImageCodec, 4, true},
+      {"instantiateImageCodec", InstantiateImageCodec, 6, true},
   });
   natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
