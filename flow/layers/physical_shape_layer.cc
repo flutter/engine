@@ -118,7 +118,8 @@ void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
 
   // If we can't find an existing retained surface, create one.
   SceneUpdateContext::Frame frame(context, frameRRect_, color_, elevation_,
-                                  getTotalElevation(), viewport_depth_, this);
+                                  get_cached_total_elevation(), viewport_depth_,
+                                  this);
   for (auto& layer : layers()) {
     if (layer->needs_painting()) {
       frame.AddPaintLayer(layer.get());

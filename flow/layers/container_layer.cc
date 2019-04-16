@@ -26,6 +26,7 @@ void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void ContainerLayer::PrerollChildren(PrerollContext* context,
                                      const SkMatrix& child_matrix,
                                      SkRect* child_paint_bounds) {
+  cacheTotalElevation();
   for (auto& layer : layers_) {
     PrerollContext child_context = *context;
     layer->Preroll(&child_context, child_matrix);
@@ -49,9 +50,10 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
   }
 }
 
-float ContainerLayer::getTotalElevation() const {
-  return elevation_ +
-         (parent() != nullptr ? parent()->getTotalElevation() : 0.0f);
+void ContainerLayer::cacheTotalElevation() {
+  cached_total_elevation_ =
+      elevation_ +
+      (parent() != nullptr ? parent()->get_cached_total_elevation() : 0.0f);
 }
 
 #if defined(OS_FUCHSIA)

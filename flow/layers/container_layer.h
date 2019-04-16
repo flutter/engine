@@ -19,9 +19,14 @@ class ContainerLayer : public Layer {
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
+  // Sets the elevation. This needs to be set before preroll because it's then
+  // cached by any children of this layer. Setting it after preroll will break
+  // their elevation calculations.
   void set_elevation(float elevation) { elevation_ = elevation; }
 
-  float getTotalElevation() const;
+  // Returns the cumulative height of this layer. Value is computed and cached
+  // during preroll.
+  float get_cached_total_elevation() const { return cached_total_elevation_; }
 
 #if defined(OS_FUCHSIA)
   void UpdateScene(SceneUpdateContext& context) override;
@@ -42,7 +47,10 @@ class ContainerLayer : public Layer {
   // For OpacityLayer to restructure to have a single child.
   void ClearChildren() { layers_.clear(); }
 
+  void cacheTotalElevation();
+
   float elevation_ = 0.0f;
+  float cached_total_elevation_ = 0.0f;
 
  private:
   std::vector<std::shared_ptr<Layer>> layers_;
