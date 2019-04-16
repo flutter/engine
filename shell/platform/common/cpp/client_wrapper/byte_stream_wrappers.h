@@ -9,6 +9,7 @@
 // in message channel codecs.
 
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <vector>
 
