@@ -87,18 +87,26 @@ class LineWidths {
 
 class TabStops {
  public:
+  void set(const int* stops, size_t nStops, int tabWidth) {
+    if (stops != nullptr) {
+      mStops.assign(stops, stops + nStops);
+    } else {
+      mStops.clear();
+    }
+    mTabWidth = tabWidth;
+  }
   float nextTab(float widthSoFar) const {
     for (size_t i = 0; i < mStops.size(); i++) {
       if (mStops[i] > widthSoFar) {
         return mStops[i];
       }
     }
-    return floor(widthSoFar / kTabWidth + 1) * kTabWidth;
+    return floor(widthSoFar / mTabWidth + 1) * mTabWidth;
   }
 
  private:
   std::vector<int> mStops;
-  const static int kTabWidth = 2;
+  int mTabWidth;
 };
 
 class LineBreaker {
@@ -134,6 +142,10 @@ class LineBreaker {
                      float restWidth);
 
   void setIndents(const std::vector<float>& indents);
+
+  void setTabStops(const int* stops, size_t nStops, int tabWidth) {
+    mTabStops.set(stops, nStops, tabWidth);
+  }
 
   BreakStrategy getStrategy() const { return mStrategy; }
 
