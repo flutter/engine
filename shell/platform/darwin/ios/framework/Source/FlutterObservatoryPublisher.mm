@@ -117,10 +117,9 @@
   const char* domain = "local.";  // default domain
   uint16_t port = [[url port] intValue];
 
-
   int err = DNSServiceRegister(&_dnsServiceRef, flags, interfaceIndex, [serviceName UTF8String],
-                               registrationType, domain, NULL, htons(port), txt.length(), txt.c_str(),
-                               registrationCallback, NULL);
+                               registrationType, domain, NULL, htons(port), txt.length(),
+                               txt.c_str(), registrationCallback, NULL);
 
   if (err != 0) {
     FML_LOG(ERROR) << "Failed to register observatory port with mDNS.";
@@ -128,12 +127,11 @@
     DNSServiceSetDispatchQueue(_dnsServiceRef, dispatch_get_main_queue());
   }
 #else   // TARGET_IPHONE_SIMULATOR
-  NSNetService* netServiceTmp =[[NSNetService alloc] initWithDomain:@"local."
-                                                    type:@"_dartobservatory._tcp."
-                                                    name:serviceName
-                                                    port:[[url port] intValue]];
-  NSData* txtData = [[[NSData alloc] initWithBytes:txt.c_str()
-                                    length:txt.length()] autorelease];
+  NSNetService* netServiceTmp = [[NSNetService alloc] initWithDomain:@"local."
+                                                                type:@"_dartobservatory._tcp."
+                                                                name:serviceName
+                                                                port:[[url port] intValue]];
+  NSData* txtData = [[[NSData alloc] initWithBytes:txt.c_str() length:txt.length()] autorelease];
   [netServiceTmp setTXTRecordData:txtData];
   _netService.reset(netServiceTmp);
   [_netService.get() setDelegate:self];
