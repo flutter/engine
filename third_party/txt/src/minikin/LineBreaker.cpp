@@ -157,6 +157,7 @@ float LineBreaker::addStyleRun(MinikinPaint* paint,
   size_t postSpaceCount = mSpaceCount;
   for (size_t i = start; i < end; i++) {
     uint16_t c = mTextBuf[i];
+    // libtxt: Tab handling was removed here.
     if (isWordSpace(c))
       mSpaceCount += 1;
     mWidth += mCharWidths[i];
