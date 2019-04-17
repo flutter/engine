@@ -105,14 +105,14 @@ static bool needsResize(const int currentWidth,
   if (targetWidth == kDoNotResizeDimension) {
     newHeight = targetHeight;
     const double aspectRatio = (double)currentWidth / currentHeight;
-    newWidth = (int)(aspectRatio * newHeight);
+    newWidth = round(aspectRatio * newHeight);
     return true;
   }
 
   if (targetHeight == kDoNotResizeDimension) {
     newWidth = targetWidth;
     const double invAspectRatio = (double)currentHeight / currentWidth;
-    newHeight = (int)(invAspectRatio * newWidth);
+    newHeight = round(invAspectRatio * newWidth);
     return true;
   }
 

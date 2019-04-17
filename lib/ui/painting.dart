@@ -1054,7 +1054,9 @@ class ImageResizeDimensions {
 
   @override
   bool operator ==(dynamic other) {
-    if (other is! ImageResizeDimensions) return false;
+    if (other is! ImageResizeDimensions) {
+      return false;
+    }
     final ImageResizeDimensions typedOther = other;
     return width == typedOther.width && height == typedOther.height;
   }
@@ -1751,7 +1753,7 @@ void decodeImageFromPixels(
   {int rowBytes, double decodedCacheRatioCap = double.infinity}
 ) {
   final _ImageInfo imageInfo = new _ImageInfo(width, height, format.index, rowBytes);
-  final ImageResizeDimensions targetSize = ImageResizeDimensions.kDoNotResize;
+  const ImageResizeDimensions targetSize = ImageResizeDimensions.kDoNotResize;
   final Future<Codec> codecFuture = _futurize(
     (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCap, targetSize.width, targetSize.height)
   );
