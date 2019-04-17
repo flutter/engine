@@ -13,14 +13,6 @@ enum FontStyle {
   italic,
 }
 
-/// {@macro flutter.dart:ui.text.TextWidthType}
-enum TextWidthType {
-  /// {@macro flutter.dart:ui.text.TextWidthType.full}
-  full,
-  /// {@macro flutter.dart:ui.text.TextWidthType.tight}
-  tight,
-}
-
 /// The thickness of the glyphs used to draw the text
 class FontWeight {
   const FontWeight._(this.index);
