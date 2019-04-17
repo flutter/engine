@@ -6,18 +6,13 @@
 
 namespace flow {
 
-TransformLayer::TransformLayer() = default;
+TransformLayer::TransformLayer() {
+  transform_.setIdentity();
+}
 
 TransformLayer::~TransformLayer() = default;
 
-void TransformLayer::set_transform(const SkMatrix& transform) {
-  transform_ = transform;
-  is_set_ = true;
-}
-
 void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  FML_CHECK(is_set_);
-
   // Checks (in some degree) that SkMatrix transform_ is valid and initialized.
   //
   // We need this even if is_set_ is true since one can call set_transform with
