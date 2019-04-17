@@ -109,8 +109,8 @@ static sk_sp<SkImage> DecodeAndResizeImageToExactSize(
 
   SkBitmap bitmap = SkBitmap();
   if (!bitmap.tryAllocPixels(scaledImageInfo)) {
-    FML_LOG(ERROR) << "Unable to allocate bitmap.";
-    return nullptr;
+    FML_LOG(ERROR) << "Unable to allocate bitmap. Returning un-scaled image.";
+    return DecodeImage(context, buffer, trace_id);
   }
 
   // Do not create a cross context image here, since it can not be resized.
