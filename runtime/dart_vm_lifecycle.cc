@@ -56,7 +56,6 @@ DartVMRef DartVMRef::Create(Settings settings,
            "process when done but a previous launch asked the VM to leak in "
            "the same process. For proper VM shutdown, all VM launches must "
            "indicate that they should shut down when done.";
-    return {nullptr};
   }
 
   // If there is already a running VM in the process, grab a strong reference to
