@@ -1661,21 +1661,18 @@ class Codec extends NativeFieldWrapperClass2 {
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list, {
   double decodedCacheRatioCap = double.infinity,
-  Size size = const Size.square(_kDoNotResizeImage),
+  Size size,
 }) {
-  assert(size != null);
+  size = size ?? const Size.square(_kDoNotResizeImage);
   return _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(
-        list, callback, null, decodedCacheRatioCap, size.width, size.height),
+    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, decodedCacheRatioCap, size.width, size.height),
   );
 }
 
 /// Instantiates a [Codec] object for an image binary data.
 ///
 /// Returns an error message if the instantiation has failed, null otherwise.
-String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback,
-    _ImageInfo imageInfo, double decodedCacheRatioCap, double width,
-    double height)
+String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, double decodedCacheRatioCap, double width, double height)
   native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -1719,9 +1716,7 @@ void decodeImageFromPixels(
 ) {
   final _ImageInfo imageInfo = new _ImageInfo(width, height, format.index, rowBytes);
   final Future<Codec> codecFuture = _futurize(
-          (_Callback<Codec> callback) =>
-          _instantiateImageCodec(pixels, callback, imageInfo,
-              decodedCacheRatioCap, _kDoNotResizeImage, _kDoNotResizeImage)
+    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCap, _kDoNotResizeImage, _kDoNotResizeImage)
   );
   codecFuture.then((Codec codec) => codec.getNextFrame())
       .then((FrameInfo frameInfo) => callback(frameInfo.image));
