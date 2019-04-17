@@ -286,7 +286,8 @@ void SceneBuilder::addPerformanceOverlay(uint64_t enabledOptions,
     return;
   }
   SkRect rect = SkRect::MakeLTRB(left, top, right, bottom);
-  auto layer = std::make_unique<flutter::PerformanceOverlayLayer>(enabledOptions);
+  auto layer =
+      std::make_unique<flutter::PerformanceOverlayLayer>(enabledOptions);
   layer->set_paint_bounds(rect);
   current_layer_->Add(std::move(layer));
 }

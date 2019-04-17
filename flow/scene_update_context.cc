@@ -188,7 +188,8 @@ scenic::Image* SceneUpdateContext::GenerateImageIfNeeded(
   return image;
 }
 
-std::vector<std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>>
+std::vector<
+    std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>>
 SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
   TRACE_EVENT0("flutter", "SceneUpdateContext::ExecutePaintTasks");
   std::vector<std::unique_ptr<SurfaceProducerSurface>> surfaces_to_submit;

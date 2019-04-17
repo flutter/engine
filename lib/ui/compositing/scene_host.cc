@@ -164,8 +164,8 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderTokenHandle,
     auto view_holder_token =
         scenic::ToViewHolderToken(zx::eventpair(handle->ReleaseHandle()));
     flutter::ViewHolder::Create(id, std::move(ui_task_runner),
-                             std::move(view_holder_token),
-                             std::move(bind_callback));
+                                std::move(view_holder_token),
+                                std::move(bind_callback));
   });
 }
 
@@ -176,9 +176,11 @@ SceneHost::~SceneHost() {
     FML_DCHECK(bindings);
     bindings->erase(id_);
 
-    gpu_task_runner_->PostTask([id = id_]() { flutter::ViewHolder::Destroy(id); });
+    gpu_task_runner_->PostTask(
+        [id = id_]() { flutter::ViewHolder::Destroy(id); });
   } else {
-    gpu_task_runner_->PostTask([id = id_]() { flutter::ExportNode::Destroy(id); });
+    gpu_task_runner_->PostTask(
+        [id = id_]() { flutter::ExportNode::Destroy(id); });
   }
 }
 

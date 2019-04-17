@@ -53,11 +53,12 @@ TEST(PerformanceOverlayLayer, Gold) {
 
   // Specify font file to ensure the same font across different operation
   // systems.
-  flutter::PerformanceOverlayLayer layer(flutter::kDisplayRasterizerStatistics |
-                                          flutter::kVisualizeRasterizerStatistics |
-                                          flutter::kDisplayEngineStatistics |
-                                          flutter::kVisualizeEngineStatistics,
-                                      flutter::GetFontFile().c_str());
+  flutter::PerformanceOverlayLayer layer(
+      flutter::kDisplayRasterizerStatistics |
+          flutter::kVisualizeRasterizerStatistics |
+          flutter::kDisplayEngineStatistics |
+          flutter::kVisualizeEngineStatistics,
+      flutter::GetFontFile().c_str());
   layer.set_paint_bounds(SkRect::MakeWH(1000, 400));
   surface->getCanvas()->clear(SK_ColorTRANSPARENT);
   layer.Paint(paintContext);

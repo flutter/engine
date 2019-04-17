@@ -169,7 +169,8 @@ class Shell final : public PlatformView::Delegate,
   void OnAnimatorNotifyIdle(int64_t deadline) override;
 
   // |Animator::Delegate|
-  void OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) override;
+  void OnAnimatorDraw(
+      fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) override;
 
   // |Animator::Delegate|
   void OnAnimatorDrawLastLayerTree() override;
