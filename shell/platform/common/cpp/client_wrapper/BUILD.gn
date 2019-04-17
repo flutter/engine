@@ -29,7 +29,7 @@ _wrapper_sources = [
   "byte_stream_wrappers.h",
   "engine_method_result.cc",
   "json_message_codec.cc",  # TODO combine into a single json_codec.cc.
-  "json_method_codec.cc",   # TODO combine into a single json_codec.cc.
+  "json_method_codec.cc",  # TODO combine into a single json_codec.cc.
   "plugin_registrar.cc",
   "standard_codec_serializer.h",
   "standard_codec.cc",
