@@ -1023,9 +1023,45 @@ enum Clip {
 // constant and can't propagate into the set/get calls.
 const Endian _kFakeHostEndian = Endian.little;
 
-// Passed to [instantiateImageCodec] to tell the engine to use the source image
-// size and not to resize to the container size.
-const double _kDoNotResizeImage = -1;
+/// An immutable image dimensions container that holds the target dimensions.
+class ImageResizeDimensions {
+  /// Creates [ImageResizeDimensions] with given width and height.
+  const ImageResizeDimensions(this.width, this.height);
+
+  /// Creates [ImageResizeDimensions] with the given width, while
+  /// preserving the aspect ratio of the original image.
+  factory ImageResizeDimensions.resizeWidthPreserveAspectRatio(int widthParam) {
+    return ImageResizeDimensions(widthParam, _kDoNotResizeDimension);
+  }
+
+  /// Creates [ImageResizeDimensions] with the given height, while
+  /// preserving the aspect ratio of the original image.
+  factory ImageResizeDimensions.resizeHeightPreserveAspectRatio(int heightParam) {
+    return ImageResizeDimensions(_kDoNotResizeDimension, heightParam);
+  }
+
+  /// Creates [ImageResizeDimensions] which preserves the original dimensions
+  /// of the image.
+  static const ImageResizeDimensions kDoNotResize = ImageResizeDimensions(_kDoNotResizeDimension, _kDoNotResizeDimension);
+
+  static const int _kDoNotResizeDimension = -1;
+
+  /// Horizontal extent of this image.
+  final int width;
+
+  /// Vertical extent of this image.
+  final int height;
+
+  @override
+  bool operator ==(dynamic other) {
+    if (other is! ImageResizeDimensions) return false;
+    final ImageResizeDimensions typedOther = other;
+    return width == typedOther.width && height == typedOther.height;
+  }
+
+  @override
+  int get hashCode => hashValues(width, height);
+}
 
 /// A description of the style to use when drawing on a [Canvas].
 ///
@@ -1654,25 +1690,25 @@ class Codec extends NativeFieldWrapperClass2 {
 /// unlikely that a factor that low will be sufficient to cache all decoded
 /// frames. The default value is `25.0`.
 ///
-/// If the [size] is specified, image is resized to this. This is typically used
+/// If the [resizeDimensions] are specified, image is resized to this. This is typically used
 /// to resize the image to the container dimensions.
 ///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list, {
   double decodedCacheRatioCap = double.infinity,
-  Size size,
+  ImageResizeDimensions resizeDimensions,
 }) {
-  size = size ?? const Size.square(_kDoNotResizeImage);
+  resizeDimensions = resizeDimensions ?? ImageResizeDimensions.kDoNotResize;
   return _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, decodedCacheRatioCap, size.width, size.height),
+    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, decodedCacheRatioCap, resizeDimensions.width, resizeDimensions.height),
   );
 }
 
 /// Instantiates a [Codec] object for an image binary data.
 ///
 /// Returns an error message if the instantiation has failed, null otherwise.
-String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, double decodedCacheRatioCap, double width, double height)
+String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, double decodedCacheRatioCap, int width, int height)
   native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -1715,8 +1751,9 @@ void decodeImageFromPixels(
   {int rowBytes, double decodedCacheRatioCap = double.infinity}
 ) {
   final _ImageInfo imageInfo = new _ImageInfo(width, height, format.index, rowBytes);
+  final ImageResizeDimensions targetSize = ImageResizeDimensions.kDoNotResize;
   final Future<Codec> codecFuture = _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCap, _kDoNotResizeImage, _kDoNotResizeImage)
+    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCap, targetSize.width, targetSize.height)
   );
   codecFuture.then((Codec codec) => codec.getNextFrame())
       .then((FrameInfo frameInfo) => callback(frameInfo.image));
