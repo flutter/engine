@@ -98,7 +98,7 @@ static const int kDefaultWindowFramebuffer = 0;
 - (BOOL)populateTextureWithIdentifier:(int64_t)textureID
                                 width:(size_t)width
                                height:(size_t)height
-                              texture:(FlutterOpenGLTexture*)openGLTexture;
+                              openGLTexture:(FlutterOpenGLTexture*)openGLTexture;
 @end
 
 #pragma mark - Static methods provided to engine configuration
@@ -157,11 +157,11 @@ static bool OnAcquireExternalTexture(FLEViewController* controller,
                                      int64_t texture_identifier,
                                      size_t width,
                                      size_t height,
-                                     FlutterOpenGLTexture* texture) {
+                                     FlutterOpenGLTexture* openGLTexture) {
   return [controller populateTextureWithIdentifier:texture_identifier
                                              width:width
                                             height:height
-                                           texture:texture];
+                                           openGLTexture:openGLTexture];
 }
 
 #pragma mark Static methods provided for headless engine configuration
@@ -512,8 +512,8 @@ static void CommonInit(FLEViewController* controller) {
 - (BOOL)populateTextureWithIdentifier:(int64_t)textureID
                                 width:(size_t)width
                                height:(size_t)height
-                              texture:(FlutterOpenGLTexture*)texture {
-  return [_textures[@(textureID)] populateTextureWithWidth:width height:height texture:texture];
+                              openGLTexture:(FlutterOpenGLTexture*)openGLTexture {
+  return [_textures[@(textureID)] populateTextureWithWidth:width height:height openGLTexture:openGLTexture];
 }
 
 - (int64_t)registerTexture:(id<FLETexture>)texture {
