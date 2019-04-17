@@ -645,8 +645,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   if (!_selectedTextRange.isEmpty)
     [self replaceRange:_selectedTextRange withText:@""];
 
-  [_textInputDelegate forwardKey:FlutterTextInputKeyDelete
-                      withClient:_textInputClient];
+  [_textInputDelegate forwardKey:FlutterTextInputKeyDelete withClient:_textInputClient];
 }
 
 @end

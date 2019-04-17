@@ -493,7 +493,7 @@
       break;
   }
   [_textInputChannel.get() invokeMethod:@"TextInputClient.forwardKey"
-                              arguments:@[ @(client), keyString]];
+                              arguments:@[ @(client), keyString ]];
 }
 
 #pragma mark - Screenshot Delegate
