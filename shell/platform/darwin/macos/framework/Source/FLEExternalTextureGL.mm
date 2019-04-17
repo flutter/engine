@@ -8,9 +8,23 @@
 #import <CoreVideo/CoreVideo.h>
 #import <OpenGL/gl.h>
 
+static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
+  CVPixelBufferRelease(pixelBuffer);
+}
+
 @implementation FLEExternalTextureGL {
-  CVOpenGLTextureCacheRef _textureCache;
+  /**
+   * OpenGL texture cache.
+   */
+  CVOpenGLTextureCacheRef _openGLTextureCache;
+  /**
+   * The pixel buffer copied from the user side will be released
+   * when the flutter engine renders it.
+   */
   CVPixelBufferRef _pixelBuffer;
+  /**
+   * User side texture object, used to copy pixel buffer.
+   */
   id<FLETexture> _texture;
 }
 
@@ -18,14 +32,8 @@
   self = [super init];
   if (self) {
     _texture = texture;
-    _pixelBuffer = nil;
-    _textureCache = nil;
   }
   return self;
-}
-
-static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
-  CVPixelBufferRelease(pixelBuffer);
 }
 
 - (int64_t)textureID {
@@ -34,24 +42,20 @@ static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
 
 - (BOOL)populateTextureWithWidth:(size_t)width
                           height:(size_t)height
-                         texture:(FlutterOpenGLTexture*)texture {
-  if (!_texture) {
-    return NO;
-  }
-
-  // Copy image buffer from external texture.
+                         texture:(FlutterOpenGLTexture*)openGLTexture {
+  // Copy the pixel buffer from the FLETexture instance implemented on the user side.
   _pixelBuffer = [_texture copyPixelBuffer:width height:height];
 
   if (!_pixelBuffer) {
     return NO;
   }
 
-  // Create the texture cache if necessary.
-  if (!_textureCache) {
+  // Create the opengl texture cache if necessary.
+  if (!_openGLTextureCache) {
     CGLContextObj context = [NSOpenGLContext currentContext].CGLContextObj;
     CGLPixelFormatObj format = CGLGetPixelFormat(context);
     if (CVOpenGLTextureCacheCreate(kCFAllocatorDefault, NULL, context, format, NULL,
-                                   &_textureCache) != kCVReturnSuccess) {
+                                   &_openGLTextureCache) != kCVReturnSuccess) {
       NSLog(@"Could not create texture cache.");
       CVPixelBufferRelease(_pixelBuffer);
       return NO;
@@ -59,27 +63,27 @@ static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
   }
 
   // Try to clear the cache of OpenGL textures to save memory.
-  CVOpenGLTextureCacheFlush(_textureCache, 0);
+  CVOpenGLTextureCacheFlush(_openGLTextureCache, 0);
 
-  CVOpenGLTextureRef openGLTexture = NULL;
-  if (CVOpenGLTextureCacheCreateTextureFromImage(kCFAllocatorDefault, _textureCache, _pixelBuffer,
-                                                 NULL, &openGLTexture) != kCVReturnSuccess) {
+  CVOpenGLTextureRef cvOpenGLTexture = NULL;
+  if (CVOpenGLTextureCacheCreateTextureFromImage(kCFAllocatorDefault, _openGLTextureCache,
+                                                 _pixelBuffer, NULL,
+                                                 &cvOpenGLTexture) != kCVReturnSuccess) {
     CVPixelBufferRelease(_pixelBuffer);
     return NO;
   }
-
-  texture->target = static_cast<uint32_t>(CVOpenGLTextureGetTarget(openGLTexture));
-  texture->name = static_cast<uint32_t>(CVOpenGLTextureGetName(openGLTexture));
-  texture->format = static_cast<uint32_t>(GL_RGBA8);
-  texture->destruction_callback = reinterpret_cast<VoidCallback>(&OnGLTextureRelease);
-  texture->user_data = openGLTexture;
-
   CVPixelBufferRelease(_pixelBuffer);
+
+  openGLTexture->target = static_cast<uint32_t>(CVOpenGLTextureGetTarget(cvOpenGLTexture));
+  openGLTexture->name = static_cast<uint32_t>(CVOpenGLTextureGetName(cvOpenGLTexture));
+  openGLTexture->format = static_cast<uint32_t>(GL_RGBA8);
+  openGLTexture->destruction_callback = (VoidCallback)OnGLTextureRelease;
+  openGLTexture->user_data = cvOpenGLTexture;
   return YES;
 }
 
 - (void)dealloc {
-  CVOpenGLTextureCacheRelease(_textureCache);
+  CVOpenGLTextureCacheRelease(_openGLTextureCache);
 }
 
 @end
