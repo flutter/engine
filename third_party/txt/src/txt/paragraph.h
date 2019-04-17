@@ -156,8 +156,8 @@ class Paragraph {
   double GetMaxWidth() const;
 
   // Returns the tight width found in Layout(), which is defined as the
-  // horizontal distance from the left edge of the leftmost character to the
-  // right edge of the rightmost character. We expect that GetTightWidth() <=
+  // horizontal distance from the left edge of the leftmost glyph to the right
+  // edge of the rightmost glyph. We expect that GetTightWidth() <=
   // GetMaxWidth().
   double GetTightWidth() const;
 

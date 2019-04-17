@@ -1315,8 +1315,8 @@ class Paragraph extends NativeFieldWrapperClass2 {
   /// Valid only after [layout] has been called.
   double get height native 'Paragraph_height';
 
-  /// The distance from the left edge of the leftmost character to the right
-  /// edge of the rightmost character in the paragraph.
+  /// The distance from the left edge of the leftmost glyph to the right edge of
+  /// the rightmost glyph in the paragraph.
   ///
   /// Valid only after [layout] has been called.
   double get tightWidth native 'Paragraph_tightWidth';
