@@ -224,7 +224,6 @@ void Paragraph::CodeUnitRun::Shift(double delta) {
 
 Paragraph::Paragraph() {
   breaker_.setLocale(icu::Locale(), nullptr);
-  breaker_.setTabStops(nullptr, 0, 2);
 }
 
 Paragraph::~Paragraph() = default;
