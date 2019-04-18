@@ -9,7 +9,7 @@
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 
-namespace shell {
+namespace flutter {
 
 AndroidExternalTextureGL::AndroidExternalTextureGL(
     int64_t id,
@@ -32,7 +32,8 @@ void AndroidExternalTextureGL::MarkNewFrameAvailable() {
 
 void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
                                      const SkRect& bounds,
-                                     bool freeze) {
+                                     bool freeze,
+                                     GrContext* context) {
   if (state_ == AttachmentState::detached) {
     return;
   }
@@ -120,4 +121,4 @@ void AndroidExternalTextureGL::Detach() {
   }
 }
 
-}  // namespace shell
+}  // namespace flutter

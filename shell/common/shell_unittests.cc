@@ -20,14 +20,13 @@
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
 
-namespace shell {
+namespace flutter {
 namespace testing {
 
 class TestPlatformView : public PlatformView,
                          public GPUSurfaceSoftwareDelegate {
  public:
-  TestPlatformView(PlatformView::Delegate& delegate,
-                   blink::TaskRunners task_runners)
+  TestPlatformView(PlatformView::Delegate& delegate, TaskRunners task_runners)
       : PlatformView(delegate, std::move(task_runners)) {}
 
  private:
@@ -84,8 +83,8 @@ static bool ValidateShell(Shell* shell) {
 }
 
 TEST_F(ShellTest, InitializeWithInvalidThreads) {
-  blink::Settings settings = CreateSettingsForFixture();
-  blink::TaskRunners task_runners("test", nullptr, nullptr, nullptr, nullptr);
+  Settings settings = CreateSettingsForFixture();
+  TaskRunners task_runners("test", nullptr, nullptr, nullptr, nullptr);
   auto shell = Shell::Create(
       std::move(task_runners), settings,
       [](Shell& shell) {
@@ -99,16 +98,15 @@ TEST_F(ShellTest, InitializeWithInvalidThreads) {
 }
 
 TEST_F(ShellTest, InitializeWithDifferentThreads) {
-  blink::Settings settings = CreateSettingsForFixture();
+  Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(
       "io.flutter.test." + ::testing::GetCurrentTestName() + ".",
       ThreadHost::Type::Platform | ThreadHost::Type::GPU |
           ThreadHost::Type::IO | ThreadHost::Type::UI);
-  blink::TaskRunners task_runners("test",
-                                  thread_host.platform_thread->GetTaskRunner(),
-                                  thread_host.gpu_thread->GetTaskRunner(),
-                                  thread_host.ui_thread->GetTaskRunner(),
-                                  thread_host.io_thread->GetTaskRunner());
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.gpu_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
   auto shell = Shell::Create(
       std::move(task_runners), settings,
       [](Shell& shell) {
@@ -122,13 +120,13 @@ TEST_F(ShellTest, InitializeWithDifferentThreads) {
 }
 
 TEST_F(ShellTest, InitializeWithSingleThread) {
-  blink::Settings settings = CreateSettingsForFixture();
+  Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(
       "io.flutter.test." + ::testing::GetCurrentTestName() + ".",
       ThreadHost::Type::Platform);
   auto task_runner = thread_host.platform_thread->GetTaskRunner();
-  blink::TaskRunners task_runners("test", task_runner, task_runner, task_runner,
-                                  task_runner);
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
   auto shell = Shell::Create(
       std::move(task_runners), settings,
       [](Shell& shell) {
@@ -142,11 +140,11 @@ TEST_F(ShellTest, InitializeWithSingleThread) {
 }
 
 TEST_F(ShellTest, InitializeWithSingleThreadWhichIsTheCallingThread) {
-  blink::Settings settings = CreateSettingsForFixture();
+  Settings settings = CreateSettingsForFixture();
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
-  blink::TaskRunners task_runners("test", task_runner, task_runner, task_runner,
-                                  task_runner);
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
   auto shell = Shell::Create(
       std::move(task_runners), settings,
       [](Shell& shell) {
@@ -161,16 +159,16 @@ TEST_F(ShellTest, InitializeWithSingleThreadWhichIsTheCallingThread) {
 
 TEST_F(ShellTest,
        InitializeWithMultipleThreadButCallingThreadAsPlatformThread) {
-  blink::Settings settings = CreateSettingsForFixture();
+  Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(
       "io.flutter.test." + ::testing::GetCurrentTestName() + ".",
       ThreadHost::Type::GPU | ThreadHost::Type::IO | ThreadHost::Type::UI);
   fml::MessageLoop::EnsureInitializedForCurrentThread();
-  blink::TaskRunners task_runners(
-      "test", fml::MessageLoop::GetCurrent().GetTaskRunner(),
-      thread_host.gpu_thread->GetTaskRunner(),
-      thread_host.ui_thread->GetTaskRunner(),
-      thread_host.io_thread->GetTaskRunner());
+  TaskRunners task_runners("test",
+                           fml::MessageLoop::GetCurrent().GetTaskRunner(),
+                           thread_host.gpu_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
   auto shell = Shell::Create(
       std::move(task_runners), settings,
       [](Shell& shell) {
@@ -184,11 +182,11 @@ TEST_F(ShellTest,
 }
 
 TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
-  blink::Settings settings = CreateSettingsForFixture();
+  Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(
       "io.flutter.test." + ::testing::GetCurrentTestName() + ".",
       ThreadHost::Type::Platform | ThreadHost::Type::IO | ThreadHost::Type::UI);
-  blink::TaskRunners task_runners(
+  TaskRunners task_runners(
       "test",
       thread_host.platform_thread->GetTaskRunner(),  // platform
       thread_host.platform_thread->GetTaskRunner(),  // gpu
@@ -244,4 +242,4 @@ TEST_F(ShellTest, FixturesAreFunctional) {
 }
 
 }  // namespace testing
-}  // namespace shell
+}  // namespace flutter

@@ -16,7 +16,7 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
 
-namespace shell {
+namespace flutter {
 
 void FlutterPlatformViewsController::SetFlutterView(UIView* flutter_view) {
   flutter_view_.reset([flutter_view retain]);
@@ -179,7 +179,7 @@ std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
 
 SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
     int view_id,
-    const flow::EmbeddedViewParams& params) {
+    const flutter::EmbeddedViewParams& params) {
   // TODO(amirh): assert that this is running on the platform thread once we support the iOS
   // embedded views thread configuration.
   // TODO(amirh): do nothing if the params didn't change.
@@ -330,7 +330,7 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   overlays_gr_context_ = gr_context;
 }
 
-}  // namespace shell
+}  // namespace flutter
 
 // This recognizers delays touch events from being dispatched to the responder chain until it failed
 // recognizing a gesture.

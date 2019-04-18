@@ -11,7 +11,7 @@
 
 using tonic::ToDart;
 
-namespace blink {
+namespace flutter {
 
 UIDartState::UIDartState(
     TaskRunners task_runners,
@@ -78,7 +78,7 @@ const TaskRunners& UIDartState::GetTaskRunners() const {
   return task_runners_;
 }
 
-fml::RefPtr<flow::SkiaUnrefQueue> UIDartState::GetSkiaUnrefQueue() const {
+fml::RefPtr<flutter::SkiaUnrefQueue> UIDartState::GetSkiaUnrefQueue() const {
   if (!io_manager_) {
     return nullptr;
   }
@@ -149,4 +149,4 @@ void UIDartState::ReportUnhandledException(const std::string& error,
                  << stack_trace;
 }
 
-}  // namespace blink
+}  // namespace flutter

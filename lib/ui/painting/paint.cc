@@ -13,7 +13,7 @@
 #include "third_party/tonic/typed_data/dart_byte_data.h"
 #include "third_party/tonic/typed_data/float32_list.h"
 
-namespace blink {
+namespace flutter {
 
 // Indices for 32bit values.
 constexpr int kIsAntiAliasIndex = 0;
@@ -80,7 +80,7 @@ sk_sp<SkColorFilter> ExtractColorFilter(const uint32_t* uint_data,
       SkBlendMode blend_mode =
           static_cast<SkBlendMode>(uint_data[kColorFilterBlendModeIndex]);
 
-      return SkColorFilter::MakeModeFilter(color, blend_mode);
+      return SkColorFilters::Blend(color, blend_mode);
     }
     case Matrix: {
       Dart_Handle matrixHandle = values[kColorFilterMatrixIndex];
@@ -92,15 +92,15 @@ sk_sp<SkColorFilter> ExtractColorFilter(const uint32_t* uint_data,
         FML_CHECK(length == 20);
 
         tonic::Float32List decoded(matrixHandle);
-        return SkColorFilter::MakeMatrixFilterRowMajor255(decoded.data());
+        return SkColorFilters::MatrixRowMajor255(decoded.data());
       }
       return nullptr;
     }
     case LinearToSRGBGamma: {
-      return SkColorFilter::MakeLinearToSRGBGamma();
+      return SkColorFilters::LinearToSRGBGamma();
     }
     case SRGBToLinearGamma: {
-      return SkColorFilter::MakeSRGBToLinearGamma();
+      return SkColorFilters::SRGBToLinearGamma();
     }
     default:
       FML_DLOG(ERROR) << "Out of range value received for kColorFilterIndex.";
@@ -178,12 +178,11 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
     sk_sp<SkColorFilter> color_filter = ExtractColorFilter(uint_data, values);
     if (color_filter) {
       sk_sp<SkColorFilter> invert_filter =
-          SkColorFilter::MakeMatrixFilterRowMajor255(invert_colors);
+          SkColorFilters::MatrixRowMajor255(invert_colors);
       paint_.setColorFilter(invert_filter->makeComposed(color_filter));
     }
   } else if (uint_data[kInvertColorIndex]) {
-    paint_.setColorFilter(
-        SkColorFilter::MakeMatrixFilterRowMajor255(invert_colors));
+    paint_.setColorFilter(SkColorFilters::MatrixRowMajor255(invert_colors));
   } else if (uint_data[kColorFilterIndex]) {
     sk_sp<SkColorFilter> color_filter = ExtractColorFilter(uint_data, values);
     if (color_filter) {
@@ -203,11 +202,11 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
   }
 }
 
-}  // namespace blink
+}  // namespace flutter
 
 namespace tonic {
 
-blink::Paint DartConverter<blink::Paint>::FromArguments(
+flutter::Paint DartConverter<flutter::Paint>::FromArguments(
     Dart_NativeArguments args,
     int index,
     Dart_Handle& exception) {
@@ -217,14 +216,14 @@ blink::Paint DartConverter<blink::Paint>::FromArguments(
   Dart_Handle paint_data = Dart_GetNativeArgument(args, index + 1);
   FML_DCHECK(!LogIfError(paint_data));
 
-  return blink::Paint(paint_objects, paint_data);
+  return flutter::Paint(paint_objects, paint_data);
 }
 
-blink::PaintData DartConverter<blink::PaintData>::FromArguments(
+flutter::PaintData DartConverter<flutter::PaintData>::FromArguments(
     Dart_NativeArguments args,
     int index,
     Dart_Handle& exception) {
-  return blink::PaintData();
+  return flutter::PaintData();
 }
 
 }  // namespace tonic

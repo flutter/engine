@@ -10,7 +10,7 @@
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
-namespace shell {
+namespace flutter {
 
 class GPUSurfaceGLDelegate {
  public:
@@ -44,7 +44,7 @@ class GPUSurfaceGLDelegate {
 
   // Get a reference to the external views embedder. This happens on the same
   // thread that the renderer is operating on.
-  virtual flow::ExternalViewEmbedder* GetExternalViewEmbedder();
+  virtual flutter::ExternalViewEmbedder* GetExternalViewEmbedder();
 
   sk_sp<const GrGLInterface> GetGLInterface() const;
 
@@ -64,6 +64,6 @@ class GPUSurfaceGLDelegate {
   virtual GLProcResolver GetGLProcResolver() const;
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_GPU_GPU_SURFACE_GL_DELEGATE_H_

@@ -39,7 +39,8 @@ FLUTTER_EXPORT
 @interface FLEViewController : NSViewController <FlutterBinaryMessenger,
                                                  FLEPluginRegistrar,
                                                  FLEReshapeListener,
-                                                 FLETextureRegistrar>
+                                                 FLEPluginRegistry,
+                                                 FLEReshapeListener>
 
 /**
  * The view this controller manages when launched in interactive mode (headless set to false). Must
@@ -75,10 +76,5 @@ FLUTTER_EXPORT
  */
 - (BOOL)launchHeadlessEngineWithAssetsPath:(nonnull NSURL*)assets
                       commandLineArguments:(nullable NSArray<NSString*>*)arguments;
-
-/**
- * Returns the FLEPluginRegistrar that should be used to register the plugin with the given name.
- */
-- (nonnull id<FLEPluginRegistrar>)registrarForPlugin:(nonnull NSString*)pluginName;
 
 @end

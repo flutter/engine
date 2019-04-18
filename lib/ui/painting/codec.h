@@ -17,7 +17,7 @@ namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 
 // A handle to an SkCodec object.
 //
@@ -52,7 +52,7 @@ class MultiFrameCodec : public Codec {
       std::unique_ptr<DartPersistentValue> callback,
       fml::RefPtr<fml::TaskRunner> ui_task_runner,
       fml::WeakPtr<GrContext> resourceContext,
-      fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+      fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
       size_t trace_id);
 
   const std::unique_ptr<SkCodec> codec_;
@@ -96,6 +96,6 @@ class SingleFrameCodec : public Codec {
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(SingleFrameCodec);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_CODEC_H_

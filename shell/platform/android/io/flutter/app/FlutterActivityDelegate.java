@@ -8,7 +8,6 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.app.Application;
-import android.app.UiModeManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -296,6 +295,9 @@ public final class FlutterActivityDelegate
         }
         if (intent.getBooleanExtra("start-paused", false)) {
             args.add("--start-paused");
+        }
+        if (intent.getBooleanExtra("enable-service-auth-codes", false)) {
+            args.add("--enable-service-auth-codes");
         }
         if (intent.getBooleanExtra("use-test-fonts", false)) {
             args.add("--use-test-fonts");

@@ -15,7 +15,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_task_runner.h"
 
-namespace shell {
+namespace flutter {
 
 class EmbedderThreadHost {
  public:
@@ -25,20 +25,20 @@ class EmbedderThreadHost {
 
   EmbedderThreadHost(
       ThreadHost host,
-      blink::TaskRunners runners,
+      flutter::TaskRunners runners,
       std::set<fml::RefPtr<EmbedderTaskRunner>> embedder_task_runners);
 
   ~EmbedderThreadHost();
 
   bool IsValid() const;
 
-  const blink::TaskRunners& GetTaskRunners() const;
+  const flutter::TaskRunners& GetTaskRunners() const;
 
   bool PostTask(int64_t runner, uint64_t task) const;
 
  private:
   ThreadHost host_;
-  blink::TaskRunners runners_;
+  flutter::TaskRunners runners_;
   std::map<int64_t, fml::RefPtr<EmbedderTaskRunner>> runners_map_;
 
   static std::unique_ptr<EmbedderThreadHost> CreateEmbedderManagedThreadHost(
@@ -49,6 +49,6 @@ class EmbedderThreadHost {
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderThreadHost);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_THREAD_HOST_H_

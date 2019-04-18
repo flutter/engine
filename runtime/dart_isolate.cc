@@ -27,7 +27,7 @@
 #include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
 
-namespace blink {
+namespace flutter {
 
 std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     const Settings& settings,
@@ -547,9 +547,8 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
     return nullptr;
   }
 
-  blink::TaskRunners null_task_runners(
-      "io.flutter." DART_VM_SERVICE_ISOLATE_NAME, nullptr, nullptr, nullptr,
-      nullptr);
+  TaskRunners null_task_runners("io.flutter." DART_VM_SERVICE_ISOLATE_NAME,
+                                nullptr, nullptr, nullptr, nullptr);
 
   flags->load_vmservice_library = true;
 
@@ -580,7 +579,8 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
           settings.observatory_port,            // server observatory port
           tonic::DartState::HandleLibraryTag,   // embedder library tag handler
           false,  //  disable websocket origin check
-          error   // error (out)
+          settings.disable_service_auth_codes,  // disable VM service auth codes
+          error                                 // error (out)
           )) {
     // Error is populated by call to startup.
     FML_DLOG(ERROR) << *error;
@@ -659,8 +659,8 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
   if (!is_root_isolate) {
     auto* raw_embedder_isolate = embedder_isolate.release();
 
-    blink::TaskRunners null_task_runners(advisory_script_uri, nullptr, nullptr,
-                                         nullptr, nullptr);
+    TaskRunners null_task_runners(advisory_script_uri, nullptr, nullptr,
+                                  nullptr, nullptr);
 
     embedder_isolate = std::make_unique<std::shared_ptr<DartIsolate>>(
         std::make_shared<DartIsolate>(
@@ -721,8 +721,6 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
     }
   }
 
-  DartVMRef::GetRunningVM()->RegisterActiveIsolate(*embedder_isolate);
-
   // The ownership of the embedder object is controlled by the Dart VM. So the
   // only reference returned to the caller is weak.
   embedder_isolate.release();
@@ -760,8 +758,6 @@ void DartIsolate::AddIsolateShutdownCallback(fml::closure closure) {
 
 void DartIsolate::OnShutdownCallback() {
   shutdown_callbacks_.clear();
-  DartVMRef::GetRunningVM()->UnregisterActiveIsolate(
-      std::static_pointer_cast<DartIsolate>(shared_from_this()));
 }
 
 DartIsolate::AutoFireClosure::AutoFireClosure(fml::closure closure)
@@ -773,4 +769,4 @@ DartIsolate::AutoFireClosure::~AutoFireClosure() {
   }
 }
 
-}  // namespace blink
+}  // namespace flutter

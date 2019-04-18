@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/common/version/version.h"
+#include "flutter/shell/version/version.h"
 
-namespace blink {
+namespace flutter {
 
 const char* GetFlutterEngineVersion() {
   return FLUTTER_ENGINE_VERSION;
@@ -18,4 +18,4 @@ const char* GetDartVersion() {
   return DART_VERSION;
 }
 
-}  // namespace blink
+}  // namespace flutter

@@ -9,16 +9,16 @@
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterTexture.h"
 
-namespace shell {
+namespace flutter {
 
-class IOSExternalTextureGL : public flow::Texture {
+class IOSExternalTextureGL : public flutter::Texture {
  public:
   IOSExternalTextureGL(int64_t textureId, NSObject<FlutterTexture>* externalTexture);
 
   ~IOSExternalTextureGL() override;
 
   // Called from GPU thread.
-  void Paint(SkCanvas& canvas, const SkRect& bounds, bool freeze) override;
+  void Paint(SkCanvas& canvas, const SkRect& bounds, bool freeze, GrContext* context) override;
 
   void OnGrContextCreated() override;
 
@@ -33,6 +33,6 @@ class IOSExternalTextureGL : public flow::Texture {
   FML_DISALLOW_COPY_AND_ASSIGN(IOSExternalTextureGL);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_IOS_EXTERNAL_TEXTURE_GL_H_
