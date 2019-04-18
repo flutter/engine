@@ -56,7 +56,8 @@ using PictureRasterCacheKey = RasterCacheKey<uint32_t>;
 
 class Layer;
 
-using LayerRasterCacheKey = RasterCacheKey<Layer*>;
+// The ID is the uint32_t layer unique_id
+using LayerRasterCacheKey = RasterCacheKey<uint32_t>;
 
 }  // namespace flutter
 
