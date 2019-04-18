@@ -273,9 +273,10 @@ TEST_F(ParagraphTest, BoldParagraph) {
       Paragraph::RectHeightStyle::kMax;
   Paragraph::RectWidthStyle rect_width_style =
       Paragraph::RectWidthStyle::kTight;
-  std::vector<txt::Paragraph::TextBox> boxes =
-      paragraph->GetRectsForRange(0, strlen(text), rect_height_style, rect_width_style);
-  ASSERT_DOUBLE_EQ(paragraph->tight_width_, boxes[boxes.size() - 1].rect.right() - boxes[0].rect.left());
+  std::vector<txt::Paragraph::TextBox> boxes = paragraph->GetRectsForRange(
+      0, strlen(text), rect_height_style, rect_width_style);
+  ASSERT_DOUBLE_EQ(paragraph->tight_width_,
+                   boxes[boxes.size() - 1].rect.right() - boxes[0].rect.left());
 }
 
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeftAlignParagraph)) {
