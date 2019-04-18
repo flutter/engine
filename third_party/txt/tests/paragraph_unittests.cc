@@ -949,6 +949,73 @@ TEST_F(ParagraphTest, DISABLED_ArabicParagraph) {
   ASSERT_TRUE(Snapshot());
 }
 
+// Checks if the rects are in the correct positions after typing spaces in
+// Arabic.
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(ArabicRectsParagraph)) {
+  const char* text = "بمباركة التقليدية قام عن. تصفح يد ";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 14;
+  paragraph_style.text_align = TextAlign::right;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Noto Naskh Arabic");
+  text_style.font_size = 26;
+  text_style.letter_spacing = 1;
+  text_style.word_spacing = 5;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  text_style.decoration = TextDecoration::kUnderline;
+  text_style.decoration_color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth() - 100);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 100, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 2ull);
+
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 556.54688);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), -0.26855469);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 900);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 44);
+
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 556.04688);
+  EXPECT_FLOAT_EQ(boxes[1].rect.top(), -0.26855469);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 544.30859);
+  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 44);
+
+  ASSERT_EQ(paragraph_style.text_align,
+            paragraph->GetParagraphStyle().text_align);
+
+  ASSERT_TRUE(Snapshot());
+}
+
 TEST_F(ParagraphTest, GetGlyphPositionAtCoordinateParagraph) {
   const char* text =
       "12345 67890 12345 67890 12345 67890 12345 67890 12345 67890 12345 "

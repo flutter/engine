@@ -17,6 +17,8 @@
 #include "paragraph.h"
 
 #include <hb.h>
+#include <minikin/Layout.h>
+
 #include <algorithm>
 #include <limits>
 #include <map>
@@ -24,7 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include <minikin/Layout.h>
 #include "flutter/fml/logging.h"
 #include "font_collection.h"
 #include "font_skia.h"
@@ -34,9 +35,6 @@
 #include "minikin/LayoutUtils.h"
 #include "minikin/LineBreaker.h"
 #include "minikin/MinikinFont.h"
-#include "unicode/ubidi.h"
-#include "unicode/utf16.h"
-
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkFontMetrics.h"
@@ -46,6 +44,8 @@
 #include "third_party/skia/include/core/SkTypeface.h"
 #include "third_party/skia/include/effects/SkDashPathEffect.h"
 #include "third_party/skia/include/effects/SkDiscretePathEffect.h"
+#include "unicode/ubidi.h"
+#include "unicode/utf16.h"
 
 namespace txt {
 namespace {
@@ -549,6 +549,19 @@ void Paragraph::Layout(double width, bool force) {
             ? line_range.end_excluding_whitespace
             : line_range.end;
 
+    // Build a map of styled runs indexed by start position to TextDirection.
+    // Once the direction of a non-ghost line run has been established for the
+    // styled run, we will enforce that the ghost run use the direction of the
+    // most recently seen bidi run that is part of the styled run. This is to
+    // ensure that default-LTR whitespace gets the proper directionality when
+    // used in a RTL run.
+    std::map<size_t, TextDirection> styled_run_direction_map;
+    for (size_t i = 0; i < runs_.size(); ++i) {
+      StyledRuns::Run run = runs_.GetRun(i);
+      // Initialize TextDirection to LTR as that is what ICU initializes it to.
+      styled_run_direction_map.emplace(
+          std::make_pair(run.start, TextDirection::ltr));
+    }
     // Find the runs comprising this line.
     std::vector<BidiRun> line_runs;
     for (const BidiRun& bidi_run : bidi_runs) {
@@ -557,6 +570,11 @@ void Paragraph::Layout(double width, bool force) {
         line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
                                std::min(bidi_run.end(), line_end_index),
                                bidi_run.direction(), bidi_run.style());
+        // Track the the most recently used text direction for the styled run.
+        styled_run_direction_map[styled_run_direction_map
+                                     .lower_bound(std::max(bidi_run.start(),
+                                                           line_range.start))
+                                     ->first] = bidi_run.direction();
       }
       // A "ghost" run is a run that does not impact the layout, breaking,
       // alignment, width, etc but is still "visible" though getRectsForRange.
@@ -571,9 +589,15 @@ void Paragraph::Layout(double width, bool force) {
           line_range.end_excluding_whitespace < line_range.end &&
           bidi_run.start() <= line_range.end &&
           bidi_run.end() > line_end_index) {
+        // Use the most recent TextDirection instead of the defaulted LTR value
+        // ICU provides.
+        TextDirection run_direction = styled_run_direction_map
+            [styled_run_direction_map
+                 .lower_bound(std::max(bidi_run.start(), line_range.start))
+                 ->first];
         line_runs.emplace_back(std::max(bidi_run.start(), line_end_index),
                                std::min(bidi_run.end(), line_range.end),
-                               bidi_run.direction(), bidi_run.style(), true);
+                               run_direction, bidi_run.style(), true);
       }
     }
     bool line_runs_all_rtl =
@@ -808,12 +832,25 @@ void Paragraph::Layout(double width, bool force) {
                   [](const GlyphPosition& a, const GlyphPosition& b) {
                     return a.code_units.start < b.code_units.start;
                   });
-        line_code_unit_runs.emplace_back(
-            std::move(code_unit_positions),
-            Range<size_t>(run.start(), run.end()),
-            Range<double>(glyph_positions.front().x_pos.start,
-                          glyph_positions.back().x_pos.end),
-            line_number, metrics, run.direction());
+        if (!(run.is_ghost() && run.is_rtl())) {
+          line_code_unit_runs.emplace_back(
+              std::move(code_unit_positions),
+              Range<size_t>(run.start(), run.end()),
+              Range<double>(glyph_positions.front().x_pos.start,
+                            glyph_positions.back().x_pos.end),
+              line_number, metrics, run.direction());
+        } else {
+          // We custom handle ghost run for RTL as ICU interprets trailing
+          // whitespace as LTR, which causes trailing space to appear at the
+          // right side instead of the (correct) left side. Here, we manually
+          // add the equivalent width to the left side instead.
+          line_code_unit_runs.emplace_back(
+              std::move(code_unit_positions),
+              Range<size_t>(run.start(), run.end()),
+              Range<double>(run_x_offset - glyph_positions.back().x_pos.start,
+                            run_x_offset - glyph_positions.back().x_pos.end),
+              line_number, metrics, run.direction());
+        }
 
         min_left_ = std::min(min_left_, glyph_positions.front().x_pos.start);
         max_right_ = std::max(max_right_, glyph_positions.back().x_pos.end);
