@@ -13,51 +13,51 @@
 
 @class CALayer;
 
-namespace shell {
+namespace flutter {
 
 class IOSSurfaceSoftware final : public IOSSurface,
                                  public GPUSurfaceSoftwareDelegate,
-                                 public flow::ExternalViewEmbedder {
+                                 public flutter::ExternalViewEmbedder {
  public:
   IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
                      FlutterPlatformViewsController* platform_views_controller);
 
   ~IOSSurfaceSoftware() override;
 
-  // |shell::IOSSurface|
+  // |IOSSurface|
   bool IsValid() const override;
 
-  // |shell::IOSSurface|
+  // |IOSSurface|
   bool ResourceContextMakeCurrent() override;
 
-  // |shell::IOSSurface|
+  // |IOSSurface|
   void UpdateStorageSizeIfNecessary() override;
 
-  // |shell::IOSSurface|
+  // |IOSSurface|
   std::unique_ptr<Surface> CreateGPUSurface() override;
 
-  // |shell::GPUSurfaceSoftwareDelegate|
+  // |GPUSurfaceSoftwareDelegate|
   sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override;
 
-  // |shell::GPUSurfaceSoftwareDelegate|
+  // |GPUSurfaceSoftwareDelegate|
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;
 
-  // |shell::GPUSurfaceSoftwareDelegate|
-  flow::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+  // |GPUSurfaceSoftwareDelegate|
+  flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
-  // |flow::ExternalViewEmbedder|
+  // |flutter::ExternalViewEmbedder|
   void BeginFrame(SkISize frame_size) override;
 
-  // |flow::ExternalViewEmbedder|
+  // |flutter::ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(int view_id) override;
 
-  // |flow::ExternalViewEmbedder|
+  // |flutter::ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
-  // |flow::ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id, const flow::EmbeddedViewParams& params) override;
+  // |flutter::ExternalViewEmbedder|
+  SkCanvas* CompositeEmbeddedView(int view_id, const flutter::EmbeddedViewParams& params) override;
 
-  // |flow::ExternalViewEmbedder|
+  // |flutter::ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;
 
  private:
@@ -67,6 +67,6 @@ class IOSSurfaceSoftware final : public IOSSurface,
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceSoftware);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SURFACE_SOFTWARE_H_

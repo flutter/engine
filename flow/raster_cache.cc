@@ -15,7 +15,7 @@
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-namespace flow {
+namespace flutter {
 
 RasterCacheResult::RasterCacheResult() {}
 
@@ -166,6 +166,7 @@ void RasterCache::Prepare(PrerollContext* context,
                               Layer::PaintContext paintContext = {
                                   (SkCanvas*)&internal_nodes_canvas,
                                   canvas,
+                                  context->gr_context,
                                   nullptr,
                                   context->frame_time,
                                   context->engine_time,
@@ -291,4 +292,4 @@ void RasterCache::TraceStatsToTimeline() const {
 #endif  // FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
 }
 
-}  // namespace flow
+}  // namespace flutter

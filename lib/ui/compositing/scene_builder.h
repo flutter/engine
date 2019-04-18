@@ -24,7 +24,7 @@
 #include "flutter/lib/ui/compositing/scene_host.h"
 #endif
 
-namespace blink {
+namespace flutter {
 
 class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   DEFINE_WRAPPERTYPEINFO();
@@ -108,18 +108,18 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
  private:
   SceneBuilder();
 
-  std::shared_ptr<flow::ContainerLayer> root_layer_;
-  flow::ContainerLayer* current_layer_ = nullptr;
+  std::shared_ptr<flutter::ContainerLayer> root_layer_;
+  flutter::ContainerLayer* current_layer_ = nullptr;
 
   int rasterizer_tracing_threshold_ = 0;
   bool checkerboard_raster_cache_images_ = false;
   bool checkerboard_offscreen_layers_ = false;
 
-  void PushLayer(std::shared_ptr<flow::ContainerLayer> layer);
+  void PushLayer(std::shared_ptr<flutter::ContainerLayer> layer);
 
   FML_DISALLOW_COPY_AND_ASSIGN(SceneBuilder);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_COMPOSITING_SCENE_BUILDER_H_

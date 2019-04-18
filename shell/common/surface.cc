@@ -7,7 +7,7 @@
 #include "flutter/fml/logging.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-namespace shell {
+namespace flutter {
 
 SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
                            SubmitCallback submit_callback)
@@ -56,7 +56,7 @@ Surface::Surface() = default;
 
 Surface::~Surface() = default;
 
-flow::ExternalViewEmbedder* Surface::GetExternalViewEmbedder() {
+flutter::ExternalViewEmbedder* Surface::GetExternalViewEmbedder() {
   return nullptr;
 }
 
@@ -64,4 +64,4 @@ bool Surface::MakeRenderContextCurrent() {
   return true;
 }
 
-}  // namespace shell
+}  // namespace flutter

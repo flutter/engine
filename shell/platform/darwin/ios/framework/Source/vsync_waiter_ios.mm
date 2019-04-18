@@ -17,7 +17,7 @@
 @interface VSyncClient : NSObject
 
 - (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
-                          callback:(shell::VsyncWaiter::Callback)callback;
+                          callback:(flutter::VsyncWaiter::Callback)callback;
 
 - (void)await;
 
@@ -25,9 +25,9 @@
 
 @end
 
-namespace shell {
+namespace flutter {
 
-VsyncWaiterIOS::VsyncWaiterIOS(blink::TaskRunners task_runners)
+VsyncWaiterIOS::VsyncWaiterIOS(flutter::TaskRunners task_runners)
     : VsyncWaiter(std::move(task_runners)),
       client_([[VSyncClient alloc] initWithTaskRunner:task_runners_.GetUITaskRunner()
                                              callback:std::bind(&VsyncWaiterIOS::FireCallback,
@@ -45,15 +45,15 @@ void VsyncWaiterIOS::AwaitVSync() {
   [client_.get() await];
 }
 
-}  // namespace shell
+}  // namespace flutter
 
 @implementation VSyncClient {
-  shell::VsyncWaiter::Callback callback_;
+  flutter::VsyncWaiter::Callback callback_;
   fml::scoped_nsobject<CADisplayLink> display_link_;
 }
 
 - (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
-                          callback:(shell::VsyncWaiter::Callback)callback {
+                          callback:(flutter::VsyncWaiter::Callback)callback {
   self = [super init];
 
   if (self) {

@@ -6,7 +6,7 @@
 
 #include "flutter/runtime/dart_vm.h"
 
-namespace shell {
+namespace flutter {
 namespace testing {
 
 static std::unique_ptr<fml::Mapping> GetMapping(const fml::UniqueFD& directory,
@@ -44,7 +44,7 @@ EmbedderContext::EmbedderContext(std::string assets_path)
   isolate_snapshot_data_ =
       GetMapping(assets_dir, "isolate_snapshot_data", false);
 
-  if (blink::DartVM::IsRunningPrecompiledCode()) {
+  if (flutter::DartVM::IsRunningPrecompiledCode()) {
     vm_snapshot_instructions_ =
         GetMapping(assets_dir, "vm_snapshot_instr", true);
     isolate_snapshot_instructions_ =
@@ -137,4 +137,4 @@ EmbedderContext::GetUpdateSemanticsCustomActionCallbackHook() {
 }
 
 }  // namespace testing
-}  // namespace shell
+}  // namespace flutter

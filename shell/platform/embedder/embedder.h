@@ -343,7 +343,8 @@ typedef struct {
 
 // |FlutterSemanticsNode| ID used as a sentinel to signal the end of a batch of
 // semantics node updates.
-const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
+FLUTTER_EXPORT
+extern const int32_t kFlutterSemanticsNodeIdBatchEnd;
 
 // A node that represents some semantic data.
 //
@@ -414,7 +415,8 @@ typedef struct {
 
 // |FlutterSemanticsCustomAction| ID used as a sentinel to signal the end of a
 // batch of semantics custom action updates.
-const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
+FLUTTER_EXPORT
+extern const int32_t kFlutterSemanticsCustomActionIdBatchEnd;
 
 // A custom semantics action, or action override.
 //

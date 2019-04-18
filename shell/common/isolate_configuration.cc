@@ -7,14 +7,14 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/runtime/dart_vm.h"
 
-namespace shell {
+namespace flutter {
 
 IsolateConfiguration::IsolateConfiguration() = default;
 
 IsolateConfiguration::~IsolateConfiguration() = default;
 
-bool IsolateConfiguration::PrepareIsolate(blink::DartIsolate& isolate) {
-  if (isolate.GetPhase() != blink::DartIsolate::Phase::LibrariesSetup) {
+bool IsolateConfiguration::PrepareIsolate(DartIsolate& isolate) {
+  if (isolate.GetPhase() != DartIsolate::Phase::LibrariesSetup) {
     FML_DLOG(ERROR)
         << "Isolate was in incorrect phase to be prepared for running.";
     return false;
@@ -27,8 +27,8 @@ class AppSnapshotIsolateConfiguration final : public IsolateConfiguration {
  public:
   AppSnapshotIsolateConfiguration() = default;
 
-  // |shell::IsolateConfiguration|
-  bool DoPrepareIsolate(blink::DartIsolate& isolate) override {
+  // |IsolateConfiguration|
+  bool DoPrepareIsolate(DartIsolate& isolate) override {
     return isolate.PrepareForRunningFromPrecompiledCode();
   }
 
@@ -41,9 +41,9 @@ class KernelIsolateConfiguration : public IsolateConfiguration {
   KernelIsolateConfiguration(std::unique_ptr<const fml::Mapping> kernel)
       : kernel_(std::move(kernel)) {}
 
-  // |shell::IsolateConfiguration|
-  bool DoPrepareIsolate(blink::DartIsolate& isolate) override {
-    if (blink::DartVM::IsRunningPrecompiledCode()) {
+  // |IsolateConfiguration|
+  bool DoPrepareIsolate(DartIsolate& isolate) override {
+    if (DartVM::IsRunningPrecompiledCode()) {
       return false;
     }
     return isolate.PrepareForRunningFromKernel(std::move(kernel_));
@@ -62,9 +62,9 @@ class KernelListIsolateConfiguration final : public IsolateConfiguration {
           kernel_pieces)
       : kernel_pieces_(std::move(kernel_pieces)) {}
 
-  // |shell::IsolateConfiguration|
-  bool DoPrepareIsolate(blink::DartIsolate& isolate) override {
-    if (blink::DartVM::IsRunningPrecompiledCode()) {
+  // |IsolateConfiguration|
+  bool DoPrepareIsolate(DartIsolate& isolate) override {
+    if (DartVM::IsRunningPrecompiledCode()) {
       return false;
     }
 
@@ -115,7 +115,7 @@ static std::vector<std::string> ParseKernelListPaths(
 
 static std::vector<std::future<std::unique_ptr<const fml::Mapping>>>
 PrepareKernelMappings(std::vector<std::string> kernel_pieces_paths,
-                      std::shared_ptr<blink::AssetManager> asset_manager,
+                      std::shared_ptr<AssetManager> asset_manager,
                       fml::RefPtr<fml::TaskRunner> io_worker) {
   FML_DCHECK(asset_manager);
   std::vector<std::future<std::unique_ptr<const fml::Mapping>>> fetch_futures;
@@ -142,11 +142,11 @@ PrepareKernelMappings(std::vector<std::string> kernel_pieces_paths,
 }
 
 std::unique_ptr<IsolateConfiguration> IsolateConfiguration::InferFromSettings(
-    const blink::Settings& settings,
-    std::shared_ptr<blink::AssetManager> asset_manager,
+    const Settings& settings,
+    std::shared_ptr<AssetManager> asset_manager,
     fml::RefPtr<fml::TaskRunner> io_worker) {
   // Running in AOT mode.
-  if (blink::DartVM::IsRunningPrecompiledCode()) {
+  if (DartVM::IsRunningPrecompiledCode()) {
     return CreateForAppSnapshot();
   }
 
@@ -219,4 +219,4 @@ std::unique_ptr<IsolateConfiguration> IsolateConfiguration::CreateForKernelList(
       std::move(kernel_pieces));
 }
 
-}  // namespace shell
+}  // namespace flutter

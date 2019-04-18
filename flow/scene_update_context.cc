@@ -7,8 +7,9 @@
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/matrix_decomposition.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/lib/ui/window/viewport_metrics.h"
 
-namespace flow {
+namespace flutter {
 
 // Helper function to generate clip planes for a scenic::EntityNode.
 static void SetEntityNodeClipPlanes(scenic::EntityNode* entity_node,
@@ -187,7 +188,8 @@ scenic::Image* SceneUpdateContext::GenerateImageIfNeeded(
   return image;
 }
 
-std::vector<std::unique_ptr<flow::SceneUpdateContext::SurfaceProducerSurface>>
+std::vector<
+    std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>>
 SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
   TRACE_EVENT0("flutter", "SceneUpdateContext::ExecutePaintTasks");
   std::vector<std::unique_ptr<SurfaceProducerSurface>> surfaces_to_submit;
@@ -196,6 +198,7 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
     SkCanvas* canvas = task.surface->GetSkiaSurface()->getCanvas();
     Layer::PaintContext context = {canvas,
                                    canvas,
+                                   frame.gr_context(),
                                    nullptr,
                                    frame.context().frame_time(),
                                    frame.context().engine_time(),
@@ -285,15 +288,23 @@ SceneUpdateContext::Transform::~Transform() {
 SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
                                  const SkRRect& rrect,
                                  SkColor color,
-                                 float elevation,
+                                 float local_elevation,
+                                 float world_elevation,
+                                 float depth,
                                  Layer* layer)
     : Entity(context),
       rrect_(rrect),
       color_(color),
       paint_bounds_(SkRect::MakeEmpty()),
       layer_(layer) {
-  if (elevation != 0.0)
-    entity_node().SetTranslation(0.f, 0.f, -elevation);
+  if (local_elevation != 0.0) {
+    if (depth > flutter::kUnsetDepth && world_elevation >= depth) {
+      // TODO(mklim): Deal with bounds overflow correctly.
+      FML_LOG(ERROR) << "Elevation " << world_elevation << " is outside of "
+                     << depth;
+    }
+    entity_node().SetTranslation(0.f, 0.f, -local_elevation);
+  }
 }
 
 SceneUpdateContext::Frame::~Frame() {
@@ -321,4 +332,4 @@ SceneUpdateContext::Clip::Clip(SceneUpdateContext& context,
   SetEntityNodeClipPlanes(&entity_node(), shape_bounds);
 }
 
-}  // namespace flow
+}  // namespace flutter

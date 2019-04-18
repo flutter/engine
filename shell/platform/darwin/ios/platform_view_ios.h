@@ -22,11 +22,11 @@
 
 @class FlutterViewController;
 
-namespace shell {
+namespace flutter {
 
 class PlatformViewIOS final : public PlatformView {
  public:
-  explicit PlatformViewIOS(PlatformView::Delegate& delegate, blink::TaskRunners task_runners);
+  explicit PlatformViewIOS(PlatformView::Delegate& delegate, flutter::TaskRunners task_runners);
 
   ~PlatformViewIOS() override;
 
@@ -41,7 +41,7 @@ class PlatformViewIOS final : public PlatformView {
 
   void SetTextInputPlugin(fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin);
 
-  // |shell::PlatformView|
+  // |PlatformView|
   void SetSemanticsEnabled(bool enabled) override;
 
  private:
@@ -53,31 +53,31 @@ class PlatformViewIOS final : public PlatformView {
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> text_input_plugin_;
   fml::closure firstFrameCallback_;
 
-  // |shell::PlatformView|
-  void HandlePlatformMessage(fml::RefPtr<blink::PlatformMessage> message) override;
+  // |PlatformView|
+  void HandlePlatformMessage(fml::RefPtr<flutter::PlatformMessage> message) override;
 
-  // |shell::PlatformView|
+  // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
 
-  // |shell::PlatformView|
+  // |PlatformView|
   sk_sp<GrContext> CreateResourceContext() const override;
 
-  // |shell::PlatformView|
+  // |PlatformView|
   void SetAccessibilityFeatures(int32_t flags) override;
 
-  // |shell::PlatformView|
-  void UpdateSemantics(blink::SemanticsNodeUpdates update,
-                       blink::CustomAccessibilityActionUpdates actions) override;
+  // |PlatformView|
+  void UpdateSemantics(flutter::SemanticsNodeUpdates update,
+                       flutter::CustomAccessibilityActionUpdates actions) override;
 
-  // |shell::PlatformView|
+  // |PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
 
-  // |shell::PlatformView|
+  // |PlatformView|
   void OnPreEngineRestart() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewIOS);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_PLATFORM_IOS_PLATFORM_VIEW_IOS_H_

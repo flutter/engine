@@ -16,11 +16,11 @@
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
 
-namespace shell {
+namespace flutter {
 
 class AndroidShellHolder {
  public:
-  AndroidShellHolder(blink::Settings settings,
+  AndroidShellHolder(flutter::Settings settings,
                      fml::jni::JavaObjectWeakGlobalRef java_object,
                      bool is_background_view);
 
@@ -30,22 +30,22 @@ class AndroidShellHolder {
 
   void Launch(RunConfiguration configuration);
 
-  void SetViewportMetrics(const blink::ViewportMetrics& metrics);
+  void SetViewportMetrics(const flutter::ViewportMetrics& metrics);
 
   void DispatchPointerDataPacket(
-      std::unique_ptr<blink::PointerDataPacket> packet);
+      std::unique_ptr<flutter::PointerDataPacket> packet);
 
-  const blink::Settings& GetSettings() const;
+  const flutter::Settings& GetSettings() const;
 
   fml::WeakPtr<PlatformViewAndroid> GetPlatformView();
 
   Rasterizer::Screenshot Screenshot(Rasterizer::ScreenshotType type,
                                     bool base64_encode);
 
-  void UpdateAssetManager(fml::RefPtr<blink::AssetManager> asset_manager);
+  void UpdateAssetManager(fml::RefPtr<flutter::AssetManager> asset_manager);
 
  private:
-  const blink::Settings settings_;
+  const flutter::Settings settings_;
   const fml::jni::JavaObjectWeakGlobalRef java_object_;
   fml::WeakPtr<PlatformViewAndroid> platform_view_;
   ThreadHost thread_host_;
@@ -59,6 +59,6 @@ class AndroidShellHolder {
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidShellHolder);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SHELL_HOLDER_H_

@@ -27,7 +27,7 @@
 - (void)blockGesture;
 @end
 
-namespace shell {
+namespace flutter {
 
 class IOSGLContext;
 class IOSSurface;
@@ -67,7 +67,7 @@ class FlutterPlatformViewsController {
 
   std::vector<SkCanvas*> GetCurrentCanvases();
 
-  SkCanvas* CompositeEmbeddedView(int view_id, const flow::EmbeddedViewParams& params);
+  SkCanvas* CompositeEmbeddedView(int view_id, const flutter::EmbeddedViewParams& params);
 
   // Discards all platform views instances and auxiliary resources.
   void Reset();
@@ -120,6 +120,6 @@ class FlutterPlatformViewsController {
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_

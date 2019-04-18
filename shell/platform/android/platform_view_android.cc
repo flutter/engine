@@ -8,7 +8,7 @@
 #include <utility>
 
 #include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/shell/common/io_manager.h"
+#include "flutter/shell/common/shell_io_manager.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/android/android_external_texture_gl.h"
 #include "flutter/shell/platform/android/android_surface_gl.h"
@@ -16,11 +16,11 @@
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/vsync_waiter_android.h"
 
-namespace shell {
+namespace flutter {
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
-    blink::TaskRunners task_runners,
+    flutter::TaskRunners task_runners,
     fml::jni::JavaObjectWeakGlobalRef java_object,
     bool use_software_rendering)
     : PlatformView(delegate, std::move(task_runners)),
@@ -33,7 +33,7 @@ PlatformViewAndroid::PlatformViewAndroid(
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
-    blink::TaskRunners task_runners,
+    flutter::TaskRunners task_runners,
     fml::jni::JavaObjectWeakGlobalRef java_object)
     : PlatformView(delegate, std::move(task_runners)),
       java_object_(java_object),
@@ -99,29 +99,29 @@ void PlatformViewAndroid::DispatchPlatformMessage(JNIEnv* env,
   std::vector<uint8_t> message =
       std::vector<uint8_t>(message_data, message_data + java_message_position);
 
-  fml::RefPtr<blink::PlatformMessageResponse> response;
+  fml::RefPtr<flutter::PlatformMessageResponse> response;
   if (response_id) {
     response = fml::MakeRefCounted<PlatformMessageResponseAndroid>(
         response_id, java_object_, task_runners_.GetPlatformTaskRunner());
   }
 
   PlatformView::DispatchPlatformMessage(
-      fml::MakeRefCounted<blink::PlatformMessage>(
+      fml::MakeRefCounted<flutter::PlatformMessage>(
           std::move(name), std::move(message), std::move(response)));
 }
 
 void PlatformViewAndroid::DispatchEmptyPlatformMessage(JNIEnv* env,
                                                        std::string name,
                                                        jint response_id) {
-  fml::RefPtr<blink::PlatformMessageResponse> response;
+  fml::RefPtr<flutter::PlatformMessageResponse> response;
   if (response_id) {
     response = fml::MakeRefCounted<PlatformMessageResponseAndroid>(
         response_id, java_object_, task_runners_.GetPlatformTaskRunner());
   }
 
   PlatformView::DispatchPlatformMessage(
-      fml::MakeRefCounted<blink::PlatformMessage>(std::move(name),
-                                                  std::move(response)));
+      fml::MakeRefCounted<flutter::PlatformMessage>(std::move(name),
+                                                    std::move(response)));
 }
 
 void PlatformViewAndroid::InvokePlatformMessageResponseCallback(
@@ -157,9 +157,9 @@ void PlatformViewAndroid::InvokePlatformMessageEmptyResponseCallback(
   message_response->CompleteEmpty();
 }
 
-// |shell::PlatformView|
+// |PlatformView|
 void PlatformViewAndroid::HandlePlatformMessage(
-    fml::RefPtr<blink::PlatformMessage> message) {
+    fml::RefPtr<flutter::PlatformMessage> message) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> view = java_object_.get(env);
   if (view.is_null())
@@ -191,7 +191,7 @@ void PlatformViewAndroid::HandlePlatformMessage(
   }
 }
 
-// |shell::PlatformView|
+// |PlatformView|
 void PlatformViewAndroid::OnPreEngineRestart() const {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> view = java_object_.get(env);
@@ -210,7 +210,7 @@ void PlatformViewAndroid::DispatchSemanticsAction(JNIEnv* env,
   if (env->IsSameObject(args, NULL)) {
     std::vector<uint8_t> args_vector;
     PlatformView::DispatchSemanticsAction(
-        id, static_cast<blink::SemanticsAction>(action), args_vector);
+        id, static_cast<flutter::SemanticsAction>(action), args_vector);
     return;
   }
 
@@ -219,13 +219,14 @@ void PlatformViewAndroid::DispatchSemanticsAction(JNIEnv* env,
       std::vector<uint8_t>(args_data, args_data + args_position);
 
   PlatformView::DispatchSemanticsAction(
-      id, static_cast<blink::SemanticsAction>(action), std::move(args_vector));
+      id, static_cast<flutter::SemanticsAction>(action),
+      std::move(args_vector));
 }
 
-// |shell::PlatformView|
+// |PlatformView|
 void PlatformViewAndroid::UpdateSemantics(
-    blink::SemanticsNodeUpdates update,
-    blink::CustomAccessibilityActionUpdates actions) {
+    flutter::SemanticsNodeUpdates update,
+    flutter::CustomAccessibilityActionUpdates actions) {
   constexpr size_t kBytesPerNode = 39 * sizeof(int32_t);
   constexpr size_t kBytesPerChild = sizeof(int32_t);
   constexpr size_t kBytesPerAction = 4 * sizeof(int32_t);
@@ -256,7 +257,7 @@ void PlatformViewAndroid::UpdateSemantics(
       // If you edit this code, make sure you update kBytesPerNode
       // and/or kBytesPerChild above to match the number of values you are
       // sending.
-      const blink::SemanticsNode& node = value.second;
+      const flutter::SemanticsNode& node = value.second;
       buffer_int32[position++] = node.id;
       buffer_int32[position++] = node.flags;
       buffer_int32[position++] = node.actions;
@@ -330,7 +331,7 @@ void PlatformViewAndroid::UpdateSemantics(
       // If you edit this code, make sure you update kBytesPerAction
       // to match the number of values you are
       // sending.
-      const blink::CustomAccessibilityAction& action = value.second;
+      const flutter::CustomAccessibilityAction& action = value.second;
       actions_buffer_int32[actions_position++] = action.id;
       actions_buffer_int32[actions_position++] = action.overrideId;
       if (action.label.empty()) {
@@ -375,12 +376,12 @@ void PlatformViewAndroid::RegisterExternalTexture(
       std::make_shared<AndroidExternalTextureGL>(texture_id, surface_texture));
 }
 
-// |shell::PlatformView|
+// |PlatformView|
 std::unique_ptr<VsyncWaiter> PlatformViewAndroid::CreateVSyncWaiter() {
   return std::make_unique<VsyncWaiterAndroid>(task_runners_);
 }
 
-// |shell::PlatformView|
+// |PlatformView|
 std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
   if (!android_surface_) {
     return nullptr;
@@ -388,7 +389,7 @@ std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
   return android_surface_->CreateGPUSurface();
 }
 
-// |shell::PlatformView|
+// |PlatformView|
 sk_sp<GrContext> PlatformViewAndroid::CreateResourceContext() const {
   if (!android_surface_) {
     return nullptr;
@@ -398,7 +399,7 @@ sk_sp<GrContext> PlatformViewAndroid::CreateResourceContext() const {
     // TODO(chinmaygarde): Currently, this code depends on the fact that only
     // the OpenGL surface will be able to make a resource context current. If
     // this changes, this assumption breaks. Handle the same.
-    resource_context = IOManager::CreateCompatibleResourceLoadingContext(
+    resource_context = ShellIOManager::CreateCompatibleResourceLoadingContext(
         GrBackend::kOpenGL_GrBackend,
         GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface());
   } else {
@@ -408,7 +409,7 @@ sk_sp<GrContext> PlatformViewAndroid::CreateResourceContext() const {
   return resource_context;
 }
 
-// |shell::PlatformView|
+// |PlatformView|
 void PlatformViewAndroid::ReleaseResourceContext() const {
   if (android_surface_) {
     android_surface_->ResourceContextClearCurrent();
@@ -441,4 +442,4 @@ void PlatformViewAndroid::FireFirstFrameCallback() {
   FlutterViewOnFirstFrame(fml::jni::AttachCurrentThread(), view.obj());
 }
 
-}  // namespace shell
+}  // namespace flutter

@@ -7,7 +7,7 @@
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/testing/testing.h"
 
-namespace blink {
+namespace flutter {
 namespace testing {
 
 RuntimeTest::RuntimeTest()
@@ -80,6 +80,7 @@ void RuntimeTest::SetSnapshotsAndAssets(Settings& settings) {
 
 Settings RuntimeTest::CreateSettingsForFixture() {
   Settings settings;
+  settings.leak_vm = false;
   settings.task_observer_add = [](intptr_t, fml::closure) {};
   settings.task_observer_remove = [](intptr_t) {};
   settings.root_isolate_create_callback = [this]() {
@@ -108,4 +109,4 @@ void RuntimeTest::AddNativeCallback(std::string name,
 }
 
 }  // namespace testing
-}  // namespace blink
+}  // namespace flutter

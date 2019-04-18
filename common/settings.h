@@ -16,7 +16,7 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
 
-namespace blink {
+namespace flutter {
 
 using TaskObserverAdd =
     std::function<void(intptr_t /* key */, fml::closure /* callback */)>;
@@ -86,6 +86,10 @@ struct Settings {
   uint32_t observatory_port = 0;
   bool ipv6 = false;
 
+  // Determines whether an authentication code is required to communicate with
+  // the VM service.
+  bool disable_service_auth_codes = true;
+
   // Font settings
   bool use_test_fonts = false;
 
@@ -145,6 +149,6 @@ struct Settings {
   std::string ToString() const;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_COMMON_SETTINGS_H_

@@ -18,14 +18,14 @@
 
 namespace {
 
-using SceneHostBindings = std::unordered_map<zx_koid_t, blink::SceneHost*>;
+using SceneHostBindings = std::unordered_map<zx_koid_t, flutter::SceneHost*>;
 
 FML_THREAD_LOCAL fml::ThreadLocal tls_scene_host_bindings([](intptr_t value) {
   delete reinterpret_cast<SceneHostBindings*>(value);
 });
 
 void SceneHost_constructor(Dart_NativeArguments args) {
-  tonic::DartCallConstructor(&blink::SceneHost::Create, args);
+  tonic::DartCallConstructor(&flutter::SceneHost::Create, args);
 }
 
 void SceneHost_constructorViewHolderToken(Dart_NativeArguments args) {
@@ -36,10 +36,10 @@ void SceneHost_constructorViewHolderToken(Dart_NativeArguments args) {
         reinterpret_cast<intptr_t>(new SceneHostBindings()));
   }
 
-  tonic::DartCallConstructor(&blink::SceneHost::CreateViewHolder, args);
+  tonic::DartCallConstructor(&flutter::SceneHost::CreateViewHolder, args);
 }
 
-blink::SceneHost* GetSceneHost(scenic::ResourceId id) {
+flutter::SceneHost* GetSceneHost(scenic::ResourceId id) {
   auto* bindings =
       reinterpret_cast<SceneHostBindings*>(tls_scene_host_bindings.Get());
   FML_DCHECK(bindings);
@@ -80,7 +80,7 @@ void InvokeDartFunction(tonic::DartPersistentValue* function, T& arg) {
 
 }  // namespace
 
-namespace blink {
+namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, SceneHost);
 
@@ -121,7 +121,7 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> exportTokenHandle)
   gpu_task_runner_->PostTask(
       [id = id_, handle = std::move(exportTokenHandle)]() {
         auto export_token = zx::eventpair(handle->ReleaseHandle());
-        flow::ExportNode::Create(id, std::move(export_token));
+        flutter::ExportNode::Create(id, std::move(export_token));
       });
 }
 
@@ -163,9 +163,9 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderTokenHandle,
                               bind_callback = std::move(bind_callback)]() {
     auto view_holder_token =
         scenic::ToViewHolderToken(zx::eventpair(handle->ReleaseHandle()));
-    flow::ViewHolder::Create(id, std::move(ui_task_runner),
-                             std::move(view_holder_token),
-                             std::move(bind_callback));
+    flutter::ViewHolder::Create(id, std::move(ui_task_runner),
+                                std::move(view_holder_token),
+                                std::move(bind_callback));
   });
 }
 
@@ -176,9 +176,11 @@ SceneHost::~SceneHost() {
     FML_DCHECK(bindings);
     bindings->erase(id_);
 
-    gpu_task_runner_->PostTask([id = id_]() { flow::ViewHolder::Destroy(id); });
+    gpu_task_runner_->PostTask(
+        [id = id_]() { flutter::ViewHolder::Destroy(id); });
   } else {
-    gpu_task_runner_->PostTask([id = id_]() { flow::ExportNode::Destroy(id); });
+    gpu_task_runner_->PostTask(
+        [id = id_]() { flutter::ExportNode::Destroy(id); });
   }
 }
 
@@ -217,7 +219,7 @@ void SceneHost::setProperties(double width,
 
   gpu_task_runner_->PostTask([id = id_, width, height, insetTop, insetRight,
                               insetBottom, insetLeft, focusable]() {
-    auto* view_holder = flow::ViewHolder::FromId(id);
+    auto* view_holder = flutter::ViewHolder::FromId(id);
     FML_DCHECK(view_holder);
 
     view_holder->SetProperties(width, height, insetTop, insetRight, insetBottom,
@@ -229,4 +231,4 @@ void SceneHost::dispose() {
   ClearDartWrapper();
 }
 
-}  // namespace blink
+}  // namespace flutter

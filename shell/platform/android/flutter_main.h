@@ -10,7 +10,7 @@
 #include "flutter/common/settings.h"
 #include "flutter/fml/macros.h"
 
-namespace shell {
+namespace flutter {
 
 class FlutterMain {
  public:
@@ -20,12 +20,12 @@ class FlutterMain {
 
   static FlutterMain& Get();
 
-  const blink::Settings& GetSettings() const;
+  const flutter::Settings& GetSettings() const;
 
  private:
-  const blink::Settings settings_;
+  const flutter::Settings settings_;
 
-  FlutterMain(blink::Settings settings);
+  FlutterMain(flutter::Settings settings);
 
   static void Init(JNIEnv* env,
                    jclass clazz,
@@ -38,6 +38,6 @@ class FlutterMain {
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterMain);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_PLATFORM_ANDROID_FLUTTER_MAIN_H_
