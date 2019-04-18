@@ -163,7 +163,6 @@ scenic::Image* SceneUpdateContext::GenerateImageIfNeeded(
     return nullptr;
 
   // Acquire a surface from the surface producer and register the paint tasks.
-
   std::unique_ptr<SurfaceProducerSurface> surface =
       surface_producer_->ProduceSurface(
           physical_size,
