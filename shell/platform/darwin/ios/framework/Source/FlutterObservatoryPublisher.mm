@@ -100,15 +100,16 @@
 
   // Check to see if there's an authentication code. If there is, we'll provide
   // it as a txt record so flutter tools can establish a connection.
-  std::string path = std::string([[url path] UTF8String]);
+  auto path = std::string{[[url path] UTF8String]};
   if (!path.empty()) {
     // Remove leading "/"
     path = path.substr(1);
   }
-  std::stringstream txtStr;
-  // txt records have the format [record length, byte0, byte1, ...]
-  txtStr << static_cast<char>(path.length()) << path;
-  const std::string txt = txtStr.str();
+  NSData* pathData = [[[NSData alloc] initWithBytes:path.c_str() length:path.length()] autorelease];
+  NSDictionary* txtDict = @{
+    @"authCode" : pathData,
+  };
+  NSData* txtData = [NSNetService dataFromTXTRecordDictionary:txtDict];
 
 #if TARGET_IPHONE_SIMULATOR
   DNSServiceFlags flags = kDNSServiceFlagsDefault;
@@ -118,8 +119,8 @@
   uint16_t port = [[url port] intValue];
 
   int err = DNSServiceRegister(&_dnsServiceRef, flags, interfaceIndex, [serviceName UTF8String],
-                               registrationType, domain, NULL, htons(port), txt.length(),
-                               txt.c_str(), registrationCallback, NULL);
+                               registrationType, domain, NULL, htons(port), txtData.length,
+                               txtData.bytes, registrationCallback, NULL);
 
   if (err != 0) {
     FML_LOG(ERROR) << "Failed to register observatory port with mDNS.";
@@ -131,7 +132,6 @@
                                                                 type:@"_dartobservatory._tcp."
                                                                 name:serviceName
                                                                 port:[[url port] intValue]];
-  NSData* txtData = [[[NSData alloc] initWithBytes:txt.c_str() length:txt.length()] autorelease];
   [netServiceTmp setTXTRecordData:txtData];
   _netService.reset(netServiceTmp);
   [_netService.get() setDelegate:self];
