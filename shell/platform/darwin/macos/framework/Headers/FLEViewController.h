@@ -40,7 +40,8 @@ FLUTTER_EXPORT
                                                  FLEPluginRegistrar,
                                                  FLEReshapeListener,
                                                  FLEPluginRegistry,
-                                                 FLEReshapeListener>
+                                                 FLEReshapeListener,
+                                                 FLETextureRegistrar>
 
 /**
  * The view this controller manages when launched in interactive mode (headless set to false). Must
