@@ -6,7 +6,7 @@
 
 #include "gtest/gtest.h"
 
-namespace flow {
+namespace flutter {
 
 TEST(PhysicalShapeLayer, TotalElevation) {
   std::shared_ptr<PhysicalShapeLayer> layers[4];
@@ -57,4 +57,4 @@ TEST(PhysicalShapeLayer, TotalElevation) {
   EXPECT_EQ(layers[3]->total_elevation_, 8.0f);
 }
 
-}  // namespace flow
+}  // namespace flutter
