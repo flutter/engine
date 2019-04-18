@@ -143,15 +143,15 @@ class Layer {
 
   bool needs_painting() const { return !paint_bounds_.isEmpty(); }
 
-  uint32_t unique_id() const { return unique_id_; }
+  uint64_t unique_id() const { return unique_id_; }
 
  private:
   ContainerLayer* parent_;
   bool needs_system_composite_;
   SkRect paint_bounds_;
-  uint32_t unique_id_;
+  uint64_t unique_id_;
 
-  static uint32_t NextUniqueID();
+  static uint64_t NextUniqueID();
 
   FML_DISALLOW_COPY_AND_ASSIGN(Layer);
 };
