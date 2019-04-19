@@ -561,9 +561,6 @@ void Paragraph::Layout(double width, bool force) {
       // let it impact metrics. After layout of the whitespace run, we do not
       // add its width into the x-offset adjustment, effectively nullifyingits
       // impact on the layout.
-      //
-      // RTL ghost run check (RTL ghost runs appear visually before the restof
-      // the text)
       std::unique_ptr<BidiRun> ghost_run = nullptr;
       if (paragraph_style_.ellipsis.empty() &&
           line_range.end_excluding_whitespace < line_range.end &&
