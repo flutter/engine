@@ -549,19 +549,6 @@ void Paragraph::Layout(double width, bool force) {
             ? line_range.end_excluding_whitespace
             : line_range.end;
 
-    // Build a map of styled runs indexed by start position to TextDirection.
-    // Once the direction of a non-ghost line run has been established for the
-    // styled run, we will enforce that the ghost run use the direction of the
-    // most recently seen bidi run that is part of the styled run. This is to
-    // ensure that default-LTR whitespace gets the proper directionality when
-    // used in a RTL run.
-    std::map<size_t, TextDirection> styled_run_direction_map;
-    for (size_t i = 0; i < runs_.size(); ++i) {
-      StyledRuns::Run run = runs_.GetRun(i);
-      // Initialize TextDirection to LTR as that is what ICU initializes it to.
-      styled_run_direction_map.emplace(
-          std::make_pair(run.start, TextDirection::ltr));
-    }
     // Find the runs comprising this line.
     std::vector<BidiRun> line_runs;
     for (const BidiRun& bidi_run : bidi_runs) {
