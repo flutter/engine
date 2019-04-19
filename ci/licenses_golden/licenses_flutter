@@ -89,6 +89,7 @@ FILE: ../../../flutter/flow/layers/performance_overlay_layer.h
 FILE: ../../../flutter/flow/layers/performance_overlay_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/physical_shape_layer.cc
 FILE: ../../../flutter/flow/layers/physical_shape_layer.h
+FILE: ../../../flutter/flow/layers/physical_shape_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/picture_layer.cc
 FILE: ../../../flutter/flow/layers/picture_layer.h
 FILE: ../../../flutter/flow/layers/platform_view_layer.cc
@@ -382,8 +383,6 @@ FILE: ../../../flutter/runtime/dart_service_isolate.h
 FILE: ../../../flutter/runtime/dart_service_isolate_unittests.cc
 FILE: ../../../flutter/runtime/dart_snapshot.cc
 FILE: ../../../flutter/runtime/dart_snapshot.h
-FILE: ../../../flutter/runtime/dart_snapshot_buffer.cc
-FILE: ../../../flutter/runtime/dart_snapshot_buffer.h
 FILE: ../../../flutter/runtime/dart_vm.cc
 FILE: ../../../flutter/runtime/dart_vm.h
 FILE: ../../../flutter/runtime/dart_vm_data.cc
@@ -560,9 +559,12 @@ FILE: ../../../flutter/shell/platform/android/platform_view_android_jni.cc
 FILE: ../../../flutter/shell/platform/android/platform_view_android_jni.h
 FILE: ../../../flutter/shell/platform/android/vsync_waiter_android.cc
 FILE: ../../../flutter/shell/platform/android/vsync_waiter_android.h
+FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/byte_stream_wrappers.h
+FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/encodable_value_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/engine_method_result.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/basic_message_channel.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/binary_messenger.h
+FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/encodable_value.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/engine_method_result.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_message_codec.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_method_codec.h
@@ -573,11 +575,17 @@ FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/method_codec.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/method_result.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h
+FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/standard_message_codec.h
+FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/standard_method_codec.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/json_message_codec.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/json_method_codec.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/method_call_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/plugin_registrar.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/plugin_registrar_unittests.cc
+FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_codec.cc
+FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_codec_serializer.h
+FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_message_codec_unittests.cc
+FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_method_codec_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.cc
 FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.h
 FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_export.h

@@ -237,7 +237,8 @@ void Engine::OnOutputSurfaceDestroyed() {
 void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
   bool dimensions_changed =
       viewport_metrics_.physical_height != metrics.physical_height ||
-      viewport_metrics_.physical_width != metrics.physical_width;
+      viewport_metrics_.physical_width != metrics.physical_width ||
+      viewport_metrics_.physical_depth != metrics.physical_depth;
   viewport_metrics_ = metrics;
   runtime_controller_->SetViewportMetrics(viewport_metrics_);
   if (animator_) {
@@ -396,7 +397,7 @@ void Engine::ScheduleFrame(bool regenerate_layer_tree) {
   animator_->RequestFrame(regenerate_layer_tree);
 }
 
-void Engine::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
+void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
   if (!layer_tree)
     return;
 

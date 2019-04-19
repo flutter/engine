@@ -1,4 +1,4 @@
-Signature: c15d1d88a20c0b676e6b7fe141f0272a
+Signature: b81db5fcd6895228a93af32d2315e2c1
 
 UNUSED LICENSES:
 
@@ -1342,7 +1342,6 @@ FILE: ../../../third_party/skia/src/opts/SkOpts_crc32.cpp
 FILE: ../../../third_party/skia/src/opts/SkOpts_sse42.cpp
 FILE: ../../../third_party/skia/src/opts/SkSwizzler_opts.h
 FILE: ../../../third_party/skia/src/pdf/SkBitmapKey.h
-FILE: ../../../third_party/skia/src/pdf/SkPDFConvertType1FontStream.h
 FILE: ../../../third_party/skia/src/pdf/SkPDFDocumentPriv.h
 FILE: ../../../third_party/skia/src/pdf/SkPDFMakeCIDGlyphWidthsArray.cpp
 FILE: ../../../third_party/skia/src/pdf/SkPDFMakeCIDGlyphWidthsArray.h
@@ -2806,7 +2805,6 @@ FILE: ../../../third_party/skia/include/core/SkImageEncoder.h
 FILE: ../../../third_party/skia/include/core/SkImageFilter.h
 FILE: ../../../third_party/skia/include/core/SkMatrix44.h
 FILE: ../../../third_party/skia/include/core/SkSize.h
-FILE: ../../../third_party/skia/include/core/SkTLazy.h
 FILE: ../../../third_party/skia/include/effects/SkLayerDrawLooper.h
 FILE: ../../../third_party/skia/include/gpu/GrRenderTarget.h
 FILE: ../../../third_party/skia/include/gpu/GrTexture.h
@@ -2897,6 +2895,7 @@ FILE: ../../../third_party/skia/src/core/SkPictureRecord.h
 FILE: ../../../third_party/skia/src/core/SkPixelRef.cpp
 FILE: ../../../third_party/skia/src/core/SkPtrRecorder.cpp
 FILE: ../../../third_party/skia/src/core/SkReadBuffer.h
+FILE: ../../../third_party/skia/src/core/SkTLazy.h
 FILE: ../../../third_party/skia/src/core/SkTypefaceCache.cpp
 FILE: ../../../third_party/skia/src/core/SkTypefaceCache.h
 FILE: ../../../third_party/skia/src/core/SkUnPreMultiply.cpp
@@ -2949,7 +2948,6 @@ FILE: ../../../third_party/skia/src/gpu/ops/GrAAHairLinePathRenderer.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrAAHairLinePathRenderer.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrDefaultPathRenderer.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrDefaultPathRenderer.h
-FILE: ../../../third_party/skia/src/pdf/SkPDFConvertType1FontStream.cpp
 FILE: ../../../third_party/skia/src/pdf/SkPDFDevice.cpp
 FILE: ../../../third_party/skia/src/pdf/SkPDFDevice.h
 FILE: ../../../third_party/skia/src/pdf/SkPDFDocument.cpp
@@ -5701,6 +5699,8 @@ FILE: ../../../third_party/skia/src/gpu/effects/generated/GrComposeLerpRedEffect
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrComposeLerpRedEffect.h
 FILE: ../../../third_party/skia/src/pdf/SkPDFGraphicStackState.cpp
 FILE: ../../../third_party/skia/src/pdf/SkPDFGraphicStackState.h
+FILE: ../../../third_party/skia/src/pdf/SkPDFType1Font.cpp
+FILE: ../../../third_party/skia/src/pdf/SkPDFType1Font.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2019 Google LLC.
 
@@ -5736,6 +5736,7 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/experimental/wasm-skp-debugger/debugger_bindings.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/debugger_bindings.cpp
+FILE: ../../../third_party/skia/gm/crbug_946965.cpp
 FILE: ../../../third_party/skia/gm/runtimecolorfilter.cpp
 FILE: ../../../third_party/skia/include/gpu/gl/GrGLAssembleHelpers.h
 FILE: ../../../third_party/skia/modules/canvaskit/WasmAliases.h
@@ -6010,8 +6011,11 @@ FILE: ../../../third_party/skia/src/gpu/GrSamplePatternDictionary.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrGSCoverageProcessor.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrVSCoverageProcessor.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrMixerEffect.fp
+FILE: ../../../third_party/skia/src/gpu/effects/GrOverrideInputFragmentProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMixerEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMixerEffect.h
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrOverrideInputFragmentProcessor.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrOverrideInputFragmentProcessor.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.h
 FILE: ../../../third_party/skia/src/sksl/SkSLDefines.h

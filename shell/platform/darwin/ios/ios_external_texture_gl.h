@@ -11,14 +11,14 @@
 
 namespace flutter {
 
-class IOSExternalTextureGL : public flow::Texture {
+class IOSExternalTextureGL : public flutter::Texture {
  public:
   IOSExternalTextureGL(int64_t textureId, NSObject<FlutterTexture>* externalTexture);
 
   ~IOSExternalTextureGL() override;
 
   // Called from GPU thread.
-  void Paint(SkCanvas& canvas, const SkRect& bounds, bool freeze) override;
+  void Paint(SkCanvas& canvas, const SkRect& bounds, bool freeze, GrContext* context) override;
 
   void OnGrContextCreated() override;
 

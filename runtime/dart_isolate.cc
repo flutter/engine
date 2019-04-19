@@ -679,14 +679,11 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
   Dart_Isolate isolate = Dart_CreateIsolate(
       advisory_script_uri,         //
       advisory_script_entrypoint,  //
-      (*embedder_isolate)
-          ->GetIsolateSnapshot()
-          ->GetData()
-          ->GetSnapshotPointer(),
-      (*embedder_isolate)->GetIsolateSnapshot()->GetInstructionsIfPresent(),
-      (*embedder_isolate)->GetSharedSnapshot()->GetDataIfPresent(),
-      (*embedder_isolate)->GetSharedSnapshot()->GetInstructionsIfPresent(),
-      flags, embedder_isolate.get(), error);
+      (*embedder_isolate)->GetIsolateSnapshot()->GetDataMapping(),
+      (*embedder_isolate)->GetIsolateSnapshot()->GetInstructionsMapping(),
+      (*embedder_isolate)->GetSharedSnapshot()->GetDataMapping(),
+      (*embedder_isolate)->GetSharedSnapshot()->GetInstructionsMapping(), flags,
+      embedder_isolate.get(), error);
 
   if (isolate == nullptr) {
     FML_DLOG(ERROR) << *error;
@@ -720,8 +717,6 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
       return {nullptr, {}};
     }
   }
-
-  DartVMRef::GetRunningVM()->RegisterActiveIsolate(*embedder_isolate);
 
   // The ownership of the embedder object is controlled by the Dart VM. So the
   // only reference returned to the caller is weak.
@@ -760,8 +755,6 @@ void DartIsolate::AddIsolateShutdownCallback(fml::closure closure) {
 
 void DartIsolate::OnShutdownCallback() {
   shutdown_callbacks_.clear();
-  DartVMRef::GetRunningVM()->UnregisterActiveIsolate(
-      std::static_pointer_cast<DartIsolate>(shared_from_this()));
 }
 
 DartIsolate::AutoFireClosure::AutoFireClosure(fml::closure closure)

@@ -9,7 +9,7 @@
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
 
-namespace flow {
+namespace flutter {
 
 LayerTree::LayerTree()
     : frame_size_{},
@@ -54,7 +54,7 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
       context,
       SkRRect::MakeRect(
           SkRect::MakeWH(frame_size_.width(), frame_size_.height())),
-      SK_ColorTRANSPARENT, 0.f);
+      SK_ColorTRANSPARENT);
   if (root_layer_->needs_system_composite()) {
     root_layer_->UpdateScene(context);
   }
@@ -81,6 +81,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
   Layer::PaintContext context = {
       (SkCanvas*)&internal_nodes_canvas,
       frame.canvas(),
+      frame.gr_context(),
       frame.view_embedder(),
       frame.context().frame_time(),
       frame.context().engine_time(),
@@ -128,6 +129,7 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
       (SkCanvas*)&internal_nodes_canvas,
       canvas,  // canvas
       nullptr,
+      nullptr,
       unused_stopwatch,         // frame time (dont care)
       unused_stopwatch,         // engine time (dont care)
       unused_texture_registry,  // texture registry (not supported)
@@ -148,4 +150,4 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   return recorder.finishRecordingAsPicture();
 }
 
-}  // namespace flow
+}  // namespace flutter

@@ -11,7 +11,7 @@
 
 namespace flutter {
 
-class AndroidExternalTextureGL : public flow::Texture {
+class AndroidExternalTextureGL : public flutter::Texture {
  public:
   AndroidExternalTextureGL(
       int64_t id,
@@ -19,7 +19,10 @@ class AndroidExternalTextureGL : public flow::Texture {
 
   ~AndroidExternalTextureGL() override;
 
-  void Paint(SkCanvas& canvas, const SkRect& bounds, bool freeze) override;
+  void Paint(SkCanvas& canvas,
+             const SkRect& bounds,
+             bool freeze,
+             GrContext* context) override;
 
   void OnGrContextCreated() override;
 
