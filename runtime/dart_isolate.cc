@@ -256,10 +256,6 @@ bool DartIsolate::LoadLibraries(bool is_root_isolate) {
 
   DartUI::InitForIsolate(is_root_isolate);
 
-  if (isolate_create_callback_) {
-    isolate_create_callback_();
-  }
-
   const bool is_service_isolate = Dart_IsServiceIsolate(isolate());
 
   DartRuntimeHooks::Install(is_root_isolate && !is_service_isolate,
@@ -293,6 +289,11 @@ bool DartIsolate::PrepareForRunningFromPrecompiledCode() {
   child_isolate_preparer_ = [](DartIsolate* isolate) {
     return isolate->PrepareForRunningFromPrecompiledCode();
   };
+
+  if (isolate_create_callback_) {
+    isolate_create_callback_();
+  }
+
   phase_ = Phase::Ready;
   return true;
 }
@@ -379,7 +380,13 @@ bool DartIsolate::PrepareForRunningFromKernel(
       return true;
     };
   }
+
+  if (isolate_create_callback_) {
+    isolate_create_callback_();
+  }
+
   phase_ = Phase::Ready;
+
   return true;
 }
 
