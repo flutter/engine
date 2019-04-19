@@ -553,13 +553,13 @@ void Paragraph::Layout(double width, bool force) {
     std::vector<BidiRun> line_runs;
     for (const BidiRun& bidi_run : bidi_runs) {
       // A "ghost" run is a run that does not impact the layout, breaking,
-      // alignment, width, etc but is still "visible" thoughgetRectsForRange.
+      // alignment, width, etc but is still "visible" through getRectsForRange.
       // For example, trailing whitespace on centered text can be scrolled
       // through with the caret but will not wrap the line.
       //
       // Here, we add an additional run for the whitespace, but dont
       // let it impact metrics. After layout of the whitespace run, we do not
-      // add its width into the x-offset adjustment, effectively nullifyingits
+      // add its width into the x-offset adjustment, effectively nullifying its
       // impact on the layout.
       std::unique_ptr<BidiRun> ghost_run = nullptr;
       if (paragraph_style_.ellipsis.empty() &&
