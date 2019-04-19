@@ -86,6 +86,7 @@ class FlutterDevCompilerTarget extends DevCompilerTarget {
         'dart:_js_primitives',
         'dart:_metadata',
         'dart:_native_typed_data',
+        'dart:_engine', // engine implemenation soources.
         'dart:async',
         'dart:collection',
         'dart:convert',
