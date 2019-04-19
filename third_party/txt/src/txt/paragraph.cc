@@ -565,17 +565,6 @@ void Paragraph::Layout(double width, bool force) {
     // Find the runs comprising this line.
     std::vector<BidiRun> line_runs;
     for (const BidiRun& bidi_run : bidi_runs) {
-      if (bidi_run.start() < line_end_index &&
-          bidi_run.end() > line_range.start) {
-        line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
-                               std::min(bidi_run.end(), line_end_index),
-                               bidi_run.direction(), bidi_run.style());
-        // Track the the most recently used text direction for the styled run.
-        styled_run_direction_map[styled_run_direction_map
-                                     .lower_bound(std::max(bidi_run.start(),
-                                                           line_range.start))
-                                     ->first] = bidi_run.direction();
-      }
       // A "ghost" run is a run that does not impact the layout, breaking,
       // alignment, width, etc but is still "visible" though getRectsForRange.
       // For example, trailing whitespace on centered text can be scrolled
@@ -585,19 +574,34 @@ void Paragraph::Layout(double width, bool force) {
       // let it impact metrics. After layout of the whitespace run, we do not
       // add its width into the x-offset adjustment, effectively nullifying its
       // impact on the layout.
-      if (paragraph_style_.ellipsis.empty() &&
+      //
+      // RTL ghost run check (RTL ghost runs appear visually before the rest of
+      // the text)
+      if (bidi_run.direction() == TextDirection::rtl &&
+          paragraph_style_.ellipsis.empty() &&
           line_range.end_excluding_whitespace < line_range.end &&
           bidi_run.start() <= line_range.end &&
           bidi_run.end() > line_end_index) {
-        // Use the most recent TextDirection instead of the defaulted LTR value
-        // ICU provides.
-        TextDirection run_direction = styled_run_direction_map
-            [styled_run_direction_map
-                 .lower_bound(std::max(bidi_run.start(), line_range.start))
-                 ->first];
         line_runs.emplace_back(std::max(bidi_run.start(), line_end_index),
                                std::min(bidi_run.end(), line_range.end),
-                               run_direction, bidi_run.style(), true);
+                               bidi_run.direction(), bidi_run.style(), true);
+      }
+      if (bidi_run.start() < line_end_index &&
+          bidi_run.end() > line_range.start) {
+        line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
+                               std::min(bidi_run.end(), line_end_index),
+                               bidi_run.direction(), bidi_run.style());
+      }
+      // LTR ghost run check. (LTR ghost runs appear visually after the rest of
+      // the text)
+      if (bidi_run.direction() == TextDirection::ltr &&
+          paragraph_style_.ellipsis.empty() &&
+          line_range.end_excluding_whitespace < line_range.end &&
+          bidi_run.start() <= line_range.end &&
+          bidi_run.end() > line_end_index) {
+        line_runs.emplace_back(std::max(bidi_run.start(), line_end_index),
+                               std::min(bidi_run.end(), line_range.end),
+                               bidi_run.direction(), bidi_run.style(), true);
       }
     }
     bool line_runs_all_rtl =
@@ -611,7 +615,9 @@ void Paragraph::Layout(double width, bool force) {
 
     std::vector<GlyphPosition> line_glyph_positions;
     std::vector<CodeUnitRun> line_code_unit_runs;
+    std::vector<CodeUnitRun*> ghost_code_unit_runs;
     double run_x_offset = 0;
+    double rtl_ghost_x_offset = 0;
     double justify_x_offset = 0;
     std::vector<PaintRecord> paint_records;
 
@@ -832,28 +838,21 @@ void Paragraph::Layout(double width, bool force) {
                   [](const GlyphPosition& a, const GlyphPosition& b) {
                     return a.code_units.start < b.code_units.start;
                   });
-        if (!(run.is_ghost() && run.is_rtl())) {
-          line_code_unit_runs.emplace_back(
-              std::move(code_unit_positions),
-              Range<size_t>(run.start(), run.end()),
-              Range<double>(glyph_positions.front().x_pos.start,
-                            glyph_positions.back().x_pos.end),
-              line_number, metrics, run.direction());
-        } else {
-          // We custom handle ghost run for RTL as ICU interprets trailing
-          // whitespace as LTR, which causes trailing space to appear at the
-          // right side instead of the (correct) left side. Here, we manually
-          // add the equivalent width to the left side instead.
-          line_code_unit_runs.emplace_back(
-              std::move(code_unit_positions),
-              Range<size_t>(run.start(), run.end()),
-              Range<double>(run_x_offset - glyph_positions.back().x_pos.start,
-                            run_x_offset - glyph_positions.back().x_pos.end),
-              line_number, metrics, run.direction());
-        }
 
-        min_left_ = std::min(min_left_, glyph_positions.front().x_pos.start);
-        max_right_ = std::max(max_right_, glyph_positions.back().x_pos.end);
+        line_code_unit_runs.emplace_back(
+            std::move(code_unit_positions),
+            Range<size_t>(run.start(), run.end()),
+            Range<double>(glyph_positions.front().x_pos.start,
+                          glyph_positions.back().x_pos.end),
+            line_number, metrics, run.direction());
+
+        if (run.is_rtl()) {
+          ghost_code_unit_runs.push_back(&line_code_unit_runs.back());
+        }
+        if (!run.is_ghost()) {
+          min_left_ = std::min(min_left_, glyph_positions.front().x_pos.start);
+          max_right_ = std::max(max_right_, glyph_positions.back().x_pos.end);
+        }
       }  // for each in glyph_blobs
 
       // Do not increase x offset for trailing ghost runs as it should not
@@ -861,6 +860,15 @@ void Paragraph::Layout(double width, bool force) {
       // GetRectsForRange() can find metrics for trailing spaces.
       if (!run.is_ghost()) {
         run_x_offset += layout.getAdvance();
+      } else if (run.is_rtl()) {
+        // For RTL ghost runs, we need to shift the ghost run over here as it is
+        // the offset is calculated in reverse order from LTR.
+        rtl_ghost_x_offset += layout.getAdvance();
+        for (CodeUnitRun* code_unit_run : ghost_code_unit_runs) {
+          code_unit_run->Shift(-rtl_ghost_x_offset);
+        }
+        ghost_code_unit_runs.clear();
+        rtl_ghost_x_offset = 0;
       }
     }  // for each in line_runs
 
