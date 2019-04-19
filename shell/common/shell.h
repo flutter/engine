@@ -27,17 +27,17 @@
 #include "flutter/runtime/service_protocol.h"
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/engine.h"
-#include "flutter/shell/common/io_manager.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
+#include "flutter/shell/common/shell_io_manager.h"
 #include "flutter/shell/common/surface.h"
 
-namespace shell {
+namespace flutter {
 
 class Shell final : public PlatformView::Delegate,
                     public Animator::Delegate,
                     public Engine::Delegate,
-                    public flutter::ServiceProtocol::Handler {
+                    public ServiceProtocol::Handler {
  public:
   template <class T>
   using CreateCallback = std::function<std::unique_ptr<T>(Shell&)>;
@@ -45,27 +45,27 @@ class Shell final : public PlatformView::Delegate,
   // Create a shell with the given task runners and settings. The isolate
   // snapshot will be shared with the snapshot of the service isolate.
   static std::unique_ptr<Shell> Create(
-      flutter::TaskRunners task_runners,
-      flutter::Settings settings,
+      TaskRunners task_runners,
+      Settings settings,
       CreateCallback<PlatformView> on_create_platform_view,
       CreateCallback<Rasterizer> on_create_rasterizer);
 
   // Creates a shell with the given task runners and settings. The isolate
   // snapshot is specified upfront.
   static std::unique_ptr<Shell> Create(
-      flutter::TaskRunners task_runners,
-      flutter::Settings settings,
-      fml::RefPtr<const flutter::DartSnapshot> isolate_snapshot,
-      fml::RefPtr<const flutter::DartSnapshot> shared_snapshot,
+      TaskRunners task_runners,
+      Settings settings,
+      fml::RefPtr<const DartSnapshot> isolate_snapshot,
+      fml::RefPtr<const DartSnapshot> shared_snapshot,
       CreateCallback<PlatformView> on_create_platform_view,
       CreateCallback<Rasterizer> on_create_rasterizer,
-      flutter::DartVMRef vm);
+      DartVMRef vm);
 
   ~Shell();
 
-  const flutter::Settings& GetSettings() const;
+  const Settings& GetSettings() const;
 
-  const flutter::TaskRunners& GetTaskRunners() const;
+  const TaskRunners& GetTaskRunners() const;
 
   fml::WeakPtr<Rasterizer> GetRasterizer();
 
@@ -73,7 +73,7 @@ class Shell final : public PlatformView::Delegate,
 
   fml::WeakPtr<PlatformView> GetPlatformView();
 
-  flutter::DartVM* GetDartVM();
+  DartVM* GetDartVM();
 
   bool IsSetup() const;
 
@@ -81,17 +81,17 @@ class Shell final : public PlatformView::Delegate,
                                     bool base64_encode);
 
  private:
-  using ServiceProtocolHandler = std::function<bool(
-      const flutter::ServiceProtocol::Handler::ServiceProtocolMap&,
-      rapidjson::Document&)>;
+  using ServiceProtocolHandler =
+      std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
+                         rapidjson::Document&)>;
 
-  const flutter::TaskRunners task_runners_;
-  const flutter::Settings settings_;
-  flutter::DartVMRef vm_;
+  const TaskRunners task_runners_;
+  const Settings settings_;
+  DartVMRef vm_;
   std::unique_ptr<PlatformView> platform_view_;  // on platform task runner
   std::unique_ptr<Engine> engine_;               // on UI task runner
   std::unique_ptr<Rasterizer> rasterizer_;       // on GPU task runner
-  std::unique_ptr<IOManager> io_manager_;        // on IO task runner
+  std::unique_ptr<ShellIOManager> io_manager_;   // on IO task runner
 
   std::unordered_map<std::string,  // method
                      std::pair<fml::RefPtr<fml::TaskRunner>,
@@ -102,146 +102,144 @@ class Shell final : public PlatformView::Delegate,
   bool is_setup_ = false;
   uint64_t next_pointer_flow_id_ = 0;
 
-  Shell(flutter::TaskRunners task_runners, flutter::Settings settings);
-  Shell(flutter::DartVMRef vm,
-        flutter::TaskRunners task_runners,
-        flutter::Settings settings);
+  Shell(TaskRunners task_runners, Settings settings);
+  Shell(DartVMRef vm, TaskRunners task_runners, Settings settings);
 
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(
-      flutter::DartVMRef vm,
-      flutter::TaskRunners task_runners,
-      flutter::Settings settings,
-      fml::RefPtr<const flutter::DartSnapshot> isolate_snapshot,
-      fml::RefPtr<const flutter::DartSnapshot> shared_snapshot,
+      DartVMRef vm,
+      TaskRunners task_runners,
+      Settings settings,
+      fml::RefPtr<const DartSnapshot> isolate_snapshot,
+      fml::RefPtr<const DartSnapshot> shared_snapshot,
       Shell::CreateCallback<PlatformView> on_create_platform_view,
       Shell::CreateCallback<Rasterizer> on_create_rasterizer);
 
   bool Setup(std::unique_ptr<PlatformView> platform_view,
              std::unique_ptr<Engine> engine,
              std::unique_ptr<Rasterizer> rasterizer,
-             std::unique_ptr<IOManager> io_manager);
+             std::unique_ptr<ShellIOManager> io_manager);
 
-  // |shell::PlatformView::Delegate|
+  // |PlatformView::Delegate|
   void OnPlatformViewCreated(std::unique_ptr<Surface> surface) override;
 
-  // |shell::PlatformView::Delegate|
+  // |PlatformView::Delegate|
   void OnPlatformViewDestroyed() override;
 
-  // |shell::PlatformView::Delegate|
+  // |PlatformView::Delegate|
   void OnPlatformViewSetViewportMetrics(
-      const flutter::ViewportMetrics& metrics) override;
+      const ViewportMetrics& metrics) override;
 
-  // |shell::PlatformView::Delegate|
+  // |PlatformView::Delegate|
   void OnPlatformViewDispatchPlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message) override;
+      fml::RefPtr<PlatformMessage> message) override;
 
-  // |shell::PlatformView::Delegate|
+  // |PlatformView::Delegate|
   void OnPlatformViewDispatchPointerDataPacket(
-      std::unique_ptr<flutter::PointerDataPacket> packet) override;
+      std::unique_ptr<PointerDataPacket> packet) override;
 
-  // |shell::PlatformView::Delegate|
+  // |PlatformView::Delegate|
   void OnPlatformViewDispatchSemanticsAction(
       int32_t id,
-      flutter::SemanticsAction action,
+      SemanticsAction action,
       std::vector<uint8_t> args) override;
 
-  // |shell::PlatformView::Delegate|
+  // |PlatformView::Delegate|
   void OnPlatformViewSetSemanticsEnabled(bool enabled) override;
 
   // |shell:PlatformView::Delegate|
   void OnPlatformViewSetAccessibilityFeatures(int32_t flags) override;
 
-  // |shell::PlatformView::Delegate|
+  // |PlatformView::Delegate|
   void OnPlatformViewRegisterTexture(
-      std::shared_ptr<flow::Texture> texture) override;
+      std::shared_ptr<flutter::Texture> texture) override;
 
-  // |shell::PlatformView::Delegate|
+  // |PlatformView::Delegate|
   void OnPlatformViewUnregisterTexture(int64_t texture_id) override;
 
-  // |shell::PlatformView::Delegate|
+  // |PlatformView::Delegate|
   void OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) override;
 
-  // |shell::PlatformView::Delegate|
+  // |PlatformView::Delegate|
   void OnPlatformViewSetNextFrameCallback(fml::closure closure) override;
 
-  // |shell::Animator::Delegate|
+  // |Animator::Delegate|
   void OnAnimatorBeginFrame(fml::TimePoint frame_time) override;
 
-  // |shell::Animator::Delegate|
+  // |Animator::Delegate|
   void OnAnimatorNotifyIdle(int64_t deadline) override;
 
-  // |shell::Animator::Delegate|
+  // |Animator::Delegate|
   void OnAnimatorDraw(
-      fml::RefPtr<flutter::Pipeline<flow::LayerTree>> pipeline) override;
+      fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) override;
 
-  // |shell::Animator::Delegate|
+  // |Animator::Delegate|
   void OnAnimatorDrawLastLayerTree() override;
 
-  // |shell::Engine::Delegate|
+  // |Engine::Delegate|
   void OnEngineUpdateSemantics(
-      flutter::SemanticsNodeUpdates update,
-      flutter::CustomAccessibilityActionUpdates actions) override;
+      SemanticsNodeUpdates update,
+      CustomAccessibilityActionUpdates actions) override;
 
-  // |shell::Engine::Delegate|
+  // |Engine::Delegate|
   void OnEngineHandlePlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message) override;
+      fml::RefPtr<PlatformMessage> message) override;
 
-  void HandleEngineSkiaMessage(fml::RefPtr<flutter::PlatformMessage> message);
+  void HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message);
 
-  // |shell::Engine::Delegate|
+  // |Engine::Delegate|
   void OnPreEngineRestart() override;
 
-  // |shell::Engine::Delegate|
+  // |Engine::Delegate|
   void UpdateIsolateDescription(const std::string isolate_name,
                                 int64_t isolate_port) override;
 
-  // |flutter::ServiceProtocol::Handler|
+  // |ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(
       fml::StringView method) const override;
 
-  // |flutter::ServiceProtocol::Handler|
+  // |ServiceProtocol::Handler|
   bool HandleServiceProtocolMessage(
       fml::StringView method,  // one if the extension names specified above.
       const ServiceProtocolMap& params,
       rapidjson::Document& response) override;
 
-  // |flutter::ServiceProtocol::Handler|
-  flutter::ServiceProtocol::Handler::Description GetServiceProtocolDescription()
+  // |ServiceProtocol::Handler|
+  ServiceProtocol::Handler::Description GetServiceProtocolDescription()
       const override;
 
   // Service protocol handler
   bool OnServiceProtocolScreenshot(
-      const flutter::ServiceProtocol::Handler::ServiceProtocolMap& params,
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document& response);
 
   // Service protocol handler
   bool OnServiceProtocolScreenshotSKP(
-      const flutter::ServiceProtocol::Handler::ServiceProtocolMap& params,
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document& response);
 
   // Service protocol handler
   bool OnServiceProtocolRunInView(
-      const flutter::ServiceProtocol::Handler::ServiceProtocolMap& params,
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document& response);
 
   // Service protocol handler
   bool OnServiceProtocolFlushUIThreadTasks(
-      const flutter::ServiceProtocol::Handler::ServiceProtocolMap& params,
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document& response);
 
   // Service protocol handler
   bool OnServiceProtocolSetAssetBundlePath(
-      const flutter::ServiceProtocol::Handler::ServiceProtocolMap& params,
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document& response);
 
   // Service protocol handler
   bool OnServiceProtocolGetDisplayRefreshRate(
-      const flutter::ServiceProtocol::Handler::ServiceProtocolMap& params,
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document& response);
 
   FML_DISALLOW_COPY_AND_ASSIGN(Shell);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_COMMON_SHELL_H_

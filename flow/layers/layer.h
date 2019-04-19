@@ -35,7 +35,7 @@
 
 #endif  // defined(OS_FUCHSIA)
 
-namespace flow {
+namespace flutter {
 
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
@@ -56,6 +56,7 @@ struct PrerollContext {
   const Stopwatch& engine_time;
   TextureRegistry& texture_registry;
   const bool checkerboard_offscreen_layers;
+  float total_elevation = 0.0f;
 };
 
 // Represents a single composited layer. Created on the UI thread but then
@@ -80,6 +81,7 @@ class Layer {
     // layers.
     SkCanvas* internal_nodes_canvas;
     SkCanvas* leaf_nodes_canvas;
+    GrContext* gr_context;
     ExternalViewEmbedder* view_embedder;
     const Stopwatch& frame_time;
     const Stopwatch& engine_time;
@@ -141,14 +143,19 @@ class Layer {
 
   bool needs_painting() const { return !paint_bounds_.isEmpty(); }
 
+  uint64_t unique_id() const { return unique_id_; }
+
  private:
   ContainerLayer* parent_;
   bool needs_system_composite_;
   SkRect paint_bounds_;
+  uint64_t unique_id_;
+
+  static uint64_t NextUniqueID();
 
   FML_DISALLOW_COPY_AND_ASSIGN(Layer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_LAYER_H_

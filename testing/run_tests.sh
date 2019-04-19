@@ -38,8 +38,11 @@ echo "Running runtime_unittests..."
 echo "Running shell_unittests..."
 "$HOST_DIR/shell_unittests"
 
-echo "Running synchronization_unittests..."
-"$HOST_DIR/synchronization_unittests"
+echo "Running client_wrapper_unittests..."
+"$HOST_DIR/client_wrapper_unittests"
+
+echo "Running client_wrapper_glfw_unittests..."
+"$HOST_DIR/client_wrapper_glfw_unittests"
 
 echo "Running txt_unittests..."
 "$HOST_DIR/txt_unittests" --font-directory="$BUILDROOT_DIR/flutter/third_party/txt/third_party/fonts"

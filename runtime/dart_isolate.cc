@@ -547,9 +547,8 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
     return nullptr;
   }
 
-  flutter::TaskRunners null_task_runners(
-      "io.flutter." DART_VM_SERVICE_ISOLATE_NAME, nullptr, nullptr, nullptr,
-      nullptr);
+  TaskRunners null_task_runners("io.flutter." DART_VM_SERVICE_ISOLATE_NAME,
+                                nullptr, nullptr, nullptr, nullptr);
 
   flags->load_vmservice_library = true;
 
@@ -580,7 +579,8 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
           settings.observatory_port,            // server observatory port
           tonic::DartState::HandleLibraryTag,   // embedder library tag handler
           false,  //  disable websocket origin check
-          error   // error (out)
+          settings.disable_service_auth_codes,  // disable VM service auth codes
+          error                                 // error (out)
           )) {
     // Error is populated by call to startup.
     FML_DLOG(ERROR) << *error;
@@ -659,8 +659,8 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
   if (!is_root_isolate) {
     auto* raw_embedder_isolate = embedder_isolate.release();
 
-    flutter::TaskRunners null_task_runners(advisory_script_uri, nullptr,
-                                           nullptr, nullptr, nullptr);
+    TaskRunners null_task_runners(advisory_script_uri, nullptr, nullptr,
+                                  nullptr, nullptr);
 
     embedder_isolate = std::make_unique<std::shared_ptr<DartIsolate>>(
         std::make_shared<DartIsolate>(
@@ -679,14 +679,11 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
   Dart_Isolate isolate = Dart_CreateIsolate(
       advisory_script_uri,         //
       advisory_script_entrypoint,  //
-      (*embedder_isolate)
-          ->GetIsolateSnapshot()
-          ->GetData()
-          ->GetSnapshotPointer(),
-      (*embedder_isolate)->GetIsolateSnapshot()->GetInstructionsIfPresent(),
-      (*embedder_isolate)->GetSharedSnapshot()->GetDataIfPresent(),
-      (*embedder_isolate)->GetSharedSnapshot()->GetInstructionsIfPresent(),
-      flags, embedder_isolate.get(), error);
+      (*embedder_isolate)->GetIsolateSnapshot()->GetDataMapping(),
+      (*embedder_isolate)->GetIsolateSnapshot()->GetInstructionsMapping(),
+      (*embedder_isolate)->GetSharedSnapshot()->GetDataMapping(),
+      (*embedder_isolate)->GetSharedSnapshot()->GetInstructionsMapping(), flags,
+      embedder_isolate.get(), error);
 
   if (isolate == nullptr) {
     FML_DLOG(ERROR) << *error;
@@ -720,8 +717,6 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
       return {nullptr, {}};
     }
   }
-
-  DartVMRef::GetRunningVM()->RegisterActiveIsolate(*embedder_isolate);
 
   // The ownership of the embedder object is controlled by the Dart VM. So the
   // only reference returned to the caller is weak.
@@ -760,8 +755,6 @@ void DartIsolate::AddIsolateShutdownCallback(fml::closure closure) {
 
 void DartIsolate::OnShutdownCallback() {
   shutdown_callbacks_.clear();
-  DartVMRef::GetRunningVM()->UnregisterActiveIsolate(
-      std::static_pointer_cast<DartIsolate>(shared_from_this()));
 }
 
 DartIsolate::AutoFireClosure::AutoFireClosure(fml::closure closure)

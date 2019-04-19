@@ -9,10 +9,10 @@
 #include <sstream>
 #include <string>
 
-#include "flutter/common/version/version.h"
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/string_view.h"
+#include "flutter/shell/version/version.h"
 
 // Include once for the default enum definition.
 #include "flutter/shell/common/switches.h"
@@ -20,7 +20,7 @@
 #undef SHELL_COMMON_SWITCHES_H_
 
 struct SwitchDesc {
-  shell::Switch sw;
+  flutter::Switch sw;
   const fml::StringView flag;
   const char* help;
 };
@@ -32,26 +32,25 @@ struct SwitchDesc {
 // clang-format off
 #define DEF_SWITCHES_START static const struct SwitchDesc gSwitchDescs[] = {
 #define DEF_SWITCH(p_swtch, p_flag, p_help) \
-  { shell::Switch:: p_swtch, p_flag, p_help },
+  { flutter::Switch:: p_swtch, p_flag, p_help },
 #define DEF_SWITCHES_END };
 // clang-format on
 
 // Include again for struct definition.
 #include "flutter/shell/common/switches.h"
 
-namespace shell {
+namespace flutter {
 
 void PrintUsage(const std::string& executable_name) {
   std::cerr << std::endl << "  " << executable_name << std::endl << std::endl;
 
   std::cerr << "Versions: " << std::endl << std::endl;
 
-  std::cerr << "Flutter Engine Version: " << flutter::GetFlutterEngineVersion()
+  std::cerr << "Flutter Engine Version: " << GetFlutterEngineVersion()
             << std::endl;
-  std::cerr << "Skia Version: " << flutter::GetSkiaVersion() << std::endl;
+  std::cerr << "Skia Version: " << GetSkiaVersion() << std::endl;
 
-  std::cerr << "Dart Version: " << flutter::GetDartVersion() << std::endl
-            << std::endl;
+  std::cerr << "Dart Version: " << GetDartVersion() << std::endl << std::endl;
 
   std::cerr << "Available Flags:" << std::endl;
 
@@ -105,11 +104,11 @@ const fml::StringView FlagForSwitch(Switch swtch) {
 
 template <typename T>
 static bool GetSwitchValue(const fml::CommandLine& command_line,
-                           shell::Switch sw,
+                           Switch sw,
                            T* result) {
   std::string switch_string;
 
-  if (!command_line.GetOptionValue(shell::FlagForSwitch(sw), &switch_string)) {
+  if (!command_line.GetOptionValue(FlagForSwitch(sw), &switch_string)) {
     return false;
   }
 
@@ -150,9 +149,8 @@ std::unique_ptr<fml::Mapping> GetSymbolMapping(std::string symbol_prefix,
   return std::make_unique<fml::NonOwnedMapping>(mapping, size);
 }
 
-flutter::Settings SettingsFromCommandLine(
-    const fml::CommandLine& command_line) {
-  flutter::Settings settings = {};
+Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
+  Settings settings = {};
 
   // Enable Observatory
   settings.enable_observatory =
@@ -167,6 +165,11 @@ flutter::Settings SettingsFromCommandLine(
           << settings.observatory_port;
     }
   }
+
+  // Disable need for authentication codes for VM service communication, if
+  // specified.
+  settings.disable_service_auth_codes =
+      command_line.HasOption(FlagForSwitch(Switch::DisableServiceAuthCodes));
 
   // Checked mode overrides.
   settings.disable_dart_asserts =
@@ -194,8 +197,6 @@ flutter::Settings SettingsFromCommandLine(
 
   settings.verbose_logging =
       command_line.HasOption(FlagForSwitch(Switch::VerboseLogging));
-
-  command_line.GetOptionValue(FlagForSwitch(Switch::FLX), &settings.flx_path);
 
   command_line.GetOptionValue(FlagForSwitch(Switch::FlutterAssetsDir),
                               &settings.assets_path);
@@ -283,4 +284,4 @@ flutter::Settings SettingsFromCommandLine(
   return settings;
 }
 
-}  // namespace shell
+}  // namespace flutter

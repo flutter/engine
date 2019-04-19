@@ -17,13 +17,13 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/runtime/dart_isolate.h"
 
-namespace shell {
+namespace flutter {
 
 class IsolateConfiguration {
  public:
   static std::unique_ptr<IsolateConfiguration> InferFromSettings(
-      const flutter::Settings& settings,
-      std::shared_ptr<flutter::AssetManager> asset_manager,
+      const Settings& settings,
+      std::shared_ptr<AssetManager> asset_manager,
       fml::RefPtr<fml::TaskRunner> io_worker);
 
   static std::unique_ptr<IsolateConfiguration> CreateForAppSnapshot();
@@ -42,15 +42,15 @@ class IsolateConfiguration {
 
   virtual ~IsolateConfiguration();
 
-  bool PrepareIsolate(flutter::DartIsolate& isolate);
+  bool PrepareIsolate(DartIsolate& isolate);
 
  protected:
-  virtual bool DoPrepareIsolate(flutter::DartIsolate& isolate) = 0;
+  virtual bool DoPrepareIsolate(DartIsolate& isolate) = 0;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(IsolateConfiguration);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_COMMON_ISOLATE_CONFIGURATION_H_
