@@ -672,6 +672,8 @@ void Paragraph::Layout(double width, bool force) {
 
       layout.doLayout(text_ptr, text_start, text_count, text_size, run.is_rtl(),
                       minikin_font, minikin_paint, minikin_font_collection);
+      if (run.is_ghost() && run.is_rtl())
+        run_x_offset -= layout.getAdvance();
 
       if (layout.nGlyphs() == 0)
         continue;
@@ -839,19 +841,13 @@ void Paragraph::Layout(double width, bool force) {
           max_right_ = std::max(max_right_, glyph_positions.back().x_pos.end);
         }
       }  // for each in glyph_blobs
-
-      // Do not increase x offset for trailing ghost runs as it should not
-      // impact the layout of visible glyphs. We do keep the record though so
-      // GetRectsForRange() can find metrics for trailing spaces.
-      if (!run.is_ghost()) {
+      // Do not increase x offset for LTR trailing ghost runs as it should not
+      // impact the layout of visible glyphs. RTL tailing ghost runs have the
+      // advance subtracted, so we do add the advance here to reset the
+      // run_x_offset. We do keep the record though so GetRectsForRange() can
+      // find metrics for trailing spaces.
+      if (!run.is_ghost() || run.is_rtl()) {
         run_x_offset += layout.getAdvance();
-      } else if (run.is_rtl()) {
-        // For RTL ghost runs, we need to shift the ghost run over here as it is
-        // the offset is calculated in reverse order from LTR.
-        for (CodeUnitRun* code_unit_run : ghost_code_unit_runs) {
-          code_unit_run->Shift(-layout.getAdvance());
-        }
-        ghost_code_unit_runs.clear();
       }
     }  // for each in line_runs
 
