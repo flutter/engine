@@ -598,7 +598,6 @@ void Paragraph::Layout(double width, bool force) {
 
     std::vector<GlyphPosition> line_glyph_positions;
     std::vector<CodeUnitRun> line_code_unit_runs;
-    std::vector<CodeUnitRun*> ghost_code_unit_runs;
     double run_x_offset = 0;
     double justify_x_offset = 0;
     std::vector<PaintRecord> paint_records;
@@ -830,9 +829,6 @@ void Paragraph::Layout(double width, bool force) {
                           glyph_positions.back().x_pos.end),
             line_number, metrics, run.direction());
 
-        if (run.is_rtl()) {
-          ghost_code_unit_runs.push_back(&line_code_unit_runs.back());
-        }
         if (!run.is_ghost()) {
           min_left_ = std::min(min_left_, glyph_positions.front().x_pos.start);
           max_right_ = std::max(max_right_, glyph_positions.back().x_pos.end);
