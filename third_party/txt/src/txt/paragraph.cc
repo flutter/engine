@@ -553,42 +553,41 @@ void Paragraph::Layout(double width, bool force) {
     std::vector<BidiRun> line_runs;
     for (const BidiRun& bidi_run : bidi_runs) {
       // A "ghost" run is a run that does not impact the layout, breaking,
-      // alignment, width, etc but is still "visible" though getRectsForRange.
+      // alignment, width, etc but is still "visible" thoughgetRectsForRange.
       // For example, trailing whitespace on centered text can be scrolled
       // through with the caret but will not wrap the line.
       //
       // Here, we add an additional run for the whitespace, but dont
       // let it impact metrics. After layout of the whitespace run, we do not
-      // add its width into the x-offset adjustment, effectively nullifying its
+      // add its width into the x-offset adjustment, effectively nullifyingits
       // impact on the layout.
       //
-      // RTL ghost run check (RTL ghost runs appear visually before the rest of
+      // RTL ghost run check (RTL ghost runs appear visually before the restof
       // the text)
-      if (bidi_run.direction() == TextDirection::rtl &&
-          paragraph_style_.ellipsis.empty() &&
+      std::unique_ptr<BidiRun> ghost_run = nullptr;
+      if (paragraph_style_.ellipsis.empty() &&
           line_range.end_excluding_whitespace < line_range.end &&
           bidi_run.start() <= line_range.end &&
           bidi_run.end() > line_end_index) {
-        line_runs.emplace_back(std::max(bidi_run.start(), line_end_index),
-                               std::min(bidi_run.end(), line_range.end),
-                               bidi_run.direction(), bidi_run.style(), true);
+        ghost_run = std::make_unique<BidiRun>(
+            std::max(bidi_run.start(), line_end_index),
+            std::min(bidi_run.end(), line_range.end), bidi_run.direction(),
+            bidi_run.style(), true);
       }
+      // Include the ghost run before normal run if RTL
+      if (bidi_run.direction() == TextDirection::rtl && ghost_run != nullptr) {
+        line_runs.push_back(*ghost_run);
+      }
+      // Emplace a normal line run.
       if (bidi_run.start() < line_end_index &&
           bidi_run.end() > line_range.start) {
         line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
                                std::min(bidi_run.end(), line_end_index),
                                bidi_run.direction(), bidi_run.style());
       }
-      // LTR ghost run check. (LTR ghost runs appear visually after the rest of
-      // the text)
-      if (bidi_run.direction() == TextDirection::ltr &&
-          paragraph_style_.ellipsis.empty() &&
-          line_range.end_excluding_whitespace < line_range.end &&
-          bidi_run.start() <= line_range.end &&
-          bidi_run.end() > line_end_index) {
-        line_runs.emplace_back(std::max(bidi_run.start(), line_end_index),
-                               std::min(bidi_run.end(), line_range.end),
-                               bidi_run.direction(), bidi_run.style(), true);
+      // Include the ghost run after normal run if LTR
+      if (bidi_run.direction() == TextDirection::ltr && ghost_run != nullptr) {
+        line_runs.push_back(*ghost_run);
       }
     }
     bool line_runs_all_rtl =
@@ -604,7 +603,6 @@ void Paragraph::Layout(double width, bool force) {
     std::vector<CodeUnitRun> line_code_unit_runs;
     std::vector<CodeUnitRun*> ghost_code_unit_runs;
     double run_x_offset = 0;
-    double rtl_ghost_x_offset = 0;
     double justify_x_offset = 0;
     std::vector<PaintRecord> paint_records;
 
@@ -850,12 +848,10 @@ void Paragraph::Layout(double width, bool force) {
       } else if (run.is_rtl()) {
         // For RTL ghost runs, we need to shift the ghost run over here as it is
         // the offset is calculated in reverse order from LTR.
-        rtl_ghost_x_offset += layout.getAdvance();
         for (CodeUnitRun* code_unit_run : ghost_code_unit_runs) {
-          code_unit_run->Shift(-rtl_ghost_x_offset);
+          code_unit_run->Shift(-layout.getAdvance());
         }
         ghost_code_unit_runs.clear();
-        rtl_ghost_x_offset = 0;
       }
     }  // for each in line_runs
 
