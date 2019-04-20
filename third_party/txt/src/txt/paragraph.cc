@@ -668,11 +668,20 @@ void Paragraph::Layout(double width, bool force) {
 
       layout.doLayout(text_ptr, text_start, text_count, text_size, run.is_rtl(),
                       minikin_font, minikin_paint, minikin_font_collection);
-      if (run.is_ghost() && run.is_rtl())
-        run_x_offset -= layout.getAdvance();
 
       if (layout.nGlyphs() == 0)
         continue;
+
+      // When laying out RTL ghost runs, shift the run_x_offset here by the
+      // advance so that the ghost run is positioned to the left of the first
+      // real run of text in the line. However, since we do not want it to
+      // impact the layout of real text, this advance is subsequently added
+      // back into the run_x_offset after the ghost run positions have been
+      // calcuated and before the next real run of text is laid out, ensuring
+      // later runs are laid out in the same position as if there were no ghost
+      // run.
+      if (run.is_ghost() && run.is_rtl())
+        run_x_offset -= layout.getAdvance();
 
       std::vector<float> layout_advances(text_count);
       layout.getAdvances(layout_advances.data());
