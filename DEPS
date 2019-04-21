@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': 'cc5d3e09e39410841ba6e8866680257a92ee5205',
+  'skia_revision': 'a76fad2d494af8bde8c3fb34a2de2b359beebab1',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -121,7 +121,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'ce7b5c786a12927c9e0b4543af267d48c52e0b3a',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '380d0ed5c3399d5a2aaac4a66d98e3a3fda77c31',
 
    # Fuchsia compatibility
    #

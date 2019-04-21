@@ -113,9 +113,11 @@ struct Settings {
   // The main isolate is current when this callback is made. This is a good spot
   // to perform native Dart bindings for libraries not built in.
   fml::closure root_isolate_create_callback;
+  fml::closure isolate_create_callback;
   // The isolate is not current and may have already been destroyed when this
   // call is made.
   fml::closure root_isolate_shutdown_callback;
+  fml::closure isolate_shutdown_callback;
   // The callback made on the UI thread in an isolate scope when the engine
   // detects that the framework is idle. The VM also uses this time to perform
   // tasks suitable when idling. Due to this, embedders are still advised to be
@@ -132,19 +134,12 @@ struct Settings {
   bool verbose_logging = false;
   std::string log_tag = "flutter";
 
-  // The icu_initialization_required setting does not have a corresponding
-  // switch because it is intended to be decided during build time, not runtime.
-  // Some companies apply source modification here because their build system
-  // brings its own ICU data files.
-  bool icu_initialization_required = true;
-  std::string icu_data_path;
   MappingCallback icu_mapper;
 
   // Assets settings
   fml::UniqueFD::element_type assets_dir =
       fml::UniqueFD::traits_type::InvalidValue();
   std::string assets_path;
-  std::string flx_path;
 };
 
 }  // namespace flutter

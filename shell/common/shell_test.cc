@@ -14,35 +14,9 @@ namespace flutter {
 namespace testing {
 
 ShellTest::ShellTest()
-    : native_resolver_(std::make_shared<::testing::TestDartNativeResolver>()) {}
+    : native_resolver_(std::make_shared<TestDartNativeResolver>()) {}
 
 ShellTest::~ShellTest() = default;
-
-static std::unique_ptr<fml::Mapping> GetMapping(const fml::UniqueFD& directory,
-                                                const char* path,
-                                                bool executable) {
-  fml::UniqueFD file = fml::OpenFile(directory, path, false /* create */,
-                                     fml::FilePermission::kRead);
-  if (!file.is_valid()) {
-    return nullptr;
-  }
-
-  using Prot = fml::FileMapping::Protection;
-  std::unique_ptr<fml::FileMapping> mapping;
-  if (executable) {
-    mapping = std::make_unique<fml::FileMapping>(
-        file, std::initializer_list<Prot>{Prot::kRead, Prot::kExecute});
-  } else {
-    mapping = std::make_unique<fml::FileMapping>(
-        file, std::initializer_list<Prot>{Prot::kRead});
-  }
-
-  if (mapping->GetSize() == 0 || mapping->GetMapping() == nullptr) {
-    return nullptr;
-  }
-
-  return mapping;
-}
 
 void ShellTest::SetSnapshotsAndAssets(Settings& settings) {
   if (!assets_dir_.is_valid()) {
@@ -55,27 +29,30 @@ void ShellTest::SetSnapshotsAndAssets(Settings& settings) {
   // don't need to be explicitly suppiled by the embedder.
   if (DartVM::IsRunningPrecompiledCode()) {
     settings.vm_snapshot_data = [this]() {
-      return GetMapping(assets_dir_, "vm_snapshot_data", false);
+      return fml::FileMapping::CreateReadOnly(assets_dir_, "vm_snapshot_data");
     };
 
     settings.isolate_snapshot_data = [this]() {
-      return GetMapping(assets_dir_, "isolate_snapshot_data", false);
+      return fml::FileMapping::CreateReadOnly(assets_dir_,
+                                              "isolate_snapshot_data");
     };
 
     if (DartVM::IsRunningPrecompiledCode()) {
       settings.vm_snapshot_instr = [this]() {
-        return GetMapping(assets_dir_, "vm_snapshot_instr", true);
+        return fml::FileMapping::CreateReadExecute(assets_dir_,
+                                                   "vm_snapshot_instr");
       };
 
       settings.isolate_snapshot_instr = [this]() {
-        return GetMapping(assets_dir_, "isolate_snapshot_instr", true);
+        return fml::FileMapping::CreateReadExecute(assets_dir_,
+                                                   "isolate_snapshot_instr");
       };
     }
   } else {
     settings.application_kernels = [this]() {
       std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
       kernel_mappings.emplace_back(
-          GetMapping(assets_dir_, "kernel_blob.bin", false));
+          fml::FileMapping::CreateReadOnly(assets_dir_, "kernel_blob.bin"));
       return kernel_mappings;
     };
   }
@@ -90,7 +67,7 @@ Settings ShellTest::CreateSettingsForFixture() {
   settings.task_observer_remove = [](intptr_t key) {
     fml::MessageLoop::GetCurrent().RemoveTaskObserver(key);
   };
-  settings.root_isolate_create_callback = [this]() {
+  settings.isolate_create_callback = [this]() {
     native_resolver_->SetNativeResolverForIsolate();
   };
   SetSnapshotsAndAssets(settings);
@@ -110,10 +87,10 @@ TaskRunners ShellTest::GetTaskRunnersForFixture() {
 // |testing::ThreadTest|
 void ShellTest::SetUp() {
   ThreadTest::SetUp();
-  assets_dir_ = fml::OpenDirectory(::testing::GetFixturesPath(), false,
-                                   fml::FilePermission::kRead);
+  assets_dir_ =
+      fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
   thread_host_ = std::make_unique<ThreadHost>(
-      "io.flutter.test." + ::testing::GetCurrentTestName() + ".",
+      "io.flutter.test." + GetCurrentTestName() + ".",
       ThreadHost::Type::Platform | ThreadHost::Type::IO | ThreadHost::Type::UI |
           ThreadHost::Type::GPU);
 }
@@ -128,6 +105,31 @@ void ShellTest::TearDown() {
 void ShellTest::AddNativeCallback(std::string name,
                                   Dart_NativeFunction callback) {
   native_resolver_->AddNativeCallback(std::move(name), callback);
+}
+
+ShellTestPlatformView::ShellTestPlatformView(PlatformView::Delegate& delegate,
+                                             TaskRunners task_runners)
+    : PlatformView(delegate, std::move(task_runners)) {}
+
+ShellTestPlatformView::~ShellTestPlatformView() = default;
+
+// |PlatformView|
+std::unique_ptr<Surface> ShellTestPlatformView::CreateRenderingSurface() {
+  return std::make_unique<GPUSurfaceSoftware>(this);
+}
+
+// |GPUSurfaceSoftwareDelegate|
+sk_sp<SkSurface> ShellTestPlatformView::AcquireBackingStore(
+    const SkISize& size) {
+  SkImageInfo image_info = SkImageInfo::MakeN32Premul(
+      size.width(), size.height(), SkColorSpace::MakeSRGB());
+  return SkSurface::MakeRaster(image_info);
+}
+
+// |GPUSurfaceSoftwareDelegate|
+bool ShellTestPlatformView::PresentBackingStore(
+    sk_sp<SkSurface> backing_store) {
+  return true;
 }
 
 }  // namespace testing
