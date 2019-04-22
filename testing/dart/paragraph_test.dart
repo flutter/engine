@@ -4,7 +4,7 @@
 
 import 'dart:ui';
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   // Ahem font uses a constant ideographic/alphabetic baseline ratio.
