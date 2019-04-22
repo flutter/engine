@@ -371,10 +371,9 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     TRACE_EVENT0("flutter", "Dart_Initialize");
     Dart_InitializeParams params = {};
     params.version = DART_INITIALIZE_PARAMS_CURRENT_VERSION;
-    params.vm_snapshot_data =
-        vm_data_->GetVMSnapshot().GetData()->GetSnapshotPointer();
+    params.vm_snapshot_data = vm_data_->GetVMSnapshot().GetDataMapping();
     params.vm_snapshot_instructions =
-        vm_data_->GetVMSnapshot().GetInstructionsIfPresent();
+        vm_data_->GetVMSnapshot().GetInstructionsMapping();
     params.create = reinterpret_cast<decltype(params.create)>(
         DartIsolate::DartIsolateCreateCallback);
     params.shutdown = reinterpret_cast<decltype(params.shutdown)>(
@@ -383,7 +382,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
         DartIsolate::DartIsolateCleanupCallback);
     params.thread_exit = ThreadExitCallback;
     params.get_service_assets = GetVMServiceAssetsArchiveCallback;
-    params.entropy_source = DartIO::EntropySource;
+    params.entropy_source = dart::bin::GetEntropy;
     char* init_error = Dart_Initialize(&params);
     if (init_error) {
       FML_LOG(FATAL) << "Error while initializing the Dart VM: " << init_error;

@@ -46,8 +46,6 @@ source_set("runtime") {
     "dart_service_isolate.h",
     "dart_snapshot.cc",
     "dart_snapshot.h",
-    "dart_snapshot_buffer.cc",
-    "dart_snapshot_buffer.h",
     "dart_vm.cc",
     "dart_vm.h",
     "dart_vm_data.cc",
@@ -98,7 +96,7 @@ source_set("runtime") {
 }
 
 test_fixtures("runtime_fixtures") {
-  fixtures = [ "fixtures/simple_main.dart" ]
+  fixtures = [ "fixtures/runtime_test.dart" ]
 }
 
 source_set("runtime_unittests_common") {
@@ -130,24 +128,9 @@ executable("runtime_unittests") {
 
   sources = [
     "dart_isolate_unittests.cc",
+    "dart_lifecycle_unittests.cc",
     "dart_service_isolate_unittests.cc",
     "dart_vm_unittests.cc",
-  ]
-
-  deps = [
-    ":runtime_unittests_common",
-  ]
-
-  if (is_linux) {
-    ldflags = [ "-rdynamic" ]
-  }
-}
-
-executable("runtime_lifecycle_unittests") {
-  testonly = true
-
-  sources = [
-    "dart_lifecycle_unittests.cc",
   ]
 
   deps = [

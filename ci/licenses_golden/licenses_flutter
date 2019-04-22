@@ -89,6 +89,7 @@ FILE: ../../../flutter/flow/layers/performance_overlay_layer.h
 FILE: ../../../flutter/flow/layers/performance_overlay_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/physical_shape_layer.cc
 FILE: ../../../flutter/flow/layers/physical_shape_layer.h
+FILE: ../../../flutter/flow/layers/physical_shape_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/picture_layer.cc
 FILE: ../../../flutter/flow/layers/picture_layer.h
 FILE: ../../../flutter/flow/layers/platform_view_layer.cc
@@ -382,8 +383,6 @@ FILE: ../../../flutter/runtime/dart_service_isolate.h
 FILE: ../../../flutter/runtime/dart_service_isolate_unittests.cc
 FILE: ../../../flutter/runtime/dart_snapshot.cc
 FILE: ../../../flutter/runtime/dart_snapshot.h
-FILE: ../../../flutter/runtime/dart_snapshot_buffer.cc
-FILE: ../../../flutter/runtime/dart_snapshot_buffer.h
 FILE: ../../../flutter/runtime/dart_vm.cc
 FILE: ../../../flutter/runtime/dart_vm.h
 FILE: ../../../flutter/runtime/dart_vm_data.cc
@@ -393,7 +392,7 @@ FILE: ../../../flutter/runtime/dart_vm_lifecycle.h
 FILE: ../../../flutter/runtime/dart_vm_unittests.cc
 FILE: ../../../flutter/runtime/embedder_resources.cc
 FILE: ../../../flutter/runtime/embedder_resources.h
-FILE: ../../../flutter/runtime/fixtures/simple_main.dart
+FILE: ../../../flutter/runtime/fixtures/runtime_test.dart
 FILE: ../../../flutter/runtime/runtime_controller.cc
 FILE: ../../../flutter/runtime/runtime_controller.h
 FILE: ../../../flutter/runtime/runtime_delegate.cc
@@ -410,7 +409,7 @@ FILE: ../../../flutter/shell/common/animator.cc
 FILE: ../../../flutter/shell/common/animator.h
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
-FILE: ../../../flutter/shell/common/fixtures/main.dart
+FILE: ../../../flutter/shell/common/fixtures/shell_test.dart
 FILE: ../../../flutter/shell/common/isolate_configuration.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.h
 FILE: ../../../flutter/shell/common/persistent_cache.cc
@@ -548,7 +547,6 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourceCleaner.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourceExtractor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourcePaths.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/TextureRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/VsyncWaiter.java
 FILE: ../../../flutter/shell/platform/android/library_loader.cc
