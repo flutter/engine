@@ -1,4 +1,4 @@
-Signature: e7ac0cfd2e59c61abc7a7430cdf35401
+Signature: 1270e1426b0f276c8ef2e835a5214be1
 
 UNUSED LICENSES:
 
@@ -5975,6 +5975,7 @@ FILE: ../../../third_party/skia/gm/overdrawcanvas.cpp
 FILE: ../../../third_party/skia/gm/samplelocations.cpp
 FILE: ../../../third_party/skia/gm/skbug_8664.cpp
 FILE: ../../../third_party/skia/gm/skbug_8955.cpp
+FILE: ../../../third_party/skia/include/core/SkApi.h
 FILE: ../../../third_party/skia/include/core/SkTileMode.h
 FILE: ../../../third_party/skia/include/gpu/GrContextThreadSafeProxy.h
 FILE: ../../../third_party/skia/include/private/GrContext_Base.h
