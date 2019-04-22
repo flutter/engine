@@ -452,7 +452,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(RightAlignParagraph)) {
   // than width_.
   ASSERT_DOUBLE_EQ(paragraph->width_, available_width);
   ASSERT_TRUE(paragraph->tight_width_ < available_width);
-  ASSERT_DOUBLE_EQ(paragraph->tight_width_, 893.19921875);
+  ASSERT_DOUBLE_EQ(paragraph->tight_width_, 880.765625);
 
   ASSERT_TRUE(paragraph->records_[2].style().equals(text_style));
   ASSERT_DOUBLE_EQ(paragraph->records_[2].offset().y(), expected_y);
