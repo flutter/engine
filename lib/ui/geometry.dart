@@ -1136,18 +1136,18 @@ class RRect {
       );
 
   const RRect._raw({
-    this.left,
-    this.top,
-    this.right,
-    this.bottom,
-    this.tlRadiusX,
-    this.tlRadiusY,
-    this.trRadiusX,
-    this.trRadiusY,
-    this.brRadiusX,
-    this.brRadiusY,
-    this.blRadiusX,
-    this.blRadiusY,
+    this.left = 0.0,
+    this.top = 0.0,
+    this.right = 0.0,
+    this.bottom = 0.0,
+    this.tlRadiusX = 0.0,
+    this.tlRadiusY = 0.0,
+    this.trRadiusX = 0.0,
+    this.trRadiusY = 0.0,
+    this.brRadiusX = 0.0,
+    this.brRadiusY = 0.0,
+    this.blRadiusX = 0.0,
+    this.blRadiusY = 0.0,
   }) : assert(left != null),
        assert(top != null),
        assert(right != null),
@@ -1225,7 +1225,7 @@ class RRect {
   Radius get blRadius => new Radius.elliptical(blRadiusX, blRadiusY);
 
   /// A rounded rectangle with all the values set to zero.
-  static final RRect zero = new RRect._raw();
+  static const RRect zero = RRect._raw();
 
   /// Returns a new [RRect] translated by the given offset.
   RRect shift(Offset offset) {
