@@ -29,7 +29,7 @@ public class TextInputPlugin implements InputTarget {
     private final InputMethodManager mImm;
     @NonNull
     private final TextInputChannel textInputChannel;
-    private final InputDispatch mInputDispatch;
+    private final InputProxy mInputProxy;
     private int mClient = 0;
     @Nullable
     private TextInputChannel.Configuration configuration;
@@ -39,9 +39,9 @@ public class TextInputPlugin implements InputTarget {
     @Nullable
     private InputConnection lastInputConnection;
 
-    public TextInputPlugin(View view, InputDispatch inputDispatch, @NonNull DartExecutor dartExecutor) {
+    public TextInputPlugin(View view, InputProxy inputProxy, @NonNull DartExecutor dartExecutor) {
         mView = view;
-        mInputDispatch = inputDispatch;
+        mInputProxy = inputProxy;
         mImm = (InputMethodManager) view.getContext().getSystemService(
                 Context.INPUT_METHOD_SERVICE);
 
@@ -176,13 +176,18 @@ public class TextInputPlugin implements InputTarget {
         return lastInputConnection;
     }
 
+    @Override
+    public void disposeInputConnection() {
+        textInputChannel.done(mClient);
+    }
+
     @Nullable
     public InputConnection getLastInputConnection() {
         return lastInputConnection;
     }
 
     private void showTextInput(View view) {
-        mInputDispatch.updateInputTarget(this, true, false);
+        mInputProxy.updateInputTarget(this, true);
         view.requestFocus();
         mImm.showSoftInput(view, 0);
     }

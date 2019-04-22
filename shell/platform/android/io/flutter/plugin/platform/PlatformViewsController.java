@@ -14,7 +14,7 @@ import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
-import io.flutter.plugin.editing.InputDispatch;
+import io.flutter.plugin.editing.InputProxy;
 import io.flutter.plugin.editing.InputTarget;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.TextureRegistry;
@@ -34,7 +34,7 @@ import static android.view.MotionEvent.PointerProperties;
  * Each {@link io.flutter.app.FlutterPluginRegistry} has a single platform views controller.
  * A platform views controller can be attached to at most one Flutter view.
  */
-public class PlatformViewsController implements MethodChannel.MethodCallHandler, PlatformViewsAccessibilityDelegate, InputDispatch {
+public class PlatformViewsController implements MethodChannel.MethodCallHandler, PlatformViewsAccessibilityDelegate, InputProxy {
     private static final String TAG = "PlatformViewsController";
 
     private static final String CHANNEL_NAME = "flutter/platform_views";
@@ -53,7 +53,12 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
     // The messenger used to communicate with the framework over the platform views channel.
     private BinaryMessenger mMessenger;
 
-    private InputDispatch mInputDispatch;
+    // The input proxy that we delegate to if it's available.
+    //
+    // Instead of passing this directly to VirtualDisplayControllers, we pass
+    // a reference to ourselves instead because otherwise we'd have to notify every
+    // VirtualDisplayController whenever it attached/detached.
+    private InputProxy mInputProxy;
 
     // The accessibility bridge to which accessibility events form the platform views will be dispatched.
     private final AccessibilityEventsDelegate mAccessibilityEventsDelegate;
@@ -75,7 +80,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
      *                        will be rendered.
      * @param messenger The Flutter application on the other side of this messenger drives this platform views controller.
      */
-    public void attach(Context context, TextureRegistry textureRegistry, BinaryMessenger messenger, InputDispatch inputDispatch) {
+    public void attach(Context context, TextureRegistry textureRegistry, BinaryMessenger messenger, InputProxy inputProxy) {
         if (mContext != null) {
             throw new AssertionError(
                     "A PlatformViewsController can only be attached to a single output target.\n" +
@@ -85,10 +90,9 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
         mContext = context;
         mTextureRegistry = textureRegistry;
         mMessenger = messenger;
-        mInputDispatch = inputDispatch;
+        mInputProxy = inputProxy;
         MethodChannel channel = new MethodChannel(messenger, CHANNEL_NAME, StandardMethodCodec.INSTANCE);
         channel.setMethodCallHandler(this);
-        Log.i(TAG, "attached to dispatch" + inputDispatch);
     }
 
     /**
@@ -101,16 +105,25 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
     public void detach() {
         mMessenger.setMessageHandler(CHANNEL_NAME, null);
         mMessenger = null;
-        mInputDispatch = null;
+        detachInputProxy();
         mContext = null;
         mTextureRegistry = null;
     }
 
     @Override
-    public void updateInputTarget(InputTarget target, boolean setAsTarget, boolean force) {
-        if (mInputDispatch != null) {
-            mInputDispatch.updateInputTarget(target, setAsTarget, force);
+    public void updateInputTarget(InputTarget target, boolean setAsTarget) {
+        if (mInputProxy != null) {
+            mInputProxy.updateInputTarget(target, setAsTarget);
         }
+    }
+
+    private void detachInputProxy() {
+        // Before we dispose of our reference to the input proxy, we'll give the
+        // the virtual input targets a chance to dispose their input connections.
+        for (VirtualDisplayController controller : vdControllers.values()) {
+            controller.getInputTarget().disposeInputConnection();
+        }
+        mInputProxy = null;
     }
 
     @Override
@@ -122,8 +135,6 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
     public void detachAccessibiltyBridge() {
         mAccessibilityEventsDelegate.setAccessibilityBridge(null);
     }
-
-
 
     public PlatformViewRegistry getRegistry() {
         return mRegistry;

@@ -32,7 +32,7 @@ import java.util.Locale;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
-import io.flutter.plugin.editing.InputDispatch;
+import io.flutter.plugin.editing.InputProxy;
 import io.flutter.plugin.editing.InputTarget;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.view.AccessibilityBridge;
@@ -58,7 +58,7 @@ import io.flutter.view.AccessibilityBridge;
  * See <a>https://source.android.com/devices/graphics/arch-tv#surface_or_texture</a> for more
  * information comparing {@link android.view.SurfaceView} and {@link android.view.TextureView}.
  */
-public class FlutterView extends FrameLayout implements InputDispatch {
+public class FlutterView extends FrameLayout implements InputProxy {
   private static final String TAG = "FlutterView";
 
   // Behavior configuration of this FlutterView.
@@ -316,7 +316,7 @@ public class FlutterView extends FrameLayout implements InputDispatch {
   }
 
   @Override
-  public void updateInputTarget(InputTarget target, boolean setAsTarget, boolean force) { }
+  public void updateInputTarget(InputTarget target, boolean setAsTarget) { }
 
   /**
    * Invoked when key is released.

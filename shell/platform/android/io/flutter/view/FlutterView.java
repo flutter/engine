@@ -41,7 +41,7 @@ import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.plugin.common.*;
-import io.flutter.plugin.editing.InputDispatch;
+import io.flutter.plugin.editing.InputProxy;
 import io.flutter.plugin.editing.InputTarget;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
@@ -55,7 +55,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * An Android view containing a Flutter app.
  */
-public class FlutterView extends SurfaceView implements BinaryMessenger, TextureRegistry, InputDispatch {
+public class FlutterView extends SurfaceView implements BinaryMessenger, TextureRegistry, InputProxy {
     /**
      * Interface for those objects that maintain and expose a reference to a
      * {@code FlutterView} (such as a full-screen Flutter activity).
@@ -388,21 +388,18 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     }
 
     @Override
-    public void updateInputTarget(InputTarget target, boolean setAsTarget, boolean force) {
+    public void updateInputTarget(InputTarget target, boolean setAsTarget) {
         InputTarget oldTarget;
         if (mInputTarget == target) {
             if (setAsTarget) {
-                if (!force) {
-                    return;
-                } else {
-                    oldTarget = null;
-                }
-            } else {
-                // We'll remove it as the current target, and revert to the plugin as
-                // the new target. We'll also hide the keyboard.
-                oldTarget = target;
-                mInputTarget = mTextInputPlugin;
+                // It's already the input target so there's nothing to do.
+                return;
             }
+
+            // We'll remove it as the current target, and revert to the plugin as
+            // the new target. We'll also hide the keyboard.
+            oldTarget = target;
+            mInputTarget = mTextInputPlugin;
         } else if (setAsTarget) {
             // We'll set it as the current target.
             oldTarget = mInputTarget;
@@ -412,10 +409,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
             return;
         }
 
-        if (oldTarget instanceof InputTarget.Disposable) {
-            ((InputTarget.Disposable) oldTarget).disposeInputConnection();
-        }
-
+        oldTarget.disposeInputConnection();
         mImm.restartInput(mInputTarget.getTargetView());
     }
 
@@ -426,7 +420,9 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
     @Override
     public boolean checkInputConnectionProxy(View view) {
-        return true;
+        // If the input target is not us, then it's a platform view so we're
+        // acting as a proxy.
+        return mInputTarget.getTargetView() != this;
     }
 
     @Override

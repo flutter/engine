@@ -12,21 +12,19 @@ import android.os.Build;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewTreeObserver;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputConnection;
-import io.flutter.plugin.editing.InputDispatch;
+import io.flutter.plugin.editing.InputProxy;
 import io.flutter.plugin.editing.InputTarget;
 import io.flutter.view.TextureRegistry;
 
 @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
-class VirtualDisplayController implements InputDispatch, InputTarget.Disposable {
+class VirtualDisplayController {
 
     public static VirtualDisplayController create(
             Context context,
             AccessibilityEventsDelegate accessibilityEventsDelegate,
             PlatformViewFactory viewFactory,
             TextureRegistry.SurfaceTextureEntry textureEntry,
-            InputDispatch inputDispatch,
+            InputProxy inputProxy,
             int width,
             int height,
             int viewId,
@@ -51,14 +49,14 @@ class VirtualDisplayController implements InputDispatch, InputTarget.Disposable 
         }
 
         return new VirtualDisplayController(
-                context, accessibilityEventsDelegate, virtualDisplay, viewFactory, surface, textureEntry, inputDispatch, viewId, createParams);
+                context, accessibilityEventsDelegate, virtualDisplay, viewFactory, surface, textureEntry, inputProxy, viewId, createParams);
     }
 
     private final Context mContext;
     private final AccessibilityEventsDelegate mAccessibilityEventsDelegate;
     private final int mDensityDpi;
     private final TextureRegistry.SurfaceTextureEntry mTextureEntry;
-    private final InputDispatch mInputDispatch;
+    private final InputProxy mInputProxy;
     private VirtualDisplay mVirtualDisplay;
     private SingleViewPresentation mPresentation;
     private Surface mSurface;
@@ -71,19 +69,19 @@ class VirtualDisplayController implements InputDispatch, InputTarget.Disposable 
             PlatformViewFactory viewFactory,
             Surface surface,
             TextureRegistry.SurfaceTextureEntry textureEntry,
-            InputDispatch inputDispatch,
+            InputProxy inputProxy,
             int viewId,
             Object createParams
     ) {
         mContext = context;
         mAccessibilityEventsDelegate = accessibilityEventsDelegate;
         mTextureEntry = textureEntry;
-        mInputDispatch = inputDispatch;
+        mInputProxy = inputProxy;
         mSurface = surface;
         mVirtualDisplay = virtualDisplay;
         mDensityDpi = context.getResources().getDisplayMetrics().densityDpi;
         mPresentation = new SingleViewPresentation(
-                context, mVirtualDisplay.getDisplay(), viewFactory, accessibilityEventsDelegate, this, viewId, createParams);
+                context, mVirtualDisplay.getDisplay(), viewFactory, accessibilityEventsDelegate, inputProxy, viewId, createParams);
         mPresentation.show();
     }
 
@@ -133,14 +131,13 @@ class VirtualDisplayController implements InputDispatch, InputTarget.Disposable 
             public void onViewDetachedFromWindow(View v) {}
         });
 
-        mPresentation = new SingleViewPresentation(mContext, mVirtualDisplay.getDisplay(), mAccessibilityEventsDelegate, this, presentationState);
+        mPresentation = new SingleViewPresentation(mContext, mVirtualDisplay.getDisplay(), mAccessibilityEventsDelegate, mInputProxy, presentationState);
         mPresentation.show();
     }
 
     public void dispose() {
         PlatformView view = mPresentation.getView();
         mPresentation.detachState();
-        mInputDispatch.updateInputTarget(this, false, false);
         view.dispose();
         mVirtualDisplay.release();
         mTextureEntry.release();
@@ -153,24 +150,8 @@ class VirtualDisplayController implements InputDispatch, InputTarget.Disposable 
         return platformView.getView();
     }
 
-    @Override
-    public void updateInputTarget(InputTarget target, boolean setAsTarget, boolean force) {
-        mInputDispatch.updateInputTarget(this, setAsTarget, force);
-    }
-
-    @Override
-    public View getTargetView() {
-        return mPresentation.getTargetView();
-    }
-
-    @Override
-    public InputConnection createInputConnection(EditorInfo outAttrs) {
-        return mPresentation.createInputConnection(outAttrs);
-    }
-
-    @Override
-    public void disposeInputConnection() {
-        mPresentation.disposeInputConnection();
+    public InputTarget getInputTarget() {
+        return mPresentation;
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)

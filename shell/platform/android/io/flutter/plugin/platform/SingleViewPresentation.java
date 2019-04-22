@@ -17,7 +17,7 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.FrameLayout;
-import io.flutter.plugin.editing.InputDispatch;
+import io.flutter.plugin.editing.InputProxy;
 import io.flutter.plugin.editing.InputTarget;
 
 import java.lang.reflect.*;
@@ -41,7 +41,7 @@ import static android.content.Context.WINDOW_SERVICE;
  *   EmbeddedView
  */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-class SingleViewPresentation extends Presentation implements InputTarget.Disposable {
+class SingleViewPresentation extends Presentation implements InputTarget {
 
     /*
      * When an embedded view is resized in Flutterverse we move the Android view to a new virtual display
@@ -51,9 +51,6 @@ class SingleViewPresentation extends Presentation implements InputTarget.Disposa
     static class PresentationState {
         // The Android view we are embedding in the Flutter app.
         private PlatformView mView;
-
-        // Whether the embedded view is focused.
-        boolean mFocused = false;
 
         // The InvocationHandler for a WindowManager proxy. This is essentially the custom window manager for the
         // presentation.
@@ -68,13 +65,12 @@ class SingleViewPresentation extends Presentation implements InputTarget.Disposa
     // A reference to the current accessibility bridge to which accessibility events will be delegated.
     private final AccessibilityEventsDelegate mAccessibilityEventsDelegate;
 
-    private final InputDispatch mInputDispatch;
+    private final InputProxy mInputProxy;
 
     private final View.OnFocusChangeListener embeddedFocusListener = new View.OnFocusChangeListener() {
         @Override
         public void onFocusChange(View v, boolean hasFocus) {
-            mState.mFocused = hasFocus;
-            mInputDispatch.updateInputTarget(SingleViewPresentation.this, hasFocus, true);
+            mInputProxy.updateInputTarget(SingleViewPresentation.this, hasFocus);
         }
     };
 
@@ -104,14 +100,14 @@ class SingleViewPresentation extends Presentation implements InputTarget.Disposa
             Display display,
             PlatformViewFactory viewFactory,
             AccessibilityEventsDelegate accessibilityEventsDelegate,
-            InputDispatch inputDispatch,
+            InputProxy inputProxy,
             int viewId,
             Object createParams
     ) {
         super(outerContext, display);
         mViewFactory = viewFactory;
         mAccessibilityEventsDelegate = accessibilityEventsDelegate;
-        mInputDispatch = inputDispatch;
+        mInputProxy = inputProxy;
         mViewId = viewId;
         mCreateParams = createParams;
         mState = new PresentationState();
@@ -132,13 +128,13 @@ class SingleViewPresentation extends Presentation implements InputTarget.Disposa
             Context outerContext,
             Display display,
             AccessibilityEventsDelegate accessibilityEventsDelegate,
-            InputDispatch inputDispatch,
+            InputProxy inputProxy,
             PresentationState state
     ) {
         super(outerContext, display);
         mAccessibilityEventsDelegate = accessibilityEventsDelegate;
         mViewFactory = null;
-        mInputDispatch = inputDispatch;
+        mInputProxy = inputProxy;
         mState = state;
         getWindow().setFlags(
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
@@ -164,7 +160,6 @@ class SingleViewPresentation extends Presentation implements InputTarget.Disposa
             mState.mView = mViewFactory.create(context, mViewId, mCreateParams);
         }
 
-        final boolean restartFocus = mState.mFocused;
         View embeddedView = mState.mView.getView();
         embeddedView.setOnFocusChangeListener(embeddedFocusListener);
 
@@ -177,12 +172,7 @@ class SingleViewPresentation extends Presentation implements InputTarget.Disposa
         mRootView.addView(mContainer);
         mRootView.addView(mState.mFakeWindowRootView);
         setContentView(mRootView);
-
-        if (restartFocus) {
-            embeddedView.requestFocus();
-        } else {
-            mRootView.requestFocus();
-        }
+        mRootView.requestFocus();
     }
 
     @Override
@@ -197,17 +187,21 @@ class SingleViewPresentation extends Presentation implements InputTarget.Disposa
 
     @Override
     public void disposeInputConnection() {
-        mState.mFocused = false;
         mRootView.requestFocus();
     }
 
     public PresentationState detachState() {
-        final PlatformView platformView = getView();
-        if (platformView != null && platformView.getView() != null) {
-            platformView.getView().setOnFocusChangeListener(null);
-        }
+        // If the embedded view was focused, removing it from the container will
+        // make it lose focus, and will trigger a call to the input proxy to remove
+        // it as the input target, thus we don't have to manually remove it here.
         mContainer.removeAllViews();
         mRootView.removeAllViews();
+        final PlatformView platformView = getView();
+        if (platformView != null && platformView.getView() != null) {
+            // Remove the focus change listener after the embedded view has been
+            // removed from the container for the reasons mentioned above.
+            platformView.getView().setOnFocusChangeListener(null);
+        }
         return mState;
     }
 
