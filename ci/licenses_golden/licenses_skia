@@ -1,4 +1,4 @@
-Signature: e01b1c67e6e7b7ce78b96231e9b43a28
+Signature: 35b76980ca188a1ab60a108eddb7d30c
 
 UNUSED LICENSES:
 
@@ -1105,7 +1105,7 @@ FILE: ../../../third_party/skia/src/core/SkAutoPixmapStorage.cpp
 FILE: ../../../third_party/skia/src/core/SkAutoPixmapStorage.h
 FILE: ../../../third_party/skia/src/core/SkBlendModePriv.h
 FILE: ../../../third_party/skia/src/core/SkClipOpPriv.h
-FILE: ../../../third_party/skia/src/core/SkColorMatrixFilterRowMajor255.h
+FILE: ../../../third_party/skia/src/core/SkColorFilter_Matrix.h
 FILE: ../../../third_party/skia/src/core/SkColorSpace.cpp
 FILE: ../../../third_party/skia/src/core/SkColorSpacePriv.h
 FILE: ../../../third_party/skia/src/core/SkCpu.cpp
@@ -2539,7 +2539,7 @@ FILE: ../../../third_party/skia/src/core/SkBlitRow.h
 FILE: ../../../third_party/skia/src/core/SkBlitRow_D32.cpp
 FILE: ../../../third_party/skia/src/core/SkClipStack.cpp
 FILE: ../../../third_party/skia/src/core/SkClipStack.h
-FILE: ../../../third_party/skia/src/core/SkColorMatrixFilterRowMajor255.cpp
+FILE: ../../../third_party/skia/src/core/SkColorFilter_Matrix.cpp
 FILE: ../../../third_party/skia/src/core/SkConvertPixels.h
 FILE: ../../../third_party/skia/src/core/SkData.cpp
 FILE: ../../../third_party/skia/src/core/SkDevice.cpp
@@ -5612,6 +5612,8 @@ FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMixerEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMixerEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrOverrideInputFragmentProcessor.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrOverrideInputFragmentProcessor.h
+FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCommandBuffer.h
+FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCommandBuffer.mm
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.h
 FILE: ../../../third_party/skia/src/sksl/SkSLDefines.h
