@@ -1419,23 +1419,28 @@ class RRect {
     scale = _getMin(scale, trRadiusY, brRadiusY, height);
     scale = _getMin(scale, brRadiusX, blRadiusX, width);
 
-    double scaledLeft = left;
-    double scaledTop = top;
-    double scaledRight = right;
-    double scaledBottom = bottom;
-
     if (scale < 1.0) {
-      scaledTop *= scale;
-      scaledLeft *= scale;
-      scaledRight *= scale;
-      scaledBottom *= scale;
+      return new RRect._raw(
+        top: top,
+        left: left,
+        right: right,
+        bottom: bottom,
+        tlRadiusX: tlRadiusX * scale,
+        tlRadiusY: tlRadiusY * scale,
+        trRadiusX: trRadiusX * scale,
+        trRadiusY: trRadiusY * scale,
+        blRadiusX: blRadiusX * scale,
+        blRadiusY: blRadiusY * scale,
+        brRadiusX: brRadiusX * scale,
+        brRadiusY: brRadiusY * scale,
+      );
     }
 
     return new RRect._raw(
-      top: scaledTop,
-      left: scaledLeft,
-      right: scaledRight,
-      bottom: scaledBottom,
+      top: top,
+      left: left,
+      right: right,
+      bottom: bottom,
       tlRadiusX: tlRadiusX,
       tlRadiusY: tlRadiusY,
       trRadiusX: trRadiusX,
