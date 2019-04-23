@@ -1490,9 +1490,9 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
     String locale
   ) native 'ParagraphBuilder_constructor';
 
-  int _placeholderCount;
   /// The number of placeholders currently in the paragraph.
   int get placeholderCount => _placeholderCount;
+  int _placeholderCount;
 
   /// Applies the given style to the added text until [pop] is called.
   ///
