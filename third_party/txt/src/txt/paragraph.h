@@ -157,8 +157,8 @@ class Paragraph {
 
   // Returns the width of the longest line as found in Layout(), which is
   // defined as the horizontal distance from the left edge of the leftmost glyph
-  // to the right edge of the rightmost glyph. We expect that GetTightWidth() <=
-  // GetMaxWidth().
+  // to the right edge of the rightmost glyph. We expect that
+  // GetLongestLine() <= GetMaxWidth().
   double GetLongestLine() const;
 
   // Distance from top of paragraph to the Alphabetic baseline of the first

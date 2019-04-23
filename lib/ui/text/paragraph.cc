@@ -22,7 +22,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Paragraph);
 #define FOR_EACH_BINDING(V)         \
   V(Paragraph, width)               \
   V(Paragraph, height)              \
-  V(Paragraph, longestLine)          \
+  V(Paragraph, longestLine)         \
   V(Paragraph, minIntrinsicWidth)   \
   V(Paragraph, maxIntrinsicWidth)   \
   V(Paragraph, alphabeticBaseline)  \
