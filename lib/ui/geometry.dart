@@ -637,11 +637,10 @@ class Rect {
   /// Construct a rectangle that bounds the given circle.
   ///
   /// The `center` argument is assumed to be an offset from the origin.
-  Rect.fromCircle({ Offset center, double radius }) : this.fromLTRB(
-    center.dx - radius,
-    center.dy - radius,
-    center.dx + radius,
-    center.dy + radius,
+  Rect.fromCircle({ Offset center, double radius }) : this.fromCenter(
+    center: center,
+    width: radius * 2,
+    height: radius * 2,
   );
 
   /// Constructs a rectangle from its center point, width, and height.
