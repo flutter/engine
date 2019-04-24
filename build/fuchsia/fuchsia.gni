@@ -45,6 +45,7 @@ template("fuchsia_cc_source_library") {
 
   _include_dirs = []
   _sources = []
+  _output_name = meta_json.name
 
   meta_json_include_dir = meta_json.include_dir
   _include_dirs += [ "$fuchsia_sdk/$meta_json_include_dir" ]
@@ -67,5 +68,6 @@ template("fuchsia_cc_source_library") {
     include_dirs = _include_dirs
     sources = _sources
     public_configs = [ ":$config_name" ]
+    output_name = _output_name
   }
 }

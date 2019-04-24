@@ -39,8 +39,6 @@
 #include "flutter/fml/time/time_point.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
-#if !defined(OS_FUCHSIA)
-
 #ifndef TRACE_EVENT_HIDE_MACROS
 
 #define __FML__TOKEN_CAT__(x, y) x##y
@@ -103,8 +101,6 @@
   ::fml::tracing::TraceEventFlowEnd0(category, name, id);
 
 #endif  // TRACE_EVENT_HIDE_MACROS
-
-#endif  // !defined(OS_FUCHSIA)
 
 namespace fml {
 namespace tracing {

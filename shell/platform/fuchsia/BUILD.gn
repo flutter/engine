@@ -4,7 +4,7 @@
 
 assert(is_fuchsia && is_fuchsia_sdk)
 
-import("$flutter_root/build/fuchsia/fuchisa.gni")
+import("$flutter_root/build/fuchsia/fuchsia.gni")
 
 fuchsia_sysroot("sysroot") {
   meta = "//fuchsia/sdk/pkg/sysroot/meta.json"
@@ -15,6 +15,10 @@ fuchsia_cc_source_library("zx") {
   meta = "//fuchsia/sdk/pkg/zx/meta.json"
 }
 
+# fuchsia_fidl_libary("images") {
+#   meta = "//fuchsia/sdk/fidl/fuchsia.images/meta.json"
+# }
+
 executable("fuchsia") {
   sources = [
     "sample_main.cc",
@@ -23,6 +27,8 @@ executable("fuchsia") {
   deps = [
     ":sysroot",
     ":zx",
+
+    # "$flutter_root/common",
   ]
 }
 
