@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <SkPaint.h>
-#include <SkTypeface.h>
+#include "third_party/skia/include/core/SkPaint.h"
+#include "third_party/skia/include/core/SkTypeface.h"
 #include <minikin/MinikinFont.h>
 #include "flutter/fml/macros.h"
 
