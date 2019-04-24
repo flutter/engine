@@ -404,8 +404,8 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 @end
 
 @implementation FlutterPlatformViewSemanticsContainer {
-  SemanticsObject *_semanticsObject;
-  UIView *_platformView;
+  SemanticsObject* _semanticsObject;
+  UIView* _platformView;
 }
 
 // Method declared as unavailable in the interface
@@ -419,11 +419,12 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   FML_CHECK(object);
   if (self = [super init]) {
     _semanticsObject = object;
-    flutter::FlutterPlatformViewsController* controller = object.bridge->GetPlatformViewsController();
+    flutter::FlutterPlatformViewsController* controller =
+        object.bridge->GetPlatformViewsController();
     if (controller) {
       _platformView = [controller->GetPlatformViewByID(object.node.platformViewId) view];
     }
-    self.accessibilityElements = @[_semanticsObject, _platformView];
+    self.accessibilityElements = @[ _semanticsObject, _platformView ];
   }
   return self;
 }
@@ -627,8 +628,8 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     if (object.node.IsPlatformViewNode()) {
       FlutterPlatformViewsController* controller = GetPlatformViewsController();
       if (controller) {
-        object.platformViewSemanticsContainer = [[FlutterPlatformViewSemanticsContainer alloc]
-            initWithSemanticsObject:object];
+        object.platformViewSemanticsContainer =
+            [[FlutterPlatformViewSemanticsContainer alloc] initWithSemanticsObject:object];
       }
     } else if (object.platformViewSemanticsContainer) {
       [object.platformViewSemanticsContainer release];
