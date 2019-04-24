@@ -2,7 +2,70 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-template("fuchsia_cpp_library") {
+declare_args() {
+  fuchsia_sdk = "//fuchsia/sdk"
+}
+
+template("fuchsia_sysroot") {
+  assert(defined(invoker.meta), "The meta.json file path must be specified.")
+
+  meta_json = read_file(invoker.meta, "trim json")
+  meta_json_versions = meta_json.versions
+  defs = meta_json_versions.x64
+
+  _libs = []
+  _lib_dirs = []
+  _include_dirs = []
+
+  foreach(link_lib, defs.link_libs) {
+    if (link_lib != "arch/x64/sysroot/lib/Scrt1.o") {
+      _libs += [ "$fuchsia_sdk/$link_lib" ]
+    }
+  }
+
+  defs_include_dir = defs.include_dir
+  _include_dirs += [ "$fuchsia_sdk/$defs_include_dir" ]
+
+  config_name = "config_$target_name"
+  config(config_name) {
+    lib_dirs = _lib_dirs
+    libs = _libs
+    include_dirs = _include_dirs
+  }
+
+  group(target_name) {
+    public_configs = [ ":$config_name" ]
+  }
+}
+
+template("fuchsia_cc_source_library") {
+  assert(defined(invoker.meta), "The meta.json file path must be specified.")
+
+  meta_json = read_file(invoker.meta, "trim json")
+
+  _include_dirs = []
+  _sources = []
+
+  meta_json_include_dir = meta_json.include_dir
+  _include_dirs += [ "$fuchsia_sdk/$meta_json_include_dir" ]
+
+  foreach(header, meta_json.headers) {
+    _sources += [ "$fuchsia_sdk/$header" ]
+  }
+
+  foreach(source, meta_json.sources) {
+    _sources += [ "$fuchsia_sdk/$source" ]
+  }
+
+  config_name = "config_$target_name"
+
+  config(config_name) {
+    include_dirs = _include_dirs
+  }
+
   source_set(target_name) {
+    include_dirs = _include_dirs
+    sources = _sources
+    public_configs = [ ":$config_name" ]
   }
 }
