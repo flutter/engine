@@ -644,6 +644,16 @@ class Rect {
     center.dy + radius,
   );
 
+  /// Constructs a rectangle from its center point, width, and height.
+  ///
+  /// The `center` argument is assumed to be an offset from the origin.
+  Rect.fromCenter({ Offset center, double width, double height }) : this.fromLTRB(
+    center.dx - width / 2,
+    center.dy - height / 2,
+    center.dx + width / 2,
+    center.dy + height / 2,
+  );
+
   /// Construct the smallest rectangle that encloses the given offsets, treating
   /// them as vectors from the origin.
   Rect.fromPoints(Offset a, Offset b) : this.fromLTRB(
