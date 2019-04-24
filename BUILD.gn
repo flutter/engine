@@ -24,6 +24,10 @@ group("flutter") {
     public_deps += [ "$flutter_root/shell/testing" ]
   }
 
+  if (is_fuchsia_sdk) {
+    public_deps += [ "$flutter_root/shell/platform/fuchsia" ]
+  }
+
   if (!is_fuchsia && !is_fuchsia_host) {
     if (current_toolchain == host_toolchain) {
       public_deps += [
