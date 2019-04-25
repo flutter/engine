@@ -96,5 +96,20 @@ void main() {
     expect(rect.top, -0.5);
     expect(rect.right, 3.5);
     expect(rect.bottom, 6.5);
+    rect = Rect.fromCenter(center: const Offset(0.0, 0.0), width: 0.0, height: 0.0);
+    expect(rect.left, 0.0);
+    expect(rect.top, 0.0);
+    expect(rect.right, 0.0);
+    expect(rect.bottom, 0.0);
+    rect = Rect.fromCenter(center: const Offset(double.nan, 0.0), width: 0.0, height: 0.0);
+    expect(rect.left, isNaN);
+    expect(rect.top, 0.0);
+    expect(rect.right, iNaN);
+    expect(rect.bottom, 0.0);
+    rect = Rect.fromCenter(center: const Offset(0.0, double.nan), width: 0.0, height: 0.0);
+    expect(rect.left, 0.0);
+    expect(rect.top, isNaN);
+    expect(rect.right, 0.0);
+    expect(rect.bottom, isNaN);
   });
 }
