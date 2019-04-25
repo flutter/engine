@@ -41,42 +41,6 @@ template("fuchsia_sysroot") {
   }
 }
 
-template("fuchsia_cc_source_library") {
-  assert(defined(invoker.meta), "The meta.json file path must be specified.")
-
-  meta_json = read_file(invoker.meta, "json")
-
-  assert(meta_json.type == "cc_source_library")
-
-  _include_dirs = []
-  _sources = []
-  _output_name = meta_json.name
-
-  meta_json_include_dir = meta_json.include_dir
-  _include_dirs += [ "$fuchsia_sdk/$meta_json_include_dir" ]
-
-  foreach(header, meta_json.headers) {
-    _sources += [ "$fuchsia_sdk/$header" ]
-  }
-
-  foreach(source, meta_json.sources) {
-    _sources += [ "$fuchsia_sdk/$source" ]
-  }
-
-  config_name = "config_$target_name"
-
-  config(config_name) {
-    include_dirs = _include_dirs
-  }
-
-  source_set(target_name) {
-    include_dirs = _include_dirs
-    sources = _sources
-    public_configs = [ ":$config_name" ]
-    output_name = _output_name
-  }
-}
-
 template("fuchsia_fidl_library") {
   assert(defined(invoker.meta), "The meta.json file path must be specified.")
 
@@ -124,6 +88,79 @@ template("fuchsia_fidl_library") {
   }
 }
 
+template("fuchsia_cc_source_library") {
+  assert(defined(invoker.meta), "The meta.json file path must be specified.")
+
+  meta_json = read_file(invoker.meta, "json")
+
+  assert(meta_json.type == "cc_source_library")
+
+  _include_dirs = []
+  _sources = []
+  _output_name = meta_json.name
+  _deps = []
+
+  meta_json_include_dir = meta_json.include_dir
+  _include_dirs += [ "$fuchsia_sdk/$meta_json_include_dir" ]
+
+  foreach(header, meta_json.headers) {
+    _sources += [ "$fuchsia_sdk/$header" ]
+  }
+
+  foreach(source, meta_json.sources) {
+    _sources += [ "$fuchsia_sdk/$source" ]
+  }
+
+  config_name = "config_$target_name"
+  config(config_name) {
+    include_dirs = _include_dirs
+  }
+
+  foreach(dep, meta_json.deps) {
+    _deps += [ ":$dep" ]
+  }
+
+  source_set(target_name) {
+    include_dirs = _include_dirs
+    sources = _sources
+    public_configs = [ ":$config_name" ]
+    output_name = _output_name
+    public_deps = _deps
+  }
+}
+
+template("fuchsia_cc_prebuilt_library") {
+  assert(defined(invoker.meta), "The meta.json file path must be specified.")
+  meta_json = read_file(invoker.meta, "json")
+
+  _include_dirs = []
+  _deps = []
+  _libs = []
+
+  meta_json_include_dir = meta_json.include_dir
+  _include_dirs += [ "$fuchsia_sdk/$meta_json_include_dir" ]
+
+  foreach(dep, meta_json.deps) {
+    _deps += [ ":$dep" ]
+  }
+
+  meta_json_binaries = meta_json.binaries
+  meta_json_binaries_x64 = meta_json_binaries.x64
+  prebuilt_lib = meta_json_binaries_x64.link
+  _libs = [ "$fuchsia_sdk/$prebuilt_lib" ]
+
+  config_name = "config_$target_name"
+  config(config_name) {
+    include_dirs = _include_dirs
+    libs = _libs
+  }
+
+  group(target_name) {
+    public_configs = [ ":$config_name" ]
+    public_deps = _deps
+  }
+}
+
 template("fuchsia_sdk") {
   assert(defined(invoker.meta), "The meta.json file path must be specified.")
 
@@ -149,6 +186,10 @@ template("fuchsia_sdk") {
       }
     } else if (part.type == "fidl_library") {
       fuchsia_fidl_library(subtarget_name) {
+        meta = part_meta_rebased
+      }
+    } else if (part.type == "cc_prebuilt_library") {
+      fuchsia_cc_prebuilt_library(subtarget_name) {
         meta = part_meta_rebased
       }
     }
