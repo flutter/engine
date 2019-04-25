@@ -3763,7 +3763,24 @@ class Picture extends NativeFieldWrapperClass2 {
     );
   }
 
+  /// Creates a shader from this picture.
+  ///
+  /// The picture is drawn using the number of pixels specified by the
+  /// given width and height.
+  Future<Shader> toShader(int width, int height, TileMode tmx, TileMode tmy, Float64List matrix4) {
+    if (width <= 0 || height <= 0)
+      throw new Exception('Invalid image dimensions.');
+    if(tmx == null || tmy == null)
+      throw new Exception('Invalid tile modes.');
+    if (matrix4.length != 16)
+      throw new ArgumentError('"matrix4" must have 16 entries.');
+    return _futurize(
+      (_Callback<Shader> callback) => _toShader(width, height, tmx, tmy, matrix4, callback)
+    );
+  }
+
   String _toImage(int width, int height, _Callback<Image> callback) native 'Picture_toImage';
+  String _toShader(int width, int height, TileMode tmx, TileMode tmy, Float64List matrix4, _Callback<Shader> callback) native 'Picture_toShader';
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.

@@ -21,6 +21,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Picture);
 
 #define FOR_EACH_BINDING(V) \
   V(Picture, toImage)       \
+  V(Picture, toShader)       \
   V(Picture, dispose)       \
   V(Picture, GetAllocationSize)
 
@@ -44,6 +45,19 @@ Dart_Handle Picture::toImage(uint32_t width,
   }
 
   return RasterizeToImage(picture_.get(), width, height, raw_image_callback);
+}
+
+Dart_Handle Picture::toShader(uint32_t width,
+                              uint32_t height,
+                              SkTileMode tmx,
+                              SkTileMode tmy,
+                              const tonic::Float64List& matrix4,
+                              Dart_Handle raw_shader_callback) {
+  if (!picture_.get()) {
+    return tonic::ToDart("Picture is null");
+  }
+
+  return TransferToShader(picture_.get(), width, height, tmx, tmy, matrix4, raw_shader_callback);
 }
 
 void Picture::dispose() {
@@ -121,6 +135,71 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
         fml::TaskRunner::RunNowOrPostTask(
             ui_task_runner,
             [ui_task, raster_image]() { ui_task(raster_image); });
+      });
+
+  return Dart_Null();
+}
+
+Dart_Handle Picture::TransferToShader(sk_sp<SkPicture> picture,
+                                      uint32_t width,
+                                      uint32_t height,
+                                      SkTileMode tmx,
+                                      SkTileMode tmy,
+                                      const tonic::Float64List& matrix4,
+                                      Dart_Handle raw_shader_callback) {
+  if (Dart_IsNull(raw_shader_callback) || !Dart_IsClosure(raw_shader_callback)) {
+    return tonic::ToDart("Shader callback was invalid");
+  }
+
+  if (width == 0 || height == 0) {
+    return tonic::ToDart("Shader dimensions for scene were invalid.");
+  }
+
+  auto* dart_state = UIDartState::Current();
+  tonic::DartPersistentValue* shader_callback = new tonic::DartPersistentValue(dart_state, raw_shader_callback);
+  auto unref_queue = dart_state->GetSkiaUnrefQueue();
+  auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
+  auto gpu_task_runner = dart_state->GetTaskRunners().GetGPUTaskRunner();
+  auto snapshot_delegate = dart_state->GetSnapshotDelegate();
+
+  auto picture_bounds = SkISize::Make(width, height);
+  auto matrix = ToSkMatrix(matrix4);
+
+  auto ui_task = fml::MakeCopyable([shader_callback, unref_queue](
+                                       sk_sp<SkShader> shader) mutable {
+    auto dart_state = shader_callback->dart_state().lock();
+    if (!dart_state) {
+      return;
+    }
+    tonic::DartState::Scope scope(dart_state);
+
+    if (!shader) {
+      tonic::DartInvoke(shader_callback->Get(), {Dart_Null()});
+      return;
+    }
+
+    auto dart_shader = ImageShader::Create();
+    dart_shader->set_shader({std::move(shader), std::move(unref_queue)});
+    auto* raw_dart_shader = tonic::ToDart(std::move(dart_shader));
+
+    tonic::DartInvoke(shader_callback->Get(), {raw_dart_shader});
+
+    delete shader_callback;
+  });
+
+  fml::TaskRunner::RunNowOrPostTask(
+      gpu_task_runner,
+      [ui_task_runner, snapshot_delegate, picture, picture_bounds, tmx, tmy, matrix, ui_task] {
+        sk_sp<SkShader> shader;
+
+        sk_sp<SkImage> surface_image = snapshot_delegate->MakeSnapshot(picture, picture_bounds, false);
+
+        if(surface_image)
+          shader = surface_image->makeShader(tmx, tmy, &matrix);
+
+        fml::TaskRunner::RunNowOrPostTask(
+            ui_task_runner,
+            [ui_task, shader]() { ui_task(shader); });
       });
 
   return Dart_Null();

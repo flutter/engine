@@ -3312,6 +3312,15 @@ class Picture {
   Future<Image> toImage(int width, int height) {
     throw UnimplementedError();
   }
+
+  /// Creates a shader from this picture.
+  ///
+  /// The picture is drawn using the number of pixels specified by the
+  /// given width and height.
+  Future<Shader> toShader(int width, int height, TileMode tmx, TileMode tmy, Float64List matrix4) {
+    throw UnimplementedError();
+  }
+
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   void dispose() {

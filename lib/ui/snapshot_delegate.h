@@ -12,8 +12,11 @@ namespace flutter {
 
 class SnapshotDelegate {
  public:
-  virtual sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
-                                            SkISize picture_size) = 0;
+  virtual sk_sp<SkImage> MakeSnapshot(sk_sp<SkPicture> picture,
+                                            SkISize picture_size,
+                                            bool rasterize) = 0;
+  inline sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
+                                            SkISize picture_size) { return MakeSnapshot(picture, picture_size, true); };
 };
 
 }  // namespace flutter
