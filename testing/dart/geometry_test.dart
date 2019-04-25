@@ -90,4 +90,11 @@ void main() {
     expect(const Size(-1.0, -1.0).aspectRatio, 1.0);
     expect(const Size(3.0, 4.0).aspectRatio, 3.0 / 4.0);
   });
+  test('Rect.fromCenter', () {
+    Rect rect = Rect.fromCenter(center: const Offset(1.0, 3.0), width: 5.0, height: 7.0);
+    expect(rect.left, -1.5);
+    expect(rect.top, -0.5);
+    expect(rect.right, 3.5);
+    expect(rect.bottom, 6.5);
+  });
 }
