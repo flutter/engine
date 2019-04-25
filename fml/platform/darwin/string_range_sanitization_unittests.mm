@@ -6,13 +6,13 @@
 #include "gtest/gtest.h"
 
 TEST(StringRangeSanitizationTest, CanHandleUnicode) {
-  auto result = fml::rangeForCharacterAtIndex(@"😠", 1);
+  auto result = fml::RangeForCharacterAtIndex(@"😠", 1);
   EXPECT_EQ(result.location, 0UL);
   EXPECT_EQ(result.length, 2UL);
 }
 
 TEST(StringRangeSanitizationTest, CanHandleUnicodeRange) {
-  auto result = fml::rangeForCharactersInRange(@"😠", NSMakeRange(1, 0));
+  auto result = fml::RangeForCharactersInRange(@"😠", NSMakeRange(1, 0));
   EXPECT_EQ(result.location, 0UL);
   EXPECT_EQ(result.length, 0UL);
 }

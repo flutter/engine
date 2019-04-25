@@ -287,7 +287,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     if (self.hasText) {
       FlutterTextRange* flutterTextRange = (FlutterTextRange*)selectedTextRange;
       _selectedTextRange = [[FlutterTextRange
-          rangeWithNSRange:fml::rangeForCharactersInRange(self.text, flutterTextRange.range)] copy];
+          rangeWithNSRange:fml::RangeForCharactersInRange(self.text, flutterTextRange.range)] copy];
     } else {
       _selectedTextRange = [selectedTextRange copy];
     }
@@ -423,11 +423,11 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 }
 
 - (NSUInteger)decrementOffsetPosition:(NSUInteger)position {
-  return fml::rangeForCharacterAtIndex(self.text, MAX(0, position - 1)).location;
+  return fml::RangeForCharacterAtIndex(self.text, MAX(0, position - 1)).location;
 }
 
 - (NSUInteger)incrementOffsetPosition:(NSUInteger)position {
-  NSRange charRange = fml::rangeForCharacterAtIndex(self.text, position);
+  NSRange charRange = fml::RangeForCharacterAtIndex(self.text, position);
   return MIN(position + charRange.length, self.text.length);
 }
 
@@ -564,7 +564,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 - (UITextRange*)characterRangeAtPoint:(CGPoint)point {
   // TODO(cbracken) Implement.
   NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
-  return [FlutterTextRange rangeWithNSRange:fml::rangeForCharacterAtIndex(self.text, currentIndex)];
+  return [FlutterTextRange rangeWithNSRange:fml::RangeForCharacterAtIndex(self.text, currentIndex)];
 }
 
 - (void)beginFloatingCursorAtPoint:(CGPoint)point {

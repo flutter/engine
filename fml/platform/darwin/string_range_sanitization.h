@@ -11,7 +11,7 @@ namespace fml {
 
 // Helper to get the correct boundary of a character position in an NSString
 // given a byte index.
-NSRange rangeForCharacterAtIndex(NSString* text, NSUInteger index);
+NSRange RangeForCharacterAtIndex(NSString* text, NSUInteger index);
 
 // Helper to get the correct boundaries around one or more character positions
 // in an NSString given an NSRange.
@@ -19,7 +19,7 @@ NSRange rangeForCharacterAtIndex(NSString* text, NSUInteger index);
 // This method will not alter the length of the input range, but will ensure
 // that the range's location is not in the middle of a multi-byte unicode
 // sequence.
-NSRange rangeForCharactersInRange(NSString* text, NSRange range);
+NSRange RangeForCharactersInRange(NSString* text, NSRange range);
 
 }  // namespace fml
 
