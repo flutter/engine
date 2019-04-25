@@ -38,6 +38,10 @@ executable("fuchsia") {
     # ":images",
     # ":scenic_cpp",
     # ":sysroot",
+    ":fuchsia.images",
+
+    # ":fuchsia_scenic",
+    ":fuchsia.ui.scenic",
     ":sysroot",
     ":zx",
 

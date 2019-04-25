@@ -151,6 +151,10 @@ template("fuchsia_sdk") {
       fuchsia_sysroot(subtarget_name) {
         meta = part_meta_rebased
       }
+    } else if (part.type == "fidl_library") {
+      fuchsia_fidl_library(subtarget_name) {
+        meta = part_meta_rebased
+      }
     }
   }
 
