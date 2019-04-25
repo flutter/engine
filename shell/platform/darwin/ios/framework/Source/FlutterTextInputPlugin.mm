@@ -286,7 +286,6 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     UITextRange* oldSelectedRange = _selectedTextRange;
     if (self.hasText) {
       FlutterTextRange* flutterTextRange = (FlutterTextRange*)selectedTextRange;
-      NSLog(@"%lu %lu %lu %lu",  flutterTextRange.range.location, flutterTextRange.range.length, fml::rangeForCharactersInRange(self.text, flutterTextRange.range).location, fml::rangeForCharactersInRange(self.text, flutterTextRange.range).length);
       _selectedTextRange = [[FlutterTextRange
           rangeWithNSRange:fml::rangeForCharactersInRange(self.text, flutterTextRange.range)] copy];
     } else {
