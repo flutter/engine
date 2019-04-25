@@ -20,4 +20,4 @@ NSRange RangeForCharactersInRange(NSString* text, NSRange range) {
   return NSMakeRange(sanitizedRange.location, range.length);
 }
 
-} // namespace fml
+}  // namespace fml
