@@ -9,16 +9,18 @@
 
 namespace fml {
 
-// Helper to get the correct boundary of a character position in an NSString
-// given a byte index.
+// Returns a range encompassing the grapheme cluster in which |index| is located.
+//
+// An invalid index will result in `NSRange(NSNotFound, 0)`.
 NSRange RangeForCharacterAtIndex(NSString* text, NSUInteger index);
 
-// Helper to get the correct boundaries around one or more character positions
-// in an NSString given an NSRange.
+// Returns a range encompassing the grapheme clusters falling in |range|.
 //
 // This method will not alter the length of the input range, but will ensure
 // that the range's location is not in the middle of a multi-byte unicode
 // sequence.
+//
+// An invalid range will result in `NSRange(NSNotFound, 0)`.
 NSRange RangeForCharactersInRange(NSString* text, NSRange range);
 
 }  // namespace fml

@@ -7,12 +7,18 @@
 namespace fml {
 
 NSRange RangeForCharacterAtIndex(NSString* text, NSUInteger index) {
+  if (text == nil || index > text.length) {
+    return NSMakeRange(NSNotFound, 0);
+  }
   if (index < text.length)
     return [text rangeOfComposedCharacterSequenceAtIndex:index];
   return NSMakeRange(index, 0);
 }
 
 NSRange RangeForCharactersInRange(NSString* text, NSRange range) {
+  if (text == nil || range.location + range.length > text.length) {
+    return NSMakeRange(NSNotFound, 0);
+  }
   NSRange sanitizedRange = [text rangeOfComposedCharacterSequencesForRange:range];
   // We don't want to override the length, we just want to make sure we don't
   // select into the middle of a multi-byte character. Taking the
