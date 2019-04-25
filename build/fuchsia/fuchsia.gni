@@ -87,23 +87,6 @@ template("fuchsia_fidl_library") {
   library_name = string_replace(meta_json.name, "fuchsia.", "")
   library_name_json = "$library_name.json"
 
-  gather_args = [
-    "--sdk-base",
-    rebase_path(fuchsia_sdk),
-    "--root",
-    rebase_path(invoker.meta),
-  ]
-  fidl_sources_relative =
-      exec_script("$flutter_root/build/fuchsia/fidl_gather.py",
-                  gather_args,
-                  "list lines",
-                  [ invoker.meta ])
-
-  _fidl_sources = []
-  foreach(fidl_source, fidl_sources_relative) {
-    _fidl_sources += [ rebase_path("$fuchsia_sdk/$fidl_source") ]
-  }
-
   config_name = "config_$target_name"
   config(config_name) {
     include_dirs = [ target_gen_dir ]
@@ -121,20 +104,21 @@ template("fuchsia_fidl_library") {
     ]
 
     args = [
-             "--fidlc-bin",
-             rebase_path("$fuchsia_sdk/tools/fidlc"),
-             "--fidlgen-bin",
-             rebase_path("$fuchsia_sdk/tools/fidlgen"),
-             "--json",
-             rebase_path("$target_gen_dir/$library_name_json"),
-             "--fidl-sources",
-           ] + _fidl_sources +
-           [
-             "--include-base",
-             rebase_path("$target_gen_dir"),
-             "--output-base",
-             rebase_path("$target_gen_dir/fuchsia/$library_name/cpp/fidl"),
-           ]
+      "--fidlc-bin",
+      rebase_path("$fuchsia_sdk/tools/fidlc"),
+      "--fidlgen-bin",
+      rebase_path("$fuchsia_sdk/tools/fidlgen"),
+      "--sdk-base",
+      rebase_path(fuchsia_sdk),
+      "--root",
+      rebase_path(invoker.meta),
+      "--json",
+      rebase_path("$target_gen_dir/$library_name_json"),
+      "--include-base",
+      rebase_path("$target_gen_dir"),
+      "--output-base",
+      rebase_path("$target_gen_dir/fuchsia/$library_name/cpp/fidl"),
+    ]
 
     public_configs = [ ":$config_name" ]
   }
