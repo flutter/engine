@@ -120,6 +120,10 @@ template("fuchsia_cc_source_library") {
     _deps += [ ":$dep" ]
   }
 
+  foreach(dep, meta_json.fidl_deps) {
+    _deps += [ ":$dep" ]
+  }
+
   source_set(target_name) {
     include_dirs = _include_dirs
     sources = _sources
