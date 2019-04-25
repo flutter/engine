@@ -93,10 +93,16 @@ template("fuchsia_fidl_library") {
     "--root",
     rebase_path(invoker.meta),
   ]
-  _fidl_sources = exec_script("$flutter_root/build/fuchsia/fidl_gather.py",
-                              gather_args,
-                              "list lines",
-                              [ invoker.meta ])
+  fidl_sources_relative =
+      exec_script("$flutter_root/build/fuchsia/fidl_gather.py",
+                  gather_args,
+                  "list lines",
+                  [ invoker.meta ])
+
+  _fidl_sources = []
+  foreach(fidl_source, fidl_sources_relative) {
+    _fidl_sources += [ rebase_path("$fuchsia_sdk/$fidl_source") ]
+  }
 
   config_name = "config_$target_name"
   config(config_name) {
