@@ -68,7 +68,7 @@ source_set("flow") {
     "//third_party/skia",
   ]
 
-  if (is_fuchsia && !is_fuchsia_sdk) {
+  if (is_fuchsia) {
     sources += [
       "export_node.cc",
       "export_node.h",
@@ -80,12 +80,19 @@ source_set("flow") {
       "view_holder.h",
     ]
 
-    public_deps += [
-      "//garnet/public/lib/ui/scenic/cpp",
-      "//sdk/fidl/fuchsia.ui.scenic",
-      "//topaz/public/dart-pkg/zircon",
-      "//zircon/public/lib/zx",
-    ]
+    if (is_fuchsia_sdk) {
+      public_deps += [
+        # "$flutter_root/shell/platform/fuchsia:images",
+        # "$flutter_root/shell/platform/fuchsia:scenic_cpp",
+      ]
+    } else {
+      public_deps += [
+        "//garnet/public/lib/ui/scenic/cpp",
+        "//sdk/fidl/fuchsia.ui.scenic",
+        "//topaz/public/dart-pkg/zircon",
+        "//zircon/public/lib/zx",
+      ]
+    }
   }
 }
 

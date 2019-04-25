@@ -10,6 +10,9 @@ template("fuchsia_sysroot") {
   assert(defined(invoker.meta), "The meta.json file path must be specified.")
 
   meta_json = read_file(invoker.meta, "trim json")
+
+  assert(meta_json.type == "sysroot")
+
   meta_json_versions = meta_json.versions
   defs = meta_json_versions.x64
 
@@ -43,6 +46,8 @@ template("fuchsia_cc_source_library") {
 
   meta_json = read_file(invoker.meta, "trim json")
 
+  assert(meta_json.type == "cc_source_library")
+
   _include_dirs = []
   _sources = []
   _output_name = meta_json.name
@@ -69,5 +74,86 @@ template("fuchsia_cc_source_library") {
     sources = _sources
     public_configs = [ ":$config_name" ]
     output_name = _output_name
+  }
+}
+
+template("fuchsia_fidl_library") {
+  assert(defined(invoker.meta), "The meta.json file path must be specified.")
+
+  meta_json = read_file(invoker.meta, "trim json")
+
+  assert(meta_json.type == "fidl_library")
+
+  library_name = string_replace(meta_json.name, "fuchsia.", "")
+  library_name_json = "$library_name.json"
+
+  _fidl_sources = []
+  foreach(source, meta_json.sources) {
+    _fidl_sources += [ rebase_path("$fuchsia_sdk/$source") ]
+  }
+
+  config_name = "config_$target_name"
+  config(config_name) {
+    include_dirs = [ target_gen_dir ]
+  }
+
+  action(target_name) {
+    script = "$flutter_root/build/fuchsia/fidl_gen.py"
+
+    inputs = [
+      invoker.meta,
+    ]
+
+    outputs = [
+      "$target_gen_dir/$library_name/$library_name.h",
+    ]
+
+    args = [
+             "--fidlc-bin",
+             rebase_path("$fuchsia_sdk/tools/fidlc"),
+             "--fidlgen-bin",
+             rebase_path("$fuchsia_sdk/tools/fidlgen"),
+             "--json",
+             rebase_path("$target_gen_dir/$library_name_json"),
+             "--fidl-sources",
+           ] + _fidl_sources +
+           [
+             "--include-base",
+             rebase_path("$target_gen_dir"),
+             "--output-base",
+             rebase_path("$target_gen_dir/fuchsia/$library_name/cpp/fidl"),
+           ]
+
+    public_configs = [ ":$config_name" ]
+  }
+}
+
+template("fuchsia_sdk") {
+  assert(defined(invoker.meta), "The meta.json file path must be specified.")
+
+  meta_json = read_file(invoker.meta, "trim json")
+
+  foreach(part, meta_json.parts) {
+    part_meta_json = {
+    }
+
+    part_meta = part.meta
+    part_meta_rebased = "$fuchsia_sdk/$part_meta"
+
+    # We need to read the JSON just to figure out what the name of the target ought to be.
+    part_meta_json = read_file(part_meta_rebased, "trim json")
+    subtarget_name = part_meta_json.name
+    if (part.type == "cc_source_library") {
+      fuchsia_cc_source_library(subtarget_name) {
+        meta = part_meta_rebased
+      }
+    } else if (part.type == "sysroot") {
+      fuchsia_sysroot(subtarget_name) {
+        meta = part_meta_rebased
+      }
+    }
+  }
+
+  group(target_name) {
   }
 }

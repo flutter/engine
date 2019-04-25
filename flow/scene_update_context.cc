@@ -7,7 +7,6 @@
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/matrix_decomposition.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/lib/ui/window/viewport_metrics.h"
 
 namespace flutter {
 
