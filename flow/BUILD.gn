@@ -82,7 +82,7 @@ source_set("flow") {
 
     if (is_fuchsia_sdk) {
       public_deps += [
-        # "$flutter_root/shell/platform/fuchsia:images",
+        "$flutter_root/shell/platform/fuchsia:fuchsia.ui.gfx",
         "$flutter_root/shell/platform/fuchsia:scenic_cpp",
       ]
     } else {

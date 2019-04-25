@@ -48,23 +48,32 @@ template("fuchsia_fidl_library") {
 
   assert(meta_json.type == "fidl_library")
 
+  _deps = [ ":fidl_cpp" ]
+
   library_name = string_replace(meta_json.name, "fuchsia.", "")
   library_name_json = "$library_name.json"
+
+  foreach(dep, meta_json.deps) {
+    _deps += [ ":$dep" ]
+  }
 
   config_name = "config_$target_name"
   config(config_name) {
     include_dirs = [ target_gen_dir ]
   }
 
-  action(target_name) {
+  fidl_gen_target_name = "fidlgen_$target_name"
+  action(fidl_gen_target_name) {
     script = "$flutter_root/build/fuchsia/fidl_gen_cpp.py"
+
+    library_name_slashes = string_replace(library_name, ".", "/")
 
     inputs = [
       invoker.meta,
     ]
 
     outputs = [
-      "$target_gen_dir/$library_name/$library_name.h",
+      "$target_gen_dir/$library_name_slashes/$library_name.h",
     ]
 
     args = [
@@ -81,10 +90,20 @@ template("fuchsia_fidl_library") {
       "--include-base",
       rebase_path("$target_gen_dir"),
       "--output-base",
-      rebase_path("$target_gen_dir/fuchsia/$library_name/cpp/fidl"),
+      rebase_path("$target_gen_dir/fuchsia/$library_name_slashes/cpp/fidl"),
+    ]
+  }
+
+  source_set(target_name) {
+    public_configs = [ ":$config_name" ]
+
+    sources = get_target_outputs(":$fidl_gen_target_name")
+
+    deps = [
+      ":$fidl_gen_target_name",
     ]
 
-    public_configs = [ ":$config_name" ]
+    public_deps = _deps
   }
 }
 
