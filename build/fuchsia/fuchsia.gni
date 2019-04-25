@@ -9,7 +9,7 @@ declare_args() {
 template("fuchsia_sysroot") {
   assert(defined(invoker.meta), "The meta.json file path must be specified.")
 
-  meta_json = read_file(invoker.meta, "trim json")
+  meta_json = read_file(invoker.meta, "json")
 
   assert(meta_json.type == "sysroot")
 
@@ -44,7 +44,7 @@ template("fuchsia_sysroot") {
 template("fuchsia_cc_source_library") {
   assert(defined(invoker.meta), "The meta.json file path must be specified.")
 
-  meta_json = read_file(invoker.meta, "trim json")
+  meta_json = read_file(invoker.meta, "json")
 
   assert(meta_json.type == "cc_source_library")
 
@@ -80,17 +80,23 @@ template("fuchsia_cc_source_library") {
 template("fuchsia_fidl_library") {
   assert(defined(invoker.meta), "The meta.json file path must be specified.")
 
-  meta_json = read_file(invoker.meta, "trim json")
+  meta_json = read_file(invoker.meta, "json")
 
   assert(meta_json.type == "fidl_library")
 
   library_name = string_replace(meta_json.name, "fuchsia.", "")
   library_name_json = "$library_name.json"
 
-  _fidl_sources = []
-  foreach(source, meta_json.sources) {
-    _fidl_sources += [ rebase_path("$fuchsia_sdk/$source") ]
-  }
+  gather_args = [
+    "--sdk-base",
+    rebase_path(fuchsia_sdk),
+    "--root",
+    rebase_path(invoker.meta),
+  ]
+  _fidl_sources = exec_script("$flutter_root/build/fuchsia/fidl_gather.py",
+                              gather_args,
+                              "list lines",
+                              [ invoker.meta ])
 
   config_name = "config_$target_name"
   config(config_name) {
@@ -98,7 +104,7 @@ template("fuchsia_fidl_library") {
   }
 
   action(target_name) {
-    script = "$flutter_root/build/fuchsia/fidl_gen.py"
+    script = "$flutter_root/build/fuchsia/fidl_gen_cpp.py"
 
     inputs = [
       invoker.meta,
@@ -131,7 +137,7 @@ template("fuchsia_fidl_library") {
 template("fuchsia_sdk") {
   assert(defined(invoker.meta), "The meta.json file path must be specified.")
 
-  meta_json = read_file(invoker.meta, "trim json")
+  meta_json = read_file(invoker.meta, "json")
 
   foreach(part, meta_json.parts) {
     part_meta_json = {
@@ -141,7 +147,7 @@ template("fuchsia_sdk") {
     part_meta_rebased = "$fuchsia_sdk/$part_meta"
 
     # We need to read the JSON just to figure out what the name of the target ought to be.
-    part_meta_json = read_file(part_meta_rebased, "trim json")
+    part_meta_json = read_file(part_meta_rebased, "json")
     subtarget_name = part_meta_json.name
     if (part.type == "cc_source_library") {
       fuchsia_cc_source_library(subtarget_name) {
