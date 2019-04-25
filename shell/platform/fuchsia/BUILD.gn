@@ -46,7 +46,8 @@ executable("fuchsia") {
     ":zx",
 
     # "$flutter_root/common",
-    # "$flutter_root/flow",
+    "$flutter_root/flow",
+
     # "$flutter_root/runtime:libdart",
   ]
 }
