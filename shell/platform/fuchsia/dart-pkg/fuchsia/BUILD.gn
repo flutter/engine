@@ -1,0 +1,35 @@
+# Copyright 2016 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/dart/dart_library.gni")
+
+# NOTE: You must add any Dart files to sdk_ext.gni.
+
+group("fuchsia") {
+  public_deps = [
+    ":sdk_ext",
+  ]
+}
+
+source_set("sdk_ext") {
+  sources = [
+    "sdk_ext/fuchsia.cc",
+    "sdk_ext/fuchsia.h",
+  ]
+
+  deps = [
+    "//sdk/lib/fidl/cpp",
+    "//src/lib/fxl",
+    "//third_party/dart/runtime:dart_api",
+    "//zircon/public/lib/zx",
+  ]
+
+  public_deps = [
+    "//sdk/fidl/fuchsia.sys",
+    "//third_party/tonic",
+    "//topaz/public/dart-pkg/zircon",
+  ]
+
+  public_configs = [ "//topaz/public/dart-pkg:config" ]
+}

@@ -1,0 +1,23 @@
+# Copyright 2016 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+source_set("zircon") {
+  sources = [
+    "sdk_ext/handle.cc",
+    "sdk_ext/handle.h",
+    "sdk_ext/handle_waiter.cc",
+    "sdk_ext/handle_waiter.h",
+    "sdk_ext/natives.cc",
+    "sdk_ext/natives.h",
+    "sdk_ext/system.cc",
+    "sdk_ext/system.h",
+  ]
+
+  deps = [
+    "//flutter/fml",
+    "//flutter/shell/platform/fuchsia:async-cpp",
+    "//flutter/shell/platform/fuchsia:async-loop-cpp",
+    "//third_party/tonic",
+  ]
+}

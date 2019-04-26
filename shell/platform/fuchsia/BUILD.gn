@@ -14,9 +14,8 @@ executable("fuchsia") {
   output_name = "4gate"
 
   sources = [
-    "component.cc",
-    "component.h",
-
+    # "component.cc",
+    # "component.h",
     #     "compositor_context.cc",
     #     "compositor_context.h",
     #     "context_writer_bridge.cc",
@@ -64,6 +63,7 @@ executable("fuchsia") {
 
   deps = [
     ":async-loop",
+    ":async-loop-cpp",
     ":fuchsia.images",
     ":fuchsia.io",
     ":fuchsia.sys",
@@ -77,6 +77,7 @@ executable("fuchsia") {
     "$flutter_root/fml",
     "$flutter_root/runtime:libdart",
     "$flutter_root/shell/common",
+    "dart-pkg/zircon",
     "//third_party/tonic",
   ]
 }

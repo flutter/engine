@@ -1,0 +1,12 @@
+# Copyright 2016 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+zircon_sdk_ext_lib = "//topaz/public/dart-pkg/zircon/lib/zircon.dart"
+
+zircon_sdk_ext_files = [
+  zircon_sdk_ext_lib,
+  "//topaz/public/dart-pkg/zircon/lib/src/handle.dart",
+  "//topaz/public/dart-pkg/zircon/lib/src/handle_waiter.dart",
+  "//topaz/public/dart-pkg/zircon/lib/src/system.dart",
+]
