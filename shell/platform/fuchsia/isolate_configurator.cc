@@ -6,7 +6,6 @@
 
 #include "dart-pkg/fuchsia/sdk_ext/fuchsia.h"
 #include "dart-pkg/zircon/sdk_ext/handle.h"
-#include "src/lib/fxl/logging.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_state.h"
@@ -49,44 +48,44 @@ void IsolateConfigurator::BindFuchsia() {
 void IsolateConfigurator::BindZircon() {
   // Tell dart:zircon about the FDIO namespace configured for this instance.
   Dart_Handle zircon_lib = Dart_LookupLibrary(tonic::ToDart("dart:zircon"));
-  FXL_CHECK(!tonic::LogIfError(zircon_lib));
+  FML_CHECK(!tonic::LogIfError(zircon_lib));
 
   Dart_Handle namespace_type =
       Dart_GetType(zircon_lib, tonic::ToDart("_Namespace"), 0, nullptr);
-  FXL_CHECK(!tonic::LogIfError(namespace_type));
+  FML_CHECK(!tonic::LogIfError(namespace_type));
 
   Dart_Handle result =
       Dart_SetField(namespace_type,               //
                     tonic::ToDart("_namespace"),  //
                     tonic::ToDart(reinterpret_cast<intptr_t>(fdio_ns_.get())));
-  FXL_CHECK(!tonic::LogIfError(result));
+  FML_CHECK(!tonic::LogIfError(result));
 }
 
 void IsolateConfigurator::BindDartIO() {
   // Grab the dart:io lib.
   Dart_Handle io_lib = Dart_LookupLibrary(tonic::ToDart("dart:io"));
-  FXL_CHECK(!tonic::LogIfError(io_lib));
+  FML_CHECK(!tonic::LogIfError(io_lib));
 
   // Disable dart:io exit()
   Dart_Handle embedder_config_type =
       Dart_GetType(io_lib, tonic::ToDart("_EmbedderConfig"), 0, nullptr);
-  FXL_CHECK(!tonic::LogIfError(embedder_config_type));
+  FML_CHECK(!tonic::LogIfError(embedder_config_type));
 
   Dart_Handle result = Dart_SetField(embedder_config_type,
                                      tonic::ToDart("_mayExit"), Dart_False());
-  FXL_CHECK(!tonic::LogIfError(result));
+  FML_CHECK(!tonic::LogIfError(result));
 
   // Tell dart:io about the FDIO namespace configured for this instance.
   Dart_Handle namespace_type =
       Dart_GetType(io_lib, tonic::ToDart("_Namespace"), 0, nullptr);
-  FXL_CHECK(!tonic::LogIfError(namespace_type));
+  FML_CHECK(!tonic::LogIfError(namespace_type));
 
   Dart_Handle namespace_args[] = {
       Dart_NewInteger(reinterpret_cast<intptr_t>(fdio_ns_.get())),  //
   };
-  result = Dart_Invoke(namespace_type, tonic::ToDart("_setupNamespace"),
-                       1, namespace_args);
-  FXL_CHECK(!tonic::LogIfError(result));
+  result = Dart_Invoke(namespace_type, tonic::ToDart("_setupNamespace"), 1,
+                       namespace_args);
+  FML_CHECK(!tonic::LogIfError(result));
 }
 
 }  // namespace flutter_runner

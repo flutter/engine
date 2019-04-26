@@ -17,16 +17,15 @@
 #include "fuchsia_font_manager.h"
 
 #include <lib/fit/function.h>
-#include <trace/event.h>
 #include <lib/zx/vmar.h>
 
 #include <unordered_map>
 
+#include "flutter/fml/trace_event.h"
+#include "logging.h"
+#include "runtime/dart/utils/inlines.h"
+#include "runtime/dart/utils/vmo.h"
 #include "third_party/icu/source/common/unicode/uchar.h"
-#include "topaz/runtime/dart/utils/inlines.h"
-#include "topaz/runtime/dart/utils/vmo.h"
-
-#include "topaz/runtime/flutter_runner/logging.h"
 
 namespace txt {
 
@@ -44,7 +43,8 @@ struct ReleaseSkDataContext {
   int buffer_id;
   fit::function<void()> release_proc;
 
-  ReleaseSkDataContext(uint64_t buffer_size, int buffer_id,
+  ReleaseSkDataContext(uint64_t buffer_size,
+                       int buffer_id,
                        fit::function<void()> release_proc)
       : buffer_size(buffer_size),
         buffer_id(buffer_id),
@@ -127,7 +127,9 @@ class FuchsiaFontManager::TypefaceCache {
   // Get an SkTypeface with the given buffer id, font index, and buffer
   // data. Creates a new SkTypeface if one does not already exist.
   sk_sp<SkTypeface> GetOrCreateTypeface(
-      int buffer_id, int font_index, const fuchsia::mem::Buffer& buffer) const;
+      int buffer_id,
+      int font_index,
+      const fuchsia::mem::Buffer& buffer) const;
 
   // Callback called when an SkData with the given buffer id is deleted.
   void OnSkDataDeleted(int buffer_id) const;
@@ -178,17 +180,15 @@ class FuchsiaFontManager::TypefaceCache {
 
 class FuchsiaFontManager::BufferHolder {
  public:
-  BufferHolder(const TypefaceCache* cache, int buffer_id) :
-      cache_(cache), buffer_id_(buffer_id) {}
+  BufferHolder(const TypefaceCache* cache, int buffer_id)
+      : cache_(cache), buffer_id_(buffer_id) {}
   ~BufferHolder() {}
 
   void SetData(SkData* data) { data_ = data; }
 
   SkData* GetData() const { return data_; }
 
-  void OnDataDeleted() {
-    cache_->OnSkDataDeleted(buffer_id_);
-  }
+  void OnDataDeleted() { cache_->OnSkDataDeleted(buffer_id_); }
 
  private:
   const TypefaceCache* cache_;
@@ -212,7 +212,8 @@ void FuchsiaFontManager::TypefaceCache::OnSkDataDeleted(int buffer_id) const {
 }
 
 sk_sp<SkData> FuchsiaFontManager::TypefaceCache::GetOrCreateSkData(
-    int buffer_id, const fuchsia::mem::Buffer& buffer) const {
+    int buffer_id,
+    const fuchsia::mem::Buffer& buffer) const {
   auto iter = buffer_cache_.find(buffer_id);
   if (iter != buffer_cache_.end()) {
     return sk_ref_sp(iter->second->GetData());
@@ -233,7 +234,8 @@ sk_sp<SkData> FuchsiaFontManager::TypefaceCache::GetOrCreateSkData(
 }
 
 sk_sp<SkTypeface> FuchsiaFontManager::TypefaceCache::CreateSkTypeface(
-    TypefaceId id, sk_sp<SkData> buffer) const {
+    TypefaceId id,
+    sk_sp<SkData> buffer) const {
   auto result = CreateTypefaceFromSkData(std::move(buffer), id.font_index);
   result->weak_ref();
   typeface_cache_[id] = result.get();
@@ -241,7 +243,9 @@ sk_sp<SkTypeface> FuchsiaFontManager::TypefaceCache::CreateSkTypeface(
 }
 
 sk_sp<SkTypeface> FuchsiaFontManager::TypefaceCache::GetOrCreateTypeface(
-    int buffer_id, int font_index, const fuchsia::mem::Buffer& buffer) const {
+    int buffer_id,
+    int font_index,
+    const fuchsia::mem::Buffer& buffer) const {
   auto id = TypefaceId{buffer_id, font_index};
   auto iter = typeface_cache_.find(id);
   if (iter != typeface_cache_.end()) {
@@ -261,7 +265,8 @@ sk_sp<SkTypeface> FuchsiaFontManager::TypefaceCache::GetOrCreateTypeface(
 
 class FuchsiaFontManager::FontStyleSet : public SkFontStyleSet {
  public:
-  FontStyleSet(sk_sp<FuchsiaFontManager> font_manager, std::string family_name,
+  FontStyleSet(sk_sp<FuchsiaFontManager> font_manager,
+               std::string family_name,
                std::vector<SkFontStyle> styles)
       : font_manager_(font_manager),
         family_name_(family_name),
@@ -272,8 +277,8 @@ class FuchsiaFontManager::FontStyleSet : public SkFontStyleSet {
   int count() override { return styles_.size(); }
 
   void getStyle(int index, SkFontStyle* style, SkString* style_name) override {
-    DEBUG_CHECK(
-        index >= 0 && index < static_cast<int>(styles_.size()), LOG_TAG, "");
+    DEBUG_CHECK(index >= 0 && index < static_cast<int>(styles_.size()), LOG_TAG,
+                "");
     if (style)
       *style = styles_[index];
 
@@ -283,8 +288,8 @@ class FuchsiaFontManager::FontStyleSet : public SkFontStyleSet {
   }
 
   SkTypeface* createTypeface(int index) override {
-    DEBUG_CHECK(
-        index >= 0 && index < static_cast<int>(styles_.size()), LOG_TAG, "");
+    DEBUG_CHECK(index >= 0 && index < static_cast<int>(styles_.size()), LOG_TAG,
+                "");
 
     if (typefaces_.empty())
       typefaces_.resize(styles_.size());
@@ -342,8 +347,10 @@ SkFontStyleSet* FuchsiaFontManager::onMatchFamily(
   int err = font_provider_->GetFamilyInfo(family_name, &family_info);
   if (err != ZX_OK) {
 #ifndef NDEBUG
-    FX_LOGF(ERROR, LOG_TAG, "Error fetching family from provider [err=%d]. Did "
-            "you run Flutter in an environment that has a font manager?", err);
+    FX_LOGF(ERROR, LOG_TAG,
+            "Error fetching family from provider [err=%d]. Did "
+            "you run Flutter in an environment that has a font manager?",
+            err);
 #endif
     return nullptr;
   }
@@ -362,14 +369,18 @@ SkFontStyleSet* FuchsiaFontManager::onMatchFamily(
 }
 
 SkTypeface* FuchsiaFontManager::onMatchFamilyStyle(
-    const char familyName[], const SkFontStyle& style) const {
+    const char familyName[],
+    const SkFontStyle& style) const {
   sk_sp<SkTypeface> typeface = FetchTypeface(familyName, style, nullptr, 0, 0);
   return typeface.release();
 }
 
 SkTypeface* FuchsiaFontManager::onMatchFamilyStyleCharacter(
-    const char familyName[], const SkFontStyle& style, const char* bcp47[],
-    int bcp47_count, SkUnichar character) const {
+    const char familyName[],
+    const SkFontStyle& style,
+    const char* bcp47[],
+    int bcp47_count,
+    SkUnichar character) const {
   sk_sp<SkTypeface> typeface =
       FetchTypeface(kDefaultFontFamily, style, bcp47, bcp47_count, character);
   return typeface.release();
@@ -388,13 +399,15 @@ sk_sp<SkTypeface> FuchsiaFontManager::onMakeFromData(sk_sp<SkData>,
 }
 
 sk_sp<SkTypeface> FuchsiaFontManager::onMakeFromStreamIndex(
-    std::unique_ptr<SkStreamAsset>, int ttcIndex) const {
+    std::unique_ptr<SkStreamAsset>,
+    int ttcIndex) const {
   DEBUG_CHECK(false, LOG_TAG, "");
   return nullptr;
 }
 
 sk_sp<SkTypeface> FuchsiaFontManager::onMakeFromStreamArgs(
-    std::unique_ptr<SkStreamAsset>, const SkFontArguments&) const {
+    std::unique_ptr<SkStreamAsset>,
+    const SkFontArguments&) const {
   DEBUG_CHECK(false, LOG_TAG, "");
   return nullptr;
 }
@@ -406,15 +419,19 @@ sk_sp<SkTypeface> FuchsiaFontManager::onMakeFromFile(const char path[],
 }
 
 sk_sp<SkTypeface> FuchsiaFontManager::onLegacyMakeTypeface(
-    const char familyName[], SkFontStyle) const {
+    const char familyName[],
+    SkFontStyle) const {
   DEBUG_CHECK(false, LOG_TAG, "");
   return nullptr;
 }
 
-sk_sp<SkTypeface> FuchsiaFontManager::FetchTypeface(
-    const char family_name[], const SkFontStyle& style, const char* bcp47[],
-    int bcp47_count, SkUnichar character, uint32_t flags) const {
-  TRACE_DURATION("flutter", "FuchsiaFontManager::FetchTypeface");
+sk_sp<SkTypeface> FuchsiaFontManager::FetchTypeface(const char family_name[],
+                                                    const SkFontStyle& style,
+                                                    const char* bcp47[],
+                                                    int bcp47_count,
+                                                    SkUnichar character,
+                                                    uint32_t flags) const {
+  TRACE_EVENT0("flutter", "FuchsiaFontManager::FetchTypeface");
   fuchsia::fonts::Request request;
   request.family = family_name;
   request.weight = style.weight();
@@ -428,8 +445,10 @@ sk_sp<SkTypeface> FuchsiaFontManager::FetchTypeface(
   int err = font_provider_->GetFont(std::move(request), &response);
   if (err != ZX_OK) {
 #ifndef NDEBUG
-    FX_LOGF(ERROR, LOG_TAG, "Error fetching font from provider [err=%d]. Did "
-            "you run Flutter in an environment that has a font manager?", err);
+    FX_LOGF(ERROR, LOG_TAG,
+            "Error fetching font from provider [err=%d]. Did "
+            "you run Flutter in an environment that has a font manager?",
+            err);
 #endif
     return nullptr;
   }

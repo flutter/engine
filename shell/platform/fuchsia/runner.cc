@@ -6,21 +6,24 @@
 
 #include <fuchsia/mem/cpp/fidl.h>
 #include <lib/async/cpp/task.h>
-#include <trace-engine/instrumentation.h>
 #include <zircon/status.h>
 #include <zircon/types.h>
+
+#if !defined(FUCHSIA_SDK)
+#include <trace-engine/instrumentation.h>
+#endif  //  !defined(FUCHSIA_SDK)
 
 #include <sstream>
 #include <utility>
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/text/font_collection.h"
+#include "flutter/runtime/dart_vm.h"
 #include "fuchsia_font_manager.h"
-#include "third_party/flutter/runtime/dart_vm.h"
+#include "runtime/dart/utils/vmo.h"
+#include "runtime/dart/utils/vmservice_object.h"
 #include "third_party/icu/source/common/unicode/udata.h"
 #include "third_party/skia/include/core/SkGraphics.h"
-#include "topaz/runtime/dart/utils/vmo.h"
-#include "topaz/runtime/dart/utils/vmservice_object.h"
 
 namespace flutter_runner {
 
@@ -89,8 +92,7 @@ static void SetThreadName(const std::string& thread_name) {
 }
 
 Runner::Runner(async::Loop* loop)
-    : loop_(loop),
-      runner_context_(RunnerContext::CreateFromStartupInfo()) {
+    : loop_(loop), runner_context_(RunnerContext::CreateFromStartupInfo()) {
 #if !defined(DART_PRODUCT)
   // The VM service isolate uses the process-wide namespace. It writes the
   // vm service protocol port under /tmp. The VMServiceObject exposes that
@@ -118,7 +120,9 @@ Runner::~Runner() {
   runner_context_->RemovePublicService<fuchsia::sys::Runner>();
 
 #if !defined(DART_PRODUCT)
+#if !defined(FUCHSIA_SDK)
   trace_observer_->Stop();
+#endif  //  !defined(FUCHSIA_SDK)
 #endif  // !defined(DART_PRODUCT)
 }
 
@@ -128,9 +132,10 @@ void Runner::RegisterApplication(
 }
 
 void Runner::StartComponent(
-    fuchsia::sys::Package package, fuchsia::sys::StartupInfo startup_info,
+    fuchsia::sys::Package package,
+    fuchsia::sys::StartupInfo startup_info,
     fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller) {
-  TRACE_DURATION("flutter", "StartComponent", "url", package.resolved_url);
+  TRACE_EVENT0("flutter", "StartComponent");
   // Notes on application termination: Application typically terminate on the
   // thread on which they were created. This usually means the thread was
   // specifically created to host the application. But we want to ensure that
@@ -199,6 +204,7 @@ void Runner::SetupICU() {
 }
 
 #if !defined(DART_PRODUCT)
+#if !defined(FUCHSIA_SDK)
 void Runner::SetupTraceObserver() {
   trace_observer_ = std::make_unique<trace::TraceObserver>();
   trace_observer_->Start(loop_->dispatcher(), [runner = this]() {
@@ -222,6 +228,7 @@ void Runner::SetupTraceObserver() {
     }
   });
 }
+#endif  //  !defined(FUCHSIA_SDK)
 #endif  // !defined(DART_PRODUCT)
 
 }  // namespace flutter_runner

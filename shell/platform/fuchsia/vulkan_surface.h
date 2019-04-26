@@ -40,13 +40,15 @@ struct VulkanImage {
 // |out_vulkan_image|.  Returns whether creation of the |VkImage| was
 // successful.
 bool CreateVulkanImage(vulkan::VulkanProvider& vulkan_provider,
-                       const SkISize& size, VulkanImage* out_vulkan_image);
+                       const SkISize& size,
+                       VulkanImage* out_vulkan_image);
 
 class VulkanSurface final
     : public flutter::SceneUpdateContext::SurfaceProducerSurface {
  public:
   VulkanSurface(vulkan::VulkanProvider& vulkan_provider,
-                sk_sp<GrContext> context, scenic::Session* session,
+                sk_sp<GrContext> context,
+                scenic::Session* session,
                 const SkISize& size);
 
   ~VulkanSurface() override;
@@ -116,13 +118,13 @@ class VulkanSurface final
   // if the swap was not successful.
   bool BindToImage(sk_sp<GrContext> context, VulkanImage vulkan_image);
 
-  // Flutter may retain a |VulkanSurface| for a |flutter::Layer| subtree to improve
-  // the performance. The |retained_key_| identifies which layer subtree this
-  // |VulkanSurface| is retained for. The key has two parts. One is the pointer
-  // to the root of that layer subtree: |retained_key_.id()|. Another is the
-  // transformation matrix: |retained_key_.matrix()|. We need the matrix part
-  // because a different matrix would invalidate the pixels (raster cache) in
-  // this |VulkanSurface|.
+  // Flutter may retain a |VulkanSurface| for a |flutter::Layer| subtree to
+  // improve the performance. The |retained_key_| identifies which layer subtree
+  // this |VulkanSurface| is retained for. The key has two parts. One is the
+  // pointer to the root of that layer subtree: |retained_key_.id()|. Another is
+  // the transformation matrix: |retained_key_.matrix()|. We need the matrix
+  // part because a different matrix would invalidate the pixels (raster cache)
+  // in this |VulkanSurface|.
   const flutter::LayerRasterCacheKey& GetRetainedKey() const {
     return retained_key_;
   }
@@ -153,13 +155,17 @@ class VulkanSurface final
  private:
   static constexpr int kSizeHistorySize = 4;
 
-  void OnHandleReady(async_dispatcher_t* dispatcher, async::WaitBase* wait,
-                     zx_status_t status, const zx_packet_signal_t* signal);
+  void OnHandleReady(async_dispatcher_t* dispatcher,
+                     async::WaitBase* wait,
+                     zx_status_t status,
+                     const zx_packet_signal_t* signal);
 
-  bool AllocateDeviceMemory(sk_sp<GrContext> context, const SkISize& size,
+  bool AllocateDeviceMemory(sk_sp<GrContext> context,
+                            const SkISize& size,
                             zx::vmo& exported_vmo);
 
-  bool SetupSkiaSurface(sk_sp<GrContext> context, const SkISize& size,
+  bool SetupSkiaSurface(sk_sp<GrContext> context,
+                        const SkISize& size,
                         SkColorType color_type,
                         const VkImageCreateInfo& image_create_info,
                         const VkMemoryRequirements& memory_reqs);
@@ -197,7 +203,7 @@ class VulkanSurface final
   flutter::LayerRasterCacheKey retained_key_ = {0, SkMatrix::MakeScale(1, 1)};
   std::unique_ptr<scenic::EntityNode> retained_node_ = nullptr;
 
-  std::atomic<bool> used_in_retained_rendering_ = false;
+  std::atomic<bool> used_in_retained_rendering_ = {false};
 
   FML_DISALLOW_COPY_AND_ASSIGN(VulkanSurface);
 };

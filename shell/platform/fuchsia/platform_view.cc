@@ -8,18 +8,15 @@
 
 #include <sstream>
 
-#include <trace/event.h>
-
 #include "flutter/fml/logging.h"
 #include "flutter/lib/ui/compositing/scene_host.h"
 #include "flutter/lib/ui/window/pointer_data.h"
+#include "logging.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "topaz/runtime/dart/utils/inlines.h"
-
-#include "topaz/runtime/flutter_runner/logging.h"
-#include "topaz/runtime/flutter_runner/vsync_waiter.h"
+#include "runtime/dart/utils/inlines.h"
+#include "vsync_waiter.h"
 
 namespace flutter_runner {
 
@@ -79,7 +76,8 @@ void SetInterfaceErrorHandler(fidl::Binding<T>& binding, std::string name) {
 }
 
 PlatformView::PlatformView(
-    PlatformView::Delegate& delegate, std::string debug_label,
+    PlatformView::Delegate& delegate,
+    std::string debug_label,
     flutter::TaskRunners task_runners,
     fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
         parent_environment_service_provider_handle,
@@ -184,20 +182,20 @@ void PlatformView::FlushViewportMetrics() {
   const auto scale_z = metrics_.scale_z;
 
   SetViewportMetrics({
-      scale,                               // device_pixel_ratio
-      metrics_.size.width * scale,         // physical_width
-      metrics_.size.height * scale,        // physical_height
-      metrics_.size.depth * scale_z,       // physical_depth
-      metrics_.padding.top * scale,        // physical_padding_top
-      metrics_.padding.right * scale,      // physical_padding_right
-      metrics_.padding.bottom * scale,     // physical_padding_bottom
-      metrics_.padding.left * scale,       // physical_padding_left
-      metrics_.view_inset.front * scale_z, // physical_view_inset_front
-      metrics_.view_inset.back * scale_z,  // physical_view_inset_back
-      metrics_.view_inset.top * scale,     // physical_view_inset_top
-      metrics_.view_inset.right * scale,   // physical_view_inset_right
-      metrics_.view_inset.bottom * scale,  // physical_view_inset_bottom
-      metrics_.view_inset.left * scale     // physical_view_inset_left
+      scale,                                // device_pixel_ratio
+      metrics_.size.width * scale,          // physical_width
+      metrics_.size.height * scale,         // physical_height
+      metrics_.size.depth * scale_z,        // physical_depth
+      metrics_.padding.top * scale,         // physical_padding_top
+      metrics_.padding.right * scale,       // physical_padding_right
+      metrics_.padding.bottom * scale,      // physical_padding_bottom
+      metrics_.padding.left * scale,        // physical_padding_left
+      metrics_.view_inset.front * scale_z,  // physical_view_inset_front
+      metrics_.view_inset.back * scale_z,   // physical_view_inset_back
+      metrics_.view_inset.top * scale,      // physical_view_inset_top
+      metrics_.view_inset.right * scale,    // physical_view_inset_right
+      metrics_.view_inset.bottom * scale,   // physical_view_inset_bottom
+      metrics_.view_inset.left * scale      // physical_view_inset_left
   });
 }
 
@@ -292,7 +290,7 @@ void PlatformView::OnScenicError(std::string error) {
 
 void PlatformView::OnScenicEvent(
     std::vector<fuchsia::ui::scenic::Event> events) {
-  TRACE_DURATION("flutter", "PlatformView::OnScenicEvent");
+  TRACE_EVENT0("flutter", "PlatformView::OnScenicEvent");
   for (const auto& event : events) {
     switch (event.Which()) {
       case fuchsia::ui::scenic::Event::Tag::kGfx:
@@ -418,6 +416,7 @@ static flutter::PointerData::DeviceKind GetKindFromPointerType(
   }
 }
 
+#if !defined(FUCHSIA_SDK)
 // TODO(SCN-1278): Remove this.
 // Turns two floats (high bits, low bits) into a 64-bit uint.
 static trace_flow_id_t PointerTraceHACK(float fa, float fb) {
@@ -426,14 +425,18 @@ static trace_flow_id_t PointerTraceHACK(float fa, float fb) {
   memcpy(&ib, &fb, sizeof(uint32_t));
   return (((uint64_t)ia) << 32) | ib;
 }
+#endif  //  !defined(FUCHSIA_SDK)
 
 bool PlatformView::OnHandlePointerEvent(
     const fuchsia::ui::input::PointerEvent& pointer) {
-  TRACE_DURATION("flutter", "PlatformView::OnHandlePointerEvent");
+  TRACE_EVENT0("flutter", "PlatformView::OnHandlePointerEvent");
+
+#if !defined(FUCHSIA_SDK)
   // TODO(SCN-1278): Use proper trace_id for tracing flow.
   trace_flow_id_t trace_id =
       PointerTraceHACK(pointer.radius_major, pointer.radius_minor);
   TRACE_FLOW_END("input", "dispatch_event_to_client", trace_id);
+#endif  //  !defined(FUCHSIA_SDK)
 
   flutter::PointerData pointer_data;
   pointer_data.Clear();
@@ -596,7 +599,7 @@ void PlatformView::UpdateSemantics(
   // as it is unused.
   // context_writer_bridge_.UpdateSemantics(update);
   // TODO(MIT-1539): Uncomment/Reimplement following code, to add A11y support.
-  //semantics_bridge_.UpdateSemantics(update);
+  // semantics_bridge_.UpdateSemantics(update);
 }
 
 // Channel handler for kAccessibilityChannel

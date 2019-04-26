@@ -14,15 +14,19 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
               const SkMatrix& root_surface_transformation,
               bool instrumentation_enabled,
               SessionConnection& session_connection)
-      : flutter::CompositorContext::ScopedFrame(context, nullptr, nullptr, nullptr,
-                                             root_surface_transformation,
-                                             instrumentation_enabled),
+      : flutter::CompositorContext::ScopedFrame(context,
+                                                nullptr,
+                                                nullptr,
+                                                nullptr,
+                                                root_surface_transformation,
+                                                instrumentation_enabled),
         session_connection_(session_connection) {}
 
  private:
   SessionConnection& session_connection_;
 
-  bool Raster(flutter::LayerTree& layer_tree, bool ignore_raster_cache) override {
+  bool Raster(flutter::LayerTree& layer_tree,
+              bool ignore_raster_cache) override {
     if (!session_connection_.has_metrics()) {
       return true;
     }
@@ -30,21 +34,21 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
     {
       // Preroll the Flutter layer tree. This allows Flutter to perform
       // pre-paint optimizations.
-      TRACE_DURATION("flutter", "Preroll");
+      TRACE_EVENT0("flutter", "Preroll");
       layer_tree.Preroll(*this, true /* ignore raster cache */);
     }
 
     {
       // Traverse the Flutter layer tree so that the necessary session ops to
       // represent the frame are enqueued in the underlying session.
-      TRACE_DURATION("flutter", "UpdateScene");
+      TRACE_EVENT0("flutter", "UpdateScene");
       layer_tree.UpdateScene(session_connection_.scene_update_context(),
                              session_connection_.root_node());
     }
 
     {
       // Flush all pending session ops.
-      TRACE_DURATION("flutter", "SessionPresent");
+      TRACE_EVENT0("flutter", "SessionPresent");
       session_connection_.Present(*this);
     }
 
@@ -55,12 +59,16 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
 };
 
 CompositorContext::CompositorContext(
-    std::string debug_label, fuchsia::ui::views::ViewToken view_token,
+    std::string debug_label,
+    fuchsia::ui::views::ViewToken view_token,
     fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
-    fit::closure session_error_callback, zx_handle_t vsync_event_handle)
+    fit::closure session_error_callback,
+    zx_handle_t vsync_event_handle)
     : debug_label_(std::move(debug_label)),
-      session_connection_(debug_label_, std::move(view_token),
-                          std::move(session), std::move(session_error_callback),
+      session_connection_(debug_label_,
+                          std::move(view_token),
+                          std::move(session),
+                          std::move(session_error_callback),
                           vsync_event_handle) {}
 
 void CompositorContext::OnSessionMetricsDidChange(
@@ -77,7 +85,8 @@ void CompositorContext::OnSessionSizeChangeHint(float width_change_factor,
 CompositorContext::~CompositorContext() = default;
 
 std::unique_ptr<flutter::CompositorContext::ScopedFrame>
-CompositorContext::AcquireFrame(GrContext* gr_context, SkCanvas* canvas,
+CompositorContext::AcquireFrame(GrContext* gr_context,
+                                SkCanvas* canvas,
                                 flutter::ExternalViewEmbedder* view_embedder,
                                 const SkMatrix& root_surface_transformation,
                                 bool instrumentation_enabled) {

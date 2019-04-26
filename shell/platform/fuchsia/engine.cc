@@ -11,10 +11,10 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/task_runner.h"
+#include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
-#include "third_party/flutter/runtime/dart_vm_lifecycle.h"
-#include "topaz/runtime/dart/utils/files.h"
+#include "runtime/dart/utils/files.h"
 
 #include "fuchsia_font_manager.h"
 #include "platform_view.h"
@@ -158,7 +158,7 @@ Engine::Engine(Delegate& delegate,
   // rasterizer.
   std::unique_ptr<flutter::CompositorContext> compositor_context;
   {
-    FML_TRACE_EVENT("flutter", "CreateCompositorContext");
+    TRACE_EVENT0("flutter", "CreateCompositorContext");
     compositor_context = std::make_unique<flutter_runner::CompositorContext>(
         thread_label_,          // debug label
         std::move(view_token),  // scenic view we attach our tree to
@@ -220,7 +220,7 @@ Engine::Engine(Delegate& delegate,
   }
 
   {
-    FML_TRACE_EVENT("flutter", "CreateShell");
+    TRACE_EVENT0("flutter", "CreateShell");
     shell_ = flutter::Shell::Create(
         task_runners,                 // host task runners
         settings_,                    // shell launch settings

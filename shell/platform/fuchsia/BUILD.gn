@@ -11,7 +11,7 @@ fuchsia_sdk("sdk") {
 }
 
 executable("fuchsia") {
-  output_name = "4gate"
+  output_name = "four_gate"
 
   include_dirs = [ "//third_party/vulkan/include" ]
 
@@ -20,23 +20,22 @@ executable("fuchsia") {
     "component.h",
     "compositor_context.cc",
     "compositor_context.h",
+    "context_writer_bridge.cc",
+    "context_writer_bridge.h",
+    "engine.cc",
+    "engine.h",
+    "fuchsia_font_manager.cc",
+    "fuchsia_font_manager.h",
+    "isolate_configurator.cc",
+    "isolate_configurator.h",
+    "logging.h",
+    "loop.cc",
+    "loop.h",
     "main.cc",
+    "platform_view.cc",
+    "platform_view.h",
+    "runner.cc",
 
-    #     "context_writer_bridge.cc",
-    #     "context_writer_bridge.h",
-    #     "engine.cc",
-    #     "engine.h",
-    #     "fuchsia_font_manager.cc",
-    #     "fuchsia_font_manager.h",
-    #     "isolate_configurator.cc",
-    #     "isolate_configurator.h",
-    #     "logging.h",
-    #     "loop.cc",
-    #     "loop.h",
-    #     "main.cc",
-    #     "platform_view.cc",
-    #     "platform_view.h",
-    #     "runner.cc",
     #     "runner.h",
     #     "runner_context.cc",
     #     "runner_context.h",
@@ -69,8 +68,10 @@ executable("fuchsia") {
     ":async-loop",
     ":async-loop-cpp",
     ":fdio",
+    ":fuchsia.fonts",
     ":fuchsia.images",
     ":fuchsia.io",
+    ":fuchsia.modular",
     ":fuchsia.sys",
     ":fuchsia.ui.app",
     ":fuchsia.ui.scenic",

@@ -8,7 +8,6 @@
 #include <map>
 #include <set>
 
-#include <fuchsia/accessibility/cpp/fidl.h>
 #include <fuchsia/modular/cpp/fidl.h>
 #include <fuchsia/ui/gfx/cpp/fidl.h>
 #include <fuchsia/ui/input/cpp/fidl.h>
@@ -40,7 +39,8 @@ class PlatformView final : public flutter::PlatformView,
                            private fuchsia::ui::scenic::SessionListener,
                            public fuchsia::ui::input::InputMethodEditorClient {
  public:
-  PlatformView(PlatformView::Delegate& delegate, std::string debug_label,
+  PlatformView(PlatformView::Delegate& delegate,
+               std::string debug_label,
                flutter::TaskRunners task_runners,
                fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
                    parent_environment_service_provider,
@@ -52,7 +52,8 @@ class PlatformView final : public flutter::PlatformView,
                fidl::InterfaceHandle<fuchsia::modular::ContextWriter>
                    accessibility_context_writer,
                zx_handle_t vsync_event_handle);
-  PlatformView(PlatformView::Delegate& delegate, std::string debug_label,
+  PlatformView(PlatformView::Delegate& delegate,
+               std::string debug_label,
                flutter::TaskRunners task_runners,
                fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
                    parent_environment_service_provider,
