@@ -42,7 +42,17 @@ bool _offsetIsValid(Offset offset) {
 bool _matrix4IsValid(Float64List matrix4) {
   assert(matrix4 != null, 'Matrix4 argument was null.');
   assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
+  assert(matrix4.every((double value) => value.isFinite), 'Matrix4 entries must be finite.');
   return true;
+}
+
+void _throwIfMatrix4IsInvalid(Float64List matrix4) {
+  if (matrix4 == null)
+    throw new ArgumentError('"matrix4" argument cannot be null');
+  if (matrix4.length != 16)
+    throw new ArgumentError('"matrix4" must have 16 entries.');
+  if (matrix4.any((double value) => value.isInfinite || value.isNaN))
+    throw new ArgumentError('"matrix4" cannot have infinite or NaN elements');
 }
 
 bool _radiusIsValid(Radius radius) {
