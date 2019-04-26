@@ -67,10 +67,10 @@ const uint8_t* NativeSymbol(Dart_NativeFunction native_function) {
 
 void Initialize() {
   Dart_Handle library = Dart_LookupLibrary(ToDart("dart:zircon"));
-  FXL_CHECK(!tonic::LogIfError(library));
+  FML_CHECK(!tonic::LogIfError(library));
   Dart_Handle result = Dart_SetNativeResolver(
       library, zircon::dart::NativeLookup, zircon::dart::NativeSymbol);
-  FXL_CHECK(!tonic::LogIfError(result));
+  FML_CHECK(!tonic::LogIfError(result));
 
   auto dart_state = tonic::DartState::Current();
   std::unique_ptr<tonic::DartClassProvider> zircon_class_provider(

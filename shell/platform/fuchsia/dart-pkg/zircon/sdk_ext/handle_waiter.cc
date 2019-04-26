@@ -43,8 +43,8 @@ HandleWaiter::HandleWaiter(Handle* handle,
     : wait_(this, handle->handle(), signals),
       handle_(handle),
       callback_(DartState::Current(), callback) {
-  FXL_CHECK(handle_ != nullptr);
-  FXL_CHECK(handle_->is_valid());
+  FML_CHECK(handle_ != nullptr);
+  FML_CHECK(handle_->is_valid());
 
   zx_status_t status = wait_.Begin(async_get_default_dispatcher());
   FML_DCHECK(status == ZX_OK);

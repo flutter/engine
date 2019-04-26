@@ -108,10 +108,10 @@ void Initialize(fidl::InterfaceHandle<fuchsia::sys::Environment> environment,
   zircon::dart::Initialize();
 
   Dart_Handle library = Dart_LookupLibrary(ToDart("dart:fuchsia"));
-  FXL_CHECK(!tonic::LogIfError(library));
+  FML_CHECK(!tonic::LogIfError(library));
   Dart_Handle result = Dart_SetNativeResolver(
       library, fuchsia::dart::NativeLookup, fuchsia::dart::NativeSymbol);
-  FXL_CHECK(!tonic::LogIfError(result));
+  FML_CHECK(!tonic::LogIfError(result));
 
   auto dart_state = tonic::DartState::Current();
   std::unique_ptr<tonic::DartClassProvider> fuchsia_class_provider(
@@ -122,13 +122,13 @@ void Initialize(fidl::InterfaceHandle<fuchsia::sys::Environment> environment,
   result = Dart_SetField(
       library, ToDart("_environment"),
       ToDart(zircon::dart::Handle::Create(environment.TakeChannel())));
-  FXL_CHECK(!tonic::LogIfError(result));
+  FML_CHECK(!tonic::LogIfError(result));
 
   if (directory_request) {
     result = Dart_SetField(
         library, ToDart("_outgoingServices"),
         ToDart(zircon::dart::Handle::Create(std::move(directory_request))));
-    FXL_CHECK(!tonic::LogIfError(result));
+    FML_CHECK(!tonic::LogIfError(result));
   }
 }
 

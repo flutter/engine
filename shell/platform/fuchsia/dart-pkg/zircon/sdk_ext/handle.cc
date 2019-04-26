@@ -61,7 +61,7 @@ zx_status_t Handle::Close() {
 fml::RefPtr<HandleWaiter> Handle::AsyncWait(zx_signals_t signals,
                                             Dart_Handle callback) {
   if (!is_valid()) {
-    FXL_LOG(WARNING) << "Attempt to wait on an invalid handle.";
+    FML_LOG(WARNING) << "Attempt to wait on an invalid handle.";
     return nullptr;
   }
 
