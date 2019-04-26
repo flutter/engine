@@ -6,22 +6,25 @@
 
 #include <array>
 
-#include <ddk/device.h>
 #include <fcntl.h>
-#include <fuchsia/device/manager/cpp/fidl.h>
 #include <lib/fdio/directory.h>
 #include <lib/fdio/io.h>
 #include <lib/fdio/limits.h>
 #include <lib/fdio/namespace.h>
+#include <lib/zx/channel.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <zircon/process.h>
 #include <zircon/processargs.h>
 
-#include "lib/fsl/io/fd.h"
-#include "src/lib/files/unique_fd.h"
+#include "flutter/fml/unique_fd.h"
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_class_library.h"
+
+#if !defined(FUCHSIA_SDK)
+#include <fuchsia/device/manager/cpp/fidl.h>
+#include "lib/fsl/io/fd.h"
+#endif
 
 using tonic::ToDart;
 
@@ -131,7 +134,7 @@ Dart_Handle ConstructDartObject(const char* class_name, Args&&... args) {
   return object;
 }
 
-fxl::UniqueFD FdFromPath(std::string path) {
+fml::UniqueFD FdFromPath(std::string path) {
   // Grab the fdio_ns_t* out of the isolate.
   Dart_Handle zircon_lib = Dart_LookupLibrary(ToDart("dart:zircon"));
   FML_DCHECK(!tonic::LogIfError(zircon_lib));
@@ -147,14 +150,14 @@ fxl::UniqueFD FdFromPath(std::string path) {
 
   // Get a VMO for the file.
   fdio_ns_t* ns = reinterpret_cast<fdio_ns_t*>(fdio_ns_ptr);
-  fxl::UniqueFD dirfd(fdio_ns_opendir(ns));
+  fml::UniqueFD dirfd(fdio_ns_opendir(ns));
   if (!dirfd.is_valid())
-    return fxl::UniqueFD();
+    return fml::UniqueFD();
 
   const char* c_path = path.c_str();
   if (path.length() > 0 && c_path[0] == '/')
     c_path = &c_path[1];
-  return fxl::UniqueFD(openat(dirfd.get(), c_path, O_RDONLY));
+  return fml::UniqueFD(openat(dirfd.get(), c_path, O_RDONLY));
 }
 
 }  // namespace
@@ -174,6 +177,10 @@ Dart_Handle System::ChannelCreate(uint32_t options) {
 }
 
 zx_status_t System::Reboot() {
+#if defined(FUCHSIA_SDK)
+  FML_CHECK(false);
+  return ZX_ERR_NOT_SUPPORTED;
+#else
   zx::channel local, remote;
   auto status = zx::channel::create(0, &local, &remote);
   if (status != ZX_OK) {
@@ -198,10 +205,15 @@ zx_status_t System::Reboot() {
   }
 
   return status != ZX_OK ? status : call_status;
+#endif
 }
 
 Dart_Handle System::ChannelFromFile(std::string path) {
-  fxl::UniqueFD fd = FdFromPath(path);
+#if defined(FUCHSIA_SDK)
+  FML_CHECK(false);
+  return Dart_Null();
+#else
+  fml::UniqueFD fd = FdFromPath(path);
   if (!fd.is_valid()) {
     return ConstructDartObject(kHandleResult, ToDart(ZX_ERR_IO));
   }
@@ -214,6 +226,7 @@ Dart_Handle System::ChannelFromFile(std::string path) {
 
   return ConstructDartObject(kHandleResult, ToDart(ZX_OK),
                              ToDart(Handle::Create(channel.release())));
+#endif
 }
 
 zx_status_t System::ChannelWrite(fml::RefPtr<Handle> channel,
@@ -351,7 +364,7 @@ Dart_Handle System::VmoCreate(uint64_t size, uint32_t options) {
 }
 
 Dart_Handle System::VmoFromFile(std::string path) {
-  fxl::UniqueFD fd = FdFromPath(path);
+  fml::UniqueFD fd = FdFromPath(path);
   if (!fd.is_valid())
     return ConstructDartObject(kFromFileResult, ToDart(ZX_ERR_IO));
 

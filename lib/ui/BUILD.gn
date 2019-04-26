@@ -115,12 +115,16 @@ source_set("ui") {
     "$flutter_root/third_party/txt",
   ]
 
-  if (is_fuchsia && !is_fuchsia_sdk) {
+  if (is_fuchsia) {
     sources += [
       "compositing/scene_host.cc",
       "compositing/scene_host.h",
     ]
 
-    deps += [ "//topaz/public/dart-pkg/zircon" ]
+    if (is_fuchsia_sdk) {
+      deps += [ "$flutter_root/shell/platform/fuchsia/dart-pkg" ]
+    } else {
+      deps += [ "//topaz/public/dart-pkg/zircon" ]
+    }
   }
 }

@@ -2,7 +2,13 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+config("zircon_config") {
+  include_dirs = [ "." ]
+}
+
 source_set("zircon") {
+  public_configs = [ ":zircon_config" ]
+
   sources = [
     "sdk_ext/handle.cc",
     "sdk_ext/handle.h",
@@ -16,8 +22,13 @@ source_set("zircon") {
 
   deps = [
     "//flutter/fml",
-    "//flutter/shell/platform/fuchsia:async-cpp",
     "//flutter/shell/platform/fuchsia:async-loop-cpp",
+    "//flutter/shell/platform/fuchsia:fdio",
+    "//flutter/shell/platform/fuchsia:zx",
     "//third_party/tonic",
+  ]
+
+  public_deps = [
+    "//flutter/shell/platform/fuchsia:async-cpp",
   ]
 }
