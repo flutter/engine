@@ -13,11 +13,15 @@ fuchsia_sdk("sdk") {
 executable("fuchsia") {
   output_name = "4gate"
 
+  include_dirs = [ "//third_party/vulkan/include" ]
+
   sources = [
-    # "component.cc",
-    # "component.h",
-    #     "compositor_context.cc",
-    #     "compositor_context.h",
+    "component.cc",
+    "component.h",
+    "compositor_context.cc",
+    "compositor_context.h",
+    "main.cc",
+
     #     "context_writer_bridge.cc",
     #     "context_writer_bridge.h",
     #     "engine.cc",
@@ -64,20 +68,25 @@ executable("fuchsia") {
   deps = [
     ":async-loop",
     ":async-loop-cpp",
+    ":fdio",
     ":fuchsia.images",
     ":fuchsia.io",
     ":fuchsia.sys",
     ":fuchsia.ui.app",
     ":fuchsia.ui.scenic",
     ":sdk",
+    ":syslog",
     ":sysroot",
     ":zx",
     "$flutter_root/common",
     "$flutter_root/flow",
     "$flutter_root/fml",
+    "$flutter_root/lib/ui",
+    "$flutter_root/runtime",
     "$flutter_root/runtime:libdart",
     "$flutter_root/shell/common",
     "dart-pkg/zircon",
+    "lib/sys/cpp",
     "//third_party/tonic",
   ]
 }

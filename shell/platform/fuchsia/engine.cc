@@ -40,12 +40,14 @@ static void UpdateNativeThreadLabelNames(const std::string& label,
   set_thread_name(runners.GetIOTaskRunner(), label, ".io");
 }
 
-Engine::Engine(Delegate& delegate, std::string thread_label,
+Engine::Engine(Delegate& delegate,
+               std::string thread_label,
                std::shared_ptr<sys::ServiceDirectory> svc,
                flutter::Settings settings,
                fml::RefPtr<const flutter::DartSnapshot> isolate_snapshot,
                fml::RefPtr<const flutter::DartSnapshot> shared_snapshot,
-               fuchsia::ui::views::ViewToken view_token, UniqueFDIONS fdio_ns,
+               fuchsia::ui::views::ViewToken view_token,
+               UniqueFDIONS fdio_ns,
                fidl::InterfaceRequest<fuchsia::io::Directory> directory_request)
     : delegate_(delegate),
       thread_label_(std::move(thread_label)),
@@ -106,36 +108,35 @@ Engine::Engine(Delegate& delegate, std::string thread_label,
       };
 
   // Setup the callback that will instantiate the platform view.
-  flutter::Shell::CreateCallback<flutter::PlatformView> on_create_platform_view =
-      fml::MakeCopyable([debug_label = thread_label_,
-                         parent_environment_service_provider =
-                             std::move(parent_environment_service_provider),
-                         session_listener_request =
-                             std::move(session_listener_request),
-                         on_session_listener_error_callback =
-                             std::move(on_session_listener_error_callback),
-                         on_session_metrics_change_callback =
-                             std::move(on_session_metrics_change_callback),
-                         on_session_size_change_hint_callback =
-                             std::move(on_session_size_change_hint_callback),
-                         accessibility_context_writer =
-                             std::move(accessibility_context_writer),
-                         vsync_handle =
-                             vsync_event_.get()](flutter::Shell& shell) mutable {
-        return std::make_unique<flutter_runner::PlatformView>(
-            shell,                                           // delegate
-            debug_label,                                     // debug label
-            shell.GetTaskRunners(),                          // task runners
-            std::move(parent_environment_service_provider),  // services
-            std::move(session_listener_request),             // session listener
-            std::move(on_session_listener_error_callback),
-            std::move(on_session_metrics_change_callback),
-            std::move(on_session_size_change_hint_callback),
-            std::move(
-                accessibility_context_writer),  // accessibility context writer
-            vsync_handle                        // vsync handle
-        );
-      });
+  flutter::Shell::CreateCallback<flutter::PlatformView>
+      on_create_platform_view = fml::MakeCopyable(
+          [debug_label = thread_label_,
+           parent_environment_service_provider =
+               std::move(parent_environment_service_provider),
+           session_listener_request = std::move(session_listener_request),
+           on_session_listener_error_callback =
+               std::move(on_session_listener_error_callback),
+           on_session_metrics_change_callback =
+               std::move(on_session_metrics_change_callback),
+           on_session_size_change_hint_callback =
+               std::move(on_session_size_change_hint_callback),
+           accessibility_context_writer =
+               std::move(accessibility_context_writer),
+           vsync_handle = vsync_event_.get()](flutter::Shell& shell) mutable {
+            return std::make_unique<flutter_runner::PlatformView>(
+                shell,                                           // delegate
+                debug_label,                                     // debug label
+                shell.GetTaskRunners(),                          // task runners
+                std::move(parent_environment_service_provider),  // services
+                std::move(session_listener_request),  // session listener
+                std::move(on_session_listener_error_callback),
+                std::move(on_session_metrics_change_callback),
+                std::move(on_session_size_change_hint_callback),
+                std::move(accessibility_context_writer),  // accessibility
+                                                          // context writer
+                vsync_handle                              // vsync handle
+            );
+          });
 
   // Session can be terminated on the GPU thread, but we must terminate
   // ourselves on the platform thread.
@@ -157,7 +158,7 @@ Engine::Engine(Delegate& delegate, std::string thread_label,
   // rasterizer.
   std::unique_ptr<flutter::CompositorContext> compositor_context;
   {
-    TRACE_DURATION("flutter", "CreateCompositorContext");
+    FML_TRACE_EVENT("flutter", "CreateCompositorContext");
     compositor_context = std::make_unique<flutter_runner::CompositorContext>(
         thread_label_,          // debug label
         std::move(view_token),  // scenic view we attach our tree to
@@ -182,9 +183,9 @@ Engine::Engine(Delegate& delegate, std::string thread_label,
   const flutter::TaskRunners task_runners(
       thread_label_,  // Dart thread labels
       CreateFMLTaskRunner(async_get_default_dispatcher()),  // platform
-      CreateFMLTaskRunner(threads_[0]->dispatcher()),    // gpu
-      CreateFMLTaskRunner(threads_[1]->dispatcher()),    // ui
-      CreateFMLTaskRunner(threads_[2]->dispatcher())     // io
+      CreateFMLTaskRunner(threads_[0]->dispatcher()),       // gpu
+      CreateFMLTaskRunner(threads_[1]->dispatcher()),       // ui
+      CreateFMLTaskRunner(threads_[2]->dispatcher())        // io
   );
 
   UpdateNativeThreadLabelNames(thread_label_, task_runners);
@@ -219,7 +220,7 @@ Engine::Engine(Delegate& delegate, std::string thread_label,
   }
 
   {
-    TRACE_DURATION("flutter", "CreateShell");
+    FML_TRACE_EVENT("flutter", "CreateShell");
     shell_ = flutter::Shell::Create(
         task_runners,                 // host task runners
         settings_,                    // shell launch settings
@@ -429,9 +430,8 @@ void Engine::OnSessionSizeChangeHint(float width_change_factor,
       [rasterizer = shell_->GetRasterizer(), width_change_factor,
        height_change_factor]() {
         if (rasterizer) {
-          auto compositor_context =
-              reinterpret_cast<CompositorContext*>(
-                  rasterizer->compositor_context());
+          auto compositor_context = reinterpret_cast<CompositorContext*>(
+              rasterizer->compositor_context());
 
           compositor_context->OnSessionSizeChangeHint(width_change_factor,
                                                       height_change_factor);

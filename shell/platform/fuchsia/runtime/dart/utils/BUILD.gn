@@ -1,0 +1,100 @@
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/package.gni")
+import("//build/testing/environments.gni")
+
+source_set("logging") {
+  visibility = [
+    ":*",
+  ]
+
+  sources = [
+    "logging.h",
+  ]
+}
+
+source_set("utils") {
+  sources = [
+    "handle_exception.cc",
+    "handle_exception.h",
+    "tempfs.cc",
+    "tempfs.h",
+    "vmservice_object.cc",
+    "vmservice_object.h",
+  ]
+
+  public_deps = [
+    "//sdk/lib/sys/cpp",
+    "//sdk/lib/vfs/cpp",
+    "//zircon/public/lib/zx",
+  ]
+
+  deps = [
+    ":logging",
+    "//third_party/tonic",
+    "//zircon/public/fidl/fuchsia-crash",
+    "//zircon/public/fidl/fuchsia-io",
+    "//zircon/public/fidl/fuchsia-mem",
+    "//zircon/public/lib/async-loop-cpp",
+    "//zircon/public/lib/memfs",
+    "//zircon/public/lib/syslog",
+  ]
+}
+
+source_set("vmo") {
+  sources = [
+    "vmo.cc",
+    "vmo.h",
+  ]
+
+  public_deps = [
+    "//zircon/public/fidl/fuchsia-mem",
+    "//zircon/public/lib/fdio",
+  ]
+
+  deps = [
+    ":logging",
+    "//zircon/public/lib/syslog",
+  ]
+}
+
+source_set("inlines") {
+  sources = [
+    "inlines.h",
+  ]
+
+  public_deps = [
+    "//zircon/public/lib/syslog",
+  ]
+}
+
+source_set("files") {
+  sources = [
+    "files.cc",
+    "files.h",
+  ]
+
+  deps = [
+    ":inlines",
+    ":logging",
+  ]
+}
+
+package("run_vmservice_object_tests") {
+  testonly = true
+
+  deps = [
+    "../../dart_runner:dart_jit_runner",
+    "../../dart_runner/examples/hello_dart:hello_dart_jit",
+  ]
+
+  tests = [
+    {
+      name = rebase_path("run_vmservice_object_tests.sh")
+      dest = "run_vmservice_object_tests.sh"
+      environments = basic_envs
+    },
+  ]
+}

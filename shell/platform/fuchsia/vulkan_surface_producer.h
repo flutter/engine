@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <lib/async/default.h>
 #include <lib/async/cpp/time.h>
+#include <lib/async/default.h>
 #include <lib/syslog/global.h>
 
 #include "flutter/flow/scene_update_context.h"
@@ -16,10 +16,9 @@
 #include "flutter/vulkan/vulkan_provider.h"
 #include "lib/ui/scenic/cpp/resources.h"
 #include "lib/ui/scenic/cpp/session.h"
-
-#include "topaz/runtime/flutter_runner/logging.h"
-#include "topaz/runtime/flutter_runner/vulkan_surface.h"
-#include "topaz/runtime/flutter_runner/vulkan_surface_pool.h"
+#include "logging.h"
+#include "vulkan_surface.h"
+#include "vulkan_surface_pool.h"
 
 namespace flutter_runner {
 
@@ -41,8 +40,8 @@ class VulkanSurfaceProducer final
 
   // |flutter::SceneUpdateContext::SurfaceProducer|
   void SubmitSurface(
-      std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface> surface)
-      override;
+      std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
+          surface) override;
 
   // |flutter::SceneUpdateContext::HasRetainedNode|
   bool HasRetainedNode(const flutter::LayerRasterCacheKey& key) const override {

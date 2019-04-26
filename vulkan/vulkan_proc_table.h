@@ -115,8 +115,10 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   DEFINE_PROC(CreateAndroidSurfaceKHR);
 #endif  // OS_ANDROID
 #if OS_FUCHSIA
+#if !defined(FUCHSIA_SDK)
   DEFINE_PROC(GetMemoryZirconHandleFUCHSIA);
   DEFINE_PROC(ImportSemaphoreZirconHandleFUCHSIA);
+#endif  //  !defined(FUCHSIA_SDK)
 #endif  // OS_FUCHSIA
 
 #undef DEFINE_PROC

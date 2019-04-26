@@ -1,0 +1,39 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+source_set("cpp") {
+  sources = [
+    "connection.cc",
+    "connection.h",
+    "directory.cc",
+    "directory.h",
+    "file.cc",
+    "file.h",
+    "flags.h",
+    "internal/directory_connection.cc",
+    "internal/directory_connection.h",
+    "internal/dirent_filler.cc",
+    "internal/dirent_filler.h",
+    "internal/file_connection.cc",
+    "internal/file_connection.h",
+    "internal/node_connection.cc",
+    "internal/node_connection.h",
+    "lazy_dir.cc",
+    "lazy_dir.h",
+    "node.cc",
+    "node.h",
+    "pseudo_dir.cc",
+    "pseudo_dir.h",
+    "pseudo_file.cc",
+    "pseudo_file.h",
+    "remote_dir.cc",
+    "remote_dir.h",
+    "service.cc",
+    "service.h",
+    "vmo_file.cc",
+    "vmo_file.h",
+  ]
+
+  deps = []
+}

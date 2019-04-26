@@ -13,7 +13,6 @@
 #include <lib/ui/scenic/cpp/view_token_pair.h>
 #include <lib/vfs/cpp/remote_dir.h>
 #include <lib/vfs/cpp/service.h>
-#include <src/lib/files/file.h>
 #include <sys/stat.h>
 #include <zircon/dlfcn.h>
 #include <zircon/status.h>
@@ -21,12 +20,12 @@
 #include <sstream>
 
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/switches.h"
-#include "third_party/flutter/runtime/dart_vm_lifecycle.h"
-#include "topaz/runtime/dart/utils/files.h"
-#include "topaz/runtime/dart/utils/handle_exception.h"
-#include "topaz/runtime/dart/utils/tempfs.h"
-#include "topaz/runtime/dart/utils/vmo.h"
+#include "runtime/dart/utils/files.h"
+#include "runtime/dart/utils/handle_exception.h"
+#include "runtime/dart/utils/tempfs.h"
+#include "runtime/dart/utils/vmo.h"
 
 #include "service_provider_dir.h"
 #include "task_observers.h"
@@ -40,7 +39,8 @@ constexpr char kServiceRootPath[] = "/svc";
 
 std::pair<std::unique_ptr<Thread>, std::unique_ptr<Application>>
 Application::Create(
-    TerminationCallback termination_callback, fuchsia::sys::Package package,
+    TerminationCallback termination_callback,
+    fuchsia::sys::Package package,
     fuchsia::sys::StartupInfo startup_info,
     std::shared_ptr<sys::ServiceDirectory> runner_incoming_services,
     fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller) {
@@ -70,7 +70,8 @@ static std::string DebugLabelForURL(const std::string& url) {
 }
 
 Application::Application(
-    TerminationCallback termination_callback, fuchsia::sys::Package package,
+    TerminationCallback termination_callback,
+    fuchsia::sys::Package package,
     fuchsia::sys::StartupInfo startup_info,
     std::shared_ptr<sys::ServiceDirectory> runner_incoming_services,
     fidl::InterfaceRequest<fuchsia::sys::ComponentController>
@@ -329,7 +330,9 @@ Application::Application(
 
 Application::~Application() = default;
 
-const std::string& Application::GetDebugLabel() const { return debug_label_; }
+const std::string& Application::GetDebugLabel() const {
+  return debug_label_;
+}
 
 class FileInNamespaceBuffer final : public fml::Mapping {
  public:
@@ -397,7 +400,7 @@ class FileInNamespaceBuffer final : public fml::Mapping {
 std::unique_ptr<fml::Mapping> CreateWithContentsOfFile(int namespace_fd,
                                                        const char* file_path,
                                                        bool executable) {
-  TRACE_DURATION("flutter", "LoadFile", "path", file_path);
+  FML_TRACE_EVENT("flutter", "LoadFile", "path", file_path);
   auto source = std::make_unique<FileInNamespaceBuffer>(namespace_fd, file_path,
                                                         executable);
   return source->GetMapping() == nullptr ? nullptr : std::move(source);
@@ -437,9 +440,9 @@ void Application::AttemptVMLaunchWithCurrentSettings(
           "shared_snapshot_instructions.bin", true));
 
   auto vm = flutter::DartVMRef::Create(settings_,               //
-                                     std::move(vm_snapshot),  //
-                                     isolate_snapshot_,       //
-                                     shared_snapshot_         //
+                                       std::move(vm_snapshot),  //
+                                       isolate_snapshot_,       //
+                                       shared_snapshot_         //
   );
   FML_CHECK(vm) << "Mut be able to initialize the VM.";
 }

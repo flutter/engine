@@ -13,11 +13,11 @@
 #include <lib/fit/function.h>
 #include <lib/ui/scenic/cpp/resources.h>
 #include <lib/ui/scenic/cpp/session.h>
-#include <trace/event.h>
 
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/scene_update_context.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/trace_event.h"
 #include "vulkan_surface_producer.h"
 
 namespace flutter_runner {
