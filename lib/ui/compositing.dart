@@ -61,11 +61,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
       throw new ArgumentError('"matrix4" argument cannot be null');
     if (matrix4.length != 16)
       throw new ArgumentError('"matrix4" must have 16 entries.');
-    for (double number in matrix4) {
-      if (number.isInfinite || number.isNaN) {
-        throw new ArgumentError('"matrix4" cannot have infinite or NaN elements');
-      }
-    }
+    if (matrix4.any((double value) => value.isInfinite || value.isNaN))
+      throw new ArgumentError('"matrix4" cannot have infinite or NaN elements');
     return _pushTransform(matrix4);
   }
   EngineLayer _pushTransform(Float64List matrix4) native 'SceneBuilder_pushTransform';
