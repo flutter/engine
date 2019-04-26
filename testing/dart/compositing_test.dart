@@ -12,7 +12,11 @@ void main() {
     final SceneBuilder builder = SceneBuilder();
     final Float64List matrix4 = Float64List(16);
     matrix4[0] = double.nan;
-    matrix4[1] = double.infinity;
+    expect(
+      () => builder.pushTransform(matrix4),
+      throwsA(TypeMatcher<ArgumentError>())
+    );
+    matrix4[0] = double.infinity;
     expect(
       () => builder.pushTransform(matrix4),
       throwsA(TypeMatcher<ArgumentError>())
