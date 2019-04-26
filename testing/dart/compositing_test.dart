@@ -26,7 +26,7 @@ void main() {
     ]);
     expect(
       () => builder.pushTransform(matrix4WrongLength),
-      throwsA(const TypeMatcher<ArgumentError>()),
+      throwsA(const TypeMatcher<AssertionError>()),
     );
 
      final Float64List matrix4NaN = Float64List.fromList(<double>[
@@ -37,7 +37,7 @@ void main() {
     ]);
     expect(
       () => builder.pushTransform(matrix4NaN),
-      throwsA(const TypeMatcher<ArgumentError>()),
+      throwsA(const TypeMatcher<AssertionError>()),
     );
 
      final Float64List matrix4Infinity = Float64List.fromList(<double>[
@@ -48,7 +48,7 @@ void main() {
     ]);
     expect(
       () => builder.pushTransform(matrix4NaN),
-      throwsA(const TypeMatcher<ArgumentError>()),
+      throwsA(const TypeMatcher<AssertionError>()),
     );
   });
 }

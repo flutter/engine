@@ -57,7 +57,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack.
   EngineLayer pushTransform(Float64List matrix4) {
-    _throwIfMatrix4IsInvalid(matrix4);
+    _matrix4IsValid(matrix4);
     return _pushTransform(matrix4);
   }
   EngineLayer _pushTransform(Float64List matrix4) native 'SceneBuilder_pushTransform';

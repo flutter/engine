@@ -46,15 +46,6 @@ bool _matrix4IsValid(Float64List matrix4) {
   return true;
 }
 
-void _throwIfMatrix4IsInvalid(Float64List matrix4) {
-  if (matrix4 == null)
-    throw new ArgumentError('"matrix4" argument cannot be null');
-  if (matrix4.length != 16)
-    throw new ArgumentError('"matrix4" must have 16 entries.');
-  if (matrix4.any((double value) => value.isInfinite || value.isNaN))
-    throw new ArgumentError('"matrix4" cannot have infinite or NaN elements');
-}
-
 bool _radiusIsValid(Radius radius) {
   assert(radius != null, 'Radius argument was null.');
   assert(!radius.x.isNaN && !radius.y.isNaN, 'Radius argument contained a NaN value.');
