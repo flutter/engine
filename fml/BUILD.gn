@@ -148,10 +148,12 @@ source_set("fml") {
     ]
   }
 
-  if (is_fuchsia && !is_fuchsia_sdk) {
+  if (is_fuchsia) {
     sources += [ "platform/fuchsia/paths_fuchsia.cc" ]
 
-    public_deps += [ "//zircon/public/lib/trace" ]
+    if (!is_fuchsia_sdk) {
+      public_deps += [ "//zircon/public/lib/trace" ]
+    }
   }
 
   if (is_win) {

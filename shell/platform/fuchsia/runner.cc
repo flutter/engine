@@ -101,7 +101,9 @@ Runner::Runner(async::Loop* loop)
       dart_utils::VMServiceObject::kPortDirName,
       std::make_unique<dart_utils::VMServiceObject>());
 
+#if !defined(FUCHSIA_SDK)
   SetupTraceObserver();
+#endif  //  !defined(FUCHSIA_SDK)
 #endif  // !defined(DART_PRODUCT)
 
   SkGraphics::Init();

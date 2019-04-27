@@ -38,6 +38,7 @@ def main():
   parser.add_argument('--include-base', dest='include_base', action='store', required=True)
   parser.add_argument('--output-base-cc', dest='output_base_cc', action='store', required=True)
   parser.add_argument('--output-c-header', dest='output_header_c', action='store', required=True)
+  parser.add_argument('--output-c-tables', dest='output_c_tables', action='store', required=True)
 
   args = parser.parse_args()
 
@@ -50,6 +51,8 @@ def main():
     args.fidlc_bin,
     '--c-header',
     args.output_header_c,
+    '--tables',
+    args.output_c_tables,
     '--json',
     args.json
   ]

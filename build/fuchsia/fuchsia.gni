@@ -76,6 +76,7 @@ template("fuchsia_fidl_library") {
       "$target_gen_dir/fuchsia/$library_name_slashes/c/fidl.h",
       "$target_gen_dir/fuchsia/$library_name_slashes/cpp/fidl.h",
       "$target_gen_dir/fuchsia/$library_name_slashes/cpp/fidl.cc",
+      "$target_gen_dir/fuchsia/$library_name_slashes/cpp/tables.cc",
       "$target_gen_dir/fuchsia/$library_name_slashes/cpp/fidl_test_base.h",
     ]
 
@@ -96,6 +97,9 @@ template("fuchsia_fidl_library") {
       rebase_path("$target_gen_dir/fuchsia/$library_name_slashes/cpp/fidl"),
       "--output-c-header",
       rebase_path("$target_gen_dir/fuchsia/$library_name_slashes/c/fidl.h"),
+      "--output-c-tables",
+      rebase_path(
+          "$target_gen_dir/fuchsia/$library_name_slashes/cpp/tables.cc"),
     ]
   }
 
