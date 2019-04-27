@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "topaz/runtime/dart/utils/handle_exception.h"
+#include "runtime/dart/utils/handle_exception.h"
 
 #include <string>
 
@@ -15,7 +15,7 @@
 #include <zircon/errors.h>
 #include <zircon/status.h>
 
-#include "topaz/runtime/dart/utils/logging.h"
+#include "runtime/dart/utils/logging.h"
 
 namespace {
 static bool FillBuffer(const std::string& data, fuchsia::mem::Buffer* buffer) {
@@ -51,7 +51,8 @@ void CopyToArray(const std::string& s, std::array<T, N>* arr) {
 }
 
 fuchsia::crash::ManagedRuntimeException BuildException(
-    const std::string& error, const std::string& stack_trace) {
+    const std::string& error,
+    const std::string& stack_trace) {
   // The runtime type has already been pre-pended to the error message so we
   // expect the format to be '$RuntimeType: $Message'.
   std::string error_type;

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "topaz/runtime/dart/utils/tempfs.h"
+#include "runtime/dart/utils/tempfs.h"
 
 #include <string>
 #include <thread>
@@ -15,7 +15,7 @@
 #include <zircon/status.h>
 #include <zircon/syscalls.h>
 
-#include "topaz/runtime/dart/utils/logging.h"
+#include "runtime/dart/utils/logging.h"
 
 namespace {
 
@@ -25,8 +25,8 @@ constexpr char kTmpPath[] = "/tmp";
 void DispatchTempMemFS() {
   async::Loop loop(&kAsyncLoopConfigAttachToThread);
 #if defined(DART_PRODUCT)
-  zx_status_t status = memfs_install_at_with_page_limit(
-      loop.dispatcher(), kMaxTmpPages, kTmpPath);
+  zx_status_t status = memfs_install_at_with_page_limit(loop.dispatcher(),
+                                                        kMaxTmpPages, kTmpPath);
 #else
   // Hot reload uses /tmp to hold the updated dills and assets so do not
   // impose any size limitation in non product runners.

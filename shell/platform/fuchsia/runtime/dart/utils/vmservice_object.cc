@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "topaz/runtime/dart/utils/vmservice_object.h"
+#include "runtime/dart/utils/vmservice_object.h"
 
 #include <dirent.h>
 #include <errno.h>
@@ -12,7 +12,7 @@
 #include <lib/syslog/global.h>
 #include <zircon/status.h>
 
-#include "topaz/runtime/dart/utils/logging.h"
+#include "runtime/dart/utils/logging.h"
 
 namespace {
 
@@ -31,7 +31,7 @@ bool ReadDirContents(const std::string& path, std::vector<std::string>* out) {
   return !errno;
 }
 
-}
+}  // namespace
 
 namespace dart_utils {
 
@@ -41,8 +41,8 @@ void VMServiceObject::GetContents(LazyEntryVector* out_vector) const {
   std::vector<std::string> files;
   if (!ReadDirContents(kPortDir, &files)) {
     FX_LOGF(ERROR, LOG_TAG,
-            "Failed to read Dart VM Service port directory '%s': %s",
-            kPortDir, strerror(errno));
+            "Failed to read Dart VM Service port directory '%s': %s", kPortDir,
+            strerror(errno));
     return;
   }
   for (const auto& file : files) {
@@ -54,7 +54,8 @@ void VMServiceObject::GetContents(LazyEntryVector* out_vector) const {
   }
 }
 
-zx_status_t VMServiceObject::GetFile(Node** out_node, uint64_t id,
+zx_status_t VMServiceObject::GetFile(Node** out_node,
+                                     uint64_t id,
                                      std::string name) const {
   return ZX_ERR_NOT_FOUND;
 }

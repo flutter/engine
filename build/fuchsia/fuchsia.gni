@@ -89,8 +89,10 @@ template("fuchsia_fidl_library") {
       rebase_path("$target_gen_dir/$library_name_json"),
       "--include-base",
       rebase_path("$target_gen_dir"),
-      "--output-base",
+      "--output-base-cc",
       rebase_path("$target_gen_dir/fuchsia/$library_name_slashes/cpp/fidl"),
+      "--output-c-header",
+      rebase_path("$target_gen_dir/fuchsia/$library_name_slashes/c/fidl.h"),
     ]
   }
 

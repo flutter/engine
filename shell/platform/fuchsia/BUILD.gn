@@ -86,6 +86,8 @@ executable("fuchsia") {
     "$flutter_root/vulkan",
     "dart-pkg/zircon",
     "lib/sys/cpp",
+    "lib/vfs/cpp",
+    "runtime/dart/utils",
     "//third_party/tonic",
   ]
 }

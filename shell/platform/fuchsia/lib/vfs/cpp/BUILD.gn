@@ -3,6 +3,8 @@
 # found in the LICENSE file.
 
 source_set("cpp") {
+  include_dirs = [ "../../.." ]
+
   sources = [
     "connection.cc",
     "connection.h",
@@ -35,5 +37,8 @@ source_set("cpp") {
     "vmo_file.h",
   ]
 
-  deps = []
+  deps = [
+    "$flutter_root/shell/platform/fuchsia:fdio",
+    "$flutter_root/shell/platform/fuchsia:fuchsia.io",
+  ]
 }

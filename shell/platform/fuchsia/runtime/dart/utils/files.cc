@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "topaz/runtime/dart/utils/files.h"
+#include "runtime/dart/utils/files.h"
 
 #include <fcntl.h>
 #include <stdint.h>
 
-#include "topaz/runtime/dart/utils/inlines.h"
-#include "topaz/runtime/dart/utils/logging.h"
+#include "runtime/dart/utils/inlines.h"
+#include "runtime/dart/utils/logging.h"
 
 namespace dart_utils {
 
@@ -56,7 +56,8 @@ bool ReadFileToString(const std::string& path, std::string* result) {
   return ReadFileToStringAt(AT_FDCWD, path, result);
 }
 
-bool ReadFileToStringAt(int dirfd, const std::string& path,
+bool ReadFileToStringAt(int dirfd,
+                        const std::string& path,
                         std::string* result) {
   int fd = openat(dirfd, path.c_str(), O_RDONLY);
   bool status = ReadFileDescriptor(fd, result);
@@ -65,8 +66,7 @@ bool ReadFileToStringAt(int dirfd, const std::string& path,
 }
 
 bool WriteFile(const std::string& path, const char* data, ssize_t size) {
-  int fd = openat(
-      AT_FDCWD, path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0666);
+  int fd = openat(AT_FDCWD, path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0666);
   if (fd < 0) {
     return false;
   }

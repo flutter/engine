@@ -10,16 +10,16 @@ source_set("cpp") {
   public_configs = [ ":config" ]
 
   sources = [
-    # "component_context.cc",
-    # "component_context.h",
-    # "file_descriptor.cc",
-    # "file_descriptor.h",
-    # "outgoing_directory.cc",
-    # "outgoing_directory.h",
-    # "service_directory.cc",
-    # "service_directory.h",
-    # "termination_reason.cc",
-    # "termination_reason.h",
+    "component_context.cc",
+    "component_context.h",
+    "file_descriptor.cc",
+    "file_descriptor.h",
+    "outgoing_directory.cc",
+    "outgoing_directory.h",
+    "service_directory.cc",
+    "service_directory.h",
+    "termination_reason.cc",
+    "termination_reason.h",
   ]
 
   deps = [

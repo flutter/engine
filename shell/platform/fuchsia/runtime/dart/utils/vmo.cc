@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "topaz/runtime/dart/utils/vmo.h"
+#include "runtime/dart/utils/vmo.h"
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -11,7 +11,7 @@
 #include <lib/fdio/io.h>
 #include <lib/syslog/global.h>
 
-#include "topaz/runtime/dart/utils/logging.h"
+#include "runtime/dart/utils/logging.h"
 
 namespace {
 
@@ -46,11 +46,13 @@ bool VmoFromFilename(const std::string& filename,
   return VmoFromFilenameAt(AT_FDCWD, filename, buffer);
 }
 
-bool VmoFromFilenameAt(int dirfd, const std::string& filename,
+bool VmoFromFilenameAt(int dirfd,
+                       const std::string& filename,
                        fuchsia::mem::Buffer* buffer) {
   int fd = openat(dirfd, filename.c_str(), O_RDONLY);
   if (fd == -1) {
-    FX_LOGF(ERROR, LOG_TAG, "openat(\"%s\") failed: %s", filename.c_str(), strerror(errno));
+    FX_LOGF(ERROR, LOG_TAG, "openat(\"%s\") failed: %s", filename.c_str(),
+            strerror(errno));
     return false;
   }
   bool result = VmoFromFd(fd, buffer);
