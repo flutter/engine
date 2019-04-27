@@ -73,7 +73,10 @@ template("fuchsia_fidl_library") {
     ]
 
     outputs = [
-      "$target_gen_dir/$library_name_slashes/$library_name.h",
+      "$target_gen_dir/fuchsia/$library_name_slashes/c/fidl.h",
+      "$target_gen_dir/fuchsia/$library_name_slashes/cpp/fidl.h",
+      "$target_gen_dir/fuchsia/$library_name_slashes/cpp/fidl.cc",
+      "$target_gen_dir/fuchsia/$library_name_slashes/cpp/fidl_test_base.h",
     ]
 
     args = [

@@ -22,7 +22,7 @@ source_set("cpp") {
     "termination_reason.h",
   ]
 
-  deps = [
+  public_deps = [
     "$flutter_root/shell/platform/fuchsia:fdio",
     "$flutter_root/shell/platform/fuchsia:fuchsia.sys",
   ]
