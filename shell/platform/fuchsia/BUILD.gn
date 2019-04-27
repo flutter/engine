@@ -84,6 +84,7 @@ executable("fuchsia") {
     "$flutter_root/runtime:libdart",
     "$flutter_root/shell/common",
     "$flutter_root/vulkan",
+    "dart-pkg/fuchsia",
     "dart-pkg/zircon",
     "lib/sys/cpp",
     "lib/vfs/cpp",

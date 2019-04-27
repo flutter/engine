@@ -122,7 +122,8 @@ source_set("ui") {
     ]
 
     if (is_fuchsia_sdk) {
-      deps += [ "$flutter_root/shell/platform/fuchsia/dart-pkg" ]
+      deps += [ "$flutter_root/shell/platform/fuchsia/dart-pkg/zircon" ]
+      deps += [ "$flutter_root/shell/platform/fuchsia/dart-pkg/fuchsia" ]
     } else {
       deps += [ "//topaz/public/dart-pkg/zircon" ]
     }
