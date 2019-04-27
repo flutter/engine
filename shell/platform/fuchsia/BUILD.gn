@@ -13,8 +13,6 @@ fuchsia_sdk("sdk") {
 executable("fuchsia") {
   output_name = "four_gate"
 
-  include_dirs = [ "//third_party/vulkan/include" ]
-
   sources = [
     "component.cc",
     "component.h",
@@ -57,11 +55,10 @@ executable("fuchsia") {
     "vsync_waiter.h",
     "vulkan_surface.cc",
     "vulkan_surface.h",
-
-    #     "vulkan_surface_pool.cc",
-    #     "vulkan_surface_pool.h",
-    #     "vulkan_surface_producer.cc",
-    #     "vulkan_surface_producer.h",
+    "vulkan_surface_pool.cc",
+    "vulkan_surface_pool.h",
+    "vulkan_surface_producer.cc",
+    "vulkan_surface_producer.h",
   ]
 
   deps = [

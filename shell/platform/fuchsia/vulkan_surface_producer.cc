@@ -4,14 +4,14 @@
 
 #include "vulkan_surface_producer.h"
 
-#include <lib/async/default.h>
 #include <lib/async/cpp/task.h>
-#include <trace/event.h>
+#include <lib/async/default.h>
 
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContext.h"
@@ -43,8 +43,8 @@ VulkanSurfaceProducer::VulkanSurfaceProducer(scenic::Session* scenic_session) {
 VulkanSurfaceProducer::~VulkanSurfaceProducer() {
   // Make sure queue is idle before we start destroying surfaces
   if (valid_) {
-    VkResult wait_result =
-        VK_CALL_LOG_ERROR(vk_->QueueWaitIdle(logical_device_->GetQueueHandle()));
+    VkResult wait_result = VK_CALL_LOG_ERROR(
+        vk_->QueueWaitIdle(logical_device_->GetQueueHandle()));
     FML_DCHECK(wait_result == VK_SUCCESS);
   }
 };
@@ -129,11 +129,11 @@ void VulkanSurfaceProducer::OnSurfacesPresented(
     std::vector<
         std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>>
         surfaces) {
-  TRACE_DURATION("flutter", "VulkanSurfaceProducer::OnSurfacesPresented");
+  TRACE_EVENT0("flutter", "VulkanSurfaceProducer::OnSurfacesPresented");
 
   // Do a single flush for all canvases derived from the context.
   {
-    TRACE_DURATION("flutter", "GrContext::flushAndSignalSemaphores");
+    TRACE_EVENT0("flutter", "GrContext::flushAndSignalSemaphores");
     context_->flush();
   }
 
@@ -151,13 +151,15 @@ void VulkanSurfaceProducer::OnSurfacesPresented(
   // If no further surface production has taken place for 10 frames (TODO:
   // Don't hardcode refresh rate here), then shrink our surface pool to fit.
   constexpr auto kShouldShrinkThreshold = zx::msec(10 * 16.67);
-  async::PostDelayedTask(async_get_default_dispatcher(),
+  async::PostDelayedTask(
+      async_get_default_dispatcher(),
       [self = weak_factory_.GetWeakPtr(), kShouldShrinkThreshold] {
         if (!self) {
           return;
         }
         auto time_since_last_produce =
-            async::Now(async_get_default_dispatcher()) - self->last_produce_time_;
+            async::Now(async_get_default_dispatcher()) -
+            self->last_produce_time_;
         if (time_since_last_produce >= kShouldShrinkThreshold) {
           self->surface_pool_->ShrinkToFit();
         }
@@ -235,7 +237,8 @@ VulkanSurfaceProducer::ProduceSurface(
 }
 
 void VulkanSurfaceProducer::SubmitSurface(
-    std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface> surface) {
+    std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
+        surface) {
   FML_DCHECK(valid_ && surface != nullptr);
   surface_pool_->SubmitSurface(std::move(surface));
 }

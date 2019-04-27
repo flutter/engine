@@ -7,8 +7,7 @@
 #include <algorithm>
 #include <string>
 
-#include <trace/event.h>
-
+#include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 
 namespace flutter_runner {
@@ -31,8 +30,8 @@ VulkanSurfacePool::VulkanSurfacePool(vulkan::VulkanProvider& vulkan_provider,
 
 VulkanSurfacePool::~VulkanSurfacePool() {}
 
-std::unique_ptr<VulkanSurface>
-VulkanSurfacePool::AcquireSurface(const SkISize& size) {
+std::unique_ptr<VulkanSurface> VulkanSurfacePool::AcquireSurface(
+    const SkISize& size) {
   auto surface = GetCachedOrCreateSurface(size);
 
   if (surface == nullptr) {
@@ -48,8 +47,8 @@ VulkanSurfacePool::AcquireSurface(const SkISize& size) {
   return surface;
 }
 
-std::unique_ptr<VulkanSurface>
-VulkanSurfacePool::GetCachedOrCreateSurface(const SkISize& size) {
+std::unique_ptr<VulkanSurface> VulkanSurfacePool::GetCachedOrCreateSurface(
+    const SkISize& size) {
   // First try to find a surface that exactly matches |size|.
   {
     auto exact_match_it =
@@ -109,7 +108,7 @@ VulkanSurfacePool::GetCachedOrCreateSurface(const SkISize& size) {
 void VulkanSurfacePool::SubmitSurface(
     std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
         p_surface) {
-  TRACE_DURATION("flutter", "VulkanSurfacePool::SubmitSurface");
+  TRACE_EVENT0("flutter", "VulkanSurfacePool::SubmitSurface");
 
   // This cast is safe because |VulkanSurface| is the only implementation of
   // |SurfaceProducerSurface| for Flutter on Fuchsia.  Additionally, it is
@@ -120,7 +119,6 @@ void VulkanSurfacePool::SubmitSurface(
   if (!vulkan_surface) {
     return;
   }
-
 
   const flutter::LayerRasterCacheKey& retained_key =
       vulkan_surface->GetRetainedKey();
@@ -139,31 +137,27 @@ void VulkanSurfacePool::SubmitSurface(
     // |VulkanSurface|. That would make the retained rendering much less useful
     // in improving the performance.
     auto insert_iterator = retained_surfaces_.insert(std::make_pair(
-        retained_key,
-        RetainedSurface({true, std::move(vulkan_surface)})
-    ));
+        retained_key, RetainedSurface({true, std::move(vulkan_surface)})));
     if (insert_iterator.second) {
-      insert_iterator.first->second.vk_surface->SignalWritesFinished(
-          std::bind(&VulkanSurfacePool::SignalRetainedReady, this, retained_key));
+      insert_iterator.first->second.vk_surface->SignalWritesFinished(std::bind(
+          &VulkanSurfacePool::SignalRetainedReady, this, retained_key));
     }
   } else {
     uintptr_t surface_key = reinterpret_cast<uintptr_t>(vulkan_surface.get());
     auto insert_iterator = pending_surfaces_.insert(std::make_pair(
         surface_key,               // key
         std::move(vulkan_surface)  // value
-    ));
+        ));
     if (insert_iterator.second) {
-      insert_iterator.first->second->SignalWritesFinished(
-          std::bind(&VulkanSurfacePool::RecyclePendingSurface,
-                    this, surface_key));
+      insert_iterator.first->second->SignalWritesFinished(std::bind(
+          &VulkanSurfacePool::RecyclePendingSurface, this, surface_key));
     }
   }
 }
 
 std::unique_ptr<VulkanSurface> VulkanSurfacePool::CreateSurface(
     const SkISize& size) {
-  TRACE_DURATION("flutter", "VulkanSurfacePool::CreateSurface", "width",
-                 size.width(), "height", size.height());
+  TRACE_EVENT0("flutter", "VulkanSurfacePool::CreateSurface");
   auto surface = std::make_unique<VulkanSurface>(vulkan_provider_, context_,
                                                  scenic_session_, size);
   if (!surface->IsValid()) {
@@ -223,7 +217,7 @@ void VulkanSurfacePool::SignalRetainedReady(flutter::LayerRasterCacheKey key) {
 }
 
 void VulkanSurfacePool::AgeAndCollectOldBuffers() {
-  TRACE_DURATION("flutter", "VulkanSurfacePool::AgeAndCollectOldBuffers");
+  TRACE_EVENT0("flutter", "VulkanSurfacePool::AgeAndCollectOldBuffers");
 
   // Remove all surfaces that are no longer valid or are too old.
   available_surfaces_.erase(
@@ -260,9 +254,9 @@ void VulkanSurfacePool::AgeAndCollectOldBuffers() {
   // whether they're used or not. Hence if there's memory pressure, feel free to
   // recycle all retained surfaces that are not pending.
   std::vector<flutter::LayerRasterCacheKey> recycle_keys;
-  for (auto&[key, retained_surface] : retained_surfaces_) {
+  for (auto& [key, retained_surface] : retained_surfaces_) {
     if (retained_surface.is_pending ||
-      retained_surface.vk_surface->IsUsedInRetainedRendering()) {
+        retained_surface.vk_surface->IsUsedInRetainedRendering()) {
       // Reset the flag for the next frame
       retained_surface.vk_surface->ResetIsUsedInRetainedRendering();
     } else {
@@ -319,16 +313,16 @@ void VulkanSurfacePool::TraceStats() {
   const size_t skia_cache_purgeable =
       context_->getResourceCachePurgeableBytes();
 
-  TRACE_COUNTER("flutter", "SurfacePool", 0u,                     //
-                "CachedCount", cached_surfaces,                   //
-                "CachedBytes", cached_surfaces_bytes,             //
-                "Created", trace_surfaces_created_,               //
-                "Reused", trace_surfaces_reused_,                 //
-                "PendingInCompositor", pending_surfaces_.size(),  //
-                "Retained", retained_surfaces_.size(),            //
-                "SkiaCacheResources", skia_resources,             //
-                "SkiaCacheBytes", skia_bytes,                     //
-                "SkiaCachePurgeable", skia_cache_purgeable        //
+  FML_TRACE_COUNTER("flutter", "SurfacePool", 0u,                     //
+                    "CachedCount", cached_surfaces,                   //
+                    "CachedBytes", cached_surfaces_bytes,             //
+                    "Created", trace_surfaces_created_,               //
+                    "Reused", trace_surfaces_reused_,                 //
+                    "PendingInCompositor", pending_surfaces_.size(),  //
+                    "Retained", retained_surfaces_.size(),            //
+                    "SkiaCacheResources", skia_resources,             //
+                    "SkiaCacheBytes", skia_bytes,                     //
+                    "SkiaCachePurgeable", skia_cache_purgeable        //
   );
 
   // Reset per present/frame stats.
