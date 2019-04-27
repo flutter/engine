@@ -5,15 +5,15 @@
 #include "vulkan_surface.h"
 
 #include <lib/async/default.h>
-#include <trace/event.h>
 
 #include <algorithm>
 
+#include "flutter/fml/trace_event.h"
+#include "runtime/dart/utils/inlines.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContext.h"
-#include "topaz/runtime/dart/utils/inlines.h"
 
 namespace flutter_runner {
 
@@ -24,8 +24,9 @@ constexpr SkColorType kSkiaColorType = kBGRA_8888_SkColorType;
 }  // namespace
 
 bool CreateVulkanImage(vulkan::VulkanProvider& vulkan_provider,
-                       const SkISize& size, VulkanImage* out_vulkan_image) {
-  TRACE_DURATION("flutter", "CreateVulkanImage");
+                       const SkISize& size,
+                       VulkanImage* out_vulkan_image) {
+  TRACE_EVENT0("flutter", "CreateVulkanImage");
 
   FML_DCHECK(!size.isEmpty());
   FML_DCHECK(out_vulkan_image != nullptr);
@@ -81,7 +82,8 @@ bool CreateVulkanImage(vulkan::VulkanProvider& vulkan_provider,
 }
 
 VulkanSurface::VulkanSurface(vulkan::VulkanProvider& vulkan_provider,
-                             sk_sp<GrContext> context, scenic::Session* session,
+                             sk_sp<GrContext> context,
+                             scenic::Session* session,
                              const SkISize& size)
     : vulkan_provider_(vulkan_provider), session_(session), wait_(this) {
   FML_DCHECK(session_);
@@ -123,7 +125,9 @@ VulkanSurface::~VulkanSurface() {
   wait_.set_object(ZX_HANDLE_INVALID);
 }
 
-bool VulkanSurface::IsValid() const { return valid_; }
+bool VulkanSurface::IsValid() const {
+  return valid_;
+}
 
 SkISize VulkanSurface::GetSize() const {
   if (!valid_) {
@@ -240,8 +244,8 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
   };
 
   {
-    TRACE_DURATION("flutter", "vk().AllocateMemory", "allocation_size",
-                   alloc_info.allocationSize);
+    TRACE_EVENT0("flutter", "vk().AllocateMemory", "allocation_size",
+                 alloc_info.allocationSize);
     VkDeviceMemory vk_memory = VK_NULL_HANDLE;
     if (VK_CALL_LOG_ERROR(vulkan_provider_.vk().AllocateMemory(
             vulkan_provider_.vk_device(), &alloc_info, NULL, &vk_memory)) !=
@@ -492,7 +496,8 @@ void VulkanSurface::Reset() {
 }
 
 void VulkanSurface::OnHandleReady(async_dispatcher_t* dispatcher,
-                                  async::WaitBase* wait, zx_status_t status,
+                                  async::WaitBase* wait,
+                                  zx_status_t status,
                                   const zx_packet_signal_t* signal) {
   if (status != ZX_OK)
     return;

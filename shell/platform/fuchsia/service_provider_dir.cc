@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "topaz/runtime/flutter_runner/service_provider_dir.h"
+#include "service_provider_dir.h"
 
 #include <lib/async/default.h>
 #include <lib/fdio/directory.h>
@@ -29,8 +29,10 @@ zx_status_t ServiceProviderDir::GetAttr(
   return root_->GetAttr(out_attributes);
 }
 
-zx_status_t ServiceProviderDir::Readdir(uint64_t offset, void* data,
-                                        uint64_t len, uint64_t* out_offset,
+zx_status_t ServiceProviderDir::Readdir(uint64_t offset,
+                                        void* data,
+                                        uint64_t len,
+                                        uint64_t* out_offset,
                                         uint64_t* out_actual) {
   // TODO(anmittal): enumerate fallback_dir_ in future once we have simple
   // implementation of fuchsia.io.Directory.
@@ -52,8 +54,9 @@ zx_status_t ServiceProviderDir::Lookup(const std::string& name,
           [name = std::string(name.data(), name.length()),
            dir = &fallback_dir_](zx::channel request,
                                  async_dispatcher_t* dispatcher) {
-        fdio_service_connect_at(dir->get(), name.c_str(), request.release());
-      });
+            fdio_service_connect_at(dir->get(), name.c_str(),
+                                    request.release());
+          });
       *out = service.get();
       fallback_services_[name] = std::move(service);
     }

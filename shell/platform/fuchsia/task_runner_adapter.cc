@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "topaz/runtime/flutter_runner/task_runner_adapter.h"
+#include "task_runner_adapter.h"
 
-#include <lib/async/default.h>
 #include <lib/async/cpp/task.h>
+#include <lib/async/default.h>
 #include <lib/zx/time.h>
 
 #include "flutter/fml/message_loop_impl.h"
@@ -24,15 +24,14 @@ class CompatTaskRunner : public fml::TaskRunner {
   }
 
   void PostTaskForTime(fml::closure task, fml::TimePoint target_time) override {
-    async::PostTaskForTime(forwarding_target_,
-        std::move(task),
+    async::PostTaskForTime(
+        forwarding_target_, std::move(task),
         zx::time(target_time.ToEpochDelta().ToNanoseconds()));
   }
 
   void PostDelayedTask(fml::closure task, fml::TimeDelta delay) override {
-    async::PostDelayedTask(forwarding_target_,
-        std::move(task),
-        zx::duration(delay.ToNanoseconds()));
+    async::PostDelayedTask(forwarding_target_, std::move(task),
+                           zx::duration(delay.ToNanoseconds()));
   }
 
   bool RunsTasksOnCurrentThread() override {

@@ -5,7 +5,7 @@
 #include "vsync_waiter.h"
 
 #include <lib/async/default.h>
-#include <trace/event.h>
+#include "flutter/fml/trace_event.h"
 
 #include "vsync_recorder.h"
 
@@ -36,7 +36,9 @@ VsyncWaiter::VsyncWaiter(std::string debug_label,
   session_wait_.set_handler(wait_handler);
 }
 
-VsyncWaiter::~VsyncWaiter() { session_wait_.Cancel(); }
+VsyncWaiter::~VsyncWaiter() {
+  session_wait_.Cancel();
+}
 
 static fml::TimePoint SnapToNextPhase(fml::TimePoint value,
                                       fml::TimePoint phase,
@@ -64,7 +66,7 @@ void VsyncWaiter::AwaitVSync() {
 }
 
 void VsyncWaiter::FireCallbackWhenSessionAvailable() {
-  TRACE_DURATION("flutter", "VsyncWaiter::FireCallbackWhenSessionAvailable");
+  TRACE_EVENT0("flutter", "VsyncWaiter::FireCallbackWhenSessionAvailable");
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   if (session_wait_.Begin(async_get_default_dispatcher()) != ZX_OK) {
     FML_LOG(ERROR) << "Could not begin wait for Vsync.";

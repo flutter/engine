@@ -13,9 +13,11 @@
 namespace flutter_runner {
 
 SessionConnection::SessionConnection(
-    std::string debug_label, fuchsia::ui::views::ViewToken view_token,
+    std::string debug_label,
+    fuchsia::ui::views::ViewToken view_token,
     fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
-    fit::closure session_error_callback, zx_handle_t vsync_event_handle)
+    fit::closure session_error_callback,
+    zx_handle_t vsync_event_handle)
     : debug_label_(std::move(debug_label)),
       session_wrapper_(session.Bind(), nullptr),
       root_view_(&session_wrapper_, std::move(view_token.value), debug_label),
@@ -47,7 +49,8 @@ SessionConnection::SessionConnection(
 
 SessionConnection::~SessionConnection() = default;
 
-void SessionConnection::Present(flutter::CompositorContext::ScopedFrame& frame) {
+void SessionConnection::Present(
+    flutter::CompositorContext::ScopedFrame& frame) {
   // Flush all session ops. Paint tasks have not yet executed but those are
   // fenced. The compositor can start processing ops while we finalize paint
   // tasks.
@@ -78,7 +81,7 @@ void SessionConnection::EnqueueClearOps() {
 }
 
 void SessionConnection::PresentSession() {
-  TRACE_DURATION("gfx", "SessionConnection::PresentSession");
+  TRACE_EVENT0("gfx", "SessionConnection::PresentSession");
   TRACE_FLOW_BEGIN("gfx", "Session::Present", next_present_trace_id_);
   next_present_trace_id_++;
 
