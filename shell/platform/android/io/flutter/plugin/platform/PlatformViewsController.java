@@ -4,9 +4,13 @@
 
 package io.flutter.plugin.platform;
 
+import static android.view.MotionEvent.PointerCoords;
+import static android.view.MotionEvent.PointerProperties;
+
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -18,15 +22,12 @@ import io.flutter.plugin.editing.InputProxy;
 import io.flutter.plugin.editing.InputTarget;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.TextureRegistry;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-
-import static android.view.MotionEvent.PointerCoords;
-import static android.view.MotionEvent.PointerProperties;
 
 /**
  * Manages platform views.
@@ -226,6 +227,10 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
             createParams = viewFactory.getCreateArgsCodec().decodeMessage(ByteBuffer.wrap((byte[]) args.get("params")));
         }
 
+        int physicalWidth = toPhysicalPixels(logicalWidth);
+        int physicalHeight = toPhysicalPixels(logicalHeight);
+        validateVirtualDisplayDimensions(physicalWidth, physicalHeight);
+
         TextureRegistry.SurfaceTextureEntry textureEntry = mTextureRegistry.createSurfaceTexture();
         VirtualDisplayController vdController = VirtualDisplayController.create(
                 mContext,
@@ -233,8 +238,8 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
                 viewFactory,
                 textureEntry,
                 this,
-                toPhysicalPixels(logicalWidth),
-                toPhysicalPixels(logicalHeight),
+                physicalWidth,
+                physicalHeight,
                 id,
                 createParams
         );
@@ -289,9 +294,14 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
             );
             return;
         }
+
+        int physicalWidth = toPhysicalPixels(width);
+        int physicalHeight = toPhysicalPixels(height);
+        validateVirtualDisplayDimensions(physicalWidth, physicalHeight);
+
         vdController.resize(
-                toPhysicalPixels(width),
-                toPhysicalPixels(height),
+                physicalWidth,
+                physicalHeight,
                 new Runnable() {
                     @Override
                     public void run() {
@@ -432,6 +442,18 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
         coords.x = (float) (double) coordsList.get(7) * density;
         coords.y = (float) (double) coordsList.get(8) * density;
         return coords;
+    }
+
+    private void validateVirtualDisplayDimensions(int width, int height) {
+        DisplayMetrics metrics = mContext.getResources().getDisplayMetrics();
+        if (height > metrics.heightPixels || width > metrics.widthPixels) {
+          StringBuilder errorBuilder = new StringBuilder();
+          errorBuilder.append("Creating a virtual display of size: ");
+          errorBuilder.append(String.format(Locale.ENGLISH, "[%d, %d], ", width, height));
+          errorBuilder.append(" is not supported. It is larger than the device screen size: ");
+          errorBuilder.append(String.format(Locale.ENGLISH, "[%d, %d].", metrics.widthPixels, metrics.heightPixels));
+          throw new IllegalArgumentException(errorBuilder.toString());
+        }
     }
 
     private int toPhysicalPixels(double logicalPixels) {
