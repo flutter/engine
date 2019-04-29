@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 declare_args() {
-  fuchsia_sdk = "//fuchsia/sdk"
+  fuchsia_sdk_path = "//fuchsia/sdk"
 }
 
 template("fuchsia_sysroot") {
@@ -22,12 +22,12 @@ template("fuchsia_sysroot") {
 
   foreach(link_lib, defs.link_libs) {
     if (link_lib != "arch/x64/sysroot/lib/Scrt1.o") {
-      _libs += [ "$fuchsia_sdk/$link_lib" ]
+      _libs += [ "$fuchsia_sdk_path/$link_lib" ]
     }
   }
 
   defs_include_dir = defs.include_dir
-  _include_dirs += [ "$fuchsia_sdk/$defs_include_dir" ]
+  _include_dirs += [ "$fuchsia_sdk_path/$defs_include_dir" ]
 
   config_name = "config_$target_name"
   config(config_name) {
@@ -82,11 +82,11 @@ template("fuchsia_fidl_library") {
 
     args = [
       "--fidlc-bin",
-      rebase_path("$fuchsia_sdk/tools/fidlc"),
+      rebase_path("$fuchsia_sdk_path/tools/fidlc"),
       "--fidlgen-bin",
-      rebase_path("$fuchsia_sdk/tools/fidlgen"),
+      rebase_path("$fuchsia_sdk_path/tools/fidlgen"),
       "--sdk-base",
-      rebase_path(fuchsia_sdk),
+      rebase_path(fuchsia_sdk_path),
       "--root",
       rebase_path(invoker.meta),
       "--json",
@@ -129,14 +129,14 @@ template("fuchsia_cc_source_library") {
   _deps = []
 
   meta_json_include_dir = meta_json.include_dir
-  _include_dirs += [ "$fuchsia_sdk/$meta_json_include_dir" ]
+  _include_dirs += [ "$fuchsia_sdk_path/$meta_json_include_dir" ]
 
   foreach(header, meta_json.headers) {
-    _sources += [ "$fuchsia_sdk/$header" ]
+    _sources += [ "$fuchsia_sdk_path/$header" ]
   }
 
   foreach(source, meta_json.sources) {
-    _sources += [ "$fuchsia_sdk/$source" ]
+    _sources += [ "$fuchsia_sdk_path/$source" ]
   }
 
   config_name = "config_$target_name"
@@ -170,7 +170,11 @@ template("fuchsia_cc_prebuilt_library") {
   _libs = []
 
   meta_json_include_dir = meta_json.include_dir
-  _include_dirs += [ "$fuchsia_sdk/$meta_json_include_dir" ]
+  _include_dirs += [ "$fuchsia_sdk_path/$meta_json_include_dir" ]
+
+  if (target_name == "vulkan") {
+    _include_dirs += [ "$flutter_root/shell/platform/fuchsia/vulkan/include" ]
+  }
 
   foreach(dep, meta_json.deps) {
     _deps += [ ":$dep" ]
@@ -179,7 +183,7 @@ template("fuchsia_cc_prebuilt_library") {
   meta_json_binaries = meta_json.binaries
   meta_json_binaries_x64 = meta_json_binaries.x64
   prebuilt_lib = meta_json_binaries_x64.link
-  _libs = [ "$fuchsia_sdk/$prebuilt_lib" ]
+  _libs = [ "$fuchsia_sdk_path/$prebuilt_lib" ]
 
   config_name = "config_$target_name"
   config(config_name) {
@@ -203,7 +207,7 @@ template("fuchsia_sdk") {
     }
 
     part_meta = part.meta
-    part_meta_rebased = "$fuchsia_sdk/$part_meta"
+    part_meta_rebased = "$fuchsia_sdk_path/$part_meta"
 
     # We need to read the JSON just to figure out what the name of the target ought to be.
     part_meta_json = read_file(part_meta_rebased, "json")
