@@ -526,6 +526,8 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StandardM
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StandardMethodCodec.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StringCodec.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/InputConnectionAdaptor.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/InputProxy.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/InputTarget.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextInputPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/AccessibilityEventsDelegate.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformPlugin.java
