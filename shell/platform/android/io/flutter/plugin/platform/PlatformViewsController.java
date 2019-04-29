@@ -416,15 +416,16 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
         return coords;
     }
 
+    // Creating a VirtualDisplay larger than the size of the device screen size
+    // could cause the device to restart: https://github.com/flutter/flutter/issues/28978
     private void validateVirtualDisplayDimensions(int width, int height) {
         DisplayMetrics metrics = mContext.getResources().getDisplayMetrics();
         if (height > metrics.heightPixels || width > metrics.widthPixels) {
-          StringBuilder errorBuilder = new StringBuilder();
-          errorBuilder.append("Creating a virtual display of size: ");
-          errorBuilder.append(String.format(Locale.ENGLISH, "[%d, %d], ", width, height));
-          errorBuilder.append(" is not supported. It is larger than the device screen size: ");
-          errorBuilder.append(String.format(Locale.ENGLISH, "[%d, %d].", metrics.widthPixels, metrics.heightPixels));
-          throw new IllegalArgumentException(errorBuilder.toString());
+            String error = "Creating a virtual display of size: "
+                + String.format(Locale.ENGLISH, "[%d, %d], ", width, height)
+                + " is not supported. It is larger than the device screen size: "
+                + String.format(Locale.ENGLISH, "[%d, %d].", metrics.widthPixels, metrics.heightPixels);
+            throw new IllegalArgumentException(error);
         }
     }
 
