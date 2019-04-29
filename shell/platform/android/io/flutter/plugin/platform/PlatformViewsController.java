@@ -24,7 +24,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -422,9 +421,9 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
         DisplayMetrics metrics = mContext.getResources().getDisplayMetrics();
         if (height > metrics.heightPixels || width > metrics.widthPixels) {
             String error = "Creating a virtual display of size: "
-                + String.format(Locale.ENGLISH, "[%d, %d], ", width, height)
+                +  "[" + width + ", " + height + "]"
                 + " is not supported. It is larger than the device screen size: "
-                + String.format(Locale.ENGLISH, "[%d, %d].", metrics.widthPixels, metrics.heightPixels);
+                +  "[" + metrics.widthPixels + ", " + metrics.heightPixels + "].";
             throw new IllegalArgumentException(error);
         }
     }
