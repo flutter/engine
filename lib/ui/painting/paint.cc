@@ -72,17 +72,17 @@ enum ColorFilterType {
   SRGBToLinearGamma
 };
 
-// Flutter still defines the matrix to be biased by 255 in the last column (translate).
-// skia is normalized, treating the last column as 0...1, so we post-scale here before
-// calling the skia factory.
+// Flutter still defines the matrix to be biased by 255 in the last column
+// (translate). skia is normalized, treating the last column as 0...1, so we
+// post-scale here before calling the skia factory.
 static sk_sp<SkColorFilter> MakeColorMatrixFilter255(const float array[20]) {
-    float tmp[20];
-    memcpy(tmp, array, sizeof(tmp));
-    tmp[ 4] *= 1.0f/255;
-    tmp[ 9] *= 1.0f/255;
-    tmp[14] *= 1.0f/255;
-    tmp[19] *= 1.0f/255;
-    return SkColorFilters::Matrix(tmp);
+  float tmp[20];
+  memcpy(tmp, array, sizeof(tmp));
+  tmp[4] *= 1.0f / 255;
+  tmp[9] *= 1.0f / 255;
+  tmp[14] *= 1.0f / 255;
+  tmp[19] *= 1.0f / 255;
+  return SkColorFilters::Matrix(tmp);
 }
 
 sk_sp<SkColorFilter> ExtractColorFilter(const uint32_t* uint_data,
