@@ -22,6 +22,20 @@ IOSExternalTextureGL::IOSExternalTextureGL(int64_t textureId,
 
 IOSExternalTextureGL::~IOSExternalTextureGL() = default;
 
+void IOSExternalTextureGL::EnsureTextureCacheExists() {
+  if (!cache_ref_) {
+    CVOpenGLESTextureCacheRef cache;
+    CVReturn err = CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, NULL,
+                                                [EAGLContext currentContext], NULL, &cache);
+    if (err == noErr) {
+      cache_ref_.Reset(cache);
+    } else {
+      FML_LOG(WARNING) << "Failed to create GLES texture cache: " << err;
+      return;
+    }
+  }
+}
+
 void IOSExternalTextureGL::CreateTextureFromPixelBuffer() {
   if (buffer_ref_ == nullptr) {
     return;
@@ -43,17 +57,7 @@ void IOSExternalTextureGL::Paint(SkCanvas& canvas,
                                  const SkRect& bounds,
                                  bool freeze,
                                  GrContext* context) {
-  if (!cache_ref_) {
-    CVOpenGLESTextureCacheRef cache;
-    CVReturn err = CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, NULL,
-                                                [EAGLContext currentContext], NULL, &cache);
-    if (err == noErr) {
-      cache_ref_.Reset(cache);
-    } else {
-      FML_LOG(WARNING) << "Failed to create GLES texture cache: " << err;
-      return;
-    }
-  }
+  EnsureTextureCacheExists();
   if (!freeze) {
     buffer_ref_.Reset([external_texture_ copyPixelBuffer]);
     CreateTextureFromPixelBuffer();
@@ -77,6 +81,7 @@ void IOSExternalTextureGL::OnGrContextCreated() {
   // Re-create texture from pixel buffer that was saved before
   // OnGrContextDestroyed gets called.
   // https://github.com/flutter/flutter/issues/30491
+  EnsureTextureCacheExists();
   CreateTextureFromPixelBuffer();
 }
 
