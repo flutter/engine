@@ -46,10 +46,10 @@ void IOSExternalTextureGL::CreateTextureFromPixelBuffer() {
       static_cast<int>(CVPixelBufferGetWidth(buffer_ref_)),
       static_cast<int>(CVPixelBufferGetHeight(buffer_ref_)), GL_BGRA, GL_UNSIGNED_BYTE, 0,
       &texture);
-  texture_ref_.Reset(texture);
   if (err != noErr) {
     FML_LOG(WARNING) << "Could not create texture from pixel buffer: " << err;
-    return;
+  } else {
+    texture_ref_.Reset(texture);
   }
 }
 
@@ -59,7 +59,10 @@ void IOSExternalTextureGL::Paint(SkCanvas& canvas,
                                  GrContext* context) {
   EnsureTextureCacheExists();
   if (!freeze) {
-    buffer_ref_.Reset([external_texture_ copyPixelBuffer]);
+    auto pixelBuffer = [external_texture_ copyPixelBuffer];
+    if (pixelBuffer) {
+      buffer_ref_.Reset(pixelBuffer);
+    }
     CreateTextureFromPixelBuffer();
   }
   if (!texture_ref_) {
