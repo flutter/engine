@@ -16,8 +16,12 @@
 extern "C" {
 #endif
 
+// Opaque reference to a Flutter window controller.
+typedef struct FlutterDesktopWindowControllerState*
+    FlutterDesktopWindowControllerRef;
+
 // Opaque reference to a Flutter window.
-typedef struct FlutterDesktopWindowState* FlutterDesktopWindowRef;
+typedef struct FlutterDesktopWindow* FlutterDesktopWindowRef;
 
 // Opaque reference to a Flutter engine instance.
 typedef struct FlutterDesktopEngineState* FlutterDesktopEngineRef;
@@ -49,7 +53,7 @@ FLUTTER_EXPORT void FlutterDesktopTerminate();
 // valid until FlutterDesktopRunWindowLoop has been called and returned.
 // Note that calling FlutterDesktopCreateWindow without later calling
 // FlutterDesktopRunWindowLoop on the returned reference is a memory leak.
-FLUTTER_EXPORT FlutterDesktopWindowRef
+FLUTTER_EXPORT FlutterDesktopWindowControllerRef
 FlutterDesktopCreateWindow(int initial_width,
                            int initial_height,
                            const char* title,
@@ -58,17 +62,38 @@ FlutterDesktopCreateWindow(int initial_width,
                            const char** arguments,
                            size_t argument_count);
 
+// Loops on Flutter window events until the window is closed.
+//
+// Once this function returns, |controller| is no longer
+// valid, and must not be used again.
+FLUTTER_EXPORT void FlutterDesktopRunWindowLoop(
+    FlutterDesktopWindowControllerRef controller);
+
+// Returns the window handle for the window associated with
+// FlutterDesktopWindowControllerRef.
+//
+// Its lifetime is the same as the |controller|'s.
+FLUTTER_EXPORT FlutterDesktopWindowRef
+FlutterDesktopGetWindow(FlutterDesktopWindowControllerRef controller);
+
+// Returns the plugin registrar handle for the plugin with the given name.
+//
+// The name must be unique across the application.
+FLUTTER_EXPORT FlutterDesktopPluginRegistrarRef
+FlutterDesktopGetPluginRegistrar(FlutterDesktopWindowControllerRef controller,
+                                 const char* plugin_name);
+
 // Enables or disables hover tracking.
 //
 // If hover is enabled, mouse movement will send hover events to the Flutter
 // engine, rather than only tracking the mouse while the button is pressed.
 // Defaults to off.
-FLUTTER_EXPORT void FlutterDesktopSetHoverEnabled(
+FLUTTER_EXPORT void FlutterDesktopWindowSetHoverEnabled(
     FlutterDesktopWindowRef flutter_window,
     bool enabled);
 
 // Sets the displayed title for |flutter_window|.
-FLUTTER_EXPORT void FlutterDesktopSetWindowTitle(
+FLUTTER_EXPORT void FlutterDesktopWindowSetTitle(
     FlutterDesktopWindowRef flutter_window,
     const char* title);
 
@@ -77,18 +102,11 @@ FLUTTER_EXPORT void FlutterDesktopSetWindowTitle(
 // The pixel format is 32-bit RGBA. The provided image data only needs to be
 // valid for the duration of the call to this method. Pass a nullptr to revert
 // to the default icon.
-FLUTTER_EXPORT void FlutterDesktopSetWindowIcon(
+FLUTTER_EXPORT void FlutterDesktopWindowSetIcon(
     FlutterDesktopWindowRef flutter_window,
     uint8_t* pixel_data,
     int width,
     int height);
-
-// Loops on Flutter window events until the window is closed.
-//
-// Once this function returns, FlutterDesktopWindowRef is no longer valid, and
-// must not be used again.
-FLUTTER_EXPORT void FlutterDesktopRunWindowLoop(
-    FlutterDesktopWindowRef flutter_window);
 
 // Runs an instance of a headless Flutter engine.
 //
@@ -111,13 +129,6 @@ FlutterDesktopRunEngine(const char* assets_path,
 // successful. |engine_ref| is no longer valid after this call.
 FLUTTER_EXPORT bool FlutterDesktopShutDownEngine(
     FlutterDesktopEngineRef engine_ref);
-
-// Returns the plugin registrar handle for the plugin with the given name.
-//
-// The name must be unique across the application.
-FLUTTER_EXPORT FlutterDesktopPluginRegistrarRef
-FlutterDesktopGetPluginRegistrar(FlutterDesktopWindowRef flutter_window,
-                                 const char* plugin_name);
 
 #if defined(__cplusplus)
 }  // extern "C"
