@@ -7,7 +7,7 @@
 
 #include <memory>
 
-#include <flutter_plugin_registrar_glfw.h>
+#include <flutter_glfw.h>
 
 #include "flutter_window.h"
 #include "plugin_registrar.h"

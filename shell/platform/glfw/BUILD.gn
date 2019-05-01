@@ -4,7 +4,6 @@
 
 _public_headers = [
   "public/flutter_glfw.h",
-  "public/flutter_plugin_registrar_glfw.h",
 ]
 
 # Any files that are built by clients (client_wrapper code, library headers for

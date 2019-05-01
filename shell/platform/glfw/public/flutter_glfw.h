@@ -130,6 +130,11 @@ FlutterDesktopRunEngine(const char* assets_path,
 FLUTTER_EXPORT bool FlutterDesktopShutDownEngine(
     FlutterDesktopEngineRef engine_ref);
 
+// Returns the window associated with this registrar's engine instance.
+// This is a GLFW shell-specific extension to flutter_plugin_registrar.h
+FLUTTER_EXPORT FlutterDesktopWindowRef
+FlutterDesktopRegistrarGetWindow(FlutterDesktopPluginRegistrarRef registrar);
+
 #if defined(__cplusplus)
 }  // extern "C"
 #endif
