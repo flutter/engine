@@ -557,19 +557,19 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   return state;
 }
 
-void FlutterDesktopSetHoverEnabled(FlutterDesktopWindowRef flutter_window,
-                                   bool enabled) {
+void FlutterDesktopWindowSetHoverEnabled(FlutterDesktopWindowRef flutter_window,
+                                         bool enabled) {
   flutter_window->hover_tracking_enabled = enabled;
   SetHoverCallbacksEnabled(flutter_window->window, enabled);
 }
 
-void FlutterDesktopSetWindowTitle(FlutterDesktopWindowRef flutter_window,
+void FlutterDesktopWindowSetTitle(FlutterDesktopWindowRef flutter_window,
                                   const char* title) {
   GLFWwindow* window = flutter_window->window;
   glfwSetWindowTitle(window, title);
 }
 
-void FlutterDesktopSetWindowIcon(FlutterDesktopWindowRef flutter_window,
+void FlutterDesktopWindowSetIcon(FlutterDesktopWindowRef flutter_window,
                                  uint8_t* pixel_data,
                                  int width,
                                  int height) {
