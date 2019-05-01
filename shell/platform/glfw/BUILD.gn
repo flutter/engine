@@ -2,9 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-_public_headers = [
-  "public/flutter_glfw.h",
-]
+_public_headers = [ "public/flutter_glfw.h" ]
 
 # Any files that are built by clients (client_wrapper code, library headers for
 # implementations using this shared code, etc.) include the public headers
