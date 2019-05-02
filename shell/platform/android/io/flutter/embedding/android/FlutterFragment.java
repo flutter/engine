@@ -523,6 +523,7 @@ public class FlutterFragment extends Fragment {
     super.onStop();
     Log.d(TAG, "onStop()");
     flutterEngine.getLifecycleChannel().appIsPaused();
+    flutterView.detachFromFlutterEngine();
   }
 
   @Override
@@ -530,7 +531,6 @@ public class FlutterFragment extends Fragment {
     super.onDestroyView();
     Log.d(TAG, "onDestroyView()");
     flutterView.removeOnFirstFrameRenderedListener(onFirstFrameRenderedListener);
-    flutterView.detachFromFlutterEngine();
   }
 
   @Override
