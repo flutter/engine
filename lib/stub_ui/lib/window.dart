@@ -114,6 +114,15 @@ class WindowPadding {
   String toString() {
     return '$runtimeType(left: $left, top: $top, right: $right, bottom: $bottom)';
   }
+
+  /// Returns a syntactically valid Unicode BCP47 Locale Identifier.
+  ///
+  /// Some examples of such identifiers: "en", "es-419", "hi-Deva-IN" and
+  /// "zh-Hans-CN". See http://www.unicode.org/reports/tr35/ for technical
+  /// details.
+  String toLanguageTag() {
+    throw UnimplementedError();
+  }
 }
 
 /// An identifier used to select a user's language and formatting preferences.
