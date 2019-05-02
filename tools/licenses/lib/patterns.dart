@@ -510,6 +510,23 @@ final List<LicenseFileReferencePattern> csReferencesByFilename = <LicenseFileRef
     )
   ),
 
+  // Seen in Fuchsia SDK files
+  LicenseFileReferencePattern(
+    firstPrefixIndex: 1,
+    indentPrefixIndex: 2,
+    fileIndex: 3,
+    needsCopyright: false,
+    pattern: RegExp(
+      kIndent +
+      r'Copyright .+\. All rights reserved\. '
+      r'This is a GENERATED file, see //zircon/system/host/abigen\. '
+      r'The license governing this file can be found in the (LICENSE) file\.'
+      .replaceAll(' ', _linebreak),
+      multiLine: true,
+      caseSensitive: false,
+    )
+  ),
+
 ];
 
 
