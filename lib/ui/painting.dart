@@ -1024,47 +1024,9 @@ enum Clip {
 // constant and can't propagate into the set/get calls.
 const Endian _kFakeHostEndian = Endian.little;
 
-/// An immutable image dimensions container that holds the target dimensions.
-class ImageResizeDimensions {
-  /// Creates [ImageResizeDimensions] with given width and height.
-  const ImageResizeDimensions(this.width, this.height);
-
-  /// Creates [ImageResizeDimensions] with the given width, while
-  /// preserving the aspect ratio of the original image.
-  factory ImageResizeDimensions.resizeWidthPreserveAspectRatio(int widthParam) {
-    return ImageResizeDimensions(widthParam, _kDoNotResizeDimension);
-  }
-
-  /// Creates [ImageResizeDimensions] with the given height, while
-  /// preserving the aspect ratio of the original image.
-  factory ImageResizeDimensions.resizeHeightPreserveAspectRatio(int heightParam) {
-    return ImageResizeDimensions(_kDoNotResizeDimension, heightParam);
-  }
-
-  /// Creates [ImageResizeDimensions] which preserves the original dimensions
-  /// of the image.
-  static const ImageResizeDimensions kDoNotResize = ImageResizeDimensions(_kDoNotResizeDimension, _kDoNotResizeDimension);
-
-  static const int _kDoNotResizeDimension = -1;
-
-  /// Horizontal extent of this image.
-  final int width;
-
-  /// Vertical extent of this image.
-  final int height;
-
-  @override
-  bool operator ==(dynamic other) {
-    if (other is! ImageResizeDimensions) {
-      return false;
-    }
-    final ImageResizeDimensions typedOther = other;
-    return width == typedOther.width && height == typedOther.height;
-  }
-
-  @override
-  int get hashCode => hashValues(width, height);
-}
+// Placeholder to signal the engine to not resize the width or height of an image.
+// This needs to be kept in sync with "kDoNotResizeDimension" in codec.cc
+const int _kDoNotResizeDimension = -1;
 
 /// A description of the style to use when drawing on a [Canvas].
 ///
@@ -1693,18 +1655,18 @@ class Codec extends NativeFieldWrapperClass2 {
 /// unlikely that a factor that low will be sufficient to cache all decoded
 /// frames. The default value is `25.0`.
 ///
-/// If the [resizeDimensions] are specified, image is resized to this. This is typically used
-/// to resize the image to the container dimensions.
+/// If [targetWidth] or [targetHeight] are specified, image is resized to this. This is
+/// typically used to resize the image to the container dimensions.
 ///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list, {
   double decodedCacheRatioCap = double.infinity,
-  ImageResizeDimensions resizeDimensions,
+  int targetWidth = _kDoNotResizeDimension,
+  int targetHeight = _kDoNotResizeDimension,
 }) {
-  resizeDimensions = resizeDimensions ?? ImageResizeDimensions.kDoNotResize;
   return _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, decodedCacheRatioCap, resizeDimensions.width, resizeDimensions.height),
+    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, decodedCacheRatioCap, targetWidth, targetHeight)
   );
 }
 
@@ -1754,9 +1716,8 @@ void decodeImageFromPixels(
   {int rowBytes, double decodedCacheRatioCap = double.infinity}
 ) {
   final _ImageInfo imageInfo = new _ImageInfo(width, height, format.index, rowBytes);
-  const ImageResizeDimensions targetSize = ImageResizeDimensions.kDoNotResize;
   final Future<Codec> codecFuture = _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCap, targetSize.width, targetSize.height)
+    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCap, _kDoNotResizeDimension, _kDoNotResizeDimension)
   );
   codecFuture.then((Codec codec) => codec.getNextFrame())
       .then((FrameInfo frameInfo) => callback(frameInfo.image));

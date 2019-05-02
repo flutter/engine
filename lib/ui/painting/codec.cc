@@ -107,18 +107,16 @@ static bool needsResize(const int currentWidth,
     const double aspectRatio = (double)currentWidth / currentHeight;
     newWidth = round(aspectRatio * newHeight);
     return true;
-  }
-
-  if (targetHeight == kDoNotResizeDimension) {
+  } else if (targetHeight == kDoNotResizeDimension) {
     newWidth = targetWidth;
     const double invAspectRatio = (double)currentHeight / currentWidth;
     newHeight = round(invAspectRatio * newWidth);
     return true;
+  } else {
+    newWidth = targetWidth;
+    newHeight = targetHeight;
+    return true;
   }
-
-  newWidth = targetWidth;
-  newHeight = targetHeight;
-  return true;
 }
 
 static sk_sp<SkImage> DecodeAndResizeImageToExactSize(
