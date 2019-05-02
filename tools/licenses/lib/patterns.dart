@@ -680,6 +680,25 @@ final List<MultipleVersionedLicenseReferencePattern> csReferencesByUrl = <Multip
   ),
 
   // MIT
+  MultipleVersionedLicenseReferencePattern(
+    firstPrefixIndex: 1,
+    indentPrefixIndex: 2,
+    licenseIndices: const <int>[3],
+    checkLocalFirst: false,
+    pattern: RegExp(
+      kIndent +
+      (
+       r'Use of this source code is governed by a MIT-style '
+       r'license that can be found in the LICENSE file or at '
+       r'(https://opensource.org/licenses/MIT)'
+       .replaceAll(' ', _linebreak)
+      ),
+      multiLine: true,
+      caseSensitive: false,
+    )
+  ),
+
+  // MIT
   // the crazy s/./->/ thing is someone being over-eager with search-and-replace in rapidjson
   MultipleVersionedLicenseReferencePattern(
     firstPrefixIndex: 1,
