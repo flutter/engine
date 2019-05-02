@@ -224,7 +224,6 @@ action("flutter_shell_java") {
     "--depfile=$_rebased_depfile",
     "--jar-path=$_rebased_jar_path",
     "--classpath=$_rebased_classpath",
-    # "--java-srcjars=$_rebased_java_srcjars",
     "--bootclasspath=$_rebased_android_sdk_jar",
   ]
 
