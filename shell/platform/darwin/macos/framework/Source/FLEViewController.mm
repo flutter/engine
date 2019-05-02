@@ -101,7 +101,6 @@ static const int kDefaultWindowFramebuffer = 0;
  */
 - (void)onSettingsChanged:(NSNotification*)notification;
 
-
 @end
 
 #pragma mark - Static methods provided to engine configuration
@@ -506,10 +505,10 @@ static void CommonInit(FLEViewController* controller) {
 
 - (void)sendInitialSettings {
   [[NSDistributedNotificationCenter defaultCenter]
-    addObserver:self
-        selector:@selector(onSettingsChanged:)
-            name:@"AppleInterfaceThemeChangedNotification"
-          object:nil];
+      addObserver:self
+         selector:@selector(onSettingsChanged:)
+             name:@"AppleInterfaceThemeChangedNotification"
+           object:nil];
   [self onSettingsChanged:nil];
 }
 
