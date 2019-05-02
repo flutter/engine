@@ -23,13 +23,13 @@ part of dart.ui;
 
 bool _rectIsValid(Rect rect) {
   assert(rect != null, 'Rect argument was null.');
-  assert(!rect._value.any((double value) => value.isNaN), 'Rect argument contained a NaN value.');
+  assert(!rect.hasNaN, 'Rect argument contained a NaN value.');
   return true;
 }
 
 bool _rrectIsValid(RRect rrect) {
   assert(rrect != null, 'RRect argument was null.');
-  assert(!rrect._value.any((double value) => value.isNaN), 'RRect argument contained a NaN value.');
+  assert(!rrect.hasNaN, 'RRect argument contained a NaN value.');
   return true;
 }
 
@@ -42,6 +42,7 @@ bool _offsetIsValid(Offset offset) {
 bool _matrix4IsValid(Float64List matrix4) {
   assert(matrix4 != null, 'Matrix4 argument was null.');
   assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
+  assert(matrix4.every((double value) => value.isFinite), 'Matrix4 entries must be finite.');
   return true;
 }
 
@@ -2076,7 +2077,7 @@ class Path extends NativeFieldWrapperClass2 {
   /// argument.
   void addRRect(RRect rrect) {
     assert(_rrectIsValid(rrect));
-    _addRRect(rrect._value);
+    _addRRect(rrect._value32);
   }
   void _addRRect(Float32List rrect) native 'Path_addRRect';
 
@@ -2961,12 +2962,13 @@ class Vertices extends NativeFieldWrapperClass2 {
     final Int32List encodedColors = colors != null
       ? _encodeColorList(colors)
       : null;
-    final Int32List encodedIndices = indices != null
-      ? new Int32List.fromList(indices)
+    final Uint16List encodedIndices = indices != null
+      ? new Uint16List.fromList(indices)
       : null;
 
     _constructor();
-    _init(mode.index, encodedPositions, encodedTextureCoordinates, encodedColors, encodedIndices);
+    if (!_init(mode.index, encodedPositions, encodedTextureCoordinates, encodedColors, encodedIndices))
+      throw new ArgumentError('Invalid configuration for vertices.');
   }
 
   Vertices.raw(
@@ -2974,7 +2976,7 @@ class Vertices extends NativeFieldWrapperClass2 {
     Float32List positions, {
     Float32List textureCoordinates,
     Int32List colors,
-    Int32List indices,
+    Uint16List indices,
   }) : assert(mode != null),
        assert(positions != null) {
     if (textureCoordinates != null && textureCoordinates.length != positions.length)
@@ -2985,16 +2987,17 @@ class Vertices extends NativeFieldWrapperClass2 {
       throw new ArgumentError('"indices" values must be valid indices in the positions list.');
 
     _constructor();
-    _init(mode.index, positions, textureCoordinates, colors, indices);
+    if (!_init(mode.index, positions, textureCoordinates, colors, indices))
+      throw new ArgumentError('Invalid configuration for vertices.');
   }
 
   void _constructor() native 'Vertices_constructor';
 
-  void _init(int mode,
+  bool _init(int mode,
              Float32List positions,
              Float32List textureCoordinates,
              Int32List colors,
-             Int32List indices) native 'Vertices_init';
+             Uint16List indices) native 'Vertices_init';
 }
 
 /// Defines how a list of points is interpreted when drawing a set of points.
@@ -3307,7 +3310,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   void clipRRect(RRect rrect, {bool doAntiAlias = true}) {
     assert(_rrectIsValid(rrect));
     assert(doAntiAlias != null);
-    _clipRRect(rrect._value, doAntiAlias);
+    _clipRRect(rrect._value32, doAntiAlias);
   }
   void _clipRRect(Float32List rrect, bool doAntiAlias) native 'Canvas_clipRRect';
 
@@ -3384,7 +3387,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   void drawRRect(RRect rrect, Paint paint) {
     assert(_rrectIsValid(rrect));
     assert(paint != null);
-    _drawRRect(rrect._value, paint._objects, paint._data);
+    _drawRRect(rrect._value32, paint._objects, paint._data);
   }
   void _drawRRect(Float32List rrect,
                   List<dynamic> paintObjects,
@@ -3399,7 +3402,7 @@ class Canvas extends NativeFieldWrapperClass2 {
     assert(_rrectIsValid(outer));
     assert(_rrectIsValid(inner));
     assert(paint != null);
-    _drawDRRect(outer._value, inner._value, paint._objects, paint._data);
+    _drawDRRect(outer._value32, inner._value32, paint._objects, paint._data);
   }
   void _drawDRRect(Float32List outer,
                    Float32List inner,
@@ -3699,7 +3702,7 @@ class Canvas extends NativeFieldWrapperClass2 {
     }
 
     final Int32List colorBuffer = colors.isEmpty ? null : _encodeColorList(colors);
-    final Float32List cullRectBuffer = cullRect?._value;
+    final Float32List cullRectBuffer = cullRect?._value32;
 
     _drawAtlas(
       paint._objects, paint._data, atlas, rstTransformBuffer, rectBuffer,
@@ -3746,7 +3749,7 @@ class Canvas extends NativeFieldWrapperClass2 {
 
     _drawAtlas(
       paint._objects, paint._data, atlas, rstTransforms, rects,
-      colors, blendMode.index, cullRect?._value
+      colors, blendMode.index, cullRect?._value32
     );
   }
 

@@ -371,10 +371,9 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     TRACE_EVENT0("flutter", "Dart_Initialize");
     Dart_InitializeParams params = {};
     params.version = DART_INITIALIZE_PARAMS_CURRENT_VERSION;
-    params.vm_snapshot_data =
-        vm_data_->GetVMSnapshot().GetData()->GetSnapshotPointer();
+    params.vm_snapshot_data = vm_data_->GetVMSnapshot().GetDataMapping();
     params.vm_snapshot_instructions =
-        vm_data_->GetVMSnapshot().GetInstructionsIfPresent();
+        vm_data_->GetVMSnapshot().GetInstructionsMapping();
     params.create = reinterpret_cast<decltype(params.create)>(
         DartIsolate::DartIsolateCreateCallback);
     params.shutdown = reinterpret_cast<decltype(params.shutdown)>(
@@ -383,7 +382,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
         DartIsolate::DartIsolateCleanupCallback);
     params.thread_exit = ThreadExitCallback;
     params.get_service_assets = GetVMServiceAssetsArchiveCallback;
-    params.entropy_source = DartIO::EntropySource;
+    params.entropy_source = dart::bin::GetEntropy;
     char* init_error = Dart_Initialize(&params);
     if (init_error) {
       FML_LOG(FATAL) << "Error while initializing the Dart VM: " << init_error;
@@ -458,56 +457,6 @@ std::shared_ptr<ServiceProtocol> DartVM::GetServiceProtocol() const {
 
 std::shared_ptr<IsolateNameServer> DartVM::GetIsolateNameServer() const {
   return isolate_name_server_;
-}
-
-size_t DartVM::GetIsolateCount() const {
-  std::lock_guard<std::mutex> lock(active_isolates_mutex_);
-  return active_isolates_.size();
-}
-
-void DartVM::ShutdownAllIsolates() {
-  std::set<std::shared_ptr<DartIsolate>> isolates_to_shutdown;
-  // We may be shutting down isolates on the current thread. Shutting down the
-  // isolate calls the shutdown callback which removes the entry from the
-  // active isolate. The lock must be obtained to mutate that entry. To avoid a
-  // deadlock, collect the isolate is a seprate collection.
-  {
-    std::lock_guard<std::mutex> lock(active_isolates_mutex_);
-    for (const auto& active_isolate : active_isolates_) {
-      if (auto task_runner = active_isolate->GetMessageHandlingTaskRunner()) {
-        isolates_to_shutdown.insert(active_isolate);
-      }
-    }
-  }
-
-  fml::CountDownLatch latch(isolates_to_shutdown.size());
-
-  for (const auto& isolate : isolates_to_shutdown) {
-    fml::TaskRunner::RunNowOrPostTask(
-        isolate->GetMessageHandlingTaskRunner(), [&latch, isolate]() {
-          if (!isolate || !isolate->Shutdown()) {
-            FML_LOG(ERROR) << "Could not shutdown isolate.";
-          }
-          latch.CountDown();
-        });
-  }
-  latch.Wait();
-}
-
-void DartVM::RegisterActiveIsolate(std::shared_ptr<DartIsolate> isolate) {
-  if (!isolate) {
-    return;
-  }
-  std::lock_guard<std::mutex> lock(active_isolates_mutex_);
-  active_isolates_.insert(isolate);
-}
-
-void DartVM::UnregisterActiveIsolate(std::shared_ptr<DartIsolate> isolate) {
-  if (!isolate) {
-    return;
-  }
-  std::lock_guard<std::mutex> lock(active_isolates_mutex_);
-  active_isolates_.erase(isolate);
 }
 
 }  // namespace flutter

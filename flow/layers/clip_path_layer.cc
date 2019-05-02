@@ -10,7 +10,7 @@
 
 #endif  // defined(OS_FUCHSIA)
 
-namespace flow {
+namespace flutter {
 
 ClipPathLayer::ClipPathLayer(Clip clip_behavior)
     : clip_behavior_(clip_behavior) {
@@ -38,7 +38,7 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
   FML_DCHECK(needs_system_composite());
 
-  // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
+  // TODO(SCN-140): Must be able to specify paths as shapes to nodes.
   //               Treating the shape as a rectangle for now.
   auto bounds = clip_path_.getBounds();
   scenic::Rectangle shape(context.session(),  // session
@@ -69,4 +69,4 @@ void ClipPathLayer::Paint(PaintContext& context) const {
   }
 }
 
-}  // namespace flow
+}  // namespace flutter

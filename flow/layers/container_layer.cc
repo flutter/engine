@@ -4,7 +4,7 @@
 
 #include "flutter/flow/layers/container_layer.h"
 
-namespace flow {
+namespace flutter {
 
 ContainerLayer::ContainerLayer() {}
 
@@ -27,8 +27,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
                                      const SkMatrix& child_matrix,
                                      SkRect* child_paint_bounds) {
   for (auto& layer : layers_) {
-    PrerollContext child_context = *context;
-    layer->Preroll(&child_context, child_matrix);
+    layer->Preroll(context, child_matrix);
 
     if (layer->needs_system_composite()) {
       set_needs_system_composite(true);
@@ -69,4 +68,4 @@ void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
 
 #endif  // defined(OS_FUCHSIA)
 
-}  // namespace flow
+}  // namespace flutter

@@ -20,9 +20,8 @@ namespace {
 
 using SceneHostBindings = std::unordered_map<zx_koid_t, flutter::SceneHost*>;
 
-FML_THREAD_LOCAL fml::ThreadLocal tls_scene_host_bindings([](intptr_t value) {
-  delete reinterpret_cast<SceneHostBindings*>(value);
-});
+FML_THREAD_LOCAL fml::ThreadLocalUniquePtr<SceneHostBindings>
+    tls_scene_host_bindings;
 
 void SceneHost_constructor(Dart_NativeArguments args) {
   tonic::DartCallConstructor(&flutter::SceneHost::Create, args);
@@ -31,17 +30,15 @@ void SceneHost_constructor(Dart_NativeArguments args) {
 void SceneHost_constructorViewHolderToken(Dart_NativeArguments args) {
   // This UI thread / Isolate contains at least 1 SceneHost.  Initialize the
   // per-Isolate bindings.
-  if (tls_scene_host_bindings.Get() == 0) {
-    tls_scene_host_bindings.Set(
-        reinterpret_cast<intptr_t>(new SceneHostBindings()));
+  if (tls_scene_host_bindings.get() == nullptr) {
+    tls_scene_host_bindings.reset(new SceneHostBindings());
   }
 
   tonic::DartCallConstructor(&flutter::SceneHost::CreateViewHolder, args);
 }
 
 flutter::SceneHost* GetSceneHost(scenic::ResourceId id) {
-  auto* bindings =
-      reinterpret_cast<SceneHostBindings*>(tls_scene_host_bindings.Get());
+  auto* bindings = tls_scene_host_bindings.get();
   FML_DCHECK(bindings);
 
   auto binding = bindings->find(id);
@@ -121,7 +118,7 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> exportTokenHandle)
   gpu_task_runner_->PostTask(
       [id = id_, handle = std::move(exportTokenHandle)]() {
         auto export_token = zx::eventpair(handle->ReleaseHandle());
-        flow::ExportNode::Create(id, std::move(export_token));
+        flutter::ExportNode::Create(id, std::move(export_token));
       });
 }
 
@@ -147,8 +144,7 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderTokenHandle,
   }
 
   auto bind_callback = [scene_host = this](scenic::ResourceId id) {
-    auto* bindings =
-        reinterpret_cast<SceneHostBindings*>(tls_scene_host_bindings.Get());
+    auto* bindings = tls_scene_host_bindings.get();
     FML_DCHECK(bindings);
     FML_DCHECK(bindings->find(id) == bindings->end());
 
@@ -163,22 +159,23 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderTokenHandle,
                               bind_callback = std::move(bind_callback)]() {
     auto view_holder_token =
         scenic::ToViewHolderToken(zx::eventpair(handle->ReleaseHandle()));
-    flow::ViewHolder::Create(id, std::move(ui_task_runner),
-                             std::move(view_holder_token),
-                             std::move(bind_callback));
+    flutter::ViewHolder::Create(id, std::move(ui_task_runner),
+                                std::move(view_holder_token),
+                                std::move(bind_callback));
   });
 }
 
 SceneHost::~SceneHost() {
   if (use_view_holder_) {
-    auto* bindings =
-        reinterpret_cast<SceneHostBindings*>(tls_scene_host_bindings.Get());
+    auto* bindings = tls_scene_host_bindings.get();
     FML_DCHECK(bindings);
     bindings->erase(id_);
 
-    gpu_task_runner_->PostTask([id = id_]() { flow::ViewHolder::Destroy(id); });
+    gpu_task_runner_->PostTask(
+        [id = id_]() { flutter::ViewHolder::Destroy(id); });
   } else {
-    gpu_task_runner_->PostTask([id = id_]() { flow::ExportNode::Destroy(id); });
+    gpu_task_runner_->PostTask(
+        [id = id_]() { flutter::ExportNode::Destroy(id); });
   }
 }
 
@@ -217,7 +214,7 @@ void SceneHost::setProperties(double width,
 
   gpu_task_runner_->PostTask([id = id_, width, height, insetTop, insetRight,
                               insetBottom, insetLeft, focusable]() {
-    auto* view_holder = flow::ViewHolder::FromId(id);
+    auto* view_holder = flutter::ViewHolder::FromId(id);
     FML_DCHECK(view_holder);
 
     view_holder->SetProperties(width, height, insetTop, insetRight, insetBottom,

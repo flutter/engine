@@ -7,8 +7,9 @@
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/matrix_decomposition.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/lib/ui/window/viewport_metrics.h"
 
-namespace flow {
+namespace flutter {
 
 // Helper function to generate clip planes for a scenic::EntityNode.
 static void SetEntityNodeClipPlanes(scenic::EntityNode* entity_node,
@@ -74,7 +75,7 @@ void SceneUpdateContext::CreateFrame(
 
   // Add a part which represents the frame's geometry for clipping purposes
   // and possibly for its texture.
-  // TODO(MZ-137): Need to be able to express the radii as vectors.
+  // TODO(SCN-137): Need to be able to express the radii as vectors.
   SkRect shape_bounds = rrect.getBounds();
   scenic::RoundedRectangle shape(
       session_,                                      // session
@@ -163,9 +164,12 @@ scenic::Image* SceneUpdateContext::GenerateImageIfNeeded(
 
   // Acquire a surface from the surface producer and register the paint tasks.
   std::unique_ptr<SurfaceProducerSurface> surface =
-      surface_producer_->ProduceSurface(physical_size,
-                                        LayerRasterCacheKey(layer, Matrix()),
-                                        std::move(entity_node));
+      surface_producer_->ProduceSurface(
+          physical_size,
+          LayerRasterCacheKey(
+              // Root frame has a nullptr layer
+              layer ? layer->unique_id() : 0, Matrix()),
+          std::move(entity_node));
 
   if (!surface) {
     FML_LOG(ERROR) << "Could not acquire a surface from the surface producer "
@@ -187,7 +191,8 @@ scenic::Image* SceneUpdateContext::GenerateImageIfNeeded(
   return image;
 }
 
-std::vector<std::unique_ptr<flow::SceneUpdateContext::SurfaceProducerSurface>>
+std::vector<
+    std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>>
 SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
   TRACE_EVENT0("flutter", "SceneUpdateContext::ExecutePaintTasks");
   std::vector<std::unique_ptr<SurfaceProducerSurface>> surfaces_to_submit;
@@ -196,6 +201,7 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
     SkCanvas* canvas = task.surface->GetSkiaSurface()->getCanvas();
     Layer::PaintContext context = {canvas,
                                    canvas,
+                                   frame.gr_context(),
                                    nullptr,
                                    frame.context().frame_time(),
                                    frame.context().engine_time(),
@@ -238,7 +244,7 @@ SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
       previous_scale_x_(context.top_scale_x_),
       previous_scale_y_(context.top_scale_y_) {
   if (!transform.isIdentity()) {
-    // TODO(MZ-192): The perspective and shear components in the matrix
+    // TODO(SCN-192): The perspective and shear components in the matrix
     // are not handled correctly.
     MatrixDecomposition decomposition(transform);
     if (decomposition.IsValid()) {
@@ -285,15 +291,23 @@ SceneUpdateContext::Transform::~Transform() {
 SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
                                  const SkRRect& rrect,
                                  SkColor color,
-                                 float elevation,
+                                 float local_elevation,
+                                 float world_elevation,
+                                 float depth,
                                  Layer* layer)
     : Entity(context),
       rrect_(rrect),
       color_(color),
       paint_bounds_(SkRect::MakeEmpty()),
       layer_(layer) {
-  if (elevation != 0.0)
-    entity_node().SetTranslation(0.f, 0.f, -elevation);
+  if (local_elevation != 0.0) {
+    if (depth > flutter::kUnsetDepth && world_elevation >= depth) {
+      // TODO(mklim): Deal with bounds overflow correctly.
+      FML_LOG(ERROR) << "Elevation " << world_elevation << " is outside of "
+                     << depth;
+    }
+    entity_node().SetTranslation(0.f, 0.f, -local_elevation);
+  }
 }
 
 SceneUpdateContext::Frame::~Frame() {
@@ -321,4 +335,4 @@ SceneUpdateContext::Clip::Clip(SceneUpdateContext& context,
   SetEntityNodeClipPlanes(&entity_node(), shape_bounds);
 }
 
-}  // namespace flow
+}  // namespace flutter

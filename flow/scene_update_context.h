@@ -18,7 +18,7 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-namespace flow {
+namespace flutter {
 
 class Layer;
 
@@ -112,7 +112,9 @@ class SceneUpdateContext {
     Frame(SceneUpdateContext& context,
           const SkRRect& rrect,
           SkColor color,
-          float elevation,
+          float local_elevation = 0.0f,
+          float parent_elevation = 0.0f,
+          float depth = 0.0f,
           Layer* layer = nullptr);
 
     ~Frame();
@@ -230,6 +232,6 @@ class SceneUpdateContext {
   FML_DISALLOW_COPY_AND_ASSIGN(SceneUpdateContext);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_
