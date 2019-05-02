@@ -194,10 +194,11 @@ static bool HeadlessOnMakeResourceCurrent(FLEViewController* controller) {
 static void CommonInit(FLEViewController* controller) {
   controller->_messageHandlers = [[NSMutableDictionary alloc] init];
   controller->_additionalKeyResponders = [[NSMutableOrderedSet alloc] init];
-  [[NSDistributedNotificationCenter defaultCenter] addObserver:controller
-      selector:@selector(onSettingsChanged:)
-          name:@"AppleInterfaceThemeChangedNotification"
-        object:nil];
+  [[NSDistributedNotificationCenter defaultCenter]
+      addObserver:controller
+         selector:@selector(onSettingsChanged:)
+             name:@"AppleInterfaceThemeChangedNotification"
+           object:nil];
   [controller onSettingChanged:nil];
 }
 
@@ -307,9 +308,9 @@ static void CommonInit(FLEViewController* controller) {
                                          binaryMessenger:self
                                                    codec:[FlutterJSONMessageCodec sharedInstance]];
   _settingsChannel =
-    [FlutterBasicMessageChannel messageChannelWithName:@"flutter/settings"
-                                        binaryMessenger:self
-                                                  codec:[FlutterJSONMessageCodec sharedInstance]];
+      [FlutterBasicMessageChannel messageChannelWithName:@"flutter/settings"
+                                         binaryMessenger:self
+                                                   codec:[FlutterJSONMessageCodec sharedInstance]];
 }
 
 - (BOOL)launchEngineInternalWithAssetsPath:(NSURL*)assets
@@ -596,14 +597,15 @@ static void CommonInit(FLEViewController* controller) {
   [self dispatchMouseEvent:event phase:kHover];
 }
 
-- (void)onSettingsChanged:(NSNotification *)notification  {
-  NSString *brightness = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
+- (void)onSettingsChanged:(NSNotification*)notification {
+  NSString* brightness =
+      [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
   [_settingsChannel sendMessage:@{
-    @"platformBrightness": [brightness isEqualToString:@"Dark"] ? @"dark" : @"light",
+    @"platformBrightness" : [brightness isEqualToString:@"Dark"] ? @"dark" : @"light",
     // The values below are hard-coded, but the iOS implementation has heuristics
     // to generate them we should find a way to reuse. See FlutterViewController.mm#L861
-    @"textScaleFactor": @1.0,
-    @"alwaysUse24HourFormat": @false
+    @"textScaleFactor" : @1.0,
+    @"alwaysUse24HourFormat" : @false
   }];
 }
 
