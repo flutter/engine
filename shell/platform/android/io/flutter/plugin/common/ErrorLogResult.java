@@ -4,6 +4,8 @@
 
 package io.flutter.plugin.common;
 
+import io.flutter.BuildConfig;
+
 import android.support.annotation.Nullable;
 import android.util.Log;
 
