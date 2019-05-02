@@ -181,6 +181,9 @@ static bool HeadlessOnMakeResourceCurrent(FLEViewController* controller) {
   // A message channel for passing key events to the Flutter engine. This should be replaced with
   // an embedding API; see Issue #47.
   FlutterBasicMessageChannel* _keyEventChannel;
+
+  // A message channel for sending user settings to the flutter engine.
+  FlutterBasicMessageChannel* _settingsChannel;
 }
 
 @dynamic view;
@@ -191,6 +194,11 @@ static bool HeadlessOnMakeResourceCurrent(FLEViewController* controller) {
 static void CommonInit(FLEViewController* controller) {
   controller->_messageHandlers = [[NSMutableDictionary alloc] init];
   controller->_additionalKeyResponders = [[NSMutableOrderedSet alloc] init];
+  [[NSDistributedNotificationCenter defaultCenter] addObserver:controller
+      selector:@selector(onSettingsChanged:)
+          name:@"AppleInterfaceThemeChangedNotification"
+        object:nil];
+  [controller onSettingChanged:nil];
 }
 
 - (instancetype)initWithCoder:(NSCoder*)coder {
@@ -298,6 +306,10 @@ static void CommonInit(FLEViewController* controller) {
       [FlutterBasicMessageChannel messageChannelWithName:@"flutter/keyevent"
                                          binaryMessenger:self
                                                    codec:[FlutterJSONMessageCodec sharedInstance]];
+  _settingsChannel =
+    [FlutterBasicMessageChannel messageChannelWithName:@"flutter/settings"
+                                        binaryMessenger:self
+                                                  codec:[FlutterJSONMessageCodec sharedInstance]];
 }
 
 - (BOOL)launchEngineInternalWithAssetsPath:(NSURL*)assets
@@ -582,6 +594,17 @@ static void CommonInit(FLEViewController* controller) {
   // TODO: Add gesture-based (trackpad) scroll support once it's supported by the engine rather
   // than always using kHover.
   [self dispatchMouseEvent:event phase:kHover];
+}
+
+- (void)onSettingsChanged:(NSNotification *)notification  {
+  NSString *brightness = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
+  [_settingsChannel sendMessage:@{
+    @"platformBrightness": [brightness isEqualToString:@"Dark"] ? @"dark" : @"light",
+    // The values below are hard-coded, but the iOS implementation has heuristics
+    // to generate them we should find a way to reuse. See FlutterViewController.mm#L861
+    @"textScaleFactor": @1.0,
+    @"alwaysUse24HourFormat": @false
+  }];
 }
 
 @end
