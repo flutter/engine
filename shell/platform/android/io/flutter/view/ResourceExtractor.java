@@ -14,8 +14,8 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
 
-import io.flutter.util.BSDiff;
 import io.flutter.BuildConfig;
+import io.flutter.util.BSDiff;
 import io.flutter.util.PathUtils;
 
 import org.json.JSONObject;
