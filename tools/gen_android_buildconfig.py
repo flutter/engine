@@ -18,6 +18,8 @@ BUILD_CONFIG_TEMPLATE = """
 package io.flutter;
 
 public final class BuildConfig {{
+  private BuildConfig() {{}}
+
   public final static boolean DEBUG = {0};
   public final static boolean PROFILE = {1};
   public final static boolean RELEASE = {2};
