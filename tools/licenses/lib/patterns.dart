@@ -527,6 +527,25 @@ final List<LicenseFileReferencePattern> csReferencesByFilename = <LicenseFileRef
     )
   ),
 
+  // Seen in Fuchsia SDK files.
+  // TODO(chinmaygarde): This is a broken license file that is being patched
+  // upstream. Remove this once DX-1477 is patched.
+  LicenseFileReferencePattern(
+    firstPrefixIndex: 1,
+    indentPrefixIndex: 2,
+    fileIndex: 3,
+    needsCopyright: false,
+    pattern: RegExp(
+      kIndent +
+      r'Use of this source code is governed by a BSD-style license that can be '
+      r'Copyright .+\. All rights reserved\. '
+      r'found in the (LICENSE) file\.'
+      .replaceAll(' ', _linebreak),
+      multiLine: true,
+      caseSensitive: false,
+    )
+  ),
+
 ];
 
 
