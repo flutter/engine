@@ -48,7 +48,7 @@ class ResourceExtractor {
         }
     }
 
-    private class ExtractTask extends AsyncTask<Void, Void, Void> {
+    private static class ExtractTask extends AsyncTask<Void, Void, Void> {
         ExtractTask() { }
 
         @Override
