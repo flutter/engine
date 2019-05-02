@@ -1310,6 +1310,14 @@ class Paragraph {
     throw UnimplementedError();
   }
 
+  /// The distance from the left edge of the leftmost glyph to the right edge of
+  /// the rightmost glyph in the paragraph.
+  ///
+  /// Valid only after [layout] has been called.
+  double get longestLine {
+    throw UnimplementedError();
+  }
+
   /// Returns the smallest width beyond which increasing the width never
   /// decreases the height.
   ///
