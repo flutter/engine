@@ -91,6 +91,17 @@ static const int kDefaultWindowFramebuffer = 0;
  */
 - (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type;
 
+/**
+ * Initializes the KVO for user settings and passes the initial user settings to the engine.
+ */
+- (void)sendInitialSettings;
+
+/**
+ * Responsds to updates in the user settings and passes this data to the engine.
+ */
+- (void)onSettingsChanged:(NSNotification*)notification;
+
+
 @end
 
 #pragma mark - Static methods provided to engine configuration
@@ -194,12 +205,6 @@ static bool HeadlessOnMakeResourceCurrent(FLEViewController* controller) {
 static void CommonInit(FLEViewController* controller) {
   controller->_messageHandlers = [[NSMutableDictionary alloc] init];
   controller->_additionalKeyResponders = [[NSMutableOrderedSet alloc] init];
-  [[NSDistributedNotificationCenter defaultCenter]
-      addObserver:controller
-         selector:@selector(onSettingsChanged:)
-             name:@"AppleInterfaceThemeChangedNotification"
-           object:nil];
-  [controller onSettingChanged:nil];
 }
 
 - (instancetype)initWithCoder:(NSCoder*)coder {
@@ -358,6 +363,9 @@ static void CommonInit(FLEViewController* controller) {
     NSLog(@"Failed to start Flutter engine: error %d", result);
     return NO;
   }
+  // Send the initial user settings such as brightness and text scale factor
+  // to the engine.
+  [self sendInitialSettings];
   return YES;
 }
 
@@ -485,6 +493,26 @@ static void CommonInit(FLEViewController* controller) {
   }];
 }
 
+- (void)onSettingsChanged:(NSNotification*)notification {
+  NSString* brightness =
+      [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
+  [_settingsChannel sendMessage:@{
+    @"platformBrightness" : [brightness isEqualToString:@"Dark"] ? @"dark" : @"light",
+    // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/32006.
+    @"textScaleFactor" : @1.0,
+    @"alwaysUse24HourFormat" : @false
+  }];
+}
+
+- (void)sendInitialSettings {
+  [[NSDistributedNotificationCenter defaultCenter]
+    addObserver:self
+        selector:@selector(onSettingsChanged:)
+            name:@"AppleInterfaceThemeChangedNotification"
+          object:nil];
+  [self onSettingsChanged:nil];
+}
+
 #pragma mark - FLEReshapeListener
 
 /**
@@ -595,18 +623,6 @@ static void CommonInit(FLEViewController* controller) {
   // TODO: Add gesture-based (trackpad) scroll support once it's supported by the engine rather
   // than always using kHover.
   [self dispatchMouseEvent:event phase:kHover];
-}
-
-- (void)onSettingsChanged:(NSNotification*)notification {
-  NSString* brightness =
-      [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
-  [_settingsChannel sendMessage:@{
-    @"platformBrightness" : [brightness isEqualToString:@"Dark"] ? @"dark" : @"light",
-    // The values below are hard-coded, but the iOS implementation has heuristics
-    // to generate them we should find a way to reuse. See FlutterViewController.mm#L861
-    @"textScaleFactor" : @1.0,
-    @"alwaysUse24HourFormat" : @false
-  }];
 }
 
 @end
