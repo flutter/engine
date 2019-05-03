@@ -129,7 +129,7 @@
         errorLine2="                  ~~~~~~~~~~~">
         <location
             file="../../../flutter/shell/platform/android/io/flutter/view/ResourceExtractor.java"
-            line="51"
+            line="52"
             column="19"/>
     </issue>
 

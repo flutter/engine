@@ -29,7 +29,6 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import io.flutter.BuildConfig;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
-import io.flutter.BuildConfig;
 import io.flutter.util.Predicate;
 
 import java.nio.ByteBuffer;

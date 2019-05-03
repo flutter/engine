@@ -9,7 +9,6 @@ import android.util.Log;
 import io.flutter.BuildConfig;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
-import io.flutter.BuildConfig;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
