@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import io.flutter.BuildConfig;
@@ -49,13 +50,22 @@ class ResourceExtractor {
     }
 
     private static class ExtractTask extends AsyncTask<Void, Void, Void> {
+        @NonNull
         private final String mDataDirPath;
+        @NonNull
         private final HashSet<String> mResources;
+        @NonNull
         private final AssetManager mAssetManager;
+        @NonNull
         private final String mPackageName;
+        @NonNull
         private final PackageManager mPackageManager;
 
-        ExtractTask(String dataDirPath, HashSet<String> resources, String packageName, PackageManager packageManager, AssetManager assetManager) {
+        ExtractTask(@NonNull String dataDirPath,
+                    @NonNull HashSet<String> resources,
+                    @NonNull String packageName,
+                    @NonNull PackageManager packageManager,
+                    @NonNull AssetManager assetManager) {
             mDataDirPath = dataDirPath;
             mResources = resources;
             mAssetManager = assetManager;
@@ -125,14 +135,22 @@ class ResourceExtractor {
         }
     }
 
+    @NonNull
     private final String mDataDirPath;
+    @NonNull
     private final String mPackageName;
+    @NonNull
     private final PackageManager mPackageManager;
+    @NonNull
     private final AssetManager mAssetManager;
+    @NonNull
     private final HashSet<String> mResources;
     private ExtractTask mExtractTask;
 
-    ResourceExtractor(String dataDirPath, String packageName, PackageManager packageManager, AssetManager assetManager) {
+    ResourceExtractor(@NonNull String dataDirPath,
+                      @NonNull String packageName,
+                      @NonNull PackageManager packageManager,
+                      @NonNull AssetManager assetManager) {
         mDataDirPath = dataDirPath;
         mPackageName = packageName;
         mPackageManager = packageManager;
