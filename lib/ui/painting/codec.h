@@ -41,8 +41,7 @@ class MultiFrameCodec : public Codec {
   Dart_Handle getNextFrame(Dart_Handle args) override;
 
  private:
-  MultiFrameCodec(std::unique_ptr<SkCodec> codec,
-                  const float decodedCacheRatioCap);
+  MultiFrameCodec(std::unique_ptr<SkCodec> codec);
 
   ~MultiFrameCodec() override;
 
@@ -58,21 +57,13 @@ class MultiFrameCodec : public Codec {
   const std::unique_ptr<SkCodec> codec_;
   int repetitionCount_;
   int nextFrameIndex_;
-  // The default max amount of memory to use for caching decoded animated image
-  // frames compared to total undecoded size.
-  const float decodedCacheRatioCap_;
   size_t compressedSizeBytes_;
-  size_t decodedCacheSize_;
 
   std::vector<SkCodec::FrameInfo> frameInfos_;
   std::map<int, bool> requiredFrames_;
 
-  // A cache of previously loaded bitmaps, indexed by the frame they belong to.
-  // Caches all frames until [decodedCacheSize_] : [compressedSize_] exceeds
-  // [decodedCacheRatioCap_].
-  std::map<int, std::shared_ptr<SkBitmap>> frameBitmaps_;
   // The last decoded frame that's required to decode any subsequent frames.
-  std::shared_ptr<SkBitmap> lastRequiredFrame_;
+  std::unique_ptr<SkBitmap> lastRequiredFrame_;
   // The index of the last decoded required frame.
   int lastRequiredFrameIndex_ = -1;
 
