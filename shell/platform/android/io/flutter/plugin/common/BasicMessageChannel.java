@@ -7,6 +7,7 @@ package io.flutter.plugin.common;
 import android.util.Log;
 import java.nio.ByteBuffer;
 
+import io.flutter.BuildConfig;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import io.flutter.BuildConfig;

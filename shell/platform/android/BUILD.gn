@@ -104,9 +104,6 @@ action("gen_android_build_config_java") {
     "--runtime-mode",
     flutter_runtime_mode,
   ]
-
-  build_config = []
-  assert(build_config == [] || true)
 }
 
 action("flutter_shell_java") {

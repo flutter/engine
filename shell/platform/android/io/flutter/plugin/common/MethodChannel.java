@@ -8,9 +8,9 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import io.flutter.BuildConfig;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
-import io.flutter.BuildConfig;
 
 import java.nio.ByteBuffer;
 

@@ -26,6 +26,7 @@ import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
 
+import io.flutter.BuildConfig;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import io.flutter.BuildConfig;
