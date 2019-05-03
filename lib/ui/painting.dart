@@ -1662,7 +1662,7 @@ class Codec extends NativeFieldWrapperClass2 {
 /// The returned future can complete with an error if the image decoding has
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list, {
-  double decodedCacheRatioCap = double.infinity,
+  double decodedCacheRatioCap = 0,
   int targetWidth = kDoNotResizeDimension,
   int targetHeight = kDoNotResizeDimension,
 }) {
@@ -1714,7 +1714,7 @@ void decodeImageFromPixels(
   int height,
   PixelFormat format,
   ImageDecoderCallback callback,
-  {int rowBytes, double decodedCacheRatioCap = double.infinity}
+  {int rowBytes, double decodedCacheRatioCap = 0}
 ) {
   final _ImageInfo imageInfo = new _ImageInfo(width, height, format.index, rowBytes);
   final Future<Codec> codecFuture = _futurize(
