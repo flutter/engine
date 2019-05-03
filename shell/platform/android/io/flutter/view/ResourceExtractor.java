@@ -40,7 +40,7 @@ class ResourceExtractor {
     private static final String[] SUPPORTED_ABIS = getSupportedAbis();
 
     @SuppressWarnings("deprecation")
-    static long getVersionCode(PackageInfo packageInfo) {
+    static long getVersionCode(@NonNull PackageInfo packageInfo) {
         // Linter needs P (28) hardcoded or else it will fail these lines.
         if (Build.VERSION.SDK_INT >= 28) {
             return packageInfo.getLongVersionCode();
@@ -102,7 +102,7 @@ class ResourceExtractor {
 
         /// Returns true if successfully unpacked APK resources,
         /// otherwise deletes all resources and returns false.
-        private boolean extractAPK(File dataDir) {
+        private boolean extractAPK(@NonNull File dataDir) {
             for (String asset : mResources) {
                 try {
                     final String resource = "assets/" + asset;
@@ -158,12 +158,12 @@ class ResourceExtractor {
         mResources = new HashSet<>();
     }
 
-    ResourceExtractor addResource(String resource) {
+    ResourceExtractor addResource(@NonNull String resource) {
         mResources.add(resource);
         return this;
     }
 
-    ResourceExtractor addResources(Collection<String> resources) {
+    ResourceExtractor addResources(@NonNull Collection<String> resources) {
         mResources.addAll(resources);
         return this;
     }
@@ -198,7 +198,7 @@ class ResourceExtractor {
         });
     }
 
-    private static void deleteFiles(String dataDirPath, HashSet<String> resources) {
+    private static void deleteFiles(@NonNull String dataDirPath, @NonNull HashSet<String> resources) {
         final File dataDir = new File(dataDirPath);
         for (String resource : resources) {
             final File file = new File(dataDir, resource);
@@ -217,7 +217,9 @@ class ResourceExtractor {
 
     // Returns null if extracted resources are found and match the current APK version
     // and update version if any, otherwise returns the current APK and update version.
-    private static String checkTimestamp(File dataDir, PackageManager packageManager, String packageName) {
+    private static String checkTimestamp(@NonNull File dataDir,
+                                         @NonNull PackageManager packageManager,
+                                         @NonNull String packageName) {
         PackageInfo packageInfo = null;
 
         try {
@@ -259,7 +261,7 @@ class ResourceExtractor {
         return null;
     }
 
-    private static void copy(InputStream in, OutputStream out) throws IOException {
+    private static void copy(@NonNull InputStream in, @NonNull OutputStream out) throws IOException {
         byte[] buf = new byte[16 * 1024];
         for (int i; (i = in.read(buf)) >= 0; ) {
             out.write(buf, 0, i);
