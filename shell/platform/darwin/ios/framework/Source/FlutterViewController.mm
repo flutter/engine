@@ -725,10 +725,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGFloat scale = [UIScreen mainScreen].scale;
 
   // The keyboard is treated as an inset since we want to effectively reduce the window size by the
-  // keyboard height. We also eliminate any bottom safe-area padding since they keyboard 'consumes'
-  // the home indicator widget.
+  // keyboard height.
   _viewportMetrics.physical_view_inset_bottom = bottom * scale;
-  _viewportMetrics.physical_padding_bottom = 0;
   [self updateViewportMetrics];
 }
 
