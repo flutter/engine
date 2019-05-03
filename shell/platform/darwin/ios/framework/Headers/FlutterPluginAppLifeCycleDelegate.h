@@ -18,7 +18,7 @@ FLUTTER_EXPORT
 /**
  * Get all registered plugins;
  */
-- (NSPointerArray *)allPluginsDelegates;
+- (NSPointerArray*)allPluginsDelegates;
 
 /**
  * Registers `delegate` to receive life cycle callbacks via this FlutterPluginAppLifecycleDelegate

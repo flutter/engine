@@ -36,7 +36,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
   return x != 0 && (x & (x - 1)) == 0;
 }
 
-- (NSPointerArray *)allPluginsDelegates {
+- (NSPointerArray*)allPluginsDelegates {
   return _pluginDelegates;
 }
 
