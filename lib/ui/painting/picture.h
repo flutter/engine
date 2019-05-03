@@ -8,8 +8,11 @@
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/image.h"
-#include "flutter/lib/ui/painting/image_shader.h"
+#include "flutter/lib/ui/painting/matrix.h"
+#include "flutter/lib/ui/painting/picture_shader.h"
+#include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"
+#include "third_party/tonic/typed_data/float64_list.h"
 
 namespace tonic {
 class DartLibraryNatives;
@@ -32,9 +35,7 @@ class Picture : public RefCountedDartWrappable<Picture> {
                       uint32_t height,
                       Dart_Handle raw_image_callback);
 
-  Dart_Handle toShader(uint32_t width,
-                       uint32_t height,
-                       SkTileMode tmx,
+  Dart_Handle toShader(SkTileMode tmx,
                        SkTileMode tmy,
                        const tonic::Float64List& matrix4,
                        Dart_Handle raw_shader_callback);
@@ -51,8 +52,6 @@ class Picture : public RefCountedDartWrappable<Picture> {
                                       Dart_Handle raw_image_callback);
 
   static Dart_Handle TransferToShader(sk_sp<SkPicture> picture,
-                                      uint32_t width,
-                                      uint32_t height,
                                       SkTileMode tmx,
                                       SkTileMode tmy,
                                       const tonic::Float64List& matrix4,

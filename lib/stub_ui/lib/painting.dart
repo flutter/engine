@@ -1318,6 +1318,7 @@ class Paint {
   ///
   ///  * [Gradient], a shader that paints a color gradient.
   ///  * [ImageShader], a shader that tiles an [Image].
+  ///  * [PictureShader], a shader that tiles a [Picture].
   ///  * [colorFilter], which overrides [shader].
   ///  * [color], which is used if [shader] and [colorFilter] are null.
   Shader get shader {
@@ -2669,6 +2670,13 @@ class ImageShader extends Shader {
     super._();
 }
 
+/// A shader (as used by [Paint.shader]) that tiles a picture.
+class PictureShader extends Shader {
+  /// This class is created by the engine, and should not be instantiated
+  /// or extended directly.
+  PictureShader._() : super._();
+}
+
 /// Defines how a list of points is interpreted when drawing a set of triangles.
 ///
 /// Used by [Canvas.drawVertices].
@@ -3313,11 +3321,11 @@ class Picture {
     throw UnimplementedError();
   }
 
-  /// Creates a shader from this picture.
+  /// Creates a picture shader from this picture.
   ///
-  /// The picture is drawn using the number of pixels specified by the
-  /// given width and height.
-  Future<Shader> toShader(int width, int height, TileMode tmx, TileMode tmy, Float64List matrix4) {
+  /// The shader is returned asynchronously to allow time for the gpu to
+  /// draw the picture and compile a shader.
+  Future<PictureShader> toShader(TileMode tmx, TileMode tmy, Float64List matrix4) {
     throw UnimplementedError();
   }
 

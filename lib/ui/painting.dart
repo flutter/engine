@@ -1319,6 +1319,7 @@ class Paint {
   ///
   ///  * [Gradient], a shader that paints a color gradient.
   ///  * [ImageShader], a shader that tiles an [Image].
+  ///  * [PictureShader], a shader that tiles a [Picture].
   ///  * [colorFilter], which overrides [shader].
   ///  * [color], which is used if [shader] and [colorFilter] are null.
   Shader get shader {
@@ -2875,6 +2876,14 @@ class ImageShader extends Shader {
   void _initWithImage(Image image, int tmx, int tmy, Float64List matrix4) native 'ImageShader_initWithImage';
 }
 
+/// A shader (as used by [Paint.shader]) that tiles a picture.
+class PictureShader extends Shader {
+  /// This class is created by the engine, and should not be instantiated
+  /// or extended directly.
+  @pragma('vm:entry-point')
+  PictureShader._() : super._();
+}
+
 /// Defines how a list of points is interpreted when drawing a set of triangles.
 ///
 /// Used by [Canvas.drawVertices].
@@ -3763,24 +3772,24 @@ class Picture extends NativeFieldWrapperClass2 {
     );
   }
 
-  /// Creates a shader from this picture.
+  String _toImage(int width, int height, _Callback<Image> callback) native 'Picture_toImage';
+
+  /// Creates a picture shader from this picture.
   ///
-  /// The picture is drawn using the number of pixels specified by the
-  /// given width and height.
-  Future<Shader> toShader(int width, int height, TileMode tmx, TileMode tmy, Float64List matrix4) {
-    if (width <= 0 || height <= 0)
-      throw new Exception('Invalid image dimensions.');
-    if(tmx == null || tmy == null)
-      throw new Exception('Invalid tile modes.');
+  /// The shader is returned asynchronously to allow time for the gpu to
+  /// draw the picture and compile a shader.
+  Future<PictureShader> toShader(TileMode tmx, TileMode tmy, Float64List matrix4) {
+    assert(tmx != null);
+    assert(tmy != null);
+    assert(matrix4 != null);
     if (matrix4.length != 16)
       throw new ArgumentError('"matrix4" must have 16 entries.');
     return _futurize(
-      (_Callback<Shader> callback) => _toShader(width, height, tmx, tmy, matrix4, callback)
+      (_Callback<PictureShader> callback) => _toShader(tmx, tmy, matrix4, callback)
     );
   }
 
-  String _toImage(int width, int height, _Callback<Image> callback) native 'Picture_toImage';
-  String _toShader(int width, int height, TileMode tmx, TileMode tmy, Float64List matrix4, _Callback<Shader> callback) native 'Picture_toShader';
+  String _toShader(TileMode tmx, TileMode tmy, Float64List matrix4, _Callback<PictureShader> callback) native 'Picture_toShader';
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
