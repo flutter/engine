@@ -1023,9 +1023,10 @@ enum Clip {
 // constant and can't propagate into the set/get calls.
 const Endian _kFakeHostEndian = Endian.little;
 
-// Placeholder to signal the engine to not resize the width or height of an image.
-// This needs to be kept in sync with "kDoNotResizeDimension" in codec.cc
-const int _kDoNotResizeDimension = -1;
+/// Indicates to the engine to not resize this dimension.
+///
+/// This needs to be kept in sync with "kDoNotResizeDimension" in codec.cc
+const int kDoNotResizeDimension = -1;
 
 /// A description of the style to use when drawing on a [Canvas].
 ///
@@ -1640,8 +1641,8 @@ class Codec {
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list, {
   double decodedCacheRatioCap = double.infinity,
-  int targetWidth = _kDoNotResizeDimension,
-  int targetHeight = _kDoNotResizeDimension,
+  int targetWidth = kDoNotResizeDimension,
+  int targetHeight = kDoNotResizeDimension,
 }) {
   throw UnimplementedError();
 }

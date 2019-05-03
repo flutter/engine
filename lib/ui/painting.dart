@@ -1024,9 +1024,10 @@ enum Clip {
 // constant and can't propagate into the set/get calls.
 const Endian _kFakeHostEndian = Endian.little;
 
-// Placeholder to signal the engine to not resize the width or height of an image.
-// This needs to be kept in sync with "kDoNotResizeDimension" in codec.cc
-const int _kDoNotResizeDimension = -1;
+/// Indicates to the engine to not resize this dimension.
+///
+/// This needs to be kept in sync with "kDoNotResizeDimension" in codec.cc
+const int kDoNotResizeDimension = -1;
 
 /// A description of the style to use when drawing on a [Canvas].
 ///
@@ -1662,8 +1663,8 @@ class Codec extends NativeFieldWrapperClass2 {
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list, {
   double decodedCacheRatioCap = double.infinity,
-  int targetWidth = _kDoNotResizeDimension,
-  int targetHeight = _kDoNotResizeDimension,
+  int targetWidth = kDoNotResizeDimension,
+  int targetHeight = kDoNotResizeDimension,
 }) {
   return _futurize(
     (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, decodedCacheRatioCap, targetWidth, targetHeight)
@@ -1717,7 +1718,7 @@ void decodeImageFromPixels(
 ) {
   final _ImageInfo imageInfo = new _ImageInfo(width, height, format.index, rowBytes);
   final Future<Codec> codecFuture = _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCap, _kDoNotResizeDimension, _kDoNotResizeDimension)
+    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCap, kDoNotResizeDimension, kDoNotResizeDimension)
   );
   codecFuture.then((Codec codec) => codec.getNextFrame())
       .then((FrameInfo frameInfo) => callback(frameInfo.image));
