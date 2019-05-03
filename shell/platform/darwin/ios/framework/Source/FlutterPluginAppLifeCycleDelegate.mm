@@ -36,6 +36,10 @@ static BOOL isPowerOfTwo(NSUInteger x) {
   return x != 0 && (x & (x - 1)) == 0;
 }
 
+- (NSPointerArray *)allPluginsDelegates {
+  return _pluginDelegates;
+}
+
 - (void)addDelegate:(NSObject<FlutterPlugin>*)delegate {
   [_pluginDelegates addPointer:(__bridge void*)delegate];
   if (isPowerOfTwo([_pluginDelegates count])) {
