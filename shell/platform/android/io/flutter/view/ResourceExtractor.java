@@ -13,6 +13,7 @@ import android.content.res.AssetManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.WorkerThread;
 import android.util.Log;
 
 import io.flutter.BuildConfig;
@@ -102,6 +103,7 @@ class ResourceExtractor {
 
         /// Returns true if successfully unpacked APK resources,
         /// otherwise deletes all resources and returns false.
+        @WorkerThread
         private boolean extractAPK(@NonNull File dataDir) {
             for (String asset : mResources) {
                 try {
