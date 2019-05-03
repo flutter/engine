@@ -493,6 +493,7 @@ static void CommonInit(FLEViewController* controller) {
 }
 
 - (void)onSettingsChanged:(NSNotification*)notification {
+  // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/32015.
   NSString* brightness =
       [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
   [_settingsChannel sendMessage:@{
@@ -504,6 +505,7 @@ static void CommonInit(FLEViewController* controller) {
 }
 
 - (void)sendInitialSettings {
+  // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/32015.
   [[NSDistributedNotificationCenter defaultCenter]
       addObserver:self
          selector:@selector(onSettingsChanged:)
