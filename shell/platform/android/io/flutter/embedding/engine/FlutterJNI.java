@@ -104,6 +104,13 @@ public class FlutterJNI {
   private PlatformMessageHandler platformMessageHandler;
   private final Set<EngineLifecycleListener> engineLifecycleListeners = new HashSet<>();
   private final Set<OnFirstFrameRenderedListener> firstFrameListeners = new HashSet<>();
+  private final Looper mainLooper; // cached to avoid synchronization on repeat access.
+
+  public FlutterJNI() {
+    // We cache the main looper so that we can ensure calls are made on the main thread
+    // without consistently paying the synchronization cost of getMainLooper().
+    mainLooper = Looper.getMainLooper();
+  }
 
   /**
    * Sets the {@link FlutterRenderer.RenderSurface} delegate for the attached Flutter context.
@@ -592,10 +599,10 @@ public class FlutterJNI {
   }
 
   private void ensureRunningOnMainThread() {
-    if (BuildConfig.DEBUG && Looper.myLooper() != Looper.getMainLooper()) {
+    if (Looper.myLooper() != mainLooper) {
       throw new RuntimeException(
-          "Attempted to invoke a @UiThread method on a different thread ("
-              + Thread.currentThread().getName() + ")"
+          "Methods marked with @UiThread must be executed on the main thread. Current thread: "
+              + Thread.currentThread().getName()
       );
     }
   }
