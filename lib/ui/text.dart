@@ -361,7 +361,7 @@ Int32List _encodeTextStyle(
 ///  * [TextStyle](https://api.flutter.dev/flutter/painting/TextStyle-class.html), the class in the [painting] library.
 ///
 class TextStyle {
-  /// Creates a TextStyle object.
+  /// Creates a new TextStyle object.
   ///
   /// * `color`: The color to use when painting the text. If this is specified, `foreground` must be null.
   /// * `decoration`: The decorations to paint near the text (e.g., an underline).
@@ -598,7 +598,7 @@ Int32List _encodeParagraphStyle(
 /// An opaque object that determines the configuration used by
 /// [ParagraphBuilder] to position lines within a [Paragraph] of text.
 class ParagraphStyle {
-  /// Creates a ParagraphStyle object.
+  /// Creates a new ParagraphStyle object.
   ///
   /// * `textAlign`: The alignment of the text within the lines of the
   ///   paragraph. If the last line is ellipsized (see `ellipsis` below), the
@@ -805,7 +805,7 @@ ByteData _encodeStrut(
 ///  * [StrutStyle](https://api.flutter.dev/flutter/painting/StrutStyle-class.html), the class in the [painting] library.
 ///
 class StrutStyle {
-  /// Creates a StrutStyle object.
+  /// Creates a new StrutStyle object.
   ///
   /// * `fontFamily`: The name of the font to use when painting the text (e.g.,
   ///   Roboto).
@@ -1410,7 +1410,7 @@ class Paragraph extends NativeFieldWrapperClass2 {
 /// paint it with [Canvas.drawParagraph].
 class ParagraphBuilder extends NativeFieldWrapperClass2 {
 
-  /// Creates a [ParagraphBuilder] object, which is used to create a
+  /// Creates a new [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].
   @pragma('vm:entry-point')
   ParagraphBuilder(ParagraphStyle style) {

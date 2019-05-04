@@ -194,7 +194,7 @@ class Offset extends OffsetBase {
   // This is included for completeness, because [Size.infinite] exists.
   static const Offset infinite = Offset(double.infinity, double.infinity);
 
-  /// Returns a offset with the x component scaled by `scaleX` and the y
+  /// Returns a new offset with the x component scaled by `scaleX` and the y
   /// component scaled by `scaleY`.
   ///
   /// If the two scale arguments are the same, consider using the `*` operator
@@ -214,7 +214,7 @@ class Offset extends OffsetBase {
   /// ```
   Offset scale(double scaleX, double scaleY) => Offset(dx * scaleX, dy * scaleY);
 
-  /// Returns a offset with translateX added to the x component and
+  /// Returns a new offset with translateX added to the x component and
   /// translateY added to the y component.
   ///
   /// If the arguments come from another [Offset], consider using the `+` or `-`
@@ -716,7 +716,7 @@ class Rect {
   /// considered empty.
   bool get isEmpty => left >= right || top >= bottom;
 
-  /// Returns a rectangle translated by the given offset.
+  /// Returns a new rectangle translated by the given offset.
   ///
   /// To translate a rectangle by separate x and y components rather than by an
   /// [Offset], consider [translate].
@@ -724,7 +724,7 @@ class Rect {
     return Rect.fromLTRB(left + offset.dx, top + offset.dy, right + offset.dx, bottom + offset.dy);
   }
 
-  /// Returns a rectangle with translateX added to the x components and
+  /// Returns a new rectangle with translateX added to the x components and
   /// translateY added to the y components.
   ///
   /// To translate a rectangle by an [Offset] rather than by separate x and y
@@ -733,15 +733,15 @@ class Rect {
     return Rect.fromLTRB(left + translateX, top + translateY, right + translateX, bottom + translateY);
   }
 
-  /// Returns a rectangle with edges moved outwards by the given delta.
+  /// Returns a new rectangle with edges moved outwards by the given delta.
   Rect inflate(double delta) {
     return Rect.fromLTRB(left - delta, top - delta, right + delta, bottom + delta);
   }
 
-  /// Returns a rectangle with edges moved inwards by the given delta.
+  /// Returns a new rectangle with edges moved inwards by the given delta.
   Rect deflate(double delta) => inflate(-delta);
 
-  /// Returns a rectangle that is the intersection of the given
+  /// Returns a new rectangle that is the intersection of the given
   /// rectangle and this rectangle. The two rectangles must overlap
   /// for this to be meaningful. If the two rectangles do not overlap,
   /// then the resulting Rect will have a negative width or height.
@@ -754,7 +754,7 @@ class Rect {
     );
   }
 
-  /// Returns a rectangle which is the bounding box containing this
+  /// Returns a new rectangle which is the bounding box containing this
   /// rectangle and the given rectangle.
   Rect expandToInclude(Rect other) {
     return Rect.fromLTRB(
@@ -1236,7 +1236,7 @@ class RRect {
   /// A rounded rectangle with all the values set to zero.
   static const RRect zero = RRect._raw();
 
-  /// Returns a [RRect] translated by the given offset.
+  /// Returns a new [RRect] translated by the given offset.
   RRect shift(Offset offset) {
     return RRect._raw(
       left: left + offset.dx,
@@ -1254,7 +1254,7 @@ class RRect {
     );
   }
 
-  /// Returns a [RRect] with edges and radii moved outwards by the given
+  /// Returns a new [RRect] with edges and radii moved outwards by the given
   /// delta.
   RRect inflate(double delta) {
     return RRect._raw(
@@ -1273,7 +1273,7 @@ class RRect {
     );
   }
 
-  /// Returns a [RRect] with edges and radii moved inwards by the given delta.
+  /// Returns a new [RRect] with edges and radii moved inwards by the given delta.
   RRect deflate(double delta) => inflate(-delta);
 
   /// The distance between the left and right edges of this rectangle.

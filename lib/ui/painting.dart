@@ -172,7 +172,7 @@ class Color {
   /// The blue channel of this color in an 8 bit value.
   int get blue => (0x000000ff & value) >> 0;
 
-  /// Returns a color that matches this color with the alpha channel
+  /// Returns a new color that matches this color with the alpha channel
   /// replaced with `a` (which ranges from 0 to 255).
   ///
   /// Out of range values will have unexpected effects.
@@ -180,7 +180,7 @@ class Color {
     return Color.fromARGB(a, red, green, blue);
   }
 
-  /// Returns a color that matches this color with the alpha channel
+  /// Returns a new color that matches this color with the alpha channel
   /// replaced with the given `opacity` (which ranges from 0.0 to 1.0).
   ///
   /// Out of range values will have unexpected effects.
@@ -189,7 +189,7 @@ class Color {
     return withAlpha((255.0 * opacity).round());
   }
 
-  /// Returns a color that matches this color with the red channel replaced
+  /// Returns a new color that matches this color with the red channel replaced
   /// with `r` (which ranges from 0 to 255).
   ///
   /// Out of range values will have unexpected effects.
@@ -197,7 +197,7 @@ class Color {
     return Color.fromARGB(alpha, r, green, blue);
   }
 
-  /// Returns a color that matches this color with the green channel
+  /// Returns a new color that matches this color with the green channel
   /// replaced with `g` (which ranges from 0 to 255).
   ///
   /// Out of range values will have unexpected effects.
@@ -205,7 +205,7 @@ class Color {
     return Color.fromARGB(alpha, red, g, blue);
   }
 
-  /// Returns a color that matches this color with the blue channel replaced
+  /// Returns a new color that matches this color with the blue channel replaced
   /// with `b` (which ranges from 0 to 255).
   ///
   /// Out of range values will have unexpected effects.
@@ -1756,7 +1756,7 @@ enum PathOperation {
   ///  * [reverseDifference], which is the same but subtracting the first path
   ///    from the second.
   difference,
-  /// Create a path that is the intersection of the two paths, leaving the
+  /// Create a new path that is the intersection of the two paths, leaving the
   /// overlapping pieces of the path.
   ///
   /// For example, if the two paths are overlapping circles of equal diameter
@@ -1766,13 +1766,13 @@ enum PathOperation {
   /// See also:
   ///  * [xor], which is the inverse of this operation
   intersect,
-  /// Create a path that is the union (inclusive-or) of the two paths.
+  /// Create a new path that is the union (inclusive-or) of the two paths.
   ///
   /// For example, if the two paths are overlapping circles of equal diameter
   /// but differing centers, the result would be a figure-eight like shape
   /// matching the outer boundaries of both circles.
   union,
-  /// Create a path that is the exclusive-or of the two paths, leaving
+  /// Create a new path that is the exclusive-or of the two paths, leaving
   /// everything but the overlapping pieces of the path.
   ///
   /// For example, if the two paths are overlapping circles of equal diameter
@@ -1822,7 +1822,7 @@ class EngineLayer extends NativeFieldWrapperClass2 {
 /// used to create clip regions using [Canvas.clipPath].
 @pragma('vm:entry-point')
 class Path extends NativeFieldWrapperClass2 {
-  /// Create a empty [Path] object.
+  /// Create a new empty [Path] object.
   @pragma('vm:entry-point')
   Path() { _constructor(); }
   void _constructor() native 'Path_constructor';
@@ -1845,10 +1845,10 @@ class Path extends NativeFieldWrapperClass2 {
   int _getFillType() native 'Path_getFillType';
   void _setFillType(int fillType) native 'Path_setFillType';
 
-  /// Starts a sub-path at the given coordinate.
+  /// Starts a new sub-path at the given coordinate.
   void moveTo(double x, double y) native 'Path_moveTo';
 
-  /// Starts a sub-path at the given offset from the current point.
+  /// Starts a new sub-path at the given offset from the current point.
   void relativeMoveTo(double dx, double dy) native 'Path_relativeMoveTo';
 
   /// Adds a straight line segment from the current point to the given
@@ -1899,7 +1899,7 @@ class Path extends NativeFieldWrapperClass2 {
   /// If the `forceMoveTo` argument is false, adds a straight line
   /// segment and an arc segment.
   ///
-  /// If the `forceMoveTo` argument is true, starts a sub-path
+  /// If the `forceMoveTo` argument is true, starts a new sub-path
   /// consisting of an arc segment.
   ///
   /// In either case, the arc segment consists of the arc that follows
@@ -1977,7 +1977,7 @@ class Path extends NativeFieldWrapperClass2 {
                            bool largeArc, bool clockwise)
                            native 'Path_relativeArcToPoint';
 
-  /// Adds a sub-path that consists of four lines that outline the
+  /// Adds a new sub-path that consists of four lines that outline the
   /// given rectangle.
   void addRect(Rect rect) {
     assert(_rectIsValid(rect));
@@ -1985,7 +1985,7 @@ class Path extends NativeFieldWrapperClass2 {
   }
   void _addRect(double left, double top, double right, double bottom) native 'Path_addRect';
 
-  /// Adds a sub-path that consists of a curve that forms the
+  /// Adds a new sub-path that consists of a curve that forms the
   /// ellipse that fills the given rectangle.
   ///
   /// To add a circle, pass an appropriate rectangle as `oval`. [Rect.fromCircle]
@@ -1996,7 +1996,7 @@ class Path extends NativeFieldWrapperClass2 {
   }
   void _addOval(double left, double top, double right, double bottom) native 'Path_addOval';
 
-  /// Adds a sub-path with one arc segment that consists of the arc
+  /// Adds a new sub-path with one arc segment that consists of the arc
   /// that follows the edge of the oval bounded by the given
   /// rectangle, from startAngle radians around the oval up to
   /// startAngle + sweepAngle radians around the oval, with zero
@@ -2011,7 +2011,7 @@ class Path extends NativeFieldWrapperClass2 {
   void _addArc(double left, double top, double right, double bottom,
                double startAngle, double sweepAngle) native 'Path_addArc';
 
-  /// Adds a sub-path with a sequence of line segments that connect the given
+  /// Adds a new sub-path with a sequence of line segments that connect the given
   /// points.
   ///
   /// If `close` is true, a final line segment will be added that connects the
@@ -2024,7 +2024,7 @@ class Path extends NativeFieldWrapperClass2 {
   }
   void _addPolygon(Float32List points, bool close) native 'Path_addPolygon';
 
-  /// Adds a sub-path that consists of the straight lines and
+  /// Adds a new sub-path that consists of the straight lines and
   /// curves needed to form the rounded rectangle described by the
   /// argument.
   void addRRect(RRect rrect) {
@@ -2033,7 +2033,7 @@ class Path extends NativeFieldWrapperClass2 {
   }
   void _addRRect(Float32List rrect) native 'Path_addRRect';
 
-  /// Adds a sub-path that consists of the given `path` offset by the given
+  /// Adds a new sub-path that consists of the given `path` offset by the given
   /// `offset`.
   ///
   /// If `matrix4` is specified, the path will be transformed by this matrix
