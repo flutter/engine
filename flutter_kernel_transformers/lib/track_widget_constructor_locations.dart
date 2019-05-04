@@ -156,15 +156,15 @@ class _WidgetCallSiteTransformer extends Transformer {
       NamedExpression('column', IntLiteral(location.column)),
     ];
     if (showFile) {
-      arguments.add(new NamedExpression(
+      arguments.add( NamedExpression(
           'file', StringLiteral(location.file.toString())));
     }
     if (name != null) {
-      arguments.add(new NamedExpression('name', StringLiteral(name)));
+      arguments.add( NamedExpression('name', StringLiteral(name)));
     }
     if (parameterLocations != null) {
       arguments
-          .add(new NamedExpression('parameterLocations', parameterLocations));
+          .add( NamedExpression('parameterLocations', parameterLocations));
     }
     return ConstructorInvocation(
       _locationClass.constructors.first,
@@ -342,7 +342,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
       return;
     }
     clazz.implementedTypes
-        .add(new Supertype(_hasCreationLocationClass, <DartType>[]));
+        .add( Supertype(_hasCreationLocationClass, <DartType>[]));
     // We intentionally use the library context of the _HasCreationLocation
     // class for the private field even if [clazz] is in a different library
     // so that all classes implementing Widget behave consistently.
@@ -394,7 +394,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
         }
       }
       if (!hasRedirectingInitializer) {
-        constructor.initializers.add(new FieldInitializer(
+        constructor.initializers.add( FieldInitializer(
           locationField,
           VariableGet(variable),
         ));
@@ -405,7 +405,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
         // arguments but it is possible users could add classes with optional
         // positional arguments.
         //
-        // constructor.initializers.add(new AssertInitializer(new AssertStatement(
+        // constructor.initializers.add( AssertInitializer( AssertStatement(
         //   IsExpression(
         //       VariableGet(variable), _locationClass.thisType),
         //   conditionStartOffset: constructor.fileOffset,

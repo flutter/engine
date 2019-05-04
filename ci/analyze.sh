@@ -1,5 +1,10 @@
 #!/bin/bash
 echo "Analyzing dart:ui library..."
+
+echo "Using analyzer from `which dartanalyzer`"
+
+dartanalyzer --version
+
 RESULTS=`dartanalyzer                                                          \
   --options flutter/analysis_options.yaml                                      \
   "$1out/host_debug_unopt/gen/sky/bindings/dart_ui/ui.dart"                    \
