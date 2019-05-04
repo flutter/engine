@@ -4,7 +4,7 @@ set -ex
 PATH="$HOME/depot_tools:$PATH"
 cd ..
 
-PATH=third_party/dart/tools/sdks/dart-sdk/bin:$PATH
+PATH=$(pwd)/third_party/dart/tools/sdks/dart-sdk/bin:$PATH
 
 # Build the dart UI files
 flutter/tools/gn --unoptimized
