@@ -63,6 +63,8 @@ void SemanticsUpdateBuilder::updateNode(
     const tonic::Int32List& childrenInTraversalOrder,
     const tonic::Int32List& childrenInHitTestOrder,
     const tonic::Int32List& localContextActions) {
+  FML_CHECK(transform.data() && SkScalarsAreFinite(transform.data(), 9))
+      << "Semantics update transform was not set or not finite.";
   FML_CHECK(scrollChildren == 0 ||
             (scrollChildren > 0 && childrenInHitTestOrder.data()))
       << "Semantics update contained scrollChildren but did not have "
@@ -89,8 +91,6 @@ void SemanticsUpdateBuilder::updateNode(
   node.decreasedValue = decreasedValue;
   node.textDirection = textDirection;
   node.transform.setColMajord(transform.data());
-  FML_CHECK(is_matrix_finite(node.transform));
-      << "Semantics update transform was not finite.";
   node.childrenInTraversalOrder =
       std::vector<int32_t>(childrenInTraversalOrder.data(),
                            childrenInTraversalOrder.data() +
