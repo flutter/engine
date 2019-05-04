@@ -483,6 +483,37 @@ class Window {
   /// intrusions in the display (e.g. overscan regions on television screens or
   /// phone sensor housings).
   ///
+  /// Unlike [Window.padding], this value does not change relative to
+  /// [Window.viewInsets]. For example, on an iPhone X, it will not change in
+  /// response to the soft keyboard being visible or hidden, whereas
+  /// [Window.padding] will.
+  ///
+  /// When this changes, [onMetricsChanged] is called.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
+  ///  * [MediaQuery.of], a simpler mechanism for the same.
+  ///  * [Scaffold], which automatically applies the padding in material design
+  ///    applications.
+  WindowPadding get viewPadding => _viewPadding;
+  WindowPadding _viewPadding = WindowPadding.zero;
+
+  /// The number of physical pixels on each side of the display rectangle into
+  /// which the application can render, but which may be partially obscured by
+  /// system UI (such as the system notification area), or or physical
+  /// intrusions in the display (e.g. overscan regions on television screens or
+  /// phone sensor housings).
+  ///
+  /// This value is calculated by taking
+  /// `max(0.0, Window.viewPadding - Window.viewInsets)`. This will treat a
+  /// system IME that increases the bottm inset as consuming that much of the
+  /// bottom padding. For example, on an iPhone X, [Window.padding.bottom] is
+  /// the same as [Window.viewPadding.bottom] when the soft keyboard is not
+  /// drawn (to account for the bottom soft button area), but will be `0.0` when
+  /// the soft keyboard is visible.
+  ///
   /// When this changes, [onMetricsChanged] is called.
   ///
   /// See also:
