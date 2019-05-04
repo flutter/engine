@@ -1548,7 +1548,7 @@ class Image extends NativeFieldWrapperClass2 {
   ///
   /// Returns a future that completes with the binary image data or an error
   /// if encoding fails.
-  Future<ByteData> toByteData({ImageByteFormat format: ImageByteFormat.rawRgba}) {
+  Future<ByteData> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
     return _futurize((_Callback<ByteData> callback) {
       return _toByteData(format.index, (Uint8List encoded) {
         callback(encoded?.buffer?.asByteData());
@@ -1932,10 +1932,10 @@ class Path extends NativeFieldWrapperClass2 {
   /// point if both are greater than zero but too small to describe an arc.
   ///
   void arcToPoint(Offset arcEnd, {
-    Radius radius: Radius.zero,
-    double rotation: 0.0,
-    bool largeArc: false,
-    bool clockwise: true,
+    Radius radius = Radius.zero,
+    double rotation = 0.0,
+    bool largeArc = false,
+    bool clockwise = true,
     }) {
     assert(_offsetIsValid(arcEnd));
     assert(_radiusIsValid(radius));
@@ -1962,10 +1962,10 @@ class Path extends NativeFieldWrapperClass2 {
   /// fit the last path point if both are greater than zero but too small to
   /// describe an arc.
   void relativeArcToPoint(Offset arcEndDelta, {
-    Radius radius: Radius.zero,
-    double rotation: 0.0,
-    bool largeArc: false,
-    bool clockwise: true,
+    Radius radius = Radius.zero,
+    double rotation = 0.0,
+    bool largeArc = false,
+    bool clockwise = true,
     }) {
     assert(_offsetIsValid(arcEndDelta));
     assert(_radiusIsValid(radius));
@@ -2151,7 +2151,7 @@ class Path extends NativeFieldWrapperClass2 {
   ///
   /// If `forceClosed` is set to true, the contours of the path will be measured
   /// as if they had been closed, even if they were not explicitly closed.
-  PathMetrics computeMetrics({bool forceClosed: false}) {
+  PathMetrics computeMetrics({bool forceClosed = false}) {
     return PathMetrics._(this, forceClosed);
   }
 }
@@ -2315,7 +2315,7 @@ class PathMetric {
   /// `start` and `end` are pinned to legal values (0..[length])
   /// Returns null if the segment is 0 length or `start` > `stop`.
   /// Begin the segment with a moveTo if `startWithMoveTo` is true.
-  Path extractPath(double start, double end, {bool startWithMoveTo: true}) {
+  Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
     return _measure.extractPath(contourIndex, start, end, startWithMoveTo: startWithMoveTo);
   }
 
@@ -2351,11 +2351,11 @@ class _PathMeasure extends NativeFieldWrapperClass2 {
   }
   Float32List _getPosTan(int contourIndex, double distance) native 'PathMeasure_getPosTan';
 
-  Path extractPath(int contourIndex, double start, double end, {bool startWithMoveTo: true}) {
+  Path extractPath(int contourIndex, double start, double end, {bool startWithMoveTo = true}) {
     assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
     return _extractPath(contourIndex, start, end, startWithMoveTo: startWithMoveTo);
   }
-  Path _extractPath(int contourIndex, double start, double end, {bool startWithMoveTo: true}) native 'PathMeasure_getSegment';
+  Path _extractPath(int contourIndex, double start, double end, {bool startWithMoveTo = true}) native 'PathMeasure_getSegment';
 
   bool isClosed(int contourIndex) {
     assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
@@ -2565,7 +2565,7 @@ class ImageFilter extends NativeFieldWrapperClass2 {
   void _constructor() native 'ImageFilter_constructor';
 
   /// Creates an image filter that applies a Gaussian blur.
-  ImageFilter.blur({ double sigmaX: 0.0, double sigmaY: 0.0 }) {
+  ImageFilter.blur({ double sigmaX = 0.0, double sigmaY = 0.0 }) {
     _constructor();
     _initBlur(sigmaX, sigmaY);
   }
@@ -2576,7 +2576,7 @@ class ImageFilter extends NativeFieldWrapperClass2 {
   /// For example, applying a positive scale matrix (see [new Matrix4.diagonal3])
   /// when used with [BackdropFilter] would magnify the background image.
   ImageFilter.matrix(Float64List matrix4,
-                     { FilterQuality filterQuality: FilterQuality.low }) {
+                     { FilterQuality filterQuality = FilterQuality.low }) {
     if (matrix4.length != 16)
       throw ArgumentError('"matrix4" must have 16 entries.');
     _constructor();
@@ -3238,7 +3238,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///
   /// Use [ClipOp.difference] to subtract the provided rectangle from the
   /// current clip.
-  void clipRect(Rect rect, { ClipOp clipOp: ClipOp.intersect, bool doAntiAlias = true }) {
+  void clipRect(Rect rect, { ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true }) {
     assert(_rectIsValid(rect));
     assert(clipOp != null);
     assert(doAntiAlias != null);

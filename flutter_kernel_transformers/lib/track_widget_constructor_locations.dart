@@ -149,7 +149,7 @@ class _WidgetCallSiteTransformer extends Transformer {
     Location location, {
     String name,
     ListLiteral parameterLocations,
-    bool showFile: true,
+    bool showFile = true,
   }) {
     final List<NamedExpression> arguments = <NamedExpression>[
       NamedExpression('line', IntLiteral(location.line)),

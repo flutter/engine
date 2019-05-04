@@ -1124,7 +1124,7 @@ class TextPosition {
   /// The arguments must not be null (so the [offset] argument is required).
   const TextPosition({
     this.offset,
-    this.affinity: TextAffinity.downstream,
+    this.affinity = TextAffinity.downstream,
   }) : assert(offset != null),
        assert(affinity != null);
 

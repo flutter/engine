@@ -1097,10 +1097,10 @@ class RRect {
     double top,
     double right,
     double bottom, {
-    Radius topLeft: Radius.zero,
-    Radius topRight: Radius.zero,
-    Radius bottomRight: Radius.zero,
-    Radius bottomLeft: Radius.zero,
+    Radius topLeft = Radius.zero,
+    Radius topRight = Radius.zero,
+    Radius bottomRight = Radius.zero,
+    Radius bottomLeft = Radius.zero,
   }) : this._raw(
          top: top,
          left: left,
@@ -1123,10 +1123,10 @@ class RRect {
   RRect.fromRectAndCorners(
     Rect rect,
     {
-      Radius topLeft: Radius.zero,
-      Radius topRight: Radius.zero,
-      Radius bottomRight: Radius.zero,
-      Radius bottomLeft: Radius.zero
+      Radius topLeft = Radius.zero,
+      Radius topRight = Radius.zero,
+      Radius bottomRight = Radius.zero,
+      Radius bottomLeft = Radius.zero
     }
   ) : this._raw(
         top: rect.top,

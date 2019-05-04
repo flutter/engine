@@ -1529,7 +1529,7 @@ class Image {
   ///
   /// Returns a future that completes with the binary image data or an error
   /// if encoding fails.
-  Future<ByteData> toByteData({ImageByteFormat format: ImageByteFormat.rawRgba}) {
+  Future<ByteData> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
     throw UnimplementedError();
   }
 
@@ -1902,10 +1902,10 @@ class Path {
   /// point if both are greater than zero but too small to describe an arc.
   ///
   void arcToPoint(Offset arcEnd, {
-    Radius radius: Radius.zero,
-    double rotation: 0.0,
-    bool largeArc: false,
-    bool clockwise: true,
+    Radius radius = Radius.zero,
+    double rotation = 0.0,
+    bool largeArc = false,
+    bool clockwise = true,
     }) {
     throw UnimplementedError();
   }
@@ -1926,10 +1926,10 @@ class Path {
   /// fit the last path point if both are greater than zero but too small to
   /// describe an arc.
   void relativeArcToPoint(Offset arcEndDelta, {
-    Radius radius: Radius.zero,
-    double rotation: 0.0,
-    bool largeArc: false,
-    bool clockwise: true,
+    Radius radius = Radius.zero,
+    double rotation = 0.0,
+    bool largeArc = false,
+    bool clockwise = true,
     }) {
     assert(_offsetIsValid(arcEndDelta));
     assert(_radiusIsValid(radius));
@@ -2085,7 +2085,7 @@ class Path {
   ///
   /// If `forceClosed` is set to true, the contours of the path will be measured
   /// as if they had been closed, even if they were not explicitly closed.
-  PathMetrics computeMetrics({bool forceClosed: false}) {
+  PathMetrics computeMetrics({bool forceClosed = false}) {
     throw UnimplementedError();
   }
 }
@@ -2242,7 +2242,7 @@ class PathMetric {
   /// `start` and `end` are pinned to legal values (0..[length])
   /// Returns null if the segment is 0 length or `start` > `stop`.
   /// Begin the segment with a moveTo if `startWithMoveTo` is true.
-  Path extractPath(double start, double end, {bool startWithMoveTo: true}) {
+  Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
     if (contourIndex != _measure.currentContourIndex) {
       throw StateError('This method cannot be invoked once the underlying iterator has advanced.');
     }
@@ -2266,7 +2266,7 @@ class _PathMeasure {
     throw UnimplementedError();
   }
 
-  Path extractPath(double start, double end, {bool startWithMoveTo: true}) {
+  Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
     throw UnimplementedError();
   }
 
@@ -2462,14 +2462,14 @@ class ColorFilter {
 class ImageFilter {
 
   /// Creates an image filter that applies a Gaussian blur.
-  ImageFilter.blur({ double sigmaX: 0.0, double sigmaY: 0.0 });
+  ImageFilter.blur({ double sigmaX = 0.0, double sigmaY = 0.0 });
 
   /// Creates an image filter that applies a matrix transformation.
   ///
   /// For example, applying a positive scale matrix (see [new Matrix4.diagonal3])
   /// when used with [BackdropFilter] would magnify the background image.
   ImageFilter.matrix(Float64List matrix4,
-                     { FilterQuality filterQuality: FilterQuality.low });
+                     { FilterQuality filterQuality = FilterQuality.low });
 }
 
 /// Base class for objects such as [Gradient] and [ImageShader] which
@@ -2973,7 +2973,7 @@ class Canvas {
   ///
   /// Use [ClipOp.difference] to subtract the provided rectangle from the
   /// current clip.
-  void clipRect(Rect rect, { ClipOp clipOp: ClipOp.intersect, bool doAntiAlias = true }) {
+  void clipRect(Rect rect, { ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true }) {
     assert(_rectIsValid(rect));
     assert(clipOp != null);
     assert(doAntiAlias != null);
