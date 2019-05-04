@@ -134,7 +134,7 @@ class WindowPadding {
 ///  * [Window.locale], which specifies the system's currently selected
 ///    [Locale].
 class Locale {
-  /// Creates a new Locale object. The first argument is the
+  /// Creates a Locale object. The first argument is the
   /// primary language subtag, the second is the region (also
   /// referred to as 'country') subtag.
   ///
@@ -173,7 +173,7 @@ class Locale {
        assert(_languageCode != ''),
        scriptCode = null;
 
-  /// Creates a new Locale object.
+  /// Creates a Locale object.
   ///
   /// The keyword arguments specify the subtags of the Locale.
   ///
@@ -967,4 +967,4 @@ enum Brightness {
 /// The [Window] singleton. This object exposes the size of the display, the
 /// core scheduler API, the input event callback, the graphics drawing API, and
 /// other such core services.
-final Window window = new Window._();
+final Window window = Window._();

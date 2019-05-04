@@ -76,7 +76,7 @@ void _maybeAddCreationLocationArgument(
   }
 
   final NamedExpression namedArgument =
-      new NamedExpression(_creationLocationParameterName, creationLocation);
+      NamedExpression(_creationLocationParameterName, creationLocation);
   namedArgument.parent = arguments;
   arguments.named.add(namedArgument);
 }
@@ -152,23 +152,23 @@ class _WidgetCallSiteTransformer extends Transformer {
     bool showFile: true,
   }) {
     final List<NamedExpression> arguments = <NamedExpression>[
-      new NamedExpression('line', new IntLiteral(location.line)),
-      new NamedExpression('column', new IntLiteral(location.column)),
+      NamedExpression('line', IntLiteral(location.line)),
+      NamedExpression('column', IntLiteral(location.column)),
     ];
     if (showFile) {
       arguments.add(new NamedExpression(
-          'file', new StringLiteral(location.file.toString())));
+          'file', StringLiteral(location.file.toString())));
     }
     if (name != null) {
-      arguments.add(new NamedExpression('name', new StringLiteral(name)));
+      arguments.add(new NamedExpression('name', StringLiteral(name)));
     }
     if (parameterLocations != null) {
       arguments
           .add(new NamedExpression('parameterLocations', parameterLocations));
     }
-    return new ConstructorInvocation(
+    return ConstructorInvocation(
       _locationClass.constructors.first,
-      new Arguments(<Expression>[], named: arguments),
+      Arguments(<Expression>[], named: arguments),
       isConst: true,
     );
   }
@@ -243,7 +243,7 @@ class _WidgetCallSiteTransformer extends Transformer {
         _creationLocationParameterName,
       );
       if (creationLocationParameter != null) {
-        return new VariableGet(creationLocationParameter);
+        return VariableGet(creationLocationParameter);
       }
     }
 
@@ -270,7 +270,7 @@ class _WidgetCallSiteTransformer extends Transformer {
     }
     return _constructLocation(
       location,
-      parameterLocations: new ListLiteral(
+      parameterLocations: ListLiteral(
         parameterLocations,
         typeArgument: _locationClass.thisType,
         isConst: true,
@@ -346,8 +346,8 @@ class WidgetCreatorTracker implements ProgramTransformer {
     // We intentionally use the library context of the _HasCreationLocation
     // class for the private field even if [clazz] is in a different library
     // so that all classes implementing Widget behave consistently.
-    final Field locationField = new Field(
-      new Name(
+    final Field locationField = Field(
+      Name(
         _locationFieldName,
         _hasCreationLocationClass.enclosingLibrary,
       ),
@@ -356,7 +356,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
     clazz.addMember(locationField);
 
     final Set<Constructor> _handledConstructors =
-        new Set<Constructor>.identity();
+        Set<Constructor>.identity();
 
     void handleConstructor(Constructor constructor) {
       if (!_handledConstructors.add(constructor)) {
@@ -366,7 +366,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
         constructor.function,
         _creationLocationParameterName,
       ));
-      final VariableDeclaration variable = new VariableDeclaration(
+      final VariableDeclaration variable = VariableDeclaration(
         _creationLocationParameterName,
         type: _locationClass.thisType,
       );
@@ -386,7 +386,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
           _maybeAddCreationLocationArgument(
             initializer.arguments,
             initializer.target.function,
-            new VariableGet(variable),
+            VariableGet(variable),
             _locationClass,
           );
           hasRedirectingInitializer = true;
@@ -396,7 +396,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
       if (!hasRedirectingInitializer) {
         constructor.initializers.add(new FieldInitializer(
           locationField,
-          new VariableGet(variable),
+          VariableGet(variable),
         ));
         // TODO(jacobr): add an assert verifying the locationField is not
         // null. Currently, we cannot safely add this assert because we do not
@@ -406,8 +406,8 @@ class WidgetCreatorTracker implements ProgramTransformer {
         // positional arguments.
         //
         // constructor.initializers.add(new AssertInitializer(new AssertStatement(
-        //   new IsExpression(
-        //       new VariableGet(variable), _locationClass.thisType),
+        //   IsExpression(
+        //       VariableGet(variable), _locationClass.thisType),
         //   conditionStartOffset: constructor.fileOffset,
         //   conditionEndOffset: constructor.fileOffset,
         // )));
@@ -419,7 +419,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
   }
 
   Component _computeFullProgram(Component deltaProgram) {
-    final Set<Library> libraries = new Set<Library>();
+    final Set<Library> libraries = <Library>{};
     final List<Library> workList = <Library>[];
     for (Library library in deltaProgram.libraries) {
       if (libraries.add(library)) {
@@ -434,7 +434,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
         }
       }
     }
-    return new Component()..libraries.addAll(libraries);
+    return Component()..libraries.addAll(libraries);
   }
 
   /// Transform the given [program].
@@ -459,13 +459,13 @@ class WidgetCreatorTracker implements ProgramTransformer {
     // TODO(jacobr): once there is a working incremental ClassHierarchy
     // constructor switch to using it instead of building a ClassHierarchy off
     // the full program.
-    hierarchy = new ClassHierarchy(
+    hierarchy = ClassHierarchy(
       _computeFullProgram(program),
       onAmbiguousSupertypes: (Class cls, Supertype a, Supertype b) { },
     );
 
-    final Set<Class> transformedClasses = new Set<Class>.identity();
-    final Set<Library> librariesToTransform = new Set<Library>.identity()
+    final Set<Class> transformedClasses = Set<Class>.identity();
+    final Set<Library> librariesToTransform = Set<Library>.identity()
       ..addAll(libraries);
 
     for (Library library in libraries) {
@@ -483,7 +483,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
 
     // Transform call sites to pass the location parameter.
     final _WidgetCallSiteTransformer callsiteTransformer =
-        new _WidgetCallSiteTransformer(
+        _WidgetCallSiteTransformer(
       hierarchy,
       widgetClass: _widgetClass,
       locationClass: _locationClass,
@@ -528,7 +528,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
       if (procedure.isFactory) {
         _maybeAddNamedParameter(
           procedure.function,
-          new VariableDeclaration(
+          VariableDeclaration(
             _creationLocationParameterName,
             type: _locationClass.thisType,
           ),
@@ -544,14 +544,14 @@ class WidgetCreatorTracker implements ProgramTransformer {
     }
 
     final Set<Constructor> _handledConstructors =
-        new Set<Constructor>.identity();
+        Set<Constructor>.identity();
 
     void handleConstructor(Constructor constructor) {
       if (!_handledConstructors.add(constructor)) {
         return;
       }
 
-      final VariableDeclaration variable = new VariableDeclaration(
+      final VariableDeclaration variable = VariableDeclaration(
         _creationLocationParameterName,
         type: _locationClass.thisType,
       );
@@ -575,7 +575,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
           _maybeAddCreationLocationArgument(
             initializer.arguments,
             initializer.target.function,
-            new VariableGet(variable),
+            VariableGet(variable),
             _locationClass,
           );
         } else if (initializer is SuperInitializer &&
@@ -583,7 +583,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
           _maybeAddCreationLocationArgument(
             initializer.arguments,
             initializer.target.function,
-            new VariableGet(variable),
+            VariableGet(variable),
             _locationClass,
           );
         }

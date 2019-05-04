@@ -15,7 +15,7 @@ Future<developer.ServiceExtensionResponse> _scheduleFrame(
   // Schedule the frame.
   window.scheduleFrame();
   // Always succeed.
-  return new developer.ServiceExtensionResponse.result(json.encode(<String, String>{
+  return developer.ServiceExtensionResponse.result(json.encode(<String, String>{
     'type': 'Success',
   }));
 }

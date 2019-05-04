@@ -150,7 +150,7 @@ class TextDecoration {
     int mask = 0;
     for (TextDecoration decoration in decorations)
       mask |= decoration._mask;
-    return new TextDecoration._(mask);
+    return TextDecoration._(mask);
   }
 
   final int _mask;
@@ -280,7 +280,7 @@ Int32List _encodeTextStyle(
   Paint foreground,
   List<Shadow> shadows
 ) {
-  final Int32List result = new Int32List(8);
+  final Int32List result = Int32List(8);
   if (color != null) {
     result[0] |= 1 << 1;
     result[1] = color.value;
@@ -353,7 +353,7 @@ Int32List _encodeTextStyle(
 
 /// An opaque object that determines the size, position, and rendering of text.
 class TextStyle {
-  /// Creates a new TextStyle object.
+  /// Creates a TextStyle object.
   ///
   /// * `color`: The color to use when painting the text. If this is specified, `foreground` must be null.
   /// * `decoration`: The decorations to paint near the text (e.g., an underline).
@@ -400,7 +400,7 @@ class TextStyle {
     List<Shadow> shadows,
   }) : assert(color == null || foreground == null,
          'Cannot provide both a color and a foreground\n'
-         'The color argument is just a shorthand for "foreground: new Paint()..color = color".'
+         'The color argument is just a shorthand for "foreground: Paint()..color = color".'
        ),
        _encoded = _encodeTextStyle(
          color,
@@ -481,9 +481,9 @@ class TextStyle {
   @override
   String toString() {
     return 'TextStyle('
-             'color: ${              _encoded[0] & 0x00002 == 0x00002  ? new Color(_encoded[1])                  : "unspecified"}, '
-             'decoration: ${         _encoded[0] & 0x00004 == 0x00004  ? new TextDecoration._(_encoded[2])       : "unspecified"}, '
-             'decorationColor: ${    _encoded[0] & 0x00008 == 0x00008  ? new Color(_encoded[3])                  : "unspecified"}, '
+             'color: ${              _encoded[0] & 0x00002 == 0x00002  ? Color(_encoded[1])                  : "unspecified"}, '
+             'decoration: ${         _encoded[0] & 0x00004 == 0x00004  ? TextDecoration._(_encoded[2])       : "unspecified"}, '
+             'decorationColor: ${    _encoded[0] & 0x00008 == 0x00008  ? Color(_encoded[3])                  : "unspecified"}, '
              'decorationStyle: ${    _encoded[0] & 0x00010 == 0x00010  ? TextDecorationStyle.values[_encoded[4]] : "unspecified"}, '
              'decorationThickness: ${_encoded[0] & 0x00020 == 0x00020  ? _decorationThickness                    : "unspecified"}, '
              'fontWeight: ${         _encoded[0] & 0x00040 == 0x00040  ? FontWeight.values[_encoded[5]]          : "unspecified"}, '
@@ -538,7 +538,7 @@ Int32List _encodeParagraphStyle(
   String ellipsis,
   Locale locale,
 ) {
-  final Int32List result = new Int32List(6); // also update paragraph_builder.cc
+  final Int32List result = Int32List(6); // also update paragraph_builder.cc
   if (textAlign != null) {
     result[0] |= 1 << 1;
     result[1] = textAlign.index;
@@ -589,7 +589,7 @@ Int32List _encodeParagraphStyle(
 /// An opaque object that determines the configuration used by
 /// [ParagraphBuilder] to position lines within a [Paragraph] of text.
 class ParagraphStyle {
-  /// Creates a new ParagraphStyle object.
+  /// Creates a ParagraphStyle object.
   ///
   /// * `textAlign`: The alignment of the text within the lines of the
   ///   paragraph. If the last line is ellipsized (see `ellipsis` below), the
@@ -792,7 +792,7 @@ ByteData _encodeStrut(
 }
 
 class StrutStyle {
-  /// Creates a new StrutStyle object.
+  /// Creates a StrutStyle object.
   ///
   /// * `fontFamily`: The name of the font to use when painting the text (e.g.,
   ///   Roboto).
@@ -1013,7 +1013,7 @@ class TextBox {
   final TextDirection direction;
 
   /// Returns a rect of the same size as this box.
-  Rect toRect() => new Rect.fromLTRB(left, top, right, bottom);
+  Rect toRect() => Rect.fromLTRB(left, top, right, bottom);
 
   /// The [left] edge of the box for left-to-right text; the [right] edge of the box for right-to-left text.
   ///

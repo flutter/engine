@@ -171,15 +171,15 @@ class Color {
   /// The blue channel of this color in an 8 bit value.
   int get blue => (0x000000ff & value) >> 0;
 
-  /// Returns a new color that matches this color with the alpha channel
+  /// Returns a color that matches this color with the alpha channel
   /// replaced with `a` (which ranges from 0 to 255).
   ///
   /// Out of range values will have unexpected effects.
   Color withAlpha(int a) {
-    return new Color.fromARGB(a, red, green, blue);
+    return Color.fromARGB(a, red, green, blue);
   }
 
-  /// Returns a new color that matches this color with the alpha channel
+  /// Returns a color that matches this color with the alpha channel
   /// replaced with the given `opacity` (which ranges from 0.0 to 1.0).
   ///
   /// Out of range values will have unexpected effects.
@@ -188,28 +188,28 @@ class Color {
     return withAlpha((255.0 * opacity).round());
   }
 
-  /// Returns a new color that matches this color with the red channel replaced
+  /// Returns a color that matches this color with the red channel replaced
   /// with `r` (which ranges from 0 to 255).
   ///
   /// Out of range values will have unexpected effects.
   Color withRed(int r) {
-    return new Color.fromARGB(alpha, r, green, blue);
+    return Color.fromARGB(alpha, r, green, blue);
   }
 
-  /// Returns a new color that matches this color with the green channel
+  /// Returns a color that matches this color with the green channel
   /// replaced with `g` (which ranges from 0 to 255).
   ///
   /// Out of range values will have unexpected effects.
   Color withGreen(int g) {
-    return new Color.fromARGB(alpha, red, g, blue);
+    return Color.fromARGB(alpha, red, g, blue);
   }
 
-  /// Returns a new color that matches this color with the blue channel replaced
+  /// Returns a color that matches this color with the blue channel replaced
   /// with `b` (which ranges from 0 to 255).
   ///
   /// Out of range values will have unexpected effects.
   Color withBlue(int b) {
-    return new Color.fromARGB(alpha, red, green, b);
+    return Color.fromARGB(alpha, red, green, b);
   }
 
   // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
@@ -263,7 +263,7 @@ class Color {
       return _scaleAlpha(b, t);
     if (b == null)
       return _scaleAlpha(a, 1.0 - t);
-    return new Color.fromARGB(
+    return Color.fromARGB(
       lerpDouble(a.alpha, b.alpha, t).toInt().clamp(0, 255),
       lerpDouble(a.red, b.red, t).toInt().clamp(0, 255),
       lerpDouble(a.green, b.green, t).toInt().clamp(0, 255),
@@ -287,7 +287,7 @@ class Color {
     final int invAlpha = 0xff - alpha;
     int backAlpha = background.alpha;
     if (backAlpha == 0xff) { // Opaque background case
-      return new Color.fromARGB(
+      return Color.fromARGB(
         0xff,
         (alpha * foreground.red + invAlpha * background.red) ~/ 0xff,
         (alpha * foreground.green + invAlpha * background.green) ~/ 0xff,
@@ -297,7 +297,7 @@ class Color {
       backAlpha = (backAlpha * invAlpha) ~/ 0xff;
       final int outAlpha = alpha + backAlpha;
       assert(outAlpha != 0x00);
-      return new Color.fromARGB(
+      return Color.fromARGB(
         outAlpha,
         (foreground.red * alpha + background.red * backAlpha) ~/ outAlpha,
         (foreground.green * alpha + background.green * backAlpha) ~/ outAlpha,
@@ -1042,7 +1042,7 @@ class Paint {
   //
   // The binary format must match the deserialization code in paint.cc.
 
-  final ByteData _data = new ByteData(_kDataByteCount);
+  final ByteData _data = ByteData(_kDataByteCount);
   static const int _kIsAntiAliasIndex = 0;
   static const int _kColorIndex = 1;
   static const int _kBlendModeIndex = 2;
@@ -1116,7 +1116,7 @@ class Paint {
   /// [colorFilter].
   Color get color {
     final int encoded = _data.getInt32(_kColorOffset, _kFakeHostEndian);
-    return new Color(encoded ^ _kColorDefault);
+    return Color(encoded ^ _kColorDefault);
   }
   set color(Color value) {
     assert(value != null);
@@ -1274,7 +1274,7 @@ class Paint {
       case MaskFilter._TypeNone:
         return null;
       case MaskFilter._TypeBlur:
-        return new MaskFilter.blur(
+        return MaskFilter.blur(
           BlurStyle.values[_data.getInt32(_kMaskFilterBlurStyleOffset, _kFakeHostEndian)],
           _data.getFloat32(_kMaskFilterSigmaOffset, _kFakeHostEndian),
         );
@@ -1326,7 +1326,7 @@ class Paint {
     return _objects[_kShaderIndex];
   }
   set shader(Shader value) {
-    _objects ??= new List<dynamic>(_kObjectCount);
+    _objects ??= List<dynamic>(_kObjectCount);
     _objects[_kShaderIndex] = value;
   }
 
@@ -1341,12 +1341,12 @@ class Paint {
       case ColorFilter._TypeNone:
         return null;
       case ColorFilter._TypeMode:
-        return new ColorFilter.mode(
-          new Color(_data.getInt32(_kColorFilterColorOffset, _kFakeHostEndian)),
+        return ColorFilter.mode(
+          Color(_data.getInt32(_kColorFilterColorOffset, _kFakeHostEndian)),
           BlendMode.values[_data.getInt32(_kColorFilterBlendModeOffset, _kFakeHostEndian)],
         );
       case ColorFilter._TypeMatrix:
-        return new ColorFilter.matrix(_objects[_kColorFilterMatrixIndex]);
+        return ColorFilter.matrix(_objects[_kColorFilterMatrixIndex]);
       case ColorFilter._TypeLinearToSrgbGamma:
         return const ColorFilter.linearToSrgbGamma();
       case ColorFilter._TypeSrgbToLinearGamma:
@@ -1377,7 +1377,7 @@ class Paint {
       } else if (value._type == ColorFilter._TypeMatrix) {
         assert(value._matrix != null);
 
-        _objects ??= new List<dynamic>(_kObjectCount);
+        _objects ??= List<dynamic>(_kObjectCount);
         _objects[_kColorFilterMatrixIndex] = Float32List.fromList(value._matrix);
       }
     }
@@ -1385,7 +1385,7 @@ class Paint {
 
   /// Whether the colors of the image are inverted when drawn.
   ///
-  /// inverting the colors of an image applies a new color filter that will
+  /// inverting the colors of an image applies a color filter that will
   /// be composed with any user provided color filters. This is primarily
   /// used for implementing smart invert on iOS.
   bool get invertColors {
@@ -1397,7 +1397,7 @@ class Paint {
 
   @override
   String toString() {
-    final StringBuffer result = new StringBuffer();
+    final StringBuffer result = StringBuffer();
     String semicolon = '';
     result.write('Paint(');
     if (style == PaintingStyle.stroke) {
@@ -1715,7 +1715,7 @@ enum PathOperation {
   ///  * [reverseDifference], which is the same but subtracting the first path
   ///    from the second.
   difference,
-  /// Create a new path that is the intersection of the two paths, leaving the
+  /// Create a path that is the intersection of the two paths, leaving the
   /// overlapping pieces of the path.
   ///
   /// For example, if the two paths are overlapping circles of equal diameter
@@ -1725,13 +1725,13 @@ enum PathOperation {
   /// See also:
   ///  * [xor], which is the inverse of this operation
   intersect,
-  /// Create a new path that is the union (inclusive-or) of the two paths.
+  /// Create a path that is the union (inclusive-or) of the two paths.
   ///
   /// For example, if the two paths are overlapping circles of equal diameter
   /// but differing centers, the result would be a figure-eight like shape
   /// matching the outer boundaries of both circles.
   union,
-  /// Create a new path that is the exclusive-or of the two paths, leaving
+  /// Create a path that is the exclusive-or of the two paths, leaving
   /// everything but the overlapping pieces of the path.
   ///
   /// For example, if the two paths are overlapping circles of equal diameter
@@ -1778,7 +1778,7 @@ class EngineLayer {
 /// Paths can be drawn on canvases using [Canvas.drawPath], and can
 /// used to create clip regions using [Canvas.clipPath].
 class Path {
-  /// Create a new empty [Path] object.
+  /// Create a empty [Path] object.
   Path() { throw UnimplementedError(); }
 
   /// Creates a copy of another [Path].
@@ -1798,12 +1798,12 @@ class Path {
   }
 
 
-  /// Starts a new sub-path at the given coordinate.
+  /// Starts a sub-path at the given coordinate.
   void moveTo(double x, double y) {
     throw UnimplementedError();
   }
 
-  /// Starts a new sub-path at the given offset from the current point.
+  /// Starts a sub-path at the given offset from the current point.
   void relativeMoveTo(double dx, double dy) {
     throw UnimplementedError();
   }
@@ -1872,7 +1872,7 @@ class Path {
   /// If the `forceMoveTo` argument is false, adds a straight line
   /// segment and an arc segment.
   ///
-  /// If the `forceMoveTo` argument is true, starts a new sub-path
+  /// If the `forceMoveTo` argument is true, starts a sub-path
   /// consisting of an arc segment.
   ///
   /// In either case, the arc segment consists of the arc that follows
@@ -1936,14 +1936,14 @@ class Path {
     throw UnimplementedError();
   }
 
-  /// Adds a new sub-path that consists of four lines that outline the
+  /// Adds a sub-path that consists of four lines that outline the
   /// given rectangle.
   void addRect(Rect rect) {
     assert(_rectIsValid(rect));
     throw UnimplementedError();
   }
 
-  /// Adds a new sub-path that consists of a curve that forms the
+  /// Adds a sub-path that consists of a curve that forms the
   /// ellipse that fills the given rectangle.
   ///
   /// To add a circle, pass an appropriate rectangle as `oval`. [Rect.fromCircle]
@@ -1953,7 +1953,7 @@ class Path {
     throw UnimplementedError();
   }
 
-  /// Adds a new sub-path with one arc segment that consists of the arc
+  /// Adds a sub-path with one arc segment that consists of the arc
   /// that follows the edge of the oval bounded by the given
   /// rectangle, from startAngle radians around the oval up to
   /// startAngle + sweepAngle radians around the oval, with zero
@@ -1967,7 +1967,7 @@ class Path {
   }
 
 
-  /// Adds a new sub-path with a sequence of line segments that connect the given
+  /// Adds a sub-path with a sequence of line segments that connect the given
   /// points.
   ///
   /// If `close` is true, a final line segment will be added that connects the
@@ -1979,7 +1979,7 @@ class Path {
     throw UnimplementedError();
   }
 
-  /// Adds a new sub-path that consists of the straight lines and
+  /// Adds a sub-path that consists of the straight lines and
   /// curves needed to form the rounded rectangle described by the
   /// argument.
   void addRRect(RRect rrect) {
@@ -1987,7 +1987,7 @@ class Path {
     throw UnimplementedError();
   }
 
-  /// Adds a new sub-path that consists of the given `path` offset by the given
+  /// Adds a sub-path that consists of the given `path` offset by the given
   /// `offset`.
   ///
   /// If `matrix4` is specified, the path will be transformed by this matrix
@@ -2107,7 +2107,7 @@ class Tangent {
   /// The [vector] is computed to be the unit vector at the given angle, interpreted
   /// as clockwise radians from the x axis.
   factory Tangent.fromAngle(Offset position, double angle) {
-    return new Tangent(position, new Offset(math.cos(angle), math.sin(angle)));
+    return Tangent(position, Offset(math.cos(angle), math.sin(angle)));
   }
 
   /// Position of the tangent.
@@ -2833,7 +2833,7 @@ class Canvas {
   ///   Rect rect = Offset.zero & size;
   ///   canvas.save();
   ///   canvas.clipRRect(new RRect.fromRectXY(rect, 100.0, 100.0));
-  ///   canvas.saveLayer(rect, new Paint());
+  ///   canvas.saveLayer(rect, Paint());
   ///   canvas.drawPaint(new Paint()..color = Colors.red);
   ///   canvas.drawPaint(new Paint()..color = Colors.white);
   ///   canvas.restore();
@@ -2898,7 +2898,7 @@ class Canvas {
   ///
   /// See also:
   ///
-  ///  * [save], which saves the current state, but does not create a new layer
+  ///  * [save], which saves the current state, but does not create a layer
   ///    for subsequent commands.
   ///  * [BlendMode], which discusses the use of [Paint.blendMode] with
   ///    [saveLayer].
@@ -3509,7 +3509,7 @@ typedef _Callbacker<T> = String Function(_Callback<T> callback);
 /// typedef IntCallback = void Function(int result);
 ///
 /// String _doSomethingAndCallback(IntCallback callback) {
-///   new Timer(new Duration(seconds: 1), () { callback(1); });
+///   Timer(new Duration(seconds: 1), () { callback(1); });
 /// }
 ///
 /// Future<int> doSomething() {

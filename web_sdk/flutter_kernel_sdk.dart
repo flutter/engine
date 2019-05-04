@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// ignore_for_file: always_specify_types, prefer_final_locals, avoid_as, override_on_non_overriding_getter
+
 import 'dart:async';
 import 'dart:convert' show json;
 import 'dart:io';

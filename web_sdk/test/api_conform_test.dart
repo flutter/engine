@@ -4,7 +4,7 @@
 
 import 'dart:io';
 
-import 'package:analyzer/analyzer.dart';
+import 'package:analyzer/analyzer.dart'; // ignore: deprecated_member_use
 
 void main() {
   // These files just contain imports to the part files;
