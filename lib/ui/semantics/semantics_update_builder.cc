@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/semantics/semantics_update_builder.h"
 
+#include "third_party/skia/include/core/SkScalar.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
@@ -63,7 +64,7 @@ void SemanticsUpdateBuilder::updateNode(
     const tonic::Int32List& childrenInTraversalOrder,
     const tonic::Int32List& childrenInHitTestOrder,
     const tonic::Int32List& localContextActions) {
-  FML_CHECK(transform.data() && SkScalarsAreFinite(transform.data(), 9))
+  FML_CHECK(transform.data() && SkScalarsAreFinite(*transform.data(), 9))
       << "Semantics update transform was not set or not finite.";
   FML_CHECK(scrollChildren == 0 ||
             (scrollChildren > 0 && childrenInHitTestOrder.data()))
