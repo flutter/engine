@@ -3,6 +3,7 @@ set -e
 shopt -s nullglob
 
 echo "Verifying license script is still happy..."
+echo "Using pub from `which pub`, dart from `which dart`"
 (cd flutter/tools/licenses; pub get; dart --enable-asserts lib/main.dart --src ../../.. --out ../../../out/license_script_output --golden ../../ci/licenses_golden)
 
 for f in out/license_script_output/licenses_*; do
