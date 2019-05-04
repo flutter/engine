@@ -156,7 +156,7 @@ void _reportUnhandledException(String error, String stackTrace) {
   throw UnimplementedError();
 }
 
-/// Invokes [callback] inside the given [zone].
+/// Stub implementation. See docs in `../ui/`.
 void _invoke(void callback(), Zone zone) {
   if (callback == null)
     return;
@@ -170,7 +170,7 @@ void _invoke(void callback(), Zone zone) {
   }
 }
 
-/// Invokes [callback] inside the given [zone] passing it [arg].
+/// Stub implementation. See docs in `../ui/`.
 void _invoke1<A>(void callback(A a), Zone zone, A arg) {
   if (callback == null)
     return;
@@ -184,7 +184,7 @@ void _invoke1<A>(void callback(A a), Zone zone, A arg) {
   }
 }
 
-/// Invokes [callback] inside the given [zone] passing it [arg1] and [arg2].
+/// Stub implementation. See docs in `../ui/`.
 // ignore: unused_element
 void _invoke2<A1, A2>(void callback(A1 a1, A2 a2), Zone zone, A1 arg1, A2 arg2) {
   if (callback == null)
@@ -199,7 +199,7 @@ void _invoke2<A1, A2>(void callback(A1 a1, A2 a2), Zone zone, A1 arg1, A2 arg2) 
   }
 }
 
-/// Invokes [callback] inside the given [zone] passing it [arg1], [arg2] and [arg3].
+/// Stub implementation. See docs in `../ui/`.
 void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1, A2 arg2, A3 arg3) {
   if (callback == null)
     return;

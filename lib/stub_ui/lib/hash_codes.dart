@@ -7,7 +7,7 @@ part of ui;
 class _HashEnd { const _HashEnd(); }
 const _HashEnd _hashEnd = const _HashEnd();
 
-/// Jenkins hash function, optimized for small integers.
+/// Stub implementation. See docs in `../ui/`.
 //
 // Borrowed from the dart sdk: sdk/lib/math/jenkins_smi_hash.dart.
 class _Jenkins {
@@ -25,20 +25,7 @@ class _Jenkins {
   }
 }
 
-/// Combine up to twenty objects' hash codes into one value.
-///
-/// If you only need to handle one object's hash code, then just refer to its
-/// [Object.hashCode] getter directly.
-///
-/// If you need to combine an arbitrary number of objects from a [List] or other
-/// [Iterable], use [hashList]. The output of [hashList] can be used as one of
-/// the arguments to this function.
-///
-/// For example:
-///
-/// ```dart
-/// int hashCode => hashValues(foo, bar, hashList(quux), baz);
-/// ```
+/// Stub implementation. See docs in `../ui/`.
 int hashValues(
   Object arg01,            Object arg02,          [ Object arg03 = _hashEnd,
   Object arg04 = _hashEnd, Object arg05 = _hashEnd, Object arg06 = _hashEnd,
@@ -108,9 +95,7 @@ int hashValues(
   return _Jenkins.finish(result);
 }
 
-/// Combine the [Object.hashCode] values of an arbitrary number of objects from
-/// an [Iterable] into one value. This function will return the same value if
-/// given null as if given an empty list.
+/// Stub implementation. See docs in `../ui/`.
 int hashList(Iterable<Object> arguments) {
   int result = 0;
   if (arguments != null) {

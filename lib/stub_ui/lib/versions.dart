@@ -4,9 +4,9 @@
 
 part of ui;
 
-/// Wraps version information for Dart, Skia and Flutter.
+/// Stub implementation. See docs in `../ui/`.
 class Versions {
-  /// Private constructor to capture the versions.
+  /// Stub implementation. See docs in `../ui/`.
   Versions._(
     this.dartVersion,
     this.skiaVersion,
@@ -20,6 +20,5 @@ class Versions {
   final String flutterEngineVersion;
 }
 
-/// [Versions] singleton. This object exposes Dart, Skia and
-/// Flutter engine versions.
+/// Stub implementation. See docs in `../ui/`.
 final Versions versions = Versions._('', '', '');

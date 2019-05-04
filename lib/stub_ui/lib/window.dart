@@ -4,110 +4,56 @@
 
 part of ui;
 
-/// Signature of callbacks that have no arguments and return no data.
+/// Stub implementation. See docs in `../ui/`.
 typedef VoidCallback = void Function();
 
-/// Signature for [Window.onBeginFrame].
+/// Stub implementation. See docs in `../ui/`.
 typedef FrameCallback = void Function(Duration duration);
 
-/// Signature for [Window.onPointerDataPacket].
+/// Stub implementation. See docs in `../ui/`.
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 
-/// Signature for [Window.onSemanticsAction].
+/// Stub implementation. See docs in `../ui/`.
 typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData args);
 
-/// Signature for responses to platform messages.
-///
-/// Used as a parameter to [Window.sendPlatformMessage] and
-/// [Window.onPlatformMessage].
+/// Stub implementation. See docs in `../ui/`.
 typedef PlatformMessageResponseCallback = void Function(ByteData data);
 
-/// Signature for [Window.onPlatformMessage].
+/// Stub implementation. See docs in `../ui/`.
 typedef PlatformMessageCallback = void Function(String name, ByteData data, PlatformMessageResponseCallback callback);
 
-/// States that an application can be in.
-///
-/// The values below describe notifications from the operating system.
-/// Applications should not expect to always receive all possible
-/// notifications. For example, if the users pulls out the battery from the
-/// device, no notification will be sent before the application is suddenly
-/// terminated, along with the rest of the operating system.
-///
-/// See also:
-///
-///  * [WidgetsBindingObserver], for a mechanism to observe the lifecycle state
-///    from the widgets layer.
+/// Stub implementation. See docs in `../ui/`.
 enum AppLifecycleState {
-  /// The application is visible and responding to user input.
+  /// Stub implementation. See docs in `../ui/`.
   resumed,
 
-  /// The application is in an inactive state and is not receiving user input.
-  ///
-  /// On iOS, this state corresponds to an app or the Flutter host view running
-  /// in the foreground inactive state. Apps transition to this state when in
-  /// a phone call, responding to a TouchID request, when entering the app
-  /// switcher or the control center, or when the UIViewController hosting the
-  /// Flutter app is transitioning.
-  ///
-  /// On Android, this corresponds to an app or the Flutter host view running
-  /// in the foreground inactive state.  Apps transition to this state when
-  /// another activity is focused, such as a split-screen app, a phone call,
-  /// a picture-in-picture app, a system dialog, or another window.
-  ///
-  /// Apps in this state should assume that they may be [paused] at any time.
+  /// Stub implementation. See docs in `../ui/`.
   inactive,
 
-  /// The application is not currently visible to the user, not responding to
-  /// user input, and running in the background.
-  ///
-  /// When the application is in this state, the engine will not call the
-  /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
-  ///
-  /// Android apps in this state should assume that they may enter the
-  /// [suspending] state at any time.
+  /// Stub implementation. See docs in `../ui/`.
   paused,
 
-  /// The application will be suspended momentarily.
-  ///
-  /// When the application is in this state, the engine will not call the
-  /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
-  ///
-  /// On iOS, this state is currently unused.
+  /// Stub implementation. See docs in `../ui/`.
   suspending,
 }
 
-/// A representation of distances for each of the four edges of a rectangle,
-/// used to encode the view insets and padding that applications should place
-/// around their user interface, as exposed by [Window.viewInsets] and
-/// [Window.padding]. View insets and padding are preferably read via
-/// [MediaQuery.of].
-///
-/// For a generic class that represents distances around a rectangle, see the
-/// [EdgeInsets] class.
-///
-/// See also:
-///
-///  * [WidgetsBindingObserver], for a widgets layer mechanism to receive
-///    notifications when the padding changes.
-///  * [MediaQuery.of], for the preferred mechanism for accessing these values.
-///  * [Scaffold], which automatically applies the padding in material design
-///    applications.
+/// Stub implementation. See docs in `../ui/`.
 class WindowPadding {
   const WindowPadding._({ this.left, this.top, this.right, this.bottom });
 
-  /// The distance from the left edge to the first unpadded pixel, in physical pixels.
+  /// Stub implementation. See docs in `../ui/`.
   final double left;
 
-  /// The distance from the top edge to the first unpadded pixel, in physical pixels.
+  /// Stub implementation. See docs in `../ui/`.
   final double top;
 
-  /// The distance from the right edge to the first unpadded pixel, in physical pixels.
+  /// Stub implementation. See docs in `../ui/`.
   final double right;
 
-  /// The distance from the bottom edge to the first unpadded pixel, in physical pixels.
+  /// Stub implementation. See docs in `../ui/`.
   final double bottom;
 
-  /// A window padding that has zeros for each edge.
+  /// Stub implementation. See docs in `../ui/`.
   static const WindowPadding zero = const WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
 
   @override
@@ -116,56 +62,9 @@ class WindowPadding {
   }
 }
 
-/// An identifier used to select a user's language and formatting preferences.
-///
-/// This represents a [Unicode Language
-/// Identifier](https://www.unicode.org/reports/tr35/#Unicode_language_identifier)
-/// (i.e. without Locale extensions), except variants are not supported.
-///
-/// Locales are canonicalized according to the "preferred value" entries in the
-/// [IANA Language Subtag
-/// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry).
-/// For example, `const Locale('he')` and `const Locale('iw')` are equal and
-/// both have the [languageCode] `he`, because `iw` is a deprecated language
-/// subtag that was replaced by the subtag `he`.
-///
-/// See also:
-///
-///  * [Window.locale], which specifies the system's currently selected
-///    [Locale].
+/// Stub implementation. See docs in `../ui/`.
 class Locale {
-  /// Creates a new Locale object. The first argument is the
-  /// primary language subtag, the second is the region (also
-  /// referred to as 'country') subtag.
-  ///
-  /// For example:
-  ///
-  /// ```dart
-  /// const Locale swissFrench = const Locale('fr', 'CH');
-  /// const Locale canadianFrench = const Locale('fr', 'CA');
-  /// ```
-  ///
-  /// The primary language subtag must not be null. The region subtag is
-  /// optional. When there is no region/country subtag, the parameter should
-  /// be omitted or passed `null` instead of an empty-string.
-  ///
-  /// The subtag values are _case sensitive_ and must be one of the valid
-  /// subtags according to CLDR supplemental data:
-  /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
-  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml). The
-  /// primary language subtag must be at least two and at most eight lowercase
-  /// letters, but not four letters. The region region subtag must be two
-  /// uppercase letters or three digits. See the [Unicode Language
-  /// Identifier](https://www.unicode.org/reports/tr35/#Unicode_language_identifier)
-  /// specification.
-  ///
-  /// Validity is not checked by default, but some methods may throw away
-  /// invalid data.
-  ///
-  /// See also:
-  ///
-  ///  * [new Locale.fromSubtags], which also allows a [scriptCode] to be
-  ///    specified.
+  /// Stub implementation. See docs in `../ui/`.
   const Locale(
     this._languageCode, [
     this._countryCode,
@@ -173,22 +72,7 @@ class Locale {
        assert(_languageCode != ''),
        scriptCode = null;
 
-  /// Creates a new Locale object.
-  ///
-  /// The keyword arguments specify the subtags of the Locale.
-  ///
-  /// The subtag values are _case sensitive_ and must be valid subtags according
-  /// to CLDR supplemental data:
-  /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
-  /// [script](http://unicode.org/cldr/latest/common/validity/script.xml) and
-  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml) for
-  /// each of languageCode, scriptCode and countryCode respectively.
-  ///
-  /// The [countryCode] subtag is optional. When there is no country subtag,
-  /// the parameter should be omitted or passed `null` instead of an empty-string.
-  ///
-  /// Validity is not checked by default, but some methods may throw away
-  /// invalid data.
+  /// Stub implementation. See docs in `../ui/`.
   const Locale.fromSubtags({
     String languageCode = 'und',
     this.scriptCode,
@@ -200,29 +84,7 @@ class Locale {
        assert(countryCode != ''),
        _countryCode = countryCode;
 
-  /// The primary language subtag for the locale.
-  ///
-  /// This must not be null. It may be 'und', representing 'undefined'.
-  ///
-  /// This is expected to be string registered in the [IANA Language Subtag
-  /// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry)
-  /// with the type "language". The string specified must match the case of the
-  /// string in the registry.
-  ///
-  /// Language subtags that are deprecated in the registry and have a preferred
-  /// code are changed to their preferred code. For example, `const
-  /// Locale('he')` and `const Locale('iw')` are equal, and both have the
-  /// [languageCode] `he`, because `iw` is a deprecated language subtag that was
-  /// replaced by the subtag `he`.
-  ///
-  /// This must be a valid Unicode Language subtag as listed in [Unicode CLDR
-  /// supplemental
-  /// data](http://unicode.org/cldr/latest/common/validity/language.xml).
-  ///
-  /// See also:
-  ///
-  ///  * [new Locale.fromSubtags], which describes the conventions for creating
-  ///    [Locale] objects.
+  /// Stub implementation. See docs in `../ui/`.
   String get languageCode => _replaceDeprecatedLanguageSubtag(_languageCode);
   final String _languageCode;
 
@@ -312,39 +174,10 @@ class Locale {
     }
   }
 
-  /// The script subtag for the locale.
-  ///
-  /// This may be null, indicating that there is no specified script subtag.
-  ///
-  /// This must be a valid Unicode Language Identifier script subtag as listed
-  /// in [Unicode CLDR supplemental
-  /// data](http://unicode.org/cldr/latest/common/validity/script.xml).
-  ///
-  /// See also:
-  ///
-  ///  * [new Locale.fromSubtags], which describes the conventions for creating
-  ///    [Locale] objects.
+  /// Stub implementation. See docs in `../ui/`.
   final String scriptCode;
 
-  /// The region subtag for the locale.
-  ///
-  /// This may be null, indicating that there is no specified region subtag.
-  ///
-  /// This is expected to be string registered in the [IANA Language Subtag
-  /// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry)
-  /// with the type "region". The string specified must match the case of the
-  /// string in the registry.
-  ///
-  /// Region subtags that are deprecated in the registry and have a preferred
-  /// code are changed to their preferred code. For example, `const Locale('de',
-  /// 'DE')` and `const Locale('de', 'DD')` are equal, and both have the
-  /// [countryCode] `DE`, because `DD` is a deprecated language subtag that was
-  /// replaced by the subtag `DE`.
-  ///
-  /// See also:
-  ///
-  ///  * [new Locale.fromSubtags], which describes the conventions for creating
-  ///    [Locale] objects.
+  /// Stub implementation. See docs in `../ui/`.
   String get countryCode => _replaceDeprecatedRegionSubtag(_countryCode);
   final String _countryCode;
 
@@ -387,120 +220,33 @@ class Locale {
     return out.toString();
   }
 
-  /// Returns a syntactically valid Unicode BCP47 Locale Identifier.
-  ///
-  /// Some examples of such identifiers: "en", "es-419", "hi-Deva-IN" and
-  /// "zh-Hans-CN". See http://www.unicode.org/reports/tr35/ for technical
-  /// details.
+  /// Stub implementation. See docs in `../ui/`.
   String toLanguageTag() {
     throw UnimplementedError();
   }
 }
 
-/// The most basic interface to the host operating system's user interface.
-///
-/// There is a single Window instance in the system, which you can
-/// obtain from the [window] property.
+/// Stub implementation. See docs in `../ui/`.
 class Window {
   Window._();
 
-  /// The number of device pixels for each logical pixel. This number might not
-  /// be a power of two. Indeed, it might not even be an integer. For example,
-  /// the Nexus 6 has a device pixel ratio of 3.5.
-  ///
-  /// Device pixels are also referred to as physical pixels. Logical pixels are
-  /// also referred to as device-independent or resolution-independent pixels.
-  ///
-  /// By definition, there are roughly 38 logical pixels per centimeter, or
-  /// about 96 logical pixels per inch, of the physical display. The value
-  /// returned by [devicePixelRatio] is ultimately obtained either from the
-  /// hardware itself, the device drivers, or a hard-coded value stored in the
-  /// operating system or firmware, and may be inaccurate, sometimes by a
-  /// significant margin.
-  ///
-  /// The Flutter framework operates in logical pixels, so it is rarely
-  /// necessary to directly deal with this property.
-  ///
-  /// When this changes, [onMetricsChanged] is called.
-  ///
-  /// See also:
-  ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this value changes.
+  /// Stub implementation. See docs in `../ui/`.
   double get devicePixelRatio => _devicePixelRatio;
   double _devicePixelRatio = 1.0;
 
-  /// The dimensions of the rectangle into which the application will be drawn,
-  /// in physical pixels.
-  ///
-  /// When this changes, [onMetricsChanged] is called.
-  ///
-  /// At startup, the size of the application window may not be known before Dart
-  /// code runs. If this value is observed early in the application lifecycle,
-  /// it may report [Size.zero].
-  ///
-  /// This value does not take into account any on-screen keyboards or other
-  /// system UI. The [padding] and [viewInsets] properties provide a view into
-  /// how much of each side of the application may be obscured by system UI.
-  ///
-  /// See also:
-  ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this value changes.
+  /// Stub implementation. See docs in `../ui/`.
   Size get physicalSize => _physicalSize;
   Size _physicalSize = Size.zero;
 
-  /// The number of physical pixels on each side of the display rectangle into
-  /// which the application can render, but over which the operating system
-  /// will likely place system UI, such as the keyboard, that fully obscures
-  /// any content.
-  ///
-  /// When this changes, [onMetricsChanged] is called.
-  ///
-  /// See also:
-  ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this value changes.
-  ///  * [MediaQuery.of], a simpler mechanism for the same.
-  ///  * [Scaffold], which automatically applies the view insets in material
-  ///    design applications.
+  /// Stub implementation. See docs in `../ui/`.
   WindowPadding get viewInsets => _viewInsets;
   WindowPadding _viewInsets = WindowPadding.zero;
 
-  /// The number of physical pixels on each side of the display rectangle into
-  /// which the application can render, but which may be partially obscured by
-  /// system UI (such as the system notification area), or or physical
-  /// intrusions in the display (e.g. overscan regions on television screens or
-  /// phone sensor housings).
-  ///
-  /// When this changes, [onMetricsChanged] is called.
-  ///
-  /// See also:
-  ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this value changes.
-  ///  * [MediaQuery.of], a simpler mechanism for the same.
-  ///  * [Scaffold], which automatically applies the padding in material design
-  ///    applications.
+  /// Stub implementation. See docs in `../ui/`.
   WindowPadding get padding => _padding;
   WindowPadding _padding = WindowPadding.zero;
 
-  /// A callback that is invoked whenever the [devicePixelRatio],
-  /// [physicalSize], [padding], or [viewInsets] values change, for example
-  /// when the device is rotated or when the application is resized (e.g. when
-  /// showing applications side-by-side on Android).
-  ///
-  /// The engine invokes this callback in the same zone in which the callback
-  /// was set.
-  ///
-  /// The framework registers with this callback and updates the layout
-  /// appropriately.
-  ///
-  /// See also:
-  ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    register for notifications when this is called.
-  ///  * [MediaQuery.of], a simpler mechanism for the same.
+  /// Stub implementation. See docs in `../ui/`.
   VoidCallback get onMetricsChanged => _onMetricsChanged;
   VoidCallback _onMetricsChanged;
   Zone _onMetricsChangedZone;
@@ -509,16 +255,7 @@ class Window {
     _onMetricsChangedZone = Zone.current;
   }
 
-  /// The system-reported default locale of the device.
-  ///
-  /// This establishes the language and formatting conventions that application
-  /// should, if possible, use to render their user interface.
-  ///
-  /// This is the first locale selected by the user and is the user's
-  /// primary locale (the locale the device UI is displayed in)
-  ///
-  /// This is equivalent to `locales.first` and will provide an empty non-null locale
-  /// if the [locales] list has not been set or is empty.
+  /// Stub implementation. See docs in `../ui/`.
   Locale get locale {
     if (_locales != null && _locales.isNotEmpty) {
       return _locales.first;
@@ -526,32 +263,11 @@ class Window {
     return null;
   }
 
-  /// The full system-reported supported locales of the device.
-  ///
-  /// This establishes the language and formatting conventions that application
-  /// should, if possible, use to render their user interface.
-  ///
-  /// The list is ordered in order of priority, with lower-indexed locales being
-  /// preferred over higher-indexed ones. The first element is the primary [locale].
-  ///
-  /// The [onLocaleChanged] callback is called whenever this value changes.
-  ///
-  /// See also:
-  ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this value changes.
+  /// Stub implementation. See docs in `../ui/`.
   List<Locale> get locales => _locales;
   List<Locale> _locales;
 
-  /// A callback that is invoked whenever [locale] changes value.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
-  ///
-  /// See also:
-  ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this callback is invoked.
+  /// Stub implementation. See docs in `../ui/`.
   VoidCallback get onLocaleChanged => _onLocaleChanged;
   VoidCallback _onLocaleChanged;
   Zone _onLocaleChangedZone;
@@ -560,29 +276,15 @@ class Window {
     _onLocaleChangedZone = Zone.current;
   }
 
-  /// The lifecycle state immediately after dart isolate initialization.
-  ///
-  /// This property will not be updated as the lifecycle changes.
-  ///
-  /// It is used to initialize [SchedulerBinding.lifecycleState] at startup
-  /// with any buffered lifecycle state events.
+  /// Stub implementation. See docs in `../ui/`.
   String get initialLifecycleState => _initialLifecycleState;
   String _initialLifecycleState;
 
-  /// The setting indicating the current brightness mode of the host platform.
-  /// If the platform has no preference, [platformBrightness] defaults to [Brightness.light].
+  /// Stub implementation. See docs in `../ui/`.
   Brightness get platformBrightness => _platformBrightness;
   Brightness _platformBrightness = Brightness.light;
 
-  /// A callback that is invoked whenever [platformBrightness] changes value.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
-  ///
-  /// See also:
-  ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this callback is invoked.
+  /// Stub implementation. See docs in `../ui/`.
   VoidCallback get onPlatformBrightnessChanged => _onPlatformBrightnessChanged;
   VoidCallback _onPlatformBrightnessChanged;
   Zone _onPlatformBrightnessChangedZone;
@@ -591,37 +293,15 @@ class Window {
     _onPlatformBrightnessChangedZone = Zone.current;
   }
 
-  /// The system-reported text scale.
-  ///
-  /// This establishes the text scaling factor to use when rendering text,
-  /// according to the user's platform preferences.
-  ///
-  /// The [onTextScaleFactorChanged] callback is called whenever this value
-  /// changes.
-  ///
-  /// See also:
-  ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this value changes.
+  /// Stub implementation. See docs in `../ui/`.
   double get textScaleFactor => _textScaleFactor;
   double _textScaleFactor = 1.0;
 
-  /// The setting indicating whether time should always be shown in the 24-hour
-  /// format.
-  ///
-  /// This option is used by [showTimePicker].
+  /// Stub implementation. See docs in `../ui/`.
   bool get alwaysUse24HourFormat => _alwaysUse24HourFormat;
   bool _alwaysUse24HourFormat = false;
 
-  /// A callback that is invoked whenever [textScaleFactor] changes value.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
-  ///
-  /// See also:
-  ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this callback is invoked.
+  /// Stub implementation. See docs in `../ui/`.
   VoidCallback get onTextScaleFactorChanged => _onTextScaleFactorChanged;
   VoidCallback _onTextScaleFactorChanged;
   Zone _onTextScaleFactorChangedZone;
@@ -630,25 +310,7 @@ class Window {
     _onTextScaleFactorChangedZone = Zone.current;
   }
 
-  /// A callback that is invoked to notify the application that it is an
-  /// appropriate time to provide a scene using the [SceneBuilder] API and the
-  /// [render] method. When possible, this is driven by the hardware VSync
-  /// signal. This is only called if [scheduleFrame] has been called since the
-  /// last time this callback was invoked.
-  ///
-  /// The [onDrawFrame] callback is invoked immediately after [onBeginFrame],
-  /// after draining any microtasks (e.g. completions of any [Future]s) queued
-  /// by the [onBeginFrame] handler.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
-  ///
-  /// See also:
-  ///
-  ///  * [SchedulerBinding], the Flutter framework class which manages the
-  ///    scheduling of frames.
-  ///  * [RendererBinding], the Flutter framework class which manages layout and
-  ///    painting.
+  /// Stub implementation. See docs in `../ui/`.
   FrameCallback get onBeginFrame => _onBeginFrame;
   FrameCallback _onBeginFrame;
   Zone _onBeginFrameZone;
@@ -657,20 +319,7 @@ class Window {
     _onBeginFrameZone = Zone.current;
   }
 
-  /// A callback that is invoked for each frame after [onBeginFrame] has
-  /// completed and after the microtask queue has been drained. This can be
-  /// used to implement a second phase of frame rendering that happens
-  /// after any deferred work queued by the [onBeginFrame] phase.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
-  ///
-  /// See also:
-  ///
-  ///  * [SchedulerBinding], the Flutter framework class which manages the
-  ///    scheduling of frames.
-  ///  * [RendererBinding], the Flutter framework class which manages layout and
-  ///    painting.
+  /// Stub implementation. See docs in `../ui/`.
   VoidCallback get onDrawFrame => _onDrawFrame;
   VoidCallback _onDrawFrame;
   Zone _onDrawFrameZone;
@@ -679,15 +328,7 @@ class Window {
     _onDrawFrameZone = Zone.current;
   }
 
-  /// A callback that is invoked when pointer data is available.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
-  ///
-  /// See also:
-  ///
-  ///  * [GestureBinding], the Flutter framework class which manages pointer
-  ///    events.
+  /// Stub implementation. See docs in `../ui/`.
   PointerDataPacketCallback get onPointerDataPacket => _onPointerDataPacket;
   PointerDataPacketCallback _onPointerDataPacket;
   Zone _onPointerDataPacketZone;
@@ -696,91 +337,26 @@ class Window {
     _onPointerDataPacketZone = Zone.current;
   }
 
-  /// The route or path that the embedder requested when the application was
-  /// launched.
-  ///
-  /// This will be the string "`/`" if no particular route was requested.
-  ///
-  /// ## Android
-  ///
-  /// On Android, calling
-  /// [`FlutterView.setInitialRoute`](/javadoc/io/flutter/view/FlutterView.html#setInitialRoute-java.lang.String-)
-  /// will set this value. The value must be set sufficiently early, i.e. before
-  /// the [runApp] call is executed in Dart, for this to have any effect on the
-  /// framework. The `createFlutterView` method in your `FlutterActivity`
-  /// subclass is a suitable time to set the value. The application's
-  /// `AndroidManifest.xml` file must also be updated to have a suitable
-  /// [`<intent-filter>`](https://developer.android.com/guide/topics/manifest/intent-filter-element.html).
-  ///
-  /// ## iOS
-  ///
-  /// On iOS, calling
-  /// [`FlutterViewController.setInitialRoute`](/objcdoc/Classes/FlutterViewController.html#/c:objc%28cs%29FlutterViewController%28im%29setInitialRoute:)
-  /// will set this value. The value must be set sufficiently early, i.e. before
-  /// the [runApp] call is executed in Dart, for this to have any effect on the
-  /// framework. The `application:didFinishLaunchingWithOptions:` method is a
-  /// suitable time to set this value.
-  ///
-  /// See also:
-  ///
-  ///  * [Navigator], a widget that handles routing.
-  ///  * [SystemChannels.navigation], which handles subsequent navigation
-  ///    requests from the embedder.
+  /// Stub implementation. See docs in `../ui/`.
   String get defaultRouteName {
     throw UnimplementedError();
   }
 
-  /// Requests that, at the next appropriate opportunity, the [onBeginFrame]
-  /// and [onDrawFrame] callbacks be invoked.
-  ///
-  /// See also:
-  ///
-  ///  * [SchedulerBinding], the Flutter framework class which manages the
-  ///    scheduling of frames.
+  /// Stub implementation. See docs in `../ui/`.
   void scheduleFrame() {
     throw UnimplementedError();
   }
 
-  /// Updates the application's rendering on the GPU with the newly provided
-  /// [Scene]. This function must be called within the scope of the
-  /// [onBeginFrame] or [onDrawFrame] callbacks being invoked. If this function
-  /// is called a second time during a single [onBeginFrame]/[onDrawFrame]
-  /// callback sequence or called outside the scope of those callbacks, the call
-  /// will be ignored.
-  ///
-  /// To record graphical operations, first create a [PictureRecorder], then
-  /// construct a [Canvas], passing that [PictureRecorder] to its constructor.
-  /// After issuing all the graphical operations, call the
-  /// [PictureRecorder.endRecording] function on the [PictureRecorder] to obtain
-  /// the final [Picture] that represents the issued graphical operations.
-  ///
-  /// Next, create a [SceneBuilder], and add the [Picture] to it using
-  /// [SceneBuilder.addPicture]. With the [SceneBuilder.build] method you can
-  /// then obtain a [Scene] object, which you can display to the user via this
-  /// [render] function.
-  ///
-  /// See also:
-  ///
-  ///  * [SchedulerBinding], the Flutter framework class which manages the
-  ///    scheduling of frames.
-  ///  * [RendererBinding], the Flutter framework class which manages layout and
-  ///    painting.
+  /// Stub implementation. See docs in `../ui/`.
   void render(Scene scene) {
     throw UnimplementedError();
   }
 
-  /// Whether the user has requested that [updateSemantics] be called when
-  /// the semantic contents of window changes.
-  ///
-  /// The [onSemanticsEnabledChanged] callback is called whenever this value
-  /// changes.
+  /// Stub implementation. See docs in `../ui/`.
   bool get semanticsEnabled => _semanticsEnabled;
   bool _semanticsEnabled = false;
 
-  /// A callback that is invoked when the value of [semanticsEnabled] changes.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
+  /// Stub implementation. See docs in `../ui/`.
   VoidCallback get onSemanticsEnabledChanged => _onSemanticsEnabledChanged;
   VoidCallback _onSemanticsEnabledChanged;
   Zone _onSemanticsEnabledChangedZone;
@@ -789,14 +365,7 @@ class Window {
     _onSemanticsEnabledChangedZone = Zone.current;
   }
 
-  /// A callback that is invoked whenever the user requests an action to be
-  /// performed.
-  ///
-  /// This callback is used when the user expresses the action they wish to
-  /// perform based on the semantics supplied by [updateSemantics].
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
+  /// Stub implementation. See docs in `../ui/`.
   SemanticsActionCallback get onSemanticsAction => _onSemanticsAction;
   SemanticsActionCallback _onSemanticsAction;
   Zone _onSemanticsActionZone;
@@ -805,14 +374,11 @@ class Window {
     _onSemanticsActionZone = Zone.current;
   }
 
-  /// Additional accessibility features that may be enabled by the platform.
+  /// Stub implementation. See docs in `../ui/`.
   AccessibilityFeatures get accessibilityFeatures => _accessibilityFeatures;
   AccessibilityFeatures _accessibilityFeatures;
 
-  /// A callback that is invoked when the value of [accessibilityFeatures] changes.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
+  /// Stub implementation. See docs in `../ui/`.
   VoidCallback get onAccessibilityFeaturesChanged => _onAccessibilityFeaturesChanged;
   VoidCallback _onAccessibilityFeaturesChanged;
   Zone _onAccessibilityFlagsChangedZone;
@@ -821,57 +387,24 @@ class Window {
     _onAccessibilityFlagsChangedZone = Zone.current;
   }
 
-  /// Change the retained semantics data about this window.
-  ///
-  /// If [semanticsEnabled] is true, the user has requested that this function
-  /// be called whenever the semantic content of this window changes.
-  ///
-  /// In either case, this function disposes the given update, which means the
-  /// semantics update cannot be used further.
+  /// Stub implementation. See docs in `../ui/`.
   void updateSemantics(SemanticsUpdate update) {
     throw UnimplementedError();
   }
 
-  /// Set the debug name associated with this window's root isolate.
-  ///
-  /// Normally debug names are automatically generated from the Dart port, entry
-  /// point, and source file. For example: `main.dart$main-1234`.
-  ///
-  /// This can be combined with flutter tools `--isolate-filter` flag to debug
-  /// specific root isolates. For example: `flutter attach --isolate-filter=[name]`.
-  /// Note that this does not rename any child isolates of the root.
+  /// Stub implementation. See docs in `../ui/`.
   void setIsolateDebugName(String name) {
     throw UnimplementedError();
   }
 
-  /// Sends a message to a platform-specific plugin.
-  ///
-  /// The `name` parameter determines which plugin receives the message. The
-  /// `data` parameter contains the message payload and is typically UTF-8
-  /// encoded JSON but can be arbitrary data. If the plugin replies to the
-  /// message, `callback` will be called with the response.
-  ///
-  /// The framework invokes [callback] in the same zone in which this method
-  /// was called.
+  /// Stub implementation. See docs in `../ui/`.
   void sendPlatformMessage(String name,
                            ByteData data,
                            PlatformMessageResponseCallback callback) {
     throw UnimplementedError();
   }
 
-  /// Called whenever this window receives a message from a platform-specific
-  /// plugin.
-  ///
-  /// The `name` parameter determines which plugin sent the message. The `data`
-  /// parameter is the payload and is typically UTF-8 encoded JSON but can be
-  /// arbitrary data.
-  ///
-  /// Message handlers must call the function given in the `callback` parameter.
-  /// If the handler does not need to respond, the handler should pass null to
-  /// the callback.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
+  /// Stub implementation. See docs in `../ui/`.
   PlatformMessageCallback get onPlatformMessage => _onPlatformMessage;
   PlatformMessageCallback _onPlatformMessage;
   Zone _onPlatformMessageZone;
@@ -881,11 +414,7 @@ class Window {
   }
 }
 
-/// Additional accessibility features that may be enabled by the platform.
-///
-/// It is not possible to enable these settings from Flutter, instead they are
-/// used by the platform to indicate that additional accessibility features are
-/// enabled.
+/// Stub implementation. See docs in `../ui/`.
 class AccessibilityFeatures {
   const AccessibilityFeatures._(this._index);
 
@@ -898,27 +427,19 @@ class AccessibilityFeatures {
   // A bitfield which represents each enabled feature.
   final int _index;
 
-  /// Whether there is a running accessibility service which is changing the
-  /// interaction model of the device.
-  ///
-  /// For example, TalkBack on Android and VoiceOver on iOS enable this flag.
+  /// Stub implementation. See docs in `../ui/`.
   bool get accessibleNavigation => _kAccessibleNavigation & _index != 0;
 
-  /// The platform is inverting the colors of the application.
+  /// Stub implementation. See docs in `../ui/`.
   bool get invertColors => _kInvertColorsIndex & _index != 0;
 
-  /// The platform is requesting that animations be disabled or simplified.
+  /// Stub implementation. See docs in `../ui/`.
   bool get disableAnimations => _kDisableAnimationsIndex & _index != 0;
 
-  /// The platform is requesting that text be rendered at a bold font weight.
-  ///
-  /// Only supported on iOS.
+  /// Stub implementation. See docs in `../ui/`.
   bool get boldText => _kBoldTextIndex & _index != 0;
 
-  /// The platform is requesting that certain animations be simplified and
-  /// parallax effects removed.
-  ///
-  /// Only supported on iOS.
+  /// Stub implementation. See docs in `../ui/`.
   bool get reduceMotion => _kReduceMotionIndex & _index != 0;
 
   @override
@@ -949,22 +470,14 @@ class AccessibilityFeatures {
   int get hashCode => _index.hashCode;
 }
 
-/// Describes the contrast of a theme or color palette.
+/// Stub implementation. See docs in `../ui/`.
 enum Brightness {
-  /// The color is dark and will require a light text color to achieve readable
-  /// contrast.
-  ///
-  /// For example, the color might be dark grey, requiring white text.
+  /// Stub implementation. See docs in `../ui/`.
   dark,
 
-  /// The color is light and will require a dark text color to achieve readable
-  /// contrast.
-  ///
-  /// For example, the color might be bright white, requiring black text.
+  /// Stub implementation. See docs in `../ui/`.
   light,
 }
 
-/// The [Window] singleton. This object exposes the size of the display, the
-/// core scheduler API, the input event callback, the graphics drawing API, and
-/// other such core services.
+/// Stub implementation. See docs in `../ui/`.
 final Window window = new Window._();
