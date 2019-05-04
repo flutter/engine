@@ -1,8 +1,6 @@
 #!/bin/bash
 echo "Analyzing dart:ui library..."
 
-PATH=third_party/dart/tools/sdks/dart-sdk/bin:$PATH
-
 echo "Using analyzer from `which dartanalyzer`"
 
 dartanalyzer --version
