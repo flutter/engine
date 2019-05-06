@@ -47,6 +47,9 @@ class StubFlutterGlfwApi {
     return nullptr;
   }
 
+  // Called for FlutterDesktopDestroyWindow
+  virtual void DestroyWindow() {}
+
   // Called for FlutterDesktopWindowSetHoverEnabled.
   virtual void SetHoverEnabled(bool enabled) {}
 

@@ -557,6 +557,12 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   return state;
 }
 
+void FlutterDesktopDestroyWindow(FlutterDesktopWindowControllerRef controller) {
+  FlutterEngineShutdown(controller->engine);
+  glfwDestroyWindow(controller->window);
+  delete controller;
+}
+
 void FlutterDesktopWindowSetHoverEnabled(FlutterDesktopWindowRef flutter_window,
                                          bool enabled) {
   flutter_window->hover_tracking_enabled = enabled;
@@ -594,9 +600,7 @@ void FlutterDesktopRunWindowLoop(FlutterDesktopWindowControllerRef controller) {
     // TODO(awdavies): This will be deprecated soon.
     __FlutterEngineFlushPendingTasksNow();
   }
-  FlutterEngineShutdown(controller->engine);
-  delete controller;
-  glfwDestroyWindow(window);
+  FlutterDesktopDestroyWindow(controller);
 }
 
 FlutterDesktopWindowRef FlutterDesktopGetWindow(

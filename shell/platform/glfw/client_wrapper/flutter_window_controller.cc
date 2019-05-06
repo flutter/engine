@@ -16,6 +16,9 @@ FlutterWindowController::FlutterWindowController(
 }
 
 FlutterWindowController::~FlutterWindowController() {
+  if (controller_) {
+    FlutterDesktopDestroyWindow(controller_);
+  }
   if (init_succeeded_) {
     FlutterDesktopTerminate();
   }

@@ -64,9 +64,14 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   return nullptr;
 }
 
-void FlutterDesktopWindowSetHoverEnabled(
-    FlutterDesktopWindowControllerRef controller,
-    bool enabled) {
+void FlutterDesktopDestroyWindow(FlutterDesktopWindowControllerRef controller) {
+  if (s_stub_implementation) {
+    s_stub_implementation->DestroyWindow();
+  }
+}
+
+void FlutterDesktopWindowSetHoverEnabled(FlutterDesktopWindowRef flutter_window,
+                                         bool enabled) {
   if (s_stub_implementation) {
     s_stub_implementation->SetHoverEnabled(enabled);
   }

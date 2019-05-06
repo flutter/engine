@@ -50,9 +50,10 @@ FLUTTER_EXPORT void FlutterDesktopTerminate();
 // for details. Not all arguments will apply to desktop.
 //
 // Returns a null pointer in the event of an error. Otherwise, the pointer is
-// valid until FlutterDesktopRunWindowLoop has been called and returned.
+// valid until FlutterDesktopRunWindowLoop has been called and returned, or
+// FlutterDesktopDestroyWindow is called.
 // Note that calling FlutterDesktopCreateWindow without later calling
-// FlutterDesktopRunWindowLoop on the returned reference is a memory leak.
+// one of those two methods on the returned reference is a memory leak.
 FLUTTER_EXPORT FlutterDesktopWindowControllerRef
 FlutterDesktopCreateWindow(int initial_width,
                            int initial_height,
@@ -62,10 +63,20 @@ FlutterDesktopCreateWindow(int initial_width,
                            const char** arguments,
                            size_t argument_count);
 
+// Shuts down the engine instance associated with |controller|, and cleans up
+// associated state.
+//
+// |controller| is no longer valid after this call.
+FLUTTER_EXPORT void FlutterDesktopDestroyWindow(
+    FlutterDesktopWindowControllerRef controller);
+
 // Loops on Flutter window events until the window is closed.
 //
-// Once this function returns, |controller| is no longer
-// valid, and must not be used again.
+// Once this function returns, |controller| is no longer valid, and must not be
+// be used again, as it calls FlutterDesktopDestroyWindow internally.
+//
+// TODO: Replace this with a method that allows running the runloop
+// incrementally.
 FLUTTER_EXPORT void FlutterDesktopRunWindowLoop(
     FlutterDesktopWindowControllerRef controller);
 

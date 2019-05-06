@@ -50,6 +50,8 @@ class FlutterWindow {
 
  private:
   // Handle for interacting with the C API's window.
+  //
+  // Note: window_ is conceptually owned by the controller, not this object.
   FlutterDesktopWindowRef window_;
 };
 
