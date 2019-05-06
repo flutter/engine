@@ -725,7 +725,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGFloat scale = [UIScreen mainScreen].scale;
 
   // The keyboard is treated as an inset since we want to effectively reduce the window size by the
-  // keyboard height. The Dart side will compute a value accounting for the keyboard consuming
+  // keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
   // bottom padding.
   _viewportMetrics.physical_view_inset_bottom = bottom * scale;
   [self updateViewportMetrics];
