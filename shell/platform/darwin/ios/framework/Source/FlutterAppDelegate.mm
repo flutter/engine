@@ -197,13 +197,13 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 
 - (BOOL)respondsToSelector:(SEL)selector {
   if ([_lifeCycleDelegate isSelectorAddedDynamically:selector]) {
-    return [self delegateRepondsSelectorToPlugins:selector];
+    return [self delegateRespondsSelectorToPlugins:selector];
   }
   return [super respondsToSelector:selector];
 }
 
-- (BOOL)delegateRepondsSelectorToPlugins:(SEL)selector {
-  if ([_lifeCycleDelegate hasPluginRespondsToSelector:selector]) {
+- (BOOL)delegateRespondsSelectorToPlugins:(SEL)selector {
+  if ([_lifeCycleDelegate hasPluginThatRespondsToSelector:selector]) {
     return [_lifeCycleDelegate respondsToSelector:selector];
   } else {
     return NO;
@@ -212,19 +212,16 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 
 - (id)forwardingTargetForSelector:(SEL)aSelector {
   if ([_lifeCycleDelegate isSelectorAddedDynamically:aSelector]) {
-    // If a selector should be handled by plugins, there should be at least one plugin
-    // that can handle this selector.
-    FML_DCHECK([_lifeCycleDelegate isSelectorAddedDynamically:aSelector]);
     [self logCapabilityConfigurationWarningIfNeeded:aSelector];
     return _lifeCycleDelegate;
   }
   return [super forwardingTargetForSelector:aSelector];
 }
 
-// Mimic the loging from Apple when the capatibility is not set for the selectors.
+// Mimic the logging from Apple when the capability is not set for the selectors.
 // However the difference is that Apple logs these message when the app launches, we only
 // log it when the method is invoked. We can possibly also log it when the app launches, but
-// it will cause an addtional scan over all the plugins.
+// it will cause an additional scan over all the plugins.
 - (void)logCapabilityConfigurationWarningIfNeeded:(SEL)selector {
   NSArray* backgroundModesArray =
       [[NSBundle mainBundle] objectForInfoDictionaryKey:kUIBackgroundMode];

@@ -23,7 +23,7 @@ FLUTTER_EXPORT
 /**
  * Check whether there is at least one plugin responds to the selector.
  */
-- (BOOL)hasPluginRespondsToSelector:(SEL)selector;
+- (BOOL)hasPluginThatRespondsToSelector:(SEL)selector;
 
 /**
  * Registers `delegate` to receive life cycle callbacks via this FlutterPluginAppLifecycleDelegate

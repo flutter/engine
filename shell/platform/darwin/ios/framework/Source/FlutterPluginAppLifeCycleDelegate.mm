@@ -49,7 +49,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
   return NO;
 }
 
-- (BOOL)hasPluginRespondsToSelector:(SEL)selector {
+- (BOOL)hasPluginThatRespondsToSelector:(SEL)selector {
   for (id<FlutterPlugin> plugin in [_pluginDelegates allObjects]) {
     if (!plugin) {
       continue;
