@@ -34,7 +34,6 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
-  //[self addBackgroundModesDelegateMethodsIfNeeded];
   return [_lifeCycleDelegate application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
