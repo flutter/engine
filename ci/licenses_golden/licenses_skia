@@ -1,4 +1,4 @@
-Signature: 4147c76fdde1ec4babb2a742395a8dd6
+Signature: fa0a95425b4c480b2922ca74481bf3c1
 
 UNUSED LICENSES:
 
@@ -1025,8 +1025,8 @@ FILE: ../../../third_party/skia/gm/croppedrects.cpp
 FILE: ../../../third_party/skia/gm/dashcircle.cpp
 FILE: ../../../third_party/skia/gm/drawregion.cpp
 FILE: ../../../third_party/skia/gm/drawregionmodes.cpp
-FILE: ../../../third_party/skia/gm/encode-platform.cpp
-FILE: ../../../third_party/skia/gm/encode-srgb.cpp
+FILE: ../../../third_party/skia/gm/encode_platform.cpp
+FILE: ../../../third_party/skia/gm/encode_srgb.cpp
 FILE: ../../../third_party/skia/gm/filterbug.cpp
 FILE: ../../../third_party/skia/gm/hardstop_gradients.cpp
 FILE: ../../../third_party/skia/gm/imagemakewithfilter.cpp
@@ -1927,6 +1927,8 @@ FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/helper.js
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/karma.conf.js
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/package.json
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/ready.js
+FILE: ../../../third_party/skia/go.mod
+FILE: ../../../third_party/skia/go.sum
 FILE: ../../../third_party/skia/infra/bots/assets.isolate
 FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_darwin/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_linux/VERSION
@@ -1943,7 +1945,6 @@ FILE: ../../../third_party/skia/infra/bots/assets/cmake_linux/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/cmake_mac/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/gcloud_linux/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/go/VERSION
-FILE: ../../../third_party/skia/infra/bots/assets/go_deps/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/linux_vulkan_sdk/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/lottie-samples/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/mesa_intel_driver_linux/VERSION
@@ -2349,6 +2350,8 @@ FILE: ../../../third_party/skia/site/user/api/catalog.htm
 FILE: ../../../third_party/skia/site/user/modules/METADATA
 FILE: ../../../third_party/skia/site/user/modules/PathKit_effects.png
 FILE: ../../../third_party/skia/specs/web-img-decode/current/index.html
+FILE: ../../../third_party/skia/specs/web-img-decode/proposed/impl/impl.js
+FILE: ../../../third_party/skia/specs/web-img-decode/proposed/index.html
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
 FILE: ../../../third_party/skia/src/sksl/lex/sksl.lex
 FILE: ../../../third_party/skia/src/sksl/sksl.inc
@@ -3845,7 +3848,7 @@ FILE: ../../../third_party/skia/gm/crbug_788500.cpp
 FILE: ../../../third_party/skia/gm/crosscontextimage.cpp
 FILE: ../../../third_party/skia/gm/dftext_blob_persp.cpp
 FILE: ../../../third_party/skia/gm/drrect_small_inner.cpp
-FILE: ../../../third_party/skia/gm/encode-alpha-jpeg.cpp
+FILE: ../../../third_party/skia/gm/encode_alpha_jpeg.cpp
 FILE: ../../../third_party/skia/gm/etc1.cpp
 FILE: ../../../third_party/skia/gm/flippity.cpp
 FILE: ../../../third_party/skia/gm/highcontrastfilter.cpp
@@ -4453,6 +4456,7 @@ FILE: ../../../third_party/skia/docs/examples/Color_Type_RGBA_F16.cpp
 FILE: ../../../third_party/skia/docs/examples/Color_Type_RGB_101010.cpp
 FILE: ../../../third_party/skia/docs/examples/Color_Type_RGB_565.cpp
 FILE: ../../../third_party/skia/docs/examples/Color_Type_RGB_888.cpp
+FILE: ../../../third_party/skia/docs/examples/Colors.cpp
 FILE: ../../../third_party/skia/docs/examples/Conic_Weight_a.cpp
 FILE: ../../../third_party/skia/docs/examples/Conic_Weight_b.cpp
 FILE: ../../../third_party/skia/docs/examples/Conic_Weight_c.cpp
@@ -5573,6 +5577,7 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/gm/backdrop.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/backdrop.cpp
+FILE: ../../../third_party/skia/gm/backdrop_imagefilter_croprect.cpp
 FILE: ../../../third_party/skia/gm/compositor_quads.cpp
 FILE: ../../../third_party/skia/gm/crbug_938592.cpp
 FILE: ../../../third_party/skia/gm/crbug_947055.cpp
