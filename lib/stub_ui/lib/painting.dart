@@ -176,7 +176,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withAlpha(int a) {
-    return Color.fromARGB(a, red, green, blue);
+    return new Color.fromARGB(a, red, green, blue);
   }
 
   /// Returns a new color that matches this color with the alpha channel
@@ -193,7 +193,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withRed(int r) {
-    return Color.fromARGB(alpha, r, green, blue);
+    return new Color.fromARGB(alpha, r, green, blue);
   }
 
   /// Returns a new color that matches this color with the green channel
@@ -201,7 +201,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withGreen(int g) {
-    return Color.fromARGB(alpha, red, g, blue);
+    return new Color.fromARGB(alpha, red, g, blue);
   }
 
   /// Returns a new color that matches this color with the blue channel replaced
@@ -209,7 +209,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withBlue(int b) {
-    return Color.fromARGB(alpha, red, green, b);
+    return new Color.fromARGB(alpha, red, green, b);
   }
 
   // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
@@ -263,7 +263,7 @@ class Color {
       return _scaleAlpha(b, t);
     if (b == null)
       return _scaleAlpha(a, 1.0 - t);
-    return Color.fromARGB(
+    return new Color.fromARGB(
       lerpDouble(a.alpha, b.alpha, t).toInt().clamp(0, 255),
       lerpDouble(a.red, b.red, t).toInt().clamp(0, 255),
       lerpDouble(a.green, b.green, t).toInt().clamp(0, 255),
@@ -287,7 +287,7 @@ class Color {
     final int invAlpha = 0xff - alpha;
     int backAlpha = background.alpha;
     if (backAlpha == 0xff) { // Opaque background case
-      return Color.fromARGB(
+      return new Color.fromARGB(
         0xff,
         (alpha * foreground.red + invAlpha * background.red) ~/ 0xff,
         (alpha * foreground.green + invAlpha * background.green) ~/ 0xff,
@@ -297,7 +297,7 @@ class Color {
       backAlpha = (backAlpha * invAlpha) ~/ 0xff;
       final int outAlpha = alpha + backAlpha;
       assert(outAlpha != 0x00);
-      return Color.fromARGB(
+      return new Color.fromARGB(
         outAlpha,
         (foreground.red * alpha + background.red * backAlpha) ~/ outAlpha,
         (foreground.green * alpha + background.green * backAlpha) ~/ outAlpha,
@@ -1042,7 +1042,7 @@ class Paint {
   //
   // The binary format must match the deserialization code in paint.cc.
 
-  final ByteData _data = ByteData(_kDataByteCount);
+  final ByteData _data = new ByteData(_kDataByteCount);
   static const int _kIsAntiAliasIndex = 0;
   static const int _kColorIndex = 1;
   static const int _kBlendModeIndex = 2;
@@ -1116,7 +1116,7 @@ class Paint {
   /// [colorFilter].
   Color get color {
     final int encoded = _data.getInt32(_kColorOffset, _kFakeHostEndian);
-    return Color(encoded ^ _kColorDefault);
+    return new Color(encoded ^ _kColorDefault);
   }
   set color(Color value) {
     assert(value != null);
@@ -1274,7 +1274,7 @@ class Paint {
       case MaskFilter._TypeNone:
         return null;
       case MaskFilter._TypeBlur:
-        return MaskFilter.blur(
+        return new MaskFilter.blur(
           BlurStyle.values[_data.getInt32(_kMaskFilterBlurStyleOffset, _kFakeHostEndian)],
           _data.getFloat32(_kMaskFilterSigmaOffset, _kFakeHostEndian),
         );
@@ -1326,7 +1326,7 @@ class Paint {
     return _objects[_kShaderIndex];
   }
   set shader(Shader value) {
-    _objects ??= List<dynamic>(_kObjectCount);
+    _objects ??= new List<dynamic>(_kObjectCount);
     _objects[_kShaderIndex] = value;
   }
 
@@ -1341,12 +1341,12 @@ class Paint {
       case ColorFilter._TypeNone:
         return null;
       case ColorFilter._TypeMode:
-        return ColorFilter.mode(
-          Color(_data.getInt32(_kColorFilterColorOffset, _kFakeHostEndian)),
+        return new ColorFilter.mode(
+          new Color(_data.getInt32(_kColorFilterColorOffset, _kFakeHostEndian)),
           BlendMode.values[_data.getInt32(_kColorFilterBlendModeOffset, _kFakeHostEndian)],
         );
       case ColorFilter._TypeMatrix:
-        return ColorFilter.matrix(_objects[_kColorFilterMatrixIndex]);
+        return new ColorFilter.matrix(_objects[_kColorFilterMatrixIndex]);
       case ColorFilter._TypeLinearToSrgbGamma:
         return const ColorFilter.linearToSrgbGamma();
       case ColorFilter._TypeSrgbToLinearGamma:
@@ -1377,7 +1377,7 @@ class Paint {
       } else if (value._type == ColorFilter._TypeMatrix) {
         assert(value._matrix != null);
 
-        _objects ??= List<dynamic>(_kObjectCount);
+        _objects ??= new List<dynamic>(_kObjectCount);
         _objects[_kColorFilterMatrixIndex] = Float32List.fromList(value._matrix);
       }
     }
@@ -1385,7 +1385,7 @@ class Paint {
 
   /// Whether the colors of the image are inverted when drawn.
   ///
-  /// inverting the colors of an image applies a color filter that will
+  /// inverting the colors of an image applies a new color filter that will
   /// be composed with any user provided color filters. This is primarily
   /// used for implementing smart invert on iOS.
   bool get invertColors {
@@ -1397,7 +1397,7 @@ class Paint {
 
   @override
   String toString() {
-    final StringBuffer result = StringBuffer();
+    final StringBuffer result = new StringBuffer();
     String semicolon = '';
     result.write('Paint(');
     if (style == PaintingStyle.stroke) {
@@ -1529,7 +1529,7 @@ class Image {
   ///
   /// Returns a future that completes with the binary image data or an error
   /// if encoding fails.
-  Future<ByteData> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
+  Future<ByteData> toByteData({ImageByteFormat format: ImageByteFormat.rawRgba}) {
     throw UnimplementedError();
   }
 
@@ -1902,10 +1902,10 @@ class Path {
   /// point if both are greater than zero but too small to describe an arc.
   ///
   void arcToPoint(Offset arcEnd, {
-    Radius radius = Radius.zero,
-    double rotation = 0.0,
-    bool largeArc = false,
-    bool clockwise = true,
+    Radius radius: Radius.zero,
+    double rotation: 0.0,
+    bool largeArc: false,
+    bool clockwise: true,
     }) {
     throw UnimplementedError();
   }
@@ -1926,10 +1926,10 @@ class Path {
   /// fit the last path point if both are greater than zero but too small to
   /// describe an arc.
   void relativeArcToPoint(Offset arcEndDelta, {
-    Radius radius = Radius.zero,
-    double rotation = 0.0,
-    bool largeArc = false,
-    bool clockwise = true,
+    Radius radius: Radius.zero,
+    double rotation: 0.0,
+    bool largeArc: false,
+    bool clockwise: true,
     }) {
     assert(_offsetIsValid(arcEndDelta));
     assert(_radiusIsValid(radius));
@@ -2085,7 +2085,7 @@ class Path {
   ///
   /// If `forceClosed` is set to true, the contours of the path will be measured
   /// as if they had been closed, even if they were not explicitly closed.
-  PathMetrics computeMetrics({bool forceClosed = false}) {
+  PathMetrics computeMetrics({bool forceClosed: false}) {
     throw UnimplementedError();
   }
 }
@@ -2107,7 +2107,7 @@ class Tangent {
   /// The [vector] is computed to be the unit vector at the given angle, interpreted
   /// as clockwise radians from the x axis.
   factory Tangent.fromAngle(Offset position, double angle) {
-    return Tangent(position, Offset(math.cos(angle), math.sin(angle)));
+    return new Tangent(position, new Offset(math.cos(angle), math.sin(angle)));
   }
 
   /// Position of the tangent.
@@ -2242,7 +2242,7 @@ class PathMetric {
   /// `start` and `end` are pinned to legal values (0..[length])
   /// Returns null if the segment is 0 length or `start` > `stop`.
   /// Begin the segment with a moveTo if `startWithMoveTo` is true.
-  Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
+  Path extractPath(double start, double end, {bool startWithMoveTo: true}) {
     if (contourIndex != _measure.currentContourIndex) {
       throw StateError('This method cannot be invoked once the underlying iterator has advanced.');
     }
@@ -2266,7 +2266,7 @@ class _PathMeasure {
     throw UnimplementedError();
   }
 
-  Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
+  Path extractPath(double start, double end, {bool startWithMoveTo: true}) {
     throw UnimplementedError();
   }
 
@@ -2462,14 +2462,14 @@ class ColorFilter {
 class ImageFilter {
 
   /// Creates an image filter that applies a Gaussian blur.
-  ImageFilter.blur({ double sigmaX = 0.0, double sigmaY = 0.0 });
+  ImageFilter.blur({ double sigmaX: 0.0, double sigmaY: 0.0 });
 
   /// Creates an image filter that applies a matrix transformation.
   ///
   /// For example, applying a positive scale matrix (see [new Matrix4.diagonal3])
   /// when used with [BackdropFilter] would magnify the background image.
   ImageFilter.matrix(Float64List matrix4,
-                     { FilterQuality filterQuality = FilterQuality.low });
+                     { FilterQuality filterQuality: FilterQuality.low });
 }
 
 /// Base class for objects such as [Gradient] and [ImageShader] which
@@ -2833,7 +2833,7 @@ class Canvas {
   ///   Rect rect = Offset.zero & size;
   ///   canvas.save();
   ///   canvas.clipRRect(new RRect.fromRectXY(rect, 100.0, 100.0));
-  ///   canvas.saveLayer(rect, Paint());
+  ///   canvas.saveLayer(rect, new Paint());
   ///   canvas.drawPaint(new Paint()..color = Colors.red);
   ///   canvas.drawPaint(new Paint()..color = Colors.white);
   ///   canvas.restore();
@@ -2973,7 +2973,7 @@ class Canvas {
   ///
   /// Use [ClipOp.difference] to subtract the provided rectangle from the
   /// current clip.
-  void clipRect(Rect rect, { ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true }) {
+  void clipRect(Rect rect, { ClipOp clipOp: ClipOp.intersect, bool doAntiAlias = true }) {
     assert(_rectIsValid(rect));
     assert(clipOp != null);
     assert(doAntiAlias != null);
@@ -3509,7 +3509,7 @@ typedef _Callbacker<T> = String Function(_Callback<T> callback);
 /// typedef IntCallback = void Function(int result);
 ///
 /// String _doSomethingAndCallback(IntCallback callback) {
-///   Timer(new Duration(seconds: 1), () { callback(1); });
+///   new Timer(new Duration(seconds: 1), () { callback(1); });
 /// }
 ///
 /// Future<int> doSomething() {

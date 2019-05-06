@@ -30,13 +30,13 @@ void _updateWindowMetrics(double devicePixelRatio,
                           double viewInsetLeft) {
   window
     .._devicePixelRatio = devicePixelRatio
-    .._physicalSize = Size(width, height)
-    .._padding = WindowPadding._(
+    .._physicalSize = new Size(width, height)
+    .._padding = new WindowPadding._(
         top: paddingTop,
         right: paddingRight,
         bottom: paddingBottom,
         left: paddingLeft)
-    .._viewInsets = WindowPadding._(
+    .._viewInsets = new WindowPadding._(
         top: viewInsetTop,
         right: viewInsetRight,
         bottom: viewInsetBottom,
@@ -60,12 +60,12 @@ _LocaleClosure _getLocaleClosure() => _localeClosure;
 void _updateLocales(List<String> locales) {
   const int stringsPerLocale = 4;
   final int numLocales = locales.length ~/ stringsPerLocale;
-  window._locales = List<Locale>(numLocales);
+  window._locales = new List<Locale>(numLocales);
   for (int localeIndex = 0; localeIndex < numLocales; localeIndex++) {
     final String countryCode = locales[localeIndex * stringsPerLocale + 1];
     final String scriptCode = locales[localeIndex * stringsPerLocale + 2];
 
-    window._locales[localeIndex] = Locale.fromSubtags(
+    window._locales[localeIndex] = new Locale.fromSubtags(
       languageCode: locales[localeIndex * stringsPerLocale],
       countryCode: countryCode.isEmpty ? null : countryCode,
       scriptCode: scriptCode.isEmpty ? null : scriptCode,
@@ -105,7 +105,7 @@ void _updateSemanticsEnabled(bool enabled) {
 
 // ignore: unused_element
 void _updateAccessibilityFeatures(int values) {
-  final AccessibilityFeatures newFeatures = AccessibilityFeatures._(values);
+  final AccessibilityFeatures newFeatures = new AccessibilityFeatures._(values);
   if (newFeatures == window._accessibilityFeatures)
     return;
   window._accessibilityFeatures = newFeatures;
@@ -131,7 +131,7 @@ void _dispatchSemanticsAction(int id, int action, ByteData args) {
 
 // ignore: unused_element
 void _beginFrame(int microseconds) {
-  _invoke1<Duration>(window.onBeginFrame, window._onBeginFrameZone, Duration(microseconds: microseconds));
+  _invoke1<Duration>(window.onBeginFrame, window._onBeginFrameZone, new Duration(microseconds: microseconds));
 }
 
 // ignore: unused_element
@@ -226,11 +226,11 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   const int kBytesPerPointerData = _kPointerDataFieldCount * kStride;
   final int length = packet.lengthInBytes ~/ kBytesPerPointerData;
   assert(length * kBytesPerPointerData == packet.lengthInBytes);
-  final List<PointerData> data = List<PointerData>(length);
+  final List<PointerData> data = new List<PointerData>(length);
   for (int i = 0; i < length; ++i) {
     int offset = i * _kPointerDataFieldCount;
-    data[i] = PointerData(
-      timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
+    data[i] = new PointerData(
+      timeStamp: new Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
       change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       kind: PointerDeviceKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       signalKind: PointerSignalKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
@@ -257,5 +257,5 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
     );
     assert(offset == (i + 1) * _kPointerDataFieldCount);
   }
-  return PointerDataPacket(data: data);
+  return new PointerDataPacket(data: data);
 }
