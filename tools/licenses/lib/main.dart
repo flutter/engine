@@ -1631,7 +1631,7 @@ class _RepositorySkiaLibWebPDirectory extends _RepositoryDirectory {
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'webp')
-      return _RepositoryReachOutDirectory(this, entry, <String>{'config.h'}, 3);
+      return _RepositoryReachOutDirectory(this, entry, const <String>{'config.h'}, 3);
     return super.createSubdirectory(entry);
   }
 }
@@ -1662,9 +1662,9 @@ class _RepositorySkiaThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'ktx')
-      return _RepositoryReachOutDirectory(this, entry, <String>{'ktx.h', 'ktx.cpp'}, 2);
+      return _RepositoryReachOutDirectory(this, entry, const <String>{'ktx.h', 'ktx.cpp'}, 2);
     if (entry.name == 'libmicrohttpd')
-      return _RepositoryReachOutDirectory(this, entry, <String>{'MHD_config.h'}, 2);
+      return _RepositoryReachOutDirectory(this, entry, const <String>{'MHD_config.h'}, 2);
     if (entry.name == 'libwebp')
       return _RepositorySkiaLibWebPDirectory(this, entry);
     if (entry.name == 'libsdl')

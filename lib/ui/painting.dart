@@ -1386,7 +1386,7 @@ class Paint {
 
   /// Whether the colors of the image are inverted when drawn.
   ///
-  /// inverting the colors of an image applies a color filter that will
+  /// Inverting the colors of an image applies a new color filter that will
   /// be composed with any user provided color filters. This is primarily
   /// used for implementing smart invert on iOS.
   bool get invertColors {
@@ -2260,7 +2260,7 @@ class PathMetricIterator implements Iterator<PathMetric> {
 /// If additional contours are added or any contours are updated, the metrics
 /// need to be recomputed. Previously created metrics will still refer to a
 /// snapshot of the path at the time they were computed, rather than to the
-/// actual metrics for the mutations to the path.
+/// actual metrics for the new mutations to the path.
 class PathMetric {
   PathMetric._(this._measure)
     : assert(_measure != null),

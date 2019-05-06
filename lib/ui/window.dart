@@ -134,7 +134,7 @@ class WindowPadding {
 ///  * [Window.locale], which specifies the system's currently selected
 ///    [Locale].
 class Locale {
-  /// Creates a Locale object. The first argument is the
+  /// Creates a new Locale object. The first argument is the
   /// primary language subtag, the second is the region (also
   /// referred to as 'country') subtag.
   ///
@@ -173,7 +173,7 @@ class Locale {
        assert(_languageCode != ''),
        scriptCode = null;
 
-  /// Creates a Locale object.
+  /// Creates a new Locale object.
   ///
   /// The keyword arguments specify the subtags of the Locale.
   ///
