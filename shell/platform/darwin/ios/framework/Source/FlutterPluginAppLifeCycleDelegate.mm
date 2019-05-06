@@ -11,6 +11,10 @@
 
 static const char* kCallbackCacheSubDir = "Library/Caches/";
 
+static const SEL selectorsHandledByPlugins[] = {
+    @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:),
+    @selector(application:performFetchWithCompletionHandler:)};
+
 @implementation FlutterPluginAppLifeCycleDelegate {
   UIBackgroundTaskIdentifier _debugBackgroundTask;
 
@@ -36,8 +40,25 @@ static BOOL isPowerOfTwo(NSUInteger x) {
   return x != 0 && (x & (x - 1)) == 0;
 }
 
-- (NSPointerArray*)allPluginsDelegates {
-  return _pluginDelegates;
+- (BOOL)isSelectorAddedDynamically:(SEL)selector {
+  for (const SEL& aSelector : selectorsHandledByPlugins) {
+    if (selector == aSelector) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
+- (BOOL)hasPluginRespondsToSelector:(SEL)selector {
+  for (id<FlutterPlugin> plugin in [_pluginDelegates allObjects]) {
+    if (!plugin) {
+      continue;
+    }
+    if ([plugin respondsToSelector:selector]) {
+      return YES;
+    }
+  }
+  return NO;
 }
 
 - (void)addDelegate:(NSObject<FlutterPlugin>*)delegate {

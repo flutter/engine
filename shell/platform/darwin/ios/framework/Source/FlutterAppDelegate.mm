@@ -35,7 +35,7 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
-  [self addBackgroundModesDelegateMethodsIfNeeded];
+  //[self addBackgroundModesDelegateMethodsIfNeeded];
   return [_lifeCycleDelegate application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
@@ -189,91 +189,66 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
   return nil;
 }
 
-#pragma mark - FlutterAppLifeCycleProvider methods
+#pragma mark - Selectors handling
 
 - (void)addApplicationLifeCycleDelegate:(NSObject<FlutterPlugin>*)delegate {
   [_lifeCycleDelegate addDelegate:delegate];
 }
 
 #pragma mark - UIApplicationDelegate method dynamic implementation
-// Some speical AppDelegate protocal methods caused warnings when our user submitting app to Apple
-// (issues/9984). We add such methods dynamically when only they are used by some plugins.
-- (void)addBackgroundModesDelegateMethodsIfNeeded {
-  BOOL receiveRemoteDelegateAdded = NO;
-  BOOL fetchDelegateAdded = NO;
 
+- (BOOL)respondsToSelector:(SEL)selector {
+  if ([_lifeCycleDelegate isSelectorAddedDynamically:selector]) {
+    return [self delegateRepondsSelectorToPlugins:selector];
+  }
+  return [super respondsToSelector:selector];
+}
+
+- (BOOL)delegateRepondsSelectorToPlugins:(SEL)selector {
+  if ([_lifeCycleDelegate hasPluginRespondsToSelector:selector]) {
+    return [_lifeCycleDelegate respondsToSelector:selector];
+  } else {
+    return NO;
+  }
+}
+
+- (id)forwardingTargetForSelector:(SEL)aSelector {
+  if ([_lifeCycleDelegate isSelectorAddedDynamically:aSelector]) {
+    // If a selector should be handled by plugins, there should be at least one plugin
+    // that can handle this selector.
+    FML_DCHECK([_lifeCycleDelegate isSelectorAddedDynamically:aSelector]);
+    [self logCapabilityConfigurationWarningIfNeeded:aSelector];
+    return _lifeCycleDelegate;
+  }
+  return [super forwardingTargetForSelector:aSelector];
+}
+
+// Mimic the loging from Apple when the capatibility is not set for the selectors.
+// However the difference is that Apple logs these message when the app launches, we only
+// log it when the method is invoked. We can possibly also log it when the app launches, but
+// it will cause an addtional scan over all the plugins.
+- (void)logCapabilityConfigurationWarningIfNeeded:(SEL)selector {
   NSArray* backgroundModesArray =
       [[NSBundle mainBundle] objectForInfoDictionaryKey:kUIBackgroundMode];
   NSSet* backgroundModesSet = [[NSSet alloc] initWithArray:backgroundModesArray];
-  for (id<FlutterPlugin> plugin in [[_lifeCycleDelegate allPluginsDelegates] allObjects]) {
-    if (!plugin) {
-      continue;
-    }
-    if (receiveRemoteDelegateAdded && fetchDelegateAdded) {
-      break;
-    }
-    BOOL pluginUsesRemoteNotification =
-        [plugin respondsToSelector:@selector(application:
-                                       didReceiveRemoteNotification:fetchCompletionHandler:)];
-    BOOL pluginUsesFetch = [plugin respondsToSelector:@selector(application:
-                                                          performFetchWithCompletionHandler:)];
 
-    if (!receiveRemoteDelegateAdded && pluginUsesRemoteNotification) {
-      [self addDidReceiveRemoteNotificationDelegate:backgroundModesSet];
-      receiveRemoteDelegateAdded = YES;
-    }
-    if (!fetchDelegateAdded && pluginUsesFetch) {
-      [self addPerformFetchDelegate:backgroundModesSet];
-      fetchDelegateAdded = YES;
-    }
-  }
-  [backgroundModesSet release];
-}
-
-typedef void (^UIBackgroundFetchBlock)(UIBackgroundFetchResult);
-
-void receiveRemoteNotificationIMP(id self,
-                                  SEL _cmd,
-                                  UIApplication* application,
-                                  NSDictionary* userInfo,
-                                  UIBackgroundFetchBlock completionHandler) {
-  FlutterAppDelegate* delegate = (FlutterAppDelegate*)self;
-  [delegate->_lifeCycleDelegate application:application
-               didReceiveRemoteNotification:userInfo
-                     fetchCompletionHandler:completionHandler];
-}
-
-- (void)addDidReceiveRemoteNotificationDelegate:(NSSet*)backgroundModesSet {
-  if (![backgroundModesSet containsObject:kRemoteNotificationCapabitiliy]) {
-    NSLog(@"You've implemented -[<UIApplicationDelegate> "
+  if (selector == @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:)) {
+    if (![backgroundModesSet containsObject:kRemoteNotificationCapabitiliy]) {
+      NSLog(
+          @"You've implemented -[<UIApplicationDelegate> "
           @"application:didReceiveRemoteNotification:fetchCompletionHandler:], but you still need "
           @"to add \"remote-notification\" to the list of your supported UIBackgroundModes in your "
           @"Info.plist.");
+    }
+  } else if (selector == @selector(application:performFetchWithCompletionHandler:)) {
+    if (![backgroundModesSet containsObject:kBackgroundFetchCapatibility]) {
+      NSLog(@"You've implemented -[<UIApplicationDelegate> "
+            @"application:performFetchWithCompletionHandler:], but you still need to add \"fetch\" "
+            @"to the list of your supported UIBackgroundModes in your Info.plist.");
+    }
   }
-  FML_DCHECK(class_addMethod([FlutterAppDelegate class],
-                             @selector(application:
-                                 didReceiveRemoteNotification:fetchCompletionHandler:),
-                             (IMP)receiveRemoteNotificationIMP, "v@:@@?"));
-}
 
-void performFetchIMP(id self,
-                     SEL _cmd,
-                     UIApplication* application,
-                     UIBackgroundFetchBlock completionHandler) {
-  FlutterAppDelegate* delegate = (FlutterAppDelegate*)self;
-  [delegate->_lifeCycleDelegate application:application
-          performFetchWithCompletionHandler:completionHandler];
-}
-
-- (void)addPerformFetchDelegate:(NSSet*)backgroundModesSet {
-  if (![backgroundModesSet containsObject:kBackgroundFetchCapatibility]) {
-    NSLog(@"You've implemented -[<UIApplicationDelegate> "
-          @"application:performFetchWithCompletionHandler:], but you still need to add \"fetch\" "
-          @"to the list of your supported UIBackgroundModes in your Info.plist.");
-  }
-  FML_DCHECK(class_addMethod([FlutterAppDelegate class],
-                             @selector(application:performFetchWithCompletionHandler:),
-                             (IMP)performFetchIMP, "v@:@?"));
+  [backgroundModesSet release];
 }
 
 @end

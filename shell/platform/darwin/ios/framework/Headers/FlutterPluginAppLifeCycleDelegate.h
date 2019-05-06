@@ -16,9 +16,14 @@ FLUTTER_EXPORT
 @interface FlutterPluginAppLifeCycleDelegate : NSObject
 
 /**
- * Get all registered plugins;
+ * Check whether the selector should be handled dynamically.
  */
-- (NSPointerArray*)allPluginsDelegates;
+- (BOOL)isSelectorAddedDynamically:(SEL)selector;
+
+/**
+ * Check whether there is at least one plugin responds to the selector.
+ */
+- (BOOL)hasPluginRespondsToSelector:(SEL)selector;
 
 /**
  * Registers `delegate` to receive life cycle callbacks via this FlutterPluginAppLifecycleDelegate
