@@ -84,15 +84,24 @@ static sk_sp<SkImage> DecodeImage(fml::WeakPtr<GrContext> context,
 
 // Returns true if the image needs to be resized.
 //
-// If exactly one of targetWidth or targetHeight is set to kDoNotResizeImage,
-// newWidth and newHeight will preserve the aspectRatio. Otherwise,
-// they will be set to targetWidth and targetHeight, as specified by the user.
+// newWidth and newHeight will reflect the dimensions that the image should
+// be scaled to.
+//
+// The targetWidth and targetHeight arguments specify the size of the output
+// image, in image pixels. If they are not equal to the intrinsic dimensions of
+// the image, then the image will be scaled after being decoded. If exactly one
+// of these two arguments is equal to kDoNotResizeDimension, then the aspect
+// ratio will be maintained while forcing the image to match the other given
+// dimension. If both are equal to kDoNotResizeDimension, then the image
+// maintains its real size.
 static bool needsResize(const int currentWidth,
                         const int currentHeight,
                         const int targetWidth,
                         const int targetHeight,
                         int& newWidth,
                         int& newHeight) {
+  newWidth = currentWidth;
+  newHeight = currentHeight;
   if (targetWidth == kDoNotResizeDimension &&
       targetHeight == kDoNotResizeDimension) {
     return false;
@@ -119,6 +128,32 @@ static bool needsResize(const int currentWidth,
   }
 }
 
+static sk_sp<SkImage> ResizeImageToExactSize(fml::WeakPtr<GrContext> context,
+                                             sk_sp<SkImage> image,
+                                             SkImageInfo scaledImageInfo) {
+  if (image == nullptr || !image.get()) {
+    FML_LOG(ERROR) << "Failed to decode image.";
+    return nullptr;
+  }
+
+  SkBitmap bitmap = SkBitmap();
+  if (!bitmap.tryAllocPixels(scaledImageInfo)) {
+    FML_LOG(ERROR) << "Failed to allocate bitmap.";
+    return nullptr;
+  }
+
+  if (!image->scalePixels(bitmap.pixmap(), kLow_SkFilterQuality)) {
+    FML_LOG(ERROR) << "Failed to scale pixels.";
+    return nullptr;
+  }
+
+  // This indicates that we do not want a "linear blending" decode.
+  sk_sp<SkColorSpace> dstColorSpace = nullptr;
+  GrContext* grContext = context ? context.get() : nullptr;
+  return SkImage::MakeCrossContextFromPixmap(grContext, bitmap.pixmap(), true,
+                                             dstColorSpace.get(), true);
+}
+
 static sk_sp<SkImage> DecodeAndResizeImageToExactSize(
     fml::WeakPtr<GrContext> context,
     SkImageInfo scaledImageInfo,
@@ -127,30 +162,9 @@ static sk_sp<SkImage> DecodeAndResizeImageToExactSize(
   TRACE_FLOW_STEP("flutter", kInitCodecTraceTag, trace_id);
   TRACE_EVENT0("flutter", "DecodeAndResizeImageToExactSize");
 
-  SkBitmap bitmap = SkBitmap();
-  if (!bitmap.tryAllocPixels(scaledImageInfo)) {
-    FML_LOG(ERROR) << "Unable to allocate bitmap. Returning un-scaled image.";
-    return DecodeImage(context, buffer, trace_id);
-  }
-
   // Do not create a cross context image here, since it can not be resized.
   sk_sp<SkImage> image = SkImage::MakeFromEncoded(std::move(buffer));
-
-  if (image == nullptr || !image.get()) {
-    FML_LOG(ERROR) << "Failed to decode image.";
-    return nullptr;
-  }
-
-  if (!image->scalePixels(bitmap.pixmap(), kLow_SkFilterQuality)) {
-    FML_LOG(ERROR) << "Failed to scale pixels. Returning un-scaled image.";
-    return DecodeImage(context, buffer, trace_id);
-  }
-
-  // This indicates that we do not want a "linear blending" decode.
-  sk_sp<SkColorSpace> dstColorSpace = nullptr;
-  GrContext* grContext = context ? context.get() : nullptr;
-  return SkImage::MakeCrossContextFromPixmap(grContext, bitmap.pixmap(), true,
-                                             dstColorSpace.get(), true);
+  return ResizeImageToExactSize(context, image, scaledImageInfo);
 }
 
 static sk_sp<SkImage> DecodeAndResizeImage(fml::WeakPtr<GrContext> context,
@@ -219,6 +233,8 @@ fml::RefPtr<Codec> InitCodecUncompressed(
     ImageInfo image_info,
     fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
     const float decodedCacheRatioCap,
+    int targetWidth,
+    int targetHeight,
     size_t trace_id) {
   TRACE_FLOW_STEP("flutter", kInitCodecTraceTag, trace_id);
   TRACE_EVENT0("blink", "InitCodecUncompressed");
@@ -229,7 +245,14 @@ fml::RefPtr<Codec> InitCodecUncompressed(
   }
 
   sk_sp<SkImage> skImage;
-  if (context) {
+  int newWidth, newHeight;
+  if (needsResize(image_info.sk_info.width(), image_info.sk_info.height(),
+                  targetWidth, targetHeight, newWidth, newHeight)) {
+    auto imageToResize = SkImage::MakeRasterData(
+        image_info.sk_info, std::move(buffer), image_info.row_bytes);
+    skImage = ResizeImageToExactSize(
+        context, imageToResize, image_info.sk_info.makeWH(newWidth, newHeight));
+  } else if (context) {
     SkPixmap pixmap(image_info.sk_info, buffer->data(), image_info.row_bytes);
     skImage = SkImage::MakeCrossContextFromPixmap(context.get(), pixmap, true,
                                                   nullptr, true);
@@ -257,10 +280,9 @@ void InitCodecAndInvokeCodecCallback(
     size_t trace_id) {
   fml::RefPtr<Codec> codec;
   if (image_info) {
-    // TODO (kaushikiska): think about the uncompressed case.
     codec = InitCodecUncompressed(context, std::move(buffer), *image_info,
                                   std::move(unref_queue), decodedCacheRatioCap,
-                                  trace_id);
+                                  targetWidth, targetHeight, trace_id);
   } else {
     codec =
         InitCodec(context, std::move(buffer), std::move(unref_queue),
