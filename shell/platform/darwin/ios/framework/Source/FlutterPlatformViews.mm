@@ -22,7 +22,8 @@ void FlutterPlatformViewsController::SetFlutterView(UIView* flutter_view) {
   flutter_view_.reset([flutter_view retain]);
 }
 
-void FlutterPlatformViewsController::SetFlutterViewController(UIViewController *flutter_view_controller) {
+void FlutterPlatformViewsController::SetFlutterViewController(
+    UIViewController* flutter_view_controller) {
   flutter_view_controller_.reset([flutter_view_controller retain]);
 }
 
@@ -84,9 +85,9 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
                                                                 arguments:params];
   views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>>([embedded_view retain]);
 
-  FlutterTouchInterceptingView* touch_interceptor =
-      [[[FlutterTouchInterceptingView alloc] initWithEmbeddedView:embedded_view.view
-                                                      flutterViewController:flutter_view_controller_.get()] autorelease];
+  FlutterTouchInterceptingView* touch_interceptor = [[[FlutterTouchInterceptingView alloc]
+       initWithEmbeddedView:embedded_view.view
+      flutterViewController:flutter_view_controller_.get()] autorelease];
 
   touch_interceptors_[viewId] =
       fml::scoped_nsobject<FlutterTouchInterceptingView>([touch_interceptor retain]);
@@ -359,13 +360,15 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
 // as well. So during this phase as well the ForwardingGestureRecognizer dispatched the events
 // directly to the FlutterView.
 @interface ForwardingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
-- (instancetype)initWithTarget:(id)target flutterViewController:(UIViewController*)flutterViewController;
+- (instancetype)initWithTarget:(id)target
+         flutterViewController:(UIViewController*)flutterViewController;
 @end
 
 @implementation FlutterTouchInterceptingView {
   fml::scoped_nsobject<DelayingGestureRecognizer> _delayingRecognizer;
 }
-- (instancetype)initWithEmbeddedView:(UIView*)embeddedView flutterViewController:(UIViewController*)flutterViewController {
+- (instancetype)initWithEmbeddedView:(UIView*)embeddedView
+               flutterViewController:(UIViewController*)flutterViewController {
   self = [super initWithFrame:embeddedView.frame];
   if (self) {
     self.multipleTouchEnabled = YES;
@@ -376,7 +379,7 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
 
     ForwardingGestureRecognizer* forwardingRecognizer =
         [[[ForwardingGestureRecognizer alloc] initWithTarget:self
-                                                 flutterViewController:flutterViewController] autorelease];
+                                       flutterViewController:flutterViewController] autorelease];
 
     _delayingRecognizer.reset([[DelayingGestureRecognizer alloc]
               initWithTarget:self
@@ -459,7 +462,8 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   NSInteger _currentTouchPointersCount;
 }
 
-- (instancetype)initWithTarget:(id)target flutterViewController:(UIViewController*)flutterViewController {
+- (instancetype)initWithTarget:(id)target
+         flutterViewController:(UIViewController*)flutterViewController {
   self = [super initWithTarget:target action:nil];
   if (self) {
     self.delegate = self;
