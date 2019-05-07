@@ -28,6 +28,8 @@ class VsyncWaiterAndroid final : public VsyncWaiter {
   // |VsyncWaiter|
   void AwaitVSync() override;
 
+  void Release();
+
   static void OnNativeVsync(JNIEnv* env,
                             jclass jcaller,
                             jlong frameTimeNanos,

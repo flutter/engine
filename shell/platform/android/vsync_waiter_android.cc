@@ -12,17 +12,39 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
+#include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/trace_event.h"
 
 namespace flutter {
 
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_vsync_waiter_class = nullptr;
 static jmethodID g_async_wait_for_vsync_method_ = nullptr;
+static jmethodID g_release_method_ = nullptr;
+static int ref_count = 0;
 
 VsyncWaiterAndroid::VsyncWaiterAndroid(flutter::TaskRunners task_runners)
-    : VsyncWaiter(std::move(task_runners)) {}
+    : VsyncWaiter(std::move(task_runners)) {
+  ++ref_count;
+}
 
-VsyncWaiterAndroid::~VsyncWaiterAndroid() = default;
+VsyncWaiterAndroid::~VsyncWaiterAndroid() {
+  --ref_count;
+  if (ref_count == 0) {
+    fml::AutoResetWaitableEvent ui_latch;
+    task_runners_.GetUITaskRunner()->PostTask([this, &ui_latch]() {
+      Release();
+      ui_latch.Signal();
+    });
+    ui_latch.Wait();
+  }
+}
+
+void VsyncWaiterAndroid::Release() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  env->CallStaticVoidMethod(g_vsync_waiter_class->obj(),  //
+                            g_release_method_             //
+  );
+}
 
 // |VsyncWaiter|
 void VsyncWaiterAndroid::AwaitVSync() {
@@ -99,6 +121,11 @@ bool VsyncWaiterAndroid::Register(JNIEnv* env) {
       g_vsync_waiter_class->obj(), "asyncWaitForVsync", "(J)V");
 
   FML_CHECK(g_async_wait_for_vsync_method_ != nullptr);
+
+  g_release_method_ =
+      env->GetStaticMethodID(g_vsync_waiter_class->obj(), "release", "()V");
+
+  FML_CHECK(g_release_method_ != nullptr);
 
   return env->RegisterNatives(clazz, methods, arraysize(methods)) == 0;
 }

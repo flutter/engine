@@ -19,12 +19,11 @@ public class VsyncWaiter {
     private static HandlerThread handlerThread;
     private static Handler handler;
 
-    static {
-        handlerThread = new HandlerThread("FlutterVsyncThread");
-        handlerThread.start();
-    }
-
     public static void asyncWaitForVsync(final long cookie) {
+        if (handlerThread == null) {
+            handlerThread = new HandlerThread("FlutterVsyncThread");
+            handlerThread.start();
+        }
         if (handler == null) {
             handler = new Handler(handlerThread.getLooper());
         }
@@ -39,6 +38,12 @@ public class VsyncWaiter {
                 });
             }
         });
+    }
+
+    public static void release() {
+        handlerThread.quit();
+        handlerThread = null;
+        handler = null;
     }
 
     private static native void nativeOnVsync(long frameTimeNanos, long frameTargetTimeNanos, long cookie);
