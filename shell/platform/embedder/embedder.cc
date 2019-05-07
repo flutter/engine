@@ -714,9 +714,8 @@ inline flutter::PointerData::SignalKind ToPointerDataSignalKind(
 
 // Returns the buttons for PointerData for the given buttons and change from a
 // FlutterPointerEvent.
-inline int64_t ToPointerDataButtons(
-    int64_t buttons,
-    flutter::PointerData::Change change) {
+inline int64_t ToPointerDataButtons(int64_t buttons,
+                                    flutter::PointerData::Change change) {
   switch (change) {
     case flutter::PointerData::Change::kDown:
     case flutter::PointerData::Change::kMove:
@@ -725,8 +724,8 @@ inline int64_t ToPointerDataButtons(
       // In case of violation, it synthesizes a primary button and log a warning
       // to inform the embedder to send the correct buttons.
       if (buttons == 0) {
-        // TODO(tongmu): Log a warning to inform the embedder to send the correct
-        // buttons. See
+        // TODO(tongmu): Log a warning to inform the embedder to send the
+        // correct buttons. See
         // https://github.com/flutter/flutter/issues/32052#issuecomment-489278965
         return flutter::PointerButton::kPrimary;
       }
@@ -741,8 +740,8 @@ inline int64_t ToPointerDataButtons(
       // In case of violation, it log a warning to inform the embedder to send
       // the correct buttons.
       if (buttons != 0) {
-        // TODO(tongmu): Log a warning to inform the embedder to send the correct
-        // buttons. See
+        // TODO(tongmu): Log a warning to inform the embedder to send the
+        // correct buttons. See
         // https://github.com/flutter/flutter/issues/32052#issuecomment-489278965
       }
       return buttons;

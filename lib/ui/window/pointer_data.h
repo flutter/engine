@@ -11,26 +11,26 @@ namespace flutter {
 
 // Must match the button constants in events.dart.
 namespace PointerButton {
-  const int64_t kPrimary = 1 << 0;
-  const int64_t kSecondary = 1 << 1;
+const int64_t kPrimary = 1 << 0;
+const int64_t kSecondary = 1 << 1;
 
-  namespace Mouse {
-    const int64_t kPrimary = 1 << 0;
-    const int64_t kSecondary = 1 << 1;
-    const int64_t kBack = 1 << 2;
-    const int64_t kForward = 1 << 3;
-  }
+namespace Mouse {
+const int64_t kPrimary = 1 << 0;
+const int64_t kSecondary = 1 << 1;
+const int64_t kBack = 1 << 2;
+const int64_t kForward = 1 << 3;
+}  // namespace Mouse
 
-  namespace Touch {
-    const int64_t kContact = 1 << 0;
-  }
-
-  namespace Stylus {
-    const int64_t kContact = 1 << 0;
-    const int64_t kPrimary = 1 << 1;
-    const int64_t kSecondary = 1 << 2;
-  }
+namespace Touch {
+const int64_t kContact = 1 << 0;
 }
+
+namespace Stylus {
+const int64_t kContact = 1 << 0;
+const int64_t kPrimary = 1 << 1;
+const int64_t kSecondary = 1 << 2;
+}  // namespace Stylus
+}  // namespace PointerButton
 
 // This structure is unpacked by hooks.dart.
 struct alignas(8) PointerData {
