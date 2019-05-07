@@ -724,7 +724,7 @@ inline int64_t ToPointerDataButtons(
       // Synthesize primary button if the embedder fails to follow the contract.
       // TODO(tongmu): Log a warning to inform the embedder to send the correct
       // buttons.
-      return kPrimaryButton;
+      return flutter::kPrimaryButton;
     }
     return buttons;
   }
