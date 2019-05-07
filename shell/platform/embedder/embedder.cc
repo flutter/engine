@@ -712,6 +712,25 @@ inline flutter::PointerData::SignalKind ToPointerDataSignalKind(
   return flutter::PointerData::SignalKind::kNone;
 }
 
+// Returns the buttons for PointerData for the given buttons and change from a
+// FlutterPointerEvent.
+inline int64_t ToPointerDataButtons(
+    int64_t buttons,
+    flutter::PointerData::Change change) {
+  // `buttons` should be non-zero when and only when the pointer is down.
+  if (change == flutter::PointerData::Change::kDown ||
+      change == flutter::PointerData::Change::kMove) {
+    if (buttons == 0) {
+      // Synthesize primary button if the embedder fails to follow the contract.
+      // TODO(tongmu): Log a warning to inform the embedder to send the correct
+      // buttons.
+      return kPrimaryButton;
+    }
+    return buttons;
+  }
+  return 0;
+}
+
 FlutterEngineResult FlutterEngineSendPointerEvent(
     FlutterEngine engine,
     const FlutterPointerEvent* pointers,
@@ -731,6 +750,10 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     pointer_data.change = ToPointerDataChange(
         SAFE_ACCESS(current, phase, FlutterPointerPhase::kCancel));
     pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
+    // TODO(tong): Change 0 to a SAFE_ACCESS to current.buttons once this
+    // field is added.
+    // See https://github.com/flutter/flutter/issues/32052#issuecomment-489278965
+    pointer_data.buttons = ToPointerDataButtons(0, pointer_data.change);
     pointer_data.physical_x = SAFE_ACCESS(current, x, 0.0);
     pointer_data.physical_y = SAFE_ACCESS(current, y, 0.0);
     pointer_data.device = SAFE_ACCESS(current, device, 0);

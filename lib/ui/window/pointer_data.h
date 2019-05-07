@@ -9,6 +9,9 @@
 
 namespace flutter {
 
+// Must match the button constants in events.dart.
+const int64_t kPrimaryButton = 0x01;
+
 // This structure is unpacked by hooks.dart.
 struct alignas(8) PointerData {
   // Must match the PointerChange enum in pointer.dart.
