@@ -717,18 +717,36 @@ inline flutter::PointerData::SignalKind ToPointerDataSignalKind(
 inline int64_t ToPointerDataButtons(
     int64_t buttons,
     flutter::PointerData::Change change) {
-  // `buttons` should be non-zero when and only when the pointer is down.
-  if (change == flutter::PointerData::Change::kDown ||
-      change == flutter::PointerData::Change::kMove) {
-    if (buttons == 0) {
-      // Synthesize primary button if the embedder fails to follow the contract.
-      // TODO(tongmu): Log a warning to inform the embedder to send the correct
-      // buttons.
-      return flutter::kPrimaryButton;
-    }
-    return buttons;
+  switch (change) {
+    case flutter::PointerData::Change::kDown:
+    case flutter::PointerData::Change::kMove:
+    case flutter::PointerData::Change::kCancel:
+      // These kinds of change should always have a non-zero `buttons`.
+      // In case of violation, it synthesizes a primary button and log a warning
+      // to inform the embedder to send the correct buttons.
+      if (buttons == 0) {
+        // TODO(tongmu): Log a warning to inform the embedder to send the correct
+        // buttons. See
+        // https://github.com/flutter/flutter/issues/32052#issuecomment-489278965
+        return flutter::PointerButton::kPrimary;
+      }
+      return buttons;
+
+    case flutter::PointerData::Change::kAdd:
+    case flutter::PointerData::Change::kRemove:
+    case flutter::PointerData::Change::kHover:
+    case flutter::PointerData::Change::kUp:
+      // These kinds of change should always have a zero `buttons`. However we
+      // are not synthesizing a 0 until a solid reason is found.
+      // In case of violation, it log a warning to inform the embedder to send
+      // the correct buttons.
+      if (buttons != 0) {
+        // TODO(tongmu): Log a warning to inform the embedder to send the correct
+        // buttons. See
+        // https://github.com/flutter/flutter/issues/32052#issuecomment-489278965
+      }
+      return buttons;
   }
-  return 0;
 }
 
 FlutterEngineResult FlutterEngineSendPointerEvent(
@@ -750,10 +768,6 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     pointer_data.change = ToPointerDataChange(
         SAFE_ACCESS(current, phase, FlutterPointerPhase::kCancel));
     pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
-    // TODO(tong): Change 0 to a SAFE_ACCESS to current.buttons once this
-    // field is added.
-    // See https://github.com/flutter/flutter/issues/32052#issuecomment-489278965
-    pointer_data.buttons = ToPointerDataButtons(0, pointer_data.change);
     pointer_data.physical_x = SAFE_ACCESS(current, x, 0.0);
     pointer_data.physical_y = SAFE_ACCESS(current, y, 0.0);
     pointer_data.device = SAFE_ACCESS(current, device, 0);
@@ -761,6 +775,10 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
         SAFE_ACCESS(current, signal_kind, kFlutterPointerSignalKindNone));
     pointer_data.scroll_delta_x = SAFE_ACCESS(current, scroll_delta_x, 0.0);
     pointer_data.scroll_delta_y = SAFE_ACCESS(current, scroll_delta_y, 0.0);
+    // TODO(tong): Change 0 to a SAFE_ACCESS to current.buttons once this
+    // field is added. See
+    // https://github.com/flutter/flutter/issues/32052#issuecomment-489278965
+    pointer_data.buttons = ToPointerDataButtons(0, pointer_data.change);
     packet->SetPointerData(i, pointer_data);
     current = reinterpret_cast<const FlutterPointerEvent*>(
         reinterpret_cast<const uint8_t*>(current) + current->struct_size);
