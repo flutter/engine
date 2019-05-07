@@ -1494,6 +1494,10 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   int get placeholderCount => _placeholderCount;
   int _placeholderCount;
 
+  /// The scales of the placeholders in the paragraph.
+  List<double> get placeholderScales => _placeholderScales;
+  List<double> _placeholderScales = List<double>();
+
   /// Applies the given style to the added text until [pop] is called.
   ///
   /// See [pop] for details.
@@ -1599,6 +1603,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// in the text buffer. For each placeholder, one object replacement character is
   /// added on to the text buffer.
   void addPlaceholder(double width, double height, PlaceholderAlignment alignment, {
+    double scale,
     double baselineOffset,
     TextBaseline baseline
   }) {
@@ -1609,8 +1614,9 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
     // Default the baselineOffset to height if null. This will place the placeholder
     // fully above the baseline, similar to [PlaceholderAlignment.aboveBaseline].
     baselineOffset = baselineOffset ?? height;
-    _addPlaceholder(width, height, alignment.index, baselineOffset, baseline == null ? null : baseline.index);
+    _addPlaceholder(width * scale, height * scale, alignment.index, baselineOffset, baseline == null ? null : baseline.index);
     _placeholderCount++;
+    _placeholderScales.add(scale);
   }
   String _addPlaceholder(double width, double height, int alignment, double baselineOffset, int baseline) native 'ParagraphBuilder_addPlaceholder';
 
