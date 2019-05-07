@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TOPAZ_RUNTIME_FLUTTER_RUNNER_COMPOSITOR_CONTEXT_H_
-#define TOPAZ_RUNTIME_FLUTTER_RUNNER_COMPOSITOR_CONTEXT_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_COMPOSITOR_CONTEXT_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_COMPOSITOR_CONTEXT_H_
 
 #include <fuchsia/ui/scenic/cpp/fidl.h>
 #include <fuchsia/ui/views/cpp/fidl.h>
@@ -49,4 +49,4 @@ class CompositorContext final : public flutter::CompositorContext {
 
 }  // namespace flutter_runner
 
-#endif  // TOPAZ_RUNTIME_FLUTTER_RUNNER_COMPOSITOR_CONTEXT_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_COMPOSITOR_CONTEXT_H_

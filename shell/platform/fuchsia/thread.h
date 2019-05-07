@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TOPAZ_RUNTIME_FLUTTER_RUNNER_THREAD_H_
-#define TOPAZ_RUNTIME_FLUTTER_RUNNER_THREAD_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_THREAD_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_THREAD_H_
 
 #include <pthread.h>
 
@@ -41,4 +41,4 @@ class Thread {
 
 }  // namespace flutter_runner
 
-#endif  // TOPAZ_RUNTIME_FLUTTER_RUNNER_THREAD_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_THREAD_H_

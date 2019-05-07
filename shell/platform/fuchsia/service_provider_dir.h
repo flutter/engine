@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TOPAZ_RUNTIME_FLUTTER_RUNNER_SERVICE_PROVIDER_DIR_H_
-#define TOPAZ_RUNTIME_FLUTTER_RUNNER_SERVICE_PROVIDER_DIR_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_SERVICE_PROVIDER_DIR_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_SERVICE_PROVIDER_DIR_H_
 
 #include <map>
 #include <string>
@@ -70,4 +70,4 @@ class ServiceProviderDir : public vfs::Directory {
 
 }  // namespace flutter_runner
 
-#endif  // TOPAZ_RUNTIME_FLUTTER_RUNNER_SERVICE_PROVIDER_DIR_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_SERVICE_PROVIDER_DIR_H_
