@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TOPAZ_RUNTIME_DART_UTILS_VMSERVICE_OBJECT_H_
-#define TOPAZ_RUNTIME_DART_UTILS_VMSERVICE_OBJECT_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_RUNTIME_DART_UTILS_VMSERVICE_OBJECT_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_RUNTIME_DART_UTILS_VMSERVICE_OBJECT_H_
 
 #include <lib/vfs/cpp/lazy_dir.h>
 
@@ -17,9 +17,10 @@ class VMServiceObject : public vfs::LazyDir {
 
   void GetContents(LazyEntryVector* out_vector) const override;
   zx_status_t GetFile(Node** out_node,
-                      uint64_t id, std::string name) const override;
+                      uint64_t id,
+                      std::string name) const override;
 };
 
 }  // namespace dart_utils
 
-#endif  // TOPAZ_RUNTIME_DART_UTILS_VMSERVICE_OBJECT_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_RUNTIME_DART_UTILS_VMSERVICE_OBJECT_H_

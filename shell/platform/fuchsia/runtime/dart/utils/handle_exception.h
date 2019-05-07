@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TOPAZ_RUNTIME_DART_UTILS_HANDLE_EXCEPTION_H_
-#define TOPAZ_RUNTIME_DART_UTILS_HANDLE_EXCEPTION_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_RUNTIME_DART_UTILS_HANDLE_EXCEPTION_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_RUNTIME_DART_UTILS_HANDLE_EXCEPTION_H_
 
 #include <memory>
 #include <string>
@@ -31,4 +31,4 @@ zx_status_t HandleException(std::shared_ptr<::sys::ServiceDirectory> services,
 
 }  // namespace dart_utils
 
-#endif  // TOPAZ_RUNTIME_DART_UTILS_HANDLE_EXCEPTION_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_RUNTIME_DART_UTILS_HANDLE_EXCEPTION_H_

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TOPAZ_RUNTIME_DART_UTILS_TEMPFS_H_
-#define TOPAZ_RUNTIME_DART_UTILS_TEMPFS_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_RUNTIME_DART_UTILS_TEMPFS_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_RUNTIME_DART_UTILS_TEMPFS_H_
 
 #include <lib/fdio/namespace.h>
 
@@ -21,4 +21,4 @@ void SetupComponentTemp(fdio_ns_t* ns);
 
 }  // namespace dart_utils
 
-#endif  // TOPAZ_RUNTIME_DART_UTILS_TEMPFS_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_RUNTIME_DART_UTILS_TEMPFS_H_
