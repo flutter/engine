@@ -764,8 +764,8 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   }
   NSString* autocorrect = configuration[@"autocorrect"];
   _activeView.autocorrectionType = autocorrect && ![autocorrect boolValue]
-                                 ? UITextAutocorrectionTypeNo
-                                 : UITextAutocorrectionTypeDefault;
+                                       ? UITextAutocorrectionTypeNo
+                                       : UITextAutocorrectionTypeDefault;
   [_activeView setTextInputClient:client];
   [_activeView reloadInputViews];
 }
