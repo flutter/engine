@@ -4,6 +4,8 @@
 
 package io.flutter.plugin.common;
 
+import android.util.Log;
+
 import io.flutter.BuildConfig;
 
 import java.io.ByteArrayOutputStream;
