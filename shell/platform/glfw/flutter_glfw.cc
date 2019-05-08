@@ -42,8 +42,8 @@ static constexpr double kDpPerInch = 160.0;
 
 // Struct for storing state within an instance of the GLFW Window.
 struct FlutterDesktopWindowControllerState {
-  // The GLFW window that owns this state object.
-  GLFWwindow* window;
+  // The GLFW window that is bound to this state object.
+  UniqueGLFWwindowPtr window = UniqueGLFWwindowPtr(nullptr, glfwDestroyWindow);
 
   // The invisible GLFW window used to upload resources in the background.
   UniqueGLFWwindowPtr resource_window =
@@ -124,12 +124,12 @@ static FlutterDesktopWindowControllerState* GetSavedWindowState(
 
 // Creates and returns an invisible GLFW window that shares |window|'s resource
 // context.
-static UniqueGLFWwindowPtr CreateResourceWindowForWindow(GLFWwindow* window) {
+static UniqueGLFWwindowPtr CreateShareWindowForWindow(GLFWwindow* window) {
   glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
   glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-  GLFWwindow* resource_window = glfwCreateWindow(1, 1, "", NULL, window);
+  GLFWwindow* share_window = glfwCreateWindow(1, 1, "", NULL, window);
   glfwDefaultWindowHints();
-  return UniqueGLFWwindowPtr(resource_window, glfwDestroyWindow);
+  return UniqueGLFWwindowPtr(share_window, glfwDestroyWindow);
 }
 
 // Converts a FlutterPlatformMessage to an equivalent FlutterDesktopMessage.
@@ -522,40 +522,37 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
 #ifdef __linux__
   gtk_init(0, nullptr);
 #endif
-  // Create the window.
-  auto* window =
-      glfwCreateWindow(initial_width, initial_height, title, NULL, NULL);
+
+  auto state = std::make_unique<FlutterDesktopWindowControllerState>();
+
+  // Create the window, and set the state as its user data.
+  state->window = UniqueGLFWwindowPtr(
+      glfwCreateWindow(initial_width, initial_height, title, NULL, NULL),
+      glfwDestroyWindow);
+  GLFWwindow* window = state->window.get();
   if (window == nullptr) {
     return nullptr;
   }
   GLFWClearCanvas(window);
+  glfwSetWindowUserPointer(window, state.get());
 
-  // Create a state object attached to the window.
-  auto* state = new FlutterDesktopWindowControllerState();
-  state->window = window;
-  glfwSetWindowUserPointer(window, state);
-
-  // Create the resource context window before starting the engine, since it may
-  // call GLFWMakeResourceContextCurrent immediately.
-  state->resource_window = CreateResourceWindowForWindow(window);
+  // Create the share window before starting the engine, since it may call
+  // GLFWMakeResourceContextCurrent immediately.
+  state->resource_window = CreateShareWindowForWindow(window);
 
   // Start the engine.
-  auto engine = RunFlutterEngine(window, assets_path, icu_data_path, arguments,
-                                 argument_count);
-  if (engine == nullptr) {
-    glfwDestroyWindow(window);
-    delete state;
+  state->engine = RunFlutterEngine(window, assets_path, icu_data_path,
+                                   arguments, argument_count);
+  if (state->engine == nullptr) {
     return nullptr;
   }
-
-  state->engine = engine;
 
   // TODO: Restructure the internals to follow the structure of the C++ API, so
   // that this isn't a tangle of references.
   auto messenger = std::make_unique<FlutterDesktopMessenger>();
   state->message_dispatcher =
       std::make_unique<flutter::IncomingMessageDispatcher>(messenger.get());
-  messenger->engine = engine;
+  messenger->engine = state->engine;
   messenger->dispatcher = state->message_dispatcher.get();
 
   state->window_wrapper = std::make_unique<FlutterDesktopWindow>();
@@ -586,12 +583,11 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   glfwSetFramebufferSizeCallback(window, GLFWFramebufferSizeCallback);
   GLFWAssignEventCallbacks(window);
 
-  return state;
+  return state.release();
 }
 
 void FlutterDesktopDestroyWindow(FlutterDesktopWindowControllerRef controller) {
   FlutterEngineShutdown(controller->engine);
-  glfwDestroyWindow(controller->window);
   delete controller;
 }
 
@@ -662,7 +658,7 @@ double FlutterDesktopWindowGetScaleFactor(
 }
 
 void FlutterDesktopRunWindowLoop(FlutterDesktopWindowControllerRef controller) {
-  GLFWwindow* window = controller->window;
+  GLFWwindow* window = controller->window.get();
 #ifdef __linux__
   // Necessary for GTK thread safety.
   XInitThreads();
