@@ -34,6 +34,8 @@
 #define GLFW_FALSE 0
 #endif
 
+using UniqueGLFWwindowPtr = std::unique_ptr<GLFWwindow, void (*)(GLFWwindow*)>;
+
 static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 
 static constexpr double kDpPerInch = 160.0;
@@ -42,6 +44,10 @@ static constexpr double kDpPerInch = 160.0;
 struct FlutterDesktopWindowControllerState {
   // The GLFW window that owns this state object.
   GLFWwindow* window;
+
+  // The invisible GLFW window used to upload resources in the background.
+  UniqueGLFWwindowPtr resource_window =
+      UniqueGLFWwindowPtr(nullptr, glfwDestroyWindow);
 
   // The handle to the Flutter engine instance.
   FlutterEngine engine;
@@ -114,6 +120,16 @@ static FlutterDesktopWindowControllerState* GetSavedWindowState(
     GLFWwindow* window) {
   return reinterpret_cast<FlutterDesktopWindowControllerState*>(
       glfwGetWindowUserPointer(window));
+}
+
+// Creates and returns an invisible GLFW window that shares |window|'s resource
+// context.
+static UniqueGLFWwindowPtr CreateResourceWindowForWindow(GLFWwindow* window) {
+  glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+  glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+  GLFWwindow* resource_window = glfwCreateWindow(1, 1, "", NULL, window);
+  glfwDefaultWindowHints();
+  return UniqueGLFWwindowPtr(resource_window, glfwDestroyWindow);
 }
 
 // Converts a FlutterPlatformMessage to an equivalent FlutterDesktopMessage.
@@ -379,6 +395,12 @@ static bool GLFWMakeContextCurrent(void* user_data) {
   return true;
 }
 
+static bool GLFWMakeResourceContextCurrent(void* user_data) {
+  GLFWwindow* window = reinterpret_cast<GLFWwindow*>(user_data);
+  glfwMakeContextCurrent(GetSavedWindowState(window)->resource_window.get());
+  return true;
+}
+
 static bool GLFWClearContext(void* user_data) {
   glfwMakeContextCurrent(nullptr);
   return true;
@@ -458,6 +480,7 @@ static FlutterEngine RunFlutterEngine(GLFWwindow* window,
     config.open_gl.clear_current = GLFWClearContext;
     config.open_gl.present = GLFWPresent;
     config.open_gl.fbo_callback = GLFWGetActiveFbo;
+    config.open_gl.make_resource_current = GLFWMakeResourceContextCurrent;
     config.open_gl.gl_proc_resolver = GLFWProcResolver;
   }
   FlutterProjectArgs args = {};
@@ -507,18 +530,24 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   }
   GLFWClearCanvas(window);
 
+  // Create a state object attached to the window.
+  auto* state = new FlutterDesktopWindowControllerState();
+  state->window = window;
+  glfwSetWindowUserPointer(window, state);
+
+  // Create the resource context window before starting the engine, since it may
+  // call GLFWMakeResourceContextCurrent immediately.
+  state->resource_window = CreateResourceWindowForWindow(window);
+
   // Start the engine.
   auto engine = RunFlutterEngine(window, assets_path, icu_data_path, arguments,
                                  argument_count);
   if (engine == nullptr) {
     glfwDestroyWindow(window);
+    delete state;
     return nullptr;
   }
 
-  // Create a state object attached to the window.
-  auto* state = new FlutterDesktopWindowControllerState();
-  state->window = window;
-  glfwSetWindowUserPointer(window, state);
   state->engine = engine;
 
   // TODO: Restructure the internals to follow the structure of the C++ API, so
