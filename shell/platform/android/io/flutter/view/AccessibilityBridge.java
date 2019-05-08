@@ -1330,11 +1330,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                         if (object.scrollIndex + visibleChildren > object.scrollChildren) {
                             Log.e(TAG, "Scroll index is out of bounds.");
                         }
-                        if (object.childrenInHitTestOrder.size() <= object.scrollIndex) {
-                            Log.e(TAG, String.format("Got a scroll index %d, but only %d children in hit test order.", object.scrollIndex, object.childrenInHitTestOrder.size()));
-                        } else if (object.childrenInHitTestOrder.get(object.scrollIndex).hasFlag(Flag.IS_HIDDEN)) {
-                            Log.e(TAG, "Attempted to move Accessibility Focus to hidden child.");
-                        }
                     }
                     // The setToIndex should be the index of the last visible child. Because we counted all
                     // children, including the first index we need to subtract one.
