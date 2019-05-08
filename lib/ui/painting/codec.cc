@@ -277,12 +277,11 @@ void InitCodecAndInvokeCodecCallback(
   fml::RefPtr<Codec> codec;
   if (image_info) {
     codec = InitCodecUncompressed(context, std::move(buffer), *image_info,
-                                  std::move(unref_queue),
-                                  targetWidth, targetHeight, trace_id);
+                                  std::move(unref_queue), targetWidth,
+                                  targetHeight, trace_id);
   } else {
-    codec =
-        InitCodec(context, std::move(buffer), std::move(unref_queue),
-                  targetWidth, targetHeight, trace_id);
+    codec = InitCodec(context, std::move(buffer), std::move(unref_queue),
+                      targetWidth, targetHeight, trace_id);
   }
   ui_task_runner->PostTask(
       fml::MakeCopyable([callback = std::move(callback),
@@ -416,8 +415,8 @@ void InstantiateImageCodec(Dart_NativeArguments args) {
        buffer = std::move(buffer), trace_id, image_info = std::move(image_info),
        ui_task_runner = task_runners.GetUITaskRunner(),
        context = dart_state->GetResourceContext(),
-       queue = UIDartState::Current()->GetSkiaUnrefQueue(),
-       targetWidth, targetHeight]() mutable {
+       queue = UIDartState::Current()->GetSkiaUnrefQueue(), targetWidth,
+       targetHeight]() mutable {
         InitCodecAndInvokeCodecCallback(
             std::move(ui_task_runner), context, std::move(queue),
             std::move(callback), std::move(buffer), std::move(image_info),
@@ -493,15 +492,6 @@ MultiFrameCodec::MultiFrameCodec(std::unique_ptr<SkCodec> codec)
   frameInfos_ = codec_->getFrameInfo();
   compressedSizeBytes_ = codec_->getInfo().computeMinByteSize();
   nextFrameIndex_ = 0;
-  // Go through our frame information and mark which frames are required in
-  // order to decode subsequent ones.
-  requiredFrames_.clear();
-  for (size_t frameIndex = 0; frameIndex < frameInfos_.size(); frameIndex++) {
-    const int requiredFrame = frameInfos_[frameIndex].fRequiredFrame;
-    if (requiredFrame != SkCodec::kNoFrame) {
-      requiredFrames_[requiredFrame] = true;
-    }
-  }
 }
 
 MultiFrameCodec::~MultiFrameCodec() {}
@@ -552,7 +542,8 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
   }
 
   // Hold onto this if we need it to decode future frames.
-  if (requiredFrames_[nextFrameIndex_]) {
+  if (frameInfos_[nextFrameIndex_].fDisposalMethod ==
+      SkCodecAnimation::DisposalMethod::kKeep) {
     lastRequiredFrame_ = std::make_unique<SkBitmap>(bitmap);
     lastRequiredFrameIndex_ = nextFrameIndex_;
   }

@@ -60,7 +60,6 @@ class MultiFrameCodec : public Codec {
   size_t compressedSizeBytes_;
 
   std::vector<SkCodec::FrameInfo> frameInfos_;
-  std::map<int, bool> requiredFrames_;
 
   // The last decoded frame that's required to decode any subsequent frames.
   std::unique_ptr<SkBitmap> lastRequiredFrame_;
