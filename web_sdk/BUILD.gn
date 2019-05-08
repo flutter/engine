@@ -80,9 +80,9 @@ web_engine_sources = [
 group("web_sdk") {
   deps = [
     ":flutter_dartdevc_kernel_sdk",
+    ":web_engine_sources",
     ":web_ui_library",
     ":web_ui_sources",
-    ":web_engine_sources",
   ]
 }
 
@@ -97,7 +97,7 @@ prebuilt_dart_action("web_ui_sources") {
   args = [
     "--output-dir=$output_dir",
     "--input-dir=$input_dir",
-    "--ui"
+    "--ui",
   ]
 
   outputs = [
