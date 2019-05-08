@@ -60,6 +60,7 @@ import java.util.Map.Entry;
  * <p>To extend the codec, overwrite the writeValue and readValueOfType methods.</p>
  */
 public class StandardMessageCodec implements MessageCodec<Object> {
+    private static final String TAG = "StandardMessageCodec#";
     public static final StandardMessageCodec INSTANCE = new StandardMessageCodec();
 
     @Override
@@ -110,7 +111,7 @@ public class StandardMessageCodec implements MessageCodec<Object> {
      */
     protected static final void writeSize(ByteArrayOutputStream stream, int value) {
         if (BuildConfig.DEBUG && 0 > value) {
-            throw new AssertionError("Attempted to write a negative size.");
+            Log.e(TAG, "Attempted to write a negative size.");
         }
         if (value < 254) {
             stream.write(value);
