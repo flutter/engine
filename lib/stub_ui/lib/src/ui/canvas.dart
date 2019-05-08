@@ -1119,12 +1119,14 @@ class Path {
   Path.from(Path source)
       : subpaths = new List<engine.Subpath>.from(source.subpaths);
 
-  Path._clone(this.subpaths, this.fillType);
+  Path._clone(this.subpaths, this._fillType);
 
   /// Determines how the interior of this path is calculated.
   ///
   /// Defaults to the non-zero winding rule, [PathFillType.nonZero].
-  PathFillType fillType = PathFillType.nonZero;
+  PathFillType _fillType = PathFillType.nonZero;
+  PathFillType get fillType => _fillType;
+  set fillType(PathFillType value) {}
 
   /// Opens a new subpath with starting point (x, y).
   void _openNewSubpath(double x, double y) {
@@ -2240,6 +2242,9 @@ class PathMetric {
   // calling `_moveNext` - `_moveNext` should be called after the first
   // iteration is done instead of before.
   bool _moveNext() => throw new UnimplementedError();
+
+  @override
+  String toString() => 'PathMetric';
 }
 
 /// The geometric description of a tangent: the angle at a point.

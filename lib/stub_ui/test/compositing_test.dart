@@ -15,7 +15,7 @@ void main() {
   group('SceneBuilder', () {
     test('pushOffset implements surface lifecycle', () {
       testLayerLifeCycle((sceneBuilder, paintedBy) {
-        return sceneBuilder.pushOffset(10, 20, webOnlyPaintedBy: paintedBy);
+        return sceneBuilder.pushOffset(10, 20);
       }, () {
         return '''<s><flt-offset></flt-offset></s>''';
       });
@@ -24,8 +24,7 @@ void main() {
     test('pushTransform implements surface lifecycle', () {
       testLayerLifeCycle((sceneBuilder, paintedBy) {
         return sceneBuilder.pushTransform(
-            Matrix4.translationValues(10, 20, 0).storage,
-            webOnlyPaintedBy: paintedBy);
+            Matrix4.translationValues(10, 20, 0).storage);
       }, () {
         return '''<s><flt-transform></flt-transform></s>''';
       });
@@ -33,8 +32,7 @@ void main() {
 
     test('pushClipRect implements surface lifecycle', () {
       testLayerLifeCycle((sceneBuilder, paintedBy) {
-        return sceneBuilder.pushClipRect(Rect.fromLTRB(10, 20, 30, 40),
-            webOnlyPaintedBy: paintedBy);
+        return sceneBuilder.pushClipRect(Rect.fromLTRB(10, 20, 30, 40));
       }, () {
         return '''
 <s>
@@ -47,8 +45,7 @@ void main() {
     test('pushClipRRect implements surface lifecycle', () {
       testLayerLifeCycle((sceneBuilder, paintedBy) {
         return sceneBuilder.pushClipRRect(
-            RRect.fromLTRBR(10, 20, 30, 40, Radius.circular(3)),
-            webOnlyPaintedBy: paintedBy);
+            RRect.fromLTRBR(10, 20, 30, 40, Radius.circular(3)));
       }, () {
         return '''
 <s>
@@ -61,7 +58,7 @@ void main() {
     test('pushClipPath implements surface lifecycle', () {
       testLayerLifeCycle((sceneBuilder, paintedBy) {
         final Path path = Path()..addRect(Rect.fromLTRB(10, 20, 30, 40));
-        return sceneBuilder.pushClipPath(path, webOnlyPaintedBy: paintedBy);
+        return sceneBuilder.pushClipPath(path);
       }, () {
         return '''
 <s>
@@ -75,7 +72,7 @@ void main() {
 
     test('pushOpacity implements surface lifecycle', () {
       testLayerLifeCycle((sceneBuilder, paintedBy) {
-        return sceneBuilder.pushOpacity(10, webOnlyPaintedBy: paintedBy);
+        return sceneBuilder.pushOpacity(10);
       }, () {
         return '''<s><o></o></s>''';
       });
@@ -89,7 +86,6 @@ void main() {
           elevation: 2,
           color: Color.fromRGBO(0, 0, 0, 1),
           shadowColor: Color.fromRGBO(0, 0, 0, 1),
-          webOnlyPaintedBy: paintedBy,
         );
       }, () {
         return '''<s><pshape><clip-i></clip-i></pshape></s>''';

@@ -124,6 +124,9 @@ class WindowPadding {
   /// A window padding that has zeros for each edge.
   static const WindowPadding zero =
       const WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
+
+  @override
+  String toString() => 'WindowPadding';
 }
 
 /// An identifier used to select a user's language and formatting preferences.
@@ -478,6 +481,10 @@ class Locale {
     if (_countryCode != null) out.write('_$countryCode');
     return out.toString();
   }
+
+  String toLanguageTag() {
+    throw UnimplementedError();
+  }
 }
 
 /// The most basic interface to the host operating system's user interface.
@@ -531,7 +538,7 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  double devicePixelRatio = 1.0;
+  double get devicePixelRatio => 1.0;
 
   /// The dimensions of the rectangle into which the application will be drawn,
   /// in physical pixels.
@@ -602,7 +609,7 @@ class Window {
   ///  * [MediaQuery.of], a simpler mechanism for the same.
   ///  * [Scaffold], which automatically applies the view insets in material
   ///    design applications.
-  WindowPadding viewInsets = WindowPadding.zero;
+  WindowPadding get viewInsets => WindowPadding.zero;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the application can render, but which may be partially obscured by
@@ -619,7 +626,11 @@ class Window {
   ///  * [MediaQuery.of], a simpler mechanism for the same.
   ///  * [Scaffold], which automatically applies the padding in material design
   ///    applications.
-  WindowPadding padding = WindowPadding.zero;
+  WindowPadding get padding => WindowPadding.zero;
+
+  void setIsolateDebugName(String name) {
+    throw UnimplementedError();
+  }
 
   /// The system-reported text scale.
   ///
@@ -1155,6 +1166,77 @@ enum Brightness {
   /// For example, the color might be bright white, requiring black text.
   light,
 }
+
+// Unimplemented classes.
+class CallbackHandle {
+  CallbackHandle.fromRawHandle(this._handle);
+
+  final int _handle;
+
+  int toRawHandle() => _handle;
+
+  @override
+  bool operator ==(Object other) => identical(this, other);
+
+  @override
+  int get hashCode => super.hashCode;
+}
+
+class PluginUtilities {
+  static CallbackHandle getCallbackHandle(Function callback) {
+    throw UnimplementedError();
+  }
+
+  static Function getCallbackFromHandle(CallbackHandle handle) {
+   throw UnimplementedError();
+  }
+}
+
+class ImageShader {}
+
+class IsolateNameServer {
+ static SendPort lookupPortByName(String name) {
+    assert(name != null, "'name' cannot be null.");
+    throw UnimplementedError();
+  }
+
+  /// Registers a [SendPort] with a given name.
+  ///
+  /// Returns true if registration is successful, and false if the name entry
+  /// already existed (in which case the earlier registration is left
+  /// unchanged). To remove a registration, consider [removePortNameMapping].
+  ///
+  /// Once a port has been registered with a name, it can be obtained from any
+  /// [Isolate] using [lookupPortByName].
+  ///
+  /// Multiple isolates should avoid attempting to register ports with the same
+  /// name, as there is an inherent race condition in doing so.
+  ///
+  /// The `port` and `name` arguments must not be null.
+  static bool registerPortWithName(SendPort port, String name) {
+    assert(port != null, "'port' cannot be null.");
+    assert(name != null, "'name' cannot be null.");
+    throw UnimplementedError();
+  }
+
+  /// Removes a name-to-[SendPort] mapping given its name.
+  ///
+  /// Returns true if the mapping was successfully removed, false if the mapping
+  /// did not exist. To add a registration, consider [registerPortWithName].
+  ///
+  /// Generally, removing a port name mapping is an inherently racy operation
+  /// (another isolate could have obtained the name just prior to the name being
+  /// removed, and thus would still be able to communicate over the port even
+  /// after it has been removed).
+  ///
+  /// The `name` argument must not be null.
+  static bool removePortNameMapping(String name) {
+    assert(name != null, "'name' cannot be null.");
+    throw UnimplementedError();
+  }
+}
+
+//
 
 /// The [Window] singleton. This object exposes the size of the display, the
 /// core scheduler API, the input event callback, the graphics drawing API, and

@@ -138,9 +138,8 @@ class SceneBuilder {
   /// This is equivalent to [pushTransform] with a matrix with only translation.
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushOffset(double dx, double dy,
-      {@required Object webOnlyPaintedBy}) {
-    return _pushSurface(PersistedOffset(webOnlyPaintedBy, dx, dy));
+  EngineLayer pushOffset(double dx, double dy) {
+    return _pushSurface(PersistedOffset(null, dx, dy));
   }
 
   /// Pushes a transform operation onto the operation stack.
@@ -148,13 +147,12 @@ class SceneBuilder {
   /// The objects are transformed by the given matrix before rasterization.
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushTransform(Float64List matrix4,
-      {@required Object webOnlyPaintedBy}) {
+  EngineLayer pushTransform(Float64List matrix4) {
     if (matrix4 == null)
       throw new ArgumentError('"matrix4" argument cannot be null');
     if (matrix4.length != 16)
       throw new ArgumentError('"matrix4" must have 16 entries.');
-    return _pushSurface(PersistedTransform(webOnlyPaintedBy, matrix4));
+    return _pushSurface(PersistedTransform(null, matrix4));
   }
 
   /// Pushes a rectangular clip operation onto the operation stack.
@@ -164,10 +162,10 @@ class SceneBuilder {
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
   EngineLayer pushClipRect(Rect rect,
-      {Clip clipBehavior = Clip.antiAlias, @required Object webOnlyPaintedBy}) {
+      {Clip clipBehavior = Clip.antiAlias, }) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
-    return _pushSurface(PersistedClipRect(webOnlyPaintedBy, rect));
+    return _pushSurface(PersistedClipRect(null, rect));
   }
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
@@ -176,9 +174,9 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   EngineLayer pushClipRRect(RRect rrect,
-      {Clip clipBehavior, @required Object webOnlyPaintedBy}) {
+      {Clip clipBehavior, }) {
     return _pushSurface(
-        PersistedClipRRect(webOnlyPaintedBy, rrect, clipBehavior));
+        PersistedClipRRect(null, rrect, clipBehavior));
   }
 
   /// Pushes a path clip operation onto the operation stack.
@@ -187,11 +185,11 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   EngineLayer pushClipPath(Path path,
-      {Clip clipBehavior = Clip.antiAlias, @required Object webOnlyPaintedBy}) {
+      {Clip clipBehavior = Clip.antiAlias, }) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
     return _pushSurface(
-        _PersistedClipPath(webOnlyPaintedBy, path, clipBehavior));
+        _PersistedClipPath(null, path, clipBehavior));
   }
 
   /// Pushes an opacity operation onto the operation stack.
@@ -203,8 +201,8 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   EngineLayer pushOpacity(int alpha,
-      {@required Object webOnlyPaintedBy, Offset offset = Offset.zero}) {
-    return _pushSurface(PersistedOpacity(webOnlyPaintedBy, alpha, offset));
+      {Offset offset = Offset.zero}) {
+    return _pushSurface(PersistedOpacity(null, alpha, offset));
   }
 
   /// Pushes a color filter operation onto the operation stack.
@@ -213,8 +211,7 @@ class SceneBuilder {
   /// blend mode.
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushColorFilter(Color color, BlendMode blendMode,
-      {@required Object webOnlyPaintedBy}) {
+  EngineLayer pushColorFilter(Color color, BlendMode blendMode) {
     throw new UnimplementedError();
   }
 
@@ -224,8 +221,7 @@ class SceneBuilder {
   /// rasterizing the given objects.
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushBackdropFilter(ImageFilter filter,
-      {@required Object webOnlyPaintedBy}) {
+  EngineLayer pushBackdropFilter(ImageFilter filter) {
     throw new UnimplementedError();
   }
 
@@ -235,8 +231,7 @@ class SceneBuilder {
   /// rectangle using the given blend mode.
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushShaderMask(Shader shader, Rect maskRect, BlendMode blendMode,
-      {@required Object webOnlyPaintedBy}) {
+  EngineLayer pushShaderMask(Shader shader, Rect maskRect, BlendMode blendMode) {
     throw new UnimplementedError();
   }
 
@@ -258,10 +253,9 @@ class SceneBuilder {
     Color color,
     Color shadowColor,
     Clip clipBehavior = Clip.none,
-    @required Object webOnlyPaintedBy,
   }) {
     return _pushSurface(PersistedPhysicalShape(
-      webOnlyPaintedBy,
+      null,
       path,
       elevation,
       color.value,
@@ -322,10 +316,9 @@ class SceneBuilder {
   ///
   /// See also the [PerformanceOverlayOption] enum in the rendering library.
   /// for more details.
-  void addPerformanceOverlay(int enabledOptions, Rect bounds,
-      {@required Object webOnlyPaintedBy}) {
+  void addPerformanceOverlay(int enabledOptions, Rect bounds) {
     _addPerformanceOverlay(enabledOptions, bounds.left, bounds.right,
-        bounds.top, bounds.bottom, webOnlyPaintedBy);
+        bounds.top, bounds.bottom, null);
   }
 
   void _addPerformanceOverlay(int enabledOptions, double left, double right,
@@ -343,18 +336,16 @@ class SceneBuilder {
   void addPicture(Offset offset, Picture picture,
       {bool isComplexHint = false,
       bool willChangeHint = false,
-      @required Object webOnlyPaintedBy}) {
+      }) {
     int hints = 0;
     if (isComplexHint) hints |= 1;
     if (willChangeHint) hints |= 2;
-    _addPicture(offset.dx, offset.dy, picture, hints,
-        webOnlyPaintedBy: webOnlyPaintedBy);
+    _addPicture(offset.dx, offset.dy, picture, hints);
   }
 
-  void _addPicture(double dx, double dy, Picture picture, int hints,
-      {@required Object webOnlyPaintedBy}) {
+  void _addPicture(double dx, double dy, Picture picture, int hints) {
     _addSurface(
-        persistedPictureFactory(webOnlyPaintedBy, dx, dy, picture, hints));
+        persistedPictureFactory(null, dx, dy, picture, hints));
   }
 
   /// Adds a backend texture to the scene.
@@ -366,10 +357,10 @@ class SceneBuilder {
       double width = 0.0,
       double height = 0.0,
       bool freeze = false,
-      @required Object webOnlyPaintedBy}) {
+      }) {
     assert(offset != null, 'Offset argument was null');
     _addTexture(
-        offset.dx, offset.dy, width, height, textureId, webOnlyPaintedBy);
+        offset.dx, offset.dy, width, height, textureId, null);
   }
 
   void _addTexture(double dx, double dy, double width, double height,
@@ -888,6 +879,19 @@ class SceneHost {
   ///
   /// After calling this function, the child scene host cannot be used further.
   void dispose() {}
+
+  /// Set properties on the linked scene.  These properties include its bounds,
+  /// as well as whether it can be the target of focus events or not.
+  void setProperties(
+    double width,
+    double height,
+    double insetTop,
+    double insetRight,
+    double insetBottom,
+    double insetLeft,
+    bool focusable) {
+      throw UnimplementedError();
+    }
 }
 
 /// Signature of a function that receives a [PersistedSurface].

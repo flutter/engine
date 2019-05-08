@@ -653,11 +653,14 @@ class SemanticsUpdateBuilder {
     int actions,
     int textSelectionBase,
     int textSelectionExtent,
+    int platformViewId,
     int scrollChildren,
     int scrollIndex,
     double scrollPosition,
     double scrollExtentMax,
     double scrollExtentMin,
+    double elevation,
+    double thickness,
     Rect rect,
     String label,
     String hint,
@@ -666,14 +669,9 @@ class SemanticsUpdateBuilder {
     String decreasedValue,
     TextDirection textDirection,
     Float64List transform,
-    double elevation,
-    double thickness,
     Int32List childrenInTraversalOrder,
     Int32List childrenInHitTestOrder,
-    @Deprecated('use additionalActions instead')
-        Int32List customAcccessibilityActions,
     Int32List additionalActions,
-    int platformViewId,
   }) {
     if (transform.length != 16)
       throw new ArgumentError('transform argument must have 16 entries.');
@@ -700,7 +698,7 @@ class SemanticsUpdateBuilder {
       thickness: thickness,
       childrenInTraversalOrder: childrenInTraversalOrder,
       childrenInHitTestOrder: childrenInHitTestOrder,
-      additionalActions: additionalActions ?? customAcccessibilityActions,
+      additionalActions: additionalActions,
       platformViewId: platformViewId,
     ));
   }

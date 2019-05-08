@@ -959,6 +959,12 @@ class Paint {
 
   BlendMode _blendMode;
 
+  double get strokeMiterLimit {
+    return null;
+  }
+  set strokeMiterLimit(double value) {
+  }
+
   /// Whether to paint inside shapes, the edges of shapes, or both.
   ///
   /// If null, defaults to [PaintingStyle.fill].
@@ -1045,7 +1051,7 @@ class Paint {
     return false;
   }
 
-  set invertColors(bool _) {
+  set invertColors(bool value) {
     if (engine.assertionsEnabled) {
       throw UnsupportedError('Paint.invertColors is not supported.');
     }

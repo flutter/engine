@@ -14,6 +14,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
+import 'dart:isolate' show SendPort;
 
 import 'src/engine.dart' as engine;
 
