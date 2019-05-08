@@ -1680,8 +1680,16 @@ Future<Codec> instantiateImageCodec(Uint8List list, {
 
 /// Instantiates a [Codec] object for an image binary data.
 ///
+/// The [targetWidth] and [targetHeight] arguments specify the size of the output
+/// image, in image pixels. Image in this context refers to image in every frame of the [Codec].
+/// If [targetWidth] and [targetHeight] are not equal to the intrinsic dimensions of the
+/// image, then the image will be scaled after being decoded. If exactly one of
+/// these two arguments is not equal to [_kDoNotResizeDimension], then the aspect
+/// ratio will be maintained while forcing the image to match the given dimension.
+/// If both are equal to [_kDoNotResizeDimension], then the image maintains its real size.
+///
 /// Returns an error message if the instantiation has failed, null otherwise.
-String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, double decodedCacheRatioCap, int width, int height)
+String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, double decodedCacheRatioCap, int targetWidth, int targetHeight)
   native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -1720,7 +1728,7 @@ Future<Null> _decodeImageFromListAsync(Uint8List list,
 /// image, in image pixels. If they are not equal to the intrinsic dimensions of the
 /// image, then the image will be scaled after being decoded. If exactly one of
 /// these two arguments is specified, then the aspect ratio will be maintained
-/// while forcing the image to match the other given dimension. If both are not
+/// while forcing the image to match the other given dimension. If neither is
 /// specified, then the image maintains its real size.
 void decodeImageFromPixels(
   Uint8List pixels,

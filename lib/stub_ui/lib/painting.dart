@@ -1641,7 +1641,7 @@ class Codec {
 /// image, in image pixels. If they are not equal to the intrinsic dimensions of the
 /// image, then the image will be scaled after being decoded. If exactly one of
 /// these two arguments is specified, then the aspect ratio will be maintained
-/// while forcing the image to match the specified dimension. If both are not
+/// while forcing the image to match the specified dimension. If neither is
 /// specified, then the image maintains its real size.
 ///
 /// The returned future can complete with an error if the image decoding has
