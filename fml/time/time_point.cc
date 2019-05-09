@@ -12,7 +12,6 @@
 #elif defined(OS_FUCHSIA)
 #include <zircon/syscalls.h>
 #elif defined(OS_WIN)
-#include <windows.h>
 #include <chrono>
 #else
 #include <time.h>
