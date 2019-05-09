@@ -31,18 +31,18 @@ void _updateWindowMetrics(double devicePixelRatio,
                           double viewInsetLeft) {
   window
     .._devicePixelRatio = devicePixelRatio
-    .._physicalSize = new Size(width, height)
-    .._viewPadding = new WindowPadding._(
+    .._physicalSize = Size(width, height)
+    .._viewPadding = WindowPadding._(
         top: viewPaddingTop,
         right: viewPaddingRight,
         bottom: viewPaddingBottom,
         left: viewPaddingLeft)
-    .._viewInsets = new WindowPadding._(
+    .._viewInsets = WindowPadding._(
         top: viewInsetTop,
         right: viewInsetRight,
         bottom: viewInsetBottom,
         left: viewInsetLeft)
-    .._padding = new WindowPadding._(
+    .._padding = WindowPadding._(
         top: math.max(0.0, viewPaddingTop - viewInsetTop),
         right: math.max(0.0, viewPaddingRight - viewInsetRight),
         bottom: math.max(0.0, viewPaddingBottom - viewInsetBottom),
