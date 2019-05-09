@@ -647,7 +647,7 @@ class Window {
   /// ┃                    ┃
   /// ┃                    ┃
   /// ┃                    ┃  _____________________________________
-  /// ┃      ━━━━━━━       ┃  viewPadding.bottom == padding.bottom
+  /// ┃      ━━━━━━━━      ┃  viewPadding.bottom == padding.bottom
   ///  ╲▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁╱   _____________________________________
   /// ```
   ///
@@ -676,10 +676,10 @@ class Window {
   /// ┃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁┃ viewInset.bottom (consumes padding.bottom)
   /// ┃     QWERTYUIOP     ┃
   /// ┃     ASDFGHJKL      ┃
-  /// ┃   ⇧	 ZXCVBNM  ⌫    ┃
+  /// ┃   ⇧  ZXCVBNM  ⌫    ┃
   /// ┃   123    ␣    ⏎    ┃
   /// ┃                    ┃  ___________________
-  /// ┃      ━━━━━━━       ┃  viewPadding.bottom
+  /// ┃      ━━━━━━━━      ┃  viewPadding.bottom
   ///  ╲▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁╱   ___________________
   /// ```
   ///
