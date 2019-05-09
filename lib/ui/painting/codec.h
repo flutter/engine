@@ -26,8 +26,8 @@ class Codec : public RefCountedDartWrappable<Codec> {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
-  virtual int frameCount() = 0;
-  virtual int repetitionCount() = 0;
+  virtual int frameCount() const = 0;
+  virtual int repetitionCount() const = 0;
   virtual Dart_Handle getNextFrame(Dart_Handle callback_handle) = 0;
   void dispose();
 
@@ -36,8 +36,8 @@ class Codec : public RefCountedDartWrappable<Codec> {
 
 class MultiFrameCodec : public Codec {
  public:
-  int frameCount() override;
-  int repetitionCount() override;
+  int frameCount() const override;
+  int repetitionCount() const override;
   Dart_Handle getNextFrame(Dart_Handle args) override;
 
  private:
@@ -55,11 +55,9 @@ class MultiFrameCodec : public Codec {
       size_t trace_id);
 
   const std::unique_ptr<SkCodec> codec_;
-  int repetitionCount_;
+  const int frameCount_;
+  const int repetitionCount_;
   int nextFrameIndex_;
-  size_t compressedSizeBytes_;
-
-  std::vector<SkCodec::FrameInfo> frameInfos_;
 
   // The last decoded frame that's required to decode any subsequent frames.
   std::unique_ptr<SkBitmap> lastRequiredFrame_;
@@ -72,8 +70,8 @@ class MultiFrameCodec : public Codec {
 
 class SingleFrameCodec : public Codec {
  public:
-  int frameCount() override;
-  int repetitionCount() override;
+  int frameCount() const override;
+  int repetitionCount() const override;
   Dart_Handle getNextFrame(Dart_Handle args) override;
 
  private:
