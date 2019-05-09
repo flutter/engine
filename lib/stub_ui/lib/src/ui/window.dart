@@ -540,6 +540,7 @@ class Window {
   ///    observe when this value changes.
   double get devicePixelRatio => _devicePixelRatio;
   double _devicePixelRatio = 1.0;
+  // TODO(yjbanov): Remove setter usage from engine.
   set devicePixelRatio(double value) {
     _devicePixelRatio = value;
   }
