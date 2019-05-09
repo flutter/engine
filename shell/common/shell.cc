@@ -510,6 +510,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
     // wasn't executed, and we just run it here as the platform thread
     // is the GPU thread.
     gpu_task();
+    latch.Wait();
   }
 }
 
