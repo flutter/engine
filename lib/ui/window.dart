@@ -488,6 +488,66 @@ class Window {
   /// response to the soft keyboard being visible or hidden, whereas
   /// [Window.padding] will.
   ///
+  /// For example, on an iPhone X when the keyboard is not showing, the
+  /// viewPadding and the padding will be equal, as there are no insets at play.
+  /// In this scenario, the [Window.viewInsets.bottom] will be 0, and the
+  /// [Window.padding.bottom] and [Window.viewPadding.bottom] will be some
+  /// positive number specified by the OS:
+  ///
+  /// ```
+  ///   ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+  ///  ╱     ████████     ╲
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃  _____________________________________
+  /// ┃      ━━━━━━━       ┃  viewPadding.bottom == padding.bottom
+  ///  ╲▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁╱   _____________________________________
+  /// ```
+  ///
+  /// Whereas when the keyboard is showing, the viewPadding and padding will be
+  /// different for the bottom, since the inset created by the software keyboard
+  /// will consume the bottom padding, but the viewPadding will remain the same
+  /// for applications that wish to draw or position elements or respond to taps
+  /// relative to the viewPadding rather than to the viewInsets and/or padding.
+  /// In this scenario, the [Window.viewInsets.bottom] will provide the height
+  /// of the IME, the [Window.padding.bottom] will be 0, and the
+  /// [Window.viewPadding.bottom] will be some positive number specified by
+  /// the OS.
+  ///
+  /// ```
+  ///   ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+  ///  ╱     ████████     ╲
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃                    ┃
+  /// ┃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁┃ viewInset.bottom (consumes padding.bottom)
+  /// ┃     QWERTYUIOP     ┃
+  /// ┃     ASDFGHJKL      ┃
+  /// ┃   ⇧	 ZXCVBNM  ⌫    ┃
+  /// ┃   123    ␣    ⏎    ┃
+  /// ┃                    ┃  ___________________
+  /// ┃      ━━━━━━━       ┃  viewPadding.bottom
+  ///  ╲▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁╱   ___________________
+  /// ```
+  ///
   /// When this changes, [onMetricsChanged] is called.
   ///
   /// See also:
