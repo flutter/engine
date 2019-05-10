@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_H_
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_H_
 
+#include <Metal/Metal.h>
+
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/surface.h"
@@ -23,6 +25,7 @@ class GPUSurfaceMetal : public Surface {
  private:
   fml::scoped_nsobject<CAMetalLayer> layer_;
   sk_sp<GrContext> context_;
+  fml::scoped_nsprotocol<id<MTLCommandQueue>> command_queue_;
 
   // |Surface|
   bool IsValid() override;

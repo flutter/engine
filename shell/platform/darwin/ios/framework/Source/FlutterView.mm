@@ -64,6 +64,14 @@ id<FlutterViewEngineDelegate> _delegate;
     layer.rasterizationScale = screenScale;
   }
 
+#if FLUTTER_SHELL_ENABLE_METAL
+  if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
+    CGFloat screenScale = [UIScreen mainScreen].scale;
+    self.layer.contentsScale = screenScale;
+    self.layer.rasterizationScale = screenScale;
+  }
+
+#endif  //  FLUTTER_SHELL_ENABLE_METAL
   [super layoutSubviews];
 }
 

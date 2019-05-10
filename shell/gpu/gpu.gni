@@ -12,7 +12,7 @@ template("shell_gpu_configuration") {
   assert(defined(invoker.enable_gl),
          "Caller must declare if the Open GL backend must be enabled.")
   assert(defined(invoker.enable_metal),
-         "Caller must declare if the Open GL backend must be enabled.")
+         "Caller must declare if the Metal backend must be enabled.")
 
   group(target_name) {
     public_deps = []

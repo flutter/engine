@@ -4,7 +4,6 @@
 
 #include "flutter/shell/gpu/gpu_surface_metal.h"
 
-#include <Metal/Metal.h>
 #include <QuartzCore/CAMetalLayer.h>
 
 #include "third_party/skia/include/core/SkSurface.h"
@@ -19,6 +18,8 @@ GPUSurfaceMetal::GPUSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer)
     return;
   }
 
+  layer.get().pixelFormat = MTLPixelFormatBGRA8Unorm;
+
   auto metal_device = fml::scoped_nsprotocol<id<MTLDevice>>([layer_.get().device retain]);
   auto metal_queue = fml::scoped_nsprotocol<id<MTLCommandQueue>>([metal_device newCommandQueue]);
 
@@ -26,6 +27,8 @@ GPUSurfaceMetal::GPUSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer)
     FML_LOG(ERROR) << "Could not create metal device or queue.";
     return;
   }
+
+  command_queue_ = metal_queue;
 
   // The context creation routine accepts arguments using transfer semantics.
   auto context = GrContext::MakeMetal(metal_device.release(), metal_queue.release());
@@ -41,7 +44,7 @@ GPUSurfaceMetal::~GPUSurfaceMetal() = default;
 
 // |Surface|
 bool GPUSurfaceMetal::IsValid() {
-  return layer_ && context_;
+  return layer_ && context_ && command_queue_;
 }
 
 // |Surface|
@@ -62,6 +65,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& size)
     return nullptr;
   }
 
+  const auto scale = layer_.get().contentsScale;
+
   auto next_drawable = fml::scoped_nsprotocol<id<CAMetalDrawable>>([[layer_ nextDrawable] retain]);
   if (!next_drawable) {
     FML_LOG(ERROR) << "Could not acquire next metal drawable.";
@@ -77,11 +82,14 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& size)
   GrMtlTextureInfo metal_texture_info;
   metal_texture_info.fTexture = metal_texture.get();
 
-  GrBackendRenderTarget metal_render_target(bounds.width,       // width
-                                            bounds.height,      // height
-                                            1,                  // sample count
-                                            metal_texture_info  // metal texture info
+  GrBackendRenderTarget metal_render_target(bounds.width * scale,   // width
+                                            bounds.height * scale,  // height
+                                            1,                      // sample count
+                                            metal_texture_info      // metal texture info
   );
+
+  auto command_buffer =
+      fml::scoped_nsprotocol<id<MTLCommandBuffer>>([[command_queue_.get() commandBuffer] retain]);
 
   SkSurface::RenderTargetReleaseProc release_proc = [](SkSurface::ReleaseContext context) {
     [reinterpret_cast<id>(context) release];
@@ -91,8 +99,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& size)
       SkSurface::MakeFromBackendRenderTarget(context_.get(),            // context
                                              metal_render_target,       // backend render target
                                              kTopLeft_GrSurfaceOrigin,  // origin
-                                             kRGBA_8888_SkColorType,    // color type
-                                             SkColorSpace::MakeSRGB(),  // colorspace
+                                             kBGRA_8888_SkColorType,    // color type
+                                             nullptr,                   // colorspace
                                              nullptr,                   // surface properties
                                              release_proc,              // release proc
                                              metal_texture.release()    // release context (texture)
@@ -103,7 +111,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& size)
     return nullptr;
   }
 
-  const auto submit_callback = [](const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
+  auto submit_callback = [drawable = next_drawable, command_buffer](
+                             const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
+    canvas->flush();
+    [command_buffer.get() presentDrawable:drawable.get()];
+    [command_buffer.get() commit];
     return true;
   };
 
