@@ -1496,7 +1496,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
 
   /// The scales of the placeholders in the paragraph.
   List<double> get placeholderScales => _placeholderScales;
-  List<double> _placeholderScales = List<double>();
+  List<double> _placeholderScales = <double>[];
 
   /// Applies the given style to the added text until [pop] is called.
   ///
