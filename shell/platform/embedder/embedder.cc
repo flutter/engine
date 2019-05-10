@@ -719,31 +719,23 @@ inline int64_t ToPointerDataButtons(int64_t buttons,
   switch (change) {
     case flutter::PointerData::Change::kDown:
     case flutter::PointerData::Change::kMove:
-    case flutter::PointerData::Change::kCancel:
-      // These kinds of change should always have a non-zero `buttons`.
-      // In case of violation, it synthesizes a primary button and log a warning
-      // to inform the embedder to send the correct buttons.
+      // These kinds of change must have a non-zero `buttons`, otherwise gesture
+      // recognizers will ignore these events. To avoid breaking legacy
+      // embedders, it synthesizes a primary button when seeing `button = 0` and
+      // log a warning to inform them to update.
       if (buttons == 0) {
         // TODO(tongmu): Log a warning to inform the embedder to send the
         // correct buttons. See
         // https://github.com/flutter/flutter/issues/32052#issuecomment-489278965
-        return flutter::PointerButton::kPrimary;
+        return flutter::kPrimaryMouseButton;
       }
       return buttons;
 
+    case flutter::PointerData::Change::kCancel:
     case flutter::PointerData::Change::kAdd:
     case flutter::PointerData::Change::kRemove:
     case flutter::PointerData::Change::kHover:
     case flutter::PointerData::Change::kUp:
-      // These kinds of change should always have a zero `buttons`. However we
-      // are not synthesizing a 0 until a solid reason is found.
-      // In case of violation, it log a warning to inform the embedder to send
-      // the correct buttons.
-      if (buttons != 0) {
-        // TODO(tongmu): Log a warning to inform the embedder to send the
-        // correct buttons. See
-        // https://github.com/flutter/flutter/issues/32052#issuecomment-489278965
-      }
       return buttons;
   }
 }
