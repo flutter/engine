@@ -36,7 +36,10 @@ class TaskRunners {
 
   bool IsValid() const;
 
+  bool SetPlatformView(bool platform_view_in_scene) const;
+
  private:
+  static bool platform_view_in_scene_;
   const std::string label_;
   fml::RefPtr<fml::TaskRunner> platform_;
   fml::RefPtr<fml::TaskRunner> gpu_;

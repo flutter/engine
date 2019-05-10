@@ -122,6 +122,7 @@ class Engine final : public RuntimeDelegate {
 
  private:
   Engine::Delegate& delegate_;
+  const TaskRunners task_runners_;
   const Settings settings_;
   std::unique_ptr<Animator> animator_;
   std::unique_ptr<RuntimeController> runtime_controller_;

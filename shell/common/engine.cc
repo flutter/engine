@@ -44,6 +44,7 @@ Engine::Engine(Delegate& delegate,
                fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
                fml::WeakPtr<IOManager> io_manager)
     : delegate_(delegate),
+      task_runners_(task_runners),
       settings_(std::move(settings)),
       animator_(std::move(animator)),
       activity_running_(false),
@@ -410,6 +411,7 @@ void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
   if (frame_size.isEmpty())
     return;
 
+  task_runners_.SetPlatformView(true);
   layer_tree->set_frame_size(frame_size);
   animator_->Render(std::move(layer_tree));
 }

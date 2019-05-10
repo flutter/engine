@@ -352,7 +352,9 @@
         return std::make_unique<flutter::Rasterizer>(shell.GetTaskRunners());
       };
 
-  if (flutter::IsIosEmbeddedViewsPreviewEnabled()) {
+  bool platformViewsEnabled = flutter::IsIosEmbeddedViewsPreviewEnabled();
+  platformViewsEnabled = false;
+  if (platformViewsEnabled) {
     // Embedded views requires the gpu and the platform views to be the same.
     // The plan is to eventually dynamically merge the threads when there's a
     // platform view in the layer tree.

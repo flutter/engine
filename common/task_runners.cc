@@ -8,6 +8,8 @@
 
 namespace flutter {
 
+bool TaskRunners::platform_view_in_scene_ = false;
+
 TaskRunners::TaskRunners(std::string label,
                          fml::RefPtr<fml::TaskRunner> platform,
                          fml::RefPtr<fml::TaskRunner> gpu,
@@ -40,11 +42,21 @@ fml::RefPtr<fml::TaskRunner> TaskRunners::GetIOTaskRunner() const {
 }
 
 fml::RefPtr<fml::TaskRunner> TaskRunners::GetGPUTaskRunner() const {
-  return gpu_;
+  if (TaskRunners::platform_view_in_scene_) {
+    return platform_;
+  } else {
+    return gpu_;
+  }
 }
 
 bool TaskRunners::IsValid() const {
   return platform_ && gpu_ && ui_ && io_;
+}
+
+bool TaskRunners::SetPlatformView(bool platform_view_in_scene) const {
+  bool old_value = TaskRunners::platform_view_in_scene_;
+  TaskRunners::platform_view_in_scene_ = platform_view_in_scene;
+  return old_value;
 }
 
 }  // namespace flutter
