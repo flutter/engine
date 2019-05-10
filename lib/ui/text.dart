@@ -1283,7 +1283,7 @@ enum BoxWidthStyle {
   /// Adds up to two additional boxes as needed at the beginning and/or end
   /// of each line so that the widths of the boxes in line are the same width
   /// as the widest line in the paragraph.
-  /// 
+  ///
   /// The additional boxes on each line are only added when the relevant box
   /// at the relevant edge of that line does not span the maximum width of
   /// the paragraph.
