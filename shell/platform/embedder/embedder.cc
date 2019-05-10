@@ -727,7 +727,7 @@ inline int64_t ToPointerDataButtons(int64_t buttons,
         // TODO(tongmu): Log a warning to inform the embedder to send the
         // correct buttons. See
         // https://github.com/flutter/flutter/issues/32052#issuecomment-489278965
-        return flutter::kPrimaryMouseButton;
+        return flutter::kPointerButtonMousePrimary;
       }
       return buttons;
 
@@ -738,6 +738,7 @@ inline int64_t ToPointerDataButtons(int64_t buttons,
     case flutter::PointerData::Change::kUp:
       return buttons;
   }
+  return buttons;
 }
 
 FlutterEngineResult FlutterEngineSendPointerEvent(
