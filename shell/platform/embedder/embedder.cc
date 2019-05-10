@@ -722,9 +722,9 @@ inline int64_t ToPointerDataButtons(int64_t buttons,
       // These kinds of change must have a non-zero `buttons`, otherwise gesture
       // recognizers will ignore these events. To avoid breaking legacy
       // embedders, it synthesizes a primary button when seeing `button = 0` and
-      // log a warning to inform them to update.
+      // logs a warning to inform them to update.
       if (buttons == 0) {
-        // TODO(tongmu): Log a warning to inform the embedder to send the
+        // TODO: Log a warning to inform the embedder to send the
         // correct buttons. See
         // https://github.com/flutter/flutter/issues/32052#issuecomment-489278965
         return flutter::kPointerButtonMousePrimary;
@@ -767,7 +767,7 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
         SAFE_ACCESS(current, signal_kind, kFlutterPointerSignalKindNone));
     pointer_data.scroll_delta_x = SAFE_ACCESS(current, scroll_delta_x, 0.0);
     pointer_data.scroll_delta_y = SAFE_ACCESS(current, scroll_delta_y, 0.0);
-    // TODO(tong): Change 0 to a SAFE_ACCESS to current.buttons once this
+    // TODO: Change 0 to a SAFE_ACCESS to current.buttons once this
     // field is added. See
     // https://github.com/flutter/flutter/issues/32052#issuecomment-489278965
     pointer_data.buttons = ToPointerDataButtons(0, pointer_data.change);
