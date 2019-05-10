@@ -1658,8 +1658,9 @@ class ParagraphBuilder {
   /// in the text buffer. For each placeholder, one object replacement character is
   /// added on to the text buffer.
   void addPlaceholder(double width, double height, PlaceholderAlignment alignment, {
+    double scale,
     double baselineOffset,
-    TextBaseline baseline
+    TextBaseline baseline,
   }) {
     // TODO(garyq): Implement stub_ui version of this.
     throw UnimplementedError();

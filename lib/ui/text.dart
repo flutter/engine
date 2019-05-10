@@ -1605,7 +1605,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   void addPlaceholder(double width, double height, PlaceholderAlignment alignment, {
     double scale,
     double baselineOffset,
-    TextBaseline baseline
+    TextBaseline baseline,
   }) {
     // Require a baseline to be specified if using a baseline-based alignment.
     assert((alignment == PlaceholderAlignment.aboveBaseline ||
