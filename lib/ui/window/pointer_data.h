@@ -10,19 +10,18 @@
 namespace flutter {
 
 // Must match the button constants in events.dart.
-enum PointerMouseButton : int64_t {
+enum PointerButton : int64_t {
   kPrimaryMouseButton = 1 << 0,
   kSecondaryMouseButton = 1 << 1,
-  kBackMouseButton = 1 << 0,
-  kForwardMouseButton = 1 << 1,
-};
-enum PointerTouchButton : int64_t {
+  kMiddleMouseButton = 1 << 2,
+  kBackMouseButton = 1 << 3,
+  kForwardMouseButton = 1 << 4,
+
   kTouchContact = 1 << 0,
-};
-enum PointerStylusButton : int64_t {
+
   kStylusContact = 1 << 0,
-  kPrimaryStylusButton = 1 << 0,
-  kSecondaryStylusButton = 1 << 0,
+  kPrimaryStylusButton = 1 << 1,
+  kSecondaryStylusButton = 1 << 2,
 };
 
 // This structure is unpacked by hooks.dart.
