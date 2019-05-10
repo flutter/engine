@@ -1053,8 +1053,9 @@ enum BoxHeightStyle {
   tight,
 
   /// The height of the boxes will be the maximum height of all runs in the
-  /// line. All boxes in the same line will be the same height. This does not
-  /// guarantee that the boxes will cover the entire vertical height of the line
+  /// line. All boxes in the same line will be the same height.
+  ///
+  /// This does not guarantee that the boxes will cover the entire vertical height of the line
   /// when there is additional line spacing.
   ///
   /// See [RectHeightStyle.includeLineSpacingTop], [RectHeightStyle.includeLineSpacingMiddle],
@@ -1100,27 +1101,36 @@ enum BoxWidthStyle {
 
   /// Adds up to two additional boxes as needed at the beginning and/or end
   /// of each line so that the widths of the boxes in line are the same width
-  /// as the widest line in the paragraph. The additional boxes on each line
-  /// are only added when the relevant box at the relevant edge of that line
-  /// does not span the maximum width of the paragraph.
+  /// as the widest line in the paragraph.
+  /// 
+  /// The additional boxes on each line are only added when the relevant box
+  /// at the relevant edge of that line does not span the maximum width of
+  /// the paragraph.
   max,
 }
 
 /// Where to vertically align the placeholder relative to the surrounding text.
+///
 /// Used by [ParagraphBuilder.addPlaceholder].
 enum PlaceholderAlignment {
-  /// Match the baseline of the placeholder with the baseline. The [TextBaseline] to
-  /// use must be non-null be specified when using this alignment mode.
+  /// Match the baseline of the placeholder with the baseline.
+  ///
+  /// The [TextBaseline] to use must be non-null be specified when using this
+  /// alignment mode.
   baseline,
 
   /// Align the bottom edge of the placeholder with the baseline such that the
-  /// placeholder sits on top of the baseline. The [TextBaseline] to
-  /// use must be non-null be specified when using this alignment mode.
+  /// placeholder sits on top of the baseline.
+  ///
+  /// The [TextBaseline] to use must be non-null be specified when using this
+  /// alignment mode.
   aboveBaseline,
 
   /// Align the top edge of the placeholder with the baseline specified in
-  /// such that the placeholder hangs below the baseline. The [TextBaseline]
-  /// to use must be non-null be specified when using this alignment mode.
+  /// such that the placeholder hangs below the baseline.
+  ///
+  /// The [TextBaseline] to use must be non-null be specified when using this
+  /// alignment mode.
   belowBaseline,
 
   /// Align the top edge of the placeholder with the top edge of the font.
@@ -1128,14 +1138,16 @@ enum PlaceholderAlignment {
   /// the top and extend through the bottom of the line.
   top,
 
-   /// Align the bottom edge of the placeholder with the top edge of the font.
-  /// When the placeholder is very tall, the extra space will rise from
-  /// the bottom and extend through the top of the line.
+  /// Align the bottom edge of the placeholder with the top edge of the font.
+  ///
+  /// When the placeholder is very tall, the extra space will rise from the
+  /// bottom and extend through the top of the line.
   bottom,
 
-  /// Align the middle of the placeholder with the middle of the text. When the
-  /// placeholder is very tall, the extra space will grow equally from
-  /// the top and bottom of the line.
+  /// Align the middle of the placeholder with the middle of the text.
+  ///
+  /// When the placeholder is very tall, the extra space will grow equally
+  /// from the top and bottom of the line.
   middle,
 }
 
@@ -1586,7 +1598,7 @@ class ParagraphBuilder {
 
    /// The scales of the placeholders in the paragraph.
   List<double> get placeholderScales => _placeholderScales;
-  List<double> _placeholderScales = List<double>();
+  List<double> _placeholderScales = <double>[];
 
   /// Applies the given style to the added text until [pop] is called.
   ///
@@ -1620,7 +1632,7 @@ class ParagraphBuilder {
   /// The paragraph will contain a rectangular space with no text of the dimensions
   /// specified.
   ///
-  /// The [width] and [height] parameters specify the size of the placeholder rectangle.
+  /// The `width` and `height` parameters specify the size of the placeholder rectangle.
   ///
   /// The [alignment] parameter specifies how the placeholder rectangle will be vertically
   /// aligned with the surrounding text. When [PlaceholderAlignment.baseline],
@@ -1631,6 +1643,7 @@ class ParagraphBuilder {
   /// is the [height].
   ///
   /// Examples:
+  ///
   /// * For a 30x50 placeholder with the bottom edge aligned with the bottom of the text, use:
   /// `addPlaceholder(30, 50, PlaceholderAlignment.bottom);`
   /// * For a 30x50 placeholder that is vertically centered around the text, use:
@@ -1643,7 +1656,7 @@ class ParagraphBuilder {
   /// Lines are permitted to break around each placeholder.
   ///
   /// Decorations will be drawn based on the font defined in the most recently
-  /// pushed TextStyle. The decorations are drawn as if unicode text were present
+  /// pushed [TextStyle]. The decorations are drawn as if unicode text were present
   /// in the placeholder space, and will draw the same regardless of the height and
   /// alignment of the placeholder. To hide or manually adjust decorations to fit,
   /// a text style with the desired decoration behavior should be pushed before

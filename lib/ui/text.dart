@@ -1229,80 +1229,89 @@ class ParagraphConstraints {
 /// Defines various ways to vertically bound the boxes returned by
 /// [Paragraph.getBoxesForRange].
 enum BoxHeightStyle {
-    /// Provide tight bounding boxes that fit heights per run. This style may result
-    /// in uneven bounding boxes that do not nicely connect with adjacent boxes.
-    tight,
+  /// Provide tight bounding boxes that fit heights per run. This style may result
+  /// in uneven bounding boxes that do not nicely connect with adjacent boxes.
+  tight,
 
-    /// The height of the boxes will be the maximum height of all runs in the
-    /// line. All boxes in the same line will be the same height. This does not
-    /// guarantee that the boxes will cover the entire vertical height of the line
-    /// when there is additional line spacing.
-    ///
-    /// See [RectHeightStyle.includeLineSpacingTop], [RectHeightStyle.includeLineSpacingMiddle],
-    /// and [RectHeightStyle.includeLineSpacingBottom] for styles that will cover
-    /// the entire line.
-    max,
+  /// The height of the boxes will be the maximum height of all runs in the
+  /// line. All boxes in the same line will be the same height.
+  ///
+  /// This does not guarantee that the boxes will cover the entire vertical height of the line
+  /// when there is additional line spacing.
+  ///
+  /// See [RectHeightStyle.includeLineSpacingTop], [RectHeightStyle.includeLineSpacingMiddle],
+  /// and [RectHeightStyle.includeLineSpacingBottom] for styles that will cover
+  /// the entire line.
+  max,
 
-    /// Extends the top and bottom edge of the bounds to fully cover any line
-    /// spacing.
-    ///
-    /// The top and bottom of each box will cover half of the
-    /// space above and half of the space below the line.
-    ///
-    /// {@template flutter.dart:ui.boxHeightStyle.includeLineSpacing}
-    /// The top edge of each line should be the same as the bottom edge
-    /// of the line above. There should be no gaps in vertical coverage given any
-    /// amount of line spacing. Line spacing is not included above the first line
-    /// and below the last line due to no additional space present there.
-    /// {@endtemplate}
-    includeLineSpacingMiddle,
+  /// Extends the top and bottom edge of the bounds to fully cover any line
+  /// spacing.
+  ///
+  /// The top and bottom of each box will cover half of the
+  /// space above and half of the space below the line.
+  ///
+  /// {@template flutter.dart:ui.boxHeightStyle.includeLineSpacing}
+  /// The top edge of each line should be the same as the bottom edge
+  /// of the line above. There should be no gaps in vertical coverage given any
+  /// amount of line spacing. Line spacing is not included above the first line
+  /// and below the last line due to no additional space present there.
+  /// {@endtemplate}
+  includeLineSpacingMiddle,
 
-    /// Extends the top edge of the bounds to fully cover any line spacing.
-    ///
-    /// The line spacing will be added to the top of the box.
-    ///
-    /// {@macro flutter.dart:ui.rectHeightStyle.includeLineSpacing}
-    includeLineSpacingTop,
+  /// Extends the top edge of the bounds to fully cover any line spacing.
+  ///
+  /// The line spacing will be added to the top of the box.
+  ///
+  /// {@macro flutter.dart:ui.rectHeightStyle.includeLineSpacing}
+  includeLineSpacingTop,
 
-    /// Extends the bottom edge of the bounds to fully cover any line spacing.
-    ///
-    /// The line spacing will be added to the bottom of the box.
-    ///
-    /// {@macro flutter.dart:ui.boxHeightStyle.includeLineSpacing}
-    includeLineSpacingBottom,
+  /// Extends the bottom edge of the bounds to fully cover any line spacing.
+  ///
+  /// The line spacing will be added to the bottom of the box.
+  ///
+  /// {@macro flutter.dart:ui.boxHeightStyle.includeLineSpacing}
+  includeLineSpacingBottom,
 }
 
 /// Defines various ways to horizontally bound the boxes returned by
 /// [Paragraph.getBoxesForRange].
 enum BoxWidthStyle {
-    // Provide tight bounding boxes that fit widths to the runs of each line
-    // independently.
-    tight,
+  // Provide tight bounding boxes that fit widths to the runs of each line
+  // independently.
+  tight,
 
-    /// Adds up to two additional boxes as needed at the beginning and/or end
-    /// of each line so that the widths of the boxes in line are the same width
-    /// as the widest line in the paragraph. The additional boxes on each line
-    /// are only added when the relevant box at the relevant edge of that line
-    /// does not span the maximum width of the paragraph.
-    max,
+  /// Adds up to two additional boxes as needed at the beginning and/or end
+  /// of each line so that the widths of the boxes in line are the same width
+  /// as the widest line in the paragraph.
+  /// 
+  /// The additional boxes on each line are only added when the relevant box
+  /// at the relevant edge of that line does not span the maximum width of
+  /// the paragraph.
+  max,
 }
 
 /// Where to vertically align the placeholder relative to the surrounding text.
 ///
 /// Used by [ParagraphBuilder.addPlaceholder].
 enum PlaceholderAlignment {
-  /// Match the baseline of the placeholder with the baseline. The [TextBaseline] to
-  /// use must be non-null be specified when using this alignment mode.
+  /// Match the baseline of the placeholder with the baseline.
+  ///
+  /// The [TextBaseline] to use must be non-null be specified when using this
+  /// alignment mode.
   baseline,
 
   /// Align the bottom edge of the placeholder with the baseline such that the
-  /// placeholder sits on top of the baseline. The [TextBaseline] to
-  /// use must be non-null be specified when using this alignment mode.
+  /// placeholder sits on top of the baseline.
+  ///
+  /// The [TextBaseline] to use must be non-null be specified when using this
+  /// alignment mode.
   aboveBaseline,
 
   /// Align the top edge of the placeholder with the baseline specified in
-  /// such that the placeholder hangs below the baseline. The [TextBaseline]
-  /// to use must be non-null be specified when using this alignment mode.
+  /// such that the placeholder hangs below the baseline.
+  ///
+  /// The [TextBaseline] to use must be non-null be specified when using this
+  /// alignment mode.
   belowBaseline,
 
   /// Align the top edge of the placeholder with the top edge of the font.
@@ -1311,13 +1320,15 @@ enum PlaceholderAlignment {
   top,
 
   /// Align the bottom edge of the placeholder with the top edge of the font.
-  /// When the placeholder is very tall, the extra space will rise from
-  /// the bottom and extend through the top of the line.
+  ///
+  /// When the placeholder is very tall, the extra space will rise from the
+  /// bottom and extend through the top of the line.
   bottom,
 
-  /// Align the middle of the placeholder with the middle of the text. When the
-  /// placeholder is very tall, the extra space will grow equally from
-  /// the top and bottom of the line.
+  /// Align the middle of the placeholder with the middle of the text.
+  ///
+  /// When the placeholder is very tall, the extra space will grow equally
+  /// from the top and bottom of the line.
   middle,
 }
 
@@ -1565,7 +1576,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// The paragraph will contain a rectangular space with no text of the dimensions
   /// specified.
   ///
-  /// The [width] and [height] parameters specify the size of the placeholder rectangle.
+  /// The `width` and `height` parameters specify the size of the placeholder rectangle.
   ///
   /// The [alignment] parameter specifies how the placeholder rectangle will be vertically
   /// aligned with the surrounding text. When [PlaceholderAlignment.baseline],
@@ -1576,6 +1587,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// is the [height].
   ///
   /// Examples:
+  ///
   /// * For a 30x50 placeholder with the bottom edge aligned with the bottom of the text, use:
   /// `addPlaceholder(30, 50, PlaceholderAlignment.bottom);`
   /// * For a 30x50 placeholder that is vertically centered around the text, use:
@@ -1588,7 +1600,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// Lines are permitted to break around each placeholder.
   ///
   /// Decorations will be drawn based on the font defined in the most recently
-  /// pushed TextStyle. The decorations are drawn as if unicode text were present
+  /// pushed [TextStyle]. The decorations are drawn as if unicode text were present
   /// in the placeholder space, and will draw the same regardless of the height and
   /// alignment of the placeholder. To hide or manually adjust decorations to fit,
   /// a text style with the desired decoration behavior should be pushed before
