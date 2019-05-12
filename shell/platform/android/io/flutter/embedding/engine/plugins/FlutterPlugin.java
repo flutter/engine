@@ -14,31 +14,43 @@ import io.flutter.embedding.engine.FlutterEngine;
  * Interface to be implemented by all Flutter plugins.
  * <p>
  * A Flutter plugin allows Flutter developers to interact with a host platform, e.g., Android and
- * iOS, via Dart code. A Flutter plugin includes platform code, as well as Dart code. A plugin
- * author is responsible for setting up an appropriate {@link io.flutter.plugin.common.MethodChannel}
+ * iOS, via Dart code. It includes platform code, as well as Dart code. A plugin author is
+ * responsible for setting up an appropriate {@link io.flutter.plugin.common.MethodChannel}
  * to communicate between platform code and Dart code.
  * <p>
- * A Flutter plugin has a lifecycle. A Flutter plugin must be registered with a given instance of a
- * {@link FlutterEngine}. When a {@code FlutterPlugin} is registered with a {@link FlutterEngine},
- * the plugin's {@link #onAttachedToEngine(FlutterPluginBinding)} is invoked. When the
- * {@code FlutterPlugin} is detached from the {@link FlutterEngine}, the plugin's
- * {@link #onDetachedFromEngine(FlutterPluginBinding)} is invoked.
+ * A Flutter plugin has a lifecycle. First, a developer must add a {@code FlutterPlugin} to an
+ * instance of {@link FlutterEngine}. To do this, obtain a {@link PluginRegistry} with
+ * {@link FlutterEngine#getPlugins()}, then call {@link PluginRegistry#add(FlutterPlugin)},
+ * passing the instance of the Flutter plugin. During the call to
+ * {@link PluginRegistry#add(FlutterPlugin)}, the {@link FlutterEngine} will invoke
+ * {@link #onAttachedToEngine(FlutterPluginBinding)} on the given {@code FlutterPlugin}. If the
+ * {@code FlutterPlugin} is removed from the {@link FlutterEngine} via
+ * {@link PluginRegistry#remove(Class)}, or if the {@link FlutterEngine} is destroyed, the
+ * {@link FlutterEngine} will invoke {@link FlutterPlugin#onDetachedFromEngine(FlutterPluginBinding)}
+ * on the given {@code FlutterPlugin}.
  * <p>
- * A {@code FlutterPlugin} is permitted to interact with its {@link FlutterPluginBinding} between
- * invocations of {@link #onAttachedToEngine(FlutterPluginBinding)} and
- * {@link #onDetachedFromEngine(FlutterPluginBinding)}. However, the {@link FlutterPluginBinding}
- * should not be cached or accessed after the completion of
+ * Once a {@code FlutterPlugin} is attached to a {@link FlutterEngine}, the plugin's code is
+ * permitted to access and invoke methods on resources within the {@link FlutterPluginBinding} that
+ * the {@link FlutterEngine} gave to the {@code FlutterPlugin} in
+ * {@link #onAttachedToEngine(FlutterPluginBinding)}. This includes, for example, the application
+ * {@link Context} for the running app.
+ * <p>
+ * The {@link FlutterPluginBinding} provided in {@link #onAttachedToEngine(FlutterPluginBinding)}
+ * is no longer valid after the execution of {@link #onDetachedFromEngine(FlutterPluginBinding)}.
+ * Do not access any properties of the {@link FlutterPluginBinding} after the completion of
  * {@link #onDetachedFromEngine(FlutterPluginBinding)}.
  * <p>
- * The Android side of a Flutter plugin can be thought of as applying itself to a {@link FlutterEngine},
- * which can be retrieved from a {@link FlutterPluginBinding} in
- * {@link #onAttachedToEngine(FlutterPluginBinding)}. To register a
- * {@link io.flutter.plugin.common.MethodChannel}, use {@link FlutterEngine}'s
- * {@link io.flutter.embedding.engine.dart.DartExecutor}.
+ * The Android side of a Flutter plugin can be thought of as applying itself to a {@link FlutterEngine}.
+ * Use {@link FlutterPluginBinding#getFlutterEngine()} to retrieve the {@link FlutterEngine} that
+ * the {@code FlutterPlugin} is attached to. To register a
+ * {@link io.flutter.plugin.common.MethodChannel}, obtain the {@link FlutterEngine}'s
+ * {@link io.flutter.embedding.engine.dart.DartExecutor} with {@link FlutterEngine#getDartExecutor()},
+ * then pass the {@link io.flutter.embedding.engine.dart.DartExecutor} to the
+ * {@link io.flutter.plugin.common.MethodChannel} as a {@link io.flutter.plugin.common.BinaryMessenger}.
  * <p>
  * An Android Flutter plugin may require access to app resources or other artifacts that can only
- * be retrieved through a {@link Context}. Therefore, the application's {@link Context} is made
- * available via {@link FlutterPluginBinding#getApplicationContext()}.
+ * be retrieved through a {@link Context}. Developers can access the application context via
+ * {@link FlutterPluginBinding#getApplicationContext()}.
  * <p>
  * TODO(mattcarroll): explain ActivityAware when it's added to the new plugin API surface.
  */

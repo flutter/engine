@@ -587,12 +587,6 @@ public class FlutterFragment extends Fragment {
    * @param grantResults permission grants or denials
    */
   public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    // TODO(mattcarroll): bring back when ActivityAware is implemented
-//    if (flutterEngine != null) {
-//      flutterEngine.getPlugins().onRequestPermissionsResult(requestCode, permissions, grantResults);
-//    } else {
-//      Log.w(TAG, "onRequestPermissionResult() invoked before FlutterFragment was attached to an Activity.");
-//    }
   }
 
   /**
@@ -604,12 +598,6 @@ public class FlutterFragment extends Fragment {
    * @param intent new Intent
    */
   public void onNewIntent(@NonNull Intent intent) {
-    // TODO(mattcarroll): bring back when ActivityAware is implemented
-//    if (flutterEngine != null) {
-//      flutterEngine.getPlugins().onNewIntent(intent);
-//    } else {
-//      Log.w(TAG, "onNewIntent() invoked before FlutterFragment was attached to an Activity.");
-//    }
   }
 
   /**
@@ -621,12 +609,6 @@ public class FlutterFragment extends Fragment {
    */
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    // TODO(mattcarroll): bring back when ActivityAware is implemented
-//    if (flutterEngine != null) {
-//      flutterEngine.getPlugins().onActivityResult(requestCode, resultCode, data);
-//    } else {
-//      Log.w(TAG, "onActivityResult() invoked before FlutterFragment was attached to an Activity.");
-//    }
   }
 
   /**
@@ -636,12 +618,6 @@ public class FlutterFragment extends Fragment {
    * See {@link android.app.Activity#onUserLeaveHint()}
    */
   public void onUserLeaveHint() {
-    // TODO(mattcarroll): bring back when ActivityAware is implemented
-//    if (flutterEngine != null) {
-//      flutterEngine.getPlugins().onUserLeaveHint();
-//    } else {
-//      Log.w(TAG, "onUserLeaveHint() invoked before FlutterFragment was attached to an Activity.");
-//    }
   }
 
   /**

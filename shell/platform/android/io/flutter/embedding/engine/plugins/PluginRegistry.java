@@ -5,6 +5,7 @@
 package io.flutter.embedding.engine.plugins;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Set;
 
@@ -35,6 +36,7 @@ public interface PluginRegistry {
    * <p>
    * If no matching plugin is found, {@code null} is returned.
    */
+  @Nullable
   FlutterPlugin get(@NonNull Class<? extends FlutterPlugin> pluginClass);
 
   /**
