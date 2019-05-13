@@ -5,8 +5,11 @@
 package io.flutter.plugin.editing;
 
 import android.content.Context;
+import android.text.DynamicLayout;
 import android.text.Editable;
+import android.text.Layout;
 import android.text.Selection;
+import android.text.TextPaint;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
@@ -24,6 +27,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
     private final Editable mEditable;
     private int mBatchCount;
     private InputMethodManager mImm;
+    private final Layout mLayout;
 
     private static final MethodChannel.Result logger =
         new ErrorLogResult("FlutterTextInput");
@@ -40,6 +44,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
         this.textInputChannel = textInputChannel;
         mEditable = editable;
         mBatchCount = 0;
+        mLayout = DynamicLayout.Builder.obtain(mEditable, new TextPaint(), Integer.MAX_VALUE).build();
         mImm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
     }
 
@@ -144,7 +149,8 @@ class InputConnectionAdaptor extends BaseInputConnection {
                     return true;
                 } else if (selStart > 0) {
                     // Delete to the left of the cursor.
-                    int newSel = Math.max(selStart - 1, 0);
+                    Selection.extendLeft(mEditable, mLayout);
+                    int newSel = Selection.getSelectionEnd(mEditable);
                     Selection.setSelection(mEditable, newSel);
                     mEditable.delete(newSel, selStart);
                     updateEditingState();
