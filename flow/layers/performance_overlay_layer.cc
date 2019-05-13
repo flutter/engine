@@ -84,11 +84,11 @@ void PerformanceOverlayLayer::Paint(PaintContext& context) const {
   SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
 
   VisualizeStopWatch(
-      *context.leaf_nodes_canvas, context.frame_time, x, y, width,
+      *context.leaf_nodes_canvas, context.raster_time, x, y, width,
       height - padding, options_ & kVisualizeRasterizerStatistics,
       options_ & kDisplayRasterizerStatistics, "GPU", font_path_);
 
-  VisualizeStopWatch(*context.leaf_nodes_canvas, context.engine_time, x,
+  VisualizeStopWatch(*context.leaf_nodes_canvas, context.ui_time, x,
                      y + height, width, height - padding,
                      options_ & kVisualizeEngineStatistics,
                      options_ & kDisplayEngineStatistics, "UI", font_path_);
