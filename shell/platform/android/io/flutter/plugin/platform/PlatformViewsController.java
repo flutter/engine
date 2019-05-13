@@ -37,7 +37,7 @@ import java.util.List;
  * Each {@link io.flutter.app.FlutterPluginRegistry} has a single platform views controller.
  * A platform views controller can be attached to at most one Flutter view.
  */
-public class PlatformViewsController {
+public class PlatformViewsController implements PlatformViewsAccessibilityDelegate {
     private static final String TAG = "PlatformViewsController";
 
     // API level 20 is required for VirtualDisplay#setSurface which we use when resizing a platform view.
@@ -51,7 +51,7 @@ public class PlatformViewsController {
     // The texture registry maintaining the textures into which the embedded views will be rendered.
     private TextureRegistry textureRegistry;
 
-    // The system channel used to communicate with Flutter about platform views.
+    // The system channel used to communicate with the framework about platform views.
     private PlatformViewsChannel platformViewsChannel;
 
     // The accessibility bridge to which accessibility events form the platform views will be dispatched.
@@ -61,31 +61,31 @@ public class PlatformViewsController {
 
     private final PlatformViewsChannel.PlatformViewsHandler channelHandler = new PlatformViewsChannel.PlatformViewsHandler() {
         @Override
-        public long createPlatformView(@NonNull PlatformViewsChannel.PlatformViewCreationRequest request) throws PlatformViewsChannel.InvalidDirectionException, PlatformViewsChannel.DuplicatePlatformViewException, PlatformViewsChannel.UnregisteredPlatformViewTypeException, PlatformViewsChannel.FailedToCreateVirtualDisplayException {
+        public long createPlatformView(@NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
             ensureValidAndroidVersion();
             return PlatformViewsController.this.createPlatformView(request);
         }
 
         @Override
-        public void disposePlatformView(int viewId) throws PlatformViewsChannel.NoSuchPlatformViewException {
+        public void disposePlatformView(int viewId) {
             ensureValidAndroidVersion();
             PlatformViewsController.this.disposePlatformView(viewId);
         }
 
         @Override
-        public void resizePlatformView(@NonNull PlatformViewsChannel.PlatformViewResizeRequest request, @NonNull Runnable onComplete) throws PlatformViewsChannel.NoSuchPlatformViewException {
+        public void resizePlatformView(@NonNull PlatformViewsChannel.PlatformViewResizeRequest request, @NonNull Runnable onComplete) {
             ensureValidAndroidVersion();
             PlatformViewsController.this.resizePlatformView(request, onComplete);
         }
 
         @Override
-        public void onTouch(@NonNull PlatformViewsChannel.PlatformViewTouch touch) throws PlatformViewsChannel.NoSuchPlatformViewException {
+        public void onTouch(@NonNull PlatformViewsChannel.PlatformViewTouch touch) {
             ensureValidAndroidVersion();
             PlatformViewsController.this.onTouch(touch);
         }
 
         @Override
-        public void setDirection(int viewId, int direction) throws PlatformViewsChannel.InvalidDirectionException, PlatformViewsChannel.NoSuchPlatformViewException {
+        public void setDirection(int viewId, int direction) {
             ensureValidAndroidVersion();
             PlatformViewsController.this.setDirection(viewId, direction);
         }
@@ -94,7 +94,8 @@ public class PlatformViewsController {
             if (Build.VERSION.SDK_INT < MINIMAL_SDK) {
                 Log.e(TAG, "Trying to use platform views with API " + Build.VERSION.SDK_INT
                     + ", required API level is: " + MINIMAL_SDK);
-                throw new PlatformViewsChannel.InvalidPlatformVersionException();
+                throw new IllegalStateException("An attempt was made to use platform views on a"
+                    + " version of Android that platform views does not support.");
             }
         }
     };
@@ -164,19 +165,31 @@ public class PlatformViewsController {
         flushAllViews();
     }
 
+    @Override
+    public View getPlatformViewById(Integer id) {
+        VirtualDisplayController controller = vdControllers.get(id);
+        if (controller == null) {
+            return null;
+        }
+        return controller.getView();
+    }
+
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     private long createPlatformView(PlatformViewsChannel.PlatformViewCreationRequest request) {
         if (!validateDirection(request.direction)) {
-            throw new PlatformViewsChannel.InvalidDirectionException();
+            throw new IllegalStateException("Trying to create a view with unknown direction value: "
+                + request.direction + "(view id: " + request.viewId + ")");
         }
 
         if (vdControllers.containsKey(request.viewId)) {
-            throw new PlatformViewsChannel.DuplicatePlatformViewException();
+            throw new IllegalStateException("Trying to create an already created platform view, view id: "
+                + request.viewId);
         }
 
         PlatformViewFactory viewFactory = registry.getFactory(request.viewType);
         if (viewFactory == null) {
-            throw new PlatformViewsChannel.NoSuchPlatformViewException();
+            throw new IllegalStateException("Trying to create a platform view of unregistered type: "
+                + request.viewType);
         }
 
         Object createParams = null;
@@ -201,7 +214,8 @@ public class PlatformViewsController {
         );
 
         if (vdController == null) {
-            throw new PlatformViewsChannel.FailedToCreateVirtualDisplayException();
+            throw new IllegalStateException("Failed creating virtual display for a "
+                + request.viewType + " with id: " + request.viewId);
         }
 
         vdControllers.put(request.viewId, vdController);
@@ -215,7 +229,8 @@ public class PlatformViewsController {
     private void disposePlatformView(int viewId) {
         VirtualDisplayController vdController = vdControllers.get(viewId);
         if (vdController == null) {
-            throw new PlatformViewsChannel.NoSuchPlatformViewException();
+            throw new IllegalStateException("Trying to dispose a platform view with unknown id: "
+                + viewId);
         }
 
         vdController.dispose();
@@ -228,7 +243,8 @@ public class PlatformViewsController {
     ) {
         VirtualDisplayController vdController = vdControllers.get(request.viewId);
         if (vdController == null) {
-            throw new PlatformViewsChannel.NoSuchPlatformViewException();
+            throw new IllegalStateException("Trying to resize a platform view with unknown id: "
+                + request.viewId);
         }
 
         int physicalWidth = toPhysicalPixels(request.newLogicalWidth);
@@ -236,8 +252,8 @@ public class PlatformViewsController {
         validateVirtualDisplayDimensions(physicalWidth, physicalHeight);
 
         vdController.resize(
-            toPhysicalPixels(request.newLogicalWidth),
-            toPhysicalPixels(request.newLogicalHeight),
+            physicalWidth,
+            physicalHeight,
             onComplete
         );
     }
@@ -253,7 +269,8 @@ public class PlatformViewsController {
 
         View view = vdControllers.get(touch.viewId).getView();
         if (view == null) {
-            throw new PlatformViewsChannel.NoSuchPlatformViewException();
+            throw new IllegalStateException("Sending touch to an unknown view with id: "
+                + touch.viewId);
         }
 
         MotionEvent event = MotionEvent.obtain(
@@ -279,12 +296,14 @@ public class PlatformViewsController {
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     private void setDirection(int viewId, int direction) {
         if (!validateDirection(direction)) {
-            throw new PlatformViewsChannel.InvalidDirectionException();
+            throw new IllegalStateException("Trying to set unknown direction value: " + direction
+                + "(view id: " + viewId + ")");
         }
 
         View view = vdControllers.get(viewId).getView();
         if (view == null) {
-            throw new PlatformViewsChannel.NoSuchPlatformViewException();
+            throw new IllegalStateException("Sending touch to an unknown view with id: "
+                + direction);
         }
 
         view.setLayoutDirection(direction);

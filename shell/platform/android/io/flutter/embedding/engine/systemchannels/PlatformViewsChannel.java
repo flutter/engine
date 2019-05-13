@@ -37,145 +37,139 @@ public class PlatformViewsChannel {
 
       switch (call.method) {
         case "create":
-          Map<String, Object> createArgs = call.arguments();
-          PlatformViewCreationRequest request = new PlatformViewCreationRequest(
-              (int) createArgs.get("id"),
-              (String) createArgs.get("viewType"),
-              (double) createArgs.get("width"),
-              (double) createArgs.get("height"),
-              (int) createArgs.get("direction"),
-              createArgs.containsKey("params")
-                  ? ByteBuffer.wrap((byte[]) createArgs.get("params"))
-                  : null
-          );
-
-          try {
-            long textureId = handler.createPlatformView(request);
-            result.success(textureId);
-          } catch (InvalidDirectionException exception) {
-            result.error(
-                "error",
-                "Trying to create a view with unknown direction value: " + request.direction + "(view id: " + request.viewId + ")",
-                null
-            );
-            return;
-          } catch (DuplicatePlatformViewException exception) {
-            result.error(
-                "error",
-                "Trying to create an already created platform view, view id: " + request.viewId,
-                null
-            );
-            return;
-          } catch (UnregisteredPlatformViewTypeException exception) {
-            result.error(
-                "error",
-                "Trying to create a platform view of unregistered type: " + request.viewType,
-                null
-            );
-          } catch (FailedToCreateVirtualDisplayException exception) {
-            result.error(
-                "error",
-                "Failed creating virtual display for a " + request.viewType + " with id: " + request.viewId,
-                null
-            );
-          }
+          create(call, result);
           break;
         case "dispose":
-          int viewId = call.arguments();
-          try {
-            handler.disposePlatformView(viewId);
-            result.success(null);
-          } catch (NoSuchPlatformViewException exception) {
-            result.error(
-                "error",
-                "Trying to dispose a platform view with unknown id: " + viewId,
-                null
-            );
-          }
+          dispose(call, result);
           break;
         case "resize":
-          Map<String, Object> resizeArgs = call.arguments();
-          PlatformViewResizeRequest resizeRequest = new PlatformViewResizeRequest(
-              (int) resizeArgs.get("id"),
-              (double) resizeArgs.get("width"),
-              (double) resizeArgs.get("height")
-          );
-          try {
-            handler.resizePlatformView(
-                resizeRequest,
-                new Runnable() {
-                  @Override
-                  public void run() {
-                    result.success(null);
-                  }
-                }
-              );
-          } catch (NoSuchPlatformViewException exception) {
-            result.error(
-                "error",
-                "Trying to resize a platform view with unknown id: " + resizeRequest.viewId,
-                null
-            );
-          }
+          resize(call, result);
           break;
         case "touch":
-          List<Object> args = call.arguments();
-          PlatformViewTouch touch = new PlatformViewTouch(
-              (int) args.get(0),
-              (Number) args.get(1),
-              (Number) args.get(2),
-              (int) args.get(3),
-              (int) args.get(4),
-              args.get(5),
-              args.get(6),
-              (int) args.get(7),
-              (int) args.get(8),
-              (float) (double) args.get(9),
-              (float) (double) args.get(10),
-              (int) args.get(11),
-              (int) args.get(12),
-              (int) args.get(13),
-              (int) args.get(14)
-          );
-
-          try {
-            handler.onTouch(touch);
-            result.success(null);
-          } catch (NoSuchPlatformViewException exception) {
-            result.error(
-                "error",
-                "Sending touch to an unknown view with id: " + touch.viewId,
-                null
-            );
-          }
-          return;
+          touch(call, result);
+          break;
         case "setDirection":
-          Map<String, Object> setDirectionArgs = call.arguments();
-          int newDirectionViewId = (int) setDirectionArgs.get("id");
-          int direction = (int) setDirectionArgs.get("direction");
-
-          try {
-            handler.setDirection(
-                newDirectionViewId,
-                direction
-            );
-            result.success(null);
-          } catch (InvalidDirectionException exception) {
-            result.error(
-                "error",
-                "Trying to set unknown direction value: " + direction + "(view id: " + newDirectionViewId + ")",
-                null
-            );
-          } catch (NoSuchPlatformViewException exception) {
-            result.error(
-                "error",
-                "Sending touch to an unknown view with id: " + newDirectionViewId,
-                null
-            );
-          }
+          setDirection(call, result);
           break;
       }
       result.notImplemented();
+    }
+
+    private void create(MethodCall call, MethodChannel.Result result) {
+      Map<String, Object> createArgs = call.arguments();
+      PlatformViewCreationRequest request = new PlatformViewCreationRequest(
+          (int) createArgs.get("id"),
+          (String) createArgs.get("viewType"),
+          (double) createArgs.get("width"),
+          (double) createArgs.get("height"),
+          (int) createArgs.get("direction"),
+          createArgs.containsKey("params")
+              ? ByteBuffer.wrap((byte[]) createArgs.get("params"))
+              : null
+      );
+
+      try {
+        long textureId = handler.createPlatformView(request);
+        result.success(textureId);
+      } catch (IllegalStateException exception) {
+        result.error(
+            "error",
+            exception.getMessage(),
+            null
+        );
+      }
+    }
+
+    private void dispose(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+      int viewId = call.arguments();
+      try {
+        handler.disposePlatformView(viewId);
+        result.success(null);
+      } catch (IllegalStateException exception) {
+        result.error(
+            "error",
+            exception.getMessage(),
+            null
+        );
+      }
+    }
+
+    private void resize(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+      Map<String, Object> resizeArgs = call.arguments();
+      PlatformViewResizeRequest resizeRequest = new PlatformViewResizeRequest(
+          (int) resizeArgs.get("id"),
+          (double) resizeArgs.get("width"),
+          (double) resizeArgs.get("height")
+      );
+      try {
+        handler.resizePlatformView(
+            resizeRequest,
+            new Runnable() {
+              @Override
+              public void run() {
+                result.success(null);
+              }
+            }
+        );
+      } catch (IllegalStateException exception) {
+        result.error(
+            "error",
+            exception.getMessage(),
+            null
+        );
+      }
+    }
+
+    private void touch(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+      List<Object> args = call.arguments();
+      PlatformViewTouch touch = new PlatformViewTouch(
+          (int) args.get(0),
+          (Number) args.get(1),
+          (Number) args.get(2),
+          (int) args.get(3),
+          (int) args.get(4),
+          args.get(5),
+          args.get(6),
+          (int) args.get(7),
+          (int) args.get(8),
+          (float) (double) args.get(9),
+          (float) (double) args.get(10),
+          (int) args.get(11),
+          (int) args.get(12),
+          (int) args.get(13),
+          (int) args.get(14)
+      );
+
+      try {
+        handler.onTouch(touch);
+        result.success(null);
+      } catch (IllegalStateException exception) {
+        result.error(
+            "error",
+            exception.getMessage(),
+            null
+        );
+      }
+    }
+
+    private void setDirection(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+      Map<String, Object> setDirectionArgs = call.arguments();
+      int newDirectionViewId = (int) setDirectionArgs.get("id");
+      int direction = (int) setDirectionArgs.get("direction");
+
+      try {
+        handler.setDirection(
+            newDirectionViewId,
+            direction
+        );
+        result.success(null);
+      } catch (IllegalStateException exception) {
+        result.error(
+            "error",
+            exception.getMessage(),
+            null
+        );
+      }
     }
   };
 
@@ -217,18 +211,13 @@ public class PlatformViewsChannel {
      * given Flutter execution context, and then return the new texture's ID.
      */
     // TODO(mattcarroll): Introduce an annotation for @TextureId
-    long createPlatformView(@NonNull PlatformViewCreationRequest request) throws
-        InvalidDirectionException,
-        DuplicatePlatformViewException,
-        UnregisteredPlatformViewTypeException,
-        FailedToCreateVirtualDisplayException;
+    long createPlatformView(@NonNull PlatformViewCreationRequest request);
 
     /**
      * The Flutter application could like dispose of an existing Android {@code View},
      * i.e., platform view.
      */
-    void disposePlatformView(int viewId) throws
-        NoSuchPlatformViewException;
+    void disposePlatformView(int viewId);
 
     /**
      * The Flutter application would like to resize an existing Android {@code View},
@@ -236,25 +225,21 @@ public class PlatformViewsChannel {
      */
     void resizePlatformView(
         @NonNull PlatformViewResizeRequest request,
-        @NonNull Runnable onComplete) throws
-        NoSuchPlatformViewException;
+        @NonNull Runnable onComplete);
 
     /**
      * The user touched a platform view within Flutter.
      *
      * Touch data is reported in {@code touch}.
      */
-    void onTouch(@NonNull PlatformViewTouch touch) throws
-        NoSuchPlatformViewException;
+    void onTouch(@NonNull PlatformViewTouch touch);
 
     /**
      * The Flutter application would like to change the layout direction of
      * an existing Android {@code View}, i.e., platform view.
      */
     // TODO(mattcarroll): Introduce an annotation for @TextureId
-    void setDirection(int viewId, int direction) throws
-        InvalidDirectionException,
-        NoSuchPlatformViewException;
+    void setDirection(int viewId, int direction);
   }
 
   /**
@@ -444,33 +429,6 @@ public class PlatformViewsChannel {
       this.flags = flags;
     }
   }
-
-  /**
-   * An attempt was made to use platform views on a version of Android that platform
-   * views does not support.
-   */
-  public static class InvalidPlatformVersionException extends IllegalStateException {}
-
-  /**
-   * An invalid value for a layout direction was sent.
-   */
-  public static class InvalidDirectionException extends IllegalArgumentException {}
-
-  /**
-   * An attempt was made to create a platform view with an ID that already exists.
-   */
-  public static class DuplicatePlatformViewException extends IllegalStateException {}
-
-  /**
-   * A request was sent to create a platform view of a View type that isn't registered
-   * with the platform view system.
-   */
-  public static class UnregisteredPlatformViewTypeException extends IllegalStateException {}
-
-  /**
-   * Something went wrong when creating the virtual display for a new platform view.
-   */
-  public static class FailedToCreateVirtualDisplayException extends IllegalStateException {}
 
   /**
    * The provided platform view ID does not correspond to any existing platform view.
