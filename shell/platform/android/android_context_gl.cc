@@ -143,6 +143,10 @@ bool AndroidContextGL::CreatePBufferSurface() {
   return surface_ != EGL_NO_SURFACE;
 }
 
+void* AndroidContextGL::GetContext() {
+  return context_;
+}
+
 AndroidContextGL::AndroidContextGL(fml::RefPtr<AndroidEnvironmentGL> env,
                                    const AndroidContextGL* share_context)
     : environment_(env),

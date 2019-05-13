@@ -75,6 +75,10 @@ bool AndroidSurfaceGL::ResourceContextClearCurrent() {
   return offscreen_context_->ClearCurrent();
 }
 
+void* AndroidSurfaceGL::GetContext() {
+  return offscreen_context_->GetContext();
+}
+
 bool AndroidSurfaceGL::SetNativeWindow(
     fml::RefPtr<AndroidNativeWindow> window) {
   // In any case, we want to get rid of our current onscreen context.

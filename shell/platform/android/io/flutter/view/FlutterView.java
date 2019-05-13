@@ -26,6 +26,7 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import android.opengl.EGLContext;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.android.AndroidKeyProcessor;
@@ -751,77 +752,188 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         void onFirstFrame();
     }
 
+  @Override
+  public long registerGLTexture(long textureID) {
+    long texIndex = nextTextureId.getAndIncrement();
+    mNativeView.getFlutterJNI().registerGLTexture(texIndex,textureID);
+    return texIndex;
+  }
+
+  @Override
+  public void onGLFrameAvaliable(int textureIndex) {
+    mNativeView.getFlutterJNI().markTextureFrameAvailable(textureIndex);
+  }
+
+  @Override
+  public TextureRegistry.GLTextureEntry createGLTexture(long textureID) {
+    long texIndex = nextTextureId.getAndIncrement();
+    final GLTextureRegistryEntry entry = new GLTextureRegistryEntry(texIndex,textureID);
+    mNativeView.getFlutterJNI().registerGLTexture(texIndex,textureID);
+    return entry;
+  }
+
+  @Override
+  public EGLContext getGLContext() {
+    return mNativeView.getFlutterJNI().getGLContext();
+  }
+
+
+  @Override
+  public SurfaceTextureEntry createSurfaceTexture() {
+    final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
+    surfaceTexture.detachFromGLContext();
+    final SurfaceTextureRegistryEntry entry = new SurfaceTextureRegistryEntry(
+      nextTextureId.getAndIncrement(),
+      surfaceTexture
+    );
+    mNativeView.getFlutterJNI().registerTexture(entry.id(), surfaceTexture);
+    return entry;
+  }
+
+  final class SurfaceTextureRegistryEntry implements TextureRegistry.SurfaceTextureEntry {
+    private final long id;
+    private SurfaceTexture surfaceTexture;
+    private boolean released;
+    private boolean suspended;
+    
+    SurfaceTextureRegistryEntry(long id, SurfaceTexture surfaceTexture) {
+      this.id = id;
+      this.surfaceTexture = surfaceTexture;
+      
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        // The callback relies on being executed on the UI thread (unsynchronised read of mNativeView
+        // and also the engine code check for platform thread in Shell::OnPlatformViewMarkTextureFrameAvailable),
+        // so we explicitly pass a Handler for the current thread.
+        this.surfaceTexture.setOnFrameAvailableListener(onFrameListener, new Handler());
+      } else {
+        // Android documentation states that the listener can be called on an arbitrary thread.
+        // But in practice, versions of Android that predate the newer API will call the listener
+        // on the thread where the SurfaceTexture was constructed.
+        this.surfaceTexture.setOnFrameAvailableListener(onFrameListener);
+      }
+    }
+    
+    private SurfaceTexture.OnFrameAvailableListener onFrameListener = new SurfaceTexture.OnFrameAvailableListener() {
+      @Override
+      public void onFrameAvailable(SurfaceTexture texture) {
+        if (released) {
+          // Even though we make sure to unregister the callback before releasing, as of Android O
+          // SurfaceTexture has a data race when accessing the callback, so the callback may
+          // still be called by a stale reference after released==true and mNativeView==null.
+          return;
+        }
+        mNativeView.getFlutterJNI().markTextureFrameAvailable(id);
+      }
+    };
+
     @Override
-    public TextureRegistry.SurfaceTextureEntry createSurfaceTexture() {
-        final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
+    public SurfaceTexture surfaceTexture() {
+      return surfaceTexture;
+    }
+
+    @Override
+    public long id() {
+      return id;
+    }
+
+    @Override
+    public void release() {
+      if (released) {
+        return;
+      }
+      surfaceTexture.release();
+      mNativeView.getFlutterJNI().unregisterTexture(id);
+      released = true;
+    }
+
+    @Override
+    public void suspend() {
+      if (released) {
+        return;
+      }
+      if (suspended) {
+        return;
+      }
+
+      suspended = true;
+      mNativeView.getFlutterJNI().unregisterTexture(id);
+      // Otherwise onFrameAvailableListener might be called after mNativeView==null
+      // (https://github.com/flutter/flutter/issues/20951). See also the check in
+      // onFrameAvailable.
+      surfaceTexture.setOnFrameAvailableListener(null);
+      surfaceTexture.release();
+      surfaceTexture = null;
+    }
+
+    @Override
+    public void resume() {
+      if(released) return;
+      if(!suspended) return;
+      suspended = false;
+      if(surfaceTexture == null){
+        surfaceTexture = new SurfaceTexture(0);
         surfaceTexture.detachFromGLContext();
-        final SurfaceTextureRegistryEntry entry = new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(),
-                surfaceTexture);
-        mNativeView.getFlutterJNI().registerTexture(entry.id(), surfaceTexture);
-        return entry;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+          // The callback relies on being executed on the UI thread (unsynchronised read of mNativeView
+          // and also the engine code check for platform thread in Shell::OnPlatformViewMarkTextureFrameAvailable),
+          // so we explicitly pass a Handler for the current thread.
+          surfaceTexture.setOnFrameAvailableListener(onFrameListener, new Handler());
+        } else {
+          // Android documentation states that the listener can be called on an arbitrary thread.
+          // But in practice, versions of Android that predate the newer API will call the listener
+          // on the thread where the SurfaceTexture was constructed.
+          surfaceTexture.setOnFrameAvailableListener(onFrameListener);
+        }
+      }
+      mNativeView.getFlutterJNI().registerTexture(id, surfaceTexture);
     }
+  }
 
-    final class SurfaceTextureRegistryEntry implements TextureRegistry.SurfaceTextureEntry {
-        private final long id;
-        private final SurfaceTexture surfaceTexture;
-        private boolean released;
-
-        SurfaceTextureRegistryEntry(long id, SurfaceTexture surfaceTexture) {
-            this.id = id;
-            this.surfaceTexture = surfaceTexture;
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                // The callback relies on being executed on the UI thread (unsynchronised read of mNativeView
-                // and also the engine code check for platform thread in Shell::OnPlatformViewMarkTextureFrameAvailable),
-                // so we explicitly pass a Handler for the current thread.
-                this.surfaceTexture.setOnFrameAvailableListener(onFrameListener, new Handler());
-            } else {
-                // Android documentation states that the listener can be called on an arbitrary thread.
-                // But in practice, versions of Android that predate the newer API will call the listener
-                // on the thread where the SurfaceTexture was constructed.
-                this.surfaceTexture.setOnFrameAvailableListener(onFrameListener);
-            }
-        }
-
-        private SurfaceTexture.OnFrameAvailableListener onFrameListener = new SurfaceTexture.OnFrameAvailableListener() {
-            @Override
-            public void onFrameAvailable(SurfaceTexture texture) {
-                if (released || mNativeView == null) {
-                    // Even though we make sure to unregister the callback before releasing, as of Android O
-                    // SurfaceTexture has a data race when accessing the callback, so the callback may
-                    // still be called by a stale reference after released==true and mNativeView==null.
-                    return;
-                }
-                mNativeView.getFlutterJNI().markTextureFrameAvailable(SurfaceTextureRegistryEntry.this.id);
-            }
-        };
-
-        @Override
-        public SurfaceTexture surfaceTexture() {
-            return surfaceTexture;
-        }
-
-        @Override
-        public long id() {
-            return id;
-        }
-
-        @Override
-        public void release() {
-            if (released) {
-                return;
-            }
-            released = true;
-
-            // The ordering of the next 3 calls is important:
-            // First we remove the frame listener, then we release the SurfaceTexture, and only after we unregister
-            // the texture which actually deletes the GL texture.
-
-            // Otherwise onFrameAvailableListener might be called after mNativeView==null
-            // (https://github.com/flutter/flutter/issues/20951). See also the check in onFrameAvailable.
-            surfaceTexture.setOnFrameAvailableListener(null);
-            surfaceTexture.release();
-            mNativeView.getFlutterJNI().unregisterTexture(id);
-        }
+  final class GLTextureRegistryEntry implements TextureRegistry.GLTextureEntry {
+    private final long id;
+    private final long textureID;
+    private boolean released;
+    private boolean suspended;
+    GLTextureRegistryEntry(long id, long textureID) {
+      this.id = id;
+      this.textureID = textureID;
     }
+    
+    @Override
+    public long id() {
+      return id;
+    }
+    
+    @Override
+    public void release() {
+      if (released) {
+        return;
+      }
+      if (suspended) {
+        return;
+      }
+      released = true;
+      mNativeView.getFlutterJNI().registerGLTexture(id,textureID);
+    }
+    
+    @Override
+    public void suspend() {
+      if (released) {
+        return;
+      }
+      if (suspended) {
+        return;
+      }
+      suspended = true;
+      mNativeView.getFlutterJNI().unregisterTexture(id);
+    }
+    
+    @Override
+    public void resume(long textureID) {
+      if(released) return;
+      if(!suspended) return;
+      suspended = false;
+      mNativeView.getFlutterJNI().registerGLTexture(id,textureID);
+    }
+  }
 }

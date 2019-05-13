@@ -12,6 +12,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.util.Log;
 import android.view.Surface;
+import android.opengl.EGLContext;
 
 import java.nio.ByteBuffer;
 import java.util.HashSet;
@@ -409,7 +410,25 @@ public class FlutterJNI {
   }
 
   private native void nativeUnregisterTexture(long nativePlatformViewId, long textureId);
-  //------- End from FlutterView -----
+
+  @UiThread
+  public void registerGLTexture(long texIndex, long textureId) {
+    ensureAttachedToNative();
+    nativeGLRegisterTexture(nativePlatformViewId, texIndex, textureId);
+  }
+  
+  private native void nativeGLRegisterTexture(long nativePlatformViewId, long texIndex, long textureId);
+
+  @UiThread
+  public EGLContext getGLContext() {
+    ensureAttachedToNative();
+    return nativeGetContext(nativePlatformViewId);
+  }
+
+  private native EGLContext nativeGetContext(long nativePlatformViewId);
+  
+
+    //------- End from FlutterView -----
 
   // TODO(mattcarroll): rename comments after refactor is done and their origin no longer matters (https://github.com/flutter/flutter/issues/25533)
   //------ Start from FlutterNativeView ----

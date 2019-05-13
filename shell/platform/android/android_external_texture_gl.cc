@@ -15,12 +15,19 @@ AndroidExternalTextureGL::AndroidExternalTextureGL(
     int64_t id,
     const fml::jni::JavaObjectWeakGlobalRef& surfaceTexture)
     : Texture(id), surface_texture_(surfaceTexture), transform(SkMatrix::I()) {}
+    
+AndroidExternalTextureGL::AndroidExternalTextureGL(int64_t id,
+                                                   int64_t texture_id)
+: Texture(id), texture_name_(texture_id) {
+    use_out_texture_ = true;
+}
 
 AndroidExternalTextureGL::~AndroidExternalTextureGL() {
-  if (state_ == AttachmentState::attached) {
-    glDeleteTextures(1, &texture_name_);
-  }
-}
+    if (texture_name_ != 0 && !use_out_texture_) {
+        glDeleteTextures(1, &texture_name_);
+        texture_name_ = 0;
+    }
+};
 
 void AndroidExternalTextureGL::OnGrContextCreated() {
   state_ = AttachmentState::uninitialized;
@@ -38,16 +45,25 @@ void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
     return;
   }
   if (state_ == AttachmentState::uninitialized) {
-    glGenTextures(1, &texture_name_);
-    Attach(static_cast<jint>(texture_name_));
+    if (!use_out_texture_) {
+      glGenTextures(1, &texture_name_);
+      Attach(static_cast<jint>(texture_name_));
+    }
     state_ = AttachmentState::attached;
   }
   if (!freeze && new_frame_ready_) {
-    Update();
+    if (!use_out_texture_) {
+      Update();
+    }
     new_frame_ready_ = false;
   }
   GrGLTextureInfo textureInfo = {GL_TEXTURE_EXTERNAL_OES, texture_name_,
                                  GL_RGBA8_OES};
+  if (use_out_texture_) {
+    textureInfo.fTarget = GL_TEXTURE_2D;
+    transform.setIdentity();
+  }
+
   GrBackendTexture backendTexture(1, 1, GrMipMapped::kNo, textureInfo);
   sk_sp<SkImage> image = SkImage::MakeFromTexture(
       canvas.getGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin,

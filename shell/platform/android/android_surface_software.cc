@@ -140,6 +140,10 @@ bool AndroidSurfaceSoftware::OnScreenSurfaceResize(const SkISize& size) const {
   return true;
 }
 
+void* AndroidSurfaceSoftware::GetContext() {
+  return 0;
+}
+
 bool AndroidSurfaceSoftware::SetNativeWindow(
     fml::RefPtr<AndroidNativeWindow> window) {
   native_window_ = std::move(window);

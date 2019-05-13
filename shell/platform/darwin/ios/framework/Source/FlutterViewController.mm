@@ -1016,6 +1016,9 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 }
 
 #pragma mark - FlutterTextureRegistry
+- (EAGLSharegroup*)glShareGroup {
+  return [_engine.get() glShareGroup];
+}
 
 - (int64_t)registerTexture:(NSObject<FlutterTexture>*)texture {
   return [_engine.get() registerTexture:texture];

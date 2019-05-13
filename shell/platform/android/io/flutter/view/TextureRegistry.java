@@ -5,6 +5,7 @@
 package io.flutter.view;
 
 import android.graphics.SurfaceTexture;
+import android.opengl.EGLContext;
 
 /**
  * Registry of backend textures used with a single {@link FlutterView} instance.
@@ -19,6 +20,42 @@ public interface TextureRegistry {
     * @return A SurfaceTextureEntry.
     */
     SurfaceTextureEntry createSurfaceTexture();
+    
+    void onGLFrameAvaliable(int index);
+    
+    long registerGLTexture(long textureID);
+    
+    EGLContext getGLContext();
+    
+    GLTextureEntry createGLTexture(long textureID);
+    
+    /**
+     * A registry entry for a managed SurfaceTexture.
+     */
+    interface GLTextureEntry {
+        
+        /**
+         * @return The identity of this SurfaceTexture.
+         */
+        long id();
+        
+        /**
+         * Deregisters and releases this SurfaceTexture.
+         */
+        void release();
+        
+        /**
+         * suspend the SurfaceTexture
+         * this will unregister the texture and release the existed surfaceeTexture,but
+         * the id will be reserved
+         */
+        void suspend();
+        
+        /**
+         * this will create a new SurfaceTexture, and register texture
+         */
+        void resume(long textureID);
+    }
 
     /**
      * A registry entry for a managed SurfaceTexture.
@@ -38,5 +75,18 @@ public interface TextureRegistry {
          * Deregisters and releases this SurfaceTexture.
          */
         void release();
+        
+        /**
+         * suspend the SurfaceTexture
+         * this will unregister the texture and release the existed surfaceeTexture,but
+         * the id will be reserved
+         */
+        void suspend();
+        
+        /**
+         * this will create a new SurfaceTexture, and register texture
+         */
+        void resume();
+
     }
 }

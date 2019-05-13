@@ -33,6 +33,8 @@ class IOSSurface {
 
   virtual std::unique_ptr<Surface> CreateGPUSurface() = 0;
 
+  virtual void* GetGLShareGroup() = 0;
+
  protected:
   FlutterPlatformViewsController* GetPlatformViewsController();
 

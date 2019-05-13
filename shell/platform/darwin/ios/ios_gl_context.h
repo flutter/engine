@@ -30,6 +30,8 @@ class IOSGLContext {
 
   bool ResourceMakeCurrent();
 
+  void* GetGLShareGroup();
+
   sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
 
  private:

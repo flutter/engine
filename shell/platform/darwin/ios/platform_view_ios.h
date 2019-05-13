@@ -37,6 +37,8 @@ class PlatformViewIOS final : public PlatformView {
 
   void RegisterExternalTexture(int64_t id, NSObject<FlutterTexture>* texture);
 
+  void* GetGLShareGroup();
+
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> GetTextInputPlugin() const;
 
   void SetTextInputPlugin(fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin);

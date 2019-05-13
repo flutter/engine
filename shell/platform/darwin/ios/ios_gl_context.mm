@@ -13,9 +13,9 @@
 namespace flutter {
 
 IOSGLContext::IOSGLContext() {
-  resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3]);
+  resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2]);
   if (resource_context_ != nullptr) {
-    context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3
+    context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
                                          sharegroup:resource_context_.get().sharegroup]);
   } else {
     resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2]);
@@ -58,6 +58,11 @@ bool IOSGLContext::MakeCurrent() {
 
 bool IOSGLContext::ResourceMakeCurrent() {
   return [EAGLContext setCurrentContext:resource_context_.get()];
+}
+    
+void* IOSGLContext::GetGLShareGroup() {
+    EAGLSharegroup* shareGroup = context_.get().sharegroup;
+    return (void*)shareGroup;
 }
 
 }  // namespace flutter

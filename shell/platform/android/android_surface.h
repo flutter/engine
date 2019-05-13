@@ -36,6 +36,8 @@ class AndroidSurface {
   virtual bool ResourceContextClearCurrent() = 0;
 
   virtual bool SetNativeWindow(fml::RefPtr<AndroidNativeWindow> window) = 0;
+    
+  virtual void* GetContext() = 0;
 };
 
 }  // namespace flutter

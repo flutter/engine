@@ -47,6 +47,8 @@ class AndroidSurfaceSoftware final : public AndroidSurface,
   // |GPUSurfaceSoftwareDelegate|
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;
 
+  void* GetContext() override;
+                                         
  private:
   sk_sp<SkSurface> sk_surface_;
   fml::RefPtr<AndroidNativeWindow> native_window_;

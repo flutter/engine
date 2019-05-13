@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.view.Surface;
+import android.opengl.EGLContext;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
@@ -76,6 +77,32 @@ public class FlutterRenderer implements TextureRegistry {
   // TODO(mattcarroll): detachFromGLContext requires API 16. Create solution for earlier APIs.
   @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
   @Override
+  public long registerGLTexture(long textureID) {
+    long texIndex = nextTextureId.getAndIncrement();
+    registerGLTexture(texIndex,textureID);
+    return texIndex;
+  }
+
+  @Override
+  public void onGLFrameAvaliable(int textureIndex) {
+    markTextureFrameAvailable(textureIndex);
+  }
+
+  @Override
+  public TextureRegistry.GLTextureEntry createGLTexture(long textureID) {
+    long texIndex = nextTextureId.getAndIncrement();
+    final GLTextureRegistryEntry entry = new GLTextureRegistryEntry(texIndex,textureID);
+    registerGLTexture(texIndex,textureID);
+    return entry;
+  }
+
+  @Override
+  public EGLContext getGLContext() {
+    return flutterJNI.getGLContext();
+  }
+
+    
+  @Override
   public SurfaceTextureEntry createSurfaceTexture() {
     final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
     surfaceTexture.detachFromGLContext();
@@ -89,9 +116,10 @@ public class FlutterRenderer implements TextureRegistry {
 
   final class SurfaceTextureRegistryEntry implements TextureRegistry.SurfaceTextureEntry {
     private final long id;
-    private final SurfaceTexture surfaceTexture;
+    private SurfaceTexture surfaceTexture;
     private boolean released;
-
+    private boolean suspended;
+    
     SurfaceTextureRegistryEntry(long id, SurfaceTexture surfaceTexture) {
       this.id = id;
       this.surfaceTexture = surfaceTexture;
@@ -141,7 +169,98 @@ public class FlutterRenderer implements TextureRegistry {
       unregisterTexture(id);
       released = true;
     }
+
+    @Override
+    public void suspend() {
+      if (released) {
+        return;
+      }
+      if (suspended) {
+        return;
+      }
+
+      suspended = true;
+      unregisterTexture(id);
+      // Otherwise onFrameAvailableListener might be called after mNativeView==null
+      // (https://github.com/flutter/flutter/issues/20951). See also the check in
+      // onFrameAvailable.
+      surfaceTexture.setOnFrameAvailableListener(null);
+      surfaceTexture.release();
+      surfaceTexture = null;
+    }
+
+    @Override
+    public void resume() {
+      if(released) return;
+      if(!suspended) return;
+      suspended = false;
+      if(surfaceTexture == null){
+        surfaceTexture = new SurfaceTexture(0);
+        surfaceTexture.detachFromGLContext();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+          // The callback relies on being executed on the UI thread (unsynchronised read of mNativeView
+          // and also the engine code check for platform thread in Shell::OnPlatformViewMarkTextureFrameAvailable),
+          // so we explicitly pass a Handler for the current thread.
+          surfaceTexture.setOnFrameAvailableListener(onFrameListener, new Handler());
+        } else {
+          // Android documentation states that the listener can be called on an arbitrary thread.
+          // But in practice, versions of Android that predate the newer API will call the listener
+          // on the thread where the SurfaceTexture was constructed.
+          surfaceTexture.setOnFrameAvailableListener(onFrameListener);
+        }
+      }
+      registerTexture(id, surfaceTexture);
+    }
   }
+
+  final class GLTextureRegistryEntry implements TextureRegistry.GLTextureEntry {
+    private final long id;
+    private final long textureID;
+    private boolean released;
+    private boolean suspended;
+    GLTextureRegistryEntry(long id, long textureID) {
+      this.id = id;
+      this.textureID = textureID;
+    }
+
+    @Override
+    public long id() {
+      return id;
+    }
+
+    @Override
+    public void release() {
+      if (released) {
+        return;
+      }
+      if (suspended) {
+        return;
+      }
+      released = true;
+      registerGLTexture(id,textureID);
+    }
+
+    @Override
+    public void suspend() {
+      if (released) {
+        return;
+      }
+      if (suspended) {
+        return;
+      }
+      suspended = true;
+      unregisterTexture(id);
+    }
+
+    @Override
+    public void resume(long textureID) {
+      if(released) return;
+      if(!suspended) return;
+      suspended = false;
+      registerGLTexture(id,textureID);
+    }
+  }
+
   //------ END TextureRegistry IMPLEMENTATION ----
 
   // TODO(mattcarroll): describe the native behavior that this invokes
@@ -199,6 +318,10 @@ public class FlutterRenderer implements TextureRegistry {
   // TODO(mattcarroll): describe the native behavior that this invokes
   private void unregisterTexture(long textureId) {
     flutterJNI.unregisterTexture(textureId);
+  }
+
+  private void registerGLTexture(long texIndex, long textureId) {
+    flutterJNI.registerGLTexture(texIndex, textureId);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes

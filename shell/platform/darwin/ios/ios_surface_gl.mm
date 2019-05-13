@@ -50,6 +50,10 @@ intptr_t IOSSurfaceGL::GLContextFBO() const {
   return IsValid() ? render_target_->framebuffer() : GL_NONE;
 }
 
+void* IOSSurfaceGL::GetGLShareGroup() {
+  return context_.get()->GetGLShareGroup();
+}
+
 bool IOSSurfaceGL::UseOffscreenSurface() const {
   // The onscreen surface wraps a GL renderbuffer, which is extremely slow to read.
   // Certain filter effects require making a copy of the current destination, so we

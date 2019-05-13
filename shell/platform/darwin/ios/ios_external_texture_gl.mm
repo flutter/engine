@@ -26,39 +26,48 @@ void IOSExternalTextureGL::Paint(SkCanvas& canvas,
                                  const SkRect& bounds,
                                  bool freeze,
                                  GrContext* context) {
-  if (!cache_ref_) {
-    CVOpenGLESTextureCacheRef cache;
-    CVReturn err = CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, NULL,
-                                                [EAGLContext currentContext], NULL, &cache);
-    if (err == noErr) {
-      cache_ref_.Reset(cache);
+    GrGLTextureInfo textureInfo;
+    if ([external_texture_ respondsToSelector:@selector(copyTextureID)]) {
+        textureInfo.fFormat = GL_RGBA8_OES;
+        textureInfo.fID = [external_texture_ copyTextureID];
+        textureInfo.fTarget = GL_TEXTURE_2D;
     } else {
-      FML_LOG(WARNING) << "Failed to create GLES texture cache: " << err;
-      return;
+        if (!cache_ref_) {
+            CVOpenGLESTextureCacheRef cache;
+            CVReturn err = CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, NULL,
+                                                        [EAGLContext currentContext], NULL, &cache);
+            if (err == noErr) {
+                cache_ref_.Reset(cache);
+            } else {
+                FML_LOG(WARNING) << "Failed to create GLES texture cache: " << err;
+                return;
+            }
+        }
+        if (!freeze) {
+            fml::CFRef<CVPixelBufferRef> bufferRef;
+            bufferRef.Reset([external_texture_ copyPixelBuffer]);
+            if (bufferRef != nullptr) {
+                CVOpenGLESTextureRef texture;
+                CVReturn err = CVOpenGLESTextureCacheCreateTextureFromImage(
+                                                                            kCFAllocatorDefault, cache_ref_, bufferRef, nullptr, GL_TEXTURE_2D, GL_RGBA,
+                                                                            static_cast<int>(CVPixelBufferGetWidth(bufferRef)),
+                                                                            static_cast<int>(CVPixelBufferGetHeight(bufferRef)), GL_BGRA, GL_UNSIGNED_BYTE, 0,
+                                                                            &texture);
+                texture_ref_.Reset(texture);
+                if (err != noErr) {
+                    FML_LOG(WARNING) << "Could not create texture from pixel buffer: " << err;
+                    return;
+                }
+            }
+        }
+        
+        if (!texture_ref_) {
+            return;
+        }
+        textureInfo.fFormat = GL_RGBA8_OES;
+        textureInfo.fID = CVOpenGLESTextureGetName(texture_ref_);
+        textureInfo.fTarget = CVOpenGLESTextureGetTarget(texture_ref_);
     }
-  }
-  fml::CFRef<CVPixelBufferRef> bufferRef;
-  if (!freeze) {
-    bufferRef.Reset([external_texture_ copyPixelBuffer]);
-    if (bufferRef != nullptr) {
-      CVOpenGLESTextureRef texture;
-      CVReturn err = CVOpenGLESTextureCacheCreateTextureFromImage(
-          kCFAllocatorDefault, cache_ref_, bufferRef, nullptr, GL_TEXTURE_2D, GL_RGBA,
-          static_cast<int>(CVPixelBufferGetWidth(bufferRef)),
-          static_cast<int>(CVPixelBufferGetHeight(bufferRef)), GL_BGRA, GL_UNSIGNED_BYTE, 0,
-          &texture);
-      texture_ref_.Reset(texture);
-      if (err != noErr) {
-        FML_LOG(WARNING) << "Could not create texture from pixel buffer: " << err;
-        return;
-      }
-    }
-  }
-  if (!texture_ref_) {
-    return;
-  }
-  GrGLTextureInfo textureInfo = {CVOpenGLESTextureGetTarget(texture_ref_),
-                                 CVOpenGLESTextureGetName(texture_ref_), GL_RGBA8_OES};
   GrBackendTexture backendTexture(bounds.width(), bounds.height(), GrMipMapped::kNo, textureInfo);
   sk_sp<SkImage> image =
       SkImage::MakeFromTexture(context, backendTexture, kTopLeft_GrSurfaceOrigin,

@@ -58,6 +58,7 @@ class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
   // |GPUSurfaceGLDelegate|
   intptr_t GLContextFBO() const override;
 
+  void* GetContext() override;
  private:
   fml::RefPtr<AndroidContextGL> onscreen_context_;
   fml::RefPtr<AndroidContextGL> offscreen_context_;
