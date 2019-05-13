@@ -18,7 +18,7 @@ import io.flutter.plugin.common.StandardMethodCodec;
 
 /**
  * System channel that sends 2-way communication between Flutter and Android to
- * display Android Views within Flutter.
+ * facilitate embedding of Android Views within a Flutter application.
  *
  * Register a {@link PlatformViewsHandler} to implement the Android side of this channel.
  */
