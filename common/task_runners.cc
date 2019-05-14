@@ -42,11 +42,7 @@ fml::RefPtr<fml::TaskRunner> TaskRunners::GetIOTaskRunner() const {
 }
 
 fml::RefPtr<fml::TaskRunner> TaskRunners::GetGPUTaskRunner() const {
-  if (TaskRunners::platform_view_in_scene_) {
-    return platform_;
-  } else {
-    return gpu_;
-  }
+  return gpu_;
 }
 
 bool TaskRunners::IsValid() const {
