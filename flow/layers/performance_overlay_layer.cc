@@ -88,8 +88,8 @@ void PerformanceOverlayLayer::Paint(PaintContext& context) const {
       height - padding, options_ & kVisualizeRasterizerStatistics,
       options_ & kDisplayRasterizerStatistics, "GPU", font_path_);
 
-  VisualizeStopWatch(*context.leaf_nodes_canvas, context.ui_time, x,
-                     y + height, width, height - padding,
+  VisualizeStopWatch(*context.leaf_nodes_canvas, context.ui_time, x, y + height,
+                     width, height - padding,
                      options_ & kVisualizeEngineStatistics,
                      options_ & kDisplayEngineStatistics, "UI", font_path_);
 }
