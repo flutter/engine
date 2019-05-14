@@ -397,7 +397,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
             }
 
             // We'll remove it as the current target, and revert to the plugin as
-            // the new target. We'll also hide the keyboard.
+            // the new target.
             oldTarget = target;
             mInputTarget = mTextInputPlugin;
         } else if (setAsTarget) {
@@ -420,9 +420,8 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
     @Override
     public boolean checkInputConnectionProxy(View view) {
-        // If the input target is not us, then it's a platform view so we're
-        // acting as a proxy.
-        return mInputTarget.getTargetView() != this;
+        PlatformViewsController controller = getPluginRegistry().getPlatformViewsController();
+        return controller.checkViewBelongsToVirtualDisplay(view);
     }
 
     @Override

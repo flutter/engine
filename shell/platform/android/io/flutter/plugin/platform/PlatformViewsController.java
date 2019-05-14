@@ -79,6 +79,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
      * @param textureRegistry The texture registry which provides the output textures into which the embedded views
      *                        will be rendered.
      * @param messenger The Flutter application on the other side of this messenger drives this platform views controller.
+     * @param inputProxy The underlying input proxy that we delegate input targets to.
      */
     public void attach(Context context, TextureRegistry textureRegistry, BinaryMessenger messenger, InputProxy inputProxy) {
         if (mContext != null) {
@@ -108,6 +109,18 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
         detachInputProxy();
         mContext = null;
         mTextureRegistry = null;
+    }
+
+    public boolean checkViewBelongsToVirtualDisplay(View view) {
+        final View rootView = view.getRootView();
+        for (VirtualDisplayController controller : vdControllers.values()) {
+            final View virtualView = controller.getView();
+            if (virtualView != null) {
+                if (virtualView.getRootView() == rootView)
+                    return true;
+            }
+        }
+        return false;
     }
 
     @Override
