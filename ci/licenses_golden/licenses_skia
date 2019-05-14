@@ -1,4 +1,4 @@
-Signature: 496df67ad5e7d7134f4a569784252e81
+Signature: 342bd807da7fd08a62d7219ab94e4a31
 
 UNUSED LICENSES:
 
@@ -1525,8 +1525,8 @@ FILE: ../../../third_party/skia/modules/skottie/src/SkottiePriv.h
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieProperty.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieShapeLayer.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieTest.cpp
-FILE: ../../../third_party/skia/modules/skottie/src/SkottieTextLayer.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieTool.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/text/TextLayer.cpp
 FILE: ../../../third_party/skia/modules/skottie/utils/SkottieUtils.cpp
 FILE: ../../../third_party/skia/modules/skottie/utils/SkottieUtils.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGClipEffect.h
@@ -5350,6 +5350,7 @@ FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/debugger_bindings
 FILE: ../../../third_party/skia/gm/crbug_946965.cpp
 FILE: ../../../third_party/skia/gm/runtimecolorfilter.cpp
 FILE: ../../../third_party/skia/include/gpu/gl/GrGLAssembleHelpers.h
+FILE: ../../../third_party/skia/include/private/SkThreadAnnotations.h
 FILE: ../../../third_party/skia/modules/canvaskit/WasmAliases.h
 FILE: ../../../third_party/skia/modules/canvaskit/particles_bindings.cpp
 FILE: ../../../third_party/skia/modules/canvaskit/skottie_bindings.cpp
@@ -5372,6 +5373,8 @@ FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleGLESInterfaceAutogen.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleGLInterfaceAutogen.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleHelpers.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleWebGLInterfaceAutogen.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/GrTransferFromOp.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/GrTransferFromOp.h
 FILE: ../../../third_party/skia/src/sksl/SkSLByteCode.h
 FILE: ../../../third_party/skia/src/sksl/SkSLByteCodeGenerator.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLByteCodeGenerator.h
@@ -5595,8 +5598,12 @@ FILE: ../../../third_party/skia/include/private/GrContext_Base.h
 FILE: ../../../third_party/skia/include/private/GrImageContext.h
 FILE: ../../../third_party/skia/include/private/GrRecordingContext.h
 FILE: ../../../third_party/skia/include/private/SkVx.h
-FILE: ../../../third_party/skia/modules/skottie/src/SkottieShaper.cpp
-FILE: ../../../third_party/skia/modules/skottie/src/SkottieShaper.h
+FILE: ../../../third_party/skia/modules/skottie/src/text/SkottieShaper.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/text/SkottieShaper.h
+FILE: ../../../third_party/skia/modules/skottie/src/text/TextAdapter.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/text/TextAdapter.h
+FILE: ../../../third_party/skia/modules/skottie/src/text/TextValue.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/text/TextValue.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGRenderEffect.h
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGRenderEffect.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGTransformPriv.h
@@ -5607,6 +5614,7 @@ FILE: ../../../third_party/skia/src/codec/SkScalingCodec.h
 FILE: ../../../third_party/skia/src/core/SkDescriptor.cpp
 FILE: ../../../third_party/skia/src/core/SkEffectPriv.h
 FILE: ../../../third_party/skia/src/core/SkStrikeInterface.h
+FILE: ../../../third_party/skia/src/core/SkStrikeSpec.h
 FILE: ../../../third_party/skia/src/gpu/GrAHardwareBufferUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrAHardwareBufferUtils.h
 FILE: ../../../third_party/skia/src/gpu/GrBaseContextPriv.h
@@ -5624,6 +5632,8 @@ FILE: ../../../third_party/skia/src/gpu/GrRecordingContextPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrSamplePatternDictionary.cpp
 FILE: ../../../third_party/skia/src/gpu/GrSamplePatternDictionary.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrGSCoverageProcessor.h
+FILE: ../../../third_party/skia/src/gpu/ccpr/GrOctoBounds.cpp
+FILE: ../../../third_party/skia/src/gpu/ccpr/GrOctoBounds.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrVSCoverageProcessor.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrMixerEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrOverrideInputFragmentProcessor.fp
@@ -6683,6 +6693,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
+ORIGIN: ../../../third_party/skia/src/core/SkStrikeSpec.cpp + ../../../third_party/skia/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/src/core/SkStrikeSpec.cpp
+----------------------------------------------------------------------------------------------------
+Copyright 2019 The Android Open Source Project
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: skia
 ORIGIN: ../../../third_party/skia/src/core/SkTraceEvent.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/src/core/SkTraceEvent.h
@@ -6944,4 +6989,4 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ====================================================================================================
-Total license count: 54
+Total license count: 55

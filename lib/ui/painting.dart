@@ -1024,6 +1024,14 @@ enum Clip {
 // constant and can't propagate into the set/get calls.
 const Endian _kFakeHostEndian = Endian.little;
 
+// Indicates that the image should not be resized in this dimension.
+//
+// Used by [instantiateImageCodec] as a magical value to disable resizing
+// in the given dimension.
+//
+// This needs to be kept in sync with "kDoNotResizeDimension" in codec.cc
+const int _kDoNotResizeDimension = -1;
+
 /// A description of the style to use when drawing on a [Canvas].
 ///
 /// Most APIs on [Canvas] take a [Paint] object to describe the style
@@ -1642,29 +1650,36 @@ class Codec extends NativeFieldWrapperClass2 {
 /// The data can be for either static or animated images. The following image
 /// formats are supported: {@macro flutter.dart:ui.imageFormats}
 ///
-/// The [decodedCacheRatioCap] is the default maximum multiple of the compressed
-/// image size to cache when decoding animated image frames. For example,
-/// setting this to `2.0` means that a 400KB GIF would be allowed at most to use
-/// 800KB of memory caching unessential decoded frames. Caching decoded frames
-/// saves CPU but can result in out-of-memory crashes when decoding large (or
-/// multiple) animated images. Note that GIFs are highly compressed, and it's
-/// unlikely that a factor that low will be sufficient to cache all decoded
-/// frames. The default value is `25.0`.
+/// The [targetWidth] and [targetHeight] arguments specify the size of the output
+/// image, in image pixels. If they are not equal to the intrinsic dimensions of the
+/// image, then the image will be scaled after being decoded. If exactly one of
+/// these two arguments is specified, then the aspect ratio will be maintained
+/// while forcing the image to match the specified dimension. If both are not
+/// specified, then the image maintains its real size.
 ///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list, {
-  double decodedCacheRatioCap = 0,
+  int targetWidth,
+  int targetHeight,
 }) {
   return _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, decodedCacheRatioCap),
+    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, targetWidth ?? _kDoNotResizeDimension, targetHeight ?? _kDoNotResizeDimension)
   );
 }
 
 /// Instantiates a [Codec] object for an image binary data.
 ///
+/// The [targetWidth] and [targetHeight] arguments specify the size of the output
+/// image, in image pixels. Image in this context refers to image in every frame of the [Codec].
+/// If [targetWidth] and [targetHeight] are not equal to the intrinsic dimensions of the
+/// image, then the image will be scaled after being decoded. If exactly one of
+/// these two arguments is not equal to [_kDoNotResizeDimension], then the aspect
+/// ratio will be maintained while forcing the image to match the given dimension.
+/// If both are equal to [_kDoNotResizeDimension], then the image maintains its real size.
+///
 /// Returns an error message if the instantiation has failed, null otherwise.
-String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, double decodedCacheRatioCap)
+String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, int targetWidth, int targetHeight)
   native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -1690,25 +1705,23 @@ Future<Null> _decodeImageFromListAsync(Uint8List list,
 /// data buffer.  If unspecified, it defaults to [width] multiplied by the
 /// number of bytes per pixel in the provided [format].
 ///
-/// The [decodedCacheRatioCap] is the default maximum multiple of the compressed
-/// image size to cache when decoding animated image frames. For example,
-/// setting this to `2.0` means that a 400KB GIF would be allowed at most to use
-/// 800KB of memory caching unessential decoded frames. Caching decoded frames
-/// saves CPU but can result in out-of-memory crashes when decoding large (or
-/// multiple) animated images. Note that GIFs are highly compressed, and it's
-/// unlikely that a factor that low will be sufficient to cache all decoded
-/// frames. The default value is `25.0`.
+/// The [targetWidth] and [targetHeight] arguments specify the size of the output
+/// image, in image pixels. If they are not equal to the intrinsic dimensions of the
+/// image, then the image will be scaled after being decoded. If exactly one of
+/// these two arguments is specified, then the aspect ratio will be maintained
+/// while forcing the image to match the other given dimension. If neither is
+/// specified, then the image maintains its real size.
 void decodeImageFromPixels(
   Uint8List pixels,
   int width,
   int height,
   PixelFormat format,
   ImageDecoderCallback callback,
-  {int rowBytes, double decodedCacheRatioCap = 0}
+  {int rowBytes, int targetWidth, int targetHeight}
 ) {
   final _ImageInfo imageInfo = _ImageInfo(width, height, format.index, rowBytes);
   final Future<Codec> codecFuture = _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCap)
+    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, targetWidth ?? _kDoNotResizeDimension, targetHeight ?? _kDoNotResizeDimension)
   );
   codecFuture.then((Codec codec) => codec.getNextFrame())
       .then((FrameInfo frameInfo) => callback(frameInfo.image));
@@ -3212,9 +3225,9 @@ class Canvas extends NativeFieldWrapperClass2 {
   void rotate(double radians) native 'Canvas_rotate';
 
   /// Add an axis-aligned skew to the current transform, with the first argument
-  /// being the horizontal skew in radians clockwise around the origin, and the
-  /// second argument being the vertical skew in radians clockwise around the
-  /// origin.
+  /// being the horizontal skew in rise over run units clockwise around the
+  /// origin, and the second argument being the vertical skew in rise over run
+  /// units clockwise around the origin.
   void skew(double sx, double sy) native 'Canvas_skew';
 
   /// Multiply the current transform by the specified 4⨉4 transformation matrix
