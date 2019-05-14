@@ -26,7 +26,8 @@
 - (instancetype)initWithContentsScale:(CGFloat)contentsScale;
 - (std::unique_ptr<flutter::IOSSurface>)createSoftwareSurface;
 - (std::unique_ptr<flutter::IOSSurfaceGL>)createGLSurfaceWithContext:
-    (std::shared_ptr<flutter::IOSGLContext>)gl_context;
+                                              (std::shared_ptr<flutter::IOSGLContext>)gl_context
+                                                     withTaskRunners:(flutter::TaskRunners)tr;
 
 @end
 

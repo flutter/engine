@@ -47,7 +47,7 @@ struct FlutterPlatformViewLayer {
 
 class FlutterPlatformViewsController {
  public:
-  FlutterPlatformViewsController();
+  FlutterPlatformViewsController(flutter::TaskRunners tr);
 
   ~FlutterPlatformViewsController();
 
@@ -82,6 +82,7 @@ class FlutterPlatformViewsController {
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
  private:
+  flutter::TaskRunners task_runners_;
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
   fml::scoped_nsobject<UIView> flutter_view_;
   fml::scoped_nsobject<UIViewController> flutter_view_controller_;

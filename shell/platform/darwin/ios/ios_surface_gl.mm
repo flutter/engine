@@ -11,14 +11,16 @@ namespace flutter {
 
 IOSSurfaceGL::IOSSurfaceGL(std::shared_ptr<IOSGLContext> context,
                            fml::scoped_nsobject<CAEAGLLayer> layer,
-                           FlutterPlatformViewsController* platform_views_controller)
-    : IOSSurface(platform_views_controller), context_(context) {
+                           FlutterPlatformViewsController* platform_views_controller,
+                           flutter::TaskRunners tr)
+    : IOSSurface(platform_views_controller), context_(context), task_runners_(tr) {
   render_target_ = context_->CreateRenderTarget(std::move(layer));
 }
 
 IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
-                           std::shared_ptr<IOSGLContext> context)
-    : IOSSurface(nullptr), context_(context) {
+                           std::shared_ptr<IOSGLContext> context,
+                           flutter::TaskRunners tr)
+    : IOSSurface(nullptr), context_(context), task_runners_(tr) {
   render_target_ = context_->CreateRenderTarget(std::move(layer));
 }
 

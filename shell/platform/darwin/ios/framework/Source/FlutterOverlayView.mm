@@ -70,14 +70,15 @@
 }
 
 - (std::unique_ptr<flutter::IOSSurfaceGL>)createGLSurfaceWithContext:
-    (std::shared_ptr<flutter::IOSGLContext>)gl_context {
+                                              (std::shared_ptr<flutter::IOSGLContext>)gl_context
+                                                     withTaskRunners:(flutter::TaskRunners)tr {
   fml::scoped_nsobject<CAEAGLLayer> eagl_layer(reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
   // TODO(amirh): We can lower this to iOS 8.0 once we have a Metal rendering backend.
   // https://github.com/flutter/flutter/issues/24132
   if (@available(iOS 9.0, *)) {
     eagl_layer.get().presentsWithTransaction = YES;
   }
-  return std::make_unique<flutter::IOSSurfaceGL>(eagl_layer, std::move(gl_context));
+  return std::make_unique<flutter::IOSSurfaceGL>(eagl_layer, std::move(gl_context), tr);
 }
 
 // TODO(amirh): implement drawLayer to suppoer snapshotting.

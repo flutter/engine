@@ -328,7 +328,7 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   overlay_view.autoresizingMask =
       (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
   std::unique_ptr<IOSSurfaceGL> ios_surface =
-      [overlay_view createGLSurfaceWithContext:std::move(gl_context)];
+      [overlay_view createGLSurfaceWithContext:std::move(gl_context) withTaskRunners:task_runners_];
   std::unique_ptr<Surface> surface = ios_surface->CreateSecondaryGPUSurface(gr_context);
   overlays_[overlay_id] = std::make_unique<FlutterPlatformViewLayer>(
       fml::scoped_nsobject<UIView>(overlay_view), std::move(ios_surface), std::move(surface));

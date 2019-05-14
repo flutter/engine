@@ -34,7 +34,8 @@
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate
                           opaque:(BOOL)opaque NS_DESIGNATED_INITIALIZER;
 - (std::unique_ptr<flutter::IOSSurface>)createSurface:
-    (std::shared_ptr<flutter::IOSGLContext>)context;
+                                            (std::shared_ptr<flutter::IOSGLContext>)context
+                                      withTaskRunners:(flutter::TaskRunners)task_runners;
 
 @end
 

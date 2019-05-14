@@ -22,9 +22,12 @@ class IOSSurfaceGL : public IOSSurface,
  public:
   IOSSurfaceGL(std::shared_ptr<IOSGLContext> context,
                fml::scoped_nsobject<CAEAGLLayer> layer,
-               FlutterPlatformViewsController* platform_views_controller);
+               FlutterPlatformViewsController* platform_views_controller,
+               flutter::TaskRunners tr);
 
-  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer, std::shared_ptr<IOSGLContext> context);
+  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
+               std::shared_ptr<IOSGLContext> context,
+               flutter::TaskRunners tr);
 
   ~IOSSurfaceGL() override;
 
@@ -69,6 +72,7 @@ class IOSSurfaceGL : public IOSSurface,
  private:
   std::shared_ptr<IOSGLContext> context_;
   std::unique_ptr<IOSGLRenderTarget> render_target_;
+  flutter::TaskRunners task_runners_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceGL);
 };

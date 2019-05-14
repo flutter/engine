@@ -72,7 +72,8 @@ id<FlutterViewEngineDelegate> _delegate;
 }
 
 - (std::unique_ptr<flutter::IOSSurface>)createSurface:
-    (std::shared_ptr<flutter::IOSGLContext>)context {
+                                            (std::shared_ptr<flutter::IOSGLContext>)context
+                                      withTaskRunners:(flutter::TaskRunners)task_runners {
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
         reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
@@ -85,8 +86,8 @@ id<FlutterViewEngineDelegate> _delegate;
         eagl_layer.get().presentsWithTransaction = YES;
       }
     }
-    return std::make_unique<flutter::IOSSurfaceGL>(context, std::move(eagl_layer),
-                                                   [_delegate platformViewsController]);
+    return std::make_unique<flutter::IOSSurfaceGL>(
+        context, std::move(eagl_layer), [_delegate platformViewsController], task_runners);
   } else {
     fml::scoped_nsobject<CALayer> layer(reinterpret_cast<CALayer*>([self.layer retain]));
     return std::make_unique<flutter::IOSSurfaceSoftware>(std::move(layer),
