@@ -411,7 +411,10 @@ void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
   if (frame_size.isEmpty())
     return;
 
-  task_runners_.SetPlatformView(true);
+  // TODO(iskakaushik): this only needs to be set for ios.
+  bool has_embedded_ui_view = layer_tree->has_platform_views();
+  FML_LOG(ERROR) << "has_embedded_ui_view => " << has_embedded_ui_view;
+  task_runners_.SetPlatformViewInScene(has_embedded_ui_view);
   layer_tree->set_frame_size(frame_size);
   animator_->Render(std::move(layer_tree));
 }

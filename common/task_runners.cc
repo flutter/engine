@@ -53,7 +53,7 @@ bool TaskRunners::IsValid() const {
   return platform_ && gpu_ && ui_ && io_;
 }
 
-bool TaskRunners::SetPlatformView(bool platform_view_in_scene) const {
+bool TaskRunners::SetPlatformViewInScene(bool platform_view_in_scene) const {
   bool old_value = TaskRunners::platform_view_in_scene_;
   TaskRunners::platform_view_in_scene_ = platform_view_in_scene;
   return old_value;

@@ -25,6 +25,14 @@ class ContainerLayer : public Layer {
 
   const std::vector<std::shared_ptr<Layer>>& layers() const { return layers_; }
 
+  bool SubtreeHasPlatformViews() {
+    return subtree_has_platform_views_;
+  }
+
+  void SetSubtreeHasPlatformViews(bool subtree_has_platform_views) {
+    subtree_has_platform_views_ = subtree_has_platform_views;
+  }
+
  protected:
   void PrerollChildren(PrerollContext* context,
                        const SkMatrix& child_matrix,
@@ -40,6 +48,7 @@ class ContainerLayer : public Layer {
 
  private:
   std::vector<std::shared_ptr<Layer>> layers_;
+  bool subtree_has_platform_views_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContainerLayer);
 };

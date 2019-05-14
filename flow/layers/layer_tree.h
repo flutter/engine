@@ -72,6 +72,14 @@ class LayerTree {
     checkerboard_offscreen_layers_ = checkerboard;
   }
 
+  void set_has_platform_views(bool has_embedded_ui_view) {
+    has_embedded_ui_view_ = has_embedded_ui_view;
+  }
+
+  bool has_platform_views() {
+    return has_embedded_ui_view_;
+  }
+
  private:
   SkISize frame_size_;  // Physical pixels.
   std::shared_ptr<Layer> root_layer_;
@@ -79,6 +87,7 @@ class LayerTree {
   uint32_t rasterizer_tracing_threshold_;
   bool checkerboard_raster_cache_images_;
   bool checkerboard_offscreen_layers_;
+  bool has_embedded_ui_view_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LayerTree);
 };

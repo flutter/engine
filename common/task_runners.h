@@ -36,7 +36,7 @@ class TaskRunners {
 
   bool IsValid() const;
 
-  bool SetPlatformView(bool platform_view_in_scene) const;
+  bool SetPlatformViewInScene(bool platform_view_in_scene) const;
 
  private:
   static bool platform_view_in_scene_;

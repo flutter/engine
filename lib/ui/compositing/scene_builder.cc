@@ -200,7 +200,11 @@ void SceneBuilder::addRetained(fml::RefPtr<EngineLayer> retainedLayer) {
   if (!current_layer_) {
     return;
   }
-  current_layer_->Add(retainedLayer->Layer());
+  auto layer = retainedLayer->Layer();
+  current_layer_->Add(layer);
+  if (root_layer_ && layer) {
+    root_layer_->SetSubtreeHasPlatformViews(layer->SubtreeHasPlatformViews());
+  }
 }
 
 void SceneBuilder::pop() {
@@ -258,6 +262,9 @@ void SceneBuilder::addPlatformView(double dx,
   layer->set_size(SkSize::Make(width, height));
   layer->set_view_id(viewId);
   current_layer_->Add(std::move(layer));
+  if (root_layer_) {
+    root_layer_->SetSubtreeHasPlatformViews(true);
+  }
 }
 
 #if defined(OS_FUCHSIA)
@@ -305,9 +312,14 @@ void SceneBuilder::setCheckerboardOffscreenLayers(bool checkerboard) {
 }
 
 fml::RefPtr<Scene> SceneBuilder::build() {
-  fml::RefPtr<Scene> scene = Scene::create(
-      std::move(root_layer_), rasterizer_tracing_threshold_,
-      checkerboard_raster_cache_images_, checkerboard_offscreen_layers_);
+  bool subtree_has_platform_views = false;
+  if (root_layer_) {
+    subtree_has_platform_views = root_layer_->SubtreeHasPlatformViews();
+  }
+  fml::RefPtr<Scene> scene =
+      Scene::create(std::move(root_layer_), rasterizer_tracing_threshold_,
+                    checkerboard_raster_cache_images_,
+                    checkerboard_offscreen_layers_, subtree_has_platform_views);
   ClearDartWrapper();
   return scene;
 }
@@ -320,6 +332,8 @@ void SceneBuilder::PushLayer(std::shared_ptr<flutter::ContainerLayer> layer) {
     current_layer_ = root_layer_.get();
     return;
   }
+
+  layer->SetSubtreeHasPlatformViews(root_layer_->SubtreeHasPlatformViews());
 
   if (!current_layer_) {
     return;

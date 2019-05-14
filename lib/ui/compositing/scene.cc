@@ -27,22 +27,26 @@ DART_BIND_ALL(Scene, FOR_EACH_BINDING)
 fml::RefPtr<Scene> Scene::create(std::shared_ptr<flutter::Layer> rootLayer,
                                  uint32_t rasterizerTracingThreshold,
                                  bool checkerboardRasterCacheImages,
-                                 bool checkerboardOffscreenLayers) {
+                                 bool checkerboardOffscreenLayers,
+                                 bool has_platform_view) {
   return fml::MakeRefCounted<Scene>(
       std::move(rootLayer), rasterizerTracingThreshold,
-      checkerboardRasterCacheImages, checkerboardOffscreenLayers);
+      checkerboardRasterCacheImages, checkerboardOffscreenLayers,
+      has_platform_view);
 }
 
 Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
-             bool checkerboardOffscreenLayers)
+             bool checkerboardOffscreenLayers,
+             bool has_platform_view)
     : m_layerTree(new flutter::LayerTree()) {
   m_layerTree->set_root_layer(std::move(rootLayer));
   m_layerTree->set_rasterizer_tracing_threshold(rasterizerTracingThreshold);
   m_layerTree->set_checkerboard_raster_cache_images(
       checkerboardRasterCacheImages);
   m_layerTree->set_checkerboard_offscreen_layers(checkerboardOffscreenLayers);
+  m_layerTree->set_has_platform_views(has_platform_view);
 }
 
 Scene::~Scene() {}
