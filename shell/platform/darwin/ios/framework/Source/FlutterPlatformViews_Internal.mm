@@ -18,7 +18,7 @@ FlutterPlatformViewLayer::FlutterPlatformViewLayer(fml::scoped_nsobject<UIView> 
 FlutterPlatformViewLayer::~FlutterPlatformViewLayer() = default;
 
 FlutterPlatformViewsController::FlutterPlatformViewsController(flutter::TaskRunners tr)
-    : task_runners_(tr) {}
+    : task_runners_(std::move(tr)) {}
 
 FlutterPlatformViewsController::~FlutterPlatformViewsController() = default;
 

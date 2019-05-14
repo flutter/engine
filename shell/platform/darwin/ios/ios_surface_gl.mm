@@ -85,16 +85,32 @@ flutter::ExternalViewEmbedder* IOSSurfaceGL::GetExternalViewEmbedder() {
 }
 
 void IOSSurfaceGL::BeginFrame(SkISize frame_size) {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  fml::AutoResetWaitableEvent gpu_latch;
+
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetPlatformTaskRunner(),
+      [platform_views_controller = GetPlatformViewsController(), frame_size = frame_size] {
   FML_CHECK(platform_views_controller != nullptr);
   platform_views_controller->SetFrameSize(frame_size);
   [CATransaction begin];
+      });
 }
 
 void IOSSurfaceGL::PrerollCompositeEmbeddedView(int view_id) {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  FML_CHECK(platform_views_controller != nullptr);
-  platform_views_controller->PrerollCompositeEmbeddedView(view_id);
+  // we are now on the GPU thread.
+  fml::AutoResetWaitableEvent gpu_latch;
+
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetPlatformTaskRunner(),
+      [&gpu_latch, tr = task_runners_, platform_views_controller = GetPlatformViewsController(),
+       view_id = view_id] {
+        FML_CHECK(tr.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+        FML_CHECK(platform_views_controller != nullptr);
+        platform_views_controller->PrerollCompositeEmbeddedView(view_id);
+        gpu_latch.Signal();
+      });
+
+  gpu_latch.Wait();
 }
 
 std::vector<SkCanvas*> IOSSurfaceGL::GetCurrentCanvases() {
@@ -105,20 +121,41 @@ std::vector<SkCanvas*> IOSSurfaceGL::GetCurrentCanvases() {
 
 SkCanvas* IOSSurfaceGL::CompositeEmbeddedView(int view_id,
                                               const flutter::EmbeddedViewParams& params) {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  FML_CHECK(platform_views_controller != nullptr);
-  return platform_views_controller->CompositeEmbeddedView(view_id, params);
+  fml::AutoResetWaitableEvent gpu_latch;
+  SkCanvas* canvas;
+
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetPlatformTaskRunner(),
+      [&gpu_latch, tr = task_runners_, platform_views_controller = GetPlatformViewsController(),
+       view_id = view_id, &canvas, params = params] {
+        FML_CHECK(platform_views_controller != nullptr);
+        canvas = platform_views_controller->CompositeEmbeddedView(view_id, params);
+        gpu_latch.Signal();
+      });
+
+  gpu_latch.Wait();
+  return canvas;
 }
 
 bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  if (platform_views_controller == nullptr) {
-    return true;
-  }
+  fml::AutoResetWaitableEvent gpu_latch;
+  bool result = true;
 
-  bool submitted = platform_views_controller->SubmitFrame(true, std::move(context), context_);
-  [CATransaction commit];
-  return submitted;
+  fml::TaskRunner::RunNowOrPostTask(
+    task_runners_.GetPlatformTaskRunner(),
+    [&gpu_latch, tr = task_runners_, platform_views_controller = GetPlatformViewsController(), &result, context = context, context_ = context_] {
+      if (platform_views_controller == nullptr) {
+          result = true;
+          gpu_latch.Signal();
+          return;
+        }
+        result = platform_views_controller->SubmitFrame(true, std::move(context), context_);
+        [CATransaction commit];
+        gpu_latch.Signal();
+    });
+      
+  gpu_latch.Wait();
+  return result;
 }
 
 }  // namespace flutter
