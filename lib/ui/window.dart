@@ -411,6 +411,39 @@ class Locale {
 ///
 /// There is a single Window instance in the system, which you can
 /// obtain from the [window] property.
+///
+/// ## Insets and Padding
+///
+/// {@animation 300 300 https://flutter.github.io/assets-for-api-docs/assets/widgets/window_padding.mp4}
+///
+/// In this diagram, the black areas represent system UI that the app annot draw
+/// over. The red area represents view padding that the application may not be
+/// able to detect gestures in and may not want to draw in. The grey area
+/// represents the system keyboard, which can cover over the bottom view
+/// padding when visible.
+///
+/// The [Window.viewInsets] are the physical pixels into which the operation
+/// system may place system UI, such as the keyboard, which would fully obscure
+/// any content drawn in that area.
+///
+/// The [Window.viewPadding] are the physical pixels on each side of the display
+/// that may be partially obscured by system UI or by physical intrusions into
+/// the display, such as an overscan region on a television or a "notch" on a
+/// phone.
+///
+/// The [Window.padding] property is computed from both [Window.viewInsets] and
+/// [Window.viewPadding]. It will allow a view inset to consume view padding
+/// where appropriate, such as when a phone's keyboard is covering the bottom
+/// view padding and so "absorbs" it.
+///
+/// Clients that want to position elements relative to the view padding
+/// regardless of the view insets should use the [Window.viewPadding] property,
+/// e.g. if you wish to draw a widget at the center of the screen with respect
+/// to the iPhone "safe area" regardless of whether the keyboard is showing.
+///
+/// Clients that want to position elements or detect gestures relative to the
+/// padding as impacted by the view insets should use the [Window.padding], e.g.
+/// if you want to know whether a gesture is within range to trigger a scroll.
 class Window {
   Window._();
 
@@ -467,6 +500,10 @@ class Window {
   ///
   /// When this changes, [onMetricsChanged] is called.
   ///
+  /// The relationship between this [Window.viewInsets], [Window.viewPadding],
+  /// and [Window.padding] are described in more detail in the documentation for
+  /// [Window].
+  ///
   /// See also:
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
@@ -488,67 +525,11 @@ class Window {
   /// response to the soft keyboard being visible or hidden, whereas
   /// [Window.padding] will.
   ///
-  /// For example, on an iPhone X when the keyboard is not showing, the
-  /// viewPadding and the padding will be equal, as there are no insets at play.
-  /// In this scenario, the [Window.viewInsets.bottom] will be 0, and the
-  /// [Window.padding.bottom] and [Window.viewPadding.bottom] will be some
-  /// positive number specified by the OS:
-  ///
-  /// ```
-  ///   ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
-  ///  ╱     ████████     ╲
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃  _____________________________________
-  /// ┃      ━━━━━━━━      ┃  viewPadding.bottom == padding.bottom
-  ///  ╲▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁╱   _____________________________________
-  /// ```
-  ///
-  /// Whereas when the keyboard is showing, the viewPadding and padding will be
-  /// different for the bottom, since the inset created by the software keyboard
-  /// will consume the bottom padding, but the viewPadding will remain the same
-  /// for applications that wish to draw or position elements or respond to taps
-  /// relative to the viewPadding rather than to the viewInsets and/or padding.
-  /// In this scenario, the [Window.viewInsets.bottom] will provide the height
-  /// of the IME, the [Window.padding.bottom] will be 0, and the
-  /// [Window.viewPadding.bottom] will be some positive number specified by
-  /// the OS.
-  ///
-  /// ```
-  ///   ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
-  ///  ╱     ████████     ╲
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃                    ┃
-  /// ┃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁┃ viewInset.bottom (consumes padding.bottom)
-  /// ┃     QWERTYUIOP     ┃
-  /// ┃     ASDFGHJKL      ┃
-  /// ┃   ⇧  ZXCVBNM  ⌫    ┃
-  /// ┃   123    ␣    ⏎    ┃
-  /// ┃                    ┃  ___________________
-  /// ┃      ━━━━━━━━      ┃  viewPadding.bottom
-  ///  ╲▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁╱   ___________________
-  /// ```
-  ///
   /// When this changes, [onMetricsChanged] is called.
+  ///
+  /// The relationship between this [Window.viewInsets], [Window.viewPadding],
+  /// and [Window.padding] are described in more detail in the documentation for
+  /// [Window].
   ///
   /// See also:
   ///
@@ -575,6 +556,10 @@ class Window {
   /// the soft keyboard is visible.
   ///
   /// When this changes, [onMetricsChanged] is called.
+  ///
+  /// The relationship between this [Window.viewInsets], [Window.viewPadding],
+  /// and [Window.padding] are described in more detail in the documentation for
+  /// [Window].
   ///
   /// See also:
   ///
