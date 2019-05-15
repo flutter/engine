@@ -32,6 +32,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
     private static final MethodChannel.Result logger =
         new ErrorLogResult("FlutterTextInput");
 
+    @SuppressWarnings("deprecation")
     public InputConnectionAdaptor(
         View view,
         int client,
@@ -44,7 +45,9 @@ class InputConnectionAdaptor extends BaseInputConnection {
         this.textInputChannel = textInputChannel;
         mEditable = editable;
         mBatchCount = 0;
-        mLayout = DynamicLayout.Builder.obtain(mEditable, new TextPaint(), Integer.MAX_VALUE).build();
+        // We create a dummy Layout with max width so that the selection
+        // shifting acts as if all text were in one line.
+        mLayout = new DynamicLayout(mEditable, new TextPaint(), Integer.MAX_VALUE, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
         mImm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
     }
 
