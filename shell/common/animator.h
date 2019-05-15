@@ -34,7 +34,8 @@ class Animator final {
 
   Animator(Delegate& delegate,
            TaskRunners task_runners,
-           std::unique_ptr<VsyncWaiter> waiter);
+           std::unique_ptr<VsyncWaiter> waiter,
+           PipelineStateObserver pipeline_state_observer);
 
   ~Animator();
 

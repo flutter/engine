@@ -118,15 +118,18 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                          shared_snapshot = std::move(shared_snapshot),      //
                          vsync_waiter = std::move(vsync_waiter),            //
                          snapshot_delegate = std::move(snapshot_delegate),  //
-                         io_manager = io_manager->GetWeakPtr()              //
+                         io_manager = io_manager->GetWeakPtr(),             //
+                         pipeline_state_observer =                          //
+                             std::move(settings.pipeline_state_observer)    //
   ]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
         const auto& task_runners = shell->GetTaskRunners();
 
         // The animator is owned by the UI thread but it gets its vsync pulses
         // from the platform.
-        auto animator = std::make_unique<Animator>(*shell, task_runners,
-                                                   std::move(vsync_waiter));
+        auto animator = std::make_unique<Animator>(
+            *shell, task_runners, std::move(vsync_waiter),
+            std::move(pipeline_state_observer));
 
         engine = std::make_unique<Engine>(*shell,                        //
                                           *shell->GetDartVM(),           //

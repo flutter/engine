@@ -51,6 +51,8 @@ std::string Settings::ToString() const {
   stream << "icu_data_path: " << icu_data_path << std::endl;
   stream << "assets_dir: " << assets_dir << std::endl;
   stream << "assets_path: " << assets_path << std::endl;
+  stream << "pipeline_state_observer set: " << !!pipeline_state_observer
+         << std::endl;
   return stream.str();
 }
 

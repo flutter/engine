@@ -15,6 +15,7 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
+#include "flutter/shell/common/pipeline.h"
 
 namespace flutter {
 
@@ -148,6 +149,12 @@ struct Settings {
   fml::UniqueFD::element_type assets_dir =
       fml::UniqueFD::traits_type::InvalidValue();
   std::string assets_path;
+
+  // An optional callback that allows the embedder to observe when pipeline
+  // items change state.  For example, it could be used to have access to
+  // pipeline item metrics in a region of code that has access to platform
+  // specific APIs.  Must be thread safe.
+  PipelineStateObserver pipeline_state_observer;
 
   std::string ToString() const;
 };

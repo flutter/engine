@@ -5,6 +5,7 @@
 #include "flutter/shell/common/animator.h"
 
 #include "flutter/fml/trace_event.h"
+#include "flutter/shell/common/pipeline.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
 namespace flutter {
@@ -21,13 +22,16 @@ constexpr fml::TimeDelta kNotifyIdleTaskWaitTime =
 
 Animator::Animator(Delegate& delegate,
                    TaskRunners task_runners,
-                   std::unique_ptr<VsyncWaiter> waiter)
+                   std::unique_ptr<VsyncWaiter> waiter,
+                   PipelineStateObserver pipeline_state_observer)
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
       waiter_(std::move(waiter)),
       last_begin_frame_time_(),
       dart_frame_deadline_(0),
-      layer_tree_pipeline_(fml::MakeRefCounted<LayerTreePipeline>(2)),
+      layer_tree_pipeline_(fml::MakeRefCounted<LayerTreePipeline>(
+          2,
+          std::move(pipeline_state_observer))),
       pending_frame_semaphore_(1),
       frame_number_(1),
       paused_(false),

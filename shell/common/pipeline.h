@@ -5,14 +5,15 @@
 #ifndef FLUTTER_SHELL_COMMON_PIPELINE_H_
 #define FLUTTER_SHELL_COMMON_PIPELINE_H_
 
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <queue>
+
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/synchronization/semaphore.h"
 #include "flutter/fml/trace_event.h"
-
-#include <memory>
-#include <mutex>
-#include <queue>
 
 namespace flutter {
 
@@ -21,6 +22,26 @@ enum class PipelineConsumeResult {
   Done,
   MoreAvailable,
 };
+
+enum class PipelineItemStateChange {
+  // Indicates that a new pipeline item has started.
+  kBegin,
+  // Indicates that the pipeline item has advanced to its next phase.  In
+  // practice this will only happen once, and means that the pipeline item has
+  // finished its UI thread work, and that GPU thread work is about to begin.
+  kStep,
+  // Indicates that the pipeline item is done.
+  kEnd,
+  // Indicates that the pipeline item was dropped.
+  kAbort,
+};
+
+// Called when pipeline items change states.  See
+// |Settings::pipeline_state_observer| for further details.
+using PipelineStateObserver =
+    std::function<void(intptr_t pipeline_id,
+                       size_t pipeline_item,
+                       PipelineItemStateChange state_change)>;
 
 size_t GetNextPipelineTraceID();
 
@@ -86,7 +107,10 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
     FML_DISALLOW_COPY_AND_ASSIGN(ProducerContinuation);
   };
 
-  explicit Pipeline(uint32_t depth) : empty_(depth), available_(0) {}
+  Pipeline(uint32_t depth, PipelineStateObserver pipeline_state_observer)
+      : empty_(depth),
+        available_(0),
+        pipeline_state_observer_(std::move(pipeline_state_observer)) {}
 
   ~Pipeline() = default;
 
@@ -97,10 +121,17 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
       return {};
     }
 
+    size_t trace_id = GetNextPipelineTraceID();
+    if (pipeline_state_observer_) {
+      pipeline_state_observer_(PipelineId(), trace_id,
+                               PipelineItemStateChange::kBegin);
+    }
+
     return ProducerContinuation{
         std::bind(&Pipeline::ProducerCommit, this, std::placeholders::_1,
                   std::placeholders::_2),  // continuation
-        GetNextPipelineTraceID()};         // trace id
+        trace_id                           // trace id
+    };
   }
 
   using Consumer = std::function<void(ResourcePtr)>;
@@ -135,7 +166,10 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
 
     TRACE_FLOW_END("flutter", "PipelineItem", trace_id);
     TRACE_EVENT_ASYNC_END0("flutter", "PipelineItem", trace_id);
-
+    if (pipeline_state_observer_) {
+      pipeline_state_observer_(PipelineId(), trace_id,
+                               PipelineItemStateChange::kEnd);
+    }
     return items_count > 0 ? PipelineConsumeResult::MoreAvailable
                            : PipelineConsumeResult::Done;
   }
@@ -145,8 +179,11 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
   fml::Semaphore available_;
   std::mutex queue_mutex_;
   std::queue<std::pair<ResourcePtr, size_t>> queue_;
+  PipelineStateObserver pipeline_state_observer_;
 
   void ProducerCommit(ResourcePtr resource, size_t trace_id) {
+    bool had_resource = !!resource;
+
     {
       std::lock_guard<std::mutex> lock(queue_mutex_);
       queue_.emplace(std::move(resource), trace_id);
@@ -154,9 +191,21 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
 
     // Ensure the queue mutex is not held as that would be a pessimization.
     available_.Signal();
+
+    if (pipeline_state_observer_) {
+      if (had_resource) {
+        pipeline_state_observer_(PipelineId(), trace_id,
+                                 PipelineItemStateChange::kStep);
+      } else {
+        pipeline_state_observer_(PipelineId(), trace_id,
+                                 PipelineItemStateChange::kAbort);
+      }
+    }
   }
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Pipeline);
+  intptr_t PipelineId() const { return intptr_t(this); }
+
+  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(Pipeline);
 };
 
 }  // namespace flutter
