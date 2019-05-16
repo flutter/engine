@@ -60,7 +60,6 @@ public class FlutterMain {
     private static final String DEFAULT_LIBRARY = "libflutter.so";
     private static final String DEFAULT_KERNEL_BLOB = "kernel_blob.bin";
     private static final String DEFAULT_FLUTTER_ASSETS_DIR = "flutter_assets";
-    private static final Boolean DEFAULT_AOT_ABI_SPLIT = false;
 
     private static String fromFlutterAssets(String filePath) {
         return sFlutterAssetsDir + File.separator + filePath;
@@ -212,7 +211,7 @@ public class FlutterMain {
                 shellArgs.add("--" + AOT_VM_SNAPSHOT_DATA_KEY + "=" + sAotVmSnapshotData);
                 shellArgs.add("--" + AOT_VM_SNAPSHOT_INSTR_KEY + "=" + sAotVmSnapshotInstr);
                 shellArgs.add("--" + AOT_ISOLATE_SNAPSHOT_DATA_KEY + "=" + sAotIsolateSnapshotData);
-                shellArgs.add("--" + AOT_ISOLATE_SNAPSHOT_INSTR_KEY + "=" + sAotIsolateSnapshotInstr); 
+                shellArgs.add("--" + AOT_ISOLATE_SNAPSHOT_INSTR_KEY + "=" + sAotIsolateSnapshotInstr);
             }
 
             if (sSettings.getLogTag() != null) {
