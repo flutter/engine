@@ -296,24 +296,24 @@ public class FlutterMain {
             throw new RuntimeException(e);
         }
 
-        String sAotVmSnapshotDataLib = "lib_" + sAotVmSnapshotData + ".so";
-        String sAotVmSnapshotInstrLib = "lib_" + sAotVmSnapshotInstr + ".so";
-        String sAotIsolateSnapshotDataLib = "lib_" + sAotIsolateSnapshotData + ".so";
-        String sAotIsolateSnapshotInstrLib = "lib_" + sAotIsolateSnapshotInstr + ".so";
+        String aotVmSnapshotDataLib = "lib_" + sAotVmSnapshotData + ".so";
+        String aotVmSnapshotInstrLib = "lib_" + sAotVmSnapshotInstr + ".so";
+        String aotIsolateSnapshotDataLib = "lib_" + sAotIsolateSnapshotData + ".so";
+        String aotIsolateSnapshotInstrLib = "lib_" + sAotIsolateSnapshotInstr + ".so";
 
-        sIsPrecompiledAsBlobs = listLibs(applicationContext)
+        sIsPrecompiledAsBlobLibraries = listLibs(applicationContext)
             .containsAll(Arrays.asList(
-                sAotVmSnapshotDataLib,
-                sAotVmSnapshotInstrLib,
-                sAotIsolateSnapshotDataLib,
-                sAotIsolateSnapshotInstrLib
+                aotVmSnapshotDataLib,
+                aotVmSnapshotInstrLib,
+                aotIsolateSnapshotDataLib,
+                aotIsolateSnapshotInstrLib
             ));
 
-        if (sIsPrecompiledAsBlobs) {
-            sAotVmSnapshotData = sAotVmSnapshotDataLib;
-            sAotVmSnapshotInstr = sAotVmSnapshotInstrLib;
-            sAotIsolateSnapshotData = sAotIsolateSnapshotDataLib;
-            sAotIsolateSnapshotInstr = sAotIsolateSnapshotInstrLib;
+        if (sIsPrecompiledAsBlobLibraries) {
+            sAotVmSnapshotData = aotVmSnapshotDataLib;
+            sAotVmSnapshotInstr = aotVmSnapshotInstrLib;
+            sAotIsolateSnapshotData = aotIsolateSnapshotDataLib;
+            sAotIsolateSnapshotInstr = aotIsolateSnapshotInstrLib;
         }
     }
 
