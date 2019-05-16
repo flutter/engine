@@ -62,7 +62,7 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
   set_shader(UIDartState::CreateGPUObject(SkGradientShader::MakeLinear(
       reinterpret_cast<const SkPoint*>(end_points.data()),
       reinterpret_cast<const SkColor*>(colors.data()), color_stops.data(),
-      colors.num_elements(), tile_mode, has_matrix ? &sk_matrix : nullptr)));
+      colors.num_elements(), tile_mode, 0, has_matrix ? &sk_matrix : nullptr)));
 }
 
 void CanvasGradient::initRadial(double center_x,
