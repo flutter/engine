@@ -1347,7 +1347,7 @@ class Paragraph extends NativeFieldWrapperClass2 {
   /// constraint.
   ///
   /// See the discussion of the `maxLines` and `ellipsis` arguments at
-  /// [ParagraphStyle].
+  /// [new ParagraphStyle].
   bool get didExceedMaxLines native 'Paragraph_didExceedMaxLines';
 
   /// Computes the size and position of each glyph in the paragraph.
@@ -1398,7 +1398,7 @@ class Paragraph extends NativeFieldWrapperClass2 {
 ///
 /// To set the paragraph's alignment, truncation, and ellipsizing behavior, pass
 /// an appropriately-configured [ParagraphStyle] object to the
-/// [ParagraphBuilder] constructor.
+/// [new ParagraphBuilder] constructor.
 ///
 /// Then, call combinations of [pushStyle], [addText], and [pop] to add styled
 /// text to the object.
