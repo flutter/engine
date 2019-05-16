@@ -356,7 +356,7 @@ class Size extends OffsetBase {
   ///
   /// See also:
   ///
-  ///  * [new Size.fromRadius], which is more convenient when the available size
+  ///  * [Size.fromRadius], which is more convenient when the available size
   ///    is the radius of a circle.
   const Size.square(double dimension) : super(dimension, dimension);
 
@@ -373,7 +373,7 @@ class Size extends OffsetBase {
   ///
   /// See also:
   ///
-  ///  * [new Size.square], which creates a square with the given dimension.
+  ///  * [Size.square], which creates a square with the given dimension.
   const Size.fromRadius(double radius) : super(radius * 2.0, radius * 2.0);
 
   /// The horizontal extent of this size.
@@ -1658,7 +1658,7 @@ class RSTransform {
   /// argument multiplied by the x-coordinate of the rotation point, minus the
   /// `scos` argument multiplied by the y-coordinate of the rotation point.
   ///
-  /// The [new RSTransform.fromComponents] method may be a simpler way to
+  /// The [RSTransform.fromComponents] method may be a simpler way to
   /// construct these values. However, if there is a way to factor out the
   /// computations of the sine and cosine of the rotation so that they can be
   /// reused over multiple calls to this constructor, it may be more efficient
@@ -1683,13 +1683,13 @@ class RSTransform {
   /// The `translateX` and `translateY` parameters give the coordinate of the
   /// offset by which to translate.
   ///
-  /// This constructor computes the arguments of the [new RSTransform]
+  /// This constructor computes the arguments of the [RSTransform]
   /// constructor and then defers to that constructor to actually create the
   /// object. If many [RSTransform] objects are being created and there is a way
   /// to factor out the computations of the sine and cosine of the rotation
   /// (which are computed each time this constructor is called) and reuse them
   /// over multiple [RSTransform] objects, it may be more efficient to directly
-  /// use the more direct [new RSTransform] constructor instead.
+  /// use the more direct [RSTransform] constructor instead.
   factory RSTransform.fromComponents({
     double rotation,
     double scale,

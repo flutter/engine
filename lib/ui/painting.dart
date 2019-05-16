@@ -2586,7 +2586,7 @@ class ImageFilter extends NativeFieldWrapperClass2 {
 
   /// Creates an image filter that applies a matrix transformation.
   ///
-  /// For example, applying a positive scale matrix (see [new Matrix4.diagonal3])
+  /// For example, applying a positive scale matrix (see [Matrix4.diagonal3])
   /// when used with [BackdropFilter] would magnify the background image.
   ImageFilter.matrix(Float64List matrix4,
                      { FilterQuality filterQuality = FilterQuality.low }) {
@@ -2624,8 +2624,8 @@ class Shader extends NativeFieldWrapperClass2 {
 ///    relative coordinates and can create a [Shader] representing the gradient
 ///    for a particular [Rect] on demand.
 ///  * [dart:ui.Gradient], the low-level class used when dealing with the
-///    [Paint.shader] property directly, with its [new Gradient.linear] and [new
-///    Gradient.radial] constructors.
+///    [Paint.shader] property directly, with its [Gradient.linear] and
+///    [Gradient.radial] constructors.
 // These enum values must be kept in sync with SkShader::TileMode.
 enum TileMode {
   /// Edge is clamped to the final color.
@@ -3552,8 +3552,8 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// first.
   ///
   /// To align the text, set the `textAlign` on the [ParagraphStyle] object
-  /// passed to the [new ParagraphBuilder] constructor. For more details see
-  /// [TextAlign] and the discussion at [new ParagraphStyle].
+  /// passed to the [ParagraphBuilder] constructor. For more details see
+  /// [TextAlign] and the discussion at [ParagraphStyle].
   ///
   /// If the text is left aligned or justified, the left margin will be at the
   /// position specified by the `offset` argument's [Offset.dx] coordinate.
