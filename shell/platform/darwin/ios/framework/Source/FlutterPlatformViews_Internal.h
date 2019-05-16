@@ -70,7 +70,7 @@ class FlutterPlatformViewsController {
 
   std::vector<SkCanvas*> GetCurrentCanvases();
 
-  SkCanvas* CompositeEmbeddedView(int view_id, const flutter::EmbeddedViewParams& params);
+  SkCanvas* CompositeEmbeddedView(int view_id, const flutter::EmbeddedViewParams& params, const std::vector<FlutterEmbededViewTransformElement>::iterator &transformIterator);
 
   // Discards all platform views instances and auxiliary resources.
   void Reset();

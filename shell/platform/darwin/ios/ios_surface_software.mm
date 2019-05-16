@@ -157,7 +157,7 @@ SkCanvas* IOSSurfaceSoftware::CompositeEmbeddedView(int view_id,
                                                     const flutter::EmbeddedViewParams& params) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
-  return platform_views_controller->CompositeEmbeddedView(view_id, params);
+  return platform_views_controller->CompositeEmbeddedView(view_id, params, getTransformStackIterator());
 }
 
 bool IOSSurfaceSoftware::SubmitFrame(GrContext* context) {
