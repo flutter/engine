@@ -211,7 +211,11 @@ void SceneBuilder::pop() {
   if (!current_layer_) {
     return;
   }
-  current_layer_ = current_layer_->parent();
+  auto parent = current_layer_->parent();
+  if (parent && current_layer_->SubtreeHasPlatformViews()) {
+    parent->SetSubtreeHasPlatformViews(true);
+  }
+  current_layer_ = parent;
 }
 
 void SceneBuilder::addPicture(double dx,
@@ -257,11 +261,13 @@ void SceneBuilder::addPlatformView(double dx,
   if (!current_layer_) {
     return;
   }
+  FML_LOG(ERROR) << "I HAVE BEEN  ADDED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
   auto layer = std::make_unique<flutter::PlatformViewLayer>();
   layer->set_offset(SkPoint::Make(dx, dy));
   layer->set_size(SkSize::Make(width, height));
   layer->set_view_id(viewId);
   current_layer_->Add(std::move(layer));
+  current_layer_->SetSubtreeHasPlatformViews(true);
   if (root_layer_) {
     root_layer_->SetSubtreeHasPlatformViews(true);
   }

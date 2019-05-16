@@ -85,7 +85,7 @@ class Shell final : public PlatformView::Delegate,
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
                          rapidjson::Document&)>;
 
-  const TaskRunners task_runners_;
+  TaskRunners task_runners_;
   const Settings settings_;
   DartVMRef vm_;
   std::unique_ptr<PlatformView> platform_view_;  // on platform task runner
@@ -118,6 +118,8 @@ class Shell final : public PlatformView::Delegate,
              std::unique_ptr<Engine> engine,
              std::unique_ptr<Rasterizer> rasterizer,
              std::unique_ptr<ShellIOManager> io_manager);
+
+  void UpdateServiceProtocolHandlers();
 
   // |PlatformView::Delegate|
   void OnPlatformViewCreated(std::unique_ptr<Surface> surface) override;
@@ -183,6 +185,9 @@ class Shell final : public PlatformView::Delegate,
   // |Engine::Delegate|
   void OnEngineHandlePlatformMessage(
       fml::RefPtr<PlatformMessage> message) override;
+
+  // |Engine::Delegate|
+  void SetPlatformViewInScene(bool platform_view_in_scene) override;
 
   void HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message);
 

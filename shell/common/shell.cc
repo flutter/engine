@@ -283,7 +283,10 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   // Install service protocol handlers.
+  UpdateServiceProtocolHandlers();
+}
 
+void Shell::UpdateServiceProtocolHandlers() {
   service_protocol_handlers_[ServiceProtocol::kScreenshotExtensionName
                                  .ToString()] = {
       task_runners_.GetGPUTaskRunner(),
@@ -294,6 +297,8 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
       task_runners_.GetGPUTaskRunner(),
       std::bind(&Shell::OnServiceProtocolScreenshotSKP, this,
                 std::placeholders::_1, std::placeholders::_2)};
+
+  // All these happen on UI Thread
   service_protocol_handlers_[ServiceProtocol::kRunInViewExtensionName
                                  .ToString()] = {
       task_runners_.GetUITaskRunner(),
@@ -314,6 +319,38 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
           task_runners_.GetUITaskRunner(),
           std::bind(&Shell::OnServiceProtocolGetDisplayRefreshRate, this,
                     std::placeholders::_1, std::placeholders::_2)};
+}
+
+// Currently we only care about GPU and Platform threads,
+// everything else is irie. Also, really, we only care about GPU thread
+// since things that happen on the platform or UI threads should be good as is.
+//
+// We also only care about iOS for now.
+//
+// This means a few things:
+//   1. Things that ever reference GPU task runner.
+//   2. All resources currently in accessible by GPU task runner
+//      should be accessible by Platform TR. Graphics stuff?
+//   3.
+void Shell::SetPlatformViewInScene(bool platform_view_in_scene) {
+  // "this" is not going to change.
+  if (task_runners_.IsPlatformViewInScene() == platform_view_in_scene) {
+    return;
+  }
+
+  std::atomic_flag lock1 = ATOMIC_FLAG_INIT, lock2 = ATOMIC_FLAG_INIT;
+
+  // GPU thread will be blocked until we mark platform thread as in view.
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetGPUTaskRunner(),
+      fml::MakeCopyable([&lock1, &lock2]() mutable {
+        lock2.clear(std::memory_order_release);
+        while (lock1.test_and_set(std::memory_order_acquire));
+      }));
+
+  while (lock2.test_and_set(std::memory_order_acquire));
+  task_runners_.SetPlatformViewInScene(platform_view_in_scene);
+  lock1.clear(std::memory_order_release);
 }
 
 Shell::~Shell() {
@@ -772,13 +809,9 @@ void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
 void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   FML_DCHECK(is_setup_);
 
-  task_runners_.GetGPUTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr(),
-       pipeline = std::move(pipeline)]() {
-        if (rasterizer) {
-          rasterizer->Draw(pipeline);
-        }
-      });
+  if (rasterizer_) {
+    rasterizer_->Draw(pipeline);
+  }
 }
 
 // |Animator::Delegate|

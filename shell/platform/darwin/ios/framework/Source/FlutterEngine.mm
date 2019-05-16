@@ -89,7 +89,7 @@
     _dartProject.reset([projectOrNil retain]);
 
   _pluginPublications = [NSMutableDictionary new];
-  _platformViewsController.reset(new flutter::FlutterPlatformViewsController(_shell->GetTaskRunners()));
+  _platformViewsController.reset(nullptr);
 
   [self setupChannels];
 

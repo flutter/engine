@@ -52,6 +52,8 @@ class Engine final : public RuntimeDelegate {
 
     virtual void UpdateIsolateDescription(const std::string isolate_name,
                                           int64_t isolate_port) = 0;
+
+    virtual void SetPlatformViewInScene(bool platform_view_in_scene) = 0;
   };
 
   Engine(Delegate& delegate,

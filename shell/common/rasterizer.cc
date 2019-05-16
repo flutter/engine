@@ -8,6 +8,7 @@
 
 #include <utility>
 
+#include "flutter/fml/make_copyable.h"
 #include "third_party/skia/include/core/SkEncodedImageFormat.h"
 #include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
@@ -72,8 +73,11 @@ void Rasterizer::DrawLastLayerTree() {
 }
 
 void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
-  TRACE_EVENT0("flutter", "GPURasterizer::Draw");
+  // this should not be called on GPU thread.
+  FML_CHECK(!task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+  TRACE_EVENT0("flutter", "Rasterizer::Draw");
 
+  // This needs to happen on the GPU thread.
   Pipeline<flutter::LayerTree>::Consumer consumer =
       std::bind(&Rasterizer::DoDraw, this, std::placeholders::_1);
 
@@ -81,12 +85,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   // between successive tries.
   switch (pipeline->Consume(consumer)) {
     case PipelineConsumeResult::MoreAvailable: {
-      task_runners_.GetGPUTaskRunner()->PostTask(
-          [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
-            if (weak_this) {
-              weak_this->Draw(pipeline);
-            }
-          });
+      Draw(pipeline);
       break;
     }
     default:
@@ -147,6 +146,27 @@ sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(sk_sp<SkPicture> picture,
 }
 
 void Rasterizer::DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree) {
+  if (layer_tree->has_platform_views()) {
+    FML_LOG(ERROR) << "this platformviews is TRUE!!!!";
+    task_runners_.SetPlatformViewInScene(true);
+  } else {
+    FML_LOG(ERROR) << "this platformviews is FALSE!!!!";
+    task_runners_.SetPlatformViewInScene(false);
+  }
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetGPUTaskRunner(),
+      fml::MakeCopyable([weak_this = weak_factory_.GetWeakPtr(),
+                         layer_tree = std::move(layer_tree)]() mutable {
+        if (weak_this) {
+          weak_this->DoDrawInternal(std::move(layer_tree));
+        }
+      }));
+}
+
+void Rasterizer::DoDrawInternal(
+    std::unique_ptr<flutter::LayerTree> layer_tree) {
+  FML_CHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+
   if (!layer_tree || !surface_) {
     return;
   }

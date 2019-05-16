@@ -37,7 +37,10 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       frame.context().texture_registry(),
       checkerboard_offscreen_layers_};
 
-  root_layer_->Preroll(&context, frame.root_surface_transformation());
+  // root_layer_ can be gc'd
+  if (root_layer_) {
+    root_layer_->Preroll(&context, frame.root_surface_transformation());
+  }
 }
 
 #if defined(OS_FUCHSIA)
@@ -89,7 +92,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
       checkerboard_offscreen_layers_};
 
-  if (root_layer_->needs_painting())
+  if (root_layer_ && root_layer_->needs_painting())
     root_layer_->Paint(context);
 }
 
