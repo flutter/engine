@@ -340,7 +340,7 @@ class Locale {
   ///
   /// See also:
   ///
-  ///  & [Locale.fromSubtags], which describes the conventions for creating
+  ///  * [Locale.fromSubtags], which describes the conventions for creating
   ///    [Locale] objects.
   String get countryCode => _deprecatedRegionSubtagMap[_countryCode] ?? _countryCode;
   final String _countryCode;
