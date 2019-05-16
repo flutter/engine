@@ -1204,7 +1204,7 @@ class ParagraphConstraints {
   /// follows).
   ///
   /// The width influences how ellipses are applied. See the discussion at
-  /// [ParagraphStyle] for more details.
+  /// [new ParagraphStyle] for more details.
   ///
   /// This width is also used to position glyphs according to the [TextAlign]
   /// alignment described in the [ParagraphStyle] used when building the
