@@ -416,13 +416,13 @@ class Locale {
 ///
 /// {@animation 300 300 https://flutter.github.io/assets-for-api-docs/assets/widgets/window_padding.mp4}
 ///
-/// In this diagram, the black areas represent system UI that the app annot draw
-/// over. The red area represents view padding that the application may not be
-/// able to detect gestures in and may not want to draw in. The grey area
+/// In this diagram, the black areas represent system UI that the app cannot
+/// draw over. The red area represents view padding that the application may not
+/// be able to detect gestures in and may not want to draw in. The grey area
 /// represents the system keyboard, which can cover over the bottom view
 /// padding when visible.
 ///
-/// The [Window.viewInsets] are the physical pixels into which the operation
+/// The [Window.viewInsets] are the physical pixels into which the operating
 /// system may place system UI, such as the keyboard, which would fully obscure
 /// any content drawn in that area.
 ///
@@ -549,7 +549,7 @@ class Window {
   ///
   /// This value is calculated by taking
   /// `max(0.0, Window.viewPadding - Window.viewInsets)`. This will treat a
-  /// system IME that increases the bottm inset as consuming that much of the
+  /// system IME that increases the bottom inset as consuming that much of the
   /// bottom padding. For example, on an iPhone X, [Window.padding.bottom] is
   /// the same as [Window.viewPadding.bottom] when the soft keyboard is not
   /// drawn (to account for the bottom soft button area), but will be `0.0` when
