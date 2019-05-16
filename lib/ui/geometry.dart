@@ -1683,7 +1683,7 @@ class RSTransform {
   /// The `translateX` and `translateY` parameters give the coordinate of the
   /// offset by which to translate.
   ///
-  /// This constructor computes the arguments of the [RSTransform]
+  /// This constructor computes the arguments of the [new RSTransform]
   /// constructor and then defers to that constructor to actually create the
   /// object. If many [RSTransform] objects are being created and there is a way
   /// to factor out the computations of the sine and cosine of the rotation
