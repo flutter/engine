@@ -40,7 +40,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
     ServiceControlSurface,
     BroadcastReceiverControlSurface,
     ContentProviderControlSurface {
-  private static final String TAG = "FlutterEnginePluginRegistry";
+  private static final String TAG = "EnginePluginRegistry";
 
   // PluginRegistry
   private final Map<Class<? extends FlutterPlugin>, FlutterPlugin> plugins = new HashMap<>();
