@@ -3552,7 +3552,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// first.
   ///
   /// To align the text, set the `textAlign` on the [ParagraphStyle] object
-  /// passed to the [ParagraphBuilder] constructor. For more details see
+  /// passed to the [new ParagraphBuilder] constructor. For more details see
   /// [TextAlign] and the discussion at [ParagraphStyle].
   ///
   /// If the text is left aligned or justified, the left margin will be at the
