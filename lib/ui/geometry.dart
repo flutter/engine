@@ -1689,7 +1689,7 @@ class RSTransform {
   /// to factor out the computations of the sine and cosine of the rotation
   /// (which are computed each time this constructor is called) and reuse them
   /// over multiple [RSTransform] objects, it may be more efficient to directly
-  /// use the more direct [RSTransform] constructor instead.
+  /// use the more direct [new RSTransform] constructor instead.
   factory RSTransform.fromComponents({
     double rotation,
     double scale,
