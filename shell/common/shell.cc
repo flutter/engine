@@ -583,7 +583,6 @@ void Shell::OnPlatformViewDestroyed() {
     // wasn't executed, and we just run it here as the platform thread
     // is the GPU thread.
     gpu_task();
-    latch.Wait();
   }
 }
 
