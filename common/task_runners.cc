@@ -15,6 +15,18 @@ TaskRunners::TaskRunners(std::string label,
                          fml::RefPtr<fml::TaskRunner> io)
     : label_(std::move(label)),
       platform_(std::move(platform)),
+      gpu_(fml::MsgLoopReconfigurableTaskRunner::CreateFromSingleTaskRunner(
+          std::move(gpu))),
+      ui_(std::move(ui)),
+      io_(std::move(io)) {}
+
+TaskRunners::TaskRunners(fml::RefPtr<fml::TaskRunner> platform,
+                         fml::RefPtr<fml::MsgLoopReconfigurableTaskRunner> gpu,
+                         fml::RefPtr<fml::TaskRunner> ui,
+                         fml::RefPtr<fml::TaskRunner> io,
+                         std::string label)
+    : label_(std::move(label)),
+      platform_(std::move(platform)),
       gpu_(std::move(gpu)),
       ui_(std::move(ui)),
       io_(std::move(io)) {}
@@ -39,7 +51,8 @@ fml::RefPtr<fml::TaskRunner> TaskRunners::GetIOTaskRunner() const {
   return io_;
 }
 
-fml::RefPtr<fml::TaskRunner> TaskRunners::GetGPUTaskRunner() const {
+fml::RefPtr<fml::MsgLoopReconfigurableTaskRunner>
+TaskRunners::GetGPUTaskRunner() const {
   return gpu_;
 }
 

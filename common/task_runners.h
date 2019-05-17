@@ -8,12 +8,19 @@
 #include <string>
 
 #include "flutter/fml/macros.h"
+#include "flutter/fml/msg_loop_reconfigurable_task_runner.h"
 #include "flutter/fml/task_runner.h"
 
 namespace flutter {
 
 class TaskRunners {
  public:
+  TaskRunners(fml::RefPtr<fml::TaskRunner> platform,
+              fml::RefPtr<fml::MsgLoopReconfigurableTaskRunner> gpu,
+              fml::RefPtr<fml::TaskRunner> ui,
+              fml::RefPtr<fml::TaskRunner> io,
+              std::string label);
+
   TaskRunners(std::string label,
               fml::RefPtr<fml::TaskRunner> platform,
               fml::RefPtr<fml::TaskRunner> gpu,
@@ -32,14 +39,14 @@ class TaskRunners {
 
   fml::RefPtr<fml::TaskRunner> GetIOTaskRunner() const;
 
-  fml::RefPtr<fml::TaskRunner> GetGPUTaskRunner() const;
+  fml::RefPtr<fml::MsgLoopReconfigurableTaskRunner> GetGPUTaskRunner() const;
 
   bool IsValid() const;
 
  private:
   const std::string label_;
   fml::RefPtr<fml::TaskRunner> platform_;
-  fml::RefPtr<fml::TaskRunner> gpu_;
+  fml::RefPtr<fml::MsgLoopReconfigurableTaskRunner> gpu_;
   fml::RefPtr<fml::TaskRunner> ui_;
   fml::RefPtr<fml::TaskRunner> io_;
 };

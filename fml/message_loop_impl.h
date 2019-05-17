@@ -45,12 +45,12 @@ class MessageLoopImpl : public fml::RefCountedThreadSafe<MessageLoopImpl> {
 
   void SwapTaskQueues(const fml::RefPtr<MessageLoopImpl>& other);
 
+  void RunExpiredTasksNow();
+
  protected:
   // Exposed for the embedder shell which allows clients to poll for events
   // instead of dedicating a thread to the message loop.
   friend class MessageLoop;
-
-  void RunExpiredTasksNow();
 
   void RunSingleExpiredTaskNow();
 
