@@ -25,6 +25,11 @@ class EmbeddedViewParams {
   SkSize sizePoints;
   std::vector<FlutterEmbededViewTransformElement>::iterator transformIteratorBegin;
   std::vector<FlutterEmbededViewTransformElement>::iterator transformIteratorEnd;
+
+  friend bool operator==(const EmbeddedViewParams &lhs, const EmbeddedViewParams &rhs) {
+    return lhs.offsetPixels == rhs.offsetPixels
+    &&lhs.sizePoints == rhs.sizePoints;
+  }
 };
 
 // This is only used on iOS when running in a non headless mode,
