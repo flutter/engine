@@ -77,8 +77,8 @@ public class FlutterMain {
     private static ResourceExtractor sResourceExtractor;
     private static boolean sIsPrecompiledAsBlobs;
     private static boolean sIsPrecompiledAsSharedLibrary;
-    private static boolean sIsPrecompiledAsBlobLibraries;
     private static Settings sSettings;
+    private static String sSnapshotPath;
 
     private static final class ImmutableSetBuilder<T> {
         static <T> ImmutableSetBuilder<T> newInstance() {
@@ -184,13 +184,9 @@ public class FlutterMain {
             }
 
             List<String> shellArgs = new ArrayList<>();
-
             shellArgs.add("--icu-symbol-prefix=_binary_icudtl_dat");
 
-            ApplicationInfo applicationInfo = applicationContext
-                .getPackageManager()
-                .getApplicationInfo(applicationContext.getPackageName(), PackageManager.GET_META_DATA);
-
+            ApplicationInfo applicationInfo = getApplicationInfo(applicationContext);
             shellArgs.add("--icu-native-lib-path=" + applicationInfo.nativeLibraryDir + File.separator + DEFAULT_LIBRARY);
 
             if (args != null) {
@@ -198,12 +194,10 @@ public class FlutterMain {
             }
             if (sIsPrecompiledAsSharedLibrary) {
                 shellArgs.add("--" + AOT_SHARED_LIBRARY_PATH + "=" +
-                    new File(PathUtils.getDataDirectory(applicationContext), sAotSharedLibraryPath));
+                    new File(sSnapshotPath, sAotSharedLibraryPath));
             } else {
-                if (sIsPrecompiledAsBlobLibraries) {
-                    shellArgs.add("--" + AOT_SNAPSHOT_PATH_KEY + "=" + applicationInfo.nativeLibraryDir);
-                } else if (sIsPrecompiledAsBlobs) {
-                    shellArgs.add("--" + AOT_SNAPSHOT_PATH_KEY + "=" + PathUtils.getDataDirectory(applicationContext));
+                if (sIsPrecompiledAsBlobs) {
+                    shellArgs.add("--" + AOT_SNAPSHOT_PATH_KEY + "=" + sSnapshotPath);
                 } else {
                     shellArgs.add("--cache-dir-path=" + PathUtils.getCacheDirectory(applicationContext));
                     shellArgs.add("--" + AOT_SNAPSHOT_PATH_KEY + "=" + PathUtils.getDataDirectory(applicationContext) + "/" + sFlutterAssetsDir);
@@ -271,70 +265,43 @@ public class FlutterMain {
     private static native void nativeInit(Context context, String[] args, String bundlePath, String appStoragePath, String engineCachesPath);
     private static native void nativeRecordStartTimestamp(long initTimeMillis);
 
+    private static ApplicationInfo getApplicationInfo(Context applicationContext) {
+        try {
+            return applicationContext
+                .getPackageManager()
+                .getApplicationInfo(applicationContext.getPackageName(), PackageManager.GET_META_DATA);
+        } catch (PackageManager.NameNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Initialize our Flutter config values by obtaining them from the
      * manifest XML file, falling back to default values.
      */
     private static void initConfig(Context applicationContext) {
-        try {
-            Bundle metadata = applicationContext
-                .getPackageManager()
-                .getApplicationInfo(applicationContext
-                    .getPackageName(), PackageManager.GET_META_DATA)
-                .metaData;
+        Bundle metadata = getApplicationInfo(applicationContext).metaData;
 
-            if (metadata != null) {
-                sAotSharedLibraryPath = metadata.getString(PUBLIC_AOT_AOT_SHARED_LIBRARY_PATH, DEFAULT_AOT_SHARED_LIBRARY_PATH);
-                sFlutterAssetsDir = metadata.getString(PUBLIC_FLUTTER_ASSETS_DIR_KEY, DEFAULT_FLUTTER_ASSETS_DIR);
+        if (metadata != null) {
+            sAotSharedLibraryPath = metadata.getString(PUBLIC_AOT_AOT_SHARED_LIBRARY_PATH, DEFAULT_AOT_SHARED_LIBRARY_PATH);
+            sFlutterAssetsDir = metadata.getString(PUBLIC_FLUTTER_ASSETS_DIR_KEY, DEFAULT_FLUTTER_ASSETS_DIR);
 
-                sAotVmSnapshotData = metadata.getString(PUBLIC_AOT_VM_SNAPSHOT_DATA_KEY, DEFAULT_AOT_VM_SNAPSHOT_DATA);
-                sAotVmSnapshotInstr = metadata.getString(PUBLIC_AOT_VM_SNAPSHOT_INSTR_KEY, DEFAULT_AOT_VM_SNAPSHOT_INSTR);
-                sAotIsolateSnapshotData = metadata.getString(PUBLIC_AOT_ISOLATE_SNAPSHOT_DATA_KEY, DEFAULT_AOT_ISOLATE_SNAPSHOT_DATA);
-                sAotIsolateSnapshotInstr = metadata.getString(PUBLIC_AOT_ISOLATE_SNAPSHOT_INSTR_KEY, DEFAULT_AOT_ISOLATE_SNAPSHOT_INSTR);
-            }
-        } catch (PackageManager.NameNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-
-        String aotVmSnapshotDataLib = "lib_" + sAotVmSnapshotData + ".so";
-        String aotVmSnapshotInstrLib = "lib_" + sAotVmSnapshotInstr + ".so";
-        String aotIsolateSnapshotDataLib = "lib_" + sAotIsolateSnapshotData + ".so";
-        String aotIsolateSnapshotInstrLib = "lib_" + sAotIsolateSnapshotInstr + ".so";
-
-        sIsPrecompiledAsBlobLibraries = listLibs(applicationContext)
-            .containsAll(Arrays.asList(
-                aotVmSnapshotDataLib,
-                aotVmSnapshotInstrLib,
-                aotIsolateSnapshotDataLib,
-                aotIsolateSnapshotInstrLib
-            ));
-
-        if (sIsPrecompiledAsBlobLibraries) {
-            sAotVmSnapshotData = aotVmSnapshotDataLib;
-            sAotVmSnapshotInstr = aotVmSnapshotInstrLib;
-            sAotIsolateSnapshotData = aotIsolateSnapshotDataLib;
-            sAotIsolateSnapshotInstr = aotIsolateSnapshotInstrLib;
+            sAotVmSnapshotData = metadata.getString(PUBLIC_AOT_VM_SNAPSHOT_DATA_KEY, DEFAULT_AOT_VM_SNAPSHOT_DATA);
+            sAotVmSnapshotInstr = metadata.getString(PUBLIC_AOT_VM_SNAPSHOT_INSTR_KEY, DEFAULT_AOT_VM_SNAPSHOT_INSTR);
+            sAotIsolateSnapshotData = metadata.getString(PUBLIC_AOT_ISOLATE_SNAPSHOT_DATA_KEY, DEFAULT_AOT_ISOLATE_SNAPSHOT_DATA);
+            sAotIsolateSnapshotInstr = metadata.getString(PUBLIC_AOT_ISOLATE_SNAPSHOT_INSTR_KEY, DEFAULT_AOT_ISOLATE_SNAPSHOT_INSTR);
         }
     }
 
     private static void initResources(Context applicationContext) {
         // The snapshots are loaded as native libs by the Android Package Manager, 
-        // so we don't need to extract them.
-        if (sIsPrecompiledAsBlobLibraries) {
+        // so we don't need to extract them using ResourceExtractor.
+        if (!sSnapshotPath.equals(PathUtils.getDataDirectory(applicationContext))) {
             return;
         }
 
         Context context = applicationContext;
         new ResourceCleaner(context).start();
-
-        Bundle metaData = null;
-        try {
-            metaData = context.getPackageManager().getApplicationInfo(
-                    context.getPackageName(), PackageManager.GET_META_DATA).metaData;
-
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Unable to read application info", e);
-        }
 
         final String dataDirPath = PathUtils.getDataDirectory(context);
         final String packageName = context.getPackageName();
@@ -378,18 +345,15 @@ public class FlutterMain {
         }
     }
 
+    /**
+     * Returns a list of the file names at the root of the application's 
+     * native library path.
+     */
     private static Set<String> listLibs(Context applicationContext) {
-        ApplicationInfo applicationInfo;
-        try {
-            applicationInfo = applicationContext
-                .getPackageManager()
-                .getApplicationInfo(applicationContext.getPackageName(), PackageManager.GET_META_DATA);
-        } catch (PackageManager.NameNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        ImmutableSetBuilder builder = ImmutableSetBuilder.<String>newInstance();
+        ApplicationInfo applicationInfo = getApplicationInfo(applicationContext);
         File[] files = new File(applicationInfo.nativeLibraryDir).listFiles();
-
+        
+        ImmutableSetBuilder builder = ImmutableSetBuilder.<String>newInstance();
         for (File file : files) {
             builder.add(file.getName());
         }
@@ -397,21 +361,49 @@ public class FlutterMain {
     }
 
     private static void initAot(Context applicationContext) {
-        Set<String> assets;
+        Set<String> assets = listAssets(applicationContext, "");
+        Set<String> libs = listLibs(applicationContext);
 
-        if (sIsPrecompiledAsBlobLibraries) {
-            assets = listLibs(applicationContext);
+        String aotVmSnapshotDataLib = "lib_" + sAotVmSnapshotData + ".so";
+        String aotVmSnapshotInstrLib = "lib_" + sAotVmSnapshotInstr + ".so";
+        String aotIsolateSnapshotDataLib = "lib_" + sAotIsolateSnapshotData + ".so";
+        String aotIsolateSnapshotInstrLib = "lib_" + sAotIsolateSnapshotInstr + ".so";
+
+        Boolean isPrecompiledBlobInLib = libs
+            .containsAll(Arrays.asList(
+                aotVmSnapshotDataLib,
+                aotVmSnapshotInstrLib,
+                aotIsolateSnapshotDataLib,
+                aotIsolateSnapshotInstrLib
+            ));
+
+        if (isPrecompiledBlobInLib) {
+            sIsPrecompiledAsBlobs = true;
+            sAotVmSnapshotData = aotVmSnapshotDataLib;
+            sAotVmSnapshotInstr = aotVmSnapshotInstrLib;
+            sAotIsolateSnapshotData = aotIsolateSnapshotDataLib;
+            sAotIsolateSnapshotInstr = aotIsolateSnapshotInstrLib;
         } else {
-            assets = listAssets(applicationContext, "");
+            sIsPrecompiledAsBlobs = assets.containsAll(Arrays.asList(
+                sAotVmSnapshotData,
+                sAotVmSnapshotInstr,
+                sAotIsolateSnapshotData,
+                sAotIsolateSnapshotInstr
+            ));
         }
 
-        sIsPrecompiledAsBlobs = assets.containsAll(Arrays.asList(
-            sAotVmSnapshotData,
-            sAotVmSnapshotInstr,
-            sAotIsolateSnapshotData,
-            sAotIsolateSnapshotInstr
-        ));
-        sIsPrecompiledAsSharedLibrary = assets.contains(sAotSharedLibraryPath);
+        Boolean isSharedLibraryInLib = libs.contains(sAotSharedLibraryPath);
+        Boolean isSharedLibraryInAssets = assets.contains(sAotSharedLibraryPath);
+
+        if (isSharedLibraryInLib || isSharedLibraryInAssets) {
+            sIsPrecompiledAsSharedLibrary = true;
+        }
+
+        if (isSharedLibraryInLib || isPrecompiledBlobInLib) {
+            sSnapshotPath = getApplicationInfo(applicationContext).nativeLibraryDir;
+        } else {
+            sSnapshotPath = PathUtils.getDataDirectory(applicationContext);
+        }
 
         if (sIsPrecompiledAsBlobs && sIsPrecompiledAsSharedLibrary) {
             throw new RuntimeException(
