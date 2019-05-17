@@ -16,14 +16,16 @@
 
 namespace flutter {
 
+class FlutterEmbededViewTransformStack;
+class FlutterEmbededViewTransformElement;
+
 class EmbeddedViewParams {
  public:
   SkPoint offsetPixels;
   SkSize sizePoints;
+  std::vector<FlutterEmbededViewTransformElement>::iterator transformIteratorBegin;
+  std::vector<FlutterEmbededViewTransformElement>::iterator transformIteratorEnd;
 };
-
-class FlutterEmbededViewTransformStack;
-class FlutterEmbededViewTransformElement;
 
 // This is only used on iOS when running in a non headless mode,
 // in this case ExternalViewEmbedder is a reference to the
@@ -53,7 +55,8 @@ class ExternalViewEmbedder {
   void clipRRect(const SkRRect& rect);
 
   void popTransform();
-  std::vector<FlutterEmbededViewTransformElement>::iterator getTransformStackIterator();
+  std::vector<FlutterEmbededViewTransformElement>::iterator getTransformStackIteratorBegin();
+  std::vector<FlutterEmbededViewTransformElement>::iterator getTransformStackIteratorEnd();
 private:
   std::unique_ptr<FlutterEmbededViewTransformStack> transfromStack_;
 }; // ExternalViewEmbedder
@@ -70,6 +73,8 @@ public:
 
   // Returns the iterator points to the bottom of the stack.
   std::vector<FlutterEmbededViewTransformElement>::iterator begin();
+  // Returns the iterator points to the top of the stack.
+  std::vector<FlutterEmbededViewTransformElement>::iterator end();
 private:
 
   std::vector<FlutterEmbededViewTransformElement> vector_;

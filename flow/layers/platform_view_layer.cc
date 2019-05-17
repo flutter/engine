@@ -34,7 +34,9 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
   params.offsetPixels =
       SkPoint::Make(transform.getTranslateX(), transform.getTranslateY());
   params.sizePoints = size_;
-
+  params.transformIteratorBegin = context.view_embedder->getTransformStackIteratorBegin();
+  params.transformIteratorEnd = context.view_embedder->getTransformStackIteratorEnd();
+  
   SkCanvas* canvas =
       context.view_embedder->CompositeEmbeddedView(view_id_, params);
   context.leaf_nodes_canvas = canvas;

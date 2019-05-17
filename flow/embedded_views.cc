@@ -22,8 +22,12 @@ void ExternalViewEmbedder::popTransform() {
   transfromStack_.get()->pop();
 }
 
-std::vector<FlutterEmbededViewTransformElement>::iterator ExternalViewEmbedder::getTransformStackIterator() {
+std::vector<FlutterEmbededViewTransformElement>::iterator ExternalViewEmbedder::getTransformStackIteratorBegin() {
   return transfromStack_.get()->begin();
+}
+
+std::vector<FlutterEmbededViewTransformElement>::iterator ExternalViewEmbedder::getTransformStackIteratorEnd() {
+  return transfromStack_.get()->end();
 }
 
 
@@ -45,6 +49,9 @@ std::vector<FlutterEmbededViewTransformElement>::iterator FlutterEmbededViewTran
   return vector_.begin();
 }
 
+std::vector<FlutterEmbededViewTransformElement>::iterator FlutterEmbededViewTransformStack::end() {
+  return vector_.end();
+}
 
 #pragma mark - FlutterEmbededViewTransformElement
 }  // namespace flutter

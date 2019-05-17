@@ -16,6 +16,16 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
 
+// A set of utility methods to handle transforms in platform views.
+static UIView* getClippedRectView(CGRect frame, CGRect clipRect) {
+  UIView *view = [[UIView alloc] initWithFrame:frame];
+  UIBezierPath *path = [UIBezierPath bezierPathWithRect:clipRect];
+  CAShapeLayer *clip = [[CAShapeLayer alloc] init];
+  clip.path = path.CGPath;
+  view.layer.mask = clip;
+  return view;
+}
+
 namespace flutter {
 
 void FlutterPlatformViewsController::SetFlutterView(UIView* flutter_view) {
@@ -91,6 +101,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
 
   touch_interceptors_[viewId] =
       fml::scoped_nsobject<FlutterTouchInterceptingView>([touch_interceptor retain]);
+  root_views_[viewId] = fml::scoped_nsobject<UIView>([touch_interceptor retain]);
 
   result(nil);
 }
@@ -184,8 +195,8 @@ std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
 
 SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView
   (int view_id,
-   const flutter::EmbeddedViewParams& params,
-   const std::vector<FlutterEmbededViewTransformElement>::iterator &transformIterator) {
+   const flutter::EmbeddedViewParams& params) {
+
   // TODO(amirh): assert that this is running on the platform thread once we support the iOS
   // embedded views thread configuration.
   // TODO(amirh): do nothing if the params didn't change.
@@ -194,8 +205,23 @@ SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView
       CGRectMake(params.offsetPixels.x() / screenScale, params.offsetPixels.y() / screenScale,
                  params.sizePoints.width(), params.sizePoints.height());
 
+  //====
+    UIView *root = nil;
+    std::vector<FlutterEmbededViewTransformElement>::iterator iter = params.transformIteratorBegin;
+    if (iter != params.transformIteratorEnd) {
+      SkRect clipSkRect = iter->rect();
+      CGRect clipRect = CGRectMake(clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fRight-clipSkRect.fLeft, clipSkRect.fBottom-clipSkRect.fTop);
+      root = getClippedRectView(rect, clipRect);
+      ++iter;
+    }
+
+  //====
   UIView* touch_interceptor = touch_interceptors_[view_id].get();
-  [touch_interceptor setFrame:rect];
+  if (root) {
+    root_views_[view_id] = fml::scoped_nsobject<UIView>([root retain]);
+  } else {
+    touch_interceptor.frame = rect;
+  }
 
   return picture_recorders_[view_id]->getRecordingCanvas();
 }
@@ -242,15 +268,19 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
 
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int view_id = composition_order_[i];
-    UIView* intercepter = touch_interceptors_[view_id].get();
+    UIView* root = root_views_[view_id].get();
     UIView* overlay = overlays_[view_id]->overlay_view;
-    FML_CHECK(intercepter.superview == overlay.superview);
-
-    if (intercepter.superview == flutter_view) {
-      [flutter_view bringSubviewToFront:intercepter];
+    FML_CHECK(root.superview == overlay.superview);
+    if (root.superview == flutter_view) {
+      [flutter_view bringSubviewToFront:root];
       [flutter_view bringSubviewToFront:overlay];
     } else {
-      [flutter_view addSubview:intercepter];
+      [flutter_view addSubview:root];
+      if (![root isKindOfClass:[FlutterTouchInterceptingView class]]) {
+        [touch_interceptor setFrame:root.bounds];
+        [root addSubview:touch_interceptor];
+      }
+      NSLog(@"root view added");
       [flutter_view addSubview:overlay];
     }
 
@@ -269,10 +299,11 @@ void FlutterPlatformViewsController::DetachUnusedLayers() {
 
   for (int64_t view_id : active_composition_order_) {
     if (composition_order_set.find(view_id) == composition_order_set.end()) {
-      if (touch_interceptors_.find(view_id) == touch_interceptors_.end()) {
+      if (root_views_.find(view_id) == root_views_.end()) {
         continue;
       }
-      [touch_interceptors_[view_id].get() removeFromSuperview];
+      UIView *root = root_views_[view_id].get();
+      [root removeFromSuperview];
       [overlays_[view_id]->overlay_view.get() removeFromSuperview];
     }
   }
@@ -284,10 +315,11 @@ void FlutterPlatformViewsController::DisposeViews() {
   }
 
   for (int64_t viewId : views_to_dispose_) {
-    UIView* touch_interceptor = touch_interceptors_[viewId].get();
-    [touch_interceptor removeFromSuperview];
+    UIView* root_view = root_views_[viewId].get();
+    [root_view removeFromSuperview];
     views_.erase(viewId);
     touch_interceptors_.erase(viewId);
+    root_views_.erase(viewId);
     overlays_.erase(viewId);
   }
   views_to_dispose_.clear();
@@ -507,3 +539,8 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   return YES;
 }
 @end
+
+
+
+
+
