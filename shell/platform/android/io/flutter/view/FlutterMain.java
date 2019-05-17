@@ -369,7 +369,7 @@ public class FlutterMain {
         String aotIsolateSnapshotDataLib = "lib_" + sAotIsolateSnapshotData + ".so";
         String aotIsolateSnapshotInstrLib = "lib_" + sAotIsolateSnapshotInstr + ".so";
 
-        Boolean isPrecompiledBlobInLib = libs
+        boolean isPrecompiledBlobInLib = libs
             .containsAll(Arrays.asList(
                 aotVmSnapshotDataLib,
                 aotVmSnapshotInstrLib,
@@ -392,8 +392,8 @@ public class FlutterMain {
             ));
         }
 
-        Boolean isSharedLibraryInLib = libs.contains(sAotSharedLibraryPath);
-        Boolean isSharedLibraryInAssets = assets.contains(sAotSharedLibraryPath);
+        boolean isSharedLibraryInLib = libs.contains(sAotSharedLibraryPath);
+        boolean isSharedLibraryInAssets = assets.contains(sAotSharedLibraryPath);
 
         if (isSharedLibraryInLib || isSharedLibraryInAssets) {
             sIsPrecompiledAsSharedLibrary = true;
