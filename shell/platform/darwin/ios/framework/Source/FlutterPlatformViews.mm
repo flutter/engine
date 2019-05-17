@@ -18,6 +18,8 @@
 
 // A set of utility methods to handle transforms in platform views.
 static UIView* getClippedRectView(CGRect frame, CGRect clipRect) {
+  NSLog(@"view frame %@", @(frame));
+  NSLog(@"clip rect %@", @(clipRect));
   UIView *view = [[UIView alloc] initWithFrame:frame];
   UIBezierPath *path = [UIBezierPath bezierPathWithRect:clipRect];
   CAShapeLayer *clip = [[CAShapeLayer alloc] init];
@@ -211,17 +213,15 @@ SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView
       CGRectMake(params.offsetPixels.x() / screenScale, params.offsetPixels.y() / screenScale,
                  params.sizePoints.width(), params.sizePoints.height());
 
-  //====
-    UIView *root = nil;
-    std::vector<FlutterEmbededViewTransformElement>::iterator iter = params.transformIteratorBegin;
-    if (iter != params.transformIteratorEnd) {
-      SkRect clipSkRect = iter->rect();
-      CGRect clipRect = CGRectMake(clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fRight-clipSkRect.fLeft, clipSkRect.fBottom-clipSkRect.fTop);
-      root = getClippedRectView(rect, clipRect);
-      ++iter;
-    }
+  UIView *root = nil;
+  std::vector<FlutterEmbededViewTransformElement>::iterator iter = params.transformIteratorBegin;
+  if (iter != params.transformIteratorEnd) {
+    SkRect clipSkRect = iter->rect();
+    CGRect clipRect = CGRectMake(clipSkRect.fLeft-rect.origin.x, clipSkRect.fTop-rect.origin.y, clipSkRect.fRight-clipSkRect.fLeft, clipSkRect.fBottom-clipSkRect.fTop);
+    root = getClippedRectView(rect, clipRect);
+    ++iter;
+  }
 
-  //====
   UIView* touch_interceptor = touch_interceptors_[view_id].get();
   if (root) {
     root_views_[view_id] = fml::scoped_nsobject<UIView>([root retain]);

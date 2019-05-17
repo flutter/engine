@@ -28,7 +28,9 @@ class EmbeddedViewParams {
 
   friend bool operator==(const EmbeddedViewParams &lhs, const EmbeddedViewParams &rhs) {
     return lhs.offsetPixels == rhs.offsetPixels
-    &&lhs.sizePoints == rhs.sizePoints;
+    &&lhs.sizePoints == rhs.sizePoints
+    &&lhs.transformIteratorBegin == rhs.transformIteratorBegin
+    &&lhs.transformIteratorEnd == rhs.transformIteratorEnd;
   }
 };
 
