@@ -7,29 +7,31 @@ package io.flutter.embedding.engine.plugins.service;
 import android.support.annotation.NonNull;
 
 /**
- * {@link FlutterPlugin} that wants to know when it is running within a {@link Service}.
+ * A {@link FlutterPlugin} that wants to know when it is running within a {@link Service}.
  */
 public interface ServiceAware {
   /**
-   * This {@code ServiceAware} {@link FlutterPlugin} is now associated with a {@link Service}.
+   * Callback triggered when a {@code ServiceAware} {@link FlutterPlugin} is associated with a
+   * {@link Service}.
    */
   void onAttachedToService(@NonNull ServicePluginBinding binding);
 
   /**
-   * This plugin has been detached from a {@link Service}.
+   * Callback triggered when a {@code ServiceAware} {@link FlutterPlugin} is detached from a
+   * {@link Service}.
    */
   void onDetachedFromService();
 
   interface OnModeChangeListener {
     /**
-     * The associated {@link Service} has changed from a background {@link Service} to a foreground
-     * {@link Service}.
+     * Callback triggered when the associated {@link Service} goes from background execution to
+     * foreground execution.
      */
     void onMoveToForeground();
 
     /**
-     * The associated {@link Service} has changed from a foreground {@link Service} to a background
-     * {@link Service}.
+     * Callback triggered when the associated {@link Service} goes from foreground execution to
+     * background execution.
      */
     void onMoveToBackground();
   }
