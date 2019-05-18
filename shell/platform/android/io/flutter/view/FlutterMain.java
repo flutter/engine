@@ -186,7 +186,8 @@ public class FlutterMain {
             return;
         }
         try {
-            // Don't wait for the extractor 
+            // There are resources to extract. For example, the AOT blobs from the `assets` directory.
+            // `sResourceExtractor` is `null` if there isn't any AOT blob to extract.
             if (sResourceExtractor != null) {
                 sResourceExtractor.waitForCompletion();
             }
