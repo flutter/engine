@@ -23,14 +23,12 @@ class EmbeddedViewParams {
  public:
   SkPoint offsetPixels;
   SkSize sizePoints;
-  std::vector<FlutterEmbededViewTransformElement>::iterator transformIteratorBegin;
-  std::vector<FlutterEmbededViewTransformElement>::iterator transformIteratorEnd;
+  std::shared_ptr<FlutterEmbededViewTransformStack> transformStack;
 
   friend bool operator==(const EmbeddedViewParams &lhs, const EmbeddedViewParams &rhs) {
     return lhs.offsetPixels == rhs.offsetPixels
     &&lhs.sizePoints == rhs.sizePoints
-    &&lhs.transformIteratorBegin == rhs.transformIteratorBegin
-    &&lhs.transformIteratorEnd == rhs.transformIteratorEnd;
+    &&lhs.transformStack == rhs.transformStack;
   }
 };
 
@@ -58,14 +56,8 @@ class ExternalViewEmbedder {
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 
 #pragma mark - transforms
-  void clipRect(const SkRect& rect);
-  void clipRRect(const SkRRect& rect);
+  std::shared_ptr<FlutterEmbededViewTransformStack> transformStack;
 
-  void popTransform();
-  std::vector<FlutterEmbededViewTransformElement>::iterator getTransformStackIteratorBegin();
-  std::vector<FlutterEmbededViewTransformElement>::iterator getTransformStackIteratorEnd();
-private:
-  std::unique_ptr<FlutterEmbededViewTransformStack> transfromStack_;
 }; // ExternalViewEmbedder
 
 class FlutterEmbededViewTransformStack {
@@ -82,6 +74,10 @@ public:
   std::vector<FlutterEmbededViewTransformElement>::iterator begin();
   // Returns the iterator points to the top of the stack.
   std::vector<FlutterEmbededViewTransformElement>::iterator end();
+
+  friend bool operator==(const FlutterEmbededViewTransformStack& lhs, const FlutterEmbededViewTransformStack& rhs) {
+    return lhs.vector_ == rhs.vector_;
+  }
 private:
 
   std::vector<FlutterEmbededViewTransformElement> vector_;
@@ -98,6 +94,16 @@ public:
   FlutterEmbededViewTransformType type() {return type_;}
   SkRect rect() {return rect_;}
   SkRRect rrect() {return rrect_;}
+
+  friend bool operator==(const FlutterEmbededViewTransformElement& lhs, const FlutterEmbededViewTransformElement& rhs) {
+    if (lhs.type_ != rhs.type_) {
+      return false;
+    }
+    if (lhs.type_ == clip_rect && lhs.rect_ != rhs.rect_) {
+      return false;
+    }
+    return true;
+  }
 
 private:
 

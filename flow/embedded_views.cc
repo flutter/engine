@@ -7,29 +7,12 @@
 namespace flutter {
 
 ExternalViewEmbedder::ExternalViewEmbedder()
-  :transfromStack_(std::unique_ptr<FlutterEmbededViewTransformStack>(new FlutterEmbededViewTransformStack())) {
+  :transformStack(std::make_shared<FlutterEmbededViewTransformStack>()) {
 };
 
 bool ExternalViewEmbedder::SubmitFrame(GrContext* context) {
   return false;
 };
-
-void ExternalViewEmbedder::clipRect(const SkRect& rect) {
-  transfromStack_.get()->pushClipRect(rect);
-};
-
-void ExternalViewEmbedder::popTransform() {
-  transfromStack_.get()->pop();
-}
-
-std::vector<FlutterEmbededViewTransformElement>::iterator ExternalViewEmbedder::getTransformStackIteratorBegin() {
-  return transfromStack_.get()->begin();
-}
-
-std::vector<FlutterEmbededViewTransformElement>::iterator ExternalViewEmbedder::getTransformStackIteratorEnd() {
-  return transfromStack_.get()->end();
-}
-
 
 #pragma mark - FlutterEmbededViewTransformStack
 
@@ -53,5 +36,4 @@ std::vector<FlutterEmbededViewTransformElement>::iterator FlutterEmbededViewTran
   return vector_.end();
 }
 
-#pragma mark - FlutterEmbededViewTransformElement
 }  // namespace flutter

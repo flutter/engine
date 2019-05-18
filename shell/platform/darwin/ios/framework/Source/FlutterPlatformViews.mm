@@ -204,8 +204,10 @@ SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView
 
   // Do nothing if the params didn't change.
   if (composite_params_.count(view_id) == 1 && composite_params_[view_id] == params) {
+    NSLog(@"not changed");
     return picture_recorders_[view_id]->getRecordingCanvas();
   }
+  NSLog(@"changed");
   composite_params_[view_id] = params;
 
   CGFloat screenScale = [[UIScreen mainScreen] scale];
@@ -214,19 +216,36 @@ SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView
                  params.sizePoints.width(), params.sizePoints.height());
 
   UIView *root = nil;
-  std::vector<FlutterEmbededViewTransformElement>::iterator iter = params.transformIteratorBegin;
-  if (iter != params.transformIteratorEnd) {
+  std::vector<FlutterEmbededViewTransformElement>::iterator iter = params.transformStack->end()-1;
+  if (iter != params.transformStack->begin()-1) {
+    UIView *view = root_views_[view_id].get();
+    if ([view isKindOfClass:[FlutterTouchInterceptingView class]]) {
+      root = [[UIView alloc] initWithFrame:rect];
+      root_views_[view_id] = fml::scoped_nsobject<UIView>([root retain]);
+    } else {
+      root = view;
+    }
+  }
+    NSLog(@"root frame %@", @(root.frame));
+  for (UIView *subview in root.subviews) {
+    [subview removeFromSuperview];
+    [subview release];
+  }
+  UIView *lastView = root;
+  while(iter != params.transformStack->begin()-1) {
     SkRect clipSkRect = iter->rect();
     CGRect clipRect = CGRectMake(clipSkRect.fLeft-rect.origin.x, clipSkRect.fTop-rect.origin.y, clipSkRect.fRight-clipSkRect.fLeft, clipSkRect.fBottom-clipSkRect.fTop);
-    root = getClippedRectView(rect, clipRect);
-    ++iter;
+    UIView *view = getClippedRectView(lastView.bounds, clipRect);
+    [lastView addSubview:view];
+    lastView = view;
+    --iter;
   }
 
   UIView* touch_interceptor = touch_interceptors_[view_id].get();
   if (root) {
-    root_views_[view_id] = fml::scoped_nsobject<UIView>([root retain]);
     [touch_interceptor setFrame:root.bounds];
-    [root addSubview:touch_interceptor];
+    [lastView addSubview:touch_interceptor];
+    NSLog(@"transformed");
   } else {
     touch_interceptor.frame = rect;
   }
