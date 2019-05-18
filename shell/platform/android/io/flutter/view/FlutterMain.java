@@ -77,11 +77,16 @@ public class FlutterMain {
     private static String sFlutterAssetsDir = DEFAULT_FLUTTER_ASSETS_DIR;
 
     private static boolean sInitialized = false;
+    private static boolean sIsPrecompiledAsBlobs = false;
+    private static boolean sIsPrecompiledAsSharedLibrary = false;
+
+    @Nullable
     private static ResourceExtractor sResourceExtractor;
-    private static boolean sIsPrecompiledAsBlobs;
-    private static boolean sIsPrecompiledAsSharedLibrary;
+    @Nullable
     private static Settings sSettings;
+    @NonNull
     private static String sSnapshotPath;
+
 
     private static final class ImmutableSetBuilder<T> {
         static <T> ImmutableSetBuilder<T> newInstance() {
