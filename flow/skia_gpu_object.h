@@ -12,6 +12,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/task_runner.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
+#include "third_party/skia/include/gpu/GrContext.h"
 
 namespace flutter {
 
@@ -31,12 +32,14 @@ class SkiaUnrefQueue : public fml::RefCountedThreadSafe<SkiaUnrefQueue> {
  private:
   const fml::RefPtr<fml::TaskRunner> task_runner_;
   const fml::TimeDelta drain_delay_;
+  const fml::WeakPtr<GrContext> context_;
   std::mutex mutex_;
   std::deque<SkRefCnt*> objects_;
   bool drain_pending_;
 
   SkiaUnrefQueue(fml::RefPtr<fml::TaskRunner> task_runner,
-                 fml::TimeDelta delay);
+                 fml::TimeDelta delay,
+                 fml::WeakPtr<GrContext> context);
 
   ~SkiaUnrefQueue();
 

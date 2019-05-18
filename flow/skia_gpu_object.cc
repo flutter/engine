@@ -6,12 +6,16 @@
 
 #include "flutter/fml/message_loop.h"
 
+#include <chrono>
+
 namespace flutter {
 
 SkiaUnrefQueue::SkiaUnrefQueue(fml::RefPtr<fml::TaskRunner> task_runner,
-                               fml::TimeDelta delay)
+                               fml::TimeDelta delay,
+                               fml::WeakPtr<GrContext> context)
     : task_runner_(std::move(task_runner)),
       drain_delay_(delay),
+      context_(context),
       drain_pending_(false) {}
 
 SkiaUnrefQueue::~SkiaUnrefQueue() {
@@ -35,9 +39,12 @@ void SkiaUnrefQueue::Drain() {
     objects_.swap(skia_objects);
     drain_pending_ = false;
   }
-
+  FML_DLOG(ERROR) << "Drain";
   for (SkRefCnt* skia_object : skia_objects) {
     skia_object->unref();
+  }
+  if (context_) {
+    context_->performDeferredCleanup(std::chrono::milliseconds(250));
   }
 }
 
