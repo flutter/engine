@@ -291,6 +291,8 @@ public class FlutterMain {
     private static void initConfig(@NonNull Context applicationContext) {
         Bundle metadata = getApplicationInfo(applicationContext).metaData;
 
+        // There isn't a `<meta-data>` tag as a direct child of `<application>` in
+        // `AndroidManifest.xml`.
         if (metadata == null) {
             return;
         }
@@ -304,6 +306,10 @@ public class FlutterMain {
         sAotIsolateSnapshotInstr = metadata.getString(PUBLIC_AOT_ISOLATE_SNAPSHOT_INSTR_KEY, DEFAULT_AOT_ISOLATE_SNAPSHOT_INSTR);
     }
 
+    /**
+     * Extract the AOT blobs from the app's asset directory. 
+     * This is required by the Dart runtime, so it can read the blobs.
+     */
     private static void initResources(@NonNull Context applicationContext) {
         // When the AOT blobs are contained in the native library directory, 
         // we don't need to extract them manually because they are 
@@ -312,13 +318,12 @@ public class FlutterMain {
             return;
         }
 
-        Context context = applicationContext;
-        new ResourceCleaner(context).start();
+        new ResourceCleaner(applicationContext).start();
 
-        final String dataDirPath = PathUtils.getDataDirectory(context);
-        final String packageName = context.getPackageName();
-        final PackageManager packageManager = context.getPackageManager();
-        final AssetManager assetManager = context.getResources().getAssets();
+        final String dataDirPath = PathUtils.getDataDirectory(applicationContext);
+        final String packageName = applicationContext.getPackageName();
+        final PackageManager packageManager = applicationContext.getPackageManager();
+        final AssetManager assetManager = applicationContext.getResources().getAssets();
         sResourceExtractor = new ResourceExtractor(dataDirPath, packageName, packageManager, assetManager);
 
         sResourceExtractor
