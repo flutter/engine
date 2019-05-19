@@ -8,8 +8,8 @@
 #import <UIKit/UIKit.h>
 
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyEventDelegate.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 
 @interface FlutterTextInputPlugin : NSObject
 

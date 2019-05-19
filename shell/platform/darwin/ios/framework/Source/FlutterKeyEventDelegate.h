@@ -9,7 +9,7 @@
 
 @protocol FlutterKeyEventDelegate <NSObject>
 
-- (void)performKeyPress:(int)keyCode withCharacters:(NSString *)characters;
+- (void)performKeyPress:(int)keyCode withCharacters:(NSString*)characters;
 
 @end
 

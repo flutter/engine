@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/fml/platform/darwin/string_range_sanitization.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
 #include <Foundation/Foundation.h>
 #include <UIKit/UIKit.h>
