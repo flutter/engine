@@ -4,7 +4,6 @@
 
 #include "flutter/lib/ui/compositing/scene_host.h"
 
-#include <lib/fsl/handles/object_info.h>
 #include <lib/ui/scenic/cpp/view_token_pair.h>
 #include <lib/zx/eventpair.h>
 #include <third_party/tonic/dart_args.h>
@@ -20,9 +19,8 @@ namespace {
 
 using SceneHostBindings = std::unordered_map<zx_koid_t, flutter::SceneHost*>;
 
-FML_THREAD_LOCAL fml::ThreadLocal tls_scene_host_bindings([](intptr_t value) {
-  delete reinterpret_cast<SceneHostBindings*>(value);
-});
+FML_THREAD_LOCAL fml::ThreadLocalUniquePtr<SceneHostBindings>
+    tls_scene_host_bindings;
 
 void SceneHost_constructor(Dart_NativeArguments args) {
   tonic::DartCallConstructor(&flutter::SceneHost::Create, args);
@@ -31,17 +29,15 @@ void SceneHost_constructor(Dart_NativeArguments args) {
 void SceneHost_constructorViewHolderToken(Dart_NativeArguments args) {
   // This UI thread / Isolate contains at least 1 SceneHost.  Initialize the
   // per-Isolate bindings.
-  if (tls_scene_host_bindings.Get() == 0) {
-    tls_scene_host_bindings.Set(
-        reinterpret_cast<intptr_t>(new SceneHostBindings()));
+  if (tls_scene_host_bindings.get() == nullptr) {
+    tls_scene_host_bindings.reset(new SceneHostBindings());
   }
 
   tonic::DartCallConstructor(&flutter::SceneHost::CreateViewHolder, args);
 }
 
 flutter::SceneHost* GetSceneHost(scenic::ResourceId id) {
-  auto* bindings =
-      reinterpret_cast<SceneHostBindings*>(tls_scene_host_bindings.Get());
+  auto* bindings = tls_scene_host_bindings.get();
   FML_DCHECK(bindings);
 
   auto binding = bindings->find(id);
@@ -76,6 +72,13 @@ void InvokeDartFunction(tonic::DartPersistentValue* function, T& arg) {
     tonic::DartState::Scope scope(dart_state);
     tonic::DartInvoke(function->value(), {tonic::ToDart(arg)});
   }
+}
+
+zx_koid_t GetKoid(zx_handle_t handle) {
+  zx_info_handle_basic_t info;
+  zx_status_t status = zx_object_get_info(handle, ZX_INFO_HANDLE_BASIC, &info,
+                                          sizeof(info), nullptr, nullptr);
+  return status == ZX_OK ? info.koid : ZX_KOID_INVALID;
 }
 
 }  // namespace
@@ -116,7 +119,7 @@ fml::RefPtr<SceneHost> SceneHost::CreateViewHolder(
 SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> exportTokenHandle)
     : gpu_task_runner_(
           UIDartState::Current()->GetTaskRunners().GetGPUTaskRunner()),
-      id_(fsl::GetKoid(exportTokenHandle->handle())),
+      id_(GetKoid(exportTokenHandle->handle())),
       use_view_holder_(false) {
   gpu_task_runner_->PostTask(
       [id = id_, handle = std::move(exportTokenHandle)]() {
@@ -131,7 +134,7 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderTokenHandle,
                      Dart_Handle viewStateChangedCallback)
     : gpu_task_runner_(
           UIDartState::Current()->GetTaskRunners().GetGPUTaskRunner()),
-      id_(fsl::GetKoid(viewHolderTokenHandle->handle())),
+      id_(GetKoid(viewHolderTokenHandle->handle())),
       use_view_holder_(true) {
   if (Dart_IsClosure(viewConnectedCallback)) {
     view_connected_callback_ = std::make_unique<tonic::DartPersistentValue>(
@@ -147,8 +150,7 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderTokenHandle,
   }
 
   auto bind_callback = [scene_host = this](scenic::ResourceId id) {
-    auto* bindings =
-        reinterpret_cast<SceneHostBindings*>(tls_scene_host_bindings.Get());
+    auto* bindings = tls_scene_host_bindings.get();
     FML_DCHECK(bindings);
     FML_DCHECK(bindings->find(id) == bindings->end());
 
@@ -171,8 +173,7 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderTokenHandle,
 
 SceneHost::~SceneHost() {
   if (use_view_holder_) {
-    auto* bindings =
-        reinterpret_cast<SceneHostBindings*>(tls_scene_host_bindings.Get());
+    auto* bindings = tls_scene_host_bindings.get();
     FML_DCHECK(bindings);
     bindings->erase(id_);
 

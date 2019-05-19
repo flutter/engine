@@ -1,4 +1,4 @@
-Signature: 3ea8eaf2d73434b50c81b323a6e6ef43
+Signature: 5672bf5e2b64a51950e5e92331fb6076
 
 UNUSED LICENSES:
 
@@ -4608,6 +4608,7 @@ FILE: ../../../third_party/dart/runtime/observatory/web/favicon.ico
 FILE: ../../../third_party/dart/runtime/observatory/web/index.html
 FILE: ../../../third_party/dart/runtime/observatory/web/third_party/trace_viewer_full.html
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline.html
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi_dbc_trampoline_x64_linux_mac.S
 FILE: ../../../third_party/dart/samples/ffi/sqlite/docs/lib/scenario-default.svg
 FILE: ../../../third_party/dart/samples/ffi/sqlite/docs/lib/scenario-full.svg
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/conversions_dart2js.dart
@@ -4706,11 +4707,6 @@ FILE: ../../../third_party/dart/runtime/bin/io_buffer.h
 FILE: ../../../third_party/dart/runtime/bin/io_natives.h
 FILE: ../../../third_party/dart/runtime/bin/isolate_data.h
 FILE: ../../../third_party/dart/runtime/bin/lockers.h
-FILE: ../../../third_party/dart/runtime/bin/log.h
-FILE: ../../../third_party/dart/runtime/bin/log_android.cc
-FILE: ../../../third_party/dart/runtime/bin/log_linux.cc
-FILE: ../../../third_party/dart/runtime/bin/log_macos.cc
-FILE: ../../../third_party/dart/runtime/bin/log_win.cc
 FILE: ../../../third_party/dart/runtime/bin/main.cc
 FILE: ../../../third_party/dart/runtime/bin/platform.cc
 FILE: ../../../third_party/dart/runtime/bin/platform.h
@@ -4728,7 +4724,6 @@ FILE: ../../../third_party/dart/runtime/bin/run_vm_tests.cc
 FILE: ../../../third_party/dart/runtime/bin/secure_socket_patch.dart
 FILE: ../../../third_party/dart/runtime/bin/secure_socket_unsupported.cc
 FILE: ../../../third_party/dart/runtime/bin/socket_android.cc
-FILE: ../../../third_party/dart/runtime/bin/socket_base_android.cc
 FILE: ../../../third_party/dart/runtime/bin/socket_base_android.h
 FILE: ../../../third_party/dart/runtime/bin/socket_base_linux.h
 FILE: ../../../third_party/dart/runtime/bin/socket_base_macos.h
@@ -4802,8 +4797,15 @@ FILE: ../../../third_party/dart/runtime/platform/floating_point_win.h
 FILE: ../../../third_party/dart/runtime/platform/globals.h
 FILE: ../../../third_party/dart/runtime/platform/hashmap.cc
 FILE: ../../../third_party/dart/runtime/platform/hashmap.h
+FILE: ../../../third_party/dart/runtime/platform/syslog.h
+FILE: ../../../third_party/dart/runtime/platform/syslog_android.cc
+FILE: ../../../third_party/dart/runtime/platform/syslog_linux.cc
+FILE: ../../../third_party/dart/runtime/platform/syslog_macos.cc
+FILE: ../../../third_party/dart/runtime/platform/syslog_win.cc
 FILE: ../../../third_party/dart/runtime/platform/text_buffer.cc
 FILE: ../../../third_party/dart/runtime/platform/text_buffer.h
+FILE: ../../../third_party/dart/runtime/platform/unicode.cc
+FILE: ../../../third_party/dart/runtime/platform/unicode.h
 FILE: ../../../third_party/dart/runtime/platform/utils.cc
 FILE: ../../../third_party/dart/runtime/platform/utils.h
 FILE: ../../../third_party/dart/runtime/platform/utils_android.cc
@@ -4980,7 +4982,6 @@ FILE: ../../../third_party/dart/runtime/vm/thread_pool_test.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_test.cc
 FILE: ../../../third_party/dart/runtime/vm/token.h
 FILE: ../../../third_party/dart/runtime/vm/unicode.cc
-FILE: ../../../third_party/dart/runtime/vm/unicode.h
 FILE: ../../../third_party/dart/runtime/vm/unit_test.cc
 FILE: ../../../third_party/dart/runtime/vm/utils_test.cc
 FILE: ../../../third_party/dart/runtime/vm/version.h
@@ -5129,8 +5130,12 @@ FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extens
 FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension_dllmain_win.cc
 FILE: ../../../third_party/dart/runtime/bin/ffi_test_dynamic_library.cc
 FILE: ../../../third_party/dart/runtime/bin/ffi_test_functions.cc
+FILE: ../../../third_party/dart/runtime/bin/ifaddrs-android.cc
+FILE: ../../../third_party/dart/runtime/bin/ifaddrs-android.h
 FILE: ../../../third_party/dart/runtime/bin/namespace_fuchsia.h
+FILE: ../../../third_party/dart/runtime/bin/socket_base_android.cc
 FILE: ../../../third_party/dart/runtime/lib/ffi.cc
+FILE: ../../../third_party/dart/runtime/lib/ffi.h
 FILE: ../../../third_party/dart/runtime/lib/ffi_dynamic_library.cc
 FILE: ../../../third_party/dart/runtime/lib/ffi_dynamic_library_patch.dart
 FILE: ../../../third_party/dart/runtime/lib/ffi_native_type_patch.dart
@@ -5158,6 +5163,7 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/type_propagator_test
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/typed_data_aot_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi_dbc_trampoline.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier_arm.cc
@@ -5176,13 +5182,17 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_ia32.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_x64.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_arm.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_arm64.cc
+FILE: ../../../third_party/dart/runtime/vm/constants_dbc.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_ia32.cc
+FILE: ../../../third_party/dart/runtime/vm/constants_kbc.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_x64.cc
 FILE: ../../../third_party/dart/runtime/vm/frame_layout.h
 FILE: ../../../third_party/dart/runtime/vm/intrusive_dlist.h
 FILE: ../../../third_party/dart/runtime/vm/intrusive_dlist_test.cc
+FILE: ../../../third_party/dart/runtime/vm/libfuzzer/dart_libfuzzer.cc
 FILE: ../../../third_party/dart/runtime/vm/longjump.h
 FILE: ../../../third_party/dart/runtime/vm/pointer_tagging.h
+FILE: ../../../third_party/dart/runtime/vm/splay-tree.h
 FILE: ../../../third_party/dart/runtime/vm/static_type_exactness_state.h
 FILE: ../../../third_party/dart/runtime/vm/stub_code_list.h
 FILE: ../../../third_party/dart/runtime/vm/thread_stack_resource.cc
@@ -5560,7 +5570,6 @@ FILE: ../../../third_party/dart/runtime/bin/file_support.cc
 FILE: ../../../third_party/dart/runtime/bin/file_system_watcher_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/bin/loader.cc
 FILE: ../../../third_party/dart/runtime/bin/loader.h
-FILE: ../../../third_party/dart/runtime/bin/log_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/bin/platform_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/bin/process_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/bin/reference_counting.h
@@ -5725,6 +5734,7 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/top_ret
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/type_arguments.dart
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline_message_handler.js
 FILE: ../../../third_party/dart/runtime/platform/atomic_fuchsia.h
+FILE: ../../../third_party/dart/runtime/platform/syslog_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/platform/utils_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/platform/utils_fuchsia.h
 FILE: ../../../third_party/dart/runtime/vm/clustered_snapshot.cc
@@ -6548,6 +6558,41 @@ FILE: ../../../third_party/dart/sdk/lib/isolate/capability.dart
 FILE: ../../../third_party/dart/sdk/lib/profiler/profiler.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
+for details. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: dart
+ORIGIN: ../../../third_party/dart/runtime/platform/splay-tree-inl.h + ../../../third_party/dart/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/dart/runtime/platform/splay-tree-inl.h
+FILE: ../../../third_party/dart/runtime/platform/splay-tree.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2010, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -18059,6 +18104,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: tonic
+ORIGIN: ../../../fuchsia/sdk/linux/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/tonic/typed_data/typed_list.cc
+----------------------------------------------------------------------------------------------------
+Copyright 2019 The Fuchsia Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: tonic
 ORIGIN: ../../../third_party/tonic/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/tonic/common/build_config.h
@@ -18086,6 +18166,8 @@ FILE: ../../../third_party/tonic/scopes/dart_isolate_scope.cc
 FILE: ../../../third_party/tonic/scopes/dart_isolate_scope.h
 FILE: ../../../third_party/tonic/typed_data/dart_byte_data.h
 FILE: ../../../third_party/tonic/typed_data/int32_list.h
+FILE: ../../../third_party/tonic/typed_data/typed_list.h
+FILE: ../../../third_party/tonic/typed_data/uint16_list.h
 FILE: ../../../third_party/tonic/typed_data/uint8_list.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2016 The Fuchsia Authors. All rights reserved.
@@ -18218,12 +18300,8 @@ FILE: ../../../third_party/tonic/dart_wrappable.cc
 FILE: ../../../third_party/tonic/dart_wrappable.h
 FILE: ../../../third_party/tonic/dart_wrapper_info.h
 FILE: ../../../third_party/tonic/typed_data/dart_byte_data.cc
-FILE: ../../../third_party/tonic/typed_data/float32_list.cc
 FILE: ../../../third_party/tonic/typed_data/float32_list.h
-FILE: ../../../third_party/tonic/typed_data/float64_list.cc
 FILE: ../../../third_party/tonic/typed_data/float64_list.h
-FILE: ../../../third_party/tonic/typed_data/int32_list.cc
-FILE: ../../../third_party/tonic/typed_data/uint8_list.cc
 ----------------------------------------------------------------------------------------------------
 Copyright 2015 The Fuchsia Authors. All rights reserved.
 
@@ -19174,4 +19252,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 319
+Total license count: 321

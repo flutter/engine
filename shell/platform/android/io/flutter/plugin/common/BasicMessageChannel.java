@@ -4,9 +4,11 @@
 
 package io.flutter.plugin.common;
 
+import android.support.annotation.UiThread;
 import android.util.Log;
 import java.nio.ByteBuffer;
 
+import io.flutter.BuildConfig;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 
@@ -39,9 +41,17 @@ public final class BasicMessageChannel<T> {
      * @param codec a {@link MessageCodec}.
      */
     public BasicMessageChannel(BinaryMessenger messenger, String name, MessageCodec<T> codec) {
-        assert messenger != null;
-        assert name != null;
-        assert codec != null;
+        if (BuildConfig.DEBUG) {
+            if (messenger == null) {
+                Log.e(TAG, "Parameter messenger must not be null.");
+            }
+            if (name == null) {
+                Log.e(TAG, "Parameter name must not be null.");
+            }
+            if (codec == null) {
+                Log.e(TAG, "Parameter codec must not be null.");
+            }
+        }
         this.messenger = messenger;
         this.name = name;
         this.codec = codec;
@@ -64,6 +74,7 @@ public final class BasicMessageChannel<T> {
      * @param message the message, possibly null.
      * @param callback a {@link Reply} callback, possibly null.
      */
+    @UiThread
     public void send(T message, final Reply<T> callback) {
         messenger.send(name, codec.encodeMessage(message),
             callback == null ? null : new IncomingReplyHandler(callback));
@@ -80,6 +91,7 @@ public final class BasicMessageChannel<T> {
      *
      * @param handler a {@link MessageHandler}, or null to deregister.
      */
+    @UiThread
     public void setMessageHandler(final MessageHandler<T> handler) {
         messenger.setMessageHandler(name,
             handler == null ? null : new IncomingMessageHandler(handler));

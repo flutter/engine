@@ -29,6 +29,10 @@ double ParagraphImplTxt::height() {
   return m_paragraph->GetHeight();
 }
 
+double ParagraphImplTxt::longestLine() {
+  return m_paragraph->GetLongestLine();
+}
+
 double ParagraphImplTxt::minIntrinsicWidth() {
   return m_paragraph->GetMinIntrinsicWidth();
 }

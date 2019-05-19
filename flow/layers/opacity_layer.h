@@ -9,6 +9,10 @@
 
 namespace flutter {
 
+// Don't add an OpacityLayer with no children to the layer tree. Painting an
+// OpacityLayer is very costly due to the saveLayer call. If there's no child,
+// having the OpacityLayer or not has the same effect. In debug_unopt build, the
+// |EnsureSingleChild| will assert if there are no children.
 class OpacityLayer : public ContainerLayer {
  public:
   OpacityLayer();
@@ -21,7 +25,7 @@ class OpacityLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
-  // TODO(chinmaygarde): Once MZ-139 is addressed, introduce a new node in the
+  // TODO(chinmaygarde): Once SCN-139 is addressed, introduce a new node in the
   // session scene hierarchy.
 
  private:

@@ -51,7 +51,7 @@ FLUTTER_EXPORT
 
 /**
  * The style of mouse tracking to use for the view. Defaults to
- * FlutterMouseTrackingModeNone.
+ * FlutterMouseTrackingModeInKeyWindow.
  */
 @property(nonatomic) FlutterMouseTrackingMode mouseTrackingMode;
 

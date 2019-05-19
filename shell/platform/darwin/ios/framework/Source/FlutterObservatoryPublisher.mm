@@ -36,6 +36,7 @@
 @end
 
 @implementation FlutterObservatoryPublisher {
+  fml::scoped_nsobject<NSURL> _url;
 #if TARGET_IPHONE_SIMULATOR
   DNSServiceRef _dnsServiceRef;
 #else   // TARGET_IPHONE_SIMULATOR
@@ -44,6 +45,10 @@
 
   flutter::DartServiceIsolate::CallbackHandle _callbackHandle;
   std::unique_ptr<fml::WeakPtrFactory<FlutterObservatoryPublisher>> _weakFactory;
+}
+
+- (NSURL*)url {
+  return _url.get();
 }
 
 - (instancetype)init {
@@ -92,22 +97,34 @@
   }
   // uri comes in as something like 'http://127.0.0.1:XXXXX/' where XXXXX is the port
   // number.
-  NSURL* url =
-      [[[NSURL alloc] initWithString:[NSString stringWithUTF8String:uri.c_str()]] autorelease];
+  _url.reset([[NSURL alloc] initWithString:[NSString stringWithUTF8String:uri.c_str()]]);
 
   NSString* serviceName =
       [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleIdentifier"];
+
+  // Check to see if there's an authentication code. If there is, we'll provide
+  // it as a txt record so flutter tools can establish a connection.
+  auto path = std::string{[[_url path] UTF8String]};
+  if (!path.empty()) {
+    // Remove leading "/"
+    path = path.substr(1);
+  }
+  NSData* pathData = [[[NSData alloc] initWithBytes:path.c_str() length:path.length()] autorelease];
+  NSDictionary* txtDict = @{
+    @"authCode" : pathData,
+  };
+  NSData* txtData = [NSNetService dataFromTXTRecordDictionary:txtDict];
 
 #if TARGET_IPHONE_SIMULATOR
   DNSServiceFlags flags = kDNSServiceFlagsDefault;
   uint32_t interfaceIndex = if_nametoindex("lo0");
   const char* registrationType = "_dartobservatory._tcp";
   const char* domain = "local.";  // default domain
-  uint16_t port = [[url port] intValue];
+  uint16_t port = [[_url port] intValue];
 
   int err = DNSServiceRegister(&_dnsServiceRef, flags, interfaceIndex, [serviceName UTF8String],
-                               registrationType, domain, NULL, htons(port), 0, NULL,
-                               registrationCallback, NULL);
+                               registrationType, domain, NULL, htons(port), txtData.length,
+                               txtData.bytes, registrationCallback, NULL);
 
   if (err != 0) {
     FML_LOG(ERROR) << "Failed to register observatory port with mDNS.";
@@ -115,10 +132,12 @@
     DNSServiceSetDispatchQueue(_dnsServiceRef, dispatch_get_main_queue());
   }
 #else   // TARGET_IPHONE_SIMULATOR
-  _netService.reset([[NSNetService alloc] initWithDomain:@"local."
-                                                    type:@"_dartobservatory._tcp."
-                                                    name:serviceName
-                                                    port:[[url port] intValue]]);
+  NSNetService* netServiceTmp = [[NSNetService alloc] initWithDomain:@"local."
+                                                                type:@"_dartobservatory._tcp."
+                                                                name:serviceName
+                                                                port:[[_url port] intValue]];
+  [netServiceTmp setTXTRecordData:txtData];
+  _netService.reset(netServiceTmp);
   [_netService.get() setDelegate:self];
   [_netService.get() publish];
 #endif  // TARGET_IPHONE_SIMULATOR

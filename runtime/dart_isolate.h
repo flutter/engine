@@ -51,7 +51,9 @@ class DartIsolate : public UIDartState {
       fml::WeakPtr<IOManager> io_manager,
       std::string advisory_script_uri,
       std::string advisory_script_entrypoint,
-      Dart_IsolateFlags* flags = nullptr);
+      Dart_IsolateFlags* flags,
+      fml::closure isolate_create_callback,
+      fml::closure isolate_shutdown_callback);
 
   DartIsolate(const Settings& settings,
               fml::RefPtr<const DartSnapshot> isolate_snapshot,
@@ -61,7 +63,9 @@ class DartIsolate : public UIDartState {
               fml::WeakPtr<IOManager> io_manager,
               std::string advisory_script_uri,
               std::string advisory_script_entrypoint,
-              ChildIsolatePreparer child_isolate_preparer);
+              ChildIsolatePreparer child_isolate_preparer,
+              fml::closure isolate_create_callback,
+              fml::closure isolate_shutdown_callback);
 
   ~DartIsolate() override;
 
@@ -85,11 +89,14 @@ class DartIsolate : public UIDartState {
       std::vector<std::unique_ptr<const fml::Mapping>> kernels);
 
   FML_WARN_UNUSED_RESULT
-  bool Run(const std::string& entrypoint, fml::closure on_run = nullptr);
+  bool Run(const std::string& entrypoint,
+           const std::vector<std::string>& args,
+           fml::closure on_run = nullptr);
 
   FML_WARN_UNUSED_RESULT
   bool RunFromLibrary(const std::string& library_name,
                       const std::string& entrypoint,
+                      const std::vector<std::string>& args,
                       fml::closure on_run = nullptr);
 
   FML_WARN_UNUSED_RESULT
@@ -128,9 +135,11 @@ class DartIsolate : public UIDartState {
   std::vector<std::unique_ptr<AutoFireClosure>> shutdown_callbacks_;
   ChildIsolatePreparer child_isolate_preparer_ = nullptr;
   fml::RefPtr<fml::TaskRunner> message_handling_task_runner_;
+  const fml::closure isolate_create_callback_;
+  const fml::closure isolate_shutdown_callback_;
 
-  FML_WARN_UNUSED_RESULT
-  bool Initialize(Dart_Isolate isolate, bool is_root_isolate);
+  FML_WARN_UNUSED_RESULT bool Initialize(Dart_Isolate isolate,
+                                         bool is_root_isolate);
 
   void SetMessageHandlingTaskRunner(fml::RefPtr<fml::TaskRunner> runner,
                                     bool is_root_isolate);

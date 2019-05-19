@@ -62,7 +62,9 @@ Engine::Engine(Delegate& delegate,
       std::move(io_manager),                 // io manager
       settings_.advisory_script_uri,         // advisory script uri
       settings_.advisory_script_entrypoint,  // advisory script entrypoint
-      settings_.idle_notification_callback   // idle notification callback
+      settings_.idle_notification_callback,  // idle notification callback
+      settings_.isolate_create_callback,     // isolate create callback
+      settings_.isolate_shutdown_callback    // isolate shutdown callback
   );
 }
 
@@ -177,13 +179,15 @@ Engine::RunStatus Engine::PrepareAndLaunchIsolate(
   }
 
   if (configuration.GetEntrypointLibrary().empty()) {
-    if (!isolate->Run(configuration.GetEntrypoint())) {
+    if (!isolate->Run(configuration.GetEntrypoint(),
+                      settings_.dart_entrypoint_args)) {
       FML_LOG(ERROR) << "Could not run the isolate.";
       return RunStatus::Failure;
     }
   } else {
     if (!isolate->RunFromLibrary(configuration.GetEntrypointLibrary(),
-                                 configuration.GetEntrypoint())) {
+                                 configuration.GetEntrypoint(),
+                                 settings_.dart_entrypoint_args)) {
       FML_LOG(ERROR) << "Could not run the isolate.";
       return RunStatus::Failure;
     }

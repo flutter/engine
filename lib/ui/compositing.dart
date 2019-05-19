@@ -24,7 +24,7 @@ class Scene extends NativeFieldWrapperClass2 {
   /// This is a slow operation that is performed on a background thread.
   Future<Image> toImage(int width, int height) {
     if (width <= 0 || height <= 0)
-      throw new Exception('Invalid image dimensions.');
+      throw Exception('Invalid image dimensions.');
     return _futurize(
       (_Callback<Image> callback) => _toImage(width, height, callback)
     );
@@ -57,10 +57,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack.
   EngineLayer pushTransform(Float64List matrix4) {
-    if (matrix4 == null)
-      throw new ArgumentError('"matrix4" argument cannot be null');
-    if (matrix4.length != 16)
-      throw new ArgumentError('"matrix4" must have 16 entries.');
+    assert(_matrix4IsValid(matrix4));
     return _pushTransform(matrix4);
   }
   EngineLayer _pushTransform(Float64List matrix4) native 'SceneBuilder_pushTransform';
@@ -98,7 +95,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   EngineLayer pushClipRRect(RRect rrect, {Clip clipBehavior = Clip.antiAlias}) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
-    return _pushClipRRect(rrect._value, clipBehavior.index);
+    return _pushClipRRect(rrect._value32, clipBehavior.index);
   }
   EngineLayer _pushClipRRect(Float32List rrect, int clipBehavior) native 'SceneBuilder_pushClipRRect';
 
@@ -245,7 +242,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Adds a [Picture] to the scene.
   ///
   /// The picture is rasterized at the given offset.
-  void addPicture(Offset offset, Picture picture, { bool isComplexHint: false, bool willChangeHint: false }) {
+  void addPicture(Offset offset, Picture picture, { bool isComplexHint = false, bool willChangeHint = false }) {
     int hints = 0;
     if (isComplexHint)
       hints |= 1;
@@ -266,7 +263,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// previous or new size, to workaround this the framework "freezes" the
   /// texture just before resizing the Android view and un-freezes it when it is
   /// certain that a frame with the new size is ready.
-  void addTexture(int textureId, { Offset offset: Offset.zero, double width: 0.0, double height: 0.0 , bool freeze: false}) {
+  void addTexture(int textureId, { Offset offset = Offset.zero, double width = 0.0, double height = 0.0 , bool freeze = false}) {
     assert(offset != null, 'Offset argument was null');
     _addTexture(offset.dx, offset.dy, width, height, textureId, freeze);
   }
@@ -288,7 +285,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// With a platform view in the scene, Quartz has to composite the two Flutter surfaces and the
   /// embedded UIView. In addition to that, on iOS versions greater than 9, the Flutter frames are
   /// synchronized with the UIView frames adding additional performance overhead.
-  void addPlatformView(int viewId, { Offset offset: Offset.zero, double width: 0.0, double height: 0.0}) {
+  void addPlatformView(int viewId, { Offset offset = Offset.zero, double width = 0.0, double height = 0.0}) {
     assert(offset != null, 'Offset argument was null');
     _addPlatformView(offset.dx, offset.dy, width, height, viewId);
   }
@@ -297,11 +294,11 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// (Fuchsia-only) Adds a scene rendered by another application to the scene
   /// for this application.
   void addChildScene({
-    Offset offset: Offset.zero,
-    double width: 0.0,
-    double height: 0.0,
+    Offset offset = Offset.zero,
+    double width = 0.0,
+    double height = 0.0,
     SceneHost sceneHost,
-    bool hitTestable: true
+    bool hitTestable = true
   }) {
     _addChildScene(offset.dx,
                    offset.dy,

@@ -7,7 +7,6 @@
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/matrix_decomposition.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/lib/ui/window/viewport_metrics.h"
 
 namespace flutter {
 
@@ -75,7 +74,7 @@ void SceneUpdateContext::CreateFrame(
 
   // Add a part which represents the frame's geometry for clipping purposes
   // and possibly for its texture.
-  // TODO(MZ-137): Need to be able to express the radii as vectors.
+  // TODO(SCN-137): Need to be able to express the radii as vectors.
   SkRect shape_bounds = rrect.getBounds();
   scenic::RoundedRectangle shape(
       session_,                                      // session
@@ -164,9 +163,12 @@ scenic::Image* SceneUpdateContext::GenerateImageIfNeeded(
 
   // Acquire a surface from the surface producer and register the paint tasks.
   std::unique_ptr<SurfaceProducerSurface> surface =
-      surface_producer_->ProduceSurface(physical_size,
-                                        LayerRasterCacheKey(layer, Matrix()),
-                                        std::move(entity_node));
+      surface_producer_->ProduceSurface(
+          physical_size,
+          LayerRasterCacheKey(
+              // Root frame has a nullptr layer
+              layer ? layer->unique_id() : 0, Matrix()),
+          std::move(entity_node));
 
   if (!surface) {
     FML_LOG(ERROR) << "Could not acquire a surface from the surface producer "
@@ -200,8 +202,8 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
                                    canvas,
                                    frame.gr_context(),
                                    nullptr,
-                                   frame.context().frame_time(),
-                                   frame.context().engine_time(),
+                                   frame.context().raster_time(),
+                                   frame.context().ui_time(),
                                    frame.context().texture_registry(),
                                    &frame.context().raster_cache(),
                                    false};
@@ -241,7 +243,7 @@ SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
       previous_scale_x_(context.top_scale_x_),
       previous_scale_y_(context.top_scale_y_) {
   if (!transform.isIdentity()) {
-    // TODO(MZ-192): The perspective and shear components in the matrix
+    // TODO(SCN-192): The perspective and shear components in the matrix
     // are not handled correctly.
     MatrixDecomposition decomposition(transform);
     if (decomposition.IsValid()) {
@@ -298,7 +300,7 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
       paint_bounds_(SkRect::MakeEmpty()),
       layer_(layer) {
   if (local_elevation != 0.0) {
-    if (depth > flutter::kUnsetDepth && world_elevation >= depth) {
+    if (depth > -1 && world_elevation >= depth) {
       // TODO(mklim): Deal with bounds overflow correctly.
       FML_LOG(ERROR) << "Elevation " << world_elevation << " is outside of "
                      << depth;
