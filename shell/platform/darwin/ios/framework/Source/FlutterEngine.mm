@@ -21,12 +21,13 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyEventDelegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
-@interface FlutterEngine () <FlutterTextInputDelegate>
+@interface FlutterEngine () <FlutterTextInputDelegate, FlutterKeyEventDelegate>
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
@@ -59,6 +60,7 @@
   fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
+  fml::scoped_nsobject<FlutterBasicMessageChannel> _keyEventChannel;
 
   int64_t _nextTextureId;
 
@@ -206,6 +208,9 @@
 - (FlutterBasicMessageChannel*)settingsChannel {
   return _settingsChannel.get();
 }
+- (FlutterBasicMessageChannel*)keyEventChannel {
+  return _keyEventChannel.get();
+}
 
 - (NSURL*)observatoryUrl {
   return [_publisher.get() url];
@@ -220,6 +225,7 @@
   _lifecycleChannel.reset();
   _systemChannel.reset();
   _settingsChannel.reset();
+  _keyEventChannel.reset();
 }
 
 // If you add a channel, be sure to also update `resetChannels`.
@@ -266,8 +272,14 @@
       binaryMessenger:self
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
+  _keyEventChannel.reset([[FlutterBasicMessageChannel alloc]
+         initWithName:@"flutter/keyevent"
+      binaryMessenger:self
+                codec:[FlutterJSONMessageCodec sharedInstance]]);
+
   _textInputPlugin.reset([[FlutterTextInputPlugin alloc] init]);
   _textInputPlugin.get().textInputDelegate = self;
+  _textInputPlugin.get().keyEventDelegate = self;
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
 }
@@ -417,6 +429,17 @@
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint {
   return [self runWithEntrypoint:entrypoint libraryURI:nil];
+}
+
+#pragma mark - Key event delegate
+
+- (void)performKeyPress:(int)keyCode withCharacters:(NSString*)characters {
+  [_keyEventChannel.get() sendMessage:@{
+    @"keymap" : @"ios",
+    @"type" : @("keydown"),
+    @"keyCode" : @(keyCode),
+    @"characters" : characters,
+  }];
 }
 
 #pragma mark - Text input delegate

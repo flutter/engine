@@ -9,10 +9,12 @@
 
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyEventDelegate.h"
 
 @interface FlutterTextInputPlugin : NSObject
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
+@property(nonatomic, assign) id<FlutterKeyEventDelegate> keyEventDelegate;
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
 /**

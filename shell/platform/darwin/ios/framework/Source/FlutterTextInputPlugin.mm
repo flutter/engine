@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/fml/platform/darwin/string_range_sanitization.h"
 
 #include <Foundation/Foundation.h>
@@ -161,6 +162,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 @property(nonatomic, getter=isSecureTextEntry) BOOL secureTextEntry;
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
+@property(nonatomic, assign) id<FlutterKeyEventDelegate> keyEventDelegate;
 
 @end
 
@@ -616,6 +618,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 - (void)insertText:(NSString*)text {
   _selectionAffinity = _kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
+  [_keyEventDelegate performKeyPress:0 withCharacters:text];
 }
 
 - (void)deleteBackward {
@@ -643,6 +646,9 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
   if (!_selectedTextRange.isEmpty)
     [self replaceRange:_selectedTextRange withText:@""];
+
+  // Backspace key code
+  [_keyEventDelegate performKeyPress:0x00000033 withCharacters:@""];
 }
 
 @end
@@ -674,6 +680,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 }
 
 @synthesize textInputDelegate = _textInputDelegate;
+@synthesize keyEventDelegate = _keyEventDelegate;
 
 - (instancetype)init {
   self = [super init];
@@ -732,6 +739,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
            @"The application must have a key window since the keyboard client "
            @"must be part of the responder chain to function");
   _activeView.textInputDelegate = _textInputDelegate;
+  _activeView.keyEventDelegate = _keyEventDelegate;
   [_inputHider addSubview:_activeView];
   [[UIApplication sharedApplication].keyWindow addSubview:_inputHider];
   [_activeView becomeFirstResponder];

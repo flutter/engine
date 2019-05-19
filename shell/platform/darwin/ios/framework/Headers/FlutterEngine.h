@@ -229,6 +229,11 @@ FLUTTER_EXPORT
 @property(nonatomic, readonly) FlutterBasicMessageChannel* settingsChannel;
 
 /**
+ * The `FlutterBasicMessageChannel` used for communicating key press events.
+ */
+@property(nonatomic, readonly) FlutterBasicMessageChannel* keyEventChannel;
+
+/**
  * The `NSURL` of the observatory for the service isolate.
  *
  * This is only set in debug and profile runtime modes, and only after the
