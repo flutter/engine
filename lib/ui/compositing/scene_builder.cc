@@ -200,14 +200,22 @@ void SceneBuilder::addRetained(fml::RefPtr<EngineLayer> retainedLayer) {
   if (!current_layer_) {
     return;
   }
-  current_layer_->Add(retainedLayer->Layer());
+  bool contains_platform_view = false;
+  if (retainedLayer->Layer()) {
+    contains_platform_view = retainedLayer->Layer()->contains_platform_view();
+  }
+  current_layer_->Add(retainedLayer->Layer(), contains_platform_view);
 }
 
 void SceneBuilder::pop() {
   if (!current_layer_) {
     return;
   }
+  bool contains_platform_view = current_layer_->contains_platform_view();
   current_layer_ = current_layer_->parent();
+  if (current_layer_) {
+    current_layer_->set_contains_platform_view(contains_platform_view);
+  }
 }
 
 void SceneBuilder::addPicture(double dx,
@@ -257,7 +265,7 @@ void SceneBuilder::addPlatformView(double dx,
   layer->set_offset(SkPoint::Make(dx, dy));
   layer->set_size(SkSize::Make(width, height));
   layer->set_view_id(viewId);
-  current_layer_->Add(std::move(layer));
+  current_layer_->Add(std::move(layer), true);
 }
 
 #if defined(OS_FUCHSIA)
@@ -326,7 +334,8 @@ void SceneBuilder::PushLayer(std::shared_ptr<flutter::ContainerLayer> layer) {
   }
 
   flutter::ContainerLayer* newLayer = layer.get();
-  current_layer_->Add(std::move(layer));
+  bool contains_platform_view = layer->contains_platform_view();
+  current_layer_->Add(std::move(layer), contains_platform_view);
   current_layer_ = newLayer;
 }
 

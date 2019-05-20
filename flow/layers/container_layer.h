@@ -15,7 +15,7 @@ class ContainerLayer : public Layer {
   ContainerLayer();
   ~ContainerLayer() override;
 
-  void Add(std::shared_ptr<Layer> layer);
+  void Add(std::shared_ptr<Layer> layer, bool is_platform_view = false);
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
@@ -24,6 +24,12 @@ class ContainerLayer : public Layer {
 #endif  // defined(OS_FUCHSIA)
 
   const std::vector<std::shared_ptr<Layer>>& layers() const { return layers_; }
+
+  bool contains_platform_view() const { return contains_platform_view_; }
+
+  void set_contains_platform_view(bool contains_platform_view) {
+    contains_platform_view_ = contains_platform_view;
+  }
 
  protected:
   void PrerollChildren(PrerollContext* context,
@@ -40,6 +46,7 @@ class ContainerLayer : public Layer {
 
  private:
   std::vector<std::shared_ptr<Layer>> layers_;
+  bool contains_platform_view_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContainerLayer);
 };

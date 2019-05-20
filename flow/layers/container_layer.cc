@@ -10,9 +10,10 @@ ContainerLayer::ContainerLayer() {}
 
 ContainerLayer::~ContainerLayer() = default;
 
-void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
+void ContainerLayer::Add(std::shared_ptr<Layer> layer, bool is_platform_view) {
   layer->set_parent(this);
   layers_.push_back(std::move(layer));
+  contains_platform_view_ |= is_platform_view;
 }
 
 void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {

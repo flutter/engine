@@ -10,7 +10,7 @@
 #include <memory>
 
 #include "flutter/flow/compositor_context.h"
-#include "flutter/flow/layers/layer.h"
+#include "flutter/flow/layers/container_layer.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
 #include "third_party/skia/include/core/SkPicture.h"
@@ -37,9 +37,9 @@ class LayerTree {
 
   sk_sp<SkPicture> Flatten(const SkRect& bounds);
 
-  Layer* root_layer() const { return root_layer_.get(); }
+  ContainerLayer* root_layer() const { return root_layer_.get(); }
 
-  void set_root_layer(std::shared_ptr<Layer> root_layer) {
+  void set_root_layer(std::shared_ptr<ContainerLayer> root_layer) {
     root_layer_ = std::move(root_layer);
   }
 
@@ -74,7 +74,7 @@ class LayerTree {
 
  private:
   SkISize frame_size_;  // Physical pixels.
-  std::shared_ptr<Layer> root_layer_;
+  std::shared_ptr<ContainerLayer> root_layer_;
   fml::TimeDelta construction_time_;
   uint32_t rasterizer_tracing_threshold_;
   bool checkerboard_raster_cache_images_;
