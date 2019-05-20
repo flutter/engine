@@ -11,8 +11,13 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FLEView.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FLETextInputPlugin.h"
 #import "flutter/shell/platform/embedder/embedder.h"
+#import "sys/stat.h"
 
 static NSString* const kICUBundlePath = @"icudtl.dat";
+static NSString* const kVmSnapshotDataPath = @"flutter_assets/vm_snapshot_data";
+static NSString* const kVmSnapshotInstructionsPath = @"flutter_assets/vm_snapshot_instr";
+static NSString* const kIsolateSnapshotDataPath = @"flutter_assets/isolate_snapshot_data";
+static NSString* const kIsolateSnapshotInstructionsPath = @"flutter_assets/isolate_snapshot_instr";
 
 static const int kDefaultWindowFramebuffer = 0;
 
@@ -356,6 +361,42 @@ static void CommonInit(FLEViewController* controller) {
   flutterArguments.command_line_argv = argv;
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
 
+  // Provide data for release mode engine.
+#if NDEBUG
+  const char* vmSnapshotDataPath = [[[NSBundle mainBundle] pathForResource:kVmSnapshotDataPath
+                                                           ofType:nil] UTF8String];
+  const char* vmSnapshotInstructionsPath = [[[NSBundle mainBundle] pathForResource:kVmSnapshotInstructionsPath
+                                                                   ofType:nil] UTF8String];
+  const char* isolateSnapshotDataPath = [[[NSBundle mainBundle] pathForResource:kIsolateSnapshotDataPath
+                                                                ofType:nil] UTF8String];
+  const char* isolateSnapshotInstructionsPath = [[[NSBundle mainBundle] pathForResource:kIsolateSnapshotInstructionsPath
+                                                                        ofType:nil] UTF8String];
+  size_t vmSnapshotDataLength;
+  void* vmSnapshotData;
+  if (MapFile(vmSnapshotDataPath, &vmSnapshotData, &vmSnapshotDataLength, false) == 0) {
+    flutterArguments.vm_snapshot_data = (const uint8_t*) vmSnapshotData;
+    flutterArguments.vm_snapshot_data_size = vmSnapshotDataLength;
+  }
+  size_t vmSnapshotInstructionsLength;
+  void* vmSnapshotInstructions;
+  if (MapFile(vmSnapshotInstructionsPath, &vmSnapshotInstructions, &vmSnapshotInstructionsLength, true) == 0) {
+    flutterArguments.vm_snapshot_instructions = (const uint8_t*) vmSnapshotInstructions;
+    flutterArguments.vm_snapshot_instructions_size = vmSnapshotInstructionsLength;
+  }
+  size_t isolateSnapshotDataLength;
+  void* isolateSnapshotData;
+  if (MapFile(isolateSnapshotDataPath, &isolateSnapshotData, &isolateSnapshotDataLength, false) == 0 ) {
+    flutterArguments.isolate_snapshot_data = (const uint8_t*) isolateSnapshotData;
+    flutterArguments.isolate_snapshot_data_size = isolateSnapshotDataLength;
+  }
+  size_t isolateSnapshotInstructionsLength;
+  void* isolateSnapshotInstructions;
+  if (MapFile(isolateSnapshotInstructionsPath, &isolateSnapshotInstructions, &isolateSnapshotInstructionsLength, true) == 0 ) {
+    flutterArguments.isolate_snapshot_instructions = (const uint8_t*) isolateSnapshotInstructions;
+    flutterArguments.isolate_snapshot_instructions_size = isolateSnapshotInstructionsLength;
+  }
+#endif // NDEBUG
+
   FlutterEngineResult result = FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config, &flutterArguments,
                                                 (__bridge void*)(self), &_engine);
   free(argv);
@@ -625,6 +666,39 @@ static void CommonInit(FLEViewController* controller) {
   // TODO: Add gesture-based (trackpad) scroll support once it's supported by the engine rather
   // than always using kHover.
   [self dispatchMouseEvent:event phase:kHover];
+}
+
+
+int MapFile(const char* inPathName, void ** outDataPtr, size_t * outDataLength, bool executable) {
+  int outError;
+  int fileDescriptor;
+  struct stat statInfo;
+  outError = 0;
+  *outDataPtr = NULL;
+  *outDataLength = 0;
+
+  fileDescriptor = open( inPathName, O_RDONLY | (executable ? O_EXCL : 0), 0 );
+  if (fileDescriptor < 0) {
+    outError = errno;
+  } else {
+    if (fstat(fileDescriptor, &statInfo) != 0) {
+      outError = errno;
+    } else {
+      *outDataPtr = mmap(NULL,
+                          statInfo.st_size,
+                          PROT_READ | (executable ? PROT_EXEC : 0),
+                          MAP_SHARED,
+                          fileDescriptor,
+                          0);
+      if (*outDataPtr == MAP_FAILED) {
+        outError = errno;
+      } else {
+        *outDataLength = statInfo.st_size;
+      }
+    }
+    close( fileDescriptor );
+  }
+  return outError;
 }
 
 @end
