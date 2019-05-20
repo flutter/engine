@@ -364,38 +364,42 @@ static void CommonInit(FLEViewController* controller) {
   // Provide data for release mode engine.
 #if NDEBUG
   const char* vmSnapshotDataPath = [[[NSBundle mainBundle] pathForResource:kVmSnapshotDataPath
-                                                           ofType:nil] UTF8String];
-  const char* vmSnapshotInstructionsPath = [[[NSBundle mainBundle] pathForResource:kVmSnapshotInstructionsPath
-                                                                   ofType:nil] UTF8String];
-  const char* isolateSnapshotDataPath = [[[NSBundle mainBundle] pathForResource:kIsolateSnapshotDataPath
-                                                                ofType:nil] UTF8String];
-  const char* isolateSnapshotInstructionsPath = [[[NSBundle mainBundle] pathForResource:kIsolateSnapshotInstructionsPath
-                                                                        ofType:nil] UTF8String];
+                                                                    ofType:nil] UTF8String];
+  const char* vmSnapshotInstructionsPath =
+      [[[NSBundle mainBundle] pathForResource:kVmSnapshotInstructionsPath ofType:nil] UTF8String];
+  const char* isolateSnapshotDataPath =
+      [[[NSBundle mainBundle] pathForResource:kIsolateSnapshotDataPath ofType:nil] UTF8String];
+  const char* isolateSnapshotInstructionsPath =
+      [[[NSBundle mainBundle] pathForResource:kIsolateSnapshotInstructionsPath
+                                       ofType:nil] UTF8String];
   size_t vmSnapshotDataLength;
   void* vmSnapshotData;
   if (MapFile(vmSnapshotDataPath, &vmSnapshotData, &vmSnapshotDataLength, false) == 0) {
-    flutterArguments.vm_snapshot_data = (const uint8_t*) vmSnapshotData;
+    flutterArguments.vm_snapshot_data = (const uint8_t*)vmSnapshotData;
     flutterArguments.vm_snapshot_data_size = vmSnapshotDataLength;
   }
   size_t vmSnapshotInstructionsLength;
   void* vmSnapshotInstructions;
-  if (MapFile(vmSnapshotInstructionsPath, &vmSnapshotInstructions, &vmSnapshotInstructionsLength, true) == 0) {
-    flutterArguments.vm_snapshot_instructions = (const uint8_t*) vmSnapshotInstructions;
+  if (MapFile(vmSnapshotInstructionsPath, &vmSnapshotInstructions, &vmSnapshotInstructionsLength,
+              true) == 0) {
+    flutterArguments.vm_snapshot_instructions = (const uint8_t*)vmSnapshotInstructions;
     flutterArguments.vm_snapshot_instructions_size = vmSnapshotInstructionsLength;
   }
   size_t isolateSnapshotDataLength;
   void* isolateSnapshotData;
-  if (MapFile(isolateSnapshotDataPath, &isolateSnapshotData, &isolateSnapshotDataLength, false) == 0 ) {
-    flutterArguments.isolate_snapshot_data = (const uint8_t*) isolateSnapshotData;
+  if (MapFile(isolateSnapshotDataPath, &isolateSnapshotData, &isolateSnapshotDataLength, false) ==
+      0) {
+    flutterArguments.isolate_snapshot_data = (const uint8_t*)isolateSnapshotData;
     flutterArguments.isolate_snapshot_data_size = isolateSnapshotDataLength;
   }
   size_t isolateSnapshotInstructionsLength;
   void* isolateSnapshotInstructions;
-  if (MapFile(isolateSnapshotInstructionsPath, &isolateSnapshotInstructions, &isolateSnapshotInstructionsLength, true) == 0 ) {
-    flutterArguments.isolate_snapshot_instructions = (const uint8_t*) isolateSnapshotInstructions;
+  if (MapFile(isolateSnapshotInstructionsPath, &isolateSnapshotInstructions,
+              &isolateSnapshotInstructionsLength, true) == 0) {
+    flutterArguments.isolate_snapshot_instructions = (const uint8_t*)isolateSnapshotInstructions;
     flutterArguments.isolate_snapshot_instructions_size = isolateSnapshotInstructionsLength;
   }
-#endif // NDEBUG
+#endif  // NDEBUG
 
   FlutterEngineResult result = FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config, &flutterArguments,
                                                 (__bridge void*)(self), &_engine);
@@ -668,8 +672,7 @@ static void CommonInit(FLEViewController* controller) {
   [self dispatchMouseEvent:event phase:kHover];
 }
 
-
-int MapFile(const char* inPathName, void ** outDataPtr, size_t * outDataLength, bool executable) {
+int MapFile(const char* inPathName, void** outDataPtr, size_t* outDataLength, bool executable) {
   int outError;
   int fileDescriptor;
   struct stat statInfo;
@@ -677,26 +680,22 @@ int MapFile(const char* inPathName, void ** outDataPtr, size_t * outDataLength, 
   *outDataPtr = NULL;
   *outDataLength = 0;
 
-  fileDescriptor = open( inPathName, O_RDONLY | (executable ? O_EXCL : 0), 0 );
+  fileDescriptor = open(inPathName, O_RDONLY | (executable ? O_EXCL : 0), 0);
   if (fileDescriptor < 0) {
     outError = errno;
   } else {
     if (fstat(fileDescriptor, &statInfo) != 0) {
       outError = errno;
     } else {
-      *outDataPtr = mmap(NULL,
-                          statInfo.st_size,
-                          PROT_READ | (executable ? PROT_EXEC : 0),
-                          MAP_SHARED,
-                          fileDescriptor,
-                          0);
+      *outDataPtr = mmap(NULL, statInfo.st_size, PROT_READ | (executable ? PROT_EXEC : 0),
+                         MAP_SHARED, fileDescriptor, 0);
       if (*outDataPtr == MAP_FAILED) {
         outError = errno;
       } else {
         *outDataLength = statInfo.st_size;
       }
     }
-    close( fileDescriptor );
+    close(fileDescriptor);
   }
   return outError;
 }
