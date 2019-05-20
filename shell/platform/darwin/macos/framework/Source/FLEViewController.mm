@@ -534,6 +534,7 @@ static void CommonInit(FLEViewController* controller) {
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([call.method isEqualToString:@"SystemNavigator.pop"]) {
     [NSApp terminate:self];
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
