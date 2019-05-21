@@ -5,13 +5,14 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FLEViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FLEViewController_Internal.h"
 
+#import <sys/stat.h>
+#import "flutter/fml/eintr_wrapper.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FLEReshapeListener.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FLEView.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FLETextInputPlugin.h"
 #import "flutter/shell/platform/embedder/embedder.h"
-#import <sys/stat.h>
 
 static NSString* const kICUBundlePath = @"icudtl.dat";
 static NSString* const kVmSnapshotDataPath = @"vm_snapshot_data";
@@ -22,31 +23,59 @@ static NSString* const kIsolateSnapshotInstructionsPath = @"isolate_snapshot_ins
 static const int kDefaultWindowFramebuffer = 0;
 
 /**
+ * Reference to the vm snapshot data retained by the engine in AOT mode.
+ */
+static void* vm_snapshot_data_;
+static size_t vm_snapshot_data_size_;
+
+/**
+ * Reference to the vm snapshot instructions retained by the engine in AOT mode.
+ */
+static void* vm_snapshot_instructions_;
+static size_t vm_snapshot_instructions_size_;
+
+/**
+ * Reference to the isolate snapshot data retained by the engine in AOT mode.
+ */
+static void* isolate_snapshot_data_;
+static size_t isolate_snapshot_data_size_;
+
+/**
+ * Reference to the isolate snapshot instructions retained by the engine in AOT mode.
+ */
+static void* isolate_snapshot_instructions_;
+static size_t isolate_snapshot_instructions_size_;
+
+/**
  * mmap the provided file, used for loading the AOT artifacts.
  */
-static void MapFile(const char* inPathName, const uint8_t** outDataPtr, size_t* outDataLength, bool executable) {
-  int fileDescriptor;
-  struct stat statInfo;
-  *outDataPtr = NULL;
-  *outDataLength = 0;
-
-  fileDescriptor = open(inPathName, O_RDONLY | (executable ? O_EXCL : 0), 0);
+static void MapFile(const char* inPathName,
+                    const uint8_t** outDataPtr,
+                    size_t* outDataLength,
+                    void** storage,
+                    size_t* storage_size,
+                    bool executable) {
+  int fileDescriptor = FML_HANDLE_EINTR(open(inPathName, O_RDONLY | (executable ? O_EXCL : 0), 0));
   if (fileDescriptor < 0) {
     NSLog(@"Failed to load %s", inPathName);
     return;
   }
+  struct stat statInfo;
   if (fstat(fileDescriptor, &statInfo) != 0) {
     NSLog(@"Failed to load %s", inPathName);
     return;
   }
-  *outDataPtr = static_cast<uint8_t *>(mmap(NULL, statInfo.st_size, PROT_READ | (executable ? PROT_EXEC : 0),
-                         MAP_PRIVATE, fileDescriptor, 0));
-  if (*outDataPtr == MAP_FAILED) {
+  void* data = mmap(NULL, statInfo.st_size, PROT_READ | (executable ? PROT_EXEC : 0), MAP_PRIVATE,
+                    fileDescriptor, 0);
+  if (data == MAP_FAILED) {
     NSLog(@"Failed to load %s", inPathName);
-  } else {
-    *outDataLength = statInfo.st_size;
+    return;
   }
-  close(fileDescriptor);
+  FML_HANDLE_EINTR(close(fileDescriptor));
+  *outDataPtr = static_cast<uint8_t*>(data);
+  *outDataLength = statInfo.st_size;
+  *storage = data;
+  *storage_size = statInfo.st_size;
 }
 
 #pragma mark - Private interface declaration.
@@ -259,6 +288,10 @@ static void CommonInit(FLEViewController* controller) {
 - (void)dealloc {
   if (FlutterEngineShutdown(_engine) == kSuccess) {
     _engine = NULL;
+    munmap(vm_snapshot_data_, vm_snapshot_data_size_);
+    munmap(vm_snapshot_instructions_, vm_snapshot_instructions_size_);
+    munmap(isolate_snapshot_data_, isolate_snapshot_data_size_);
+    munmap(isolate_snapshot_instructions_, isolate_snapshot_instructions_size_);
   }
 }
 
@@ -391,7 +424,8 @@ static void CommonInit(FLEViewController* controller) {
 
   // Provide data for release mode engine.
 #if NDEBUG
-  const char* vmSnapshotDataPath =  [[[assets URLByAppendingPathComponent:kVmSnapshotDataPath] path] UTF8String];
+  const char* vmSnapshotDataPath =
+      [[[assets URLByAppendingPathComponent:kVmSnapshotDataPath] path] UTF8String];
   const char* vmSnapshotInstructionsPath =
       [[[assets URLByAppendingPathComponent:kVmSnapshotInstructionsPath] path] UTF8String];
   const char* isolateSnapshotDataPath =
@@ -399,10 +433,18 @@ static void CommonInit(FLEViewController* controller) {
   const char* isolateSnapshotInstructionsPath =
       [[[assets URLByAppendingPathComponent:kIsolateSnapshotInstructionsPath] path] UTF8String];
 
-  MapFile(vmSnapshotDataPath, &flutterArguments.vm_snapshot_data, &flutterArguments.vm_snapshot_data_size, false);
-  MapFile(vmSnapshotInstructionsPath, &flutterArguments.vm_snapshot_instructions, &flutterArguments.vm_snapshot_instructions_size, true);
-  MapFile(isolateSnapshotDataPath, &flutterArguments.isolate_snapshot_data, &flutterArguments.isolate_snapshot_data_size, false);
-  MapFile(isolateSnapshotInstructionsPath, &flutterArguments.isolate_snapshot_instructions, &flutterArguments.isolate_snapshot_instructions_size, true);
+  MapFile(vmSnapshotDataPath, &flutterArguments.vm_snapshot_data,
+          &flutterArguments.vm_snapshot_data_size, &vm_snapshot_data_, &vm_snapshot_data_size_,
+          false);
+  MapFile(vmSnapshotInstructionsPath, &flutterArguments.vm_snapshot_instructions,
+          &flutterArguments.vm_snapshot_instructions_size, &vm_snapshot_instructions_,
+          &vm_snapshot_instructions_size_, true);
+  MapFile(isolateSnapshotDataPath, &flutterArguments.isolate_snapshot_data,
+          &flutterArguments.isolate_snapshot_data_size, &isolate_snapshot_data_,
+          &isolate_snapshot_data_size_, false);
+  MapFile(isolateSnapshotInstructionsPath, &flutterArguments.isolate_snapshot_instructions,
+          &flutterArguments.isolate_snapshot_instructions_size, &isolate_snapshot_instructions_,
+          &isolate_snapshot_instructions_size_, true);
 #endif  // NDEBUG
 
   FlutterEngineResult result = FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config, &flutterArguments,
