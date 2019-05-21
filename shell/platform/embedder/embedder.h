@@ -287,7 +287,7 @@ typedef enum {
   // any other buttons are still pressed when one button is released, that
   // should be sent as a kMove rather than a kUp.
   kUp,
-  // The pointer, which must have been been up, is now up.
+  // The pointer, which must have been been up, is now down.
   //
   // For touch, this means that the pointer has come into contact with the
   // screen. For a mouse, it means a button is now pressed. Note that if any
@@ -295,6 +295,9 @@ typedef enum {
   // be sent as a kMove rather than a kDown.
   kDown,
   // The pointer moved while down.
+  //
+  // This is also used for changes in button state that don't cause a kDown or
+  // kUp, such as releasing one of two pressed buttons.
   kMove,
   // The pointer is now sending input to Flutter. For instance, a mouse has
   // entered the area where the Flutter content is displayed.
