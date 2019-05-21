@@ -1213,6 +1213,7 @@ abstract class Gradient extends Shader {
     List<Color> colors, [
     List<double> colorStops,
     TileMode tileMode = TileMode.clamp,
+    Float64List matrix4, // TODO(yjbanov): Implement this https://github.com/flutter/flutter/issues/32819
   ]) =>
       _GradientLinear(from, to, colors, colorStops, tileMode);
 
@@ -1758,8 +1759,7 @@ class Codec {
 ///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
-Future<Codec> instantiateImageCodec(Uint8List list,
-    {double decodedCacheRatioCap = double.infinity}) {
+Future<Codec> instantiateImageCodec(Uint8List list) {
   return engine.futurize((engine.Callback<Codec> callback) =>
       _instantiateImageCodec(list, callback, null));
 }

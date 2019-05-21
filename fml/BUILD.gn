@@ -6,7 +6,6 @@ import("//build/fuchsia/sdk.gni")
 
 source_set("fml") {
   sources = [
-    "arraysize.h",
     "base32.cc",
     "base32.h",
     "build_config.h",
@@ -47,6 +46,7 @@ source_set("fml") {
     "native_library.h",
     "paths.cc",
     "paths.h",
+    "size.h",
     "string_view.cc",
     "string_view.h",
     "synchronization/atomic_object.h",
@@ -136,13 +136,10 @@ source_set("fml") {
   }
 
   if (is_android) {
-    # Don't filter away these Linux sources on Android.
-    set_sources_assignment_filter([])
     sources += [
       "platform/linux/timerfd.cc",
       "platform/linux/timerfd.h",
     ]
-    set_sources_assignment_filter(sources_assignment_filter)
   }
 
   if (is_linux) {

@@ -27,7 +27,6 @@ group("platform") {
       "windows",
     ]
   } else if (is_fuchsia) {
-    # Fuchsia has its own runner implementation.
     if (using_fuchsia_sdk) {
       deps = [
         "fuchsia",

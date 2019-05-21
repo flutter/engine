@@ -591,13 +591,15 @@ void Paragraph::ComputePlaceholder(PlaceholderRun* placeholder_run,
 //   -Calculate line vertical layout (ascent, descent, etc)
 //   -Store per-line metrics
 void Paragraph::Layout(double width, bool force) {
+  double rounded_width = floor(width);
   // Do not allow calling layout multiple times without changing anything.
-  if (!needs_layout_ && width == width_ && !force) {
+  if (!needs_layout_ && rounded_width == width_ && !force) {
     return;
   }
-  needs_layout_ = false;
 
-  width_ = floor(width);
+  width_ = rounded_width;
+
+  needs_layout_ = false;
 
   if (!ComputeLineBreaks())
     return;
@@ -609,7 +611,7 @@ void Paragraph::Layout(double width, bool force) {
   SkFont font;
   font.setEdging(SkFont::Edging::kAntiAlias);
   font.setSubpixel(true);
-  font.setHinting(kSlight_SkFontHinting);
+  font.setHinting(SkFontHinting::kSlight);
 
   records_.clear();
   line_heights_.clear();
@@ -630,8 +632,7 @@ void Paragraph::Layout(double width, bool force) {
   double max_word_width = 0;
 
   // Compute strut minimums according to paragraph_style_.
-  StrutMetrics strut;
-  ComputeStrut(&strut, font);
+  ComputeStrut(&strut_, font);
 
   // Paragraph bounds tracking.
   size_t line_limit = std::min(paragraph_style_.max_lines, line_ranges_.size());
@@ -1030,13 +1031,13 @@ void Paragraph::Layout(double width, bool force) {
 
     // Calculate the amount to advance in the y direction. This is done by
     // computing the maximum ascent and descent with respect to the strut.
-    double max_ascent = strut.ascent + strut.half_leading;
-    double max_descent = strut.descent + strut.half_leading;
+    double max_ascent = strut_.ascent + strut_.half_leading;
+    double max_descent = strut_.descent + strut_.half_leading;
     double max_unscaled_ascent = 0;
     auto update_line_metrics = [&](const SkFontMetrics& metrics,
                                    const TextStyle& style,
                                    PlaceholderRun* placeholder_run) {
-      if (!strut.force_strut) {
+      if (!strut_.force_strut) {
         double ascent =
             (-metrics.fAscent + metrics.fLeading / 2) * style.height;
         double descent =
@@ -1612,7 +1613,8 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
                 line_baselines_[kv.first] + line_max_descent_[kv.first]),
             box.direction);
       }
-    } else {  // kIncludeLineSpacingBottom
+    } else if (rect_height_style ==
+               RectHeightStyle::kIncludeLineSpacingBottom) {
       for (const Paragraph::TextBox& box : kv.second.boxes) {
         SkScalar adjusted_bottom =
             line_baselines_[kv.first] + line_max_descent_[kv.first];
@@ -1625,6 +1627,14 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
                                                 line_max_ascent_[kv.first],
                                             box.rect.fRight, adjusted_bottom),
                            box.direction);
+      }
+    } else if (rect_height_style == RectHeightStyle::kStrut) {
+      for (const Paragraph::TextBox& box : kv.second.boxes) {
+        boxes.emplace_back(
+            SkRect::MakeLTRB(
+                box.rect.fLeft, line_baselines_[kv.first] - strut_.ascent,
+                box.rect.fRight, line_baselines_[kv.first] + strut_.descent),
+            box.direction);
       }
     }
   }

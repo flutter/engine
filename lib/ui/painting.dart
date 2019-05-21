@@ -1650,15 +1650,6 @@ class Codec extends NativeFieldWrapperClass2 {
 /// The data can be for either static or animated images. The following image
 /// formats are supported: {@macro flutter.dart:ui.imageFormats}
 ///
-/// The [decodedCacheRatioCap] is the default maximum multiple of the compressed
-/// image size to cache when decoding animated image frames. For example,
-/// setting this to `2.0` means that a 400KB GIF would be allowed at most to use
-/// 800KB of memory caching unessential decoded frames. Caching decoded frames
-/// saves CPU but can result in out-of-memory crashes when decoding large (or
-/// multiple) animated images. Note that GIFs are highly compressed, and it's
-/// unlikely that a factor that low will be sufficient to cache all decoded
-/// frames. The default value is `25.0`.
-///
 /// The [targetWidth] and [targetHeight] arguments specify the size of the output
 /// image, in image pixels. If they are not equal to the intrinsic dimensions of the
 /// image, then the image will be scaled after being decoded. If exactly one of
@@ -1669,12 +1660,11 @@ class Codec extends NativeFieldWrapperClass2 {
 /// The returned future can complete with an error if the image decoding has
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list, {
-  double decodedCacheRatioCap = 0,
   int targetWidth,
   int targetHeight,
 }) {
   return _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, decodedCacheRatioCap, targetWidth ?? _kDoNotResizeDimension, targetHeight ?? _kDoNotResizeDimension)
+    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, targetWidth ?? _kDoNotResizeDimension, targetHeight ?? _kDoNotResizeDimension)
   );
 }
 
@@ -1689,7 +1679,7 @@ Future<Codec> instantiateImageCodec(Uint8List list, {
 /// If both are equal to [_kDoNotResizeDimension], then the image maintains its real size.
 ///
 /// Returns an error message if the instantiation has failed, null otherwise.
-String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, double decodedCacheRatioCap, int targetWidth, int targetHeight)
+String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, int targetWidth, int targetHeight)
   native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -1715,15 +1705,6 @@ Future<Null> _decodeImageFromListAsync(Uint8List list,
 /// data buffer.  If unspecified, it defaults to [width] multiplied by the
 /// number of bytes per pixel in the provided [format].
 ///
-/// The [decodedCacheRatioCap] is the default maximum multiple of the compressed
-/// image size to cache when decoding animated image frames. For example,
-/// setting this to `2.0` means that a 400KB GIF would be allowed at most to use
-/// 800KB of memory caching unessential decoded frames. Caching decoded frames
-/// saves CPU but can result in out-of-memory crashes when decoding large (or
-/// multiple) animated images. Note that GIFs are highly compressed, and it's
-/// unlikely that a factor that low will be sufficient to cache all decoded
-/// frames. The default value is `25.0`.
-///
 /// The [targetWidth] and [targetHeight] arguments specify the size of the output
 /// image, in image pixels. If they are not equal to the intrinsic dimensions of the
 /// image, then the image will be scaled after being decoded. If exactly one of
@@ -1736,11 +1717,11 @@ void decodeImageFromPixels(
   int height,
   PixelFormat format,
   ImageDecoderCallback callback,
-  {int rowBytes, double decodedCacheRatioCap = 0, int targetWidth, int targetHeight}
+  {int rowBytes, int targetWidth, int targetHeight}
 ) {
   final _ImageInfo imageInfo = _ImageInfo(width, height, format.index, rowBytes);
   final Future<Codec> codecFuture = _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCap, targetWidth ?? _kDoNotResizeDimension, targetHeight ?? _kDoNotResizeDimension)
+    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, targetWidth ?? _kDoNotResizeDimension, targetHeight ?? _kDoNotResizeDimension)
   );
   codecFuture.then((Codec codec) => codec.getNextFrame())
       .then((FrameInfo frameInfo) => callback(frameInfo.image));
@@ -2605,7 +2586,7 @@ class ImageFilter extends NativeFieldWrapperClass2 {
 
   /// Creates an image filter that applies a matrix transformation.
   ///
-  /// For example, applying a positive scale matrix (see [new Matrix4.diagonal3])
+  /// For example, applying a positive scale matrix (see [Matrix4.diagonal3])
   /// when used with [BackdropFilter] would magnify the background image.
   ImageFilter.matrix(Float64List matrix4,
                      { FilterQuality filterQuality = FilterQuality.low }) {
@@ -2643,8 +2624,8 @@ class Shader extends NativeFieldWrapperClass2 {
 ///    relative coordinates and can create a [Shader] representing the gradient
 ///    for a particular [Rect] on demand.
 ///  * [dart:ui.Gradient], the low-level class used when dealing with the
-///    [Paint.shader] property directly, with its [new Gradient.linear] and [new
-///    Gradient.radial] constructors.
+///    [Paint.shader] property directly, with its [Gradient.linear] and
+///    [Gradient.radial] constructors.
 // These enum values must be kept in sync with SkShader::TileMode.
 enum TileMode {
   /// Edge is clamped to the final color.
@@ -2741,25 +2722,31 @@ class Gradient extends Shader {
   /// If `from`, `to`, `colors`, or `tileMode` are null, or if `colors` or
   /// `colorStops` contain null values, this constructor will throw a
   /// [NoSuchMethodError].
+  ///
+  /// If `matrix4` is provided, the gradient fill will be transformed by the
+  /// specified 4x4 matrix relative to the local coordinate system. `matrix4` must
+  /// be a column-major matrix packed into a list of 16 values.
   Gradient.linear(
     Offset from,
     Offset to,
     List<Color> colors, [
     List<double> colorStops,
     TileMode tileMode = TileMode.clamp,
+    Float64List matrix4,
   ]) : assert(_offsetIsValid(from)),
        assert(_offsetIsValid(to)),
        assert(colors != null),
        assert(tileMode != null),
+       assert(matrix4 == null || _matrix4IsValid(matrix4)),
        super._() {
     _validateColorStops(colors, colorStops);
     final Float32List endPointsBuffer = _encodeTwoPoints(from, to);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
     _constructor();
-    _initLinear(endPointsBuffer, colorsBuffer, colorStopsBuffer, tileMode.index);
+    _initLinear(endPointsBuffer, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
   }
-  void _initLinear(Float32List endPoints, Int32List colors, Float32List colorStops, int tileMode) native 'Gradient_initLinear';
+  void _initLinear(Float32List endPoints, Int32List colors, Float32List colorStops, int tileMode, Float64List matrix4) native 'Gradient_initLinear';
 
   /// Creates a radial gradient centered at `center` that ends at `radius`
   /// distance from the center.
@@ -3244,9 +3231,9 @@ class Canvas extends NativeFieldWrapperClass2 {
   void rotate(double radians) native 'Canvas_rotate';
 
   /// Add an axis-aligned skew to the current transform, with the first argument
-  /// being the horizontal skew in radians clockwise around the origin, and the
-  /// second argument being the vertical skew in radians clockwise around the
-  /// origin.
+  /// being the horizontal skew in rise over run units clockwise around the
+  /// origin, and the second argument being the vertical skew in rise over run
+  /// units clockwise around the origin.
   void skew(double sx, double sy) native 'Canvas_skew';
 
   /// Multiply the current transform by the specified 4⨉4 transformation matrix
