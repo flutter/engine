@@ -36,7 +36,7 @@ struct MouseState {
   bool flutter_state_is_down = false;
 
   /**
-   * Wether or not mouseExited: was received while a button was down. Cocoa's behavior when dragging
+   * Whether or not mouseExited: was received while a button was down. Cocoa's behavior when dragging
    * out of a tracked area is to send an exit, then keep sending drag events until the last button
    * is released. If it was released inside the view, mouseEntered: is sent the next time the mouse
    * moves. Flutter doesn't expect to receive events after a kRemove, so the kRemove for the exit
