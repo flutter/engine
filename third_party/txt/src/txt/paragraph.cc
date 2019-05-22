@@ -1042,15 +1042,25 @@ void Paragraph::Layout(double width, bool force) {
                                    const TextStyle& style,
                                    PlaceholderRun* placeholder_run) {
       if (!strut_.force_strut) {
-        double ascent =
-            (-metrics.fAscent + metrics.fLeading / 2) * style.height;
-        double descent =
-            (metrics.fDescent + metrics.fLeading / 2) * style.height;
-
-        ComputePlaceholder(placeholder_run, ascent, descent);
-
+        double ascent;
+        double descent;
+        if (style.has_height_override) {
+          // Scale the ascent and descent such that the sum of ascent and
+          // descent is `fontsize * style.height * style.font_size`.
+          double metrics_height = -metrics.fAscent + metrics.fDescent;
+          ascent = (-metrics.fAscent / metrics_height) * style.height *
+                   style.font_size;
+          descent = (metrics.fDescent / metrics_height) * style.height *
+                    style.font_size;
+        } else {
+          // Use the font-provided ascent, descent, and leading directly.
+          ascent = (-metrics.fAscent + metrics.fLeading / 2);
+          descent = (metrics.fDescent + metrics.fLeading / 2);
+        }
         max_ascent = std::max(ascent, max_ascent);
         max_descent = std::max(descent, max_descent);
+
+        ComputePlaceholder(placeholder_run, ascent, descent);
       }
 
       max_unscaled_ascent = std::max(placeholder_run == nullptr
