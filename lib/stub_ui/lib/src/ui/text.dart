@@ -4,6 +4,11 @@
 
 part of ui;
 
+// If we actually run on big endian machines, we'll need to do something smarter
+// here. We don't use [Endian.Host] because it's not a compile-time
+// constant and can't propagate into the set/get calls.
+const Endian _kFakeHostEndian = Endian.little;
+
 /// Whether to slant the glyphs in the font
 enum FontStyle {
   /// Use the upright glyphs
