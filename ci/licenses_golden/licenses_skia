@@ -1,4 +1,4 @@
-Signature: 1fddd339b082ea61ee90ee99bdfc18f8
+Signature: 1b08ab5b77780c5e7965cf3c7bfe7eb2
 
 UNUSED LICENSES:
 
@@ -5388,6 +5388,8 @@ FILE: ../../../third_party/skia/src/gpu/GrContextPriv.cpp
 FILE: ../../../third_party/skia/src/gpu/GrContextThreadSafeProxy.cpp
 FILE: ../../../third_party/skia/src/gpu/GrContext_Base.cpp
 FILE: ../../../third_party/skia/src/gpu/GrCpuBuffer.h
+FILE: ../../../third_party/skia/src/gpu/GrDataUtils.cpp
+FILE: ../../../third_party/skia/src/gpu/GrDataUtils.h
 FILE: ../../../third_party/skia/src/gpu/GrGpuBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/GrGpuBuffer.h
 FILE: ../../../third_party/skia/src/gpu/GrImageContext.cpp
