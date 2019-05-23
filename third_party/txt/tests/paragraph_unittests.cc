@@ -4188,6 +4188,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
   paragraph_style.strut_font_families.push_back("ahem");
   paragraph_style.strut_font_size = 50;
   paragraph_style.strut_height = 1.8;
+  paragraph_style.strut_has_height_override = true;
   paragraph_style.strut_leading = 0.1;
   paragraph_style.strut_enabled = true;
 
@@ -4315,6 +4316,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
   paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
   paragraph_style.strut_font_size = 50;
   paragraph_style.strut_height = 1.6;
+  paragraph_style.strut_has_height_override = true;
   paragraph_style.strut_enabled = true;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
@@ -4440,6 +4442,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
   paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
   paragraph_style.strut_font_size = 50;
   paragraph_style.strut_height = 1.2;
+  paragraph_style.strut_has_height_override = true;
   paragraph_style.strut_enabled = true;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
@@ -4565,6 +4568,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
   paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
   paragraph_style.strut_font_size = 50;
   paragraph_style.strut_height = 1.5;
+  paragraph_style.strut_has_height_override = true;
   paragraph_style.strut_leading = 0.1;
   paragraph_style.force_strut_height = true;
   paragraph_style.strut_enabled = true;
@@ -4725,6 +4729,87 @@ TEST_F(ParagraphTest, FontFeaturesParagraph) {
   // Alphabetic characters should be unaffected.
   EXPECT_FLOAT_EQ(tnum_line.positions[2].x_pos.width(),
                   pnum_line.positions[2].x_pos.width());
+
+  ASSERT_TRUE(Snapshot());
+}
+
+// The height override is disabled for this test. DIrect metrics from the font.
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutDefaultParagraph)) {
+  const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
+  paragraph_style.strut_font_size = 50;
+  paragraph_style.strut_height = 1.5;
+  paragraph_style.strut_leading = 0.1;
+  paragraph_style.force_strut_height = false;
+  paragraph_style.strut_enabled = true;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "ahem");
+  text_style.font_families.push_back("ahem");
+  text_style.font_size = 20;
+  text_style.letter_spacing = 0;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectHeightStyle rect_height_strut_style =
+      Paragraph::RectHeightStyle::kStrut;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_NEAR(boxes[0].rect.top(), 26.5, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 20);
+  EXPECT_NEAR(boxes[0].rect.bottom(), 46.5, 0.0001);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 2, rect_height_strut_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_NEAR(boxes[0].rect.top(), 2.5, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 40);
+  EXPECT_NEAR(boxes[0].rect.bottom(), 52.5, 0.0001);
 
   ASSERT_TRUE(Snapshot());
 }
