@@ -259,6 +259,7 @@ class Paragraph {
   FRIEND_TEST(ParagraphTest, ComplexShadow);
   FRIEND_TEST(ParagraphTest, FontFallbackParagraph);
   FRIEND_TEST(ParagraphTest, InlinePlaceholder0xFFFCParagraph);
+  FRIEND_TEST(ParagraphTest, FontFeaturesParagraph);
 
   // Starting data to layout.
   std::vector<uint16_t> text_;
@@ -467,6 +468,8 @@ class Paragraph {
   void ComputePlaceholder(PlaceholderRun* placeholder_run,
                           double& ascent,
                           double& descent);
+
+  bool IsStrutValid() const;
 
   // Calculate the starting X offset of a line based on the line's width and
   // alignment.
