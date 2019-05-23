@@ -1322,6 +1322,67 @@ TEST_F(ParagraphTest, BoldParagraph) {
                    boxes[boxes.size() - 1].rect.right() - boxes[0].rect.left());
 }
 
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(HeightOverrideParagraph)) {
+  const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 20;
+  text_style.letter_spacing = 0;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 3.6345;
+  text_style.has_height_override = true;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kIncludeLineSpacingMiddle;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 40, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 3ull);
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 0);
+  EXPECT_NEAR(boxes[1].rect.top(), 92.805778503417969, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 43.84375);
+  EXPECT_NEAR(boxes[1].rect.bottom(), 165.49578857421875, 0.0001);
+
+  ASSERT_TRUE(Snapshot());
+}
+
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeftAlignParagraph)) {
   const char* text =
       "This is a very long sentence to test if the text will properly wrap "
@@ -4683,57 +4744,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
   ASSERT_TRUE(Snapshot());
 }
 
-TEST_F(ParagraphTest, FontFeaturesParagraph) {
-  const char* text = "12ab\n";
-  auto icu_text = icu::UnicodeString::fromUTF8(text);
-  std::u16string u16_text(icu_text.getBuffer(),
-                          icu_text.getBuffer() + icu_text.length());
-
-  txt::ParagraphStyle paragraph_style;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
-
-  txt::TextStyle text_style;
-  text_style.font_families = std::vector<std::string>(1, "Roboto");
-  text_style.color = SK_ColorBLACK;
-  text_style.font_features.SetFeature("tnum", 1);
-  builder.PushStyle(text_style);
-  builder.AddText(u16_text);
-
-  text_style.font_features.SetFeature("tnum", 0);
-  text_style.font_features.SetFeature("pnum", 1);
-  builder.PushStyle(text_style);
-  builder.AddText(u16_text);
-
-  builder.Pop();
-  builder.Pop();
-
-  auto paragraph = builder.Build();
-  paragraph->Layout(GetTestCanvasWidth());
-
-  paragraph->Paint(GetCanvas(), 10.0, 15.0);
-
-  ASSERT_EQ(paragraph->glyph_lines_.size(), 3ull);
-
-  // Tabular numbers should have equal widths.
-  const txt::Paragraph::GlyphLine& tnum_line = paragraph->glyph_lines_[0];
-  ASSERT_EQ(tnum_line.positions.size(), 4ull);
-  EXPECT_FLOAT_EQ(tnum_line.positions[0].x_pos.width(),
-                  tnum_line.positions[1].x_pos.width());
-
-  // Proportional numbers should have variable widths.
-  const txt::Paragraph::GlyphLine& pnum_line = paragraph->glyph_lines_[1];
-  ASSERT_EQ(pnum_line.positions.size(), 4ull);
-  EXPECT_NE(pnum_line.positions[0].x_pos.width(),
-            pnum_line.positions[1].x_pos.width());
-
-  // Alphabetic characters should be unaffected.
-  EXPECT_FLOAT_EQ(tnum_line.positions[2].x_pos.width(),
-                  pnum_line.positions[2].x_pos.width());
-
-  ASSERT_TRUE(Snapshot());
-}
-
-// The height override is disabled for this test. DIrect metrics from the font.
+// The height override is disabled for this test. Direct metrics from the font.
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutDefaultParagraph)) {
   const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
@@ -4800,8 +4811,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutDefaultParagraph)) {
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 20);
   EXPECT_NEAR(boxes[0].rect.bottom(), 46.5, 0.0001);
 
-  boxes =
-      paragraph->GetRectsForRange(0, 2, rect_height_strut_style, rect_width_style);
+  boxes = paragraph->GetRectsForRange(0, 2, rect_height_strut_style,
+                                      rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -4810,6 +4821,56 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutDefaultParagraph)) {
   EXPECT_NEAR(boxes[0].rect.top(), 2.5, 0.0001);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 40);
   EXPECT_NEAR(boxes[0].rect.bottom(), 52.5, 0.0001);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest, FontFeaturesParagraph) {
+  const char* text = "12ab\n";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.color = SK_ColorBLACK;
+  text_style.font_features.SetFeature("tnum", 1);
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  text_style.font_features.SetFeature("tnum", 0);
+  text_style.font_features.SetFeature("pnum", 1);
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  builder.Pop();
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth());
+
+  paragraph->Paint(GetCanvas(), 10.0, 15.0);
+
+  ASSERT_EQ(paragraph->glyph_lines_.size(), 3ull);
+
+  // Tabular numbers should have equal widths.
+  const txt::Paragraph::GlyphLine& tnum_line = paragraph->glyph_lines_[0];
+  ASSERT_EQ(tnum_line.positions.size(), 4ull);
+  EXPECT_FLOAT_EQ(tnum_line.positions[0].x_pos.width(),
+                  tnum_line.positions[1].x_pos.width());
+
+  // Proportional numbers should have variable widths.
+  const txt::Paragraph::GlyphLine& pnum_line = paragraph->glyph_lines_[1];
+  ASSERT_EQ(pnum_line.positions.size(), 4ull);
+  EXPECT_NE(pnum_line.positions[0].x_pos.width(),
+            pnum_line.positions[1].x_pos.width());
+
+  // Alphabetic characters should be unaffected.
+  EXPECT_FLOAT_EQ(tnum_line.positions[2].x_pos.width(),
+                  pnum_line.positions[2].x_pos.width());
 
   ASSERT_TRUE(Snapshot());
 }
