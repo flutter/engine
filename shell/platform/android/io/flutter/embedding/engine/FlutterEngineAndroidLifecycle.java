@@ -33,7 +33,7 @@ import android.support.annotation.Nullable;
  * default {@link Lifecycle.State#CREATED} state until some other backing {@link Lifecycle} is
  * registered.
  */
-class FlutterEngineAndroidLifecycle extends LifecycleRegistry {
+final class FlutterEngineAndroidLifecycle extends LifecycleRegistry {
   private static final String TAG = "FlutterEngineAndroidLifecycle";
 
   @Nullable
