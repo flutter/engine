@@ -527,7 +527,7 @@ class TextStyle {
   /// * `letterSpacing`: The amount of space (in logical pixels) to add between each letter.
   /// * `wordSpacing`: The amount of space (in logical pixels) to add at each sequence of white-space (i.e. between each word).
   /// * `textBaseline`: The common baseline that should be aligned between this text span and its parent text span, or, for the root text spans, with the line box.
-  /// * `height`: The height of this text span, as a multiplier of the font size. Omitting `height` will allow the text
+  /// * `height`: The height of this text span, as a multiplier of the font size. Omitting `height` will allow the line height
   ///   to take the height as defined by the font, which may not be exactly the height of the fontSize.
   /// * `locale`: The locale used to select region-specific glyphs.
   /// * `background`: The paint drawn as a background for the text.
@@ -780,8 +780,8 @@ class ParagraphStyle {
   /// * `height`: The fallback height of the spans as a multiplier of the font
   ///   size. The fallback height is used when no height is provided in through
   ///   [TextStyle.height]. Omitting `height` here and in [TextStyle] will allow
-  ///   the text to take the height as defined by the font, which may not be
-  ///   exactly the height of the fontSize.
+  ///   the line height to take the height as defined by the font, which may not
+  ///   be exactly the height of the fontSize.
   ///
   /// * `fontWeight`: The typeface thickness to use when painting the text
   ///   (e.g., bold).
