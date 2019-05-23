@@ -507,14 +507,30 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
     SkFontMetrics strut_metrics;
     font.getMetrics(&strut_metrics);
 
-    strut->ascent = paragraph_style_.strut_height * -strut_metrics.fAscent;
-    strut->descent = paragraph_style_.strut_height * strut_metrics.fDescent;
-    strut->leading =
-        // Use font's leading if there is no user specified strut leading.
-        paragraph_style_.strut_leading < 0
-            ? strut_metrics.fLeading
-            : (paragraph_style_.strut_leading *
-               (strut_metrics.fDescent - strut_metrics.fAscent));
+    if (paragraph_style_.strut_has_height_override) {
+      double metrics_height = -strut_metrics.fAscent + strut_metrics.fDescent;
+      strut->ascent = (-strut_metrics.fAscent / metrics_height) *
+                      paragraph_style_.strut_height *
+                      paragraph_style_.strut_font_size;
+      strut->descent = (strut_metrics.fDescent / metrics_height) *
+                       paragraph_style_.strut_height *
+                       paragraph_style_.strut_font_size;
+      strut->leading =
+          // Zero leading if there is no user specified strut leading.
+          paragraph_style_.strut_leading < 0
+              ? 0
+              : (paragraph_style_.strut_leading *
+                 paragraph_style_.strut_font_size);
+    } else {
+      strut->ascent = paragraph_style_.strut_height * -strut_metrics.fAscent;
+      strut->descent = paragraph_style_.strut_height * strut_metrics.fDescent;
+      strut->leading =
+          // Use font's leading if there is no user specified strut leading.
+          paragraph_style_.strut_leading < 0
+              ? strut_metrics.fLeading
+              : (paragraph_style_.strut_leading *
+                 paragraph_style_.strut_font_size);
+    }
     strut->half_leading = strut->leading / 2;
     strut->line_height = strut->ascent + strut->descent + strut->leading;
   }
