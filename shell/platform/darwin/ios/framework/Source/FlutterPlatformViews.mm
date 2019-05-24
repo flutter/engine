@@ -16,16 +16,50 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
 
-// A set of utility methods to handle transforms in platform views.
-static UIView* getClippedRectView(CGRect frame, CGRect clipRect) {
-  NSLog(@"view frame %@", @(frame));
-  NSLog(@"clip rect %@", @(clipRect));
-  UIView *view = [[UIView alloc] initWithFrame:frame];
-  UIBezierPath *path = [UIBezierPath bezierPathWithRect:clipRect];
-  CAShapeLayer *clip = [[CAShapeLayer alloc] init];
+#pragma mark - Transforms Utils
+
+static void ClipRect(UIView* view, CGRect clipRect) {
+  UIBezierPath* path = [UIBezierPath bezierPathWithRect:clipRect];
+  CAShapeLayer* clip = [[CAShapeLayer alloc] init];
   clip.path = path.CGPath;
   view.layer.mask = clip;
-  return view;
+}
+
+static CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix) {
+  // TODO TEST(cyanglaz): test perspective transform
+  CATransform3D transform = CATransform3DIdentity;
+  transform.m11 = matrix.getScaleX();
+  transform.m21 = matrix.getSkewX();
+  transform.m41 = matrix.getTranslateX();
+  transform.m14 = matrix.getPerspX();
+
+  transform.m12 = matrix.getSkewY();
+  transform.m22 = matrix.getScaleY();
+  transform.m42 = matrix.getTranslateY();
+  transform.m24 = matrix.getPerspY();
+
+  NSLog(@"=========");
+
+  NSLog(@"%.2f %.2f %.2f\n%.2f %.2f %.2f\n%.2f %.2f %.2f\n", matrix.getScaleX(), matrix.getSkewX(),
+        matrix.getTranslateX(), matrix.getSkewY(), matrix.getScaleY(), matrix.getTranslateY(),
+        matrix.getPerspX(), matrix.getPerspY(), 1.0);
+
+  NSLog(@"----------");
+
+  NSLog(@"%.2f %.2f %.2f %.2f\n%.2f %.2f %.2f %.2f\n%.2f %.2f %.2f %.2f\n%.2f %.2f %.2f %.2f\n",
+        transform.m11, transform.m12, transform.m13, transform.m14, transform.m21, transform.m22,
+        transform.m23, transform.m24, transform.m31, transform.m32, transform.m33, transform.m34,
+        transform.m41, transform.m42, transform.m43, transform.m44);
+  NSLog(@"=========");
+  return transform;
+}
+
+static void ReadyUIViewForTranslate(UIView* view) {
+  view.layer.transform = CATransform3DIdentity;
+  view.layer.anchorPoint = CGPointMake(
+      0, 0);  // Quartz's default anchor point is the center, we set it to (0,0) to match flow.
+  view.layer.position = CGPointMake(0, 0);  // After changing the anchor point, the layer's position
+                                            // is changed, we need to reset it back to (0,0).
 }
 
 namespace flutter {
@@ -195,60 +229,88 @@ std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
   return canvases;
 }
 
-SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView
-  (int view_id,
-   const flutter::EmbeddedViewParams& params) {
+void FlutterPlatformViewsController::CompositeWithParams(
+    int view_id,
+    const flutter::EmbeddedViewParams& params) {
+  UIView* touch_interceptor = touch_interceptors_[view_id].get();
 
+  CGRect frame = CGRectMake(0, 0, params.sizePoints.width(), params.sizePoints.height());
+  touch_interceptor.frame = frame;
+  UIView* lastView = touch_interceptor;
+
+  ReadyUIViewForTranslate(lastView);
+  std::vector<FlutterEmbededViewTransformElement>::iterator iter = params.transformStack->end() - 1;
+  // TODO(cyanglaz): figure out how to handle the root transform layer (2x, 2y)
+  bool hasMoreClipOperations = false;
+  while (iter != params.transformStack->begin()) {
+    switch (iter->type()) {
+      case transform: {
+        CATransform3D transform = GetCATransform3DFromSkMatrix(iter->matrix());
+        lastView.layer.transform = CATransform3DConcat(lastView.layer.transform, transform);
+        break;
+      }
+      case clip_rect: {
+        SkRect clipSkRect = iter->rect();
+        CGRect clipRect =
+            CGRectMake(clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fRight - clipSkRect.fLeft,
+                       clipSkRect.fBottom - clipSkRect.fTop);
+        UIView* view = lastView.superview;
+        // if we need more clips operations than last time, create a new view.
+        if (!view || view == flutter_view_.get()) {
+          [lastView removeFromSuperview];
+          view = [[UIView alloc] initWithFrame:lastView.bounds];
+          [view addSubview:lastView];
+          hasMoreClipOperations = true;
+        }
+        ClipRect(view, clipRect);
+        lastView = view;
+        ReadyUIViewForTranslate(lastView);
+        break;
+      }
+        // TODO(cyanglaz): Add other clippings
+      case clip_rrect: {
+        break;
+      }
+      case clip_path: {
+        break;
+      }
+    }
+    --iter;
+  }
+  // If we have less cilp operations this time, remove unnecessary views.
+  // We skip this process if we have more clip operations this time.
+  // TODO TEST(cyanglaz):
+  if (!hasMoreClipOperations) {
+    UIView* superview = lastView.superview;
+    if (superview != flutter_view_.get()) {
+      [lastView removeFromSuperview];
+    }
+    while (superview != flutter_view_.get()) {
+      UIView* superSuperView = superview.superview;
+      [superview removeFromSuperview];
+      [superview release];
+      superview = superSuperView;
+    }
+  }
+
+  // If we have clips
+  if (lastView != touch_interceptor) {
+    root_views_[view_id] = fml::scoped_nsobject<UIView>([lastView retain]);
+  }
+}
+
+SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
+    int view_id,
+    const flutter::EmbeddedViewParams& params) {
   // TODO(amirh): assert that this is running on the platform thread once we support the iOS
   // embedded views thread configuration.
 
   // Do nothing if the params didn't change.
   if (composite_params_.count(view_id) == 1 && composite_params_[view_id] == params) {
-    NSLog(@"not changed");
     return picture_recorders_[view_id]->getRecordingCanvas();
   }
-  NSLog(@"changed");
   composite_params_[view_id] = params;
-
-  CGFloat screenScale = [[UIScreen mainScreen] scale];
-  CGRect rect =
-      CGRectMake(params.offsetPixels.x() / screenScale, params.offsetPixels.y() / screenScale,
-                 params.sizePoints.width(), params.sizePoints.height());
-
-  UIView *root = nil;
-  std::vector<FlutterEmbededViewTransformElement>::iterator iter = params.transformStack->end()-1;
-  if (iter != params.transformStack->begin()-1) {
-    UIView *view = root_views_[view_id].get();
-    if ([view isKindOfClass:[FlutterTouchInterceptingView class]]) {
-      root = [[UIView alloc] initWithFrame:rect];
-      root_views_[view_id] = fml::scoped_nsobject<UIView>([root retain]);
-    } else {
-      root = view;
-    }
-  }
-    NSLog(@"root frame %@", @(root.frame));
-  for (UIView *subview in root.subviews) {
-    [subview removeFromSuperview];
-    [subview release];
-  }
-  UIView *lastView = root;
-  while(iter != params.transformStack->begin()-1) {
-    SkRect clipSkRect = iter->rect();
-    CGRect clipRect = CGRectMake(clipSkRect.fLeft-rect.origin.x, clipSkRect.fTop-rect.origin.y, clipSkRect.fRight-clipSkRect.fLeft, clipSkRect.fBottom-clipSkRect.fTop);
-    UIView *view = getClippedRectView(lastView.bounds, clipRect);
-    [lastView addSubview:view];
-    lastView = view;
-    --iter;
-  }
-
-  UIView* touch_interceptor = touch_interceptors_[view_id].get();
-  if (root) {
-    [touch_interceptor setFrame:root.bounds];
-    [lastView addSubview:touch_interceptor];
-    NSLog(@"transformed");
-  } else {
-    touch_interceptor.frame = rect;
-  }
+  CompositeWithParams(view_id, params);
 
   return picture_recorders_[view_id]->getRecordingCanvas();
 }
@@ -325,7 +387,7 @@ void FlutterPlatformViewsController::DetachUnusedLayers() {
       if (root_views_.find(view_id) == root_views_.end()) {
         continue;
       }
-      UIView *root = root_views_[view_id].get();
+      UIView* root = root_views_[view_id].get();
       [root removeFromSuperview];
       [overlays_[view_id]->overlay_view.get() removeFromSuperview];
     }
@@ -563,8 +625,3 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   return YES;
 }
 @end
-
-
-
-
-

@@ -10,9 +10,9 @@
 #include "flutter/fml/memory/ref_counted.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPoint.h"
-#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
+#include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 
@@ -25,10 +25,11 @@ class EmbeddedViewParams {
   SkSize sizePoints;
   std::shared_ptr<FlutterEmbededViewTransformStack> transformStack;
 
-  friend bool operator==(const EmbeddedViewParams &lhs, const EmbeddedViewParams &rhs) {
-    return lhs.offsetPixels == rhs.offsetPixels
-    &&lhs.sizePoints == rhs.sizePoints
-    &&lhs.transformStack == rhs.transformStack;
+  friend bool operator==(const EmbeddedViewParams& lhs,
+                         const EmbeddedViewParams& rhs) {
+    return lhs.offsetPixels == rhs.offsetPixels &&
+           lhs.sizePoints == rhs.sizePoints &&
+           lhs.transformStack == rhs.transformStack;
   }
 };
 
@@ -58,16 +59,18 @@ class ExternalViewEmbedder {
 #pragma mark - transforms
   std::shared_ptr<FlutterEmbededViewTransformStack> transformStack;
 
-}; // ExternalViewEmbedder
+};  // ExternalViewEmbedder
 
 class FlutterEmbededViewTransformStack {
-
-public:
+ public:
   void pushClipRect(const SkRect& rect);
   void pushClipRRect(const SkRRect& rect);
   void pushClipPath(const SkPath& rect);
 
-  // Removes the `FlutterEmbededViewTransformElement` on the top of the stack and destroys it.
+  void pushTransform(const SkMatrix& matrix);
+
+  // Removes the `FlutterEmbededViewTransformElement` on the top of the stack
+  // and destroys it.
   void pop();
 
   // Returns the iterator points to the bottom of the stack.
@@ -75,42 +78,57 @@ public:
   // Returns the iterator points to the top of the stack.
   std::vector<FlutterEmbededViewTransformElement>::iterator end();
 
-  friend bool operator==(const FlutterEmbededViewTransformStack& lhs, const FlutterEmbededViewTransformStack& rhs) {
+  friend bool operator==(const FlutterEmbededViewTransformStack& lhs,
+                         const FlutterEmbededViewTransformStack& rhs) {
     return lhs.vector_ == rhs.vector_;
   }
-private:
 
+ private:
   std::vector<FlutterEmbededViewTransformElement> vector_;
-}; //FlutterEmbededViewTransformStack
+};  // FlutterEmbededViewTransformStack
 
-enum FlutterEmbededViewTransformType {clip_rect, clip_rrect};
+enum FlutterEmbededViewTransformType {
+  clip_rect,
+  clip_rrect,
+  clip_path,
+  transform
+};
 
 class FlutterEmbededViewTransformElement {
-public:
+ public:
+  void setType(const FlutterEmbededViewTransformType type) { type_ = type; }
+  void setRect(const SkRect& rect) { rect_ = rect; }
+  void setMatrix(const SkMatrix& matrix) { matrix_ = matrix; }
 
-  void setType(const FlutterEmbededViewTransformType type) {type_ = type;}
-  void setRect(const SkRect &rect){rect_ = rect;}
+  FlutterEmbededViewTransformType type() { return type_; }
+  SkRect rect() { return rect_; }
+  SkRRect rrect() { return rrect_; }
+  SkMatrix matrix() { return matrix_; }
 
-  FlutterEmbededViewTransformType type() {return type_;}
-  SkRect rect() {return rect_;}
-  SkRRect rrect() {return rrect_;}
-
-  friend bool operator==(const FlutterEmbededViewTransformElement& lhs, const FlutterEmbededViewTransformElement& rhs) {
+  friend bool operator==(const FlutterEmbededViewTransformElement& lhs,
+                         const FlutterEmbededViewTransformElement& rhs) {
     if (lhs.type_ != rhs.type_) {
       return false;
     }
-    if (lhs.type_ == clip_rect && lhs.rect_ != rhs.rect_) {
-      return false;
+    if (lhs.type_ == clip_rect && lhs.rect_ == rhs.rect_) {
+      return true;
     }
-    return true;
+    if (lhs.type_ == transform && lhs.matrix_ == rhs.matrix_) {
+      return true;
+    }
+    return false;
   }
 
-private:
+  bool isClipType() {
+    return type_ == clip_rect || type_ == clip_rrect || type_ == clip_path;
+  }
 
+ private:
   FlutterEmbededViewTransformType type_;
   SkRect rect_;
   SkRRect rrect_;
-}; // FlutterEmbededViewTransformElement
+  SkMatrix matrix_;
+};  // FlutterEmbededViewTransformElement
 
 }  // namespace flutter
 
