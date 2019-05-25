@@ -53,6 +53,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
   private final Map<Class<? extends FlutterPlugin>, ActivityAware> activityAwarePlugins = new HashMap<>();
   private Activity activity;
   private FlutterEngineActivityPluginBinding activityPluginBinding;
+  private boolean isWaitingForActivityReattachment = false;
 
   // ServiceAware
   private final Map<Class<? extends FlutterPlugin>, ServiceAware> serviceAwarePlugins = new HashMap<>();
@@ -259,7 +260,8 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
 
   @Override
   public void attachToActivity(@NonNull Activity activity, @NonNull Lifecycle lifecycle) {
-    Log.d(TAG, "Attaching to an Activity.");
+    Log.d(TAG, "Attaching to an Activity."
+        + (isWaitingForActivityReattachment ? " This is after a config change." : ""));
     // If we were already attached to an Android component, detach from it.
     detachFromAndroidComponent();
 
@@ -269,14 +271,21 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
 
     // Notify all ActivityAware plugins that they are now attached to a new Activity.
     for (ActivityAware activityAware : activityAwarePlugins.values()) {
-      activityAware.onAttachedToActivity(activityPluginBinding);
+      if (isWaitingForActivityReattachment) {
+        activityAware.onReattachedToActivityForConfigChanges(activityPluginBinding);
+      } else {
+        activityAware.onAttachedToActivity(activityPluginBinding);
+      }
     }
+    isWaitingForActivityReattachment = false;
   }
 
   @Override
   public void detachFromActivityForConfigChanges() {
     Log.d(TAG, "Detaching from an Activity for config changes.");
     if (isAttachedToActivity()) {
+      isWaitingForActivityReattachment = true;
+
       for (ActivityAware activityAware : activityAwarePlugins.values()) {
         activityAware.onDetachedFromActivityForConfigChanges();
       }
@@ -286,22 +295,6 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
       activityPluginBinding = null;
     } else {
       Log.e(TAG, "Attempted to detach plugins from an Activity when no Activity was attached.");
-    }
-  }
-
-  @Override
-  public void reattachToActivityAfterConfigChange(@NonNull Activity activity, @NonNull Lifecycle lifecycle) {
-    Log.d(TAG, "Re-attaching to an Activity after config change.");
-    if (!isAttachedToActivity()) {
-      this.activity = activity;
-      activityPluginBinding = new FlutterEngineActivityPluginBinding(activity);
-      this.flutterEngineAndroidLifecycle.setBackingLifecycle(lifecycle);
-
-      for (ActivityAware activityAware : activityAwarePlugins.values()) {
-        activityAware.onReattachedToActivityForConfigChanges(activityPluginBinding);
-      }
-    } else {
-      Log.e(TAG, "Attempted to reattach plugins to an Activity after config changes, but an Activity was already attached.");
     }
   }
 
