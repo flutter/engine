@@ -17,6 +17,7 @@ import 'dart:js_util' as js_util;
 import 'dart:isolate' show SendPort;
 
 import 'src/engine.dart' as engine;
+export 'src/engine.dart' show webOnlyTestSetup;
 
 import 'package:meta/meta.dart';
 

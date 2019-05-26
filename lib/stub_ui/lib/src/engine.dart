@@ -64,6 +64,7 @@ part 'engine/text_editing.dart';
 part 'engine/util.dart';
 part 'engine/validators.dart';
 part 'engine/vector_math.dart';
+part 'engine/testing.dart';
 
 bool _engineInitialized = false;
 

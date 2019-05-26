@@ -20,9 +20,11 @@ const List<List<String>> uiPatterns = <List<String>>[
   <String>[
 r'''
 import 'src/engine.dart' as engine;
+export 'src/engine.dart' show webOnlyTestSetup;
 ''',
 r'''
 import 'dart:_engine' as engine;
+export 'dart:_engine' show webOnlyTestSetup;
 '''
   ]
 ];

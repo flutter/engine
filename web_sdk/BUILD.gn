@@ -75,6 +75,7 @@ web_engine_sources = [
   "$flutter_root/lib/stub_ui/lib/src/engine/util.dart",
   "$flutter_root/lib/stub_ui/lib/src/engine/validators.dart",
   "$flutter_root/lib/stub_ui/lib/src/engine/vector_math.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/testing.dart",
 ]
 
 group("web_sdk") {

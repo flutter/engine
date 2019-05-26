@@ -1050,11 +1050,7 @@ class Paint {
   bool get invertColors {
     return false;
   }
-
   set invertColors(bool value) {
-    if (engine.assertionsEnabled) {
-      throw UnsupportedError('Paint.invertColors is not supported.');
-    }
   }
 
   Color _color = _defaultPaintColor;
