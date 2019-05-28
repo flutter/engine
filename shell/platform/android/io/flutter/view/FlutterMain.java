@@ -4,10 +4,7 @@
 
 package io.flutter.view;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
@@ -376,6 +373,9 @@ public class FlutterMain {
     private static Set<String> listLibs(@NonNull Context applicationContext) {
         ApplicationInfo applicationInfo = getApplicationInfo(applicationContext);
         File[] files = new File(applicationInfo.nativeLibraryDir).listFiles();
+        if (files == null) {
+            files = new File[0];
+        }
 
         ImmutableSetBuilder<String> builder = ImmutableSetBuilder.newInstance();
         for (File file : files) {

@@ -944,7 +944,7 @@ class Window {
 
   /// Change the retained semantics data about this window.
   ///
-  /// If [semanticsEnabled] is true, the user has requested that this funciton
+  /// If [semanticsEnabled] is true, the user has requested that this function
   /// be called whenever the semantic content of this window changes.
   ///
   /// In either case, this function disposes the given update, which means the
@@ -1197,7 +1197,9 @@ class PluginUtilities {
   }
 }
 
-class ImageShader {}
+class ImageShader {
+  ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4);
+}
 
 class IsolateNameServer {
  static SendPort lookupPortByName(String name) {

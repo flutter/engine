@@ -48,8 +48,8 @@ const int objReplacementChar = 0xFFFC;
 // mark. Used to replace non-placeholder instances of 0xFFFC in the text buffer.
 const int replacementChar = 0xFFFD;
 
-// Paragraph provides Layout, metrics, and painting capabilites for text. Once a
-// Paragraph is constructed with ParagraphBuilder::Build(), an example basic
+// Paragraph provides Layout, metrics, and painting capabilities for text. Once
+// a Paragraph is constructed with ParagraphBuilder::Build(), an example basic
 // workflow can be this:
 //
 //   std::unique_ptr<Paragraph> paragraph = paragraph_builder.Build();
