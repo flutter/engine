@@ -6,6 +6,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate_internal.h"
 
 static NSString* kUIBackgroundMode = @"UIBackgroundModes";
 static NSString* kRemoteNotificationCapabitiliy = @"remote-notification";
@@ -225,8 +226,7 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 - (void)logCapabilityConfigurationWarningIfNeeded:(SEL)selector {
   NSArray* backgroundModesArray =
       [[NSBundle mainBundle] objectForInfoDictionaryKey:kUIBackgroundMode];
-  NSSet* backgroundModesSet = [[NSSet alloc] initWithArray:backgroundModesArray];
-
+  NSSet* backgroundModesSet = [[[NSSet alloc] initWithArray:backgroundModesArray] autorelease];
   if (selector == @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:)) {
     if (![backgroundModesSet containsObject:kRemoteNotificationCapabitiliy]) {
       NSLog(
@@ -242,8 +242,6 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
             @"to the list of your supported UIBackgroundModes in your Info.plist.");
     }
   }
-
-  [backgroundModesSet release];
 }
 
 @end
