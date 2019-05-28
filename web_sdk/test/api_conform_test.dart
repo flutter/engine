@@ -90,12 +90,12 @@ void main() {
             print('Warning: lib/ui/ui.dart $className.$name parameter $i'
                 ' ${uiParam.identifier.name} has a different name in lib/stub_ui/ui.dart.');
           }
-          if (uiParam.isPositional && !webParam.isPositional) {
+          if (uiParam.isPositional != webParam.isPositional) {
             failed = true;
             print('Warning: lib/ui/ui.dart $className.$name parameter $i'
                 '${uiParam.identifier.name} is positional, but not in lib/stub_ui/ui.dart.');
           }
-          if (uiParam.isNamed && !webParam.isNamed) {
+          if (uiParam.isNamed != webParam.isNamed) {
             failed = true;
             print('Warning: lib/ui/ui.dart $className.$name parameter $i'
                 '${uiParam.identifier.name} is named, but not in lib/stub_ui/ui.dart.');
@@ -137,12 +137,12 @@ void main() {
           print('Warning: lib/ui/ui.dart $className.$methodName parameter $i'
               ' ${uiParam.identifier.name} has a different name in lib/stub_ui/ui.dart.');
         }
-        if (uiParam.isPositional && !webParam.isPositional) {
+        if (uiParam.isPositional != webParam.isPositional) {
           failed = true;
           print('Warning: lib/ui/ui.dart $className.$methodName parameter $i'
               '${uiParam.identifier.name} is positional, but not in lib/stub_ui/ui.dart.');
         }
-        if (uiParam.isNamed && !webParam.isNamed) {
+        if (uiParam.isNamed != webParam.isNamed) {
           failed = true;
           print('Warning: lib/ui/ui.dart $className.$methodName parameter $i'
               '${uiParam.identifier.name} is named, but not in lib/stub_ui/ui.dart.');
