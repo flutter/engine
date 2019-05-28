@@ -14,5 +14,5 @@
  */
 - (BOOL)hasPluginThatRespondsToSelector:(SEL)selector;
 
-@end;
-
+@end
+;
