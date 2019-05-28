@@ -353,7 +353,6 @@ def main(argv):
   command.append(out_dir)
   command.append('--args=%s' % ' '.join(gn_args))
   print "Generating GN files in: %s" % out_dir
-  print "Command: %s" % ' '.join(command)
   gn_call_result = subprocess.call(command, cwd=SRC_ROOT)
 
   if gn_call_result == 0:
