@@ -51,7 +51,8 @@ static void ClipRRect(UIView* view, const SkRRect &clipSkRRect) {
     case SkRRect::kNinePatch_Type:
     case SkRRect::kComplex_Type: {
       CGMutablePathRef mutablePathRef = CGPathCreateMutable();
-
+//      CGContextRef context = UIGraphicsGetCurrentContext();
+//      CGContextSetAllowsAntialiasing(context, NO);
       // Complex types, we manually add cornors.
       SkRect clipSkRect = clipSkRRect.rect();
       SkVector topLeftRadii = clipSkRRect.radii(SkRRect::kUpperLeft_Corner);
@@ -75,6 +76,7 @@ static void ClipRRect(UIView* view, const SkRRect &clipSkRRect) {
       CGPathAddLineToPoint(mutablePathRef, nil, clipSkRect.fLeft, clipSkRect.fTop+topLeftRadii.y());
       CGPathAddCurveToPoint(mutablePathRef, nil, clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fLeft+topLeftRadii.x(), clipSkRect.fTop, clipSkRect.fLeft+topLeftRadii.x(), clipSkRect.fTop);
       CGPathCloseSubpath(mutablePathRef);
+      
 
       pathRef = mutablePathRef;
       break;

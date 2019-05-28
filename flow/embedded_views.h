@@ -65,8 +65,8 @@ class ExternalViewEmbedder {
 class FlutterEmbededViewTransformStack {
  public:
   void pushClipRect(const SkRect& rect);
-  void pushClipRRect(const SkRRect& rect);
-  void pushClipPath(const SkPath& rect);
+  void pushClipRRect(const SkRRect& rrect);
+  void pushClipPath(const SkPath& path);
 
   void pushTransform(const SkMatrix& matrix);
 
