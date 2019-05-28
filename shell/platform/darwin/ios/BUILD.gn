@@ -14,6 +14,7 @@ shell_gpu_configuration("ios_gpu_configuration") {
   enable_software = true
   enable_gl = true
   enable_vulkan = false
+  enable_metal = shell_enable_metal
 }
 
 # The headers that will be copied to the Flutter.framework and be accessed
@@ -100,6 +101,13 @@ shared_library("create_flutter_framework_dylib") {
     "platform_view_ios.mm",
   ]
 
+  if (shell_enable_metal) {
+    sources += [
+      "ios_surface_metal.h",
+      "ios_surface_metal.mm",
+    ]
+  }
+
   sources += _flutter_framework_headers
 
   deps = [
@@ -117,7 +125,11 @@ shared_library("create_flutter_framework_dylib") {
 
   public_configs = [ "$flutter_root:config" ]
 
-  defines = [ "FLUTTER_FRAMEWORK" ]
+  defines = [ "FLUTTER_FRAMEWORK=1" ]
+
+  if (shell_enable_metal) {
+    defines += [ "FLUTTER_SHELL_ENABLE_METAL=1" ]
+  }
 
   libs = [
     "CoreMedia.framework",
@@ -208,11 +220,9 @@ action("copy_framework_headers") {
 
 copy("copy_framework_icu") {
   visibility = [ ":*" ]
-  set_sources_assignment_filter([])
   sources = [
     "//third_party/icu/flutter/icudtl.dat",
   ]
-  set_sources_assignment_filter(sources_assignment_filter)
   outputs = [
     "$_flutter_framework_dir/{{source_file_part}}",
   ]
@@ -241,6 +251,7 @@ copy("copy_license") {
 shared_library("copy_and_verify_framework_headers") {
   visibility = [ ":*" ]
   include_dirs = [ "$_flutter_framework_headers_copy_dir" ]
+
   sources = [
     "framework/Source/FlutterUmbrellaImport.m",
   ]

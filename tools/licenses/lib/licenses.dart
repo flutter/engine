@@ -278,6 +278,7 @@ abstract class License implements Comparable<License> {
         type = LicenseType.mpl;
         break;
       case 'http://opensource.org/licenses/MIT':
+      case 'https://opensource.org/licenses/MIT':
       case 'http://opensource->org/licenses/MIT': // i don't even
         body = system.File('data/mit').readAsStringSync();
         type = LicenseType.mit;
@@ -375,7 +376,7 @@ abstract class License implements Comparable<License> {
 
   Iterable<String> get licensees => _licensees;
   final List<String> _licensees = <String>[];
-  final Set<String> _libraries = Set<String>();
+  final Set<String> _libraries = <String>{};
 
   bool get isUsed => _licensees.isNotEmpty;
 

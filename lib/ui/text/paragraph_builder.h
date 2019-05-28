@@ -10,7 +10,7 @@
 #include "flutter/lib/ui/painting/paint.h"
 #include "flutter/lib/ui/text/paragraph.h"
 #include "flutter/third_party/txt/src/txt/paragraph_builder.h"
-#include "third_party/tonic/typed_data/int32_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 namespace tonic {
 class DartLibraryNatives;
@@ -49,7 +49,8 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
                  Dart_Handle background_data,
                  Dart_Handle foreground_objects,
                  Dart_Handle foreground_data,
-                 Dart_Handle shadows_data);
+                 Dart_Handle shadows_data,
+                 Dart_Handle font_features_data);
 
   void pop();
 

@@ -39,8 +39,8 @@ namespace txt {
 
 using GlyphID = uint32_t;
 
-// Paragraph provides Layout, metrics, and painting capabilites for text. Once a
-// Paragraph is constructed with ParagraphBuilder::Build(), an example basic
+// Paragraph provides Layout, metrics, and painting capabilities for text. Once
+// a Paragraph is constructed with ParagraphBuilder::Build(), an example basic
 // workflow can be this:
 //
 //   std::unique_ptr<Paragraph> paragraph = paragraph_builder.Build();
@@ -79,7 +79,10 @@ class Paragraph {
     // The line spacing will be added to the top of the rect.
     kIncludeLineSpacingTop,
     // The line spacing will be added to the bottom of the rect.
-    kIncludeLineSpacingBottom
+    kIncludeLineSpacingBottom,
+
+    // Calculate boxes based on the strut's metrics.
+    kStrut
   };
 
   enum class RectWidthStyle {
@@ -117,7 +120,7 @@ class Paragraph {
       return start == other.start && end == other.end;
     }
 
-    T width() { return end - start; }
+    T width() const { return end - start; }
 
     void Shift(T delta) {
       start += delta;
@@ -235,6 +238,7 @@ class Paragraph {
   FRIEND_TEST(ParagraphTest, SimpleShadow);
   FRIEND_TEST(ParagraphTest, ComplexShadow);
   FRIEND_TEST(ParagraphTest, FontFallbackParagraph);
+  FRIEND_TEST(ParagraphTest, FontFeaturesParagraph);
 
   // Starting data to layout.
   std::vector<uint16_t> text_;
@@ -266,6 +270,18 @@ class Paragraph {
   std::vector<double> line_heights_;
   std::vector<double> line_baselines_;
   bool did_exceed_max_lines_;
+
+  // Strut metrics of zero will have no effect on the layout.
+  struct StrutMetrics {
+    double ascent = 0;  // Positive value to keep signs clear.
+    double descent = 0;
+    double leading = 0;
+    double half_leading = 0;
+    double line_height = 0;
+    bool force_strut = false;
+  };
+
+  StrutMetrics strut_;
 
   // Metrics for use in GetRectsForRange(...);
   // Per-line max metrics over all runs in a given line.
@@ -372,16 +388,6 @@ class Paragraph {
         : x_start(x_s), y_start(y_s), x_end(x_e), y_end(y_e) {}
   };
 
-  // Strut metrics of zero will have no effect on the layout.
-  struct StrutMetrics {
-    double ascent = 0;  // Positive value to keep signs clear.
-    double descent = 0;
-    double leading = 0;
-    double half_leading = 0;
-    double line_height = 0;
-    bool force_strut = false;
-  };
-
   // Passes in the text and Styled Runs. text_ and runs_ will later be passed
   // into breaker_ in InitBreaker(), which is called in Layout().
   void SetText(std::vector<uint16_t> text, StyledRuns runs);
@@ -398,6 +404,8 @@ class Paragraph {
 
   // Calculates and populates strut based on paragraph_style_ strut info.
   void ComputeStrut(StrutMetrics* strut, SkFont& font);
+
+  bool IsStrutValid() const;
 
   // Calculate the starting X offset of a line based on the line's width and
   // alignment.

@@ -1,10 +1,15 @@
 #!/bin/bash
 echo "Analyzing dart:ui library..."
+
+echo "Using analyzer from `which dartanalyzer`"
+
+dartanalyzer --version
+
 RESULTS=`dartanalyzer                                                          \
   --options flutter/analysis_options.yaml                                      \
   "$1out/host_debug_unopt/gen/sky/bindings/dart_ui/ui.dart"                    \
   2>&1                                                                         \
-  | grep -Ev "No issues found!"                                          \
+  | grep -Ev "No issues found!"                                                \
   | grep -Ev "Analyzing.+out/host_debug_unopt/gen/sky/bindings/dart_ui/ui\.dart"`
 
 echo "$RESULTS"
@@ -21,20 +26,6 @@ RESULTS=`dartanalyzer                                                          \
   2>&1                                                                         \
   | grep -Ev "No issues found!"                                                \
   | grep -Ev "Analyzing.+frontend_server"`
-echo "$RESULTS"
-if [ -n "$RESULTS" ]; then
-  echo "Failed."
-  exit 1;
-fi
-
-echo "Analyzing flutter_kernel_transformers..."
-RESULTS=`dartanalyzer                                                          \
-  --packages=flutter/flutter_kernel_transformers/.packages                     \
-  --options flutter/analysis_options.yaml                                      \
-  flutter/flutter_kernel_transformers                                          \
-  2>&1                                                                         \
-  | grep -Ev "No issues found!"                                                \
-  | grep -Ev "Analyzing.+flutter_kernel_transformers"`
 echo "$RESULTS"
 if [ -n "$RESULTS" ]; then
   echo "Failed."

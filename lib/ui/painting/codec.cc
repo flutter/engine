@@ -15,7 +15,7 @@
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/dart_state.h"
 #include "third_party/tonic/logging/dart_invoke.h"
-#include "third_party/tonic/typed_data/uint8_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 using tonic::DartInvoke;
 using tonic::DartPersistentValue;
@@ -27,6 +27,9 @@ namespace {
 
 static constexpr const char* kInitCodecTraceTag = "InitCodec";
 static constexpr const char* kCodecNextFrameTraceTag = "CodecNextFrame";
+
+// This needs to be kept in sync with _kDoNotResizeDimension in painting.dart
+const int kDoNotResizeDimension = -1;
 
 // This must be kept in sync with the enum in painting.dart
 enum PixelFormat {
@@ -79,10 +82,117 @@ static sk_sp<SkImage> DecodeImage(fml::WeakPtr<GrContext> context,
   }
 }
 
+// Returns true if the image needs to be resized.
+//
+// newWidth and newHeight will reflect the dimensions that the image should
+// be scaled to.
+//
+// The targetWidth and targetHeight arguments specify the size of the output
+// image, in image pixels. If they are not equal to the intrinsic dimensions of
+// the image, then the image will be scaled after being decoded. If exactly one
+// of these two arguments is equal to kDoNotResizeDimension, then the aspect
+// ratio will be maintained while forcing the image to match the other given
+// dimension. If both are equal to kDoNotResizeDimension, then the image
+// maintains its real size.
+static bool needsResize(const int currentWidth,
+                        const int currentHeight,
+                        const int targetWidth,
+                        const int targetHeight,
+                        int& newWidth,
+                        int& newHeight) {
+  newWidth = currentWidth;
+  newHeight = currentHeight;
+  if (targetWidth == kDoNotResizeDimension &&
+      targetHeight == kDoNotResizeDimension) {
+    return false;
+  }
+
+  if (currentWidth == targetWidth && currentHeight == targetHeight) {
+    return false;
+  }
+
+  if (targetWidth == kDoNotResizeDimension) {
+    newHeight = targetHeight;
+    const double aspectRatio = (double)currentWidth / currentHeight;
+    newWidth = round(aspectRatio * newHeight);
+    return true;
+  } else if (targetHeight == kDoNotResizeDimension) {
+    newWidth = targetWidth;
+    const double invAspectRatio = (double)currentHeight / currentWidth;
+    newHeight = round(invAspectRatio * newWidth);
+    return true;
+  } else {
+    newWidth = targetWidth;
+    newHeight = targetHeight;
+    return true;
+  }
+}
+
+static sk_sp<SkImage> ResizeImageToExactSize(fml::WeakPtr<GrContext> context,
+                                             sk_sp<SkImage> image,
+                                             SkImageInfo scaledImageInfo) {
+  if (image == nullptr || !image.get()) {
+    FML_LOG(ERROR) << "Failed to decode image.";
+    return nullptr;
+  }
+
+  SkBitmap bitmap = SkBitmap();
+  if (!bitmap.tryAllocPixels(scaledImageInfo)) {
+    FML_LOG(ERROR) << "Failed to allocate bitmap.";
+    return nullptr;
+  }
+
+  if (!image->scalePixels(bitmap.pixmap(), kLow_SkFilterQuality)) {
+    FML_LOG(ERROR) << "Failed to scale pixels.";
+    return nullptr;
+  }
+
+  // This indicates that we do not want a "linear blending" decode.
+  sk_sp<SkColorSpace> dstColorSpace = nullptr;
+  GrContext* grContext = context ? context.get() : nullptr;
+  return SkImage::MakeCrossContextFromPixmap(grContext, bitmap.pixmap(), true,
+                                             dstColorSpace.get(), true);
+}
+
+static sk_sp<SkImage> DecodeAndResizeImageToExactSize(
+    fml::WeakPtr<GrContext> context,
+    SkImageInfo scaledImageInfo,
+    sk_sp<SkData> buffer,
+    size_t trace_id) {
+  TRACE_FLOW_STEP("flutter", kInitCodecTraceTag, trace_id);
+  TRACE_EVENT0("flutter", "DecodeAndResizeImageToExactSize");
+
+  // Do not create a cross context image here, since it can not be resized.
+  sk_sp<SkImage> image = SkImage::MakeFromEncoded(std::move(buffer));
+  return ResizeImageToExactSize(context, image, scaledImageInfo);
+}
+
+static sk_sp<SkImage> DecodeAndResizeImage(fml::WeakPtr<GrContext> context,
+                                           std::unique_ptr<SkCodec>& skCodec,
+                                           sk_sp<SkData> buffer,
+                                           const int targetWidth,
+                                           const int targetHeight,
+                                           size_t trace_id) {
+  const SkImageInfo imageInfo = skCodec->getInfo();
+
+  const int width = imageInfo.width();
+  const int height = imageInfo.height();
+
+  int newWidth, newHeight;
+  if (needsResize(width, height, targetWidth, targetHeight, newWidth,
+                  newHeight)) {
+    return DecodeAndResizeImageToExactSize(
+        context, imageInfo.makeWH(newWidth, newHeight), buffer, trace_id);
+  } else {
+    return DecodeImage(context, buffer, trace_id);
+  }
+}
+
 fml::RefPtr<Codec> InitCodec(fml::WeakPtr<GrContext> context,
                              sk_sp<SkData> buffer,
                              fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
-                             const float decodedCacheRatioCap,
+                             const int targetWidth,
+                             const int targetHeight,
                              size_t trace_id) {
   TRACE_FLOW_STEP("flutter", kInitCodecTraceTag, trace_id);
   TRACE_EVENT0("blink", "InitCodec");
@@ -99,12 +209,14 @@ fml::RefPtr<Codec> InitCodec(fml::WeakPtr<GrContext> context,
     return nullptr;
   }
   if (skCodec->getFrameCount() > 1) {
-    return fml::MakeRefCounted<MultiFrameCodec>(std::move(skCodec),
-                                                decodedCacheRatioCap);
+    return fml::MakeRefCounted<MultiFrameCodec>(std::move(skCodec));
   }
-  auto skImage = DecodeImage(context, buffer, trace_id);
+
+  auto skImage = DecodeAndResizeImage(context, skCodec, buffer, targetWidth,
+                                      targetHeight, trace_id);
+  FML_DCHECK(skImage) << "Unable to resize the image to (w, h): " << targetWidth
+                      << ", " << targetHeight << ".";
   if (!skImage) {
-    FML_LOG(ERROR) << "DecodeImage failed";
     return nullptr;
   }
   auto image = CanvasImage::Create();
@@ -118,7 +230,8 @@ fml::RefPtr<Codec> InitCodecUncompressed(
     sk_sp<SkData> buffer,
     ImageInfo image_info,
     fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
-    const float decodedCacheRatioCap,
+    int targetWidth,
+    int targetHeight,
     size_t trace_id) {
   TRACE_FLOW_STEP("flutter", kInitCodecTraceTag, trace_id);
   TRACE_EVENT0("blink", "InitCodecUncompressed");
@@ -129,7 +242,14 @@ fml::RefPtr<Codec> InitCodecUncompressed(
   }
 
   sk_sp<SkImage> skImage;
-  if (context) {
+  int newWidth, newHeight;
+  if (needsResize(image_info.sk_info.width(), image_info.sk_info.height(),
+                  targetWidth, targetHeight, newWidth, newHeight)) {
+    auto imageToResize = SkImage::MakeRasterData(
+        image_info.sk_info, std::move(buffer), image_info.row_bytes);
+    skImage = ResizeImageToExactSize(
+        context, imageToResize, image_info.sk_info.makeWH(newWidth, newHeight));
+  } else if (context) {
     SkPixmap pixmap(image_info.sk_info, buffer->data(), image_info.row_bytes);
     skImage = SkImage::MakeCrossContextFromPixmap(context.get(), pixmap, true,
                                                   nullptr, true);
@@ -151,16 +271,17 @@ void InitCodecAndInvokeCodecCallback(
     std::unique_ptr<DartPersistentValue> callback,
     sk_sp<SkData> buffer,
     std::unique_ptr<ImageInfo> image_info,
-    const float decodedCacheRatioCap,
+    const int targetWidth,
+    const int targetHeight,
     size_t trace_id) {
   fml::RefPtr<Codec> codec;
   if (image_info) {
     codec = InitCodecUncompressed(context, std::move(buffer), *image_info,
-                                  std::move(unref_queue), decodedCacheRatioCap,
-                                  trace_id);
+                                  std::move(unref_queue), targetWidth,
+                                  targetHeight, trace_id);
   } else {
     codec = InitCodec(context, std::move(buffer), std::move(unref_queue),
-                      decodedCacheRatioCap, trace_id);
+                      targetWidth, targetHeight, trace_id);
   }
   ui_task_runner->PostTask(
       fml::MakeCopyable([callback = std::move(callback),
@@ -278,8 +399,10 @@ void InstantiateImageCodec(Dart_NativeArguments args) {
     }
   }
 
-  const float decodedCacheRatioCap =
-      tonic::DartConverter<float>::FromDart(Dart_GetNativeArgument(args, 3));
+  const int targetWidth =
+      tonic::DartConverter<int>::FromDart(Dart_GetNativeArgument(args, 3));
+  const int targetHeight =
+      tonic::DartConverter<int>::FromDart(Dart_GetNativeArgument(args, 4));
 
   auto buffer = SkData::MakeWithCopy(list.data(), list.num_elements());
 
@@ -292,12 +415,12 @@ void InstantiateImageCodec(Dart_NativeArguments args) {
        buffer = std::move(buffer), trace_id, image_info = std::move(image_info),
        ui_task_runner = task_runners.GetUITaskRunner(),
        context = dart_state->GetResourceContext(),
-       queue = UIDartState::Current()->GetSkiaUnrefQueue(),
-       decodedCacheRatioCap]() mutable {
+       queue = UIDartState::Current()->GetSkiaUnrefQueue(), targetWidth,
+       targetHeight]() mutable {
         InitCodecAndInvokeCodecCallback(
             std::move(ui_task_runner), context, std::move(queue),
             std::move(callback), std::move(buffer), std::move(image_info),
-            decodedCacheRatioCap, trace_id);
+            targetWidth, targetHeight, trace_id);
       }));
 }
 
@@ -363,92 +486,64 @@ void Codec::dispose() {
   ClearDartWrapper();
 }
 
-MultiFrameCodec::MultiFrameCodec(std::unique_ptr<SkCodec> codec,
-                                 const float decodedCacheRatioCap)
-    : codec_(std::move(codec)), decodedCacheRatioCap_(decodedCacheRatioCap) {
-  repetitionCount_ = codec_->getRepetitionCount();
-  frameInfos_ = codec_->getFrameInfo();
-  compressedSizeBytes_ = codec_->getInfo().computeMinByteSize();
-  frameBitmaps_.clear();
-  decodedCacheSize_ = 0;
-  nextFrameIndex_ = 0;
-  // Go through our frame information and mark which frames are required in
-  // order to decode subsequent ones.
-  requiredFrames_.clear();
-  for (size_t frameIndex = 0; frameIndex < frameInfos_.size(); frameIndex++) {
-    const int requiredFrame = frameInfos_[frameIndex].fRequiredFrame;
-    if (requiredFrame != SkCodec::kNoFrame) {
-      requiredFrames_[requiredFrame] = true;
-    }
-  }
-}
+MultiFrameCodec::MultiFrameCodec(std::unique_ptr<SkCodec> codec)
+    : codec_(std::move(codec)),
+      frameCount_(codec_->getFrameCount()),
+      repetitionCount_(codec_->getRepetitionCount()),
+      nextFrameIndex_(0) {}
 
 MultiFrameCodec::~MultiFrameCodec() {}
 
-int MultiFrameCodec::frameCount() {
-  return frameInfos_.size();
+int MultiFrameCodec::frameCount() const {
+  return frameCount_;
 }
 
-int MultiFrameCodec::repetitionCount() {
+int MultiFrameCodec::repetitionCount() const {
   return repetitionCount_;
 }
 
 sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
     fml::WeakPtr<GrContext> resourceContext) {
-  // Populate this bitmap from the cache if it exists
-  SkBitmap bitmap = frameBitmaps_[nextFrameIndex_] != nullptr
-                        ? *frameBitmaps_[nextFrameIndex_]
-                        : SkBitmap();
-  const bool frameAlreadyCached = bitmap.getPixels();
-  if (!frameAlreadyCached) {
-    SkImageInfo info = codec_->getInfo().makeColorType(kN32_SkColorType);
-    if (info.alphaType() == kUnpremul_SkAlphaType) {
-      info = info.makeAlphaType(kPremul_SkAlphaType);
-    }
-    bitmap.allocPixels(info);
+  SkBitmap bitmap = SkBitmap();
+  SkImageInfo info = codec_->getInfo().makeColorType(kN32_SkColorType);
+  if (info.alphaType() == kUnpremul_SkAlphaType) {
+    info = info.makeAlphaType(kPremul_SkAlphaType);
+  }
+  bitmap.allocPixels(info);
 
-    SkCodec::Options options;
-    options.fFrameIndex = nextFrameIndex_;
-    const int requiredFrameIndex = frameInfos_[nextFrameIndex_].fRequiredFrame;
-    if (requiredFrameIndex != SkCodec::kNoFrame) {
-      if (lastRequiredFrame_ == nullptr) {
-        FML_LOG(ERROR) << "Frame " << nextFrameIndex_ << " depends on frame "
-                       << requiredFrameIndex
-                       << " and no required frames are cached.";
-        return NULL;
-      } else if (lastRequiredFrameIndex_ != requiredFrameIndex) {
-        FML_DLOG(INFO) << "Required frame " << requiredFrameIndex
-                       << " is not cached. Using " << lastRequiredFrameIndex_
-                       << " instead";
-      }
-
-      if (lastRequiredFrame_->getPixels() &&
-          copy_to(&bitmap, lastRequiredFrame_->colorType(),
-                  *lastRequiredFrame_)) {
-        options.fPriorFrame = requiredFrameIndex;
-      }
-    }
-
-    if (SkCodec::kSuccess != codec_->getPixels(info, bitmap.getPixels(),
-                                               bitmap.rowBytes(), &options)) {
-      FML_LOG(ERROR) << "Could not getPixels for frame " << nextFrameIndex_;
+  SkCodec::Options options;
+  options.fFrameIndex = nextFrameIndex_;
+  SkCodec::FrameInfo frameInfo;
+  codec_->getFrameInfo(nextFrameIndex_, &frameInfo);
+  const int requiredFrameIndex = frameInfo.fRequiredFrame;
+  if (requiredFrameIndex != SkCodec::kNoFrame) {
+    if (lastRequiredFrame_ == nullptr) {
+      FML_LOG(ERROR) << "Frame " << nextFrameIndex_ << " depends on frame "
+                     << requiredFrameIndex
+                     << " and no required frames are cached.";
       return NULL;
+    } else if (lastRequiredFrameIndex_ != requiredFrameIndex) {
+      FML_DLOG(INFO) << "Required frame " << requiredFrameIndex
+                     << " is not cached. Using " << lastRequiredFrameIndex_
+                     << " instead";
     }
 
-    const size_t cachedFrameSize = bitmap.computeByteSize();
-    const bool shouldCache = ((decodedCacheSize_ + cachedFrameSize) /
-                              compressedSizeBytes_) <= decodedCacheRatioCap_;
-    if (shouldCache) {
-      frameBitmaps_[nextFrameIndex_] = std::make_shared<SkBitmap>(bitmap);
-      decodedCacheSize_ += cachedFrameSize;
+    if (lastRequiredFrame_->getPixels() &&
+        copy_to(&bitmap, lastRequiredFrame_->colorType(),
+                *lastRequiredFrame_)) {
+      options.fPriorFrame = requiredFrameIndex;
     }
   }
 
+  if (SkCodec::kSuccess != codec_->getPixels(info, bitmap.getPixels(),
+                                             bitmap.rowBytes(), &options)) {
+    FML_LOG(ERROR) << "Could not getPixels for frame " << nextFrameIndex_;
+    return NULL;
+  }
+
   // Hold onto this if we need it to decode future frames.
-  if (requiredFrames_[nextFrameIndex_]) {
-    lastRequiredFrame_ = frameAlreadyCached
-                             ? frameBitmaps_[nextFrameIndex_]
-                             : std::make_shared<SkBitmap>(bitmap);
+  if (frameInfo.fDisposalMethod == SkCodecAnimation::DisposalMethod::kKeep) {
+    lastRequiredFrame_ = std::make_unique<SkBitmap>(bitmap);
     lastRequiredFrameIndex_ = nextFrameIndex_;
   }
 
@@ -478,10 +573,12 @@ void MultiFrameCodec::GetNextFrameAndInvokeCallback(
   if (skImage) {
     fml::RefPtr<CanvasImage> image = CanvasImage::Create();
     image->set_image({skImage, std::move(unref_queue)});
-    frameInfo = fml::MakeRefCounted<FrameInfo>(
-        std::move(image), frameInfos_[nextFrameIndex_].fDuration);
+    SkCodec::FrameInfo skFrameInfo;
+    codec_->getFrameInfo(nextFrameIndex_, &skFrameInfo);
+    frameInfo =
+        fml::MakeRefCounted<FrameInfo>(std::move(image), skFrameInfo.fDuration);
   }
-  nextFrameIndex_ = (nextFrameIndex_ + 1) % frameInfos_.size();
+  nextFrameIndex_ = (nextFrameIndex_ + 1) % frameCount_;
 
   ui_task_runner->PostTask(fml::MakeCopyable(
       [callback = std::move(callback), frameInfo, trace_id]() mutable {
@@ -524,11 +621,11 @@ SingleFrameCodec::SingleFrameCodec(fml::RefPtr<FrameInfo> frame)
 
 SingleFrameCodec::~SingleFrameCodec() {}
 
-int SingleFrameCodec::frameCount() {
+int SingleFrameCodec::frameCount() const {
   return 1;
 }
 
-int SingleFrameCodec::repetitionCount() {
+int SingleFrameCodec::repetitionCount() const {
   return 0;
 }
 
@@ -551,7 +648,7 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
 
 void Codec::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({
-      {"instantiateImageCodec", InstantiateImageCodec, 4, true},
+      {"instantiateImageCodec", InstantiateImageCodec, 5, true},
   });
   natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }

@@ -15,6 +15,11 @@ class _Logger {
   static void _printString(String s) native 'Logger_PrintString';
 }
 
+// If we actually run on big endian machines, we'll need to do something smarter
+// here. We don't use [Endian.Host] because it's not a compile-time
+// constant and can't propagate into the set/get calls.
+const Endian _kFakeHostEndian = Endian.little;
+
 // A service protocol extension to schedule a frame to be rendered into the
 // window.
 Future<developer.ServiceExtensionResponse> _scheduleFrame(
@@ -24,7 +29,7 @@ Future<developer.ServiceExtensionResponse> _scheduleFrame(
   // Schedule the frame.
   window.scheduleFrame();
   // Always succeed.
-  return new developer.ServiceExtensionResponse.result(json.encode(<String, String>{
+  return developer.ServiceExtensionResponse.result(json.encode(<String, String>{
     'type': 'Success',
   }));
 }

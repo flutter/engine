@@ -135,9 +135,7 @@ template("shell_host_executable") {
       "//third_party/tonic",
     ]
 
-    if (is_linux) {
-      ldflags += [ "-rdynamic" ]
-    }
+    public_configs = [ "$flutter_root:export_dynamic_symbols" ]
   }
 }
 
@@ -145,6 +143,7 @@ shell_gpu_configuration("shell_unittests_gpu_configuration") {
   enable_software = true
   enable_vulkan = false
   enable_gl = false
+  enable_metal = false
 }
 
 test_fixtures("shell_unittests_fixtures") {

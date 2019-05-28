@@ -4,11 +4,17 @@
 
 package io.flutter.embedding.engine;
 
+import android.arch.lifecycle.Lifecycle;
+import android.arch.lifecycle.LifecycleOwner;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.plugins.PluginRegistry;
+import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
+import io.flutter.embedding.engine.plugins.broadcastreceiver.BroadcastReceiverControlSurface;
+import io.flutter.embedding.engine.plugins.contentprovider.ContentProviderControlSurface;
+import io.flutter.embedding.engine.plugins.service.ServiceControlSurface;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
@@ -44,7 +50,7 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel;
  * a {@link io.flutter.embedding.android.FlutterView} as a {@link FlutterRenderer.RenderSurface}.
  */
 // TODO(mattcarroll): re-evaluate system channel APIs - some are not well named or differentiated
-public class FlutterEngine {
+public class FlutterEngine implements LifecycleOwner {
   private static final String TAG = "FlutterEngine";
 
   @NonNull
@@ -54,7 +60,9 @@ public class FlutterEngine {
   @NonNull
   private final DartExecutor dartExecutor;
   @NonNull
-  private final FlutterPluginRegistry pluginRegistry;
+  private final FlutterEnginePluginRegistry pluginRegistry;
+  @NonNull
+  private final FlutterEngineAndroidLifecycle androidLifecycle;
 
   // System channels.
   @NonNull
@@ -79,7 +87,8 @@ public class FlutterEngine {
   private final EngineLifecycleListener engineLifecycleListener = new EngineLifecycleListener() {
     @SuppressWarnings("unused")
     public void onPreEngineRestart() {
-      pluginRegistry.onPreEngineRestart();
+      // TODO(mattcarroll): work into plugin API. should probably loop through each plugin.
+//      pluginRegistry.onPreEngineRestart();
     }
   };
 
@@ -95,7 +104,7 @@ public class FlutterEngine {
    * {@link #getRenderer()} and {@link FlutterRenderer#attachToRenderSurface(FlutterRenderer.RenderSurface)}.
    *
    * A new {@code FlutterEngine} does not come with any Flutter plugins attached. To attach plugins,
-   * see {@link #getPluginRegistry()}.
+   * see {@link #getPlugins()}.
    *
    * A new {@code FlutterEngine} does come with all default system channels attached.
    */
@@ -120,7 +129,12 @@ public class FlutterEngine {
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
 
-    this.pluginRegistry = new FlutterPluginRegistry(this, context);
+    androidLifecycle = new FlutterEngineAndroidLifecycle(this);
+    this.pluginRegistry = new FlutterEnginePluginRegistry(
+      context.getApplicationContext(),
+      this,
+        androidLifecycle
+    );
   }
 
   private void attachToJni() {
@@ -138,24 +152,13 @@ public class FlutterEngine {
   }
 
   /**
-   * Detaches this {@code FlutterEngine} from Flutter's native implementation, but allows
-   * reattachment later.
-   *
-   * // TODO(mattcarroll): document use-cases for this behavior.
-   */
-  public void detachFromJni() {
-    pluginRegistry.detach();
-    dartExecutor.onDetachedFromJNI();
-    flutterJNI.removeEngineLifecycleListener(engineLifecycleListener);
-  }
-
-  /**
    * Cleans up all components within this {@code FlutterEngine} and then detaches from Flutter's
    * native implementation.
    *
    * This {@code FlutterEngine} instance should be discarded after invoking this method.
    */
   public void destroy() {
+    // The order that these things are destroyed is important.
     pluginRegistry.destroy();
     dartExecutor.onDetachedFromJNI();
     flutterJNI.removeEngineLifecycleListener(engineLifecycleListener);
@@ -262,10 +265,39 @@ public class FlutterEngine {
     return textInputChannel;
   }
 
-  // TODO(mattcarroll): propose a robust story for plugin backward compability and future facing API.
+  /**
+   * Plugin registry, which registers plugins that want to be applied to this {@code FlutterEngine}.
+   */
   @NonNull
-  public FlutterPluginRegistry getPluginRegistry() {
+  public PluginRegistry getPlugins() {
     return pluginRegistry;
+  }
+
+  @NonNull
+  public ActivityControlSurface getActivityControlSurface() {
+    return pluginRegistry;
+  }
+
+  @NonNull
+  public ServiceControlSurface getServiceControlSurface() {
+    return pluginRegistry;
+  }
+
+  @NonNull
+  public BroadcastReceiverControlSurface getBroadcastReceiverControlSurface() {
+    return pluginRegistry;
+  }
+
+  @NonNull
+  public ContentProviderControlSurface getContentProviderControlSurface() {
+    return pluginRegistry;
+  }
+
+  // TODO(mattcarroll): determine if we really need to expose this from FlutterEngine vs making PluginBinding a LifecycleOwner
+  @NonNull
+  @Override
+  public Lifecycle getLifecycle() {
+    return androidLifecycle;
   }
 
   /**
