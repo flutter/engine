@@ -57,7 +57,8 @@ source_set("embedder") {
 }
 
 test_fixtures("fixtures") {
-  fixtures = [ "fixtures/main.dart" ]
+  dart_main = "fixtures/main.dart"
+  fixtures = []
 }
 
 executable("embedder_unittests") {
