@@ -13,6 +13,7 @@
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSize.h"
+#include "third_party/skia/include/core/SkPath.h"
 
 namespace flutter {
 
@@ -98,11 +99,13 @@ class FlutterEmbededViewTransformElement {
  public:
   void setType(const FlutterEmbededViewTransformType type) { type_ = type; }
   void setRect(const SkRect& rect) { rect_ = rect; }
+  void setRRect(const SkRRect& rrect) { rrect_ = rrect; }
   void setMatrix(const SkMatrix& matrix) { matrix_ = matrix; }
 
   FlutterEmbededViewTransformType type() { return type_; }
   SkRect rect() { return rect_; }
   SkRRect rrect() { return rrect_; }
+  SkPath path() {return path_;}
   SkMatrix matrix() { return matrix_; }
 
   friend bool operator==(const FlutterEmbededViewTransformElement& lhs,
@@ -127,6 +130,7 @@ class FlutterEmbededViewTransformElement {
   FlutterEmbededViewTransformType type_;
   SkRect rect_;
   SkRRect rrect_;
+  SkPath path_;
   SkMatrix matrix_;
 };  // FlutterEmbededViewTransformElement
 

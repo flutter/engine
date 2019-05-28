@@ -58,10 +58,12 @@ void ClipRRectLayer::Paint(PaintContext& context) const {
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->clipRRect(clip_rrect_,
                                            clip_behavior_ != Clip::hardEdge);
+  context.view_embedder->transformStack->pushClipRRect(clip_rrect_);
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->saveLayer(paint_bounds(), nullptr);
   }
   PaintChildren(context);
+  context.view_embedder->transformStack->pop();
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->restore();
   }

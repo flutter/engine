@@ -23,6 +23,14 @@ void FlutterEmbededViewTransformStack::pushClipRect(const SkRect& rect) {
   vector_.push_back(element);
 };
 
+void FlutterEmbededViewTransformStack::pushClipRRect(const SkRRect& rrect) {
+  FlutterEmbededViewTransformElement element =
+  FlutterEmbededViewTransformElement();
+  element.setType(clip_rrect);
+  element.setRRect(rrect);
+  vector_.push_back(element);
+};
+
 void FlutterEmbededViewTransformStack::pushTransform(const SkMatrix& matrix) {
   FlutterEmbededViewTransformElement element =
       FlutterEmbededViewTransformElement();

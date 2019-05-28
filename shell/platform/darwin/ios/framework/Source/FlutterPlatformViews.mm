@@ -18,11 +18,89 @@
 
 #pragma mark - Transforms Utils
 
-static void ClipRect(UIView* view, CGRect clipRect) {
-  UIBezierPath* path = [UIBezierPath bezierPathWithRect:clipRect];
+static CGRect GetCGRectFromSkRect(const SkRect &clipSkRect) {
+  return CGRectMake(clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fRight - clipSkRect.fLeft,
+                      clipSkRect.fBottom - clipSkRect.fTop);
+}
+
+static void ClipRect(UIView* view, const SkRect &clipSkRect) {
+  CGRect clipRect = GetCGRectFromSkRect(clipSkRect);
+  CGPathRef pathRef = CGPathCreateWithRect(clipRect, nil);
   CAShapeLayer* clip = [[CAShapeLayer alloc] init];
-  clip.path = path.CGPath;
+  clip.path = pathRef;
   view.layer.mask = clip;
+  CGPathRelease(pathRef);
+}
+
+static void ClipRRect(UIView* view, const SkRRect &clipSkRRect) {
+  CGPathRef pathRef = nullptr;
+  switch (clipSkRRect.getType()) {
+    case SkRRect::kEmpty_Type: {
+      break;
+    }
+    case SkRRect::kRect_Type: {
+      ClipRect(view, clipSkRRect.rect());
+      return;
+    }
+    case SkRRect::kOval_Type:
+    case SkRRect::kSimple_Type: {
+      CGRect clipRect = GetCGRectFromSkRect(clipSkRRect.rect());
+      pathRef = CGPathCreateWithRoundedRect(clipRect, clipSkRRect.getSimpleRadii().x(), clipSkRRect.getSimpleRadii().y(), nil);
+      break;
+    }
+    case SkRRect::kNinePatch_Type:
+    case SkRRect::kComplex_Type: {
+      CGMutablePathRef mutablePathRef = CGPathCreateMutable();
+
+      // Complex types, we manually add cornors.
+      SkRect clipSkRect = clipSkRRect.rect();
+      SkVector topLeftRadii = clipSkRRect.radii(SkRRect::kUpperLeft_Corner);
+      SkVector topRightRadii = clipSkRRect.radii(SkRRect::kUpperRight_Corner);
+      SkVector bottomRightRadii = clipSkRRect.radii(SkRRect::kLowerRight_Corner);
+      SkVector bottomLeftRadii = clipSkRRect.radii(SkRRect::kLowerLeft_Corner);
+
+      // Start drawing RRect
+      // Move point to the top left cornor adding the top left radii's x.
+      CGPathMoveToPoint(mutablePathRef, nil, clipSkRect.fLeft+topLeftRadii.x(), clipSkRect.fTop);
+      // Move point horizontally right to the top right cornor and add the top right curve.
+      CGPathAddLineToPoint(mutablePathRef, nil, clipSkRect.fRight-topRightRadii.x(), clipSkRect.fTop);
+      CGPathAddCurveToPoint(mutablePathRef, nil, clipSkRect.fRight, clipSkRect.fTop, clipSkRect.fRight, clipSkRect.fTop+topRightRadii.y(), clipSkRect.fRight, clipSkRect.fTop+topRightRadii.y());
+      // Move point vertically down to the bottom right cornor and add the bottom right curve.
+      CGPathAddLineToPoint(mutablePathRef, nil, clipSkRect.fRight, clipSkRect.fBottom - bottomRightRadii.y());
+      CGPathAddCurveToPoint(mutablePathRef, nil, clipSkRect.fRight, clipSkRect.fBottom, clipSkRect.fRight-bottomRightRadii.x(), clipSkRect.fBottom, clipSkRect.fRight-bottomRightRadii.x(), clipSkRect.fBottom);
+      // Move point horizontally left to the bottom left cornor and add the bottom left curve.
+      CGPathAddLineToPoint(mutablePathRef, nil, clipSkRect.fLeft+bottomLeftRadii.x(),  clipSkRect.fBottom);
+      CGPathAddCurveToPoint(mutablePathRef, nil, clipSkRect.fLeft, clipSkRect.fBottom, clipSkRect.fLeft, clipSkRect.fBottom-bottomLeftRadii.y(),  clipSkRect.fLeft, clipSkRect.fBottom-bottomLeftRadii.y());
+      // Move point vertically up to the top left cornor and add the top left curve.
+      CGPathAddLineToPoint(mutablePathRef, nil, clipSkRect.fLeft, clipSkRect.fTop+topLeftRadii.y());
+      CGPathAddCurveToPoint(mutablePathRef, nil, clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fLeft+topLeftRadii.x(), clipSkRect.fTop, clipSkRect.fLeft+topLeftRadii.x(), clipSkRect.fTop);
+      CGPathCloseSubpath(mutablePathRef);
+
+      pathRef = mutablePathRef;
+      break;
+    }
+  }
+  CAShapeLayer* clip = [[CAShapeLayer alloc] init];
+  clip.path = pathRef;
+  view.layer.mask = clip;
+  CGPathRelease(pathRef);
+}
+
+static void PerformClip(UIView *view, flutter::FlutterEmbededViewTransformType type, const SkRect &rect, const SkRRect &rrect, const SkPath &path) {
+  FML_CHECK(type == flutter::clip_rect || type == flutter::clip_rrect || type == flutter::clip_path);
+  // TODO(cyanglaz): Add other clippings
+  switch (type) {
+    case flutter::clip_rect:
+      ClipRect(view, rect);
+      break;
+    case flutter::clip_rrect:
+      ClipRRect(view, rrect);
+      break;
+    case flutter::clip_path:
+      break;
+    default:
+      break;
+  }
 }
 
 static CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix) {
@@ -37,20 +115,20 @@ static CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix) {
   transform.m22 = matrix.getScaleY();
   transform.m42 = matrix.getTranslateY();
   transform.m24 = matrix.getPerspY();
-
-  NSLog(@"=========");
-
-  NSLog(@"%.2f %.2f %.2f\n%.2f %.2f %.2f\n%.2f %.2f %.2f\n", matrix.getScaleX(), matrix.getSkewX(),
-        matrix.getTranslateX(), matrix.getSkewY(), matrix.getScaleY(), matrix.getTranslateY(),
-        matrix.getPerspX(), matrix.getPerspY(), 1.0);
-
-  NSLog(@"----------");
-
-  NSLog(@"%.2f %.2f %.2f %.2f\n%.2f %.2f %.2f %.2f\n%.2f %.2f %.2f %.2f\n%.2f %.2f %.2f %.2f\n",
-        transform.m11, transform.m12, transform.m13, transform.m14, transform.m21, transform.m22,
-        transform.m23, transform.m24, transform.m31, transform.m32, transform.m33, transform.m34,
-        transform.m41, transform.m42, transform.m43, transform.m44);
-  NSLog(@"=========");
+//
+//  NSLog(@"=========");
+//
+//  NSLog(@"%.2f %.2f %.2f\n%.2f %.2f %.2f\n%.2f %.2f %.2f\n", matrix.getScaleX(), matrix.getSkewX(),
+//        matrix.getTranslateX(), matrix.getSkewY(), matrix.getScaleY(), matrix.getTranslateY(),
+//        matrix.getPerspX(), matrix.getPerspY(), 1.0);
+//
+//  NSLog(@"----------");
+//
+//  NSLog(@"%.2f %.2f %.2f %.2f\n%.2f %.2f %.2f %.2f\n%.2f %.2f %.2f %.2f\n%.2f %.2f %.2f %.2f\n",
+//        transform.m11, transform.m12, transform.m13, transform.m14, transform.m21, transform.m22,
+//        transform.m23, transform.m24, transform.m31, transform.m32, transform.m33, transform.m34,
+//        transform.m41, transform.m42, transform.m43, transform.m44);
+//  NSLog(@"=========");
   return transform;
 }
 
@@ -242,6 +320,7 @@ void FlutterPlatformViewsController::CompositeWithParams(
   std::vector<FlutterEmbededViewTransformElement>::iterator iter = params.transformStack->end() - 1;
   // TODO(cyanglaz): figure out how to handle the root transform layer (2x, 2y)
   bool hasMoreClipOperations = false;
+
   while (iter != params.transformStack->begin()) {
     switch (iter->type()) {
       case transform: {
@@ -249,11 +328,9 @@ void FlutterPlatformViewsController::CompositeWithParams(
         lastView.layer.transform = CATransform3DConcat(lastView.layer.transform, transform);
         break;
       }
-      case clip_rect: {
-        SkRect clipSkRect = iter->rect();
-        CGRect clipRect =
-            CGRectMake(clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fRight - clipSkRect.fLeft,
-                       clipSkRect.fBottom - clipSkRect.fTop);
+      case clip_rect:
+      case clip_rrect:
+      case clip_path: {
         UIView* view = lastView.superview;
         // if we need more clips operations than last time, create a new view.
         if (!view || view == flutter_view_.get()) {
@@ -262,18 +339,12 @@ void FlutterPlatformViewsController::CompositeWithParams(
           [view addSubview:lastView];
           hasMoreClipOperations = true;
         }
-        ClipRect(view, clipRect);
+        PerformClip(view, iter->type(), iter->rect(), iter->rrect(), iter->path());
         lastView = view;
         ReadyUIViewForTranslate(lastView);
         break;
       }
-        // TODO(cyanglaz): Add other clippings
-      case clip_rrect: {
-        break;
-      }
-      case clip_path: {
-        break;
-      }
+      // TODO(cyanglaz): Add other clippings
     }
     --iter;
   }
