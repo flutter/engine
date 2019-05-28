@@ -63,6 +63,14 @@ void main() {
         continue;
       }
 
+      if (uiConstructor.parameters.parameters.length !=
+          webConstructor.parameters.parameters.length) {
+        failed = true;
+        print(
+            'Warning: lib/ui/ui.dart $className.$name has a different parameter '
+            'length than in lib/stub_ui/ui.dart.');
+      }
+
       for (int i = 0;
           i < uiConstructor.parameters.parameters.length &&
               i < uiConstructor.parameters.parameters.length;
