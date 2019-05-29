@@ -423,13 +423,17 @@ class Locale {
 /// padding when visible.
 ///
 /// The [Window.viewInsets] are the physical pixels into which the operating
-/// system may place system UI, such as the keyboard, which would fully obscure
-/// any content drawn in that area.
+/// system reserves for system UI, such as the keyboard, which would fully
+/// obscure any content drawn in that area.
 ///
 /// The [Window.viewPadding] are the physical pixels on each side of the display
 /// that may be partially obscured by system UI or by physical intrusions into
 /// the display, such as an overscan region on a television or a "notch" on a
-/// phone.
+/// phone. Unlike the insets, these areas may have portions that show the user
+/// application painted pixels without being obscured, such as a notch at the
+/// top of a phone that covers only a subset of the area. Insets, on the other
+/// hand, the insets either partially or fully obscured, such as as opaque
+/// keyboard or a partially transluscent statusbar, which cover the entire area.
 ///
 /// The [Window.padding] property is computed from both [Window.viewInsets] and
 /// [Window.viewPadding]. It will allow a view inset to consume view padding
@@ -441,9 +445,13 @@ class Locale {
 /// e.g. if you wish to draw a widget at the center of the screen with respect
 /// to the iPhone "safe area" regardless of whether the keyboard is showing.
 ///
-/// Clients that want to position elements or detect gestures relative to the
-/// padding as impacted by the view insets should use the [Window.padding], e.g.
-/// if you want to know whether a gesture is within range to trigger a scroll.
+/// [Window.padding] is useful for clients that want to know how much padding
+/// should be accounted for without concern for the current inset(s) state, e.g.
+/// determining whether a gesture should be considered for scrolling purposes.
+/// This value varies based on the current state of the insets. For example, a
+/// visible keyboard will consume all gestures in the bottom part of the
+/// [Window.viewPadding] anyway, so there is no need to account for that in the
+/// [Window.padding], which is always safe to use for such calculations.
 class Window {
   Window._();
 

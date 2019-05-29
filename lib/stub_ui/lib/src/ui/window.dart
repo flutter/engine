@@ -612,8 +612,7 @@ class Window {
   ///    design applications.
   WindowPadding get viewInsets => WindowPadding.zero;
 
-  WindowPadding get viewPadding => _viewPadding;
-  WindowPadding _viewPadding = WindowPadding.zero;
+  WindowPadding get viewPadding => WindowPadding.zero;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the application can render, but which may be partially obscured by
