@@ -50,6 +50,31 @@ id<FlutterViewEngineDelegate> _delegate;
   if (self) {
     _delegate = delegate;
     self.layer.opaque = opaque;
+    if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
+      fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
+          reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
+      if (flutter::IsIosEmbeddedViewsPreviewEnabled()) {
+        // TODO(amirh): We can lower this to iOS 8.0 once we have a Metal rendering backend.
+        // https://github.com/flutter/flutter/issues/24132
+        if (@available(iOS 9.0, *)) {
+          // TODO(amirh): only do this if there's an embedded view.
+          // https://github.com/flutter/flutter/issues/24133
+          NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+          [center addObserverForName:UIKeyboardDidShowNotification
+                              object:nil
+                               queue:nil
+                          usingBlock:^(NSNotification* note) {
+                            eagl_layer.get().presentsWithTransaction = NO;
+                          }];
+          [center addObserverForName:UIKeyboardWillHideNotification
+                              object:nil
+                               queue:nil
+                          usingBlock:^(NSNotification* note) {
+                            eagl_layer.get().presentsWithTransaction = YES;
+                          }];
+        }
+      }
+    }
   }
 
   return self;
