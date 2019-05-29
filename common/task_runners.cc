@@ -43,6 +43,10 @@ fml::RefPtr<fml::TaskRunner> TaskRunners::GetGPUTaskRunner() const {
   return gpu_;
 }
 
+bool TaskRunners::PlatformAndGPUAreShared() const {
+  return platform_ == gpu_;
+}
+
 bool TaskRunners::IsValid() const {
   return platform_ && gpu_ && ui_ && io_;
 }
