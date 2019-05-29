@@ -1265,25 +1265,26 @@ enum BoxWidthStyle {
 enum PlaceholderAlignment {
   /// Match the baseline of the placeholder with the baseline.
   ///
-  /// The [TextBaseline] to use must be non-null be specified when using this
+  /// The [TextBaseline] to use must be specified and non-null when using this
   /// alignment mode.
   baseline,
 
   /// Align the bottom edge of the placeholder with the baseline such that the
   /// placeholder sits on top of the baseline.
   ///
-  /// The [TextBaseline] to use must be non-null be specified when using this
+  /// The [TextBaseline] to use must be specified and non-null when using this
   /// alignment mode.
   aboveBaseline,
 
-  /// Align the top edge of the placeholder with the baseline specified in
+  /// Align the top edge of the placeholder with the baseline specified
   /// such that the placeholder hangs below the baseline.
   ///
-  /// The [TextBaseline] to use must be non-null be specified when using this
+  /// The [TextBaseline] to use must be specified and non-null when using this
   /// alignment mode.
   belowBaseline,
 
   /// Align the top edge of the placeholder with the top edge of the font.
+  ///
   /// When the placeholder is very tall, the extra space will hang from
   /// the top and extend through the bottom of the line.
   top,
@@ -1614,7 +1615,7 @@ class Paragraph {
   ///
   /// The order of the boxes are in the same order as passed in through [addPlaceholder].
   ///
-  /// Coordinates of the TextBox are relative to the upper-left corner of the paragraph,
+  /// Coordinates of the [TextBox] are relative to the upper-left corner of the paragraph,
   /// where positive y values indicate down.
   List<TextBox> getBoxesForPlaceholders() {
     // TODO(garyq): Implement stub_ui version of this.
@@ -1784,13 +1785,13 @@ class ParagraphBuilder {
   ///
   /// The `width` and `height` parameters specify the size of the placeholder rectangle.
   ///
-  /// The [alignment] parameter specifies how the placeholder rectangle will be vertically
+  /// The `alignment` parameter specifies how the placeholder rectangle will be vertically
   /// aligned with the surrounding text. When [PlaceholderAlignment.baseline],
   /// [PlaceholderAlignment.aboveBaseline], and [PlaceholderAlignment.belowBaseline]
-  /// alignment modes are used, the baseline needs to be set with the [baseline].
-  /// When using [PlaceholderAlignment.baseline], [baselineOffset] indicates the distance
-  /// of the baseline down from the top of of the rectangle. The default [baselineOffset]
-  /// is the [height].
+  /// alignment modes are used, the baseline needs to be set with the `baseline`.
+  /// When using [PlaceholderAlignment.baseline], `baselineOffset` indicates the distance
+  /// of the baseline down from the top of of the rectangle. The default `baselineOffset`
+  /// is the `height`.
   ///
   /// Examples:
   ///
