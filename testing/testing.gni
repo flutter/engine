@@ -217,7 +217,10 @@ template("copy_fixtures") {
 }
 
 # Specifies the fixtures to copy to a location known by the specific unit test.
-# Test executable can only depend on one such target.
+# Test executable can only depend on one such target. You can use either one of
+# both arguments to expand this template. If you have none, then you'll see the
+# unused invoker scope error. In such cases specify the fixtures using an empty
+# array.
 #
 # Arguments:
 #
