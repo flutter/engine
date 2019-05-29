@@ -208,8 +208,7 @@ void StandardCodecSerializer::WriteValue(const EncodableValue& value,
   }
 }
 
-size_t StandardCodecSerializer::ReadSize(
-    ByteBufferStreamReader* stream) const {
+size_t StandardCodecSerializer::ReadSize(ByteBufferStreamReader* stream) const {
   uint8_t byte = stream->ReadByte();
   if (byte < 254) {
     return byte;
