@@ -65,8 +65,6 @@ class Paragraph {
 
   enum Affinity { UPSTREAM, DOWNSTREAM };
 
-  // TODO(garyq): Implement kIncludeLineSpacing and kExtendEndOfLine
-  //
   // Options for various types of bounding boxes provided by
   // GetRectsForRange(...).
   enum class RectHeightStyle {
