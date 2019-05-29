@@ -9,11 +9,11 @@
 
 #include "flutter/fml/memory/ref_counted.h"
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSize.h"
-#include "third_party/skia/include/core/SkPath.h"
 
 namespace flutter {
 
@@ -105,7 +105,7 @@ class FlutterEmbededViewTransformElement {
   FlutterEmbededViewTransformType type() { return type_; }
   SkRect rect() { return rect_; }
   SkRRect rrect() { return rrect_; }
-  SkPath path() {return path_;}
+  SkPath path() { return path_; }
   SkMatrix matrix() { return matrix_; }
 
   friend bool operator==(const FlutterEmbededViewTransformElement& lhs,

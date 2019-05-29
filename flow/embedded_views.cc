@@ -25,7 +25,7 @@ void FlutterEmbededViewTransformStack::pushClipRect(const SkRect& rect) {
 
 void FlutterEmbededViewTransformStack::pushClipRRect(const SkRRect& rrect) {
   FlutterEmbededViewTransformElement element =
-  FlutterEmbededViewTransformElement();
+      FlutterEmbededViewTransformElement();
   element.setType(clip_rrect);
   element.setRRect(rrect);
   vector_.push_back(element);
