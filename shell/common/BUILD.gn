@@ -148,7 +148,6 @@ shell_gpu_configuration("shell_unittests_gpu_configuration") {
 
 test_fixtures("shell_unittests_fixtures") {
   dart_main = "fixtures/shell_test.dart"
-  fixtures = []
 }
 
 shell_host_executable("shell_unittests") {

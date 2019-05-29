@@ -224,16 +224,12 @@ template("copy_fixtures") {
 #
 # Arguments:
 #
-#     fixtures (required): The list of test fixtures. An empty list may be
+#     fixtures (optional): The list of test fixtures. An empty list may be
 #                          specified.
 #
 #     dart_main (optional): The path to the main Dart file. If specified, it is
 #                           snapshotted.
 template("test_fixtures") {
-  assert(
-      defined(invoker.fixtures),
-      "The test fixtures must be specified. Use an empty array if no fixtures are present.")
-
   # Even if no fixtures are present, the location of the fixtures directory
   # must always be known to tests.
   fixtures_location_target_name = "fixtures_location_$target_name"
@@ -242,12 +238,14 @@ template("test_fixtures") {
   }
   test_deps = [ ":$fixtures_location_target_name" ]
 
-  # Copy fixtures to the assets directory.
-  copy_fixtures_target_name = "copy_fixtures_$target_name"
-  copy_fixtures(copy_fixtures_target_name) {
-    fixtures = invoker.fixtures
+  # If the fixtures are specified, copy them to the assets directory.
+  if (defined(invoker.fixtures)) {
+    copy_fixtures_target_name = "copy_fixtures_$target_name"
+    copy_fixtures(copy_fixtures_target_name) {
+      fixtures = invoker.fixtures
+    }
+    test_deps += [ ":$copy_fixtures_target_name" ]
   }
-  test_deps += [ ":$copy_fixtures_target_name" ]
 
   # If a Dart file is specified, snapshot it and place it in the generated
   # assets directory.
