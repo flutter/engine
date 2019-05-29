@@ -522,7 +522,9 @@ public class FlutterActivity extends FragmentActivity implements OnFirstFrameRen
    * The mode of the background of a {@code FlutterActivity}, either opaque or transparent.
    */
   public enum BackgroundMode {
+    /** Indicates a FlutterActivity with an opaque background. This is the default. */
     opaque,
+    /** Indicates a FlutterActivity with a transparent background. */
     transparent
   }
 }
