@@ -34,8 +34,6 @@ class TaskRunners {
 
   fml::RefPtr<fml::TaskRunner> GetGPUTaskRunner() const;
 
-  bool PlatformAndGPUAreShared() const;
-
   bool IsValid() const;
 
  private:
