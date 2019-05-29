@@ -3,7 +3,6 @@ package io.flutter.embedding.engine.plugins.shim;
 import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -100,9 +99,6 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
 
     if (activityPluginBinding != null) {
       activityPluginBinding.addRequestPermissionsResultListener(listener);
-    } else {
-      Log.w(TAG, "Tried to add a RequestPermissionsResultListener but no Activity is currently"
-          + " attached to the associated FlutterEngine");
     }
 
     return this;
@@ -114,9 +110,6 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
 
     if (activityPluginBinding != null) {
       activityPluginBinding.addActivityResultListener(listener);
-    } else {
-      Log.w(TAG, "Tried to add an ActivityResultListener but no Activity is currently"
-          + " attached to the associated FlutterEngine");
     }
 
     return this;
@@ -128,9 +121,6 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
 
     if (activityPluginBinding != null) {
       activityPluginBinding.addOnNewIntentListener(listener);
-    } else {
-      Log.w(TAG, "Tried to add a NewIntentListener but no Activity is currently"
-          + " attached to the associated FlutterEngine");
     }
 
     return this;
@@ -142,9 +132,6 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
 
     if (activityPluginBinding != null) {
       activityPluginBinding.addOnUserLeaveHintListener(listener);
-    } else {
-      Log.w(TAG, "Tried to add a UserLeaveHintListener but no Activity is currently"
-          + " attached to the associated FlutterEngine");
     }
 
     return this;
