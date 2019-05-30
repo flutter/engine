@@ -10,3 +10,6 @@ dependencies:
 dev_dependencies:
   test: ^1.3.0
   quiver:
+  build_runner:
+  build_test:
+  build_web_compilers:
