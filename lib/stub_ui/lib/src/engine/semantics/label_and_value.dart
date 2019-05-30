@@ -1,4 +1,4 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2019 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -24,6 +24,9 @@ part of engine;
 /// interactive controls, such as an `<input>` element. In such case the value
 /// is reported via that element's `value` attribute rather than rendering it
 /// separately.
+///
+/// Aria role image is not managed by this role manager. Img role and label
+/// describes the visual are added in [ImageRoleManager].
 class LabelAndValue extends RoleManager {
   LabelAndValue(SemanticsObject semanticsObject)
       : super(Role.labelAndValue, semanticsObject);

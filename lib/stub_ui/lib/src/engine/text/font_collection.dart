@@ -1,7 +1,3 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 part of engine;
 
 const _testFontFamily = 'Ahem';
@@ -121,10 +117,10 @@ class _FontManager {
     String asset,
     Map<String, String> descriptors,
   ) {
-    final fontFace = html.FontFace(family, asset, descriptors);
+    final html.FontFace fontFace = html.FontFace(family, asset, descriptors);
     _fontLoadingFutures.add(fontFace
         .load()
-        .then((_) => html.document.fonts.add(fontFace), onError: (e) {
+        .then((_) => html.document.fonts.add(fontFace), onError: (dynamic e) {
       html.window.console
           .warn('Error while trying to load font family "$family":\n$e');
       return null;

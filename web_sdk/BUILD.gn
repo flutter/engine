@@ -10,10 +10,8 @@ sdk_libraries_json = "$root_out_dir/flutter_web_sdk/libraries.json"
 
 web_ui_sources = [
   "$flutter_root/lib/stub_ui/lib/ui.dart",
-  "$flutter_root/lib/stub_ui/lib/src/ui/browser_location.dart",
   "$flutter_root/lib/stub_ui/lib/src/ui/canvas.dart",
   "$flutter_root/lib/stub_ui/lib/src/ui/compositing.dart",
-  "$flutter_root/lib/stub_ui/lib/src/ui/debug_canvas_reuse_overlay.dart",
   "$flutter_root/lib/stub_ui/lib/src/ui/geometry.dart",
   "$flutter_root/lib/stub_ui/lib/src/ui/hash_codes.dart",
   "$flutter_root/lib/stub_ui/lib/src/ui/lerp.dart",

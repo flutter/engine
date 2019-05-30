@@ -1,4 +1,4 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2018 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,7 +7,7 @@ part of engine;
 /// Make the content editable span visible to facilitate debugging.
 const _debugVisibleTextEditing = false;
 
-void _emptyCallback(_) {}
+void _emptyCallback(dynamic _) {}
 
 void _styleEditingElement(html.HtmlElement domElement) {
   domElement.style

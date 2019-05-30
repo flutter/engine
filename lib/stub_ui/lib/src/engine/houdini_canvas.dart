@@ -1,4 +1,4 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2018 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -222,21 +222,8 @@ class HoudiniCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
-    assert(paragraph.webOnlyIsLaidOut);
-
-    html.Element paragraphElement =
-        paragraph.webOnlyGetParagraphElement().clone(true);
-
-    String cssTransform =
-        matrix4ToCssTransform(transformWithOffset(currentTransform, offset));
-
-    paragraphElement.style
-      ..position = 'absolute'
-      ..transformOrigin = '0 0 0'
-      ..transform = cssTransform
-      ..whiteSpace = paragraph.webOnlyDrawOnCanvas ? 'nowrap' : 'pre-wrap'
-      ..width = '${paragraph.width}px'
-      ..height = '${paragraph.height}px';
+    final html.Element paragraphElement =
+        _drawParagraphElement(paragraph, offset, transform: currentTransform);
     currentElement.append(paragraphElement);
   }
 }
