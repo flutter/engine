@@ -328,7 +328,6 @@ void FlutterPlatformViewsController::CompositeWithParams(
   SetAnchor(lastView.layer, transformAnchor);
   // Reverse transform based on screen scale.
   // We needed to do that because in our layer tree, we have a transform layer at the root to transform based on the sreen scale.
-  lastView.layer.transform = CATransform3DMakeScale(1/screenScale, 1/screenScale, 1);
   std::vector<FlutterEmbededViewTransformElement>::reverse_iterator iter = params.transformStack->rbegin();
   int64_t clipCount = 0;
   while (iter != params.transformStack->rend()) {
@@ -361,6 +360,7 @@ void FlutterPlatformViewsController::CompositeWithParams(
     NSLog(@"last view frame %@", @(lastView.frame));
     ++iter;
   }
+  lastView.layer.transform = CATransform3DMakeScale(1/screenScale, 1/screenScale, 1);
 
   // If we have less cilp operations this time, remove unnecessary views.
   // We skip this process if we have more clip operations this time.
