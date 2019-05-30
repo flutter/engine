@@ -39,6 +39,7 @@ void SkiaUnrefQueue::Drain() {
     objects_.swap(skia_objects);
     drain_pending_ = false;
   }
+
   for (SkRefCnt* skia_object : skia_objects) {
     skia_object->unref();
   }
