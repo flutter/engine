@@ -422,7 +422,7 @@ class Locale {
 /// represents the system keyboard, which can cover over the bottom view
 /// padding when visible.
 ///
-/// The [Window.viewInsets] are the physical pixels into which the operating
+/// The [Window.viewInsets] are the physical pixels which the operating
 /// system reserves for system UI, such as the keyboard, which would fully
 /// obscure any content drawn in that area.
 ///
@@ -432,8 +432,9 @@ class Locale {
 /// phone. Unlike the insets, these areas may have portions that show the user
 /// application painted pixels without being obscured, such as a notch at the
 /// top of a phone that covers only a subset of the area. Insets, on the other
-/// hand, the insets either partially or fully obscured, such as as opaque
-/// keyboard or a partially transluscent statusbar, which cover the entire area.
+/// hand, either partially or fully obscure the window, such as an opaque
+/// keyboard or a partially transluscent statusbar, which cover an area without
+/// gaps.
 ///
 /// The [Window.padding] property is computed from both [Window.viewInsets] and
 /// [Window.viewPadding]. It will allow a view inset to consume view padding
