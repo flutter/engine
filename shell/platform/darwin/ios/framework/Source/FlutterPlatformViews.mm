@@ -189,7 +189,8 @@ SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
   // embedded views thread configuration.
 
   // Do nothing if the params didn't change.
-  if (current_composition_params_.count(view_id) == 1 && current_composition_params_[view_id] == params) {
+  if (current_composition_params_.count(view_id) == 1 &&
+      current_composition_params_[view_id] == params) {
     return picture_recorders_[view_id]->getRecordingCanvas();
   }
   current_composition_params_[view_id] = params;

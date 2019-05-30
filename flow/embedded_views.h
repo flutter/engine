@@ -19,10 +19,8 @@ class EmbeddedViewParams {
   SkPoint offsetPixels;
   SkSize sizePoints;
 
-  friend bool operator==(const EmbeddedViewParams& lhs,
-                         const EmbeddedViewParams& rhs) {
-    return lhs.offsetPixels == rhs.offsetPixels &&
-           lhs.sizePoints == rhs.sizePoints;
+  bool operator==(const EmbeddedViewParams& other) const {
+    return offsetPixels == other.offsetPixels && sizePoints == other.sizePoints;
   }
 };
 
