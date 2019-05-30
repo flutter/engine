@@ -49,38 +49,26 @@ public class Log {
   }
 
   public static void w(@NonNull String tag, @NonNull String message) {
-    if (BuildConfig.DEBUG) {
-      android.util.Log.w(tag, message);
-    }
+    android.util.Log.w(tag, message);
   }
 
   public static void w(@NonNull String tag, @NonNull String message, @NonNull Throwable tr) {
-    if (BuildConfig.DEBUG) {
-      android.util.Log.w(tag, message, tr);
-    }
+    android.util.Log.w(tag, message, tr);
   }
 
   public static void e(@NonNull String tag, @NonNull String message) {
-    if (BuildConfig.DEBUG) {
-      android.util.Log.e(tag, message);
-    }
+    android.util.Log.e(tag, message);
   }
 
   public static void e(@NonNull String tag, @NonNull String message, @NonNull Throwable tr) {
-    if (BuildConfig.DEBUG) {
-      android.util.Log.e(tag, message, tr);
-    }
+    android.util.Log.e(tag, message, tr);
   }
 
   public static void wtf(@NonNull String tag, @NonNull String message) {
-    if (BuildConfig.DEBUG) {
-      android.util.Log.wtf(tag, message);
-    }
+    android.util.Log.wtf(tag, message);
   }
 
   public static void wtf(@NonNull String tag, @NonNull String message, @NonNull Throwable tr) {
-    if (BuildConfig.DEBUG) {
-      android.util.Log.wtf(tag, message, tr);
-    }
+    android.util.Log.wtf(tag, message, tr);
   }
 }
