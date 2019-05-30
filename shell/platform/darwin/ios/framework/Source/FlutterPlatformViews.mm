@@ -124,25 +124,27 @@ static void PerformClip(UIView* view,
 }
 
 static CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix) {
+  CGFloat screenScale = [UIScreen mainScreen].scale;
   CATransform3D transform = CATransform3DIdentity;
   transform.m11 = matrix.getScaleX();
   transform.m21 = matrix.getSkewX();
-  transform.m41 = matrix.getTranslateX();
+  transform.m41 = matrix.getTranslateX()/screenScale;
   transform.m14 = matrix.getPerspX();
 
   transform.m12 = matrix.getSkewY();
   transform.m22 = matrix.getScaleY();
-  transform.m42 = matrix.getTranslateY();
+  transform.m42 = matrix.getTranslateY()/screenScale;
   transform.m24 = matrix.getPerspY();
   return transform;
 }
 
-static void ReadyUIViewForTranslate(UIView* view) {
-  view.layer.transform = CATransform3DIdentity;
-  view.layer.anchorPoint = CGPointMake(
-      0, 0);  // Quartz's default anchor point is the center, we set it to (0,0) to match flow.
-  view.layer.position = CGPointMake(0, 0);  // After changing the anchor point, the layer's position
-                                            // is changed, we need to reset it back to (0,0).
+static void SetAnchor(CALayer *layer, CGPoint transformPosition) {
+  NSLog(@"subview original in view %@", @(transformPosition));
+  NSLog(@"current position %@", @(layer.position));
+  layer.anchorPoint = CGPointMake(transformPosition.x/layer.bounds.size.width, transformPosition.y/layer.bounds.size.height);
+  layer.position = transformPosition;
+  NSLog(@"transform anchor %@", @(layer.anchorPoint));
+  NSLog(@"transform position %@", @(layer.position));
 }
 
 namespace flutter {
@@ -317,16 +319,19 @@ void FlutterPlatformViewsController::CompositeWithParams(
     const flutter::EmbeddedViewParams& params) {
   UIView* touch_interceptor = touch_interceptors_[view_id].get();
 
+  CGFloat screenScale = [UIScreen mainScreen].scale;
   CGRect frame = CGRectMake(0, 0, params.sizePoints.width(), params.sizePoints.height());
   touch_interceptor.frame = frame;
   UIView* lastView = touch_interceptor;
-
-  ReadyUIViewForTranslate(lastView);
-  std::vector<FlutterEmbededViewTransformElement>::iterator iter = params.transformStack->end() - 1;
-  // TODO(cyanglaz): figure out how to handle the root transform layer (2x, 2y)
+  CGPoint transformAnchor = CGPointZero;
+  lastView.layer.transform = CATransform3DIdentity;
+  SetAnchor(lastView.layer, transformAnchor);
+  // Reverse transform based on screen scale.
+  // We needed to do that because in our layer tree, we have a transform layer at the root to transform based on the sreen scale.
+  lastView.layer.transform = CATransform3DMakeScale(1/screenScale, 1/screenScale, 1);
+  std::vector<FlutterEmbededViewTransformElement>::reverse_iterator iter = params.transformStack->rbegin();
   int64_t clipCount = 0;
-
-  while (iter != params.transformStack->begin()) {
+  while (iter != params.transformStack->rend()) {
     switch (iter->type()) {
       case transform: {
         CATransform3D transform = GetCATransform3DFromSkMatrix(iter->matrix());
@@ -345,13 +350,18 @@ void FlutterPlatformViewsController::CompositeWithParams(
           [view addSubview:lastView];
         }
         PerformClip(view, iter->type(), iter->rect(), iter->rrect(), iter->path());
+
+        CGPoint transformPosition = [view convertPoint:touch_interceptor.bounds.origin fromView:touch_interceptor];
+        SetAnchor(view.layer, transformPosition);
+
         lastView = view;
-        ReadyUIViewForTranslate(lastView);
         break;
       }
     }
-    --iter;
+    NSLog(@"last view frame %@", @(lastView.frame));
+    ++iter;
   }
+
   // If we have less cilp operations this time, remove unnecessary views.
   // We skip this process if we have more clip operations this time.
   // TODO TEST(cyanglaz):
@@ -368,7 +378,7 @@ void FlutterPlatformViewsController::CompositeWithParams(
     [flutter_view_.get() addSubview:lastView];
   }
   clip_count_[view_id] = clipCount;
-  // If we have clips
+  // If we have clips, replace root view with the top parent view.
   if (lastView != touch_interceptor) {
     root_views_[view_id] = fml::scoped_nsobject<UIView>([lastView retain]);
   }
@@ -443,6 +453,7 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
     } else {
       [flutter_view addSubview:root];
       [flutter_view addSubview:overlay];
+      NSLog(@"root view frame %@", @(root.frame));
     }
 
     active_composition_order_.push_back(view_id);

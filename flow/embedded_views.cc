@@ -43,14 +43,14 @@ void FlutterEmbededViewTransformStack::pop() {
   vector_.pop_back();
 }
 
-std::vector<FlutterEmbededViewTransformElement>::iterator
-FlutterEmbededViewTransformStack::begin() {
-  return vector_.begin();
+std::vector<FlutterEmbededViewTransformElement>::reverse_iterator
+FlutterEmbededViewTransformStack::rbegin() {
+  return vector_.rbegin();
 }
 
-std::vector<FlutterEmbededViewTransformElement>::iterator
-FlutterEmbededViewTransformStack::end() {
-  return vector_.end();
+std::vector<FlutterEmbededViewTransformElement>::reverse_iterator
+FlutterEmbededViewTransformStack::rend() {
+  return vector_.rend();
 }
 
 }  // namespace flutter

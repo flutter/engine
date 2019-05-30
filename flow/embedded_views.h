@@ -75,9 +75,9 @@ class FlutterEmbededViewTransformStack {
   void pop();
 
   // Returns the iterator points to the bottom of the stack.
-  std::vector<FlutterEmbededViewTransformElement>::iterator begin();
+  std::vector<FlutterEmbededViewTransformElement>::reverse_iterator rbegin();
   // Returns the iterator points to the top of the stack.
-  std::vector<FlutterEmbededViewTransformElement>::iterator end();
+  std::vector<FlutterEmbededViewTransformElement>::reverse_iterator rend();
 
   friend bool operator==(const FlutterEmbededViewTransformStack& lhs,
                          const FlutterEmbededViewTransformStack& rhs) {
