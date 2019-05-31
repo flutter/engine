@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// See README in this directory for information on how this code is organised.
+// See README in this directory for information on how this code is organized.
 
 import 'dart:async';
 import 'dart:collection';
@@ -1752,6 +1752,7 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
         && entry.name != 'android_support' // build-time only
         && entry.name != 'googletest' // only used by tests
         && entry.name != 'skia' // treated as a separate component
+        && entry.name != 'fontconfig' // not used in standard configurations
         && super.shouldRecurse(entry);
   }
 

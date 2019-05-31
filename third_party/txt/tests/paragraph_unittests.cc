@@ -283,7 +283,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeftAlignParagraph)) {
   const char* text =
       "This is a very long sentence to test if the text will properly wrap "
       "around and go to the next line. Sometimes, short sentence. Longer "
-      "sentences are okay too because they are nessecary. Very short. "
+      "sentences are okay too because they are necessary. Very short. "
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
       "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim "
       "veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea "
@@ -380,7 +380,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(RightAlignParagraph)) {
   const char* text =
       "This is a very long sentence to test if the text will properly wrap "
       "around and go to the next line. Sometimes, short sentence. Longer "
-      "sentences are okay too because they are nessecary. Very short. "
+      "sentences are okay too because they are necessary. Very short. "
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
       "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim "
       "veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea "
@@ -499,7 +499,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(CenterAlignParagraph)) {
   const char* text =
       "This is a very long sentence to test if the text will properly wrap "
       "around and go to the next line. Sometimes, short sentence. Longer "
-      "sentences are okay too because they are nessecary. Very short. "
+      "sentences are okay too because they are necessary. Very short. "
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
       "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim "
       "veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea "
@@ -610,7 +610,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyAlignParagraph)) {
   const char* text =
       "This is a very long sentence to test if the text will properly wrap "
       "around and go to the next line. Sometimes, short sentence. Longer "
-      "sentences are okay too because they are nessecary. Very short. "
+      "sentences are okay too because they are necessary. Very short. "
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
       "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim "
       "veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea "
@@ -1224,7 +1224,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeParagraph)) {
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 463.61719);
   EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 118);
 
-  // TODO(garyq): The following set of vals are definetly wrong and
+  // TODO(garyq): The following set of vals are definitely wrong and
   // end of paragraph handling needs to be fixed in a later patch.
   EXPECT_FLOAT_EQ(boxes[3].rect.left(), 0);
   EXPECT_FLOAT_EQ(boxes[3].rect.top(), 236.40625);
@@ -2259,6 +2259,41 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeStrut)) {
   ASSERT_TRUE(Snapshot());
 }
 
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeStrutFallback)) {
+  const char* text = "Chinese 字典";
+
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.strut_enabled = false;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families.push_back("Noto Sans CJK JP");
+  text_style.font_size = 20;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(550);
+
+  std::vector<txt::Paragraph::TextBox> strut_boxes =
+      paragraph->GetRectsForRange(0, 10, Paragraph::RectHeightStyle::kStrut,
+                                  Paragraph::RectWidthStyle::kMax);
+  std::vector<txt::Paragraph::TextBox> tight_boxes =
+      paragraph->GetRectsForRange(0, 10, Paragraph::RectHeightStyle::kTight,
+                                  Paragraph::RectWidthStyle::kMax);
+
+  ASSERT_EQ(strut_boxes.size(), 1ull);
+  ASSERT_EQ(tight_boxes.size(), 1ull);
+  ASSERT_EQ(strut_boxes.front().rect, tight_boxes.front().rect);
+}
+
 SkRect GetCoordinatesForGlyphPosition(const txt::Paragraph& paragraph,
                                       size_t pos) {
   std::vector<txt::Paragraph::TextBox> boxes =
@@ -2740,7 +2775,7 @@ TEST_F(ParagraphTest, Ellipsize) {
   const char* text =
       "This is a very long sentence to test if the text will properly wrap "
       "around and go to the next line. Sometimes, short sentence. Longer "
-      "sentences are okay too because they are nessecary. Very short. ";
+      "sentences are okay too because they are necessary. Very short. ";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
   std::u16string u16_text(icu_text.getBuffer(),
                           icu_text.getBuffer() + icu_text.length());
@@ -3103,11 +3138,6 @@ TEST_F(ParagraphTest, FontFallbackParagraph) {
               0);
 }
 
-// Disabled due to Skia depending on platform to get metrics, which
-// results in presubmit runs to have different values.
-//
-// TODO(garyq): Re-enable strut tests, allow font metric fakery, or
-// consolidate skia font metric behavior.
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
   // The chinese extra height should be absorbed by the strut.
   const char* text = "01234満毎冠p来É本可\nabcd\n満毎É行p昼本可";
@@ -3236,11 +3266,6 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
   ASSERT_TRUE(Snapshot());
 }
 
-// Disabled due to Skia depending on platform to get metrics, which
-// results in presubmit runs to have different values.
-//
-// TODO(garyq): Re-enable strut tests, allow font metric fakery, or
-// consolidate skia font metric behavior.
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
   // This string is all one size and smaller than the strut metrics.
   const char* text = "01234ABCDEFGH\nabcd\nABCDEFGH";
@@ -3365,11 +3390,6 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
   ASSERT_TRUE(Snapshot());
 }
 
-// Disabled due to Skia depending on platform to get metrics, which
-// results in presubmit runs to have different values.
-//
-// TODO(garyq): Re-enable strut tests, allow font metric fakery, or
-// consolidate skia font metric behavior.
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
   // The strut is too small to absorb the extra chinese height, but the english
   // second line height is increased due to strut.
@@ -3495,11 +3515,6 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
   ASSERT_TRUE(Snapshot());
 }
 
-// Disabled due to Skia depending on platform to get metrics, which
-// results in presubmit runs to have different values.
-//
-// TODO(garyq): Re-enable strut tests, allow font metric fakery, or
-// consolidate skia font metric behavior.
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
   // The strut is too small to absorb the extra chinese height, but the english
   // second line height is increased due to strut.
@@ -3623,6 +3638,56 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
   EXPECT_FLOAT_EQ(boxes[0].rect.top(), 262.5);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 300);
   EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 320);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest, FontFeaturesParagraph) {
+  const char* text = "12ab\n";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.color = SK_ColorBLACK;
+  text_style.font_features.SetFeature("tnum", 1);
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  text_style.font_features.SetFeature("tnum", 0);
+  text_style.font_features.SetFeature("pnum", 1);
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  builder.Pop();
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth());
+
+  paragraph->Paint(GetCanvas(), 10.0, 15.0);
+
+  ASSERT_EQ(paragraph->glyph_lines_.size(), 3ull);
+
+  // Tabular numbers should have equal widths.
+  const txt::Paragraph::GlyphLine& tnum_line = paragraph->glyph_lines_[0];
+  ASSERT_EQ(tnum_line.positions.size(), 4ull);
+  EXPECT_FLOAT_EQ(tnum_line.positions[0].x_pos.width(),
+                  tnum_line.positions[1].x_pos.width());
+
+  // Proportional numbers should have variable widths.
+  const txt::Paragraph::GlyphLine& pnum_line = paragraph->glyph_lines_[1];
+  ASSERT_EQ(pnum_line.positions.size(), 4ull);
+  EXPECT_NE(pnum_line.positions[0].x_pos.width(),
+            pnum_line.positions[1].x_pos.width());
+
+  // Alphabetic characters should be unaffected.
+  EXPECT_FLOAT_EQ(tnum_line.positions[2].x_pos.width(),
+                  pnum_line.positions[2].x_pos.width());
 
   ASSERT_TRUE(Snapshot());
 }

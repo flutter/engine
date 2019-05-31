@@ -1019,11 +1019,6 @@ enum Clip {
   antiAliasWithSaveLayer,
 }
 
-// If we actually run on big endian machines, we'll need to do something smarter
-// here. We don't use [Endian.Host] because it's not a compile-time
-// constant and can't propagate into the set/get calls.
-const Endian _kFakeHostEndian = Endian.little;
-
 // Indicates that the image should not be resized in this dimension.
 //
 // Used by [instantiateImageCodec] as a magical value to disable resizing
@@ -2586,7 +2581,7 @@ class ImageFilter extends NativeFieldWrapperClass2 {
 
   /// Creates an image filter that applies a matrix transformation.
   ///
-  /// For example, applying a positive scale matrix (see [new Matrix4.diagonal3])
+  /// For example, applying a positive scale matrix (see [Matrix4.diagonal3])
   /// when used with [BackdropFilter] would magnify the background image.
   ImageFilter.matrix(Float64List matrix4,
                      { FilterQuality filterQuality = FilterQuality.low }) {
@@ -2624,8 +2619,8 @@ class Shader extends NativeFieldWrapperClass2 {
 ///    relative coordinates and can create a [Shader] representing the gradient
 ///    for a particular [Rect] on demand.
 ///  * [dart:ui.Gradient], the low-level class used when dealing with the
-///    [Paint.shader] property directly, with its [new Gradient.linear] and [new
-///    Gradient.radial] constructors.
+///    [Paint.shader] property directly, with its [Gradient.linear] and
+///    [Gradient.radial] constructors.
 // These enum values must be kept in sync with SkShader::TileMode.
 enum TileMode {
   /// Edge is clamped to the final color.
