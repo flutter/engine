@@ -92,7 +92,7 @@ static void ClipRRect(UIView* view, const SkRRect& clipSkRRect) {
       break;
     }
   }
-  // TODO(cyanglaz): iOS seems does not support hard edge on CAShapeLayer. It clearly stated that
+  // TODO(cyanglaz): iOS does not seem to support hard edge on CAShapeLayer. It clearly stated that
   // the CAShaperLayer will be drawn antialiased. Need to figure out a way to do the hard edge
   // clipping on iOS.
   CAShapeLayer* clip = [[CAShapeLayer alloc] init];
