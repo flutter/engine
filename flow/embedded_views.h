@@ -79,9 +79,8 @@ class FlutterEmbededViewTransformStack {
   // Returns the iterator points to the top of the stack.
   std::vector<FlutterEmbededViewTransformElement>::reverse_iterator rend();
 
-  friend bool operator==(const FlutterEmbededViewTransformStack& lhs,
-                         const FlutterEmbededViewTransformStack& rhs) {
-    return lhs.vector_ == rhs.vector_;
+  bool operator==(const FlutterEmbededViewTransformStack& other) const {
+    return vector_ == other.vector_;
   }
 
  private:
@@ -108,15 +107,20 @@ class FlutterEmbededViewTransformElement {
   SkPath path() { return path_; }
   SkMatrix matrix() { return matrix_; }
 
-  friend bool operator==(const FlutterEmbededViewTransformElement& lhs,
-                         const FlutterEmbededViewTransformElement& rhs) {
-    if (lhs.type_ != rhs.type_) {
+  bool operator==(const FlutterEmbededViewTransformElement& other) const {
+    if (type_ != other.type_) {
       return false;
     }
-    if (lhs.type_ == clip_rect && lhs.rect_ == rhs.rect_) {
+    if (type_ == clip_rect && rect_ == other.rect_) {
       return true;
     }
-    if (lhs.type_ == transform && lhs.matrix_ == rhs.matrix_) {
+    if (type_ == clip_rect && rrect_ == other.rrect_) {
+      return true;
+    }
+    if (type_ == clip_path && path_ == other.path_) {
+      return true;
+    }
+    if (type_ == transform && matrix_ == other.matrix_) {
       return true;
     }
     return false;
