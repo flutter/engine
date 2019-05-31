@@ -763,24 +763,24 @@ class StrutStyle {
   /// * `fontFamily`: The name of the font to use when painting the text (e.g.,
   ///   Roboto).
   ///
-  /// * `fontFamilyFallback`: An ordered list of font family names that will be searched for when
-  ///    the font in `fontFamily` cannot be found.
+  /// * `fontFamilyFallback`: An ordered list of font family names that will be
+  ///    searched for when the font in `fontFamily` cannot be found.
   ///
   /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting
   ///   the text.
   ///
   /// * `height`: The minimum height of the line boxes, as a multiplier of the
   ///   font size. The lines of the paragraph will be at least
-  ///   `(height + leading) * fontSize` tall when fontSize is not null. Omitting
+  ///   `(height + leading) * fontSize` tall when `fontSize` is not null. Omitting
   ///   `height` will allow the minimum line height to take the height as defined
-  ///   by the font, which may not be exactly the height of the [fontSize]. When
-  ///   [fontSize] is null, there is no minimum line height. Tall glyphs due to
+  ///   by the font, which may not be exactly the height of the `fontSize`. When
+  ///   `fontSize` is null, there is no minimum line height. Tall glyphs due to
   ///   baseline alignment or large [TextStyle.fontSize] may cause the actual line
-  ///   height after layout to be taller than specified here. The [fontSize] must
+  ///   height after layout to be taller than specified here. The `fontSize` must
   ///   be provided for this property to take effect.
   ///
   /// * `leading`: The minimum amount of leading between lines as a multiple of
-  ///   the font size. [fontSize] must be provided for this property to take effect.
+  ///   the font size. `fontSize` must be provided for this property to take effect.
   ///
   /// * `fontWeight`: The typeface thickness to use when painting the text
   ///   (e.g., bold).
@@ -789,11 +789,11 @@ class StrutStyle {
   ///   italics).
   ///
   /// * `forceStrutHeight`: When true, the paragraph will force all lines to be exactly
-  ///   `(lineHeight + leading) * fontSize` tall from baseline to baseline.
+  ///   `(height + leading) * fontSize` tall from baseline to baseline.
   ///   [TextStyle] is no longer able to influence the line height, and any tall
-  ///   glyphs may overlap with lines above. If a [fontFamily] is specified, the
+  ///   glyphs may overlap with lines above. If a `fontFamily` is specified, the
   ///   total ascent of the first line will be the min of the `Ascent + half-leading`
-  ///   of the [fontFamily] and `(lineHeight + leading) * fontSize`. Otherwise, it
+  ///   of the `fontFamily` and `(height + leading) * fontSize`. Otherwise, it
   ///   will be determined by the Ascent + half-leading of the first text.
   StrutStyle({
     String fontFamily,
