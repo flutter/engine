@@ -52,7 +52,7 @@ static void ClipRRect(UIView* view, const SkRRect& clipSkRRect) {
     case SkRRect::kNinePatch_Type:
     case SkRRect::kComplex_Type: {
       CGMutablePathRef mutablePathRef = CGPathCreateMutable();
-      // Complex types, we manually add cornors.
+      // Complex types, we manually add each cornor.
       SkRect clipSkRect = clipSkRRect.rect();
       SkVector topLeftRadii = clipSkRRect.radii(SkRRect::kUpperLeft_Corner);
       SkVector topRightRadii = clipSkRRect.radii(SkRRect::kUpperRight_Corner);
@@ -124,27 +124,24 @@ static void PerformClip(UIView* view,
 }
 
 static CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix) {
-  CGFloat screenScale = [UIScreen mainScreen].scale;
+  // Skia only supports 2D transform so we don't map z.
   CATransform3D transform = CATransform3DIdentity;
   transform.m11 = matrix.getScaleX();
   transform.m21 = matrix.getSkewX();
-  transform.m41 = matrix.getTranslateX()/screenScale;
+  transform.m41 = matrix.getTranslateX();
   transform.m14 = matrix.getPerspX();
 
   transform.m12 = matrix.getSkewY();
   transform.m22 = matrix.getScaleY();
-  transform.m42 = matrix.getTranslateY()/screenScale;
+  transform.m42 = matrix.getTranslateY();
   transform.m24 = matrix.getPerspY();
   return transform;
 }
 
-static void SetAnchor(CALayer *layer, CGPoint transformPosition) {
-  NSLog(@"subview original in view %@", @(transformPosition));
-  NSLog(@"current position %@", @(layer.position));
-  layer.anchorPoint = CGPointMake(transformPosition.x/layer.bounds.size.width, transformPosition.y/layer.bounds.size.height);
-  layer.position = transformPosition;
-  NSLog(@"transform anchor %@", @(layer.anchorPoint));
-  NSLog(@"transform position %@", @(layer.position));
+static void ResetAnchor(CALayer* layer) {
+  // Flow uses (0, 0) to apply transform matrix so we need to match that in Quartz.
+  layer.anchorPoint = CGPointZero;
+  layer.position = CGPointZero;
 }
 
 namespace flutter {
@@ -319,16 +316,17 @@ void FlutterPlatformViewsController::CompositeWithParams(
     const flutter::EmbeddedViewParams& params) {
   UIView* touch_interceptor = touch_interceptors_[view_id].get();
 
-  CGFloat screenScale = [UIScreen mainScreen].scale;
   CGRect frame = CGRectMake(0, 0, params.sizePoints.width(), params.sizePoints.height());
   touch_interceptor.frame = frame;
   UIView* lastView = touch_interceptor;
-  CGPoint transformAnchor = CGPointZero;
+
+  // Reset everything related to transform.
   lastView.layer.transform = CATransform3DIdentity;
-  SetAnchor(lastView.layer, transformAnchor);
-  // Reverse transform based on screen scale.
-  // We needed to do that because in our layer tree, we have a transform layer at the root to transform based on the sreen scale.
-  std::vector<FlutterEmbededViewTransformElement>::reverse_iterator iter = params.transformStack->rbegin();
+  ResetAnchor(lastView.layer);
+
+  // Start loop to apply transforms/clips.
+  std::vector<FlutterEmbededViewTransformElement>::reverse_iterator iter =
+      params.transformStack->rbegin();
   int64_t clipCount = 0;
   while (iter != params.transformStack->rend()) {
     switch (iter->type()) {
@@ -349,22 +347,27 @@ void FlutterPlatformViewsController::CompositeWithParams(
           [view addSubview:lastView];
         }
         PerformClip(view, iter->type(), iter->rect(), iter->rrect(), iter->path());
-
-        CGPoint transformPosition = [view convertPoint:touch_interceptor.bounds.origin fromView:touch_interceptor];
-        SetAnchor(view.layer, transformPosition);
-
+        ResetAnchor(view.layer);
         lastView = view;
         break;
       }
     }
-    NSLog(@"last view frame %@", @(lastView.frame));
     ++iter;
   }
-  lastView.layer.transform = CATransform3DMakeScale(1/screenScale, 1/screenScale, 1);
+
+  // Reverse scale based on screen scale.
+  //
+  // The UIKit frame is set based on the logical resolution instead of physical.
+  // (https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html).
+  // However, flow is based on the physical resolution. For eaxmple, 1000 pixels in flow equals
+  // 500 points in UIKit. And until this point, we did all the calculation based on the flow
+  // resolution. So we need to scale down to match UIKit's logical resolution.
+  CGFloat screenScale = [UIScreen mainScreen].scale;
+  lastView.layer.transform = CATransform3DConcat(
+      lastView.layer.transform, CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1));
 
   // If we have less cilp operations this time, remove unnecessary views.
   // We skip this process if we have more clip operations this time.
-  // TODO TEST(cyanglaz):
   int64_t extraClipsFromLastTime = clip_count_[view_id] - clipCount;
   if (extraClipsFromLastTime > 0 && lastView.superview) {
     [lastView removeFromSuperview];
@@ -453,7 +456,6 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
     } else {
       [flutter_view addSubview:root];
       [flutter_view addSubview:overlay];
-      NSLog(@"root view frame %@", @(root.frame));
     }
 
     active_composition_order_.push_back(view_id);
