@@ -625,10 +625,10 @@ class ParagraphStyle {
   ///   the text.
   ///
   /// * `height`: The fallback height of the spans as a multiplier of the font
-  ///   size. The fallback height is used when no height is provided in through
+  ///   size. The fallback height is used when no height is provided through
   ///   [TextStyle.height]. Omitting `height` here and in [TextStyle] will allow
   ///   the line height to take the height as defined by the font, which may not
-  ///   be exactly the height of the fontSize.
+  ///   be exactly the height of the `fontSize`.
   ///
   /// * `fontWeight`: The typeface thickness to use when painting the text
   ///   (e.g., bold).
@@ -770,14 +770,14 @@ class StrutStyle {
   ///   the text.
   ///
   /// * `height`: The minimum height of the line boxes, as a multiplier of the
-  ///   font size. The lines of the paragraph will be at least `(height + leading)
-  ///   * fontSize` tall when fontSize is not null. Omitting `height` will allow
-  ///   the minimum line height to take the height as defined by the font, which
-  ///   may not be exactly the height of the fontSize. When fontSize is null, there
-  ///   is no minimum line height. Tall glyphs due to baseline alignment or large
-  ///   [TextStyle.fontSize] may cause the actual line height after layout to be
-  ///   taller than specified here. [fontSize] must be provided for this property
-  ///   to take effect.
+  ///   font size. The lines of the paragraph will be at least
+  ///   `(height + leading) * fontSize` tall when fontSize is not null. Omitting
+  ///   `height` will allow the minimum line height to take the height as defined
+  ///   by the font, which may not be exactly the height of the [fontSize]. When
+  ///   [fontSize] is null, there is no minimum line height. Tall glyphs due to
+  ///   baseline alignment or large [TextStyle.fontSize] may cause the actual line
+  ///   height after layout to be taller than specified here. The [fontSize] must
+  ///   be provided for this property to take effect.
   ///
   /// * `leading`: The minimum amount of leading between lines as a multiple of
   ///   the font size. [fontSize] must be provided for this property to take effect.
