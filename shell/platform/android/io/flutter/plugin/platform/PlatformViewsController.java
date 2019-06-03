@@ -60,6 +60,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     private final HashMap<Integer, VirtualDisplayController> vdControllers;
 
     private final PlatformViewsChannel.PlatformViewsHandler channelHandler = new PlatformViewsChannel.PlatformViewsHandler() {
+        @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
         @Override
         public long createPlatformView(@NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
             ensureValidAndroidVersion();
@@ -187,6 +188,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             view.dispatchTouchEvent(event);
         }
 
+        @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
         @Override
         public void setDirection(int viewId, int direction) {
             ensureValidAndroidVersion();
