@@ -556,6 +556,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/system
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LocalizationChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/NavigationChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformViewsChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SettingsChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SystemChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/TextInputChannel.java
@@ -839,8 +840,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/compositor_context.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/compositor_context.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/context_writer_bridge.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/context_writer_bridge.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_font_manager.cc
@@ -1061,6 +1060,8 @@ FILE: ../../../flutter/third_party/txt/src/txt/paragraph_builder.cc
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph_builder.h
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph_style.cc
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph_style.h
+FILE: ../../../flutter/third_party/txt/src/txt/placeholder_run.cc
+FILE: ../../../flutter/third_party/txt/src/txt/placeholder_run.h
 FILE: ../../../flutter/third_party/txt/src/txt/styled_runs.cc
 FILE: ../../../flutter/third_party/txt/src/txt/styled_runs.h
 FILE: ../../../flutter/third_party/txt/src/txt/test_font_manager.cc
