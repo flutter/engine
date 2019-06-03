@@ -63,31 +63,146 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         @Override
         public long createPlatformView(@NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
             ensureValidAndroidVersion();
-            return PlatformViewsController.this.createPlatformView(request);
+
+            if (!validateDirection(request.direction)) {
+                throw new IllegalStateException("Trying to create a view with unknown direction value: "
+                    + request.direction + "(view id: " + request.viewId + ")");
+            }
+
+            if (vdControllers.containsKey(request.viewId)) {
+                throw new IllegalStateException("Trying to create an already created platform view, view id: "
+                    + request.viewId);
+            }
+
+            PlatformViewFactory viewFactory = registry.getFactory(request.viewType);
+            if (viewFactory == null) {
+                throw new IllegalStateException("Trying to create a platform view of unregistered type: "
+                    + request.viewType);
+            }
+
+            Object createParams = null;
+            if (request.params != null) {
+                createParams = viewFactory.getCreateArgsCodec().decodeMessage(request.params);
+            }
+
+            int physicalWidth = toPhysicalPixels(request.logicalWidth);
+            int physicalHeight = toPhysicalPixels(request.logicalHeight);
+            validateVirtualDisplayDimensions(physicalWidth, physicalHeight);
+
+            TextureRegistry.SurfaceTextureEntry textureEntry = textureRegistry.createSurfaceTexture();
+            VirtualDisplayController vdController = VirtualDisplayController.create(
+                context,
+                accessibilityEventsDelegate,
+                viewFactory,
+                textureEntry,
+                toPhysicalPixels(request.logicalWidth),
+                toPhysicalPixels(request.logicalHeight),
+                request.viewId,
+                createParams
+            );
+
+            if (vdController == null) {
+                throw new IllegalStateException("Failed creating virtual display for a "
+                    + request.viewType + " with id: " + request.viewId);
+            }
+
+            vdControllers.put(request.viewId, vdController);
+            vdController.getView().setLayoutDirection(request.direction);
+
+            // TODO(amirh): copy accessibility nodes to the FlutterView's accessibility tree.
+
+            return textureEntry.id();
         }
 
         @Override
         public void disposePlatformView(int viewId) {
             ensureValidAndroidVersion();
-            PlatformViewsController.this.disposePlatformView(viewId);
+
+            VirtualDisplayController vdController = vdControllers.get(viewId);
+            if (vdController == null) {
+                throw new IllegalStateException("Trying to dispose a platform view with unknown id: "
+                    + viewId);
+            }
+
+            vdController.dispose();
+            vdControllers.remove(viewId);
         }
 
         @Override
         public void resizePlatformView(@NonNull PlatformViewsChannel.PlatformViewResizeRequest request, @NonNull Runnable onComplete) {
             ensureValidAndroidVersion();
-            PlatformViewsController.this.resizePlatformView(request, onComplete);
+
+            VirtualDisplayController vdController = vdControllers.get(request.viewId);
+            if (vdController == null) {
+                throw new IllegalStateException("Trying to resize a platform view with unknown id: "
+                    + request.viewId);
+            }
+
+            int physicalWidth = toPhysicalPixels(request.newLogicalWidth);
+            int physicalHeight = toPhysicalPixels(request.newLogicalHeight);
+            validateVirtualDisplayDimensions(physicalWidth, physicalHeight);
+
+            vdController.resize(
+                physicalWidth,
+                physicalHeight,
+                onComplete
+            );
         }
 
         @Override
         public void onTouch(@NonNull PlatformViewsChannel.PlatformViewTouch touch) {
             ensureValidAndroidVersion();
-            PlatformViewsController.this.onTouch(touch);
+
+            float density = context.getResources().getDisplayMetrics().density;
+            PointerProperties[] pointerProperties =
+                parsePointerPropertiesList(touch.rawPointerPropertiesList)
+                    .toArray(new PointerProperties[touch.pointerCount]);
+            PointerCoords[] pointerCoords =
+                parsePointerCoordsList(touch.rawPointerCoords, density)
+                    .toArray(new PointerCoords[touch.pointerCount]);
+
+            View view = vdControllers.get(touch.viewId).getView();
+            if (view == null) {
+                throw new IllegalStateException("Sending touch to an unknown view with id: "
+                    + touch.viewId);
+            }
+
+            MotionEvent event = MotionEvent.obtain(
+                touch.downTime.longValue(),
+                touch.eventTime.longValue(),
+                touch.action,
+                touch.pointerCount,
+                pointerProperties,
+                pointerCoords,
+                touch.metaState,
+                touch.buttonState,
+                touch.xPrecision,
+                touch.yPrecision,
+                touch.deviceId,
+                touch.edgeFlags,
+                touch.source,
+                touch.flags
+            );
+
+            view.dispatchTouchEvent(event);
         }
 
         @Override
         public void setDirection(int viewId, int direction) {
             ensureValidAndroidVersion();
-            PlatformViewsController.this.setDirection(viewId, direction);
+
+            if (!validateDirection(direction)) {
+                throw new IllegalStateException("Trying to set unknown direction value: " + direction
+                    + "(view id: " + viewId + ")");
+            }
+
+            View view = vdControllers.get(viewId).getView();
+            if (view == null) {
+                throw new IllegalStateException("Sending touch to an unknown view with id: "
+                    + direction);
+            }
+
+            view.setLayoutDirection(direction);
         }
 
         private void ensureValidAndroidVersion() {
@@ -172,141 +287,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             return null;
         }
         return controller.getView();
-    }
-
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-    private long createPlatformView(PlatformViewsChannel.PlatformViewCreationRequest request) {
-        if (!validateDirection(request.direction)) {
-            throw new IllegalStateException("Trying to create a view with unknown direction value: "
-                + request.direction + "(view id: " + request.viewId + ")");
-        }
-
-        if (vdControllers.containsKey(request.viewId)) {
-            throw new IllegalStateException("Trying to create an already created platform view, view id: "
-                + request.viewId);
-        }
-
-        PlatformViewFactory viewFactory = registry.getFactory(request.viewType);
-        if (viewFactory == null) {
-            throw new IllegalStateException("Trying to create a platform view of unregistered type: "
-                + request.viewType);
-        }
-
-        Object createParams = null;
-        if (request.params != null) {
-            createParams = viewFactory.getCreateArgsCodec().decodeMessage(request.params);
-        }
-
-        int physicalWidth = toPhysicalPixels(request.logicalWidth);
-        int physicalHeight = toPhysicalPixels(request.logicalHeight);
-        validateVirtualDisplayDimensions(physicalWidth, physicalHeight);
-
-        TextureRegistry.SurfaceTextureEntry textureEntry = textureRegistry.createSurfaceTexture();
-        VirtualDisplayController vdController = VirtualDisplayController.create(
-                context,
-                accessibilityEventsDelegate,
-                viewFactory,
-                textureEntry,
-                toPhysicalPixels(request.logicalWidth),
-                toPhysicalPixels(request.logicalHeight),
-                request.viewId,
-                createParams
-        );
-
-        if (vdController == null) {
-            throw new IllegalStateException("Failed creating virtual display for a "
-                + request.viewType + " with id: " + request.viewId);
-        }
-
-        vdControllers.put(request.viewId, vdController);
-        vdController.getView().setLayoutDirection(request.direction);
-
-        // TODO(amirh): copy accessibility nodes to the FlutterView's accessibility tree.
-
-        return textureEntry.id();
-    }
-
-    private void disposePlatformView(int viewId) {
-        VirtualDisplayController vdController = vdControllers.get(viewId);
-        if (vdController == null) {
-            throw new IllegalStateException("Trying to dispose a platform view with unknown id: "
-                + viewId);
-        }
-
-        vdController.dispose();
-        vdControllers.remove(viewId);
-    }
-
-    private void resizePlatformView(
-        PlatformViewsChannel.PlatformViewResizeRequest request,
-        Runnable onComplete
-    ) {
-        VirtualDisplayController vdController = vdControllers.get(request.viewId);
-        if (vdController == null) {
-            throw new IllegalStateException("Trying to resize a platform view with unknown id: "
-                + request.viewId);
-        }
-
-        int physicalWidth = toPhysicalPixels(request.newLogicalWidth);
-        int physicalHeight = toPhysicalPixels(request.newLogicalHeight);
-        validateVirtualDisplayDimensions(physicalWidth, physicalHeight);
-
-        vdController.resize(
-            physicalWidth,
-            physicalHeight,
-            onComplete
-        );
-    }
-
-    private void onTouch(PlatformViewsChannel.PlatformViewTouch touch) {
-        float density = context.getResources().getDisplayMetrics().density;
-        PointerProperties[] pointerProperties =
-                parsePointerPropertiesList(touch.rawPointerPropertiesList)
-                    .toArray(new PointerProperties[touch.pointerCount]);
-        PointerCoords[] pointerCoords =
-                parsePointerCoordsList(touch.rawPointerCoords, density)
-                    .toArray(new PointerCoords[touch.pointerCount]);
-
-        View view = vdControllers.get(touch.viewId).getView();
-        if (view == null) {
-            throw new IllegalStateException("Sending touch to an unknown view with id: "
-                + touch.viewId);
-        }
-
-        MotionEvent event = MotionEvent.obtain(
-            touch.downTime.longValue(),
-            touch.eventTime.longValue(),
-            touch.action,
-            touch.pointerCount,
-            pointerProperties,
-            pointerCoords,
-            touch.metaState,
-            touch.buttonState,
-            touch.xPrecision,
-            touch.yPrecision,
-            touch.deviceId,
-            touch.edgeFlags,
-            touch.source,
-            touch.flags
-        );
-
-        view.dispatchTouchEvent(event);
-    }
-
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-    private void setDirection(int viewId, int direction) {
-        if (!validateDirection(direction)) {
-            throw new IllegalStateException("Trying to set unknown direction value: " + direction
-                + "(view id: " + viewId + ")");
-        }
-
-        View view = vdControllers.get(viewId).getView();
-        if (view == null) {
-            throw new IllegalStateException("Sending touch to an unknown view with id: "
-                + direction);
-        }
-
-        view.setLayoutDirection(direction);
     }
 
     private static boolean validateDirection(int direction) {
