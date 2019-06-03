@@ -338,6 +338,8 @@
   // The current thread will be used as the platform thread. Ensure that the message loop is
   // initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
+  const auto platformThreadLabel = [NSString stringWithFormat:@"%@.platform", threadLabel];
+  pthread_setname_np([platformThreadLabel cStringUsingEncoding:NSUTF8StringEncoding]);
 
   _threadHost = {threadLabel.UTF8String,  // label
                  flutter::ThreadHost::Type::UI | flutter::ThreadHost::Type::GPU |
