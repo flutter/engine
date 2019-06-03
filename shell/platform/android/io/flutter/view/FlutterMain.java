@@ -400,7 +400,9 @@ public class FlutterMain {
      * </ul>
      *
      * <p>When the blobs are contained in the native library directory,
-     * the format <b>`lib_%s.so`</b> is applied to the file name.
+     * this method looks for blobs named <b>`lib_%s.so`</b>.
+     *
+     * The shared library should have the `lib` prefix only. e.g. <b>`libapp.so`</b>.
      *
      * <p>Note: The name of the files can be customized in the app's metadata, but the
      * format is preserved.
@@ -415,7 +417,7 @@ public class FlutterMain {
         String aotVmSnapshotInstrLib = "lib_" + sAotVmSnapshotInstr + ".so";
         String aotIsolateSnapshotDataLib = "lib_" + sAotIsolateSnapshotData + ".so";
         String aotIsolateSnapshotInstrLib = "lib_" + sAotIsolateSnapshotInstr + ".so";
-        String aotSharedLibraryLib = "lib_" + sAotSharedLibraryPath + ".so";
+        String aotSharedLibraryLib = "lib" + sAotSharedLibraryPath;
 
         boolean isPrecompiledBlobInLib = libs
             .containsAll(Arrays.asList(
