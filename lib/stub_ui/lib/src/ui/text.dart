@@ -110,6 +110,351 @@ class FontWeight {
   }
 }
 
+/// Whether and how to align text horizontally.
+// The order of this enum must match the order of the values in RenderStyleConstants.h's ETextAlign.
+enum TextAlign {
+  /// Align the text on the left edge of the container.
+  left,
+
+  /// Align the text on the right edge of the container.
+  right,
+
+  /// Align the text in the center of the container.
+  center,
+
+  /// Stretch lines of text that end with a soft line break to fill the width of
+  /// the container.
+  ///
+  /// Lines that end with hard line breaks are aligned towards the [start] edge.
+  justify,
+
+  /// Align the text on the leading edge of the container.
+  ///
+  /// For left-to-right text ([TextDirection.ltr]), this is the left edge.
+  ///
+  /// For right-to-left text ([TextDirection.rtl]), this is the right edge.
+  start,
+
+  /// Align the text on the trailing edge of the container.
+  ///
+  /// For left-to-right text ([TextDirection.ltr]), this is the right edge.
+  ///
+  /// For right-to-left text ([TextDirection.rtl]), this is the left edge.
+  end,
+}
+
+/// Converts [align] to its corresponding CSS value.
+///
+/// This value is used as the "text-align" CSS property, e.g.:
+///
+/// ```css
+/// text-align: right;
+/// ```
+String textAlignToCssValue(TextAlign align, TextDirection textDirection) {
+  switch (align) {
+    case TextAlign.left:
+      return 'left';
+    case TextAlign.right:
+      return 'right';
+    case TextAlign.center:
+      return 'center';
+    case TextAlign.justify:
+      return 'justify';
+    case TextAlign.start:
+      switch (textDirection) {
+        case TextDirection.ltr:
+          return null; // it's the default
+        case TextDirection.rtl:
+          return 'right';
+      }
+      break;
+    case TextAlign.end:
+      switch (textDirection) {
+        case TextDirection.ltr:
+          return 'end';
+        case TextDirection.rtl:
+          return 'left';
+      }
+      break;
+  }
+  throw AssertionError('Unsupported TextAlign value $align');
+}
+
+/// A horizontal line used for aligning text.
+enum TextBaseline {
+  /// The horizontal line used to align the bottom of glyphs for alphabetic characters.
+  alphabetic,
+
+  /// The horizontal line used to align ideographic characters.
+  ideographic,
+}
+
+/// A linear decoration to draw near the text.
+class TextDecoration {
+  const TextDecoration._(this._mask);
+
+  /// Creates a decoration that paints the union of all the given decorations.
+  factory TextDecoration.combine(List<TextDecoration> decorations) {
+    int mask = 0;
+    for (TextDecoration decoration in decorations) {
+      mask |= decoration._mask;
+    }
+    return new TextDecoration._(mask);
+  }
+
+  final int _mask;
+
+  /// Whether this decoration will paint at least as much decoration as the given decoration.
+  bool contains(TextDecoration other) {
+    return (_mask | other._mask) == _mask;
+  }
+
+  /// Do not draw a decoration
+  static const TextDecoration none = const TextDecoration._(0x0);
+
+  /// Draw a line underneath each line of text
+  static const TextDecoration underline = const TextDecoration._(0x1);
+
+  /// Draw a line above each line of text
+  static const TextDecoration overline = const TextDecoration._(0x2);
+
+  /// Draw a line through each line of text
+  static const TextDecoration lineThrough = const TextDecoration._(0x4);
+
+  @override
+  bool operator ==(dynamic other) {
+    if (other is! TextDecoration) return false;
+    final TextDecoration typedOther = other;
+    return _mask == typedOther._mask;
+  }
+
+  @override
+  int get hashCode => _mask.hashCode;
+
+  @override
+  String toString() {
+    if (_mask == 0) return 'TextDecoration.none';
+    final List<String> values = <String>[];
+    if (_mask & underline._mask != 0) values.add('underline');
+    if (_mask & overline._mask != 0) values.add('overline');
+    if (_mask & lineThrough._mask != 0) values.add('lineThrough');
+    if (values.length == 1) return 'TextDecoration.${values[0]}';
+    return 'TextDecoration.combine([${values.join(", ")}])';
+  }
+}
+
+/// The style in which to draw a text decoration
+enum TextDecorationStyle {
+  /// Draw a solid line
+  solid,
+
+  /// Draw two lines
+  double,
+
+  /// Draw a dotted line
+  dotted,
+
+  /// Draw a dashed line
+  dashed,
+
+  /// Draw a sinusoidal line
+  wavy
+}
+
+/// Determines if lists [a] and [b] are deep equivalent.
+///
+/// Returns true if the lists are both null, or if they are both non-null, have
+/// the same length, and contain the same elements in the same order. Returns
+/// false otherwise.
+bool _listEquals<T>(List<T> a, List<T> b) {
+  if (a == null) return b == null;
+  if (b == null || a.length != b.length) return false;
+  for (int index = 0; index < a.length; index += 1) {
+    if (a[index] != b[index]) return false;
+  }
+  return true;
+}
+
+/// An opaque object that determines the size, position, and rendering of text.
+class TextStyle {
+  /// Creates a new TextStyle object.
+  ///
+  /// * `color`: The color to use when painting the text. If this is specified, `foreground` must be null.
+  /// * `decoration`: The decorations to paint near the text (e.g., an underline).
+  /// * `decorationColor`: The color in which to paint the text decorations.
+  /// * `decorationStyle`: The style in which to paint the text decorations (e.g., dashed).
+  /// * `fontWeight`: The typeface thickness to use when painting the text (e.g., bold).
+  /// * `fontStyle`: The typeface variant to use when drawing the letters (e.g., italics).
+  /// * `fontFamily`: The name of the font to use when painting the text (e.g., Roboto). If a `fontFamilyFallback` is
+  ///   provided and `fontFamily` is not, then the first font family in `fontFamilyFallback` will take the position of
+  ///   the preferred font family. When a higher priority font cannot be found or does not contain a glyph, a lower
+  ///   priority font will be used.
+  /// * `fontFamilyFallback`: An ordered list of the names of the fonts to fallback on when a glyph cannot
+  ///   be found in a higher priority font. When the `fontFamily` is null, the first font family in this list
+  ///   is used as the preferred font. Internally, the 'fontFamily` is concatenated to the front of this list.
+  ///   When no font family is provided through 'fontFamilyFallback' (null or empty) or `fontFamily`, then the
+  ///   platform default font will be used.
+  /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting the text.
+  /// * `letterSpacing`: The amount of space (in logical pixels) to add between each letter.
+  /// * `wordSpacing`: The amount of space (in logical pixels) to add at each sequence of white-space (i.e. between each word).
+  /// * `textBaseline`: The common baseline that should be aligned between this text span and its parent text span, or, for the root text spans, with the line box.
+  /// * `height`: The height of this text span, as a multiple of the font size.
+  /// * `locale`: The locale used to select region-specific glyphs.
+  /// * `background`: The paint drawn as a background for the text.
+  /// * `foreground`: The paint used to draw the text. If this is specified, `color` must be null.
+  TextStyle({
+    Color color,
+    TextDecoration decoration,
+    Color decorationColor,
+    TextDecorationStyle decorationStyle,
+    double decorationThickness,
+    FontWeight fontWeight,
+    FontStyle fontStyle,
+    TextBaseline textBaseline,
+    String fontFamily,
+    List<String> fontFamilyFallback,
+    double fontSize,
+    double letterSpacing,
+    double wordSpacing,
+    double height,
+    Locale locale,
+    Paint background,
+    Paint foreground,
+    List<Shadow> shadows,
+    List<FontFeature> fontFeatures,
+  })  : assert(
+            color == null || foreground == null,
+            'Cannot provide both a color and a foreground\n'
+            'The color argument is just a shorthand for "foreground: new Paint()..color = color".'),
+        _color = color,
+        _decoration = decoration,
+        _decorationColor = decorationColor,
+        _decorationStyle = decorationStyle,
+        _fontWeight = fontWeight,
+        _fontStyle = fontStyle,
+        _textBaseline = textBaseline,
+        // TODO(b/128311960): when font fallback is supported, we should check
+        //                    for it here.
+        _webOnlyIsFontFamilyProvided = fontFamily != null,
+        _fontFamily = fontFamily ?? '',
+        // TODO(b/128311960): add support for font family fallback.
+        _fontFamilyFallback = fontFamilyFallback,
+        _fontSize = fontSize,
+        _letterSpacing = letterSpacing,
+        _wordSpacing = wordSpacing,
+        _height = height,
+        _locale = locale,
+        _background = background,
+        _foreground = foreground,
+        _shadows = shadows;
+
+  final Color _color;
+  final TextDecoration _decoration;
+  final Color _decorationColor;
+  final TextDecorationStyle _decorationStyle;
+  final FontWeight _fontWeight;
+  final FontStyle _fontStyle;
+  final TextBaseline _textBaseline;
+  final bool _webOnlyIsFontFamilyProvided;
+  final String _fontFamily;
+  final List<String> _fontFamilyFallback;
+  final double _fontSize;
+  final double _letterSpacing;
+  final double _wordSpacing;
+  final double _height;
+  final Locale _locale;
+  final Paint _background;
+  final Paint _foreground;
+  final List<Shadow> _shadows;
+
+  String get _effectiveFontFamily {
+    if (engine.assertionsEnabled) {
+      // In widget tests we use a predictable-size font "Ahem". This makes
+      // widget tests predictable and less flaky.
+      if (engine.domRenderer.debugIsInWidgetTest) {
+        return 'Ahem';
+      }
+    }
+    if (_fontFamily == null || _fontFamily.isEmpty) {
+      return engine.DomRenderer.defaultFontFamily;
+    }
+    return _fontFamily;
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    if (identical(this, other)) return true;
+    if (other is! TextStyle) return false;
+    final TextStyle typedOther = other;
+    return _color == typedOther._color &&
+        _decoration == typedOther._decoration &&
+        _decorationColor == typedOther._decorationColor &&
+        _decorationStyle == typedOther._decorationStyle &&
+        _fontWeight == typedOther._fontWeight &&
+        _fontStyle == typedOther._fontStyle &&
+        _textBaseline == typedOther._textBaseline &&
+        _fontFamily == typedOther._fontFamily &&
+        _fontSize == typedOther._fontSize &&
+        _letterSpacing == typedOther._letterSpacing &&
+        _wordSpacing == typedOther._wordSpacing &&
+        _height == typedOther._height &&
+        _locale == typedOther._locale &&
+        _background == typedOther._background &&
+        _foreground == typedOther._foreground &&
+        _listEquals<Shadow>(_shadows, typedOther._shadows) &&
+        _listEquals<String>(
+            _fontFamilyFallback, typedOther._fontFamilyFallback);
+  }
+
+  @override
+  int get hashCode => hashValues(
+        _color,
+        _decoration,
+        _decorationColor,
+        _decorationStyle,
+        _fontWeight,
+        _fontStyle,
+        _textBaseline,
+        _fontFamily,
+        _fontFamilyFallback,
+        _fontSize,
+        _letterSpacing,
+        _wordSpacing,
+        _height,
+        _locale,
+        _background,
+        _foreground,
+        _shadows,
+      );
+
+  @override
+  String toString() {
+    if (engine.assertionsEnabled) {
+      return 'TextStyle('
+          'color: ${_color != null ? _color : "unspecified"}, '
+          'decoration: ${_decoration ?? "unspecified"}, '
+          'decorationColor: ${_decorationColor ?? "unspecified"}, '
+          'decorationStyle: ${_decorationStyle ?? "unspecified"}, '
+          'fontWeight: ${_fontWeight ?? "unspecified"}, '
+          'fontStyle: ${_fontStyle ?? "unspecified"}, '
+          'textBaseline: ${_textBaseline ?? "unspecified"}, '
+          'fontFamily: ${_webOnlyIsFontFamilyProvided && _fontFamily != null ? _fontFamily : "unspecified"}, '
+          'fontFamilyFallback: ${_webOnlyIsFontFamilyProvided && _fontFamilyFallback != null && _fontFamilyFallback.isNotEmpty ? _fontFamilyFallback : "unspecified"}, '
+          'fontSize: ${_fontSize != null ? _fontSize.toStringAsFixed(1) : "unspecified"}, '
+          'letterSpacing: ${_letterSpacing != null ? "${_letterSpacing}x" : "unspecified"}, '
+          'wordSpacing: ${_wordSpacing != null ? "${_wordSpacing}x" : "unspecified"}, '
+          'height: ${_height != null ? "${_height.toStringAsFixed(1)}x" : "unspecified"}, '
+          'locale: ${_locale ?? "unspecified"}, '
+          'background: ${_background ?? "unspecified"}, '
+          'foreground: ${_foreground ?? "unspecified"}, '
+          'shadows: ${_shadows ?? "unspecified"}'
+          ')';
+    } else {
+      return super.toString();
+    }
+  }
+}
+
 /// A feature tag and value that affect the selection of glyphs in a font.
 class FontFeature {
   /// Creates a [FontFeature] object, which can be added to a [TextStyle] to
@@ -247,348 +592,6 @@ class FontFeature {
 
   @override
   String toString() => 'FontFeature($feature, $value)';
-}
-
-/// Whether and how to align text horizontally.
-// The order of this enum must match the order of the values in RenderStyleConstants.h's ETextAlign.
-enum TextAlign {
-  /// Align the text on the left edge of the container.
-  left,
-
-  /// Align the text on the right edge of the container.
-  right,
-
-  /// Align the text in the center of the container.
-  center,
-
-  /// Stretch lines of text that end with a soft line break to fill the width of
-  /// the container.
-  ///
-  /// Lines that end with hard line breaks are aligned towards the [start] edge.
-  justify,
-
-  /// Align the text on the leading edge of the container.
-  ///
-  /// For left-to-right text ([TextDirection.ltr]), this is the left edge.
-  ///
-  /// For right-to-left text ([TextDirection.rtl]), this is the right edge.
-  start,
-
-  /// Align the text on the trailing edge of the container.
-  ///
-  /// For left-to-right text ([TextDirection.ltr]), this is the right edge.
-  ///
-  /// For right-to-left text ([TextDirection.rtl]), this is the left edge.
-  end,
-}
-
-/// Converts [align] to its corresponding CSS value.
-///
-/// This value is used as the "text-align" CSS property, e.g.:
-///
-/// ```css
-/// text-align: right;
-/// ```
-String textAlignToCssValue(TextAlign align, TextDirection textDirection) {
-  switch (align) {
-    case TextAlign.left:
-      return 'left';
-    case TextAlign.right:
-      return 'right';
-    case TextAlign.center:
-      return 'center';
-    case TextAlign.justify:
-      return 'justify';
-    case TextAlign.start:
-      switch (textDirection) {
-        case TextDirection.ltr:
-          return null; // it's the default
-        case TextDirection.rtl:
-          return 'right';
-      }
-      break;
-    case TextAlign.end:
-      switch (textDirection) {
-        case TextDirection.ltr:
-          return 'end';
-        case TextDirection.rtl:
-          return 'left';
-      }
-      break;
-  }
-  throw AssertionError('Unsupported TextAlign value $align');
-}
-
-/// A horizontal line used for aligning text.
-enum TextBaseline {
-  /// The horizontal line used to align the bottom of glyphs for alphabetic characters.
-  alphabetic,
-
-  /// The horizontal line used to align ideographic characters.
-  ideographic,
-}
-
-/// A linear decoration to draw near the text.
-class TextDecoration {
-  const TextDecoration._(this._mask);
-
-  /// Creates a decoration that paints the union of all the given decorations.
-  factory TextDecoration.combine(List<TextDecoration> decorations) {
-    int mask = 0;
-    for (TextDecoration decoration in decorations) mask |= decoration._mask;
-    return new TextDecoration._(mask);
-  }
-
-  final int _mask;
-
-  /// Whether this decoration will paint at least as much decoration as the given decoration.
-  bool contains(TextDecoration other) {
-    return (_mask | other._mask) == _mask;
-  }
-
-  /// Do not draw a decoration
-  static const TextDecoration none = const TextDecoration._(0x0);
-
-  /// Draw a line underneath each line of text
-  static const TextDecoration underline = const TextDecoration._(0x1);
-
-  /// Draw a line above each line of text
-  static const TextDecoration overline = const TextDecoration._(0x2);
-
-  /// Draw a line through each line of text
-  static const TextDecoration lineThrough = const TextDecoration._(0x4);
-
-  @override
-  bool operator ==(dynamic other) {
-    if (other is! TextDecoration) return false;
-    final TextDecoration typedOther = other;
-    return _mask == typedOther._mask;
-  }
-
-  @override
-  int get hashCode => _mask.hashCode;
-
-  @override
-  String toString() {
-    if (_mask == 0) return 'TextDecoration.none';
-    final List<String> values = <String>[];
-    if (_mask & underline._mask != 0) values.add('underline');
-    if (_mask & overline._mask != 0) values.add('overline');
-    if (_mask & lineThrough._mask != 0) values.add('lineThrough');
-    if (values.length == 1) return 'TextDecoration.${values[0]}';
-    return 'TextDecoration.combine([${values.join(", ")}])';
-  }
-}
-
-/// The style in which to draw a text decoration
-enum TextDecorationStyle {
-  /// Draw a solid line
-  solid,
-
-  /// Draw two lines
-  double,
-
-  /// Draw a dotted line
-  dotted,
-
-  /// Draw a dashed line
-  dashed,
-
-  /// Draw a sinusoidal line
-  wavy
-}
-
-/// Determines if lists [a] and [b] are deep equivalent.
-///
-/// Returns true if the lists are both null, or if they are both non-null, have
-/// the same length, and contain the same elements in the same order. Returns
-/// false otherwise.
-bool _listEquals<T>(List<T> a, List<T> b) {
-  if (a == null) return b == null;
-  if (b == null || a.length != b.length) return false;
-  for (int index = 0; index < a.length; index += 1) {
-    if (a[index] != b[index]) return false;
-  }
-  return true;
-}
-
-/// An opaque object that determines the size, position, and rendering of text.
-class TextStyle {
-  /// Creates a new TextStyle object.
-  ///
-  /// * `color`: The color to use when painting the text. If this is specified, `foreground` must be null.
-  /// * `decoration`: The decorations to paint near the text (e.g., an underline).
-  /// * `decorationColor`: The color in which to paint the text decorations.
-  /// * `decorationStyle`: The style in which to paint the text decorations (e.g., dashed).
-  /// * `fontWeight`: The typeface thickness to use when painting the text (e.g., bold).
-  /// * `fontStyle`: The typeface variant to use when drawing the letters (e.g., italics).
-  /// * `fontFamily`: The name of the font to use when painting the text (e.g., Roboto). If a `fontFamilyFallback` is
-  ///   provided and `fontFamily` is not, then the first font family in `fontFamilyFallback` will take the position of
-  ///   the preferred font family. When a higher priority font cannot be found or does not contain a glyph, a lower
-  ///   priority font will be used.
-  /// * `fontFamilyFallback`: An ordered list of the names of the fonts to fallback on when a glyph cannot
-  ///   be found in a higher priority font. When the `fontFamily` is null, the first font family in this list
-  ///   is used as the preferred font. Internally, the 'fontFamily` is concatenated to the front of this list.
-  ///   When no font family is provided through 'fontFamilyFallback' (null or empty) or `fontFamily`, then the
-  ///   platform default font will be used.
-  /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting the text.
-  /// * `letterSpacing`: The amount of space (in logical pixels) to add between each letter.
-  /// * `wordSpacing`: The amount of space (in logical pixels) to add at each sequence of white-space (i.e. between each word).
-  /// * `textBaseline`: The common baseline that should be aligned between this text span and its parent text span, or, for the root text spans, with the line box.
-  /// * `height`: The height of this text span, as a multiple of the font size.
-  /// * `locale`: The locale used to select region-specific glyphs.
-  /// * `background`: The paint drawn as a background for the text.
-  /// * `foreground`: The paint used to draw the text. If this is specified, `color` must be null.
-  TextStyle({
-    Color color,
-    TextDecoration decoration,
-    Color decorationColor,
-    TextDecorationStyle decorationStyle,
-    double decorationThickness,
-    FontWeight fontWeight,
-    FontStyle fontStyle,
-    TextBaseline textBaseline,
-    String fontFamily,
-    List<String> fontFamilyFallback,
-    double fontSize,
-    double letterSpacing,
-    double wordSpacing,
-    double height,
-    Locale locale,
-    Paint background,
-    Paint foreground,
-    List<Shadow> shadows,
-  })  : assert(
-            color == null || foreground == null,
-            'Cannot provide both a color and a foreground\n'
-            'The color argument is just a shorthand for "foreground: new Paint()..color = color".'),
-        _color = color,
-        _decoration = decoration,
-        _decorationColor = decorationColor,
-        _decorationStyle = decorationStyle,
-        _fontWeight = fontWeight,
-        _fontStyle = fontStyle,
-        _textBaseline = textBaseline,
-        // TODO(b/128311960): when font fallback is supported, we should check
-        //                    for it here.
-        _webOnlyIsFontFamilyProvided = fontFamily != null,
-        _fontFamily = fontFamily ?? '',
-        // TODO(b/128311960): add support for font family fallback.
-        _fontFamilyFallback = fontFamilyFallback,
-        _fontSize = fontSize,
-        _letterSpacing = letterSpacing,
-        _wordSpacing = wordSpacing,
-        _height = height,
-        _locale = locale,
-        _background = background,
-        _foreground = foreground,
-        _shadows = shadows;
-
-  final Color _color;
-  final TextDecoration _decoration;
-  final Color _decorationColor;
-  final TextDecorationStyle _decorationStyle;
-  final FontWeight _fontWeight;
-  final FontStyle _fontStyle;
-  final TextBaseline _textBaseline;
-  final bool _webOnlyIsFontFamilyProvided;
-  final String _fontFamily;
-  final List<String> _fontFamilyFallback;
-  final double _fontSize;
-  final double _letterSpacing;
-  final double _wordSpacing;
-  final double _height;
-  final Locale _locale;
-  final Paint _background;
-  final Paint _foreground;
-  final List<Shadow> _shadows;
-
-  String get _effectiveFontFamily {
-    if (engine.assertionsEnabled) {
-      // In widget tests we use a predictable-size font "Ahem". This makes
-      // widget tests predictable and less flaky.
-      if (engine.domRenderer.debugIsInWidgetTest) {
-        return 'Ahem';
-      }
-    }
-    if (_fontFamily == null || _fontFamily.isEmpty) {
-      return engine.DomRenderer.defaultFontFamily;
-    }
-    return _fontFamily;
-  }
-
-  @override
-  bool operator ==(dynamic other) {
-    if (identical(this, other)) return true;
-    if (other is! TextStyle) return false;
-    final TextStyle typedOther = other;
-    return _color == typedOther._color &&
-        _decoration == typedOther._decoration &&
-        _decorationColor == typedOther._decorationColor &&
-        _decorationStyle == typedOther._decorationStyle &&
-        _fontWeight == typedOther._fontWeight &&
-        _fontStyle == typedOther._fontStyle &&
-        _textBaseline == typedOther._textBaseline &&
-        _fontFamily == typedOther._fontFamily &&
-        _fontSize == typedOther._fontSize &&
-        _letterSpacing == typedOther._letterSpacing &&
-        _wordSpacing == typedOther._wordSpacing &&
-        _height == typedOther._height &&
-        _locale == typedOther._locale &&
-        _background == typedOther._background &&
-        _foreground == typedOther._foreground &&
-        _listEquals<Shadow>(_shadows, typedOther._shadows) &&
-        _listEquals<String>(
-            _fontFamilyFallback, typedOther._fontFamilyFallback);
-  }
-
-  @override
-  int get hashCode => hashValues(
-        _color,
-        _decoration,
-        _decorationColor,
-        _decorationStyle,
-        _fontWeight,
-        _fontStyle,
-        _textBaseline,
-        _fontFamily,
-        _fontFamilyFallback,
-        _fontSize,
-        _letterSpacing,
-        _wordSpacing,
-        _height,
-        _locale,
-        _background,
-        _foreground,
-        _shadows,
-      );
-
-  @override
-  String toString() {
-    if (engine.assertionsEnabled) {
-      return 'TextStyle('
-          'color: ${_color != null ? _color : "unspecified"}, '
-          'decoration: ${_decoration ?? "unspecified"}, '
-          'decorationColor: ${_decorationColor ?? "unspecified"}, '
-          'decorationStyle: ${_decorationStyle ?? "unspecified"}, '
-          'fontWeight: ${_fontWeight ?? "unspecified"}, '
-          'fontStyle: ${_fontStyle ?? "unspecified"}, '
-          'textBaseline: ${_textBaseline ?? "unspecified"}, '
-          'fontFamily: ${_webOnlyIsFontFamilyProvided && _fontFamily != null ? _fontFamily : "unspecified"}, '
-          'fontFamilyFallback: ${_webOnlyIsFontFamilyProvided && _fontFamilyFallback != null && _fontFamilyFallback.isNotEmpty ? _fontFamilyFallback : "unspecified"}, '
-          'fontSize: ${_fontSize != null ? _fontSize.toStringAsFixed(1) : "unspecified"}, '
-          'letterSpacing: ${_letterSpacing != null ? "${_letterSpacing}x" : "unspecified"}, '
-          'wordSpacing: ${_wordSpacing != null ? "${_wordSpacing}x" : "unspecified"}, '
-          'height: ${_height != null ? "${_height.toStringAsFixed(1)}x" : "unspecified"}, '
-          'locale: ${_locale ?? "unspecified"}, '
-          'background: ${_background ?? "unspecified"}, '
-          'foreground: ${_foreground ?? "unspecified"}, '
-          'shadows: ${_shadows ?? "unspecified"}'
-          ')';
-    } else {
-      return super.toString();
-    }
-  }
 }
 
 /// An opaque object that determines the configuration used by
@@ -1192,8 +1195,9 @@ enum BoxHeightStyle {
   tight,
 
   /// The height of the boxes will be the maximum height of all runs in the
-  /// line. All boxes in the same line will be the same height. This does not
-  /// guarantee that the boxes will cover the entire vertical height of the line
+  /// line. All boxes in the same line will be the same height.
+  ///
+  /// This does not guarantee that the boxes will cover the entire vertical height of the line
   /// when there is additional line spacing.
   ///
   /// See [RectHeightStyle.includeLineSpacingTop], [RectHeightStyle.includeLineSpacingMiddle],
@@ -1228,16 +1232,6 @@ enum BoxHeightStyle {
   ///
   /// {@macro flutter.dart:ui.boxHeightStyle.includeLineSpacing}
   includeLineSpacingBottom,
-
-  /// Calculate box heights based on the metrics of this paragraph's [StrutStyle].
-  ///
-  /// Boxes based on the strut will have consistent heights throughout the
-  /// entire paragraph.  The top edge of each line will align with the bottom
-  /// edge of the previous line.  It is possible for glyphs to extend outside
-  /// these boxes.
-  ///
-  /// Will fall back to tight bounds if the strut is disabled or invalid.
-  strut,
 }
 
 /// Defines various ways to horizontally bound the boxes returned by
@@ -1249,10 +1243,55 @@ enum BoxWidthStyle {
 
   /// Adds up to two additional boxes as needed at the beginning and/or end
   /// of each line so that the widths of the boxes in line are the same width
-  /// as the widest line in the paragraph. The additional boxes on each line
-  /// are only added when the relevant box at the relevant edge of that line
-  /// does not span the maximum width of the paragraph.
+  /// as the widest line in the paragraph.
+  ///
+  /// The additional boxes on each line are only added when the relevant box
+  /// at the relevant edge of that line does not span the maximum width of
+  /// the paragraph.
   max,
+}
+
+/// Where to vertically align the placeholder relative to the surrounding text.
+///
+/// Used by [ParagraphBuilder.addPlaceholder].
+enum PlaceholderAlignment {
+  /// Match the baseline of the placeholder with the baseline.
+  ///
+  /// The [TextBaseline] to use must be specified and non-null when using this
+  /// alignment mode.
+  baseline,
+
+  /// Align the bottom edge of the placeholder with the baseline such that the
+  /// placeholder sits on top of the baseline.
+  ///
+  /// The [TextBaseline] to use must be specified and non-null when using this
+  /// alignment mode.
+  aboveBaseline,
+
+  /// Align the top edge of the placeholder with the baseline specified
+  /// such that the placeholder hangs below the baseline.
+  ///
+  /// The [TextBaseline] to use must be specified and non-null when using this
+  /// alignment mode.
+  belowBaseline,
+
+  /// Align the top edge of the placeholder with the top edge of the font.
+  ///
+  /// When the placeholder is very tall, the extra space will hang from
+  /// the top and extend through the bottom of the line.
+  top,
+
+  /// Align the bottom edge of the placeholder with the top edge of the font.
+  ///
+  /// When the placeholder is very tall, the extra space will rise from the
+  /// bottom and extend through the top of the line.
+  bottom,
+
+  /// Align the middle of the placeholder with the middle of the text.
+  ///
+  /// When the placeholder is very tall, the extra space will grow equally
+  /// from the top and bottom of the line.
+  middle,
 }
 
 /// A paragraph of text.
@@ -1302,48 +1341,63 @@ class Paragraph {
   /// of painting should be considered deprecated.
   html.HtmlElement webOnlyGetParagraphElement() => _paragraphElement;
 
+  /// The instance of [TextMeasurementService] to be used to measure this
+  /// paragraph.
+  engine.TextMeasurementService get _measurementService =>
+      engine.TextMeasurementService.forParagraph(this);
+
+  /// The measurement result of the last layout operation.
+  engine.MeasurementResult _measurementResult;
+
   /// The amount of horizontal space this paragraph occupies.
   ///
   /// Valid only after [layout] has been called.
-  double get width => _width;
-  double _width = 0.0;
+  double get width => _measurementResult?.width ?? -1;
 
   /// The amount of vertical space this paragraph occupies.
   ///
   /// Valid only after [layout] has been called.
-  double get height => _height;
-  double _height = 0.0;
+  double get height => _measurementResult?.height ?? 0;
 
   /// The amount of vertical space one line of this paragraph occupies.
   ///
   /// Valid only after [layout] has been called.
-  double _lineHeight = 0.0;
+  double get _lineHeight => _measurementResult?.lineHeight ?? 0;
 
-  double get longestLine => 0.0;
+  /// The distance from the left edge of the leftmost glyph to the right edge of
+  /// the rightmost glyph in the paragraph.
+  ///
+  /// Valid only after [layout] has been called.
+  double get longestLine => 0;
 
+  /// {@template dart.ui.paragraph.minIntrinsicWidth}
   /// The minimum width that this paragraph could be without failing to paint
   /// its contents within itself.
+  /// {@endtemplate}
   ///
   /// Valid only after [layout] has been called.
-  double get minIntrinsicWidth => _minIntrinsicWidth;
-  double _minIntrinsicWidth = 0.0;
+  double get minIntrinsicWidth => _measurementResult?.minIntrinsicWidth ?? 0;
 
+  /// {@template dart.ui.paragraph.maxIntrinsicWidth}
   /// Returns the smallest width beyond which increasing the width never
   /// decreases the height.
+  /// {@endtemplate}
   ///
   /// Valid only after [layout] has been called.
-  double get maxIntrinsicWidth => _maxIntrinsicWidth;
-  double _maxIntrinsicWidth = 0.0;
+  double get maxIntrinsicWidth => _measurementResult?.maxIntrinsicWidth ?? 0;
 
+  /// {@template dart.ui.paragraph.alphabeticBaseline}
   /// The distance from the top of the paragraph to the alphabetic
   /// baseline of the first line, in logical pixels.
-  double get alphabeticBaseline => _alphabeticBaseline;
-  double _alphabeticBaseline = 0.0;
+  /// {@endtemplate}
+  double get alphabeticBaseline => _measurementResult?.alphabeticBaseline ?? -1;
 
+  /// {@template dart.ui.paragraph.ideographicBaseline}
   /// The distance from the top of the paragraph to the ideographic
   /// baseline of the first line, in logical pixels.
-  double get ideographicBaseline => _ideographicBaseline;
-  double _ideographicBaseline = 0.0;
+  /// {@endtemplate}
+  double get ideographicBaseline =>
+      _measurementResult?.ideographicBaseline ?? -1;
 
   /// True if there is more vertical content, but the text was truncated, either
   /// because we reached `maxLines` lines of text or because the `maxLines` was
@@ -1369,11 +1423,11 @@ class Paragraph {
       return;
     }
 
-    engine.TextMeasurementService.instance.measure(this, constraints);
+    _measurementResult = _measurementService.measure(this, constraints);
     _lastUsedConstraints = constraints;
 
     if (_paragraphGeometricStyle.maxLines != null) {
-      _didExceedMaxLines = webOnlyMaxLinesHeight < _height;
+      _didExceedMaxLines = webOnlyMaxLinesHeight < height;
     } else {
       _didExceedMaxLines = false;
     }
@@ -1381,19 +1435,19 @@ class Paragraph {
     if (_webOnlyIsSingleLine && constraints != null) {
       switch (_textAlign) {
         case TextAlign.center:
-          webOnlyAlignOffset = (constraints.width - _maxIntrinsicWidth) / 2.0;
+          webOnlyAlignOffset = (constraints.width - maxIntrinsicWidth) / 2.0;
           break;
         case TextAlign.right:
-          webOnlyAlignOffset = constraints.width - _maxIntrinsicWidth;
+          webOnlyAlignOffset = constraints.width - maxIntrinsicWidth;
           break;
         case TextAlign.start:
           webOnlyAlignOffset = _textDirection == TextDirection.rtl
-              ? constraints.width - _maxIntrinsicWidth
+              ? constraints.width - maxIntrinsicWidth
               : 0.0;
           break;
         case TextAlign.end:
           webOnlyAlignOffset = _textDirection == TextDirection.ltr
-              ? constraints.width - _maxIntrinsicWidth
+              ? constraints.width - maxIntrinsicWidth
               : 0.0;
           break;
         default:
@@ -1425,7 +1479,7 @@ class Paragraph {
   /// that there's no expected height for this paragraph in order to respect
   /// [maxLines].
   double get webOnlyMaxLinesHeight {
-    assert(_webOnlyIsLaidOut);
+    assert(webOnlyIsLaidOut);
     if (_paragraphGeometricStyle.maxLines == null) {
       return null;
     }
@@ -1437,40 +1491,8 @@ class Paragraph {
     return _paragraphGeometricStyle.maxLines * _lineHeight;
   }
 
-  /// Called by the text measurement system to report the layout attributes
-  /// computed for this paragraph.
-  ///
-  /// All of the arguments must be non-null.
-  void webOnlySetComputedLayout({
-    @required double width,
-    @required double height,
-    @required double lineHeight,
-    @required double minIntrinsicWidth,
-    @required double maxIntrinsicWidth,
-    @required double alphabeticBaseline,
-    @required double ideographicBaseline,
-    @required bool isSingleLine,
-  }) {
-    assert(width != null &&
-        height != null &&
-        minIntrinsicWidth != null &&
-        maxIntrinsicWidth != null &&
-        minIntrinsicWidth <= maxIntrinsicWidth &&
-        alphabeticBaseline != null &&
-        ideographicBaseline != null);
-    _width = width;
-    _height = height;
-    _lineHeight = lineHeight;
-    _minIntrinsicWidth = minIntrinsicWidth;
-    _maxIntrinsicWidth = maxIntrinsicWidth;
-    _alphabeticBaseline = alphabeticBaseline;
-    _ideographicBaseline = ideographicBaseline;
-    _webOnlyIsSingleLine = isSingleLine;
-    _webOnlyIsLaidOut = true;
-  }
-
   /// Whether or not this paragraph can be drawn on a single line.
-  bool _webOnlyIsSingleLine = false;
+  bool get _webOnlyIsSingleLine => _measurementResult.isSingleLine;
 
   /// Returns `true` if this paragraph can be directly painted to the canvas.
   ///
@@ -1489,8 +1511,7 @@ class Paragraph {
 
   /// Whether this paragraph has been laid out.
   // TODO(yjbanov): This is Engine-internal API. We should make it private.
-  bool get webOnlyIsLaidOut => _webOnlyIsLaidOut;
-  bool _webOnlyIsLaidOut = false;
+  bool get webOnlyIsLaidOut => _measurementResult != null;
 
   /// Asserts that the properties used to measure paragraph layout are the same
   /// as the properties of this paragraphs root style.
@@ -1514,6 +1535,9 @@ class Paragraph {
   /// of how the boxes are bound vertically and horizontally. Both style
   /// parameters default to the tight option, which will provide close-fitting
   /// boxes and will not account for any line spacing.
+  ///
+  /// Coordinates of the TextBox are relative to the upper-left corner of the paragraph,
+  /// where positive y values indicate down.
   ///
   /// The [boxHeightStyle] and [boxWidthStyle] parameters must not be null.
   ///
@@ -1539,7 +1563,7 @@ class Paragraph {
       return [];
     }
 
-    return engine.TextMeasurementService.instance.measureBoxesForRange(
+    return _measurementService.measureBoxesForRange(
       this,
       _lastUsedConstraints,
       start: start,
@@ -1549,7 +1573,7 @@ class Paragraph {
     );
   }
 
-  Paragraph _cloneWithText(String plainText) {
+  Paragraph webOnlyCloneWithText(String plainText) {
     return Paragraph._(
       plainText: plainText,
       paragraphElement: _paragraphElement.clone(true),
@@ -1559,6 +1583,17 @@ class Paragraph {
       textDirection: _textDirection,
       background: _background,
     );
+  }
+
+  /// Returns a list of text boxes that enclose all placeholders in the paragraph.
+  ///
+  /// The order of the boxes are in the same order as passed in through [addPlaceholder].
+  ///
+  /// Coordinates of the [TextBox] are relative to the upper-left corner of the paragraph,
+  /// where positive y values indicate down.
+  List<TextBox> getBoxesForPlaceholders() {
+    // TODO(garyq): Implement stub_ui version of this.
+    throw UnimplementedError();
   }
 
   /// Returns the text position closest to the given offset.
@@ -1571,27 +1606,13 @@ class Paragraph {
     }
 
     final double dx = offset.dx - webOnlyAlignOffset;
-    final engine.TextMeasurementService instance =
-        engine.TextMeasurementService.instance;
-
-    double _measureSingleLineWidth(String text) {
-      if (_paragraphGeometricStyle.letterSpacing != null ||
-          _paragraphGeometricStyle.wordSpacing != null ||
-          _paragraphGeometricStyle.decoration != null) {
-        // Note that measuring single-line text repeatedly with this API is
-        // very slow.
-        return instance.measureSingleLineText(_cloneWithText(text)).width;
-      } else {
-        return instance.measureSingleLineWidth(text, _paragraphGeometricStyle);
-      }
-    }
+    final engine.TextMeasurementService instance = _measurementService;
 
     int low = 0;
     int high = _plainText.length;
     do {
       final int current = (low + high) ~/ 2;
-      final double width =
-          _measureSingleLineWidth(_plainText.substring(0, current));
+      final double width = instance.measureSubstringWidth(this, 0, current);
       if (width < dx) {
         low = current;
       } else if (width > dx) {
@@ -1606,10 +1627,8 @@ class Paragraph {
       return TextPosition(offset: high, affinity: TextAffinity.upstream);
     }
 
-    final double lowWidth =
-        _measureSingleLineWidth(_plainText.substring(0, low));
-    final double highWidth =
-        _measureSingleLineWidth(_plainText.substring(0, high));
+    final double lowWidth = instance.measureSubstringWidth(this, 0, low);
+    final double highWidth = instance.measureSubstringWidth(this, 0, high);
 
     if (dx - lowWidth < highWidth - dx) {
       // The offset is closer to the low index.
@@ -1669,17 +1688,28 @@ class ParagraphBuilder {
   /// [Paragraph].
   ParagraphBuilder(ParagraphStyle style) : _paragraphStyle = style {
     // TODO(b/128317744): Implement support for strut font families.
+    _placeholderCount = 0;
     List<String> strutFontFamilies;
     if (style._strutStyle != null) {
       strutFontFamilies = <String>[];
-      if (style._strutStyle._fontFamily != null)
+      if (style._strutStyle._fontFamily != null) {
         strutFontFamilies.add(style._strutStyle._fontFamily);
-      if (style._strutStyle._fontFamilyFallback != null)
+      }
+      if (style._strutStyle._fontFamilyFallback != null) {
         strutFontFamilies.addAll(style._strutStyle._fontFamilyFallback);
+      }
     }
     applyParagraphStyleToElement(
         element: _paragraphElement, style: _paragraphStyle);
   }
+
+  /// The number of placeholders currently in the paragraph.
+  int get placeholderCount => _placeholderCount;
+  int _placeholderCount;
+
+   /// The scales of the placeholders in the paragraph.
+  List<double> get placeholderScales => _placeholderScales;
+  List<double> _placeholderScales = <double>[];
 
   /// Applies the given style to the added text until [pop] is called.
   ///
@@ -1689,7 +1719,7 @@ class ParagraphBuilder {
   }
 
   // TODO(yjbanov): do we need to do this?
-//  static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
+  //  static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
 
   /// Ends the effect of the most recent call to [pushStyle].
   ///
@@ -1706,6 +1736,58 @@ class ParagraphBuilder {
   /// The text will be styled according to the current stack of text styles.
   void addText(String text) {
     _ops.add(text);
+  }
+
+  /// Adds an inline placeholder space to the paragraph.
+  ///
+  /// The paragraph will contain a rectangular space with no text of the dimensions
+  /// specified.
+  ///
+  /// The `width` and `height` parameters specify the size of the placeholder rectangle.
+  ///
+  /// The `alignment` parameter specifies how the placeholder rectangle will be vertically
+  /// aligned with the surrounding text. When [PlaceholderAlignment.baseline],
+  /// [PlaceholderAlignment.aboveBaseline], and [PlaceholderAlignment.belowBaseline]
+  /// alignment modes are used, the baseline needs to be set with the `baseline`.
+  /// When using [PlaceholderAlignment.baseline], `baselineOffset` indicates the distance
+  /// of the baseline down from the top of of the rectangle. The default `baselineOffset`
+  /// is the `height`.
+  ///
+  /// Examples:
+  ///
+  /// * For a 30x50 placeholder with the bottom edge aligned with the bottom of the text, use:
+  /// `addPlaceholder(30, 50, PlaceholderAlignment.bottom);`
+  /// * For a 30x50 placeholder that is vertically centered around the text, use:
+  /// `addPlaceholder(30, 50, PlaceholderAlignment.middle);`.
+  /// * For a 30x50 placeholder that sits completely on top of the alphabetic baseline, use:
+  /// `addPlaceholder(30, 50, PlaceholderAlignment.aboveBaseline, baseline: TextBaseline.alphabetic)`.
+  /// * For a 30x50 placeholder with 40 pixels above and 10 pixels below the alphabetic baseline, use:
+  /// `addPlaceholder(30, 50, PlaceholderAlignment.baseline, baseline: TextBaseline.alphabetic, baselineOffset: 40)`.
+  ///
+  /// Lines are permitted to break around each placeholder.
+  ///
+  /// Decorations will be drawn based on the font defined in the most recently
+  /// pushed [TextStyle]. The decorations are drawn as if unicode text were present
+  /// in the placeholder space, and will draw the same regardless of the height and
+  /// alignment of the placeholder. To hide or manually adjust decorations to fit,
+  /// a text style with the desired decoration behavior should be pushed before
+  /// adding a placeholder.
+  ///
+  /// Any decorations drawn through a placeholder will exist on the same canvas/layer
+  /// as the text. This means any content drawn on top of the space reserved by
+  /// the placeholder will be drawn over the decoration, possibly obscuring the
+  /// decoration.
+  ///
+  /// Placeholders are represented by a unicode 0xFFFC "object replacement character"
+  /// in the text buffer. For each placeholder, one object replacement character is
+  /// added on to the text buffer.
+  void addPlaceholder(double width, double height, PlaceholderAlignment alignment, {
+    double scale,
+    double baselineOffset,
+    TextBaseline baseline,
+  }) {
+    // TODO(garyq): Implement stub_ui version of this.
+    throw UnimplementedError();
   }
 
   /// Applies the given paragraph style and returns a [Paragraph] containing the

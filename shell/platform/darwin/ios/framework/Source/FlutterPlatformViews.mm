@@ -394,10 +394,10 @@ SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
   // embedded views thread configuration.
 
   // Do nothing if the params didn't change.
-  if (composite_params_.count(view_id) == 1 && composite_params_[view_id] == params) {
+  if (current_composition_params_.count(view_id) == 1 && current_composition_params_[view_id] == params) {
     return picture_recorders_[view_id]->getRecordingCanvas();
   }
-  composite_params_[view_id] = params;
+  current_composition_params_[view_id] = params;
   CompositeWithParams(view_id, params);
 
   return picture_recorders_[view_id]->getRecordingCanvas();
@@ -413,7 +413,7 @@ void FlutterPlatformViewsController::Reset() {
   composition_order_.clear();
   active_composition_order_.clear();
   picture_recorders_.clear();
-  composite_params_.clear();
+  current_composition_params_.clear();
   clip_count_.clear();
 }
 
@@ -495,7 +495,7 @@ void FlutterPlatformViewsController::DisposeViews() {
     touch_interceptors_.erase(viewId);
     root_views_.erase(viewId);
     overlays_.erase(viewId);
-    composite_params_.erase(viewId);
+    current_composition_params_.erase(viewId);
     clip_count_.erase(viewId);
   }
   views_to_dispose_.clear();
