@@ -1,4 +1,4 @@
-Signature: 3c7fe189eb8b90a2365c2f29c0d56332
+Signature: 1e7a40b0fa731f1458b12527c0a6a82a
 
 UNUSED LICENSES:
 
@@ -5183,6 +5183,7 @@ FILE: ../../../third_party/dart/runtime/vm/constants_dbc.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_ia32.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_kbc.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_x64.cc
+FILE: ../../../third_party/dart/runtime/vm/debugger_kbc.cc
 FILE: ../../../third_party/dart/runtime/vm/elf.cc
 FILE: ../../../third_party/dart/runtime/vm/elf.h
 FILE: ../../../third_party/dart/runtime/vm/frame_layout.h
