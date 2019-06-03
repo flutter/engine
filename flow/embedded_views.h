@@ -17,17 +17,19 @@
 
 namespace flutter {
 
-class FlutterEmbededViewTransformStack;
-class FlutterEmbededViewTransformElement;
+class EmbeddedViewMutatorStack;
+class EmbeddedViewMutator;
 
 class EmbeddedViewParams {
  public:
   SkPoint offsetPixels;
   SkSize sizePoints;
-  std::shared_ptr<FlutterEmbededViewTransformStack> transformStack;
+  std::shared_ptr<EmbeddedViewMutatorStack> transformStack;
 
   bool operator==(const EmbeddedViewParams& other) const {
-    return offsetPixels == other.offsetPixels && sizePoints == other.sizePoints && transformStack == other.transformStack;
+    return offsetPixels == other.offsetPixels &&
+           sizePoints == other.sizePoints &&
+           transformStack == other.transformStack;
   }
 };
 
@@ -54,12 +56,11 @@ class ExternalViewEmbedder {
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 
-#pragma mark - transforms
-  std::shared_ptr<FlutterEmbededViewTransformStack> transformStack;
+  std::shared_ptr<EmbeddedViewMutatorStack> transformStack;
 
 };  // ExternalViewEmbedder
 
-class FlutterEmbededViewTransformStack {
+class EmbeddedViewMutatorStack {
  public:
   void pushClipRect(const SkRect& rect);
   void pushClipRRect(const SkRRect& rrect);
@@ -67,44 +68,44 @@ class FlutterEmbededViewTransformStack {
 
   void pushTransform(const SkMatrix& matrix);
 
-  // Removes the `FlutterEmbededViewTransformElement` on the top of the stack
+  // Removes the `EmbeddedViewMutator` on the top of the stack
   // and destroys it.
   void pop();
 
   // Returns the iterator points to the bottom of the stack.
-  std::vector<FlutterEmbededViewTransformElement>::reverse_iterator rbegin();
+  // When we composite a embedded view, this is the first mutator we should
+  // apply to the view. And we should iterate through all the mutators until we
+  // reach `rend()` and apply all the mutations to the view along the way.
+  std::vector<EmbeddedViewMutator>::reverse_iterator rbegin();
   // Returns the iterator points to the top of the stack.
-  std::vector<FlutterEmbededViewTransformElement>::reverse_iterator rend();
+  // When we composite a embedded view, this is the last mutator we apply to the
+  // view.
+  std::vector<EmbeddedViewMutator>::reverse_iterator rend();
 
-  bool operator==(const FlutterEmbededViewTransformStack& other) const {
+  bool operator==(const EmbeddedViewMutatorStack& other) const {
     return vector_ == other.vector_;
   }
 
  private:
-  std::vector<FlutterEmbededViewTransformElement> vector_;
-};  // FlutterEmbededViewTransformStack
+  std::vector<EmbeddedViewMutator> vector_;
+};  // EmbeddedViewMutatorStack
 
-enum FlutterEmbededViewTransformType {
-  clip_rect,
-  clip_rrect,
-  clip_path,
-  transform
-};
+enum EmbeddedViewMutationType { clip_rect, clip_rrect, clip_path, transform };
 
-class FlutterEmbededViewTransformElement {
+class EmbeddedViewMutator {
  public:
-  void setType(const FlutterEmbededViewTransformType type) { type_ = type; }
+  void setType(const EmbeddedViewMutationType type) { type_ = type; }
   void setRect(const SkRect& rect) { rect_ = rect; }
   void setRRect(const SkRRect& rrect) { rrect_ = rrect; }
   void setMatrix(const SkMatrix& matrix) { matrix_ = matrix; }
 
-  FlutterEmbededViewTransformType type() { return type_; }
+  EmbeddedViewMutationType type() { return type_; }
   SkRect rect() { return rect_; }
   SkRRect rrect() { return rrect_; }
   SkPath path() { return path_; }
   SkMatrix matrix() { return matrix_; }
 
-  bool operator==(const FlutterEmbededViewTransformElement& other) const {
+  bool operator==(const EmbeddedViewMutator& other) const {
     if (type_ != other.type_) {
       return false;
     }
@@ -128,12 +129,12 @@ class FlutterEmbededViewTransformElement {
   }
 
  private:
-  FlutterEmbededViewTransformType type_;
+  EmbeddedViewMutationType type_;
   SkRect rect_;
   SkRRect rrect_;
   SkPath path_;
   SkMatrix matrix_;
-};  // FlutterEmbededViewTransformElement
+};  // EmbeddedViewMutator
 
 }  // namespace flutter
 

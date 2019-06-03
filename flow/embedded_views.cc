@@ -7,49 +7,44 @@
 namespace flutter {
 
 ExternalViewEmbedder::ExternalViewEmbedder()
-    : transformStack(std::make_shared<FlutterEmbededViewTransformStack>()){};
+    : transformStack(std::make_shared<EmbeddedViewMutatorStack>()){};
 
 bool ExternalViewEmbedder::SubmitFrame(GrContext* context) {
   return false;
 };
 
-#pragma mark - FlutterEmbededViewTransformStack
-
-void FlutterEmbededViewTransformStack::pushClipRect(const SkRect& rect) {
-  FlutterEmbededViewTransformElement element =
-      FlutterEmbededViewTransformElement();
+void EmbeddedViewMutatorStack::pushClipRect(const SkRect& rect) {
+  EmbeddedViewMutator element = EmbeddedViewMutator();
   element.setType(clip_rect);
   element.setRect(rect);
   vector_.push_back(element);
 };
 
-void FlutterEmbededViewTransformStack::pushClipRRect(const SkRRect& rrect) {
-  FlutterEmbededViewTransformElement element =
-      FlutterEmbededViewTransformElement();
+void EmbeddedViewMutatorStack::pushClipRRect(const SkRRect& rrect) {
+  EmbeddedViewMutator element = EmbeddedViewMutator();
   element.setType(clip_rrect);
   element.setRRect(rrect);
   vector_.push_back(element);
 };
 
-void FlutterEmbededViewTransformStack::pushTransform(const SkMatrix& matrix) {
-  FlutterEmbededViewTransformElement element =
-      FlutterEmbededViewTransformElement();
+void EmbeddedViewMutatorStack::pushTransform(const SkMatrix& matrix) {
+  EmbeddedViewMutator element = EmbeddedViewMutator();
   element.setType(transform);
   element.setMatrix(matrix);
   vector_.push_back(element);
 };
 
-void FlutterEmbededViewTransformStack::pop() {
+void EmbeddedViewMutatorStack::pop() {
   vector_.pop_back();
 }
 
-std::vector<FlutterEmbededViewTransformElement>::reverse_iterator
-FlutterEmbededViewTransformStack::rbegin() {
+std::vector<EmbeddedViewMutator>::reverse_iterator
+EmbeddedViewMutatorStack::rbegin() {
   return vector_.rbegin();
 }
 
-std::vector<FlutterEmbededViewTransformElement>::reverse_iterator
-FlutterEmbededViewTransformStack::rend() {
+std::vector<EmbeddedViewMutator>::reverse_iterator
+EmbeddedViewMutatorStack::rend() {
   return vector_.rend();
 }
 

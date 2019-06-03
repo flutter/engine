@@ -16,8 +16,6 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
 
-#pragma mark - Transforms Utils
-
 static CGRect GetCGRectFromSkRect(const SkRect& clipSkRect) {
   return CGRectMake(clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fRight - clipSkRect.fLeft,
                     clipSkRect.fBottom - clipSkRect.fTop);
@@ -52,7 +50,7 @@ static void ClipRRect(UIView* view, const SkRRect& clipSkRRect) {
     case SkRRect::kNinePatch_Type:
     case SkRRect::kComplex_Type: {
       CGMutablePathRef mutablePathRef = CGPathCreateMutable();
-      // Complex types, we manually add each cornor.
+      // Complex types, we manually add each corner.
       SkRect clipSkRect = clipSkRRect.rect();
       SkVector topLeftRadii = clipSkRRect.radii(SkRRect::kUpperLeft_Corner);
       SkVector topRightRadii = clipSkRRect.radii(SkRRect::kUpperRight_Corner);
@@ -60,27 +58,27 @@ static void ClipRRect(UIView* view, const SkRRect& clipSkRRect) {
       SkVector bottomLeftRadii = clipSkRRect.radii(SkRRect::kLowerLeft_Corner);
 
       // Start drawing RRect
-      // Move point to the top left cornor adding the top left radii's x.
+      // Move point to the top left corner adding the top left radii's x.
       CGPathMoveToPoint(mutablePathRef, nil, clipSkRect.fLeft + topLeftRadii.x(), clipSkRect.fTop);
-      // Move point horizontally right to the top right cornor and add the top right curve.
+      // Move point horizontally right to the top right corner and add the top right curve.
       CGPathAddLineToPoint(mutablePathRef, nil, clipSkRect.fRight - topRightRadii.x(),
                            clipSkRect.fTop);
       CGPathAddCurveToPoint(mutablePathRef, nil, clipSkRect.fRight, clipSkRect.fTop,
                             clipSkRect.fRight, clipSkRect.fTop + topRightRadii.y(),
                             clipSkRect.fRight, clipSkRect.fTop + topRightRadii.y());
-      // Move point vertically down to the bottom right cornor and add the bottom right curve.
+      // Move point vertically down to the bottom right corner and add the bottom right curve.
       CGPathAddLineToPoint(mutablePathRef, nil, clipSkRect.fRight,
                            clipSkRect.fBottom - bottomRightRadii.y());
       CGPathAddCurveToPoint(mutablePathRef, nil, clipSkRect.fRight, clipSkRect.fBottom,
                             clipSkRect.fRight - bottomRightRadii.x(), clipSkRect.fBottom,
                             clipSkRect.fRight - bottomRightRadii.x(), clipSkRect.fBottom);
-      // Move point horizontally left to the bottom left cornor and add the bottom left curve.
+      // Move point horizontally left to the bottom left corner and add the bottom left curve.
       CGPathAddLineToPoint(mutablePathRef, nil, clipSkRect.fLeft + bottomLeftRadii.x(),
                            clipSkRect.fBottom);
       CGPathAddCurveToPoint(mutablePathRef, nil, clipSkRect.fLeft, clipSkRect.fBottom,
                             clipSkRect.fLeft, clipSkRect.fBottom - bottomLeftRadii.y(),
                             clipSkRect.fLeft, clipSkRect.fBottom - bottomLeftRadii.y());
-      // Move point vertically up to the top left cornor and add the top left curve.
+      // Move point vertically up to the top left corner and add the top left curve.
       CGPathAddLineToPoint(mutablePathRef, nil, clipSkRect.fLeft,
                            clipSkRect.fTop + topLeftRadii.y());
       CGPathAddCurveToPoint(mutablePathRef, nil, clipSkRect.fLeft, clipSkRect.fTop,
@@ -102,7 +100,7 @@ static void ClipRRect(UIView* view, const SkRRect& clipSkRRect) {
 }
 
 static void PerformClip(UIView* view,
-                        flutter::FlutterEmbededViewTransformType type,
+                        flutter::EmbeddedViewMutationType type,
                         const SkRect& rect,
                         const SkRRect& rrect,
                         const SkPath& path) {
@@ -325,8 +323,7 @@ void FlutterPlatformViewsController::CompositeWithParams(
   ResetAnchor(lastView.layer);
 
   // Start loop to apply transforms/clips.
-  std::vector<FlutterEmbededViewTransformElement>::reverse_iterator iter =
-      params.transformStack->rbegin();
+  std::vector<EmbeddedViewMutator>::reverse_iterator iter = params.transformStack->rbegin();
   int64_t clipCount = 0;
   while (iter != params.transformStack->rend()) {
     switch (iter->type()) {
@@ -394,7 +391,8 @@ SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
   // embedded views thread configuration.
 
   // Do nothing if the params didn't change.
-  if (current_composition_params_.count(view_id) == 1 && current_composition_params_[view_id] == params) {
+  if (current_composition_params_.count(view_id) == 1 &&
+      current_composition_params_[view_id] == params) {
     return picture_recorders_[view_id]->getRecordingCanvas();
   }
   current_composition_params_[view_id] = params;
