@@ -24,6 +24,7 @@ class EmbeddedViewParams {
  public:
   SkPoint offsetPixels;
   SkSize sizePoints;
+  std::shared_ptr<FlutterEmbededViewTransformStack> transformStack;
 
   bool operator==(const EmbeddedViewParams& other) const {
     return offsetPixels == other.offsetPixels && sizePoints == other.sizePoints && transformStack == other.transformStack;
