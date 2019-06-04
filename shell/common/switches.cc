@@ -128,7 +128,7 @@ static bool IsWhitelistedDartVMFlag(const std::string& flag) {
     // Check that the prefix of the flag matches one of the whitelisted flags.
     // We don't need to worry about cases like "--safe --sneaky_dangerous" as
     // the VM will discard these as a single unrecognized flag.
-    if (std::equal(allowed.begin(), allowed.end(), flag.begin()))
+    if (std::equal(allowed.begin(), allowed.end(), flag.begin())) {
       return true;
     }
   }

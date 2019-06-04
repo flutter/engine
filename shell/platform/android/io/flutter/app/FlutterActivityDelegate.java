@@ -314,7 +314,8 @@ public final class FlutterActivityDelegate
         }
         // NOTE: all flags provided with this argument are subject to filtering
         // based on a whitelist in shell/common/switches.cc. If any flag provided
-        // is not present in the whitelist, the engine will immediately shut down.
+        // is not present in the whitelist, the process will immediately
+        // terminate.
         if (intent.hasExtra("dart-flags")) {
             args.add("--dart-flags=" + intent.getStringExtra("dart-flags"));
         }
