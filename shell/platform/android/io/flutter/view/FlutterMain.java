@@ -188,6 +188,8 @@ public class FlutterMain {
             return;
         }
         try {
+            sResourceExtractor.waitForCompletion();
+
             List<String> shellArgs = new ArrayList<>();
             shellArgs.add("--icu-symbol-prefix=_binary_icudtl_dat");
 
