@@ -7,9 +7,11 @@
 
 #import <Foundation/Foundation.h>
 
+#define KEYCODE_DELETE_BACKWARD 0x33
+
 @protocol FlutterKeyEventDelegate <NSObject>
 
-- (void)performKeyPress:(int)keyCode withCharacters:(NSString*)characters;
+- (void)dispatchKeyEvent:(NSString*)type keyCode:(int)keyCode characters:(NSString*)characters;
 
 @end
 

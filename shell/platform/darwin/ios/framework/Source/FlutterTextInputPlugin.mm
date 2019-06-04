@@ -4,7 +4,7 @@
 
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #include "flutter/fml/platform/darwin/string_range_sanitization.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyEventDelegate.h"
 
 #include <Foundation/Foundation.h>
 #include <UIKit/UIKit.h>
@@ -618,7 +618,8 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 - (void)insertText:(NSString*)text {
   _selectionAffinity = _kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
-  [_keyEventDelegate performKeyPress:0 withCharacters:text];
+
+  [_keyEventDelegate dispatchKeyEvent:@"keyup" keyCode:0 characters:text];
 }
 
 - (void)deleteBackward {
@@ -644,11 +645,11 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     }
   }
 
-  if (!_selectedTextRange.isEmpty)
+  if (!_selectedTextRange.isEmpty) {
     [self replaceRange:_selectedTextRange withText:@""];
+  }
 
-  // Backspace key code
-  [_keyEventDelegate performKeyPress:0x00000033 withCharacters:@""];
+  [_keyEventDelegate dispatchKeyEvent:@"keyup" keyCode:KEYCODE_DELETE_BACKWARD characters:@""];
 }
 
 @end

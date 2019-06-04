@@ -433,10 +433,10 @@
 
 #pragma mark - Key event delegate
 
-- (void)performKeyPress:(int)keyCode withCharacters:(NSString*)characters {
+- (void)dispatchKeyEvent:(NSString*)type keyCode:(int)keyCode characters:(NSString*)characters {
   [_keyEventChannel.get() sendMessage:@{
     @"keymap" : @"ios",
-    @"type" : @("keydown"),
+    @"type" : type,
     @"keyCode" : @(keyCode),
     @"characters" : characters,
   }];
