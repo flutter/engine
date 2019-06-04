@@ -35,12 +35,13 @@ void MutatorsStack::pop() {
   vector_.pop_back();
 }
 
-const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator MutatorsStack::top() {
+const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator
+MutatorsStack::top() {
   return vector_.rend();
 }
 
 const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator
-  MutatorsStack::bottom() {
+MutatorsStack::bottom() {
   return vector_.rbegin();
 }
 

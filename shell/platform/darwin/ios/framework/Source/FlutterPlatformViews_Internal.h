@@ -113,9 +113,16 @@ class FlutterPlatformViewsController {
   std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
   std::map<int64_t, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> views_;
   std::map<int64_t, fml::scoped_nsobject<FlutterTouchInterceptingView>> touch_interceptors_;
+  // Mapping a platform view ID to the top most parent view (root_view) who is a direct child to the
+  // `flutter_view_`.
+  //
+  // The platform view with the view ID is a child of the root view; or in some cases the platform
+  // view is the root view itself.
   std::map<int64_t, fml::scoped_nsobject<UIView>> root_views_;
   // Mapping a platform view ID to its latest composition params.
   std::map<int64_t, EmbeddedViewParams> current_composition_params_;
+  // Mapping a platform view ID to the count of the clipping operations that was applied to the
+  // platform view.
   std::map<int64_t, int64_t> clip_count_;
   std::map<int64_t, std::unique_ptr<FlutterPlatformViewLayer>> overlays_;
   // The GrContext that is currently used by all of the overlay surfaces.
@@ -149,6 +156,7 @@ class FlutterPlatformViewsController {
   void EnsureGLOverlayInitialized(int64_t overlay_id,
                                   std::shared_ptr<IOSGLContext> gl_context,
                                   GrContext* gr_context);
+  UIView* ApplyMutators(MutatorsStack& mutators_stack, UIView* embedded_view, int view_id);
   void CompositeWithParams(int view_id, const flutter::EmbeddedViewParams& params);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);

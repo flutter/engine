@@ -105,10 +105,10 @@ void ClipRRect(UIView* view, const SkRRect& clipSkRRect) {
 }
 
 void PerformClip(UIView* view,
-                        flutter::MutatorType type,
-                        const SkRect& rect,
-                        const SkRRect& rrect,
-                        const SkPath& path) {
+                 flutter::MutatorType type,
+                 const SkRect& rect,
+                 const SkRRect& rrect,
+                 const SkPath& path) {
   FML_CHECK(type == flutter::clip_rect || type == flutter::clip_rrect ||
             type == flutter::clip_path);
   switch (type) {

@@ -60,11 +60,13 @@ class ExternalViewEmbedder {
 
 // A stack of mutators that can be applied to an embedded platform view.
 //
-// The stack may include mutators like transforms and clips, each mutator applies to all the mutators that are below it in the stack
-// and to the embedded view.
+// The stack may include mutators like transforms and clips, each mutator
+// applies to all the mutators that are below it in the stack and to the
+// embedded view.
 //
-// For example consider the following stack: [T1, T2, T3], where T1 is the top of the stack and T3 is the bottom of the stack.
-// Applying this mutators stack to a platform view P1 will result in T1(T2(T2(P1))).
+// For example consider the following stack: [T1, T2, T3], where T1 is the top
+// of the stack and T3 is the bottom of the stack. Applying this mutators stack
+// to a platform view P1 will result in T1(T2(T2(P1))).
 class MutatorsStack {
  public:
   void pushClipRect(const SkRect& rect);

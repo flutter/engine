@@ -183,45 +183,58 @@ std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
   return canvases;
 }
 
-void FlutterPlatformViewsController::CompositeWithParams(
-    int view_id,
-    const flutter::EmbeddedViewParams& params) {
-  UIView* touch_interceptor = touch_interceptors_[view_id].get();
-
-  CGRect frame = CGRectMake(0, 0, params.sizePoints.width(), params.sizePoints.height());
-  touch_interceptor.frame = frame;
-  UIView* lastView = touch_interceptor;
+// Build a chain of UIViews that applies the mutations described by mutatorsStack.
+//
+// Clips are applied by adding a super view with the CALayer mask. Transforms are applied to the
+// view that's at the head of the chain. For example the following mutators stack [T_1, C_2, T_3,
+// T_4, C_5, T_6] where T denotes a transform and C denotes a clip, will result in the following
+// UIView tree:
+//
+// C_2 -> C_5 -> PLATFORM_VIEW
+// (PLATFORM_VIEW is a subview of C_5 which is a subview of C_2)
+//
+// T_1 is applied to C_2, T_3 and T_4 are applied to C_5, and T_6 is applied to PLATFORM_VIEW.
+//
+// UIView instances used for clip mutations are re-used when possible.
+// For example if we the mutators stack is updated to [T_1, C_7, T_3, T_4, C_8, T_9], we do not
+// remove the previous superviews and re-create new views. Instead, we reuse the superviews that was
+// used to perform clips in the previous example and perform the new clips on the same views.
+//
+// Returns the UIView that's at the top of the generated chain(C_2 for the example above).
+UIView* FlutterPlatformViewsController::ApplyMutators(MutatorsStack& mutators_stack,
+                                                      UIView* embedded_view,
+                                                      int view_id) {
+  UIView* head = embedded_view;
 
   // Reset everything related to transform.
-  lastView.layer.transform = CATransform3DIdentity;
-  ResetAnchor(lastView.layer);
+  head.layer.transform = CATransform3DIdentity;
+  ResetAnchor(head.layer);
 
   // Start loop to apply transforms/clips.
-  FML_CHECK(params.mutatorsStack != nullptr);
-
-  auto iter = params.mutatorsStack->bottom();
+  auto iter = mutators_stack.bottom();
   int64_t clipCount = 0;
-  while (iter != params.mutatorsStack->top()) {
+  while (iter != mutators_stack.top()) {
     switch (iter->get()->type()) {
       case transform: {
         CATransform3D transform = GetCATransform3DFromSkMatrix(iter->get()->matrix());
-        lastView.layer.transform = CATransform3DConcat(lastView.layer.transform, transform);
+        head.layer.transform = CATransform3DConcat(head.layer.transform, transform);
         break;
       }
       case clip_rect:
       case clip_rrect:
       case clip_path: {
-        UIView* view = lastView.superview;
+        UIView* view = head.superview;
         // if we need more clips operations than last time, create a new view.
         ++clipCount;
         if (clipCount > clip_count_[view_id]) {
-          [lastView removeFromSuperview];
-          view = [[UIView alloc] initWithFrame:lastView.bounds];
-          [view addSubview:lastView];
+          [head removeFromSuperview];
+          view = [[UIView alloc] initWithFrame:head.bounds];
+          [view addSubview:head];
         }
-        PerformClip(view, iter->get()->type(), iter->get()->rect(), iter->get()->rrect(), iter->get()->path());
+        PerformClip(view, iter->get()->type(), iter->get()->rect(), iter->get()->rrect(),
+                    iter->get()->path());
         ResetAnchor(view.layer);
-        lastView = view;
+        head = view;
         break;
       }
     }
@@ -236,27 +249,37 @@ void FlutterPlatformViewsController::CompositeWithParams(
   // 500 points in UIKit. And until this point, we did all the calculation based on the flow
   // resolution. So we need to scale down to match UIKit's logical resolution.
   CGFloat screenScale = [UIScreen mainScreen].scale;
-  lastView.layer.transform = CATransform3DConcat(
-      lastView.layer.transform, CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1));
+  head.layer.transform = CATransform3DConcat(
+      head.layer.transform, CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1));
 
   // If we have less cilp operations this time, remove unnecessary views.
   // We skip this process if we have more clip operations this time.
-  int64_t extraClipsFromLastTime = clip_count_[view_id] - clipCount;
-  if (extraClipsFromLastTime > 0 && lastView.superview) {
-    [lastView removeFromSuperview];
-    UIView* superview = lastView.superview;
-    while (extraClipsFromLastTime > 0) {
-      UIView* superSuperView = superview.superview;
-      [superview removeFromSuperview];
-      [superview release];
-      superview = superSuperView;
-    }
-    [flutter_view_.get() addSubview:lastView];
-  }
   clip_count_[view_id] = clipCount;
+  bool hasExtraClipViews = clip_count_[view_id] - clipCount > 0;
+  if (!hasExtraClipViews) {
+    return head;
+  }
+
+  [head removeFromSuperview];
+
+  [root_views_[view_id] removeFromSuperview];
+  [root_views_[view_id] release];
+
+  return head;
+}
+
+void FlutterPlatformViewsController::CompositeWithParams(
+    int view_id,
+    const flutter::EmbeddedViewParams& params) {
+  UIView* touch_interceptor = touch_interceptors_[view_id].get();
+
+  CGRect frame = CGRectMake(0, 0, params.sizePoints.width(), params.sizePoints.height());
+  touch_interceptor.frame = frame;
+  FML_CHECK(params.mutatorsStack != nullptr);
+  UIView* head = ApplyMutators(*params.mutatorsStack, touch_interceptor, view_id);
   // If we have clips, replace root view with the top parent view.
-  if (lastView != touch_interceptor) {
-    root_views_[view_id] = fml::scoped_nsobject<UIView>([lastView retain]);
+  if (head != touch_interceptor) {
+    root_views_[view_id] = fml::scoped_nsobject<UIView>([head retain]);
   }
 }
 
