@@ -51,8 +51,9 @@ public class PlatformViewsChannel {
         case "setDirection":
           setDirection(call, result);
           break;
+        default:
+          result.notImplemented();
       }
-      result.notImplemented();
     }
 
     private void create(MethodCall call, MethodChannel.Result result) {
