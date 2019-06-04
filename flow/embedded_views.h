@@ -17,14 +17,14 @@
 
 namespace flutter {
 
-class EmbeddedViewMutatorStack;
-class EmbeddedViewMutator;
+class MutatorsStack;
+class Mutator;
 
 class EmbeddedViewParams {
  public:
   SkPoint offsetPixels;
   SkSize sizePoints;
-  std::shared_ptr<EmbeddedViewMutatorStack> transformStack;
+  std::shared_ptr<MutatorsStack> transformStack;
 
   bool operator==(const EmbeddedViewParams& other) const {
     return offsetPixels == other.offsetPixels &&
@@ -56,11 +56,18 @@ class ExternalViewEmbedder {
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 
-  std::shared_ptr<EmbeddedViewMutatorStack> transformStack;
+  std::shared_ptr<MutatorsStack> transformStack;
 
 };  // ExternalViewEmbedder
 
-class EmbeddedViewMutatorStack {
+// A stack of mutators that can be applied to an embedded platform view.
+//
+// The stack may include mutators like transforms and clips, each mutator applies to all the mutators that are below it in the stack
+// and to the embedded view.
+//
+// For example consider the following stack: [T1, T2, T3], where T1 is the top of the stack and T3 is the bottom of the stack.
+// Applying this mutators stack to a platform view P1 will result in T1(T2(T2(P1))).
+class MutatorsStack {
  public:
   void pushClipRect(const SkRect& rect);
   void pushClipRRect(const SkRRect& rrect);
@@ -68,44 +75,39 @@ class EmbeddedViewMutatorStack {
 
   void pushTransform(const SkMatrix& matrix);
 
-  // Removes the `EmbeddedViewMutator` on the top of the stack
+  // Removes the `Mutator` on the top of the stack
   // and destroys it.
   void pop();
 
-  // Returns the iterator points to the bottom of the stack.
-  // When we composite a embedded view, this is the first mutator we should
-  // apply to the view. And we should iterate through all the mutators until we
-  // reach `rend()` and apply all the mutations to the view along the way.
-  std::vector<EmbeddedViewMutator>::reverse_iterator rbegin();
-  // Returns the iterator points to the top of the stack.
-  // When we composite a embedded view, this is the last mutator we apply to the
-  // view.
-  std::vector<EmbeddedViewMutator>::reverse_iterator rend();
+  // Returns the iterator points to the top of the stack..
+  std::vector<Mutator>::reverse_iterator top();
+  // Returns an iterator pointing to the bottom of the stack.
+  std::vector<Mutator>::reverse_iterator bottom();
 
-  bool operator==(const EmbeddedViewMutatorStack& other) const {
+  bool operator==(const MutatorsStack& other) const {
     return vector_ == other.vector_;
   }
 
  private:
-  std::vector<EmbeddedViewMutator> vector_;
-};  // EmbeddedViewMutatorStack
+  std::vector<Mutator> vector_;
+};  // MutatorsStack
 
-enum EmbeddedViewMutationType { clip_rect, clip_rrect, clip_path, transform };
+enum MutatorType { clip_rect, clip_rrect, clip_path, transform };
 
-class EmbeddedViewMutator {
+class Mutator {
  public:
-  void setType(const EmbeddedViewMutationType type) { type_ = type; }
+  void setType(const MutatorType type) { type_ = type; }
   void setRect(const SkRect& rect) { rect_ = rect; }
   void setRRect(const SkRRect& rrect) { rrect_ = rrect; }
   void setMatrix(const SkMatrix& matrix) { matrix_ = matrix; }
 
-  EmbeddedViewMutationType type() { return type_; }
+  MutatorType type() { return type_; }
   SkRect rect() { return rect_; }
   SkRRect rrect() { return rrect_; }
   SkPath path() { return path_; }
   SkMatrix matrix() { return matrix_; }
 
-  bool operator==(const EmbeddedViewMutator& other) const {
+  bool operator==(const Mutator& other) const {
     if (type_ != other.type_) {
       return false;
     }
@@ -129,12 +131,12 @@ class EmbeddedViewMutator {
   }
 
  private:
-  EmbeddedViewMutationType type_;
+  MutatorType type_;
   SkRect rect_;
   SkRRect rrect_;
   SkPath path_;
   SkMatrix matrix_;
-};  // EmbeddedViewMutator
+};  // Mutator
 
 }  // namespace flutter
 

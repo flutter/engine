@@ -7,45 +7,45 @@
 namespace flutter {
 
 ExternalViewEmbedder::ExternalViewEmbedder()
-    : transformStack(std::make_shared<EmbeddedViewMutatorStack>()){};
+    : transformStack(std::make_shared<MutatorsStack>()){};
 
 bool ExternalViewEmbedder::SubmitFrame(GrContext* context) {
   return false;
 };
 
-void EmbeddedViewMutatorStack::pushClipRect(const SkRect& rect) {
-  EmbeddedViewMutator element = EmbeddedViewMutator();
+void MutatorsStack::pushClipRect(const SkRect& rect) {
+  Mutator element = Mutator();
   element.setType(clip_rect);
   element.setRect(rect);
   vector_.push_back(element);
 };
 
-void EmbeddedViewMutatorStack::pushClipRRect(const SkRRect& rrect) {
-  EmbeddedViewMutator element = EmbeddedViewMutator();
+void MutatorsStack::pushClipRRect(const SkRRect& rrect) {
+  Mutator element = Mutator();
   element.setType(clip_rrect);
   element.setRRect(rrect);
   vector_.push_back(element);
 };
 
-void EmbeddedViewMutatorStack::pushTransform(const SkMatrix& matrix) {
-  EmbeddedViewMutator element = EmbeddedViewMutator();
+void MutatorsStack::pushTransform(const SkMatrix& matrix) {
+  Mutator element = Mutator();
   element.setType(transform);
   element.setMatrix(matrix);
   vector_.push_back(element);
 };
 
-void EmbeddedViewMutatorStack::pop() {
+void MutatorsStack::pop() {
   vector_.pop_back();
 }
 
-std::vector<EmbeddedViewMutator>::reverse_iterator
-EmbeddedViewMutatorStack::rbegin() {
-  return vector_.rbegin();
+std::vector<Mutator>::reverse_iterator
+MutatorsStack::top() {
+  return vector_.rend();
 }
 
-std::vector<EmbeddedViewMutator>::reverse_iterator
-EmbeddedViewMutatorStack::rend() {
-  return vector_.rend();
+std::vector<Mutator>::reverse_iterator
+MutatorsStack::bottom() {
+  return vector_.rbegin();
 }
 
 }  // namespace flutter

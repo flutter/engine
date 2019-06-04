@@ -42,7 +42,7 @@ void ClipRRect(UIView* view, const SkRRect& clipSkRRect);
 // Perform a clip operation on the `view`.
 // Uses either `rect`, `rrect` or `path` to perform the clip based on the `type`.
 void PerformClip(UIView* view,
-                 flutter::EmbeddedViewMutationType type,
+                 flutter::MutatorType type,
                  const SkRect& rect,
                  const SkRRect& rrect,
                  const SkPath& path);

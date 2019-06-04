@@ -105,7 +105,7 @@ void ClipRRect(UIView* view, const SkRRect& clipSkRRect) {
 }
 
 void PerformClip(UIView* view,
-                        flutter::EmbeddedViewMutationType type,
+                        flutter::MutatorType type,
                         const SkRect& rect,
                         const SkRRect& rrect,
                         const SkPath& path) {
