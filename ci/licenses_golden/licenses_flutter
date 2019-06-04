@@ -680,6 +680,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartPro
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterHeadlessDartRunner.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyEventDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h
