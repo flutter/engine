@@ -281,14 +281,14 @@ TEST_F(ShellTest, BlacklistedDartVMFlag) {
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
 
   const std::vector<fml::CommandLine::Option> options = {
-    fml::CommandLine::Option("dart-flags", "--verify_after_gc")
-  };
+      fml::CommandLine::Option("dart-flags", "--verify_after_gc")};
   fml::CommandLine command_line("", options, std::vector<std::string>());
 
 #if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE && \
     FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
   // Upon encountering a non-whitelisted Dart flag the process terminates.
-  const char* expected = "Encountered blacklisted Dart VM flag: --verify_after_gc";
+  const char* expected =
+      "Encountered blacklisted Dart VM flag: --verify_after_gc";
   ASSERT_DEATH(flutter::SettingsFromCommandLine(command_line), expected);
 #else
   flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
@@ -298,9 +298,8 @@ TEST_F(ShellTest, BlacklistedDartVMFlag) {
 
 TEST_F(ShellTest, WhitelistedDartVMFlag) {
   const std::vector<fml::CommandLine::Option> options = {
-    fml::CommandLine::Option("dart-flags",
-                             "--max_profile_depth 1,--trace_service")
-  };
+      fml::CommandLine::Option("dart-flags",
+                               "--max_profile_depth 1,--trace_service")};
   fml::CommandLine command_line("", options, std::vector<std::string>());
   flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
 
