@@ -30,6 +30,31 @@
 
 namespace flutter {
 
+// Converts a SkRect to CGRect.
+CGRect GetCGRectFromSkRect(const SkRect& clipSkRect);
+
+// Perform clip rect on the `view` using `clipSkRect`.
+void ClipRect(UIView* view, const SkRect& clipSkRect);
+
+// Perform clip rounded rect on the `view` using `clipSkRRect`.
+void ClipRRect(UIView* view, const SkRRect& clipSkRRect);
+
+// Perform a clip operation on the `view`.
+// Uses either `rect`, `rrect` or `path` to perform the clip based on the `type`.
+void PerformClip(UIView* view,
+                 flutter::EmbeddedViewMutationType type,
+                 const SkRect& rect,
+                 const SkRRect& rrect,
+                 const SkPath& path);
+
+// Converts a SkMatrix to CATransform3D.
+// Certain fields are ignored in CATransform3D since SkMatrix is 3x3 and CATransform3D is 4x4.
+CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix);
+
+// Reset the anchor of `layer` to match the tranform operation from flow.
+// The position of the `layer` should be unchanged after resetting the anchor.
+void ResetAnchor(CALayer* layer);
+
 class IOSGLContext;
 class IOSSurface;
 
