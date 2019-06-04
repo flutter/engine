@@ -31,9 +31,9 @@ _flutter_framework_dir = "$root_out_dir/$_flutter_framework_filename"
 # the Flutter engine source root.
 _flutter_framework_headers = [
   "framework/Headers/FlutterMacOS.h",
+  "framework/Headers/FlutterPluginMacOS.h",
+  "framework/Headers/FlutterPluginRegistrarMacOS.h",
   "framework/Headers/FLEOpenGLContextHandling.h",
-  "framework/Headers/FLEPlugin.h",
-  "framework/Headers/FLEPluginRegistrar.h",
   "framework/Headers/FLEReshapeListener.h",
   "framework/Headers/FLEView.h",
   "framework/Headers/FLEViewController.h",
@@ -200,9 +200,20 @@ action("_generate_symlinks") {
   ]
 }
 
+copy("copy_framework_podspec") {
+  visibility = [ ":*" ]
+  sources = [
+    "framework/FlutterMacOS.podspec",
+  ]
+  outputs = [
+    "$root_out_dir/FlutterMacOS.podspec",
+  ]
+}
+
 group("flutter_framework") {
   deps = [
     ":_generate_symlinks",
+    ":copy_framework_podspec",
   ]
 }
 

@@ -51,7 +51,7 @@ class DomRenderer {
   html.Element get sceneElement => _sceneElement;
   html.Element _sceneElement;
 
-  /// This is state persistant across hot restarts that indicates what
+  /// This is state persistent across hot restarts that indicates what
   /// to clear.  We delay removal of old visible state to make the
   /// transition appear smooth.
   static const String _staleHotRestartStore = '__flutter_state';
@@ -117,7 +117,7 @@ class DomRenderer {
     _debugIsInWidgetTest = value;
     if (_debugIsInWidgetTest) {
       var logicalSize = ui.Size(800.0, 600.0);
-      ui.window.webOnlyDebugPhysicalSizeOverride =
+      window.webOnlyDebugPhysicalSizeOverride =
           logicalSize * ui.window.devicePixelRatio;
     }
   }
@@ -373,7 +373,7 @@ flt-glass-pane * {
     // position, and sizes all use browser pixel as the unit (i.e. "px" in CSS).
     // Therefore, as far as the framework is concerned the device pixel ratio
     // is 1.0.
-    ui.window.devicePixelRatio = 1.0;
+    window.debugOverrideDevicePixelRatio(1.0);
 
     if (browserEngine == BrowserEngine.webkit) {
       // Safari sometimes gives us bogus innerWidth/innerHeight values when the

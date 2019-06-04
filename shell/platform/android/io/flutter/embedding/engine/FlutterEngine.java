@@ -4,8 +4,13 @@
 
 package io.flutter.embedding.engine;
 
+import android.arch.lifecycle.Lifecycle;
+import android.arch.lifecycle.LifecycleOwner;
 import android.content.Context;
 import android.support.annotation.NonNull;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.plugins.PluginRegistry;
@@ -48,7 +53,7 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel;
  * a {@link io.flutter.embedding.android.FlutterView} as a {@link FlutterRenderer.RenderSurface}.
  */
 // TODO(mattcarroll): re-evaluate system channel APIs - some are not well named or differentiated
-public class FlutterEngine {
+public class FlutterEngine implements LifecycleOwner {
   private static final String TAG = "FlutterEngine";
 
   @NonNull
@@ -59,6 +64,8 @@ public class FlutterEngine {
   private final DartExecutor dartExecutor;
   @NonNull
   private final FlutterEnginePluginRegistry pluginRegistry;
+  @NonNull
+  private final FlutterEngineAndroidLifecycle androidLifecycle;
 
   // System channels.
   @NonNull
@@ -80,11 +87,13 @@ public class FlutterEngine {
   @NonNull
   private final TextInputChannel textInputChannel;
 
+  private final Set<EngineLifecycleListener> engineLifecycleListeners = new HashSet<>();
   private final EngineLifecycleListener engineLifecycleListener = new EngineLifecycleListener() {
     @SuppressWarnings("unused")
     public void onPreEngineRestart() {
-      // TODO(mattcarroll): work into plugin API. should probably loop through each plugin.
-//      pluginRegistry.onPreEngineRestart();
+      for (EngineLifecycleListener lifecycleListener : engineLifecycleListeners) {
+        lifecycleListener.onPreEngineRestart();
+      }
     }
   };
 
@@ -125,11 +134,11 @@ public class FlutterEngine {
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
 
-    // TODO(mattcarroll): bring in Lifecycle.
+    androidLifecycle = new FlutterEngineAndroidLifecycle(this);
     this.pluginRegistry = new FlutterEnginePluginRegistry(
       context.getApplicationContext(),
       this,
-      null
+        androidLifecycle
     );
   }
 
@@ -154,10 +163,27 @@ public class FlutterEngine {
    * This {@code FlutterEngine} instance should be discarded after invoking this method.
    */
   public void destroy() {
-    pluginRegistry.removeAll();
+    // The order that these things are destroyed is important.
+    pluginRegistry.destroy();
     dartExecutor.onDetachedFromJNI();
     flutterJNI.removeEngineLifecycleListener(engineLifecycleListener);
     flutterJNI.detachFromNativeAndReleaseResources();
+  }
+
+  /**
+   * Adds a {@code listener} to be notified of Flutter engine lifecycle events, e.g.,
+   * {@code onPreEngineStart()}.
+   */
+  public void addEngineLifecycleListener(@NonNull EngineLifecycleListener listener) {
+    engineLifecycleListeners.add(listener);
+  }
+
+  /**
+   * Removes a {@code listener} that was previously added with
+   * {@link #addEngineLifecycleListener(EngineLifecycleListener)}.
+   */
+  public void removeEngineLifecycleListener(@NonNull EngineLifecycleListener listener) {
+    engineLifecycleListeners.remove(listener);
   }
 
   /**
@@ -286,6 +312,13 @@ public class FlutterEngine {
   @NonNull
   public ContentProviderControlSurface getContentProviderControlSurface() {
     return pluginRegistry;
+  }
+
+  // TODO(mattcarroll): determine if we really need to expose this from FlutterEngine vs making PluginBinding a LifecycleOwner
+  @NonNull
+  @Override
+  public Lifecycle getLifecycle() {
+    return androidLifecycle;
   }
 
   /**
