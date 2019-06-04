@@ -11,7 +11,9 @@ namespace flutter {
 
 CompositorContext::CompositorContext() = default;
 
-CompositorContext::~CompositorContext() = default;
+  CompositorContext::~CompositorContext() {
+    delete mutator_statck_;
+  }
 
 void CompositorContext::BeginFrame(ScopedFrame& frame,
                                    bool enable_instrumentation) {

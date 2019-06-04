@@ -6,9 +6,6 @@
 
 namespace flutter {
 
-ExternalViewEmbedder::ExternalViewEmbedder()
-    : transformStack(std::make_shared<MutatorsStack>()){};
-
 bool ExternalViewEmbedder::SubmitFrame(GrContext* context) {
   return false;
 };

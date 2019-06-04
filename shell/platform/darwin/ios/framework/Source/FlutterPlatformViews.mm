@@ -197,9 +197,11 @@ void FlutterPlatformViewsController::CompositeWithParams(
   ResetAnchor(lastView.layer);
 
   // Start loop to apply transforms/clips.
-  std::vector<Mutator>::reverse_iterator iter = params.transformStack->bottom();
+  FML_CHECK(params.mutatorsStack != nullptr);
+
+  std::vector<Mutator>::reverse_iterator iter = params.mutatorsStack->bottom();
   int64_t clipCount = 0;
-  while (iter != params.transformStack->top()) {
+  while (iter != params.mutatorsStack->top()) {
     switch (iter->type()) {
       case transform: {
         CATransform3D transform = GetCATransform3DFromSkMatrix(iter->matrix());

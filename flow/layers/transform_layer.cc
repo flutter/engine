@@ -66,12 +66,12 @@ void TransformLayer::Paint(PaintContext& context) const {
 
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->concat(transform_);
-  if (context.view_embedder != nullptr) {
-    context.view_embedder->transformStack->pushTransform(transform_);
+  if (context.mutator_stack != nullptr) {
+    context.mutator_stack->pushTransform(transform_);
   }
   PaintChildren(context);
-  if (context.view_embedder != nullptr) {
-    context.view_embedder->transformStack->pop();
+  if (context.mutator_stack != nullptr) {
+    context.mutator_stack->pop();
   }
 }
 

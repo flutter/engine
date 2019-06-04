@@ -24,12 +24,12 @@ class EmbeddedViewParams {
  public:
   SkPoint offsetPixels;
   SkSize sizePoints;
-  std::shared_ptr<MutatorsStack> transformStack;
+  MutatorsStack* mutatorsStack;
 
   bool operator==(const EmbeddedViewParams& other) const {
     return offsetPixels == other.offsetPixels &&
            sizePoints == other.sizePoints &&
-           transformStack == other.transformStack;
+           mutatorsStack == other.mutatorsStack;
   }
 };
 
@@ -38,7 +38,7 @@ class EmbeddedViewParams {
 // FlutterPlatformViewsController which is owned by FlutterViewController.
 class ExternalViewEmbedder {
  public:
-  ExternalViewEmbedder();
+  ExternalViewEmbedder() = default;
 
   virtual void BeginFrame(SkISize frame_size) = 0;
 
@@ -55,8 +55,6 @@ class ExternalViewEmbedder {
   virtual ~ExternalViewEmbedder() = default;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
-
-  std::shared_ptr<MutatorsStack> transformStack;
 
 };  // ExternalViewEmbedder
 
