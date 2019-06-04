@@ -78,16 +78,16 @@ class MutatorsStack {
   void pop();
 
   // Returns the iterator points to the top of the stack..
-  std::vector<Mutator>::reverse_iterator top();
+  const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator top();
   // Returns an iterator pointing to the bottom of the stack.
-  std::vector<Mutator>::reverse_iterator bottom();
+  const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator bottom();
 
   bool operator==(const MutatorsStack& other) const {
     return vector_ == other.vector_;
   }
 
  private:
-  std::vector<Mutator> vector_;
+  std::vector<std::unique_ptr<Mutator>> vector_;
 };  // MutatorsStack
 
 enum MutatorType { clip_rect, clip_rrect, clip_path, transform };
@@ -99,11 +99,11 @@ class Mutator {
   void setRRect(const SkRRect& rrect) { rrect_ = rrect; }
   void setMatrix(const SkMatrix& matrix) { matrix_ = matrix; }
 
-  MutatorType type() { return type_; }
-  SkRect rect() { return rect_; }
-  SkRRect rrect() { return rrect_; }
-  SkPath path() { return path_; }
-  SkMatrix matrix() { return matrix_; }
+  MutatorType type() const { return type_; }
+  SkRect rect() const { return rect_; }
+  SkRRect rrect() const { return rrect_; }
+  SkPath path() const { return path_; }
+  SkMatrix matrix() const { return matrix_; }
 
   bool operator==(const Mutator& other) const {
     if (type_ != other.type_) {

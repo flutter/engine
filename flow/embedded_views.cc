@@ -11,37 +11,36 @@ bool ExternalViewEmbedder::SubmitFrame(GrContext* context) {
 };
 
 void MutatorsStack::pushClipRect(const SkRect& rect) {
-  Mutator element = Mutator();
-  element.setType(clip_rect);
-  element.setRect(rect);
-  vector_.push_back(element);
+  std::unique_ptr<Mutator> element = std::make_unique<Mutator>();
+  element->setType(clip_rect);
+  element->setRect(rect);
+  vector_.push_back(std::move(element));
 };
 
 void MutatorsStack::pushClipRRect(const SkRRect& rrect) {
-  Mutator element = Mutator();
-  element.setType(clip_rrect);
-  element.setRRect(rrect);
-  vector_.push_back(element);
+  std::unique_ptr<Mutator> element = std::make_unique<Mutator>();
+  element->setType(clip_rrect);
+  element->setRRect(rrect);
+  vector_.push_back(std::move(element));
 };
 
 void MutatorsStack::pushTransform(const SkMatrix& matrix) {
-  Mutator element = Mutator();
-  element.setType(transform);
-  element.setMatrix(matrix);
-  vector_.push_back(element);
+  std::unique_ptr<Mutator> element = std::make_unique<Mutator>();
+  element->setType(transform);
+  element->setMatrix(matrix);
+  vector_.push_back(std::move(element));
 };
 
 void MutatorsStack::pop() {
   vector_.pop_back();
 }
 
-std::vector<Mutator>::reverse_iterator
-MutatorsStack::top() {
+const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator MutatorsStack::top() {
   return vector_.rend();
 }
 
-std::vector<Mutator>::reverse_iterator
-MutatorsStack::bottom() {
+const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator
+  MutatorsStack::bottom() {
   return vector_.rbegin();
 }
 
