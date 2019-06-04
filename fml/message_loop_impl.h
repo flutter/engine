@@ -43,6 +43,8 @@ class MessageLoopImpl : public fml::RefCountedThreadSafe<MessageLoopImpl> {
 
   void DoTerminate();
 
+  void Swap(MessageLoopImpl& other);
+
  protected:
   // Exposed for the embedder shell which allows clients to poll for events
   // instead of dedicating a thread to the message loop.
@@ -80,7 +82,11 @@ class MessageLoopImpl : public fml::RefCountedThreadSafe<MessageLoopImpl> {
   using DelayedTaskQueue = std::
       priority_queue<DelayedTask, std::deque<DelayedTask>, DelayedTaskCompare>;
 
-  std::map<intptr_t, fml::closure> task_observers_;
+  // all this is state which controls what will be run on this message loop.
+  // we ideally want to have a mechanism to change all of this?!
+  std::mutex observers_mutex_;
+  std::map<intptr_t, fml::closure> task_observers_ FML_GUARDED_BY(observers_mutex_);
+
   std::mutex delayed_tasks_mutex_;
   DelayedTaskQueue delayed_tasks_ FML_GUARDED_BY(delayed_tasks_mutex_);
   size_t order_ FML_GUARDED_BY(delayed_tasks_mutex_);

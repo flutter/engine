@@ -53,6 +53,7 @@ void MessageLoopImpl::AddTaskObserver(intptr_t key, fml::closure callback) {
   FML_DCHECK(MessageLoop::GetCurrent().GetLoopImpl().get() == this)
       << "Message loop task observer must be added on the same thread as the "
          "loop.";
+  std::lock_guard<std::mutex> observers_lock(observers_mutex_);
   task_observers_[key] = std::move(callback);
 }
 
@@ -60,6 +61,7 @@ void MessageLoopImpl::RemoveTaskObserver(intptr_t key) {
   FML_DCHECK(MessageLoop::GetCurrent().GetLoopImpl().get() == this)
       << "Message loop task observer must be removed from the same thread as "
          "the loop.";
+  std::lock_guard<std::mutex> observers_lock(observers_mutex_);
   task_observers_.erase(key);
 }
 
@@ -95,6 +97,29 @@ void MessageLoopImpl::DoTerminate() {
   Terminate();
 }
 
+void MessageLoopImpl::Swap(MessageLoopImpl& other)
+    FML_NO_THREAD_SAFETY_ANALYSIS {
+  if (terminated_ || other.terminated_) {
+    return;
+  }
+
+  // task_observers locks
+  std::unique_lock<std::mutex> o1(observers_mutex_, std::defer_lock);
+  std::unique_lock<std::mutex> o2(other.observers_mutex_, std::defer_lock);
+
+  // delayed_tasks locks
+  std::unique_lock<std::mutex> d1(delayed_tasks_mutex_, std::defer_lock);
+  std::unique_lock<std::mutex> d2(other.delayed_tasks_mutex_, std::defer_lock);
+
+  // we need to first lock the task_obervers_mutex_ and only then lock
+  // delayed_tasks_mutex_.
+  std::lock(o1, o2);
+  std::lock(d1, d2);
+
+  std::swap(task_observers_, other.task_observers_);
+  std::swap(delayed_tasks_, other.delayed_tasks_);
+}
+
 void MessageLoopImpl::RegisterTask(fml::closure task,
                                    fml::TimePoint target_time) {
   FML_DCHECK(task != nullptr);
@@ -111,6 +136,14 @@ void MessageLoopImpl::RegisterTask(fml::closure task,
 void MessageLoopImpl::FlushTasks(FlushType type) {
   TRACE_EVENT0("fml", "MessageLoop::FlushTasks");
   std::vector<fml::closure> invocations;
+
+  // We are grabbing this lock here as a proxy to indicate
+  // tht we are running tasks and will invoke the
+  // "right" observers, we are trying to avoid the scenario
+  // where:
+  // gather invocations -> Swap -> execute invocations
+  // will lead us to run invocations on the wrong thread.
+  std::lock_guard<std::mutex> observers_lock(observers_mutex_);
 
   {
     std::lock_guard<std::mutex> lock(delayed_tasks_mutex_);

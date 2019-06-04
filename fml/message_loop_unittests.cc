@@ -295,3 +295,39 @@ TEST(MessageLoop, CanCreateConcurrentMessageLoop) {
   }
   latch.Wait();
 }
+
+TEST(MessageLoop, CanSwapMessageLoopQueues) {
+  fml::MessageLoop* loop1 = nullptr;
+  fml::AutoResetWaitableEvent latch1;
+
+  std::thread thread1([&loop1, &latch1]() {
+    fml::MessageLoop::EnsureInitializedForCurrentThread();
+    loop1 = &fml::MessageLoop::GetCurrent();
+    latch1.Signal();
+  });
+
+  fml::MessageLoop* loop2 = nullptr;
+  fml::AutoResetWaitableEvent latch2;
+  std::thread thread2([&loop2, &latch2]() {
+    fml::MessageLoop::EnsureInitializedForCurrentThread();
+    loop2 = &fml::MessageLoop::GetCurrent();
+    latch2.Signal();
+  });
+
+  // wait for loops to initialize.
+  latch1.Wait();
+  latch2.Wait();
+
+  fml::AutoResetWaitableEvent term1, term2;
+  loop1->GetTaskRunner()->PostTask([&term1]() { term1.Signal(); });
+  loop2->GetTaskRunner()->PostTask([&term2]() { term2.Signal(); });
+
+  loop1->Swap(*loop2);
+
+  // now that we have swapped, loop1 can wait for term2.
+  loop1->Run();
+  term2.Wait();
+
+  loop2->Run();
+  term1.Wait();
+}
