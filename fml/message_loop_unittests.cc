@@ -296,7 +296,7 @@ TEST(MessageLoop, CanCreateConcurrentMessageLoop) {
   latch.Wait();
 }
 
-TEST(MessageLoop, CanSwapMessageLoops) {
+TEST(MessageLoop, CanSwapMessageLoopsAndPreserveThreadConfiguration) {
   // synchronization notes:
   // 1. term1 and term2 are to wait for Swap.
   // 2. tr_term1 (read as task_runner terminated latch) is to
@@ -311,7 +311,7 @@ TEST(MessageLoop, CanSwapMessageLoops) {
   std::thread thread1([&loop1, &latch1, &term1, &tr_term1]() {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
     loop1 = &fml::MessageLoop::GetCurrent();
-    ASSERT_TRUE(loop1->GetTaskRunner());
+    // this task will be run on thread1 after Swap.
     loop1->GetTaskRunner()->PostTask([&tr_term1]() {
       tr_term1.Signal();
       fml::MessageLoop::GetCurrent().Terminate();
@@ -321,15 +321,19 @@ TEST(MessageLoop, CanSwapMessageLoops) {
     loop1->Run();
   });
 
+  latch1.Wait();
+
   fml::MessageLoop* loop2 = nullptr;
   fml::AutoResetWaitableEvent latch2;
   fml::AutoResetWaitableEvent tr_term2;
   fml::AutoResetWaitableEvent term2;
-  std::thread thread2([&loop2, &latch2, &term2, &tr_term2]() {
+  std::thread thread2([&loop2, &latch2, &term2, &tr_term2, &loop1]() {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
     loop2 = &fml::MessageLoop::GetCurrent();
-    ASSERT_TRUE(loop2->GetTaskRunner());
-    loop2->GetTaskRunner()->PostTask([&tr_term2]() {
+    // this task will be run on thread1 after Swap.
+    loop2->GetTaskRunner()->PostTask([&tr_term2, &loop1]() {
+      // ensure that we run the task on loop1 after the swap.
+      ASSERT_TRUE(loop1 == &fml::MessageLoop::GetCurrent());
       tr_term2.Signal();
       fml::MessageLoop::GetCurrent().Terminate();
     });
@@ -338,8 +342,6 @@ TEST(MessageLoop, CanSwapMessageLoops) {
     loop2->Run();
   });
 
-  // wait for loops to initialize.
-  latch1.Wait();
   latch2.Wait();
 
   // swap the loops.
