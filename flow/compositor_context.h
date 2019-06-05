@@ -37,16 +37,6 @@ class CompositorContext {
 
     ExternalViewEmbedder* view_embedder() { return view_embedder_; }
 
-    MutatorsStack* mutator_statck() {
-      if (view_embedder_ == nullptr) {
-        return nullptr;
-      }
-      if (context_.mutator_statck_ == nullptr) {
-        context_.mutator_statck_ = new MutatorsStack();
-      }
-      return context_.mutator_statck_;
-    }
-
     CompositorContext& context() const { return context_; }
 
     const SkMatrix& root_surface_transformation() const {
@@ -99,7 +89,6 @@ class CompositorContext {
   Counter frame_count_;
   Stopwatch raster_time_;
   Stopwatch ui_time_;
-  MutatorsStack* mutator_statck_;
 
   void BeginFrame(ScopedFrame& frame, bool enable_instrumentation);
 

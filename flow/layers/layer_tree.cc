@@ -78,12 +78,14 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
     }
   }
 
+  MutatorsStack* stack = new MutatorsStack();
+
   Layer::PaintContext context = {
       (SkCanvas*)&internal_nodes_canvas,
       frame.canvas(),
       frame.gr_context(),
       frame.view_embedder(),
-      frame.mutator_statck(),
+      stack,
       frame.context().raster_time(),
       frame.context().ui_time(),
       frame.context().texture_registry(),
@@ -92,6 +94,8 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
 
   if (root_layer_->needs_painting())
     root_layer_->Paint(context);
+
+  delete stack;
 }
 
 sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {

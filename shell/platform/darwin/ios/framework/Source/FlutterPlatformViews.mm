@@ -205,6 +205,7 @@ UIView* FlutterPlatformViewsController::ApplyMutators(MutatorsStack& mutators_st
                                                       UIView* embedded_view,
                                                       int view_id) {
   UIView* head = embedded_view;
+  head.clipsToBounds = YES;
 
   // Reset everything related to transform.
   head.layer.transform = CATransform3DIdentity;
@@ -228,7 +229,7 @@ UIView* FlutterPlatformViewsController::ApplyMutators(MutatorsStack& mutators_st
         ++clipCount;
         if (clipCount > clip_count_[view_id]) {
           [head removeFromSuperview];
-          view = [[UIView alloc] initWithFrame:head.bounds];
+          view = [[UIView alloc] initWithFrame:flutter_view_.get().bounds];
           [view addSubview:head];
         }
         PerformClip(view, iter->get()->type(), iter->get()->rect(), iter->get()->rrect(),
