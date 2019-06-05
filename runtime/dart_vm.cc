@@ -352,7 +352,6 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
 
   if (settings_.trace_startup) {
     PushBackAll(&args, kDartTraceStartupArgs, fml::size(kDartTraceStartupArgs));
-
   }
 
   for (size_t i = 0; i < settings_.dart_flags.size(); i++)

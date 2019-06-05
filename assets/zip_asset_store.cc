@@ -42,7 +42,7 @@ bool ZipAssetStore::IsValid() const {
 std::unique_ptr<fml::Mapping> ZipAssetStore::GetAsMapping(
     const std::string& asset_name) const {
   FML_TRACE_EVENT1("flutter", "ZipAssetStore::GetAsMapping", "name",
-               asset_name.c_str());
+                   asset_name.c_str());
 
   auto found = stat_cache_.find(directory_ + "/" + asset_name);
   if (found == stat_cache_.end()) {

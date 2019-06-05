@@ -203,7 +203,7 @@ void Engine::BeginFrame(fml::TimePoint frame_time) {
 
 void Engine::NotifyIdle(int64_t deadline) {
   FML_TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
-               std::to_string(deadline - Dart_TimelineGetMicros()).c_str());
+                   std::to_string(deadline - Dart_TimelineGetMicros()).c_str());
   runtime_controller_->NotifyIdle(deadline);
 }
 
