@@ -10,13 +10,13 @@
 
 namespace fml {
 
-// TaskRunner that allows for "switching" message loops backing it.
+// TaskRunner that allows for "switching" message loop - task queues.
 // We currently support instantiating this with two configurations, backed
 // by the same task runner or backed by two task runners.
 //
 // Threading: active loop, indexed by current_loop_ is guarded by a shared
-// mutex. When SwitchLoop gets called, we wait for all the expired tasks
-// on the active loop to flush, then we switch the loop.
+// mutex. When SwitchLoop gets called, we swap the task queues for the
+// message loops.
 class MsgLoopReconfigurableTaskRunner : public TaskRunner {
  public:
   // Both loops are backed by the task_runner's loop.
