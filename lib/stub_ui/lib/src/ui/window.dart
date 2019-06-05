@@ -66,7 +66,14 @@ enum FramePhase {
 /// Therefore it's recommended to only monitor and analyze performance metrics
 /// in profile and release modes.
 class FrameTiming {
-  FrameTiming._(List<int> timestamps)
+  /// Construct [FrameTiming] with raw timestamps in microseconds.
+  ///
+  /// List [timestamps] must have the same number of elements as
+  /// [FramePhase.values].
+  ///
+  /// This constructor is usually only called by the Flutter engine, or a test.
+  /// To get the [FrameTiming] of your app, see [Window.onReportTimings].
+  FrameTiming(List<int> timestamps)
       : assert(timestamps.length == FramePhase.values.length), _timestamps = timestamps;
 
   /// This is a raw timestamp in microseconds from some epoch. The epoch in all
@@ -109,15 +116,11 @@ class FrameTiming {
 
   final List<int> _timestamps;  // in microseconds
 
+  String _formatMS(Duration duration) => '${duration.inMicroseconds * 0.001}ms';
+
   @override
   String toString() {
-    return '''
-$runtimeType(
-  buildDuration: $buildDuration,
-  rasterDuration: $rasterDuration,
-  totalSpan: $totalSpan,
-  timestamps: $_timestamps,
-)''';
+    return '$runtimeType(buildDuration: ${_formatMS(buildDuration)}, rasterDuration: ${_formatMS(rasterDuration)}, totalSpan: ${_formatMS(totalSpan)})';
   }
 }
 
