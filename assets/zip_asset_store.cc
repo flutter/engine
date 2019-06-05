@@ -41,7 +41,7 @@ bool ZipAssetStore::IsValid() const {
 // |AssetResolver|
 std::unique_ptr<fml::Mapping> ZipAssetStore::GetAsMapping(
     const std::string& asset_name) const {
-  TRACE_EVENT1("flutter", "ZipAssetStore::GetAsMapping", "name",
+  FML_TRACE_EVENT1("flutter", "ZipAssetStore::GetAsMapping", "name",
                asset_name.c_str());
 
   auto found = stat_cache_.find(directory_ + "/" + asset_name);
@@ -84,7 +84,7 @@ std::unique_ptr<fml::Mapping> ZipAssetStore::GetAsMapping(
 }
 
 void ZipAssetStore::BuildStatCache() {
-  TRACE_EVENT0("flutter", "ZipAssetStore::BuildStatCache");
+  FML_TRACE_EVENT0("flutter", "ZipAssetStore::BuildStatCache");
 
   auto unzipper = CreateUnzipper();
 

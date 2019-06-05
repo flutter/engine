@@ -10,23 +10,7 @@
 #if defined(OS_FUCHSIA)
 #if !defined(FUCHSIA_SDK)
 
-// Forward to the system tracing mechanism on Fuchsia.
-
 #include <trace/event.h>
-
-// TODO(DNO-448): This is disabled because the Fuchsia counter id json parsing
-// only handles ints whereas this can produce ints or strings.
-#define FML_TRACE_COUNTER(a, b, c, args...)
-#define FML_TRACE_EVENT(a, b, args...) TRACE_DURATION(a, b)
-
-#define TRACE_EVENT0(a, b) TRACE_DURATION(a, b)
-#define TRACE_EVENT1(a, b, c, d) TRACE_DURATION(a, b, c, d)
-#define TRACE_EVENT2(a, b, c, d, e, f) TRACE_DURATION(a, b, c, d, e, f)
-#define TRACE_EVENT_ASYNC_BEGIN0(a, b, c) TRACE_ASYNC_BEGIN(a, b, c)
-#define TRACE_EVENT_ASYNC_END0(a, b, c) TRACE_ASYNC_END(a, b, c)
-#define TRACE_EVENT_ASYNC_BEGIN1(a, b, c, d, e) TRACE_ASYNC_BEGIN(a, b, c, d, e)
-#define TRACE_EVENT_ASYNC_END1(a, b, c, d, e) TRACE_ASYNC_END(a, b, c, d, e)
-#define TRACE_EVENT_INSTANT0(a, b) TRACE_INSTANT(a, b, TRACE_SCOPE_THREAD)
 
 #endif  //  !defined(FUCHSIA_SDK)
 #endif  //  defined(OS_FUCHSIA)
@@ -40,9 +24,6 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_point.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
-
-#if !defined(OS_FUCHSIA) || defined(FUCHSIA_SDK)
-#ifndef TRACE_EVENT_HIDE_MACROS
 
 #define __FML__TOKEN_CAT__(x, y) x##y
 #define __FML__TOKEN_CAT__2(x, y) __FML__TOKEN_CAT__(x, y)
@@ -62,49 +43,46 @@
   ::fml::tracing::TraceEvent((category_group), (name), __VA_ARGS__); \
   __FML__AUTO_TRACE_END(name)
 
-#define TRACE_EVENT0(category_group, name)           \
+#define FML_TRACE_EVENT0(category_group, name)           \
   ::fml::tracing::TraceEvent0(category_group, name); \
   __FML__AUTO_TRACE_END(name)
 
-#define TRACE_EVENT1(category_group, name, arg1_name, arg1_val)           \
+#define FML_TRACE_EVENT1(category_group, name, arg1_name, arg1_val)           \
   ::fml::tracing::TraceEvent1(category_group, name, arg1_name, arg1_val); \
   __FML__AUTO_TRACE_END(name)
 
-#define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, \
+#define FML_TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, \
                      arg2_val)                                             \
   ::fml::tracing::TraceEvent2(category_group, name, arg1_name, arg1_val,   \
                               arg2_name, arg2_val);                        \
   __FML__AUTO_TRACE_END(name)
 
-#define TRACE_EVENT_ASYNC_BEGIN0(category_group, name, id) \
+#define FML_TRACE_EVENT_ASYNC_BEGIN0(category_group, name, id) \
   ::fml::tracing::TraceEventAsyncBegin0(category_group, name, id);
 
-#define TRACE_EVENT_ASYNC_END0(category_group, name, id) \
+#define FML_TRACE_EVENT_ASYNC_END0(category_group, name, id) \
   ::fml::tracing::TraceEventAsyncEnd0(category_group, name, id);
 
-#define TRACE_EVENT_ASYNC_BEGIN1(category_group, name, id, arg1_name,        \
+#define FML_TRACE_EVENT_ASYNC_BEGIN1(category_group, name, id, arg1_name,        \
                                  arg1_val)                                   \
   ::fml::tracing::TraceEventAsyncBegin1(category_group, name, id, arg1_name, \
                                         arg1_val);
 
-#define TRACE_EVENT_ASYNC_END1(category_group, name, id, arg1_name, arg1_val) \
+#define FML_TRACE_EVENT_ASYNC_END1(category_group, name, id, arg1_name, arg1_val) \
   ::fml::tracing::TraceEventAsyncEnd1(category_group, name, id, arg1_name,    \
                                       arg1_val);
 
-#define TRACE_EVENT_INSTANT0(category_group, name) \
+#define FML_TRACE_EVENT_INSTANT0(category_group, name) \
   ::fml::tracing::TraceEventInstant0(category_group, name);
 
-#define TRACE_FLOW_BEGIN(category, name, id) \
+#define FML_TRACE_FLOW_BEGIN(category, name, id) \
   ::fml::tracing::TraceEventFlowBegin0(category, name, id);
 
-#define TRACE_FLOW_STEP(category, name, id) \
+#define FML_TRACE_FLOW_STEP(category, name, id) \
   ::fml::tracing::TraceEventFlowStep0(category, name, id);
 
-#define TRACE_FLOW_END(category, name, id) \
+#define FML_TRACE_FLOW_END(category, name, id) \
   ::fml::tracing::TraceEventFlowEnd0(category, name, id);
-
-#endif  // TRACE_EVENT_HIDE_MACROS
-#endif  // !defined(OS_FUCHSIA) || defined(FUCHSIA_SDK)
 
 namespace fml {
 namespace tracing {

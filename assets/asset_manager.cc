@@ -35,7 +35,7 @@ std::unique_ptr<fml::Mapping> AssetManager::GetAsMapping(
   if (asset_name.size() == 0) {
     return nullptr;
   }
-  TRACE_EVENT1("flutter", "AssetManager::GetAsMapping", "name",
+  FML_TRACE_EVENT1("flutter", "AssetManager::GetAsMapping", "name",
                asset_name.c_str());
   for (const auto& resolver : resolvers_) {
     auto mapping = resolver->GetAsMapping(asset_name);
