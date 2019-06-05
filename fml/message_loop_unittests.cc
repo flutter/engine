@@ -345,7 +345,7 @@ TEST(MessageLoop, CanSwapMessageLoopsAndPreserveThreadConfiguration) {
   latch2.Wait();
 
   // swap the loops.
-  loop1->Swap(loop2);
+  loop1->SwapTaskQueues(loop2);
 
   // thread_1 should wait for tr_term2 latch.
   term1.Signal();

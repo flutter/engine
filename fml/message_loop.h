@@ -38,7 +38,7 @@ class MessageLoop {
   // instead of dedicating a thread to the message loop.
   void RunExpiredTasksNow();
 
-  void Swap(MessageLoop* other);
+  void SwapTaskQueues(MessageLoop* other);
 
   static void EnsureInitializedForCurrentThread();
 

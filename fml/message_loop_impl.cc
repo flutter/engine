@@ -97,7 +97,7 @@ void MessageLoopImpl::DoTerminate() {
   Terminate();
 }
 
-void MessageLoopImpl::Swap(const fml::RefPtr<MessageLoopImpl>& other)
+void MessageLoopImpl::SwapTaskQueues(const fml::RefPtr<MessageLoopImpl>& other)
     FML_NO_THREAD_SAFETY_ANALYSIS {
   if (terminated_ || other->terminated_) {
     return;
