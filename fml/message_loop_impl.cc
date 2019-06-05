@@ -97,6 +97,7 @@ void MessageLoopImpl::DoTerminate() {
   Terminate();
 }
 
+// Thread safety analysis disabled as it does not account for defered locks.
 void MessageLoopImpl::SwapTaskQueues(const fml::RefPtr<MessageLoopImpl>& other)
     FML_NO_THREAD_SAFETY_ANALYSIS {
   if (terminated_ || other->terminated_) {
@@ -116,9 +117,7 @@ void MessageLoopImpl::SwapTaskQueues(const fml::RefPtr<MessageLoopImpl>& other)
   std::unique_lock<std::mutex> d1(delayed_tasks_mutex_, std::defer_lock);
   std::unique_lock<std::mutex> d2(other->delayed_tasks_mutex_, std::defer_lock);
 
-  std::lock(t1, t2);
-  std::lock(o1, o2);
-  std::lock(d1, d2);
+  std::lock(t1, t2, o1, o2, d1, d2);
 
   std::swap(task_observers_, other->task_observers_);
   std::swap(delayed_tasks_, other->delayed_tasks_);
@@ -142,7 +141,7 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
   std::vector<fml::closure> invocations;
 
   // We are grabbing this lock here as a proxy to indicate
-  // tht we are running tasks and will invoke the
+  // that we are running tasks and will invoke the
   // "right" observers, we are trying to avoid the scenario
   // where:
   // gather invocations -> Swap -> execute invocations
