@@ -47,7 +47,6 @@ import io.flutter.plugin.common.*;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
-import io.flutter.plugin.platform.PlatformViewsResolver;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -192,8 +191,8 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         PlatformPlugin platformPlugin = new PlatformPlugin(activity, platformChannel);
         addActivityLifecycleListener(platformPlugin);
         mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        PlatformViewsResolver platformViewsResolver = mNativeView.getPluginRegistry().getPlatformViewsController();
-        mTextInputPlugin = new TextInputPlugin(this, dartExecutor, platformViewsResolver);
+        PlatformViewsController platformViewsController = mNativeView.getPluginRegistry().getPlatformViewsController();
+        mTextInputPlugin = new TextInputPlugin(this, dartExecutor, platformViewsController);
         androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
         androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer);
         mNativeView.getPluginRegistry().getPlatformViewsController().attachTextInputPlugin(mTextInputPlugin);

@@ -18,7 +18,7 @@ import android.view.inputmethod.InputMethodManager;
 
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
-import io.flutter.plugin.platform.PlatformViewsResolver;
+import io.flutter.plugin.platform.PlatformViewsController;
 
 /**
  * Android implementation of the text input plugin.
@@ -40,13 +40,13 @@ public class TextInputPlugin {
     @Nullable
     private InputConnection lastInputConnection;
 
-    private PlatformViewsResolver platformViewsResolver;
+    private PlatformViewsController platformViewsController;
 
     // When true following calls to createInputConnection will return the cached lastInputConnection if the input
     // target is a platform view. See the comments on lockPlatformViewInputConnection for more details.
     private boolean isInputConnectionLocked;
 
-    public TextInputPlugin(View view, @NonNull DartExecutor dartExecutor, PlatformViewsResolver platformViewsResolver) {
+    public TextInputPlugin(View view, @NonNull DartExecutor dartExecutor, PlatformViewsController platformViewsController) {
         mView = view;
         mImm = (InputMethodManager) view.getContext().getSystemService(
                 Context.INPUT_METHOD_SERVICE);
@@ -83,7 +83,8 @@ public class TextInputPlugin {
                 clearTextInputClient();
             }
         });
-        this.platformViewsResolver = platformViewsResolver;
+        this.platformViewsController = platformViewsController;
+        platformViewsController.attachTextInputPlugin(this);
     }
 
     @NonNull
@@ -94,7 +95,8 @@ public class TextInputPlugin {
     /***
      * Use the current platform view input connection until unlockPlatformViewInputConnection is called.
      *
-     * The current input connection instance is cached and any following call to @{link createInputConnection}.
+     * The current input connection instance is cached and any following call to @{link createInputConnection} returns
+     * the cached connection until unlockPlatformViewInputConnection is called.
      *
      * This is a no-op if the current input target isn't a platform view.
      *
@@ -174,7 +176,7 @@ public class TextInputPlugin {
             if (isInputConnectionLocked) {
                 return lastInputConnection;
             }
-            lastInputConnection = platformViewsResolver.getPlatformViewById(inputTarget.id).onCreateInputConnection(outAttrs);
+            lastInputConnection = platformViewsController.getPlatformViewById(inputTarget.id).onCreateInputConnection(outAttrs);
             return lastInputConnection;
         }
 
@@ -302,11 +304,12 @@ public class TextInputPlugin {
             PLATFORM_VIEW
         }
 
-        public InputTarget(Type type, int id) {
+        public InputTarget(@NonNull Type type, int id) {
             this.type = type;
             this.id = id;
         }
 
+        @NonNull
         Type type;
         // The ID of the input target.
         //

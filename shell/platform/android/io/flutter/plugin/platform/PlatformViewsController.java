@@ -314,10 +314,22 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         accessibilityEventsDelegate.setAccessibilityBridge(null);
     }
 
+    /**
+     * Attaches this controller to a text input plugin.
+     *
+     * While a text input plugin is available, the platform views controller interacts with it to facilitate
+     * delegation of text input connections to platform views.
+     *
+     * A platform views controller should be attached to a text input plugin whenever it is possible for the Flutter
+     * framework to receive text input.
+     */
     public void attachTextInputPlugin(TextInputPlugin textInputPlugin) {
         this.textInputPlugin = textInputPlugin;
     }
 
+    /**
+     * Detaches this controller from the currently attached text input plugin.
+     */
     public void detachTextInputPlugin() {
         textInputPlugin = null;
     }
