@@ -58,6 +58,54 @@ class ExternalViewEmbedder {
 
 };  // ExternalViewEmbedder
 
+enum MutatorType { clip_rect, clip_rrect, clip_path, transform };
+
+class Mutator {
+ public:
+  void setType(const MutatorType type) { type_ = type; }
+  void setRect(const SkRect& rect) { rect_ = rect; }
+  void setRRect(const SkRRect& rrect) { rrect_ = rrect; }
+  void setMatrix(const SkMatrix& matrix) { matrix_ = matrix; }
+
+  MutatorType type() const { return type_; }
+  SkRect rect() const { return rect_; }
+  SkRRect rrect() const { return rrect_; }
+  SkPath path() const { return path_; }
+  SkMatrix matrix() const { return matrix_; }
+
+  bool operator==(const Mutator& other) const {
+    if (type_ != other.type_) {
+      return false;
+    }
+    if (type_ == clip_rect && rect_ == other.rect_) {
+      return true;
+    }
+    if (type_ == clip_rrect && rrect_ == other.rrect_) {
+      return true;
+    }
+    if (type_ == clip_path && path_ == other.path_) {
+      return true;
+    }
+    if (type_ == transform && matrix_ == other.matrix_) {
+      return true;
+    }
+    return false;
+  }
+
+  bool operator!=(const Mutator& other) const { return !operator==(other); }
+
+  bool isClipType() {
+    return type_ == clip_rect || type_ == clip_rrect || type_ == clip_path;
+  }
+
+ private:
+  MutatorType type_;
+  SkRect rect_;
+  SkRRect rrect_;
+  SkPath path_;
+  SkMatrix matrix_;
+};  // Mutator
+
 // A stack of mutators that can be applied to an embedded platform view.
 //
 // The stack may include mutators like transforms and clips, each mutator
@@ -85,58 +133,24 @@ class MutatorsStack {
   const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator bottom();
 
   bool operator==(const MutatorsStack& other) const {
-    return vector_ == other.vector_;
+    if (vector_.size() != other.vector_.size()) {
+      return false;
+    }
+    for (size_t i = 0; i < vector_.size(); i++) {
+      if (*(vector_[i]) != *(other.vector_[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool operator!=(const MutatorsStack& other) const {
+    return !operator==(other);
   }
 
  private:
   std::vector<std::unique_ptr<Mutator>> vector_;
 };  // MutatorsStack
-
-enum MutatorType { clip_rect, clip_rrect, clip_path, transform };
-
-class Mutator {
- public:
-  void setType(const MutatorType type) { type_ = type; }
-  void setRect(const SkRect& rect) { rect_ = rect; }
-  void setRRect(const SkRRect& rrect) { rrect_ = rrect; }
-  void setMatrix(const SkMatrix& matrix) { matrix_ = matrix; }
-
-  MutatorType type() const { return type_; }
-  SkRect rect() const { return rect_; }
-  SkRRect rrect() const { return rrect_; }
-  SkPath path() const { return path_; }
-  SkMatrix matrix() const { return matrix_; }
-
-  bool operator==(const Mutator& other) const {
-    if (type_ != other.type_) {
-      return false;
-    }
-    if (type_ == clip_rect && rect_ == other.rect_) {
-      return true;
-    }
-    if (type_ == clip_rect && rrect_ == other.rrect_) {
-      return true;
-    }
-    if (type_ == clip_path && path_ == other.path_) {
-      return true;
-    }
-    if (type_ == transform && matrix_ == other.matrix_) {
-      return true;
-    }
-    return false;
-  }
-
-  bool isClipType() {
-    return type_ == clip_rect || type_ == clip_rrect || type_ == clip_path;
-  }
-
- private:
-  MutatorType type_;
-  SkRect rect_;
-  SkRRect rrect_;
-  SkPath path_;
-  SkMatrix matrix_;
-};  // Mutator
 
 }  // namespace flutter
 
