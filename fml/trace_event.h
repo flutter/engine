@@ -41,18 +41,18 @@
   ::fml::tracing::TraceEvent((category_group), (name), __VA_ARGS__); \
   __FML__AUTO_TRACE_END(name)
 
-#define FML_TRACE_EVENT0(category_group, name)           \
+#define FML_TRACE_EVENT0(category_group, name)       \
   ::fml::tracing::TraceEvent0(category_group, name); \
   __FML__AUTO_TRACE_END(name)
 
-#define FML_TRACE_EVENT1(category_group, name, arg1_name, arg1_val)           \
+#define FML_TRACE_EVENT1(category_group, name, arg1_name, arg1_val)       \
   ::fml::tracing::TraceEvent1(category_group, name, arg1_name, arg1_val); \
   __FML__AUTO_TRACE_END(name)
 
 #define FML_TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, \
-                     arg2_val)                                             \
-  ::fml::tracing::TraceEvent2(category_group, name, arg1_name, arg1_val,   \
-                              arg2_name, arg2_val);                        \
+                         arg2_val)                                             \
+  ::fml::tracing::TraceEvent2(category_group, name, arg1_name, arg1_val,       \
+                              arg2_name, arg2_val);                            \
   __FML__AUTO_TRACE_END(name)
 
 #define FML_TRACE_EVENT_ASYNC_BEGIN0(category_group, name, id) \
@@ -61,13 +61,14 @@
 #define FML_TRACE_EVENT_ASYNC_END0(category_group, name, id) \
   ::fml::tracing::TraceEventAsyncEnd0(category_group, name, id);
 
-#define FML_TRACE_EVENT_ASYNC_BEGIN1(category_group, name, id, arg1_name,        \
-                                 arg1_val)                                   \
+#define FML_TRACE_EVENT_ASYNC_BEGIN1(category_group, name, id, arg1_name,    \
+                                     arg1_val)                               \
   ::fml::tracing::TraceEventAsyncBegin1(category_group, name, id, arg1_name, \
                                         arg1_val);
 
-#define FML_TRACE_EVENT_ASYNC_END1(category_group, name, id, arg1_name, arg1_val) \
-  ::fml::tracing::TraceEventAsyncEnd1(category_group, name, id, arg1_name,    \
+#define FML_TRACE_EVENT_ASYNC_END1(category_group, name, id, arg1_name,    \
+                                   arg1_val)                               \
+  ::fml::tracing::TraceEventAsyncEnd1(category_group, name, id, arg1_name, \
                                       arg1_val);
 
 #define FML_TRACE_EVENT_INSTANT0(category_group, name) \

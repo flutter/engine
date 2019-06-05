@@ -42,7 +42,8 @@ void VsyncWaiter::AsyncWaitForVsync(Callback callback) {
       // The animator may request a frame more than once within a frame
       // interval. Multiple calls to request frame must result in a single
       // callback per frame interval.
-      FML_TRACE_EVENT_INSTANT0("flutter", "MultipleCallsToVsyncInFrameInterval");
+      FML_TRACE_EVENT_INSTANT0("flutter",
+                               "MultipleCallsToVsyncInFrameInterval");
       return;
     }
     callback_ = std::move(callback);

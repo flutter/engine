@@ -253,7 +253,7 @@ bool RuntimeController::DispatchPlatformMessage(
     fml::RefPtr<PlatformMessage> message) {
   if (auto* window = GetWindowIfAvailable()) {
     FML_TRACE_EVENT1("flutter", "RuntimeController::DispatchPlatformMessage",
-                 "mode", "basic");
+                     "mode", "basic");
     window->DispatchPlatformMessage(std::move(message));
     return true;
   }
@@ -264,7 +264,7 @@ bool RuntimeController::DispatchPointerDataPacket(
     const PointerDataPacket& packet) {
   if (auto* window = GetWindowIfAvailable()) {
     FML_TRACE_EVENT1("flutter", "RuntimeController::DispatchPointerDataPacket",
-                 "mode", "basic");
+                     "mode", "basic");
     window->DispatchPointerDataPacket(packet);
     return true;
   }
@@ -274,8 +274,8 @@ bool RuntimeController::DispatchPointerDataPacket(
 bool RuntimeController::DispatchSemanticsAction(int32_t id,
                                                 SemanticsAction action,
                                                 std::vector<uint8_t> args) {
-  FML_TRACE_EVENT1("flutter", "RuntimeController::DispatchSemanticsAction", "mode",
-               "basic");
+  FML_TRACE_EVENT1("flutter", "RuntimeController::DispatchSemanticsAction",
+                   "mode", "basic");
   if (auto* window = GetWindowIfAvailable()) {
     window->DispatchSemanticsAction(id, action, std::move(args));
     return true;

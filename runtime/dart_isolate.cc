@@ -271,7 +271,8 @@ bool DartIsolate::LoadLibraries(bool is_root_isolate) {
 }
 
 bool DartIsolate::PrepareForRunningFromPrecompiledCode() {
-  FML_TRACE_EVENT0("flutter", "DartIsolate::PrepareForRunningFromPrecompiledCode");
+  FML_TRACE_EVENT0("flutter",
+                   "DartIsolate::PrepareForRunningFromPrecompiledCode");
   if (phase_ != Phase::LibrariesSetup) {
     return false;
   }
