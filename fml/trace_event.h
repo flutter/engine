@@ -33,8 +33,6 @@
 
 // This macro has the FML_ prefix so that it does not collide with the macros
 // from trace/event.h on Fuchsia.
-//
-// TODO(chinmaygarde): All macros here should have the FML prefix.
 #define FML_TRACE_COUNTER(category_group, name, counter_id, arg1, ...)         \
   ::fml::tracing::TraceCounter((category_group), (name), (counter_id), (arg1), \
                                __VA_ARGS__);
