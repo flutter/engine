@@ -7,7 +7,9 @@
 
 #import <Foundation/Foundation.h>
 
-#define KEYCODE_DELETE_BACKWARD 0x33
+// The iOS platform doesn't provide us with the device keycode, so the
+// usb keycode (as defined in chromium) is used here.
+#define KEYCODE_DELETE_BACKWARD 0x7002A
 
 @protocol FlutterKeyEventDelegate <NSObject>
 

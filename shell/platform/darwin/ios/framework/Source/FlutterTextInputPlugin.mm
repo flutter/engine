@@ -619,6 +619,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   _selectionAffinity = _kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
 
+  // Simulate key event for the inserted text.
   [_keyEventDelegate dispatchKeyEvent:@"keyup" keyCode:0 characters:text];
 }
 
@@ -649,6 +650,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     [self replaceRange:_selectedTextRange withText:@""];
   }
 
+  // Simulate key event for delete backward.
   [_keyEventDelegate dispatchKeyEvent:@"keyup" keyCode:KEYCODE_DELETE_BACKWARD characters:@""];
 }
 
