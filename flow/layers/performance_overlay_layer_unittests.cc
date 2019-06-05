@@ -74,7 +74,9 @@ TEST(PerformanceOverlayLayer, Gold) {
       << "Please either set --golden-dir, or make sure that the unit test is "
       << "run from the right directory (e.g., flutter/engine/src).";
 
-#if OS_LINUX
+#if !OS_LINUX
+  GTEST_SKIP() << "Skipping golden tests on non-Linux OSes";
+#endif  // OS_LINUX
   const bool golden_data_matches = golden_data->equals(snapshot_data.get());
   if (!golden_data_matches) {
     SkFILEWStream wstream(new_golden_file_path.c_str());
@@ -96,7 +98,4 @@ TEST(PerformanceOverlayLayer, Gold) {
         << "See also the base64 encoded " << kNewGoldenFileName << ":\n"
         << b64_char;
   }
-#else
-  std::cout << "Skipping golden tests on non-Linux OSes" << std::endl;
-#endif  // OS_LINUX
 }
