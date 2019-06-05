@@ -4,10 +4,7 @@
 
 package io.flutter.view;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
@@ -191,11 +188,7 @@ public class FlutterMain {
             return;
         }
         try {
-            // There are resources to extract. For example, the AOT blobs from the `assets` directory.
-            // `sResourceExtractor` is `null` if there isn't any AOT blob to extract.
-            if (sResourceExtractor != null) {
-                sResourceExtractor.waitForCompletion();
-            }
+            sResourceExtractor.waitForCompletion();
 
             List<String> shellArgs = new ArrayList<>();
             shellArgs.add("--icu-symbol-prefix=_binary_icudtl_dat");
@@ -312,17 +305,10 @@ public class FlutterMain {
     }
 
     /**
-     * Extract the AOT blobs from the app's asset directory. 
+     * Extract the AOT blobs from the app's asset directory.
      * This is required by the Dart runtime, so it can read the blobs.
      */
     private static void initResources(@NonNull Context applicationContext) {
-        // When the AOT blobs are contained in the native library directory, 
-        // we don't need to extract them manually because they are 
-        // extracted by the Android Package Manager automatically.
-        if (!sSnapshotPath.equals(PathUtils.getDataDirectory(applicationContext))) {
-            return;
-        }
-
         new ResourceCleaner(applicationContext).start();
 
         final String dataDirPath = PathUtils.getDataDirectory(applicationContext);
@@ -369,15 +355,18 @@ public class FlutterMain {
     }
 
     /**
-     * Returns a list of the file names at the root of the application's 
+     * Returns a list of the file names at the root of the application's
      * native library directory.
      */
     @NonNull
     private static Set<String> listLibs(@NonNull Context applicationContext) {
         ApplicationInfo applicationInfo = getApplicationInfo(applicationContext);
         File[] files = new File(applicationInfo.nativeLibraryDir).listFiles();
-        
-        ImmutableSetBuilder builder = ImmutableSetBuilder.<String>newInstance();
+        if (files == null) {
+            files = new File[0];
+        }
+
+        ImmutableSetBuilder<String> builder = ImmutableSetBuilder.newInstance();
         for (File file : files) {
             builder.add(file.getName());
         }
@@ -385,10 +374,10 @@ public class FlutterMain {
     }
 
     /**
-     * Determines if the APK contains a shared library or AOT snapshots, 
+     * Determines if the APK contains a shared library or AOT snapshots,
      * the file name of the snapshots and the directory where they are contained.
      *
-     * <p>The snapshots can be contained in the app's assets or in the native library 
+     * <p>The snapshots can be contained in the app's assets or in the native library
      * directory. The default names are:
      *
      * <ul>
@@ -400,9 +389,11 @@ public class FlutterMain {
      * </ul>
      *
      * <p>When the blobs are contained in the native library directory,
-     * the format <b>`lib_%s.so`</b> is applied to the file name.
+     * this method looks for blobs named <b>`lib_%s.so`</b>.
      *
-     * <p>Note: The name of the files can be customized in the app's metadata, but the 
+     * The shared library should have the `lib` prefix only. e.g. <b>`libapp.so`</b>.
+     *
+     * <p>Note: The name of the files can be customized in the app's metadata, but the
      * format is preserved.
      *
      * <p>The AOT snapshots and the shared library cannot exist at the same time in the APK.
@@ -415,7 +406,7 @@ public class FlutterMain {
         String aotVmSnapshotInstrLib = "lib_" + sAotVmSnapshotInstr + ".so";
         String aotIsolateSnapshotDataLib = "lib_" + sAotIsolateSnapshotData + ".so";
         String aotIsolateSnapshotInstrLib = "lib_" + sAotIsolateSnapshotInstr + ".so";
-        String aotSharedLibraryLib = "lib_" + sAotSharedLibraryPath + ".so";
+        String aotSharedLibraryLib = "lib" + sAotSharedLibraryPath;
 
         boolean isPrecompiledBlobInLib = libs
             .containsAll(Arrays.asList(
