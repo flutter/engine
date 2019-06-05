@@ -355,7 +355,6 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
 
   }
 
-  // PushBackAll(&args, kDartTraceStreamsArgs, fml::size(kDartTraceStreamsArgs));
   for (size_t i = 0; i < settings_.dart_flags.size(); i++)
     args.push_back(settings_.dart_flags[i].c_str());
 
