@@ -43,7 +43,7 @@ class MessageLoopImpl : public fml::RefCountedThreadSafe<MessageLoopImpl> {
 
   void DoTerminate();
 
-  void Swap(MessageLoopImpl& other);
+  void Swap(const fml::RefPtr<MessageLoopImpl>& other);
 
  protected:
   // Exposed for the embedder shell which allows clients to poll for events

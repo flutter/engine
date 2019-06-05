@@ -97,27 +97,27 @@ void MessageLoopImpl::DoTerminate() {
   Terminate();
 }
 
-void MessageLoopImpl::Swap(MessageLoopImpl& other)
+void MessageLoopImpl::Swap(const fml::RefPtr<MessageLoopImpl>& other)
     FML_NO_THREAD_SAFETY_ANALYSIS {
-  if (terminated_ || other.terminated_) {
+  if (terminated_ || other->terminated_) {
     return;
   }
 
   // task_observers locks
   std::unique_lock<std::mutex> o1(observers_mutex_, std::defer_lock);
-  std::unique_lock<std::mutex> o2(other.observers_mutex_, std::defer_lock);
+  std::unique_lock<std::mutex> o2(other->observers_mutex_, std::defer_lock);
 
   // delayed_tasks locks
   std::unique_lock<std::mutex> d1(delayed_tasks_mutex_, std::defer_lock);
-  std::unique_lock<std::mutex> d2(other.delayed_tasks_mutex_, std::defer_lock);
+  std::unique_lock<std::mutex> d2(other->delayed_tasks_mutex_, std::defer_lock);
 
   // we need to first lock the task_obervers_mutex_ and only then lock
   // delayed_tasks_mutex_.
   std::lock(o1, o2);
   std::lock(d1, d2);
 
-  std::swap(task_observers_, other.task_observers_);
-  std::swap(delayed_tasks_, other.delayed_tasks_);
+  std::swap(task_observers_, other->task_observers_);
+  std::swap(delayed_tasks_, other->delayed_tasks_);
 }
 
 void MessageLoopImpl::RegisterTask(fml::closure task,

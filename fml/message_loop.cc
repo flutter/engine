@@ -81,8 +81,10 @@ void MessageLoop::RunExpiredTasksNow() {
   loop_->RunExpiredTasksNow();
 }
 
-void MessageLoop::Swap(MessageLoop& other) {
-  other.loop_->Swap(*loop_);
+void MessageLoop::Swap(MessageLoop* other) {
+  FML_CHECK(loop_);
+  FML_CHECK(other->loop_);
+  loop_->Swap(other->loop_);
 }
 
 }  // namespace fml
