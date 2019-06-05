@@ -72,11 +72,9 @@ bool MsgLoopReconfigurableTaskRunner::RunsTasksOnCurrentThread() {
 
 void MsgLoopReconfigurableTaskRunner::SwitchMessageLoop() {
   fml::UniqueLock lock(*shared_mutex_);
-  fml::AutoResetWaitableEvent latch;
-  loops_[current_loop_]->PostTask([&latch]() { latch.Signal(); },
-                                  fml::TimePoint::Now());
-  latch.Wait();
-  current_loop_ ^= 1;
+  int next_loop_ = current_loop_ ^ 1;
+  loops_[current_loop_]->SwapTaskQueues(loops_[next_loop_]);
+  current_loop_ = next_loop_;
 }
 
 }  // namespace fml
