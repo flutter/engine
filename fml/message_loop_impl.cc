@@ -103,6 +103,11 @@ void MessageLoopImpl::SwapTaskQueues(const fml::RefPtr<MessageLoopImpl>& other)
     return;
   }
 
+  // task_flushing locks
+  std::unique_lock<std::mutex> t1(tasks_flushing_mutex_, std::defer_lock);
+  std::unique_lock<std::mutex> t2(other->tasks_flushing_mutex_,
+                                  std::defer_lock);
+
   // task_observers locks
   std::unique_lock<std::mutex> o1(observers_mutex_, std::defer_lock);
   std::unique_lock<std::mutex> o2(other->observers_mutex_, std::defer_lock);
@@ -111,8 +116,7 @@ void MessageLoopImpl::SwapTaskQueues(const fml::RefPtr<MessageLoopImpl>& other)
   std::unique_lock<std::mutex> d1(delayed_tasks_mutex_, std::defer_lock);
   std::unique_lock<std::mutex> d2(other->delayed_tasks_mutex_, std::defer_lock);
 
-  // we need to first lock the task_obervers_mutex_ and only then lock
-  // delayed_tasks_mutex_.
+  std::lock(t1, t2);
   std::lock(o1, o2);
   std::lock(d1, d2);
 
@@ -143,7 +147,7 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
   // where:
   // gather invocations -> Swap -> execute invocations
   // will lead us to run invocations on the wrong thread.
-  std::lock_guard<std::mutex> observers_lock(observers_mutex_);
+  std::lock_guard<std::mutex> task_flush_lock(tasks_flushing_mutex_);
 
   {
     std::lock_guard<std::mutex> lock(delayed_tasks_mutex_);
@@ -171,6 +175,7 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
 
   for (const auto& invocation : invocations) {
     invocation();
+    std::lock_guard<std::mutex> observers_lock(observers_mutex_);
     for (const auto& observer : task_observers_) {
       observer.second();
     }

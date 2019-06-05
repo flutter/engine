@@ -82,6 +82,8 @@ class MessageLoopImpl : public fml::RefCountedThreadSafe<MessageLoopImpl> {
   using DelayedTaskQueue = std::
       priority_queue<DelayedTask, std::deque<DelayedTask>, DelayedTaskCompare>;
 
+  std::mutex tasks_flushing_mutex_;
+
   std::mutex observers_mutex_;
   std::map<intptr_t, fml::closure> task_observers_
       FML_GUARDED_BY(observers_mutex_);
