@@ -17,7 +17,6 @@ TEST(MutatorsStack, PushClipRect) {
   auto iter = stack.bottom();
   ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::clip_rect);
   ASSERT_TRUE(iter->get()->rect() == rect);
-
 }
 
 TEST(MutatorsStack, PushClipRRect) {
@@ -57,7 +56,7 @@ TEST(MutatorsStack, Traversal) {
   stack.pushClipRRect(rrect);
   auto iter = stack.bottom();
   int index = 0;
-  while(iter != stack.top()) {
+  while (iter != stack.top()) {
     switch (index) {
       case 0:
         ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::clip_rrect);
@@ -81,7 +80,7 @@ TEST(MutatorsStack, Traversal) {
 
 TEST(MutatorsStack, Equality) {
   flutter::MutatorsStack stack;
-  SkMatrix matrix = SkMatrix::MakeScale(1,1);
+  SkMatrix matrix = SkMatrix::MakeScale(1, 1);
   stack.pushTransform(matrix);
   SkRect rect = SkRect::MakeEmpty();
   stack.pushClipRect(rect);
@@ -89,7 +88,7 @@ TEST(MutatorsStack, Equality) {
   stack.pushClipRRect(rrect);
 
   flutter::MutatorsStack stackOther;
-  SkMatrix matrixOther = SkMatrix::MakeScale(1,1);
+  SkMatrix matrixOther = SkMatrix::MakeScale(1, 1);
   stackOther.pushTransform(matrixOther);
   SkRect rectOther = SkRect::MakeEmpty();
   stackOther.pushClipRect(rectOther);
@@ -141,4 +140,3 @@ TEST(Mutator, UnEquality) {
   notEqualMutator.setMatrix(matrix);
   ASSERT_TRUE(notEqualMutator != mutator);
 }
-
