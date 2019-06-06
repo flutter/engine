@@ -43,13 +43,12 @@ void MutatorsStack::pop() {
   vector_.pop_back();
 };
 
-const std::vector<Mutator>::const_reverse_iterator
-MutatorsStack::top() const {
+const std::vector<Mutator>::const_reverse_iterator MutatorsStack::top() const {
   return vector_.rend();
 };
 
-const std::vector<Mutator>::const_reverse_iterator
-MutatorsStack::bottom() const {
+const std::vector<Mutator>::const_reverse_iterator MutatorsStack::bottom()
+    const {
   return vector_.rbegin();
 };
 
