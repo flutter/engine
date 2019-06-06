@@ -98,7 +98,7 @@ void MessageLoopImpl::DoTerminate() {
 }
 
 // Thread safety analysis disabled as it does not account for defered locks.
-void MessageLoopImpl::SwapTaskQueues(const fml::RefPtr<MessageLoopImpl>& other)
+void MessageLoopImpl::InheritAllTasks(const fml::RefPtr<MessageLoopImpl>& other)
     FML_NO_THREAD_SAFETY_ANALYSIS {
   if (terminated_ || other->terminated_) {
     return;
@@ -119,8 +119,18 @@ void MessageLoopImpl::SwapTaskQueues(const fml::RefPtr<MessageLoopImpl>& other)
 
   std::lock(t1, t2, o1, o2, d1, d2);
 
-  std::swap(task_observers_, other->task_observers_);
-  std::swap(delayed_tasks_, other->delayed_tasks_);
+  // inherit all the task_observers.
+  using mv_iter =
+      std::move_iterator<std::map<intptr_t, fml::closure>::iterator>;
+  task_observers_.insert(mv_iter(other->task_observers_.begin()),
+                         mv_iter(other->task_observers_.end()));
+
+  // inherit all the delayed tasks.
+  DelayedTaskQueue& other_tasks = other->delayed_tasks_;
+  while (!other_tasks.empty()) {
+    delayed_tasks_.push(std::move(other_tasks.top()));
+    other_tasks.pop();
+  }
 }
 
 void MessageLoopImpl::RegisterTask(fml::closure task,

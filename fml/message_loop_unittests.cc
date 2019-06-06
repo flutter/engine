@@ -296,7 +296,7 @@ TEST(MessageLoop, CanCreateConcurrentMessageLoop) {
   latch.Wait();
 }
 
-TEST(MessageLoop, CanSwapMessageLoopsAndPreserveThreadConfiguration) {
+TEST(MessageLoop, CanInheritMessageLoopsAndPreserveThreadConfiguration) {
   // synchronization notes:
   // 1. term1 and term2 are to wait for Swap.
   // 2. task_started_1 is to wait for the task runners
@@ -345,8 +345,7 @@ TEST(MessageLoop, CanSwapMessageLoopsAndPreserveThreadConfiguration) {
 
   loop_init_2.Wait();
 
-  // swap the loops.
-  loop1->SwapTaskQueues(loop2);
+  loop1->InheritAllTasks(loop2);
 
   // thread_1 should wait for tr_term2 latch.
   term1.Signal();
@@ -360,13 +359,14 @@ TEST(MessageLoop, CanSwapMessageLoopsAndPreserveThreadConfiguration) {
   thread2.join();
 }
 
-TEST(MessageLoop, TIME_SENSITIVE(DelayedTaskSwap)) {
+// TIME_SENSITIVE
+TEST(MessageLoop, DelayedTaskSwap) {
   // Task execution order:
   // time (ms): 0    10   20   30  40
   // thread 1:  A1   A2   A3   A4  TERM
   // thread 2:       B1   B2   B3  TERM
 
-  // At time 15, we swap thread 1 and 2, and assert
+  // At time 15, we inherit 2 to thread 1, and assert
   // that tasks run on the right threads.
 
   std::thread::id t1, t2;
@@ -374,7 +374,7 @@ TEST(MessageLoop, TIME_SENSITIVE(DelayedTaskSwap)) {
   fml::MessageLoop* loop1 = nullptr;
   fml::MessageLoop* loop2 = nullptr;
 
-  std::thread thread_1([&loop1, &t1, &t2, &tid_1, &tid_2]() {
+  std::thread thread_1([&loop1, &t1, &tid_1, &tid_2]() {
     t1 = std::this_thread::get_id();
     tid_1.Signal();
     tid_2.Wait();
@@ -382,13 +382,9 @@ TEST(MessageLoop, TIME_SENSITIVE(DelayedTaskSwap)) {
     loop1 = &fml::MessageLoop::GetCurrent();
     for (int t = 0; t <= 4; t++) {
       loop1->GetTaskRunner()->PostDelayedTask(
-          [t, &t1, &t2]() {
+          [t, &t1]() {
             auto cur_tid = std::this_thread::get_id();
-            if (t <= 1) {
-              ASSERT_EQ(cur_tid, t1);
-            } else {
-              ASSERT_EQ(cur_tid, t2);
-            }
+            ASSERT_EQ(cur_tid, t1);
 
             if (t == 4) {
               fml::MessageLoop::GetCurrent().Terminate();
@@ -424,9 +420,9 @@ TEST(MessageLoop, TIME_SENSITIVE(DelayedTaskSwap)) {
     loop2->Run();
   });
 
-  // on main thread we swap the threads at 15 ms.
+  // on main thread we inherit tasks on the threads at 15 ms.
   std::this_thread::sleep_for(std::chrono::milliseconds(15));
-  loop1->SwapTaskQueues(loop2);
+  loop1->InheritAllTasks(loop2);
 
   thread_1.join();
   thread_2.join();

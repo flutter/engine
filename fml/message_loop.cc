@@ -81,10 +81,10 @@ void MessageLoop::RunExpiredTasksNow() {
   loop_->RunExpiredTasksNow();
 }
 
-void MessageLoop::SwapTaskQueues(MessageLoop* other) {
+void MessageLoop::InheritAllTasks(MessageLoop* other) {
   FML_CHECK(loop_);
   FML_CHECK(other->loop_);
-  loop_->SwapTaskQueues(other->loop_);
+  loop_->InheritAllTasks(other->loop_);
 }
 
 }  // namespace fml
