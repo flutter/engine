@@ -27,6 +27,11 @@ class EmbeddedViewParams {
   MutatorsStack* mutatorsStack;
 
   bool operator==(const EmbeddedViewParams& other) const {
+    FML_LOG(ERROR)<< "param equal";
+    FML_LOG(ERROR)<< "offset equal" << (offsetPixels == other.offsetPixels);
+    FML_LOG(ERROR)<< "sizePoints equal" << (sizePoints == other.sizePoints);
+    FML_LOG(ERROR)<< "mutatorsStack equal" << (mutatorsStack == other.mutatorsStack);
+
     return offsetPixels == other.offsetPixels &&
            sizePoints == other.sizePoints &&
            mutatorsStack == other.mutatorsStack;
@@ -65,6 +70,7 @@ class Mutator {
   void setType(const MutatorType type) { type_ = type; }
   void setRect(const SkRect& rect) { rect_ = rect; }
   void setRRect(const SkRRect& rrect) { rrect_ = rrect; }
+  void setPath(const SkPath& path) { path_ = path; }
   void setMatrix(const SkMatrix& matrix) { matrix_ = matrix; }
 
   MutatorType type() const { return type_; }
@@ -74,6 +80,9 @@ class Mutator {
   SkMatrix matrix() const { return matrix_; }
 
   bool operator==(const Mutator& other) const {
+    if (type_ == clip_path) {
+      FML_LOG(ERROR)<< "path equal" << (path_ == other.path_);
+    }
     if (type_ != other.type_) {
       return false;
     }
@@ -133,6 +142,8 @@ class MutatorsStack {
   const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator bottom();
 
   bool operator==(const MutatorsStack& other) const {
+    FML_LOG(ERROR)<< "stack equal";
+
     if (vector_.size() != other.vector_.size()) {
       return false;
     }

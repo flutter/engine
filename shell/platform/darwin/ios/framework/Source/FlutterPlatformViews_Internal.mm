@@ -104,6 +104,70 @@ void ClipRRect(UIView* view, const SkRRect& clipSkRRect) {
   CGPathRelease(pathRef);
 }
 
+void ClipPath(UIView *view, const SkPath &path) {
+  CGMutablePathRef pathRef = CGPathCreateMutable();
+  if (!path.isValid()) {
+    return;
+  }
+  if (path.isEmpty()) {
+    CAShapeLayer* clip = [[CAShapeLayer alloc] init];
+    clip.path = pathRef;
+    view.layer.mask = clip;
+    CGPathRelease(pathRef);
+    return;
+  }
+
+  // Loop through all verbs and translate them into CGPath
+
+  SkPath::Iter iter(path, true);
+  SkPoint pts[4];
+  SkPath::Verb verb = iter.next(pts);
+  while(verb != SkPath::kDone_Verb) {
+    switch (verb) {
+      case SkPath::kMove_Verb: {
+        NSLog(@"verb move");
+        CGPathMoveToPoint(pathRef, nil, pts[0].x(), pts[0].y());
+        break;
+      }
+      case SkPath::kLine_Verb: {
+        NSLog(@"verb line");
+        CGPathAddLineToPoint(pathRef, nil, pts[1].x(), pts[1].y());
+        break;
+      }
+      case SkPath::kQuad_Verb: {
+        NSLog(@"verb quad");
+        CGPathAddQuadCurveToPoint(pathRef, nil, pts[1].x(), pts[1].y(), pts[2].x(), pts[2].y());
+        break;
+      }
+      case SkPath::kConic_Verb: {
+        NSLog(@"verb conic");
+        break;
+      }
+      case SkPath::kCubic_Verb: {
+        NSLog(@"verb cubic");
+        CGPathAddCurveToPoint(pathRef, nil, pts[1].x(), pts[1].y(), pts[2].x(), pts[2].y(), pts[3].x(), pts[3].y());
+        break;
+      }
+      case SkPath::kClose_Verb: {
+        NSLog(@"verb close");
+        CGPathCloseSubpath(pathRef);
+        break;
+      }
+      case SkPath::kDone_Verb: {
+        NSLog(@"verb done");
+        break;
+      }
+    }
+    verb = iter.next(pts);
+  }
+
+  NSLog(@"final path %@", pathRef);
+  CAShapeLayer* clip = [[CAShapeLayer alloc] init];
+  clip.path = pathRef;
+  view.layer.mask = clip;
+  CGPathRelease(pathRef);
+}
+
 void PerformClip(UIView* view,
                  flutter::MutatorType type,
                  const SkRect& rect,
@@ -119,7 +183,7 @@ void PerformClip(UIView* view,
       ClipRRect(view, rrect);
       break;
     case flutter::clip_path:
-      // TODO(cyanglaz): Add clip path
+      ClipPath(view, path);
       break;
     default:
       break;

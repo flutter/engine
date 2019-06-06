@@ -39,6 +39,9 @@ void ClipRect(UIView* view, const SkRect& clipSkRect);
 // Perform clip rounded rect on the `view` using `clipSkRRect`.
 void ClipRRect(UIView* view, const SkRRect& clipSkRRect);
 
+// Perform clip path on the `view` using `path`.
+void ClipPath(UIView *view, const SkPath &path);
+
 // Perform a clip operation on the `view`.
 // Uses either `rect`, `rrect` or `path` to perform the clip based on the `type`.
 void PerformClip(UIView* view,

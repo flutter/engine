@@ -24,6 +24,14 @@ void MutatorsStack::pushClipRRect(const SkRRect& rrect) {
   vector_.push_back(std::move(element));
 };
 
+  void MutatorsStack::pushClipPath(const SkPath& path) {
+    std::unique_ptr<Mutator> element = std::make_unique<Mutator>();
+    element->setType(clip_path);
+    element->setPath(path);
+    vector_.push_back(std::move(element));
+  };
+
+
 void MutatorsStack::pushTransform(const SkMatrix& matrix) {
   std::unique_ptr<Mutator> element = std::make_unique<Mutator>();
   element->setType(transform);

@@ -60,12 +60,18 @@ void ClipPathLayer::Paint(PaintContext& context) const {
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->clipPath(clip_path_,
                                           clip_behavior_ != Clip::hardEdge);
+  if (context.mutator_stack != nullptr) {
+    context.mutator_stack->pushClipPath(clip_path_);
+  }
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->saveLayer(paint_bounds(), nullptr);
   }
   PaintChildren(context);
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->restore();
+  }
+  if (context.mutator_stack != nullptr) {
+    context.mutator_stack->pop();
   }
 }
 
