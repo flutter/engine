@@ -101,6 +101,7 @@ class MutatorsStack {
   }
 
  private:
+  // TODO(cyanglaz): Make it a vector of unique_ptr to save some copies.
   std::vector<Mutator> vector_;
 };  // MutatorsStack
 
