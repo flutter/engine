@@ -176,9 +176,14 @@ fml::RefPtr<EngineLayer> SceneBuilder::pushPhysicalShape(const CanvasPath* path,
                                                          int clipBehavior) {
   auto layer = std::make_shared<flutter::PhysicalShapeLayer>(
       static_cast<SkColor>(color), static_cast<SkColor>(shadow_color),
-      UIDartState::Current()->window()->viewport_metrics().device_pixel_ratio,
-      UIDartState::Current()->window()->viewport_metrics().physical_depth,
-      elevation, path->path(), static_cast<flutter::Clip>(clipBehavior));
+      static_cast<float>(UIDartState::Current()
+                             ->window()
+                             ->viewport_metrics()
+                             .device_pixel_ratio),
+      static_cast<float>(
+          UIDartState::Current()->window()->viewport_metrics().physical_depth),
+      static_cast<float>(elevation), path->path(),
+      static_cast<flutter::Clip>(clipBehavior));
   PushLayer(layer);
   return EngineLayer::MakeRetained(layer);
 }
