@@ -156,7 +156,7 @@ class FlutterPlatformViewsController {
   void EnsureGLOverlayInitialized(int64_t overlay_id,
                                   std::shared_ptr<IOSGLContext> gl_context,
                                   GrContext* gr_context);
-  UIView* ApplyMutators(MutatorsStack& mutators_stack, UIView* embedded_view, int view_id);
+  UIView* ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view, int view_id);
   void CompositeWithParams(int view_id, const flutter::EmbeddedViewParams& params);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
