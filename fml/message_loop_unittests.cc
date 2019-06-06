@@ -352,13 +352,11 @@ TEST(MessageLoop, CanInheritMessageLoopsAndPreserveThreadConfiguration) {
   task_started_2.Wait();
   task_started_1.Wait();
 
-  loop1->GetTaskRunner()->PostTask([]() {
-    fml::MessageLoop::GetCurrent().Terminate();
-  });
+  loop1->GetTaskRunner()->PostTask(
+      []() { fml::MessageLoop::GetCurrent().Terminate(); });
 
-  loop2->GetTaskRunner()->PostTask([]() {
-    fml::MessageLoop::GetCurrent().Terminate();
-  });
+  loop2->GetTaskRunner()->PostTask(
+      []() { fml::MessageLoop::GetCurrent().Terminate(); });
 
   thread1.join();
   thread2.join();
@@ -424,9 +422,8 @@ TEST(MessageLoop, TIME_SENSITIVE(DelayedTaskInheritance)) {
   std::this_thread::sleep_for(std::chrono::milliseconds(15));
   loop1->InheritAllTasks(loop2);
 
-  loop2->GetTaskRunner()->PostTask([]() {
-    fml::MessageLoop::GetCurrent().Terminate();
-  });
+  loop2->GetTaskRunner()->PostTask(
+      []() { fml::MessageLoop::GetCurrent().Terminate(); });
 
   thread_1.join();
   thread_2.join();

@@ -58,7 +58,7 @@ class MsgLoopReconfigurableTaskRunner : public TaskRunner {
 
  private:
   std::unique_ptr<fml::SharedMutex> shared_mutex_;
-  std::atomic_bool merged_; // guarded by shared_mutex_
+  std::atomic_bool merged_;  // guarded by shared_mutex_
   RefPtr<MessageLoopImpl> loops_[2];
 
   FML_DISALLOW_COPY_AND_ASSIGN(MsgLoopReconfigurableTaskRunner);
