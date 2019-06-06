@@ -232,8 +232,7 @@ UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutat
           view = [[UIView alloc] initWithFrame:flutter_view_.get().bounds];
           [view addSubview:head];
         }
-        PerformClip(view, iter->type(), iter->rect(), iter->rrect(),
-                    iter->path());
+        PerformClip(view, iter->type(), iter->rect(), iter->rrect(), iter->path());
         ResetAnchor(view.layer);
         head = view;
         break;

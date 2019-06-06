@@ -77,7 +77,6 @@ class Mutator {
 // to a platform view P1 will result in T1(T2(T2(P1))).
 class MutatorsStack {
  public:
-
   void pushClipRect(const SkRect& rect);
   void pushClipRRect(const SkRRect& rrect);
   void pushClipPath(const SkPath& path);
