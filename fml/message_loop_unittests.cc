@@ -312,9 +312,9 @@ TEST(MessageLoop, CanInheritMessageLoopsAndPreserveThreadConfiguration) {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
     loop1 = &fml::MessageLoop::GetCurrent();
     // this task will be run on thread1 after Swap.
-    loop1->GetTaskRunner()->PostTask([&task_started_1]() {
+    loop1->GetTaskRunner()->PostTask([&loop1, &task_started_1]() {
+      ASSERT_TRUE(loop1 == &fml::MessageLoop::GetCurrent());
       task_started_1.Signal();
-      fml::MessageLoop::GetCurrent().Terminate();
     });
     loop_init_1.Signal();
     term1.Wait();
@@ -336,7 +336,6 @@ TEST(MessageLoop, CanInheritMessageLoopsAndPreserveThreadConfiguration) {
           // ensure that we run the task on loop1 after the swap.
           ASSERT_TRUE(loop1 == &fml::MessageLoop::GetCurrent());
           task_started_2.Signal();
-          fml::MessageLoop::GetCurrent().Terminate();
         });
         loop_init_2.Signal();
         term2.Wait();
@@ -347,20 +346,25 @@ TEST(MessageLoop, CanInheritMessageLoopsAndPreserveThreadConfiguration) {
 
   loop1->InheritAllTasks(loop2);
 
-  // thread_1 should wait for tr_term2 latch.
   term1.Signal();
-  task_started_2.Wait();
-
-  // thread_2 should wait for tr_term2 latch.
   term2.Signal();
+
+  task_started_2.Wait();
   task_started_1.Wait();
+
+  loop1->GetTaskRunner()->PostTask([]() {
+    fml::MessageLoop::GetCurrent().Terminate();
+  });
+
+  loop2->GetTaskRunner()->PostTask([]() {
+    fml::MessageLoop::GetCurrent().Terminate();
+  });
 
   thread1.join();
   thread2.join();
 }
 
-// TIME_SENSITIVE
-TEST(MessageLoop, DelayedTaskSwap) {
+TEST(MessageLoop, TIME_SENSITIVE(DelayedTaskInheritance)) {
   // Task execution order:
   // time (ms): 0    10   20   30  40
   // thread 1:  A1   A2   A3   A4  TERM
@@ -410,10 +414,6 @@ TEST(MessageLoop, DelayedTaskSwap) {
             } else {
               ASSERT_EQ(cur_tid, t1);
             }
-
-            if (t == 4) {
-              fml::MessageLoop::GetCurrent().Terminate();
-            }
           },
           fml::TimeDelta::FromMilliseconds(t * 10));
     }
@@ -423,6 +423,10 @@ TEST(MessageLoop, DelayedTaskSwap) {
   // on main thread we inherit tasks on the threads at 15 ms.
   std::this_thread::sleep_for(std::chrono::milliseconds(15));
   loop1->InheritAllTasks(loop2);
+
+  loop2->GetTaskRunner()->PostTask([]() {
+    fml::MessageLoop::GetCurrent().Terminate();
+  });
 
   thread_1.join();
   thread_2.join();
