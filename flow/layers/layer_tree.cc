@@ -77,7 +77,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       internal_nodes_canvas.addCanvas(overlay_canvases[i]);
     }
   }
-
+  
   MutatorsStack* stack = new MutatorsStack();
 
   Layer::PaintContext context = {
