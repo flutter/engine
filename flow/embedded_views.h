@@ -17,52 +17,6 @@
 
 namespace flutter {
 
-class MutatorsStack;
-class Mutator;
-
-class EmbeddedViewParams {
- public:
-  SkPoint offsetPixels;
-  SkSize sizePoints;
-  MutatorsStack* mutatorsStack;
-
-  bool operator==(const EmbeddedViewParams& other) const {
-    FML_LOG(ERROR)<< "param equal";
-    FML_LOG(ERROR)<< "offset equal" << (offsetPixels == other.offsetPixels);
-    FML_LOG(ERROR)<< "sizePoints equal" << (sizePoints == other.sizePoints);
-    FML_LOG(ERROR)<< "mutatorsStack equal" << (mutatorsStack == other.mutatorsStack);
-
-    return offsetPixels == other.offsetPixels &&
-           sizePoints == other.sizePoints &&
-           mutatorsStack == other.mutatorsStack;
-  }
-};
-
-// This is only used on iOS when running in a non headless mode,
-// in this case ExternalViewEmbedder is a reference to the
-// FlutterPlatformViewsController which is owned by FlutterViewController.
-class ExternalViewEmbedder {
- public:
-  ExternalViewEmbedder() = default;
-
-  virtual void BeginFrame(SkISize frame_size) = 0;
-
-  virtual void PrerollCompositeEmbeddedView(int view_id) = 0;
-
-  virtual std::vector<SkCanvas*> GetCurrentCanvases() = 0;
-
-  // Must be called on the UI thread.
-  virtual SkCanvas* CompositeEmbeddedView(int view_id,
-                                          const EmbeddedViewParams& params) = 0;
-
-  virtual bool SubmitFrame(GrContext* context);
-
-  virtual ~ExternalViewEmbedder() = default;
-
-  FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
-
-};  // ExternalViewEmbedder
-
 enum MutatorType { clip_rect, clip_rrect, clip_path, transform };
 
 class Mutator {
@@ -80,9 +34,6 @@ class Mutator {
   SkMatrix matrix() const { return matrix_; }
 
   bool operator==(const Mutator& other) const {
-    if (type_ == clip_path) {
-      FML_LOG(ERROR)<< "path equal" << (path_ == other.path_);
-    }
     if (type_ != other.type_) {
       return false;
     }
@@ -98,6 +49,7 @@ class Mutator {
     if (type_ == transform && matrix_ == other.matrix_) {
       return true;
     }
+
     return false;
   }
 
@@ -142,13 +94,13 @@ class MutatorsStack {
   const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator bottom();
 
   bool operator==(const MutatorsStack& other) const {
-    FML_LOG(ERROR)<< "stack equal";
 
     if (vector_.size() != other.vector_.size()) {
       return false;
     }
+
     for (size_t i = 0; i < vector_.size(); i++) {
-      if (*(vector_[i]) != *(other.vector_[i])) {
+      if (*(vector_[i].get()) != *(other.vector_[i].get())) {
         return false;
       }
     }
@@ -162,6 +114,44 @@ class MutatorsStack {
  private:
   std::vector<std::unique_ptr<Mutator>> vector_;
 };  // MutatorsStack
+
+class EmbeddedViewParams {
+ public:
+  SkPoint offsetPixels;
+  SkSize sizePoints;
+  MutatorsStack* mutatorsStack;
+
+  bool operator==(const EmbeddedViewParams& other) const {
+    return offsetPixels == other.offsetPixels &&
+           sizePoints == other.sizePoints &&
+           *mutatorsStack == *(other.mutatorsStack);
+  }
+};
+
+// This is only used on iOS when running in a non headless mode,
+// in this case ExternalViewEmbedder is a reference to the
+// FlutterPlatformViewsController which is owned by FlutterViewController.
+class ExternalViewEmbedder {
+ public:
+  ExternalViewEmbedder() = default;
+
+  virtual void BeginFrame(SkISize frame_size) = 0;
+
+  virtual void PrerollCompositeEmbeddedView(int view_id) = 0;
+
+  virtual std::vector<SkCanvas*> GetCurrentCanvases() = 0;
+
+  // Must be called on the UI thread.
+  virtual SkCanvas* CompositeEmbeddedView(int view_id,
+                                          const EmbeddedViewParams& params) = 0;
+
+  virtual bool SubmitFrame(GrContext* context);
+
+  virtual ~ExternalViewEmbedder() = default;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
+
+};  // ExternalViewEmbedder
 
 }  // namespace flutter
 
