@@ -78,6 +78,7 @@ class Mutator {
 // to a platform view P1 will result in T1(T2(T2(P1))).
 class MutatorsStack {
  public:
+
   void pushClipRect(const SkRect& rect);
   void pushClipRRect(const SkRRect& rrect);
   void pushClipPath(const SkPath& path);
@@ -89,22 +90,12 @@ class MutatorsStack {
   void pop();
 
   // Returns the iterator points to the top of the stack..
-  const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator top();
+  const std::vector<Mutator>::const_reverse_iterator top() const;
   // Returns an iterator pointing to the bottom of the stack.
-  const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator bottom();
+  const std::vector<Mutator>::const_reverse_iterator bottom() const;
 
   bool operator==(const MutatorsStack& other) const {
-
-    if (vector_.size() != other.vector_.size()) {
-      return false;
-    }
-
-    for (size_t i = 0; i < vector_.size(); i++) {
-      if (*(vector_[i].get()) != *(other.vector_[i].get())) {
-        return false;
-      }
-    }
-    return true;
+    return vector_ == other.vector_;
   }
 
   bool operator!=(const MutatorsStack& other) const {
@@ -112,19 +103,19 @@ class MutatorsStack {
   }
 
  private:
-  std::vector<std::unique_ptr<Mutator>> vector_;
+  std::vector<Mutator> vector_;
 };  // MutatorsStack
 
 class EmbeddedViewParams {
  public:
   SkPoint offsetPixels;
   SkSize sizePoints;
-  MutatorsStack* mutatorsStack;
+  MutatorsStack mutatorsStack;
 
   bool operator==(const EmbeddedViewParams& other) const {
     return offsetPixels == other.offsetPixels &&
            sizePoints == other.sizePoints &&
-           *mutatorsStack == *(other.mutatorsStack);
+           mutatorsStack == other.mutatorsStack;
   }
 };
 

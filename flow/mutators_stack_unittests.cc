@@ -15,8 +15,8 @@ TEST(MutatorsStack, PushClipRect) {
   SkRect rect;
   stack.pushClipRect(rect);
   auto iter = stack.bottom();
-  ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::clip_rect);
-  ASSERT_TRUE(iter->get()->rect() == rect);
+  ASSERT_TRUE(iter->type() == flutter::MutatorType::clip_rect);
+  ASSERT_TRUE(iter->rect() == rect);
 }
 
 TEST(MutatorsStack, PushClipRRect) {
@@ -24,8 +24,8 @@ TEST(MutatorsStack, PushClipRRect) {
   SkRRect rrect;
   stack.pushClipRRect(rrect);
   auto iter = stack.bottom();
-  ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::clip_rrect);
-  ASSERT_TRUE(iter->get()->rrect() == rrect);
+  ASSERT_TRUE(iter->type() == flutter::MutatorType::clip_rrect);
+  ASSERT_TRUE(iter->rrect() == rrect);
 }
 
 TEST(MutatorsStack, PushClipPath) {
@@ -33,8 +33,8 @@ TEST(MutatorsStack, PushClipPath) {
   SkPath path;
   stack.pushClipPath(path);
   auto iter = stack.bottom();
-  ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::clip_path);
-  ASSERT_TRUE(iter->get()->path() == path);
+  ASSERT_TRUE(iter->type() == flutter::MutatorType::clip_path);
+  ASSERT_TRUE(iter->path() == path);
 }
 
 TEST(MutatorsStack, PushTransform) {
@@ -42,8 +42,8 @@ TEST(MutatorsStack, PushTransform) {
   SkMatrix matrix;
   stack.pushTransform(matrix);
   auto iter = stack.bottom();
-  ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::transform);
-  ASSERT_TRUE(iter->get()->matrix() == matrix);
+  ASSERT_TRUE(iter->type() == flutter::MutatorType::transform);
+  ASSERT_TRUE(iter->matrix() == matrix);
 }
 
 TEST(MutatorsStack, Pop) {
@@ -68,16 +68,16 @@ TEST(MutatorsStack, Traversal) {
   while (iter != stack.top()) {
     switch (index) {
       case 0:
-        ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::clip_rrect);
-        ASSERT_TRUE(iter->get()->rrect() == rrect);
+        ASSERT_TRUE(iter->type() == flutter::MutatorType::clip_rrect);
+        ASSERT_TRUE(iter->rrect() == rrect);
         break;
       case 1:
-        ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::clip_rect);
-        ASSERT_TRUE(iter->get()->rect() == rect);
+        ASSERT_TRUE(iter->type() == flutter::MutatorType::clip_rect);
+        ASSERT_TRUE(iter->rect() == rect);
         break;
       case 2:
-        ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::transform);
-        ASSERT_TRUE(iter->get()->matrix() == matrix);
+        ASSERT_TRUE(iter->type() == flutter::MutatorType::transform);
+        ASSERT_TRUE(iter->matrix() == matrix);
         break;
       default:
         break;

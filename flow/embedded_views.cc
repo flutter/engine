@@ -11,46 +11,46 @@ bool ExternalViewEmbedder::SubmitFrame(GrContext* context) {
 };
 
 void MutatorsStack::pushClipRect(const SkRect& rect) {
-  std::unique_ptr<Mutator> element = std::make_unique<Mutator>();
-  element->setType(clip_rect);
-  element->setRect(rect);
-  vector_.push_back(std::move(element));
+  Mutator element;
+  element.setType(clip_rect);
+  element.setRect(rect);
+  vector_.push_back(element);
 };
 
 void MutatorsStack::pushClipRRect(const SkRRect& rrect) {
-  std::unique_ptr<Mutator> element = std::make_unique<Mutator>();
-  element->setType(clip_rrect);
-  element->setRRect(rrect);
-  vector_.push_back(std::move(element));
+  Mutator element;
+  element.setType(clip_rrect);
+  element.setRRect(rrect);
+  vector_.push_back(element);
 };
 
   void MutatorsStack::pushClipPath(const SkPath& path) {
-    std::unique_ptr<Mutator> element = std::make_unique<Mutator>();
-    element->setType(clip_path);
-    element->setPath(path);
-    vector_.push_back(std::move(element));
+    Mutator element;
+    element.setType(clip_path);
+    element.setPath(path);
+    vector_.push_back(element);
   };
 
 
 void MutatorsStack::pushTransform(const SkMatrix& matrix) {
-  std::unique_ptr<Mutator> element = std::make_unique<Mutator>();
-  element->setType(transform);
-  element->setMatrix(matrix);
-  vector_.push_back(std::move(element));
+  Mutator element;
+  element.setType(transform);
+  element.setMatrix(matrix);
+  vector_.push_back(element);
 };
 
 void MutatorsStack::pop() {
   vector_.pop_back();
-}
+};
 
-const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator
-MutatorsStack::top() {
+const std::vector<Mutator>::const_reverse_iterator
+MutatorsStack::top() const {
   return vector_.rend();
-}
+};
 
-const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator
-MutatorsStack::bottom() {
+const std::vector<Mutator>::const_reverse_iterator
+MutatorsStack::bottom() const {
   return vector_.rbegin();
-}
+};
 
 }  // namespace flutter

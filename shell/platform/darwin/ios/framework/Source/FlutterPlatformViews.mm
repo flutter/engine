@@ -201,7 +201,7 @@ std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
 // used to perform clips in the previous example and perform the new clips on the same views.
 //
 // Returns the UIView that's at the top of the generated chain(C_2 for the example above).
-UIView* FlutterPlatformViewsController::ApplyMutators(MutatorsStack& mutators_stack,
+UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
                                                       UIView* embedded_view,
                                                       int view_id) {
   UIView* head = embedded_view;
@@ -215,9 +215,9 @@ UIView* FlutterPlatformViewsController::ApplyMutators(MutatorsStack& mutators_st
   auto iter = mutators_stack.bottom();
   int64_t clipCount = 0;
   while (iter != mutators_stack.top()) {
-    switch (iter->get()->type()) {
+    switch (iter->type()) {
       case transform: {
-        CATransform3D transform = GetCATransform3DFromSkMatrix(iter->get()->matrix());
+        CATransform3D transform = GetCATransform3DFromSkMatrix(iter->matrix());
         head.layer.transform = CATransform3DConcat(head.layer.transform, transform);
         break;
       }
@@ -232,8 +232,8 @@ UIView* FlutterPlatformViewsController::ApplyMutators(MutatorsStack& mutators_st
           view = [[UIView alloc] initWithFrame:flutter_view_.get().bounds];
           [view addSubview:head];
         }
-        PerformClip(view, iter->get()->type(), iter->get()->rect(), iter->get()->rrect(),
-                    iter->get()->path());
+        PerformClip(view, iter->type(), iter->rect(), iter->rrect(),
+                    iter->path());
         ResetAnchor(view.layer);
         head = view;
         break;
@@ -276,8 +276,7 @@ void FlutterPlatformViewsController::CompositeWithParams(
 
   CGRect frame = CGRectMake(0, 0, params.sizePoints.width(), params.sizePoints.height());
   touch_interceptor.frame = frame;
-  FML_CHECK(params.mutatorsStack != nullptr);
-  UIView* head = ApplyMutators(*params.mutatorsStack, touch_interceptor, view_id);
+  UIView* head = ApplyMutators(params.mutatorsStack, touch_interceptor, view_id);
   // If we have clips, replace root view with the top parent view.
   if (head != touch_interceptor) {
     root_views_[view_id] = fml::scoped_nsobject<UIView>([head retain]);

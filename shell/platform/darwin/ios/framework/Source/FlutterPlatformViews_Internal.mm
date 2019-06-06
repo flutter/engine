@@ -125,43 +125,43 @@ void ClipPath(UIView *view, const SkPath &path) {
   while(verb != SkPath::kDone_Verb) {
     switch (verb) {
       case SkPath::kMove_Verb: {
-        //NSLog(@"verb move");
+        NSLog(@"verb move");
         CGPathMoveToPoint(pathRef, nil, pts[0].x(), pts[0].y());
         break;
       }
       case SkPath::kLine_Verb: {
-        //NSLog(@"verb line");
+        NSLog(@"verb line");
         CGPathAddLineToPoint(pathRef, nil, pts[1].x(), pts[1].y());
         break;
       }
       case SkPath::kQuad_Verb: {
-        //NSLog(@"verb quad");
+        NSLog(@"verb quad");
         CGPathAddQuadCurveToPoint(pathRef, nil, pts[1].x(), pts[1].y(), pts[2].x(), pts[2].y());
         break;
       }
       case SkPath::kConic_Verb: {
-        //NSLog(@"verb conic");
+        NSLog(@"verb conic");
         break;
       }
       case SkPath::kCubic_Verb: {
-        //NSLog(@"verb cubic");
+        NSLog(@"verb cubic");
         CGPathAddCurveToPoint(pathRef, nil, pts[1].x(), pts[1].y(), pts[2].x(), pts[2].y(), pts[3].x(), pts[3].y());
         break;
       }
       case SkPath::kClose_Verb: {
-        //NSLog(@"verb close");
+        NSLog(@"verb close");
         CGPathCloseSubpath(pathRef);
         break;
       }
       case SkPath::kDone_Verb: {
-        //NSLog(@"verb done");
+        NSLog(@"verb done");
         break;
       }
     }
     verb = iter.next(pts);
   }
 
-  //NSLog(@"final path %@", pathRef);
+  NSLog(@"final path %@", pathRef);
   CAShapeLayer* clip = [[CAShapeLayer alloc] init];
   clip.path = pathRef;
   view.layer.mask = clip;
