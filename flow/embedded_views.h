@@ -20,7 +20,7 @@ namespace flutter {
 enum MutatorType { clip_rect, clip_rrect, clip_path, transform };
 
 class Mutator {
-public:
+ public:
   void setType(const MutatorType type) { type_ = type; }
   void setRect(const SkRect& rect) { rect_ = rect; }
   void setRRect(const SkRRect& rrect) { rrect_ = rrect; }
@@ -33,7 +33,6 @@ public:
   SkMatrix matrix() const { return matrix_; }
 
   bool operator==(const Mutator& other) const {
-
     if (type_ != other.type_) {
       return false;
     }
@@ -59,7 +58,7 @@ public:
     return type_ == clip_rect || type_ == clip_rrect || type_ == clip_path;
   }
 
-private:
+ private:
   MutatorType type_;
   SkRect rect_;
   SkRRect rrect_;
@@ -77,7 +76,7 @@ private:
 // of the stack and T3 is the bottom of the stack. Applying this mutators stack
 // to a platform view P1 will result in T1(T2(T2(P1))).
 class MutatorsStack {
-public:
+ public:
   void pushClipRect(const SkRect& rect);
   void pushClipRRect(const SkRRect& rrect);
   void pushClipPath(const SkPath& path);
@@ -94,7 +93,6 @@ public:
   const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator bottom();
 
   bool operator==(const MutatorsStack& other) const {
-
     if (vector_.size() != other.vector_.size()) {
       return false;
     }
@@ -111,7 +109,7 @@ public:
     return !operator==(other);
   }
 
-private:
+ private:
   std::vector<std::unique_ptr<Mutator>> vector_;
 };  // MutatorsStack
 
@@ -123,8 +121,8 @@ class EmbeddedViewParams {
 
   bool operator==(const EmbeddedViewParams& other) const {
     return offsetPixels == other.offsetPixels &&
-    sizePoints == other.sizePoints &&
-    *mutatorsStack == *(other.mutatorsStack);
+           sizePoints == other.sizePoints &&
+           *mutatorsStack == *(other.mutatorsStack);
   }
 };
 
