@@ -36,6 +36,7 @@ class TaskRunner : public fml::RefCountedThreadSafe<TaskRunner> {
  private:
   fml::RefPtr<MessageLoopImpl> loop_;
 
+  friend class MsgLoopReconfigurableTaskRunner;
   FML_FRIEND_MAKE_REF_COUNTED(TaskRunner);
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(TaskRunner);
   FML_DISALLOW_COPY_AND_ASSIGN(TaskRunner);

@@ -462,7 +462,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // task to the gpu thread, the ui thread just signals the latch and the
   // platform/gpu thread follows with executing gpu_task.
   bool should_post_gpu_task =
-      task_runners_.GetGPUTaskRunner() != task_runners_.GetPlatformTaskRunner();
+      !task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread();
 
   auto ui_task = [engine = engine_->GetWeakPtr(),                      //
                   gpu_task_runner = task_runners_.GetGPUTaskRunner(),  //
@@ -555,7 +555,7 @@ void Shell::OnPlatformViewDestroyed() {
   // instead of posting a task to the gpu thread, the ui thread just signals the
   // latch and the platform/gpu thread follows with executing gpu_task.
   bool should_post_gpu_task =
-      task_runners_.GetGPUTaskRunner() != task_runners_.GetPlatformTaskRunner();
+      !task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread();
 
   auto ui_task = [engine = engine_->GetWeakPtr(),
                   gpu_task_runner = task_runners_.GetGPUTaskRunner(), gpu_task,

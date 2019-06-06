@@ -104,6 +104,10 @@ void MessageLoopImpl::InheritAllTasks(const fml::RefPtr<MessageLoopImpl>& other)
     return;
   }
 
+  if (this == other.get()) {
+    return;
+  }
+
   // task_flushing locks
   std::unique_lock<std::mutex> t1(tasks_flushing_mutex_, std::defer_lock);
   std::unique_lock<std::mutex> t2(other->tasks_flushing_mutex_,
