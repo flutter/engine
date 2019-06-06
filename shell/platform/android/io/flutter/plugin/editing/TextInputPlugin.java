@@ -117,6 +117,15 @@ public class TextInputPlugin {
         isInputConnectionLocked = false;
     }
 
+    /**
+     * Detaches the text input plugin from the platform views controller.
+     *
+     * The TextInputPlugin instance should not be used after calling this.
+     */
+    public void destroy() {
+        platformViewsController.detachTextInputPlugin();
+    }
+
     private static int inputTypeFromTextInputType(
         TextInputChannel.InputType type,
         boolean obscureText,
