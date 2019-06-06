@@ -36,7 +36,7 @@ MsgLoopReconfigurableTaskRunner::MsgLoopReconfigurableTaskRunner(
     const fml::RefPtr<MessageLoopImpl>& loop_2)
     : TaskRunner(nullptr /* loop implemenation*/),
       shared_mutex_(fml::SharedMutex::Create()),
-      current_loop_(0) {
+      merged_(false) {
   loops_[0] = fml::RefPtr<MessageLoopImpl>(loop_1);
   loops_[1] = fml::RefPtr<MessageLoopImpl>(loop_2);
 }
@@ -54,7 +54,8 @@ void MsgLoopReconfigurableTaskRunner::PostTaskForTime(
     return;
   }
   fml::SharedLock lock(*shared_mutex_);
-  loops_[current_loop_]->PostTask(std::move(task), target_time);
+  int cur_loop = merged_ ? 1 : 0;
+  loops_[cur_loop]->PostTask(std::move(task), target_time);
 }
 
 void MsgLoopReconfigurableTaskRunner::PostDelayedTask(fml::closure task,
@@ -67,14 +68,22 @@ bool MsgLoopReconfigurableTaskRunner::RunsTasksOnCurrentThread() {
     return false;
   }
   fml::SharedLock lock(*shared_mutex_);
-  return MessageLoop::GetCurrent().GetLoopImpl() == loops_[current_loop_];
+  int cur_loop = merged_ ? 1 : 0;
+  return MessageLoop::GetCurrent().GetLoopImpl() == loops_[cur_loop];
 }
 
-void MsgLoopReconfigurableTaskRunner::SwitchMessageLoop() {
+void MsgLoopReconfigurableTaskRunner::MergeLoops() {
   fml::UniqueLock lock(*shared_mutex_);
-  int next_loop_ = current_loop_ ^ 1;
-  loops_[current_loop_]->SwapTaskQueues(loops_[next_loop_]);
-  current_loop_ = next_loop_;
+  if (merged_) {
+    return;
+  }
+  loops_[1]->InheritAllTasks(loops_[0]);
+  merged_ = true;
+}
+
+void MsgLoopReconfigurableTaskRunner::UnMergeLoops() {
+  fml::UniqueLock lock(*shared_mutex_);
+  merged_ = false;
 }
 
 }  // namespace fml

@@ -10,13 +10,17 @@
 
 namespace fml {
 
-// TaskRunner that allows for "switching" message loop - task queues.
+// TaskRunner that allows for merging and un-merging loops.
 // We currently support instantiating this with two configurations, backed
 // by the same task runner or backed by two task runners.
 //
-// Threading: active loop, indexed by current_loop_ is guarded by a shared
-// mutex. When SwitchLoop gets called, we swap the task queues for the
-// message loops.
+// Threading: active loop, determined by merged_ is guarded by a shared
+// mutex. When MergeLoops gets called, we move the tasks in loop_1
+// to loop_2.
+//
+// Note: Unmerge does not re-transfer the ownership of prior submissions.
+// Only the tasks that are submitted in the future are assigned to loop_1.
+// We start with an empty task queue for loop_1 after Merge -> UnMerge.
 class MsgLoopReconfigurableTaskRunner : public TaskRunner {
  public:
   // Both loops are backed by the task_runner's loop.
@@ -48,11 +52,13 @@ class MsgLoopReconfigurableTaskRunner : public TaskRunner {
   bool RunsTasksOnCurrentThread() override;
 
   // Changes the active message loop.
-  void SwitchMessageLoop();
+  void MergeLoops();
+
+  void UnMergeLoops();
 
  private:
   std::unique_ptr<fml::SharedMutex> shared_mutex_;
-  int current_loop_;
+  std::atomic_bool merged_; // guarded by shared_mutex_
   RefPtr<MessageLoopImpl> loops_[2];
 
   FML_DISALLOW_COPY_AND_ASSIGN(MsgLoopReconfigurableTaskRunner);
