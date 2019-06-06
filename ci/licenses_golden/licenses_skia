@@ -1,4 +1,4 @@
-Signature: 66e8a438ea76492e4dc45914f910be22
+Signature: 313ba01d815b1b8b64b350d9e0745acd
 
 UNUSED LICENSES:
 
@@ -1213,6 +1213,10 @@ FILE: ../../../third_party/skia/src/gpu/ops/GrRegionOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrShadowRRectOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrShadowRRectOp.h
 FILE: ../../../third_party/skia/src/gpu/text/GrTextBlobVertexRegenerator.cpp
+FILE: ../../../third_party/skia/src/gpu/vk/GrVkCopyManager.cpp
+FILE: ../../../third_party/skia/src/gpu/vk/GrVkCopyManager.h
+FILE: ../../../third_party/skia/src/gpu/vk/GrVkCopyPipeline.cpp
+FILE: ../../../third_party/skia/src/gpu/vk/GrVkCopyPipeline.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkDescriptorPool.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkDescriptorPool.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkDescriptorSet.cpp
@@ -1644,6 +1648,10 @@ FILE: ../../../third_party/skia/src/gpu/gradients/generated/GrUnrolledBinaryGrad
 FILE: ../../../third_party/skia/src/gpu/gradients/generated/GrUnrolledBinaryGradientColorizer.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlBuffer.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlBuffer.mm
+FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCopyManager.h
+FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCopyManager.mm
+FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCopyPipelineState.h
+FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCopyPipelineState.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCppUtil.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlDepthStencil.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlGpuCommandBuffer.h
