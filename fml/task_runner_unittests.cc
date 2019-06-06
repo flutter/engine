@@ -12,10 +12,7 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/thread.h"
 
-TEST(MsgLoopReconfigurableTaskRunner, SwitchMessageLoop) {
-  fml::MessageLoop::EnsureInitializedForCurrentThread();
-  auto current_task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
-
+TEST(MsgLoopReconfigurableTaskRunner, MergeMessageLoop) {
   std::unique_ptr<fml::Thread> thread_1 = std::make_unique<fml::Thread>(
       "MsgLoopReconfigurableTaskRunner_Test.thread_1");
   std::unique_ptr<fml::Thread> thread_2 = std::make_unique<fml::Thread>(
@@ -27,26 +24,25 @@ TEST(MsgLoopReconfigurableTaskRunner, SwitchMessageLoop) {
       fml::MsgLoopReconfigurableTaskRunner::Create(task_runner_1,
                                                    task_runner_2);
 
-  fml::CountDownLatch latch(2);
-  runner->PostTask([&task_runner_1, &latch]() {
+  fml::AutoResetWaitableEvent latch_1, latch_2;
+
+  runner->PostTask([&task_runner_1, &latch_1]() {
     ASSERT_TRUE(task_runner_1->RunsTasksOnCurrentThread());
-    latch.CountDown();
+    latch_1.Signal();
   });
 
-  runner->SwitchMessageLoop();
+  latch_1.Wait();
+  runner->MergeLoops();
 
-  runner->PostTask([&task_runner_2, &latch]() {
+  runner->PostTask([&task_runner_2, &latch_2]() {
     ASSERT_TRUE(task_runner_2->RunsTasksOnCurrentThread());
-    latch.CountDown();
+    latch_2.Signal();
   });
 
-  latch.Wait();
+  latch_2.Wait();
 }
 
-TEST(MsgLoopReconfigurableTaskRunner, SameMessageLoopSwitch) {
-  fml::MessageLoop::EnsureInitializedForCurrentThread();
-  auto current_task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
-
+TEST(MsgLoopReconfigurableTaskRunner, SameMessageLoopMerge) {
   std::unique_ptr<fml::Thread> thread = std::make_unique<fml::Thread>(
       "MsgLoopReconfigurableTaskRunner_Test.thread");
 
@@ -54,33 +50,34 @@ TEST(MsgLoopReconfigurableTaskRunner, SameMessageLoopSwitch) {
   fml::RefPtr<fml::MsgLoopReconfigurableTaskRunner> runner =
       fml::MsgLoopReconfigurableTaskRunner::Create(task_runner, task_runner);
 
-  fml::CountDownLatch latch(2);
-  runner->PostTask([&task_runner, &latch]() {
+  fml::AutoResetWaitableEvent latch_1, latch_2;
+  runner->PostTask([&task_runner, &latch_1]() {
     ASSERT_TRUE(task_runner->RunsTasksOnCurrentThread());
-    latch.CountDown();
+    latch_1.Signal();
   });
 
-  runner->SwitchMessageLoop();
+  latch_1.Wait();
+  runner->MergeLoops();
 
-  runner->PostTask([&task_runner, &latch]() {
+  runner->PostTask([&task_runner, &latch_2]() {
     ASSERT_TRUE(task_runner->RunsTasksOnCurrentThread());
-    latch.CountDown();
+    latch_2.Signal();
   });
 
-  latch.Wait();
+  latch_2.Wait();
 }
 
-TEST(MsgLoopReconfigurableTaskRunner, SwitchLoopBlocks) {
-  fml::MessageLoop::EnsureInitializedForCurrentThread();
-  auto current_task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
-
+TEST(MsgLoopReconfigurableTaskRunner, MergeLoopBlocks) {
   std::unique_ptr<fml::Thread> thread_1 = std::make_unique<fml::Thread>(
       "MsgLoopReconfigurableTaskRunner_Test.thread_1");
   std::unique_ptr<fml::Thread> thread_2 = std::make_unique<fml::Thread>(
       "MsgLoopReconfigurableTaskRunner_Test.thread_2");
+  std::unique_ptr<fml::Thread> thread_3 = std::make_unique<fml::Thread>(
+      "MsgLoopReconfigurableTaskRunner_Test.thread_3");
 
   auto task_runner_1 = thread_1->GetTaskRunner();
   auto task_runner_2 = thread_2->GetTaskRunner();
+  auto task_runner_3 = thread_3->GetTaskRunner();
   fml::RefPtr<fml::MsgLoopReconfigurableTaskRunner> runner =
       fml::MsgLoopReconfigurableTaskRunner::Create(task_runner_1,
                                                    task_runner_2);
@@ -99,10 +96,10 @@ TEST(MsgLoopReconfigurableTaskRunner, SwitchLoopBlocks) {
   latch_1.Wait();
   ASSERT_TRUE(test_val == 1);
 
-  // switch message loop will be blocked until latch_2
+  // merge loop will be blocked until latch_2
   // is signalled.
-  task_runner_2->PostTask([&test_val, &runner, &latch_3]() {
-    runner->SwitchMessageLoop();
+  task_runner_3->PostTask([&runner, &latch_3, &test_val]() {
+    runner->MergeLoops();
     ASSERT_TRUE(test_val == 2);
     test_val = 3;
     latch_3.Signal();
@@ -112,11 +109,50 @@ TEST(MsgLoopReconfigurableTaskRunner, SwitchLoopBlocks) {
   latch_3.Wait();
   ASSERT_TRUE(test_val == 3);
 
-  runner->PostTask([&latch_4, &test_val]() {
+  runner->PostTask([&latch_4, &test_val, &task_runner_2]() {
+    ASSERT_TRUE(task_runner_2->RunsTasksOnCurrentThread());
     test_val = 4;
     latch_4.Signal();
   });
 
   latch_4.Wait();
   ASSERT_TRUE(test_val == 4);
+}
+
+TEST(MsgLoopReconfigurableTaskRunner, UnMerge) {
+  std::unique_ptr<fml::Thread> thread_1 = std::make_unique<fml::Thread>(
+      "MsgLoopReconfigurableTaskRunner_Test.thread_1");
+  std::unique_ptr<fml::Thread> thread_2 = std::make_unique<fml::Thread>(
+      "MsgLoopReconfigurableTaskRunner_Test.thread_2");
+
+  auto task_runner_1 = thread_1->GetTaskRunner();
+  auto task_runner_2 = thread_2->GetTaskRunner();
+  fml::RefPtr<fml::MsgLoopReconfigurableTaskRunner> runner =
+      fml::MsgLoopReconfigurableTaskRunner::Create(task_runner_1,
+                                                   task_runner_2);
+
+  fml::AutoResetWaitableEvent latch_1, latch_2, latch_3;
+
+  runner->PostTask([&task_runner_1, &latch_1]() {
+    ASSERT_TRUE(task_runner_1->RunsTasksOnCurrentThread());
+    latch_1.Signal();
+  });
+
+  latch_1.Wait();
+  runner->MergeLoops();
+
+  runner->PostTask([&task_runner_2, &latch_2]() {
+    ASSERT_TRUE(task_runner_2->RunsTasksOnCurrentThread());
+    latch_2.Signal();
+  });
+
+  latch_2.Wait();
+  runner->UnMergeLoops();
+
+  runner->PostTask([&task_runner_1, &latch_3]() {
+    ASSERT_TRUE(task_runner_1->RunsTasksOnCurrentThread());
+    latch_3.Signal();
+  });
+
+  latch_3.Wait();
 }
