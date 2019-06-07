@@ -229,7 +229,7 @@ TEST_F(ShellTest, WhitelistedDartVMFlag) {
     FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
   EXPECT_EQ(settings.dart_flags.size(), 2u);
   EXPECT_EQ(settings.dart_flags[0], "--max_profile_depth 1");
-  EXPECT_EQ(settings.dart_flags[1], "--trace_service");
+  EXPECT_EQ(settings.dart_flags[1], "--random_seed 42");
 #else
   EXPECT_EQ(settings.dart_flags.size(), 0u);
 #endif
