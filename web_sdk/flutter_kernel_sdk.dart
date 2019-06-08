@@ -44,7 +44,7 @@ Future main(List<String> args) async {
   }
 
   var librarySpecPath = parserOptions['libraries'] as String;
-  var packagesPath = path.join(ddcPath, '../../.packages');
+  var packagesPath = path.join(ddcPath, '../third_party/dart/.packages');
   void onDiagnostic(DiagnosticMessage message) {
     printDiagnosticMessage(message, print);
     if (message.severity == Severity.error ||
