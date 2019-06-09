@@ -200,6 +200,7 @@ abstract class License implements Comparable<License> {
         case LicenseType.libpng:
           return BlankLicense._(body, type, origin: origin);
       }
+      throw 'unhandled license type: $type';
     });
     assert(result.type == type);
     return result;
