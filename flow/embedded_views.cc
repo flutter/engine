@@ -24,13 +24,12 @@ void MutatorsStack::pushClipRRect(const SkRRect& rrect) {
   vector_.push_back(element);
 };
 
-  void MutatorsStack::pushClipPath(const SkPath& path) {
-    Mutator element;
-    element.setType(clip_path);
-    element.setPath(path);
-    vector_.push_back(element);
-  };
-
+void MutatorsStack::pushClipPath(const SkPath& path) {
+  Mutator element;
+  element.setType(clip_path);
+  element.setPath(path);
+  vector_.push_back(element);
+};
 
 void MutatorsStack::pushTransform(const SkMatrix& matrix) {
   Mutator element;
