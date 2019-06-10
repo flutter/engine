@@ -229,7 +229,8 @@ UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutat
         ++clipCount;
         if (clipCount > clip_count_[view_id]) {
           [head removeFromSuperview];
-          view = [[UIView alloc] initWithFrame:flutter_view_.get().bounds];
+          view = [[TouchTransparentView alloc] initWithFrame:flutter_view_.get().bounds];
+
           [view addSubview:head];
         }
         view.layer.transform = CATransform3DIdentity;
@@ -611,4 +612,16 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
         (UIGestureRecognizer*)otherGestureRecognizer {
   return YES;
 }
+@end
+
+@implementation TouchTransparentView
+
+- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent*)event {
+  for (UIView* view in self.subviews) {
+    if ([view pointInside:[self convertPoint:point toView:view] withEvent:event])
+      return YES;
+  }
+  return NO;
+}
+
 @end
