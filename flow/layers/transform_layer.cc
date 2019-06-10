@@ -17,7 +17,10 @@ TransformLayer::TransformLayer(const SkMatrix& transform)
   //
   // We have to write this flaky test because there is no reliable way to test
   // whether a variable is initialized or not in C++.
-  FML_CHECK(transform_.isFinite());
+  FML_DCHECK(transform_.isFinite());
+  if (!transform_.isFinite()) {
+    transform_.setIdentity();
+  }
 }
 
 TransformLayer::~TransformLayer() = default;
