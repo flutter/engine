@@ -45,5 +45,8 @@ source_set("framework_shared") {
 
   defines = [ "FLUTTER_FRAMEWORK" ]
 
-  public_configs = [ "$flutter_root:config", ":framework_relative_headers" ]
+  public_configs = [
+    "$flutter_root:config",
+    ":framework_relative_headers",
+  ]
 }
