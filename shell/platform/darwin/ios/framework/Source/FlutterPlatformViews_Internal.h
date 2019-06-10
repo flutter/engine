@@ -28,6 +28,12 @@
 - (void)blockGesture;
 @end
 
+// A view that only acknowlege touches are inside if the touches are acknowlege inside by any of its
+// subviews.
+@interface TouchTransparentView : UIView
+
+@end
+
 namespace flutter {
 
 // Converts a SkRect to CGRect.
