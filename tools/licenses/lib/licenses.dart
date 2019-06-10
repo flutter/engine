@@ -176,6 +176,7 @@ abstract class License implements Comparable<License> {
     if (!reformatted)
       body = _reformat(body);
     final License result = _registry.putIfAbsent(body, () {
+      assert(type != null);
       switch (type) {
         case LicenseType.bsd:
         case LicenseType.mit:
@@ -200,7 +201,7 @@ abstract class License implements Comparable<License> {
         case LicenseType.libpng:
           return BlankLicense._(body, type, origin: origin);
       }
-      throw 'unhandled license type: $type';
+      return null;
     });
     assert(result.type == type);
     return result;
