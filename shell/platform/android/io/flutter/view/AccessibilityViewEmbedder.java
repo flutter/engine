@@ -19,6 +19,7 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.accessibility.AccessibilityRecord;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -409,43 +410,64 @@ final class AccessibilityViewEmbedder {
     }
 
     private static class ReflectionAccessors {
-        private final Method getSourceNodeId;
-        private final Method getParentNodeId;
-        private final Method getRecordSourceNodeId;
-        private final Method getChildId;
+        private @Nullable final Method getSourceNodeId;
+        private @Nullable final Method getParentNodeId;
+        private @Nullable final Method getRecordSourceNodeId;
+        private @Nullable final Method getChildId;
+        private @Nullable final Field childNodesField;
+        private @Nullable final Method longArrayGetIndex;
 
         private ReflectionAccessors() {
             Method getSourceNodeId = null;
             Method getParentNodeId = null;
             Method getRecordSourceNodeId = null;
             Method getChildId = null;
+            Field childNodesField = null;
+            Method longArrayGetIndex = null;
+            try {
+                getSourceNodeId = AccessibilityNodeInfo.class.getMethod("getSourceNodeId");
+            } catch (NoSuchMethodException e) {
+                Log.w(TAG, "can't invoke AccessibilityNodeInfo#getSourceNodeId with reflection");
+            }
             // Reflection access is not allowed starting Android P.
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
-                try {
-                    getSourceNodeId = AccessibilityNodeInfo.class.getMethod("getSourceNodeId");
-                } catch (NoSuchMethodException e) {
-                    Log.w(TAG, "can't invoke AccessibilityNodeInfo#getSourceNodeId with reflection");
-                }
                 try {
                     getParentNodeId = AccessibilityNodeInfo.class.getMethod("getParentNodeId");
                 } catch (NoSuchMethodException e) {
                     Log.w(TAG, "can't invoke getParentNodeId with reflection");
                 }
-                try {
-                    getRecordSourceNodeId = AccessibilityRecord.class.getMethod("getSourceNodeId");
-                } catch (NoSuchMethodException e) {
-                    Log.w(TAG, "can't invoke AccessibiiltyRecord#getSourceNodeId with reflection");
-                }
+            }
+            try {
+                getRecordSourceNodeId = AccessibilityRecord.class.getMethod("getSourceNodeId");
+            } catch (NoSuchMethodException e) {
+                Log.w(TAG, "can't invoke AccessibiiltyRecord#getSourceNodeId with reflection");
+            }
+            // Reflection access is not allowed starting Android P on this method. Alternatively grab the child field
+            // instead.
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
                 try {
                     getChildId = AccessibilityNodeInfo.class.getMethod("getChildId", int.class);
                 } catch (NoSuchMethodException e) {
                     Log.w(TAG, "can't invoke getChildId with reflection");
+                }
+            } else {
+                try {
+                    childNodesField = AccessibilityNodeInfo.class.getDeclaredField("mChildNodeIds");
+                    childNodesField.setAccessible(true);
+                    // The private member is a private utility class to Android. We need to use
+                    // reflection to actually handle the data too.
+                    longArrayGetIndex = Class.forName("android.util.LongArray").getMethod("get", int.class);
+                } catch (NoSuchFieldException | ClassNotFoundException | NoSuchMethodException | NullPointerException e) {
+                    Log.w(TAG, "can't access childNodesField with reflection");
+                    childNodesField = null;
                 }
             }
             this.getSourceNodeId = getSourceNodeId;
             this.getParentNodeId = getParentNodeId;
             this.getRecordSourceNodeId = getRecordSourceNodeId;
             this.getChildId = getChildId;
+            this.childNodesField = childNodesField;
+            this.longArrayGetIndex = longArrayGetIndex;
         }
 
         /** Returns virtual node ID given packed node ID used internally in accessibility API. */
@@ -470,15 +492,21 @@ final class AccessibilityViewEmbedder {
 
         @Nullable
         private Long getChildId(@NonNull AccessibilityNodeInfo node, int child) {
-            if (getChildId == null) {
+            if (getChildId == null && (childNodesField == null || longArrayGetIndex == null)) {
                 return null;
             }
-            try {
-                return (Long) getChildId.invoke(node, child);
-            } catch (IllegalAccessException e) {
-                Log.w(TAG, e);
-            } catch (InvocationTargetException e) {
-                Log.w(TAG, e);
+            if (getChildId != null) {
+                try {
+                    return (Long) getChildId.invoke(node, child);
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    Log.w(TAG, e);
+                }
+            } else {
+                try {
+                    return (long) longArrayGetIndex.invoke(childNodesField.get(node), child);
+                } catch (IllegalAccessException | InvocationTargetException | ArrayIndexOutOfBoundsException e) {
+                    Log.w(TAG, e);
+                }
             }
             return null;
         }
