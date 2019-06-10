@@ -236,9 +236,11 @@ public class TextInputPlugin {
     }
 
     private void hideTextInput(View view) {
-        if (inputTarget.type == InputTarget.Type.FRAMEWORK_CLIENT) {
-            mImm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
-        }
+        // Note: a race condition may lead to us hiding the keyboard here just after a platform view has shown it.
+        // This can only potentially happen when switching focus from a Flutter text field to a platform view's text
+        // field(by text field here I mean anything that keeps the keyboard open).
+        // See: https://github.com/flutter/flutter/issues/34169
+        mImm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
     }
 
     private void setTextInputClient(int client, TextInputChannel.Configuration configuration) {
