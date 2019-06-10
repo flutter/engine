@@ -235,6 +235,7 @@ UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutat
         PerformClip(view, iter->type(), iter->rect(), iter->rrect(), iter->path());
         ResetAnchor(view.layer);
         head = view;
+        head.layer.transform = CATransform3DIdentity;
         break;
       }
     }
