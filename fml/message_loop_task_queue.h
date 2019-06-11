@@ -33,11 +33,14 @@ struct DelayedTask {
   ~DelayedTask();
 };
 
+enum class FlushType {
+  kSingle,
+  kAll,
+};
+
 class MessageLoopTaskQueue {
  public:
-  MessageLoopTaskQueue();
-
-  ~MessageLoopTaskQueue();
+  static MessageLoopTaskQueue* GetInstance();
 
   MessageLoopId CreateMessageLoopId();
 
@@ -55,10 +58,25 @@ class MessageLoopTaskQueue {
 
   bool UnmergeQueues(MessageLoopId owner);
 
-  DelayedTask GetTopTask(MessageLoopId owner);
+  void DisposeTasks(MessageLoopId owner);
+
+  fml::TimePoint GetTasksToRunNow(MessageLoopId owner,
+                                  FlushType flush_type,
+                                  std::vector<fml::closure>& invocations);
+
+  void InvokeAndNotifyObservers(MessageLoopId owner,
+                                std::vector<fml::closure>& invocations);
+
+  std::vector<std::mutex> flush_tasks_mutexes;
 
  private:
-  std::mutex creation_mutex_;
+  static std::mutex creation_mutex_;
+  static MessageLoopTaskQueue* instance_;
+
+  MessageLoopTaskQueue();
+
+  ~MessageLoopTaskQueue();
+
   std::atomic_int message_loop_id_counter_;
 
   std::mutex merge_mutex_;
@@ -84,6 +102,8 @@ class MessageLoopTaskQueue {
   std::vector<DelayedTaskQueue> delayed_tasks_;
 
   std::atomic_int order_;
+
+  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(MessageLoopTaskQueue);
 };
 
 }  // namespace fml

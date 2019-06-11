@@ -18,6 +18,14 @@ DelayedTask::DelayedTask(const DelayedTask& other) = default;
 
 DelayedTask::~DelayedTask() = default;
 
+MessageLoopTaskQueue* MessageLoopTaskQueue::GetInstance() {
+  std::lock_guard<std::mutex> creation(creation_mutex_);
+  if (!instance_) {
+    instance_ = new MessageLoopTaskQueue();
+  }
+  return instance_;
+}
+
 MessageLoopTaskQueue::MessageLoopTaskQueue()
     : message_loop_id_counter_(0), order_(0) {}
 
@@ -30,6 +38,7 @@ MessageLoopId MessageLoopTaskQueue::CreateMessageLoopId() {
 
   observers_mutexes_.push_back(std::mutex());
   delayed_tasks_mutexes_.push_back(std::mutex());
+  flush_tasks_mutexes.push_back(std::mutex());
 
   task_observers_.push_back(TaskObservers());
   delayed_tasks_.push_back(DelayedTaskQueue());
@@ -48,6 +57,10 @@ fml::TimePoint MessageLoopTaskQueue::RegisterTask(MessageLoopId loop_id,
 bool MessageLoopTaskQueue::MergeQueues(MessageLoopId owner,
                                        MessageLoopId subsumed) {
   std::lock_guard<std::mutex> lock(merge_mutex_);
+
+  if (owner == subsumed) {
+    return true;
+  }
 
   // these are already merged.
   if (owner_to_subsumed_[owner] == subsumed) {
@@ -88,5 +101,55 @@ bool MessageLoopTaskQueue::UnmergeQueues(MessageLoopId owner) {
   return true;
 }
 
+fml::TimePoint MessageLoopTaskQueue::GetTasksToRunNow(
+    MessageLoopId owner,
+    FlushType flush_type,
+    std::vector<fml::closure>& invocations) {
+  std::lock_guard<std::mutex> lock(delayed_tasks_mutexes_[owner]);
+
+  // if the owner has been subsumed.
+  if (subsumed_to_owner_.count(owner)) {
+    return fml::TimePoint::Max();
+  }
+
+  auto& delayed_tasks = delayed_tasks_[owner];
+
+  if (delayed_tasks.empty()) {
+    return fml::TimePoint::Max();
+  }
+
+  auto now = fml::TimePoint::Now();
+  while (!delayed_tasks.empty()) {
+    const auto& top = delayed_tasks.top();
+    if (top.target_time > now) {
+      break;
+    }
+    invocations.emplace_back(std::move(top.task));
+    delayed_tasks.pop();
+    if (flush_type == FlushType::kSingle) {
+      break;
+    }
+  }
+  return delayed_tasks.empty() ? fml::TimePoint::Max()
+                               : delayed_tasks.top().target_time;
+}
+
+void MessageLoopTaskQueue::InvokeAndNotifyObservers(
+    MessageLoopId owner,
+    std::vector<fml::closure>& invocations) {
+  std::lock_guard<std::mutex> observers_lock(observers_mutexes_[owner]);
+
+  for (const auto& invocation : invocations) {
+    invocation();
+    for (const auto& observer : task_observers_[owner]) {
+      observer.second();
+    }
+  }
+}
+
+void MessageLoopTaskQueue::DisposeTasks(MessageLoopId owner) {
+  std::lock_guard<std::mutex> lock(delayed_tasks_mutexes_[owner]);
+  delayed_tasks_[owner] = {};
+}
 
 }  // namespace fml
