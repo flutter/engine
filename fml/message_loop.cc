@@ -87,4 +87,9 @@ void MessageLoop::InheritAllTasks(MessageLoop* other) {
   loop_->InheritAllTasks(other->loop_);
 }
 
+void MessageLoop::Unmerge() {
+  FML_CHECK(loop_);
+  loop_->Unmerge();
+}
+
 }  // namespace fml

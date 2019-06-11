@@ -94,14 +94,9 @@ bool MessageLoopTaskQueue::MergeQueues(MessageLoopId owner,
     return true;
   }
 
-  // these are already merged.
-  if (owner_to_subsumed_[owner] == subsumed) {
-    return subsumed_to_owner_[subsumed] == owner;
-  }
-
-  // these are already merged with some other things.
+  // these are already merged or subsumed.
   if (owner_to_subsumed_.count(owner) || subsumed_to_owner_.count(subsumed)) {
-    return false;
+    return subsumed_to_owner_[subsumed] == owner;
   }
 
   owner_to_subsumed_[owner] = subsumed;

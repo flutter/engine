@@ -98,14 +98,19 @@ void MessageLoopImpl::DoTerminate() {
 }
 
 // Thread safety analysis disabled as it does not account for defered locks.
-void MessageLoopImpl::InheritAllTasks(const fml::RefPtr<MessageLoopImpl>& other)
-    FML_NO_THREAD_SAFETY_ANALYSIS {
+void MessageLoopImpl::InheritAllTasks(
+    const fml::RefPtr<MessageLoopImpl>& other) {
   if (terminated_ || other->terminated_) {
     return;
   }
   bool success = task_queue_->MergeQueues(loop_id_, other->loop_id_);
   FML_CHECK(success) << "failed to merge task queues for " << loop_id_
                      << " and " << other->loop_id_;
+}
+
+void MessageLoopImpl::Unmerge() {
+  bool success = task_queue_->UnmergeQueues(loop_id_);
+  FML_CHECK(success) << "unable to unmerge loop: " << loop_id_;
 }
 
 void MessageLoopImpl::RegisterTask(fml::closure task,

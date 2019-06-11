@@ -347,10 +347,12 @@ TEST(MessageLoop, CanInheritMessageLoopsAndPreserveThreadConfiguration) {
   loop1->InheritAllTasks(loop2);
 
   term1.Signal();
-  term2.Signal();
 
-  task_started_2.Wait();
   task_started_1.Wait();
+  task_started_2.Wait();
+
+  term2.Signal();
+  loop1->Unmerge();
 
   loop1->GetTaskRunner()->PostTask(
       []() { fml::MessageLoop::GetCurrent().Terminate(); });

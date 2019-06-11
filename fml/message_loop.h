@@ -40,6 +40,8 @@ class MessageLoop {
 
   void InheritAllTasks(MessageLoop* other);
 
+  void Unmerge();
+
   static void EnsureInitializedForCurrentThread();
 
   static bool IsInitializedForCurrentThread();

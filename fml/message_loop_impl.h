@@ -46,6 +46,8 @@ class MessageLoopImpl : public fml::RefCountedThreadSafe<MessageLoopImpl> {
 
   void InheritAllTasks(const fml::RefPtr<MessageLoopImpl>& other);
 
+  void Unmerge();
+
  protected:
   // Exposed for the embedder shell which allows clients to poll for events
   // instead of dedicating a thread to the message loop.
