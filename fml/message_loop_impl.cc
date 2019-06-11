@@ -121,7 +121,6 @@ void MessageLoopImpl::RegisterTask(fml::closure task,
 
 void MessageLoopImpl::FlushTasks(FlushType type) {
   TRACE_EVENT0("fml", "MessageLoop::FlushTasks");
-  std::vector<fml::closure> invocations;
 
   // We are grabbing this lock here as a proxy to indicate
   // that we are running tasks and will invoke the
@@ -129,14 +128,14 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
   // where:
   // gather invocations -> Swap -> execute invocations
   // will lead us to run invocations on the wrong thread.
-  std::mutex& flush_tasks_mutex = task_queue_->flush_tasks_mutexes[loop_id_];
+  std::mutex& flush_tasks_mutex = *task_queue_->flush_tasks_mutexes[loop_id_];
   std::lock_guard<std::mutex> task_flush_lock(flush_tasks_mutex);
 
-  fml::TimePoint wake_up =
-      task_queue_->GetTasksToRunNow(loop_id_, type, invocations);
-  WakeUp(wake_up);
+  const MessageLoopTaskQueue::TasksToRun& tasks =
+      task_queue_->GetTasksToRunNow(loop_id_, type);
+  WakeUp(tasks.wake_up_time);
 
-  task_queue_->InvokeAndNotifyObservers(loop_id_, invocations);
+  task_queue_->InvokeAndNotifyObservers(loop_id_, tasks);
 }
 
 void MessageLoopImpl::RunExpiredTasksNow() {

@@ -41,6 +41,8 @@ enum class FlushType {
 
 class MessageLoopTaskQueue {
  public:
+  using Mutexes = std::vector<std::unique_ptr<std::mutex>>;
+
   struct TasksToRun {
     fml::TimePoint wake_up_time;
     std::vector<fml::closure> invocations;
@@ -78,15 +80,15 @@ class MessageLoopTaskQueue {
   void InvokeAndNotifyObservers(MessageLoopId owner,
                                 const TasksToRun& tasks_to_run);
 
-  std::vector<std::mutex> flush_tasks_mutexes;
+  Mutexes flush_tasks_mutexes;
+
+  ~MessageLoopTaskQueue();
 
  private:
   static std::mutex creation_mutex_;
   static MessageLoopTaskQueue* instance_;
 
   MessageLoopTaskQueue();
-
-  ~MessageLoopTaskQueue();
 
   bool HasMoreTasks(MessageLoopId owner);
 
@@ -110,10 +112,10 @@ class MessageLoopTaskQueue {
       priority_queue<DelayedTask, std::deque<DelayedTask>, DelayedTaskCompare>;
   using TaskObservers = std::map<intptr_t, fml::closure>;
 
-  std::vector<std::mutex> observers_mutexes_;
+  Mutexes observers_mutexes_;
   std::vector<TaskObservers> task_observers_;
 
-  std::vector<std::mutex> delayed_tasks_mutexes_;
+  Mutexes delayed_tasks_mutexes_;
   std::vector<DelayedTaskQueue> delayed_tasks_;
 
   std::atomic_int order_;

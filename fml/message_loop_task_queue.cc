@@ -8,6 +8,9 @@
 
 namespace fml {
 
+std::mutex MessageLoopTaskQueue::creation_mutex_;
+MessageLoopTaskQueue* MessageLoopTaskQueue::instance_;
+
 // delayed tasks
 DelayedTask::DelayedTask(int p_order,
                          fml::closure p_task,
@@ -36,9 +39,9 @@ MessageLoopId MessageLoopTaskQueue::CreateMessageLoopId() {
   MessageLoopId loop_id = message_loop_id_counter_;
   ++message_loop_id_counter_;
 
-  observers_mutexes_.push_back(std::mutex());
-  delayed_tasks_mutexes_.push_back(std::mutex());
-  flush_tasks_mutexes.push_back(std::mutex());
+  observers_mutexes_.push_back(std::unique_ptr<std::mutex>());
+  delayed_tasks_mutexes_.push_back(std::unique_ptr<std::mutex>());
+  flush_tasks_mutexes.push_back(std::unique_ptr<std::mutex>());
 
   task_observers_.push_back(TaskObservers());
   delayed_tasks_.push_back(DelayedTaskQueue());
@@ -46,10 +49,23 @@ MessageLoopId MessageLoopTaskQueue::CreateMessageLoopId() {
   return loop_id;
 }
 
+void MessageLoopTaskQueue::AddTaskObserver(MessageLoopId loop_id,
+                                           intptr_t key,
+                                           fml::closure callback) {
+  std::lock_guard<std::mutex> lock(*observers_mutexes_[loop_id]);
+  task_observers_[loop_id][key] = std::move(callback);
+}
+
+void MessageLoopTaskQueue::RemoveTaskObserver(MessageLoopId loop_id,
+                                              intptr_t key) {
+  std::lock_guard<std::mutex> lock(*observers_mutexes_[loop_id]);
+  task_observers_[loop_id].erase(key);
+}
+
 fml::TimePoint MessageLoopTaskQueue::RegisterTask(MessageLoopId loop_id,
                                                   fml::closure task,
                                                   fml::TimePoint target_time) {
-  std::lock_guard<std::mutex> lock(delayed_tasks_mutexes_[loop_id]);
+  std::lock_guard<std::mutex> lock(*delayed_tasks_mutexes_[loop_id]);
   delayed_tasks_[loop_id].push({++order_, std::move(task), target_time});
   MessageLoopId dummy;
   return PeekNextTask(loop_id, dummy).target_time;
@@ -105,7 +121,7 @@ bool MessageLoopTaskQueue::UnmergeQueues(MessageLoopId owner) {
 MessageLoopTaskQueue::TasksToRun MessageLoopTaskQueue::GetTasksToRunNow(
     MessageLoopId owner,
     FlushType flush_type) {
-  std::lock_guard<std::mutex> lock(delayed_tasks_mutexes_[owner]);
+  std::lock_guard<std::mutex> lock(*delayed_tasks_mutexes_[owner]);
   std::vector<MessageLoopId> loop_ids;
   std::vector<fml::closure> invocations;
 
@@ -142,7 +158,7 @@ MessageLoopTaskQueue::TasksToRun MessageLoopTaskQueue::GetTasksToRunNow(
 void MessageLoopTaskQueue::InvokeAndNotifyObservers(
     MessageLoopId owner,
     const MessageLoopTaskQueue::TasksToRun& tasks_to_run) {
-  std::lock_guard<std::mutex> observers_lock(observers_mutexes_[owner]);
+  std::lock_guard<std::mutex> observers_lock(*observers_mutexes_[owner]);
 
   for (const auto& invocation : tasks_to_run.invocations) {
     invocation();
@@ -153,7 +169,7 @@ void MessageLoopTaskQueue::InvokeAndNotifyObservers(
 }
 
 void MessageLoopTaskQueue::DisposeTasks(MessageLoopId owner) {
-  std::lock_guard<std::mutex> lock(delayed_tasks_mutexes_[owner]);
+  std::lock_guard<std::mutex> lock(*delayed_tasks_mutexes_[owner]);
   delayed_tasks_[owner] = {};
   // remove all subsumed tasks too.
   if (owner_to_subsumed_.count(owner)) {
