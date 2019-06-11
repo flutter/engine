@@ -60,7 +60,7 @@ class MessageLoopImpl : public fml::RefCountedThreadSafe<MessageLoopImpl> {
 
  private:
   std::atomic_bool terminated_;
-  std::unique_ptr<MessageLoopTaskQueue> task_queue_;
+  fml::RefPtr<MessageLoopTaskQueue> task_queue_;
   MessageLoopId loop_id_;
 
   void RegisterTask(fml::closure task, fml::TimePoint target_time);

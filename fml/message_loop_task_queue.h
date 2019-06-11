@@ -15,6 +15,7 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/fml/time/time_point.h"
 
@@ -39,7 +40,8 @@ enum class FlushType {
   kAll,
 };
 
-class MessageLoopTaskQueue {
+class MessageLoopTaskQueue
+    : public fml::RefCountedThreadSafe<MessageLoopTaskQueue> {
  public:
   using Mutexes = std::vector<std::unique_ptr<std::mutex>>;
 
@@ -55,7 +57,7 @@ class MessageLoopTaskQueue {
     ~TasksToRun();
   };
 
-  static MessageLoopTaskQueue* GetInstance();
+  static fml::RefPtr<MessageLoopTaskQueue> GetInstance();
 
   MessageLoopId CreateMessageLoopId();
 
@@ -82,21 +84,19 @@ class MessageLoopTaskQueue {
 
   Mutexes flush_tasks_mutexes;
 
-  ~MessageLoopTaskQueue();
-
  private:
   static std::mutex creation_mutex_;
-  static MessageLoopTaskQueue* instance_;
+  static fml::RefPtr<MessageLoopTaskQueue> instance_;
 
   MessageLoopTaskQueue();
+
+  ~MessageLoopTaskQueue();
 
   bool HasMoreTasks(MessageLoopId owner);
 
   DelayedTask PeekNextTask(MessageLoopId owner, MessageLoopId& loop);
 
   std::atomic_int message_loop_id_counter_;
-
-  std::mutex merge_mutex_;
 
   std::map<MessageLoopId, MessageLoopId> owner_to_subsumed_;
   std::map<MessageLoopId, MessageLoopId> subsumed_to_owner_;
@@ -120,6 +120,8 @@ class MessageLoopTaskQueue {
 
   std::atomic_int order_;
 
+  FML_FRIEND_MAKE_REF_COUNTED(MessageLoopTaskQueue);
+  FML_FRIEND_REF_COUNTED_THREAD_SAFE(MessageLoopTaskQueue);
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(MessageLoopTaskQueue);
 };
 

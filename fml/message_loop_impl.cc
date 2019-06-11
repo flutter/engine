@@ -103,7 +103,9 @@ void MessageLoopImpl::InheritAllTasks(const fml::RefPtr<MessageLoopImpl>& other)
   if (terminated_ || other->terminated_) {
     return;
   }
-  task_queue_->MergeQueues(loop_id_, other->loop_id_);
+  bool success = task_queue_->MergeQueues(loop_id_, other->loop_id_);
+  FML_CHECK(success) << "failed to merge task queues for " << loop_id_
+                     << " and " << other->loop_id_;
 }
 
 void MessageLoopImpl::RegisterTask(fml::closure task,
