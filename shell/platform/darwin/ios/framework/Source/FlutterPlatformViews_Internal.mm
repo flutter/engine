@@ -151,8 +151,9 @@ void ResetAnchor(CALayer* layer) {
 // subviews.
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent* )event {
   for (UIView* view in self.subviews) {
-    if ([view pointInside:[self convertPoint:point toView:view] withEvent:event])
+    if ([view pointInside:[self convertPoint:point toView:view] withEvent:event]) {
       return YES;
+    }
   }
   return NO;
 }

@@ -24,14 +24,14 @@ class Mutator {
 
   explicit Mutator(const SkRect& rect):type_(clip_rect), rect_(rect){}
   explicit Mutator(const SkRRect& rrect):type_(clip_rrect), rrect_(rrect){}
-  explicit Mutator(const SkPath& path):type_(clip_path), path_(path){}
+  explicit Mutator(const SkPath& path):type_(clip_path), path_(new SkPath(path)){}
   explicit Mutator(const SkMatrix& matrix):type_(transform), matrix_(matrix){}
 
-  MutatorType type() const { return type_; }
-  SkRect rect() const { return rect_; }
-  SkRRect rrect() const { return rrect_; }
-  SkPath path() const { return path_; }
-  SkMatrix matrix() const { return matrix_; }
+  const MutatorType& type() const { return type_; }
+  const SkRect& rect() const { return rect_; }
+  const SkRRect& rrect() const { return rrect_; }
+  const SkPath& path() const { return *path_; }
+  const SkMatrix& matrix() const { return matrix_; }
 
   bool operator==(const Mutator& other) const {
     if (type_ != other.type_) {
@@ -43,7 +43,7 @@ class Mutator {
     if (type_ == clip_rrect && rrect_ == other.rrect_) {
       return true;
     }
-    if (type_ == clip_path && path_ == other.path_) {
+    if (type_ == clip_path && *path_ == *other.path_) {
       return true;
     }
     if (type_ == transform && matrix_ == other.matrix_) {
@@ -59,14 +59,20 @@ class Mutator {
     return type_ == clip_rect || type_ == clip_rrect || type_ == clip_path;
   }
 
+  ~Mutator(){
+    if (type_ == clip_path) {
+      delete path_;
+    }
+  };
+
  private:
   MutatorType type_;
 
   union{
     SkRect rect_;
     SkRRect rrect_;
-    SkPath path_;
     SkMatrix matrix_;
+    SkPath* path_;
   };
 
 };  // Mutator
