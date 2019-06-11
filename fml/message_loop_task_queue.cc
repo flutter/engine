@@ -12,16 +12,6 @@ namespace fml {
 std::mutex MessageLoopTaskQueue::creation_mutex_;
 fml::RefPtr<MessageLoopTaskQueue> MessageLoopTaskQueue::instance_;
 
-// delayed tasks
-DelayedTask::DelayedTask(int p_order,
-                         fml::closure p_task,
-                         fml::TimePoint p_target_time)
-    : order(p_order), task(std::move(p_task)), target_time(p_target_time) {}
-
-DelayedTask::DelayedTask(const DelayedTask& other) = default;
-
-DelayedTask::~DelayedTask() = default;
-
 fml::RefPtr<MessageLoopTaskQueue> MessageLoopTaskQueue::GetInstance() {
   std::lock_guard<std::mutex> creation(creation_mutex_);
   if (!instance_) {

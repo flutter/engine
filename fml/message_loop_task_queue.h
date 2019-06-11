@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "flutter/fml/closure.h"
+#include "flutter/fml/delayed_task.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
@@ -24,18 +25,6 @@ typedef size_t MessageLoopId;
 namespace fml {
 
 class MessageLoopImpl;
-
-struct DelayedTask {
-  int order;
-  fml::closure task;
-  fml::TimePoint target_time;
-
-  DelayedTask(int p_order, fml::closure p_task, fml::TimePoint p_target_time);
-
-  DelayedTask(const DelayedTask& other);
-
-  ~DelayedTask();
-};
 
 enum class FlushType {
   kSingle,
