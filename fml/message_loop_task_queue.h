@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "flutter/fml/closure.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/fml/time/time_point.h"
@@ -40,6 +41,18 @@ enum class FlushType {
 
 class MessageLoopTaskQueue {
  public:
+  struct TasksToRun {
+    fml::TimePoint wake_up_time;
+    std::vector<fml::closure> invocations;
+    std::vector<MessageLoopId> loop_ids;
+
+    TasksToRun(fml::TimePoint p_wake_up,
+               std::vector<fml::closure> p_invocations,
+               std::vector<MessageLoopId> p_loop_ids);
+
+    ~TasksToRun();
+  };
+
   static MessageLoopTaskQueue* GetInstance();
 
   MessageLoopId CreateMessageLoopId();
@@ -60,12 +73,10 @@ class MessageLoopTaskQueue {
 
   void DisposeTasks(MessageLoopId owner);
 
-  fml::TimePoint GetTasksToRunNow(MessageLoopId owner,
-                                  FlushType flush_type,
-                                  std::vector<fml::closure>& invocations);
+  TasksToRun GetTasksToRunNow(MessageLoopId owner, FlushType flush_type);
 
   void InvokeAndNotifyObservers(MessageLoopId owner,
-                                std::vector<fml::closure>& invocations);
+                                const TasksToRun& tasks_to_run);
 
   std::vector<std::mutex> flush_tasks_mutexes;
 
@@ -76,6 +87,10 @@ class MessageLoopTaskQueue {
   MessageLoopTaskQueue();
 
   ~MessageLoopTaskQueue();
+
+  bool HasMoreTasks(MessageLoopId owner);
+
+  DelayedTask PeekNextTask(MessageLoopId owner, MessageLoopId& loop);
 
   std::atomic_int message_loop_id_counter_;
 
