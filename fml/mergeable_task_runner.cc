@@ -81,6 +81,9 @@ void MergeableTaskRunner::MergeLoops() {
 
 void MergeableTaskRunner::UnMergeLoops() {
   fml::UniqueLock lock(*shared_mutex_);
+  if (merged_) {
+    loops_[1]->Unmerge();
+  }
   merged_ = false;
 }
 
