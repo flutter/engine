@@ -52,8 +52,7 @@ void MergeableTaskRunner::PostTaskForTime(fml::closure task,
     return;
   }
   fml::SharedLock lock(*shared_mutex_);
-  int cur_loop = merged_ ? 1 : 0;
-  loops_[cur_loop]->PostTask(std::move(task), target_time);
+  loops_[0]->PostTask(std::move(task), target_time);
 }
 
 void MergeableTaskRunner::PostDelayedTask(fml::closure task,

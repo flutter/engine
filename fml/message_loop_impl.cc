@@ -103,6 +103,11 @@ void MessageLoopImpl::InheritAllTasks(
   if (terminated_ || other->terminated_) {
     return;
   }
+
+  if (this == other.get()) {
+    return;
+  }
+
   bool success = task_queue_->MergeQueues(loop_id_, other->loop_id_);
   FML_CHECK(success) << "failed to merge task queues for " << loop_id_
                      << " and " << other->loop_id_;
@@ -121,9 +126,7 @@ void MessageLoopImpl::RegisterTask(fml::closure task,
     // |task| synchronously within this function.
     return;
   }
-  fml::TimePoint wake_up =
-      task_queue_->RegisterTask(loop_id_, task, target_time);
-  WakeUp(wake_up);
+  task_queue_->RegisterTask(loop_id_, task, target_time);
 }
 
 void MessageLoopImpl::FlushTasks(FlushType type) {

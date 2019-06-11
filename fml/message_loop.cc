@@ -42,6 +42,7 @@ MessageLoop::MessageLoop()
       task_runner_(fml::MakeRefCounted<fml::TaskRunner>(loop_)) {
   FML_CHECK(loop_);
   FML_CHECK(task_runner_);
+  MessageLoopTaskQueue::GetInstance()->RegisterLoop(loop_->loop_id_, loop_);
 }
 
 MessageLoop::MessageLoop(Type)
@@ -49,6 +50,7 @@ MessageLoop::MessageLoop(Type)
       task_runner_(fml::MakeRefCounted<fml::TaskRunner>(loop_)) {
   FML_CHECK(loop_);
   FML_CHECK(task_runner_);
+  MessageLoopTaskQueue::GetInstance()->RegisterLoop(loop_->loop_id_, loop_);
 }
 
 MessageLoop::~MessageLoop() = default;

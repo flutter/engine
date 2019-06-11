@@ -23,6 +23,8 @@ typedef size_t MessageLoopId;
 
 namespace fml {
 
+class MessageLoopImpl;
+
 struct DelayedTask {
   int order;
   fml::closure task;
@@ -82,6 +84,9 @@ class MessageLoopTaskQueue
   void InvokeAndNotifyObservers(MessageLoopId owner,
                                 const TasksToRun& tasks_to_run);
 
+  void RegisterLoop(MessageLoopId loop_id,
+                    fml::RefPtr<MessageLoopImpl> loop_impl);
+
   Mutexes flush_tasks_mutexes;
 
  private:
@@ -100,6 +105,7 @@ class MessageLoopTaskQueue
 
   std::map<MessageLoopId, MessageLoopId> owner_to_subsumed_;
   std::map<MessageLoopId, MessageLoopId> subsumed_to_owner_;
+  std::map<MessageLoopId, fml::RefPtr<MessageLoopImpl>> registered_loop_impls_;
 
   struct DelayedTaskCompare {
     bool operator()(const DelayedTask& a, const DelayedTask& b) {

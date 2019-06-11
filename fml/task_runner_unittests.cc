@@ -39,6 +39,8 @@ TEST(MergeableTaskRunner, MergeMessageLoop) {
   });
 
   latch_2.Wait();
+
+  runner->UnMergeLoops();
 }
 
 TEST(MergeableTaskRunner, SameMessageLoopMerge) {
@@ -115,6 +117,8 @@ TEST(MergeableTaskRunner, MergeLoopBlocks) {
 
   latch_4.Wait();
   ASSERT_TRUE(test_val == 4);
+
+  runner->UnMergeLoops();
 }
 
 TEST(MergeableTaskRunner, UnMerge) {

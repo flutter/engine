@@ -5,6 +5,7 @@
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/fml/message_loop_task_queue.h"
+#include "flutter/fml/message_loop_impl.h"
 
 namespace fml {
 
@@ -68,7 +69,13 @@ fml::TimePoint MessageLoopTaskQueue::RegisterTask(MessageLoopId loop_id,
   std::lock_guard<std::mutex> lock(*delayed_tasks_mutexes_[loop_id]);
   delayed_tasks_[loop_id].push({++order_, std::move(task), target_time});
   MessageLoopId dummy;
-  return PeekNextTask(loop_id, dummy).target_time;
+  auto wake_up_time = PeekNextTask(loop_id, dummy).target_time;
+  registered_loop_impls_[loop_id]->WakeUp(wake_up_time);
+  if (subsumed_to_owner_.count(loop_id)) {
+    MessageLoopId owner = subsumed_to_owner_[loop_id];
+    registered_loop_impls_[owner]->WakeUp(wake_up_time);
+  }
+  return wake_up_time;
 }
 
 #define MLTQ_DEF_LOCK(l, mutexes, loop) \
@@ -193,6 +200,12 @@ bool MessageLoopTaskQueue::HasMoreTasks(MessageLoopId owner) {
     return !delayed_tasks_[subsumed].empty();
   }
   return false;
+}
+
+void MessageLoopTaskQueue::RegisterLoop(
+    MessageLoopId loop_id,
+    fml::RefPtr<MessageLoopImpl> loop_impl) {
+  registered_loop_impls_[loop_id] = loop_impl;
 }
 
 DelayedTask MessageLoopTaskQueue::PeekNextTask(MessageLoopId owner,
