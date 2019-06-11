@@ -4,23 +4,22 @@
 
 #define FML_USED_ON_EMBEDDER
 
-#include "flutter/fml/msg_loop_reconfigurable_task_runner.h"
+#include "flutter/fml/mergeable_task_runner.h"
 #include "flutter/fml/message_loop_impl.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 
 namespace fml {
 
-RefPtr<MsgLoopReconfigurableTaskRunner>
-MsgLoopReconfigurableTaskRunner::CreateFromSingleTaskRunner(
+RefPtr<MergeableTaskRunner> MergeableTaskRunner::CreateFromSingleTaskRunner(
     const RefPtr<TaskRunner>& task_runner) {
   if (!task_runner) {
     return nullptr;
   }
   auto loop = task_runner->loop_;
-  return MakeRefCounted<MsgLoopReconfigurableTaskRunner>(loop, loop);
+  return MakeRefCounted<MergeableTaskRunner>(loop, loop);
 }
 
-RefPtr<MsgLoopReconfigurableTaskRunner> MsgLoopReconfigurableTaskRunner::Create(
+RefPtr<MergeableTaskRunner> MergeableTaskRunner::Create(
     const RefPtr<TaskRunner>& task_runner_1,
     const RefPtr<TaskRunner>& task_runner_2) {
   if (!task_runner_1 || !task_runner_2) {
@@ -28,10 +27,10 @@ RefPtr<MsgLoopReconfigurableTaskRunner> MsgLoopReconfigurableTaskRunner::Create(
   }
   auto loop_1 = task_runner_1->loop_;
   auto loop_2 = task_runner_2->loop_;
-  return MakeRefCounted<MsgLoopReconfigurableTaskRunner>(loop_1, loop_2);
+  return MakeRefCounted<MergeableTaskRunner>(loop_1, loop_2);
 }
 
-MsgLoopReconfigurableTaskRunner::MsgLoopReconfigurableTaskRunner(
+MergeableTaskRunner::MergeableTaskRunner(
     const fml::RefPtr<MessageLoopImpl>& loop_1,
     const fml::RefPtr<MessageLoopImpl>& loop_2)
     : TaskRunner(nullptr /* loop implemenation*/),
@@ -41,15 +40,14 @@ MsgLoopReconfigurableTaskRunner::MsgLoopReconfigurableTaskRunner(
   loops_[1] = fml::RefPtr<MessageLoopImpl>(loop_2);
 }
 
-MsgLoopReconfigurableTaskRunner::~MsgLoopReconfigurableTaskRunner() = default;
+MergeableTaskRunner::~MergeableTaskRunner() = default;
 
-void MsgLoopReconfigurableTaskRunner::PostTask(fml::closure task) {
+void MergeableTaskRunner::PostTask(fml::closure task) {
   PostTaskForTime(task, fml::TimePoint::Now());
 }
 
-void MsgLoopReconfigurableTaskRunner::PostTaskForTime(
-    fml::closure task,
-    fml::TimePoint target_time) {
+void MergeableTaskRunner::PostTaskForTime(fml::closure task,
+                                          fml::TimePoint target_time) {
   if (!task) {
     return;
   }
@@ -58,12 +56,12 @@ void MsgLoopReconfigurableTaskRunner::PostTaskForTime(
   loops_[cur_loop]->PostTask(std::move(task), target_time);
 }
 
-void MsgLoopReconfigurableTaskRunner::PostDelayedTask(fml::closure task,
-                                                      fml::TimeDelta delay) {
+void MergeableTaskRunner::PostDelayedTask(fml::closure task,
+                                          fml::TimeDelta delay) {
   PostTaskForTime(task, fml::TimePoint::Now() + delay);
 }
 
-bool MsgLoopReconfigurableTaskRunner::RunsTasksOnCurrentThread() {
+bool MergeableTaskRunner::RunsTasksOnCurrentThread() {
   if (!fml::MessageLoop::IsInitializedForCurrentThread()) {
     return false;
   }
@@ -72,7 +70,7 @@ bool MsgLoopReconfigurableTaskRunner::RunsTasksOnCurrentThread() {
   return MessageLoop::GetCurrent().GetLoopImpl() == loops_[cur_loop];
 }
 
-void MsgLoopReconfigurableTaskRunner::MergeLoops() {
+void MergeableTaskRunner::MergeLoops() {
   fml::UniqueLock lock(*shared_mutex_);
   if (merged_) {
     return;
@@ -81,7 +79,7 @@ void MsgLoopReconfigurableTaskRunner::MergeLoops() {
   merged_ = true;
 }
 
-void MsgLoopReconfigurableTaskRunner::UnMergeLoops() {
+void MergeableTaskRunner::UnMergeLoops() {
   fml::UniqueLock lock(*shared_mutex_);
   merged_ = false;
 }

@@ -126,6 +126,8 @@ FILE: ../../../flutter/fml/memory/weak_ptr.h
 FILE: ../../../flutter/fml/memory/weak_ptr_internal.cc
 FILE: ../../../flutter/fml/memory/weak_ptr_internal.h
 FILE: ../../../flutter/fml/memory/weak_ptr_unittest.cc
+FILE: ../../../flutter/fml/mergeable_task_runner.cc
+FILE: ../../../flutter/fml/mergeable_task_runner.h
 FILE: ../../../flutter/fml/message.cc
 FILE: ../../../flutter/fml/message.h
 FILE: ../../../flutter/fml/message_loop.cc
@@ -134,8 +136,6 @@ FILE: ../../../flutter/fml/message_loop_impl.cc
 FILE: ../../../flutter/fml/message_loop_impl.h
 FILE: ../../../flutter/fml/message_loop_unittests.cc
 FILE: ../../../flutter/fml/message_unittests.cc
-FILE: ../../../flutter/fml/msg_loop_reconfigurable_task_runner.cc
-FILE: ../../../flutter/fml/msg_loop_reconfigurable_task_runner.h
 FILE: ../../../flutter/fml/native_library.h
 FILE: ../../../flutter/fml/paths.cc
 FILE: ../../../flutter/fml/paths.h

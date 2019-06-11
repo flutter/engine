@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FML_MSG_LOOP_RECONFIGURABLE_TASK_RUNNER_H_
-#define FLUTTER_FML_MSG_LOOP_RECONFIGURABLE_TASK_RUNNER_H_
+#ifndef FLUTTER_FML_MERGEABLE_TASK_RUNNER_H_
+#define FLUTTER_FML_MERGEABLE_TASK_RUNNER_H_
 
 #include "flutter/fml/synchronization/shared_mutex.h"
 #include "flutter/fml/task_runner.h"
@@ -21,23 +21,23 @@ namespace fml {
 // Note: Unmerge does not re-transfer the ownership of prior submissions.
 // Only the tasks that are submitted in the future are assigned to loop_1.
 // We start with an empty task queue for loop_1 after Merge -> UnMerge.
-class MsgLoopReconfigurableTaskRunner : public TaskRunner {
+class MergeableTaskRunner : public TaskRunner {
  public:
   // Both loops are backed by the task_runner's loop.
-  static RefPtr<MsgLoopReconfigurableTaskRunner> CreateFromSingleTaskRunner(
+  static RefPtr<MergeableTaskRunner> CreateFromSingleTaskRunner(
       const RefPtr<TaskRunner>& task_runner);
 
-  static RefPtr<MsgLoopReconfigurableTaskRunner> Create(
+  static RefPtr<MergeableTaskRunner> Create(
       const RefPtr<TaskRunner>& task_runner_1,
       const RefPtr<TaskRunner>& task_runner_2);
 
-  ~MsgLoopReconfigurableTaskRunner() override;
+  ~MergeableTaskRunner() override;
 
   // We will default to loop_1 to execute tasks.
-  // Use |MsgLoopReconfigurableTaskRunner::SwitchLoop| to change
+  // Use |MergeableTaskRunner::SwitchLoop| to change
   // the active loop.
-  MsgLoopReconfigurableTaskRunner(const RefPtr<MessageLoopImpl>& loop_1,
-                                  const RefPtr<MessageLoopImpl>& loop_2);
+  MergeableTaskRunner(const RefPtr<MessageLoopImpl>& loop_1,
+                      const RefPtr<MessageLoopImpl>& loop_2);
 
   // |TaskRunner|
   void PostTask(closure task) override;
@@ -61,9 +61,9 @@ class MsgLoopReconfigurableTaskRunner : public TaskRunner {
   std::atomic_bool merged_;  // guarded by shared_mutex_
   RefPtr<MessageLoopImpl> loops_[2];
 
-  FML_DISALLOW_COPY_AND_ASSIGN(MsgLoopReconfigurableTaskRunner);
+  FML_DISALLOW_COPY_AND_ASSIGN(MergeableTaskRunner);
 };
 
 }  // namespace fml
 
-#endif  // FLUTTER_FML_MSG_LOOP_RECONFIGURABLE_TASK_RUNNER_H_
+#endif  // FLUTTER_FML_MERGEABLE_TASK_RUNNER_H_

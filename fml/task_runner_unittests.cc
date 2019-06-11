@@ -6,23 +6,22 @@
 
 #include "gtest/gtest.h"
 
+#include "flutter/fml/mergeable_task_runner.h"
 #include "flutter/fml/message_loop.h"
-#include "flutter/fml/msg_loop_reconfigurable_task_runner.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/thread.h"
 
-TEST(MsgLoopReconfigurableTaskRunner, MergeMessageLoop) {
-  std::unique_ptr<fml::Thread> thread_1 = std::make_unique<fml::Thread>(
-      "MsgLoopReconfigurableTaskRunner_Test.thread_1");
-  std::unique_ptr<fml::Thread> thread_2 = std::make_unique<fml::Thread>(
-      "MsgLoopReconfigurableTaskRunner_Test.thread_2");
+TEST(MergeableTaskRunner, MergeMessageLoop) {
+  std::unique_ptr<fml::Thread> thread_1 =
+      std::make_unique<fml::Thread>("MergeableTaskRunner_Test.thread_1");
+  std::unique_ptr<fml::Thread> thread_2 =
+      std::make_unique<fml::Thread>("MergeableTaskRunner_Test.thread_2");
 
   auto task_runner_1 = thread_1->GetTaskRunner();
   auto task_runner_2 = thread_2->GetTaskRunner();
-  fml::RefPtr<fml::MsgLoopReconfigurableTaskRunner> runner =
-      fml::MsgLoopReconfigurableTaskRunner::Create(task_runner_1,
-                                                   task_runner_2);
+  fml::RefPtr<fml::MergeableTaskRunner> runner =
+      fml::MergeableTaskRunner::Create(task_runner_1, task_runner_2);
 
   fml::AutoResetWaitableEvent latch_1, latch_2;
 
@@ -42,13 +41,13 @@ TEST(MsgLoopReconfigurableTaskRunner, MergeMessageLoop) {
   latch_2.Wait();
 }
 
-TEST(MsgLoopReconfigurableTaskRunner, SameMessageLoopMerge) {
-  std::unique_ptr<fml::Thread> thread = std::make_unique<fml::Thread>(
-      "MsgLoopReconfigurableTaskRunner_Test.thread");
+TEST(MergeableTaskRunner, SameMessageLoopMerge) {
+  std::unique_ptr<fml::Thread> thread =
+      std::make_unique<fml::Thread>("MergeableTaskRunner_Test.thread");
 
   auto task_runner = thread->GetTaskRunner();
-  fml::RefPtr<fml::MsgLoopReconfigurableTaskRunner> runner =
-      fml::MsgLoopReconfigurableTaskRunner::Create(task_runner, task_runner);
+  fml::RefPtr<fml::MergeableTaskRunner> runner =
+      fml::MergeableTaskRunner::Create(task_runner, task_runner);
 
   fml::AutoResetWaitableEvent latch_1, latch_2;
   runner->PostTask([&task_runner, &latch_1]() {
@@ -67,20 +66,19 @@ TEST(MsgLoopReconfigurableTaskRunner, SameMessageLoopMerge) {
   latch_2.Wait();
 }
 
-TEST(MsgLoopReconfigurableTaskRunner, MergeLoopBlocks) {
-  std::unique_ptr<fml::Thread> thread_1 = std::make_unique<fml::Thread>(
-      "MsgLoopReconfigurableTaskRunner_Test.thread_1");
-  std::unique_ptr<fml::Thread> thread_2 = std::make_unique<fml::Thread>(
-      "MsgLoopReconfigurableTaskRunner_Test.thread_2");
-  std::unique_ptr<fml::Thread> thread_3 = std::make_unique<fml::Thread>(
-      "MsgLoopReconfigurableTaskRunner_Test.thread_3");
+TEST(MergeableTaskRunner, MergeLoopBlocks) {
+  std::unique_ptr<fml::Thread> thread_1 =
+      std::make_unique<fml::Thread>("MergeableTaskRunner_Test.thread_1");
+  std::unique_ptr<fml::Thread> thread_2 =
+      std::make_unique<fml::Thread>("MergeableTaskRunner_Test.thread_2");
+  std::unique_ptr<fml::Thread> thread_3 =
+      std::make_unique<fml::Thread>("MergeableTaskRunner_Test.thread_3");
 
   auto task_runner_1 = thread_1->GetTaskRunner();
   auto task_runner_2 = thread_2->GetTaskRunner();
   auto task_runner_3 = thread_3->GetTaskRunner();
-  fml::RefPtr<fml::MsgLoopReconfigurableTaskRunner> runner =
-      fml::MsgLoopReconfigurableTaskRunner::Create(task_runner_1,
-                                                   task_runner_2);
+  fml::RefPtr<fml::MergeableTaskRunner> runner =
+      fml::MergeableTaskRunner::Create(task_runner_1, task_runner_2);
 
   int test_val = 0;
   fml::AutoResetWaitableEvent latch_1, latch_2, latch_3, latch_4;
@@ -119,17 +117,16 @@ TEST(MsgLoopReconfigurableTaskRunner, MergeLoopBlocks) {
   ASSERT_TRUE(test_val == 4);
 }
 
-TEST(MsgLoopReconfigurableTaskRunner, UnMerge) {
-  std::unique_ptr<fml::Thread> thread_1 = std::make_unique<fml::Thread>(
-      "MsgLoopReconfigurableTaskRunner_Test.thread_1");
-  std::unique_ptr<fml::Thread> thread_2 = std::make_unique<fml::Thread>(
-      "MsgLoopReconfigurableTaskRunner_Test.thread_2");
+TEST(MergeableTaskRunner, UnMerge) {
+  std::unique_ptr<fml::Thread> thread_1 =
+      std::make_unique<fml::Thread>("MergeableTaskRunner_Test.thread_1");
+  std::unique_ptr<fml::Thread> thread_2 =
+      std::make_unique<fml::Thread>("MergeableTaskRunner_Test.thread_2");
 
   auto task_runner_1 = thread_1->GetTaskRunner();
   auto task_runner_2 = thread_2->GetTaskRunner();
-  fml::RefPtr<fml::MsgLoopReconfigurableTaskRunner> runner =
-      fml::MsgLoopReconfigurableTaskRunner::Create(task_runner_1,
-                                                   task_runner_2);
+  fml::RefPtr<fml::MergeableTaskRunner> runner =
+      fml::MergeableTaskRunner::Create(task_runner_1, task_runner_2);
 
   fml::AutoResetWaitableEvent latch_1, latch_2, latch_3;
 

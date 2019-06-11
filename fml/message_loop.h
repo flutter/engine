@@ -48,7 +48,7 @@ class MessageLoop {
 
  private:
   friend class TaskRunner;
-  friend class MsgLoopReconfigurableTaskRunner;
+  friend class MergeableTaskRunner;
   friend class MessageLoopImpl;
 
   fml::RefPtr<MessageLoopImpl> loop_;

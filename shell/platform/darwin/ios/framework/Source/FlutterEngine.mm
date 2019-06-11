@@ -366,8 +366,7 @@
     // https://github.com/flutter/flutter/issues/23975
 
     auto platform = fml::MessageLoop::GetCurrent().GetTaskRunner();
-    auto gpu = fml::MsgLoopReconfigurableTaskRunner::Create(
-        platform, _threadHost.gpu_thread->GetTaskRunner());
+    auto gpu = fml::MergeableTaskRunner::Create(platform, _threadHost.gpu_thread->GetTaskRunner());
 
     flutter::TaskRunners task_runners(platform,                                // platform
                                       gpu,                                     // gpu
