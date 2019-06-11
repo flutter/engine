@@ -130,7 +130,7 @@ void MessageLoopImpl::RegisterTask(fml::closure task,
 }
 
 void MessageLoopImpl::FlushTasks(FlushType type) {
-  TRACE_EVENT0("fml", "MessageLoop::FlushTasks");
+  FML_TRACE_EVENT0("fml", "MessageLoop::FlushTasks");
 
   // We are grabbing this lock here as a proxy to indicate
   // that we are running tasks and will invoke the

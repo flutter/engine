@@ -73,7 +73,7 @@ AndroidShellHolder::AndroidShellHolder(
       };
 
   Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
-    return std::make_unique<Rasterizer>(shell.GetTaskRunners());
+    return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
   };
 
   // The current thread will be used as the platform thread. Ensure that the
@@ -192,8 +192,8 @@ void AndroidShellHolder::DispatchPointerDataPacket(
     return;
   }
 
-  TRACE_EVENT0("flutter", "AndroidShellHolder::DispatchPointerDataPacket");
-  TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
+  FML_TRACE_EVENT0("flutter", "AndroidShellHolder::DispatchPointerDataPacket");
+  FML_TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
 
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
       [engine = shell_->GetEngine(), packet = std::move(packet),

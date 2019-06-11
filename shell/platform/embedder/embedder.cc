@@ -527,7 +527,8 @@ FlutterEngineResult FlutterEngineRun(size_t version,
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       [](flutter::Shell& shell) {
-        return std::make_unique<flutter::Rasterizer>(shell.GetTaskRunners());
+        return std::make_unique<flutter::Rasterizer>(shell,
+                                                     shell.GetTaskRunners());
       };
 
   // TODO(chinmaygarde): This is the wrong spot for this. It belongs in the
@@ -950,7 +951,7 @@ FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
-  TRACE_EVENT0("flutter", "FlutterEngineOnVsync");
+  FML_TRACE_EVENT0("flutter", "FlutterEngineOnVsync");
 
   auto start_time = fml::TimePoint::FromEpochDelta(
       fml::TimeDelta::FromNanoseconds(frame_start_time_nanos));
