@@ -50,9 +50,8 @@ void ClipRectLayer::Paint(PaintContext& context) const {
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->clipRect(clip_rect_,
                                           clip_behavior_ != Clip::hardEdge);
-  if (context.mutator_stack != nullptr) {
-    context.mutator_stack->pushClipRect(clip_rect_);
-  }
+  context.mutator_stack.pushClipRect(clip_rect_);
+
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->saveLayer(clip_rect_, nullptr);
   }
@@ -60,9 +59,8 @@ void ClipRectLayer::Paint(PaintContext& context) const {
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->restore();
   }
-  if (context.mutator_stack != nullptr) {
-    context.mutator_stack->pop();
-  }
+  context.mutator_stack.pop();
+
 }
 
 }  // namespace flutter

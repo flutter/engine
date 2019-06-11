@@ -120,7 +120,7 @@ class EmbeddedViewParams {
  public:
   SkPoint offsetPixels;
   SkSize sizePoints;
-  MutatorsStack mutatorsStack;
+  MutatorsStack& mutatorsStack;
 
   bool operator==(const EmbeddedViewParams& other) const {
     return offsetPixels == other.offsetPixels &&
