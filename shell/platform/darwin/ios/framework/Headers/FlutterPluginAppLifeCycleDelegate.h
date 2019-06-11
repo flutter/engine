@@ -89,8 +89,11 @@ FLUTTER_EXPORT
 /**
  * Calls all plugins registered for `UIApplicationDelegate` callbacks.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 - (void)application:(UIApplication*)application
     didReceiveLocalNotification:(UILocalNotification*)notification;
+#pragma GCC diagnostic pop
 
 /**
  * Calls all plugins registered for `UNUserNotificationCenterDelegate` callbacks.

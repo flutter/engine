@@ -178,10 +178,13 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
                  name:NSCurrentLocaleDidChangeNotification
                object:nil];
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   [center addObserver:self
              selector:@selector(onAccessibilityStatusChanged:)
                  name:UIAccessibilityVoiceOverStatusChanged
                object:nil];
+#pragma GCC diagnostic pop
 
   [center addObserver:self
              selector:@selector(onAccessibilityStatusChanged:)
