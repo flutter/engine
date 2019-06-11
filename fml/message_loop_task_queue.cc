@@ -9,7 +9,7 @@
 namespace fml {
 
 std::mutex MessageLoopTaskQueue::creation_mutex_;
-MessageLoopTaskQueue* MessageLoopTaskQueue::instance_;
+fml::RefPtr<MessageLoopTaskQueue> MessageLoopTaskQueue::instance_;
 
 // delayed tasks
 DelayedTask::DelayedTask(int p_order,
@@ -21,10 +21,10 @@ DelayedTask::DelayedTask(const DelayedTask& other) = default;
 
 DelayedTask::~DelayedTask() = default;
 
-MessageLoopTaskQueue* MessageLoopTaskQueue::GetInstance() {
+fml::RefPtr<MessageLoopTaskQueue> MessageLoopTaskQueue::GetInstance() {
   std::lock_guard<std::mutex> creation(creation_mutex_);
   if (!instance_) {
-    instance_ = new MessageLoopTaskQueue();
+    instance_ = fml::MakeRefCounted<MessageLoopTaskQueue>();
   }
   return instance_;
 }
@@ -71,9 +71,24 @@ fml::TimePoint MessageLoopTaskQueue::RegisterTask(MessageLoopId loop_id,
   return PeekNextTask(loop_id, dummy).target_time;
 }
 
+#define MLTQ_DEF_LOCK(l, mutexes, loop) \
+  std::unique_lock<std::mutex> l(*mutexes[loop], std::defer_lock)
+
 bool MessageLoopTaskQueue::MergeQueues(MessageLoopId owner,
                                        MessageLoopId subsumed) {
-  std::lock_guard<std::mutex> lock(merge_mutex_);
+  // task_flushing locks
+  MLTQ_DEF_LOCK(t1, flush_tasks_mutexes, owner);
+  MLTQ_DEF_LOCK(t2, flush_tasks_mutexes, subsumed);
+
+  // task observers mutexes
+  MLTQ_DEF_LOCK(o1, observers_mutexes_, owner);
+  MLTQ_DEF_LOCK(o2, observers_mutexes_, subsumed);
+
+  // delayed_tasks locks
+  MLTQ_DEF_LOCK(d1, delayed_tasks_mutexes_, owner);
+  MLTQ_DEF_LOCK(d2, delayed_tasks_mutexes_, subsumed);
+
+  std::lock(t1, t2, o1, o2, d1, d2);
 
   if (owner == subsumed) {
     return true;
@@ -100,7 +115,12 @@ bool MessageLoopTaskQueue::MergeQueues(MessageLoopId owner,
 }
 
 bool MessageLoopTaskQueue::UnmergeQueues(MessageLoopId owner) {
-  std::lock_guard<std::mutex> lock(merge_mutex_);
+  // task_flushing locks
+  MLTQ_DEF_LOCK(t, flush_tasks_mutexes, owner);
+  MLTQ_DEF_LOCK(o, observers_mutexes_, owner);
+  MLTQ_DEF_LOCK(d, delayed_tasks_mutexes_, owner);
+
+  std::lock(t, o, d);
 
   // is not merged.
   if (owner_to_subsumed_.count(owner) == 0) {
