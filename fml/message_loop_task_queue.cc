@@ -104,10 +104,6 @@ bool MessageLoopTaskQueue::MergeQueues(MessageLoopId owner,
     return false;
   }
 
-  // block any running tasks
-  // no more task adding or removing
-  // no more task observers
-
   owner_to_subsumed_[owner] = subsumed;
   subsumed_to_owner_[subsumed] = owner;
 
@@ -126,10 +122,6 @@ bool MessageLoopTaskQueue::UnmergeQueues(MessageLoopId owner) {
   if (owner_to_subsumed_.count(owner) == 0) {
     return true;
   }
-
-  // block any running tasks
-  // no more task adding or removing
-  // no more task observers
 
   MessageLoopId subsumed = owner_to_subsumed_[owner];
   owner_to_subsumed_.erase(owner);
@@ -157,7 +149,7 @@ MessageLoopTaskQueue::TasksToRun MessageLoopTaskQueue::GetTasksToRunNow(
   auto now = fml::TimePoint::Now();
   // this is the loop that has a higher priority task.
   MessageLoopId task_loop;
-  while (!HasMoreTasks(owner)) {
+  while (HasMoreTasks(owner)) {
     const auto& top = PeekNextTask(owner, task_loop);
     if (top.target_time > now) {
       break;
