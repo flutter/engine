@@ -21,10 +21,11 @@ enum MutatorType { clip_rect, clip_rrect, clip_path, transform };
 
 class Mutator {
  public:
-  void setType(const MutatorType type) { type_ = type; }
-  void setRect(const SkRect& rect) { rect_ = rect; }
-  void setRRect(const SkRRect& rrect) { rrect_ = rrect; }
-  void setMatrix(const SkMatrix& matrix) { matrix_ = matrix; }
+
+  explicit Mutator(const SkRect& rect):type_(clip_rect), rect_(rect){}
+  explicit Mutator(const SkRRect& rrect):type_(clip_rrect), rrect_(rrect){}
+  explicit Mutator(const SkPath& path):type_(clip_path), path_(path){}
+  explicit Mutator(const SkMatrix& matrix):type_(transform), matrix_(matrix){}
 
   MutatorType type() const { return type_; }
   SkRect rect() const { return rect_; }
@@ -60,10 +61,14 @@ class Mutator {
 
  private:
   MutatorType type_;
-  SkRect rect_;
-  SkRRect rrect_;
-  SkPath path_;
-  SkMatrix matrix_;
+
+  union{
+    SkRect rect_;
+    SkRRect rrect_;
+    SkPath path_;
+    SkMatrix matrix_;
+  };
+
 };  // Mutator
 
 // A stack of mutators that can be applied to an embedded platform view.

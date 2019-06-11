@@ -11,23 +11,17 @@ bool ExternalViewEmbedder::SubmitFrame(GrContext* context) {
 };
 
 void MutatorsStack::pushClipRect(const SkRect& rect) {
-  Mutator element;
-  element.setType(clip_rect);
-  element.setRect(rect);
+  Mutator element = Mutator(rect);
   vector_.push_back(std::move(element));
 };
 
 void MutatorsStack::pushClipRRect(const SkRRect& rrect) {
-  Mutator element;
-  element.setType(clip_rrect);
-  element.setRRect(rrect);
+  Mutator element = Mutator(rrect);
   vector_.push_back(std::move(element));
 };
 
 void MutatorsStack::pushTransform(const SkMatrix& matrix) {
-  Mutator element;
-  element.setType(transform);
-  element.setMatrix(matrix);
+  Mutator element = Mutator(matrix);
   vector_.push_back(std::move(element));
 };
 

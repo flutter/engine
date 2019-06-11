@@ -99,44 +99,28 @@ TEST(MutatorsStack, Equality) {
 }
 
 TEST(Mutator, Equality) {
-  flutter::Mutator mutator;
-  flutter::Mutator otherMutator;
-  mutator.setType(flutter::MutatorType::transform);
-  otherMutator.setType(flutter::MutatorType::transform);
   SkMatrix matrix;
-  mutator.setMatrix(matrix);
-  otherMutator.setMatrix(matrix);
+  flutter::Mutator mutator = flutter::Mutator(matrix);
+  flutter::Mutator otherMutator = flutter::Mutator(matrix);
   ASSERT_TRUE(mutator == otherMutator);
 
-  mutator.setType(flutter::MutatorType::clip_rect);
-  otherMutator.setType(flutter::MutatorType::clip_rect);
   SkRect rect;
-  mutator.setRect(rect);
-  otherMutator.setRect(rect);
-  ASSERT_TRUE(mutator == otherMutator);
+  flutter::Mutator mutator2 = flutter::Mutator(rect);
+  flutter::Mutator otherMutator2 = flutter::Mutator(rect);
+  ASSERT_TRUE(mutator2 == otherMutator2);
 
-  mutator.setType(flutter::MutatorType::clip_rrect);
-  otherMutator.setType(flutter::MutatorType::clip_rrect);
   SkRRect rrect;
-  mutator.setRRect(rrect);
-  otherMutator.setRRect(rrect);
-  ASSERT_TRUE(mutator == otherMutator);
+  flutter::Mutator mutator3 = flutter::Mutator(rrect);
+  flutter::Mutator otherMutator3 =flutter::Mutator(rrect);
+  ASSERT_TRUE(mutator3 == otherMutator3);
 
-  flutter::Mutator notEqualMutator;
-  notEqualMutator.setType(flutter::MutatorType::transform);
-  notEqualMutator.setMatrix(matrix);
-  ASSERT_FALSE(notEqualMutator == mutator);
+  ASSERT_FALSE(mutator2 == mutator);
 }
 
 TEST(Mutator, UnEquality) {
-  flutter::Mutator mutator;
-  mutator.setType(flutter::MutatorType::clip_rect);
   SkRect rect;
-  mutator.setRect(rect);
-
+  flutter::Mutator mutator = flutter::Mutator(rect);
   SkMatrix matrix;
-  flutter::Mutator notEqualMutator;
-  notEqualMutator.setType(flutter::MutatorType::transform);
-  notEqualMutator.setMatrix(matrix);
+  flutter::Mutator notEqualMutator = flutter::Mutator(matrix);
   ASSERT_TRUE(notEqualMutator != mutator);
 }
