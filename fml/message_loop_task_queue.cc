@@ -39,9 +39,9 @@ MessageLoopId MessageLoopTaskQueue::CreateMessageLoopId() {
   MessageLoopId loop_id = message_loop_id_counter_;
   ++message_loop_id_counter_;
 
-  observers_mutexes_.push_back(std::unique_ptr<std::mutex>());
-  delayed_tasks_mutexes_.push_back(std::unique_ptr<std::mutex>());
-  flush_tasks_mutexes.push_back(std::unique_ptr<std::mutex>());
+  observers_mutexes_.push_back(std::make_unique<std::mutex>());
+  delayed_tasks_mutexes_.push_back(std::make_unique<std::mutex>());
+  flush_tasks_mutexes.push_back(std::make_unique<std::mutex>());
 
   task_observers_.push_back(TaskObservers());
   delayed_tasks_.push_back(DelayedTaskQueue());
