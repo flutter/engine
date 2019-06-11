@@ -145,7 +145,7 @@ MessageLoopTaskQueue::TasksToRun MessageLoopTaskQueue::GetTasksToRunNow(
   }
 
   if (!HasMoreTasks(owner)) {
-    return TasksToRun(fml::TimePoint::Max(), invocations, loop_ids);
+    return TasksToRun(fml::TimePoint::Now(), invocations, loop_ids);
   }
 
   auto now = fml::TimePoint::Now();
@@ -172,10 +172,9 @@ MessageLoopTaskQueue::TasksToRun MessageLoopTaskQueue::GetTasksToRunNow(
 void MessageLoopTaskQueue::InvokeAndNotifyObservers(
     MessageLoopId owner,
     const MessageLoopTaskQueue::TasksToRun& tasks_to_run) {
-  std::lock_guard<std::mutex> observers_lock(*observers_mutexes_[owner]);
-
   for (const auto& invocation : tasks_to_run.invocations) {
     invocation();
+    std::lock_guard<std::mutex> observers_lock(*observers_mutexes_[owner]);
     for (const auto& observer : task_observers_[owner]) {
       observer.second();
     }
