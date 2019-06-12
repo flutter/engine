@@ -6,6 +6,7 @@
 #define FLUTTER_FML_MESSAGE_LOOP_TASK_QUEUE_H_
 
 #include <map>
+#include <mutex>
 #include <vector>
 
 #include "flutter/fml/closure.h"
