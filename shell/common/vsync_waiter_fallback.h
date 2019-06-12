@@ -12,6 +12,7 @@
 
 namespace flutter {
 
+/// A fake |VsyncWaiter| that will fire at 60 fps.
 class VsyncWaiterFallback final : public VsyncWaiter {
  public:
   VsyncWaiterFallback(TaskRunners task_runners);

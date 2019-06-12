@@ -24,6 +24,7 @@ enum class PipelineConsumeResult {
 
 size_t GetNextPipelineTraceID();
 
+/// A thread-safe queue of resources.
 template <class R>
 class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
  public:
