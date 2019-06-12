@@ -22,8 +22,11 @@ enum class FlushType {
   kAll,
 };
 
+class MessageLoopImpl;
+
 // This class keeps track of all the tasks and observers that
-// need to be run on it's MessageLoopImpl.
+// need to be run on it's MessageLoopImpl. This also wakes up the
+// loop at the required times.
 class MessageLoopTaskQueue {
  public:
   // Lifecycle.
@@ -36,13 +39,11 @@ class MessageLoopTaskQueue {
 
   // Tasks methods.
 
-  fml::TimePoint RegisterTask(fml::closure task, fml::TimePoint target_time);
+  void RegisterTask(fml::closure task, fml::TimePoint target_time);
 
   bool HasPendingTasks();
 
-  // Returns the wake up time.
-  fml::TimePoint GetTasksToRunNow(FlushType type,
-                                  std::vector<fml::closure>& invocations);
+  void GetTasksToRunNow(FlushType type, std::vector<fml::closure>& invocations);
 
   // Observers methods.
 
@@ -56,7 +57,13 @@ class MessageLoopTaskQueue {
 
   void Swap(MessageLoopTaskQueue& other);
 
+  void SetLoop(fml::MessageLoopImpl* loop);
+
  private:
+  void WakeUp(fml::TimePoint time);
+
+  std::unique_ptr<MessageLoopImpl> loop_;
+
   std::mutex observers_mutex_;
   std::map<intptr_t, fml::closure> task_observers_
       FML_GUARDED_BY(observers_mutex_);
