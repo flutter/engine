@@ -25,6 +25,7 @@ void MutatorsStack::pushTransform(const SkMatrix& matrix) {
   vector_.push_back(std::move(element));
 };
 
+
 void MutatorsStack::pop() {
   vector_.pop_back();
 };

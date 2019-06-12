@@ -23,6 +23,7 @@ class Mutator {
  public:
 
   Mutator(const Mutator& other) {
+    type_ = other.type_;
     switch (other.type_) {
       case clip_rect:
         rect_ = other.rect_;
