@@ -212,9 +212,9 @@ UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutat
   ResetAnchor(head.layer);
 
   // Apply transforms/clips.
-  auto iter = mutators_stack.bottom();
+  auto iter = mutators_stack.bottom()->get();
   int64_t clipCount = 0;
-  while (iter != mutators_stack.top()) {
+  while (iter != mutators_stack.top()->get()) {
     switch (iter->type()) {
       case transform: {
         CATransform3D transform = GetCATransform3DFromSkMatrix(iter->matrix());

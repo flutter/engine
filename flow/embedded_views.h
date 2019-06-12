@@ -21,6 +21,26 @@ enum MutatorType { clip_rect, clip_rrect, clip_path, transform };
 
 class Mutator {
  public:
+
+  Mutator(const Mutator& other) {
+    switch (other.type_) {
+      case clip_rect:
+        rect_ = other.rect_;
+        break;
+      case clip_rrect:
+        rrect_ = other.rrect_;
+        break;
+      case clip_path:
+        path_ = new SkPath(*other.path_);
+        break;
+      case transform:
+        matrix_ = other.matrix_;
+        break;
+      default:
+        break;
+    }
+  }
+
   explicit Mutator(const SkRect& rect) : type_(clip_rect), rect_(rect) {}
   explicit Mutator(const SkRRect& rrect) : type_(clip_rrect), rrect_(rrect) {}
   explicit Mutator(const SkPath& path)
@@ -89,6 +109,15 @@ class Mutator {
 // to a platform view P1 will result in T1(T2(T2(P1))).
 class MutatorsStack {
  public:
+
+  MutatorsStack() = default;
+
+  MutatorsStack(const MutatorsStack& other) {
+    for (size_t i = 0; i < other.vector_.size(); i++) {
+      vector_[i] = std::make_unique<Mutator>(*other.vector_[i].get());
+    }
+  }
+
   void pushClipRect(const SkRect& rect);
   void pushClipRRect(const SkRRect& rrect);
   void pushClipPath(const SkPath& path);
@@ -100,12 +129,20 @@ class MutatorsStack {
   void pop();
 
   // Returns the iterator points to the top of the stack..
-  const std::vector<Mutator>::const_reverse_iterator top() const;
+  const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator top() const;
   // Returns an iterator pointing to the bottom of the stack.
-  const std::vector<Mutator>::const_reverse_iterator bottom() const;
+  const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator bottom() const;
 
   bool operator==(const MutatorsStack& other) const {
-    return vector_ == other.vector_;
+    if (vector_.size() != other.vector_.size()) {
+      return false;
+    }
+    for (size_t i = 0; i < vector_.size(); i ++) {
+      if (*vector_[i] != *other.vector_[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   bool operator!=(const MutatorsStack& other) const {
@@ -113,8 +150,7 @@ class MutatorsStack {
   }
 
  private:
-  // TODO(cyanglaz): Make it a vector of unique_ptr to save some copies.
-  std::vector<Mutator> vector_;
+  std::vector<std::unique_ptr<Mutator>> vector_;
 };  // MutatorsStack
 
 class EmbeddedViewParams {
