@@ -29,7 +29,9 @@
 
 namespace flutter {
 
-/// Runner of the Dart code.
+/// Manager of the root Dart isolate and the relay of platform messages.
+///
+/// Also setups up dart::ui bindings and handles restarts.
 class Engine final : public RuntimeDelegate {
  public:
   // Used by Engine::Run
