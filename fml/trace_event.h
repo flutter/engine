@@ -17,10 +17,10 @@
 
 #if !defined(OS_FUCHSIA) || defined(FUCHSIA_SDK)
 
-#define TRACE_DURATION(args...)
-#define TRACE_ASYNC_BEGIN(args...)
-#define TRACE_ASYNC_END(args...)
-#define TRACE_INSTANT(a, b, c);
+#define TRACE_DURATION(args, ...)
+#define TRACE_ASYNC_BEGIN(args, ...)
+#define TRACE_ASYNC_END(args, ...)
+#define TRACE_INSTANT(a, b, c)
 #define TRACE_SCOPE_THREAD 0
 
 #endif  // !defined(OS_FUCHSIA) ||defined(FUCHSIA_SDK)
