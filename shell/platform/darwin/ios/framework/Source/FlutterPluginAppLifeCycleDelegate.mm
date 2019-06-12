@@ -228,6 +228,9 @@ static BOOL isPowerOfTwo(NSUInteger x) {
   }
 }
 
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 - (void)application:(UIApplication*)application
     didReceiveLocalNotification:(UILocalNotification*)notification {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
@@ -239,6 +242,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
     }
   }
 }
+#pragma GCC diagnostic pop
 
 - (void)userNotificationCenter:(UNUserNotificationCenter*)center
        willPresentNotification:(UNNotification*)notification
