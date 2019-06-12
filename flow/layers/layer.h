@@ -83,7 +83,7 @@ class Layer {
     SkCanvas* leaf_nodes_canvas;
     GrContext* gr_context;
     ExternalViewEmbedder* view_embedder;
-    MutatorsStack* mutator_stack;
+    MutatorsStack& mutators_stack;
     const Stopwatch& raster_time;
     const Stopwatch& ui_time;
     TextureRegistry& texture_registry;

@@ -28,9 +28,16 @@
 - (void)blockGesture;
 @end
 
-// A view that only acknowlege touches are inside if the touches are acknowlege inside by any of its
-// subviews.
-@interface TouchTransparentView : UIView
+// The parent view handles clipping to its subviews.
+@interface ChildClippingView : UIView
+
+// Performs the clipping based on the type.
+//
+// The `type` must be one of the 3: clip_rect, clip_rrect, clip_path.
+- (void)performClip:(flutter::MutatorType)type
+               rect:(const SkRect&)rect
+              rrect:(const SkRRect&)rrect
+               path:(const SkPath&)path;
 
 @end
 

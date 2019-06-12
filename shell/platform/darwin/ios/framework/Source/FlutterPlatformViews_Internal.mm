@@ -21,33 +21,58 @@ FlutterPlatformViewsController::FlutterPlatformViewsController() = default;
 
 FlutterPlatformViewsController::~FlutterPlatformViewsController() = default;
 
-CGRect GetCGRectFromSkRect(const SkRect& clipSkRect) {
+CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix) {
+  // Skia only supports 2D transform so we don't map z.
+  CATransform3D transform = CATransform3DIdentity;
+  transform.m11 = matrix.getScaleX();
+  transform.m21 = matrix.getSkewX();
+  transform.m41 = matrix.getTranslateX();
+  transform.m14 = matrix.getPerspX();
+
+  transform.m12 = matrix.getSkewY();
+  transform.m22 = matrix.getScaleY();
+  transform.m42 = matrix.getTranslateY();
+  transform.m24 = matrix.getPerspY();
+  return transform;
+}
+
+void ResetAnchor(CALayer* layer) {
+  // Flow uses (0, 0) to apply transform matrix so we need to match that in Quartz.
+  layer.anchorPoint = CGPointZero;
+  layer.position = CGPointZero;
+}
+
+}  // namespace flutter
+
+@implementation ChildClippingView
+
++ (CGRect)getCGRectFromSkRect:(const SkRect&)clipSkRect {
   return CGRectMake(clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fRight - clipSkRect.fLeft,
                     clipSkRect.fBottom - clipSkRect.fTop);
 }
 
-void ClipRect(UIView* view, const SkRect& clipSkRect) {
-  CGRect clipRect = GetCGRectFromSkRect(clipSkRect);
+- (void)clipRect:(const SkRect&)clipSkRect {
+  CGRect clipRect = [ChildClippingView getCGRectFromSkRect:clipSkRect];
   CGPathRef pathRef = CGPathCreateWithRect(clipRect, nil);
   CAShapeLayer* clip = [[CAShapeLayer alloc] init];
   clip.path = pathRef;
-  view.layer.mask = clip;
+  self.layer.mask = clip;
   CGPathRelease(pathRef);
 }
 
-void ClipRRect(UIView* view, const SkRRect& clipSkRRect) {
+- (void)clipRRect:(const SkRRect&)clipSkRRect {
   CGPathRef pathRef = nullptr;
   switch (clipSkRRect.getType()) {
     case SkRRect::kEmpty_Type: {
       break;
     }
     case SkRRect::kRect_Type: {
-      ClipRect(view, clipSkRRect.rect());
+      [self clipRect:clipSkRRect.rect()];
       return;
     }
     case SkRRect::kOval_Type:
     case SkRRect::kSimple_Type: {
-      CGRect clipRect = GetCGRectFromSkRect(clipSkRRect.rect());
+      CGRect clipRect = [ChildClippingView getCGRectFromSkRect:clipSkRRect.rect()];
       pathRef = CGPathCreateWithRoundedRect(clipRect, clipSkRRect.getSimpleRadii().x(),
                                             clipSkRRect.getSimpleRadii().y(), nil);
       break;
@@ -100,11 +125,11 @@ void ClipRRect(UIView* view, const SkRRect& clipSkRRect) {
   // clipping on iOS.
   CAShapeLayer* clip = [[CAShapeLayer alloc] init];
   clip.path = pathRef;
-  view.layer.mask = clip;
+  self.layer.mask = clip;
   CGPathRelease(pathRef);
 }
 
-void ClipPath(UIView* view, const SkPath& path) {
+- (void)clipPath:(const SkPath&)path {
   CGMutablePathRef pathRef = CGPathCreateMutable();
   if (!path.isValid()) {
     return;
@@ -112,7 +137,7 @@ void ClipPath(UIView* view, const SkPath& path) {
   if (path.isEmpty()) {
     CAShapeLayer* clip = [[CAShapeLayer alloc] init];
     clip.path = pathRef;
-    view.layer.mask = clip;
+    self.layer.mask = clip;
     CGPathRelease(pathRef);
     return;
   }
@@ -158,51 +183,40 @@ void ClipPath(UIView* view, const SkPath& path) {
 
   CAShapeLayer* clip = [[CAShapeLayer alloc] init];
   clip.path = pathRef;
-  view.layer.mask = clip;
+  self.layer.mask = clip;
   CGPathRelease(pathRef);
 }
 
-void PerformClip(UIView* view,
-                 flutter::MutatorType type,
-                 const SkRect& rect,
-                 const SkRRect& rrect,
-                 const SkPath& path) {
+- (void)performClip:(flutter::MutatorType)type
+               rect:(const SkRect&)rect
+              rrect:(const SkRRect&)rrect
+               path:(const SkPath&)path {
   FML_CHECK(type == flutter::clip_rect || type == flutter::clip_rrect ||
             type == flutter::clip_path);
   switch (type) {
     case flutter::clip_rect:
-      ClipRect(view, rect);
+      [self clipRect:rect];
       break;
     case flutter::clip_rrect:
-      ClipRRect(view, rrect);
+      [self clipRRect:rrect];
       break;
     case flutter::clip_path:
-      ClipPath(view, path);
+      [self clipPath:path];
       break;
     default:
       break;
   }
 }
 
-CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix) {
-  // Skia only supports 2D transform so we don't map z.
-  CATransform3D transform = CATransform3DIdentity;
-  transform.m11 = matrix.getScaleX();
-  transform.m21 = matrix.getSkewX();
-  transform.m41 = matrix.getTranslateX();
-  transform.m14 = matrix.getPerspX();
-
-  transform.m12 = matrix.getSkewY();
-  transform.m22 = matrix.getScaleY();
-  transform.m42 = matrix.getTranslateY();
-  transform.m24 = matrix.getPerspY();
-  return transform;
+// Only acknowlege touches are inside if the touches are acknowlege inside by any of its
+// subviews.
+- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent*)event {
+  for (UIView* view in self.subviews) {
+    if ([view pointInside:[self convertPoint:point toView:view] withEvent:event]) {
+      return YES;
+    }
+  }
+  return NO;
 }
 
-void ResetAnchor(CALayer* layer) {
-  // Flow uses (0, 0) to apply transform matrix so we need to match that in Quartz.
-  layer.anchorPoint = CGPointZero;
-  layer.position = CGPointZero;
-}
-
-}  // namespace flutter
+@end

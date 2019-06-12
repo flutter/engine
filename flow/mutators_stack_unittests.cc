@@ -10,13 +10,23 @@ TEST(MutatorsStack, Initialization) {
   ASSERT_TRUE(true);
 }
 
+TEST(MutatorsStack, CopyConstructor) {
+  flutter::MutatorsStack stack;
+  SkRRect rrect;
+  SkRect rect;
+  stack.pushClipRect(rect);
+  stack.pushClipRRect(rrect);
+  flutter::MutatorsStack copy = flutter::MutatorsStack(stack);
+  ASSERT_TRUE(copy == stack);
+}
+
 TEST(MutatorsStack, PushClipRect) {
   flutter::MutatorsStack stack;
   SkRect rect;
   stack.pushClipRect(rect);
   auto iter = stack.bottom();
-  ASSERT_TRUE(iter->type() == flutter::MutatorType::clip_rect);
-  ASSERT_TRUE(iter->rect() == rect);
+  ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::clip_rect);
+  ASSERT_TRUE(iter->get()->rect() == rect);
 }
 
 TEST(MutatorsStack, PushClipRRect) {
@@ -24,8 +34,8 @@ TEST(MutatorsStack, PushClipRRect) {
   SkRRect rrect;
   stack.pushClipRRect(rrect);
   auto iter = stack.bottom();
-  ASSERT_TRUE(iter->type() == flutter::MutatorType::clip_rrect);
-  ASSERT_TRUE(iter->rrect() == rrect);
+  ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::clip_rrect);
+  ASSERT_TRUE(iter->get()->rrect() == rrect);
 }
 
 TEST(MutatorsStack, PushClipPath) {
@@ -33,8 +43,8 @@ TEST(MutatorsStack, PushClipPath) {
   SkPath path;
   stack.pushClipPath(path);
   auto iter = stack.bottom();
-  ASSERT_TRUE(iter->type() == flutter::MutatorType::clip_path);
-  ASSERT_TRUE(iter->path() == path);
+  ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::clip_path);
+  ASSERT_TRUE(iter->get()->path() == path);
 }
 
 TEST(MutatorsStack, PushTransform) {
@@ -42,8 +52,8 @@ TEST(MutatorsStack, PushTransform) {
   SkMatrix matrix;
   stack.pushTransform(matrix);
   auto iter = stack.bottom();
-  ASSERT_TRUE(iter->type() == flutter::MutatorType::transform);
-  ASSERT_TRUE(iter->matrix() == matrix);
+  ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::transform);
+  ASSERT_TRUE(iter->get()->matrix() == matrix);
 }
 
 TEST(MutatorsStack, Pop) {
@@ -68,16 +78,16 @@ TEST(MutatorsStack, Traversal) {
   while (iter != stack.top()) {
     switch (index) {
       case 0:
-        ASSERT_TRUE(iter->type() == flutter::MutatorType::clip_rrect);
-        ASSERT_TRUE(iter->rrect() == rrect);
+        ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::clip_rrect);
+        ASSERT_TRUE(iter->get()->rrect() == rrect);
         break;
       case 1:
-        ASSERT_TRUE(iter->type() == flutter::MutatorType::clip_rect);
-        ASSERT_TRUE(iter->rect() == rect);
+        ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::clip_rect);
+        ASSERT_TRUE(iter->get()->rect() == rect);
         break;
       case 2:
-        ASSERT_TRUE(iter->type() == flutter::MutatorType::transform);
-        ASSERT_TRUE(iter->matrix() == matrix);
+        ASSERT_TRUE(iter->get()->type() == flutter::MutatorType::transform);
+        ASSERT_TRUE(iter->get()->matrix() == matrix);
         break;
       default:
         break;
@@ -111,52 +121,78 @@ TEST(MutatorsStack, Equality) {
   ASSERT_TRUE(stack == stackOther);
 }
 
-TEST(Mutator, Equality) {
-  flutter::Mutator mutator;
-  flutter::Mutator otherMutator;
-  mutator.setType(flutter::MutatorType::transform);
-  otherMutator.setType(flutter::MutatorType::transform);
-  SkMatrix matrix;
-  mutator.setMatrix(matrix);
-  otherMutator.setMatrix(matrix);
-  ASSERT_TRUE(mutator == otherMutator);
-
-  mutator.setType(flutter::MutatorType::clip_rect);
-  otherMutator.setType(flutter::MutatorType::clip_rect);
+TEST(Mutator, Initialization) {
   SkRect rect;
-  mutator.setRect(rect);
-  otherMutator.setRect(rect);
-  ASSERT_TRUE(mutator == otherMutator);
+  flutter::Mutator mutator = flutter::Mutator(rect);
+  ASSERT_TRUE(mutator.type() == flutter::MutatorType::clip_rect);
+  ASSERT_TRUE(mutator.rect() == rect);
 
-  mutator.setType(flutter::MutatorType::clip_rrect);
-  otherMutator.setType(flutter::MutatorType::clip_rrect);
   SkRRect rrect;
-  mutator.setRRect(rrect);
-  otherMutator.setRRect(rrect);
-  ASSERT_TRUE(mutator == otherMutator);
+  flutter::Mutator mutator2 = flutter::Mutator(rrect);
+  ASSERT_TRUE(mutator2.type() == flutter::MutatorType::clip_rrect);
+  ASSERT_TRUE(mutator2.rrect() == rrect);
 
-  mutator.setType(flutter::MutatorType::clip_path);
-  otherMutator.setType(flutter::MutatorType::clip_path);
   SkPath path;
-  mutator.setPath(path);
-  otherMutator.setPath(path);
+  flutter::Mutator mutator3 = flutter::Mutator(path);
+  ASSERT_TRUE(mutator3.type() == flutter::MutatorType::clip_path);
+  ASSERT_TRUE(mutator3.path() == path);
+
+  SkMatrix matrix;
+  flutter::Mutator mutator4 = flutter::Mutator(matrix);
+  ASSERT_TRUE(mutator4.type() == flutter::MutatorType::transform);
+  ASSERT_TRUE(mutator4.matrix() == matrix);
+}
+
+TEST(Mutator, CopyConstructor) {
+  SkRect rect;
+  flutter::Mutator mutator = flutter::Mutator(rect);
+  flutter::Mutator copy = flutter::Mutator(mutator);
+  ASSERT_TRUE(mutator == copy);
+
+  SkRRect rrect;
+  flutter::Mutator mutator2 = flutter::Mutator(rrect);
+  flutter::Mutator copy2 = flutter::Mutator(mutator2);
+  ASSERT_TRUE(mutator2 == copy2);
+
+  SkPath path;
+  flutter::Mutator mutator3 = flutter::Mutator(path);
+  flutter::Mutator copy3 = flutter::Mutator(mutator3);
+  ASSERT_TRUE(mutator3 == copy3);
+
+  SkMatrix matrix;
+  flutter::Mutator mutator4 = flutter::Mutator(matrix);
+  flutter::Mutator copy4 = flutter::Mutator(mutator4);
+  ASSERT_TRUE(mutator4 == copy4);
+}
+
+TEST(Mutator, Equality) {
+  SkMatrix matrix;
+  flutter::Mutator mutator = flutter::Mutator(matrix);
+  flutter::Mutator otherMutator = flutter::Mutator(matrix);
   ASSERT_TRUE(mutator == otherMutator);
 
-  flutter::Mutator notEqualMutator;
-  notEqualMutator.setType(flutter::MutatorType::transform);
-  notEqualMutator.setMatrix(matrix);
-  ASSERT_FALSE(notEqualMutator == mutator);
+  SkRect rect;
+  flutter::Mutator mutator2 = flutter::Mutator(rect);
+  flutter::Mutator otherMutator2 = flutter::Mutator(rect);
+  ASSERT_TRUE(mutator2 == otherMutator2);
+
+  SkRRect rrect;
+  flutter::Mutator mutator3 = flutter::Mutator(rrect);
+  flutter::Mutator otherMutator3 = flutter::Mutator(rrect);
+  ASSERT_TRUE(mutator3 == otherMutator3);
+
+  SkPath path;
+  flutter::Mutator mutator4 = flutter::Mutator(path);
+  flutter::Mutator otherMutator4 = flutter::Mutator(path);
+  ASSERT_TRUE(mutator4 == otherMutator4);
+
+  ASSERT_FALSE(mutator2 == mutator);
 }
 
 TEST(Mutator, UnEquality) {
-  flutter::Mutator mutator;
-  mutator.setType(flutter::MutatorType::clip_rect);
   SkRect rect;
-  mutator.setRect(rect);
-
+  flutter::Mutator mutator = flutter::Mutator(rect);
   SkMatrix matrix;
-  flutter::Mutator notEqualMutator;
-  notEqualMutator.setType(flutter::MutatorType::transform);
-  notEqualMutator.setMatrix(matrix);
+  flutter::Mutator notEqualMutator = flutter::Mutator(matrix);
   ASSERT_TRUE(notEqualMutator != mutator);
 }

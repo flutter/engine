@@ -6,7 +6,10 @@
 
 namespace flutter {
 
-PlatformViewLayer::PlatformViewLayer() = default;
+PlatformViewLayer::PlatformViewLayer(const SkPoint& offset,
+                                     const SkSize& size,
+                                     int64_t view_id)
+    : offset_(offset), size_(size), view_id_(view_id) {}
 
 PlatformViewLayer::~PlatformViewLayer() = default;
 
@@ -34,7 +37,7 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
   params.offsetPixels =
       SkPoint::Make(transform.getTranslateX(), transform.getTranslateY());
   params.sizePoints = size_;
-  params.mutatorsStack = *context.mutator_stack;
+  params.mutatorsStack = &context.mutators_stack;
 
   SkCanvas* canvas =
       context.view_embedder->CompositeEmbeddedView(view_id_, params);

@@ -11,30 +11,22 @@ bool ExternalViewEmbedder::SubmitFrame(GrContext* context) {
 };
 
 void MutatorsStack::pushClipRect(const SkRect& rect) {
-  Mutator element;
-  element.setType(clip_rect);
-  element.setRect(rect);
+  std::shared_ptr<Mutator> element = std::make_shared<Mutator>(rect);
   vector_.push_back(element);
 };
 
 void MutatorsStack::pushClipRRect(const SkRRect& rrect) {
-  Mutator element;
-  element.setType(clip_rrect);
-  element.setRRect(rrect);
+  std::shared_ptr<Mutator> element = std::make_shared<Mutator>(rrect);
   vector_.push_back(element);
 };
 
 void MutatorsStack::pushClipPath(const SkPath& path) {
-  Mutator element;
-  element.setType(clip_path);
-  element.setPath(path);
+  std::shared_ptr<Mutator> element = std::make_shared<Mutator>(path);
   vector_.push_back(element);
 };
 
 void MutatorsStack::pushTransform(const SkMatrix& matrix) {
-  Mutator element;
-  element.setType(transform);
-  element.setMatrix(matrix);
+  std::shared_ptr<Mutator> element = std::make_shared<Mutator>(matrix);
   vector_.push_back(element);
 };
 
@@ -42,12 +34,13 @@ void MutatorsStack::pop() {
   vector_.pop_back();
 };
 
-const std::vector<Mutator>::const_reverse_iterator MutatorsStack::top() const {
+const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator
+MutatorsStack::top() const {
   return vector_.rend();
 };
 
-const std::vector<Mutator>::const_reverse_iterator MutatorsStack::bottom()
-    const {
+const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator
+MutatorsStack::bottom() const {
   return vector_.rbegin();
 };
 

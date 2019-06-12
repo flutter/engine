@@ -183,9 +183,9 @@ std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
   return canvases;
 }
 
-// Build a chain of UIViews that applies the mutations described by mutatorsStack.
+// Builds a chain of UIViews that applies the mutations described by mutatorsStack.
 //
-// Clips are applied by adding a super view with the CALayer mask. Transforms are applied to the
+// Clips are applied by adding a super view with a CALayer mask. Transforms are applied to the
 // view that's at the head of the chain. For example the following mutators stack [T_1, C_2, T_3,
 // T_4, C_5, T_6] where T denotes a transform and C denotes a clip, will result in the following
 // UIView tree:
@@ -196,9 +196,9 @@ std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
 // T_1 is applied to C_2, T_3 and T_4 are applied to C_5, and T_6 is applied to PLATFORM_VIEW.
 //
 // UIView instances used for clip mutations are re-used when possible.
-// For example if we the mutators stack is updated to [T_1, C_7, T_3, T_4, C_8, T_9], we do not
-// remove the previous superviews and re-create new views. Instead, we reuse the superviews that was
-// used to perform clips in the previous example and perform the new clips on the same views.
+// For example if the mutators stack above is updated to [T_1, C_7, T_3, T_4, C_8, T_9], we do not
+// remove the previous superviews and re-create new views. Instead, we reuse the superviews that
+// were used to perform clips in the previous example and perform the new clips on the same views.
 //
 // Returns the UIView that's at the top of the generated chain(C_2 for the example above).
 UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
@@ -211,49 +211,44 @@ UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutat
   head.layer.transform = CATransform3DIdentity;
   ResetAnchor(head.layer);
 
-  // Start loop to apply transforms/clips.
-  auto iter = mutators_stack.bottom();
+  // Apply transforms/clips.
+  std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.bottom();
   int64_t clipCount = 0;
   while (iter != mutators_stack.top()) {
-    switch (iter->type()) {
+    switch ((*iter)->type()) {
       case transform: {
-        CATransform3D transform = GetCATransform3DFromSkMatrix(iter->matrix());
+        CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->matrix());
         head.layer.transform = CATransform3DConcat(head.layer.transform, transform);
         break;
       }
       case clip_rect:
       case clip_rrect:
       case clip_path: {
-        UIView* view = head.superview;
+        UIView* clipView = head.superview;
         // if we need more clips operations than last time, create a new view.
         ++clipCount;
         if (clipCount > clip_count_[view_id]) {
           [head removeFromSuperview];
-          view = [[TouchTransparentView alloc] initWithFrame:flutter_view_.get().bounds];
-
-          [view addSubview:head];
+          clipView = [[ChildClippingView alloc] initWithFrame:flutter_view_.get().bounds];
+          [clipView addSubview:head];
         }
-        view.layer.transform = CATransform3DIdentity;
-        PerformClip(view, iter->type(), iter->rect(), iter->rrect(), iter->path());
-        ResetAnchor(view.layer);
-        head = view;
+        clipView.layer.transform = CATransform3DIdentity;
+        [(ChildClippingView*)clipView performClip:(*iter)->type()
+                                             rect:(*iter)->rect()
+                                            rrect:(*iter)->rrect()
+                                             path:(*iter)->path()];
+        ResetAnchor(clipView.layer);
+        head = clipView;
         break;
       }
     }
     ++iter;
   }
 
-  // Reverse scale based on screen scale.
-  //
-  // The UIKit frame is set based on the logical resolution instead of physical.
-  // (https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html).
-  // However, flow is based on the physical resolution. For eaxmple, 1000 pixels in flow equals
-  // 500 points in UIKit. And until this point, we did all the calculation based on the flow
-  // resolution. So we need to scale down to match UIKit's logical resolution.
-  CGFloat screenScale = [UIScreen mainScreen].scale;
-  head.layer.transform = CATransform3DConcat(
-      head.layer.transform, CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1));
-
+  // If we have clips, replace root view with the top parent view.
+  if (head != embedded_view) {
+    root_views_[view_id] = fml::scoped_nsobject<UIView>([head retain]);
+  }
   // If we have less cilp operations this time, remove unnecessary views.
   // We skip this process if we have more clip operations this time.
   clip_count_[view_id] = clipCount;
@@ -277,11 +272,18 @@ void FlutterPlatformViewsController::CompositeWithParams(
 
   CGRect frame = CGRectMake(0, 0, params.sizePoints.width(), params.sizePoints.height());
   touch_interceptor.frame = frame;
-  UIView* head = ApplyMutators(params.mutatorsStack, touch_interceptor, view_id);
-  // If we have clips, replace root view with the top parent view.
-  if (head != touch_interceptor) {
-    root_views_[view_id] = fml::scoped_nsobject<UIView>([head retain]);
-  }
+  UIView* head = ApplyMutators(*params.mutatorsStack, touch_interceptor, view_id);
+
+  // Reverse scale based on screen scale.
+  //
+  // The UIKit frame is set based on the logical resolution instead of physical.
+  // (https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html).
+  // However, flow is based on the physical resolution. For eaxmple, 1000 pixels in flow equals
+  // 500 points in UIKit. And until this point, we did all the calculation based on the flow
+  // resolution. So we need to scale down to match UIKit's logical resolution.
+  CGFloat screenScale = [UIScreen mainScreen].scale;
+  head.layer.transform = CATransform3DConcat(
+      head.layer.transform, CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1));
 }
 
 SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
@@ -297,7 +299,7 @@ SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
     return picture_recorders_[view_id]->getRecordingCanvas();
   }
   NSLog(@"changed");
-  current_composition_params_[view_id] = params;
+  current_composition_params_[view_id] = EmbeddedViewParams(params);
   CompositeWithParams(view_id, params);
 
   return picture_recorders_[view_id]->getRecordingCanvas();
@@ -347,14 +349,17 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
 
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int view_id = composition_order_[i];
-    UIView* root = root_views_[view_id].get();
+    // We added a chain of super views to the platform view to handle clipping.
+    // The `platform_view_root` is the view at the top of the chain which is a direct subview of the
+    // `FlutterView`.
+    UIView* platform_view_root = root_views_[view_id].get();
     UIView* overlay = overlays_[view_id]->overlay_view;
-    FML_CHECK(root.superview == overlay.superview);
-    if (root.superview == flutter_view) {
-      [flutter_view bringSubviewToFront:root];
+    FML_CHECK(platform_view_root.superview == overlay.superview);
+    if (platform_view_root.superview == flutter_view) {
+      [flutter_view bringSubviewToFront:platform_view_root];
       [flutter_view bringSubviewToFront:overlay];
     } else {
-      [flutter_view addSubview:root];
+      [flutter_view addSubview:platform_view_root];
       [flutter_view addSubview:overlay];
     }
 
@@ -376,8 +381,11 @@ void FlutterPlatformViewsController::DetachUnusedLayers() {
       if (root_views_.find(view_id) == root_views_.end()) {
         continue;
       }
-      UIView* root = root_views_[view_id].get();
-      [root removeFromSuperview];
+      // We added a chain of super views to the platform view to handle clipping.
+      // The `platform_view_root` is the view at the top of the chain which is a direct subview of
+      // the `FlutterView`.
+      UIView* platform_view_root = root_views_[view_id].get();
+      [platform_view_root removeFromSuperview];
       [overlays_[view_id]->overlay_view.get() removeFromSuperview];
     }
   }
@@ -614,16 +622,4 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
         (UIGestureRecognizer*)otherGestureRecognizer {
   return YES;
 }
-@end
-
-@implementation TouchTransparentView
-
-- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent*)event {
-  for (UIView* view in self.subviews) {
-    if ([view pointInside:[self convertPoint:point toView:view] withEvent:event])
-      return YES;
-  }
-  return NO;
-}
-
 @end

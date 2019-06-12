@@ -6,8 +6,8 @@
 
 namespace flutter {
 
-ClipRRectLayer::ClipRRectLayer(Clip clip_behavior)
-    : clip_behavior_(clip_behavior) {
+ClipRRectLayer::ClipRRectLayer(const SkRRect& clip_rrect, Clip clip_behavior)
+    : clip_rrect_(clip_rrect), clip_behavior_(clip_behavior) {
   FML_DCHECK(clip_behavior != Clip::none);
 }
 
@@ -58,9 +58,8 @@ void ClipRRectLayer::Paint(PaintContext& context) const {
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->clipRRect(clip_rrect_,
                                            clip_behavior_ != Clip::hardEdge);
-  if (context.mutator_stack != nullptr) {
-    context.mutator_stack->pushClipRRect(clip_rrect_);
-  }
+  context.mutators_stack.pushClipRRect(clip_rrect_);
+
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->saveLayer(paint_bounds(), nullptr);
   }
@@ -68,9 +67,7 @@ void ClipRRectLayer::Paint(PaintContext& context) const {
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->restore();
   }
-  if (context.mutator_stack != nullptr) {
-    context.mutator_stack->pop();
-  }
+  context.mutators_stack.pop();
 }
 
 }  // namespace flutter
