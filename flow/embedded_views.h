@@ -21,6 +21,26 @@ enum MutatorType { clip_rect, clip_rrect, clip_path, transform };
 
 class Mutator {
  public:
+
+  Mutator(const Mutator& other) {
+    switch (other.type_) {
+      case clip_rect:
+        rect_ = other.rect_;
+        break;
+      case clip_rrect:
+        rrect_ = other.rrect_;
+        break;
+      case clip_path:
+        path_ = new SkPath(*other.path_);
+        break;
+      case transform:
+        matrix_ = other.matrix_;
+        break;
+      default:
+        break;
+    }
+  }
+  
   explicit Mutator(const SkRect& rect) : type_(clip_rect), rect_(rect) {}
   explicit Mutator(const SkRRect& rrect) : type_(clip_rrect), rrect_(rrect) {}
   explicit Mutator(const SkPath& path)
