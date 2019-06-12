@@ -54,6 +54,11 @@ fml::TimePoint MessageLoopTaskQueue::GetTasksToRunNow(
   }
 }
 
+size_t MessageLoopTaskQueue::GetNumPendingTasks() {
+  std::lock_guard<std::mutex> lock(delayed_tasks_mutex_);
+  return delayed_tasks_.size();
+}
+
 void MessageLoopTaskQueue::AddTaskObserver(intptr_t key,
                                            fml::closure callback) {
   std::lock_guard<std::mutex> observers_lock(observers_mutex_);

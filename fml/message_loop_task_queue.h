@@ -44,6 +44,8 @@ class MessageLoopTaskQueue {
   fml::TimePoint GetTasksToRunNow(FlushType type,
                                   std::vector<fml::closure>& invocations);
 
+  size_t GetNumPendingTasks();
+
   // Observers methods.
 
   void AddTaskObserver(intptr_t key, fml::closure callback);

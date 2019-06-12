@@ -200,6 +200,7 @@ executable("fml_unittests") {
     "file_unittest.cc",
     "memory/ref_counted_unittest.cc",
     "memory/weak_ptr_unittest.cc",
+    "message_loop_task_queue_unittests.cc",
     "message_loop_unittests.cc",
     "message_unittests.cc",
     "paths_unittests.cc",
