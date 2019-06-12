@@ -105,6 +105,21 @@ TEST(Mutator, CopyConstructor) {
   flutter::Mutator mutator = flutter::Mutator(rect);
   flutter::Mutator copy = flutter::Mutator(mutator);
   ASSERT_TRUE(mutator == copy);
+
+  SkRRect rrect;
+  flutter::Mutator mutator2 = flutter::Mutator(rrect);
+  flutter::Mutator copy2 = flutter::Mutator(mutator2);
+  ASSERT_TRUE(mutator2 == copy2);
+
+  SkPath path;
+  flutter::Mutator mutator3 = flutter::Mutator(path);
+  flutter::Mutator copy3 = flutter::Mutator(mutator3);
+  ASSERT_TRUE(mutator3 == copy3);
+
+  SkMatrix matrix;
+  flutter::Mutator mutator4 = flutter::Mutator(matrix);
+  flutter::Mutator copy4 = flutter::Mutator(mutator4);
+  ASSERT_TRUE(mutator4 == copy4);
 }
 
 TEST(MutatorsStack, Equality) {

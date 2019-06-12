@@ -23,6 +23,7 @@ class Mutator {
  public:
 
   Mutator(const Mutator& other) {
+    type_ = other.type_;
     switch (other.type_) {
       case clip_rect:
         rect_ = other.rect_;
@@ -40,7 +41,7 @@ class Mutator {
         break;
     }
   }
-  
+
   explicit Mutator(const SkRect& rect) : type_(clip_rect), rect_(rect) {}
   explicit Mutator(const SkRRect& rrect) : type_(clip_rrect), rrect_(rrect) {}
   explicit Mutator(const SkPath& path)
