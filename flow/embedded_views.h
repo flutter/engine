@@ -173,7 +173,6 @@ class EmbeddedViewParams {
            *mutatorsStack == *other.mutatorsStack;
   }
 
-  ~EmbeddedViewParams() { delete mutatorsStack; }
 };
 
 // This is only used on iOS when running in a non headless mode,
