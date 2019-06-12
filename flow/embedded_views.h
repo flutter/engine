@@ -21,7 +21,6 @@ enum MutatorType { clip_rect, clip_rrect, clip_path, transform };
 
 class Mutator {
  public:
-
   Mutator(const Mutator& other) {
     type_ = other.type_;
     switch (other.type_) {
@@ -110,7 +109,6 @@ class Mutator {
 // to a platform view P1 will result in T1(T2(T2(P1))).
 class MutatorsStack {
  public:
-
   MutatorsStack() = default;
 
   void pushClipRect(const SkRect& rect);
@@ -124,15 +122,17 @@ class MutatorsStack {
   void pop();
 
   // Returns the iterator points to the top of the stack..
-  const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator top() const;
+  const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator top()
+      const;
   // Returns an iterator pointing to the bottom of the stack.
-  const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator bottom() const;
+  const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator bottom()
+      const;
 
   bool operator==(const MutatorsStack& other) const {
     if (vector_.size() != other.vector_.size()) {
       return false;
     }
-    for (size_t i = 0; i < vector_.size(); i ++) {
+    for (size_t i = 0; i < vector_.size(); i++) {
       if (*vector_[i] != *other.vector_[i]) {
         return false;
       }
@@ -167,7 +167,6 @@ class EmbeddedViewParams {
            sizePoints == other.sizePoints &&
            *mutatorsStack == *other.mutatorsStack;
   }
-
 };
 
 // This is only used on iOS when running in a non headless mode,

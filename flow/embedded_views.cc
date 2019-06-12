@@ -25,17 +25,17 @@ void MutatorsStack::pushTransform(const SkMatrix& matrix) {
   vector_.push_back(element);
 };
 
-
 void MutatorsStack::pop() {
   vector_.pop_back();
 };
 
-const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator MutatorsStack::top() const {
+const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator
+MutatorsStack::top() const {
   return vector_.rend();
 };
 
-const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator MutatorsStack::bottom()
-    const {
+const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator
+MutatorsStack::bottom() const {
   return vector_.rbegin();
 };
 
