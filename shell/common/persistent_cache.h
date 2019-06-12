@@ -17,6 +17,7 @@
 
 namespace flutter {
 
+/// A cache of shaders that gets stored to disk.
 class PersistentCache : public GrContextOptions::PersistentCache {
  public:
   // Mutable static switch that can be set before GetCacheForProcess. If true,

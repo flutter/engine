@@ -29,6 +29,7 @@
 
 namespace flutter {
 
+/// Runner of the Dart code.
 class Engine final : public RuntimeDelegate {
  public:
   // Used by Engine::Run

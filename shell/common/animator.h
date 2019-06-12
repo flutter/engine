@@ -22,6 +22,10 @@ namespace testing {
 class ShellTest;
 }
 
+/// Executor of animations on a |LayerTree|.
+///
+/// This typically happens after the Layout and Paint passes in the Dart code
+/// and before the LayerTree is Rasterized.
 class Animator final {
  public:
   class Delegate {
