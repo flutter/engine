@@ -295,10 +295,8 @@ SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
   // Do nothing if the params didn't change.
   if (current_composition_params_.count(view_id) == 1 &&
       current_composition_params_[view_id] == params) {
-    NSLog(@"not changed");
     return picture_recorders_[view_id]->getRecordingCanvas();
   }
-  NSLog(@"changed");
   current_composition_params_[view_id] = EmbeddedViewParams(params);
   CompositeWithParams(view_id, params);
 
