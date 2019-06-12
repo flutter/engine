@@ -121,7 +121,10 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
  * Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
  */
 - (void)application:(UIApplication*)application
-    didRegisterUserNotificationSettings:(UIUserNotificationSettings*)notificationSettings API_DEPRECATED("See -[UIApplicationDelegate application:didRegisterUserNotificationSettings:] deprecation", ios(8.0, 10.0));
+    didRegisterUserNotificationSettings:(UIUserNotificationSettings*)notificationSettings
+    API_DEPRECATED(
+        "See -[UIApplicationDelegate application:didRegisterUserNotificationSettings:] deprecation",
+        ios(8.0, 10.0));
 
 /**
  * Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
@@ -142,7 +145,10 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
  * Calls all plugins registered for `UIApplicationDelegate` callbacks.
  */
 - (void)application:(UIApplication*)application
-    didReceiveLocalNotification:(UILocalNotification*)notification API_DEPRECATED("See -[UIApplicationDelegate application:didReceiveLocalNotification:] deprecation", ios(4.0, 10.0));
+    didReceiveLocalNotification:(UILocalNotification*)notification
+    API_DEPRECATED(
+        "See -[UIApplicationDelegate application:didReceiveLocalNotification:] deprecation",
+        ios(4.0, 10.0));
 
 /**
  * Calls all plugins registered for `UNUserNotificationCenterDelegate` callbacks.

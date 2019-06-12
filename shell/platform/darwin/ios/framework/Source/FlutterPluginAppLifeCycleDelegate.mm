@@ -228,7 +228,6 @@ static BOOL isPowerOfTwo(NSUInteger x) {
   }
 }
 
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 - (void)application:(UIApplication*)application
