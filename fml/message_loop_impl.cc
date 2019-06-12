@@ -189,13 +189,4 @@ void MessageLoopImpl::RunSingleExpiredTaskNow() {
   FlushTasks(FlushType::kSingle);
 }
 
-MessageLoopImpl::DelayedTask::DelayedTask(size_t p_order,
-                                          fml::closure p_task,
-                                          fml::TimePoint p_target_time)
-    : order(p_order), task(std::move(p_task)), target_time(p_target_time) {}
-
-MessageLoopImpl::DelayedTask::DelayedTask(const DelayedTask& other) = default;
-
-MessageLoopImpl::DelayedTask::~DelayedTask() = default;
-
 }  // namespace fml
