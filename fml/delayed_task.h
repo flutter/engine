@@ -12,29 +12,29 @@
 
 namespace fml {
 
-struct DelayedTask {
-  size_t order;
-  fml::closure task;
-  fml::TimePoint target_time;
-
-  DelayedTask(size_t p_order,
-              fml::closure p_task,
-              fml::TimePoint p_target_time);
+class DelayedTask {
+ public:
+  DelayedTask(size_t order, fml::closure task, fml::TimePoint target_time);
 
   DelayedTask(const DelayedTask& other);
 
   ~DelayedTask();
+
+  const fml::closure& GetTask() const;
+
+  fml::TimePoint GetTargetTime() const;
+
+  bool operator>(const DelayedTask& other) const;
+
+ private:
+  size_t order_;
+  fml::closure task_;
+  fml::TimePoint target_time_;
 };
 
-struct DelayedTaskCompare {
-  bool operator()(const DelayedTask& a, const DelayedTask& b) {
-    return a.target_time == b.target_time ? a.order > b.order
-                                          : a.target_time > b.target_time;
-  }
-};
-
-using DelayedTaskQueue = std::
-    priority_queue<DelayedTask, std::deque<DelayedTask>, DelayedTaskCompare>;
+using DelayedTaskQueue = std::priority_queue<DelayedTask,
+                                             std::deque<DelayedTask>,
+                                             std::greater<DelayedTask>>;
 
 }  // namespace fml
 
