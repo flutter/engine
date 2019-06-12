@@ -113,12 +113,6 @@ class MutatorsStack {
 
   MutatorsStack() = default;
 
-  MutatorsStack(const MutatorsStack& other) {
-    for (size_t i = 0; i < other.vector_.size(); i++) {
-      vector_[i] = std::make_unique<Mutator>(*other.vector_[i].get());
-    }
-  }
-
   void pushClipRect(const SkRect& rect);
   void pushClipRRect(const SkRRect& rrect);
   void pushClipPath(const SkPath& path);
@@ -130,9 +124,9 @@ class MutatorsStack {
   void pop();
 
   // Returns the iterator points to the top of the stack..
-  const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator top() const;
+  const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator top() const;
   // Returns an iterator pointing to the bottom of the stack.
-  const std::vector<std::unique_ptr<Mutator>>::const_reverse_iterator bottom() const;
+  const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator bottom() const;
 
   bool operator==(const MutatorsStack& other) const {
     if (vector_.size() != other.vector_.size()) {
@@ -151,7 +145,7 @@ class MutatorsStack {
   }
 
  private:
-  std::vector<std::unique_ptr<Mutator>> vector_;
+  std::vector<std::shared_ptr<Mutator>> vector_;
 };  // MutatorsStack
 
 class EmbeddedViewParams {

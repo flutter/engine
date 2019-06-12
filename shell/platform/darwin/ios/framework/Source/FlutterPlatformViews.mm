@@ -212,12 +212,12 @@ UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutat
   ResetAnchor(head.layer);
 
   // Apply transforms/clips.
-  auto iter = mutators_stack.bottom()->get();
+  std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.bottom();
   int64_t clipCount = 0;
-  while (iter != mutators_stack.top()->get()) {
-    switch (iter->type()) {
+  while (iter != mutators_stack.top()) {
+    switch ((*iter)->type()) {
       case transform: {
-        CATransform3D transform = GetCATransform3DFromSkMatrix(iter->matrix());
+        CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->matrix());
         head.layer.transform = CATransform3DConcat(head.layer.transform, transform);
         break;
       }
@@ -233,10 +233,10 @@ UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutat
           [clipView addSubview:head];
         }
         clipView.layer.transform = CATransform3DIdentity;
-        [(ChildClippingView*)clipView performClip:iter->type()
-                                             rect:iter->rect()
-                                            rrect:iter->rrect()
-                                             path:iter->path()];
+        [(ChildClippingView*)clipView performClip:(*iter)->type()
+                                             rect:(*iter)->rect()
+                                            rrect:(*iter)->rrect()
+                                             path:(*iter)->path()];
         ResetAnchor(clipView.layer);
         head = clipView;
         break;

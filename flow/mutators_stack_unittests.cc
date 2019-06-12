@@ -88,50 +88,6 @@ TEST(MutatorsStack, Traversal) {
   }
 }
 
-TEST(Mutator, Initialization) {
-  SkRect rect;
-  flutter::Mutator mutator = flutter::Mutator(rect);
-  ASSERT_TRUE(mutator.type() == flutter::MutatorType::clip_rect);
-  ASSERT_TRUE(mutator.rect() == rect);
-
-  SkRRect rrect;
-  flutter::Mutator mutator2 = flutter::Mutator(rrect);
-  ASSERT_TRUE(mutator2.type() == flutter::MutatorType::clip_rrect);
-  ASSERT_TRUE(mutator2.rrect() == rrect);
-
-  SkPath path;
-  flutter::Mutator mutator3 = flutter::Mutator(path);
-  ASSERT_TRUE(mutator3.type() == flutter::MutatorType::clip_path);
-  ASSERT_TRUE(mutator3.path() == path);
-
-  SkMatrix matrix;
-  flutter::Mutator mutator4 = flutter::Mutator(matrix);
-  ASSERT_TRUE(mutator4.type() == flutter::MutatorType::transform);
-  ASSERT_TRUE(mutator4.matrix() == matrix);
-}
-
-TEST(Mutator, CopyConstructor) {
-  SkRect rect;
-  flutter::Mutator mutator = flutter::Mutator(rect);
-  flutter::Mutator copy = flutter::Mutator(mutator);
-  ASSERT_TRUE(mutator == copy);
-
-  SkRRect rrect;
-  flutter::Mutator mutator2 = flutter::Mutator(rrect);
-  flutter::Mutator copy2 = flutter::Mutator(mutator2);
-  ASSERT_TRUE(mutator2 == copy2);
-
-  SkPath path;
-  flutter::Mutator mutator3 = flutter::Mutator(path);
-  flutter::Mutator copy3 = flutter::Mutator(mutator3);
-  ASSERT_TRUE(mutator3 == copy3);
-
-  SkMatrix matrix;
-  flutter::Mutator mutator4 = flutter::Mutator(matrix);
-  flutter::Mutator copy4 = flutter::Mutator(mutator4);
-  ASSERT_TRUE(mutator4 == copy4);
-}
-
 TEST(MutatorsStack, Equality) {
   flutter::MutatorsStack stack;
   SkMatrix matrix = SkMatrix::MakeScale(1, 1);
@@ -179,6 +135,21 @@ TEST(Mutator, CopyConstructor) {
   flutter::Mutator mutator = flutter::Mutator(rect);
   flutter::Mutator copy = flutter::Mutator(mutator);
   ASSERT_TRUE(mutator == copy);
+
+  SkRRect rrect;
+  flutter::Mutator mutator2 = flutter::Mutator(rrect);
+  flutter::Mutator copy2 = flutter::Mutator(mutator2);
+  ASSERT_TRUE(mutator2 == copy2);
+
+  SkPath path;
+  flutter::Mutator mutator3 = flutter::Mutator(path);
+  flutter::Mutator copy3 = flutter::Mutator(mutator3);
+  ASSERT_TRUE(mutator3 == copy3);
+
+  SkMatrix matrix;
+  flutter::Mutator mutator4 = flutter::Mutator(matrix);
+  flutter::Mutator copy4 = flutter::Mutator(mutator4);
+  ASSERT_TRUE(mutator4 == copy4);
 }
 
 TEST(Mutator, Equality) {
