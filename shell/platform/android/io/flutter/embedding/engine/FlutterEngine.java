@@ -29,6 +29,8 @@ import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
+import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
+import io.flutter.plugin.platform.PlatformViewsController;
 
 /**
  * A single Flutter execution environment.
@@ -139,6 +141,7 @@ public class FlutterEngine implements LifecycleOwner {
     textInputChannel = new TextInputChannel(dartExecutor);
 
     androidLifecycle = new FlutterEngineAndroidLifecycle(this);
+
     this.pluginRegistry = new FlutterEnginePluginRegistry(
       context.getApplicationContext(),
       this,

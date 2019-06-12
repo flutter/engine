@@ -8,6 +8,7 @@ import android.app.Activity;
 import android.support.annotation.NonNull;
 
 import io.flutter.plugin.common.PluginRegistry;
+import io.flutter.plugin.platform.PlatformViewsController;
 
 /**
  * Binding that gives {@link ActivityAware} plugins access to an associated {@link Activity} and
@@ -21,6 +22,13 @@ public interface ActivityPluginBinding {
    */
   @NonNull
   Activity getActivity();
+
+  /**
+   * Returns the {@link PlatformViewsController} that is currently connected to the Flutter UI
+   * being displayed in the given {@code Activity}.
+   */
+  @NonNull
+  PlatformViewsController getPlatformViewsController();
 
   /**
    * Adds a listener that is invoked whenever the associated {@link Activity}'s

@@ -34,13 +34,14 @@ import io.flutter.embedding.engine.plugins.contentprovider.ContentProviderPlugin
 import io.flutter.embedding.engine.plugins.service.ServiceAware;
 import io.flutter.embedding.engine.plugins.service.ServiceControlSurface;
 import io.flutter.embedding.engine.plugins.service.ServicePluginBinding;
+import io.flutter.plugin.platform.PlatformViewsController;
 
 class FlutterEnginePluginRegistry implements PluginRegistry,
     ActivityControlSurface,
     ServiceControlSurface,
     BroadcastReceiverControlSurface,
     ContentProviderControlSurface {
-  private static final String TAG = "EnginePluginRegistry";
+  private static final String TAG = "FlutterEnginePluginRegistry";
 
   // PluginRegistry
   @NonNull
@@ -277,15 +278,31 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
   }
 
   @Override
-  public void attachToActivity(@NonNull Activity activity, @NonNull Lifecycle lifecycle) {
+  public void attachToActivity(
+      @NonNull Activity activity,
+      @NonNull Lifecycle lifecycle,
+      @NonNull PlatformViewsController platformViewsController
+  ) {
     Log.v(TAG, "Attaching to an Activity: " + activity + "."
         + (isWaitingForActivityReattachment ? " This is after a config change." : ""));
     // If we were already attached to an Android component, detach from it.
     detachFromAndroidComponent();
 
     this.activity = activity;
-    this.activityPluginBinding = new FlutterEngineActivityPluginBinding(activity);
+    this.activityPluginBinding = new FlutterEngineActivityPluginBinding(
+        activity,
+        platformViewsController
+    );
     this.flutterEngineAndroidLifecycle.setBackingLifecycle(lifecycle);
+
+    // Activate the PlatformViewsController. This must happen before any plugins attempt
+    // to use it, otherwise an error strack trace will appear that says there is no
+    // flutter/platform_views channel.
+    platformViewsController.attach(
+        activity,
+        pluginBinding.getFlutterEngine().getRenderer(),
+        pluginBinding.getFlutterEngine().getDartExecutor()
+    );
 
     // Notify all ActivityAware plugins that they are now attached to a new Activity.
     for (ActivityAware activityAware : activityAwarePlugins.values()) {
@@ -307,6 +324,9 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
       for (ActivityAware activityAware : activityAwarePlugins.values()) {
         activityAware.onDetachedFromActivityForConfigChanges();
       }
+
+      // Deactivate PlatformViewsController.
+      activityPluginBinding.platformViewsController.detach();
 
       flutterEngineAndroidLifecycle.setBackingLifecycle(null);
       activity = null;
@@ -504,6 +524,8 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
     @NonNull
     private final Activity activity;
     @NonNull
+    private final PlatformViewsController platformViewsController;
+    @NonNull
     private final Set<io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener> onRequestPermissionsResultListeners = new HashSet<>();
     @NonNull
     private final Set<io.flutter.plugin.common.PluginRegistry.ActivityResultListener> onActivityResultListeners = new HashSet<>();
@@ -512,32 +534,28 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
     @NonNull
     private final Set<io.flutter.plugin.common.PluginRegistry.UserLeaveHintListener> onUserLeaveHintListeners = new HashSet<>();
 
-    public FlutterEngineActivityPluginBinding(@NonNull Activity activity) {
+    public FlutterEngineActivityPluginBinding(@NonNull Activity activity, @NonNull PlatformViewsController platformViewsController) {
       this.activity = activity;
+      this.platformViewsController = platformViewsController;
     }
 
-    /**
-     * Returns the {@link Activity} that is currently attached to the {@link FlutterEngine} that
-     * owns this {@code ActivityPluginBinding}.
-     */
     @Override
     @NonNull
     public Activity getActivity() {
       return activity;
     }
 
-    /**
-     * Adds a listener that is invoked whenever the associated {@link Activity}'s
-     * {@code onRequestPermissionsResult(...)} method is invoked.
-     */
+    @NonNull
+    @Override
+    public PlatformViewsController getPlatformViewsController() {
+      return platformViewsController;
+    }
+
     @Override
     public void addRequestPermissionsResultListener(@NonNull io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener listener) {
       onRequestPermissionsResultListeners.add(listener);
     }
 
-    /**
-     * Removes a listener that was added in {@link #addRequestPermissionsResultListener(io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener)}.
-     */
     @Override
     public void removeRequestPermissionsResultListener(@NonNull io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener listener) {
       onRequestPermissionsResultListeners.remove(listener);
@@ -555,18 +573,11 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
       return didConsumeResult;
     }
 
-    /**
-     * Adds a listener that is invoked whenever the associated {@link Activity}'s
-     * {@code onActivityResult(...)} method is invoked.
-     */
     @Override
     public void addActivityResultListener(@NonNull io.flutter.plugin.common.PluginRegistry.ActivityResultListener listener) {
       onActivityResultListeners.add(listener);
     }
 
-    /**
-     * Removes a listener that was added in {@link #addActivityResultListener(io.flutter.plugin.common.PluginRegistry.ActivityResultListener)}.
-     */
     @Override
     public void removeActivityResultListener(@NonNull io.flutter.plugin.common.PluginRegistry.ActivityResultListener listener) {
       onActivityResultListeners.remove(listener);
@@ -584,18 +595,11 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
       return didConsumeResult;
     }
 
-    /**
-     * Adds a listener that is invoked whenever the associated {@link Activity}'s
-     * {@code onNewIntent(...)} method is invoked.
-     */
     @Override
     public void addOnNewIntentListener(@NonNull io.flutter.plugin.common.PluginRegistry.NewIntentListener listener) {
       onNewIntentListeners.add(listener);
     }
 
-    /**
-     * Removes a listener that was added in {@link #addOnNewIntentListener(io.flutter.plugin.common.PluginRegistry.NewIntentListener)}.
-     */
     @Override
     public void removeOnNewIntentListener(@NonNull io.flutter.plugin.common.PluginRegistry.NewIntentListener listener) {
       onNewIntentListeners.remove(listener);
@@ -611,18 +615,11 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
       }
     }
 
-    /**
-     * Adds a listener that is invoked whenever the associated {@link Activity}'s
-     * {@code onUserLeaveHint()} method is invoked.
-     */
     @Override
     public void addOnUserLeaveHintListener(@NonNull io.flutter.plugin.common.PluginRegistry.UserLeaveHintListener listener) {
       onUserLeaveHintListeners.add(listener);
     }
 
-    /**
-     * Removes a listener that was added in {@link #addOnUserLeaveHintListener(io.flutter.plugin.common.PluginRegistry.UserLeaveHintListener)}.
-     */
     @Override
     public void removeOnUserLeaveHintListener(@NonNull io.flutter.plugin.common.PluginRegistry.UserLeaveHintListener listener) {
       onUserLeaveHintListeners.remove(listener);

@@ -5,6 +5,7 @@
 package io.flutter.embedding.android;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Rect;
@@ -36,6 +37,7 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
 
 /**
@@ -72,6 +74,8 @@ public class FlutterView extends FrameLayout {
   @Nullable
   private FlutterRenderer.RenderSurface renderSurface;
   private boolean didRenderFirstFrame;
+  @Nullable
+  private PlatformViewsController platformViewsController;
 
   // Connections to a Flutter execution context.
   @Nullable
@@ -117,9 +121,11 @@ public class FlutterView extends FrameLayout {
    *   <li>{@link #renderMode} defaults to {@link RenderMode#surface}.</li>
    *   <li>{@link #transparencyMode} defaults to {@link TransparencyMode#opaque}.</li>
    * </ul>
+   * {@code FlutterView} requires an {@code Activity} instead of a generic {@code Context}
+   * to be compatible with {@link PlatformViewsController}.
    */
-  public FlutterView(@NonNull Context context) {
-    this(context, null, null, null);
+  public FlutterView(@NonNull Activity activity) {
+    this(activity, null, null, null);
   }
 
   /**
@@ -127,38 +133,49 @@ public class FlutterView extends FrameLayout {
    * and allows selection of a {@link #renderMode}.
    * <p>
    * {@link #transparencyMode} defaults to {@link TransparencyMode#opaque}.
+   * <p>
+   * {@code FlutterView} requires an {@code Activity} instead of a generic {@code Context}
+   * to be compatible with {@link PlatformViewsController}.
    */
-  public FlutterView(@NonNull Context context, @NonNull RenderMode renderMode) {
-    this(context, null, renderMode, null);
+  public FlutterView(@NonNull Activity activity, @NonNull RenderMode renderMode) {
+    this(activity, null, renderMode, null);
   }
 
   /**
    * Constructs a {@code FlutterView} programmatically, without any XML attributes,
    * assumes the use of {@link RenderMode#surface}, and allows selection of a {@link #transparencyMode}.
+   * <p>
+   * {@code FlutterView} requires an {@code Activity} instead of a generic {@code Context}
+   * to be compatible with {@link PlatformViewsController}.
    */
-  public FlutterView(@NonNull Context context, @NonNull TransparencyMode transparencyMode) {
-    this(context, null, RenderMode.surface, transparencyMode);
+  public FlutterView(@NonNull Activity activity, @NonNull TransparencyMode transparencyMode) {
+    this(activity, null, RenderMode.surface, transparencyMode);
   }
 
   /**
    * Constructs a {@code FlutterView} programmatically, without any XML attributes, and allows
    * a selection of {@link #renderMode} and {@link #transparencyMode}.
+   * <p>
+   * {@code FlutterView} requires an {@code Activity} instead of a generic {@code Context}
+   * to be compatible with {@link PlatformViewsController}.
    */
-  public FlutterView(@NonNull Context context, @NonNull RenderMode renderMode, @NonNull TransparencyMode transparencyMode) {
-    this(context, null, renderMode, transparencyMode);
+  public FlutterView(@NonNull Activity activity, @NonNull RenderMode renderMode, @NonNull TransparencyMode transparencyMode) {
+    this(activity, null, renderMode, transparencyMode);
   }
 
   /**
    * Constructs a {@code FlutterSurfaceView} in an XML-inflation-compliant manner.
-   *
-   * // TODO(mattcarroll): expose renderMode in XML when build system supports R.attr
+   * <p>
+   * {@code FlutterView} requires an {@code Activity} instead of a generic {@code Context}
+   * to be compatible with {@link PlatformViewsController}.
    */
-  public FlutterView(@NonNull Context context, @Nullable AttributeSet attrs) {
-    this(context, attrs, null, null);
+   // TODO(mattcarroll): expose renderMode in XML when build system supports R.attr
+  public FlutterView(@NonNull Activity activity, @Nullable AttributeSet attrs) {
+    this(activity, attrs, null, null);
   }
 
-  private FlutterView(@NonNull Context context, @Nullable AttributeSet attrs, @Nullable RenderMode renderMode, @Nullable TransparencyMode transparencyMode) {
-    super(context, attrs);
+  private FlutterView(@NonNull Activity activity, @Nullable AttributeSet attrs, @Nullable RenderMode renderMode, @Nullable TransparencyMode transparencyMode) {
+    super(activity, attrs);
 
     this.renderMode = renderMode == null ? RenderMode.surface : renderMode;
     this.transparencyMode = transparencyMode != null ? transparencyMode : TransparencyMode.opaque;
@@ -511,7 +528,10 @@ public class FlutterView extends FrameLayout {
    * See {@link #detachFromFlutterEngine()} for information on how to detach from a
    * {@link FlutterEngine}.
    */
-  public void attachToFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+  public void attachToFlutterEngine(
+      @NonNull FlutterEngine flutterEngine,
+      @NonNull PlatformViewsController platformViewsController
+  ) {
     Log.d(TAG, "Attaching to a FlutterEngine: " + flutterEngine);
     if (isAttachedToFlutterEngine()) {
       if (flutterEngine == this.flutterEngine) {
@@ -527,6 +547,7 @@ public class FlutterView extends FrameLayout {
     }
 
     this.flutterEngine = flutterEngine;
+    this.platformViewsController = platformViewsController;
 
     // Instruct our FlutterRenderer that we are now its designated RenderSurface.
     didRenderFirstFrame = false;
@@ -537,7 +558,7 @@ public class FlutterView extends FrameLayout {
     textInputPlugin = new TextInputPlugin(
         this,
         this.flutterEngine.getDartExecutor(),
-        null
+        platformViewsController
     );
     androidKeyProcessor = new AndroidKeyProcessor(
         this.flutterEngine.getKeyEventChannel(),
@@ -549,15 +570,17 @@ public class FlutterView extends FrameLayout {
         flutterEngine.getAccessibilityChannel(),
         (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE),
         getContext().getContentResolver(),
-        // TODO(mattcaroll): plumb the platform views controller to the accessibility bridge.
-        // https://github.com/flutter/flutter/issues/29618
-        null
+        platformViewsController
     );
     accessibilityBridge.setOnAccessibilityChangeListener(onAccessibilityChangeListener);
     resetWillNotDraw(
         accessibilityBridge.isAccessibilityEnabled(),
         accessibilityBridge.isTouchExplorationEnabled()
     );
+
+    // Connect AccessibilityBridge to the PlatformViewsController within the FlutterEngine.
+    // This allows platform Views to hook into Flutter's overall accessibility system.
+    platformViewsController.attachAccessibilityBridge(accessibilityBridge);
 
     // Inform the Android framework that it should retrieve a new InputConnection
     // now that an engine is attached.
@@ -596,6 +619,9 @@ public class FlutterView extends FrameLayout {
     for (FlutterEngineAttachmentListener listener : flutterEngineAttachmentListeners) {
       listener.onFlutterEngineDetachedFromFlutterView();
     }
+
+    // Disconnect the FlutterEngine's PlatformViewsController from the AccessibilityBridge.
+    platformViewsController.detachAccessibiltyBridge();
 
     // Disconnect and clean up the AccessibilityBridge.
     accessibilityBridge.release();

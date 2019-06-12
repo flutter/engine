@@ -10,6 +10,8 @@ import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import io.flutter.plugin.platform.PlatformViewsController;
+
 /**
  * Control surface through which an {@link Activity} attaches to a {@link FlutterEngine}.
  * <p>
@@ -46,8 +48,11 @@ public interface ActivityControlSurface {
    * executing Dart code, the {@link Activity} should invoke this method. At that point the
    * {@link FlutterEngine} is considered "attached" to the {@link Activity} and all
    * {@link ActivityAware} plugins are given access to the {@link Activity}.
+   * <p>
+   * Flutter expects that platform views are supported whenever a Flutter UI is available,
+   * therefore, a {@link PlatformViewsController} is required when attaching to an {@code Activity}.
    */
-  void attachToActivity(@NonNull Activity activity, @NonNull Lifecycle lifecycle);
+  void attachToActivity(@NonNull Activity activity, @NonNull Lifecycle lifecycle, @NonNull PlatformViewsController platformViewsController);
 
   /**
    * Call this method from the {@link Activity} that is attached to this {@code ActivityControlSurfaces}'s
@@ -56,7 +61,11 @@ public interface ActivityControlSurface {
    * <p>
    * This method gives each {@link ActivityAware} plugin an opportunity to clean up its references
    * before the {@link Activity is destroyed}.
+   * <p>
+   * This method does NOT detach the {@link PlatformViewsController} that was provided in the
+   * {@link #attachToActivity(Activity, Lifecycle, PlatformViewsController)} method.
    */
+   // TODO(mattcarroll): once platform views are fully updated for lifecycle purposes, reconsider detaching PlatformViewsController here.
   void detachFromActivityForConfigChanges();
 
   /**
@@ -66,6 +75,9 @@ public interface ActivityControlSurface {
    * <p>
    * This method gives each {@link ActivityAware} plugin an opportunity to clean up its references
    * before the {@link Activity is destroyed}.
+   * <p>
+   * Invocation of this method also detaches the {@link PlatformViewsController} that was provided
+   * in the {@link #attachToActivity(Activity, Lifecycle, PlatformViewsController)} method.
    */
   void detachFromActivity();
 

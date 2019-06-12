@@ -74,7 +74,7 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
 
   @Override
   public PlatformViewRegistry platformViewRegistry() {
-    return null;
+    return activityPluginBinding != null ? activityPluginBinding.getPlatformViewsController().getRegistry() : null;
   }
 
   @Override

@@ -6,6 +6,8 @@ package io.flutter.embedding.android;
 
 import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
 
+import android.app.Activity;
+import android.arch.lifecycle.Lifecycle;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -27,6 +29,7 @@ import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 import io.flutter.plugin.platform.PlatformPlugin;
+import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.FlutterMain;
 
 /**
@@ -296,6 +299,8 @@ public class FlutterFragment extends Fragment {
   private FlutterView flutterView;
   @Nullable
   private PlatformPlugin platformPlugin;
+  @NonNull
+  private final PlatformViewsController platformViewsController = new PlatformViewsController();
 
   private final OnFirstFrameRenderedListener onFirstFrameRenderedListener = new OnFirstFrameRenderedListener() {
     @Override
@@ -359,8 +364,14 @@ public class FlutterFragment extends Fragment {
       // sync with the Activity. We use the Fragment's Lifecycle because it is possible that the
       // attached Activity is not a LifecycleOwner.
       Log.d(TAG, "Attaching FlutterEngine to the Activity that owns this Fragment.");
-      flutterEngine.getActivityControlSurface().attachToActivity(getActivity(), getLifecycle());
+      flutterEngine.getActivityControlSurface().attachToActivity(
+          getActivity(),
+          getLifecycle(),
+          platformViewsController
+      );
     }
+
+    configureFlutterEngine(flutterEngine);
   }
 
   private void initializeFlutter(@NonNull Context context) {
@@ -401,11 +412,11 @@ public class FlutterFragment extends Fragment {
       // Defer to the Activity that owns us to provide a FlutterEngine.
       Log.d(TAG, "Deferring to attached Activity to provide a FlutterEngine.");
       FlutterEngineProvider flutterEngineProvider = (FlutterEngineProvider) attachedActivity;
-      flutterEngine = flutterEngineProvider.getFlutterEngine(getContext());
+      flutterEngine = flutterEngineProvider.provideFlutterEngine(getContext());
       if (flutterEngine != null) {
         isFlutterEngineFromActivity = true;
+        return;
       }
-      return;
     }
 
     // Neither our subclass, nor our owning Activity wanted to provide a custom FlutterEngine.
@@ -434,11 +445,34 @@ public class FlutterFragment extends Fragment {
     return null;
   }
 
+  /**
+   * Configures a {@link FlutterEngine} after its creation.
+   * <p>
+   * This method is called after the given {@link FlutterEngine} has been attached to the
+   * owning {@code FragmentActivity}. See
+   * {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(Activity, Lifecycle, PlatformViewsController)}.
+   * <p>
+   * It is possible that the owning {@code FragmentActivity} opted not to connect itself as
+   * an {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface}. In that
+   * case, any configuration, e.g., plugins, must not expect or depend upon an available
+   * {@code Activity} at the time that this method is invoked.
+   * <p>
+   * The default behavior of this method is to defer to the owning {@code FragmentActivity}
+   * as a {@link FlutterEngineConfigurator}. Subclasses can override this method if the
+   * subclass needs to override the {@code FragmentActivity}'s behavior, or add to it.
+   */
+  protected void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    FragmentActivity attachedActivity = getActivity();
+    if (attachedActivity instanceof FlutterEngineConfigurator) {
+      ((FlutterEngineConfigurator) attachedActivity).configureFlutterEngine(flutterEngine);
+    }
+  }
+
   @Nullable
   @Override
-  public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+  public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
     Log.v(TAG, "Creating FlutterView.");
-    flutterView = new FlutterView(getContext(), getRenderMode(), getTransparencyMode());
+    flutterView = new FlutterView(getActivity(), getRenderMode(), getTransparencyMode());
     flutterView.addOnFirstFrameRenderedListener(onFirstFrameRenderedListener);
     return flutterView;
   }
@@ -546,7 +580,7 @@ public class FlutterFragment extends Fragment {
       @Override
       public void run() {
         Log.v(TAG, "Attaching FlutterEngine to FlutterView.");
-        flutterView.attachToFlutterEngine(flutterEngine);
+        flutterView.attachToFlutterEngine(flutterEngine, platformViewsController);
 
         // TODO(mattcarroll): the following call should exist here, but the plugin system needs to be revamped.
         //                    The existing attach() method does not know how to handle this kind of FlutterView.
@@ -788,7 +822,7 @@ public class FlutterFragment extends Fragment {
    * {@link FlutterActivity}s and/or {@code FlutterFragments}.
    * <p>
    * If the {@link FragmentActivity} that owns this {@code FlutterFragment} implements
-   * {@code FlutterEngineProvider}, that {@link FlutterActivity} will be given an opportunity
+   * {@code FlutterEngineProvider}, that {@link FragmentActivity} will be given an opportunity
    * to provide a {@link FlutterEngine} instead of the {@code FlutterFragment} creating a
    * new one. The {@link FragmentActivity} can provide an existing, pre-warmed {@link FlutterEngine},
    * if desired.
@@ -804,6 +838,27 @@ public class FlutterFragment extends Fragment {
      * to provide its own {@code FlutterEngine} instance.
      */
     @Nullable
-    FlutterEngine getFlutterEngine(@NonNull Context context);
+    FlutterEngine provideFlutterEngine(@NonNull Context context);
+  }
+
+  /**
+   * Configures a {@link FlutterEngine} after it is created, e.g., adds plugins.
+   * <p>
+   * This interface may be applied to a {@link FragmentActivity} that owns a {@code FlutterFragment}.
+   */
+  public interface FlutterEngineConfigurator {
+    /**
+     * Configures the given {@link FlutterEngine}.
+     * <p>
+     * This method is called after the given {@link FlutterEngine} has been attached to the
+     * owning {@code FragmentActivity}. See
+     * {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(Activity, Lifecycle, PlatformViewsController)}.
+     * <p>
+     * It is possible that the owning {@code FragmentActivity} opted not to connect itself as
+     * an {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface}. In that
+     * case, any configuration, e.g., plugins, must not expect or depend upon an available
+     * {@code Activity} at the time that this method is invoked.
+     */
+    void configureFlutterEngine(@NonNull FlutterEngine flutterEngine);
   }
 }
