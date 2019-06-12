@@ -21,11 +21,12 @@ enum MutatorType { clip_rect, clip_rrect, clip_path, transform };
 
 class Mutator {
  public:
-
-  explicit Mutator(const SkRect& rect):type_(clip_rect), rect_(rect){}
-  explicit Mutator(const SkRRect& rrect):type_(clip_rrect), rrect_(rrect){}
-  explicit Mutator(const SkPath& path):type_(clip_path), path_(new SkPath(path)){}
-  explicit Mutator(const SkMatrix& matrix):type_(transform), matrix_(matrix){}
+  explicit Mutator(const SkRect& rect) : type_(clip_rect), rect_(rect) {}
+  explicit Mutator(const SkRRect& rrect) : type_(clip_rrect), rrect_(rrect) {}
+  explicit Mutator(const SkPath& path)
+      : type_(clip_path), path_(new SkPath(path)) {}
+  explicit Mutator(const SkMatrix& matrix)
+      : type_(transform), matrix_(matrix) {}
 
   const MutatorType& type() const { return type_; }
   const SkRect& rect() const { return rect_; }
@@ -59,7 +60,7 @@ class Mutator {
     return type_ == clip_rect || type_ == clip_rrect || type_ == clip_path;
   }
 
-  ~Mutator(){
+  ~Mutator() {
     if (type_ == clip_path) {
       delete path_;
     }
@@ -68,7 +69,7 @@ class Mutator {
  private:
   MutatorType type_;
 
-  union{
+  union {
     SkRect rect_;
     SkRRect rrect_;
     SkMatrix matrix_;
@@ -118,15 +119,25 @@ class MutatorsStack {
 
 class EmbeddedViewParams {
  public:
+  EmbeddedViewParams() = default;
+
+  EmbeddedViewParams(const EmbeddedViewParams& other) {
+    offsetPixels = other.offsetPixels;
+    sizePoints = other.sizePoints;
+    mutatorsStack = new MutatorsStack(*other.mutatorsStack);
+  };
+
   SkPoint offsetPixels;
   SkSize sizePoints;
-  MutatorsStack& mutatorsStack;
+  MutatorsStack* mutatorsStack;
 
   bool operator==(const EmbeddedViewParams& other) const {
     return offsetPixels == other.offsetPixels &&
            sizePoints == other.sizePoints &&
-           mutatorsStack == other.mutatorsStack;
+           *mutatorsStack == *other.mutatorsStack;
   }
+
+  ~EmbeddedViewParams() { delete mutatorsStack; }
 };
 
 // This is only used on iOS when running in a non headless mode,

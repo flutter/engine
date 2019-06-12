@@ -93,7 +93,6 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
 
   if (root_layer_->needs_painting())
     root_layer_->Paint(context);
-
 }
 
 sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {

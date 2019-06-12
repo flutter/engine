@@ -34,11 +34,11 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
   params.offsetPixels =
       SkPoint::Make(transform.getTranslateX(), transform.getTranslateY());
   params.sizePoints = size_;
-  params.mutatorsStack = context.mutator_stack;
+  params.mutatorsStack = &context.mutators_stack;
 
   FML_DLOG(ERROR) << "address:";
   FML_DLOG(ERROR) << &params.mutatorsStack;
-  FML_DLOG(ERROR) << &context.mutator_stack;
+  FML_DLOG(ERROR) << &context.mutators_stack;
 
   SkCanvas* canvas =
       context.view_embedder->CompositeEmbeddedView(view_id_, params);

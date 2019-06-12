@@ -51,7 +51,7 @@ TEST(PerformanceOverlayLayer, Gold) {
   flutter::Layer::PaintContext paintContext = {
       nullptr,        surface->getCanvas(),
       nullptr,        nullptr,
-      unused_stack,        mock_stopwatch,
+      unused_stack,   mock_stopwatch,
       mock_stopwatch, unused_texture_registry,
       nullptr,        false};
 

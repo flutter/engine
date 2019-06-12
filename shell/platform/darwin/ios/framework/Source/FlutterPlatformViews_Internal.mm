@@ -46,7 +46,7 @@ void ResetAnchor(CALayer* layer) {
 
 @implementation ChildClippingView
 
-+ (CGRect)getCGRectFromSkRect:(const SkRect&) clipSkRect {
++ (CGRect)getCGRectFromSkRect:(const SkRect&)clipSkRect {
   return CGRectMake(clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fRight - clipSkRect.fLeft,
                     clipSkRect.fBottom - clipSkRect.fTop);
 }
@@ -60,7 +60,7 @@ void ResetAnchor(CALayer* layer) {
   CGPathRelease(pathRef);
 }
 
--(void)clipRRect:(const SkRRect&)clipSkRRect {
+- (void)clipRRect:(const SkRRect&)clipSkRRect {
   CGPathRef pathRef = nullptr;
   switch (clipSkRRect.getType()) {
     case SkRRect::kEmpty_Type: {
@@ -129,7 +129,10 @@ void ResetAnchor(CALayer* layer) {
   CGPathRelease(pathRef);
 }
 
--(void)performClip:(flutter::MutatorType)type rect:(const SkRect&)rect rrect:(const SkRRect&) rrect path:(const SkPath&)path {
+- (void)performClip:(flutter::MutatorType)type
+               rect:(const SkRect&)rect
+              rrect:(const SkRRect&)rrect
+               path:(const SkPath&)path {
   FML_CHECK(type == flutter::clip_rect || type == flutter::clip_rrect ||
             type == flutter::clip_path);
   switch (type) {
@@ -149,7 +152,7 @@ void ResetAnchor(CALayer* layer) {
 
 // Only acknowlege touches are inside if the touches are acknowlege inside by any of its
 // subviews.
-- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent* )event {
+- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent*)event {
   for (UIView* view in self.subviews) {
     if ([view pointInside:[self convertPoint:point toView:view] withEvent:event]) {
       return YES;

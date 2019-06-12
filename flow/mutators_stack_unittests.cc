@@ -111,7 +111,7 @@ TEST(Mutator, Equality) {
 
   SkRRect rrect;
   flutter::Mutator mutator3 = flutter::Mutator(rrect);
-  flutter::Mutator otherMutator3 =flutter::Mutator(rrect);
+  flutter::Mutator otherMutator3 = flutter::Mutator(rrect);
   ASSERT_TRUE(mutator3 == otherMutator3);
 
   ASSERT_FALSE(mutator2 == mutator);

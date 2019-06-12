@@ -34,7 +34,10 @@
 // Performs the clipping based on the type.
 //
 // The `type` must be one of the 3: clip_rect, clip_rrect, clip_path.
--(void)performClip:(flutter::MutatorType)type rect:(const SkRect&)rect rrect:(const SkRRect&)rrect path:(const SkPath&)path;
+- (void)performClip:(flutter::MutatorType)type
+               rect:(const SkRect&)rect
+              rrect:(const SkRRect&)rrect
+               path:(const SkPath&)path;
 
 @end
 
