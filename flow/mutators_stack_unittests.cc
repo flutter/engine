@@ -109,7 +109,7 @@ TEST(MutatorsStack, Equality) {
 }
 
 TEST(Mutator, Initialization) {
-  SkRect rect;
+  SkRect rect = SkRect::MakeEmpty();
   flutter::Mutator mutator = flutter::Mutator(rect);
   ASSERT_TRUE(mutator.type() == flutter::MutatorType::clip_rect);
   ASSERT_TRUE(mutator.rect() == rect);
@@ -131,7 +131,7 @@ TEST(Mutator, Initialization) {
 }
 
 TEST(Mutator, CopyConstructor) {
-  SkRect rect;
+  SkRect rect = SkRect::MakeEmpty();
   flutter::Mutator mutator = flutter::Mutator(rect);
   flutter::Mutator copy = flutter::Mutator(mutator);
   ASSERT_TRUE(mutator == copy);
@@ -158,7 +158,7 @@ TEST(Mutator, Equality) {
   flutter::Mutator otherMutator = flutter::Mutator(matrix);
   ASSERT_TRUE(mutator == otherMutator);
 
-  SkRect rect;
+  SkRect rect = SkRect::MakeEmpty();
   flutter::Mutator mutator2 = flutter::Mutator(rect);
   flutter::Mutator otherMutator2 = flutter::Mutator(rect);
   ASSERT_TRUE(mutator2 == otherMutator2);
@@ -172,7 +172,7 @@ TEST(Mutator, Equality) {
 }
 
 TEST(Mutator, UnEquality) {
-  SkRect rect;
+  SkRect rect = SkRect::MakeEmpty();
   flutter::Mutator mutator = flutter::Mutator(rect);
   SkMatrix matrix;
   flutter::Mutator notEqualMutator = flutter::Mutator(matrix);
