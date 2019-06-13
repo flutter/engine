@@ -7,7 +7,7 @@
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 
-namespace shell {
+namespace flutter {
 
 EmbedderSurfaceSoftware::EmbedderSurfaceSoftware(
     SoftwareDispatchTable software_dispatch_table)
@@ -20,12 +20,12 @@ EmbedderSurfaceSoftware::EmbedderSurfaceSoftware(
 
 EmbedderSurfaceSoftware::~EmbedderSurfaceSoftware() = default;
 
-// |shell::EmbedderSurface|
+// |EmbedderSurface|
 bool EmbedderSurfaceSoftware::IsValid() const {
   return valid_;
 }
 
-// |shell::EmbedderSurface|
+// |EmbedderSurface|
 std::unique_ptr<Surface> EmbedderSurfaceSoftware::CreateGPUSurface() {
   if (!IsValid()) {
     return nullptr;
@@ -40,12 +40,12 @@ std::unique_ptr<Surface> EmbedderSurfaceSoftware::CreateGPUSurface() {
   return surface;
 }
 
-// |shell::EmbedderSurface|
+// |EmbedderSurface|
 sk_sp<GrContext> EmbedderSurfaceSoftware::CreateResourceContext() const {
   return nullptr;
 }
 
-// |shell::GPUSurfaceSoftwareDelegate|
+// |GPUSurfaceSoftwareDelegate|
 sk_sp<SkSurface> EmbedderSurfaceSoftware::AcquireBackingStore(
     const SkISize& size) {
   TRACE_EVENT0("flutter", "EmbedderSurfaceSoftware::AcquireBackingStore");
@@ -61,8 +61,8 @@ sk_sp<SkSurface> EmbedderSurfaceSoftware::AcquireBackingStore(
     return sk_surface_;
   }
 
-  SkImageInfo info =
-      SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType);
+  SkImageInfo info = SkImageInfo::MakeN32(
+      size.fWidth, size.fHeight, kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
   sk_surface_ = SkSurface::MakeRaster(info, nullptr);
 
   if (sk_surface_ == nullptr) {
@@ -73,7 +73,7 @@ sk_sp<SkSurface> EmbedderSurfaceSoftware::AcquireBackingStore(
   return sk_surface_;
 }
 
-// |shell::GPUSurfaceSoftwareDelegate|
+// |GPUSurfaceSoftwareDelegate|
 bool EmbedderSurfaceSoftware::PresentBackingStore(
     sk_sp<SkSurface> backing_store) {
   if (!IsValid()) {
@@ -104,4 +104,4 @@ bool EmbedderSurfaceSoftware::PresentBackingStore(
   );
 }
 
-}  // namespace shell
+}  // namespace flutter

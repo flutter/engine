@@ -1,0 +1,187 @@
+# Copyright 2019 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//third_party/dart/build/dart/dart_action.gni")
+import("//third_party/dart/utils/compile_platform.gni")
+
+sdk_dill = "$root_out_dir/flutter_web_sdk/kernel/flutter_ddc_sdk.dill"
+sdk_libraries_json = "$root_out_dir/flutter_web_sdk/libraries.json"
+
+web_ui_sources = [
+  "$flutter_root/lib/stub_ui/lib/ui.dart",
+  "$flutter_root/lib/stub_ui/lib/src/ui/compositing.dart",
+  "$flutter_root/lib/stub_ui/lib/src/ui/hash_codes.dart",
+  "$flutter_root/lib/stub_ui/lib/src/ui/canvas.dart",
+  "$flutter_root/lib/stub_ui/lib/src/ui/initialization.dart",
+  "$flutter_root/lib/stub_ui/lib/src/ui/lerp.dart",
+  "$flutter_root/lib/stub_ui/lib/src/ui/window.dart",
+  "$flutter_root/lib/stub_ui/lib/src/ui/pointer.dart",
+  "$flutter_root/lib/stub_ui/lib/src/ui/painting.dart",
+  "$flutter_root/lib/stub_ui/lib/src/ui/semantics.dart",
+  "$flutter_root/lib/stub_ui/lib/src/ui/natives.dart",
+  "$flutter_root/lib/stub_ui/lib/src/ui/geometry.dart",
+  "$flutter_root/lib/stub_ui/lib/src/ui/text.dart",
+  "$flutter_root/lib/stub_ui/lib/src/ui/test_embedding.dart",
+  "$flutter_root/lib/stub_ui/lib/src/ui/tile_mode.dart",
+]
+
+web_engine_sources = [
+  "$flutter_root/lib/stub_ui/lib/src/engine.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/vector_math.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/shadow.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/keyboard.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/assets.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/engine_canvas.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/path_to_svg.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/window.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/text_editing.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/semantics/label_and_value.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/semantics/tappable.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/semantics/semantics.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/semantics/image.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/semantics/incrementable.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/semantics/checkable.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/semantics/text_field.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/semantics/scrollable.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/pointer_binding.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/validators.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/bitmap_canvas.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/history.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/houdini_canvas.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/conic.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/text/unicode_range.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/text/word_breaker.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/text/line_breaker.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/text/measurement.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/text/font_collection.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/text/word_break_properties.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/text/ruler.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/browser_detection.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/util.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/alarm_clock.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/compositor/layer.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/compositor/layer_tree.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/compositor/engine_delegate.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/compositor/raster_cache.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/compositor/viewport_metrics.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/compositor/layer_scene_builder.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/compositor/runtime_delegate.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/compositor/platform_message.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/compositor/surface.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/compositor/rasterizer.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/recording_canvas.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/dom_renderer.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/test_embedding.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/html_image_codec.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/surface/opacity.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/surface/scene.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/surface/debug_canvas_reuse_overlay.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/surface/clip.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/surface/offset.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/surface/picture.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/surface/surface.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/surface/transform.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/browser_location.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/onscreen_logging.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/dom_canvas.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/services/message_codec.dart",
+  "$flutter_root/lib/stub_ui/lib/src/engine/services/message_codecs.dart",
+]
+
+group("web_sdk") {
+  deps = [
+    ":flutter_dartdevc_kernel_sdk",
+    ":web_engine_sources",
+    ":web_ui_library",
+    ":web_ui_sources",
+  ]
+}
+
+prebuilt_dart_action("web_ui_sources") {
+  inputs = web_ui_sources + [ "sdk_rewriter.dart" ]
+
+  packages = "//third_party/dart/.packages"
+  script = "sdk_rewriter.dart"
+  output_dir = rebase_path("$root_out_dir/flutter_web_sdk/lib/ui/")
+  input_dir = rebase_path("$flutter_root/lib/stub_ui/lib/")
+
+  args = [
+    "--output-dir=$output_dir",
+    "--input-dir=$input_dir",
+    "--ui",
+  ]
+
+  outputs = [
+    "$root_out_dir/flutter_web_engine_sdk_stamp",
+  ]
+
+  foreach(source_file, web_ui_sources) {
+    path = rebase_path(source_file)
+    args += [ "--input=$path" ]
+  }
+}
+
+prebuilt_dart_action("web_engine_sources") {
+  inputs = web_engine_sources + [ "sdk_rewriter.dart" ]
+
+  packages = "//third_party/dart/.packages"
+  script = "sdk_rewriter.dart"
+  output_dir = rebase_path("$root_out_dir/flutter_web_sdk/lib/_engine/")
+  input_dir = rebase_path("$flutter_root/lib/stub_ui/lib/src/")
+
+  args = [
+    "--output-dir=$output_dir",
+    "--input-dir=$input_dir",
+    "--engine",
+  ]
+
+  outputs = [
+    "$root_out_dir/flutter_web_sdk_stamp",
+  ]
+
+  foreach(source_file, web_engine_sources) {
+    path = rebase_path(source_file)
+    args += [ "--input=$path" ]
+  }
+}
+
+copy("web_ui_library") {
+  sources = [
+    "$flutter_root/web_sdk/libraries.json",
+  ]
+
+  outputs = [
+    "$root_out_dir/flutter_web_sdk/{{source_file_part}}",
+  ]
+}
+
+prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
+  deps = [
+    "//third_party/dart/pkg:pkg_files_stamp",
+    "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
+    "//third_party/dart/utils/dartdevc:dartdevc_sdk_patch_stamp",
+  ]
+
+  inputs = [
+    "//third_party/dart/pkg/dev_compiler/tool/kernel_sdk.dart",
+  ]
+
+  outputs = [
+    sdk_dill,
+    "$root_out_dir/flutter_web_sdk/lib/_internal/libraries.json",
+    "$root_out_dir/flutter_web_sdk/kernel/amd/dart_sdk.js",
+    "$root_out_dir/flutter_web_sdk/kernel/amd/dart_sdk.js.map",
+  ]
+
+  script = "flutter_kernel_sdk.dart"
+  packages = "//third_party/dart/.packages"
+
+  output_path = rebase_path(sdk_dill)
+  libraries_path = rebase_path(sdk_libraries_json)
+
+  args = [
+    "--output=$output_path",
+    "--libraries=$libraries_path",
+  ]
+}

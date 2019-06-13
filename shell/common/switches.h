@@ -9,7 +9,7 @@
 #ifndef SHELL_COMMON_SWITCHES_H_
 #define SHELL_COMMON_SWITCHES_H_
 
-namespace shell {
+namespace flutter {
 
 // clang-format off
 #ifndef DEF_SWITCHES_START
@@ -24,30 +24,39 @@ namespace shell {
 // clang-format on
 
 DEF_SWITCHES_START
-DEF_SWITCH(AotSharedLibraryPath, "aot-shared-library-path", "Path to the *.so.")
-DEF_SWITCH(AotSnapshotPath,
-           "aot-snapshot-path",
+DEF_SWITCH(AotSharedLibraryName,
+           "aot-shared-library-name",
+           "Name of the *.so containing AOT compiled Dart assets.")
+DEF_SWITCH(SnapshotAssetPath,
+           "snapshot-asset-path",
            "Path to the directory containing the four files specified by "
-           "AotVmSnapshotData, AotVmSnapshotInstructions, "
-           "AotVmSnapshotInstructions and AotIsolateSnapshotInstructions.")
-DEF_SWITCH(AotVmSnapshotData,
+           "VmSnapshotData, VmSnapshotInstructions, "
+           "VmSnapshotInstructions and IsolateSnapshotInstructions.")
+DEF_SWITCH(VmSnapshotData,
            "vm-snapshot-data",
            "The VM snapshot data that will be memory mapped as read-only. "
-           "AotSnapshotPath must be present.")
-DEF_SWITCH(AotVmSnapshotInstructions,
+           "SnapshotAssetPath must be present.")
+DEF_SWITCH(VmSnapshotInstructions,
            "vm-snapshot-instr",
            "The VM instructions snapshot that will be memory mapped as read "
-           "and executable. AotSnapshotPath must be present.")
-DEF_SWITCH(AotIsolateSnapshotData,
+           "and executable. SnapshotAssetPath must be present.")
+DEF_SWITCH(IsolateSnapshotData,
            "isolate-snapshot-data",
            "The isolate snapshot data that will be memory mapped as read-only. "
-           "AotSnapshotPath must be present.")
-DEF_SWITCH(AotIsolateSnapshotInstructions,
+           "SnapshotAssetPath must be present.")
+DEF_SWITCH(IsolateSnapshotInstructions,
            "isolate-snapshot-instr",
            "The isolate instructions snapshot that will be memory mapped as "
-           "read and executable. AotSnapshotPath must be present.")
+           "read and executable. SnapshotAssetPath must be present.")
 DEF_SWITCH(CacheDirPath, "cache-dir-path", "Path to the cache directory.")
 DEF_SWITCH(ICUDataFilePath, "icu-data-file-path", "Path to the ICU data file.")
+DEF_SWITCH(ICUSymbolPrefix,
+           "icu-symbol-prefix",
+           "Prefix for the symbols representing ICU data linked into the "
+           "Flutter library.")
+DEF_SWITCH(ICUNativeLibPath,
+           "icu-native-lib-path",
+           "Path to the library file that exports the ICU data.")
 DEF_SWITCH(DartFlags,
            "dart-flags",
            "Flags passed directly to the Dart VM without being interpreted "
@@ -83,15 +92,15 @@ DEF_SWITCH(SkiaDeterministicRendering,
            "Skips the call to SkGraphics::Init(), thus avoiding swapping out"
            "some Skia function pointers based on available CPU features. This"
            "is used to obtain 100% deterministic behavior in Skia rendering.")
-DEF_SWITCH(EnableBlink,
-           "enable-blink",
-           "Enable Blink as the text shaping library instead of libtxt.")
-DEF_SWITCH(FLX, "flx", "Specify the FLX path.")
 DEF_SWITCH(FlutterAssetsDir,
            "flutter-assets-dir",
            "Path to the Flutter assets directory.")
 DEF_SWITCH(Help, "help", "Display this help text.")
 DEF_SWITCH(LogTag, "log-tag", "Tag associated with log messages.")
+DEF_SWITCH(DisableServiceAuthCodes,
+           "disable-service-auth-codes",
+           "Disable the requirement for authentication codes for communicating"
+           " with the VM service.")
 DEF_SWITCH(StartPaused,
            "start-paused",
            "Start the application paused in the Dart debugger.")
@@ -102,8 +111,19 @@ DEF_SWITCH(TraceStartup,
 DEF_SWITCH(TraceSkia,
            "trace-skia",
            "Trace Skia calls. This is useful when debugging the GPU threed."
-           "By default, Skia tracing is not enable to reduce the number of "
+           "By default, Skia tracing is not enabled to reduce the number of "
            "traced events")
+DEF_SWITCH(DumpSkpOnShaderCompilation,
+           "dump-skp-on-shader-compilation",
+           "Automatically dump the skp that triggers new shader compilations. "
+           "This is useful for writing custom ShaderWarmUp to reduce jank. "
+           "By default, this is not enabled to reduce the overhead. ")
+DEF_SWITCH(
+    TraceSystrace,
+    "trace-systrace",
+    "Trace to the system tracer (instead of the timeline) on platforms where "
+    "such a tracer is available. Currently only supported on Android and "
+    "Fuchsia.")
 DEF_SWITCH(UseTestFonts,
            "use-test-fonts",
            "Running tests that layout and measure text will not yield "
@@ -133,8 +153,8 @@ void PrintUsage(const std::string& executable_name);
 
 const fml::StringView FlagForSwitch(Switch swtch);
 
-blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line);
+Settings SettingsFromCommandLine(const fml::CommandLine& command_line);
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_COMMON_SWITCHES_H_

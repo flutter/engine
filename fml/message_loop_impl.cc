@@ -48,15 +48,12 @@ void MessageLoopImpl::PostTask(fml::closure task, fml::TimePoint target_time) {
   RegisterTask(task, target_time);
 }
 
-void MessageLoopImpl::RunExpiredTasksNow() {
-  RunExpiredTasks();
-}
-
 void MessageLoopImpl::AddTaskObserver(intptr_t key, fml::closure callback) {
   FML_DCHECK(callback != nullptr);
   FML_DCHECK(MessageLoop::GetCurrent().GetLoopImpl().get() == this)
       << "Message loop task observer must be added on the same thread as the "
          "loop.";
+  std::lock_guard<std::mutex> observers_lock(observers_mutex_);
   task_observers_[key] = std::move(callback);
 }
 
@@ -64,6 +61,7 @@ void MessageLoopImpl::RemoveTaskObserver(intptr_t key) {
   FML_DCHECK(MessageLoop::GetCurrent().GetLoopImpl().get() == this)
       << "Message loop task observer must be removed from the same thread as "
          "the loop.";
+  std::lock_guard<std::mutex> observers_lock(observers_mutex_);
   task_observers_.erase(key);
 }
 
@@ -99,6 +97,32 @@ void MessageLoopImpl::DoTerminate() {
   Terminate();
 }
 
+// Thread safety analysis disabled as it does not account for defered locks.
+void MessageLoopImpl::SwapTaskQueues(const fml::RefPtr<MessageLoopImpl>& other)
+    FML_NO_THREAD_SAFETY_ANALYSIS {
+  if (terminated_ || other->terminated_) {
+    return;
+  }
+
+  // task_flushing locks
+  std::unique_lock<std::mutex> t1(tasks_flushing_mutex_, std::defer_lock);
+  std::unique_lock<std::mutex> t2(other->tasks_flushing_mutex_,
+                                  std::defer_lock);
+
+  // task_observers locks
+  std::unique_lock<std::mutex> o1(observers_mutex_, std::defer_lock);
+  std::unique_lock<std::mutex> o2(other->observers_mutex_, std::defer_lock);
+
+  // delayed_tasks locks
+  std::unique_lock<std::mutex> d1(delayed_tasks_mutex_, std::defer_lock);
+  std::unique_lock<std::mutex> d2(other->delayed_tasks_mutex_, std::defer_lock);
+
+  std::lock(t1, t2, o1, o2, d1, d2);
+
+  std::swap(task_observers_, other->task_observers_);
+  std::swap(delayed_tasks_, other->delayed_tasks_);
+}
+
 void MessageLoopImpl::RegisterTask(fml::closure task,
                                    fml::TimePoint target_time) {
   FML_DCHECK(task != nullptr);
@@ -109,12 +133,20 @@ void MessageLoopImpl::RegisterTask(fml::closure task,
   }
   std::lock_guard<std::mutex> lock(delayed_tasks_mutex_);
   delayed_tasks_.push({++order_, std::move(task), target_time});
-  WakeUp(delayed_tasks_.top().target_time);
+  WakeUp(delayed_tasks_.top().GetTargetTime());
 }
 
-void MessageLoopImpl::RunExpiredTasks() {
-  TRACE_EVENT0("fml", "MessageLoop::RunExpiredTasks");
+void MessageLoopImpl::FlushTasks(FlushType type) {
+  TRACE_EVENT0("fml", "MessageLoop::FlushTasks");
   std::vector<fml::closure> invocations;
+
+  // We are grabbing this lock here as a proxy to indicate
+  // that we are running tasks and will invoke the
+  // "right" observers, we are trying to avoid the scenario
+  // where:
+  // gather invocations -> Swap -> execute invocations
+  // will lead us to run invocations on the wrong thread.
+  std::lock_guard<std::mutex> task_flush_lock(tasks_flushing_mutex_);
 
   {
     std::lock_guard<std::mutex> lock(delayed_tasks_mutex_);
@@ -126,32 +158,35 @@ void MessageLoopImpl::RunExpiredTasks() {
     auto now = fml::TimePoint::Now();
     while (!delayed_tasks_.empty()) {
       const auto& top = delayed_tasks_.top();
-      if (top.target_time > now) {
+      if (top.GetTargetTime() > now) {
         break;
       }
-      invocations.emplace_back(std::move(top.task));
+      invocations.emplace_back(std::move(top.GetTask()));
       delayed_tasks_.pop();
+      if (type == FlushType::kSingle) {
+        break;
+      }
     }
 
     WakeUp(delayed_tasks_.empty() ? fml::TimePoint::Max()
-                                  : delayed_tasks_.top().target_time);
+                                  : delayed_tasks_.top().GetTargetTime());
   }
 
   for (const auto& invocation : invocations) {
     invocation();
+    std::lock_guard<std::mutex> observers_lock(observers_mutex_);
     for (const auto& observer : task_observers_) {
       observer.second();
     }
   }
 }
 
-MessageLoopImpl::DelayedTask::DelayedTask(size_t p_order,
-                                          fml::closure p_task,
-                                          fml::TimePoint p_target_time)
-    : order(p_order), task(std::move(p_task)), target_time(p_target_time) {}
+void MessageLoopImpl::RunExpiredTasksNow() {
+  FlushTasks(FlushType::kAll);
+}
 
-MessageLoopImpl::DelayedTask::DelayedTask(const DelayedTask& other) = default;
-
-MessageLoopImpl::DelayedTask::~DelayedTask() = default;
+void MessageLoopImpl::RunSingleExpiredTaskNow() {
+  FlushTasks(FlushType::kSingle);
+}
 
 }  // namespace fml

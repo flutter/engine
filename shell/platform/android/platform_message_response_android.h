@@ -10,14 +10,14 @@
 #include "flutter/fml/task_runner.h"
 #include "flutter/lib/ui/window/platform_message_response.h"
 
-namespace shell {
+namespace flutter {
 
-class PlatformMessageResponseAndroid : public blink::PlatformMessageResponse {
+class PlatformMessageResponseAndroid : public flutter::PlatformMessageResponse {
  public:
-  // |blink::PlatformMessageResponse|
+  // |flutter::PlatformMessageResponse|
   void Complete(std::unique_ptr<fml::Mapping> data) override;
 
-  // |blink::PlatformMessageResponse|
+  // |flutter::PlatformMessageResponse|
   void CompleteEmpty() override;
 
  private:
@@ -36,6 +36,6 @@ class PlatformMessageResponseAndroid : public blink::PlatformMessageResponse {
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformMessageResponseAndroid);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_MESSAGE_RESPONSE_ANDROID_H_

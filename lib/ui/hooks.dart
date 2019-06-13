@@ -21,27 +21,32 @@ dynamic _decodeJSON(String message) {
 void _updateWindowMetrics(double devicePixelRatio,
                           double width,
                           double height,
-                          double paddingTop,
-                          double paddingRight,
-                          double paddingBottom,
-                          double paddingLeft,
+                          double viewPaddingTop,
+                          double viewPaddingRight,
+                          double viewPaddingBottom,
+                          double viewPaddingLeft,
                           double viewInsetTop,
                           double viewInsetRight,
                           double viewInsetBottom,
                           double viewInsetLeft) {
   window
     .._devicePixelRatio = devicePixelRatio
-    .._physicalSize = new Size(width, height)
-    .._padding = new WindowPadding._(
-        top: paddingTop,
-        right: paddingRight,
-        bottom: paddingBottom,
-        left: paddingLeft)
-    .._viewInsets = new WindowPadding._(
+    .._physicalSize = Size(width, height)
+    .._viewPadding = WindowPadding._(
+        top: viewPaddingTop,
+        right: viewPaddingRight,
+        bottom: viewPaddingBottom,
+        left: viewPaddingLeft)
+    .._viewInsets = WindowPadding._(
         top: viewInsetTop,
         right: viewInsetRight,
         bottom: viewInsetBottom,
-        left: viewInsetLeft);
+        left: viewInsetLeft)
+    .._padding = WindowPadding._(
+        top: math.max(0.0, viewPaddingTop - viewInsetTop),
+        right: math.max(0.0, viewPaddingRight - viewInsetRight),
+        bottom: math.max(0.0, viewPaddingBottom - viewInsetBottom),
+        left: math.max(0.0, viewPaddingLeft - viewInsetLeft));
   _invoke(window.onMetricsChanged, window._onMetricsChangedZone);
 }
 
@@ -63,12 +68,12 @@ _LocaleClosure _getLocaleClosure() => _localeClosure;
 void _updateLocales(List<String> locales) {
   const int stringsPerLocale = 4;
   final int numLocales = locales.length ~/ stringsPerLocale;
-  window._locales = new List<Locale>(numLocales);
+  window._locales = List<Locale>(numLocales);
   for (int localeIndex = 0; localeIndex < numLocales; localeIndex++) {
     final String countryCode = locales[localeIndex * stringsPerLocale + 1];
     final String scriptCode = locales[localeIndex * stringsPerLocale + 2];
 
-    window._locales[localeIndex] = new Locale.fromSubtags(
+    window._locales[localeIndex] = Locale.fromSubtags(
       languageCode: locales[localeIndex * stringsPerLocale],
       countryCode: countryCode.isEmpty ? null : countryCode,
       scriptCode: scriptCode.isEmpty ? null : scriptCode,
@@ -86,7 +91,18 @@ void _updateUserSettingsData(String jsonData) {
   }
   _updateTextScaleFactor(data['textScaleFactor'].toDouble());
   _updateAlwaysUse24HourFormat(data['alwaysUse24HourFormat']);
+  _updatePlatformBrightness(data['platformBrightness']);
 }
+
+@pragma('vm:entry-point')
+// ignore: unused_element
+void _updateLifecycleState(String state) {
+  // We do not update the state if the state has already been used to initialize
+  // the lifecycleState.
+  if (!window._initialLifecycleStateAccessed)
+    window._initialLifecycleState = state;
+}
+
 
 void _updateTextScaleFactor(double textScaleFactor) {
   window._textScaleFactor = textScaleFactor;
@@ -95,6 +111,11 @@ void _updateTextScaleFactor(double textScaleFactor) {
 
 void _updateAlwaysUse24HourFormat(bool alwaysUse24HourFormat) {
   window._alwaysUse24HourFormat = alwaysUse24HourFormat;
+}
+
+void _updatePlatformBrightness(String brightnessName) {
+  window._platformBrightness = brightnessName == 'dark' ? Brightness.dark : Brightness.light;
+  _invoke(window.onPlatformBrightnessChanged, window._onPlatformBrightnessChangedZone);
 }
 
 @pragma('vm:entry-point')
@@ -107,7 +128,7 @@ void _updateSemanticsEnabled(bool enabled) {
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateAccessibilityFeatures(int values) {
-  final AccessibilityFeatures newFeatures = new AccessibilityFeatures._(values);
+  final AccessibilityFeatures newFeatures = AccessibilityFeatures._(values);
   if (newFeatures == window._accessibilityFeatures)
     return;
   window._accessibilityFeatures = newFeatures;
@@ -153,7 +174,18 @@ void _dispatchSemanticsAction(int id, int action, ByteData args) {
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _beginFrame(int microseconds) {
-  _invoke1<Duration>(window.onBeginFrame, window._onBeginFrameZone, new Duration(microseconds: microseconds));
+  _invoke1<Duration>(window.onBeginFrame, window._onBeginFrameZone, Duration(microseconds: microseconds));
+}
+
+@pragma('vm:entry-point')
+// ignore: unused_element
+void _reportTimings(List<int> timings) {
+  assert(timings.length % FramePhase.values.length == 0);
+  final List<FrameTiming> frameTimings = <FrameTiming>[];
+  for (int i = 0; i < timings.length; i += FramePhase.values.length) {
+    frameTimings.add(FrameTiming(timings.sublist(i, i + FramePhase.values.length)));
+  }
+  _invoke1(window.onReportTimings, window._onReportTimingsZone, frameTimings);
 }
 
 @pragma('vm:entry-point')
@@ -161,6 +193,35 @@ void _beginFrame(int microseconds) {
 void _drawFrame() {
   _invoke(window.onDrawFrame, window._onDrawFrameZone);
 }
+
+// ignore: always_declare_return_types, prefer_generic_function_type_aliases
+typedef _UnaryFunction(Null args);
+// ignore: always_declare_return_types, prefer_generic_function_type_aliases
+typedef _BinaryFunction(Null args, Null message);
+
+@pragma('vm:entry-point')
+// ignore: unused_element
+void _runMainZoned(Function startMainIsolateFunction,
+                   Function userMainFunction,
+                   List<String> args) {
+  startMainIsolateFunction((){
+    runZoned<Future<void>>(() {
+      if (userMainFunction is _BinaryFunction) {
+        // This seems to be undocumented but supported by the command line VM.
+        // Let's do the same in case old entry-points are ported to Flutter.
+        (userMainFunction as dynamic)(args, '');
+      } else if (userMainFunction is _UnaryFunction) {
+        (userMainFunction as dynamic)(args);
+      } else {
+        userMainFunction();
+      }
+    }, onError: (Object error, StackTrace stackTrace) {
+      _reportUnhandledException(error.toString(), stackTrace.toString());
+    });
+  }, null);
+}
+
+void _reportUnhandledException(String error, String stackTrace) native 'Window_reportUnhandledException';
 
 /// Invokes [callback] inside the given [zone].
 void _invoke(void callback(), Zone zone) {
@@ -225,20 +286,21 @@ void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1
 //
 //  * pointer_data.cc
 //  * FlutterView.java
-const int _kPointerDataFieldCount = 21;
+const int _kPointerDataFieldCount = 24;
 
 PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   const int kStride = Int64List.bytesPerElement;
   const int kBytesPerPointerData = _kPointerDataFieldCount * kStride;
   final int length = packet.lengthInBytes ~/ kBytesPerPointerData;
   assert(length * kBytesPerPointerData == packet.lengthInBytes);
-  final List<PointerData> data = new List<PointerData>(length);
+  final List<PointerData> data = List<PointerData>(length);
   for (int i = 0; i < length; ++i) {
     int offset = i * _kPointerDataFieldCount;
-    data[i] = new PointerData(
-      timeStamp: new Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
+    data[i] = PointerData(
+      timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
       change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       kind: PointerDeviceKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      signalKind: PointerSignalKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       device: packet.getInt64(kStride * offset++, _kFakeHostEndian),
       physicalX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       physicalY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
@@ -257,8 +319,10 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
       orientation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       tilt: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       platformData: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      scrollDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian)
     );
     assert(offset == (i + 1) * _kPointerDataFieldCount);
   }
-  return new PointerDataPacket(data: data);
+  return PointerDataPacket(data: data);
 }

@@ -10,7 +10,7 @@
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/skia/include/core/SkShader.h"
 
-namespace blink {
+namespace flutter {
 
 class Shader : public RefCountedDartWrappable<Shader> {
   DEFINE_WRAPPERTYPEINFO();
@@ -21,17 +21,17 @@ class Shader : public RefCountedDartWrappable<Shader> {
 
   sk_sp<SkShader> shader() { return shader_.get(); }
 
-  void set_shader(flow::SkiaGPUObject<SkShader> shader) {
+  void set_shader(flutter::SkiaGPUObject<SkShader> shader) {
     shader_ = std::move(shader);
   }
 
  protected:
-  Shader(flow::SkiaGPUObject<SkShader> shader = {});
+  Shader(flutter::SkiaGPUObject<SkShader> shader = {});
 
  private:
-  flow::SkiaGPUObject<SkShader> shader_;
+  flutter::SkiaGPUObject<SkShader> shader_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_SHADER_H_

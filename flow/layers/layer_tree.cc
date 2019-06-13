@@ -9,7 +9,7 @@
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
 
-namespace flow {
+namespace flutter {
 
 LayerTree::LayerTree()
     : frame_size_{},
@@ -18,6 +18,11 @@ LayerTree::LayerTree()
       checkerboard_offscreen_layers_(false) {}
 
 LayerTree::~LayerTree() = default;
+
+void LayerTree::RecordBuildTime(fml::TimePoint start) {
+  build_start_ = start;
+  build_finish_ = fml::TimePoint::Now();
+}
 
 void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
                         bool ignore_raster_cache) {
@@ -32,8 +37,8 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       frame.view_embedder(),
       color_space,
       kGiantRect,
-      frame.context().frame_time(),
-      frame.context().engine_time(),
+      frame.context().raster_time(),
+      frame.context().ui_time(),
       frame.context().texture_registry(),
       checkerboard_offscreen_layers_};
 
@@ -54,12 +59,12 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
       context,
       SkRRect::MakeRect(
           SkRect::MakeWH(frame_size_.width(), frame_size_.height())),
-      SK_ColorTRANSPARENT, 0.f);
+      SK_ColorTRANSPARENT);
   if (root_layer_->needs_system_composite()) {
     root_layer_->UpdateScene(context);
   }
   if (root_layer_->needs_painting()) {
-    frame.AddPaintedLayer(root_layer_.get());
+    frame.AddPaintLayer(root_layer_.get());
   }
   container.AddChild(transform.entity_node());
 }
@@ -81,9 +86,10 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
   Layer::PaintContext context = {
       (SkCanvas*)&internal_nodes_canvas,
       frame.canvas(),
+      frame.gr_context(),
       frame.view_embedder(),
-      frame.context().frame_time(),
-      frame.context().engine_time(),
+      frame.context().raster_time(),
+      frame.context().ui_time(),
       frame.context().texture_registry(),
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
       checkerboard_offscreen_layers_};
@@ -128,6 +134,7 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
       (SkCanvas*)&internal_nodes_canvas,
       canvas,  // canvas
       nullptr,
+      nullptr,
       unused_stopwatch,         // frame time (dont care)
       unused_stopwatch,         // engine time (dont care)
       unused_texture_registry,  // texture registry (not supported)
@@ -148,4 +155,4 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   return recorder.finishRecordingAsPicture();
 }
 
-}  // namespace flow
+}  // namespace flutter

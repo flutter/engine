@@ -10,11 +10,13 @@ import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.Surface;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.view.TextureRegistry;
 
@@ -42,6 +44,14 @@ public class FlutterRenderer implements TextureRegistry {
     this.flutterJNI = flutterJNI;
   }
 
+  /**
+   * Returns true if this {@code FlutterRenderer} is attached to the given {@link RenderSurface},
+   * false otherwise.
+   */
+  public boolean isAttachedTo(@NonNull RenderSurface renderSurface) {
+    return this.renderSurface == renderSurface;
+  }
+
   public void attachToRenderSurface(@NonNull RenderSurface renderSurface) {
     // TODO(mattcarroll): determine desired behavior when attaching to an already attached renderer
     if (this.renderSurface != null) {
@@ -49,14 +59,16 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     this.renderSurface = renderSurface;
+    this.renderSurface.attachToRenderer(this);
     this.flutterJNI.setRenderSurface(renderSurface);
   }
 
   public void detachFromRenderSurface() {
     // TODO(mattcarroll): determine desired behavior if we're asked to detach without first being attached
     if (this.renderSurface != null) {
-      surfaceDestroyed();
+      this.renderSurface.detachFromRenderer();
       this.renderSurface = null;
+      surfaceDestroyed();
       this.flutterJNI.setRenderSurface(null);
     }
   }
@@ -134,8 +146,8 @@ public class FlutterRenderer implements TextureRegistry {
       if (released) {
         return;
       }
-      unregisterTexture(id);
       surfaceTexture.release();
+      unregisterTexture(id);
       released = true;
     }
   }
@@ -157,29 +169,19 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
-  public void setViewportMetrics(float devicePixelRatio,
-                                 int physicalWidth,
-                                 int physicalHeight,
-                                 int physicalPaddingTop,
-                                 int physicalPaddingRight,
-                                 int physicalPaddingBottom,
-                                 int physicalPaddingLeft,
-                                 int physicalViewInsetTop,
-                                 int physicalViewInsetRight,
-                                 int physicalViewInsetBottom,
-                                 int physicalViewInsetLeft) {
+  public void setViewportMetrics(@NonNull ViewportMetrics viewportMetrics) {
     flutterJNI.setViewportMetrics(
-        devicePixelRatio,
-        physicalWidth,
-        physicalHeight,
-        physicalPaddingTop,
-        physicalPaddingRight,
-        physicalPaddingBottom,
-        physicalPaddingLeft,
-        physicalViewInsetTop,
-        physicalViewInsetRight,
-        physicalViewInsetBottom,
-        physicalViewInsetLeft
+        viewportMetrics.devicePixelRatio,
+        viewportMetrics.width,
+        viewportMetrics.height,
+        viewportMetrics.paddingTop,
+        viewportMetrics.paddingRight,
+        viewportMetrics.paddingBottom,
+        viewportMetrics.paddingLeft,
+        viewportMetrics.viewInsetTop,
+        viewportMetrics.viewInsetRight,
+        viewportMetrics.viewInsetBottom,
+        viewportMetrics.viewInsetLeft
     );
   }
 
@@ -241,17 +243,27 @@ public class FlutterRenderer implements TextureRegistry {
    * UI.
    *
    * A {@code RenderSurface} is responsible for carrying out behaviors that are needed by a
-   * corresponding {@link FlutterRenderer}, e.g., {@link #updateSemantics(ByteBuffer, String[])}.
+   * corresponding {@link FlutterRenderer}.
    *
    * A {@code RenderSurface} also receives callbacks for important events, e.g.,
    * {@link #onFirstFrameRendered()}.
    */
   public interface RenderSurface {
-    // TODO(mattcarroll): describe what this callback is intended to do
-    void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings);
+    /**
+     * Invoked by the owner of this {@code RenderSurface} when it wants to begin rendering
+     * a Flutter UI to this {@code RenderSurface}.
+     *
+     * The details of how rendering is handled is an implementation detail.
+     */
+    void attachToRenderer(@NonNull FlutterRenderer renderer);
 
-    // TODO(mattcarroll): describe what this callback is intended to do
-    void updateSemantics(ByteBuffer buffer, String[] strings);
+    /**
+     * Invoked by the owner of this {@code RenderSurface} when it no longer wants to render
+     * a Flutter UI to this {@code RenderSurface}.
+     *
+     * This method will cease any on-going rendering from Flutter to this {@code RenderSurface}.
+     */
+    void detachFromRenderer();
 
     /**
      * The {@link FlutterRenderer} corresponding to this {@code RenderSurface} has painted its
@@ -264,5 +276,37 @@ public class FlutterRenderer implements TextureRegistry {
      * never be called.
      */
     void onFirstFrameRendered();
+
+    /**
+     * Adds the given {@code listener} to this {@code FlutterRenderer}, to be notified upon Flutter's
+     * first rendered frame.
+     */
+    void addOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener);
+
+    /**
+     * Removes the given {@code listener}, which was previously added with
+     * {@link #addOnFirstFrameRenderedListener(OnFirstFrameRenderedListener)}.
+     */
+    void removeOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener);
+  }
+
+  /**
+   * Mutable data structure that holds all viewport metrics properties that Flutter cares about.
+   *
+   * All distance measurements, e.g., width, height, padding, viewInsets, are measured in device
+   * pixels, not logical pixels.
+   */
+  public static final class ViewportMetrics {
+    public float devicePixelRatio = 1.0f;
+    public int width = 0;
+    public int height = 0;
+    public int paddingTop = 0;
+    public int paddingRight = 0;
+    public int paddingBottom = 0;
+    public int paddingLeft = 0;
+    public int viewInsetTop = 0;
+    public int viewInsetRight = 0;
+    public int viewInsetBottom = 0;
+    public int viewInsetLeft = 0;
   }
 }

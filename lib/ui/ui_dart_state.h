@@ -23,7 +23,7 @@
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/dart_state.h"
 
-namespace blink {
+namespace flutter {
 class FontSelector;
 class Window;
 
@@ -47,18 +47,21 @@ class UIDartState : public tonic::DartState {
 
   void FlushMicrotasksNow();
 
-  fml::RefPtr<flow::SkiaUnrefQueue> GetSkiaUnrefQueue() const;
+  fml::RefPtr<flutter::SkiaUnrefQueue> GetSkiaUnrefQueue() const;
 
   fml::WeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
   fml::WeakPtr<GrContext> GetResourceContext() const;
 
-  IsolateNameServer* GetIsolateNameServer();
+  std::shared_ptr<IsolateNameServer> GetIsolateNameServer() const;
 
   tonic::DartErrorHandleType GetLastError();
 
+  void ReportUnhandledException(const std::string& error,
+                                const std::string& stack_trace);
+
   template <class T>
-  static flow::SkiaGPUObject<T> CreateGPUObject(sk_sp<T> object) {
+  static flutter::SkiaGPUObject<T> CreateGPUObject(sk_sp<T> object) {
     if (!object) {
       return {};
     }
@@ -77,7 +80,8 @@ class UIDartState : public tonic::DartState {
               std::string advisory_script_uri,
               std::string advisory_script_entrypoint,
               std::string logger_prefix,
-              IsolateNameServer* isolate_name_server);
+              UnhandledExceptionCallback unhandled_exception_callback,
+              std::shared_ptr<IsolateNameServer> isolate_name_server);
 
   ~UIDartState() override;
 
@@ -102,11 +106,12 @@ class UIDartState : public tonic::DartState {
   std::string debug_name_;
   std::unique_ptr<Window> window_;
   tonic::DartMicrotaskQueue microtask_queue_;
-  IsolateNameServer* isolate_name_server_;
+  UnhandledExceptionCallback unhandled_exception_callback_;
+  const std::shared_ptr<IsolateNameServer> isolate_name_server_;
 
   void AddOrRemoveTaskObserver(bool add);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_UI_DART_STATE_H_

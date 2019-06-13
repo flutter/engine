@@ -5,8 +5,11 @@
 #ifndef TESTING_TESTING_H_
 #define TESTING_TESTING_H_
 
+#include <string>
+
 #include "gtest/gtest.h"
 
+namespace flutter {
 namespace testing {
 
 // Returns the directory containing the test fixture for the target if this
@@ -14,6 +17,9 @@ namespace testing {
 // error.
 const char* GetFixturesPath();
 
+std::string GetCurrentTestName();
+
 }  // namespace testing
+}  // namespace flutter
 
 #endif  // TESTING_TESTING_H_

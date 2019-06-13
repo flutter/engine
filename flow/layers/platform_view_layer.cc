@@ -4,9 +4,12 @@
 
 #include "flutter/flow/layers/platform_view_layer.h"
 
-namespace flow {
+namespace flutter {
 
-PlatformViewLayer::PlatformViewLayer() = default;
+PlatformViewLayer::PlatformViewLayer(const SkPoint& offset,
+                                     const SkSize& size,
+                                     int64_t view_id)
+    : offset_(offset), size_(size), view_id_(view_id) {}
 
 PlatformViewLayer::~PlatformViewLayer() = default;
 
@@ -39,4 +42,4 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
       context.view_embedder->CompositeEmbeddedView(view_id_, params);
   context.leaf_nodes_canvas = canvas;
 }
-}  // namespace flow
+}  // namespace flutter

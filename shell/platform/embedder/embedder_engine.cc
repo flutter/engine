@@ -5,13 +5,14 @@
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 
 #include "flutter/fml/make_copyable.h"
+#include "flutter/shell/platform/embedder/vsync_waiter_embedder.h"
 
-namespace shell {
+namespace flutter {
 
 EmbedderEngine::EmbedderEngine(
-    ThreadHost thread_host,
-    blink::TaskRunners task_runners,
-    blink::Settings settings,
+    std::unique_ptr<EmbedderThreadHost> thread_host,
+    flutter::TaskRunners task_runners,
+    flutter::Settings settings,
     Shell::CreateCallback<PlatformView> on_create_platform_view,
     Shell::CreateCallback<Rasterizer> on_create_rasterizer,
     EmbedderExternalTextureGL::ExternalTextureCallback
@@ -22,7 +23,11 @@ EmbedderEngine::EmbedderEngine(
                            on_create_platform_view,
                            on_create_rasterizer)),
       external_texture_callback_(external_texture_callback) {
-  is_valid_ = shell_ != nullptr;
+  if (!shell_) {
+    return;
+  }
+
+  is_valid_ = true;
 }
 
 EmbedderEngine::~EmbedderEngine() = default;
@@ -60,7 +65,7 @@ bool EmbedderEngine::Run(RunConfiguration run_configuration) {
   ]() mutable {
         if (engine) {
           auto result = engine->Run(std::move(config));
-          if (result == shell::Engine::RunStatus::Failure) {
+          if (result == Engine::RunStatus::Failure) {
             FML_LOG(ERROR) << "Could not launch the engine with configuration.";
           }
         }
@@ -69,7 +74,7 @@ bool EmbedderEngine::Run(RunConfiguration run_configuration) {
   return true;
 }
 
-bool EmbedderEngine::SetViewportMetrics(blink::ViewportMetrics metrics) {
+bool EmbedderEngine::SetViewportMetrics(flutter::ViewportMetrics metrics) {
   if (!IsValid()) {
     return false;
   }
@@ -84,23 +89,28 @@ bool EmbedderEngine::SetViewportMetrics(blink::ViewportMetrics metrics) {
 }
 
 bool EmbedderEngine::DispatchPointerDataPacket(
-    std::unique_ptr<blink::PointerDataPacket> packet) {
+    std::unique_ptr<flutter::PointerDataPacket> packet) {
   if (!IsValid() || !packet) {
     return false;
   }
 
+  TRACE_EVENT0("flutter", "EmbedderEngine::DispatchPointerDataPacket");
+  TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
+
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = shell_->GetEngine(), packet = std::move(packet)] {
+      [engine = shell_->GetEngine(), packet = std::move(packet),
+       flow_id = next_pointer_flow_id_] {
         if (engine) {
-          engine->DispatchPointerDataPacket(*packet);
+          engine->DispatchPointerDataPacket(*packet, flow_id);
         }
       }));
+  next_pointer_flow_id_++;
 
   return true;
 }
 
 bool EmbedderEngine::SendPlatformMessage(
-    fml::RefPtr<blink::PlatformMessage> message) {
+    fml::RefPtr<flutter::PlatformMessage> message) {
   if (!IsValid() || !message) {
     return false;
   }
@@ -141,4 +151,77 @@ bool EmbedderEngine::MarkTextureFrameAvailable(int64_t texture) {
   return true;
 }
 
-}  // namespace shell
+bool EmbedderEngine::SetSemanticsEnabled(bool enabled) {
+  if (!IsValid()) {
+    return false;
+  }
+  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
+      [engine = shell_->GetEngine(), enabled] {
+        if (engine) {
+          engine->SetSemanticsEnabled(enabled);
+        }
+      });
+  return true;
+}
+
+bool EmbedderEngine::SetAccessibilityFeatures(int32_t flags) {
+  if (!IsValid()) {
+    return false;
+  }
+  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
+      [engine = shell_->GetEngine(), flags] {
+        if (engine) {
+          engine->SetAccessibilityFeatures(flags);
+        }
+      });
+  return true;
+}
+
+bool EmbedderEngine::DispatchSemanticsAction(int id,
+                                             flutter::SemanticsAction action,
+                                             std::vector<uint8_t> args) {
+  if (!IsValid()) {
+    return false;
+  }
+  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([engine = shell_->GetEngine(),  // engine
+                         id,                            // id
+                         action,                        // action
+                         args = std::move(args)         // args
+  ]() mutable {
+        if (engine) {
+          engine->DispatchSemanticsAction(id, action, std::move(args));
+        }
+      }));
+  return true;
+}
+
+bool EmbedderEngine::OnVsyncEvent(intptr_t baton,
+                                  fml::TimePoint frame_start_time,
+                                  fml::TimePoint frame_target_time) {
+  if (!IsValid()) {
+    return false;
+  }
+
+  return VsyncWaiterEmbedder::OnEmbedderVsync(baton, frame_start_time,
+                                              frame_target_time);
+}
+
+bool EmbedderEngine::PostRenderThreadTask(fml::closure task) {
+  if (!IsValid()) {
+    return false;
+  }
+
+  shell_->GetTaskRunners().GetGPUTaskRunner()->PostTask(task);
+  return true;
+}
+
+bool EmbedderEngine::RunTask(const FlutterTask* task) {
+  if (!IsValid() || task == nullptr) {
+    return false;
+  }
+  return thread_host_->PostTask(reinterpret_cast<int64_t>(task->runner),
+                                task->task);
+}
+
+}  // namespace flutter

@@ -9,14 +9,18 @@
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 
-namespace shell {
+namespace flutter {
 
 AndroidExternalTextureGL::AndroidExternalTextureGL(
     int64_t id,
     const fml::jni::JavaObjectWeakGlobalRef& surfaceTexture)
     : Texture(id), surface_texture_(surfaceTexture), transform(SkMatrix::I()) {}
 
-AndroidExternalTextureGL::~AndroidExternalTextureGL() = default;
+AndroidExternalTextureGL::~AndroidExternalTextureGL() {
+  if (state_ == AttachmentState::attached) {
+    glDeleteTextures(1, &texture_name_);
+  }
+}
 
 void AndroidExternalTextureGL::OnGrContextCreated() {
   state_ = AttachmentState::uninitialized;
@@ -28,7 +32,8 @@ void AndroidExternalTextureGL::MarkNewFrameAvailable() {
 
 void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
                                      const SkRect& bounds,
-                                     bool freeze) {
+                                     bool freeze,
+                                     GrContext* context) {
   if (state_ == AttachmentState::detached) {
     return;
   }
@@ -116,4 +121,4 @@ void AndroidExternalTextureGL::Detach() {
   }
 }
 
-}  // namespace shell
+}  // namespace flutter

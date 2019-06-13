@@ -4,18 +4,18 @@
 
 #include "flutter/shell/version/version.h"
 
-namespace shell {
+namespace flutter {
 
 const char* GetFlutterEngineVersion() {
-  return SHELL_FLUTTER_ENGINE_VERSION;
+  return FLUTTER_ENGINE_VERSION;
 }
 
 const char* GetSkiaVersion() {
-  return SHELL_SKIA_VERSION;
+  return SKIA_VERSION;
 }
 
 const char* GetDartVersion() {
-  return SHELL_DART_VERSION;
+  return DART_VERSION;
 }
 
-}  // namespace shell
+}  // namespace flutter

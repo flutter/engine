@@ -11,7 +11,6 @@ gpu_common_deps = [
   "$flutter_root/flow",
   "$flutter_root/fml",
   "$flutter_root/shell/common",
-  "$flutter_root/synchronization",
   "//third_party/skia",
 ]
 
@@ -28,6 +27,8 @@ source_set("gpu_surface_gl") {
   sources = [
     "$gpu_dir/gpu_surface_gl.cc",
     "$gpu_dir/gpu_surface_gl.h",
+    "$gpu_dir/gpu_surface_gl_delegate.cc",
+    "$gpu_dir/gpu_surface_gl_delegate.h",
   ]
 
   deps = gpu_common_deps + [ "//third_party/skia" ]
@@ -43,4 +44,13 @@ source_set("gpu_surface_vulkan") {
            "//third_party/skia",
            "$flutter_root/vulkan",
          ]
+}
+
+source_set("gpu_surface_metal") {
+  sources = [
+    "$gpu_dir/gpu_surface_metal.h",
+    "$gpu_dir/gpu_surface_metal.mm",
+  ]
+
+  deps = gpu_common_deps + [ "//third_party/skia" ]
 }

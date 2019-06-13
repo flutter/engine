@@ -7,14 +7,12 @@
 
 #include "flutter/flow/layers/container_layer.h"
 
-namespace flow {
+namespace flutter {
 
 class ClipPathLayer : public ContainerLayer {
  public:
-  ClipPathLayer(Clip clip_behavior = Clip::antiAlias);
+  ClipPathLayer(const SkPath& clip_path, Clip clip_behavior = Clip::antiAlias);
   ~ClipPathLayer() override;
-
-  void set_clip_path(const SkPath& clip_path) { clip_path_ = clip_path; }
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
@@ -31,6 +29,6 @@ class ClipPathLayer : public ContainerLayer {
   FML_DISALLOW_COPY_AND_ASSIGN(ClipPathLayer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_CLIP_PATH_LAYER_H_

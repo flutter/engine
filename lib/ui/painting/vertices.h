@@ -7,14 +7,13 @@
 
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "third_party/skia/include/core/SkVertices.h"
-#include "third_party/tonic/typed_data/float32_list.h"
-#include "third_party/tonic/typed_data/int32_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 
 class Vertices : public RefCountedDartWrappable<Vertices> {
   DEFINE_WRAPPERTYPEINFO();
@@ -27,11 +26,11 @@ class Vertices : public RefCountedDartWrappable<Vertices> {
 
   static fml::RefPtr<Vertices> Create();
 
-  void init(SkVertices::VertexMode vertex_mode,
+  bool init(SkVertices::VertexMode vertex_mode,
             const tonic::Float32List& positions,
             const tonic::Float32List& texture_coordinates,
             const tonic::Int32List& colors,
-            const tonic::Int32List& indices);
+            const tonic::Uint16List& indices);
 
   const sk_sp<SkVertices>& vertices() const { return vertices_; }
 
@@ -41,6 +40,6 @@ class Vertices : public RefCountedDartWrappable<Vertices> {
   sk_sp<SkVertices> vertices_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_VERTICES_H_

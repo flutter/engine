@@ -10,6 +10,19 @@ typedef VoidCallback = void Function();
 /// Signature for [Window.onBeginFrame].
 typedef FrameCallback = void Function(Duration duration);
 
+/// Signature for [Window.onReportTimings].
+///
+/// {@template dart.ui.TimingsCallback.list}
+/// The callback takes a list of [FrameTiming] because it may not be
+/// immediately triggered after each frame. Instead, Flutter tries to batch
+/// frames together and send all their timings at once to decrease the
+/// overhead (as this is available in the release mode). The list is sorted in
+/// ascending order of time (earliest frame first). The timing of any frame
+/// will be sent within about 1 second (100ms if in the profile/debug mode)
+/// even if there are no later frames to batch.
+/// {@endtemplate}
+typedef TimingsCallback = void Function(List<FrameTiming> timings);
+
 /// Signature for [Window.onPointerDataPacket].
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 
@@ -24,6 +37,98 @@ typedef PlatformMessageResponseCallback = void Function(ByteData data);
 
 /// Signature for [Window.onPlatformMessage].
 typedef PlatformMessageCallback = void Function(String name, ByteData data, PlatformMessageResponseCallback callback);
+
+/// Various important time points in the lifetime of a frame.
+///
+/// [FrameTiming] records a timestamp of each phase for performance analysis.
+enum FramePhase {
+  /// When the UI thread starts building a frame.
+  ///
+  /// See also [FrameTiming.buildDuration].
+  buildStart,
+
+  /// When the UI thread finishes building a frame.
+  ///
+  /// See also [FrameTiming.buildDuration].
+  buildFinish,
+
+  /// When the GPU thread starts rasterizing a frame.
+  ///
+  /// See also [FrameTiming.rasterDuration].
+  rasterStart,
+
+  /// When the GPU thread finishes rasterizing a frame.
+  ///
+  /// See also [FrameTiming.rasterDuration].
+  rasterFinish,
+}
+
+/// Time-related performance metrics of a frame.
+///
+/// See [Window.onReportTimings] for how to get this.
+///
+/// The metrics in debug mode (`flutter run` without any flags) may be very
+/// different from those in profile and release modes due to the debug overhead.
+/// Therefore it's recommended to only monitor and analyze performance metrics
+/// in profile and release modes.
+class FrameTiming {
+  /// Construct [FrameTiming] with raw timestamps in microseconds.
+  ///
+  /// List [timestamps] must have the same number of elements as
+  /// [FramePhase.values].
+  ///
+  /// This constructor is usually only called by the Flutter engine, or a test.
+  /// To get the [FrameTiming] of your app, see [Window.onReportTimings].
+  FrameTiming(List<int> timestamps)
+      : assert(timestamps.length == FramePhase.values.length), _timestamps = timestamps;
+
+  /// This is a raw timestamp in microseconds from some epoch. The epoch in all
+  /// [FrameTiming] is the same, but it may not match [DateTime]'s epoch.
+  int timestampInMicroseconds(FramePhase phase) => _timestamps[phase.index];
+
+  Duration _rawDuration(FramePhase phase) => Duration(microseconds: _timestamps[phase.index]);
+
+  /// The duration to build the frame on the UI thread.
+  ///
+  /// The build starts approximately when [Window.onBeginFrame] is called. The
+  /// [Duration] in the [Window.onBeginFrame] callback is exactly the
+  /// `Duration(microseconds: timestampInMicroseconds(FramePhase.buildStart))`.
+  ///
+  /// The build finishes when [Window.render] is called.
+  ///
+  /// {@template dart.ui.FrameTiming.fps_smoothness_milliseconds}
+  /// To ensure smooth animations of X fps, this should not exceed 1000/X
+  /// milliseconds.
+  /// {@endtemplate}
+  /// {@template dart.ui.FrameTiming.fps_milliseconds}
+  /// That's about 16ms for 60fps, and 8ms for 120fps.
+  /// {@endtemplate}
+  Duration get buildDuration => _rawDuration(FramePhase.buildFinish) - _rawDuration(FramePhase.buildStart);
+
+  /// The duration to rasterize the frame on the GPU thread.
+  ///
+  /// {@macro dart.ui.FrameTiming.fps_smoothness_milliseconds}
+  /// {@macro dart.ui.FrameTiming.fps_milliseconds}
+  Duration get rasterDuration => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.rasterStart);
+
+  /// The timespan between build start and raster finish.
+  ///
+  /// To achieve the lowest latency on an X fps display, this should not exceed
+  /// 1000/X milliseconds.
+  /// {@macro dart.ui.FrameTiming.fps_milliseconds}
+  ///
+  /// See also [buildDuration] and [rasterDuration].
+  Duration get totalSpan => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.buildStart);
+
+  final List<int> _timestamps;  // in microseconds
+
+  String _formatMS(Duration duration) => '${duration.inMicroseconds * 0.001}ms';
+
+  @override
+  String toString() {
+    return '$runtimeType(buildDuration: ${_formatMS(buildDuration)}, rasterDuration: ${_formatMS(rasterDuration)}, totalSpan: ${_formatMS(totalSpan)})';
+  }
+}
 
 /// States that an application can be in.
 ///
@@ -108,11 +213,11 @@ class WindowPadding {
   final double bottom;
 
   /// A window padding that has zeros for each edge.
-  static const WindowPadding zero = const WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
+  static const WindowPadding zero = WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
 
   @override
   String toString() {
-    return '$runtimeType(left: $left, top: $top, right: $right, bottom: $bottom)';
+    return 'WindowPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
   }
 }
 
@@ -141,8 +246,8 @@ class Locale {
   /// For example:
   ///
   /// ```dart
-  /// const Locale swissFrench = const Locale('fr', 'CH');
-  /// const Locale canadianFrench = const Locale('fr', 'CA');
+  /// const Locale swissFrench = Locale('fr', 'CH');
+  /// const Locale canadianFrench = Locale('fr', 'CA');
   /// ```
   ///
   /// The primary language subtag must not be null. The region subtag is
@@ -164,7 +269,7 @@ class Locale {
   ///
   /// See also:
   ///
-  ///  * [new Locale.fromSubtags], which also allows a [scriptCode] to be
+  ///  * [Locale.fromSubtags], which also allows a [scriptCode] to be
   ///    specified.
   const Locale(
     this._languageCode, [
@@ -221,96 +326,93 @@ class Locale {
   ///
   /// See also:
   ///
-  ///  * [new Locale.fromSubtags], which describes the conventions for creating
+  ///  * [Locale.fromSubtags], which describes the conventions for creating
   ///    [Locale] objects.
-  String get languageCode => _replaceDeprecatedLanguageSubtag(_languageCode);
+  String get languageCode => _deprecatedLanguageSubtagMap[_languageCode] ?? _languageCode;
   final String _languageCode;
 
-  static String _replaceDeprecatedLanguageSubtag(String languageCode) {
-    // This switch statement is generated by //flutter/tools/gen_locale.dart
-    // Mappings generated for language subtag registry as of 2018-08-08.
-    switch (languageCode) {
-      case 'in': return 'id'; // Indonesian; deprecated 1989-01-01
-      case 'iw': return 'he'; // Hebrew; deprecated 1989-01-01
-      case 'ji': return 'yi'; // Yiddish; deprecated 1989-01-01
-      case 'jw': return 'jv'; // Javanese; deprecated 2001-08-13
-      case 'mo': return 'ro'; // Moldavian, Moldovan; deprecated 2008-11-22
-      case 'aam': return 'aas'; // Aramanik; deprecated 2015-02-12
-      case 'adp': return 'dz'; // Adap; deprecated 2015-02-12
-      case 'aue': return 'ktz'; // =/Kx'au//'ein; deprecated 2015-02-12
-      case 'ayx': return 'nun'; // Ayi (China); deprecated 2011-08-16
-      case 'bgm': return 'bcg'; // Baga Mboteni; deprecated 2016-05-30
-      case 'bjd': return 'drl'; // Bandjigali; deprecated 2012-08-12
-      case 'ccq': return 'rki'; // Chaungtha; deprecated 2012-08-12
-      case 'cjr': return 'mom'; // Chorotega; deprecated 2010-03-11
-      case 'cka': return 'cmr'; // Khumi Awa Chin; deprecated 2012-08-12
-      case 'cmk': return 'xch'; // Chimakum; deprecated 2010-03-11
-      case 'coy': return 'pij'; // Coyaima; deprecated 2016-05-30
-      case 'cqu': return 'quh'; // Chilean Quechua; deprecated 2016-05-30
-      case 'drh': return 'khk'; // Darkhat; deprecated 2010-03-11
-      case 'drw': return 'prs'; // Darwazi; deprecated 2010-03-11
-      case 'gav': return 'dev'; // Gabutamon; deprecated 2010-03-11
-      case 'gfx': return 'vaj'; // Mangetti Dune !Xung; deprecated 2015-02-12
-      case 'ggn': return 'gvr'; // Eastern Gurung; deprecated 2016-05-30
-      case 'gti': return 'nyc'; // Gbati-ri; deprecated 2015-02-12
-      case 'guv': return 'duz'; // Gey; deprecated 2016-05-30
-      case 'hrr': return 'jal'; // Horuru; deprecated 2012-08-12
-      case 'ibi': return 'opa'; // Ibilo; deprecated 2012-08-12
-      case 'ilw': return 'gal'; // Talur; deprecated 2013-09-10
-      case 'jeg': return 'oyb'; // Jeng; deprecated 2017-02-23
-      case 'kgc': return 'tdf'; // Kasseng; deprecated 2016-05-30
-      case 'kgh': return 'kml'; // Upper Tanudan Kalinga; deprecated 2012-08-12
-      case 'koj': return 'kwv'; // Sara Dunjo; deprecated 2015-02-12
-      case 'krm': return 'bmf'; // Krim; deprecated 2017-02-23
-      case 'ktr': return 'dtp'; // Kota Marudu Tinagas; deprecated 2016-05-30
-      case 'kvs': return 'gdj'; // Kunggara; deprecated 2016-05-30
-      case 'kwq': return 'yam'; // Kwak; deprecated 2015-02-12
-      case 'kxe': return 'tvd'; // Kakihum; deprecated 2015-02-12
-      case 'kzj': return 'dtp'; // Coastal Kadazan; deprecated 2016-05-30
-      case 'kzt': return 'dtp'; // Tambunan Dusun; deprecated 2016-05-30
-      case 'lii': return 'raq'; // Lingkhim; deprecated 2015-02-12
-      case 'lmm': return 'rmx'; // Lamam; deprecated 2014-02-28
-      case 'meg': return 'cir'; // Mea; deprecated 2013-09-10
-      case 'mst': return 'mry'; // Cataelano Mandaya; deprecated 2010-03-11
-      case 'mwj': return 'vaj'; // Maligo; deprecated 2015-02-12
-      case 'myt': return 'mry'; // Sangab Mandaya; deprecated 2010-03-11
-      case 'nad': return 'xny'; // Nijadali; deprecated 2016-05-30
-      case 'ncp': return 'kdz'; // Ndaktup; deprecated 2018-03-08
-      case 'nnx': return 'ngv'; // Ngong; deprecated 2015-02-12
-      case 'nts': return 'pij'; // Natagaimas; deprecated 2016-05-30
-      case 'oun': return 'vaj'; // !O!ung; deprecated 2015-02-12
-      case 'pcr': return 'adx'; // Panang; deprecated 2013-09-10
-      case 'pmc': return 'huw'; // Palumata; deprecated 2016-05-30
-      case 'pmu': return 'phr'; // Mirpur Panjabi; deprecated 2015-02-12
-      case 'ppa': return 'bfy'; // Pao; deprecated 2016-05-30
-      case 'ppr': return 'lcq'; // Piru; deprecated 2013-09-10
-      case 'pry': return 'prt'; // Pray 3; deprecated 2016-05-30
-      case 'puz': return 'pub'; // Purum Naga; deprecated 2014-02-28
-      case 'sca': return 'hle'; // Sansu; deprecated 2012-08-12
-      case 'skk': return 'oyb'; // Sok; deprecated 2017-02-23
-      case 'tdu': return 'dtp'; // Tempasuk Dusun; deprecated 2016-05-30
-      case 'thc': return 'tpo'; // Tai Hang Tong; deprecated 2016-05-30
-      case 'thx': return 'oyb'; // The; deprecated 2015-02-12
-      case 'tie': return 'ras'; // Tingal; deprecated 2011-08-16
-      case 'tkk': return 'twm'; // Takpa; deprecated 2011-08-16
-      case 'tlw': return 'weo'; // South Wemale; deprecated 2012-08-12
-      case 'tmp': return 'tyj'; // Tai Mène; deprecated 2016-05-30
-      case 'tne': return 'kak'; // Tinoc Kallahan; deprecated 2016-05-30
-      case 'tnf': return 'prs'; // Tangshewi; deprecated 2010-03-11
-      case 'tsf': return 'taj'; // Southwestern Tamang; deprecated 2015-02-12
-      case 'uok': return 'ema'; // Uokha; deprecated 2015-02-12
-      case 'xba': return 'cax'; // Kamba (Brazil); deprecated 2016-05-30
-      case 'xia': return 'acn'; // Xiandao; deprecated 2013-09-10
-      case 'xkh': return 'waw'; // Karahawyana; deprecated 2016-05-30
-      case 'xsj': return 'suj'; // Subi; deprecated 2015-02-12
-      case 'ybd': return 'rki'; // Yangbye; deprecated 2012-08-12
-      case 'yma': return 'lrr'; // Yamphe; deprecated 2012-08-12
-      case 'ymt': return 'mtm'; // Mator-Taygi-Karagas; deprecated 2015-02-12
-      case 'yos': return 'zom'; // Yos; deprecated 2013-09-10
-      case 'yuu': return 'yug'; // Yugh; deprecated 2014-02-28
-      default: return languageCode;
-    }
-  }
+  // This map is generated by //flutter/tools/gen_locale.dart
+  // Mappings generated for language subtag registry as of 2019-02-27.
+  static const Map<String, String> _deprecatedLanguageSubtagMap = <String, String>{
+    'in': 'id', // Indonesian; deprecated 1989-01-01
+    'iw': 'he', // Hebrew; deprecated 1989-01-01
+    'ji': 'yi', // Yiddish; deprecated 1989-01-01
+    'jw': 'jv', // Javanese; deprecated 2001-08-13
+    'mo': 'ro', // Moldavian, Moldovan; deprecated 2008-11-22
+    'aam': 'aas', // Aramanik; deprecated 2015-02-12
+    'adp': 'dz', // Adap; deprecated 2015-02-12
+    'aue': 'ktz', // ǂKxʼauǁʼein; deprecated 2015-02-12
+    'ayx': 'nun', // Ayi (China); deprecated 2011-08-16
+    'bgm': 'bcg', // Baga Mboteni; deprecated 2016-05-30
+    'bjd': 'drl', // Bandjigali; deprecated 2012-08-12
+    'ccq': 'rki', // Chaungtha; deprecated 2012-08-12
+    'cjr': 'mom', // Chorotega; deprecated 2010-03-11
+    'cka': 'cmr', // Khumi Awa Chin; deprecated 2012-08-12
+    'cmk': 'xch', // Chimakum; deprecated 2010-03-11
+    'coy': 'pij', // Coyaima; deprecated 2016-05-30
+    'cqu': 'quh', // Chilean Quechua; deprecated 2016-05-30
+    'drh': 'khk', // Darkhat; deprecated 2010-03-11
+    'drw': 'prs', // Darwazi; deprecated 2010-03-11
+    'gav': 'dev', // Gabutamon; deprecated 2010-03-11
+    'gfx': 'vaj', // Mangetti Dune ǃXung; deprecated 2015-02-12
+    'ggn': 'gvr', // Eastern Gurung; deprecated 2016-05-30
+    'gti': 'nyc', // Gbati-ri; deprecated 2015-02-12
+    'guv': 'duz', // Gey; deprecated 2016-05-30
+    'hrr': 'jal', // Horuru; deprecated 2012-08-12
+    'ibi': 'opa', // Ibilo; deprecated 2012-08-12
+    'ilw': 'gal', // Talur; deprecated 2013-09-10
+    'jeg': 'oyb', // Jeng; deprecated 2017-02-23
+    'kgc': 'tdf', // Kasseng; deprecated 2016-05-30
+    'kgh': 'kml', // Upper Tanudan Kalinga; deprecated 2012-08-12
+    'koj': 'kwv', // Sara Dunjo; deprecated 2015-02-12
+    'krm': 'bmf', // Krim; deprecated 2017-02-23
+    'ktr': 'dtp', // Kota Marudu Tinagas; deprecated 2016-05-30
+    'kvs': 'gdj', // Kunggara; deprecated 2016-05-30
+    'kwq': 'yam', // Kwak; deprecated 2015-02-12
+    'kxe': 'tvd', // Kakihum; deprecated 2015-02-12
+    'kzj': 'dtp', // Coastal Kadazan; deprecated 2016-05-30
+    'kzt': 'dtp', // Tambunan Dusun; deprecated 2016-05-30
+    'lii': 'raq', // Lingkhim; deprecated 2015-02-12
+    'lmm': 'rmx', // Lamam; deprecated 2014-02-28
+    'meg': 'cir', // Mea; deprecated 2013-09-10
+    'mst': 'mry', // Cataelano Mandaya; deprecated 2010-03-11
+    'mwj': 'vaj', // Maligo; deprecated 2015-02-12
+    'myt': 'mry', // Sangab Mandaya; deprecated 2010-03-11
+    'nad': 'xny', // Nijadali; deprecated 2016-05-30
+    'ncp': 'kdz', // Ndaktup; deprecated 2018-03-08
+    'nnx': 'ngv', // Ngong; deprecated 2015-02-12
+    'nts': 'pij', // Natagaimas; deprecated 2016-05-30
+    'oun': 'vaj', // ǃOǃung; deprecated 2015-02-12
+    'pcr': 'adx', // Panang; deprecated 2013-09-10
+    'pmc': 'huw', // Palumata; deprecated 2016-05-30
+    'pmu': 'phr', // Mirpur Panjabi; deprecated 2015-02-12
+    'ppa': 'bfy', // Pao; deprecated 2016-05-30
+    'ppr': 'lcq', // Piru; deprecated 2013-09-10
+    'pry': 'prt', // Pray 3; deprecated 2016-05-30
+    'puz': 'pub', // Purum Naga; deprecated 2014-02-28
+    'sca': 'hle', // Sansu; deprecated 2012-08-12
+    'skk': 'oyb', // Sok; deprecated 2017-02-23
+    'tdu': 'dtp', // Tempasuk Dusun; deprecated 2016-05-30
+    'thc': 'tpo', // Tai Hang Tong; deprecated 2016-05-30
+    'thx': 'oyb', // The; deprecated 2015-02-12
+    'tie': 'ras', // Tingal; deprecated 2011-08-16
+    'tkk': 'twm', // Takpa; deprecated 2011-08-16
+    'tlw': 'weo', // South Wemale; deprecated 2012-08-12
+    'tmp': 'tyj', // Tai Mène; deprecated 2016-05-30
+    'tne': 'kak', // Tinoc Kallahan; deprecated 2016-05-30
+    'tnf': 'prs', // Tangshewi; deprecated 2010-03-11
+    'tsf': 'taj', // Southwestern Tamang; deprecated 2015-02-12
+    'uok': 'ema', // Uokha; deprecated 2015-02-12
+    'xba': 'cax', // Kamba (Brazil); deprecated 2016-05-30
+    'xia': 'acn', // Xiandao; deprecated 2013-09-10
+    'xkh': 'waw', // Karahawyana; deprecated 2016-05-30
+    'xsj': 'suj', // Subi; deprecated 2015-02-12
+    'ybd': 'rki', // Yangbye; deprecated 2012-08-12
+    'yma': 'lrr', // Yamphe; deprecated 2012-08-12
+    'ymt': 'mtm', // Mator-Taygi-Karagas; deprecated 2015-02-12
+    'yos': 'zom', // Yos; deprecated 2013-09-10
+    'yuu': 'yug', // Yugh; deprecated 2014-02-28
+  };
 
   /// The script subtag for the locale.
   ///
@@ -322,7 +424,7 @@ class Locale {
   ///
   /// See also:
   ///
-  ///  * [new Locale.fromSubtags], which describes the conventions for creating
+  ///  * [Locale.fromSubtags], which describes the conventions for creating
   ///    [Locale] objects.
   final String scriptCode;
 
@@ -343,24 +445,21 @@ class Locale {
   ///
   /// See also:
   ///
-  ///  * [new Locale.fromSubtags], which describes the conventions for creating
+  ///  * [Locale.fromSubtags], which describes the conventions for creating
   ///    [Locale] objects.
-  String get countryCode => _replaceDeprecatedRegionSubtag(_countryCode);
+  String get countryCode => _deprecatedRegionSubtagMap[_countryCode] ?? _countryCode;
   final String _countryCode;
 
-  static String _replaceDeprecatedRegionSubtag(String regionCode) {
-    // This switch statement is generated by //flutter/tools/gen_locale.dart
-    // Mappings generated for language subtag registry as of 2018-08-08.
-    switch (regionCode) {
-      case 'BU': return 'MM'; // Burma; deprecated 1989-12-05
-      case 'DD': return 'DE'; // German Democratic Republic; deprecated 1990-10-30
-      case 'FX': return 'FR'; // Metropolitan France; deprecated 1997-07-14
-      case 'TP': return 'TL'; // East Timor; deprecated 2002-05-20
-      case 'YD': return 'YE'; // Democratic Yemen; deprecated 1990-08-14
-      case 'ZR': return 'CD'; // Zaire; deprecated 1997-07-14
-      default: return regionCode;
-    }
-  }
+  // This map is generated by //flutter/tools/gen_locale.dart
+  // Mappings generated for language subtag registry as of 2019-02-27.
+  static const Map<String, String> _deprecatedRegionSubtagMap = <String, String>{
+    'BU': 'MM', // Burma; deprecated 1989-12-05
+    'DD': 'DE', // German Democratic Republic; deprecated 1990-10-30
+    'FX': 'FR', // Metropolitan France; deprecated 1997-07-14
+    'TP': 'TL', // East Timor; deprecated 2002-05-20
+    'YD': 'YE', // Democratic Yemen; deprecated 1990-08-14
+    'ZR': 'CD', // Zaire; deprecated 1997-07-14
+  };
 
   @override
   bool operator ==(dynamic other) {
@@ -377,13 +476,38 @@ class Locale {
   @override
   int get hashCode => hashValues(languageCode, scriptCode, countryCode);
 
+  static Locale cachedLocale;
+  static String cachedLocaleString;
+
+  /// Returns a string representing the locale.
+  ///
+  /// This identifier happens to be a valid Unicode Locale Identifier using
+  /// underscores as separator, however it is intended to be used for debugging
+  /// purposes only. For parseable results, use [toLanguageTag] instead.
   @override
-  String toString() {
+  String toString() => _toLanguageTag('_');
+
+  /// Returns a syntactically valid Unicode BCP47 Locale Identifier.
+  ///
+  /// Some examples of such identifiers: "en", "es-419", "hi-Deva-IN" and
+  /// "zh-Hans-CN". See http://www.unicode.org/reports/tr35/ for technical
+  /// details.
+  String toLanguageTag() => _toLanguageTag();
+
+  String _toLanguageTag([String separator = '-']) {
+    if (!identical(cachedLocale, this)) {
+      cachedLocale = this;
+      cachedLocaleString = _rawToString(separator);
+    }
+    return cachedLocaleString;
+  }
+
+  String _rawToString(String separator) {
     final StringBuffer out = StringBuffer(languageCode);
     if (scriptCode != null)
-      out.write('_$scriptCode');
+      out.write('$separator$scriptCode');
     if (_countryCode != null)
-      out.write('_$countryCode');
+      out.write('$separator$countryCode');
     return out.toString();
   }
 }
@@ -392,6 +516,48 @@ class Locale {
 ///
 /// There is a single Window instance in the system, which you can
 /// obtain from the [window] property.
+///
+/// ## Insets and Padding
+///
+/// {@animation 300 300 https://flutter.github.io/assets-for-api-docs/assets/widgets/window_padding.mp4}
+///
+/// In this diagram, the black areas represent system UI that the app cannot
+/// draw over. The red area represents view padding that the application may not
+/// be able to detect gestures in and may not want to draw in. The grey area
+/// represents the system keyboard, which can cover over the bottom view
+/// padding when visible.
+///
+/// The [Window.viewInsets] are the physical pixels which the operating
+/// system reserves for system UI, such as the keyboard, which would fully
+/// obscure any content drawn in that area.
+///
+/// The [Window.viewPadding] are the physical pixels on each side of the display
+/// that may be partially obscured by system UI or by physical intrusions into
+/// the display, such as an overscan region on a television or a "notch" on a
+/// phone. Unlike the insets, these areas may have portions that show the user
+/// application painted pixels without being obscured, such as a notch at the
+/// top of a phone that covers only a subset of the area. Insets, on the other
+/// hand, either partially or fully obscure the window, such as an opaque
+/// keyboard or a partially transluscent statusbar, which cover an area without
+/// gaps.
+///
+/// The [Window.padding] property is computed from both [Window.viewInsets] and
+/// [Window.viewPadding]. It will allow a view inset to consume view padding
+/// where appropriate, such as when a phone's keyboard is covering the bottom
+/// view padding and so "absorbs" it.
+///
+/// Clients that want to position elements relative to the view padding
+/// regardless of the view insets should use the [Window.viewPadding] property,
+/// e.g. if you wish to draw a widget at the center of the screen with respect
+/// to the iPhone "safe area" regardless of whether the keyboard is showing.
+///
+/// [Window.padding] is useful for clients that want to know how much padding
+/// should be accounted for without concern for the current inset(s) state, e.g.
+/// determining whether a gesture should be considered for scrolling purposes.
+/// This value varies based on the current state of the insets. For example, a
+/// visible keyboard will consume all gestures in the bottom part of the
+/// [Window.viewPadding] anyway, so there is no need to account for that in the
+/// [Window.padding], which is always safe to use for such calculations.
 class Window {
   Window._();
 
@@ -448,6 +614,10 @@ class Window {
   ///
   /// When this changes, [onMetricsChanged] is called.
   ///
+  /// The relationship between this [Window.viewInsets], [Window.viewPadding],
+  /// and [Window.padding] are described in more detail in the documentation for
+  /// [Window].
+  ///
   /// See also:
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
@@ -464,7 +634,46 @@ class Window {
   /// intrusions in the display (e.g. overscan regions on television screens or
   /// phone sensor housings).
   ///
+  /// Unlike [Window.padding], this value does not change relative to
+  /// [Window.viewInsets]. For example, on an iPhone X, it will not change in
+  /// response to the soft keyboard being visible or hidden, whereas
+  /// [Window.padding] will.
+  ///
   /// When this changes, [onMetricsChanged] is called.
+  ///
+  /// The relationship between this [Window.viewInsets], [Window.viewPadding],
+  /// and [Window.padding] are described in more detail in the documentation for
+  /// [Window].
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
+  ///  * [MediaQuery.of], a simpler mechanism for the same.
+  ///  * [Scaffold], which automatically applies the padding in material design
+  ///    applications.
+  WindowPadding get viewPadding => _viewPadding;
+  WindowPadding _viewPadding = WindowPadding.zero;
+
+  /// The number of physical pixels on each side of the display rectangle into
+  /// which the application can render, but which may be partially obscured by
+  /// system UI (such as the system notification area), or or physical
+  /// intrusions in the display (e.g. overscan regions on television screens or
+  /// phone sensor housings).
+  ///
+  /// This value is calculated by taking
+  /// `max(0.0, Window.viewPadding - Window.viewInsets)`. This will treat a
+  /// system IME that increases the bottom inset as consuming that much of the
+  /// bottom padding. For example, on an iPhone X, [Window.padding.bottom] is
+  /// the same as [Window.viewPadding.bottom] when the soft keyboard is not
+  /// drawn (to account for the bottom soft button area), but will be `0.0` when
+  /// the soft keyboard is visible.
+  ///
+  /// When this changes, [onMetricsChanged] is called.
+  ///
+  /// The relationship between this [Window.viewInsets], [Window.viewPadding],
+  /// and [Window.padding] are described in more detail in the documentation for
+  /// [Window].
   ///
   /// See also:
   ///
@@ -551,6 +760,22 @@ class Window {
     _onLocaleChangedZone = Zone.current;
   }
 
+  /// The lifecycle state immediately after dart isolate initialization.
+  ///
+  /// This property will not be updated as the lifecycle changes.
+  ///
+  /// It is used to initialize [SchedulerBinding.lifecycleState] at startup
+  /// with any buffered lifecycle state events.
+  String get initialLifecycleState {
+    _initialLifecycleStateAccessed = true;
+    return _initialLifecycleState;
+  }
+  String _initialLifecycleState;
+  /// Tracks if the initial state has been accessed. Once accessed, we
+  /// will stop updating the [initialLifecycleState], as it is not the
+  /// preferred way to access the state.
+  bool _initialLifecycleStateAccessed = false;
+
   /// The system-reported text scale.
   ///
   /// This establishes the text scaling factor to use when rendering text,
@@ -588,6 +813,28 @@ class Window {
   set onTextScaleFactorChanged(VoidCallback callback) {
     _onTextScaleFactorChanged = callback;
     _onTextScaleFactorChangedZone = Zone.current;
+  }
+
+  /// The setting indicating the current brightness mode of the host platform.
+  /// If the platform has no preference, [platformBrightness] defaults to [Brightness.light].
+  Brightness get platformBrightness => _platformBrightness;
+  Brightness _platformBrightness = Brightness.light;
+
+  /// A callback that is invoked whenever [platformBrightness] changes value.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this callback is invoked.
+  VoidCallback get onPlatformBrightnessChanged => _onPlatformBrightnessChanged;
+  VoidCallback _onPlatformBrightnessChanged;
+  Zone _onPlatformBrightnessChangedZone;
+  set onPlatformBrightnessChanged(VoidCallback callback) {
+    _onPlatformBrightnessChanged = callback;
+    _onPlatformBrightnessChangedZone = Zone.current;
   }
 
   /// A callback that is invoked to notify the application that it is an
@@ -638,6 +885,36 @@ class Window {
     _onDrawFrame = callback;
     _onDrawFrameZone = Zone.current;
   }
+
+  /// A callback that is invoked to report the [FrameTiming] of recently
+  /// rasterized frames.
+  ///
+  /// This can be used to see if the application has missed frames (through
+  /// [FrameTiming.buildDuration] and [FrameTiming.rasterDuration]), or high
+  /// latencies (through [FrameTiming.totalSpan]).
+  ///
+  /// Unlike [Timeline], the timing information here is available in the release
+  /// mode (additional to the profile and the debug mode). Hence this can be
+  /// used to monitor the application's performance in the wild.
+  ///
+  /// {@macro dart.ui.TimingsCallback.list}
+  ///
+  /// If this is null, no additional work will be done. If this is not null,
+  /// Flutter spends less than 0.1ms every 1 second to report the timings
+  /// (measured on iPhone6S). The 0.1ms is about 0.6% of 16ms (frame budget for
+  /// 60fps), or 0.01% CPU usage per second.
+  TimingsCallback get onReportTimings => _onReportTimings;
+  TimingsCallback _onReportTimings;
+  Zone _onReportTimingsZone;
+  set onReportTimings(TimingsCallback callback) {
+    if ((callback == null) != (_onReportTimings == null)) {
+      _setNeedsReportTimings(callback != null);
+    }
+    _onReportTimings = callback;
+    _onReportTimingsZone = Zone.current;
+  }
+
+  void _setNeedsReportTimings(bool value) native 'Window_setNeedsReportTimings';
 
   /// A callback that is invoked when pointer data is available.
   ///
@@ -764,7 +1041,7 @@ class Window {
   AccessibilityFeatures get accessibilityFeatures => _accessibilityFeatures;
   AccessibilityFeatures _accessibilityFeatures;
 
-  /// A callback that is invoked when the value of [accessibilityFlags] changes.
+  /// A callback that is invoked when the value of [accessibilityFeatures] changes.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -810,7 +1087,7 @@ class Window {
     final String error =
         _sendPlatformMessage(name, _zonedPlatformMessageResponseCallback(callback), data);
     if (error != null)
-      throw new Exception(error);
+      throw Exception(error);
   }
   String _sendPlatformMessage(String name,
                               PlatformMessageResponseCallback callback,
@@ -861,6 +1138,9 @@ class Window {
 /// It is not possible to enable these settings from Flutter, instead they are
 /// used by the platform to indicate that additional accessibility features are
 /// enabled.
+//
+// When changes are made to this class, the equivalent APIs in each of the
+// embedders *must* be updated.
 class AccessibilityFeatures {
   const AccessibilityFeatures._(this._index);
 
@@ -924,7 +1204,22 @@ class AccessibilityFeatures {
   int get hashCode => _index.hashCode;
 }
 
+/// Describes the contrast of a theme or color palette.
+enum Brightness {
+  /// The color is dark and will require a light text color to achieve readable
+  /// contrast.
+  ///
+  /// For example, the color might be dark grey, requiring white text.
+  dark,
+
+  /// The color is light and will require a dark text color to achieve readable
+  /// contrast.
+  ///
+  /// For example, the color might be bright white, requiring black text.
+  light,
+}
+
 /// The [Window] singleton. This object exposes the size of the display, the
 /// core scheduler API, the input event callback, the graphics drawing API, and
 /// other such core services.
-final Window window = new Window._();
+final Window window = Window._();

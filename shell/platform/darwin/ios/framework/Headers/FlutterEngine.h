@@ -50,6 +50,10 @@ FLUTTER_EXPORT
  * A newly initialized engine will not run the `FlutterDartProject` until either
  * `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI:` is called.
  *
+ * FlutterEngine created with this method will have allowHeadlessExecution set to `YES`.
+ * This means that the engine will continue to run regardless of whether a `FlutterViewController`
+ * is attached to it or not, until `-destroyContext:` is called or the process finishes.
+ *
  * @param labelPrefix The label prefix used to identify threads for this instance. Should
  *   be unique across FlutterEngine instances, and is used in instrumentation to label
  *   the threads used by this FlutterEngine.
@@ -120,6 +124,42 @@ FLUTTER_EXPORT
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)uri;
 
 /**
+ * Destroy running context for an engine.
+ *
+ * This method can be used to force the FlutterEngine object to release all resources.
+ * After sending this message, the object will be in an unusable state until it is deallocated.
+ * Accessing properties or sending messages to it will result in undefined behavior or runtime
+ * errors.
+ */
+- (void)destroyContext;
+
+/**
+ * Ensures that Flutter will generate a semantics tree.
+ *
+ * This is enabled by default if certain accessibility services are turned on by
+ * the user, or when using a Simulator. This method allows a user to turn
+ * semantics on when they would not ordinarily be generated and the performance
+ * overhead is not a concern, e.g. for UI testing. Note that semantics should
+ * never be programmatically turned off, as it would potentially disable
+ * accessibility services an end user has requested.
+ *
+ * This method must only be called after launching the engine via
+ * `-runWithEntrypoint:` or `-runWithEntryPoint:libraryURI`.
+ *
+ * Although this method returns synchronously, it does not guarantee that a
+ * semantics tree is actually available when the method returns. It
+ * synchronously ensures that the next frame the Flutter framework creates will
+ * have a semantics tree.
+ *
+ * You can subscribe to semantics updates via `NSNotificationCenter` by adding
+ * an observer for the name `FlutterSemanticsUpdateNotification`.  The `object`
+ * parameter will be the `FlutterViewController` associated with the semantics
+ * update.  This will asynchronously fire after a semantics tree has actually
+ * built (which may be some time after the frame has been rendered).
+ */
+- (void)ensureSemanticsEnabled;
+
+/**
  * Sets the `FlutterViewController` for this instance.  The FlutterEngine must be
  * running (e.g. a successful call to `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI`)
  * before calling this method. Callers may pass nil to remove the viewController
@@ -187,6 +227,15 @@ FLUTTER_EXPORT
  * clock format and text scale.
  */
 @property(nonatomic, readonly) FlutterBasicMessageChannel* settingsChannel;
+
+/**
+ * The `NSURL` of the observatory for the service isolate.
+ *
+ * This is only set in debug and profile runtime modes, and only after the
+ * observatory service is ready. In release mode or before the observatory has
+ * started, it returns `nil`.
+ */
+@property(nonatomic, readonly) NSURL* observatoryUrl;
 
 @end
 

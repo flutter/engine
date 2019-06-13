@@ -18,6 +18,15 @@
 @class FlutterEngine;
 
 /**
+ * The name used for semantic update notifications via `NSNotificationCenter`.
+ *
+ * The object passed as the sender is the `FlutterViewController` associated
+ * with the update.
+ */
+FLUTTER_EXPORT
+extern NSNotificationName const FlutterSemanticsUpdateNotification;
+
+/**
  * A `UIViewController` implementation for Flutter views.
  *
  * Dart execution, channel communication, texture registration, and plugin registration
@@ -110,7 +119,7 @@ FLUTTER_EXPORT
 
 /**
  * Instructs the Flutter Navigator (if any) to push a route on to the navigation
- * stack.  The setInitialRoute method should be prefered if this is called before the
+ * stack.  The setInitialRoute method should be preferred if this is called before the
  * FlutterViewController has come into view.
  *
  * @param route The name of the route to push to the navigation stack.

@@ -12,14 +12,15 @@
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterBinaryMessenger.h"
 
-namespace shell {
+namespace flutter {
 
 class PlatformMessageRouter {
  public:
   PlatformMessageRouter();
   ~PlatformMessageRouter();
 
-  void HandlePlatformMessage(fml::RefPtr<blink::PlatformMessage> message) const;
+  void HandlePlatformMessage(
+      fml::RefPtr<flutter::PlatformMessage> message) const;
 
   void SetMessageHandler(const std::string& channel,
                          FlutterBinaryMessageHandler handler);
@@ -31,6 +32,6 @@ class PlatformMessageRouter {
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformMessageRouter);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_H_

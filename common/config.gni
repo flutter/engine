@@ -6,14 +6,15 @@ if (is_android) {
   import("//build/config/android/config.gni")
 }
 
+if (is_fuchsia) {
+  import("//build/fuchsia/sdk.gni")
+}
+
 if (target_cpu == "arm" || target_cpu == "arm64") {
   import("//build/config/arm.gni")
 }
 
 declare_args() {
-  # Enable ahead-of-time compilation on platforms where AOT is optional.
-  flutter_aot = false
-
   # The runtime mode ("debug", "profile", "release", "dynamic_profile", or "dynamic_release")
   flutter_runtime_mode = "debug"
 }
@@ -42,6 +43,6 @@ if (flutter_runtime_mode == "debug") {
   feature_defines_list += [ "FLUTTER_RUNTIME_MODE=0" ]
 }
 
-if (flutter_aot) {
-  feature_defines_list += [ "FLUTTER_AOT=1" ]
+if (is_fuchsia && using_fuchsia_sdk) {
+  feature_defines_list += [ "FUCHSIA_SDK=1" ]
 }

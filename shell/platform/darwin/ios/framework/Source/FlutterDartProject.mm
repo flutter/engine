@@ -15,10 +15,18 @@
 #include "flutter/shell/platform/darwin/common/command_line.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 
+extern "C" {
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+// Used for debugging dart:* sources.
+extern const uint8_t kPlatformStrongDill[];
+extern const intptr_t kPlatformStrongDillSize;
+#endif
+}
+
 static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
 
-static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
-  auto command_line = shell::CommandLineFromNSProcessInfo();
+static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
+  auto command_line = flutter::CommandLineFromNSProcessInfo();
 
   // Precedence:
   // 1. Settings from the specified NSBundle.
@@ -37,7 +45,7 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
     bundle = mainBundle;
   }
 
-  auto settings = shell::SettingsFromCommandLine(command_line);
+  auto settings = flutter::SettingsFromCommandLine(command_line);
 
   settings.task_observer_add = [](intptr_t key, fml::closure callback) {
     fml::MessageLoop::GetCurrent().AddTaskObserver(key, std::move(callback));
@@ -58,7 +66,7 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
     }
   }
 
-  if (blink::DartVM::IsRunningPrecompiledCode()) {
+  if (flutter::DartVM::IsRunningPrecompiledCode()) {
     if (hasExplicitBundle) {
       NSString* executablePath = bundle.executablePath;
       if ([[NSFileManager defaultManager] fileExistsAtPath:executablePath]) {
@@ -110,7 +118,7 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
       // Check if there is an application kernel snapshot in the assets directory we could
       // potentially use.  Looking for the snapshot makes sense only if we have a VM that can use
       // it.
-      if (!blink::DartVM::IsRunningPrecompiledCode()) {
+      if (!flutter::DartVM::IsRunningPrecompiledCode()) {
         NSURL* applicationKernelSnapshotURL =
             [NSURL URLWithString:@(kApplicationKernelSnapshotFileName)
                    relativeToURL:[NSURL fileURLWithPath:assetsPath]];
@@ -123,12 +131,23 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
     }
   }
 
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  // There are no ownership concerns here as all mappings are owned by the
+  // embedder and not the engine.
+  auto make_mapping_callback = [](const uint8_t* mapping, size_t size) {
+    return [mapping, size]() { return std::make_unique<fml::NonOwnedMapping>(mapping, size); };
+  };
+
+  settings.dart_library_sources_kernel =
+      make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
+#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+
   return settings;
 }
 
 @implementation FlutterDartProject {
   fml::scoped_nsobject<NSBundle> _precompiledDartBundle;
-  blink::Settings _settings;
+  flutter::Settings _settings;
 }
 
 #pragma mark - Override base class designated initializers
@@ -152,21 +171,21 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 
 #pragma mark - Settings accessors
 
-- (const blink::Settings&)settings {
+- (const flutter::Settings&)settings {
   return _settings;
 }
 
-- (shell::RunConfiguration)runConfiguration {
+- (flutter::RunConfiguration)runConfiguration {
   return [self runConfigurationForEntrypoint:nil];
 }
 
-- (shell::RunConfiguration)runConfigurationForEntrypoint:(NSString*)entrypointOrNil {
+- (flutter::RunConfiguration)runConfigurationForEntrypoint:(NSString*)entrypointOrNil {
   return [self runConfigurationForEntrypoint:entrypointOrNil libraryOrNil:nil];
 }
 
-- (shell::RunConfiguration)runConfigurationForEntrypoint:(NSString*)entrypointOrNil
-                                            libraryOrNil:(NSString*)dartLibraryOrNil {
-  shell::RunConfiguration config = shell::RunConfiguration::InferFromSettings(_settings);
+- (flutter::RunConfiguration)runConfigurationForEntrypoint:(NSString*)entrypointOrNil
+                                              libraryOrNil:(NSString*)dartLibraryOrNil {
+  auto config = flutter::RunConfiguration::InferFromSettings(_settings);
   if (dartLibraryOrNil && entrypointOrNil) {
     config.SetEntrypointAndLibrary(std::string([entrypointOrNil UTF8String]),
                                    std::string([dartLibraryOrNil UTF8String]));
@@ -180,6 +199,12 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 #pragma mark - Assets-related utilities
 
 + (NSString*)flutterAssetsName:(NSBundle*)bundle {
+  if (bundle == nil) {
+    bundle = [NSBundle bundleWithIdentifier:[FlutterDartProject defaultBundleIdentifier]];
+  }
+  if (bundle == nil) {
+    bundle = [NSBundle mainBundle];
+  }
   NSString* flutterAssetsName = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
   if (flutterAssetsName == nil) {
     flutterAssetsName = @"Frameworks/App.framework/flutter_assets";
@@ -188,12 +213,23 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset {
-  NSString* flutterAssetsName = [FlutterDartProject flutterAssetsName:[NSBundle mainBundle]];
+  return [self lookupKeyForAsset:asset fromBundle:nil];
+}
+
++ (NSString*)lookupKeyForAsset:(NSString*)asset fromBundle:(NSBundle*)bundle {
+  NSString* flutterAssetsName = [FlutterDartProject flutterAssetsName:bundle];
   return [NSString stringWithFormat:@"%@/%@", flutterAssetsName, asset];
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
-  return [self lookupKeyForAsset:[NSString stringWithFormat:@"packages/%@/%@", package, asset]];
+  return [self lookupKeyForAsset:asset fromPackage:package fromBundle:nil];
+}
+
++ (NSString*)lookupKeyForAsset:(NSString*)asset
+                   fromPackage:(NSString*)package
+                    fromBundle:(NSBundle*)bundle {
+  return [self lookupKeyForAsset:[NSString stringWithFormat:@"packages/%@/%@", package, asset]
+                      fromBundle:bundle];
 }
 
 + (NSString*)defaultBundleIdentifier {

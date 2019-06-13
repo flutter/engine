@@ -12,32 +12,10 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/common/surface.h"
+#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 
-namespace shell {
-
-class GPUSurfaceGLDelegate {
- public:
-  virtual bool GLContextMakeCurrent() = 0;
-
-  virtual bool GLContextClearCurrent() = 0;
-
-  virtual bool GLContextPresent() = 0;
-
-  virtual intptr_t GLContextFBO() const = 0;
-
-  virtual bool GLContextFBOResetAfterPresent() const;
-
-  virtual bool UseOffscreenSurface() const;
-
-  virtual SkMatrix GLContextSurfaceTransformation() const;
-
-  virtual flow::ExternalViewEmbedder* GetExternalViewEmbedder();
-
-  using GLProcResolver =
-      std::function<void* /* proc name */ (const char* /* proc address */)>;
-  virtual GLProcResolver GetGLProcResolver() const;
-};
+namespace flutter {
 
 class GPUSurfaceGL : public Surface {
  public:
@@ -48,27 +26,26 @@ class GPUSurfaceGL : public Surface {
 
   ~GPUSurfaceGL() override;
 
-  // |shell::Surface|
+  // |Surface|
   bool IsValid() override;
 
-  // |shell::Surface|
+  // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
 
-  // |shell::Surface|
+  // |Surface|
   SkMatrix GetRootTransformation() const override;
 
-  // |shell::Surface|
+  // |Surface|
   GrContext* GetContext() override;
 
-  // |shell::Surface|
-  flow::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+  // |Surface|
+  flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
-  // |shell::Surface|
+  // |Surface|
   bool MakeRenderContextCurrent() override;
 
  private:
   GPUSurfaceGLDelegate* delegate_;
-  GPUSurfaceGLDelegate::GLProcResolver proc_resolver_;
   sk_sp<GrContext> context_;
   sk_sp<SkSurface> onscreen_surface_;
   sk_sp<SkSurface> offscreen_surface_;
@@ -84,11 +61,9 @@ class GPUSurfaceGL : public Surface {
 
   bool PresentSurface(SkCanvas* canvas);
 
-  bool IsProcResolverOpenGLES();
-
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGL);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_GPU_GPU_SURFACE_GL_H_

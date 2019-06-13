@@ -11,20 +11,15 @@
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/skia_gpu_object.h"
 
-namespace flow {
+namespace flutter {
 
 class PictureLayer : public Layer {
  public:
-  PictureLayer();
+  PictureLayer(const SkPoint& offset,
+               SkiaGPUObject<SkPicture> picture,
+               bool is_complex,
+               bool will_change);
   ~PictureLayer() override;
-
-  void set_offset(const SkPoint& offset) { offset_ = offset; }
-  void set_picture(SkiaGPUObject<SkPicture> picture) {
-    picture_ = std::move(picture);
-  }
-
-  void set_is_complex(bool value) { is_complex_ = value; }
-  void set_will_change(bool value) { will_change_ = value; }
 
   SkPicture* picture() const { return picture_.get().get(); }
 
@@ -43,6 +38,6 @@ class PictureLayer : public Layer {
   FML_DISALLOW_COPY_AND_ASSIGN(PictureLayer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_PICTURE_LAYER_H_

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:collection/collection.dart' show MapEquality;
 
 // This script verifies that the release binaries only export the expected
 // symbols.
@@ -13,22 +14,30 @@ import 'package:path/path.dart' as p;
 // Symbols from the Flutter namespace. These are either of type
 // "(__DATA,__common)" or "(__DATA,__objc_data)".
 
-/// Takes the path to the out directory as argument.
+/// Takes the path to the out directory as the first argument, and the path to
+/// the buildtools directory as the second argument.
+///
+/// If the second argument is not specified, it is assumed that it is the parent
+/// of the out directory (for backwards compatibility).
 void main(List<String> arguments) {
-  assert(arguments.length == 1);
+  assert(arguments.length == 2 || arguments.length == 1);
   final String outPath = arguments.first;
+  final String buildToolsPath = arguments.length == 1
+      ? p.join(p.dirname(outPath), 'buildtools')
+      : arguments[1];
+
   String platform;
   if (Platform.isLinux) {
     platform = 'linux-x64';
   } else if (Platform.isMacOS) {
     platform = 'mac-x64';
   } else {
-    throw new UnimplementedError('Script only support running on Linux or MacOS.');
+    throw UnimplementedError('Script only support running on Linux or MacOS.');
   }
-  final String nmPath = p.join(p.dirname(outPath), 'buildtools', platform, 'clang', 'bin', 'llvm-nm');
+  final String nmPath = p.join(buildToolsPath, platform, 'clang', 'bin', 'llvm-nm');
   assert(new Directory(outPath).existsSync());
 
-  final Iterable<String> releaseBuilds = new Directory(outPath).listSync()
+  final Iterable<String> releaseBuilds = Directory(outPath).listSync()
       .where((FileSystemEntity entity) => entity is Directory)
       .map<String>((FileSystemEntity dir) => p.basename(dir.path))
       .where((String s) => s.contains('_release'));
@@ -60,7 +69,7 @@ int _checkIos(String outPath, String nmPath, Iterable<String> builds) {
       continue;
     }
     final Iterable<NmEntry> unexpectedEntries = NmEntry.parse(nmResult.stdout).where((NmEntry entry) {
-      return !((entry.type == '(__DATA,__common)' && entry.name.startsWith('_Flutter'))
+      return !(((entry.type == '(__DATA,__common)' || entry.type == '(__DATA,__const)') && entry.name.startsWith('_Flutter'))
           || (entry.type == '(__DATA,__objc_data)'
               && (entry.name.startsWith('_OBJC_METACLASS_\$_Flutter') || entry.name.startsWith('_OBJC_CLASS_\$_Flutter'))));
     });
@@ -92,16 +101,19 @@ int _checkAndroid(String outPath, String nmPath, Iterable<String> builds) {
       continue;
     }
     final Iterable<NmEntry> entries = NmEntry.parse(nmResult.stdout);
-    if (entries.isEmpty) {
-      print('ERROR: $libFlutter exports no symbol');
-      print(' Expected exactly one symbol "JNI_OnLoad" of type "T", but got none.');
-      failures++;
-    } else if (entries.length > 1 || entries.first.type != 'T' || entries.first.name != 'JNI_OnLoad') {
-      print('ERROR: $libFlutter exports unexpected symbols.');
-      print('  Expected exactly one symbol "JNI_OnLoad" of type "T", but got instead:');
-      print(entries.fold<String>('', (String previous, NmEntry entry) {
-        return '${previous == '' ? '' : '$previous\n'}     ${entry.type} ${entry.name}';
-      }));
+    final Map<String, String> entryMap = Map<String, String>.fromIterable(
+        entries,
+        key: (dynamic entry) => entry.name,
+        value: (dynamic entry) => entry.type);
+    final Map<String, String> expectedSymbols = <String, String>{
+      'JNI_OnLoad': 'T',
+      '_binary_icudtl_dat_size': 'A',
+      '_binary_icudtl_dat_start': 'D',
+    };
+    if (!const MapEquality<String, String>().equals(entryMap, expectedSymbols)) {
+      print('ERROR: $libFlutter exports the wrong symbols');
+      print(' Expected $expectedSymbols');
+      print(' Library has $entryMap.');
       failures++;
     } else {
       print('OK: $libFlutter');
@@ -120,7 +132,7 @@ class NmEntry {
   static Iterable<NmEntry> parse(String stdout) {
     return LineSplitter.split(stdout).map((String line) {
       final List<String> parts = line.split(' ');
-      return new NmEntry._(parts[0], parts[1], parts.last);
+      return NmEntry._(parts[0], parts[1], parts.last);
     });
   }
 }

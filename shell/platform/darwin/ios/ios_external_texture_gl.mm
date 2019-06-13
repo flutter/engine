@@ -12,7 +12,7 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 
-namespace shell {
+namespace flutter {
 
 IOSExternalTextureGL::IOSExternalTextureGL(int64_t textureId,
                                            NSObject<FlutterTexture>* externalTexture)
@@ -22,7 +22,7 @@ IOSExternalTextureGL::IOSExternalTextureGL(int64_t textureId,
 
 IOSExternalTextureGL::~IOSExternalTextureGL() = default;
 
-void IOSExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds, bool freeze) {
+void IOSExternalTextureGL::EnsureTextureCacheExists() {
   if (!cache_ref_) {
     CVOpenGLESTextureCacheRef cache;
     CVReturn err = CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, NULL,
@@ -34,22 +34,36 @@ void IOSExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds, bool fr
       return;
     }
   }
-  fml::CFRef<CVPixelBufferRef> bufferRef;
+}
+
+void IOSExternalTextureGL::CreateTextureFromPixelBuffer() {
+  if (buffer_ref_ == nullptr) {
+    return;
+  }
+  CVOpenGLESTextureRef texture;
+  CVReturn err = CVOpenGLESTextureCacheCreateTextureFromImage(
+      kCFAllocatorDefault, cache_ref_, buffer_ref_, nullptr, GL_TEXTURE_2D, GL_RGBA,
+      static_cast<int>(CVPixelBufferGetWidth(buffer_ref_)),
+      static_cast<int>(CVPixelBufferGetHeight(buffer_ref_)), GL_BGRA, GL_UNSIGNED_BYTE, 0,
+      &texture);
+  if (err != noErr) {
+    FML_LOG(WARNING) << "Could not create texture from pixel buffer: " << err;
+  } else {
+    texture_ref_.Reset(texture);
+  }
+}
+
+void IOSExternalTextureGL::Paint(SkCanvas& canvas,
+                                 const SkRect& bounds,
+                                 bool freeze,
+                                 GrContext* context) {
+  EnsureTextureCacheExists();
   if (!freeze) {
-    bufferRef.Reset([external_texture_ copyPixelBuffer]);
-    if (bufferRef != nullptr) {
-      CVOpenGLESTextureRef texture;
-      CVReturn err = CVOpenGLESTextureCacheCreateTextureFromImage(
-          kCFAllocatorDefault, cache_ref_, bufferRef, nullptr, GL_TEXTURE_2D, GL_RGBA,
-          static_cast<int>(CVPixelBufferGetWidth(bufferRef)),
-          static_cast<int>(CVPixelBufferGetHeight(bufferRef)), GL_BGRA, GL_UNSIGNED_BYTE, 0,
-          &texture);
-      texture_ref_.Reset(texture);
-      if (err != noErr) {
-        FML_LOG(WARNING) << "Could not create texture from pixel buffer: " << err;
-        return;
-      }
+    auto pixelBuffer = [external_texture_ copyPixelBuffer];
+    if (pixelBuffer) {
+      buffer_ref_.Reset(pixelBuffer);
     }
+    CreateTextureFromPixelBuffer();
   }
   if (!texture_ref_) {
     return;
@@ -58,14 +72,21 @@ void IOSExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds, bool fr
                                  CVOpenGLESTextureGetName(texture_ref_), GL_RGBA8_OES};
   GrBackendTexture backendTexture(bounds.width(), bounds.height(), GrMipMapped::kNo, textureInfo);
   sk_sp<SkImage> image =
-      SkImage::MakeFromTexture(canvas.getGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin,
+      SkImage::MakeFromTexture(context, backendTexture, kTopLeft_GrSurfaceOrigin,
                                kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
+  FML_DCHECK(image) << "Failed to create SkImage from Texture.";
   if (image) {
     canvas.drawImage(image, bounds.x(), bounds.y());
   }
 }
 
-void IOSExternalTextureGL::OnGrContextCreated() {}
+void IOSExternalTextureGL::OnGrContextCreated() {
+  // Re-create texture from pixel buffer that was saved before
+  // OnGrContextDestroyed gets called.
+  // https://github.com/flutter/flutter/issues/30491
+  EnsureTextureCacheExists();
+  CreateTextureFromPixelBuffer();
+}
 
 void IOSExternalTextureGL::OnGrContextDestroyed() {
   texture_ref_.Reset(nullptr);
@@ -74,4 +95,4 @@ void IOSExternalTextureGL::OnGrContextDestroyed() {
 
 void IOSExternalTextureGL::MarkNewFrameAvailable() {}
 
-}  // namespace shell
+}  // namespace flutter

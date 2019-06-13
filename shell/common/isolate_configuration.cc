@@ -7,14 +7,14 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/runtime/dart_vm.h"
 
-namespace shell {
+namespace flutter {
 
 IsolateConfiguration::IsolateConfiguration() = default;
 
 IsolateConfiguration::~IsolateConfiguration() = default;
 
-bool IsolateConfiguration::PrepareIsolate(blink::DartIsolate& isolate) {
-  if (isolate.GetPhase() != blink::DartIsolate::Phase::LibrariesSetup) {
+bool IsolateConfiguration::PrepareIsolate(DartIsolate& isolate) {
+  if (isolate.GetPhase() != DartIsolate::Phase::LibrariesSetup) {
     FML_DLOG(ERROR)
         << "Isolate was in incorrect phase to be prepared for running.";
     return false;
@@ -27,8 +27,8 @@ class AppSnapshotIsolateConfiguration final : public IsolateConfiguration {
  public:
   AppSnapshotIsolateConfiguration() = default;
 
-  // |shell::IsolateConfiguration|
-  bool DoPrepareIsolate(blink::DartIsolate& isolate) override {
+  // |IsolateConfiguration|
+  bool DoPrepareIsolate(DartIsolate& isolate) override {
     return isolate.PrepareForRunningFromPrecompiledCode();
   }
 
@@ -38,19 +38,19 @@ class AppSnapshotIsolateConfiguration final : public IsolateConfiguration {
 
 class KernelIsolateConfiguration : public IsolateConfiguration {
  public:
-  KernelIsolateConfiguration(std::unique_ptr<fml::Mapping> kernel)
+  KernelIsolateConfiguration(std::unique_ptr<const fml::Mapping> kernel)
       : kernel_(std::move(kernel)) {}
 
-  // |shell::IsolateConfiguration|
-  bool DoPrepareIsolate(blink::DartIsolate& isolate) override {
-    if (blink::DartVM::IsRunningPrecompiledCode()) {
+  // |IsolateConfiguration|
+  bool DoPrepareIsolate(DartIsolate& isolate) override {
+    if (DartVM::IsRunningPrecompiledCode()) {
       return false;
     }
     return isolate.PrepareForRunningFromKernel(std::move(kernel_));
   }
 
  private:
-  std::unique_ptr<fml::Mapping> kernel_;
+  std::unique_ptr<const fml::Mapping> kernel_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(KernelIsolateConfiguration);
 };
@@ -58,12 +58,13 @@ class KernelIsolateConfiguration : public IsolateConfiguration {
 class KernelListIsolateConfiguration final : public IsolateConfiguration {
  public:
   KernelListIsolateConfiguration(
-      std::vector<std::future<std::unique_ptr<fml::Mapping>>> kernel_pieces)
+      std::vector<std::future<std::unique_ptr<const fml::Mapping>>>
+          kernel_pieces)
       : kernel_pieces_(std::move(kernel_pieces)) {}
 
-  // |shell::IsolateConfiguration|
-  bool DoPrepareIsolate(blink::DartIsolate& isolate) override {
-    if (blink::DartVM::IsRunningPrecompiledCode()) {
+  // |IsolateConfiguration|
+  bool DoPrepareIsolate(DartIsolate& isolate) override {
+    if (DartVM::IsRunningPrecompiledCode()) {
       return false;
     }
 
@@ -80,7 +81,7 @@ class KernelListIsolateConfiguration final : public IsolateConfiguration {
   }
 
  private:
-  std::vector<std::future<std::unique_ptr<fml::Mapping>>> kernel_pieces_;
+  std::vector<std::future<std::unique_ptr<const fml::Mapping>>> kernel_pieces_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(KernelListIsolateConfiguration);
 };
@@ -112,15 +113,15 @@ static std::vector<std::string> ParseKernelListPaths(
   return kernel_pieces_paths;
 }
 
-static std::vector<std::future<std::unique_ptr<fml::Mapping>>>
+static std::vector<std::future<std::unique_ptr<const fml::Mapping>>>
 PrepareKernelMappings(std::vector<std::string> kernel_pieces_paths,
-                      std::shared_ptr<blink::AssetManager> asset_manager,
+                      std::shared_ptr<AssetManager> asset_manager,
                       fml::RefPtr<fml::TaskRunner> io_worker) {
   FML_DCHECK(asset_manager);
-  std::vector<std::future<std::unique_ptr<fml::Mapping>>> fetch_futures;
+  std::vector<std::future<std::unique_ptr<const fml::Mapping>>> fetch_futures;
 
   for (const auto& kernel_pieces_path : kernel_pieces_paths) {
-    std::promise<std::unique_ptr<fml::Mapping>> fetch_promise;
+    std::promise<std::unique_ptr<const fml::Mapping>> fetch_promise;
     fetch_futures.push_back(fetch_promise.get_future());
     auto fetch_task =
         fml::MakeCopyable([asset_manager, kernel_pieces_path,
@@ -141,16 +142,20 @@ PrepareKernelMappings(std::vector<std::string> kernel_pieces_paths,
 }
 
 std::unique_ptr<IsolateConfiguration> IsolateConfiguration::InferFromSettings(
-    const blink::Settings& settings,
-    std::shared_ptr<blink::AssetManager> asset_manager,
+    const Settings& settings,
+    std::shared_ptr<AssetManager> asset_manager,
     fml::RefPtr<fml::TaskRunner> io_worker) {
   // Running in AOT mode.
-  if (blink::DartVM::IsRunningPrecompiledCode()) {
+  if (DartVM::IsRunningPrecompiledCode()) {
     return CreateForAppSnapshot();
   }
 
   if (!asset_manager) {
     return nullptr;
+  }
+
+  if (settings.application_kernels) {
+    return CreateForKernelList(settings.application_kernels());
   }
 
   if (settings.application_kernel_asset.empty() &&
@@ -192,15 +197,15 @@ IsolateConfiguration::CreateForAppSnapshot() {
 }
 
 std::unique_ptr<IsolateConfiguration> IsolateConfiguration::CreateForKernel(
-    std::unique_ptr<fml::Mapping> kernel) {
+    std::unique_ptr<const fml::Mapping> kernel) {
   return std::make_unique<KernelIsolateConfiguration>(std::move(kernel));
 }
 
 std::unique_ptr<IsolateConfiguration> IsolateConfiguration::CreateForKernelList(
-    std::vector<std::unique_ptr<fml::Mapping>> kernel_pieces) {
-  std::vector<std::future<std::unique_ptr<fml::Mapping>>> pieces;
+    std::vector<std::unique_ptr<const fml::Mapping>> kernel_pieces) {
+  std::vector<std::future<std::unique_ptr<const fml::Mapping>>> pieces;
   for (auto& piece : kernel_pieces) {
-    std::promise<std::unique_ptr<fml::Mapping>> promise;
+    std::promise<std::unique_ptr<const fml::Mapping>> promise;
     pieces.push_back(promise.get_future());
     promise.set_value(std::move(piece));
   }
@@ -208,9 +213,10 @@ std::unique_ptr<IsolateConfiguration> IsolateConfiguration::CreateForKernelList(
 }
 
 std::unique_ptr<IsolateConfiguration> IsolateConfiguration::CreateForKernelList(
-    std::vector<std::future<std::unique_ptr<fml::Mapping>>> kernel_pieces) {
+    std::vector<std::future<std::unique_ptr<const fml::Mapping>>>
+        kernel_pieces) {
   return std::make_unique<KernelListIsolateConfiguration>(
       std::move(kernel_pieces));
 }
 
-}  // namespace shell
+}  // namespace flutter

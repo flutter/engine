@@ -31,11 +31,10 @@ def main():
     '-C',
     repository,
     'rev-parse',
-    '--short',
     'HEAD',
   ])
 
-  print version.strip()
+  print (version.strip())
 
   return 0
 

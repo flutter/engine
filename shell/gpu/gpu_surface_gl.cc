@@ -4,16 +4,14 @@
 
 #include "gpu_surface_gl.h"
 
-#include "flutter/fml/arraysize.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/size.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/persistent_cache.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
-#include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
-#include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
 // These are common defines present on all OpenGL headers. However, we don't
 // want to perform GL header reasolution on each platform we support. So just
@@ -22,9 +20,8 @@
 #define GPU_GL_RGBA8 0x8058
 #define GPU_GL_RGBA4 0x8056
 #define GPU_GL_RGB565 0x8D62
-#define GPU_GL_VERSION 0x1F02
 
-namespace shell {
+namespace flutter {
 
 // Default maximum number of budgeted resources in the cache.
 static const int kGrCacheMaxCount = 8192;
@@ -33,9 +30,6 @@ static const int kGrCacheMaxCount = 8192;
 // cache.
 static const size_t kGrCacheMaxByteSize = 512 * (1 << 20);
 
-// Version string prefix that identifies an OpenGL ES implementation.
-static const char kGLESVersionPrefix[] = "OpenGL ES";
-
 GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate)
     : delegate_(delegate), weak_factory_(this) {
   if (!delegate_->GLContextMakeCurrent()) {
@@ -43,8 +37,6 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate)
         << "Could not make the context current to setup the gr context.";
     return;
   }
-
-  proc_resolver_ = delegate_->GetGLProcResolver();
 
   GrContextOptions options;
 
@@ -60,26 +52,7 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate)
   // A similar work-around is also used in shell/common/io_manager.cc.
   options.fDisableGpuYUVConversion = true;
 
-  sk_sp<const GrGLInterface> interface;
-
-  if (proc_resolver_ == nullptr) {
-    interface = GrGLMakeNativeInterface();
-  } else {
-    auto gl_get_proc = [](void* context,
-                          const char gl_proc_name[]) -> GrGLFuncPtr {
-      return reinterpret_cast<GrGLFuncPtr>(
-          reinterpret_cast<GPUSurfaceGL*>(context)->proc_resolver_(
-              gl_proc_name));
-    };
-
-    if (IsProcResolverOpenGLES()) {
-      interface = GrGLMakeAssembledGLESInterface(this, gl_get_proc);
-    } else {
-      interface = GrGLMakeAssembledGLInterface(this, gl_get_proc);
-    }
-  }
-
-  auto context = GrContext::MakeGL(interface, options);
+  auto context = GrContext::MakeGL(delegate_->GetGLInterface(), options);
 
   if (context == nullptr) {
     FML_LOG(ERROR) << "Failed to setup Skia Gr context.";
@@ -104,8 +77,6 @@ GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrContext> gr_context,
         << "Could not make the context current to setup the gr context.";
     return;
   }
-
-  proc_resolver_ = delegate_->GetGLProcResolver();
 
   delegate_->GLContextClearCurrent();
 
@@ -133,21 +104,7 @@ GPUSurfaceGL::~GPUSurfaceGL() {
   delegate_->GLContextClearCurrent();
 }
 
-bool GPUSurfaceGL::IsProcResolverOpenGLES() {
-  using GLGetStringProc = const char* (*)(uint32_t);
-  GLGetStringProc gl_get_string =
-      reinterpret_cast<GLGetStringProc>(proc_resolver_("glGetString"));
-  FML_CHECK(gl_get_string)
-      << "The GL proc resolver could not resolve glGetString";
-  const char* gl_version_string = gl_get_string(GPU_GL_VERSION);
-  FML_CHECK(gl_version_string)
-      << "The GL proc resolver's glGetString(GL_VERSION) failed";
-
-  return strncmp(gl_version_string, kGLESVersionPrefix,
-                 strlen(kGLESVersionPrefix)) == 0;
-}
-
-// |shell::Surface|
+// |Surface|
 bool GPUSurfaceGL::IsValid() {
   return valid_;
 }
@@ -182,7 +139,7 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrContext* context,
                                       framebuffer_info  // framebuffer info
   );
 
-  sk_sp<SkColorSpace> colorspace = nullptr;
+  sk_sp<SkColorSpace> colorspace = SkColorSpace::MakeSRGB();
 
   SkSurfaceProps surface_props(
       SkSurfaceProps::InitType::kLegacyFontHost_InitType);
@@ -199,8 +156,8 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrContext* context,
 
 static sk_sp<SkSurface> CreateOffscreenSurface(GrContext* context,
                                                const SkISize& size) {
-  const SkImageInfo image_info =
-      SkImageInfo::MakeN32(size.fWidth, size.fHeight, kOpaque_SkAlphaType);
+  const SkImageInfo image_info = SkImageInfo::MakeN32(
+      size.fWidth, size.fHeight, kOpaque_SkAlphaType, SkColorSpace::MakeSRGB());
 
   const SkSurfaceProps surface_props(
       SkSurfaceProps::InitType::kLegacyFontHost_InitType);
@@ -259,12 +216,12 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   return true;
 }
 
-// |shell::Surface|
+// |Surface|
 SkMatrix GPUSurfaceGL::GetRootTransformation() const {
   return delegate_->GLContextSurfaceTransformation();
 }
 
-// |shell::Surface|
+// |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   if (delegate_ == nullptr) {
     return nullptr;
@@ -357,42 +314,19 @@ sk_sp<SkSurface> GPUSurfaceGL::AcquireRenderSurface(
   return offscreen_surface_ != nullptr ? offscreen_surface_ : onscreen_surface_;
 }
 
-// |shell::Surface|
+// |Surface|
 GrContext* GPUSurfaceGL::GetContext() {
   return context_.get();
 }
 
-// |shell::Surface|
-flow::ExternalViewEmbedder* GPUSurfaceGL::GetExternalViewEmbedder() {
+// |Surface|
+flutter::ExternalViewEmbedder* GPUSurfaceGL::GetExternalViewEmbedder() {
   return delegate_->GetExternalViewEmbedder();
 }
 
-// |shell::Surface|
+// |Surface|
 bool GPUSurfaceGL::MakeRenderContextCurrent() {
   return delegate_->GLContextMakeCurrent();
 }
 
-bool GPUSurfaceGLDelegate::GLContextFBOResetAfterPresent() const {
-  return false;
-}
-
-bool GPUSurfaceGLDelegate::UseOffscreenSurface() const {
-  return false;
-}
-
-SkMatrix GPUSurfaceGLDelegate::GLContextSurfaceTransformation() const {
-  SkMatrix matrix;
-  matrix.setIdentity();
-  return matrix;
-}
-
-flow::ExternalViewEmbedder* GPUSurfaceGLDelegate::GetExternalViewEmbedder() {
-  return nullptr;
-}
-
-GPUSurfaceGLDelegate::GLProcResolver GPUSurfaceGLDelegate::GetGLProcResolver()
-    const {
-  return nullptr;
-}
-
-}  // namespace shell
+}  // namespace flutter

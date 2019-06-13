@@ -4,6 +4,8 @@
 
 package io.flutter.plugin.common;
 
+import android.support.annotation.UiThread;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -11,6 +13,11 @@ import java.nio.ByteBuffer;
  * The Flutter Dart code should use
  * <a href="https://docs.flutter.io/flutter/services/BinaryMessages-class.html">BinaryMessages</a>
  * to participate.
+ * <p>
+ * {@code BinaryMessenger} is expected to be utilized from a single thread throughout the duration
+ * of its existence. If created on the main thread, then all invocations should take place on the
+ * main thread. If created on a background thread, then all invocations should take place on that
+ * background thread.
  *
  * @see BasicMessageChannel , which supports message passing with Strings and semi-structured messages.
  * @see MethodChannel , which supports communication using asynchronous method invocation.
@@ -24,6 +31,7 @@ public interface BinaryMessenger {
      * @param message the message payload, a direct-allocated {@link ByteBuffer} with the message bytes
      * between position zero and current position, or null.
      */
+    @UiThread
     void send(String channel, ByteBuffer message);
 
     /**
@@ -37,6 +45,7 @@ public interface BinaryMessenger {
      * @param callback a {@link BinaryReply} callback invoked when the Flutter application responds to the
      * message, possibly null.
      */
+    @UiThread
     void send(String channel, ByteBuffer message, BinaryReply callback);
 
     /**
@@ -52,6 +61,7 @@ public interface BinaryMessenger {
      * @param channel the name {@link String} of the channel.
      * @param handler a {@link BinaryMessageHandler} to be invoked on incoming messages, or null.
      */
+    @UiThread
     void setMessageHandler(String channel, BinaryMessageHandler handler);
 
     /**
@@ -71,6 +81,7 @@ public interface BinaryMessenger {
          * @param message the message {@link ByteBuffer} payload, possibly null.
          * @param reply A {@link BinaryReply} used for submitting a reply back to Flutter.
          */
+        @UiThread
         void onMessage(ByteBuffer message, BinaryReply reply);
     }
 
@@ -87,6 +98,7 @@ public interface BinaryMessenger {
          * outgoing replies must place the reply bytes between position zero and current position.
          * Reply receivers can read from the buffer directly.
          */
+        @UiThread
         void reply(ByteBuffer reply);
     }
 }

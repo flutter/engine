@@ -32,7 +32,6 @@ import io.flutter.view.FlutterMain;
 import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterRunArguments;
 import io.flutter.view.FlutterView;
-import io.flutter.view.ResourceUpdater;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -128,15 +127,6 @@ public final class FlutterActivityDelegate
         return flutterView.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    /*
-     * Method onRequestPermissionResult(int, String[], int[]) was made
-     * unavailable on 2018-02-28, following deprecation. This comment is left as
-     * a temporary tombstone for reference, to be removed on 2018-03-28 (or at
-     * least four weeks after release of unavailability).
-     *
-     * https://github.com/flutter/flutter/wiki/Changelog#typo-fixed-in-flutter-engine-android-api
-     */
-
     @Override
     public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
         return flutterView.getPluginRegistry().onActivityResult(requestCode, resultCode, data);
@@ -213,7 +203,6 @@ public final class FlutterActivityDelegate
     @Override
     public void onResume() {
         Application app = (Application) activity.getApplicationContext();
-        FlutterMain.onResume(app);
         if (app instanceof FlutterApplication) {
             FlutterApplication flutterApp = (FlutterApplication) app;
             flutterApp.setCurrentActivity(activity);
@@ -283,8 +272,7 @@ public final class FlutterActivityDelegate
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-    }
+    public void onConfigurationChanged(Configuration newConfig) {}
 
     private static String[] getArgsFromIntent(Intent intent) {
         // Before adding more entries to this list, consider that arbitrary
@@ -296,6 +284,9 @@ public final class FlutterActivityDelegate
         }
         if (intent.getBooleanExtra("start-paused", false)) {
             args.add("--start-paused");
+        }
+        if (intent.getBooleanExtra("disable-service-auth-codes", false)) {
+            args.add("--disable-service-auth-codes");
         }
         if (intent.getBooleanExtra("use-test-fonts", false)) {
             args.add("--use-test-fonts");
@@ -312,8 +303,21 @@ public final class FlutterActivityDelegate
         if (intent.getBooleanExtra("trace-skia", false)) {
             args.add("--trace-skia");
         }
+        if (intent.getBooleanExtra("trace-systrace", false)) {
+            args.add("--trace-systrace");
+        }
+        if (intent.getBooleanExtra("dump-skp-on-shader-compilation", false)) {
+            args.add("--dump-skp-on-shader-compilation");
+        }
         if (intent.getBooleanExtra("verbose-logging", false)) {
             args.add("--verbose-logging");
+        }
+        // NOTE: all flags provided with this argument are subject to filtering
+        // based on a whitelist in shell/common/switches.cc. If any flag provided
+        // is not present in the whitelist, the process will immediately
+        // terminate.
+        if (intent.hasExtra("dart-flags")) {
+            args.add("--dart-flags=" + intent.getStringExtra("dart-flags"));
         }
         if (!args.isEmpty()) {
             String[] argsArray = new String[args.size()];
@@ -346,14 +350,6 @@ public final class FlutterActivityDelegate
         if (!flutterView.getFlutterNativeView().isApplicationRunning()) {
             FlutterRunArguments args = new FlutterRunArguments();
             ArrayList<String> bundlePaths = new ArrayList<>();
-            ResourceUpdater resourceUpdater = FlutterMain.getResourceUpdater();
-            if (resourceUpdater != null) {
-                File patchFile = resourceUpdater.getInstalledPatch();
-                JSONObject manifest = resourceUpdater.readManifest(patchFile);
-                if (resourceUpdater.validateManifest(manifest)) {
-                    bundlePaths.add(patchFile.getPath());
-                }
-            }
             bundlePaths.add(appBundlePath);
             args.bundlePaths = bundlePaths.toArray(new String[0]);
             args.entrypoint = "main";
@@ -396,7 +392,7 @@ public final class FlutterActivityDelegate
         if (!activity.getTheme().resolveAttribute(
             android.R.attr.windowBackground,
             typedValue,
-            true)) {;
+            true)) {
             return null;
         }
         if (typedValue.resourceId == 0) {

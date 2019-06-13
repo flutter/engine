@@ -5,11 +5,13 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_PATH_MEASURE_H_
 #define FLUTTER_LIB_UI_PAINTING_PATH_MEASURE_H_
 
+#include <vector>
+
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/path.h"
+#include "third_party/skia/include/core/SkContourMeasure.h"
 #include "third_party/skia/include/core/SkPath.h"
-#include "third_party/skia/include/core/SkPathMeasure.h"
-#include "third_party/tonic/typed_data/float64_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 namespace tonic {
 class DartLibraryNatives;
@@ -18,7 +20,7 @@ class DartLibraryNatives;
 // Be sure that the client doesn't modify a path on us before Skia finishes
 // See AOSP's reasoning in PathMeasure.cpp
 
-namespace blink {
+namespace flutter {
 
 class CanvasPathMeasure : public RefCountedDartWrappable<CanvasPathMeasure> {
   DEFINE_WRAPPERTYPEINFO();
@@ -30,24 +32,26 @@ class CanvasPathMeasure : public RefCountedDartWrappable<CanvasPathMeasure> {
                                                bool forceClosed);
 
   void setPath(const CanvasPath* path, bool isClosed);
-  float getLength();
-  tonic::Float32List getPosTan(float distance);
-  fml::RefPtr<CanvasPath> getSegment(float startD,
+  float getLength(int contourIndex);
+  tonic::Float32List getPosTan(int contourIndex, float distance);
+  fml::RefPtr<CanvasPath> getSegment(int contourIndex,
+                                     float startD,
                                      float stopD,
                                      bool startWithMoveTo);
-  bool isClosed();
+  bool isClosed(int contourIndex);
   bool nextContour();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
-  const SkPathMeasure& pathMeasure() const { return *path_measure_; }
+  const SkContourMeasureIter& pathMeasure() const { return *path_measure_; }
 
  private:
   CanvasPathMeasure();
 
-  std::unique_ptr<SkPathMeasure> path_measure_;
+  std::unique_ptr<SkContourMeasureIter> path_measure_;
+  std::vector<sk_sp<SkContourMeasure>> measures_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_PATH_MEASURE_H_

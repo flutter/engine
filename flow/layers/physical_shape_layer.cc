@@ -7,16 +7,26 @@
 #include "flutter/flow/paint_utils.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 
-namespace flow {
+namespace flutter {
 
-PhysicalShapeLayer::PhysicalShapeLayer(Clip clip_behavior)
-    : isRect_(false), clip_behavior_(clip_behavior) {}
+const SkScalar kLightHeight = 600;
+const SkScalar kLightRadius = 800;
 
-PhysicalShapeLayer::~PhysicalShapeLayer() = default;
-
-void PhysicalShapeLayer::set_path(const SkPath& path) {
-  path_ = path;
-  isRect_ = false;
+PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
+                                       SkColor shadow_color,
+                                       SkScalar device_pixel_ratio,
+                                       float viewport_depth,
+                                       float elevation,
+                                       const SkPath& path,
+                                       Clip clip_behavior)
+    : color_(color),
+      shadow_color_(shadow_color),
+      device_pixel_ratio_(device_pixel_ratio),
+      viewport_depth_(viewport_depth),
+      elevation_(elevation),
+      path_(path),
+      isRect_(false),
+      clip_behavior_(clip_behavior) {
   SkRect rect;
   if (path.isRect(&rect)) {
     isRect_ = true;
@@ -38,10 +48,15 @@ void PhysicalShapeLayer::set_path(const SkPath& path) {
   }
 }
 
+PhysicalShapeLayer::~PhysicalShapeLayer() = default;
+
 void PhysicalShapeLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
+  context->total_elevation += elevation_;
+  total_elevation_ = context->total_elevation;
   SkRect child_paint_bounds;
   PrerollChildren(context, matrix, &child_paint_bounds);
+  context->total_elevation -= elevation_;
 
   if (elevation_ == 0) {
     set_paint_bounds(path_.getBounds());
@@ -51,11 +66,46 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     set_needs_system_composite(true);
 #else
     // Add some margin to the paint bounds to leave space for the shadow.
-    // The margin is hardcoded to an arbitrary maximum for now because Skia
-    // doesn't provide a way to calculate it.  We fill this whole region
-    // and clip children to it so we don't need to join the child paint bounds.
+    // We fill this whole region and clip children to it so we don't need to
+    // join the child paint bounds.
+    // The offset is calculated as follows:
+
+    //                   .---                           (kLightRadius)
+    //                -------/                          (light)
+    //                   |  /
+    //                   | /
+    //                   |/
+    //                   |O
+    //                  /|                              (kLightHeight)
+    //                 / |
+    //                /  |
+    //               /   |
+    //              /    |
+    //             -------------                        (layer)
+    //            /|     |
+    //           / |     |                              (elevation)
+    //        A /  |     |B
+    // ------------------------------------------------ (canvas)
+    //          ---                                     (extent of shadow)
+    //
+    // E = lt        }           t = (r + w/2)/h
+    //                } =>
+    // r + w/2 = ht  }           E = (l/h)(r + w/2)
+    //
+    // Where: E = extent of shadow
+    //        l = elevation of layer
+    //        r = radius of the light source
+    //        w = width of the layer
+    //        h = light height
+    //        t = tangent of AOB, i.e., multiplier for elevation to extent
     SkRect bounds(path_.getBounds());
-    bounds.outset(20.0, 20.0);
+    // tangent for x
+    double tx = (kLightRadius * device_pixel_ratio_ + bounds.width() * 0.5) /
+                kLightHeight;
+    // tangent for y
+    double ty = (kLightRadius * device_pixel_ratio_ + bounds.height() * 0.5) /
+                kLightHeight;
+    bounds.outset(elevation_ * tx, elevation_ * ty);
     set_paint_bounds(bounds);
 #endif  // defined(OS_FUCHSIA)
   }
@@ -66,10 +116,24 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
 void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
   FML_DCHECK(needs_system_composite());
 
-  SceneUpdateContext::Frame frame(context, frameRRect_, color_, elevation_);
+  // Retained rendering: speedup by reusing a retained entity node if possible.
+  // When an entity node is reused, no paint layer is added to the frame so we
+  // won't call PhysicalShapeLayer::Paint.
+  LayerRasterCacheKey key(unique_id(), context.Matrix());
+  if (context.HasRetainedNode(key)) {
+    const scenic::EntityNode& retained_node = context.GetRetainedNode(key);
+    FML_DCHECK(context.top_entity());
+    FML_DCHECK(retained_node.session() == context.session());
+    context.top_entity()->entity_node().AddChild(retained_node);
+    return;
+  }
+
+  // If we can't find an existing retained surface, create one.
+  SceneUpdateContext::Frame frame(context, frameRRect_, color_, elevation_,
+                                  total_elevation_, viewport_depth_, this);
   for (auto& layer : layers()) {
     if (layer->needs_painting()) {
-      frame.AddPaintedLayer(layer.get());
+      frame.AddPaintLayer(layer.get());
     }
   }
 
@@ -90,6 +154,7 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   // Call drawPath without clip if possible for better performance.
   SkPaint paint;
   paint.setColor(color_);
+  paint.setAntiAlias(true);
   if (clip_behavior_ != Clip::antiAliasWithSaveLayer) {
     context.leaf_nodes_canvas->drawPath(path_, paint);
   }
@@ -131,8 +196,6 @@ void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
                                     SkScalar dpr) {
   const SkScalar kAmbientAlpha = 0.039f;
   const SkScalar kSpotAlpha = 0.25f;
-  const SkScalar kLightHeight = 600;
-  const SkScalar kLightRadius = 800;
 
   SkShadowFlags flags = transparentOccluder
                             ? SkShadowFlags::kTransparentOccluder_ShadowFlag
@@ -151,4 +214,4 @@ void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
       dpr * kLightRadius, ambientColor, spotColor, flags);
 }
 
-}  // namespace flow
+}  // namespace flutter

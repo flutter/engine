@@ -6,9 +6,13 @@
 
 #include "flutter/flow/texture.h"
 
-namespace flow {
+namespace flutter {
 
-TextureLayer::TextureLayer() = default;
+TextureLayer::TextureLayer(const SkPoint& offset,
+                           const SkSize& size,
+                           int64_t texture_id,
+                           bool freeze)
+    : offset_(offset), size_(size), texture_id_(texture_id), freeze_(freeze) {}
 
 TextureLayer::~TextureLayer() = default;
 
@@ -23,7 +27,8 @@ void TextureLayer::Paint(PaintContext& context) const {
   if (!texture) {
     return;
   }
-  texture->Paint(*context.leaf_nodes_canvas, paint_bounds(), freeze_);
+  texture->Paint(*context.leaf_nodes_canvas, paint_bounds(), freeze_,
+                 context.gr_context);
 }
 
-}  // namespace flow
+}  // namespace flutter

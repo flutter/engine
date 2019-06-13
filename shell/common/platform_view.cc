@@ -14,9 +14,9 @@
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
-namespace shell {
+namespace flutter {
 
-PlatformView::PlatformView(Delegate& delegate, blink::TaskRunners task_runners)
+PlatformView::PlatformView(Delegate& delegate, TaskRunners task_runners)
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
       size_(SkISize::Make(0, 0)),
@@ -32,17 +32,17 @@ std::unique_ptr<VsyncWaiter> PlatformView::CreateVSyncWaiter() {
 }
 
 void PlatformView::DispatchPlatformMessage(
-    fml::RefPtr<blink::PlatformMessage> message) {
+    fml::RefPtr<PlatformMessage> message) {
   delegate_.OnPlatformViewDispatchPlatformMessage(std::move(message));
 }
 
 void PlatformView::DispatchPointerDataPacket(
-    std::unique_ptr<blink::PointerDataPacket> packet) {
+    std::unique_ptr<PointerDataPacket> packet) {
   delegate_.OnPlatformViewDispatchPointerDataPacket(std::move(packet));
 }
 
 void PlatformView::DispatchSemanticsAction(int32_t id,
-                                           blink::SemanticsAction action,
+                                           SemanticsAction action,
                                            std::vector<uint8_t> args) {
   delegate_.OnPlatformViewDispatchSemanticsAction(id, action, std::move(args));
 }
@@ -55,12 +55,25 @@ void PlatformView::SetAccessibilityFeatures(int32_t flags) {
   delegate_.OnPlatformViewSetAccessibilityFeatures(flags);
 }
 
-void PlatformView::SetViewportMetrics(const blink::ViewportMetrics& metrics) {
+void PlatformView::SetViewportMetrics(const ViewportMetrics& metrics) {
   delegate_.OnPlatformViewSetViewportMetrics(metrics);
 }
 
 void PlatformView::NotifyCreated() {
-  delegate_.OnPlatformViewCreated(CreateRenderingSurface());
+  std::unique_ptr<Surface> surface;
+
+  // Threading: We want to use the platform view on the non-platform thread.
+  // Using the weak pointer is illegal. But, we are going to introduce a latch
+  // so that the platform view is not collected till the surface is obtained.
+  auto* platform_view = this;
+  fml::ManualResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetGPUTaskRunner(), [platform_view, &surface, &latch]() {
+        surface = platform_view->CreateRenderingSurface();
+        latch.Signal();
+      });
+  latch.Wait();
+  delegate_.OnPlatformViewCreated(std::move(surface));
 }
 
 void PlatformView::NotifyDestroyed() {
@@ -79,19 +92,17 @@ fml::WeakPtr<PlatformView> PlatformView::GetWeakPtr() const {
   return weak_factory_.GetWeakPtr();
 }
 
-void PlatformView::UpdateSemantics(
-    blink::SemanticsNodeUpdates update,
-    blink::CustomAccessibilityActionUpdates actions) {}
+void PlatformView::UpdateSemantics(SemanticsNodeUpdates update,
+                                   CustomAccessibilityActionUpdates actions) {}
 
-void PlatformView::HandlePlatformMessage(
-    fml::RefPtr<blink::PlatformMessage> message) {
+void PlatformView::HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) {
   if (auto response = message->response())
     response->CompleteEmpty();
 }
 
 void PlatformView::OnPreEngineRestart() const {}
 
-void PlatformView::RegisterTexture(std::shared_ptr<flow::Texture> texture) {
+void PlatformView::RegisterTexture(std::shared_ptr<flutter::Texture> texture) {
   delegate_.OnPlatformViewRegisterTexture(std::move(texture));
 }
 
@@ -119,4 +130,4 @@ void PlatformView::SetNextFrameCallback(fml::closure closure) {
   delegate_.OnPlatformViewSetNextFrameCallback(std::move(closure));
 }
 
-}  // namespace shell
+}  // namespace flutter

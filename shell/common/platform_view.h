@@ -21,7 +21,7 @@
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 
-namespace shell {
+namespace flutter {
 
 class Shell;
 
@@ -36,17 +36,17 @@ class PlatformView {
     virtual void OnPlatformViewSetNextFrameCallback(fml::closure closure) = 0;
 
     virtual void OnPlatformViewSetViewportMetrics(
-        const blink::ViewportMetrics& metrics) = 0;
+        const ViewportMetrics& metrics) = 0;
 
     virtual void OnPlatformViewDispatchPlatformMessage(
-        fml::RefPtr<blink::PlatformMessage> message) = 0;
+        fml::RefPtr<PlatformMessage> message) = 0;
 
     virtual void OnPlatformViewDispatchPointerDataPacket(
-        std::unique_ptr<blink::PointerDataPacket> packet) = 0;
+        std::unique_ptr<PointerDataPacket> packet) = 0;
 
     virtual void OnPlatformViewDispatchSemanticsAction(
         int32_t id,
-        blink::SemanticsAction action,
+        SemanticsAction action,
         std::vector<uint8_t> args) = 0;
 
     virtual void OnPlatformViewSetSemanticsEnabled(bool enabled) = 0;
@@ -54,7 +54,7 @@ class PlatformView {
     virtual void OnPlatformViewSetAccessibilityFeatures(int32_t flags) = 0;
 
     virtual void OnPlatformViewRegisterTexture(
-        std::shared_ptr<flow::Texture> texture) = 0;
+        std::shared_ptr<flutter::Texture> texture) = 0;
 
     virtual void OnPlatformViewUnregisterTexture(int64_t texture_id) = 0;
 
@@ -62,23 +62,23 @@ class PlatformView {
         int64_t texture_id) = 0;
   };
 
-  explicit PlatformView(Delegate& delegate, blink::TaskRunners task_runners);
+  explicit PlatformView(Delegate& delegate, TaskRunners task_runners);
 
   virtual ~PlatformView();
 
   virtual std::unique_ptr<VsyncWaiter> CreateVSyncWaiter();
 
-  void DispatchPlatformMessage(fml::RefPtr<blink::PlatformMessage> message);
+  void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
 
   void DispatchSemanticsAction(int32_t id,
-                               blink::SemanticsAction action,
+                               SemanticsAction action,
                                std::vector<uint8_t> args);
 
   virtual void SetSemanticsEnabled(bool enabled);
 
   virtual void SetAccessibilityFeatures(int32_t flags);
 
-  void SetViewportMetrics(const blink::ViewportMetrics& metrics);
+  void SetViewportMetrics(const ViewportMetrics& metrics);
 
   void NotifyCreated();
 
@@ -94,21 +94,19 @@ class PlatformView {
 
   fml::WeakPtr<PlatformView> GetWeakPtr() const;
 
-  virtual void UpdateSemantics(blink::SemanticsNodeUpdates updates,
-                               blink::CustomAccessibilityActionUpdates actions);
+  virtual void UpdateSemantics(SemanticsNodeUpdates updates,
+                               CustomAccessibilityActionUpdates actions);
 
-  virtual void HandlePlatformMessage(
-      fml::RefPtr<blink::PlatformMessage> message);
+  virtual void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message);
 
   virtual void OnPreEngineRestart() const;
 
   void SetNextFrameCallback(fml::closure closure);
 
-  void DispatchPointerDataPacket(
-      std::unique_ptr<blink::PointerDataPacket> packet);
+  void DispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet);
 
   // Called once per texture, on the platform thread.
-  void RegisterTexture(std::shared_ptr<flow::Texture> texture);
+  void RegisterTexture(std::shared_ptr<flutter::Texture> texture);
 
   // Called once per texture, on the platform thread.
   void UnregisterTexture(int64_t texture_id);
@@ -118,17 +116,19 @@ class PlatformView {
 
  protected:
   PlatformView::Delegate& delegate_;
-  const blink::TaskRunners task_runners_;
+  const TaskRunners task_runners_;
 
   SkISize size_;
   fml::WeakPtrFactory<PlatformView> weak_factory_;
 
+  // Unlike all other methods on the platform view, this is called on the GPU
+  // task runner.
   virtual std::unique_ptr<Surface> CreateRenderingSurface();
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformView);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // COMMON_PLATFORM_VIEW_H_

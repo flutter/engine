@@ -6,7 +6,9 @@
 
 #include <sstream>
 
-namespace blink {
+namespace flutter {
+
+constexpr FrameTiming::Phase FrameTiming::kPhases[FrameTiming::kCount];
 
 Settings::Settings() = default;
 
@@ -33,6 +35,9 @@ std::string Settings::ToString() const {
   stream << "start_paused: " << start_paused << std::endl;
   stream << "trace_skia: " << trace_skia << std::endl;
   stream << "trace_startup: " << trace_startup << std::endl;
+  stream << "trace_systrace: " << trace_systrace << std::endl;
+  stream << "dump_skp_on_shader_compilation: " << dump_skp_on_shader_compilation
+         << std::endl;
   stream << "endless_trace_buffer: " << endless_trace_buffer << std::endl;
   stream << "enable_dart_profiling: " << enable_dart_profiling << std::endl;
   stream << "disable_dart_asserts: " << disable_dart_asserts << std::endl;
@@ -43,10 +48,14 @@ std::string Settings::ToString() const {
   stream << "enable_software_rendering: " << enable_software_rendering
          << std::endl;
   stream << "log_tag: " << log_tag << std::endl;
+  stream << "icu_initialization_required: " << icu_initialization_required
+         << std::endl;
   stream << "icu_data_path: " << icu_data_path << std::endl;
   stream << "assets_dir: " << assets_dir << std::endl;
   stream << "assets_path: " << assets_path << std::endl;
+  stream << "frame_rasterized_callback set: " << !!frame_rasterized_callback
+         << std::endl;
   return stream.str();
 }
 
-}  // namespace blink
+}  // namespace flutter

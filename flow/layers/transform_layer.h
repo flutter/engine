@@ -7,14 +7,14 @@
 
 #include "flutter/flow/layers/container_layer.h"
 
-namespace flow {
+namespace flutter {
 
+// Be careful that SkMatrix's default constructor doesn't initialize the matrix
+// at all. Hence |set_transform| must be called with an initialized SkMatrix.
 class TransformLayer : public ContainerLayer {
  public:
-  TransformLayer();
+  TransformLayer(const SkMatrix& transform);
   ~TransformLayer() override;
-
-  void set_transform(const SkMatrix& transform) { transform_ = transform; }
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
@@ -30,6 +30,6 @@ class TransformLayer : public ContainerLayer {
   FML_DISALLOW_COPY_AND_ASSIGN(TransformLayer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_TRANSFORM_LAYER_H_

@@ -4,9 +4,10 @@
 
 #include "flutter/flow/layers/backdrop_filter_layer.h"
 
-namespace flow {
+namespace flutter {
 
-BackdropFilterLayer::BackdropFilterLayer() = default;
+BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter)
+    : filter_(std::move(filter)) {}
 
 BackdropFilterLayer::~BackdropFilterLayer() = default;
 
@@ -20,4 +21,4 @@ void BackdropFilterLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
 }
 
-}  // namespace flow
+}  // namespace flutter

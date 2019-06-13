@@ -7,14 +7,12 @@
 
 #include "flutter/flow/layers/container_layer.h"
 
-namespace flow {
+namespace flutter {
 
 class ClipRectLayer : public ContainerLayer {
  public:
-  ClipRectLayer(Clip clip_behavior);
+  ClipRectLayer(const SkRect& clip_rect, Clip clip_behavior);
   ~ClipRectLayer() override;
-
-  void set_clip_rect(const SkRect& clip_rect) { clip_rect_ = clip_rect; }
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
@@ -30,6 +28,6 @@ class ClipRectLayer : public ContainerLayer {
   FML_DISALLOW_COPY_AND_ASSIGN(ClipRectLayer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_CLIP_RECT_LAYER_H_

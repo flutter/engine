@@ -7,12 +7,12 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 
-namespace shell {
+namespace flutter {
 
-IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
+IOSSurfaceGL::IOSSurfaceGL(std::shared_ptr<IOSGLContext> context,
+                           fml::scoped_nsobject<CAEAGLLayer> layer,
                            FlutterPlatformViewsController* platform_views_controller)
-    : IOSSurface(platform_views_controller) {
-  context_ = std::make_shared<IOSGLContext>();
+    : IOSSurface(platform_views_controller), context_(context) {
   render_target_ = context_->CreateRenderTarget(std::move(layer));
 }
 
@@ -29,7 +29,7 @@ bool IOSSurfaceGL::IsValid() const {
 }
 
 bool IOSSurfaceGL::ResourceContextMakeCurrent() {
-  return render_target_->IsValid() ? context_->ResourceMakeCurrent() : false;
+  return context_->ResourceMakeCurrent();
 }
 
 void IOSSurfaceGL::UpdateStorageSizeIfNecessary() {
@@ -74,7 +74,7 @@ bool IOSSurfaceGL::GLContextPresent() {
   return IsValid() && render_target_->PresentRenderBuffer();
 }
 
-flow::ExternalViewEmbedder* IOSSurfaceGL::GetExternalViewEmbedder() {
+flutter::ExternalViewEmbedder* IOSSurfaceGL::GetExternalViewEmbedder() {
   if (IsIosEmbeddedViewsPreviewEnabled()) {
     return this;
   } else {
@@ -101,7 +101,8 @@ std::vector<SkCanvas*> IOSSurfaceGL::GetCurrentCanvases() {
   return platform_views_controller->GetCurrentCanvases();
 }
 
-SkCanvas* IOSSurfaceGL::CompositeEmbeddedView(int view_id, const flow::EmbeddedViewParams& params) {
+SkCanvas* IOSSurfaceGL::CompositeEmbeddedView(int view_id,
+                                              const flutter::EmbeddedViewParams& params) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   return platform_views_controller->CompositeEmbeddedView(view_id, params);
@@ -118,4 +119,4 @@ bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
   return submitted;
 }
 
-}  // namespace shell
+}  // namespace flutter

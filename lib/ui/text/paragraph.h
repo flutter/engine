@@ -17,7 +17,7 @@ namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 
 class Paragraph : public RefCountedDartWrappable<Paragraph> {
   DEFINE_WRAPPERTYPEINFO();
@@ -33,6 +33,7 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
 
   double width();
   double height();
+  double longestLine();
   double minIntrinsicWidth();
   double maxIntrinsicWidth();
   double alphabeticBaseline();
@@ -46,6 +47,7 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
                                         unsigned end,
                                         unsigned boxHeightStyle,
                                         unsigned boxWidthStyle);
+  std::vector<TextBox> getRectsForPlaceholders();
   Dart_Handle getPositionForOffset(double dx, double dy);
   Dart_Handle getWordBoundary(unsigned offset);
 
@@ -59,6 +61,6 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
   explicit Paragraph(std::unique_ptr<txt::Paragraph> paragraph);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_TEXT_PARAGRAPH_H_

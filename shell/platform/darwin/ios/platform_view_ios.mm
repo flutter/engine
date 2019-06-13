@@ -11,15 +11,21 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/shell/common/io_manager.h"
+#include "flutter/shell/common/shell_io_manager.h"
+#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 #include "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
 
-namespace shell {
+namespace flutter {
 
-PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate, blink::TaskRunners task_runners)
-    : PlatformView(delegate, std::move(task_runners)) {}
+PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
+                                 flutter::TaskRunners task_runners)
+    : PlatformView(delegate, std::move(task_runners)) {
+#if !TARGET_IPHONE_SIMULATOR
+  gl_context_ = std::make_shared<IOSGLContext>();
+#endif  // !TARGET_IPHONE_SIMULATOR
+}
 
 PlatformViewIOS::~PlatformViewIOS() = default;
 
@@ -27,8 +33,8 @@ PlatformMessageRouter& PlatformViewIOS::GetPlatformMessageRouter() {
   return platform_message_router_;
 }
 
-// |shell::PlatformView|
-void PlatformViewIOS::HandlePlatformMessage(fml::RefPtr<blink::PlatformMessage> message) {
+// |PlatformView|
+void PlatformViewIOS::HandlePlatformMessage(fml::RefPtr<flutter::PlatformMessage> message) {
   platform_message_router_.HandlePlatformMessage(std::move(message));
 }
 
@@ -44,12 +50,14 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
   }
   owner_controller_ = owner_controller;
   if (owner_controller_) {
-    ios_surface_ = static_cast<FlutterView*>(owner_controller.get().view).createSurface;
+    ios_surface_ =
+        [static_cast<FlutterView*>(owner_controller.get().view) createSurface:gl_context_];
     FML_DCHECK(ios_surface_ != nullptr);
 
     if (accessibility_bridge_) {
       accessibility_bridge_.reset(
-          new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this));
+          new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
+                                  [owner_controller.get() platformViewsController]));
     }
     // Do not call `NotifyCreated()` here - let FlutterViewController take care
     // of that when its Viewport is sized.  If `NotifyCreated()` is called here,
@@ -63,7 +71,7 @@ void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
   RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
 }
 
-// |shell::PlatformView|
+// |PlatformView|
 std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
   if (!ios_surface_) {
     FML_DLOG(INFO) << "Could not CreateRenderingSurface, this PlatformViewIOS "
@@ -73,28 +81,30 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
   return ios_surface_->CreateGPUSurface();
 }
 
-// |shell::PlatformView|
+// |PlatformView|
 sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
-  if (!ios_surface_ || !ios_surface_->ResourceContextMakeCurrent()) {
+  if (!gl_context_ || !gl_context_->ResourceMakeCurrent()) {
     FML_DLOG(INFO) << "Could not make resource context current on IO thread. "
-                      "Async texture uploads "
-                      "will be disabled.";
+                      "Async texture uploads will be disabled. On Simulators, "
+                      "this is expected.";
     return nullptr;
   }
 
-  return IOManager::CreateCompatibleResourceLoadingContext(GrBackend::kOpenGL_GrBackend);
+  return ShellIOManager::CreateCompatibleResourceLoadingContext(
+      GrBackend::kOpenGL_GrBackend, GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface());
 }
 
-// |shell::PlatformView|
+// |PlatformView|
 void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
   if (!owner_controller_) {
-    FML_DLOG(WARNING) << "Could not set semantics to enabled, this "
-                         "PlatformViewIOS has no ViewController.";
+    FML_LOG(WARNING) << "Could not set semantics to enabled, this "
+                        "PlatformViewIOS has no ViewController.";
     return;
   }
   if (enabled && !accessibility_bridge_) {
     accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
-        static_cast<FlutterView*>(owner_controller_.get().view), this);
+        static_cast<FlutterView*>(owner_controller_.get().view), this,
+        [owner_controller_.get() platformViewsController]);
   } else if (!enabled && accessibility_bridge_) {
     accessibility_bridge_.reset();
   }
@@ -106,15 +116,18 @@ void PlatformViewIOS::SetAccessibilityFeatures(int32_t flags) {
   PlatformView::SetAccessibilityFeatures(flags);
 }
 
-// |shell::PlatformView|
-void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update,
-                                      blink::CustomAccessibilityActionUpdates actions) {
+// |PlatformView|
+void PlatformViewIOS::UpdateSemantics(flutter::SemanticsNodeUpdates update,
+                                      flutter::CustomAccessibilityActionUpdates actions) {
+  FML_DCHECK(owner_controller_);
   if (accessibility_bridge_) {
     accessibility_bridge_->UpdateSemantics(std::move(update), std::move(actions));
+    [[NSNotificationCenter defaultCenter] postNotificationName:FlutterSemanticsUpdateNotification
+                                                        object:owner_controller_.get()];
   }
 }
 
-// |shell::PlatformView|
+// |PlatformView|
 std::unique_ptr<VsyncWaiter> PlatformViewIOS::CreateVSyncWaiter() {
   return std::make_unique<VsyncWaiterIOS>(task_runners_);
 }
@@ -137,4 +150,4 @@ void PlatformViewIOS::SetTextInputPlugin(fml::scoped_nsprotocol<FlutterTextInput
   text_input_plugin_ = plugin;
 }
 
-}  // namespace shell
+}  // namespace flutter

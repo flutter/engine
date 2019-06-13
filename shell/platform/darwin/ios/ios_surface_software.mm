@@ -13,7 +13,7 @@
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
-namespace shell {
+namespace flutter {
 
 IOSSurfaceSoftware::IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
                                        FlutterPlatformViewsController* platform_views_controller)
@@ -64,7 +64,8 @@ sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const SkISize& size) {
     return sk_surface_;
   }
 
-  SkImageInfo info = SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType);
+  SkImageInfo info = SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType,
+                                          SkColorSpace::MakeSRGB());
   sk_surface_ = SkSurface::MakeRaster(info, nullptr);
   return sk_surface_;
 }
@@ -126,7 +127,7 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
   return true;
 }
 
-flow::ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
+flutter::ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
   if (IsIosEmbeddedViewsPreviewEnabled()) {
     return this;
   } else {
@@ -153,7 +154,7 @@ std::vector<SkCanvas*> IOSSurfaceSoftware::GetCurrentCanvases() {
 }
 
 SkCanvas* IOSSurfaceSoftware::CompositeEmbeddedView(int view_id,
-                                                    const flow::EmbeddedViewParams& params) {
+                                                    const flutter::EmbeddedViewParams& params) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   return platform_views_controller->CompositeEmbeddedView(view_id, params);
@@ -167,4 +168,4 @@ bool IOSSurfaceSoftware::SubmitFrame(GrContext* context) {
   return platform_views_controller->SubmitFrame(false, nullptr, nullptr);
 }
 
-}  // namespace shell
+}  // namespace flutter

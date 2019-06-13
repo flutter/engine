@@ -7,6 +7,8 @@ package io.flutter.app;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+
+import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformViewRegistry;
@@ -49,6 +51,12 @@ public class FlutterPluginRegistry
         mPlatformViewsController = new PlatformViewsController();
     }
 
+    public FlutterPluginRegistry(FlutterEngine engine, Context context) {
+        // TODO(mattcarroll): implement use of engine instead of nativeView.
+        mAppContext = context;
+        mPlatformViewsController = new PlatformViewsController();
+    }
+
     @Override
     public boolean hasPlugin(String key) {
         return mPluginMap.containsKey(key);
@@ -72,7 +80,7 @@ public class FlutterPluginRegistry
     public void attach(FlutterView flutterView, Activity activity) {
         mFlutterView = flutterView;
         mActivity = activity;
-        mPlatformViewsController.attach(activity, flutterView, flutterView);
+        mPlatformViewsController.attach(activity, flutterView, flutterView.getDartExecutor());
     }
 
     public void detach() {
@@ -84,6 +92,10 @@ public class FlutterPluginRegistry
 
     public void onPreEngineRestart() {
         mPlatformViewsController.onPreEngineRestart();
+    }
+
+    public PlatformViewsController getPlatformViewsController() {
+        return mPlatformViewsController;
     }
 
     private class FlutterRegistrar implements Registrar {
@@ -144,15 +156,6 @@ public class FlutterPluginRegistry
             return this;
         }
 
-       /*
-        * Method addRequestPermissionResultListener(RequestPermissionResultListener)
-        * was made unavailable on 2018-02-28, following deprecation.
-        * This comment is left as a temporary tombstone for reference, to be removed
-        * on 2018-03-28 (or at least four weeks after release of unavailability).
-        *
-        * https://github.com/flutter/flutter/wiki/Changelog#typo-fixed-in-flutter-engine-android-api
-        */
-
         @Override
         public Registrar addRequestPermissionsResultListener(
                 RequestPermissionsResultListener listener) {
@@ -194,15 +197,6 @@ public class FlutterPluginRegistry
         }
         return false;
     }
-
-    /*
-     * Method onRequestPermissionResult(int, String[], int[]) was made
-     * unavailable on 2018-02-28, following deprecation. This comment is left as
-     * a temporary tombstone for reference, to be removed on 2018-03-28 (or at
-     * least four weeks after release of unavailability).
-     *
-     * https://github.com/flutter/flutter/wiki/Changelog#typo-fixed-in-flutter-engine-android-api
-     */
 
     @Override
     public boolean onActivityResult(int requestCode, int resultCode, Intent data) {

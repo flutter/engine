@@ -4,9 +4,21 @@
 
 #include "flutter/flow/layers/transform_layer.h"
 
-namespace flow {
+namespace flutter {
 
-TransformLayer::TransformLayer() = default;
+TransformLayer::TransformLayer(const SkMatrix& transform)
+    : transform_(transform) {
+  // Checks (in some degree) that SkMatrix transform_ is valid and initialized.
+  //
+  // If transform_ is uninitialized, this assert may look flaky as it doesn't
+  // fail all the time, and some rerun may make it pass. But don't ignore it and
+  // just rerun the test if this is triggered, since even a flaky failure here
+  // may signify a potentially big problem in the code.
+  //
+  // We have to write this flaky test because there is no reliable way to test
+  // whether a variable is initialized or not in C++.
+  FML_CHECK(transform_.isFinite());
+}
 
 TransformLayer::~TransformLayer() = default;
 
@@ -16,7 +28,9 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   SkRect previous_cull_rect = context->cull_rect;
   SkMatrix inverse_transform_;
-  if (transform_.invert(&inverse_transform_)) {
+  // Perspective projections don't produce rectangles that are useful for
+  // culling for some reason.
+  if (!transform_.hasPerspective() && transform_.invert(&inverse_transform_)) {
     inverse_transform_.mapRect(&context->cull_rect);
   } else {
     context->cull_rect = kGiantRect;
@@ -51,4 +65,4 @@ void TransformLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
 }
 
-}  // namespace flow
+}  // namespace flutter

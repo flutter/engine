@@ -9,7 +9,7 @@
 #include "flutter/lib/ui/text/text_box.h"
 #include "flutter/third_party/txt/src/txt/paragraph.h"
 
-namespace blink {
+namespace flutter {
 
 class ParagraphImpl {
  public:
@@ -18,6 +18,8 @@ class ParagraphImpl {
   virtual double width() = 0;
 
   virtual double height() = 0;
+
+  virtual double longestLine() = 0;
 
   virtual double minIntrinsicWidth() = 0;
 
@@ -39,11 +41,13 @@ class ParagraphImpl {
       txt::Paragraph::RectHeightStyle rect_height_style,
       txt::Paragraph::RectWidthStyle rect_width_style) = 0;
 
+  virtual std::vector<TextBox> getRectsForPlaceholders() = 0;
+
   virtual Dart_Handle getPositionForOffset(double dx, double dy) = 0;
 
   virtual Dart_Handle getWordBoundary(unsigned offset) = 0;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_TEXT_PARAGRAPH_IMPL_H_

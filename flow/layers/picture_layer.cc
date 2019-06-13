@@ -6,9 +6,16 @@
 
 #include "flutter/fml/logging.h"
 
-namespace flow {
+namespace flutter {
 
-PictureLayer::PictureLayer() = default;
+PictureLayer::PictureLayer(const SkPoint& offset,
+                           SkiaGPUObject<SkPicture> picture,
+                           bool is_complex,
+                           bool will_change)
+    : offset_(offset),
+      picture_(std::move(picture)),
+      is_complex_(is_complex),
+      will_change_(will_change) {}
 
 PictureLayer::~PictureLayer() = default;
 
@@ -52,4 +59,4 @@ void PictureLayer::Paint(PaintContext& context) const {
   context.leaf_nodes_canvas->drawPicture(picture());
 }
 
-}  // namespace flow
+}  // namespace flutter

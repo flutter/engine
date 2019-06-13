@@ -14,7 +14,7 @@
 
 using tonic::ToDart;
 
-namespace blink {
+namespace flutter {
 
 ParagraphImplTxt::ParagraphImplTxt(std::unique_ptr<txt::Paragraph> paragraph)
     : m_paragraph(std::move(paragraph)) {}
@@ -27,6 +27,10 @@ double ParagraphImplTxt::width() {
 
 double ParagraphImplTxt::height() {
   return m_paragraph->GetHeight();
+}
+
+double ParagraphImplTxt::longestLine() {
+  return m_paragraph->GetLongestLine();
 }
 
 double ParagraphImplTxt::minIntrinsicWidth() {
@@ -70,8 +74,18 @@ std::vector<TextBox> ParagraphImplTxt::getRectsForRange(
   std::vector<txt::Paragraph::TextBox> boxes = m_paragraph->GetRectsForRange(
       start, end, rect_height_style, rect_width_style);
   for (const txt::Paragraph::TextBox& box : boxes) {
+    result.emplace_back(box.rect, static_cast<TextDirection>(box.direction));
+  }
+  return result;
+}
+
+std::vector<TextBox> ParagraphImplTxt::getRectsForPlaceholders() {
+  std::vector<TextBox> result;
+  std::vector<txt::Paragraph::TextBox> boxes =
+      m_paragraph->GetRectsForPlaceholders();
+  for (const txt::Paragraph::TextBox& box : boxes) {
     result.emplace_back(box.rect,
-                        static_cast<blink::TextDirection>(box.direction));
+                        static_cast<flutter::TextDirection>(box.direction));
   }
   return result;
 }
@@ -93,4 +107,4 @@ Dart_Handle ParagraphImplTxt::getWordBoundary(unsigned offset) {
   return result;
 }
 
-}  // namespace blink
+}  // namespace flutter

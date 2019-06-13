@@ -10,7 +10,7 @@
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-namespace flow {
+namespace flutter {
 
 static const size_t kMaxSamples = 120;
 static const size_t kMaxFrameMarkers = 8;
@@ -42,13 +42,13 @@ const fml::TimeDelta& Stopwatch::LastLap() const {
   return laps_[(current_sample_ - 1) % kMaxSamples];
 }
 
-static inline constexpr double UnitFrameInterval(double frame_time_ms) {
-  return frame_time_ms * 60.0 * 1e-3;
+static inline constexpr double UnitFrameInterval(double raster_time_ms) {
+  return raster_time_ms * 60.0 * 1e-3;
 }
 
-static inline double UnitHeight(double frame_time_ms,
+static inline double UnitHeight(double raster_time_ms,
                                 double max_unit_interval) {
-  double unitHeight = UnitFrameInterval(frame_time_ms) / max_unit_interval;
+  double unitHeight = UnitFrameInterval(raster_time_ms) / max_unit_interval;
   if (unitHeight > 1.0)
     unitHeight = 1.0;
   return unitHeight;
@@ -311,4 +311,4 @@ int64_t CounterValues::GetMinValue() const {
   return min;
 }
 
-}  // namespace flow
+}  // namespace flutter

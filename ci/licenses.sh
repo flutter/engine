@@ -3,6 +3,10 @@ set -e
 shopt -s nullglob
 
 echo "Verifying license script is still happy..."
+echo "Using pub from `which pub`, dart from `which dart`"
+
+dart --version
+
 (cd flutter/tools/licenses; pub get; dart --enable-asserts lib/main.dart --src ../../.. --out ../../../out/license_script_output --golden ../../ci/licenses_golden)
 
 for f in out/license_script_output/licenses_*; do
@@ -32,7 +36,7 @@ then
     echo "changed, no diffs are typically expected in the output of the"
     echo "script. Verify the output, and if it looks correct, update the"
     echo "license tool signature golden file:"
-    echo "  ci/licences_golden/tool_signature"
+    echo "  ci/licenses_golden/tool_signature"
     echo "For more information, see the script in:"
     echo "  https://github.com/flutter/engine/tree/master/tools/licenses"
     echo ""
