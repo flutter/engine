@@ -56,7 +56,7 @@ void MessageLoopTaskQueue::GetTasksToRunNow(
 }
 
 void MessageLoopTaskQueue::WakeUp(fml::TimePoint time) {
-  if (wakeable_.get()) {
+  if (wakeable_) {
     wakeable_->WakeUp(time);
   }
 }
@@ -102,7 +102,7 @@ void MessageLoopTaskQueue::Swap(MessageLoopTaskQueue& other)
 }
 
 void MessageLoopTaskQueue::SetWakeable(fml::Wakeable* wakeable) {
-  wakeable_.reset(wakeable);
+  wakeable_ = wakeable;
 }
 
 }  // namespace fml

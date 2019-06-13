@@ -63,7 +63,7 @@ class MessageLoopTaskQueue {
  private:
   void WakeUp(fml::TimePoint time);
 
-  std::unique_ptr<Wakeable> wakeable_;
+  Wakeable* wakeable_ = NULL;
 
   std::mutex observers_mutex_;
   std::map<intptr_t, fml::closure> task_observers_
