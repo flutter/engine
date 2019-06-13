@@ -159,6 +159,16 @@ struct MouseState {
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
+/**
+ * Reads the data from the clipboard.
+ */
+- (NSDictionary*)getClipboardData:(NSString*)format;
+
+/**
+ * Clears contents and writes new data into clipboard.
+ */
+- (void)setClipboardData:(NSDictionary*)data;
+
 @end
 
 #pragma mark - Static methods provided to engine configuration
@@ -625,13 +635,10 @@ static void CommonInit(FLEViewController* controller) {
   }
 }
 
-#pragma mark - ClipboardData
-
 - (NSDictionary*)getClipboardData:(NSString*)format {
   NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
-  if (!format || [format isEqualToString:@(kTextPlainFormat)]) {
-    id stringInPasteboard = [pasteboard stringForType:NSPasteboardTypeString];
-    // The pasteboard may contain an item but it may not be a string (an image for instance).
+  if ([format isEqualToString:@(kTextPlainFormat)]) {
+    NSString* stringInPasteboard = [pasteboard stringForType:NSPasteboardTypeString];
     return stringInPasteboard == nil ? nil : @{@"text" : stringInPasteboard};
   }
   return nil;
@@ -639,8 +646,11 @@ static void CommonInit(FLEViewController* controller) {
 
 - (void)setClipboardData:(NSDictionary*)data {
   NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
-  [pasteboard declareTypes:@[ NSPasteboardTypeString ] owner:self];
-  [pasteboard setString:data[@"text"] forType:NSPasteboardTypeString];
+  NSString* text = data[@"text"];
+  if (text && ![text isEqual:[NSNull null]]) {
+    [pasteboard clearContents];
+    [pasteboard setString:data[@"text"] forType:NSPasteboardTypeString];
+  }
 }
 
 #pragma mark - FLEReshapeListener
