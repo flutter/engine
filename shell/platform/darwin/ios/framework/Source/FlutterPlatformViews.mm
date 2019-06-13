@@ -286,7 +286,7 @@ void FlutterPlatformViewsController::CompositeWithParams(
   CGFloat screenScale = [UIScreen mainScreen].scale;
   head.layer.transform = CATransform3DConcat(
       head.layer.transform, CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1));
-  if (index > -1) {
+  if (index > -1 && !head.superview) {
     UIView* flutter_view = flutter_view_.get();
     [flutter_view insertSubview:head atIndex:index];
   }
