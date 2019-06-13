@@ -135,12 +135,18 @@ class InputConnectionAdaptor extends BaseInputConnection {
         return result;
     }
 
+    // Sanitizes the index to ensure the index is within the range of the
+    // contents of editable.
+    private static int clampIndexToEditable(int index, Editable editable) {
+        return Math.max(0, Math.min(editable.length() - 1, index));
+    }
+
     @Override
     public boolean sendKeyEvent(KeyEvent event) {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
-                int selStart = Selection.getSelectionStart(mEditable);
-                int selEnd = Selection.getSelectionEnd(mEditable);
+                int selStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
+                int selEnd = clampIndexToEditable(Selection.getSelectionEnd(mEditable), mEditable);
                 if (selEnd > selStart) {
                     // Delete the selection.
                     Selection.setSelection(mEditable, selStart);
@@ -150,12 +156,10 @@ class InputConnectionAdaptor extends BaseInputConnection {
                 } else if (selStart > 0) {
                     // Delete to the left of the cursor.
                     Selection.extendLeft(mEditable, mLayout);
-                    int newSel = Selection.getSelectionEnd(mEditable);
-                    if (newSel >= 0) {
-                        Selection.setSelection(mEditable, newSel);
-                        mEditable.delete(newSel, selStart);
-                        updateEditingState();
-                    }
+                    int newSel = clampIndexToEditable(Selection.getSelectionEnd(mEditable), mEditable);
+                    Selection.setSelection(mEditable, newSel);
+                    mEditable.delete(newSel, selStart);
+                    updateEditingState();
                     return true;
                 }
             } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
