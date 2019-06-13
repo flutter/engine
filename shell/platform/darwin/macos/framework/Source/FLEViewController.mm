@@ -160,12 +160,14 @@ struct MouseState {
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
 /**
- * Reads the data from the clipboard.
+ * Reads the data from the clipboard. |format| specifies the media type of the
+ * data to obtain.
  */
 - (NSDictionary*)getClipboardData:(NSString*)format;
 
 /**
- * Clears contents and writes new data into clipboard.
+ * Clears contents and writes new data into clipboard. |data| is a dictionary where
+ * the keys are the type of data, and tervalue the data to be stored.
  */
 - (void)setClipboardData:(NSDictionary*)data;
 
@@ -649,7 +651,7 @@ static void CommonInit(FLEViewController* controller) {
   NSString* text = data[@"text"];
   if (text && ![text isEqual:[NSNull null]]) {
     [pasteboard clearContents];
-    [pasteboard setString:data[@"text"] forType:NSPasteboardTypeString];
+    [pasteboard setString:text forType:NSPasteboardTypeString];
   }
 }
 
