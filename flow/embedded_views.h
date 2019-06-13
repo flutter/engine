@@ -19,27 +19,33 @@ namespace flutter {
 
 enum MutatorType { clip_rect, clip_rrect, clip_path, transform };
 
+// Stores mutation information like clipping or transform.
+//
+// The `type` indicates the type of the mutation: clip_rect, transform and etc.
+// Each `type` is paired with an object that supports the mutation. For example,
+// if the `type` is clip_rect, `rect()` is used the represent the rect to be clipped.
+// One mutation object must only contain one type of mutation.
 class Mutator {
  public:
-  Mutator(const Mutator& other) {
-    type_ = other.type_;
-    switch (other.type_) {
-      case clip_rect:
-        rect_ = other.rect_;
-        break;
-      case clip_rrect:
-        rrect_ = other.rrect_;
-        break;
-      case clip_path:
-        path_ = new SkPath(*other.path_);
-        break;
-      case transform:
-        matrix_ = other.matrix_;
-        break;
-      default:
-        break;
-    }
-  }
+//  Mutator(const Mutator& other) {
+//    type_ = other.type_;
+//    switch (other.type_) {
+//      case clip_rect:
+//        rect_ = other.rect_;
+//        break;
+//      case clip_rrect:
+//        rrect_ = other.rrect_;
+//        break;
+//      case clip_path:
+//        path_ = new SkPath(*other.path_);
+//        break;
+//      case transform:
+//        matrix_ = other.matrix_;
+//        break;
+//      default:
+//        break;
+//    }
+//  }
 
   explicit Mutator(const SkRect& rect) : type_(clip_rect), rect_(rect) {}
   explicit Mutator(const SkRRect& rrect) : type_(clip_rrect), rrect_(rrect) {}
@@ -121,10 +127,10 @@ class MutatorsStack {
   // and destroys it.
   void pop();
 
-  // Returns the iterator points to the top of the stack..
+  // Returns an iterator points the top of the stack.
   const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator top()
       const;
-  // Returns an iterator pointing to the bottom of the stack.
+  // Returns an iterator points the bottom of the stack.
   const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator bottom()
       const;
 
@@ -155,17 +161,17 @@ class EmbeddedViewParams {
   EmbeddedViewParams(const EmbeddedViewParams& other) {
     offsetPixels = other.offsetPixels;
     sizePoints = other.sizePoints;
-    mutatorsStack = new MutatorsStack(*other.mutatorsStack);
+    mutatorsStack = other.mutatorsStack;
   };
 
   SkPoint offsetPixels;
   SkSize sizePoints;
-  MutatorsStack* mutatorsStack;
+  MutatorsStack mutatorsStack;
 
   bool operator==(const EmbeddedViewParams& other) const {
     return offsetPixels == other.offsetPixels &&
            sizePoints == other.sizePoints &&
-           *mutatorsStack == *other.mutatorsStack;
+           mutatorsStack == other.mutatorsStack;
   }
 };
 

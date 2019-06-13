@@ -225,9 +225,9 @@ UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutat
       case clip_rrect:
       case clip_path: {
         UIView* clipView = head.superview;
-        // if we need more clips operations than last time, create a new view.
         ++clipCount;
         if (clipCount > clip_count_[view_id]) {
+          // if we need more clip operations than last time, create a new view.
           [head removeFromSuperview];
           clipView = [[ChildClippingView alloc] initWithFrame:flutter_view_.get().bounds];
           [clipView addSubview:head];
@@ -245,15 +245,12 @@ UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutat
     ++iter;
   }
 
-  // If we have clips, replace root view with the top parent view.
-  if (head != embedded_view) {
-    root_views_[view_id] = fml::scoped_nsobject<UIView>([head retain]);
-  }
   // If we have less cilp operations this time, remove unnecessary views.
   // We skip this process if we have more clip operations this time.
-  clip_count_[view_id] = clipCount;
   bool hasExtraClipViews = clip_count_[view_id] - clipCount > 0;
+  clip_count_[view_id] = clipCount;
   if (!hasExtraClipViews) {
+    root_views_[view_id] = fml::scoped_nsobject<UIView>([head retain]);
     return head;
   }
 
@@ -261,6 +258,7 @@ UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutat
 
   [root_views_[view_id] removeFromSuperview];
   [root_views_[view_id] release];
+  root_views_[view_id] = fml::scoped_nsobject<UIView>([head retain]);
 
   return head;
 }
@@ -269,10 +267,14 @@ void FlutterPlatformViewsController::CompositeWithParams(
     int view_id,
     const flutter::EmbeddedViewParams& params) {
   UIView* touch_interceptor = touch_interceptors_[view_id].get();
-
+  UIView *platform_view_root = root_views_[view_id].get();
+  NSInteger index = -1;
+  if (platform_view_root.superview) {
+    index = [platform_view_root.superview.subviews indexOfObject:platform_view_root];
+  }
   CGRect frame = CGRectMake(0, 0, params.sizePoints.width(), params.sizePoints.height());
   touch_interceptor.frame = frame;
-  UIView* head = ApplyMutators(*params.mutatorsStack, touch_interceptor, view_id);
+  UIView* head = ApplyMutators(params.mutatorsStack, touch_interceptor, view_id);
 
   // Reverse scale based on screen scale.
   //
@@ -284,6 +286,10 @@ void FlutterPlatformViewsController::CompositeWithParams(
   CGFloat screenScale = [UIScreen mainScreen].scale;
   head.layer.transform = CATransform3DConcat(
       head.layer.transform, CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1));
+  if (index > -1) {
+    UIView* flutter_view = flutter_view_.get();
+    [flutter_view insertSubview:head atIndex:index];
+  }
 }
 
 SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
