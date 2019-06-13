@@ -151,9 +151,11 @@ class InputConnectionAdaptor extends BaseInputConnection {
                     // Delete to the left of the cursor.
                     Selection.extendLeft(mEditable, mLayout);
                     int newSel = Selection.getSelectionEnd(mEditable);
-                    Selection.setSelection(mEditable, newSel);
-                    mEditable.delete(newSel, selStart);
-                    updateEditingState();
+                    if (newSel >= 0) {
+                        Selection.setSelection(mEditable, newSel);
+                        mEditable.delete(newSel, selStart);
+                        updateEditingState();
+                    }
                     return true;
                 }
             } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
