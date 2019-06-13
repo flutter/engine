@@ -19,11 +19,12 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
+  'swiftshader_git': 'https://swiftshader.googlesource.com',
   'dart_git': 'https://dart.googlesource.com',
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '81756e4cae9547a525d039128a870e336f13114b',
+  'skia_revision': '569f12f0e50368b03f7316e1fb48b05e2e91117c',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -121,7 +122,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '263ee3b119f686591f8bb131bf22f53d384c2be2',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '95662021f20c859d1a1d30d3e436375b1078a39d',
 
    # Fuchsia compatibility
    #
@@ -394,6 +395,9 @@ deps = {
    'src/third_party/vulkan':
    Var('github_git') + '/KhronosGroup/Vulkan-Docs.git' + '@' + 'v1.1.91',
 
+   'src/third_party/swiftshader':
+   Var('swiftshader_git') + '/SwiftShader.git' + '@' + '95b1db9619fb0f5f232c09995bc00729273f74ee',
+
   'src/third_party/pkg/when':
    Var('dart_git') + '/when.git' + '@' + '0.2.0',
 
@@ -469,7 +473,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'jlQvNeRMq6X81_VYiFI_Ol311YCXak0xACebeb8f6TcC'
+        'version': 'Cx51FRV5TCoqQ9nfs4E2QMfYkJ1JWt7arQXhV01tr7cC'
        }
      ],
      'condition': 'host_os == "mac"',
@@ -479,7 +483,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/clang/mac-amd64',
-        'version': '4OfgjQg8g3Ztj2OYJ4Zlz9Q6DGYjOTuHh3G8MSMhxg4C'
+        'version': 'BzmZEP9A83NSNSqnrff3k0tYJK7UXs0pknphn-quiZwC'
        }
      ],
      'condition': 'host_os == "mac"',
@@ -489,7 +493,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': '9-zyx3CzWylM-x9RYdL5UTT9uU-sl_0ysOCcEGCtot0C'
+        'version': 'udf6w2VmM5E8PyQm5ggugW_jjiEdWs-Xl6efeLf2JdkC'
        }
      ],
      'condition': 'host_os == "linux"',
@@ -499,7 +503,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/clang/linux-amd64',
-        'version': 'WPg0zzXLyTjFNrOrz4uA5vPaXUuEYvTJ5DPyYdiaN3MC'
+        'version': 'dV3r0yk4WXi1C-QwjzNUA-pIkHCG3COYnrlt80GFacYC'
        }
      ],
      'condition': 'host_os == "linux"',

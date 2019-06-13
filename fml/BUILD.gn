@@ -1,5 +1,5 @@
-# Copyright 2013 The Flutter Authors. All rights reserved.
-# Use of this source code is governed by a BSD-style license that can be
+# Copyright 2013 The Flutter Authors.All rights reserved.
+# Use of this source code is governed by a BSD - style license that can be
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
@@ -200,6 +200,7 @@ executable("fml_unittests") {
     "file_unittest.cc",
     "memory/ref_counted_unittest.cc",
     "memory/weak_ptr_unittest.cc",
+    "message_loop_task_queue_unittests.cc",
     "message_loop_unittests.cc",
     "message_unittests.cc",
     "paths_unittests.cc",
