@@ -4,6 +4,7 @@
 
 package io.flutter.view;
 
+import android.annotation.SuppressLint;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
@@ -419,6 +420,7 @@ final class AccessibilityViewEmbedder {
         private @Nullable final Field childNodesField;
         private @Nullable final Method longArrayGetIndex;
 
+        @SuppressLint("PrivateApi")
         private ReflectionAccessors() {
             Method getSourceNodeId = null;
             Method getParentNodeId = null;
@@ -500,13 +502,27 @@ final class AccessibilityViewEmbedder {
             if (getChildId != null) {
                 try {
                     return (Long) getChildId.invoke(node, child);
-                } catch (IllegalAccessException | InvocationTargetException e) {
+                // Using identical separate catch blocks to comply with the following lint:
+                // Error: Multi-catch with these reflection exceptions requires API level 19
+                // (current min is 16) because they get compiled to the common but new super
+                // type ReflectiveOperationException. As a workaround either create individual
+                // catch statements, or catch Exception. [NewApi]
+                } catch (IllegalAccessException e) {
+                    Log.w(TAG, e);
+                } catch (InvocationTargetException e) {
                     Log.w(TAG, e);
                 }
             } else {
                 try {
                     return (long) longArrayGetIndex.invoke(childNodesField.get(node), child);
-                } catch (IllegalAccessException | InvocationTargetException | ArrayIndexOutOfBoundsException e) {
+                // Using identical separate catch blocks to comply with the following lint:
+                // Error: Multi-catch with these reflection exceptions requires API level 19
+                // (current min is 16) because they get compiled to the common but new super
+                // type ReflectiveOperationException. As a workaround either create individual
+                // catch statements, or catch Exception. [NewApi]
+                } catch (IllegalAccessException e) {
+                    Log.w(TAG, e);
+                } catch (InvocationTargetException | ArrayIndexOutOfBoundsException e) {
                     Log.w(TAG, e);
                 }
             }
@@ -518,7 +534,14 @@ final class AccessibilityViewEmbedder {
             if (getParentNodeId != null) {
                 try {
                     return (long) getParentNodeId.invoke(node);
-                } catch (IllegalAccessException | InvocationTargetException e) {
+                // Using identical separate catch blocks to comply with the following lint:
+                // Error: Multi-catch with these reflection exceptions requires API level 19
+                // (current min is 16) because they get compiled to the common but new super
+                // type ReflectiveOperationException. As a workaround either create individual
+                // catch statements, or catch Exception. [NewApi]
+                } catch (IllegalAccessException e) {
+                    Log.w(TAG, e);
+                } catch (InvocationTargetException e) {
                     Log.w(TAG, e);
                 }
             }
