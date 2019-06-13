@@ -48,6 +48,10 @@ void PlatformView::DispatchSemanticsAction(int32_t id,
 }
 
 void PlatformView::SetSemanticsEnabled(bool enabled) {
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  FML_DLOG(INFO) << "Debug build. Forcing semantics to enabled.";
+  enabled = true;
+#endif
   delegate_.OnPlatformViewSetSemanticsEnabled(enabled);
 }
 
