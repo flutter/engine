@@ -7,6 +7,8 @@ package io.flutter.view;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -513,17 +515,60 @@ final class AccessibilityViewEmbedder {
 
         @Nullable
         private Long getParentNodeId(@NonNull AccessibilityNodeInfo node) {
-            if (getParentNodeId == null) {
+            if (getParentNodeId != null) {
+                try {
+                    return (long) getParentNodeId.invoke(node);
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    Log.w(TAG, e);
+                }
+            }
+
+            // Fall back on reading the ID from a serialized data if we absolutely have to.
+            return yoinkParentIdFromParcel(node);
+        }
+
+        @Nullable
+        private static Long yoinkParentIdFromParcel(AccessibilityNodeInfo node) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                Log.w(TAG, "Unexpected Android version. Unable to find the parent ID.");
                 return null;
             }
-            try {
-                return (long) getParentNodeId.invoke(node);
-            } catch (IllegalAccessException e) {
-                Log.w(TAG, e);
-            } catch (InvocationTargetException e) {
-                Log.w(TAG, e);
+
+            // If this looks like it's failing, that's because it probably is. This method is
+            // relying on the implementation details of `AccessibilityNodeInfo#writeToParcel` in
+            // order to find the particular bit in the opaque parcel that represents mParentNodeId.
+            // If these implementation details change from our assumptions in this method, this will
+            // silently break.
+            AccessibilityNodeInfo copy = AccessibilityNodeInfo.obtain(node);
+            final Parcel parcel = Parcel.obtain();
+            parcel.setDataPosition(0);
+            copy.writeToParcel(parcel, /*flags=*/ 0);
+            Long parentNodeId = null;
+            // Match the internal logic that sets where the data actually ends up finally living.
+            // Move through the parcel if and when there's data set to read so that we can get to
+            // where the parentNodeId has been stored.
+            parcel.setDataPosition(0);
+            long nonDefaultFields = parcel.readLong();
+            int fieldIndex = 0;
+            if (isBitSet(nonDefaultFields, fieldIndex++)) {
+                parcel.readInt(); // mIsSealed
             }
-            return null;
+            if (isBitSet(nonDefaultFields, fieldIndex++)) {
+                parcel.readLong(); // mSourceNodeId
+            }
+            if (isBitSet(nonDefaultFields, fieldIndex++)) {
+                parcel.readInt();  // mWindowId
+            }
+            if (isBitSet(nonDefaultFields, fieldIndex++)) {
+                parentNodeId = parcel.readLong();
+            }
+
+            parcel.recycle();
+            return parentNodeId;
+        }
+
+        private static boolean isBitSet(long flags, int bitIndex) {
+            return (flags & (1L << bitIndex)) != 0;
         }
 
         @Nullable
