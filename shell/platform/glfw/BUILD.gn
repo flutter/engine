@@ -38,6 +38,8 @@ source_set("flutter_glfw") {
     "keyboard_hook_handler.h",
     "text_input_plugin.cc",
     "text_input_plugin.h",
+    "platform_handler.h",
+    "platform_handler.cc",
   ]
 
   defines = [ "USE_RAPID_JSON" ]
