@@ -56,8 +56,9 @@ void MessageLoopTaskQueue::GetTasksToRunNow(
 }
 
 void MessageLoopTaskQueue::WakeUp(fml::TimePoint time) {
-  FML_CHECK(loop_.get()) << "Loop should be set by calling SetLoop";
-  loop_->WakeUp(time);
+  if (wakeable_.get()) {
+    wakeable_->WakeUp(time);
+  }
 }
 
 size_t MessageLoopTaskQueue::GetNumPendingTasks() {
@@ -100,8 +101,8 @@ void MessageLoopTaskQueue::Swap(MessageLoopTaskQueue& other)
   std::swap(delayed_tasks_, other.delayed_tasks_);
 }
 
-void MessageLoopTaskQueue::SetLoop(fml::MessageLoopImpl* loop) {
-  loop_.reset(loop);
+void MessageLoopTaskQueue::SetWakeable(fml::Wakeable* wakeable) {
+  wakeable_.reset(wakeable);
 }
 
 }  // namespace fml

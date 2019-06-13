@@ -41,7 +41,7 @@ fml::RefPtr<MessageLoopImpl> MessageLoopImpl::Create() {
 
 MessageLoopImpl::MessageLoopImpl() : terminated_(false) {
   task_queue_ = std::make_unique<MessageLoopTaskQueue>();
-  task_queue_->SetLoop(this);
+  task_queue_->SetWakeable(this);
 }
 
 MessageLoopImpl::~MessageLoopImpl() = default;

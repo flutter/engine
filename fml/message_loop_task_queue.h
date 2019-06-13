@@ -14,6 +14,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/synchronization/thread_annotations.h"
+#include "flutter/fml/wakeable.h"
 
 namespace fml {
 
@@ -21,8 +22,6 @@ enum class FlushType {
   kSingle,
   kAll,
 };
-
-class MessageLoopImpl;
 
 // This class keeps track of all the tasks and observers that
 // need to be run on it's MessageLoopImpl. This also wakes up the
@@ -59,12 +58,12 @@ class MessageLoopTaskQueue {
 
   void Swap(MessageLoopTaskQueue& other);
 
-  void SetLoop(fml::MessageLoopImpl* loop);
+  void SetWakeable(fml::Wakeable* wakeable);
 
  private:
   void WakeUp(fml::TimePoint time);
 
-  std::unique_ptr<MessageLoopImpl> loop_;
+  std::unique_ptr<Wakeable> wakeable_;
 
   std::mutex observers_mutex_;
   std::map<intptr_t, fml::closure> task_observers_

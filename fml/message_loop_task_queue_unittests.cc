@@ -7,18 +7,37 @@
 #include "flutter/fml/message_loop_task_queue.h"
 #include "gtest/gtest.h"
 
+class TestWakeable : public fml::Wakeable {
+ public:
+  using WakeUpCall  = std::function<void(const fml::TimePoint)>;
+
+  TestWakeable(WakeUpCall call) : wake_up_call_(call) {}
+
+  void WakeUp(fml::TimePoint time_point) override {
+    wake_up_call_(time_point);
+  }
+
+ private:
+  WakeUpCall wake_up_call_;
+};
+
 TEST(MessageLoopTaskQueue, StartsWithNoPendingTasks) {
   auto task_queue = std::make_unique<fml::MessageLoopTaskQueue>();
   ASSERT_FALSE(task_queue->HasPendingTasks());
 }
 
 TEST(MessageLoopTaskQueue, RegisterOneTask) {
-  auto task_queue = std::make_unique<fml::MessageLoopTaskQueue>();
   const auto time = fml::TimePoint::Max();
-  const auto wake_time = task_queue->RegisterTask([] {}, time);
+
+  auto task_queue = std::make_unique<fml::MessageLoopTaskQueue>();
+  task_queue->SetWakeable(new TestWakeable([&time](fml::TimePoint wake_time) {
+    ASSERT_TRUE(wake_time == time);
+  }));
+
+  task_queue->RegisterTask([] {}, time);
   ASSERT_TRUE(task_queue->HasPendingTasks());
   ASSERT_TRUE(task_queue->GetNumPendingTasks() == 1);
-  ASSERT_TRUE(wake_time == time);
+
 }
 
 TEST(MessageLoopTaskQueue, RegisterTwoTasksAndCount) {
