@@ -18,6 +18,9 @@ static const int kDefaultWindowFramebuffer = 0;
 
 namespace {
 
+/// Clipboard plain text format.
+constexpr char kTextPlainFormat[] = "text/plain";
+
 /**
  * State tracking for mouse events, to adapt between the events coming from the system and the
  * events that the embedding API expects.
@@ -612,9 +615,32 @@ static void CommonInit(FLEViewController* controller) {
   if ([call.method isEqualToString:@"SystemNavigator.pop"]) {
     [NSApp terminate:self];
     result(nil);
+  } else if ([call.method isEqualToString:@"Clipboard.getData"]) {
+    result([self getClipboardData:call.arguments]);
+  } else if ([call.method isEqualToString:@"Clipboard.setData"]) {
+    [self setClipboardData:call.arguments];
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
+}
+
+#pragma mark - ClipboardData
+
+- (NSDictionary*)getClipboardData:(NSString*)format {
+  NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
+  if (!format || [format isEqualToString:@(kTextPlainFormat)]) {
+    id stringInPasteboard = [pasteboard stringForType:NSPasteboardTypeString];
+    // The pasteboard may contain an item but it may not be a string (an image for instance).
+    return stringInPasteboard == nil ? nil : @{@"text" : stringInPasteboard};
+  }
+  return nil;
+}
+
+- (void)setClipboardData:(NSDictionary*)data {
+  NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
+  [pasteboard declareTypes:@[ NSPasteboardTypeString ] owner:self];
+  [pasteboard setString:data[@"text"] forType:NSPasteboardTypeString];
 }
 
 #pragma mark - FLEReshapeListener
