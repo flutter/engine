@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
- // ignore_for_file: uri_does_not_exist
+// These packages exist in the third_party/dart .package, but not locally
+// which confuses the analyzer.
+// ignore_for_file: uri_does_not_exist
 import 'dart:async';
 import 'dart:convert' show json;
 import 'dart:io';
