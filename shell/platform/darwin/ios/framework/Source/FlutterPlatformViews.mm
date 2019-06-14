@@ -233,10 +233,10 @@ UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutat
           [clipView addSubview:head];
         }
         clipView.layer.transform = CATransform3DIdentity;
-        [(ChildClippingView*)clipView performClip:(*iter)->type()
-                                             rect:(*iter)->rect()
-                                            rrect:(*iter)->rrect()
-                                             path:(*iter)->path()];
+        [(ChildClippingView*)clipView setClip:(*iter)->type()
+                                         rect:(*iter)->rect()
+                                        rrect:(*iter)->rrect()
+                                         path:(*iter)->path()];
         ResetAnchor(clipView.layer);
         head = clipView;
         break;

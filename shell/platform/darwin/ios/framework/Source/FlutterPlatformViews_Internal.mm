@@ -129,10 +129,10 @@ void ResetAnchor(CALayer* layer) {
   CGPathRelease(pathRef);
 }
 
-- (void)performClip:(flutter::MutatorType)type
-               rect:(const SkRect&)rect
-              rrect:(const SkRRect&)rrect
-               path:(const SkPath&)path {
+- (void)setClip:(flutter::MutatorType)type
+           rect:(const SkRect&)rect
+          rrect:(const SkRRect&)rrect
+           path:(const SkPath&)path {
   FML_CHECK(type == flutter::clip_rect || type == flutter::clip_rrect ||
             type == flutter::clip_path);
   switch (type) {
@@ -150,8 +150,8 @@ void ResetAnchor(CALayer* layer) {
   }
 }
 
-// Only acknowlege touches are inside if the touches are acknowlege inside by any of its
-// subviews.
+// The ChildClippingView is as big as the FlutterView, we only want touches to be hit tested and
+// consumed by this view if they are inside the smaller child view.
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent*)event {
   for (UIView* view in self.subviews) {
     if ([view pointInside:[self convertPoint:point toView:view] withEvent:event]) {

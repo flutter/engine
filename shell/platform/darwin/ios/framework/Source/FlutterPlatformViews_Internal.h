@@ -34,31 +34,14 @@
 // Performs the clipping based on the type.
 //
 // The `type` must be one of the 3: clip_rect, clip_rrect, clip_path.
-- (void)performClip:(flutter::MutatorType)type
-               rect:(const SkRect&)rect
-              rrect:(const SkRRect&)rrect
-               path:(const SkPath&)path;
+- (void)setClip:(flutter::MutatorType)type
+           rect:(const SkRect&)rect
+          rrect:(const SkRRect&)rrect
+           path:(const SkPath&)path;
 
 @end
 
 namespace flutter {
-
-// Converts a SkRect to CGRect.
-CGRect GetCGRectFromSkRect(const SkRect& clipSkRect);
-
-// Perform clip rect on the `view` using `clipSkRect`.
-void ClipRect(UIView* view, const SkRect& clipSkRect);
-
-// Perform clip rounded rect on the `view` using `clipSkRRect`.
-void ClipRRect(UIView* view, const SkRRect& clipSkRRect);
-
-// Perform a clip operation on the `view`.
-// Uses either `rect`, `rrect` or `path` to perform the clip based on the `type`.
-void PerformClip(UIView* view,
-                 flutter::MutatorType type,
-                 const SkRect& rect,
-                 const SkRRect& rrect,
-                 const SkPath& path);
 
 // Converts a SkMatrix to CATransform3D.
 // Certain fields are ignored in CATransform3D since SkMatrix is 3x3 and CATransform3D is 4x4.
@@ -129,12 +112,12 @@ class FlutterPlatformViewsController {
   // Mapping a platform view ID to the top most parent view (root_view) who is a direct child to the
   // `flutter_view_`.
   //
-  // The platform view with the view ID is a child of the root view; or in some cases the platform
-  // view is the root view itself.
+  // The platform view with the view ID is a child of the root view; If the platform view is not
+  // clipped, and no clipping view is added, the root view will be the intercepting view.
   std::map<int64_t, fml::scoped_nsobject<UIView>> root_views_;
   // Mapping a platform view ID to its latest composition params.
   std::map<int64_t, EmbeddedViewParams> current_composition_params_;
-  // Mapping a platform view ID to the count of the clipping operations that was applied to the
+  // Mapping a platform view ID to the count of the clipping operations that were applied to the
   // platform view.
   std::map<int64_t, int64_t> clip_count_;
   std::map<int64_t, std::unique_ptr<FlutterPlatformViewLayer>> overlays_;
