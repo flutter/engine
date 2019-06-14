@@ -209,7 +209,7 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
     return;
   }
   // Make sure the block captures the codec, not self.
-  NSObject<FlutterMessageCodec>* codec = _codec;
+  NSObject<FlutterMethodCodec>* codec = _codec;
   FlutterBinaryMessageHandler messageHandler = ^(NSData* message, FlutterBinaryReply callback) {
     FlutterMethodCall* call = [codec decodeMethodCall:message];
     handler(call, ^(id result) {
