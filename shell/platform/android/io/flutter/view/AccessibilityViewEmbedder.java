@@ -438,14 +438,15 @@ final class AccessibilityViewEmbedder {
             } catch (NoSuchMethodException e) {
                 Log.w(TAG, "can't invoke AccessibiiltyRecord#getSourceNodeId with reflection");
             }
-            // Reflection access is not allowed starting Android P on these methods. Starting P we
-            // extract the child id from the mChildNodeIds field (see getChildId below).
+            // Reflection access is not allowed starting Android P on these methods.
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
                 try {
                     getParentNodeId = AccessibilityNodeInfo.class.getMethod("getParentNodeId");
                 } catch (NoSuchMethodException e) {
                     Log.w(TAG, "can't invoke getParentNodeId with reflection");
                 }
+                // Starting P we extract the child id from the mChildNodeIds field (see getChildId
+                // below).
                 try {
                     getChildId = AccessibilityNodeInfo.class.getMethod("getChildId", int.class);
                 } catch (NoSuchMethodException e) {
