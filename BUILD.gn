@@ -61,11 +61,13 @@ group("flutter") {
       "$flutter_root/shell/platform/embedder:embedder_unittests",
       "$flutter_root/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
       "$flutter_root/third_party/txt:txt_unittests",
-      "$flutter_root/third_party/txt:txt_benchmarks",
     ]
 
     if (!is_win) {
-      public_deps += [ "$flutter_root/shell/common:shell_benchmarks" ]
+      public_deps += [
+        "$flutter_root/shell/common:shell_benchmarks",
+        "$flutter_root/third_party/txt:txt_benchmarks",
+      ]
     }
   }
 }
