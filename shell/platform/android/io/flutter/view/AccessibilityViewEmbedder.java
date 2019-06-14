@@ -417,7 +417,7 @@ final class AccessibilityViewEmbedder {
         private @Nullable final Method getParentNodeId;
         private @Nullable final Method getRecordSourceNodeId;
         private @Nullable final Method getChildId;
-        private @Nullable final Field childNodesField;
+        private @Nullable final Field childNodeIdsField;
         private @Nullable final Method longArrayGetIndex;
 
         @SuppressLint("PrivateApi")
@@ -426,29 +426,26 @@ final class AccessibilityViewEmbedder {
             Method getParentNodeId = null;
             Method getRecordSourceNodeId = null;
             Method getChildId = null;
-            Field childNodesField = null;
+            Field childNodeIdsField = null;
             Method longArrayGetIndex = null;
             try {
                 getSourceNodeId = AccessibilityNodeInfo.class.getMethod("getSourceNodeId");
             } catch (NoSuchMethodException e) {
                 Log.w(TAG, "can't invoke AccessibilityNodeInfo#getSourceNodeId with reflection");
             }
-            // Reflection access is not allowed starting Android P.
+            try {
+                getRecordSourceNodeId = AccessibilityRecord.class.getMethod("getSourceNodeId");
+            } catch (NoSuchMethodException e) {
+                Log.w(TAG, "can't invoke AccessibiiltyRecord#getSourceNodeId with reflection");
+            }
+            // Reflection access is not allowed starting Android P on these methods. Starting P we
+            // extract the child id from the mChildNodeIds field (see getChildId below).
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
                 try {
                     getParentNodeId = AccessibilityNodeInfo.class.getMethod("getParentNodeId");
                 } catch (NoSuchMethodException e) {
                     Log.w(TAG, "can't invoke getParentNodeId with reflection");
                 }
-            }
-            try {
-                getRecordSourceNodeId = AccessibilityRecord.class.getMethod("getSourceNodeId");
-            } catch (NoSuchMethodException e) {
-                Log.w(TAG, "can't invoke AccessibiiltyRecord#getSourceNodeId with reflection");
-            }
-            // Reflection access is not allowed starting Android P on this method. Alternatively grab the child field
-            // instead.
-            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
                 try {
                     getChildId = AccessibilityNodeInfo.class.getMethod("getChildId", int.class);
                 } catch (NoSuchMethodException e) {
@@ -456,21 +453,21 @@ final class AccessibilityViewEmbedder {
                 }
             } else {
                 try {
-                    childNodesField = AccessibilityNodeInfo.class.getDeclaredField("mChildNodeIds");
-                    childNodesField.setAccessible(true);
+                    childNodeIdsField = AccessibilityNodeInfo.class.getDeclaredField("mChildNodeIds");
+                    childNodeIdsField.setAccessible(true);
                     // The private member is a private utility class to Android. We need to use
                     // reflection to actually handle the data too.
                     longArrayGetIndex = Class.forName("android.util.LongArray").getMethod("get", int.class);
                 } catch (NoSuchFieldException | ClassNotFoundException | NoSuchMethodException | NullPointerException e) {
-                    Log.w(TAG, "can't access childNodesField with reflection");
-                    childNodesField = null;
+                    Log.w(TAG, "can't access childNodeIdsField with reflection");
+                    childNodeIdsField = null;
                 }
             }
             this.getSourceNodeId = getSourceNodeId;
             this.getParentNodeId = getParentNodeId;
             this.getRecordSourceNodeId = getRecordSourceNodeId;
             this.getChildId = getChildId;
-            this.childNodesField = childNodesField;
+            this.childNodeIdsField = childNodeIdsField;
             this.longArrayGetIndex = longArrayGetIndex;
         }
 
@@ -496,7 +493,7 @@ final class AccessibilityViewEmbedder {
 
         @Nullable
         private Long getChildId(@NonNull AccessibilityNodeInfo node, int child) {
-            if (getChildId == null && (childNodesField == null || longArrayGetIndex == null)) {
+            if (getChildId == null && (childNodeIdsField == null || longArrayGetIndex == null)) {
                 return null;
             }
             if (getChildId != null) {
@@ -514,7 +511,7 @@ final class AccessibilityViewEmbedder {
                 }
             } else {
                 try {
-                    return (long) longArrayGetIndex.invoke(childNodesField.get(node), child);
+                    return (long) longArrayGetIndex.invoke(childNodeIdsField.get(node), child);
                 // Using identical separate catch blocks to comply with the following lint:
                 // Error: Multi-catch with these reflection exceptions requires API level 19
                 // (current min is 16) because they get compiled to the common but new super
@@ -550,6 +547,10 @@ final class AccessibilityViewEmbedder {
             return yoinkParentIdFromParcel(node);
         }
 
+        // If this looks like it's failing, that's because it probably is. This method is relying on
+        // the implementation details of `AccessibilityNodeInfo#writeToParcel` in order to find the
+        // particular bit in the opaque parcel that represents mParentNodeId. If the implementation
+        // details change from our assumptions in this method, this will silently break.
         @Nullable
         private static Long yoinkParentIdFromParcel(AccessibilityNodeInfo node) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -557,19 +558,18 @@ final class AccessibilityViewEmbedder {
                 return null;
             }
 
-            // If this looks like it's failing, that's because it probably is. This method is
-            // relying on the implementation details of `AccessibilityNodeInfo#writeToParcel` in
-            // order to find the particular bit in the opaque parcel that represents mParentNodeId.
-            // If these implementation details change from our assumptions in this method, this will
-            // silently break.
+            // We're creating a copy here because writing a node to a parcel recycles it. Objects
+            // are passed by reference in Java. So even though this method doesn't seem to use the
+            // node again, it's really used in other methods that would throw exceptions if we
+            // recycle it here.
             AccessibilityNodeInfo copy = AccessibilityNodeInfo.obtain(node);
             final Parcel parcel = Parcel.obtain();
             parcel.setDataPosition(0);
             copy.writeToParcel(parcel, /*flags=*/ 0);
             Long parentNodeId = null;
-            // Match the internal logic that sets where the data actually ends up finally living.
-            // Move through the parcel if and when there's data set to read so that we can get to
-            // where the parentNodeId has been stored.
+            // Match the internal logic that sets where mParentId actually ends up finally living.
+            // This logic should match
+            // https://android.googlesource.com/platform/frameworks/base/+/0b5ca24a4/core/java/android/view/accessibility/AccessibilityNodeInfo.java#3524.
             parcel.setDataPosition(0);
             long nonDefaultFields = parcel.readLong();
             int fieldIndex = 0;
