@@ -267,7 +267,7 @@ void FlutterPlatformViewsController::CompositeWithParams(
     int view_id,
     const flutter::EmbeddedViewParams& params) {
   UIView* touch_interceptor = touch_interceptors_[view_id].get();
-  UIView *platform_view_root = root_views_[view_id].get();
+  UIView* platform_view_root = root_views_[view_id].get();
   NSInteger index = -1;
   if (platform_view_root.superview) {
     index = [platform_view_root.superview.subviews indexOfObject:platform_view_root];
