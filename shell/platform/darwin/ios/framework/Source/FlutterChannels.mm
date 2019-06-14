@@ -208,15 +208,17 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
     [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:nil];
     return;
   }
+  // Make sure the block captures the codec, not self.
+  NSObject<FlutterMessageCodec>* codec = _codec;
   FlutterBinaryMessageHandler messageHandler = ^(NSData* message, FlutterBinaryReply callback) {
-    FlutterMethodCall* call = [_codec decodeMethodCall:message];
+    FlutterMethodCall* call = [codec decodeMethodCall:message];
     handler(call, ^(id result) {
       if (result == FlutterMethodNotImplemented)
         callback(nil);
       else if ([result isKindOfClass:[FlutterError class]])
-        callback([_codec encodeErrorEnvelope:(FlutterError*)result]);
+        callback([codec encodeErrorEnvelope:(FlutterError*)result]);
       else
-        callback([_codec encodeSuccessEnvelope:result]);
+        callback([codec encodeSuccessEnvelope:result]);
     });
   };
   [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
