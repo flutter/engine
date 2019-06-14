@@ -18,6 +18,8 @@
 
 namespace fml {
 
+typedef size_t TaskQueueId;
+
 enum class FlushType {
   kSingle,
   kAll,
@@ -26,53 +28,86 @@ enum class FlushType {
 // This class keeps track of all the tasks and observers that
 // need to be run on it's MessageLoopImpl. This also wakes up the
 // loop at the required times.
-class MessageLoopTaskQueue {
+class MessageLoopTaskQueue
+    : public fml::RefCountedThreadSafe<MessageLoopTaskQueue> {
  public:
   // Lifecycle.
 
-  MessageLoopTaskQueue();
+  static fml::RefPtr<MessageLoopTaskQueue> GetInstance();
 
-  ~MessageLoopTaskQueue();
+  TaskQueueId CreateTaskQueue();
 
-  void Dispose();
+  void Dispose(TaskQueueId queue_id);
 
   // Tasks methods.
 
-  void RegisterTask(fml::closure task, fml::TimePoint target_time);
+  void RegisterTask(TaskQueueId queue_id,
+                    fml::closure task,
+                    fml::TimePoint target_time);
 
-  bool HasPendingTasks();
+  bool HasPendingTasks(TaskQueueId queue_id);
 
-  void GetTasksToRunNow(FlushType type, std::vector<fml::closure>& invocations);
+  void GetTasksToRunNow(TaskQueueId queue_id,
+                        FlushType type,
+                        std::vector<fml::closure>& invocations);
 
-  size_t GetNumPendingTasks();
+  size_t GetNumPendingTasks(TaskQueueId queue_id);
 
   // Observers methods.
 
-  void AddTaskObserver(intptr_t key, fml::closure callback);
+  void AddTaskObserver(TaskQueueId queue_id,
+                       intptr_t key,
+                       fml::closure callback);
 
-  void RemoveTaskObserver(intptr_t key);
+  void RemoveTaskObserver(TaskQueueId queue_id, intptr_t key);
 
-  void NotifyObservers();
+  void NotifyObservers(TaskQueueId queue_id);
 
   // Misc.
 
   void Swap(MessageLoopTaskQueue& other);
 
-  void SetWakeable(fml::Wakeable* wakeable);
+  void SetWakeable(TaskQueueId queue_id, fml::Wakeable* wakeable);
 
  private:
-  void WakeUp(fml::TimePoint time);
+  enum class MutexType {
+    kTasks,
+    kObservers,
+    kWakeables,
+  };
 
-  Wakeable* wakeable_ = NULL;
+  using Mutexes = std::vector<std::unique_ptr<std::mutex>>;
+  using TaskObservers = std::map<intptr_t, fml::closure>;
 
-  std::mutex observers_mutex_;
-  std::map<intptr_t, fml::closure> task_observers_
-      FML_GUARDED_BY(observers_mutex_);
+  MessageLoopTaskQueue();
 
-  std::mutex delayed_tasks_mutex_;
-  DelayedTaskQueue delayed_tasks_ FML_GUARDED_BY(delayed_tasks_mutex_);
-  size_t order_ FML_GUARDED_BY(delayed_tasks_mutex_);
+  ~MessageLoopTaskQueue();
 
+  void WakeUp(TaskQueueId queue_id, fml::TimePoint time);
+
+  std::mutex& GetMutex(TaskQueueId queue_id, MutexType type);
+
+  static std::mutex creation_mutex_;
+  static fml::RefPtr<MessageLoopTaskQueue> instance_
+      FML_GUARDED_BY(creation_mutex_);
+
+  std::mutex queue_meta_mutex_;
+
+  size_t task_queue_id_counter_ FML_GUARDED_BY(queue_meta_mutex_);
+
+  Mutexes observers_mutexes_ FML_GUARDED_BY(queue_meta_mutex_);
+  Mutexes delayed_tasks_mutexes_ FML_GUARDED_BY(queue_meta_mutex_);
+  Mutexes wakeable_mutexes_ FML_GUARDED_BY(queue_meta_mutex_);
+
+  // These are guarded by their corresponding `Mutexes`
+  std::vector<Wakeable*> wakeables_;
+  std::vector<TaskObservers> task_observers_;
+  std::vector<DelayedTaskQueue> delayed_tasks_;
+
+  std::atomic_int order_;
+
+  FML_FRIEND_MAKE_REF_COUNTED(MessageLoopTaskQueue);
+  FML_FRIEND_REF_COUNTED_THREAD_SAFE(MessageLoopTaskQueue);
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(MessageLoopTaskQueue);
 };
 
