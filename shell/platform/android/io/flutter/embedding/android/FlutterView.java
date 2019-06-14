@@ -124,8 +124,8 @@ public class FlutterView extends FrameLayout {
    * {@code FlutterView} requires an {@code Activity} instead of a generic {@code Context}
    * to be compatible with {@link PlatformViewsController}.
    */
-  public FlutterView(@NonNull Activity activity) {
-    this(activity, null, null, null);
+  public FlutterView(@NonNull Context context) {
+    this(context, null, null, null);
   }
 
   /**
@@ -137,8 +137,8 @@ public class FlutterView extends FrameLayout {
    * {@code FlutterView} requires an {@code Activity} instead of a generic {@code Context}
    * to be compatible with {@link PlatformViewsController}.
    */
-  public FlutterView(@NonNull Activity activity, @NonNull RenderMode renderMode) {
-    this(activity, null, renderMode, null);
+  public FlutterView(@NonNull Context context, @NonNull RenderMode renderMode) {
+    this(context, null, renderMode, null);
   }
 
   /**
@@ -148,8 +148,8 @@ public class FlutterView extends FrameLayout {
    * {@code FlutterView} requires an {@code Activity} instead of a generic {@code Context}
    * to be compatible with {@link PlatformViewsController}.
    */
-  public FlutterView(@NonNull Activity activity, @NonNull TransparencyMode transparencyMode) {
-    this(activity, null, RenderMode.surface, transparencyMode);
+  public FlutterView(@NonNull Context context, @NonNull TransparencyMode transparencyMode) {
+    this(context, null, RenderMode.surface, transparencyMode);
   }
 
   /**
@@ -159,8 +159,8 @@ public class FlutterView extends FrameLayout {
    * {@code FlutterView} requires an {@code Activity} instead of a generic {@code Context}
    * to be compatible with {@link PlatformViewsController}.
    */
-  public FlutterView(@NonNull Activity activity, @NonNull RenderMode renderMode, @NonNull TransparencyMode transparencyMode) {
-    this(activity, null, renderMode, transparencyMode);
+  public FlutterView(@NonNull Context context, @NonNull RenderMode renderMode, @NonNull TransparencyMode transparencyMode) {
+    this(context, null, renderMode, transparencyMode);
   }
 
   /**
@@ -170,12 +170,12 @@ public class FlutterView extends FrameLayout {
    * to be compatible with {@link PlatformViewsController}.
    */
    // TODO(mattcarroll): expose renderMode in XML when build system supports R.attr
-  public FlutterView(@NonNull Activity activity, @Nullable AttributeSet attrs) {
-    this(activity, attrs, null, null);
+  public FlutterView(@NonNull Context context, @Nullable AttributeSet attrs) {
+    this(context, attrs, null, null);
   }
 
-  private FlutterView(@NonNull Activity activity, @Nullable AttributeSet attrs, @Nullable RenderMode renderMode, @Nullable TransparencyMode transparencyMode) {
-    super(activity, attrs);
+  private FlutterView(@NonNull Context context, @Nullable AttributeSet attrs, @Nullable RenderMode renderMode, @Nullable TransparencyMode transparencyMode) {
+    super(context, attrs);
 
     this.renderMode = renderMode == null ? RenderMode.surface : renderMode;
     this.transparencyMode = transparencyMode != null ? transparencyMode : TransparencyMode.opaque;
