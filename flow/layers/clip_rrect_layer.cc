@@ -6,8 +6,8 @@
 
 namespace flutter {
 
-ClipRRectLayer::ClipRRectLayer(Clip clip_behavior)
-    : clip_behavior_(clip_behavior) {
+ClipRRectLayer::ClipRRectLayer(const SkRRect& clip_rrect, Clip clip_behavior)
+    : clip_rrect_(clip_rrect), clip_behavior_(clip_behavior) {
   FML_DCHECK(clip_behavior != Clip::none);
 }
 
@@ -52,7 +52,7 @@ void ClipRRectLayer::UpdateScene(SceneUpdateContext& context) {
 #endif  // defined(OS_FUCHSIA)
 
 void ClipRRectLayer::Paint(PaintContext& context) const {
-  FML_TRACE_EVENT0("flutter", "ClipRRectLayer::Paint");
+  TRACE_EVENT0("flutter", "ClipRRectLayer::Paint");
   FML_DCHECK(needs_painting());
 
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);

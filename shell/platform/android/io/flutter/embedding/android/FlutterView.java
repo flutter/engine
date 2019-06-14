@@ -68,6 +68,7 @@ public class FlutterView extends FrameLayout {
   // Internal view hierarchy references.
   @Nullable
   private FlutterRenderer.RenderSurface renderSurface;
+  private boolean didRenderFirstFrame;
 
   // Connections to a Flutter execution context.
   @Nullable
@@ -94,6 +95,13 @@ public class FlutterView extends FrameLayout {
     @Override
     public void onAccessibilityChanged(boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled) {
       resetWillNotDraw(isAccessibilityEnabled, isTouchExplorationEnabled);
+    }
+  };
+
+  private final OnFirstFrameRenderedListener onFirstFrameRenderedListener = new OnFirstFrameRenderedListener() {
+    @Override
+    public void onFirstFrameRendered() {
+      didRenderFirstFrame = true;
     }
   };
 
@@ -171,9 +179,32 @@ public class FlutterView extends FrameLayout {
         break;
     }
 
+    // Register a listener for the first frame render event to set didRenderFirstFrame.
+    renderSurface.addOnFirstFrameRenderedListener(onFirstFrameRenderedListener);
+
     // FlutterView needs to be focusable so that the InputMethodManager can interact with it.
     setFocusable(true);
     setFocusableInTouchMode(true);
+  }
+
+  /**
+   * Returns true if an attached {@link FlutterEngine} has rendered at least 1 frame to this
+   * {@code FlutterView}.
+   * <p>
+   * Returns false if no {@link FlutterEngine} is attached.
+   * <p>
+   * This flag is specific to a given {@link FlutterEngine}. The following hypothetical timeline
+   * demonstrates how this flag changes over time.
+   * <ol>
+   *   <li>{@code flutterEngineA} is attached to this {@code FlutterView}: returns false</li>
+   *   <li>{@code flutterEngineA} renders its first frame to this {@code FlutterView}: returns true</li>
+   *   <li>{@code flutterEngineA} is detached from this {@code FlutterView}: returns false</li>
+   *   <li>{@code flutterEngineB} is attached to this {@code FlutterView}: returns false</li>
+   *   <li>{@code flutterEngineB} renders its first frame to this {@code FlutterView}: returns true</li>
+   * </ol>
+   */
+  public boolean hasRenderedFirstFrame() {
+    return didRenderFirstFrame;
   }
 
   /**
@@ -471,6 +502,7 @@ public class FlutterView extends FrameLayout {
     this.flutterEngine = flutterEngine;
 
     // Instruct our FlutterRenderer that we are now its designated RenderSurface.
+    didRenderFirstFrame = false;
     this.flutterEngine.getRenderer().attachToRenderSurface(renderSurface);
 
     // Initialize various components that know how to process Android View I/O
@@ -529,13 +561,19 @@ public class FlutterView extends FrameLayout {
     }
     Log.d(TAG, "Detaching from Flutter Engine");
 
+    // Disconnect and clean up the AccessibilityBridge.
+    accessibilityBridge.release();
+    accessibilityBridge = null;
+
     // Inform the Android framework that it should retrieve a new InputConnection
     // now that the engine is detached. The new InputConnection will be null, which
     // signifies that this View does not process input (until a new engine is attached).
     // TODO(mattcarroll): once this is proven to work, move this line ot TextInputPlugin
     textInputPlugin.getInputMethodManager().restartInput(this);
+    textInputPlugin.destroy();
 
     // Instruct our FlutterRenderer that we are no longer interested in being its RenderSurface.
+    didRenderFirstFrame = false;
     flutterEngine.getRenderer().detachFromRenderSurface();
     flutterEngine = null;
 

@@ -98,6 +98,12 @@ def to_gn_args(args):
     gn_args['android_full_debug'] = args.target_os == 'android' and args.unoptimized
     gn_args['is_clang'] = not sys.platform.startswith(('cygwin', 'win'))
 
+    if args.target_os == 'android' or args.target_os == 'ios':
+      gn_args['skia_gl_standard'] = 'gles'
+    else:
+      # We explicitly don't want to pick GL because we run GLES tests using SwiftShader.
+      gn_args['skia_gl_standard'] = ''
+
     if not sys.platform.startswith(('cygwin', 'win')):
       gn_args['use_clang_static_analyzer'] = args.clang_static_analyzer
 
@@ -171,10 +177,7 @@ def to_gn_args(args):
     else:
       gn_args['dart_target_arch'] = gn_args['target_cpu']
 
-    # No cross-compilation on Windows (for now).
     if sys.platform.startswith(('cygwin', 'win')):
-      if 'target_os' in gn_args:
-        gn_args['target_os'] = 'win'
       if 'target_cpu' in gn_args:
         gn_args['target_cpu'] = cpu_for_target_arch(gn_args['target_cpu'])
 

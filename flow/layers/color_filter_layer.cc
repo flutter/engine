@@ -6,12 +6,13 @@
 
 namespace flutter {
 
-ColorFilterLayer::ColorFilterLayer() = default;
+ColorFilterLayer::ColorFilterLayer(SkColor color, SkBlendMode blend_mode)
+    : color_(color), blend_mode_(blend_mode) {}
 
 ColorFilterLayer::~ColorFilterLayer() = default;
 
 void ColorFilterLayer::Paint(PaintContext& context) const {
-  FML_TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");
+  TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");
   FML_DCHECK(needs_painting());
 
   SkPaint paint;

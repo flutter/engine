@@ -8,7 +8,14 @@
 
 namespace flutter {
 
-PictureLayer::PictureLayer() = default;
+PictureLayer::PictureLayer(const SkPoint& offset,
+                           SkiaGPUObject<SkPicture> picture,
+                           bool is_complex,
+                           bool will_change)
+    : offset_(offset),
+      picture_(std::move(picture)),
+      is_complex_(is_complex),
+      will_change_(will_change) {}
 
 PictureLayer::~PictureLayer() = default;
 
@@ -30,7 +37,7 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 void PictureLayer::Paint(PaintContext& context) const {
-  FML_TRACE_EVENT0("flutter", "PictureLayer::Paint");
+  TRACE_EVENT0("flutter", "PictureLayer::Paint");
   FML_DCHECK(picture_.get());
   FML_DCHECK(needs_painting());
 

@@ -12,8 +12,8 @@
 
 namespace flutter {
 
-ClipPathLayer::ClipPathLayer(Clip clip_behavior)
-    : clip_behavior_(clip_behavior) {
+ClipPathLayer::ClipPathLayer(const SkPath& clip_path, Clip clip_behavior)
+    : clip_path_(clip_path), clip_behavior_(clip_behavior) {
   FML_DCHECK(clip_behavior != Clip::none);
 }
 
@@ -54,7 +54,7 @@ void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
 #endif  // defined(OS_FUCHSIA)
 
 void ClipPathLayer::Paint(PaintContext& context) const {
-  FML_TRACE_EVENT0("flutter", "ClipPathLayer::Paint");
+  TRACE_EVENT0("flutter", "ClipPathLayer::Paint");
   FML_DCHECK(needs_painting());
 
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);

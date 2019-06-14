@@ -78,7 +78,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
        &platform_view,  //
        io_task_runner   //
   ]() {
-        FML_TRACE_EVENT0("flutter", "ShellSetupIOSubsystem");
+        TRACE_EVENT0("flutter", "ShellSetupIOSubsystem");
         io_manager = std::make_unique<ShellIOManager>(
             platform_view->CreateResourceContext(), io_task_runner);
         io_latch.Signal();
@@ -96,7 +96,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                                         shell = shell.get(),   //
                                         &snapshot_delegate     //
   ]() {
-        FML_TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
+        TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
         if (auto new_rasterizer = on_create_rasterizer(*shell)) {
           rasterizer = std::move(new_rasterizer);
           snapshot_delegate = rasterizer->GetSnapshotDelegate();
@@ -120,7 +120,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                          snapshot_delegate = std::move(snapshot_delegate),  //
                          io_manager = io_manager->GetWeakPtr()              //
   ]() mutable {
-        FML_TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
+        TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
         const auto& task_runners = shell->GetTaskRunners();
 
         // The animator is owned by the UI thread but it gets its vsync pulses
@@ -212,7 +212,7 @@ std::unique_ptr<Shell> Shell::Create(
     Shell::CreateCallback<Rasterizer> on_create_rasterizer) {
   PerformInitializationTasks(settings);
 
-  FML_TRACE_EVENT0("flutter", "Shell::Create");
+  TRACE_EVENT0("flutter", "Shell::Create");
 
   auto vm = DartVMRef::Create(settings);
   FML_CHECK(vm) << "Must be able to initialize the VM.";
@@ -239,7 +239,7 @@ std::unique_ptr<Shell> Shell::Create(
     DartVMRef vm) {
   PerformInitializationTasks(settings);
 
-  FML_TRACE_EVENT0("flutter", "Shell::CreateWithSnapshots");
+  TRACE_EVENT0("flutter", "Shell::CreateWithSnapshots");
 
   if (!task_runners.IsValid() || !on_create_platform_view ||
       !on_create_rasterizer) {
@@ -439,7 +439,7 @@ DartVM* Shell::GetDartVM() {
 
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
-  FML_TRACE_EVENT0("flutter", "Shell::OnPlatformViewCreated");
+  TRACE_EVENT0("flutter", "Shell::OnPlatformViewCreated");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
@@ -523,7 +523,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
 
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewDestroyed() {
-  FML_TRACE_EVENT0("flutter", "Shell::OnPlatformViewDestroyed");
+  TRACE_EVENT0("flutter", "Shell::OnPlatformViewDestroyed");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
@@ -625,8 +625,8 @@ void Shell::OnPlatformViewDispatchPlatformMessage(
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchPointerDataPacket(
     std::unique_ptr<PointerDataPacket> packet) {
-  FML_TRACE_EVENT0("flutter", "Shell::OnPlatformViewDispatchPointerDataPacket");
-  FML_TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
+  TRACE_EVENT0("flutter", "Shell::OnPlatformViewDispatchPointerDataPacket");
+  TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
@@ -934,9 +934,20 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
   // threshold here is mainly for unit tests (so we don't have to write a
   // 1-second unit test), and make sure that our vector won't grow too big with
   // future 120fps, 240fps, or 1000fps displays.
+  //
+  // In the profile/debug mode, the timings are used by development tools which
+  // require a latency of no more than 100ms. Hence we lower that 1-second
+  // threshold to 100ms because performance overhead isn't that critical in
+  // those cases.
   if (UnreportedFramesCount() >= 100) {
     ReportTimings();
   } else if (!frame_timings_report_scheduled_) {
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+    constexpr int kBatchTimeInMilliseconds = 1000;
+#else
+    constexpr int kBatchTimeInMilliseconds = 100;
+#endif
+
     // Also make sure that frame times get reported with a max latency of 1
     // second. Otherwise, the timings of last few frames of an animation may
     // never be reported until the next animation starts.
@@ -951,7 +962,7 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
             self->ReportTimings();
           }
         },
-        fml::TimeDelta::FromSeconds(1));
+        fml::TimeDelta::FromMilliseconds(kBatchTimeInMilliseconds));
   }
 }
 
@@ -1187,7 +1198,7 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
 Rasterizer::Screenshot Shell::Screenshot(
     Rasterizer::ScreenshotType screenshot_type,
     bool base64_encode) {
-  FML_TRACE_EVENT0("flutter", "Shell::Screenshot");
+  TRACE_EVENT0("flutter", "Shell::Screenshot");
   fml::AutoResetWaitableEvent latch;
   Rasterizer::Screenshot screenshot;
   fml::TaskRunner::RunNowOrPostTask(

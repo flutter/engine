@@ -1,4 +1,4 @@
-Signature: 03bb97e370333f3a6cbb5d0d30f20549
+Signature: 12cc709bc4fb60e485a34b939491dcab
 
 UNUSED LICENSES:
 
@@ -1932,6 +1932,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Debug-OpenCL.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Debug-SK_CPU_LIMIT_SSE41.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Debug-SafeStack.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Debug-SwiftShader_MSAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Debug-Tidy.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Debug-Wuffs.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Release-ASAN.json
@@ -2092,7 +2093,6 @@ FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Cl
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-Nexus5-GPU-Adreno330-arm-Release-All-Android.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-Nexus5x-GPU-Adreno418-arm-Release-All-Android_Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-Nexus7-CPU-Tegra3-arm-Release-All-Android.json
-FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-NexusPlayer-GPU-PowerVRG6430-x86-Release-All-Android.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-Pixel-GPU-Adreno530-arm-Debug-All-Android_ASAN.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-Pixel-GPU-Adreno530-arm64-Debug-All-Android_Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-Pixel3-GPU-Adreno630-arm64-Debug-All-Android_Vulkan.json
@@ -3221,6 +3221,7 @@ FILE: ../../../third_party/skia/gm/textblobrandomfont.cpp
 FILE: ../../../third_party/skia/gm/textblobtransforms.cpp
 FILE: ../../../third_party/skia/gm/textblobuseaftergpufree.cpp
 FILE: ../../../third_party/skia/gm/transparency.cpp
+FILE: ../../../third_party/skia/gm/xform.cpp
 FILE: ../../../third_party/skia/include/android/SkBRDAllocator.h
 FILE: ../../../third_party/skia/include/android/SkBitmapRegionDecoder.h
 FILE: ../../../third_party/skia/include/codec/SkAndroidCodec.h
@@ -5221,6 +5222,11 @@ FILE: ../../../third_party/skia/experimental/editor/run_handler.cpp
 FILE: ../../../third_party/skia/experimental/editor/run_handler.h
 FILE: ../../../third_party/skia/experimental/editor/stringslice.cpp
 FILE: ../../../third_party/skia/experimental/editor/stringslice.h
+FILE: ../../../third_party/skia/experimental/xform/SkShape.cpp
+FILE: ../../../third_party/skia/experimental/xform/SkShape.h
+FILE: ../../../third_party/skia/experimental/xform/SkXform.cpp
+FILE: ../../../third_party/skia/experimental/xform/SkXform.h
+FILE: ../../../third_party/skia/experimental/xform/XContext.cpp
 FILE: ../../../third_party/skia/gm/crbug_918512.cpp
 FILE: ../../../third_party/skia/gm/preservefillrule.cpp
 FILE: ../../../third_party/skia/gm/tilemodes_alpha.cpp
@@ -5323,8 +5329,10 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/bench/SkSLBench.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/SkSLBench.cpp
+FILE: ../../../third_party/skia/bench/SkSLInterpreterBench.cpp
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/debugger_bindings.cpp
 FILE: ../../../third_party/skia/gm/asyncrescaleandread.cpp
+FILE: ../../../third_party/skia/gm/crbug_908646.cpp
 FILE: ../../../third_party/skia/gm/crbug_946965.cpp
 FILE: ../../../third_party/skia/gm/runtimecolorfilter.cpp
 FILE: ../../../third_party/skia/include/gpu/gl/GrGLAssembleHelpers.h
@@ -5350,6 +5358,7 @@ FILE: ../../../third_party/skia/src/core/SkVM.cpp
 FILE: ../../../third_party/skia/src/core/SkVM.h
 FILE: ../../../third_party/skia/src/gpu/GrShaderUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrShaderUtils.h
+FILE: ../../../third_party/skia/src/gpu/GrSwizzle.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrColorMatrixFragmentProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrColorMatrixFragmentProcessor.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrColorMatrixFragmentProcessor.h
@@ -5428,6 +5437,7 @@ FILE: ../../../third_party/skia/gm/skbug_8955.cpp
 FILE: ../../../third_party/skia/gm/video_decoder.cpp
 FILE: ../../../third_party/skia/include/core/SkTileMode.h
 FILE: ../../../third_party/skia/include/gpu/GrContextThreadSafeProxy.h
+FILE: ../../../third_party/skia/include/ports/SkCFObject.h
 FILE: ../../../third_party/skia/include/private/GrContext_Base.h
 FILE: ../../../third_party/skia/include/private/GrImageContext.h
 FILE: ../../../third_party/skia/include/private/GrRecordingContext.h

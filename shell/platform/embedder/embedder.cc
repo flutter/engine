@@ -340,6 +340,7 @@ FlutterEngineResult FlutterEngineRun(size_t version,
   }
 
   if (!IsRendererValid(config)) {
+    FML_LOG(WARNING) << "Invalid renderer config.";
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
@@ -951,7 +952,7 @@ FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
-  FML_TRACE_EVENT0("flutter", "FlutterEngineOnVsync");
+  TRACE_EVENT0("flutter", "FlutterEngineOnVsync");
 
   auto start_time = fml::TimePoint::FromEpochDelta(
       fml::TimeDelta::FromNanoseconds(frame_start_time_nanos));

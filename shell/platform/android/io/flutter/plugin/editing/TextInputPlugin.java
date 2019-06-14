@@ -46,7 +46,8 @@ public class TextInputPlugin {
     // target is a platform view. See the comments on lockPlatformViewInputConnection for more details.
     private boolean isInputConnectionLocked;
 
-    public TextInputPlugin(View view, @NonNull DartExecutor dartExecutor, PlatformViewsController platformViewsController) {
+    // TODO(mattcarroll): change @Nullable to @NonNull once new embedding integrates PlatformViewsController (#34286).
+    public TextInputPlugin(View view, @NonNull DartExecutor dartExecutor, @Nullable PlatformViewsController platformViewsController) {
         mView = view;
         mImm = (InputMethodManager) view.getContext().getSystemService(
                 Context.INPUT_METHOD_SERVICE);
@@ -84,7 +85,10 @@ public class TextInputPlugin {
             }
         });
         this.platformViewsController = platformViewsController;
-        platformViewsController.attachTextInputPlugin(this);
+        // TODO(mattcarroll): remove if-statement once new embedding integrates PlatformViewsController (#34286).
+        if (platformViewsController != null) {
+            platformViewsController.attachTextInputPlugin(this);
+        }
     }
 
     @NonNull
@@ -123,7 +127,10 @@ public class TextInputPlugin {
      * The TextInputPlugin instance should not be used after calling this.
      */
     public void destroy() {
-        platformViewsController.detachTextInputPlugin();
+        // TODO(mattcarroll): Remove if-statement once new embedding integrates PlatformViewsController (#34286).
+        if (platformViewsController != null) {
+            platformViewsController.detachTextInputPlugin();
+        }
     }
 
     private static int inputTypeFromTextInputType(
@@ -236,9 +243,11 @@ public class TextInputPlugin {
     }
 
     private void hideTextInput(View view) {
-        if (inputTarget.type == InputTarget.Type.FRAMEWORK_CLIENT) {
-            mImm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
-        }
+        // Note: a race condition may lead to us hiding the keyboard here just after a platform view has shown it.
+        // This can only potentially happen when switching focus from a Flutter text field to a platform view's text
+        // field(by text field here I mean anything that keeps the keyboard open).
+        // See: https://github.com/flutter/flutter/issues/34169
+        mImm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
     }
 
     private void setTextInputClient(int client, TextInputChannel.Configuration configuration) {
