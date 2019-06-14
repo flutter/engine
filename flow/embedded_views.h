@@ -179,6 +179,8 @@ class EmbeddedViewParams {
 // in this case ExternalViewEmbedder is a reference to the
 // FlutterPlatformViewsController which is owned by FlutterViewController.
 class ExternalViewEmbedder {
+  // TODO(cyanglaz): Make embedder own the `EmbeddedViewParams`.
+
  public:
   ExternalViewEmbedder() = default;
 
