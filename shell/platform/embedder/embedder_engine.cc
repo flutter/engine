@@ -60,9 +60,13 @@ bool EmbedderEngine::Run(RunConfiguration run_configuration) {
   }
 
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = shell_->GetEngine(),          // engine
+      fml::MakeCopyable([shell = shell_->GetShell(),            // shell
                          config = std::move(run_configuration)  // config
   ]() mutable {
+        if (!shell) {
+          return;
+        }
+        auto engine = shell->GetEngine();
         if (engine) {
           auto result = engine->Run(std::move(config));
           if (result == Engine::RunStatus::Failure) {
@@ -80,7 +84,11 @@ bool EmbedderEngine::SetViewportMetrics(flutter::ViewportMetrics metrics) {
   }
 
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [engine = shell_->GetEngine(), metrics = std::move(metrics)]() {
+      [shell = shell_->GetShell(), metrics = std::move(metrics)]() {
+        if (!shell) {
+          return;
+        }
+        auto engine = shell->GetEngine();
         if (engine) {
           engine->SetViewportMetrics(std::move(metrics));
         }
@@ -97,9 +105,13 @@ bool EmbedderEngine::DispatchPointerDataPacket(
   TRACE_EVENT0("flutter", "EmbedderEngine::DispatchPointerDataPacket");
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
 
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = shell_->GetEngine(), packet = std::move(packet),
-       flow_id = next_pointer_flow_id_] {
+  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([shell = shell_->GetShell(), packet = std::move(packet),
+                         flow_id = next_pointer_flow_id_] {
+        if (!shell) {
+          return;
+        }
+        auto engine = shell->GetEngine();
         if (engine) {
           engine->DispatchPointerDataPacket(*packet, flow_id);
         }
@@ -116,7 +128,11 @@ bool EmbedderEngine::SendPlatformMessage(
   }
 
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [engine = shell_->GetEngine(), message] {
+      [shell = shell_->GetShell(), message] {
+        if (!shell) {
+          return;
+        }
+        auto engine = shell->GetEngine();
         if (engine) {
           engine->DispatchPlatformMessage(message);
         }
@@ -156,7 +172,11 @@ bool EmbedderEngine::SetSemanticsEnabled(bool enabled) {
     return false;
   }
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [engine = shell_->GetEngine(), enabled] {
+      [shell = shell_->GetShell(), enabled] {
+        if (!shell) {
+          return;
+        }
+        auto engine = shell->GetEngine();
         if (engine) {
           engine->SetSemanticsEnabled(enabled);
         }
@@ -169,7 +189,11 @@ bool EmbedderEngine::SetAccessibilityFeatures(int32_t flags) {
     return false;
   }
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [engine = shell_->GetEngine(), flags] {
+      [shell = shell_->GetShell(), flags] {
+        if (!shell) {
+          return;
+        }
+        auto engine = shell->GetEngine();
         if (engine) {
           engine->SetAccessibilityFeatures(flags);
         }
@@ -184,11 +208,15 @@ bool EmbedderEngine::DispatchSemanticsAction(int id,
     return false;
   }
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = shell_->GetEngine(),  // engine
-                         id,                            // id
-                         action,                        // action
-                         args = std::move(args)         // args
+      fml::MakeCopyable([shell = shell_->GetShell(),  // engine
+                         id,                          // id
+                         action,                      // action
+                         args = std::move(args)       // args
   ]() mutable {
+        if (!shell) {
+          return;
+        }
+        auto engine = shell->GetEngine();
         if (engine) {
           engine->DispatchSemanticsAction(id, action, std::move(args));
         }

@@ -53,30 +53,21 @@ class Shell final : public PlatformView::Delegate,
       CreateCallback<PlatformView> on_create_platform_view,
       CreateCallback<Rasterizer> on_create_rasterizer);
 
-  // Creates a shell with the given task runners and settings. The isolate
-  // snapshot is specified upfront.
-  static std::unique_ptr<Shell> Create(
-      TaskRunners task_runners,
-      Settings settings,
-      fml::RefPtr<const DartSnapshot> isolate_snapshot,
-      fml::RefPtr<const DartSnapshot> shared_snapshot,
-      CreateCallback<PlatformView> on_create_platform_view,
-      CreateCallback<Rasterizer> on_create_rasterizer,
-      DartVMRef vm);
-
   ~Shell();
 
   const Settings& GetSettings() const;
 
   const TaskRunners& GetTaskRunners() const;
 
-  fml::WeakPtr<Rasterizer> GetRasterizer();
+  fml::WeakPtr<Rasterizer> GetRasterizer() const;
 
-  fml::WeakPtr<Engine> GetEngine();
+  fml::WeakPtr<Engine> GetEngine() const;
 
-  fml::WeakPtr<PlatformView> GetPlatformView();
+  fml::WeakPtr<PlatformView> GetPlatformView() const;
 
-  DartVM* GetDartVM();
+  fml::WeakPtr<ShellIOManager> GetIOManager() const;
+
+  fml::WeakPtr<Shell> GetShell() const;
 
   bool IsSetup() const;
 
@@ -90,13 +81,20 @@ class Shell final : public PlatformView::Delegate,
 
   const TaskRunners task_runners_;
   const Settings settings_;
-  DartVMRef vm_;
+  DartVM* vm_;
+
   std::unique_ptr<PlatformView> platform_view_;  // on platform task runner
   std::unique_ptr<Engine> engine_;               // on UI task runner
   std::unique_ptr<Rasterizer> rasterizer_;       // on GPU task runner
   std::unique_ptr<ShellIOManager> io_manager_;   // on IO task runner
-
-  fml::WeakPtr<Engine> weak_engine_;  // to be shared across threads
+  std::promise<fml::WeakPtr<PlatformView>> platform_view_promise_;
+  std::promise<fml::WeakPtr<Engine>> engine_promise_;
+  std::promise<fml::WeakPtr<Rasterizer>> rasterizer_promise_;
+  std::promise<fml::WeakPtr<ShellIOManager>> io_manager_promise_;
+  std::shared_future<fml::WeakPtr<PlatformView>> platform_view_future_;
+  std::shared_future<fml::WeakPtr<Engine>> engine_future_;
+  std::shared_future<fml::WeakPtr<Rasterizer>> rasterizer_future_;
+  std::shared_future<fml::WeakPtr<ShellIOManager>> io_manager_future_;
 
   std::unordered_map<std::string,  // method
                      std::pair<fml::RefPtr<fml::TaskRunner>,
@@ -124,21 +122,14 @@ class Shell final : public PlatformView::Delegate,
   size_t UnreportedFramesCount() const;
 
   Shell(TaskRunners task_runners, Settings settings);
-  Shell(DartVMRef vm, TaskRunners task_runners, Settings settings);
 
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(
-      DartVMRef vm,
       TaskRunners task_runners,
       Settings settings,
-      fml::RefPtr<const DartSnapshot> isolate_snapshot,
-      fml::RefPtr<const DartSnapshot> shared_snapshot,
       Shell::CreateCallback<PlatformView> on_create_platform_view,
       Shell::CreateCallback<Rasterizer> on_create_rasterizer);
 
-  bool Setup(std::unique_ptr<PlatformView> platform_view,
-             std::unique_ptr<Engine> engine,
-             std::unique_ptr<Rasterizer> rasterizer,
-             std::unique_ptr<ShellIOManager> io_manager);
+  bool Setup();
 
   void ReportTimings();
 
