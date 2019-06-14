@@ -118,7 +118,7 @@ void MessageLoopImpl::SwapTaskQueues(const fml::RefPtr<MessageLoopImpl>& other)
                                   std::defer_lock);
 
   std::lock(t1, t2);
-  task_queue_->Swap(*other->task_queue_);
+  task_queue_->Swap(queue_id_, other->queue_id_);
 }
 
 void MessageLoopImpl::FlushTasks(FlushType type) {

@@ -65,7 +65,7 @@ class MessageLoopTaskQueue
 
   // Misc.
 
-  void Swap(MessageLoopTaskQueue& other);
+  void Swap(TaskQueueId primary, TaskQueueId secondary);
 
   void SetWakeable(TaskQueueId queue_id, fml::Wakeable* wakeable);
 

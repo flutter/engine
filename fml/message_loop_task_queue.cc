@@ -43,7 +43,7 @@ MessageLoopTaskQueue::~MessageLoopTaskQueue() = default;
 
 void MessageLoopTaskQueue::Dispose(TaskQueueId queue_id) {
   std::lock_guard<std::mutex> lock(GetMutex(queue_id, MutexType::kTasks));
-  delayed_tasks_ = {};
+  delayed_tasks_[queue_id] = {};
 }
 
 void MessageLoopTaskQueue::RegisterTask(TaskQueueId queue_id,
@@ -57,7 +57,7 @@ void MessageLoopTaskQueue::RegisterTask(TaskQueueId queue_id,
 
 bool MessageLoopTaskQueue::HasPendingTasks(TaskQueueId queue_id) {
   std::lock_guard<std::mutex> lock(GetMutex(queue_id, MutexType::kTasks));
-  return !delayed_tasks_.empty();
+  return !delayed_tasks_[queue_id].empty();
 }
 
 void MessageLoopTaskQueue::GetTasksToRunNow(
@@ -97,7 +97,7 @@ void MessageLoopTaskQueue::WakeUp(TaskQueueId queue_id, fml::TimePoint time) {
 
 size_t MessageLoopTaskQueue::GetNumPendingTasks(TaskQueueId queue_id) {
   std::lock_guard<std::mutex> lock(GetMutex(queue_id, MutexType::kTasks));
-  return delayed_tasks_.size();
+  return delayed_tasks_[queue_id].size();
 }
 
 void MessageLoopTaskQueue::AddTaskObserver(TaskQueueId queue_id,
@@ -121,21 +121,24 @@ void MessageLoopTaskQueue::NotifyObservers(TaskQueueId queue_id) {
 }
 
 // Thread safety analysis disabled as it does not account for defered locks.
-void MessageLoopTaskQueue::Swap(MessageLoopTaskQueue& other)
+void MessageLoopTaskQueue::Swap(TaskQueueId primary, TaskQueueId secondary)
     FML_NO_THREAD_SAFETY_ANALYSIS {
-  // // task_observers locks
-  // std::unique_lock<std::mutex> o1(observers_mutex_, std::defer_lock);
-  // std::unique_lock<std::mutex> o2(other.observers_mutex_, std::defer_lock);
+  // task_observers locks
+  std::unique_lock<std::mutex> o1(GetMutex(primary, MutexType::kObservers),
+                                  std::defer_lock);
+  std::unique_lock<std::mutex> o2(GetMutex(secondary, MutexType::kObservers),
+                                  std::defer_lock);
 
-  // // delayed_tasks locks
-  // std::unique_lock<std::mutex> d1(delayed_tasks_mutex_, std::defer_lock);
-  // std::unique_lock<std::mutex> d2(other.delayed_tasks_mutex_,
-  // std::defer_lock);
+  // delayed_tasks locks
+  std::unique_lock<std::mutex> t1(GetMutex(primary, MutexType::kTasks),
+                                  std::defer_lock);
+  std::unique_lock<std::mutex> t2(GetMutex(secondary, MutexType::kTasks),
+                                  std::defer_lock);
 
-  // std::lock(o1, o2, d1, d2);
+  std::lock(o1, o2, t1, t2);
 
-  // std::swap(task_observers_, other.task_observers_);
-  // std::swap(delayed_tasks_, other.delayed_tasks_);
+  std::swap(task_observers_[primary], task_observers_[secondary]);
+  std::swap(delayed_tasks_[primary], delayed_tasks_[secondary]);
 }
 
 void MessageLoopTaskQueue::SetWakeable(TaskQueueId queue_id,
