@@ -8,6 +8,7 @@ import android.content.Context;
 import android.text.DynamicLayout;
 import android.text.Editable;
 import android.text.Layout;
+import android.text.Layout.Directions;
 import android.text.Selection;
 import android.text.TextPaint;
 import android.view.KeyEvent;
@@ -15,6 +16,7 @@ import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.util.Log;
 
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.common.ErrorLogResult;
@@ -138,7 +140,8 @@ class InputConnectionAdaptor extends BaseInputConnection {
     // Sanitizes the index to ensure the index is within the range of the
     // contents of editable.
     private static int clampIndexToEditable(int index, Editable editable) {
-        return Math.max(0, Math.min(editable.length() - 1, index));
+        // return index;
+        return Math.max(0, Math.min(editable.length(), index));
     }
 
     @Override
@@ -154,11 +157,17 @@ class InputConnectionAdaptor extends BaseInputConnection {
                     updateEditingState();
                     return true;
                 } else if (selStart > 0) {
-                    // Delete to the left of the cursor.
-                    Selection.extendLeft(mEditable, mLayout);
-                    int newSel = clampIndexToEditable(Selection.getSelectionEnd(mEditable), mEditable);
-                    Selection.setSelection(mEditable, newSel);
-                    mEditable.delete(newSel, selStart);
+                    // Delete to the left/right of the cursor depending on direction of text.
+                    boolean isRtl = mLayout.isRtlCharAt(mLayout.getLineForOffset(selStart));
+                    if (isRtl) {
+                        Selection.extendRight(mEditable, mLayout);
+                    } else {
+                        Selection.extendLeft(mEditable, mLayout);
+                    }
+                    int newStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
+                    int newEnd = clampIndexToEditable(Selection.getSelectionEnd(mEditable), mEditable);
+                    Selection.setSelection(mEditable, Math.min(newStart, newEnd));
+                    mEditable.delete(Math.min(newStart, newEnd), Math.max(newStart, newEnd));
                     updateEditingState();
                     return true;
                 }
