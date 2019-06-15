@@ -126,14 +126,14 @@ void DartCallbackCache::LoadCacheFromDisk() {
   }
   std::string cache_contents{std::istreambuf_iterator<char>(input),
                              std::istreambuf_iterator<char>()};
-  Document d;
-  d.Parse(cache_contents.c_str());
-  if (d.HasParseError() || !d.IsArray()) {
+  Document document;
+  document.Parse(cache_contents.c_str());
+  if (document.HasParseError() || !document.IsArray()) {
     FML_LOG(WARNING) << "Could not parse callback cache, aborting restore";
     // TODO(bkonyi): log and bail (delete cache?)
     return;
   }
-  const auto entries = d.GetArray();
+  const auto entries = document.GetArray();
   for (auto* it = entries.begin(); it != entries.end(); ++it) {
     const auto root_obj = it->GetObject();
     const auto representation = root_obj[kRepresentationKey].GetObject();
