@@ -158,6 +158,9 @@ class InputConnectionAdaptor extends BaseInputConnection {
                     return true;
                 } else if (selStart > 0) {
                     // Delete to the left/right of the cursor depending on direction of text.
+                    // TODO(garyq): Explore how to obtain per-character direction. The
+                    // isRTLCharAt() call below is returning blanket direction assumption
+                    // based on the first character in the line.
                     boolean isRtl = mLayout.isRtlCharAt(mLayout.getLineForOffset(selStart));
                     if (isRtl) {
                         Selection.extendRight(mEditable, mLayout);
