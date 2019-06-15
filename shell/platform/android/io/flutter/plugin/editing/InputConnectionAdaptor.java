@@ -167,6 +167,8 @@ class InputConnectionAdaptor extends BaseInputConnection {
                     int newStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
                     int newEnd = clampIndexToEditable(Selection.getSelectionEnd(mEditable), mEditable);
                     Selection.setSelection(mEditable, Math.min(newStart, newEnd));
+                    // Min/Max the values since RTL selections will start at a higher
+                    // index than they end at.
                     mEditable.delete(Math.min(newStart, newEnd), Math.max(newStart, newEnd));
                     updateEditingState();
                     return true;
