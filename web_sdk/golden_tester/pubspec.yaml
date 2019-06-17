@@ -1,0 +1,8 @@
+name: golden_tester
+
+environment:
+  sdk: ">=2.2.0 <3.0.0"
+
+dependencies:
+  test: 1.6.4
+  webkit_inspection_protocol:
