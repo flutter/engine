@@ -8,10 +8,10 @@ import android.content.res.AssetManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
-import android.util.Log;
 
 import java.nio.ByteBuffer;
 
+import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.view.FlutterCallbackInformation;
@@ -62,6 +62,7 @@ public class DartExecutor implements BinaryMessenger {
    * </ul>
    */
   public void onAttachedToJNI() {
+    Log.v(TAG, "Attached to JNI. Registering the platform message handler for this Dart execution context.");
     flutterJNI.setPlatformMessageHandler(messenger);
   }
 
@@ -73,6 +74,7 @@ public class DartExecutor implements BinaryMessenger {
    * the Dart execution context.
    */
   public void onDetachedFromJNI() {
+    Log.v(TAG, "Detached from JNI. De-registering the platform message handler for this Dart execution context.");
     flutterJNI.setPlatformMessageHandler(null);
   }
 
@@ -97,6 +99,8 @@ public class DartExecutor implements BinaryMessenger {
       Log.w(TAG, "Attempted to run a DartExecutor that is already running.");
       return;
     }
+
+    Log.v(TAG, "Executing Dart entrypoint: " + dartEntrypoint);
 
     flutterJNI.runBundleAndSnapshotFromLibrary(
         new String[]{
@@ -123,6 +127,8 @@ public class DartExecutor implements BinaryMessenger {
       Log.w(TAG, "Attempted to run a DartExecutor that is already running.");
       return;
     }
+
+    Log.v(TAG, "Executing Dart callback: " + dartCallback);
 
     flutterJNI.runBundleAndSnapshotFromLibrary(
         new String[]{
@@ -234,6 +240,12 @@ public class DartExecutor implements BinaryMessenger {
       this.pathToFallbackBundle = pathToFallbackBundle;
       this.dartEntrypointFunctionName = dartEntrypointFunctionName;
     }
+
+    @Override
+    @NonNull
+    public String toString() {
+      return "DartEntrypoint( bundle path: " + pathToPrimaryBundle + ", function: " + dartEntrypointFunctionName + " )";
+    }
   }
 
   /**
@@ -284,6 +296,14 @@ public class DartExecutor implements BinaryMessenger {
       this.pathToPrimaryBundle = pathToPrimaryBundle;
       this.pathToFallbackBundle = pathToFallbackBundle;
       this.callbackHandle = callbackHandle;
+    }
+
+    @Override
+    @NonNull
+    public String toString() {
+      return "DartCallback( bundle path: " + pathToPrimaryBundle
+          + ", library path: " + callbackHandle.callbackLibraryPath
+          + ", function: " + callbackHandle.callbackName + " )";
     }
   }
 }
