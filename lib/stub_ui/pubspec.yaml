@@ -13,3 +13,5 @@ dev_dependencies:
   build_runner:
   build_test:
   build_web_compilers:
+  golden_tester:
+    path: ../../web_sdk/golden_tester
