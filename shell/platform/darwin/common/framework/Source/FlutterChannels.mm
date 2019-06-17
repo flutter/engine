@@ -7,8 +7,7 @@
 
 #pragma mark - Basic message channel
 
-static NSObject<FlutterBinaryMessenger>* getSurrogate(
-    NSObject<FlutterBinaryMessenger>* messenger) {
+static NSObject<FlutterBinaryMessenger>* getSurrogate(NSObject<FlutterBinaryMessenger>* messenger) {
   if ([messenger conformsToProtocol:@protocol(FlutterSurrogateBinaryMessenger)]) {
     NSObject<FlutterSurrogateBinaryMessenger>* surrogate =
         (NSObject<FlutterSurrogateBinaryMessenger>*)messenger;
