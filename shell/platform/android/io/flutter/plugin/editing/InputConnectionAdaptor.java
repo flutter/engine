@@ -139,7 +139,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
     // Sanitizes the index to ensure the index is within the range of the
     // contents of editable.
     private static int clampIndexToEditable(int index, Editable editable) {
-        // return index;
         return Math.max(0, Math.min(editable.length(), index));
     }
 
