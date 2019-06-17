@@ -18,6 +18,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
+import io.flutter.Log;
 import io.flutter.plugin.common.ErrorLogResult;
 import io.flutter.plugin.common.MethodChannel;
 
@@ -139,7 +140,14 @@ class InputConnectionAdaptor extends BaseInputConnection {
     // Sanitizes the index to ensure the index is within the range of the
     // contents of editable.
     private static int clampIndexToEditable(int index, Editable editable) {
-        return Math.max(0, Math.min(editable.length(), index));
+        int clamped = Math.max(0, Math.min(editable.length(), index));
+        if (clamped != index) {
+            Log.d("flutter", "Text selection index was clamped ("
+                + index + "->" + clamped
+                + ") to remain in bounds. This may not be your fault, as some keyboards may select outside of bounds."
+            );
+        }
+        return clamped;
     }
 
     @Override
