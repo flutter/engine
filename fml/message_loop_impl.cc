@@ -131,7 +131,7 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
   // where:
   // gather invocations -> Swap -> execute invocations
   // will lead us to run invocations on the wrong thread.
-  std::lock_guard<std::mutex> task_flush_lock(tasks_flushing_mutex_);
+  std::scoped_lock task_flush_lock(tasks_flushing_mutex_);
   task_queue_->GetTasksToRunNow(queue_id_, type, invocations);
 
   for (const auto& invocation : invocations) {

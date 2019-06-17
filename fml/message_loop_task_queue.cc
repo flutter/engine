@@ -13,7 +13,7 @@ std::mutex MessageLoopTaskQueue::creation_mutex_;
 fml::RefPtr<MessageLoopTaskQueue> MessageLoopTaskQueue::instance_;
 
 fml::RefPtr<MessageLoopTaskQueue> MessageLoopTaskQueue::GetInstance() {
-  std::lock_guard<std::mutex> creation(creation_mutex_);
+  std::scoped_lock creation(creation_mutex_);
   if (!instance_) {
     instance_ = fml::MakeRefCounted<MessageLoopTaskQueue>();
   }
@@ -21,7 +21,7 @@ fml::RefPtr<MessageLoopTaskQueue> MessageLoopTaskQueue::GetInstance() {
 }
 
 TaskQueueId MessageLoopTaskQueue::CreateTaskQueue() {
-  std::lock_guard<std::mutex> creation(queue_meta_mutex_);
+  std::scoped_lock creation(queue_meta_mutex_);
   TaskQueueId loop_id = task_queue_id_counter_;
   ++task_queue_id_counter_;
 
@@ -42,21 +42,21 @@ MessageLoopTaskQueue::MessageLoopTaskQueue()
 MessageLoopTaskQueue::~MessageLoopTaskQueue() = default;
 
 void MessageLoopTaskQueue::Dispose(TaskQueueId queue_id) {
-  std::lock_guard<std::mutex> lock(GetMutex(queue_id, MutexType::kTasks));
+  std::scoped_lock lock(GetMutex(queue_id, MutexType::kTasks));
   delayed_tasks_[queue_id] = {};
 }
 
 void MessageLoopTaskQueue::RegisterTask(TaskQueueId queue_id,
                                         fml::closure task,
                                         fml::TimePoint target_time) {
-  std::lock_guard<std::mutex> lock(GetMutex(queue_id, MutexType::kTasks));
+  std::scoped_lock lock(GetMutex(queue_id, MutexType::kTasks));
   size_t order = order_++;
   delayed_tasks_[queue_id].push({order, std::move(task), target_time});
   WakeUp(queue_id, delayed_tasks_[queue_id].top().GetTargetTime());
 }
 
 bool MessageLoopTaskQueue::HasPendingTasks(TaskQueueId queue_id) {
-  std::lock_guard<std::mutex> lock(GetMutex(queue_id, MutexType::kTasks));
+  std::scoped_lock lock(GetMutex(queue_id, MutexType::kTasks));
   return !delayed_tasks_[queue_id].empty();
 }
 
@@ -64,7 +64,7 @@ void MessageLoopTaskQueue::GetTasksToRunNow(
     TaskQueueId queue_id,
     FlushType type,
     std::vector<fml::closure>& invocations) {
-  std::lock_guard<std::mutex> lock(GetMutex(queue_id, MutexType::kTasks));
+  std::scoped_lock lock(GetMutex(queue_id, MutexType::kTasks));
 
   const auto now = fml::TimePoint::Now();
   DelayedTaskQueue& tasks = delayed_tasks_[queue_id];
@@ -89,32 +89,32 @@ void MessageLoopTaskQueue::GetTasksToRunNow(
 }
 
 void MessageLoopTaskQueue::WakeUp(TaskQueueId queue_id, fml::TimePoint time) {
-  std::lock_guard<std::mutex> lock(GetMutex(queue_id, MutexType::kWakeables));
+  std::scoped_lock lock(GetMutex(queue_id, MutexType::kWakeables));
   if (wakeables_[queue_id]) {
     wakeables_[queue_id]->WakeUp(time);
   }
 }
 
 size_t MessageLoopTaskQueue::GetNumPendingTasks(TaskQueueId queue_id) {
-  std::lock_guard<std::mutex> lock(GetMutex(queue_id, MutexType::kTasks));
+  std::scoped_lock lock(GetMutex(queue_id, MutexType::kTasks));
   return delayed_tasks_[queue_id].size();
 }
 
 void MessageLoopTaskQueue::AddTaskObserver(TaskQueueId queue_id,
                                            intptr_t key,
                                            fml::closure callback) {
-  std::lock_guard<std::mutex> lock(GetMutex(queue_id, MutexType::kObservers));
+  std::scoped_lock lock(GetMutex(queue_id, MutexType::kObservers));
   task_observers_[queue_id][key] = std::move(callback);
 }
 
 void MessageLoopTaskQueue::RemoveTaskObserver(TaskQueueId queue_id,
                                               intptr_t key) {
-  std::lock_guard<std::mutex> lock(GetMutex(queue_id, MutexType::kObservers));
+  std::scoped_lock lock(GetMutex(queue_id, MutexType::kObservers));
   task_observers_[queue_id].erase(key);
 }
 
 void MessageLoopTaskQueue::NotifyObservers(TaskQueueId queue_id) {
-  std::lock_guard<std::mutex> lock(GetMutex(queue_id, MutexType::kObservers));
+  std::scoped_lock lock(GetMutex(queue_id, MutexType::kObservers));
   for (const auto& observer : task_observers_[queue_id]) {
     observer.second();
   }
@@ -143,13 +143,13 @@ void MessageLoopTaskQueue::Swap(TaskQueueId primary, TaskQueueId secondary)
 
 void MessageLoopTaskQueue::SetWakeable(TaskQueueId queue_id,
                                        fml::Wakeable* wakeable) {
-  std::lock_guard<std::mutex> lock(GetMutex(queue_id, MutexType::kWakeables));
+  std::scoped_lock lock(GetMutex(queue_id, MutexType::kWakeables));
   wakeables_[queue_id] = wakeable;
 }
 
 std::mutex& MessageLoopTaskQueue::GetMutex(TaskQueueId queue_id,
                                            MutexType type) {
-  std::lock_guard<std::mutex> lock(queue_meta_mutex_);
+  std::scoped_lock lock(queue_meta_mutex_);
   if (type == MutexType::kTasks) {
     return *delayed_tasks_mutexes_[queue_id];
   } else if (type == MutexType::kObservers) {
