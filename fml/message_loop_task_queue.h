@@ -28,12 +28,12 @@ enum class FlushType {
 // This class keeps track of all the tasks and observers that
 // need to be run on it's MessageLoopImpl. This also wakes up the
 // loop at the required times.
-class MessageLoopTaskQueue
-    : public fml::RefCountedThreadSafe<MessageLoopTaskQueue> {
+class MessageLoopTaskQueues
+    : public fml::RefCountedThreadSafe<MessageLoopTaskQueues> {
  public:
   // Lifecycle.
 
-  static fml::RefPtr<MessageLoopTaskQueue> GetInstance();
+  static fml::RefPtr<MessageLoopTaskQueues> GetInstance();
 
   TaskQueueId CreateTaskQueue();
 
@@ -79,16 +79,16 @@ class MessageLoopTaskQueue
   using Mutexes = std::vector<std::unique_ptr<std::mutex>>;
   using TaskObservers = std::map<intptr_t, fml::closure>;
 
-  MessageLoopTaskQueue();
+  MessageLoopTaskQueues();
 
-  ~MessageLoopTaskQueue();
+  ~MessageLoopTaskQueues();
 
   void WakeUp(TaskQueueId queue_id, fml::TimePoint time);
 
   std::mutex& GetMutex(TaskQueueId queue_id, MutexType type);
 
   static std::mutex creation_mutex_;
-  static fml::RefPtr<MessageLoopTaskQueue> instance_
+  static fml::RefPtr<MessageLoopTaskQueues> instance_
       FML_GUARDED_BY(creation_mutex_);
 
   std::mutex queue_meta_mutex_;
@@ -106,9 +106,9 @@ class MessageLoopTaskQueue
 
   std::atomic_int order_;
 
-  FML_FRIEND_MAKE_REF_COUNTED(MessageLoopTaskQueue);
-  FML_FRIEND_REF_COUNTED_THREAD_SAFE(MessageLoopTaskQueue);
-  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(MessageLoopTaskQueue);
+  FML_FRIEND_MAKE_REF_COUNTED(MessageLoopTaskQueues);
+  FML_FRIEND_REF_COUNTED_THREAD_SAFE(MessageLoopTaskQueues);
+  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(MessageLoopTaskQueues);
 };
 
 }  // namespace fml

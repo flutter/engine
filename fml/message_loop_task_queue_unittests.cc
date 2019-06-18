@@ -22,7 +22,7 @@ class TestWakeable : public fml::Wakeable {
 };
 
 TEST(MessageLoopTaskQueue, StartsWithNoPendingTasks) {
-  auto task_queue = fml::MessageLoopTaskQueue::GetInstance();
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto queue_id = task_queue->CreateTaskQueue();
   ASSERT_FALSE(task_queue->HasPendingTasks(queue_id));
 }
@@ -30,7 +30,7 @@ TEST(MessageLoopTaskQueue, StartsWithNoPendingTasks) {
 TEST(MessageLoopTaskQueue, RegisterOneTask) {
   const auto time = fml::TimePoint::Max();
 
-  auto task_queue = fml::MessageLoopTaskQueue::GetInstance();
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto queue_id = task_queue->CreateTaskQueue();
   task_queue->SetWakeable(queue_id,
                           new TestWakeable([&time](fml::TimePoint wake_time) {
@@ -44,7 +44,7 @@ TEST(MessageLoopTaskQueue, RegisterOneTask) {
 }
 
 TEST(MessageLoopTaskQueue, RegisterTwoTasksAndCount) {
-  auto task_queue = fml::MessageLoopTaskQueue::GetInstance();
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto queue_id = task_queue->CreateTaskQueue();
   task_queue->RegisterTask(
       queue_id, [] {}, fml::TimePoint::Now());
@@ -55,7 +55,7 @@ TEST(MessageLoopTaskQueue, RegisterTwoTasksAndCount) {
 }
 
 TEST(MessageLoopTaskQueue, PreserveTaskOrdering) {
-  auto task_queue = fml::MessageLoopTaskQueue::GetInstance();
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto queue_id = task_queue->CreateTaskQueue();
   int test_val = 0;
 
@@ -80,7 +80,7 @@ TEST(MessageLoopTaskQueue, PreserveTaskOrdering) {
 }
 
 TEST(MessageLoopTaskQueue, AddRemoveNotifyObservers) {
-  auto task_queue = fml::MessageLoopTaskQueue::GetInstance();
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto queue_id = task_queue->CreateTaskQueue();
 
   int test_val = 0;
@@ -97,7 +97,7 @@ TEST(MessageLoopTaskQueue, AddRemoveNotifyObservers) {
 }
 
 TEST(MessageLoopTaskQueue, WakeUpIndependentOfTime) {
-  auto task_queue = fml::MessageLoopTaskQueue::GetInstance();
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto queue_id = task_queue->CreateTaskQueue();
 
   int num_wakes = 0;
@@ -114,7 +114,7 @@ TEST(MessageLoopTaskQueue, WakeUpIndependentOfTime) {
 }
 
 TEST(MessageLoopTaskQueue, WakeUpWithMaxIfNoInvocations) {
-  auto task_queue = fml::MessageLoopTaskQueue::GetInstance();
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto queue_id = task_queue->CreateTaskQueue();
   fml::AutoResetWaitableEvent ev;
 
@@ -130,7 +130,7 @@ TEST(MessageLoopTaskQueue, WakeUpWithMaxIfNoInvocations) {
 }
 
 TEST(MessageLoopTaskQueue, WokenUpWithNewerTime) {
-  auto task_queue = fml::MessageLoopTaskQueue::GetInstance();
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto queue_id = task_queue->CreateTaskQueue();
   fml::CountDownLatch latch(2);
 

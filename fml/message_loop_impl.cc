@@ -40,7 +40,7 @@ fml::RefPtr<MessageLoopImpl> MessageLoopImpl::Create() {
 }
 
 MessageLoopImpl::MessageLoopImpl()
-    : task_queue_(MessageLoopTaskQueue::GetInstance()),
+    : task_queue_(MessageLoopTaskQueues::GetInstance()),
       queue_id_(task_queue_->CreateTaskQueue()),
       terminated_(false) {
   task_queue_->SetWakeable(queue_id_, this);

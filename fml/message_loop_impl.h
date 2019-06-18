@@ -60,7 +60,7 @@ class MessageLoopImpl : public Wakeable,
   MessageLoopImpl();
 
  private:
-  fml::RefPtr<MessageLoopTaskQueue> task_queue_;
+  fml::RefPtr<MessageLoopTaskQueues> task_queue_;
   TaskQueueId queue_id_;
 
   std::mutex tasks_flushing_mutex_;
