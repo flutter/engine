@@ -666,13 +666,33 @@ void Paragraph::Layout(double width, bool force) {
     size_t line_end_index =
         (paragraph_style_.effective_align() == TextAlign::right ||
          paragraph_style_.effective_align() == TextAlign::center ||
+         paragraph_style_.effective_align() == TextAlign::left ||
          paragraph_style_.effective_align() == TextAlign::justify)
             ? line_range.end_excluding_whitespace
             : line_range.end;
 
     // Find the runs comprising this line.
     std::vector<BidiRun> line_runs;
-    for (const BidiRun& bidi_run : bidi_runs) {
+    // for (const BidiRun& bidi_run : bidi_runs) {
+    for (size_t bidi_run_index = 0; bidi_run_index < bidi_runs.size();
+         bidi_run_index++) {
+      const BidiRun& bidi_run = bidi_runs[bidi_run_index];
+      bool is_rtl_correction_ghost_run = false;
+      if (bidi_run_index - 1 >= 0) {
+        const BidiRun& prev_bidi_run = bidi_runs[bidi_run_index - 1];
+        FML_DLOG(ERROR) << (bidi_run.direction() == TextDirection::rtl) << " "
+                        << (prev_bidi_run.direction() == TextDirection::rtl)
+                        << " " << bidi_run.end() << ":" << line_range.end << " "
+                        << bidi_run.start() << ":"
+                        << line_range.end_excluding_whitespace << " ";
+
+        if (bidi_run.direction() == TextDirection::ltr &&
+            prev_bidi_run.direction() == TextDirection::rtl &&
+            bidi_run.end() >= line_range.end &&
+            bidi_run.start() == line_range.end_excluding_whitespace) {
+          is_rtl_correction_ghost_run = true;
+        }
+      }
       // A "ghost" run is a run that does not impact the layout, breaking,
       // alignment, width, etc but is still "visible" through getRectsForRange.
       // For example, trailing whitespace on centered text can be scrolled
@@ -689,11 +709,25 @@ void Paragraph::Layout(double width, bool force) {
           bidi_run.end() > line_end_index) {
         ghost_run = std::make_unique<BidiRun>(
             std::max(bidi_run.start(), line_end_index),
-            std::min(bidi_run.end(), line_range.end), bidi_run.direction(),
+            std::min(bidi_run.end(), line_range.end),
+            is_rtl_correction_ghost_run
+                ? (bidi_run.direction() == TextDirection::ltr
+                       ? TextDirection::rtl
+                       : TextDirection::ltr)
+                : bidi_run.direction(),
             bidi_run.style(), true);
       }
+      FML_DLOG(ERROR) << (ghost_run == nullptr);
+      if (is_rtl_correction_ghost_run && ghost_run != nullptr &&
+          line_runs.size() > 0) {
+        FML_DLOG(ERROR) << "INSERTING CORRECTION RUN";
+        line_runs.insert(line_runs.begin() + line_runs.size() - 1, *ghost_run);
+      }
       // Include the ghost run before normal run if RTL
-      if (bidi_run.direction() == TextDirection::rtl && ghost_run != nullptr) {
+      // if (bidi_run.direction() == TextDirection::rtl && ghost_run != nullptr)
+      // {
+      if (bidi_run.direction() == TextDirection::rtl && ghost_run != nullptr &&
+          !is_rtl_correction_ghost_run) {
         line_runs.push_back(*ghost_run);
       }
       // Emplace a normal line run.
@@ -716,7 +750,10 @@ void Paragraph::Layout(double width, bool force) {
         }
       }
       // Include the ghost run after normal run if LTR
-      if (bidi_run.direction() == TextDirection::ltr && ghost_run != nullptr) {
+      if (bidi_run.direction() == TextDirection::ltr && ghost_run != nullptr &&
+          !is_rtl_correction_ghost_run) {
+        // if (bidi_run.direction() == TextDirection::ltr && ghost_run !=
+        // nullptr) {
         line_runs.push_back(*ghost_run);
       }
     }
