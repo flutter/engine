@@ -34,7 +34,7 @@ void SceneUpdateContext::CreateFrame(
   scenic::RoundedRectangle shape(
       session_,                                      // session
       rrect.width(),                                 // width
-      rrect.height(),                                // heightgit b
+      rrect.height(),                                // height
       rrect.radii(SkRRect::kUpperLeft_Corner).x(),   // top_left_radius
       rrect.radii(SkRRect::kUpperRight_Corner).x(),  // top_right_radius
       rrect.radii(SkRRect::kLowerRight_Corner).x(),  // bottom_right_radius
