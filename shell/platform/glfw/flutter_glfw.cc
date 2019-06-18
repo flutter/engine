@@ -4,20 +4,20 @@
 
 #include "flutter/shell/platform/glfw/public/flutter_glfw.h"
 
+#include <GLFW/glfw3.h>
 #include <assert.h>
+
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
 
-#include <GLFW/glfw3.h>
-
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/glfw/clipboard_handler.h"
 #include "flutter/shell/platform/glfw/key_event_handler.h"
 #include "flutter/shell/platform/glfw/keyboard_hook_handler.h"
+#include "flutter/shell/platform/glfw/platform_handler.h"
 #include "flutter/shell/platform/glfw/text_input_plugin.h"
 
 // For compatibility with GTK-based plugins, special message loop setup is
@@ -77,7 +77,7 @@ struct FlutterDesktopWindowControllerState {
       keyboard_hook_handlers;
 
   // Handler for glfw clipboard support.
-  std::unique_ptr<flutter::ClipboardHandler> clipboard_handler;
+  std::unique_ptr<flutter::PlatformHandler> platform_handler;
 
   // Whether or not the pointer has been added (or if tracking is enabled, has
   // been added since it was last removed).
@@ -549,18 +549,6 @@ void FlutterDesktopTerminate() {
   glfwTerminate();
 }
 
-// Get the clipboard string from GFLW. GLFW only supports reading strings.
-const char* FlutterDesktopGetClipboardData(
-    FlutterDesktopWindowRef flutter_window) {
-  return glfwGetClipboardString(flutter_window->window);
-}
-
-// Store a string into the clipboard. GLFW only supports writing strings.
-void FlutterDesktopSetClipboardData(FlutterDesktopWindowRef flutter_window,
-                                    const char* string) {
-  glfwSetClipboardString(flutter_window->window, string);
-}
-
 FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
     int initial_width,
     int initial_height,
@@ -622,9 +610,8 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
       std::make_unique<flutter::KeyEventHandler>(internal_plugin_messenger));
   state->keyboard_hook_handlers.push_back(
       std::make_unique<flutter::TextInputPlugin>(internal_plugin_messenger));
-  state->clipboard_handler = std::make_unique<flutter::ClipboardHandler>(
-      internal_plugin_messenger, state->window_wrapper.get(),
-      FlutterDesktopGetClipboardData, FlutterDesktopSetClipboardData);
+  state->platform_handler = std::make_unique<flutter::PlatformHandler>(
+      internal_plugin_messenger, state->window.get());
 
   // Trigger an initial size callback to send size information to Flutter.
   state->monitor_screen_coordinates_per_inch = GetScreenCoordinatesPerInch();

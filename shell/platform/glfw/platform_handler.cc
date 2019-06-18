@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/glfw/clipboard_handler.h"
+#include "flutter/shell/platform/glfw/platform_handler.h"
 
 #include <iostream>
 
@@ -21,18 +21,13 @@ static constexpr char kUnknownClipboardFormatError[] =
 
 namespace flutter {
 
-ClipboardHandler::ClipboardHandler(
-    flutter::BinaryMessenger* messenger,
-    FlutterDesktopWindowRef window,
-    GetClipboardDataCallback get_clipboard_callback,
-    SetClipboardDataCallback set_clipboard_callback)
+PlatformHandler::PlatformHandler(flutter::BinaryMessenger* messenger,
+                                 GLFWwindow* window)
     : channel_(std::make_unique<flutter::MethodChannel<rapidjson::Document>>(
           messenger,
           kChannelName,
           &flutter::JsonMethodCodec::GetInstance())),
-      window_(window),
-      get_clipboard_callback_(get_clipboard_callback),
-      set_clipboard_callback_(set_clipboard_callback) {
+      window_(window) {
   channel_->SetMethodCallHandler(
       [this](
           const flutter::MethodCall<rapidjson::Document>& call,
@@ -41,9 +36,7 @@ ClipboardHandler::ClipboardHandler(
       });
 }
 
-ClipboardHandler::~ClipboardHandler() = default;
-
-void ClipboardHandler::HandleMethodCall(
+void PlatformHandler::HandleMethodCall(
     const flutter::MethodCall<rapidjson::Document>& method_call,
     std::unique_ptr<flutter::MethodResult<rapidjson::Document>> result) {
   const std::string& method = method_call.method_name();
@@ -58,8 +51,8 @@ void ClipboardHandler::HandleMethodCall(
       return;
     }
 
-    const char* clipboardData = get_clipboard_callback_(window_);
-    if (clipboardData == NULL) {
+    const char* clipboardData = glfwGetClipboardString(window_);
+    if (clipboardData == nullptr) {
       result->Error(kUnknownClipboardFormatError,
                     "Failed to retrieve clipboard data from GLFW api.");
       return;
@@ -70,7 +63,6 @@ void ClipboardHandler::HandleMethodCall(
     document.AddMember(rapidjson::Value(kTextKey, allocator),
                        rapidjson::Value(clipboardData, allocator), allocator);
     result->Success(&document);
-    return;
   } else if (method.compare(kSetClipboardDataMethod) == 0) {
     const rapidjson::Value& document = *method_call.arguments();
     rapidjson::Value::ConstMemberIterator itr = document.FindMember(kTextKey);
@@ -79,11 +71,10 @@ void ClipboardHandler::HandleMethodCall(
                     "Missing text to store on clipboard.");
       return;
     }
-    set_clipboard_callback_(window_, itr->value.GetString());
+    glfwSetClipboardString(window_, itr->value.GetString());
+    result->Success();
   } else {
     result->NotImplemented();
-    return;
   }
-  result->Success();
 }
 }  // namespace flutter
