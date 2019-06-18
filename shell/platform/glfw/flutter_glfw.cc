@@ -76,7 +76,7 @@ struct FlutterDesktopWindowControllerState {
   std::vector<std::unique_ptr<flutter::KeyboardHookHandler>>
       keyboard_hook_handlers;
 
-  // Handler for glfw clipboard support.
+  // Handler for the flutter/platform channel.
   std::unique_ptr<flutter::PlatformHandler> platform_handler;
 
   // Whether or not the pointer has been added (or if tracking is enabled, has
