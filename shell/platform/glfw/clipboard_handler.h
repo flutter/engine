@@ -18,15 +18,15 @@ typedef const char* (*GetClipboardDataCallback)(FlutterDesktopWindowRef);
 // Callback for writing data to the clipboard.
 typedef void (*SetClipboardDataCallback)(FlutterDesktopWindowRef, const char*);
 
-// Handler for internal system channels.
-class PlatformHandler {
+// Handler for clipboard interactions.
+class ClipboardHandler {
  public:
-  explicit PlatformHandler(flutter::BinaryMessenger* messenger,
-                           FlutterDesktopWindowRef window,
-                           GetClipboardDataCallback get_clipboard_callback,
-                           SetClipboardDataCallback set_clipboard_callback);
+  explicit ClipboardHandler(flutter::BinaryMessenger* messenger,
+                            FlutterDesktopWindowRef window,
+                            GetClipboardDataCallback get_clipboard_callback,
+                            SetClipboardDataCallback set_clipboard_callback);
 
-  virtual ~PlatformHandler();
+  virtual ~ClipboardHandler();
 
  private:
   // Called when a method is called on |channel_|;

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/glfw/platform_handler.h"
+#include "flutter/shell/platform/glfw/clipboard_handler.h"
 
 #include <iostream>
 
@@ -19,7 +19,7 @@ static constexpr char kUnknownClipboardFormatError[] =
     "Unknown clipboard formaterror";
 namespace flutter {
 
-PlatformHandler::PlatformHandler(
+ClipboardHandler::ClipboardHandler(
     flutter::BinaryMessenger* messenger,
     FlutterDesktopWindowRef window,
     GetClipboardDataCallback get_clipboard_callback,
@@ -39,9 +39,9 @@ PlatformHandler::PlatformHandler(
       });
 }
 
-PlatformHandler::~PlatformHandler() = default;
+ClipboardHandler::~ClipboardHandler() = default;
 
-void PlatformHandler::HandleMethodCall(
+void ClipboardHandler::HandleMethodCall(
     const flutter::MethodCall<rapidjson::Document>& method_call,
     std::unique_ptr<flutter::MethodResult<rapidjson::Document>> result) {
   const char* kTextKey = "text";
