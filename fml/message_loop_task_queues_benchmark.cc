@@ -4,7 +4,7 @@
 
 #include <string>
 #include "benchmark/benchmark_api.h"
-#include "flutter/fml/message_loop_task_queue.h"
+#include "flutter/fml/message_loop_task_queues.h"
 
 namespace fml {
 namespace benchmarking {
