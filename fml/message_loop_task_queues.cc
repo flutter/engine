@@ -124,18 +124,14 @@ void MessageLoopTaskQueues::NotifyObservers(TaskQueueId queue_id) {
 void MessageLoopTaskQueues::Swap(TaskQueueId primary, TaskQueueId secondary)
     FML_NO_THREAD_SAFETY_ANALYSIS {
   // task_observers locks
-  std::unique_lock<std::mutex> o1(GetMutex(primary, MutexType::kObservers),
-                                  std::defer_lock);
-  std::unique_lock<std::mutex> o2(GetMutex(secondary, MutexType::kObservers),
-                                  std::defer_lock);
+  std::mutex& o1 = GetMutex(primary, MutexType::kObservers);
+  std::mutex& o2 = GetMutex(secondary, MutexType::kObservers);
 
   // delayed_tasks locks
-  std::unique_lock<std::mutex> t1(GetMutex(primary, MutexType::kTasks),
-                                  std::defer_lock);
-  std::unique_lock<std::mutex> t2(GetMutex(secondary, MutexType::kTasks),
-                                  std::defer_lock);
+  std::mutex& t1 = GetMutex(primary, MutexType::kTasks);
+  std::mutex& t2 = GetMutex(secondary, MutexType::kTasks);
 
-  std::lock(o1, o2, t1, t2);
+  std::scoped_lock(o1, o2, t1, t2);
 
   std::swap(task_observers_[primary], task_observers_[secondary]);
   std::swap(delayed_tasks_[primary], delayed_tasks_[secondary]);

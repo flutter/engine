@@ -226,10 +226,6 @@ executable("fml_unittests") {
   ]
 }
 
-config("benchmark_config") {
-  include_dirs = [ "//third_party/benchmark:benchmark_config" ]
-}
-
 executable("fml_benchmarks") {
   testonly = true
 
@@ -238,13 +234,8 @@ executable("fml_benchmarks") {
   ]
 
   deps = [
+    "$flutter_root/benchmarking",
     "$flutter_root/fml",
-    "//third_party/benchmark",
-    "//third_party/dart/runtime:libdart_jit",
-  ]
-
-  public_configs = [
-    "$flutter_root:config",
-    ":benchmark_config",
+    "$flutter_root/runtime:libdart",
   ]
 }

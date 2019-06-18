@@ -6,7 +6,7 @@
 #include <string>
 #include <thread>
 #include <vector>
-#include "benchmark/benchmark_api.h"
+#include "flutter/benchmarking/benchmarking.h"
 #include "flutter/fml/message_loop_task_queues.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 
@@ -57,15 +57,5 @@ static void BM_RegisterAndGetTasks(benchmark::State& state) {
 
 BENCHMARK(BM_RegisterAndGetTasks);
 
-int Main(int argc, char** argv) {
-  benchmark::Initialize(&argc, argv);
-  benchmark::RunSpecifiedBenchmarks();
-  return 0;
-}
-
 }  // namespace benchmarking
 }  // namespace fml
-
-int main(int argc, char** argv) {
-  return fml::benchmarking::Main(argc, argv);
-}
