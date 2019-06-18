@@ -12,7 +12,7 @@ namespace flutter {
 static void StartupAndShutdownShell(benchmark::State& state,
                                     bool measure_startup,
                                     bool measure_shutdown) {
-  std::unique_ptr<Shell> shell;
+  std::shared_ptr<Shell> shell;
   std::unique_ptr<ThreadHost> thread_host;
   {
     benchmarking::ScopedPauseTiming pause(state, !measure_startup);

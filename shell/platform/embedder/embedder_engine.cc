@@ -60,9 +60,10 @@ bool EmbedderEngine::Run(RunConfiguration run_configuration) {
   }
 
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([shell = shell_->GetShell(),            // shell
+      fml::MakeCopyable([weak_shell = shell_->GetWeakPtr(),     // shell
                          config = std::move(run_configuration)  // config
   ]() mutable {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -84,7 +85,8 @@ bool EmbedderEngine::SetViewportMetrics(flutter::ViewportMetrics metrics) {
   }
 
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [shell = shell_->GetShell(), metrics = std::move(metrics)]() {
+      [weak_shell = shell_->GetWeakPtr(), metrics = std::move(metrics)]() {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -105,9 +107,10 @@ bool EmbedderEngine::DispatchPointerDataPacket(
   TRACE_EVENT0("flutter", "EmbedderEngine::DispatchPointerDataPacket");
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
 
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([shell = shell_->GetShell(), packet = std::move(packet),
-                         flow_id = next_pointer_flow_id_] {
+  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
+      [weak_shell = shell_->GetWeakPtr(), packet = std::move(packet),
+       flow_id = next_pointer_flow_id_] {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -128,7 +131,8 @@ bool EmbedderEngine::SendPlatformMessage(
   }
 
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [shell = shell_->GetShell(), message] {
+      [weak_shell = shell_->GetWeakPtr(), message] {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -172,7 +176,8 @@ bool EmbedderEngine::SetSemanticsEnabled(bool enabled) {
     return false;
   }
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [shell = shell_->GetShell(), enabled] {
+      [weak_shell = shell_->GetWeakPtr(), enabled] {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -189,7 +194,8 @@ bool EmbedderEngine::SetAccessibilityFeatures(int32_t flags) {
     return false;
   }
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [shell = shell_->GetShell(), flags] {
+      [weak_shell = shell_->GetWeakPtr(), flags] {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -208,11 +214,12 @@ bool EmbedderEngine::DispatchSemanticsAction(int id,
     return false;
   }
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([shell = shell_->GetShell(),  // engine
-                         id,                          // id
-                         action,                      // action
-                         args = std::move(args)       // args
+      fml::MakeCopyable([weak_shell = shell_->GetWeakPtr(),  // engine
+                         id,                                 // id
+                         action,                             // action
+                         args = std::move(args)              // args
   ]() mutable {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }

@@ -35,7 +35,7 @@ namespace flutter {
 
 constexpr char kSkiaChannel[] = "flutter/skia";
 
-std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
+std::shared_ptr<Shell> Shell::CreateShellOnPlatformThread(
     TaskRunners task_runners,
     Settings settings,
     Shell::CreateCallback<PlatformView> on_create_platform_view,
@@ -45,7 +45,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     return nullptr;
   }
 
-  auto shell = std::unique_ptr<Shell>(new Shell(task_runners, settings));
+  auto shell = std::shared_ptr<Shell>(new Shell(task_runners, settings));
+  shell->weak_shell_ = shell;
 
   // Create the platform view on the platform thread (this thread).
   auto platform_view = on_create_platform_view(*shell.get());
@@ -182,7 +183,7 @@ static void PerformInitializationTasks(const Settings& settings) {
   });
 }
 
-std::unique_ptr<Shell> Shell::Create(
+std::shared_ptr<Shell> Shell::Create(
     TaskRunners task_runners,
     Settings settings,
     Shell::CreateCallback<PlatformView> on_create_platform_view,
@@ -197,7 +198,7 @@ std::unique_ptr<Shell> Shell::Create(
   }
 
   fml::AutoResetWaitableEvent latch;
-  std::unique_ptr<Shell> shell;
+  std::shared_ptr<Shell> shell;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners.GetPlatformTaskRunner(),
       fml::MakeCopyable([&latch,                                  //
@@ -275,30 +276,30 @@ Shell::~Shell() {
 
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetUITaskRunner(),
-      fml::MakeCopyable([shell = GetShell(), &ui_latch]() mutable {
-        shell->vm_->GetServiceProtocol()->RemoveHandler(shell.get());
-        shell->engine_future_.wait();
-        shell->engine_.reset();
+      fml::MakeCopyable([this, &ui_latch]() mutable {
+        vm_->GetServiceProtocol()->RemoveHandler(this);
+        engine_future_.wait();
+        engine_.reset();
         ui_latch.Signal();
       }));
   ui_latch.Wait();
 
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetGPUTaskRunner(),
-      fml::MakeCopyable([shell = GetShell(), &gpu_latch]() mutable {
-        shell->rasterizer_future_.wait();
-        shell->rasterizer_.reset();
+      fml::MakeCopyable([this, &gpu_latch]() mutable {
+        rasterizer_future_.wait();
+        rasterizer_.reset();
         gpu_latch.Signal();
       }));
   gpu_latch.Wait();
 
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetIOTaskRunner(),
-      fml::MakeCopyable([shell = GetShell(), &io_latch]() mutable {
-        shell->platform_view_future_.wait();
-        shell->io_manager_future_.wait();
-        shell->io_manager_.reset();
-        auto platform_view = shell->platform_view_.get();
+      fml::MakeCopyable([this, &io_latch]() mutable {
+        platform_view_future_.wait();
+        io_manager_future_.wait();
+        io_manager_.reset();
+        auto platform_view = platform_view_.get();
         if (platform_view) {
           platform_view->ReleaseResourceContext();
         }
@@ -312,8 +313,8 @@ Shell::~Shell() {
   // example, the NSOpenGLContext on the Mac.
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetPlatformTaskRunner(),
-      fml::MakeCopyable([shell = GetShell(), &platform_latch]() mutable {
-        shell->platform_view_.reset();
+      fml::MakeCopyable([this, &platform_latch]() mutable {
+        platform_view_.reset();
         platform_latch.Signal();
       }));
   platform_latch.Wait();
@@ -387,8 +388,12 @@ fml::WeakPtr<PlatformView> Shell::GetPlatformView() const {
   return {};
 }
 
-fml::WeakPtr<Shell> Shell::GetShell() const {
-  return weak_factory_.GetWeakPtr();
+std::weak_ptr<Shell> Shell::GetWeakPtr() const {
+  return weak_shell_;
+}
+
+DartVM* Shell::GetDartVM() {
+  return vm_;
 }
 
 // |PlatformView::Delegate|
@@ -402,7 +407,8 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // setup/suspension of all activities that may be interacting with the GPU in
   // a synchronous fashion.
 
-  auto ui_task = [shell = GetShell()] {
+  auto ui_task = [weak_shell = GetWeakPtr()] {
+    auto shell = weak_shell.lock();
     if (shell) {
       auto engine = shell->GetEngine();
       if (engine) {
@@ -413,10 +419,11 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
 
   fml::AutoResetWaitableEvent latch;
   auto gpu_task =
-      fml::MakeCopyable([shell = GetShell(),                                //
+      fml::MakeCopyable([weak_shell = GetWeakPtr(),                         //
                          surface = std::move(surface),                      //
                          ui_task_runner = task_runners_.GetUITaskRunner(),  //
                          ui_task, &latch]() mutable {
+        auto shell = weak_shell.lock();
         if (shell) {
           auto rasterizer = shell->GetRasterizer();
           if (rasterizer) {
@@ -453,9 +460,10 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
 
   FML_DCHECK(platform_view);
 
-  auto io_task = [shell = GetShell(), platform_view,
+  auto io_task = [weak_shell = GetWeakPtr(), platform_view,
                   gpu_task_runner = task_runners_.GetGPUTaskRunner(), gpu_task,
                   &latch, should_post_gpu_task] {
+    auto shell = weak_shell.lock();
     if (shell) {
       auto io_manager = shell->GetIOManager();
       if (io_manager && !io_manager->GetResourceContext()) {
@@ -499,7 +507,9 @@ void Shell::OnPlatformViewDestroyed() {
 
   fml::AutoResetWaitableEvent latch;
 
-  auto io_task = [io_manager = GetIOManager(), &latch]() {
+  auto io_task = [weak_shell = GetWeakPtr(), &latch]() {
+    auto shell = weak_shell.lock();
+    auto io_manager = shell->GetIOManager();
     if (io_manager) {
       // Execute any pending Skia object deletions while GPU access is still
       // allowed.
@@ -510,9 +520,11 @@ void Shell::OnPlatformViewDestroyed() {
     latch.Signal();
   };
 
-  auto gpu_task = [rasterizer = GetRasterizer(),
+  auto gpu_task = [weak_shell = GetWeakPtr(),
                    io_task_runner = task_runners_.GetIOTaskRunner(),
                    io_task]() {
+    auto shell = weak_shell.lock();
+    auto rasterizer = shell->GetRasterizer();
     if (rasterizer) {
       rasterizer->Teardown();
     }
@@ -532,9 +544,11 @@ void Shell::OnPlatformViewDestroyed() {
   bool should_post_gpu_task =
       task_runners_.GetGPUTaskRunner() != task_runners_.GetPlatformTaskRunner();
 
-  auto ui_task = [engine = GetEngine(),
+  auto ui_task = [weak_shell = GetWeakPtr(),
                   gpu_task_runner = task_runners_.GetGPUTaskRunner(), gpu_task,
                   should_post_gpu_task, &latch]() {
+    auto shell = weak_shell.lock();
+    auto engine = shell->GetEngine();
     if (engine) {
       engine->OnOutputSurfaceDestroyed();
     }
@@ -567,15 +581,17 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  task_runners_.GetUITaskRunner()->PostTask([shell = GetShell(), metrics]() {
-    if (!shell) {
-      return;
-    }
-    auto engine = shell->GetEngine();
-    if (engine) {
-      engine->SetViewportMetrics(metrics);
-    }
-  });
+  task_runners_.GetUITaskRunner()->PostTask(
+      [weak_shell = GetWeakPtr(), metrics]() {
+        auto shell = weak_shell.lock();
+        if (!shell) {
+          return;
+        }
+        auto engine = shell->GetEngine();
+        if (engine) {
+          engine->SetViewportMetrics(metrics);
+        }
+      });
 }
 
 // |PlatformView::Delegate|
@@ -585,7 +601,8 @@ void Shell::OnPlatformViewDispatchPlatformMessage(
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
-      [shell = GetShell(), message = std::move(message)] {
+      [weak_shell = GetWeakPtr(), message = std::move(message)] {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -604,8 +621,9 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   task_runners_.GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([shell = GetShell(), packet = std::move(packet),
+      fml::MakeCopyable([weak_shell = GetWeakPtr(), packet = std::move(packet),
                          flow_id = next_pointer_flow_id_] {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -625,7 +643,8 @@ void Shell::OnPlatformViewDispatchSemanticsAction(int32_t id,
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
-      [shell = GetShell(), id, action, args = std::move(args)] {
+      [weak_shell = GetWeakPtr(), id, action, args = std::move(args)] {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -641,15 +660,17 @@ void Shell::OnPlatformViewSetSemanticsEnabled(bool enabled) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  task_runners_.GetUITaskRunner()->PostTask([shell = GetShell(), enabled] {
-    if (!shell) {
-      return;
-    }
-    auto engine = shell->GetEngine();
-    if (engine) {
-      engine->SetSemanticsEnabled(enabled);
-    }
-  });
+  task_runners_.GetUITaskRunner()->PostTask(
+      [weak_shell = GetWeakPtr(), enabled] {
+        auto shell = weak_shell.lock();
+        if (!shell) {
+          return;
+        }
+        auto engine = shell->GetEngine();
+        if (engine) {
+          engine->SetSemanticsEnabled(enabled);
+        }
+      });
 }
 
 // |PlatformView::Delegate|
@@ -657,7 +678,8 @@ void Shell::OnPlatformViewSetAccessibilityFeatures(int32_t flags) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  task_runners_.GetUITaskRunner()->PostTask([shell = GetShell(), flags] {
+  task_runners_.GetUITaskRunner()->PostTask([weak_shell = GetWeakPtr(), flags] {
+    auto shell = weak_shell.lock();
     if (!shell) {
       return;
     }
@@ -674,17 +696,19 @@ void Shell::OnPlatformViewRegisterTexture(
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  task_runners_.GetGPUTaskRunner()->PostTask([shell = GetShell(), texture] {
-    if (!shell) {
-      return;
-    }
-    auto rasterizer = shell->GetRasterizer();
-    if (rasterizer) {
-      if (auto* registry = rasterizer->GetTextureRegistry()) {
-        registry->RegisterTexture(texture);
-      }
-    }
-  });
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [weak_shell = GetWeakPtr(), texture] {
+        auto shell = weak_shell.lock();
+        if (!shell) {
+          return;
+        }
+        auto rasterizer = shell->GetRasterizer();
+        if (rasterizer) {
+          if (auto* registry = rasterizer->GetTextureRegistry()) {
+            registry->RegisterTexture(texture);
+          }
+        }
+      });
 }
 
 // |PlatformView::Delegate|
@@ -693,7 +717,8 @@ void Shell::OnPlatformViewUnregisterTexture(int64_t texture_id) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetGPUTaskRunner()->PostTask(
-      [shell = GetShell(), texture_id]() {
+      [weak_shell = GetWeakPtr(), texture_id]() {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -713,7 +738,8 @@ void Shell::OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) {
 
   // Tell the rasterizer that one of its textures has a new frame available.
   task_runners_.GetGPUTaskRunner()->PostTask(
-      [shell = GetShell(), texture_id]() {
+      [weak_shell = GetWeakPtr(), texture_id]() {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -738,7 +764,8 @@ void Shell::OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) {
       });
 
   // Schedule a new frame without having to rebuild the layer tree.
-  task_runners_.GetUITaskRunner()->PostTask([shell = GetShell()]() {
+  task_runners_.GetUITaskRunner()->PostTask([weak_shell = GetWeakPtr()]() {
+    auto shell = weak_shell.lock();
     if (!shell) {
       return;
     }
@@ -755,7 +782,8 @@ void Shell::OnPlatformViewSetNextFrameCallback(fml::closure closure) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetGPUTaskRunner()->PostTask(
-      [shell = GetShell(), closure = std::move(closure)]() {
+      [weak_shell = GetWeakPtr(), closure = std::move(closure)]() {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -793,7 +821,8 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   FML_DCHECK(is_setup_);
 
   task_runners_.GetGPUTaskRunner()->PostTask(
-      [shell = GetShell(), pipeline = std::move(pipeline)]() {
+      [weak_shell = GetWeakPtr(), pipeline = std::move(pipeline)]() {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -808,7 +837,8 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
 void Shell::OnAnimatorDrawLastLayerTree() {
   FML_DCHECK(is_setup_);
 
-  task_runners_.GetGPUTaskRunner()->PostTask([shell = GetShell()]() {
+  task_runners_.GetGPUTaskRunner()->PostTask([weak_shell = GetWeakPtr()]() {
+    auto shell = weak_shell.lock();
     if (!shell) {
       return;
     }
@@ -826,8 +856,9 @@ void Shell::OnEngineUpdateSemantics(SemanticsNodeUpdates update,
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetPlatformTaskRunner()->PostTask(
-      [shell = GetShell(), update = std::move(update),
+      [weak_shell = GetWeakPtr(), update = std::move(update),
        actions = std::move(actions)] {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -850,7 +881,8 @@ void Shell::OnEngineHandlePlatformMessage(
   }
 
   task_runners_.GetPlatformTaskRunner()->PostTask(
-      [shell = GetShell(), message = std::move(message)]() {
+      [weak_shell = GetWeakPtr(), message = std::move(message)]() {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -877,7 +909,8 @@ void Shell::HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message) {
     return;
 
   task_runners_.GetGPUTaskRunner()->PostTask(
-      [shell = GetShell(), max_bytes = args->value.GetInt()] {
+      [weak_shell = GetWeakPtr(), max_bytes = args->value.GetInt()] {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -895,7 +928,8 @@ void Shell::OnPreEngineRestart() {
 
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetPlatformTaskRunner(),
-                                    [shell = GetShell(), &latch]() {
+                                    [weak_shell = GetWeakPtr(), &latch]() {
+                                      auto shell = weak_shell.lock();
                                       if (!shell) {
                                         return;
                                       }
@@ -927,15 +961,17 @@ void Shell::ReportTimings() {
 
   auto timings = std::move(unreported_timings_);
   unreported_timings_ = {};
-  task_runners_.GetUITaskRunner()->PostTask([shell = GetShell(), timings] {
-    if (!shell) {
-      return;
-    }
-    auto engine = shell->GetEngine();
-    if (engine) {
-      engine->ReportTimings(std::move(timings));
-    }
-  });
+  task_runners_.GetUITaskRunner()->PostTask(
+      [weak_shell = GetWeakPtr(), timings] {
+        auto shell = weak_shell.lock();
+        if (!shell) {
+          return;
+        }
+        auto engine = shell->GetEngine();
+        if (engine) {
+          engine->ReportTimings(std::move(timings));
+        }
+      });
 }
 
 size_t Shell::UnreportedFramesCount() const {
@@ -990,7 +1026,7 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     // never be reported until the next animation starts.
     frame_timings_report_scheduled_ = true;
     task_runners_.GetGPUTaskRunner()->PostDelayedTask(
-        [self = GetShell()]() {
+        [self = weak_factory_.GetWeakPtr()]() {
           if (!self.get()) {
             return;
           }

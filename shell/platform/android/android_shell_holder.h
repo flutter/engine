@@ -49,7 +49,7 @@ class AndroidShellHolder {
   const fml::jni::JavaObjectWeakGlobalRef java_object_;
   fml::WeakPtr<PlatformViewAndroid> platform_view_;
   ThreadHost thread_host_;
-  std::unique_ptr<Shell> shell_;
+  std::shared_ptr<Shell> shell_;
   bool is_valid_ = false;
   pthread_key_t thread_destruct_key_;
   uint64_t next_pointer_flow_id_ = 0;

@@ -158,9 +158,10 @@ void AndroidShellHolder::Launch(RunConfiguration config) {
   }
 
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([shell = shell_->GetShell(),  //
-                         config = std::move(config)   //
+      fml::MakeCopyable([weak_shell = shell_->GetWeakPtr(),  //
+                         config = std::move(config)          //
   ]() mutable {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -183,7 +184,8 @@ void AndroidShellHolder::SetViewportMetrics(
   }
 
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [shell = shell_->GetShell(), metrics]() {
+      [weak_shell = shell_->GetWeakPtr(), metrics]() {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }
@@ -203,9 +205,10 @@ void AndroidShellHolder::DispatchPointerDataPacket(
   TRACE_EVENT0("flutter", "AndroidShellHolder::DispatchPointerDataPacket");
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
 
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([shell = shell_->GetShell(), packet = std::move(packet),
-                         flow_id = next_pointer_flow_id_] {
+  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
+      [weak_shell = shell_->GetWeakPtr(), packet = std::move(packet),
+       flow_id = next_pointer_flow_id_] {
+        auto shell = weak_shell.lock();
         if (!shell) {
           return;
         }

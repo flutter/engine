@@ -26,8 +26,8 @@ class ShellTest : public ThreadTest {
   ~ShellTest();
 
   Settings CreateSettingsForFixture();
-  std::unique_ptr<Shell> CreateShell(Settings settings);
-  std::unique_ptr<Shell> CreateShell(Settings settings,
+  std::shared_ptr<Shell> CreateShell(Settings settings);
+  std::shared_ptr<Shell> CreateShell(Settings settings,
                                      TaskRunners task_runners);
   TaskRunners GetTaskRunnersForFixture();
 

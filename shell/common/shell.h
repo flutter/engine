@@ -40,14 +40,15 @@ class Shell final : public PlatformView::Delegate,
                     public Animator::Delegate,
                     public Engine::Delegate,
                     public Rasterizer::Delegate,
-                    public ServiceProtocol::Handler {
+                    public ServiceProtocol::Handler,
+                    public std::enable_shared_from_this<flutter::Shell> {
  public:
   template <class T>
   using CreateCallback = std::function<std::unique_ptr<T>(Shell&)>;
 
   // Create a shell with the given task runners and settings. The isolate
   // snapshot will be shared with the snapshot of the service isolate.
-  static std::unique_ptr<Shell> Create(
+  static std::shared_ptr<Shell> Create(
       TaskRunners task_runners,
       Settings settings,
       CreateCallback<PlatformView> on_create_platform_view,
@@ -67,7 +68,10 @@ class Shell final : public PlatformView::Delegate,
 
   fml::WeakPtr<ShellIOManager> GetIOManager() const;
 
-  fml::WeakPtr<Shell> GetShell() const;
+  // for access Shell in a closure
+  std::weak_ptr<Shell> GetWeakPtr() const;
+
+  DartVM* GetDartVM();
 
   bool IsSetup() const;
 
@@ -83,6 +87,7 @@ class Shell final : public PlatformView::Delegate,
   const Settings settings_;
   DartVM* vm_;
 
+  std::weak_ptr<Shell> weak_shell_;
   std::unique_ptr<PlatformView> platform_view_;  // on platform task runner
   std::unique_ptr<Engine> engine_;               // on UI task runner
   std::unique_ptr<Rasterizer> rasterizer_;       // on GPU task runner
@@ -123,7 +128,7 @@ class Shell final : public PlatformView::Delegate,
 
   Shell(TaskRunners task_runners, Settings settings);
 
-  static std::unique_ptr<Shell> CreateShellOnPlatformThread(
+  static std::shared_ptr<Shell> CreateShellOnPlatformThread(
       TaskRunners task_runners,
       Settings settings,
       Shell::CreateCallback<PlatformView> on_create_platform_view,

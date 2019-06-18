@@ -152,11 +152,11 @@ TaskRunners ShellTest::GetTaskRunnersForFixture() {
   };
 }
 
-std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings) {
+std::shared_ptr<Shell> ShellTest::CreateShell(Settings settings) {
   return CreateShell(std::move(settings), GetTaskRunnersForFixture());
 }
 
-std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
+std::shared_ptr<Shell> ShellTest::CreateShell(Settings settings,
                                               TaskRunners task_runners) {
   return Shell::Create(
       task_runners, settings,
