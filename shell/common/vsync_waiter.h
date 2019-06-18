@@ -32,6 +32,8 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   // Return kUnknownRefreshRateFPS if the refresh rate is unknown.
   virtual float GetDisplayRefreshRate() const;
 
+  virtual void ForceVSync() {}
+
  protected:
   // On some backends, the |FireCallback| needs to be made from a static C
   // method.

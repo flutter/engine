@@ -36,4 +36,8 @@ void VsyncWaiterFallback::AwaitVSync() {
   FireCallback(next, next + kSingleFrameInterval);
 }
 
+void VsyncWaiterFallback::ForceVSync() {
+  AwaitVSync();
+}
+
 }  // namespace flutter

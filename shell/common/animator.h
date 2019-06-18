@@ -62,6 +62,8 @@ class Animator final {
   // will be ended during the next |BeginFrame|.
   void EnqueueTraceFlowId(uint64_t trace_flow_id);
 
+  void ForceVSync();
+
  private:
   using LayerTreePipeline = Pipeline<flutter::LayerTree>;
 

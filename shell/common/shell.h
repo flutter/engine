@@ -90,6 +90,9 @@ class Shell final : public PlatformView::Delegate,
   Rasterizer::Screenshot Screenshot(Rasterizer::ScreenshotType type,
                                     bool base64_encode);
 
+  /// Returns true on timeout.
+  bool WaitForFrameRender(fml::TimeDelta timeout);
+
  private:
   using ServiceProtocolHandler =
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
@@ -118,6 +121,9 @@ class Shell final : public PlatformView::Delegate,
   uint64_t next_pointer_flow_id_ = 0;
 
   bool first_frame_rasterized_ = false;
+  bool waiting_for_frame_ = false;
+  std::mutex waiting_for_frame_mutex_;
+  std::condition_variable waiting_for_frame_condition_;
 
   // Written in the UI thread and read from the GPU thread. Hence make it
   // atomic.

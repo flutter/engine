@@ -23,6 +23,8 @@
 
 - (void)invalidate;
 
+- (void)forceVSync;
+
 @end
 
 namespace flutter {
@@ -43,6 +45,10 @@ VsyncWaiterIOS::~VsyncWaiterIOS() {
 
 void VsyncWaiterIOS::AwaitVSync() {
   [client_.get() await];
+}
+
+void VsyncWaiterIOS::ForceVSync() {
+  [client_.get() forceVSync];
 }
 
 }  // namespace flutter
@@ -95,6 +101,10 @@ void VsyncWaiterIOS::AwaitVSync() {
   [self invalidate];
 
   [super dealloc];
+}
+
+- (void)forceVSync {
+  [self onDisplayLink:display_link_];
 }
 
 @end

@@ -922,6 +922,16 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
 
+  // waiting_for_frame is only modified on this thread so we should be able to
+  // read from it safely without guards.
+  if (waiting_for_frame_) {
+    {
+      std::lock_guard<std::mutex> lock(waiting_for_frame_mutex_);
+      waiting_for_frame_ = false;
+    }
+    waiting_for_frame_condition_.notify_all();
+  }
+
   // The C++ callback defined in settings.h and set by Flutter runner. This is
   // independent of the timings report to the Dart side.
   if (settings_.frame_rasterized_callback) {
@@ -1227,6 +1237,18 @@ Rasterizer::Screenshot Shell::Screenshot(
       });
   latch.Wait();
   return screenshot;
+}
+
+bool Shell::WaitForFrameRender(fml::TimeDelta timeout) {
+  std::unique_lock<std::mutex> lock(waiting_for_frame_mutex_);
+  task_runners_.GetUITaskRunner()->AwaitTask([this] {
+    engine_->GetAnimator()->ForceVSync();
+  });
+  waiting_for_frame_ = true;
+  bool success = waiting_for_frame_condition_.wait_for(
+      lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
+      [this] { return !waiting_for_frame_; });
+  return success;
 }
 
 }  // namespace flutter

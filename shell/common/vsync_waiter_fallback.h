@@ -19,6 +19,8 @@ class VsyncWaiterFallback final : public VsyncWaiter {
 
   ~VsyncWaiterFallback() override;
 
+  void ForceVSync() override;
+
  private:
   fml::TimePoint phase_;
 

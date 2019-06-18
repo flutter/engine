@@ -21,6 +21,8 @@ class TaskRunner : public fml::RefCountedThreadSafe<TaskRunner> {
 
   virtual void PostTask(fml::closure task);
 
+  virtual void AwaitTask(fml::closure task);
+
   virtual void PostTaskForTime(fml::closure task, fml::TimePoint target_time);
 
   virtual void PostDelayedTask(fml::closure task, fml::TimeDelta delay);
