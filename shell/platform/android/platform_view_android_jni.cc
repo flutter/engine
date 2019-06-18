@@ -25,6 +25,7 @@
 #include "flutter/shell/platform/android/flutter_main.h"
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
+#include <android/log.h>
 
 #define ANDROID_SHELL_HOLDER \
   (reinterpret_cast<AndroidShellHolder*>(shell_holder))
@@ -506,19 +507,37 @@ static void RegisterGLTexture(JNIEnv* env,
 }
 
 static jobject GetContext(JNIEnv* env, jobject jcaller, jlong shell_holder) {
-  jclass eglcontextClassLocal = env->FindClass("android/opengl/EGLContext");
-  jmethodID eglcontextConstructor =
-      env->GetMethodID(eglcontextClassLocal, "<init>", "(J)V");
 
   void* cxt = ANDROID_SHELL_HOLDER->GetPlatformView()->GetContext();
 
-  if ((EGLContext)cxt == EGL_NO_CONTEXT) {
-    return env->NewObject(eglcontextClassLocal, eglcontextConstructor,
-                          reinterpret_cast<jlong>(EGL_NO_CONTEXT));
+    
+  jclass versionClass = env->FindClass("android/os/Build$VERSION" );
+  jfieldID sdkIntFieldID = env->GetStaticFieldID(versionClass, "SDK_INT", "I" );
+  int sdkInt = env->GetStaticIntField(versionClass, sdkIntFieldID );
+  __android_log_print(ANDROID_LOG_ERROR, "andymao", "sdkInt %d",sdkInt);
+  jclass eglcontextClassLocal = env->FindClass("android/opengl/EGLContext");
+  jmethodID eglcontextConstructor;
+  jobject eglContext;
+  if (sdkInt >= 21) {
+      //5.0and above
+      eglcontextConstructor=env->GetMethodID(eglcontextClassLocal, "<init>", "(J)V");
+      if ((EGLContext)cxt == EGL_NO_CONTEXT) {
+          return env->NewObject(eglcontextClassLocal, eglcontextConstructor,
+                                reinterpret_cast<jlong>(EGL_NO_CONTEXT));
+      }
+      eglContext = env->NewObject(eglcontextClassLocal, eglcontextConstructor,
+                                  reinterpret_cast<jlong>(jlong(cxt)));
+  }else{
+      eglcontextConstructor=env->GetMethodID(eglcontextClassLocal, "<init>", "(I)V");
+      if ((EGLContext)cxt == EGL_NO_CONTEXT) {
+          return env->NewObject(eglcontextClassLocal, eglcontextConstructor,
+                                reinterpret_cast<jlong>(EGL_NO_CONTEXT));
+      }
+      eglContext = env->NewObject(eglcontextClassLocal, eglcontextConstructor,
+                                  reinterpret_cast<jint>(jint(cxt)));
   }
 
-  return env->NewObject(eglcontextClassLocal, eglcontextConstructor,
-                        reinterpret_cast<jlong>(cxt));
+  return eglContext;
 }
 
 static void MarkTextureFrameAvailable(JNIEnv* env,
