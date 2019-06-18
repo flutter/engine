@@ -14,9 +14,11 @@ static constexpr char kGetClipboardDataMethod[] = "Clipboard.getData";
 static constexpr char kSetClipboardDataMethod[] = "Clipboard.setData";
 
 static constexpr char kTextPlainFormat[] = "text/plain";
+static constexpr char kTextKey[] = "text";
 
 static constexpr char kUnknownClipboardFormatError[] =
-    "Unknown clipboard formaterror";
+    "Unknown clipboard format error";
+
 namespace flutter {
 
 ClipboardHandler::ClipboardHandler(
@@ -44,8 +46,6 @@ ClipboardHandler::~ClipboardHandler() = default;
 void ClipboardHandler::HandleMethodCall(
     const flutter::MethodCall<rapidjson::Document>& method_call,
     std::unique_ptr<flutter::MethodResult<rapidjson::Document>> result) {
-  const char* kTextKey = "text";
-
   const std::string& method = method_call.method_name();
 
   if (method.compare(kGetClipboardDataMethod) == 0) {
@@ -59,7 +59,6 @@ void ClipboardHandler::HandleMethodCall(
     }
 
     const char* clipboardData = get_clipboard_callback_(window_);
-
     if (clipboardData == NULL) {
       result->Error(kUnknownClipboardFormatError,
                     "Failed to retrieve clipboard data from GLFW api.");
@@ -73,10 +72,14 @@ void ClipboardHandler::HandleMethodCall(
     result->Success(&document);
     return;
   } else if (method.compare(kSetClipboardDataMethod) == 0) {
-    const rapidjson::Value& format = *method_call.arguments();
-    rapidjson::Value::ConstMemberIterator itr = format.FindMember(kTextKey);
-    const char* string = itr->value.GetString();
-    set_clipboard_callback_(window_, string);
+    const rapidjson::Value& document = *method_call.arguments();
+    rapidjson::Value::ConstMemberIterator itr = document.FindMember(kTextKey);
+    if (itr == document.MemberEnd()) {
+      result->Error(kUnknownClipboardFormatError,
+                    "Missing text to store on clipboard.");
+      return;
+    }
+    set_clipboard_callback_(window_, itr->value.GetString());
   } else {
     result->NotImplemented();
     return;
