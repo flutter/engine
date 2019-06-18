@@ -10,45 +10,6 @@
 
 namespace flutter {
 
-// Helper function to generate clip planes for a scenic::EntityNode.
-static void SetEntityNodeClipPlanes(scenic::EntityNode* entity_node,
-                                    const SkRect& bounds) {
-  const float top = bounds.top();
-  const float bottom = bounds.bottom();
-  const float left = bounds.left();
-  const float right = bounds.right();
-
-  // We will generate 4 oriented planes, one for each edge of the bounding rect.
-  std::vector<fuchsia::ui::gfx::Plane3> clip_planes;
-  clip_planes.resize(4);
-
-  // Top plane.
-  clip_planes[0].dist = top;
-  clip_planes[0].dir.x = 0.f;
-  clip_planes[0].dir.y = 1.f;
-  clip_planes[0].dir.z = 0.f;
-
-  // Bottom plane.
-  clip_planes[1].dist = -bottom;
-  clip_planes[1].dir.x = 0.f;
-  clip_planes[1].dir.y = -1.f;
-  clip_planes[1].dir.z = 0.f;
-
-  // Left plane.
-  clip_planes[2].dist = left;
-  clip_planes[2].dir.x = 1.f;
-  clip_planes[2].dir.y = 0.f;
-  clip_planes[2].dir.z = 0.f;
-
-  // Right plane.
-  clip_planes[3].dist = -right;
-  clip_planes[3].dir.x = -1.f;
-  clip_planes[3].dir.y = 0.f;
-  clip_planes[3].dir.z = 0.f;
-
-  entity_node->SetClipPlanes(std::move(clip_planes));
-}
-
 SceneUpdateContext::SceneUpdateContext(scenic::Session* session,
                                        SurfaceProducer* surface_producer)
     : session_(session), surface_producer_(surface_producer) {
@@ -63,10 +24,6 @@ void SceneUpdateContext::CreateFrame(
     const SkRect& paint_bounds,
     std::vector<Layer*> paint_layers,
     Layer* layer) {
-  // Frames always clip their children.
-  SetEntityNodeClipPlanes(entity_node.get(), rrect.getBounds());
-  // TODO(SCN-1274): AddPart() and SetClip() will be deleted.
-  entity_node->SetClip(0u, true /* clip to self */);
 
   // We don't need a shape if the frame is zero size.
   if (rrect.isEmpty())
@@ -225,7 +182,7 @@ SceneUpdateContext::Entity::Entity(SceneUpdateContext& context)
     : context_(context), previous_entity_(context.top_entity_) {
   entity_node_ptr_ = std::make_unique<scenic::EntityNode>(context.session());
   shape_node_ptr_ = std::make_unique<scenic::ShapeNode>(context.session());
-  // TODO(SCN-1274): AddPart() and SetClip() will be deleted.
+
   entity_node_ptr_->AddPart(*shape_node_ptr_);
   if (previous_entity_)
     previous_entity_->entity_node_ptr_->AddChild(*entity_node_ptr_);
@@ -329,9 +286,6 @@ SceneUpdateContext::Clip::Clip(SceneUpdateContext& context,
   shape_node().SetTranslation(shape_bounds.width() * 0.5f + shape_bounds.left(),
                               shape_bounds.height() * 0.5f + shape_bounds.top(),
                               0.f);
-  entity_node().SetClip(0u, true /* clip to self */);
-
-  SetEntityNodeClipPlanes(&entity_node(), shape_bounds);
 }
 
 }  // namespace flutter
