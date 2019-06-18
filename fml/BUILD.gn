@@ -225,3 +225,26 @@ executable("fml_unittests") {
     "//third_party/dart/runtime:libdart_jit",
   ]
 }
+
+config("benchmark_config") {
+  include_dirs = [ "//third_party/benchmark:benchmark_config" ]
+}
+
+executable("fml_benchmarks") {
+  testonly = true
+
+  sources = [
+    "message_loop_task_queues_benchmark.cc",
+  ]
+
+  deps = [
+    "$flutter_root/fml",
+    "//third_party/benchmark",
+    "//third_party/dart/runtime:libdart_jit",
+  ]
+
+  public_configs = [
+    "$flutter_root:config",
+    ":benchmark_config",
+  ]
+}
