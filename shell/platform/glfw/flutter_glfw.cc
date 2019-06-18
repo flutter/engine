@@ -391,6 +391,7 @@ static void SetHoverCallbacksEnabled(GLFWwindow* window, bool enabled) {
 
 // Flushes event queue and then assigns default window callbacks.
 static void GLFWAssignEventCallbacks(GLFWwindow* window) {
+  std::cout << "Assigning callbacks \n";
   glfwPollEvents();
   glfwSetKeyCallback(window, GLFWKeyCallback);
   glfwSetCharCallback(window, GLFWCharCallback);

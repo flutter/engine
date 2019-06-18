@@ -12,9 +12,16 @@ static constexpr char kChannelName[] = "flutter/keyevent";
 
 static constexpr char kKeyCodeKey[] = "keyCode";
 static constexpr char kKeyMapKey[] = "keymap";
+static constexpr char kScanCodeKey[] = "scanCode";
+static constexpr char kModifiersKey[] = "modifiers";
 static constexpr char kTypeKey[] = "type";
+static constexpr char kToolkitKey[] = "toolkit";
+static constexpr char kCharactersIgnoringModifiersKey[] =
+    "charactersIgnoringModifiers";
 
-static constexpr char kAndroidKeyMap[] = "android";
+static constexpr char kLinuxKeyMap[] = "linux";
+static constexpr char kGLFWKey[] = "glfw";
+
 static constexpr char kKeyUp[] = "keyup";
 static constexpr char kKeyDown[] = "keydown";
 
@@ -41,7 +48,20 @@ void KeyEventHandler::KeyboardHook(GLFWwindow* window,
   rapidjson::Document event(rapidjson::kObjectType);
   auto& allocator = event.GetAllocator();
   event.AddMember(kKeyCodeKey, key, allocator);
-  event.AddMember(kKeyMapKey, kAndroidKeyMap, allocator);
+  event.AddMember(kKeyMapKey, kLinuxKeyMap, allocator);
+  event.AddMember(kScanCodeKey, scancode, allocator);
+  event.AddMember(kModifiersKey, mods, allocator);
+  event.AddMember(kToolkitKey, kGLFWKey, allocator);
+
+  // Get the name of the printable key, encoded as UTF-8.
+  // There's a known issue with glfwGetKeyName, where users with multiple
+  // layouts configured on their machines, will not always return the right
+  // value. See: https://github.com/glfw/glfw/issues/1462
+  const char* keyName = glfwGetKeyName(key, scancode);
+  if (keyName != nullptr) {
+    event.AddMember(kCharactersIgnoringModifiersKey, std::string(keyName),
+                    allocator);
+  }
 
   switch (action) {
     case GLFW_PRESS:
