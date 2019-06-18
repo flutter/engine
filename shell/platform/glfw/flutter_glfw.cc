@@ -4,13 +4,13 @@
 
 #include "flutter/shell/platform/glfw/public/flutter_glfw.h"
 
-#include <GLFW/glfw3.h>
 #include <assert.h>
-
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
+
+#include <GLFW/glfw3.h>
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
