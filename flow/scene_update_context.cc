@@ -9,7 +9,6 @@
 #include "flutter/fml/trace_event.h"
 
 namespace flutter {
-
 SceneUpdateContext::SceneUpdateContext(scenic::Session* session,
                                        SurfaceProducer* surface_producer)
     : session_(session), surface_producer_(surface_producer) {
@@ -24,7 +23,6 @@ void SceneUpdateContext::CreateFrame(
     const SkRect& paint_bounds,
     std::vector<Layer*> paint_layers,
     Layer* layer) {
-
   // We don't need a shape if the frame is zero size.
   if (rrect.isEmpty())
     return;
@@ -36,7 +34,7 @@ void SceneUpdateContext::CreateFrame(
   scenic::RoundedRectangle shape(
       session_,                                      // session
       rrect.width(),                                 // width
-      rrect.height(),                                // height
+      rrect.height(),                                // heightgit b
       rrect.radii(SkRRect::kUpperLeft_Corner).x(),   // top_left_radius
       rrect.radii(SkRRect::kUpperRight_Corner).x(),  // top_right_radius
       rrect.radii(SkRRect::kLowerRight_Corner).x(),  // bottom_right_radius
@@ -182,7 +180,6 @@ SceneUpdateContext::Entity::Entity(SceneUpdateContext& context)
     : context_(context), previous_entity_(context.top_entity_) {
   entity_node_ptr_ = std::make_unique<scenic::EntityNode>(context.session());
   shape_node_ptr_ = std::make_unique<scenic::ShapeNode>(context.session());
-
   entity_node_ptr_->AddPart(*shape_node_ptr_);
   if (previous_entity_)
     previous_entity_->entity_node_ptr_->AddChild(*entity_node_ptr_);
@@ -286,6 +283,5 @@ SceneUpdateContext::Clip::Clip(SceneUpdateContext& context,
   shape_node().SetTranslation(shape_bounds.width() * 0.5f + shape_bounds.left(),
                               shape_bounds.height() * 0.5f + shape_bounds.top(),
                               0.f);
-}
 
 }  // namespace flutter
