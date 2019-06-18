@@ -16,7 +16,6 @@ namespace benchmarking {
 static void BM_RegisterAndGetTasks(benchmark::State& state) {
   while (state.KeepRunning()) {
     auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
-    std::vector<size_t> task_queue_ids;
 
     const int num_task_queues = 10;
     const int num_tasks_per_queue = 100;
