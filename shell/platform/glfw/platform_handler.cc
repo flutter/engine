@@ -75,8 +75,7 @@ void PlatformHandler::HandleMethodCall(
     glfwSetClipboardString(window_, itr->value.GetString());
     result->Success();
   } else if (method.compare(kSystemNavigatorPopMethod) == 0) {
-    glfwSetWindowShouldClose(window_, true);
-    result->Success();
+    exit(EXIT_SUCCESS);
   } else {
     result->NotImplemented();
   }
