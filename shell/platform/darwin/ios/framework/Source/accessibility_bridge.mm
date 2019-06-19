@@ -18,6 +18,14 @@ namespace {
 
 constexpr int32_t kRootNodeId = 0;
 
+void HandleEvent(NSDictionary<NSString*, id>* annotatedEvent) {
+  NSString* type = annotatedEvent[@"type"];
+  if ([type isEqualToString:@"announce"]) {
+    NSString* message = annotatedEvent[@"data"][@"message"];
+    UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, message);
+  }
+}
+
 flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     UIAccessibilityScrollDirection direction) {
   // To describe scroll direction, UIAccessibilityScrollDirection uses the direction the scroll bar
@@ -582,7 +590,6 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
 AccessibilityBridge::~AccessibilityBridge() {
   clearState();
   view_.accessibilityElements = nil;
-  [accessibility_channel_.get() setMessageHandler:nil];
 }
 
 UIView<UITextInput>* AccessibilityBridge::textInputView() {
@@ -761,14 +768,6 @@ void AccessibilityBridge::VisitObjectsRecursivelyAndRemove(SemanticsObject* obje
   [doomed_uids removeObject:@(object.uid)];
   for (SemanticsObject* child in [object children])
     VisitObjectsRecursivelyAndRemove(child, doomed_uids);
-}
-
-void AccessibilityBridge::HandleEvent(NSDictionary<NSString*, id>* annotatedEvent) {
-  NSString* type = annotatedEvent[@"type"];
-  if ([type isEqualToString:@"announce"]) {
-    NSString* message = annotatedEvent[@"data"][@"message"];
-    UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, message);
-  }
 }
 
 fml::WeakPtr<AccessibilityBridge> AccessibilityBridge::GetWeakPtr() {

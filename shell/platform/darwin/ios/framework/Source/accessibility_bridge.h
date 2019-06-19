@@ -172,7 +172,6 @@ class AccessibilityBridge final {
   SemanticsObject* GetOrCreateObject(int32_t id, flutter::SemanticsNodeUpdates& updates);
   void VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
                                         NSMutableArray<NSNumber*>* doomed_uids);
-  void HandleEvent(NSDictionary<NSString*, id>* annotatedEvent);
 
   UIView* view_;
   PlatformViewIOS* platform_view_;
