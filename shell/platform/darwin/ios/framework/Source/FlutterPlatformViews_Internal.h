@@ -155,11 +155,27 @@ class FlutterPlatformViewsController {
   // Traverse the `mutators_stack` and return the number of clip operations.
   int GetNumberOfClips(const MutatorsStack& mutators_stack);
 
-  // Removes extra views or add more views to ensure there are `number_of_clips` numbers of UIViews between the `child` and the `parent`
-  // including the `parent`. Returns the new parent after reconsturcting.
-  UIView* ReconstructViewChains(int number_of_clips, UIView* child, UIView* parent);
+  // Removes extra views or add more `ChildClippingView` to ensure there are `number_of_clips` numbers of UIViews between the `child` and the `parent`
+  // including the `parent`.
+  // Returns the new parent after reconsturcting. If the returning parent is not the same as child, it will be an instance of `ChildClippingView`.
+  UIView* ReconstructClipViewChain(int number_of_clips, UIView* child, UIView* parent);
 
-  UIView* ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view, int view_id);
+  // Apply mutators in the mutators_stack to the UIView chain that was constructed by `ReconstructClipViewChain`
+  //
+  // Clips are applied to the super view with a CALayer mask. Transforms are applied to the current
+  // view that's at the head of the chain. For example the following mutators stack [T_1, C_2, T_3,
+  // T_4, C_5, T_6] where T denotes a transform and C denotes a clip, will result in the following
+  // UIView tree:
+  //
+  // C_2 -> C_5 -> PLATFORM_VIEW
+  // (PLATFORM_VIEW is a subview of C_5 which is a subview of C_2)
+  //
+  // T_1 is applied to C_2, T_3 and T_4 are applied to C_5, and T_6 is applied to PLATFORM_VIEW.
+  //
+  // After each clip operation, we update the head to the super view of the current head.
+  void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
+
+  // Composite the platform view with the passed in `params`.
   void CompositeWithParams(int view_id, const flutter::EmbeddedViewParams& params);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
