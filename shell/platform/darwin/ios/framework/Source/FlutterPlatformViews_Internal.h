@@ -152,6 +152,13 @@ class FlutterPlatformViewsController {
   void EnsureGLOverlayInitialized(int64_t overlay_id,
                                   std::shared_ptr<IOSGLContext> gl_context,
                                   GrContext* gr_context);
+  // Traverse the `mutators_stack` and return the number of clip operations.
+  int GetNumberOfClips(const MutatorsStack& mutators_stack);
+
+  // Removes extra views or add more views to ensure there are `number_of_clips` numbers of UIViews between the `child` and the `parent`
+  // including the `parent`. Returns the new parent after reconsturcting.
+  UIView* ReconstructViewChains(int number_of_clips, UIView* child, UIView* parent);
+
   UIView* ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view, int view_id);
   void CompositeWithParams(int view_id, const flutter::EmbeddedViewParams& params);
 

@@ -183,6 +183,23 @@ std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
   return canvases;
 }
 
+int FlutterPlatformViewsController::GetNumberOfClips(const MutatorsStack& mutators_stack) {
+  // Apply transforms/clips.
+  std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.bottom();
+  int clipCount = 0;
+  while (iter != mutators_stack.top()) {
+    if (*iter->isClipType()) {
+      clipCount ++;
+    }
+    ++iter;
+  }
+  return clipCount;
+}
+
+UIView* FlutterPlatformViewsController::ReconstructViewChains(int number_of_clips, UIView* child, UIView* parent) {
+
+}
+
 // Builds a chain of UIViews that applies the mutations described by mutatorsStack.
 //
 // Clips are applied by adding a super view with a CALayer mask. Transforms are applied to the
