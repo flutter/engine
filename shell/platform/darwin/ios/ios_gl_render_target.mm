@@ -62,7 +62,7 @@ IOSGLRenderTarget::IOSGLRenderTarget(fml::scoped_nsobject<CAEAGLLayer> layer,
 }
 
 IOSGLRenderTarget::~IOSGLRenderTarget() {
-  EAGLContext *context = EAGLContext.currentContext;
+  EAGLContext* context = EAGLContext.currentContext;
   [EAGLContext setCurrentContext:context_];
   FML_DCHECK(glGetError() == GL_NO_ERROR);
 
