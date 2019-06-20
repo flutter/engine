@@ -275,6 +275,7 @@ void FlutterPlatformViewsController::CompositeWithParams(
   int currentClippingCount = GetNumberOfClips(params.mutatorsStack);
   int previousClippingCount = clip_count_[view_id];
   if (currentClippingCount != previousClippingCount) {
+    NSLog(@"clipping count not the same");
     // If we have a different clipping count in this frame, we need to reconstruct the
     // ClippingChildView chain to prepare for `ApplyMutators`. Meanwhile, we detach the
     // root.
