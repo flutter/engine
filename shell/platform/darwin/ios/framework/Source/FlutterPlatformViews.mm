@@ -276,19 +276,13 @@ void FlutterPlatformViewsController::CompositeWithParams(
   int previousClippingCount = clip_count_[view_id];
   if (currentClippingCount != previousClippingCount) {
     // If we have a different clipping count in this frame, we need to reconstruct the
-    // ClippingChildView chain to prepare for `ApplyMutators`
+    // ClippingChildView chain to prepare for `ApplyMutators`. Meanwhile, we detach the
+    // root.
     UIView* platformViewRoot = root_views_[view_id].get();
-    NSInteger index = -1;
-    if (platformViewRoot.superview) {
-      index = [platformViewRoot.superview.subviews indexOfObject:platformViewRoot];
-    }
     [platformViewRoot removeFromSuperview];
     UIView* newPlatformViewRoot =
         ReconstructClipViewChain(currentClippingCount, touchInterceptor, platformViewRoot);
-    if (index > -1) {
-      UIView* flutter_view = flutter_view_.get();
-      [flutter_view insertSubview:newPlatformViewRoot atIndex:index];
-    }
+
     root_views_[view_id] = fml::scoped_nsobject<UIView>([newPlatformViewRoot retain]);
   }
   ApplyMutators(params.mutatorsStack, touchInterceptor);
@@ -360,12 +354,14 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
     // `FlutterView`.
     UIView* platform_view_root = root_views_[view_id].get();
     UIView* overlay = overlays_[view_id]->overlay_view;
-    FML_CHECK(platform_view_root.superview == overlay.superview);
     if (platform_view_root.superview == flutter_view) {
       [flutter_view bringSubviewToFront:platform_view_root];
-      [flutter_view bringSubviewToFront:overlay];
     } else {
       [flutter_view addSubview:platform_view_root];
+    }
+    if (overlay.superview == flutter_view) {
+      [flutter_view bringSubviewToFront:overlay];
+    } else {
       [flutter_view addSubview:overlay];
     }
 
