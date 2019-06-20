@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import <XCTest/XCTest.h>
+#import <OCMock/OCMock.h>
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 
 @interface FlutteEngineTest : XCTestCase
@@ -17,7 +18,9 @@
 }
 
 - (void)testCreate {
-  FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"foobar" project:nil] autorelease];
+  id project = OCMClassMock([FlutterDartProject class]);
+  FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"foobar"
+                                                       project:project] autorelease];
   XCTAssertNotNil(engine);
 }
 

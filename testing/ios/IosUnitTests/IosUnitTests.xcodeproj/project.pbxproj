@@ -399,6 +399,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Tests",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.flutter.IosUnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -414,6 +418,10 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Tests",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.flutter.IosUnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -445,13 +453,23 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Tests",
+					"$(PROJECT_DIR)/../../third_party/ocmock",
+				);
 				OTHER_LDFLAGS = (
 					"-L",
 					../../../../out/ios_debug_sim_unopt,
 					"-lFlutter",
+					"-L",
+					../../../third_party/ocmock,
+					"-ObjC",
+					"-lOCMock",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.flutter.IosUnitTestsTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SYSTEM_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../../../third_party/ocmock/";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IosUnitTests.app/IosUnitTests";
 			};
@@ -481,13 +499,23 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Tests",
+					"$(PROJECT_DIR)/../../../third_party/ocmock",
+				);
 				OTHER_LDFLAGS = (
 					"-L",
 					../../../../out/ios_debug_sim_unopt,
 					"-lFlutter",
+					"-L",
+					../../../third_party/ocmock,
+					"-ObjC",
+					"-lOCMock",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.flutter.IosUnitTestsTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SYSTEM_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../../../third_party/ocmock/";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IosUnitTests.app/IosUnitTests";
 			};
