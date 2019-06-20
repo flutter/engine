@@ -96,8 +96,6 @@ public class FlutterJNI {
 
   @Nullable
   private static AsyncWaitForVsyncDelegate asyncWaitForVsyncDelegate;
-  @Nullable
-  private static Long lastVsyncCookie;
   // This should also be updated by FlutterView when it is attached to a Display.
   // The initial value of 0.0 indicates unknown refresh rate.
   private static float refreshRateFPS = 0.0f;
@@ -135,13 +133,6 @@ public class FlutterJNI {
   // TODO(mattcarroll): add javadocs
   public static void setAsyncWaitForVsyncDelegate(@Nullable AsyncWaitForVsyncDelegate delegate) {
     asyncWaitForVsyncDelegate = delegate;
-
-    // If we've been given a new delegate, and there was an un-handled asyncWaitForVsync call,
-    // immediately invoke the delegate to handle it.
-    if (asyncWaitForVsyncDelegate != null && lastVsyncCookie != null) {
-      asyncWaitForVsyncDelegate.asyncWaitForVsync(lastVsyncCookie);
-      lastVsyncCookie = null;
-    }
   }
 
   // TODO(mattcarroll): add javadocs
@@ -150,7 +141,7 @@ public class FlutterJNI {
     if (asyncWaitForVsyncDelegate != null) {
       asyncWaitForVsyncDelegate.asyncWaitForVsync(cookie);
     } else {
-      lastVsyncCookie = cookie;
+      throw new IllegalStateException("An AsyncWaitForVsyncDelegate must be registered with FlutterJNI before asyncWaitForVsync() is invoked.");
     }
   }
 
