@@ -1753,6 +1753,7 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
         && entry.name != 'googletest' // only used by tests
         && entry.name != 'skia' // treated as a separate component
         && entry.name != 'fontconfig' // not used in standard configurations
+        && entry.name != 'swiftshader' // only used on hosts for tests
         && super.shouldRecurse(entry);
   }
 
@@ -2062,6 +2063,37 @@ class _RepositoryFuchsiaDirectory extends _RepositoryDirectory {
   bool shouldRecurse(fs.IoNode entry) {
     return entry.name != 'toolchain'
         && super.shouldRecurse(entry);
+  }
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'sdk')
+      return _RepositoryFuchsiaSdkDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryFuchsiaSdkDirectory extends _RepositoryDirectory {
+  _RepositoryFuchsiaSdkDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'linux' || entry.name == 'mac')
+      return _RepositoryFuchsiaSdkLinuxDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryFuchsiaSdkLinuxDirectory extends _RepositoryDirectory {
+  _RepositoryFuchsiaSdkLinuxDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != '.build-id'
+        && entry.name != 'docs'
+        && entry.name != 'images'
+        && entry.name != 'meta'
+        && entry.name != 'tools';
   }
 }
 
