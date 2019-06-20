@@ -1,0 +1,2 @@
+OCMOCK_INCLUDE_PATH=$HOME/dev/ocmock/
+OCMOCK_LIB_PATH=$HOME/dev/ocmock/

@@ -14,6 +14,7 @@
 		0D6AB6C122BB05E200EEE540 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0D6AB6BF22BB05E200EEE540 /* LaunchScreen.storyboard */; };
 		0D6AB6C422BB05E200EEE540 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D6AB6C322BB05E200EEE540 /* main.m */; };
 		0D6AB6EB22BB40E700EEE540 /* FlutterEngineTest.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0D6AB6E722BB40CF00EEE540 /* FlutterEngineTest.mm */; };
+		0D6AB70022BC1E0500EEE540 /* OCMockConfig.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 0D6AB6FF22BC1E0500EEE540 /* OCMockConfig.xcconfig */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,6 +41,7 @@
 		0D6AB6C922BB05E200EEE540 /* IosUnitTestsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IosUnitTestsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D6AB6CF22BB05E200EEE540 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0D6AB6E722BB40CF00EEE540 /* FlutterEngineTest.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterEngineTest.mm; sourceTree = "<group>"; };
+		0D6AB6FF22BC1E0500EEE540 /* OCMockConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = OCMockConfig.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,6 +68,7 @@
 				0D6AB6B322BB05E100EEE540 /* App */,
 				0D6AB6CC22BB05E200EEE540 /* Tests */,
 				0D6AB6B222BB05E100EEE540 /* Products */,
+				0D6AB6FC22BC1BC300EEE540 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -99,6 +102,7 @@
 			children = (
 				0D6AB6E622BB409F00EEE540 /* Source */,
 				0D6AB6CF22BB05E200EEE540 /* Info.plist */,
+				0D6AB6FF22BC1E0500EEE540 /* OCMockConfig.xcconfig */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -110,6 +114,13 @@
 			);
 			name = Source;
 			path = ../../../../shell/platform/darwin/ios/framework/Source;
+			sourceTree = "<group>";
+		};
+		0D6AB6FC22BC1BC300EEE540 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -203,6 +214,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0D6AB70022BC1E0500EEE540 /* OCMockConfig.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -431,6 +443,7 @@
 		};
 		0D6AB6D622BB05E200EEE540 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0D6AB6FF22BC1E0500EEE540 /* OCMockConfig.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
@@ -456,7 +469,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Tests",
-					"$(PROJECT_DIR)/../../third_party/ocmock",
+					"$(OCMOCK_LIB_PATH)",
 				);
 				OTHER_LDFLAGS = (
 					"-L",
@@ -469,7 +482,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.flutter.IosUnitTestsTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SYSTEM_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../../../third_party/ocmock/";
+				SYSTEM_HEADER_SEARCH_PATHS = "$(OCMOCK_INCLUDE_PATH)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IosUnitTests.app/IosUnitTests";
 			};
@@ -477,6 +490,7 @@
 		};
 		0D6AB6D722BB05E200EEE540 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0D6AB6FF22BC1E0500EEE540 /* OCMockConfig.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
@@ -502,7 +516,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Tests",
-					"$(PROJECT_DIR)/../../../third_party/ocmock",
+					"$(OCMOCK_LIB_PATH)",
 				);
 				OTHER_LDFLAGS = (
 					"-L",
@@ -515,7 +529,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.flutter.IosUnitTestsTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SYSTEM_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../../../third_party/ocmock/";
+				SYSTEM_HEADER_SEARCH_PATHS = "$(OCMOCK_INCLUDE_PATH)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IosUnitTests.app/IosUnitTests";
 			};

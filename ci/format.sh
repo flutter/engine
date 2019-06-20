@@ -46,9 +46,6 @@ FILES_TO_CHECK="$(git diff $DIFF_OPTS $BASE_SHA..HEAD -- $FILETYPES)"
 
 FAILED_CHECKS=0
 for f in $FILES_TO_CHECK; do
-  if [[ $f == *"third_party"* ]]; then
-    continue
-  fi
   set +e
   CUR_DIFF="$(diff -u "$f" <("$CLANG_FORMAT" --style=file "$f"))"
   set -e
