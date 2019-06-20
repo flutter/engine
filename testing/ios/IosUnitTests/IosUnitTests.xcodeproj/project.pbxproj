@@ -13,7 +13,7 @@
 		0D6AB6BE22BB05E200EEE540 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0D6AB6BD22BB05E200EEE540 /* Assets.xcassets */; };
 		0D6AB6C122BB05E200EEE540 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0D6AB6BF22BB05E200EEE540 /* LaunchScreen.storyboard */; };
 		0D6AB6C422BB05E200EEE540 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D6AB6C322BB05E200EEE540 /* main.m */; };
-		0D6AB6D922BB061600EEE540 /* FlutteEngineTest.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0D6AB6D822BB061600EEE540 /* FlutteEngineTest.mm */; };
+		0D6AB6EB22BB40E700EEE540 /* FlutterEngineTest.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0D6AB6E722BB40CF00EEE540 /* FlutterEngineTest.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,7 +39,7 @@
 		0D6AB6C322BB05E200EEE540 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		0D6AB6C922BB05E200EEE540 /* IosUnitTestsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IosUnitTestsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D6AB6CF22BB05E200EEE540 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		0D6AB6D822BB061600EEE540 /* FlutteEngineTest.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = FlutteEngineTest.mm; path = Tests/FlutteEngineTest.mm; sourceTree = SOURCE_ROOT; };
+		0D6AB6E722BB40CF00EEE540 /* FlutterEngineTest.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterEngineTest.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,10 +97,19 @@
 		0D6AB6CC22BB05E200EEE540 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				0D6AB6E622BB409F00EEE540 /* Source */,
 				0D6AB6CF22BB05E200EEE540 /* Info.plist */,
-				0D6AB6D822BB061600EEE540 /* FlutteEngineTest.mm */,
 			);
 			path = Tests;
+			sourceTree = "<group>";
+		};
+		0D6AB6E622BB409F00EEE540 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				0D6AB6E722BB40CF00EEE540 /* FlutterEngineTest.mm */,
+			);
+			name = Source;
+			path = ../../../../shell/platform/darwin/ios/framework/Source;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -234,7 +243,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0D6AB6D922BB061600EEE540 /* FlutteEngineTest.mm in Sources */,
+				0D6AB6EB22BB40E700EEE540 /* FlutterEngineTest.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
