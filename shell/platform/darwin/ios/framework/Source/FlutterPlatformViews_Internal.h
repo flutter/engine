@@ -118,7 +118,7 @@ class FlutterPlatformViewsController {
   // Mapping a platform view ID to its latest composition params.
   std::map<int64_t, EmbeddedViewParams> current_composition_params_;
   // Mapping a platform view ID to the count of the clipping operations that were applied to the
-  // platform view.
+  // platform view last time it was composited.
   std::map<int64_t, int64_t> clip_count_;
   std::map<int64_t, std::unique_ptr<FlutterPlatformViewLayer>> overlays_;
   // The GrContext that is currently used by all of the overlay surfaces.

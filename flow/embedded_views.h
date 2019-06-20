@@ -127,10 +127,10 @@ class MutatorsStack {
   // and destroys it.
   void pop();
 
-  // Returns an iterator points the top of the stack.
+  // Returns an iterator pointing to the top of the stack.
   const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator top()
       const;
-  // Returns an iterator points the bottom of the stack.
+  // Returns an iterator pointing to the bottom of the stack.
   const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator bottom()
       const;
 
