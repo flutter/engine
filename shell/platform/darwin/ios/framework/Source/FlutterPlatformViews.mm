@@ -189,23 +189,25 @@ int FlutterPlatformViewsController::GetNumberOfClips(const MutatorsStack& mutato
   int clipCount = 0;
   while (iter != mutators_stack.top()) {
     if ((*iter)->isClipType()) {
-      clipCount ++;
+      clipCount++;
     }
     ++iter;
   }
   return clipCount;
 }
 
-UIView* FlutterPlatformViewsController::ReconstructClipViewChain(int number_of_clips, UIView* child, UIView* parent) {
+UIView* FlutterPlatformViewsController::ReconstructClipViewChain(int number_of_clips,
+                                                                 UIView* child,
+                                                                 UIView* parent) {
   FML_DCHECK(!parent.superview);
-  UIView *head = child;
+  UIView* head = child;
   BOOL needAddNewView = NO;
   for (int i = 0; i < number_of_clips; i++) {
     if (head == parent) {
       needAddNewView = YES;
     }
     if (needAddNewView) {
-      ChildClippingView *clippingView = [ChildClippingView new];
+      ChildClippingView* clippingView = [ChildClippingView new];
       [clippingView addSubview:head];
       head = clippingView;
     } else {
@@ -219,7 +221,7 @@ UIView* FlutterPlatformViewsController::ReconstructClipViewChain(int number_of_c
 }
 
 void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
-                                                      UIView* embedded_view) {
+                                                   UIView* embedded_view) {
   UIView* head = embedded_view;
   head.clipsToBounds = YES;
   head.layer.transform = CATransform3DIdentity;
@@ -260,7 +262,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   // resolution. So we need to scale down to match UIKit's logical resolution.
   CGFloat screenScale = [UIScreen mainScreen].scale;
   head.layer.transform = CATransform3DConcat(
-                                             head.layer.transform, CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1));
+      head.layer.transform, CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1));
 }
 
 void FlutterPlatformViewsController::CompositeWithParams(
@@ -273,20 +275,21 @@ void FlutterPlatformViewsController::CompositeWithParams(
   int currentClippingCount = GetNumberOfClips(params.mutatorsStack);
   int previousClippingCount = clip_count_[view_id];
   if (currentClippingCount != previousClippingCount) {
-    // If we have a different clipping count in this frame, we need to reconstruct the ClippingChildView chain to prepare for `ApplyMutators`
+    // If we have a different clipping count in this frame, we need to reconstruct the
+    // ClippingChildView chain to prepare for `ApplyMutators`
     UIView* platformViewRoot = root_views_[view_id].get();
     NSInteger index = -1;
     if (platformViewRoot.superview) {
       index = [platformViewRoot.superview.subviews indexOfObject:platformViewRoot];
     }
     [platformViewRoot removeFromSuperview];
-    UIView *newPlatformViewRoot = ReconstructClipViewChain(currentClippingCount, touchInterceptor, platformViewRoot);
+    UIView* newPlatformViewRoot =
+        ReconstructClipViewChain(currentClippingCount, touchInterceptor, platformViewRoot);
     if (index > -1) {
       UIView* flutter_view = flutter_view_.get();
       [flutter_view insertSubview:newPlatformViewRoot atIndex:index];
     }
     root_views_[view_id] = fml::scoped_nsobject<UIView>([newPlatformViewRoot retain]);
-
   }
   ApplyMutators(params.mutatorsStack, touchInterceptor);
 }

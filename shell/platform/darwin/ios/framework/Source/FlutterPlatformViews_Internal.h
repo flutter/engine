@@ -155,12 +155,14 @@ class FlutterPlatformViewsController {
   // Traverse the `mutators_stack` and return the number of clip operations.
   int GetNumberOfClips(const MutatorsStack& mutators_stack);
 
-  // Removes extra views or add more `ChildClippingView` to ensure there are `number_of_clips` numbers of UIViews between the `child` and the `parent`
-  // including the `parent`.
-  // Returns the new parent after reconsturcting. If the returning parent is not the same as child, it will be an instance of `ChildClippingView`.
+  // Removes extra views or add more `ChildClippingView` to ensure there are `number_of_clips`
+  // numbers of UIViews between the `child` and the `parent` including the `parent`. Returns the new
+  // parent after reconsturcting. If the returning parent is not the same as child, it will be an
+  // instance of `ChildClippingView`.
   UIView* ReconstructClipViewChain(int number_of_clips, UIView* child, UIView* parent);
 
-  // Apply mutators in the mutators_stack to the UIView chain that was constructed by `ReconstructClipViewChain`
+  // Apply mutators in the mutators_stack to the UIView chain that was constructed by
+  // `ReconstructClipViewChain`
   //
   // Clips are applied to the super view with a CALayer mask. Transforms are applied to the current
   // view that's at the head of the chain. For example the following mutators stack [T_1, C_2, T_3,
