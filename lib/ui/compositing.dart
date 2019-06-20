@@ -38,6 +38,112 @@ class Scene extends NativeFieldWrapperClass2 {
   void dispose() native 'Scene_dispose';
 }
 
+// Wraps a native layer object.
+//
+// This is used to provide a typed API for engine layers to prevent
+// incompatible layers from being passed to [SceneBuilder]'s push methods.
+// For example, this prevents a layer returned from `pushOpacity` from being
+// passed as `oldLayer` to `pushTransform`.
+abstract class _EngineLayerWrapper implements EngineLayer {
+  _EngineLayerWrapper._(this._nativeLayer);
+
+  EngineLayer _nativeLayer;
+}
+
+/// An opaque handle to a transform engine layer.
+///
+/// Instances of this class are created by [SceneBuilder.pushTransform].
+///
+/// {@template dart.ui.sceneBuilder.oldLayerCompatibility}
+/// `oldLayer` parameter in [SceneBuilder] methods only accepts objects created
+/// by the engine. [SceneBuilder] will throw an [AssertionError] if you pass it
+/// a custom implementation of this class.
+/// {@endtemplate}
+class TransformEngineLayer extends _EngineLayerWrapper {
+  TransformEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+}
+
+/// An opaque handle to an offset engine layer.
+///
+/// Instances of this class are created by [SceneBuilder.pushOffset].
+///
+/// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
+class OffsetEngineLayer extends _EngineLayerWrapper {
+  OffsetEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+}
+
+/// An opaque handle to a clip rect engine layer.
+///
+/// Instances of this class are created by [SceneBuilder.pushClipRect].
+///
+/// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
+class ClipRectEngineLayer extends _EngineLayerWrapper {
+  ClipRectEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+}
+
+/// An opaque handle to a clip rounded rect engine layer.
+///
+/// Instances of this class are created by [SceneBuilder.pushClipRRect].
+///
+/// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
+class ClipRRectEngineLayer extends _EngineLayerWrapper {
+  ClipRRectEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+}
+
+/// An opaque handle to a clip path engine layer.
+///
+/// Instances of this class are created by [SceneBuilder.pushClipPath].
+///
+/// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
+class ClipPathEngineLayer extends _EngineLayerWrapper {
+  ClipPathEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+}
+
+/// An opaque handle to an opacity engine layer.
+///
+/// Instances of this class are created by [SceneBuilder.pushOpacity].
+///
+/// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
+class OpacityEngineLayer extends _EngineLayerWrapper {
+  OpacityEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+}
+
+/// An opaque handle to a color filter engine layer.
+///
+/// Instances of this class are created by [SceneBuilder.pushColorFilter].
+///
+/// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
+class ColorFilterEngineLayer extends _EngineLayerWrapper {
+  ColorFilterEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+}
+
+/// An opaque handle to a backdrop filter engine layer.
+/// 
+/// Instances of this class are created by [SceneBuilder.pushBackdropFilter].
+/// 
+/// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
+class BackdropFilterEngineLayer extends _EngineLayerWrapper {
+  BackdropFilterEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+}
+
+/// An opaque handle to a shader mask engine layer.
+/// 
+/// Instances of this class are created by [SceneBuilder.pushShaderMask].
+/// 
+/// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
+class ShaderMaskEngineLayer extends _EngineLayerWrapper {
+  ShaderMaskEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+}
+
+/// An opaque handle to a physical shape engine layer.
+/// 
+/// Instances of this class are created by [SceneBuilder.pushPhysicalShape].
+/// 
+/// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
+class PhysicalShapeEngineLayer extends _EngineLayerWrapper {
+  PhysicalShapeEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+}
+
 /// Builds a [Scene] containing the given visuals.
 ///
 /// A [Scene] can then be rendered using [Window.render].
@@ -51,34 +157,71 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   SceneBuilder() { _constructor(); }
   void _constructor() native 'SceneBuilder_constructor';
 
+  static void _debugAssertCompatibleLayerImplementation(EngineLayer layer, Type compatibleType, String methodName) {
+    if (layer == null) {
+      return;
+    }
+    assert(
+      layer.runtimeType != compatibleType,
+      'Unsupported implementation of $compatibleType passed to SceneBuilder.$methodName as oldLayer argument.\n'
+      'Only instances of $compatibleType returned by the SceneBuilder.$methodName are accepted, '
+      'but the passed implementation had type ${layer.runtimeType}.\n',
+    );
+  }
+
   /// Pushes a transform operation onto the operation stack.
   ///
   /// The objects are transformed by the given matrix before rasterization.
+  /// 
+  /// {@template dart.ui.sceneBuilder.oldLayer}
+  /// If `oldLayer` is not null the engine will attempt to reuse the resources
+  /// allocated for the old layer when rendering the new layer. This is purely
+  /// an optimization. It has no effect on the correctness of rendering.
+  /// {@endtemplate}
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushTransform(Float64List matrix4) {
+  TransformEngineLayer pushTransform(Float64List matrix4, { TransformEngineLayer oldLayer }) {
     assert(_matrix4IsValid(matrix4));
-    return _pushTransform(matrix4);
+    assert(() {
+      _debugAssertCompatibleLayerImplementation(oldLayer, TransformEngineLayer, 'pushTransform');
+      return true;
+    }());
+    return TransformEngineLayer._(_pushTransform(matrix4));
   }
   EngineLayer _pushTransform(Float64List matrix4) native 'SceneBuilder_pushTransform';
 
   /// Pushes an offset operation onto the operation stack.
   ///
   /// This is equivalent to [pushTransform] with a matrix with only translation.
+  /// 
+  /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushOffset(double dx, double dy) native 'SceneBuilder_pushOffset';
+  OffsetEngineLayer pushOffset(double dx, double dy, { OffsetEngineLayer oldLayer }) {
+    assert(() {
+      _debugAssertCompatibleLayerImplementation(oldLayer, OffsetEngineLayer, 'pushOffset');
+      return true;
+    }());
+    return OffsetEngineLayer._(_pushOffset(dx, dy));
+  }
+  EngineLayer _pushOffset(double dx, double dy) native 'SceneBuilder_pushOffset';
 
   /// Pushes a rectangular clip operation onto the operation stack.
   ///
   /// Rasterization outside the given rectangle is discarded.
+  /// 
+  /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  EngineLayer pushClipRect(Rect rect, {Clip clipBehavior = Clip.antiAlias}) {
+  ClipRectEngineLayer pushClipRect(Rect rect, {Clip clipBehavior = Clip.antiAlias, ClipRectEngineLayer oldLayer }) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
-    return _pushClipRect(rect.left, rect.right, rect.top, rect.bottom, clipBehavior.index);
+    assert(() {
+      _debugAssertCompatibleLayerImplementation(oldLayer, ClipRectEngineLayer, 'pushClipRect');
+      return true;
+    }());
+    return ClipRectEngineLayer._(_pushClipRect(rect.left, rect.right, rect.top, rect.bottom, clipBehavior.index));
   }
   EngineLayer _pushClipRect(double left,
                             double right,
@@ -89,26 +232,38 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
   ///
   /// Rasterization outside the given rounded rectangle is discarded.
+  /// 
+  /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  EngineLayer pushClipRRect(RRect rrect, {Clip clipBehavior = Clip.antiAlias}) {
+  ClipRRectEngineLayer pushClipRRect(RRect rrect, {Clip clipBehavior = Clip.antiAlias, ClipRRectEngineLayer oldLayer}) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
-    return _pushClipRRect(rrect._value32, clipBehavior.index);
+    assert(() {
+      _debugAssertCompatibleLayerImplementation(oldLayer, ClipRRectEngineLayer, 'pushClipRRect');
+      return true;
+    }());
+    return ClipRRectEngineLayer._(_pushClipRRect(rrect._value32, clipBehavior.index));
   }
   EngineLayer _pushClipRRect(Float32List rrect, int clipBehavior) native 'SceneBuilder_pushClipRRect';
 
   /// Pushes a path clip operation onto the operation stack.
   ///
   /// Rasterization outside the given path is discarded.
+  /// 
+  /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack. See [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  EngineLayer pushClipPath(Path path, {Clip clipBehavior = Clip.antiAlias}) {
+  ClipPathEngineLayer pushClipPath(Path path, {Clip clipBehavior = Clip.antiAlias, ClipPathEngineLayer oldLayer}) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
-    return _pushClipPath(path, clipBehavior.index);
+    assert(() {
+      _debugAssertCompatibleLayerImplementation(oldLayer, ClipPathEngineLayer, 'pushClipPath');
+      return true;
+    }());
+    return ClipPathEngineLayer._(_pushClipPath(path, clipBehavior.index));
   }
   EngineLayer _pushClipPath(Path path, int clipBehavior) native 'SceneBuilder_pushClipPath';
 
@@ -118,10 +273,16 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// rasterization. An alpha value of 0 makes the objects entirely invisible.
   /// An alpha value of 255 has no effect (i.e., the objects retain the current
   /// opacity).
+  /// 
+  /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushOpacity(int alpha, {Offset offset = Offset.zero}) {
-    return _pushOpacity(alpha, offset.dx, offset.dy);
+  OpacityEngineLayer pushOpacity(int alpha, {Offset offset = Offset.zero, OpacityEngineLayer oldLayer}) {
+    assert(() {
+      _debugAssertCompatibleLayerImplementation(oldLayer, OpacityEngineLayer, 'pushOpacity');
+      return true;
+    }());
+    return OpacityEngineLayer._(_pushOpacity(alpha, offset.dx, offset.dy));
   }
   EngineLayer _pushOpacity(int alpha, double dx, double dy) native 'SceneBuilder_pushOpacity';
 
@@ -129,10 +290,16 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The given color is applied to the objects' rasterization using the given
   /// blend mode.
+  /// 
+  /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushColorFilter(Color color, BlendMode blendMode) {
-    return _pushColorFilter(color.value, blendMode.index);
+  ColorFilterEngineLayer pushColorFilter(Color color, BlendMode blendMode, ColorFilterEngineLayer oldLayer) {
+    assert(() {
+      _debugAssertCompatibleLayerImplementation(oldLayer, ColorFilterEngineLayer, 'pushColorFilter');
+      return true;
+    }());
+    return ColorFilterEngineLayer._(_pushColorFilter(color.value, blendMode.index));
   }
   EngineLayer _pushColorFilter(int color, int blendMode) native 'SceneBuilder_pushColorFilter';
 
@@ -140,23 +307,38 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The given filter is applied to the current contents of the scene prior to
   /// rasterizing the given objects.
+  /// 
+  /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushBackdropFilter(ImageFilter filter) native 'SceneBuilder_pushBackdropFilter';
+  BackdropFilterEngineLayer pushBackdropFilter(ImageFilter filter, { BackdropFilterEngineLayer oldLayer }) {
+    assert(() {
+      _debugAssertCompatibleLayerImplementation(oldLayer, BackdropFilterEngineLayer, 'pushBackdropFilter');
+      return true;
+    }());
+    return BackdropFilterEngineLayer._(_pushBackdropFilter(filter));
+  }
+  EngineLayer _pushBackdropFilter(ImageFilter filter) native 'SceneBuilder_pushBackdropFilter';
 
   /// Pushes a shader mask operation onto the operation stack.
   ///
   /// The given shader is applied to the object's rasterization in the given
   /// rectangle using the given blend mode.
+  /// 
+  /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushShaderMask(Shader shader, Rect maskRect, BlendMode blendMode) {
-    return _pushShaderMask(shader,
+  ShaderMaskEngineLayer pushShaderMask(Shader shader, Rect maskRect, BlendMode blendMode, { ShaderMaskEngineLayer oldLayer }) {
+    assert(() {
+      _debugAssertCompatibleLayerImplementation(oldLayer, ShaderMaskEngineLayer, 'pushShaderMask');
+      return true;
+    }());
+    return ShaderMaskEngineLayer._(_pushShaderMask(shader,
                            maskRect.left,
                            maskRect.right,
                            maskRect.top,
                            maskRect.bottom,
-                           blendMode.index);
+                           blendMode.index));
   }
   EngineLayer _pushShaderMask(Shader shader,
                               double maskRectLeft,
@@ -175,11 +357,17 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// If [elevation] is greater than 0.0, then a shadow is drawn around the layer.
   /// [shadowColor] defines the color of the shadow if present and [color] defines the
   /// color of the layer background.
+  /// 
+  /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   // ignore: deprecated_member_use
-  EngineLayer pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, Clip clipBehavior = Clip.none}) {
-    return _pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000, clipBehavior.index);
+  PhysicalShapeEngineLayer pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, Clip clipBehavior = Clip.none, PhysicalShapeEngineLayer oldLayer }) {
+    assert(() {
+      _debugAssertCompatibleLayerImplementation(oldLayer, PhysicalShapeEngineLayer, 'pushPhysicalShape');
+      return true;
+    }());
+    return PhysicalShapeEngineLayer._(_pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000, clipBehavior.index));
   }
   EngineLayer _pushPhysicalShape(Path path, double elevation, int color, int shadowColor, int clipBehavior) native
     'SceneBuilder_pushPhysicalShape';
@@ -200,7 +388,14 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Therefore, when implementing a subclass of the [Layer] concept defined in
   /// the rendering layer of Flutter's framework, once this is called, there's
   /// no need to call [addToScene] for its children layers.
-  void addRetained(EngineLayer retainedLayer) native 'SceneBuilder_addRetained';
+  void addRetained(EngineLayer retainedLayer) {
+    if (retainedLayer is _EngineLayerWrapper) {
+      _addRetained(retainedLayer._nativeLayer);
+    } else {
+      _addRetained(retainedLayer);
+    }
+  }
+  void _addRetained(EngineLayer retainedLayer) native 'SceneBuilder_addRetained';
 
   /// Adds an object to the scene that displays performance statistics.
   ///

@@ -108,7 +108,7 @@ class SceneBuilder {
   /// This is equivalent to [pushTransform] with a matrix with only translation.
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushOffset(double dx, double dy) {
+  EngineLayer pushOffset(double dx, double dy, { EngineLayer oldLayer }) {
     return _pushSurface(engine.PersistedOffset(null, dx, dy));
   }
 
@@ -117,7 +117,7 @@ class SceneBuilder {
   /// The objects are transformed by the given matrix before rasterization.
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushTransform(Float64List matrix4) {
+  EngineLayer pushTransform(Float64List matrix4, { EngineLayer oldLayer }) {
     if (matrix4 == null) {
       throw new ArgumentError('"matrix4" argument cannot be null');
     }
@@ -134,7 +134,7 @@ class SceneBuilder {
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
   EngineLayer pushClipRect(Rect rect,
-      {Clip clipBehavior = Clip.antiAlias}) {
+      {Clip clipBehavior = Clip.antiAlias, EngineLayer oldLayer }) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
     return _pushSurface(engine.PersistedClipRect(null, rect));
@@ -146,7 +146,7 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   EngineLayer pushClipRRect(RRect rrect,
-      {Clip clipBehavior}) {
+      {Clip clipBehavior, EngineLayer oldLayer }) {
     return _pushSurface(
         engine.PersistedClipRRect(null, rrect, clipBehavior));
   }
@@ -157,7 +157,7 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   EngineLayer pushClipPath(Path path,
-      {Clip clipBehavior = Clip.antiAlias}) {
+      {Clip clipBehavior = Clip.antiAlias, EngineLayer oldLayer }) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
     return _pushSurface(
@@ -173,9 +173,8 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   EngineLayer pushOpacity(int alpha,
-      {Offset offset = Offset.zero}) {
-    return _pushSurface(
-        engine.PersistedOpacity(null, alpha, offset));
+      {Offset offset = Offset.zero, EngineLayer oldLayer}) {
+    return _pushSurface(engine.PersistedOpacity(null, alpha, offset));
   }
 
   /// Pushes a color filter operation onto the operation stack.
@@ -184,7 +183,7 @@ class SceneBuilder {
   /// blend mode.
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushColorFilter(Color color, BlendMode blendMode) {
+  EngineLayer pushColorFilter(Color color, BlendMode blendMode, { EngineLayer oldLayer }) {
     throw new UnimplementedError();
   }
 
@@ -194,7 +193,7 @@ class SceneBuilder {
   /// rasterizing the given objects.
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushBackdropFilter(ImageFilter filter) {
+  EngineLayer pushBackdropFilter(ImageFilter filter, { EngineLayer oldLayer }) {
     throw new UnimplementedError();
   }
 
@@ -204,7 +203,7 @@ class SceneBuilder {
   /// rectangle using the given blend mode.
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushShaderMask(Shader shader, Rect maskRect, BlendMode blendMode) {
+  EngineLayer pushShaderMask(Shader shader, Rect maskRect, BlendMode blendMode, { EngineLayer oldLayer }) {
     throw new UnimplementedError();
   }
 
@@ -226,6 +225,7 @@ class SceneBuilder {
     Color color,
     Color shadowColor,
     Clip clipBehavior = Clip.none,
+    EngineLayer oldLayer,
   }) {
     return _pushSurface(engine.PersistedPhysicalShape(
       null,
