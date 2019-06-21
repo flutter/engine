@@ -50,7 +50,7 @@ public class FlutterTextureView extends TextureView implements FlutterRenderer.R
   private final SurfaceTextureListener surfaceTextureListener = new SurfaceTextureListener() {
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
-      Log.v(TAG, "SurfaceTextureListener.onSurfaceTextureAvailable()");
+      Log.d(TAG, "SurfaceTextureListener.onSurfaceTextureAvailable()");
       isSurfaceAvailableForRendering = true;
 
       // If we're already attached to a FlutterRenderer then we're now attached to both a renderer
@@ -62,7 +62,7 @@ public class FlutterTextureView extends TextureView implements FlutterRenderer.R
 
     @Override
     public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {
-      Log.v(TAG, "SurfaceTextureListener.onSurfaceTextureSizeChanged()");
+      Log.d(TAG, "SurfaceTextureListener.onSurfaceTextureSizeChanged()");
       if (isAttachedToFlutterRenderer) {
         changeSurfaceSize(width, height);
       }
@@ -75,7 +75,7 @@ public class FlutterTextureView extends TextureView implements FlutterRenderer.R
 
     @Override
     public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
-      Log.v(TAG, "SurfaceTextureListener.onSurfaceTextureDestroyed()");
+      Log.d(TAG, "SurfaceTextureListener.onSurfaceTextureDestroyed()");
       isSurfaceAvailableForRendering = false;
 
       // If we're attached to a FlutterRenderer then we need to notify it that our SurfaceTexture
@@ -125,9 +125,9 @@ public class FlutterTextureView extends TextureView implements FlutterRenderer.R
    * Flutter's UI to this {@code FlutterTextureView}.
    */
   public void attachToRenderer(@NonNull FlutterRenderer flutterRenderer) {
-    Log.v(TAG, "Attaching to FlutterRenderer.");
+    Log.d(TAG, "Attaching to FlutterRenderer.");
     if (this.flutterRenderer != null) {
-      Log.v(TAG, "Already connected to a FlutterRenderer. Detaching from old one and attaching to new one.");
+      Log.d(TAG, "Already connected to a FlutterRenderer. Detaching from old one and attaching to new one.");
       this.flutterRenderer.detachFromRenderSurface();
     }
 
@@ -137,7 +137,7 @@ public class FlutterTextureView extends TextureView implements FlutterRenderer.R
     // If we're already attached to an Android window then we're now attached to both a renderer
     // and the Android window. We can begin rendering now.
     if (isSurfaceAvailableForRendering) {
-      Log.v(TAG, "Surface is available for rendering. Connecting FlutterRenderer to Android surface.");
+      Log.d(TAG, "Surface is available for rendering. Connecting FlutterRenderer to Android surface.");
       connectSurfaceToRenderer();
     }
   }
@@ -154,7 +154,7 @@ public class FlutterTextureView extends TextureView implements FlutterRenderer.R
       // this FlutterTextureView is detached from the FlutterRenderer, we need to stop rendering.
       // TODO(mattcarroll): introduce a isRendererConnectedToSurface() to wrap "getWindowToken() != null"
       if (getWindowToken() != null) {
-        Log.v(TAG, "Disconnecting FlutterRenderer from Android surface.");
+        Log.d(TAG, "Disconnecting FlutterRenderer from Android surface.");
         disconnectSurfaceFromRenderer();
       }
 
@@ -180,7 +180,7 @@ public class FlutterTextureView extends TextureView implements FlutterRenderer.R
       throw new IllegalStateException("changeSurfaceSize() should only be called when flutterRenderer is non-null.");
     }
 
-    Log.v(TAG, "Notifying FlutterRenderer that Android surface size has changed to " + width + " x " + height);
+    Log.d(TAG, "Notifying FlutterRenderer that Android surface size has changed to " + width + " x " + height);
     flutterRenderer.surfaceChanged(width, height);
   }
 
@@ -214,7 +214,7 @@ public class FlutterTextureView extends TextureView implements FlutterRenderer.R
   @Override
   public void onFirstFrameRendered() {
     // TODO(mattcarroll): decide where this method should live and what it needs to do.
-    Log.v(TAG, "onFirstFrameRendered()");
+    Log.d(TAG, "onFirstFrameRendered()");
 
     for (OnFirstFrameRenderedListener listener : onFirstFrameRenderedListeners) {
       listener.onFirstFrameRendered();

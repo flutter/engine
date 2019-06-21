@@ -116,7 +116,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
 
   @Override
   public void add(@NonNull FlutterPlugin plugin) {
-    Log.v(TAG, "Adding plugin: " + plugin);
+    Log.d(TAG, "Adding plugin: " + plugin);
     // Add the plugin to our generic set of plugins and notify the plugin
     // that is has been attached to an engine.
     plugins.put(plugin.getClass(), plugin);
@@ -192,7 +192,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
   public void remove(@NonNull Class<? extends FlutterPlugin> pluginClass) {
     FlutterPlugin plugin = plugins.get(pluginClass);
     if (plugin != null) {
-      Log.v(TAG, "Removing plugin: " + plugin);
+      Log.d(TAG, "Removing plugin: " + plugin);
       // For ActivityAware plugins, notify the plugin that it is detached from
       // an Activity if an Activity is currently attached to this engine. Then
       // remove the plugin from our set of ActivityAware plugins.
@@ -278,7 +278,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
 
   @Override
   public void attachToActivity(@NonNull Activity activity, @NonNull Lifecycle lifecycle) {
-    Log.v(TAG, "Attaching to an Activity: " + activity + "."
+    Log.d(TAG, "Attaching to an Activity: " + activity + "."
         + (isWaitingForActivityReattachment ? " This is after a config change." : ""));
     // If we were already attached to an Android component, detach from it.
     detachFromAndroidComponent();
@@ -301,7 +301,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
   @Override
   public void detachFromActivityForConfigChanges() {
     if (isAttachedToActivity()) {
-      Log.v(TAG, "Detaching from an Activity for config changes: " + activity);
+      Log.d(TAG, "Detaching from an Activity for config changes: " + activity);
       isWaitingForActivityReattachment = true;
 
       for (ActivityAware activityAware : activityAwarePlugins.values()) {
@@ -319,7 +319,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
   @Override
   public void detachFromActivity() {
     if (isAttachedToActivity()) {
-      Log.v(TAG, "Detaching from an Activity: " + activity);
+      Log.d(TAG, "Detaching from an Activity: " + activity);
       for (ActivityAware activityAware : activityAwarePlugins.values()) {
         activityAware.onDetachedFromActivity();
       }
@@ -334,7 +334,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
 
   @Override
   public boolean onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResult) {
-    Log.v(TAG, "Forwarding onRequestPermissionsResult() to plugins.");
+    Log.d(TAG, "Forwarding onRequestPermissionsResult() to plugins.");
     if (isAttachedToActivity()) {
       return activityPluginBinding.onRequestPermissionsResult(requestCode, permissions, grantResult);
     } else {
@@ -345,7 +345,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
 
   @Override
   public boolean onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-    Log.v(TAG, "Forwarding onActivityResult() to plugins.");
+    Log.d(TAG, "Forwarding onActivityResult() to plugins.");
     if (isAttachedToActivity()) {
       return activityPluginBinding.onActivityResult(requestCode, resultCode, data);
     } else {
@@ -356,7 +356,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
 
   @Override
   public void onNewIntent(@NonNull Intent intent) {
-    Log.v(TAG, "Forwarding onNewIntent() to plugins.");
+    Log.d(TAG, "Forwarding onNewIntent() to plugins.");
     if (isAttachedToActivity()) {
       activityPluginBinding.onNewIntent(intent);
     } else {
@@ -366,7 +366,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
 
   @Override
   public void onUserLeaveHint() {
-    Log.v(TAG, "Forwarding onUserLeaveHint() to plugins.");
+    Log.d(TAG, "Forwarding onUserLeaveHint() to plugins.");
     if (isAttachedToActivity()) {
       activityPluginBinding.onUserLeaveHint();
     } else {
@@ -382,7 +382,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
 
   @Override
   public void attachToService(@NonNull Service service, @NonNull Lifecycle lifecycle, boolean isForeground) {
-    Log.v(TAG, "Attaching to a Service: " + service);
+    Log.d(TAG, "Attaching to a Service: " + service);
     // If we were already attached to an Android component, detach from it.
     detachFromAndroidComponent();
 
@@ -399,7 +399,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
   @Override
   public void detachFromService() {
     if (isAttachedToService()) {
-      Log.v(TAG, "Detaching from a Service: " + service);
+      Log.d(TAG, "Detaching from a Service: " + service);
       // Notify all ServiceAware plugins that they are no longer attached to a Service.
       for (ServiceAware serviceAware : serviceAwarePlugins.values()) {
         serviceAware.onDetachedFromService();
@@ -416,7 +416,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
   @Override
   public void onMoveToForeground() {
     if (isAttachedToService()) {
-      Log.v(TAG, "Attached Service moved to foreground.");
+      Log.d(TAG, "Attached Service moved to foreground.");
       servicePluginBinding.onMoveToForeground();
     }
   }
@@ -424,7 +424,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
   @Override
   public void onMoveToBackground() {
     if (isAttachedToService()) {
-      Log.v(TAG, "Attached Service moved to background.");
+      Log.d(TAG, "Attached Service moved to background.");
       servicePluginBinding.onMoveToBackground();
     }
   }
@@ -437,7 +437,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
 
   @Override
   public void attachToBroadcastReceiver(@NonNull BroadcastReceiver broadcastReceiver, @NonNull Lifecycle lifecycle) {
-    Log.v(TAG, "Attaching to BroadcastReceiver: " + broadcastReceiver);
+    Log.d(TAG, "Attaching to BroadcastReceiver: " + broadcastReceiver);
     // If we were already attached to an Android component, detach from it.
     detachFromAndroidComponent();
 
@@ -454,7 +454,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
   @Override
   public void detachFromBroadcastReceiver() {
     if (isAttachedToBroadcastReceiver()) {
-      Log.v(TAG, "Detaching from BroadcastReceiver: " + broadcastReceiver);
+      Log.d(TAG, "Detaching from BroadcastReceiver: " + broadcastReceiver);
       // Notify all BroadcastReceiverAware plugins that they are no longer attached to a BroadcastReceiver.
       for (BroadcastReceiverAware broadcastReceiverAware : broadcastReceiverAwarePlugins.values()) {
         broadcastReceiverAware.onDetachedFromBroadcastReceiver();
@@ -472,7 +472,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
 
   @Override
   public void attachToContentProvider(@NonNull ContentProvider contentProvider, @NonNull Lifecycle lifecycle) {
-    Log.v(TAG, "Attaching to ContentProvider: " + contentProvider);
+    Log.d(TAG, "Attaching to ContentProvider: " + contentProvider);
     // If we were already attached to an Android component, detach from it.
     detachFromAndroidComponent();
 
@@ -489,7 +489,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
   @Override
   public void detachFromContentProvider() {
     if (isAttachedToContentProvider()) {
-      Log.v(TAG, "Detaching from ContentProvider: " + contentProvider);
+      Log.d(TAG, "Detaching from ContentProvider: " + contentProvider);
       // Notify all ContentProviderAware plugins that they are no longer attached to a ContentProvider.
       for (ContentProviderAware contentProviderAware : contentProviderAwarePlugins.values()) {
         contentProviderAware.onDetachedFromContentProvider();

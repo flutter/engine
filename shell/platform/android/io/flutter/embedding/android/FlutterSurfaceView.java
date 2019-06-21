@@ -51,7 +51,7 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
   private final SurfaceHolder.Callback surfaceCallback = new SurfaceHolder.Callback() {
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
-      Log.v(TAG, "SurfaceHolder.Callback.surfaceCreated()");
+      Log.d(TAG, "SurfaceHolder.Callback.surfaceCreated()");
       isSurfaceAvailableForRendering = true;
 
       if (isAttachedToFlutterRenderer) {
@@ -61,7 +61,7 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
 
     @Override
     public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
-      Log.v(TAG, "SurfaceHolder.Callback.surfaceChanged()");
+      Log.d(TAG, "SurfaceHolder.Callback.surfaceChanged()");
       if (isAttachedToFlutterRenderer) {
         changeSurfaceSize(width, height);
       }
@@ -69,7 +69,7 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
 
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
-      Log.v(TAG, "SurfaceHolder.Callback.surfaceDestroyed()");
+      Log.d(TAG, "SurfaceHolder.Callback.surfaceDestroyed()");
       isSurfaceAvailableForRendering = false;
 
       if (isAttachedToFlutterRenderer) {
@@ -137,9 +137,9 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
    * Flutter's UI to this {@code FlutterSurfaceView}.
    */
   public void attachToRenderer(@NonNull FlutterRenderer flutterRenderer) {
-    Log.v(TAG, "Attaching to FlutterRenderer.");
+    Log.d(TAG, "Attaching to FlutterRenderer.");
     if (this.flutterRenderer != null) {
-      Log.v(TAG, "Already connected to a FlutterRenderer. Detaching from old one and attaching to new one.");
+      Log.d(TAG, "Already connected to a FlutterRenderer. Detaching from old one and attaching to new one.");
       this.flutterRenderer.detachFromRenderSurface();
     }
 
@@ -149,7 +149,7 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
     // If we're already attached to an Android window then we're now attached to both a renderer
     // and the Android window. We can begin rendering now.
     if (isSurfaceAvailableForRendering) {
-      Log.v(TAG, "Surface is available for rendering. Connecting FlutterRenderer to Android surface.");
+      Log.d(TAG, "Surface is available for rendering. Connecting FlutterRenderer to Android surface.");
       connectSurfaceToRenderer();
     }
   }
@@ -166,7 +166,7 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
       // this FlutterSurfaceView is detached from the FlutterRenderer, we need to stop rendering.
       // TODO(mattcarroll): introduce a isRendererConnectedToSurface() to wrap "getWindowToken() != null"
       if (getWindowToken() != null) {
-        Log.v(TAG, "Disconnecting FlutterRenderer from Android surface.");
+        Log.d(TAG, "Disconnecting FlutterRenderer from Android surface.");
         disconnectSurfaceFromRenderer();
       }
 
@@ -195,7 +195,7 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
       throw new IllegalStateException("changeSurfaceSize() should only be called when flutterRenderer is non-null.");
     }
 
-    Log.v(TAG, "Notifying FlutterRenderer that Android surface size has changed to " + width + " x " + height);
+    Log.d(TAG, "Notifying FlutterRenderer that Android surface size has changed to " + width + " x " + height);
     flutterRenderer.surfaceChanged(width, height);
   }
 
@@ -229,7 +229,7 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
   @Override
   public void onFirstFrameRendered() {
     // TODO(mattcarroll): decide where this method should live and what it needs to do.
-    Log.v(TAG, "onFirstFrameRendered()");
+    Log.d(TAG, "onFirstFrameRendered()");
     // Now that a frame is ready to display, take this SurfaceView from transparent to opaque.
     setAlpha(1.0f);
 

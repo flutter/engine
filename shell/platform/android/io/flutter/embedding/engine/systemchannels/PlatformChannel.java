@@ -44,7 +44,7 @@ public class PlatformChannel {
 
       String method = call.method;
       Object arguments = call.arguments;
-      Log.v(TAG, "Received '" + method + "' message.");
+      Log.d(TAG, "Received '" + method + "' message.");
       try {
         switch (method) {
           case "SystemSound.play":

@@ -79,7 +79,7 @@ public class DartExecutor implements BinaryMessenger {
    * </ul>
    */
   public void onAttachedToJNI() {
-    Log.v(TAG, "Attached to JNI. Registering the platform message handler for this Dart execution context.");
+    Log.d(TAG, "Attached to JNI. Registering the platform message handler for this Dart execution context.");
     flutterJNI.setPlatformMessageHandler(messenger);
   }
 
@@ -91,7 +91,7 @@ public class DartExecutor implements BinaryMessenger {
    * the Dart execution context.
    */
   public void onDetachedFromJNI() {
-    Log.v(TAG, "Detached from JNI. De-registering the platform message handler for this Dart execution context.");
+    Log.d(TAG, "Detached from JNI. De-registering the platform message handler for this Dart execution context.");
     flutterJNI.setPlatformMessageHandler(null);
   }
 
@@ -117,7 +117,7 @@ public class DartExecutor implements BinaryMessenger {
       return;
     }
 
-    Log.v(TAG, "Executing Dart entrypoint: " + dartEntrypoint);
+    Log.d(TAG, "Executing Dart entrypoint: " + dartEntrypoint);
 
     flutterJNI.runBundleAndSnapshotFromLibrary(
         new String[]{
@@ -145,7 +145,7 @@ public class DartExecutor implements BinaryMessenger {
       return;
     }
 
-    Log.v(TAG, "Executing Dart callback: " + dartCallback);
+    Log.d(TAG, "Executing Dart callback: " + dartCallback);
 
     flutterJNI.runBundleAndSnapshotFromLibrary(
         new String[]{

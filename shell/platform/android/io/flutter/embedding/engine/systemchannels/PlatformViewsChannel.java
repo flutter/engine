@@ -45,7 +45,7 @@ public class PlatformViewsChannel {
         return;
       }
 
-      Log.v(TAG, "Received '" + call.method + "' message.");
+      Log.d(TAG, "Received '" + call.method + "' message.");
       switch (call.method) {
         case "create":
           create(call, result);

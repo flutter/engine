@@ -20,7 +20,7 @@ public class SettingsChannel {
 
   @NonNull
   public final BasicMessageChannel<Object> channel;
-  
+
   public SettingsChannel(@NonNull DartExecutor dartExecutor) {
     this.channel = new BasicMessageChannel<>(dartExecutor, CHANNEL_NAME, JSONMessageCodec.INSTANCE);
   }
@@ -29,13 +29,13 @@ public class SettingsChannel {
   public MessageBuilder startMessage() {
     return new MessageBuilder(channel);
   }
-  
+
   public static class MessageBuilder {
     @NonNull
     private final BasicMessageChannel<Object> channel;
     @NonNull
     private Map<String, Object> message = new HashMap<>();
-    
+
     MessageBuilder(@NonNull BasicMessageChannel<Object> channel) {
       this.channel = channel;
     }
@@ -57,16 +57,16 @@ public class SettingsChannel {
       message.put(PLATFORM_BRIGHTNESS, brightness.name);
       return this;
     }
-    
+
     public void send() {
-      Log.v(TAG, "Sending message: \n"
+      Log.d(TAG, "Sending message: \n"
         + "textScaleFactor: " + message.get(TEXT_SCALE_FACTOR) + "\n"
         + "alwaysUse24HourFormat: " + message.get(ALWAYS_USE_24_HOUR_FORMAT) + "\n"
         + "platformBrightness: " + message.get(PLATFORM_BRIGHTNESS));
       channel.send(message);
     }
   }
-  
+
   /**
    * The brightness mode of the host platform.
    *
@@ -79,7 +79,7 @@ public class SettingsChannel {
 
     @NonNull
     public String name;
-    
+
     PlatformBrightness(@NonNull String name) {
       this.name = name;
     }

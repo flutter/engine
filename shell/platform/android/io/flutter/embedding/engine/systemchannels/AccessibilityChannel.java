@@ -43,7 +43,7 @@ public class AccessibilityChannel {
       @SuppressWarnings("unchecked")
       final HashMap<String, Object> data = (HashMap<String, Object>) annotatedEvent.get("data");
 
-      Log.v(TAG, "Received " + type + " message.");
+      Log.d(TAG, "Received " + type + " message.");
       switch (type) {
         case "announce":
           String announceMessage = (String) data.get("message");

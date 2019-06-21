@@ -28,7 +28,7 @@ public class SystemChannel {
   }
 
   public void sendMemoryPressureWarning() {
-    Log.v(TAG, "Sending memory pressure warning to Flutter.");
+    Log.d(TAG, "Sending memory pressure warning to Flutter.");
     Map<String, Object> message = new HashMap<>(1);
     message.put("type", "memoryPressure");
     channel.send(message);

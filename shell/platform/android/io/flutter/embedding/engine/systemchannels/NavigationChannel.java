@@ -26,17 +26,17 @@ public class NavigationChannel {
   }
 
   public void setInitialRoute(@NonNull String initialRoute) {
-    Log.v(TAG, "Sending message to set initial route to '" + initialRoute + "'");
+    Log.d(TAG, "Sending message to set initial route to '" + initialRoute + "'");
     channel.invokeMethod("setInitialRoute", initialRoute);
   }
 
   public void pushRoute(@NonNull String route) {
-    Log.v(TAG, "Sending message to push route '" + route + "'");
+    Log.d(TAG, "Sending message to push route '" + route + "'");
     channel.invokeMethod("pushRoute", route);
   }
 
   public void popRoute() {
-    Log.v(TAG, "Sending message to pop route.");
+    Log.d(TAG, "Sending message to pop route.");
     channel.invokeMethod("popRoute", null);
   }
 

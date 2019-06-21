@@ -50,7 +50,7 @@ public class TextInputChannel {
 
       String method = call.method;
       Object args = call.arguments;
-      Log.v(TAG, "Received '" + method + "' message.");
+      Log.d(TAG, "Received '" + method + "' message.");
       switch (method) {
         case "TextInput.show":
           textInputMethodHandler.show();
@@ -114,7 +114,7 @@ public class TextInputChannel {
    * Instructs Flutter to update its text input editing state to reflect the given configuration.
    */
   public void updateEditingState(int inputClientId, String text, int selectionStart, int selectionEnd, int composingStart, int composingEnd) {
-    Log.v(TAG, "Sending message to update editing state: \n"
+    Log.d(TAG, "Sending message to update editing state: \n"
       + "Text: " + text + "\n"
       + "Selection start: " + selectionStart + "\n"
       + "Selection end: " + selectionEnd + "\n"
@@ -138,7 +138,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute a "newline" action.
    */
   public void newline(int inputClientId) {
-    Log.v(TAG, "Sending 'newline' message.");
+    Log.d(TAG, "Sending 'newline' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.newline")
@@ -149,7 +149,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute a "go" action.
    */
   public void go(int inputClientId) {
-    Log.v(TAG, "Sending 'go' message.");
+    Log.d(TAG, "Sending 'go' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.go")
@@ -160,7 +160,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute a "search" action.
    */
   public void search(int inputClientId) {
-    Log.v(TAG, "Sending 'search' message.");
+    Log.d(TAG, "Sending 'search' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.search")
@@ -171,7 +171,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute a "send" action.
    */
   public void send(int inputClientId) {
-    Log.v(TAG, "Sending 'send' message.");
+    Log.d(TAG, "Sending 'send' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.send")
@@ -182,7 +182,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute a "done" action.
    */
   public void done(int inputClientId) {
-    Log.v(TAG, "Sending 'done' message.");
+    Log.d(TAG, "Sending 'done' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.done")
@@ -193,7 +193,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute a "next" action.
    */
   public void next(int inputClientId) {
-    Log.v(TAG, "Sending 'next' message.");
+    Log.d(TAG, "Sending 'next' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.next")
@@ -204,7 +204,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute a "previous" action.
    */
   public void previous(int inputClientId) {
-    Log.v(TAG, "Sending 'previous' message.");
+    Log.d(TAG, "Sending 'previous' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.previous")
@@ -215,7 +215,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute an "unspecified" action.
    */
   public void unspecifiedAction(int inputClientId) {
-    Log.v(TAG, "Sending 'unspecified' message.");
+    Log.d(TAG, "Sending 'unspecified' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.unspecified")

@@ -41,7 +41,7 @@ public class ShimPluginRegistry implements PluginRegistry {
   private final FlutterEngine.EngineLifecycleListener engineLifecycleListener = new FlutterEngine.EngineLifecycleListener() {
     @Override
     public void onPreEngineRestart() {
-      Log.v(TAG, "onPreEngineRestart()");
+      Log.d(TAG, "onPreEngineRestart()");
       ShimPluginRegistry.this.onPreEngineRestart();
     }
   };
@@ -57,7 +57,7 @@ public class ShimPluginRegistry implements PluginRegistry {
 
   @Override
   public Registrar registrarFor(String pluginKey) {
-    Log.v(TAG, "Creating plugin Registrar for '" + pluginKey + "'");
+    Log.d(TAG, "Creating plugin Registrar for '" + pluginKey + "'");
     if (pluginMap.containsKey(pluginKey)) {
       throw new IllegalStateException("Plugin key " + pluginKey + " is already in use");
     }
@@ -80,12 +80,12 @@ public class ShimPluginRegistry implements PluginRegistry {
 
   //----- From FlutterPluginRegistry that aren't in the PluginRegistry interface ----//
   public void attach(FlutterView flutterView, Activity activity) {
-    Log.v(TAG, "Attaching to a FlutterView and an Activity.");
+    Log.d(TAG, "Attaching to a FlutterView and an Activity.");
     platformViewsController.attach(activity, flutterEngine.getRenderer(), flutterEngine.getDartExecutor());
   }
 
   public void detach() {
-    Log.v(TAG, "Detaching from a FlutterView and an Activity.");
+    Log.d(TAG, "Detaching from a FlutterView and an Activity.");
     platformViewsController.detach();
     platformViewsController.onFlutterViewDestroyed();
   }

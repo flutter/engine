@@ -55,10 +55,10 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   public void attachToRenderSurface(@NonNull RenderSurface renderSurface) {
-    Log.v(TAG, "Attaching to RenderSurface.");
+    Log.d(TAG, "Attaching to RenderSurface.");
     // TODO(mattcarroll): determine desired behavior when attaching to an already attached renderer
     if (this.renderSurface != null) {
-      Log.v(TAG, "Already attached to a RenderSurface. Detaching from old one and attaching to new one.");
+      Log.d(TAG, "Already attached to a RenderSurface. Detaching from old one and attaching to new one.");
       detachFromRenderSurface();
     }
 
@@ -68,7 +68,7 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   public void detachFromRenderSurface() {
-    Log.v(TAG, "Detaching from RenderSurface.");
+    Log.d(TAG, "Detaching from RenderSurface.");
     // TODO(mattcarroll): determine desired behavior if we're asked to detach without first being attached
     if (this.renderSurface != null) {
       this.renderSurface.detachFromRenderer();
@@ -91,14 +91,14 @@ public class FlutterRenderer implements TextureRegistry {
   @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
   @Override
   public SurfaceTextureEntry createSurfaceTexture() {
-    Log.v(TAG, "Creating a SurfaceTexture.");
+    Log.d(TAG, "Creating a SurfaceTexture.");
     final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
     surfaceTexture.detachFromGLContext();
     final SurfaceTextureRegistryEntry entry = new SurfaceTextureRegistryEntry(
         nextTextureId.getAndIncrement(),
         surfaceTexture
     );
-    Log.v(TAG, "New SurfaceTexture ID: " + entry.id());
+    Log.d(TAG, "New SurfaceTexture ID: " + entry.id());
     registerTexture(entry.id(), surfaceTexture);
     return entry;
   }
@@ -155,7 +155,7 @@ public class FlutterRenderer implements TextureRegistry {
       if (released) {
         return;
       }
-      Log.v(TAG, "Releasing a SurfaceTexture (" + id + ").");
+      Log.d(TAG, "Releasing a SurfaceTexture (" + id + ").");
       surfaceTexture.release();
       unregisterTexture(id);
       released = true;
@@ -180,7 +180,7 @@ public class FlutterRenderer implements TextureRegistry {
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   public void setViewportMetrics(@NonNull ViewportMetrics viewportMetrics) {
-    Log.v(TAG, "Setting viewport metrics\n"
+    Log.d(TAG, "Setting viewport metrics\n"
       + "Size: " + viewportMetrics.width + " x " + viewportMetrics.height + "\n"
       + "Padding - L: " + viewportMetrics.paddingLeft + ", T: " + viewportMetrics.paddingTop
         + ", R: " + viewportMetrics.paddingRight + ", B: " + viewportMetrics.paddingBottom + "\n"

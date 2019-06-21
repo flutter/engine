@@ -33,10 +33,10 @@ public class LocalizationChannel {
    * Send the given {@code locales} to Dart.
    */
   public void sendLocales(@NonNull List<Locale> locales) {
-    Log.v(TAG, "Sending Locales to Flutter.");
+    Log.d(TAG, "Sending Locales to Flutter.");
     List<String> data = new ArrayList<>();
     for (Locale locale : locales) {
-      Log.v(TAG, "Locale (Language: " + locale.getLanguage()
+      Log.d(TAG, "Locale (Language: " + locale.getLanguage()
           + ", Country: " + locale.getCountry()
           + ", Variant: " + locale.getVariant() + ")");
       data.add(locale.getLanguage());

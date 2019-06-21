@@ -168,17 +168,17 @@ public class FlutterView extends FrameLayout {
   }
 
   private void init() {
-    Log.v(TAG, "Initializing FlutterView");
+    Log.d(TAG, "Initializing FlutterView");
 
     switch (renderMode) {
       case surface:
-        Log.v(TAG, "Internally using a FlutterSurfaceView.");
+        Log.d(TAG, "Internally using a FlutterSurfaceView.");
         FlutterSurfaceView flutterSurfaceView = new FlutterSurfaceView(getContext(), transparencyMode == TransparencyMode.transparent);
         renderSurface = flutterSurfaceView;
         addView(flutterSurfaceView);
         break;
       case texture:
-        Log.v(TAG, "Internally using a FlutterTextureView.");
+        Log.d(TAG, "Internally using a FlutterTextureView.");
         FlutterTextureView flutterTextureView = new FlutterTextureView(getContext());
         renderSurface = flutterTextureView;
         addView(flutterTextureView);
@@ -240,7 +240,7 @@ public class FlutterView extends FrameLayout {
   @Override
   protected void onConfigurationChanged(@NonNull Configuration newConfig) {
     super.onConfigurationChanged(newConfig);
-    Log.v(TAG, "Configuration changed. Sending locales and user settings to Flutter.");
+    Log.d(TAG, "Configuration changed. Sending locales and user settings to Flutter.");
     sendLocalesToFlutter(newConfig);
     sendUserSettingsToFlutter();
   }
@@ -259,7 +259,7 @@ public class FlutterView extends FrameLayout {
   @Override
   protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
     super.onSizeChanged(width, height, oldWidth, oldHeight);
-    Log.v(TAG, "Size changed. Sending Flutter new viewport metrics. FlutterView was "
+    Log.d(TAG, "Size changed. Sending Flutter new viewport metrics. FlutterView was "
         + oldWidth + " x " + oldHeight
         + ", it is now " + width + " x " + height);
     viewportMetrics.width = width;
@@ -296,7 +296,7 @@ public class FlutterView extends FrameLayout {
     viewportMetrics.viewInsetBottom = insets.getSystemWindowInsetBottom();
     viewportMetrics.viewInsetLeft = 0;
 
-    Log.v(TAG, "Updating window insets (onApplyWindowInsets()):\n"
+    Log.d(TAG, "Updating window insets (onApplyWindowInsets()):\n"
       + "Status bar insets: Top: " + viewportMetrics.paddingTop
         + ", Left: " + viewportMetrics.paddingLeft + ", Right: " + viewportMetrics.paddingRight + "\n"
       + "Keyboard insets: Bottom: " + viewportMetrics.viewInsetBottom
@@ -330,7 +330,7 @@ public class FlutterView extends FrameLayout {
       viewportMetrics.viewInsetBottom = insets.bottom;
       viewportMetrics.viewInsetLeft = 0;
 
-      Log.v(TAG, "Updating window insets (fitSystemWindows()):\n"
+      Log.d(TAG, "Updating window insets (fitSystemWindows()):\n"
           + "Status bar insets: Top: " + viewportMetrics.paddingTop
           + ", Left: " + viewportMetrics.paddingLeft + ", Right: " + viewportMetrics.paddingRight + "\n"
           + "Keyboard insets: Bottom: " + viewportMetrics.viewInsetBottom

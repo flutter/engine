@@ -224,7 +224,7 @@ public class FlutterActivity extends FragmentActivity implements OnFirstFrameRen
       return;
     }
 
-    Log.v(TAG, "Showing cover view until first frame is rendered.");
+    Log.d(TAG, "Showing cover view until first frame is rendered.");
 
     // Create the coverView.
     if (coverView == null) {
@@ -527,7 +527,7 @@ public class FlutterActivity extends FragmentActivity implements OnFirstFrameRen
 
   @Override
   public void onFirstFrameRendered() {
-    Log.v(TAG, "First frame has been rendered. Hiding cover view.");
+    Log.d(TAG, "First frame has been rendered. Hiding cover view.");
     hideCoverView();
   }
 

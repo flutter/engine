@@ -94,7 +94,7 @@ public class FlutterEngine implements LifecycleOwner {
   private final EngineLifecycleListener engineLifecycleListener = new EngineLifecycleListener() {
     @SuppressWarnings("unused")
     public void onPreEngineRestart() {
-      Log.v(TAG, "onPreEngineRestart()");
+      Log.d(TAG, "onPreEngineRestart()");
       for (EngineLifecycleListener lifecycleListener : engineLifecycleListeners) {
         lifecycleListener.onPreEngineRestart();
       }
@@ -147,7 +147,7 @@ public class FlutterEngine implements LifecycleOwner {
   }
 
   private void attachToJni() {
-    Log.v(TAG, "Attaching to JNI.");
+    Log.d(TAG, "Attaching to JNI.");
     // TODO(mattcarroll): update native call to not take in "isBackgroundView"
     flutterJNI.attachToNative(false);
 

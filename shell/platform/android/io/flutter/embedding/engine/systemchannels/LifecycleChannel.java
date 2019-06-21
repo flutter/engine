@@ -25,17 +25,17 @@ public class LifecycleChannel {
   }
 
   public void appIsInactive() {
-    Log.v(TAG, "Sending AppLifecycleState.inactive message.");
+    Log.d(TAG, "Sending AppLifecycleState.inactive message.");
     channel.send("AppLifecycleState.inactive");
   }
 
   public void appIsResumed() {
-    Log.v(TAG, "Sending AppLifecycleState.resumed message.");
+    Log.d(TAG, "Sending AppLifecycleState.resumed message.");
     channel.send("AppLifecycleState.resumed");
   }
 
   public void appIsPaused() {
-    Log.v(TAG, "Sending AppLifecycleState.paused message.");
+    Log.d(TAG, "Sending AppLifecycleState.paused message.");
     channel.send("AppLifecycleState.paused");
   }
 
