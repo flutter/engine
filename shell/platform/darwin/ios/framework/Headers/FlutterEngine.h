@@ -8,7 +8,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-#include "FlutterBinaryMessenger.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessengerContainer.h"
 #include "FlutterDartProject.h"
 #include "FlutterMacros.h"
 #include "FlutterPlugin.h"
@@ -39,7 +39,7 @@
  */
 FLUTTER_EXPORT
 @interface FlutterEngine
-    : NSObject <FlutterBinaryMessenger, FlutterTextureRegistry, FlutterPluginRegistry>
+    : NSObject <FlutterBinaryMessengerContainer, FlutterTextureRegistry, FlutterPluginRegistry>
 /**
  * Initialize this FlutterEngine with a `FlutterDartProject`.
  *

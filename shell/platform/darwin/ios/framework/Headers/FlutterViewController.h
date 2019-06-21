@@ -6,14 +6,14 @@
 #define FLUTTER_FLUTTERVIEWCONTROLLER_H_
 
 #import <UIKit/UIKit.h>
-#include <sys/cdefs.h>
+#import <sys/cdefs.h>
 
-#include "FlutterBinaryMessenger.h"
-#include "FlutterDartProject.h"
-#include "FlutterEngine.h"
-#include "FlutterMacros.h"
-#include "FlutterPlugin.h"
-#include "FlutterTexture.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessengerContainer.h"
+#import "FlutterDartProject.h"
+#import "FlutterEngine.h"
+#import "FlutterMacros.h"
+#import "FlutterPlugin.h"
+#import "FlutterTexture.h"
 
 @class FlutterEngine;
 
@@ -42,7 +42,7 @@ extern NSNotificationName const FlutterSemanticsUpdateNotification;
  */
 FLUTTER_EXPORT
 @interface FlutterViewController
-    : UIViewController <FlutterBinaryMessenger, FlutterTextureRegistry, FlutterPluginRegistry>
+    : UIViewController <FlutterBinaryMessengerContainer, FlutterTextureRegistry, FlutterPluginRegistry>
 
 /**
  * Initializes this FlutterViewController with the specified `FlutterEngine`.
