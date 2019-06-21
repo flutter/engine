@@ -10,50 +10,51 @@ import io.flutter.BuildConfig;
 
 /**
  * Port of {@link android.util.Log} that only logs in {@link BuildConfig#DEBUG} mode and
- * when enabled.
+ * internally filters logs based on a {@link #logCutoff}.
  */
 public class Log {
-  private static boolean isEnabled = false;
+  private static int logCutoff = android.util.Log.DEBUG;
 
   /**
-   * Enables/disables verbose, debug, and info logs related to Flutter's Android embedding.
+   * Sets a log cutoff such that a log level of lower priority than {@code logCutoff} is
+   * filtered out.
    */
-  public static void setEnabled(boolean isEnabled) {
-    Log.isEnabled = isEnabled;
+  public static void setLogCutoff(int logCutoff) {
+    Log.logCutoff = logCutoff;
   }
 
   public static void v(@NonNull String tag, @NonNull String message) {
-    if (BuildConfig.DEBUG && isEnabled) {
+    if (BuildConfig.DEBUG && logCutoff >= android.util.Log.VERBOSE) {
       android.util.Log.v(tag, message);
     }
   }
 
   public static void v(@NonNull String tag, @NonNull String message, @NonNull Throwable tr) {
-    if (BuildConfig.DEBUG && isEnabled) {
+    if (BuildConfig.DEBUG && logCutoff >= android.util.Log.VERBOSE) {
       android.util.Log.v(tag, message, tr);
     }
   }
 
   public static void i(@NonNull String tag, @NonNull String message) {
-    if (BuildConfig.DEBUG && isEnabled) {
+    if (BuildConfig.DEBUG && logCutoff >= android.util.Log.INFO) {
       android.util.Log.i(tag, message);
     }
   }
 
   public static void i(@NonNull String tag, @NonNull String message, @NonNull Throwable tr) {
-    if (BuildConfig.DEBUG && isEnabled) {
+    if (BuildConfig.DEBUG && logCutoff >= android.util.Log.INFO) {
       android.util.Log.i(tag, message, tr);
     }
   }
 
   public static void d(@NonNull String tag, @NonNull String message) {
-    if (BuildConfig.DEBUG && isEnabled) {
+    if (BuildConfig.DEBUG && logCutoff >= android.util.Log.DEBUG) {
       android.util.Log.d(tag, message);
     }
   }
 
   public static void d(@NonNull String tag, @NonNull String message, @NonNull Throwable tr) {
-    if (BuildConfig.DEBUG && isEnabled) {
+    if (BuildConfig.DEBUG && logCutoff >= android.util.Log.DEBUG) {
       android.util.Log.d(tag, message, tr);
     }
   }
