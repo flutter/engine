@@ -5,9 +5,8 @@
 #ifndef FLUTTER_FLUTTERCHANNELS_H_
 #define FLUTTER_FLUTTERCHANNELS_H_
 
+#include "FlutterBinaryMessenger.h"
 #include "FlutterCodecs.h"
-
-@protocol FlutterBinaryMessenger;
 
 NS_ASSUME_NONNULL_BEGIN
 /**
