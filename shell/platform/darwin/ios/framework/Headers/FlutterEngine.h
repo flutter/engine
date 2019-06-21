@@ -8,7 +8,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessengerContainer.h"
+#include "FlutterBinaryMessenger.h"
 #include "FlutterDartProject.h"
 #include "FlutterMacros.h"
 #include "FlutterPlugin.h"
@@ -39,7 +39,7 @@
  */
 FLUTTER_EXPORT
 @interface FlutterEngine
-    : NSObject <FlutterBinaryMessengerContainer, FlutterTextureRegistry, FlutterPluginRegistry>
+    : NSObject <FlutterTextureRegistry, FlutterPluginRegistry>
 /**
  * Initialize this FlutterEngine with a `FlutterDartProject`.
  *
@@ -236,6 +236,12 @@ FLUTTER_EXPORT
  * started, it returns `nil`.
  */
 @property(nonatomic, readonly) NSURL* observatoryUrl;
+
+/**
+ * The `FlutterBinaryMessenger` associated with this FlutterEngine (used for communicating with
+ * channels).
+ */
+@property(nonatomic, readonly) NSObject<FlutterBinaryMessenger>* binaryMessenger;
 
 @end
 

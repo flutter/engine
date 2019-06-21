@@ -6,7 +6,7 @@
 
 #import "FLEOpenGLContextHandling.h"
 #import "FLEReshapeListener.h"
-#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessengerContainer.h"
+#import "FlutterBinaryMessenger.h"
 #import "FlutterMacros.h"
 #import "FlutterPluginRegistrarMacOS.h"
 
@@ -29,8 +29,7 @@ typedef NS_ENUM(NSInteger, FlutterMouseTrackingMode) {
  * Flutter engine in non-interactive mode, or with a drawable Flutter canvas.
  */
 FLUTTER_EXPORT
-@interface FLEViewController : NSViewController <FlutterBinaryMessengerContainer,
-                                                 FlutterPluginRegistrar,
+@interface FLEViewController : NSViewController <FlutterPluginRegistrar,
                                                  FlutterPluginRegistry,
                                                  FLEReshapeListener>
 
@@ -68,5 +67,11 @@ FLUTTER_EXPORT
  */
 - (BOOL)launchHeadlessEngineWithAssetsPath:(nonnull NSURL*)assets
                       commandLineArguments:(nullable NSArray<NSString*>*)arguments;
+
+/**
+ * The `FlutterBinaryMessenger` associated with this FLEViewController (used for communicating
+ * with channels).
+ */
+@property(nonatomic, readonly) NSObject<FlutterBinaryMessenger>* _Nonnull binaryMessenger;
 
 @end
