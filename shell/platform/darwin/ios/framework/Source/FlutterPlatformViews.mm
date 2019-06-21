@@ -196,10 +196,15 @@ int FlutterPlatformViewsController::GetNumberOfClips(const MutatorsStack& mutato
   return clipCount;
 }
 
-UIView* FlutterPlatformViewsController::ReconstructClipViewChain(int number_of_clips,
-                                                                 UIView* child,
-                                                                 UIView* parent) {
-  FML_DCHECK(!parent.superview);
+UIView* FlutterPlatformViewsController::ReconstructClipViewsChain(int number_of_clips,
+                                                                  UIView* child,
+                                                                  UIView* parent) {
+  NSInteger index = -1;
+  if (parent.superview) {
+    // TODO(cyanglaz): protentially cache the index of oldPlatformViewRoot to make this a O(1).
+    index = [flutter_view_.get().subviews indexOfObject:parent];
+    [parent removeFromSuperview];
+  }
   UIView* head = child;
   BOOL needAddNewView = NO;
   for (int i = 0; i < number_of_clips; i++) {
@@ -216,6 +221,9 @@ UIView* FlutterPlatformViewsController::ReconstructClipViewChain(int number_of_c
   }
   if (!needAddNewView && head != parent) {
     [head removeFromSuperview];
+  }
+  if (index > -1) {
+    [flutter_view_.get() insertSubview:head atIndex:index];
   }
   return head;
 }
@@ -275,15 +283,12 @@ void FlutterPlatformViewsController::CompositeWithParams(
   int currentClippingCount = GetNumberOfClips(params.mutatorsStack);
   int previousClippingCount = clip_count_[view_id];
   if (currentClippingCount != previousClippingCount) {
-    NSLog(@"clipping count not the same");
+    clip_count_[view_id] = currentClippingCount;
     // If we have a different clipping count in this frame, we need to reconstruct the
-    // ClippingChildView chain to prepare for `ApplyMutators`. Meanwhile, we detach the
-    // root.
-    UIView* platformViewRoot = root_views_[view_id].get();
-    [platformViewRoot removeFromSuperview];
+    // ClippingChildView chain to prepare for `ApplyMutators`.
+    UIView* oldPlatformViewRoot = root_views_[view_id].get();
     UIView* newPlatformViewRoot =
-        ReconstructClipViewChain(currentClippingCount, touchInterceptor, platformViewRoot);
-
+        ReconstructClipViewsChain(currentClippingCount, touchInterceptor, oldPlatformViewRoot);
     root_views_[view_id] = fml::scoped_nsobject<UIView>([newPlatformViewRoot retain]);
   }
   ApplyMutators(params.mutatorsStack, touchInterceptor);
