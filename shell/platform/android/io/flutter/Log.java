@@ -9,41 +9,51 @@ import android.support.annotation.NonNull;
 import io.flutter.BuildConfig;
 
 /**
- * Port of {@link android.util.Log} that only logs in {@link BuildConfig#DEBUG} mode.
+ * Port of {@link android.util.Log} that only logs in {@link BuildConfig#DEBUG} mode and
+ * when enabled.
  */
 public class Log {
+  private static boolean isEnabled = false;
+
+  /**
+   * Enables/disables verbose, debug, and info logs related to Flutter's Android embedding.
+   */
+  public static void setEnabled(boolean isEnabled) {
+    Log.isEnabled = isEnabled;
+  }
+
   public static void v(@NonNull String tag, @NonNull String message) {
-    if (BuildConfig.DEBUG) {
+    if (BuildConfig.DEBUG && isEnabled) {
       android.util.Log.v(tag, message);
     }
   }
 
   public static void v(@NonNull String tag, @NonNull String message, @NonNull Throwable tr) {
-    if (BuildConfig.DEBUG) {
+    if (BuildConfig.DEBUG && isEnabled) {
       android.util.Log.v(tag, message, tr);
     }
   }
 
   public static void i(@NonNull String tag, @NonNull String message) {
-    if (BuildConfig.DEBUG) {
+    if (BuildConfig.DEBUG && isEnabled) {
       android.util.Log.i(tag, message);
     }
   }
 
   public static void i(@NonNull String tag, @NonNull String message, @NonNull Throwable tr) {
-    if (BuildConfig.DEBUG) {
+    if (BuildConfig.DEBUG && isEnabled) {
       android.util.Log.i(tag, message, tr);
     }
   }
 
   public static void d(@NonNull String tag, @NonNull String message) {
-    if (BuildConfig.DEBUG) {
+    if (BuildConfig.DEBUG && isEnabled) {
       android.util.Log.d(tag, message);
     }
   }
 
   public static void d(@NonNull String tag, @NonNull String message, @NonNull Throwable tr) {
-    if (BuildConfig.DEBUG) {
+    if (BuildConfig.DEBUG && isEnabled) {
       android.util.Log.d(tag, message, tr);
     }
   }
