@@ -1496,8 +1496,6 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
       top = baseline - run.placeholder_run->baseline_offset;
       bottom = baseline + run.placeholder_run->height -
                run.placeholder_run->baseline_offset;
-      FML_DLOG(ERROR) << baseline << " " << run.placeholder_run->baseline_offset
-                      << " " << run.placeholder_run->height;
     }
 
     max_line = std::max(run.line_number, max_line);
