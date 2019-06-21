@@ -360,14 +360,13 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
     // `FlutterView`.
     UIView* platform_view_root = root_views_[view_id].get();
     UIView* overlay = overlays_[view_id]->overlay_view;
+    FML_CHECK(intercepter.superview == overlay.superview);
+
     if (platform_view_root.superview == flutter_view) {
       [flutter_view bringSubviewToFront:platform_view_root];
-    } else {
-      [flutter_view addSubview:platform_view_root];
-    }
-    if (overlay.superview == flutter_view) {
       [flutter_view bringSubviewToFront:overlay];
     } else {
+      [flutter_view addSubview:platform_view_root];
       [flutter_view addSubview:overlay];
     }
 
