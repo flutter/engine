@@ -1013,13 +1013,13 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
               message:(NSData*)message
           binaryReply:(FlutterBinaryReply)callback {
   NSAssert(channel, @"The channel must not be null");
-  [_engine.get().binaryMessenger  sendOnChannel:channel message:message binaryReply:callback];
+  [_engine.get().binaryMessenger sendOnChannel:channel message:message binaryReply:callback];
 }
 
 - (void)setMessageHandlerOnChannel:(NSString*)channel
               binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
   NSAssert(channel, @"The channel must not be null");
-  [_engine.get().binaryMessenger  setMessageHandlerOnChannel:channel binaryMessageHandler:handler];
+  [_engine.get().binaryMessenger setMessageHandlerOnChannel:channel binaryMessageHandler:handler];
 }
 
 #pragma mark - FlutterTextureRegistry

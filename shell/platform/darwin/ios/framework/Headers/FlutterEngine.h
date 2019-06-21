@@ -38,8 +38,7 @@
  * One of these methods must be invoked before calling `-setViewController:`.
  */
 FLUTTER_EXPORT
-@interface FlutterEngine
-    : NSObject <FlutterTextureRegistry, FlutterPluginRegistry>
+@interface FlutterEngine : NSObject <FlutterTextureRegistry, FlutterPluginRegistry>
 /**
  * Initialize this FlutterEngine with a `FlutterDartProject`.
  *

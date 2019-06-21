@@ -37,7 +37,7 @@
   id messenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   FlutterBinaryMessengerRelay* relay =
       [[FlutterBinaryMessengerRelay alloc] initWithParent:messenger];
-  char messageData[] = {'a','a','r','o','n'};
+  char messageData[] = {'a', 'a', 'r', 'o', 'n'};
   NSData* message = [NSData dataWithBytes:messageData length:sizeof(messageData)];
   NSString* channel = @"foobar";
   [relay sendOnChannel:channel message:message binaryReply:nil];
@@ -48,7 +48,7 @@
   id messenger = OCMStrictProtocolMock(@protocol(FlutterBinaryMessenger));
   FlutterBinaryMessengerRelay* relay =
       [[FlutterBinaryMessengerRelay alloc] initWithParent:messenger];
-  char messageData[] = {'a','a','r','o','n'};
+  char messageData[] = {'a', 'a', 'r', 'o', 'n'};
   NSData* message = [NSData dataWithBytes:messageData length:sizeof(messageData)];
   NSString* channel = @"foobar";
   relay.parent = nil;
