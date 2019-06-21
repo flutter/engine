@@ -1755,6 +1755,7 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
         && entry.name != 'skia' // treated as a separate component
         && entry.name != 'fontconfig' // not used in standard configurations
         && entry.name != 'swiftshader' // only used on hosts for tests
+        && entry.name != 'ocmock' // only used for tests
         && super.shouldRecurse(entry);
   }
 
