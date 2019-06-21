@@ -1073,10 +1073,10 @@ void Paragraph::Layout(double width, bool force) {
           ascent = (-metrics.fAscent + metrics.fLeading / 2);
           descent = (metrics.fDescent + metrics.fLeading / 2);
         }
+        ComputePlaceholder(placeholder_run, ascent, descent);
+
         max_ascent = std::max(ascent, max_ascent);
         max_descent = std::max(descent, max_descent);
-
-        ComputePlaceholder(placeholder_run, ascent, descent);
       }
 
       max_unscaled_ascent = std::max(placeholder_run == nullptr
@@ -1496,6 +1496,8 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
       top = baseline - run.placeholder_run->baseline_offset;
       bottom = baseline + run.placeholder_run->height -
                run.placeholder_run->baseline_offset;
+      FML_DLOG(ERROR) << baseline << " " << run.placeholder_run->baseline_offset
+                      << " " << run.placeholder_run->height;
     }
 
     max_line = std::max(run.line_number, max_line);
