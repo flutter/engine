@@ -300,7 +300,9 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
       paint_bounds_(SkRect::MakeEmpty()),
       layer_(layer) {
   if (depth > -1 && world_elevation > depth) {
-    // TODO(mklim): Deal with bounds overflow correctly.
+    // TODO(mklim): Deal with bounds overflow more elegantly. We'd like to be
+    // able to have developers specify the behavior here to alternatives besides
+    // clamping, like normalization on some arbitrary curve.
 
     // Clamp the local z coordinate at our max bound. Take into account the
     // parent z position here to fix clamping in cases where the child is
