@@ -537,6 +537,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
 - (CGRect)firstRectForRange:(UITextRange*)range {
   // TODO(cbracken) Implement.
+  [_textInputDelegate showAutocorrectionPromptWithClient:_textInputClient];
   return CGRectZero;
 }
 

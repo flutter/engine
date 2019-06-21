@@ -490,6 +490,11 @@
                               arguments:@[ @(client), actionString ]];
 }
 
+- (void)showAutocorrectionPromptWithClient:(int)client {
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.showAutocorrectionPrompt"
+                              arguments:@[@(client)]];
+}
+
 #pragma mark - Screenshot Delegate
 
 - (flutter::Rasterizer::Screenshot)takeScreenshot:(flutter::Rasterizer::ScreenshotType)type
