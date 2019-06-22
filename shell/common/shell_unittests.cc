@@ -156,7 +156,7 @@ TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
 TEST_F(ShellTest, FixturesAreFunctional) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   auto settings = CreateSettingsForFixture();
-  auto shell = CreateShell(std::move(settings));
+  auto shell = CreateShell(settings);
   ASSERT_TRUE(ValidateShell(shell.get()));
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -178,7 +178,7 @@ TEST_F(ShellTest, FixturesAreFunctional) {
 TEST_F(ShellTest, SecondaryIsolateBindingsAreSetupViaShellSettings) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   auto settings = CreateSettingsForFixture();
-  auto shell = CreateShell(std::move(settings));
+  auto shell = CreateShell(settings);
   ASSERT_TRUE(ValidateShell(shell.get()));
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -251,7 +251,7 @@ TEST_F(ShellTest, WhitelistedDartVMFlag) {
 
 TEST_F(ShellTest, NoNeedToReportTimingsByDefault) {
   auto settings = CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = CreateShell(std::move(settings));
+  std::unique_ptr<Shell> shell = CreateShell(settings);
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
@@ -278,7 +278,7 @@ TEST_F(ShellTest, NoNeedToReportTimingsByDefault) {
 
 TEST_F(ShellTest, NeedsReportTimingsIsSetWithCallback) {
   auto settings = CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = CreateShell(std::move(settings));
+  std::unique_ptr<Shell> shell = CreateShell(settings);
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
@@ -315,7 +315,7 @@ static void CheckFrameTimings(const std::vector<FrameTiming>& timings,
 TEST_F(ShellTest, ReportTimingsIsCalled) {
   fml::TimePoint start = fml::TimePoint::Now();
   auto settings = CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = CreateShell(std::move(settings));
+  std::unique_ptr<Shell> shell = CreateShell(settings);
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
@@ -381,7 +381,7 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
     timingLatch.Signal();
   };
 
-  std::unique_ptr<Shell> shell = CreateShell(std::move(settings));
+  std::unique_ptr<Shell> shell = CreateShell(settings);
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
@@ -439,7 +439,7 @@ TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
 #endif
   fml::TimePoint start = fml::TimePoint::Now();
   auto settings = CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = CreateShell(std::move(settings));
+  std::unique_ptr<Shell> shell = CreateShell(settings);
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
@@ -485,7 +485,7 @@ TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
 
 TEST_F(ShellTest, ReportTimingsIsCalledImmediatelyAfterTheFirstFrame) {
   auto settings = CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = CreateShell(std::move(settings));
+  std::unique_ptr<Shell> shell = CreateShell(settings);
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
