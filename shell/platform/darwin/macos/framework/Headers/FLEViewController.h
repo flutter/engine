@@ -5,16 +5,10 @@
 #import <Cocoa/Cocoa.h>
 
 #import "FLEOpenGLContextHandling.h"
-#import "FLEPluginRegistrar.h"
 #import "FLEReshapeListener.h"
-
-#if defined(FLUTTER_FRAMEWORK)
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterBinaryMessenger.h"
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterMacros.h"
-#else
 #import "FlutterBinaryMessenger.h"
 #import "FlutterMacros.h"
-#endif
+#import "FlutterPluginRegistrarMacOS.h"
 
 typedef NS_ENUM(NSInteger, FlutterMouseTrackingMode) {
   // Hover events will never be sent to Flutter.
@@ -36,8 +30,8 @@ typedef NS_ENUM(NSInteger, FlutterMouseTrackingMode) {
  */
 FLUTTER_EXPORT
 @interface FLEViewController : NSViewController <FlutterBinaryMessenger,
-                                                 FLEPluginRegistrar,
-                                                 FLEPluginRegistry,
+                                                 FlutterPluginRegistrar,
+                                                 FlutterPluginRegistry,
                                                  FLEReshapeListener>
 
 /**
@@ -48,7 +42,7 @@ FLUTTER_EXPORT
 
 /**
  * The style of mouse tracking to use for the view. Defaults to
- * FlutterMouseTrackingModeNone.
+ * FlutterMouseTrackingModeInKeyWindow.
  */
 @property(nonatomic) FlutterMouseTrackingMode mouseTrackingMode;
 

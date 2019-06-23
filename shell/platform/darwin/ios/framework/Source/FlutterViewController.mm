@@ -382,10 +382,12 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   if (appeared) {
     [self installSplashScreenViewCallback];
     [_engine.get() platformViewsController] -> SetFlutterView(_flutterView.get());
+    [_engine.get() platformViewsController] -> SetFlutterViewController(self);
     [_engine.get() platformView] -> NotifyCreated();
   } else {
     [_engine.get() platformView] -> NotifyDestroyed();
     [_engine.get() platformViewsController] -> SetFlutterView(nullptr);
+    [_engine.get() platformViewsController] -> SetFlutterViewController(nullptr);
   }
 }
 
@@ -725,23 +727,14 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGFloat scale = [UIScreen mainScreen].scale;
 
   // The keyboard is treated as an inset since we want to effectively reduce the window size by the
-  // keyboard height. We also eliminate any bottom safe-area padding since they keyboard 'consumes'
-  // the home indicator widget.
+  // keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
+  // bottom padding.
   _viewportMetrics.physical_view_inset_bottom = bottom * scale;
-  _viewportMetrics.physical_padding_bottom = 0;
   [self updateViewportMetrics];
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
-  CGFloat scale = [UIScreen mainScreen].scale;
   _viewportMetrics.physical_view_inset_bottom = 0;
-
-  // Restore any safe area padding that the keyboard had consumed.
-  if (@available(iOS 11, *)) {
-    _viewportMetrics.physical_padding_bottom = self.view.safeAreaInsets.bottom * scale;
-  } else {
-    _viewportMetrics.physical_padding_top = [self statusBarPadding] * scale;
-  }
   [self updateViewportMetrics];
 }
 

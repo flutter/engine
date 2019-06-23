@@ -19,18 +19,20 @@ namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Paragraph);
 
-#define FOR_EACH_BINDING(V)         \
-  V(Paragraph, width)               \
-  V(Paragraph, height)              \
-  V(Paragraph, minIntrinsicWidth)   \
-  V(Paragraph, maxIntrinsicWidth)   \
-  V(Paragraph, alphabeticBaseline)  \
-  V(Paragraph, ideographicBaseline) \
-  V(Paragraph, didExceedMaxLines)   \
-  V(Paragraph, layout)              \
-  V(Paragraph, paint)               \
-  V(Paragraph, getWordBoundary)     \
-  V(Paragraph, getRectsForRange)    \
+#define FOR_EACH_BINDING(V)             \
+  V(Paragraph, width)                   \
+  V(Paragraph, height)                  \
+  V(Paragraph, longestLine)             \
+  V(Paragraph, minIntrinsicWidth)       \
+  V(Paragraph, maxIntrinsicWidth)       \
+  V(Paragraph, alphabeticBaseline)      \
+  V(Paragraph, ideographicBaseline)     \
+  V(Paragraph, didExceedMaxLines)       \
+  V(Paragraph, layout)                  \
+  V(Paragraph, paint)                   \
+  V(Paragraph, getWordBoundary)         \
+  V(Paragraph, getRectsForRange)        \
+  V(Paragraph, getRectsForPlaceholders) \
   V(Paragraph, getPositionForOffset)
 
 DART_BIND_ALL(Paragraph, FOR_EACH_BINDING)
@@ -54,6 +56,10 @@ double Paragraph::width() {
 
 double Paragraph::height() {
   return m_paragraphImpl->height();
+}
+
+double Paragraph::longestLine() {
+  return m_paragraphImpl->longestLine();
 }
 
 double Paragraph::minIntrinsicWidth() {
@@ -91,6 +97,10 @@ std::vector<TextBox> Paragraph::getRectsForRange(unsigned start,
   return m_paragraphImpl->getRectsForRange(
       start, end, static_cast<txt::Paragraph::RectHeightStyle>(boxHeightStyle),
       static_cast<txt::Paragraph::RectWidthStyle>(boxWidthStyle));
+}
+
+std::vector<TextBox> Paragraph::getRectsForPlaceholders() {
+  return m_paragraphImpl->getRectsForPlaceholders();
 }
 
 Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {

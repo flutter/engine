@@ -35,9 +35,6 @@ echo "Running fml_unittests..."
 echo "Running runtime_unittests..."
 "$HOST_DIR/runtime_unittests"
 
-echo "Running runtime_lifecycle_unittests..."
-"$HOST_DIR/runtime_lifecycle_unittests"
-
 echo "Running shell_unittests..."
 "$HOST_DIR/shell_unittests"
 
@@ -61,6 +58,8 @@ ninja -C $OUT_DIR/host_debug_unopt flutter/sky/packages
 pushd "$BUILDROOT_DIR/flutter/testing/dart"
 "$HOST_DIR/dart-sdk/bin/pub" get
 popd
+
+"$HOST_DIR/dart" --version
 
 run_test () {
   "$HOST_DIR/dart" $HOST_DIR/gen/frontend_server.dart.snapshot \

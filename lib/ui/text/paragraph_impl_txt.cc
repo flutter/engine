@@ -29,6 +29,10 @@ double ParagraphImplTxt::height() {
   return m_paragraph->GetHeight();
 }
 
+double ParagraphImplTxt::longestLine() {
+  return m_paragraph->GetLongestLine();
+}
+
 double ParagraphImplTxt::minIntrinsicWidth() {
   return m_paragraph->GetMinIntrinsicWidth();
 }
@@ -71,6 +75,17 @@ std::vector<TextBox> ParagraphImplTxt::getRectsForRange(
       start, end, rect_height_style, rect_width_style);
   for (const txt::Paragraph::TextBox& box : boxes) {
     result.emplace_back(box.rect, static_cast<TextDirection>(box.direction));
+  }
+  return result;
+}
+
+std::vector<TextBox> ParagraphImplTxt::getRectsForPlaceholders() {
+  std::vector<TextBox> result;
+  std::vector<txt::Paragraph::TextBox> boxes =
+      m_paragraph->GetRectsForPlaceholders();
+  for (const txt::Paragraph::TextBox& box : boxes) {
+    result.emplace_back(box.rect,
+                        static_cast<flutter::TextDirection>(box.direction));
   }
   return result;
 }

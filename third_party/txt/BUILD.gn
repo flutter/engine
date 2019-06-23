@@ -12,17 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+declare_args() {
+  flutter_use_fontconfig = false
+}
+
+if (flutter_use_fontconfig) {
+  assert(is_linux)
+}
+
 config("txt_config") {
   visibility = [ ":*" ]
   include_dirs = [ "src" ]
 }
 
 source_set("txt") {
-  if (current_toolchain == host_toolchain && !is_mac) {
-    defines = [ "DIRECTORY_FONT_MANAGER_AVAILABLE" ]
-  }
-  if (is_android) {
-    defines = [ "ANDROID_FONT_MANAGER_AVAILABLE" ]
+  defines = []
+  if (flutter_use_fontconfig) {
+    defines += [ "FLUTTER_USE_FONTCONFIG" ]
   }
 
   sources = [
@@ -70,6 +76,8 @@ source_set("txt") {
     "src/txt/font_asset_provider.h",
     "src/txt/font_collection.cc",
     "src/txt/font_collection.h",
+    "src/txt/font_features.cc",
+    "src/txt/font_features.h",
     "src/txt/font_skia.cc",
     "src/txt/font_skia.h",
     "src/txt/font_style.h",
@@ -82,6 +90,8 @@ source_set("txt") {
     "src/txt/paragraph_builder.h",
     "src/txt/paragraph_style.cc",
     "src/txt/paragraph_style.h",
+    "src/txt/placeholder_run.cc",
+    "src/txt/placeholder_run.h",
     "src/txt/platform.h",
     "src/txt/styled_runs.cc",
     "src/txt/styled_runs.h",
@@ -116,15 +126,19 @@ source_set("txt") {
     "//third_party/skia",
   ]
 
+  if (flutter_use_fontconfig) {
+    deps += [ "//third_party/fontconfig" ]
+  }
+
   if (is_mac || is_ios) {
-    set_sources_assignment_filter([])
     sources += [ "src/txt/platform_mac.mm" ]
-    set_sources_assignment_filter(sources_assignment_filter)
     deps += [ "$flutter_root/fml" ]
   } else if (is_android) {
     sources += [ "src/txt/platform_android.cc" ]
   } else if (is_linux) {
     sources += [ "src/txt/platform_linux.cc" ]
+  } else if (is_fuchsia) {
+    sources += [ "src/txt/platform_fuchsia.cc" ]
   } else {
     sources += [ "src/txt/platform.cc" ]
   }

@@ -207,6 +207,10 @@
   return _settingsChannel.get();
 }
 
+- (NSURL*)observatoryUrl {
+  return [_publisher.get() url];
+}
+
 - (void)resetChannels {
   _localizationChannel.reset();
   _navigationChannel.reset();
@@ -349,7 +353,7 @@
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       [](flutter::Shell& shell) {
-        return std::make_unique<flutter::Rasterizer>(shell.GetTaskRunners());
+        return std::make_unique<flutter::Rasterizer>(shell, shell.GetTaskRunners());
       };
 
   if (flutter::IsIosEmbeddedViewsPreviewEnabled()) {

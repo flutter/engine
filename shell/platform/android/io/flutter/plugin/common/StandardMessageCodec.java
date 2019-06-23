@@ -4,6 +4,10 @@
 
 package io.flutter.plugin.common;
 
+import android.util.Log;
+
+import io.flutter.BuildConfig;
+
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -14,8 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import android.util.Log;
 
 /**
  * MessageCodec using the Flutter standard binary encoding.
@@ -60,6 +62,7 @@ import android.util.Log;
  * <p>To extend the codec, overwrite the writeValue and readValueOfType methods.</p>
  */
 public class StandardMessageCodec implements MessageCodec<Object> {
+    private static final String TAG = "StandardMessageCodec#";
     public static final StandardMessageCodec INSTANCE = new StandardMessageCodec();
 
     @Override
@@ -109,7 +112,9 @@ public class StandardMessageCodec implements MessageCodec<Object> {
      * Uses an expanding code of 1 to 5 bytes to optimize for small values.
      */
     protected static final void writeSize(ByteArrayOutputStream stream, int value) {
-        assert 0 <= value;
+        if (BuildConfig.DEBUG && 0 > value) {
+            Log.e(TAG, "Attempted to write a negative size.");
+        }
         if (value < 254) {
             stream.write(value);
         } else if (value <= 0xffff) {
@@ -281,7 +286,7 @@ public class StandardMessageCodec implements MessageCodec<Object> {
             stream.write(MAP);
             final Map<?, ?> map = (Map) value;
             writeSize(stream, map.size());
-            for (final Entry entry: map.entrySet()) {
+            for (final Entry<?, ?> entry: map.entrySet()) {
                 writeValue(stream, entry.getKey());
                 writeValue(stream, entry.getValue());
             }

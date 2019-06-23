@@ -27,7 +27,14 @@ Animator::Animator(Delegate& delegate,
       waiter_(std::move(waiter)),
       last_begin_frame_time_(),
       dart_frame_deadline_(0),
-      layer_tree_pipeline_(fml::MakeRefCounted<LayerTreePipeline>(2)),
+      // TODO(dnfield): We should remove this logic and set the pipeline depth
+      // back to 2 in this case. See https://github.com/flutter/engine/pull/9132
+      // for discussion.
+      layer_tree_pipeline_(fml::MakeRefCounted<LayerTreePipeline>(
+          task_runners.GetPlatformTaskRunner() ==
+                  task_runners.GetGPUTaskRunner()
+              ? 1
+              : 2)),
       pending_frame_semaphore_(1),
       frame_number_(1),
       paused_(false),
@@ -166,8 +173,7 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
 
   if (layer_tree) {
     // Note the frame time for instrumentation.
-    layer_tree->set_construction_time(fml::TimePoint::Now() -
-                                      last_begin_frame_time_);
+    layer_tree->RecordBuildTime(last_begin_frame_time_);
   }
 
   // Commit the pending continuation.

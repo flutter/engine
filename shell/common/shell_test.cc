@@ -6,6 +6,9 @@
 
 #include "flutter/shell/common/shell_test.h"
 
+#include "flutter/flow/layers/layer_tree.h"
+#include "flutter/flow/layers/transform_layer.h"
+#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/testing/testing.h"
@@ -14,35 +17,9 @@ namespace flutter {
 namespace testing {
 
 ShellTest::ShellTest()
-    : native_resolver_(std::make_shared<::testing::TestDartNativeResolver>()) {}
+    : native_resolver_(std::make_shared<TestDartNativeResolver>()) {}
 
 ShellTest::~ShellTest() = default;
-
-static std::unique_ptr<fml::Mapping> GetMapping(const fml::UniqueFD& directory,
-                                                const char* path,
-                                                bool executable) {
-  fml::UniqueFD file = fml::OpenFile(directory, path, false /* create */,
-                                     fml::FilePermission::kRead);
-  if (!file.is_valid()) {
-    return nullptr;
-  }
-
-  using Prot = fml::FileMapping::Protection;
-  std::unique_ptr<fml::FileMapping> mapping;
-  if (executable) {
-    mapping = std::make_unique<fml::FileMapping>(
-        file, std::initializer_list<Prot>{Prot::kRead, Prot::kExecute});
-  } else {
-    mapping = std::make_unique<fml::FileMapping>(
-        file, std::initializer_list<Prot>{Prot::kRead});
-  }
-
-  if (mapping->GetSize() == 0 || mapping->GetMapping() == nullptr) {
-    return nullptr;
-  }
-
-  return mapping;
-}
 
 void ShellTest::SetSnapshotsAndAssets(Settings& settings) {
   if (!assets_dir_.is_valid()) {
@@ -55,41 +32,110 @@ void ShellTest::SetSnapshotsAndAssets(Settings& settings) {
   // don't need to be explicitly suppiled by the embedder.
   if (DartVM::IsRunningPrecompiledCode()) {
     settings.vm_snapshot_data = [this]() {
-      return GetMapping(assets_dir_, "vm_snapshot_data", false);
+      return fml::FileMapping::CreateReadOnly(assets_dir_, "vm_snapshot_data");
     };
 
     settings.isolate_snapshot_data = [this]() {
-      return GetMapping(assets_dir_, "isolate_snapshot_data", false);
+      return fml::FileMapping::CreateReadOnly(assets_dir_,
+                                              "isolate_snapshot_data");
     };
 
     if (DartVM::IsRunningPrecompiledCode()) {
       settings.vm_snapshot_instr = [this]() {
-        return GetMapping(assets_dir_, "vm_snapshot_instr", true);
+        return fml::FileMapping::CreateReadExecute(assets_dir_,
+                                                   "vm_snapshot_instr");
       };
 
       settings.isolate_snapshot_instr = [this]() {
-        return GetMapping(assets_dir_, "isolate_snapshot_instr", true);
+        return fml::FileMapping::CreateReadExecute(assets_dir_,
+                                                   "isolate_snapshot_instr");
       };
     }
   } else {
     settings.application_kernels = [this]() {
       std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
       kernel_mappings.emplace_back(
-          GetMapping(assets_dir_, "kernel_blob.bin", false));
+          fml::FileMapping::CreateReadOnly(assets_dir_, "kernel_blob.bin"));
       return kernel_mappings;
     };
   }
 }
 
+void ShellTest::PlatformViewNotifyCreated(Shell* shell) {
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(), [shell, &latch]() {
+        shell->GetPlatformView()->NotifyCreated();
+        latch.Signal();
+      });
+  latch.Wait();
+}
+
+void ShellTest::RunEngine(Shell* shell, RunConfiguration configuration) {
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetUITaskRunner(),
+      fml::MakeCopyable([&latch, config = std::move(configuration),
+                         engine = shell->GetEngine()]() mutable {
+        ASSERT_TRUE(engine);
+        ASSERT_EQ(engine->Run(std::move(config)), Engine::RunStatus::Success);
+        latch.Signal();
+      }));
+  latch.Wait();
+}
+
+void ShellTest::PumpOneFrame(Shell* shell) {
+  // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
+  // tree pipeline nonempty. Without either of this, the layer tree below
+  // won't be rasterized.
+  fml::AutoResetWaitableEvent latch;
+  shell->GetTaskRunners().GetUITaskRunner()->PostTask(
+      [&latch, engine = shell->GetEngine()]() {
+        engine->SetViewportMetrics({1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0});
+        engine->animator_->BeginFrame(fml::TimePoint::Now(),
+                                      fml::TimePoint::Now());
+        latch.Signal();
+      });
+  latch.Wait();
+
+  latch.Reset();
+  // Call |Render| to rasterize a layer tree and trigger |OnFrameRasterized|
+  fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->GetEngine();
+  shell->GetTaskRunners().GetUITaskRunner()->PostTask(
+      [&latch, runtime_delegate]() {
+        auto layer_tree = std::make_unique<LayerTree>();
+        SkMatrix identity;
+        identity.setIdentity();
+        auto root_layer = std::make_shared<TransformLayer>(identity);
+        layer_tree->set_root_layer(root_layer);
+        runtime_delegate->Render(std::move(layer_tree));
+        latch.Signal();
+      });
+  latch.Wait();
+}
+
+int ShellTest::UnreportedTimingsCount(Shell* shell) {
+  return shell->unreported_timings_.size();
+}
+
+void ShellTest::SetNeedsReportTimings(Shell* shell, bool value) {
+  shell->SetNeedsReportTimings(value);
+}
+
+bool ShellTest::GetNeedsReportTimings(Shell* shell) {
+  return shell->needs_report_timings_;
+}
+
 Settings ShellTest::CreateSettingsForFixture() {
   Settings settings;
+  settings.leak_vm = false;
   settings.task_observer_add = [](intptr_t key, fml::closure handler) {
     fml::MessageLoop::GetCurrent().AddTaskObserver(key, handler);
   };
   settings.task_observer_remove = [](intptr_t key) {
     fml::MessageLoop::GetCurrent().RemoveTaskObserver(key);
   };
-  settings.root_isolate_create_callback = [this]() {
+  settings.isolate_create_callback = [this]() {
     native_resolver_->SetNativeResolverForIsolate();
   };
   SetSnapshotsAndAssets(settings);
@@ -106,13 +152,30 @@ TaskRunners ShellTest::GetTaskRunnersForFixture() {
   };
 }
 
+std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings) {
+  return CreateShell(std::move(settings), GetTaskRunnersForFixture());
+}
+
+std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
+                                              TaskRunners task_runners) {
+  return Shell::Create(
+      task_runners, settings,
+      [](Shell& shell) {
+        return std::make_unique<ShellTestPlatformView>(shell,
+                                                       shell.GetTaskRunners());
+      },
+      [](Shell& shell) {
+        return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
+      });
+}
+
 // |testing::ThreadTest|
 void ShellTest::SetUp() {
   ThreadTest::SetUp();
-  assets_dir_ = fml::OpenDirectory(::testing::GetFixturesPath(), false,
-                                   fml::FilePermission::kRead);
+  assets_dir_ =
+      fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
   thread_host_ = std::make_unique<ThreadHost>(
-      "io.flutter.test." + ::testing::GetCurrentTestName() + ".",
+      "io.flutter.test." + GetCurrentTestName() + ".",
       ThreadHost::Type::Platform | ThreadHost::Type::IO | ThreadHost::Type::UI |
           ThreadHost::Type::GPU);
 }
@@ -127,6 +190,31 @@ void ShellTest::TearDown() {
 void ShellTest::AddNativeCallback(std::string name,
                                   Dart_NativeFunction callback) {
   native_resolver_->AddNativeCallback(std::move(name), callback);
+}
+
+ShellTestPlatformView::ShellTestPlatformView(PlatformView::Delegate& delegate,
+                                             TaskRunners task_runners)
+    : PlatformView(delegate, std::move(task_runners)) {}
+
+ShellTestPlatformView::~ShellTestPlatformView() = default;
+
+// |PlatformView|
+std::unique_ptr<Surface> ShellTestPlatformView::CreateRenderingSurface() {
+  return std::make_unique<GPUSurfaceSoftware>(this);
+}
+
+// |GPUSurfaceSoftwareDelegate|
+sk_sp<SkSurface> ShellTestPlatformView::AcquireBackingStore(
+    const SkISize& size) {
+  SkImageInfo image_info = SkImageInfo::MakeN32Premul(
+      size.width(), size.height(), SkColorSpace::MakeSRGB());
+  return SkSurface::MakeRaster(image_info);
+}
+
+// |GPUSurfaceSoftwareDelegate|
+bool ShellTestPlatformView::PresentBackingStore(
+    sk_sp<SkSurface> backing_store) {
+  return true;
 }
 
 }  // namespace testing

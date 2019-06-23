@@ -153,6 +153,10 @@ typedef enum {
   // |PageView| widget does not have implicit scrolling, so that users don't
   // navigate to the next page when reaching the end of the current one.
   kFlutterSemanticsFlagHasImplicitScrolling = 1 << 18,
+  // Whether the semantic node is read only.
+  //
+  // Only applicable when kFlutterSemanticsFlagIsTextField flag is on.
+  kFlutterSemanticsFlagIsReadOnly = 1 << 20,
 } FlutterSemanticsFlag;
 
 typedef enum {
@@ -280,13 +284,56 @@ typedef struct {
 // The phase of the pointer event.
 typedef enum {
   kCancel,
+  // The pointer, which must have been down (see kDown), is now up.
+  //
+  // For touch, this means that the pointer is no longer in contact with the
+  // screen. For a mouse, it means the last button was released. Note that if
+  // any other buttons are still pressed when one button is released, that
+  // should be sent as a kMove rather than a kUp.
   kUp,
+  // The pointer, which must have been been up, is now down.
+  //
+  // For touch, this means that the pointer has come into contact with the
+  // screen. For a mouse, it means a button is now pressed. Note that if any
+  // other buttons are already pressed when a new button is pressed, that should
+  // be sent as a kMove rather than a kDown.
   kDown,
+  // The pointer moved while down.
+  //
+  // This is also used for changes in button state that don't cause a kDown or
+  // kUp, such as releasing one of two pressed buttons.
   kMove,
+  // The pointer is now sending input to Flutter. For instance, a mouse has
+  // entered the area where the Flutter content is displayed.
+  //
+  // A pointer should always be added before sending any other events.
   kAdd,
+  // The pointer is no longer sending input to Flutter. For instance, a mouse
+  // has left the area where the Flutter content is displayed.
+  //
+  // A removed pointer should no longer send events until sending a new kAdd.
   kRemove,
+  // The pointer moved while up.
   kHover,
 } FlutterPointerPhase;
+
+// The device type that created a pointer event.
+typedef enum {
+  kFlutterPointerDeviceKindMouse = 1,
+  kFlutterPointerDeviceKindTouch,
+} FlutterPointerDeviceKind;
+
+// Flags for the |buttons| field of |FlutterPointerEvent| when |device_kind|
+// is |kFlutterPointerDeviceKindMouse|.
+typedef enum {
+  kFlutterPointerButtonMousePrimary = 1 << 0,
+  kFlutterPointerButtonMouseSecondary = 1 << 1,
+  kFlutterPointerButtonMouseMiddle = 1 << 2,
+  kFlutterPointerButtonMouseBack = 1 << 3,
+  kFlutterPointerButtonMouseForward = 1 << 4,
+  // If a mouse has more than five buttons, send higher bit shifted values
+  // corresponding to the button number: 1 << 5 for the 6th, etc.
+} FlutterPointerMouseButtons;
 
 // The type of a pointer signal.
 typedef enum {
@@ -307,6 +354,14 @@ typedef struct {
   FlutterPointerSignalKind signal_kind;
   double scroll_delta_x;
   double scroll_delta_y;
+  // The type of the device generating this event.
+  // Backwards compatibility note: If this is not set, the device will be
+  // treated as a mouse, with the primary button set for |kDown| and |kMove|.
+  // If set explicitly to |kFlutterPointerDeviceKindMouse|, you must set the
+  // correct buttons.
+  FlutterPointerDeviceKind device_kind;
+  // The buttons currently pressed, if any.
+  int64_t buttons;
 } FlutterPointerEvent;
 
 struct _FlutterPlatformMessageResponseHandle;
@@ -322,11 +377,10 @@ typedef struct {
   // The response handle on which to invoke
   // |FlutterEngineSendPlatformMessageResponse| when the response is ready. This
   // field is ignored for messages being sent from the embedder to the
-  // framework. If the embedder ever receives a message with a non-null response
-  // handle, that handle must always be used with a
-  // |FlutterEngineSendPlatformMessageResponse| call. If not, this is a memory
-  // leak. It is not safe to send multiple responses on a single response
-  // object.
+  // framework. |FlutterEngineSendPlatformMessageResponse| must be called for
+  // all messages received by the embedder. Failure to call
+  // |FlutterEngineSendPlatformMessageResponse| will cause a memory leak. It is
+  // not safe to send multiple responses on a single response object.
   const FlutterPlatformMessageResponseHandle* response_handle;
 } FlutterPlatformMessage;
 
@@ -432,7 +486,7 @@ typedef struct {
   size_t struct_size;
   // The unique custom action or action override ID.
   int32_t id;
-  // For overriden standard actions, corresponds to the
+  // For overridden standard actions, corresponds to the
   // |FlutterSemanticsAction| to override.
   FlutterSemanticsAction override_action;
   // The user-readable name of this custom semantics action.

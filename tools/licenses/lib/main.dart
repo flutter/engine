@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// See README in this directory for information on how this code is organised.
+// See README in this directory for information on how this code is organized.
 
 import 'dart:async';
 import 'dart:collection';
@@ -930,6 +930,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
            entry.name != '.git' &&
            entry.name != '.github' &&
            entry.name != '.gitignore' &&
+           entry.name != '.vscode' &&
            entry.name != 'test' &&
            entry.name != 'test.disabled' &&
            entry.name != 'test_support' &&
@@ -1172,7 +1173,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
   }
 
   Set<License> getLicenses(_Progress progress) {
-    final Set<License> result = Set<License>();
+    final Set<License> result = <License>{};
     for (_RepositoryDirectory directory in _subdirectories)
       result.addAll(directory.getLicenses(progress));
     for (_RepositoryLicensedFile file in _files) {
@@ -1344,7 +1345,7 @@ class _RepositoryFreetypeDocsDirectory extends _RepositoryDirectory {
     // We don't ship anything in this directory so don't bother looking for licenses there.
     // However, there are licenses in this directory referenced from elsewhere, so we do
     // want to crawl it and expose them.
-    return Set<License>();
+    return <License>{};
   }
 }
 
@@ -1631,7 +1632,7 @@ class _RepositorySkiaLibWebPDirectory extends _RepositoryDirectory {
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'webp')
-      return _RepositoryReachOutDirectory(this, entry, Set<String>.from(const <String>['config.h']), 3);
+      return _RepositoryReachOutDirectory(this, entry, const <String>{'config.h'}, 3);
     return super.createSubdirectory(entry);
   }
 }
@@ -1662,9 +1663,9 @@ class _RepositorySkiaThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'ktx')
-      return _RepositoryReachOutDirectory(this, entry, Set<String>.from(const <String>['ktx.h', 'ktx.cpp']), 2);
+      return _RepositoryReachOutDirectory(this, entry, const <String>{'ktx.h', 'ktx.cpp'}, 2);
     if (entry.name == 'libmicrohttpd')
-      return _RepositoryReachOutDirectory(this, entry, Set<String>.from(const <String>['MHD_config.h']), 2);
+      return _RepositoryReachOutDirectory(this, entry, const <String>{'MHD_config.h'}, 2);
     if (entry.name == 'libwebp')
       return _RepositorySkiaLibWebPDirectory(this, entry);
     if (entry.name == 'libsdl')
@@ -1752,6 +1753,9 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
         && entry.name != 'android_support' // build-time only
         && entry.name != 'googletest' // only used by tests
         && entry.name != 'skia' // treated as a separate component
+        && entry.name != 'fontconfig' // not used in standard configurations
+        && entry.name != 'swiftshader' // only used on hosts for tests
+        && entry.name != 'ocmock' // only used for tests
         && super.shouldRecurse(entry);
   }
 
@@ -2048,6 +2052,53 @@ class _RepositoryFlutterDirectory extends _RepositoryDirectory {
   }
 }
 
+class _RepositoryFuchsiaDirectory extends _RepositoryDirectory {
+  _RepositoryFuchsiaDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  String get libraryName => 'fuchsia_sdk';
+
+  @override
+  bool get isLicenseRoot => true;
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'toolchain'
+        && super.shouldRecurse(entry);
+  }
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'sdk')
+      return _RepositoryFuchsiaSdkDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryFuchsiaSdkDirectory extends _RepositoryDirectory {
+  _RepositoryFuchsiaSdkDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'linux' || entry.name == 'mac')
+      return _RepositoryFuchsiaSdkLinuxDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryFuchsiaSdkLinuxDirectory extends _RepositoryDirectory {
+  _RepositoryFuchsiaSdkLinuxDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != '.build-id'
+        && entry.name != 'docs'
+        && entry.name != 'images'
+        && entry.name != 'meta'
+        && entry.name != 'tools';
+  }
+}
+
 class _RepositoryFlutterThirdPartyDirectory extends _RepositoryDirectory {
   _RepositoryFlutterThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
@@ -2133,6 +2184,8 @@ class _RepositoryRoot extends _RepositoryDirectory {
       return _RepositoryRootThirdPartyDirectory(this, entry);
     if (entry.name == 'flutter')
       return _RepositoryFlutterDirectory(this, entry);
+    if (entry.name == 'fuchsia')
+      return _RepositoryFuchsiaDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 

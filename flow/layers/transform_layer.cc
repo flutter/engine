@@ -6,17 +6,9 @@
 
 namespace flutter {
 
-TransformLayer::TransformLayer() {
-  transform_.setIdentity();
-}
-
-TransformLayer::~TransformLayer() = default;
-
-void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+TransformLayer::TransformLayer(const SkMatrix& transform)
+    : transform_(transform) {
   // Checks (in some degree) that SkMatrix transform_ is valid and initialized.
-  //
-  // We need this even if is_set_ is true since one can call set_transform with
-  // an uninitialized SkMatrix.
   //
   // If transform_ is uninitialized, this assert may look flaky as it doesn't
   // fail all the time, and some rerun may make it pass. But don't ignore it and
@@ -25,8 +17,16 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   //
   // We have to write this flaky test because there is no reliable way to test
   // whether a variable is initialized or not in C++.
-  FML_CHECK(transform_.isFinite());
+  FML_DCHECK(transform_.isFinite());
+  if (!transform_.isFinite()) {
+    FML_LOG(ERROR) << "TransformLayer is constructed with an invalid matrix.";
+    transform_.setIdentity();
+  }
+}
 
+TransformLayer::~TransformLayer() = default;
+
+void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkMatrix child_matrix;
   child_matrix.setConcat(matrix, transform_);
 

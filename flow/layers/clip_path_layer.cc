@@ -12,8 +12,8 @@
 
 namespace flutter {
 
-ClipPathLayer::ClipPathLayer(Clip clip_behavior)
-    : clip_behavior_(clip_behavior) {
+ClipPathLayer::ClipPathLayer(const SkPath& clip_path, Clip clip_behavior)
+    : clip_path_(clip_path), clip_behavior_(clip_behavior) {
   FML_DCHECK(clip_behavior != Clip::none);
 }
 
@@ -38,7 +38,7 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
   FML_DCHECK(needs_system_composite());
 
-  // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
+  // TODO(SCN-140): Must be able to specify paths as shapes to nodes.
   //               Treating the shape as a rectangle for now.
   auto bounds = clip_path_.getBounds();
   scenic::Rectangle shape(context.session(),  // session

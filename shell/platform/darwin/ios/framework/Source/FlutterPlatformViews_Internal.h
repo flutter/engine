@@ -8,8 +8,8 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/shell.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterBinaryMessenger.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
+#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
+#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
 
 // A UIView that is used as the parent for embedded UIViews.
@@ -18,7 +18,8 @@
 // 1. Delay or prevent touch events from arriving the embedded view.
 // 2. Dispatching all events that are hittested to the embedded view to the FlutterView.
 @interface FlutterTouchInterceptingView : UIView
-- (instancetype)initWithEmbeddedView:(UIView*)embeddedView flutterView:(UIView*)flutterView;
+- (instancetype)initWithEmbeddedView:(UIView*)embeddedView
+               flutterViewController:(UIViewController*)flutterViewController;
 
 // Stop delaying any active touch sequence (and let it arrive the embedded view).
 - (void)releaseGesture;
@@ -52,6 +53,8 @@ class FlutterPlatformViewsController {
 
   void SetFlutterView(UIView* flutter_view);
 
+  void SetFlutterViewController(UIViewController* flutter_view_controller);
+
   void RegisterViewFactory(NSObject<FlutterPlatformViewFactory>* factory, NSString* factoryId);
 
   void SetFrameSize(SkISize frame_size);
@@ -81,9 +84,12 @@ class FlutterPlatformViewsController {
  private:
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
   fml::scoped_nsobject<UIView> flutter_view_;
+  fml::scoped_nsobject<UIViewController> flutter_view_controller_;
   std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
   std::map<int64_t, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> views_;
   std::map<int64_t, fml::scoped_nsobject<FlutterTouchInterceptingView>> touch_interceptors_;
+  // Mapping a platform view ID to its latest composition params.
+  std::map<int64_t, EmbeddedViewParams> current_composition_params_;
   std::map<int64_t, std::unique_ptr<FlutterPlatformViewLayer>> overlays_;
   // The GrContext that is currently used by all of the overlay surfaces.
   // We track this to know when the GrContext for the Flutter app has changed

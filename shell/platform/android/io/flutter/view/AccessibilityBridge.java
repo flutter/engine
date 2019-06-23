@@ -26,6 +26,7 @@ import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
 
+import io.flutter.BuildConfig;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import io.flutter.util.Predicate;
@@ -528,9 +529,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
         if (semanticsNode.hasFlag(Flag.IS_TEXT_FIELD)) {
             result.setPassword(semanticsNode.hasFlag(Flag.IS_OBSCURED));
-            result.setClassName("android.widget.EditText");
+            if (!semanticsNode.hasFlag(Flag.IS_READ_ONLY)) {
+                result.setClassName("android.widget.EditText");
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                result.setEditable(true);
+                result.setEditable(!semanticsNode.hasFlag(Flag.IS_READ_ONLY));
                 if (semanticsNode.textSelectionBase != -1 && semanticsNode.textSelectionExtent != -1) {
                     result.setTextSelection(semanticsNode.textSelectionBase, semanticsNode.textSelectionExtent);
                 }
@@ -594,10 +597,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
 
         if (semanticsNode.parent != null) {
-            assert semanticsNode.id > ROOT_NODE_ID;
+            if (BuildConfig.DEBUG && semanticsNode.id <= ROOT_NODE_ID) {
+                Log.e(TAG, "Semantics node id is not > ROOT_NODE_ID.");
+            }
             result.setParent(rootAccessibilityView, semanticsNode.parent.id);
         } else {
-            assert semanticsNode.id == ROOT_NODE_ID;
+            if (BuildConfig.DEBUG && semanticsNode.id != ROOT_NODE_ID) {
+                Log.e(TAG, "Semantics node id does not equal ROOT_NODE_ID.");
+            }
             result.setParent(rootAccessibilityView);
         }
 
@@ -706,7 +713,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
         boolean hasCheckedState = semanticsNode.hasFlag(Flag.HAS_CHECKED_STATE);
         boolean hasToggledState = semanticsNode.hasFlag(Flag.HAS_TOGGLED_STATE);
-        assert !(hasCheckedState && hasToggledState);
+        if (BuildConfig.DEBUG && (hasCheckedState && hasToggledState)) {
+            Log.e(TAG, "Expected semanticsNode to have checked state and toggled state.");
+        }
         result.setCheckable(hasCheckedState || hasToggledState);
         if (hasCheckedState) {
             result.setChecked(semanticsNode.hasFlag(Flag.IS_CHECKED));
@@ -1055,7 +1064,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
      * Returns the {@link SemanticsNode} at the root of Flutter's semantics tree.
      */
     private SemanticsNode getRootSemanticsNode() {
-        assert flutterSemanticsTree.containsKey(0);
+        if (BuildConfig.DEBUG && !flutterSemanticsTree.containsKey(0)) {
+            Log.e(TAG, "Attempted to getRootSemanticsNode without a root sematnics node.");
+        }
         return flutterSemanticsTree.get(0);
     }
 
@@ -1174,11 +1185,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     /**
      * Updates the Android cache of Flutter's currently registered custom accessibility actions.
+     *
+     * The buffer received here is encoded by PlatformViewAndroid::UpdateSemantics, and the
+     * decode logic here must be kept in sync with that method's encoding logic.
      */
     // TODO(mattcarroll): Consider introducing ability to delete custom actions because they can
     //                    probably come and go in Flutter, so we may want to reflect that here in
     //                    the Android cache as well.
-    // TODO(mattcarroll): where is the encoding code for reference?
     void updateCustomAccessibilityActions(@NonNull ByteBuffer buffer, @NonNull String[] strings) {
         while (buffer.hasRemaining()) {
             int id = buffer.getInt();
@@ -1194,9 +1207,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     /**
      * Updates {@link #flutterSemanticsTree} to reflect the latest state of Flutter's semantics tree.
      *
-     * The latest state of Flutter's semantics tree is encoded in the given {@code buffer}.
+     * The latest state of Flutter's semantics tree is encoded in the given {@code buffer}. The buffer
+     * is encoded by PlatformViewAndroid::UpdateSemantics, and the decode logic must be kept in sync
+     * with that method's encoding logic.
      */
-    // TODO(mattcarroll): where is the encoding code for reference?
     void updateSemantics(@NonNull ByteBuffer buffer, @NonNull String[] strings) {
         ArrayList<SemanticsNode> updated = new ArrayList<>();
         while (buffer.hasRemaining()) {
@@ -1317,8 +1331,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                             visibleChildren += 1;
                         }
                     }
-                    assert(object.scrollIndex + visibleChildren <= object.scrollChildren);
-                    assert(!object.childrenInHitTestOrder.get(object.scrollIndex).hasFlag(Flag.IS_HIDDEN));
+                    if (BuildConfig.DEBUG) {
+                        if (object.scrollIndex + visibleChildren > object.scrollChildren) {
+                            Log.e(TAG, "Scroll index is out of bounds.");
+                        }
+                    }
                     // The setToIndex should be the index of the last visible child. Because we counted all
                     // children, including the first index we need to subtract one.
                     //
@@ -1470,7 +1487,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
      * invoked to create an {@link AccessibilityEvent} for the {@link #rootAccessibilityView}.
      */
     private AccessibilityEvent obtainAccessibilityEvent(int virtualViewId, int eventType) {
-        assert virtualViewId != ROOT_NODE_ID;
+        if (BuildConfig.DEBUG && virtualViewId == ROOT_NODE_ID) {
+            Log.e(TAG, "VirtualView node must not be the root node.");
+        }
         AccessibilityEvent event = AccessibilityEvent.obtain(eventType);
         event.setPackageName(rootAccessibilityView.getContext().getPackageName());
         event.setSource(rootAccessibilityView, virtualViewId);
@@ -1482,8 +1501,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
      * semantics tree.
      */
     private void willRemoveSemanticsNode(SemanticsNode semanticsNodeToBeRemoved) {
-        assert flutterSemanticsTree.containsKey(semanticsNodeToBeRemoved.id);
-        assert flutterSemanticsTree.get(semanticsNodeToBeRemoved.id) == semanticsNodeToBeRemoved;
+        if (BuildConfig.DEBUG) {
+            if (!flutterSemanticsTree.containsKey(semanticsNodeToBeRemoved.id)) {
+                Log.e(TAG, "Attempted to remove a node that is not in the tree.");
+            }
+            if (flutterSemanticsTree.get(semanticsNodeToBeRemoved.id) != semanticsNodeToBeRemoved) {
+                Log.e(TAG, "Flutter semantics tree failed to get expected node when searching by id.");
+            }
+        }
         // TODO(mattcarroll): should parent be set to "null" here? Changing the parent seems like the
         //                    behavior of a method called "removeSemanticsNode()". The same is true
         //                    for null'ing accessibilityFocusedSemanticsNode, inputFocusedSemanticsNode,
@@ -1588,7 +1613,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         IS_LIVE_REGION(1 << 15),
         HAS_TOGGLED_STATE(1 << 16),
         IS_TOGGLED(1 << 17),
-        HAS_IMPLICIT_SCROLLING(1 << 18);
+        HAS_IMPLICIT_SCROLLING(1 << 18),
+        IS_READ_ONLY(1 << 20);
 
         final int value;
 
@@ -1779,7 +1805,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
 
         private boolean hadFlag(@NonNull Flag flag) {
-            assert hadPreviousConfig;
+            if (BuildConfig.DEBUG && !hadPreviousConfig) {
+                Log.e(TAG, "Attempted to check hadFlag but had no previous config.");
+            }
             return (previousFlags & flag.value) != 0;
         }
 
@@ -1796,16 +1824,18 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
 
         private void log(@NonNull String indent, boolean recursive) {
-            Log.i(TAG,
-                    indent + "SemanticsNode id=" + id + " label=" + label + " actions=" + actions
-                            + " flags=" + flags + "\n" + indent + "  +-- textDirection="
-                            + textDirection + "\n" + indent + "  +-- rect.ltrb=(" + left + ", "
-                            + top + ", " + right + ", " + bottom + ")\n" + indent
-                            + "  +-- transform=" + Arrays.toString(transform) + "\n");
-            if (childrenInTraversalOrder != null && recursive) {
-                String childIndent = indent + "  ";
-                for (SemanticsNode child : childrenInTraversalOrder) {
-                    child.log(childIndent, recursive);
+            if (BuildConfig.DEBUG) {
+                Log.i(TAG,
+                        indent + "SemanticsNode id=" + id + " label=" + label + " actions=" + actions
+                                + " flags=" + flags + "\n" + indent + "  +-- textDirection="
+                                + textDirection + "\n" + indent + "  +-- rect.ltrb=(" + left + ", "
+                                + top + ", " + right + ", " + bottom + ")\n" + indent
+                                + "  +-- transform=" + Arrays.toString(transform) + "\n");
+                if (childrenInTraversalOrder != null && recursive) {
+                    String childIndent = indent + "  ";
+                    for (SemanticsNode child : childrenInTraversalOrder) {
+                        child.log(childIndent, recursive);
+                    }
                 }
             }
         }
@@ -1909,7 +1939,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                     } else {
                         // If we receive a different overrideId it means that we were passed
                         // a standard action to override that we don't yet support.
-                        assert action.overrideId == -1;
+                        if (BuildConfig.DEBUG && action.overrideId != -1) {
+                            Log.e(TAG, "Expected action.overrideId to be -1.");
+                        }
                         customAccessibilityActions.add(action);
                     }
                     customAccessibilityActions.add(action);
@@ -1931,7 +1963,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
 
         private Rect getGlobalRect() {
-            assert !globalGeometryDirty;
+            if (BuildConfig.DEBUG && globalGeometryDirty) {
+                Log.e(TAG, "Attempted to getGlobalRect with a dirty geometry.");
+            }
             return globalRect;
         }
 
@@ -2052,8 +2086,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 globalGeometryDirty = false;
             }
 
-            assert globalTransform != null;
-            assert globalRect != null;
+            if (BuildConfig.DEBUG) {
+                if (globalTransform == null) {
+                    Log.e(TAG, "Expected globalTransform to not be null.");
+                }
+                if (globalRect == null) {
+                    Log.e(TAG, "Expected globalRect to not be null.");
+                }
+            }
 
             if (childrenInTraversalOrder != null) {
                 for (int i = 0; i < childrenInTraversalOrder.size(); ++i) {

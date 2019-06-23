@@ -24,7 +24,7 @@ class Scene extends NativeFieldWrapperClass2 {
   /// This is a slow operation that is performed on a background thread.
   Future<Image> toImage(int width, int height) {
     if (width <= 0 || height <= 0)
-      throw new Exception('Invalid image dimensions.');
+      throw Exception('Invalid image dimensions.');
     return _futurize(
       (_Callback<Image> callback) => _toImage(width, height, callback)
     );
@@ -57,10 +57,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack.
   EngineLayer pushTransform(Float64List matrix4) {
-    if (matrix4 == null)
-      throw new ArgumentError('"matrix4" argument cannot be null');
-    if (matrix4.length != 16)
-      throw new ArgumentError('"matrix4" must have 16 entries.');
+    assert(_matrix4IsValid(matrix4));
     return _pushTransform(matrix4);
   }
   EngineLayer _pushTransform(Float64List matrix4) native 'SceneBuilder_pushTransform';
@@ -98,7 +95,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   EngineLayer pushClipRRect(RRect rrect, {Clip clipBehavior = Clip.antiAlias}) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
-    return _pushClipRRect(rrect._value, clipBehavior.index);
+    return _pushClipRRect(rrect._value32, clipBehavior.index);
   }
   EngineLayer _pushClipRRect(Float32List rrect, int clipBehavior) native 'SceneBuilder_pushClipRRect';
 
@@ -203,7 +200,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Therefore, when implementing a subclass of the [Layer] concept defined in
   /// the rendering layer of Flutter's framework, once this is called, there's
   /// no need to call [addToScene] for its children layers.
-  EngineLayer addRetained(EngineLayer retainedLayer) native 'SceneBuilder_addRetained';
+  void addRetained(EngineLayer retainedLayer) native 'SceneBuilder_addRetained';
 
   /// Adds an object to the scene that displays performance statistics.
   ///
@@ -245,7 +242,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Adds a [Picture] to the scene.
   ///
   /// The picture is rasterized at the given offset.
-  void addPicture(Offset offset, Picture picture, { bool isComplexHint: false, bool willChangeHint: false }) {
+  void addPicture(Offset offset, Picture picture, { bool isComplexHint = false, bool willChangeHint = false }) {
     int hints = 0;
     if (isComplexHint)
       hints |= 1;
@@ -266,7 +263,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// previous or new size, to workaround this the framework "freezes" the
   /// texture just before resizing the Android view and un-freezes it when it is
   /// certain that a frame with the new size is ready.
-  void addTexture(int textureId, { Offset offset: Offset.zero, double width: 0.0, double height: 0.0 , bool freeze: false}) {
+  void addTexture(int textureId, { Offset offset = Offset.zero, double width = 0.0, double height = 0.0 , bool freeze = false}) {
     assert(offset != null, 'Offset argument was null');
     _addTexture(offset.dx, offset.dy, width, height, textureId, freeze);
   }
@@ -288,7 +285,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// With a platform view in the scene, Quartz has to composite the two Flutter surfaces and the
   /// embedded UIView. In addition to that, on iOS versions greater than 9, the Flutter frames are
   /// synchronized with the UIView frames adding additional performance overhead.
-  void addPlatformView(int viewId, { Offset offset: Offset.zero, double width: 0.0, double height: 0.0}) {
+  void addPlatformView(int viewId, { Offset offset = Offset.zero, double width = 0.0, double height = 0.0}) {
     assert(offset != null, 'Offset argument was null');
     _addPlatformView(offset.dx, offset.dy, width, height, viewId);
   }
@@ -297,11 +294,11 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// (Fuchsia-only) Adds a scene rendered by another application to the scene
   /// for this application.
   void addChildScene({
-    Offset offset: Offset.zero,
-    double width: 0.0,
-    double height: 0.0,
+    Offset offset = Offset.zero,
+    double width = 0.0,
+    double height = 0.0,
     SceneHost sceneHost,
-    bool hitTestable: true
+    bool hitTestable = true
   }) {
     _addChildScene(offset.dx,
                    offset.dy,
@@ -361,42 +358,38 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
 
 /// (Fuchsia-only) Hosts content provided by another application.
 class SceneHost extends NativeFieldWrapperClass2 {
-  /// Creates a host for a child scene.
+  /// Creates a host for a child scene's content.
   ///
-  /// The export token is bound to a scene graph node which acts as a container
-  /// for the child's content.  The creator of the scene host is responsible for
-  /// sending the corresponding import token (the other endpoint of the event pair)
-  /// to the child.
+  /// The ViewHolder token is bound to a ViewHolder scene graph node which acts
+  /// as a container for the child's content.  The creator of the SceneHost is
+  /// responsible for sending the corresponding ViewToken to the child.
   ///
-  /// The export token is a dart:zircon Handle, but that type isn't
+  /// The ViewHolder token is a dart:zircon Handle, but that type isn't
   /// available here. This is called by ChildViewConnection in
   /// //topaz/public/dart/fuchsia_scenic_flutter/.
   ///
-  /// The scene host takes ownership of the provided export token handle.
-  SceneHost(dynamic exportTokenHandle) {
-    _constructor(exportTokenHandle);
-  }
-  SceneHost.fromViewHolderToken(
-      dynamic viewHolderTokenHandle,
+  /// The SceneHost takes ownership of the provided ViewHolder token.
+  SceneHost(
+      dynamic viewHolderToken,
       void Function() viewConnectedCallback,
       void Function() viewDisconnectedCallback,
       void Function(bool) viewStateChangedCallback) {
-    _constructorViewHolderToken(viewHolderTokenHandle, viewConnectedCallback,
-        viewDisconnectedCallback, viewStateChangedCallback);
+    _constructor(viewHolderToken, viewConnectedCallback, viewDisconnectedCallback, viewStateChangedCallback);
+  }
+  SceneHost.fromViewHolderToken(
+      dynamic viewHolderToken,
+      void Function() viewConnectedCallback,
+      void Function() viewDisconnectedCallback,
+      void Function(bool) viewStateChangedCallback) {
+    _constructor(viewHolderToken, viewConnectedCallback, viewDisconnectedCallback, viewStateChangedCallback);
   }
 
-  void _constructor(dynamic exportTokenHandle) native 'SceneHost_constructor';
-  void
-      _constructorViewHolderToken(
-          dynamic viewHolderTokenHandle,
-          void Function() viewConnectedCallback,
-          void Function() viewDisconnectedCallback,
-          void Function(bool) viewStateChangedCallback)
-      native 'SceneHost_constructorViewHolderToken';
+  void _constructor(dynamic viewHolderToken, void Function() viewConnectedCallback, void Function() viewDisconnectedCallback, void Function(bool) viewStateChangedCallback)
+      native 'SceneHost_constructor';
 
-  /// Releases the resources associated with the child scene host.
+  /// Releases the resources associated with the SceneHost.
   ///
-  /// After calling this function, the child scene host cannot be used further.
+  /// After calling this function, the SceneHost cannot be used further.
   void dispose() native 'SceneHost_dispose';
 
   /// Set properties on the linked scene.  These properties include its bounds,
@@ -409,4 +402,8 @@ class SceneHost extends NativeFieldWrapperClass2 {
       double insetBottom,
       double insetLeft,
       bool focusable) native 'SceneHost_setProperties';
+
+  /// Set the opacity of the linked scene.  This opacity value is applied only
+  /// once, when the child scene is composited into our own.
+  void setOpacity(double opacity) native 'SceneHost_setOpacity';
 }

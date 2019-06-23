@@ -14,12 +14,17 @@
 
 #include "FlutterPlatformViews_Internal.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
+#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 
 namespace flutter {
 
 void FlutterPlatformViewsController::SetFlutterView(UIView* flutter_view) {
   flutter_view_.reset([flutter_view retain]);
+}
+
+void FlutterPlatformViewsController::SetFlutterViewController(
+    UIViewController* flutter_view_controller) {
+  flutter_view_controller_.reset([flutter_view_controller retain]);
 }
 
 void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult& result) {
@@ -39,7 +44,7 @@ void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, Flutt
 void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult& result) {
   if (!flutter_view_.get()) {
     // Right now we assume we have a reference to FlutterView when creating a new view.
-    // TODO(amirh): support this by setting the refernce to FlutterView when it becomes available.
+    // TODO(amirh): support this by setting the reference to FlutterView when it becomes available.
     // https://github.com/flutter/flutter/issues/23787
     result([FlutterError errorWithCode:@"create_failed"
                                message:@"can't create a view on a headless engine"
@@ -80,9 +85,9 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
                                                                 arguments:params];
   views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>>([embedded_view retain]);
 
-  FlutterTouchInterceptingView* touch_interceptor =
-      [[[FlutterTouchInterceptingView alloc] initWithEmbeddedView:embedded_view.view
-                                                      flutterView:flutter_view_] autorelease];
+  FlutterTouchInterceptingView* touch_interceptor = [[[FlutterTouchInterceptingView alloc]
+       initWithEmbeddedView:embedded_view.view
+      flutterViewController:flutter_view_controller_.get()] autorelease];
 
   touch_interceptors_[viewId] =
       fml::scoped_nsobject<FlutterTouchInterceptingView>([touch_interceptor retain]);
@@ -182,7 +187,14 @@ SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
     const flutter::EmbeddedViewParams& params) {
   // TODO(amirh): assert that this is running on the platform thread once we support the iOS
   // embedded views thread configuration.
-  // TODO(amirh): do nothing if the params didn't change.
+
+  // Do nothing if the params didn't change.
+  if (current_composition_params_.count(view_id) == 1 &&
+      current_composition_params_[view_id] == params) {
+    return picture_recorders_[view_id]->getRecordingCanvas();
+  }
+  current_composition_params_[view_id] = params;
+
   CGFloat screenScale = [[UIScreen mainScreen] scale];
   CGRect rect =
       CGRectMake(params.offsetPixels.x() / screenScale, params.offsetPixels.y() / screenScale,
@@ -204,6 +216,7 @@ void FlutterPlatformViewsController::Reset() {
   composition_order_.clear();
   active_composition_order_.clear();
   picture_recorders_.clear();
+  current_composition_params_.clear();
 }
 
 bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
@@ -283,6 +296,7 @@ void FlutterPlatformViewsController::DisposeViews() {
     views_.erase(viewId);
     touch_interceptors_.erase(viewId);
     overlays_.erase(viewId);
+    current_composition_params_.erase(viewId);
   }
   views_to_dispose_.clear();
 }
@@ -355,13 +369,15 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
 // as well. So during this phase as well the ForwardingGestureRecognizer dispatched the events
 // directly to the FlutterView.
 @interface ForwardingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
-- (instancetype)initWithTarget:(id)target flutterView:(UIView*)flutterView;
+- (instancetype)initWithTarget:(id)target
+         flutterViewController:(UIViewController*)flutterViewController;
 @end
 
 @implementation FlutterTouchInterceptingView {
   fml::scoped_nsobject<DelayingGestureRecognizer> _delayingRecognizer;
 }
-- (instancetype)initWithEmbeddedView:(UIView*)embeddedView flutterView:(UIView*)flutterView {
+- (instancetype)initWithEmbeddedView:(UIView*)embeddedView
+               flutterViewController:(UIViewController*)flutterViewController {
   self = [super initWithFrame:embeddedView.frame];
   if (self) {
     self.multipleTouchEnabled = YES;
@@ -372,7 +388,7 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
 
     ForwardingGestureRecognizer* forwardingRecognizer =
         [[[ForwardingGestureRecognizer alloc] initWithTarget:self
-                                                 flutterView:flutterView] autorelease];
+                                       flutterViewController:flutterViewController] autorelease];
 
     _delayingRecognizer.reset([[DelayingGestureRecognizer alloc]
               initWithTarget:self
@@ -446,35 +462,37 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
 @implementation ForwardingGestureRecognizer {
   // We can't dispatch events to the framework without this back pointer.
   // This is a weak reference, the ForwardingGestureRecognizer is owned by the
-  // FlutterTouchInterceptingView which is strong referenced only by the FlutterView.
+  // FlutterTouchInterceptingView which is strong referenced only by the FlutterView,
+  // which is strongly referenced by the FlutterViewController.
   // So this is safe as when FlutterView is deallocated the reference to ForwardingGestureRecognizer
   // will go away.
-  UIView* _flutterView;
+  UIViewController* _flutterViewController;
   // Counting the pointers that has started in one touch sequence.
   NSInteger _currentTouchPointersCount;
 }
 
-- (instancetype)initWithTarget:(id)target flutterView:(UIView*)flutterView {
+- (instancetype)initWithTarget:(id)target
+         flutterViewController:(UIViewController*)flutterViewController {
   self = [super initWithTarget:target action:nil];
   if (self) {
     self.delegate = self;
-    _flutterView = flutterView;
+    _flutterViewController = flutterViewController;
     _currentTouchPointersCount = 0;
   }
   return self;
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_flutterView touchesBegan:touches withEvent:event];
+  [_flutterViewController touchesBegan:touches withEvent:event];
   _currentTouchPointersCount += touches.count;
 }
 
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_flutterView touchesMoved:touches withEvent:event];
+  [_flutterViewController touchesMoved:touches withEvent:event];
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_flutterView touchesEnded:touches withEvent:event];
+  [_flutterViewController touchesEnded:touches withEvent:event];
   _currentTouchPointersCount -= touches.count;
   // Touches in one touch sequence are sent to the touchesEnded method separately if different
   // fingers stop touching the screen at different time. So one touchesEnded method triggering does
@@ -486,7 +504,7 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
-  [_flutterView touchesCancelled:touches withEvent:event];
+  [_flutterViewController touchesCancelled:touches withEvent:event];
   _currentTouchPointersCount = 0;
   self.state = UIGestureRecognizerStateFailed;
 }

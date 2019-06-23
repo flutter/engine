@@ -2,9 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/fuchsia/sdk.gni")
+import("$flutter_root/testing/testing.gni")
+
 source_set("fml") {
   sources = [
-    "arraysize.h",
     "base32.cc",
     "base32.h",
     "build_config.h",
@@ -14,6 +16,8 @@ source_set("fml") {
     "compiler_specific.h",
     "concurrent_message_loop.cc",
     "concurrent_message_loop.h",
+    "delayed_task.cc",
+    "delayed_task.h",
     "eintr_wrapper.h",
     "file.cc",
     "file.h",
@@ -42,9 +46,12 @@ source_set("fml") {
     "message_loop.h",
     "message_loop_impl.cc",
     "message_loop_impl.h",
+    "message_loop_task_queues.cc",
+    "message_loop_task_queues.h",
     "native_library.h",
     "paths.cc",
     "paths.h",
+    "size.h",
     "string_view.cc",
     "string_view.h",
     "synchronization/atomic_object.h",
@@ -70,6 +77,7 @@ source_set("fml") {
     "unique_fd.cc",
     "unique_fd.h",
     "unique_object.h",
+    "wakeable.h",
   ]
 
   public_deps = []
@@ -83,7 +91,10 @@ source_set("fml") {
 
   configs += [ "//third_party/icu:icu_config" ]
 
-  public_configs = [ "$flutter_root:config" ]
+  public_configs = [
+    "$flutter_root:config",
+    "$flutter_root/common:flutter_config",
+  ]
 
   libs = []
 
@@ -106,6 +117,8 @@ source_set("fml") {
       "platform/darwin/scoped_block.mm",
       "platform/darwin/scoped_nsobject.h",
       "platform/darwin/scoped_nsobject.mm",
+      "platform/darwin/string_range_sanitization.h",
+      "platform/darwin/string_range_sanitization.mm",
     ]
 
     libs += [ "Foundation.framework" ]
@@ -129,13 +142,10 @@ source_set("fml") {
   }
 
   if (is_android) {
-    # Don't filter away these Linux sources on Android.
-    set_sources_assignment_filter([])
     sources += [
       "platform/linux/timerfd.cc",
       "platform/linux/timerfd.h",
     ]
-    set_sources_assignment_filter(sources_assignment_filter)
   }
 
   if (is_linux) {
@@ -151,7 +161,9 @@ source_set("fml") {
   if (is_fuchsia) {
     sources += [ "platform/fuchsia/paths_fuchsia.cc" ]
 
-    public_deps += [ "//zircon/public/lib/trace" ]
+    if (!using_fuchsia_sdk) {
+      public_deps += [ "//zircon/public/lib/trace" ]
+    }
   }
 
   if (is_win) {
@@ -176,6 +188,10 @@ source_set("fml") {
   }
 }
 
+test_fixtures("fml_fixtures") {
+  fixtures = []
+}
+
 executable("fml_unittests") {
   testonly = true
 
@@ -185,9 +201,11 @@ executable("fml_unittests") {
     "file_unittest.cc",
     "memory/ref_counted_unittest.cc",
     "memory/weak_ptr_unittest.cc",
+    "message_loop_task_queues_unittests.cc",
     "message_loop_unittests.cc",
     "message_unittests.cc",
     "paths_unittests.cc",
+    "platform/darwin/string_range_sanitization_unittests.mm",
     "string_view_unittest.cc",
     "synchronization/count_down_latch_unittests.cc",
     "synchronization/semaphore_unittest.cc",
@@ -201,8 +219,23 @@ executable("fml_unittests") {
   ]
 
   deps = [
+    ":fml_fixtures",
     "$flutter_root/fml",
     "$flutter_root/testing",
     "//third_party/dart/runtime:libdart_jit",
+  ]
+}
+
+executable("fml_benchmarks") {
+  testonly = true
+
+  sources = [
+    "message_loop_task_queues_benchmark.cc",
+  ]
+
+  deps = [
+    "$flutter_root/benchmarking",
+    "$flutter_root/fml",
+    "$flutter_root/runtime:libdart",
   ]
 }

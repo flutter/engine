@@ -12,14 +12,21 @@ namespace flutter {
 const SkScalar kLightHeight = 600;
 const SkScalar kLightRadius = 800;
 
-PhysicalShapeLayer::PhysicalShapeLayer(Clip clip_behavior)
-    : isRect_(false), clip_behavior_(clip_behavior) {}
-
-PhysicalShapeLayer::~PhysicalShapeLayer() = default;
-
-void PhysicalShapeLayer::set_path(const SkPath& path) {
-  path_ = path;
-  isRect_ = false;
+PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
+                                       SkColor shadow_color,
+                                       SkScalar device_pixel_ratio,
+                                       float viewport_depth,
+                                       float elevation,
+                                       const SkPath& path,
+                                       Clip clip_behavior)
+    : color_(color),
+      shadow_color_(shadow_color),
+      device_pixel_ratio_(device_pixel_ratio),
+      viewport_depth_(viewport_depth),
+      elevation_(elevation),
+      path_(path),
+      isRect_(false),
+      clip_behavior_(clip_behavior) {
   SkRect rect;
   if (path.isRect(&rect)) {
     isRect_ = true;
@@ -41,12 +48,15 @@ void PhysicalShapeLayer::set_path(const SkPath& path) {
   }
 }
 
+PhysicalShapeLayer::~PhysicalShapeLayer() = default;
+
 void PhysicalShapeLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
   context->total_elevation += elevation_;
   total_elevation_ = context->total_elevation;
   SkRect child_paint_bounds;
   PrerollChildren(context, matrix, &child_paint_bounds);
+  context->total_elevation -= elevation_;
 
   if (elevation_ == 0) {
     set_paint_bounds(path_.getBounds());
@@ -109,7 +119,7 @@ void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
   // Retained rendering: speedup by reusing a retained entity node if possible.
   // When an entity node is reused, no paint layer is added to the frame so we
   // won't call PhysicalShapeLayer::Paint.
-  LayerRasterCacheKey key(this, context.Matrix());
+  LayerRasterCacheKey key(unique_id(), context.Matrix());
   if (context.HasRetainedNode(key)) {
     const scenic::EntityNode& retained_node = context.GetRetainedNode(key);
     FML_DCHECK(context.top_entity());

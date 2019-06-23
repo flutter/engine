@@ -19,6 +19,11 @@ LayerTree::LayerTree()
 
 LayerTree::~LayerTree() = default;
 
+void LayerTree::RecordBuildTime(fml::TimePoint start) {
+  build_start_ = start;
+  build_finish_ = fml::TimePoint::Now();
+}
+
 void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
                         bool ignore_raster_cache) {
   TRACE_EVENT0("flutter", "LayerTree::Preroll");
@@ -32,8 +37,8 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       frame.view_embedder(),
       color_space,
       kGiantRect,
-      frame.context().frame_time(),
-      frame.context().engine_time(),
+      frame.context().raster_time(),
+      frame.context().ui_time(),
       frame.context().texture_registry(),
       checkerboard_offscreen_layers_};
 
@@ -83,8 +88,8 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       frame.canvas(),
       frame.gr_context(),
       frame.view_embedder(),
-      frame.context().frame_time(),
-      frame.context().engine_time(),
+      frame.context().raster_time(),
+      frame.context().ui_time(),
       frame.context().texture_registry(),
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
       checkerboard_offscreen_layers_};

@@ -19,6 +19,8 @@ class ParagraphImpl {
 
   virtual double height() = 0;
 
+  virtual double longestLine() = 0;
+
   virtual double minIntrinsicWidth() = 0;
 
   virtual double maxIntrinsicWidth() = 0;
@@ -38,6 +40,8 @@ class ParagraphImpl {
       unsigned end,
       txt::Paragraph::RectHeightStyle rect_height_style,
       txt::Paragraph::RectWidthStyle rect_width_style) = 0;
+
+  virtual std::vector<TextBox> getRectsForPlaceholders() = 0;
 
   virtual Dart_Handle getPositionForOffset(double dx, double dy) = 0;
 

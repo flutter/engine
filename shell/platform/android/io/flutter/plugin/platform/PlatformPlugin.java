@@ -94,6 +94,15 @@ public class PlatformPlugin implements ActivityLifecycleListener {
         mEnabledOverlays = DEFAULT_SYSTEM_UI;
     }
 
+    /**
+     * Releases all resources held by this {@code PlatformPlugin}.
+     * <p>
+     * Do not invoke any methods on a {@code PlatformPlugin} after invoking this method.
+     */
+    public void destroy() {
+        this.platformChannel.setPlatformMessageHandler(null);
+    }
+
     private void playSystemSound(PlatformChannel.SoundType soundType) {
         if (soundType == PlatformChannel.SoundType.CLICK) {
             View view = activity.getWindow().getDecorView();
@@ -225,7 +234,7 @@ public class PlatformPlugin implements ActivityLifecycleListener {
             }
         }
         if (systemChromeStyle.systemNavigationBarDividerColor != null) {
-            // Not availible until Android P.
+            // Not available until Android P.
             // window.setNavigationBarDividerColor(systemNavigationBarDividerColor);
         }
         view.setSystemUiVisibility(flags);

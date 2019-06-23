@@ -4,7 +4,7 @@
 
 assert(is_mac || is_ios)
 
-import("framework_shared.gni")
+import("$flutter_root/testing/testing.gni")
 
 group("darwin") {
   if (is_ios) {
@@ -20,20 +20,18 @@ group("darwin") {
 }
 
 source_set("flutter_channels") {
-  set_sources_assignment_filter([])
   sources = [
     "common/buffer_conversions.h",
     "common/buffer_conversions.mm",
-    "ios/framework/Headers/FlutterBinaryMessenger.h",
-    "ios/framework/Headers/FlutterChannels.h",
-    "ios/framework/Headers/FlutterCodecs.h",
-    "ios/framework/Headers/FlutterMacros.h",
-    "ios/framework/Source/FlutterChannels.mm",
-    "ios/framework/Source/FlutterCodecs.mm",
-    "ios/framework/Source/FlutterStandardCodec.mm",
-    "ios/framework/Source/FlutterStandardCodec_Internal.h",
+    "common/framework/Headers/FlutterBinaryMessenger.h",
+    "common/framework/Headers/FlutterChannels.h",
+    "common/framework/Headers/FlutterCodecs.h",
+    "common/framework/Headers/FlutterMacros.h",
+    "common/framework/Source/FlutterChannels.mm",
+    "common/framework/Source/FlutterCodecs.mm",
+    "common/framework/Source/FlutterStandardCodec.mm",
+    "common/framework/Source/FlutterStandardCodec_Internal.h",
   ]
-  set_sources_assignment_filter(sources_assignment_filter)
 
   deps = [
     "$flutter_root/common",
@@ -47,36 +45,21 @@ source_set("flutter_channels") {
   public_configs = [ "$flutter_root:config" ]
 }
 
-# Framework code shared between iOS and macOS.
-source_set("framework_shared") {
-  set_sources_assignment_filter([])
-  sources = [
-    "ios/framework/Source/FlutterChannels.mm",
-    "ios/framework/Source/FlutterCodecs.mm",
-    "ios/framework/Source/FlutterStandardCodec.mm",
-    "ios/framework/Source/FlutterStandardCodec_Internal.h",
-  ]
-
-  public = framework_shared_headers
-  set_sources_assignment_filter(sources_assignment_filter)
-
-  defines = [ "FLUTTER_FRAMEWORK" ]
-
-  public_configs = [ "$flutter_root:config" ]
+test_fixtures("flutter_channels_fixtures") {
+  fixtures = []
 }
 
 executable("flutter_channels_unittests") {
   testonly = true
 
-  set_sources_assignment_filter([])
   sources = [
-    "ios/framework/Source/flutter_codecs_unittest.mm",
-    "ios/framework/Source/flutter_standard_codec_unittest.mm",
+    "common/framework/Source/flutter_codecs_unittest.mm",
+    "common/framework/Source/flutter_standard_codec_unittest.mm",
   ]
-  set_sources_assignment_filter(sources_assignment_filter)
 
   deps = [
     ":flutter_channels",
+    ":flutter_channels_fixtures",
     "$flutter_root/testing",
     "//third_party/dart/runtime:libdart_jit",
   ]

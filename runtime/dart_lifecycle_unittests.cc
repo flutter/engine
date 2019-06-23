@@ -51,16 +51,18 @@ static std::shared_ptr<DartIsolate> CreateAndRunRootIsolate(
   TaskRunners runners("io.flutter.test", task_runner, task_runner, task_runner,
                       task_runner);
   auto isolate_weak = DartIsolate::CreateRootIsolate(
-      vm.GetSettings(),         // settings
-      vm.GetIsolateSnapshot(),  // isolate_snapshot
-      vm.GetSharedSnapshot(),   // shared_snapshot
-      runners,                  // task_runners
-      {},                       // window
-      {},                       // snapshot_delegate
-      {},                       // io_manager
-      "main.dart",              // advisory_script_uri
-      entrypoint.c_str(),       // advisory_script_entrypoint
-      nullptr                   // flags
+      vm.GetSettings(),                   // settings
+      vm.GetIsolateSnapshot(),            // isolate_snapshot
+      vm.GetSharedSnapshot(),             // shared_snapshot
+      runners,                            // task_runners
+      {},                                 // window
+      {},                                 // snapshot_delegate
+      {},                                 // io_manager
+      "main.dart",                        // advisory_script_uri
+      entrypoint.c_str(),                 // advisory_script_entrypoint
+      nullptr,                            // flags
+      settings.isolate_create_callback,   // isolate create callback
+      settings.isolate_shutdown_callback  // isolate shutdown callback
   );
 
   auto isolate = isolate_weak.lock();
@@ -90,7 +92,7 @@ static std::shared_ptr<DartIsolate> CreateAndRunRootIsolate(
     return nullptr;
   }
 
-  if (!isolate->Run(entrypoint, settings.root_isolate_create_callback)) {
+  if (!isolate->Run(entrypoint, {}, settings.root_isolate_create_callback)) {
     FML_LOG(ERROR) << "Could not run entrypoint: " << entrypoint << ".";
     return nullptr;
   }
