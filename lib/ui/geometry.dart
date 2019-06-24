@@ -1416,11 +1416,15 @@ class RRect {
     return min;
   }
 
-  // Scales all radii so that on each side their sum will not pass the size of
-  // the width/height.
-  //
-  // Inspired from:
-  //   https://github.com/google/skia/blob/master/src/core/SkRRect.cpp#L164
+  /// Scales all radii so that on each side their sum will not pass the size of
+  /// the width/height.
+  ///
+  /// This is how Skia currently handles RRects with radii that are too large.
+  /// Therefore, this method is only needed for custom RRect implementations
+  /// that require the appropriately scaled radii values.
+  ///
+  /// See the [Skia scaling implementation](https://github.com/google/skia/blob/master/src/core/SkRRect.cpp)
+  /// for more details.
   RRect scaleRadii() {
     double scale = 1.0;
     scale = _getMin(scale, blRadiusY, tlRadiusY, height);
