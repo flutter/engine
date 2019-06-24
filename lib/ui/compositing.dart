@@ -119,27 +119,27 @@ class ColorFilterEngineLayer extends _EngineLayerWrapper {
 }
 
 /// An opaque handle to a backdrop filter engine layer.
-/// 
+///
 /// Instances of this class are created by [SceneBuilder.pushBackdropFilter].
-/// 
+///
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 class BackdropFilterEngineLayer extends _EngineLayerWrapper {
   BackdropFilterEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
 }
 
 /// An opaque handle to a shader mask engine layer.
-/// 
+///
 /// Instances of this class are created by [SceneBuilder.pushShaderMask].
-/// 
+///
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 class ShaderMaskEngineLayer extends _EngineLayerWrapper {
   ShaderMaskEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
 }
 
 /// An opaque handle to a physical shape engine layer.
-/// 
+///
 /// Instances of this class are created by [SceneBuilder.pushPhysicalShape].
-/// 
+///
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 class PhysicalShapeEngineLayer extends _EngineLayerWrapper {
   PhysicalShapeEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
@@ -185,7 +185,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Pushes a transform operation onto the operation stack.
   ///
   /// The objects are transformed by the given matrix before rasterization.
-  /// 
+  ///
   /// {@template dart.ui.sceneBuilder.oldLayer}
   /// If `oldLayer` is not null the engine will attempt to reuse the resources
   /// allocated for the old layer when rendering the new layer. This is purely
@@ -203,7 +203,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Pushes an offset operation onto the operation stack.
   ///
   /// This is equivalent to [pushTransform] with a matrix with only translation.
-  /// 
+  ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack.
@@ -216,7 +216,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Pushes a rectangular clip operation onto the operation stack.
   ///
   /// Rasterization outside the given rectangle is discarded.
-  /// 
+  ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
@@ -236,7 +236,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
   ///
   /// Rasterization outside the given rounded rectangle is discarded.
-  /// 
+  ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
@@ -252,7 +252,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Pushes a path clip operation onto the operation stack.
   ///
   /// Rasterization outside the given path is discarded.
-  /// 
+  ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack. See [Clip] for different clip modes.
@@ -271,7 +271,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// rasterization. An alpha value of 0 makes the objects entirely invisible.
   /// An alpha value of 255 has no effect (i.e., the objects retain the current
   /// opacity).
-  /// 
+  ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack.
@@ -285,7 +285,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The given color is applied to the objects' rasterization using the given
   /// blend mode.
-  /// 
+  ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack.
@@ -299,7 +299,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The given filter is applied to the current contents of the scene prior to
   /// rasterizing the given objects.
-  /// 
+  ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack.
@@ -313,7 +313,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The given shader is applied to the object's rasterization in the given
   /// rectangle using the given blend mode.
-  /// 
+  ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack.
@@ -343,7 +343,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// If [elevation] is greater than 0.0, then a shadow is drawn around the layer.
   /// [shadowColor] defines the color of the shadow if present and [color] defines the
   /// color of the layer background.
-  /// 
+  ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
