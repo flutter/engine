@@ -537,7 +537,9 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
 - (CGRect)firstRectForRange:(UITextRange*)range {
   // TODO(cbracken) Implement.
-  [_textInputDelegate showAutocorrectionPromptWithClient:_textInputClient];
+  NSUInteger start = ((FlutterTextPosition*)range.start).index;
+  NSUInteger end = ((FlutterTextPosition*)range.end).index;
+  [_textInputDelegate showPromptRectForStart:start end:end withClient:_textInputClient];
   return CGRectZero;
 }
 

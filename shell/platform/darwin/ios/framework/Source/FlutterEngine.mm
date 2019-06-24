@@ -490,9 +490,13 @@
                               arguments:@[ @(client), actionString ]];
 }
 
+- (void)showPromptRectForStart:(NSUInteger)start end:(NSUInteger)end withClient:(int)client {
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.showPromptRect"
+                              arguments:@[@(client), @(start), @(end)]];
+}
+
 - (void)showAutocorrectionPromptWithClient:(int)client {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.showAutocorrectionPrompt"
-                              arguments:@[@(client)]];
+
 }
 
 #pragma mark - Screenshot Delegate
