@@ -16,8 +16,7 @@ static constexpr char kScanCodeKey[] = "scanCode";
 static constexpr char kModifiersKey[] = "modifiers";
 static constexpr char kTypeKey[] = "type";
 static constexpr char kToolkitKey[] = "toolkit";
-static constexpr char kCharactersIgnoringModifiersKey[] =
-    "charactersIgnoringModifiers";
+static constexpr char kCodePoint[] = "codePoint";
 
 static constexpr char kLinuxKeyMap[] = "linux";
 static constexpr char kGLFWKey[] = "glfw";
@@ -59,8 +58,7 @@ void KeyEventHandler::KeyboardHook(GLFWwindow* window,
   // value. See: https://github.com/glfw/glfw/issues/1462
   const char* keyName = glfwGetKeyName(key, scancode);
   if (keyName != nullptr) {
-    event.AddMember(kCharactersIgnoringModifiersKey, std::string(keyName),
-                    allocator);
+    event.AddMember(kCodePoint, std::string(keyName), allocator);
   }
 
   switch (action) {
