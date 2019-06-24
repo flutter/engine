@@ -1419,7 +1419,7 @@ class RRect {
   /// Scales all radii so that on each side their sum will not pass the size of
   /// the width/height.
   ///
-  /// This is how Skia currently handles RRects with radii that are too large.
+  /// Skia already handles RRects with radii that are too large in this way.
   /// Therefore, this method is only needed for custom RRect implementations
   /// that require the appropriately scaled radii values.
   ///
