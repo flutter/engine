@@ -15,9 +15,8 @@ import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Handler;
-import android.provider.Settings;
-import android.support.annotation.NonNull;
 import android.os.LocaleList;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.annotation.UiThread;
 import android.text.format.DateFormat;
@@ -30,9 +29,9 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import io.flutter.app.FlutterPluginRegistry;
-import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.android.AndroidTouchProcessor;
+import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
@@ -399,8 +398,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
     @Override
     public boolean checkInputConnectionProxy(View view) {
-        PlatformViewsController platformViewsController = mNativeView.getPluginRegistry().getPlatformViewsController();
-        return platformViewsController.isPlatformView(view);
+        return mNativeView.getPluginRegistry().getPlatformViewsController().checkInputConnectionProxy(view);
     }
 
     @Override
@@ -652,11 +650,6 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
                 mMetrics.physicalHeight, mMetrics.physicalPaddingTop, mMetrics.physicalPaddingRight,
                 mMetrics.physicalPaddingBottom, mMetrics.physicalPaddingLeft, mMetrics.physicalViewInsetTop,
                 mMetrics.physicalViewInsetRight, mMetrics.physicalViewInsetBottom, mMetrics.physicalViewInsetLeft);
-
-        WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
-        float fps = wm.getDefaultDisplay().getRefreshRate();
-        VsyncWaiter.refreshPeriodNanos = (long) (1000000000.0 / fps);
-        VsyncWaiter.refreshRateFPS = fps;
     }
 
     // Called by native to update the semantics/accessibility tree.

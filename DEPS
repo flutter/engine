@@ -24,7 +24,9 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '4918bbcbfd5444919b4f11c3fa3d4422cf3b1236',
+  # OCMock is for testing only so there is no google clone
+  'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
+  'skia_revision': 'd8f79a27b06b5bce7a27f89ce2d43d39f8c058dc',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -99,6 +101,8 @@ vars = {
   'dart_watcher_rev': '0.9.7+12',
   'dart_web_socket_channel_tag': '1.0.9',
   'dart_yaml_tag': '2.1.15',
+
+  'ocmock_tag': 'v3.4.3',
 
   # Build bot tooling for iOS
   'ios_tools_revision': '69b7c1b160e7107a6a98d948363772dc9caea46f',
@@ -376,6 +380,9 @@ deps = {
   'src/third_party/skia':
    Var('skia_git') + '/skia.git' + '@' +  Var('skia_revision'),
 
+  'src/third_party/ocmock':
+   Var('ocmock_git') + '@' +  Var('ocmock_tag'),
+
   'src/third_party/libjpeg-turbo':
    Var('fuchsia_git') + '/third_party/libjpeg-turbo' + '@' + '0fb821f3b2e570b2783a94ccd9a2fb1f4916ae9f',
 
@@ -483,7 +490,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/clang/mac-amd64',
-        'version': 'BzmZEP9A83NSNSqnrff3k0tYJK7UXs0pknphn-quiZwC'
+        'version': 'Lc64-GTi4kihzkCnW8Vaa80TWTnMpZY0Fy6AqChmqvcC'
        }
      ],
      'condition': 'host_os == "mac"',
@@ -503,7 +510,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/clang/linux-amd64',
-        'version': 'dV3r0yk4WXi1C-QwjzNUA-pIkHCG3COYnrlt80GFacYC'
+        'version': 'oEsFSe99FkcDKVxZkAY0MKi6C-yYOan1m-QL45N33W8C'
        }
      ],
      'condition': 'host_os == "linux"',
