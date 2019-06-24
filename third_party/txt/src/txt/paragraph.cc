@@ -1342,8 +1342,8 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
       double mid_x = remaining / 2;
       double mid_y = (wave_count % 2 != 0 ? -1 : 1) * quarter
         * (normalized_remaining * normalized_remaining / 2 - normalized_remaining);
-      double control_x = 2 * mid_x - 0.5 * end_x;
-      double control_y = 2 * mid_y - 0.5 * end_y;
+      double control_x = 2 * mid_x - end_x / 2;
+      double control_y = 2 * mid_y - end_y / 2;
       path.rQuadTo(control_x, control_y, end_x, end_y);
       break;
     }
