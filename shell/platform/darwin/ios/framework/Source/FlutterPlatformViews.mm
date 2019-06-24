@@ -183,8 +183,7 @@ std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
   return canvases;
 }
 
-int FlutterPlatformViewsController::GetNumberOfClips(const MutatorsStack& mutators_stack) {
-  // Apply transforms/clips.
+int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_stack) {
   std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.bottom();
   int clipCount = 0;
   while (iter != mutators_stack.top()) {
@@ -197,33 +196,34 @@ int FlutterPlatformViewsController::GetNumberOfClips(const MutatorsStack& mutato
 }
 
 UIView* FlutterPlatformViewsController::ReconstructClipViewsChain(int number_of_clips,
-                                                                  UIView* child,
-                                                                  UIView* parent) {
-  NSInteger index = -1;
-  if (parent.superview) {
-    // TODO(cyanglaz): protentially cache the index of oldPlatformViewRoot to make this a O(1).
-    index = [flutter_view_.get().subviews indexOfObject:parent];
-    [parent removeFromSuperview];
+                                                                  UIView* platform_view,
+                                                                  UIView* head_clip_view) {
+  NSInteger indexInFlutterView = -1;
+  if (head_clip_view.superview) {
+    // TODO(cyanglaz): potentially cache the index of oldPlatformViewRoot to make this a O(1).
+    // https://github.com/flutter/flutter/issues/35023
+    indexInFlutterView = [flutter_view_.get().subviews indexOfObject:head_clip_view];
+    [head_clip_view removeFromSuperview];
   }
-  UIView* head = child;
-  BOOL needAddNewView = NO;
-  for (int i = 0; i < number_of_clips; i++) {
-    if (head == parent) {
-      needAddNewView = YES;
-    }
-    if (needAddNewView) {
-      ChildClippingView* clippingView = [ChildClippingView new];
-      [clippingView addSubview:head];
-      head = clippingView;
-    } else {
-      head = head.superview;
-    }
+  UIView* head = platform_view;
+  int clipIndex = 0;
+  // Re-use as much existing clip views as needed.
+  while (head != head_clip_view && clipIndex < number_of_clips) {
+    head = head.superview;
+    clipIndex++;
   }
-  if (!needAddNewView && head != parent) {
-    [head removeFromSuperview];
+  // If there were not enough existing clip views, add more.
+  while (clipIndex < number_of_clips) {
+    ChildClippingView* clippingView = [ChildClippingView new];
+    [clippingView addSubview:head];
+    head = clippingView;
+    clipIndex++;
   }
-  if (index > -1) {
-    [flutter_view_.get() insertSubview:head atIndex:index];
+  [head removeFromSuperview];
+
+  if (indexInFlutterView > -1) {
+    // The chain was previously attached; attach it to the same position.
+    [flutter_view_.get() insertSubview:head atIndex:indexInFlutterView];
   }
   return head;
 }
@@ -246,12 +246,12 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
       case clip_rect:
       case clip_rrect:
       case clip_path: {
-        UIView* clipView = head.superview;
+        ChildClippingView* clipView = (ChildClippingView*)head.superview;
         clipView.layer.transform = CATransform3DIdentity;
-        [(ChildClippingView*)clipView setClip:(*iter)->type()
-                                         rect:(*iter)->rect()
-                                        rrect:(*iter)->rrect()
-                                         path:(*iter)->path()];
+        [clipView setClip:(*iter)->type()
+                     rect:(*iter)->rect()
+                    rrect:(*iter)->rrect()
+                     path:(*iter)->path()];
         head.clipsToBounds = YES;
         ResetAnchor(clipView.layer);
         head = clipView;
@@ -280,7 +280,7 @@ void FlutterPlatformViewsController::CompositeWithParams(
   UIView* touchInterceptor = touch_interceptors_[view_id].get();
   touchInterceptor.frame = frame;
 
-  int currentClippingCount = GetNumberOfClips(params.mutatorsStack);
+  int currentClippingCount = CountClips(params.mutatorsStack);
   int previousClippingCount = clip_count_[view_id];
   if (currentClippingCount != previousClippingCount) {
     clip_count_[view_id] = currentClippingCount;
@@ -360,7 +360,7 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
     // `FlutterView`.
     UIView* platform_view_root = root_views_[view_id].get();
     UIView* overlay = overlays_[view_id]->overlay_view;
-    FML_CHECK(intercepter.superview == overlay.superview);
+    FML_CHECK(platform_view_root.superview == overlay.superview);
 
     if (platform_view_root.superview == flutter_view) {
       [flutter_view bringSubviewToFront:platform_view_root];

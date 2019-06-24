@@ -153,15 +153,23 @@ class FlutterPlatformViewsController {
                                   std::shared_ptr<IOSGLContext> gl_context,
                                   GrContext* gr_context);
   // Traverse the `mutators_stack` and return the number of clip operations.
-  int GetNumberOfClips(const MutatorsStack& mutators_stack);
+  int CountClips(const MutatorsStack& mutators_stack);
 
-  // Removes extra views or add more `ChildClippingView` to ensure there are `number_of_clips`
-  // numbers of UIViews between the `child` and the `parent` including the `parent`. Returns the new
-  // parent after reconsturcting. If the returning parent is not the same as child, it will be an
-  // instance of `ChildClippingView`.
-  UIView* ReconstructClipViewsChain(int number_of_clips, UIView* child, UIView* parent);
+  // Make sure that platform_view has exactly clip_count ChildClippingView ancestors.
+  //
+  // Existing ChildClippingViews are re-used. If there are currently more ChildClippingView
+  // ancestors than needed, the extra views are detached. If there are less ChildClippingView
+  // ancestors than needed, new ChildClippingViews will be added.
+  //
+  // If head_clip_view was attached as a subview to FlutterView, the head of the newly constructed
+  // ChildClippingViews chain is attached to FlutterView in the same position.
+  //
+  // Returns the new head of the clip views chain.
+  UIView* ReconstructClipViewsChain(int number_of_clips,
+                                    UIView* platform_view,
+                                    UIView* head_clip_view);
 
-  // Apply mutators in the mutators_stack to the UIView chain that was constructed by
+  // Applies the mutators in the mutators_stack to the UIView chain that was constructed by
   // `ReconstructClipViewsChain`
   //
   // Clips are applied to the super view with a CALayer mask. Transforms are applied to the current
@@ -177,7 +185,6 @@ class FlutterPlatformViewsController {
   // After each clip operation, we update the head to the super view of the current head.
   void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
 
-  // Composite the platform view with the passed in `params`.
   void CompositeWithParams(int view_id, const flutter::EmbeddedViewParams& params);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
