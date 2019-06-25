@@ -113,14 +113,13 @@ class Mutator {
 // For example consider the following stack: [T1, T2, T3], where T1 is the top
 // of the stack and T3 is the bottom of the stack. Applying this mutators stack
 // to a platform view P1 will result in T1(T2(T2(P1))).
-class MutatorsStack {
+class MutatorsStack {//clip path
  public:
   MutatorsStack() = default;
 
   void pushClipRect(const SkRect& rect);
   void pushClipRRect(const SkRRect& rrect);
   void pushClipPath(const SkPath& path);
-
   void pushTransform(const SkMatrix& matrix);
 
   // Removes the `Mutator` on the top of the stack
