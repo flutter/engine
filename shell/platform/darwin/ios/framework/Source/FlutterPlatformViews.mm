@@ -202,9 +202,8 @@ UIView* FlutterPlatformViewsController::ReconstructClipViewsChain(int number_of_
                                                                   UIView* head_clip_view, int64_t view_id) {
   NSInteger indexInFlutterView = -1;
   if (head_clip_view.superview) {
-    // TODO(cyanglaz): potentially cache the index of oldPlatformViewRoot to make this a O(1).
-    // https://github.com/flutter/flutter/issues/35023
-    indexInFlutterView = root_views_indices_[view_id]
+    indexInFlutterView = root_views_indices_[view_id];
+    NSLog(@"index reset %@", @(indexInFlutterView));
     [head_clip_view removeFromSuperview];
   }
   UIView* head = platform_view;
@@ -284,13 +283,16 @@ void FlutterPlatformViewsController::CompositeWithParams(
 
   int currentClippingCount = CountClips(params.mutatorsStack);
   int previousClippingCount = clip_count_[view_id];
+  NSLog(@"previousClippingCount %d", previousClippingCount);
+  NSLog(@"currentClippingCount  %d", currentClippingCount);
+
   if (currentClippingCount != previousClippingCount) {
     clip_count_[view_id] = currentClippingCount;
     // If we have a different clipping count in this frame, we need to reconstruct the
     // ClippingChildView chain to prepare for `ApplyMutators`.
     UIView* oldPlatformViewRoot = root_views_[view_id].get();
     UIView* newPlatformViewRoot =
-        ReconstructClipViewsChain(currentClippingCount, touchInterceptor, oldPlatformViewRoot);
+        ReconstructClipViewsChain(currentClippingCount, touchInterceptor, oldPlatformViewRoot, view_id);
     root_views_[view_id] = fml::scoped_nsobject<UIView>([newPlatformViewRoot retain]);
   }
   ApplyMutators(params.mutatorsStack, touchInterceptor);
