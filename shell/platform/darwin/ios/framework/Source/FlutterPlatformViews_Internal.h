@@ -37,10 +37,11 @@
 - (void)setClip:(flutter::MutatorType)type
            rect:(const SkRect&)rect
           rrect:(const SkRRect&)rrect
+           path:(const SkPath&)path;
 
-    @end
+@end
 
-    namespace flutter {
+namespace flutter {
   // Converts a SkMatrix to CATransform3D.
   // Certain fields are ignored in CATransform3D since SkMatrix is 3x3 and CATransform3D is 4x4.
   CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix);
