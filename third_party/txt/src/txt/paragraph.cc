@@ -1319,39 +1319,6 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
       ComputeWavyDecoration(
           path, x, y, width,
           underline_thickness * record.style().decoration_thickness_multiplier);
-      // int wave_count = 0;
-      // double x_start = 0;
-      // double quarter =
-      //     underline_thickness *
-      //     record.style().decoration_thickness_multiplier;
-      // path.moveTo(x, y);
-      // double remaining = width;
-      // while (x_start + quarter * 2 < width) {
-      //   path.rQuadTo(quarter, wave_count % 2 == 0 ? -quarter : quarter,
-      //                quarter * 2, 0);
-      //   remaining = width - (x_start + quarter * 2);
-      //   x_start += quarter * 2;
-      //   ++wave_count;
-      // }
-      // // Manually add a final partial quad for the remaining width that do
-      // // not fit nicely into a half-wavelength.
-      // // The following math is based off of quadratic bezier equations:
-      // //   Let P0 = start (0,0), P1 = control point, P2 = end, and P(x) be
-      // the equation for the curve.
-      // //   P(x) = -2x^2 - 2x
-      // //   P1 = 2P(0.5) - 0.5 * P0 - 0.5 * P2
-      // double normalized_remaining = remaining / (quarter * 2);
-      // double end_x = remaining;
-      // double end_y = (wave_count % 2 != 0 ? -1 : 1) * quarter
-      //   * (2 * normalized_remaining * normalized_remaining - 2 *
-      //   normalized_remaining);
-      // double mid_x = remaining / 2;
-      // double mid_y = (wave_count % 2 != 0 ? -1 : 1) * quarter
-      //   * (normalized_remaining * normalized_remaining / 2 -
-      //   normalized_remaining);
-      // double control_x = 2 * mid_x - end_x / 2;
-      // double control_y = 2 * mid_y - end_y / 2;
-      // path.rQuadTo(control_x, control_y, end_x, end_y);
       break;
     }
   }
