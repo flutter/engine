@@ -203,7 +203,7 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
                                    canvas,
                                    frame.gr_context(),
                                    nullptr,
-                                   stack
+                                   stack,
                                    frame.context().raster_time(),
                                    frame.context().ui_time(),
                                    frame.context().texture_registry(),
