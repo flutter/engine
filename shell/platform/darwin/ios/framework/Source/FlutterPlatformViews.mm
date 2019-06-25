@@ -215,7 +215,7 @@ UIView* FlutterPlatformViewsController::ReconstructClipViewsChain(int number_of_
   }
   // If there were not enough existing clip views, add more.
   while (clipIndex < number_of_clips) {
-    ChildClippingView* clippingView = [ChildClippingView new];
+    ChildClippingView* clippingView = [[ChildClippingView alloc] initWithFrame: flutter_view_.get().frame];
     [clippingView addSubview:head];
     head = clippingView;
     clipIndex++;
@@ -288,6 +288,7 @@ void FlutterPlatformViewsController::CompositeWithParams(
 
   if (currentClippingCount != previousClippingCount) {
     clip_count_[view_id] = currentClippingCount;
+    NSLog(@"clip count resetted");
     // If we have a different clipping count in this frame, we need to reconstruct the
     // ClippingChildView chain to prepare for `ApplyMutators`.
     UIView* oldPlatformViewRoot = root_views_[view_id].get();
@@ -327,6 +328,7 @@ void FlutterPlatformViewsController::Reset() {
   picture_recorders_.clear();
   current_composition_params_.clear();
   clip_count_.clear();
+  NSLog(@"cleared");
 }
 
 bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
@@ -417,6 +419,7 @@ void FlutterPlatformViewsController::DisposeViews() {
     overlays_.erase(viewId);
     current_composition_params_.erase(viewId);
     clip_count_.erase(viewId);
+    NSLog(@"disposed");
   }
   views_to_dispose_.clear();
 }
