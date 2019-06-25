@@ -14,7 +14,7 @@
 
 #include "FlutterPlatformViews_Internal.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
+#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 
 namespace flutter {
 
@@ -183,37 +183,59 @@ std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
   return canvases;
 }
 
-// Builds a chain of UIViews that applies the mutations described by mutatorsStack.
-//
-// Clips are applied by adding a super view with a CALayer mask. Transforms are applied to the
-// view that's at the head of the chain. For example the following mutators stack [T_1, C_2, T_3,
-// T_4, C_5, T_6] where T denotes a transform and C denotes a clip, will result in the following
-// UIView tree:
-//
-// C_2 -> C_5 -> PLATFORM_VIEW
-// (PLATFORM_VIEW is a subview of C_5 which is a subview of C_2)
-//
-// T_1 is applied to C_2, T_3 and T_4 are applied to C_5, and T_6 is applied to PLATFORM_VIEW.
-//
-// UIView instances used for clip mutations are re-used when possible.
-// For example if the mutators stack above is updated to [T_1, C_7, T_3, T_4, C_8, T_9], we do not
-// remove the previous superviews and re-create new views. Instead, we reuse the superviews that
-// were used to perform clips in the previous example and perform the new clips on the same views.
-//
-// Returns the UIView that's at the top of the generated chain(C_2 for the example above).
-UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
-                                                      UIView* embedded_view,
-                                                      int view_id) {
+int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_stack) {
+  std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.bottom();
+  int clipCount = 0;
+  while (iter != mutators_stack.top()) {
+    if ((*iter)->isClipType()) {
+      clipCount++;
+    }
+    ++iter;
+  }
+  return clipCount;
+}
+
+UIView* FlutterPlatformViewsController::ReconstructClipViewsChain(int number_of_clips,
+                                                                  UIView* platform_view,
+                                                                  UIView* head_clip_view) {
+  NSInteger indexInFlutterView = -1;
+  if (head_clip_view.superview) {
+    // TODO(cyanglaz): potentially cache the index of oldPlatformViewRoot to make this a O(1).
+    // https://github.com/flutter/flutter/issues/35023
+    indexInFlutterView = [flutter_view_.get().subviews indexOfObject:head_clip_view];
+    [head_clip_view removeFromSuperview];
+  }
+  UIView* head = platform_view;
+  int clipIndex = 0;
+  // Re-use as much existing clip views as needed.
+  while (head != head_clip_view && clipIndex < number_of_clips) {
+    head = head.superview;
+    clipIndex++;
+  }
+  // If there were not enough existing clip views, add more.
+  while (clipIndex < number_of_clips) {
+    ChildClippingView* clippingView = [ChildClippingView new];
+    [clippingView addSubview:head];
+    head = clippingView;
+    clipIndex++;
+  }
+  [head removeFromSuperview];
+
+  if (indexInFlutterView > -1) {
+    // The chain was previously attached; attach it to the same position.
+    [flutter_view_.get() insertSubview:head atIndex:indexInFlutterView];
+  }
+  return head;
+}
+
+void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
+                                                   UIView* embedded_view) {
   UIView* head = embedded_view;
   head.clipsToBounds = YES;
-
-  // Reset everything related to transform.
   head.layer.transform = CATransform3DIdentity;
   ResetAnchor(head.layer);
 
-  // Apply transforms/clips.
   std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.bottom();
-  int64_t clipCount = 0;
   while (iter != mutators_stack.top()) {
     switch ((*iter)->type()) {
       case transform: {
@@ -224,19 +246,13 @@ UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutat
       case clip_rect:
       case clip_rrect:
       case clip_path: {
-        UIView* clipView = head.superview;
-        // if we need more clips operations than last time, create a new view.
-        ++clipCount;
-        if (clipCount > clip_count_[view_id]) {
-          [head removeFromSuperview];
-          clipView = [[ChildClippingView alloc] initWithFrame:flutter_view_.get().bounds];
-          [clipView addSubview:head];
-        }
+        ChildClippingView* clipView = (ChildClippingView*)head.superview;
         clipView.layer.transform = CATransform3DIdentity;
-        [(ChildClippingView*)clipView performClip:(*iter)->type()
-                                             rect:(*iter)->rect()
-                                            rrect:(*iter)->rrect()
-                                             path:(*iter)->path()];
+        [clipView setClip:(*iter)->type()
+                     rect:(*iter)->rect()
+                    rrect:(*iter)->rrect()
+                     path:(*iter)->path()];
+        head.clipsToBounds = YES;
         ResetAnchor(clipView.layer);
         head = clipView;
         break;
@@ -244,46 +260,30 @@ UIView* FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutat
     }
     ++iter;
   }
-
-  // If we have clips, replace root view with the top parent view.
-  if (head != embedded_view) {
-    root_views_[view_id] = fml::scoped_nsobject<UIView>([head retain]);
-  }
-  // If we have less cilp operations this time, remove unnecessary views.
-  // We skip this process if we have more clip operations this time.
-  clip_count_[view_id] = clipCount;
-  bool hasExtraClipViews = clip_count_[view_id] - clipCount > 0;
-  if (!hasExtraClipViews) {
-    return head;
-  }
-
-  [head removeFromSuperview];
-
-  [root_views_[view_id] removeFromSuperview];
-  [root_views_[view_id] release];
-
-  return head;
+  CGFloat screenScale = [UIScreen mainScreen].scale;
+  head.layer.transform = CATransform3DConcat(
+      head.layer.transform, CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1));
 }
 
 void FlutterPlatformViewsController::CompositeWithParams(
     int view_id,
     const flutter::EmbeddedViewParams& params) {
-  UIView* touch_interceptor = touch_interceptors_[view_id].get();
-
   CGRect frame = CGRectMake(0, 0, params.sizePoints.width(), params.sizePoints.height());
-  touch_interceptor.frame = frame;
-  UIView* head = ApplyMutators(*params.mutatorsStack, touch_interceptor, view_id);
+  UIView* touchInterceptor = touch_interceptors_[view_id].get();
+  touchInterceptor.frame = frame;
 
-  // Reverse scale based on screen scale.
-  //
-  // The UIKit frame is set based on the logical resolution instead of physical.
-  // (https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html).
-  // However, flow is based on the physical resolution. For eaxmple, 1000 pixels in flow equals
-  // 500 points in UIKit. And until this point, we did all the calculation based on the flow
-  // resolution. So we need to scale down to match UIKit's logical resolution.
-  CGFloat screenScale = [UIScreen mainScreen].scale;
-  head.layer.transform = CATransform3DConcat(
-      head.layer.transform, CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1));
+  int currentClippingCount = CountClips(params.mutatorsStack);
+  int previousClippingCount = clip_count_[view_id];
+  if (currentClippingCount != previousClippingCount) {
+    clip_count_[view_id] = currentClippingCount;
+    // If we have a different clipping count in this frame, we need to reconstruct the
+    // ClippingChildView chain to prepare for `ApplyMutators`.
+    UIView* oldPlatformViewRoot = root_views_[view_id].get();
+    UIView* newPlatformViewRoot =
+        ReconstructClipViewsChain(currentClippingCount, touchInterceptor, oldPlatformViewRoot);
+    root_views_[view_id] = fml::scoped_nsobject<UIView>([newPlatformViewRoot retain]);
+  }
+  ApplyMutators(params.mutatorsStack, touchInterceptor);
 }
 
 SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(

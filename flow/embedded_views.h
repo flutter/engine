@@ -19,6 +19,12 @@ namespace flutter {
 
 enum MutatorType { clip_rect, clip_rrect, clip_path, transform };
 
+// Stores mutation information like clipping or transform.
+//
+// The `type` indicates the type of the mutation: clip_rect, transform and etc.
+// Each `type` is paired with an object that supports the mutation. For example,
+// if the `type` is clip_rect, `rect()` is used the represent the rect to be
+// clipped. One mutation object must only contain one type of mutation.
 class Mutator {
  public:
   Mutator(const Mutator& other) {
@@ -121,7 +127,7 @@ class MutatorsStack {
   // and destroys it.
   void pop();
 
-  // Returns the iterator points to the top of the stack..
+  // Returns an iterator pointing to the top of the stack.
   const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator top()
       const;
   // Returns an iterator pointing to the bottom of the stack.
@@ -155,17 +161,17 @@ class EmbeddedViewParams {
   EmbeddedViewParams(const EmbeddedViewParams& other) {
     offsetPixels = other.offsetPixels;
     sizePoints = other.sizePoints;
-    mutatorsStack = new MutatorsStack(*other.mutatorsStack);
+    mutatorsStack = other.mutatorsStack;
   };
 
   SkPoint offsetPixels;
   SkSize sizePoints;
-  MutatorsStack* mutatorsStack;
+  MutatorsStack mutatorsStack;
 
   bool operator==(const EmbeddedViewParams& other) const {
     return offsetPixels == other.offsetPixels &&
            sizePoints == other.sizePoints &&
-           *mutatorsStack == *other.mutatorsStack;
+           mutatorsStack == other.mutatorsStack;
   }
 };
 
@@ -173,6 +179,8 @@ class EmbeddedViewParams {
 // in this case ExternalViewEmbedder is a reference to the
 // FlutterPlatformViewsController which is owned by FlutterViewController.
 class ExternalViewEmbedder {
+  // TODO(cyanglaz): Make embedder own the `EmbeddedViewParams`.
+
  public:
   ExternalViewEmbedder() = default;
 

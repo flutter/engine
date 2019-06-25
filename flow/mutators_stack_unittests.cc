@@ -185,7 +185,6 @@ TEST(Mutator, Equality) {
   flutter::Mutator mutator4 = flutter::Mutator(path);
   flutter::Mutator otherMutator4 = flutter::Mutator(path);
   ASSERT_TRUE(mutator4 == otherMutator4);
-
   ASSERT_FALSE(mutator2 == mutator);
 }
 

@@ -164,11 +164,6 @@ static void DestroyJNI(JNIEnv* env, jobject jcaller, jlong shell_holder) {
   delete ANDROID_SHELL_HOLDER;
 }
 
-static jstring GetObservatoryUri(JNIEnv* env, jclass clazz) {
-  return env->NewStringUTF(
-      flutter::DartServiceIsolate::GetObservatoryUri().c_str());
-}
-
 static void SurfaceCreated(JNIEnv* env,
                            jobject jcaller,
                            jlong shell_holder,
@@ -554,11 +549,6 @@ bool RegisterApi(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&RunBundleAndSnapshotFromLibrary),
       },
       {
-          .name = "nativeGetObservatoryUri",
-          .signature = "()Ljava/lang/String;",
-          .fnPtr = reinterpret_cast<void*>(&GetObservatoryUri),
-      },
-      {
           .name = "nativeDispatchEmptyPlatformMessage",
           .signature = "(JLjava/lang/String;I)V",
           .fnPtr = reinterpret_cast<void*>(&DispatchEmptyPlatformMessage),
@@ -646,6 +636,13 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeUnregisterTexture",
           .signature = "(JJ)V",
           .fnPtr = reinterpret_cast<void*>(&UnregisterTexture),
+      },
+
+      // Methods for Dart callback functionality.
+      {
+          .name = "nativeLookupCallbackInformation",
+          .signature = "(J)Lio/flutter/view/FlutterCallbackInformation;",
+          .fnPtr = reinterpret_cast<void*>(&LookupCallbackInformation),
       },
   };
 
@@ -742,21 +739,6 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       env, env->FindClass("android/graphics/SurfaceTexture"));
   if (g_surface_texture_class->is_null()) {
     FML_LOG(ERROR) << "Could not locate SurfaceTexture class";
-    return false;
-  }
-
-  static const JNINativeMethod callback_info_methods[] = {
-      {
-          .name = "nativeLookupCallbackInformation",
-          .signature = "(J)Lio/flutter/view/FlutterCallbackInformation;",
-          .fnPtr = reinterpret_cast<void*>(&LookupCallbackInformation),
-      },
-  };
-
-  if (env->RegisterNatives(g_flutter_callback_info_class->obj(),
-                           callback_info_methods,
-                           fml::size(callback_info_methods)) != 0) {
-    FML_LOG(ERROR) << "Failed to RegisterNatives with FlutterCallbackInfo";
     return false;
   }
 

@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-#include "third_party/benchmark/include/benchmark/benchmark_api.h"
-
 #include "flutter/fml/logging.h"
 #include "flutter/third_party/txt/tests/txt_test_utils.h"
+#include "third_party/benchmark/include/benchmark/benchmark_api.h"
 #include "third_party/icu/source/common/unicode/unistr.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "txt/font_collection.h"
@@ -64,7 +63,7 @@ static void BM_ParagraphBuilderPushPop(benchmark::State& state) {
 BENCHMARK(BM_ParagraphBuilderPushPop);
 
 static void BM_ParagraphBuilderAddTextString(benchmark::State& state) {
-  std::string text = "Hello World";
+  std::u16string text = u"Hello World";
 
   auto font_collection = GetTestFontCollection();
 
@@ -78,7 +77,7 @@ static void BM_ParagraphBuilderAddTextString(benchmark::State& state) {
 BENCHMARK(BM_ParagraphBuilderAddTextString);
 
 static void BM_ParagraphBuilderAddTextChar(benchmark::State& state) {
-  const char* text = "Hello World";
+  std::u16string text = u"Hello World";
 
   txt::ParagraphStyle paragraph_style;
   auto font_collection = GetTestFontCollection();

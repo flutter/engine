@@ -153,6 +153,10 @@ typedef enum {
   // |PageView| widget does not have implicit scrolling, so that users don't
   // navigate to the next page when reaching the end of the current one.
   kFlutterSemanticsFlagHasImplicitScrolling = 1 << 18,
+  // Whether the semantic node is read only.
+  //
+  // Only applicable when kFlutterSemanticsFlagIsTextField flag is on.
+  kFlutterSemanticsFlagIsReadOnly = 1 << 20,
 } FlutterSemanticsFlag;
 
 typedef enum {
@@ -373,11 +377,10 @@ typedef struct {
   // The response handle on which to invoke
   // |FlutterEngineSendPlatformMessageResponse| when the response is ready. This
   // field is ignored for messages being sent from the embedder to the
-  // framework. If the embedder ever receives a message with a non-null response
-  // handle, that handle must always be used with a
-  // |FlutterEngineSendPlatformMessageResponse| call. If not, this is a memory
-  // leak. It is not safe to send multiple responses on a single response
-  // object.
+  // framework. |FlutterEngineSendPlatformMessageResponse| must be called for
+  // all messages received by the embedder. Failure to call
+  // |FlutterEngineSendPlatformMessageResponse| will cause a memory leak. It is
+  // not safe to send multiple responses on a single response object.
   const FlutterPlatformMessageResponseHandle* response_handle;
 } FlutterPlatformMessage;
 
