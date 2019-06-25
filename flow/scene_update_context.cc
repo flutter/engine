@@ -197,11 +197,13 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
   std::vector<std::unique_ptr<SurfaceProducerSurface>> surfaces_to_submit;
   for (auto& task : paint_tasks_) {
     FML_DCHECK(task.surface);
+    MutatorsStack stack;
     SkCanvas* canvas = task.surface->GetSkiaSurface()->getCanvas();
     Layer::PaintContext context = {canvas,
                                    canvas,
                                    frame.gr_context(),
                                    nullptr,
+                                   stack
                                    frame.context().raster_time(),
                                    frame.context().ui_time(),
                                    frame.context().texture_registry(),
