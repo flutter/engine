@@ -278,6 +278,7 @@ void FlutterPlatformViewsController::CompositeWithParams(
     const flutter::EmbeddedViewParams& params) {
   CGRect frame = CGRectMake(0, 0, params.sizePoints.width(), params.sizePoints.height());
   UIView* touchInterceptor = touch_interceptors_[view_id].get();
+  touchInterceptor.layer.transform = CATransform3DIdentity;
   touchInterceptor.frame = frame;
 
   int currentClippingCount = CountClips(params.mutatorsStack);
