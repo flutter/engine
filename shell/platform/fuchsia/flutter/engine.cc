@@ -163,6 +163,7 @@ Engine::Engine(Delegate& delegate,
       fml::MakeCopyable([compositor_context = std::move(compositor_context)](
                             flutter::Shell& shell) mutable {
         return std::make_unique<flutter::Rasterizer>(
+            shell,
             shell.GetTaskRunners(),        // task runners
             std::move(compositor_context)  // compositor context
         );
