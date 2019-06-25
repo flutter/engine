@@ -13,9 +13,9 @@ import android.os.LocaleList;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
+import android.support.annotation.VisibleForTesting;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.WindowInsets;
@@ -26,9 +26,12 @@ import android.view.inputmethod.InputConnection;
 import android.widget.FrameLayout;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
+import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
@@ -73,6 +76,8 @@ public class FlutterView extends FrameLayout {
   // Connections to a Flutter execution context.
   @Nullable
   private FlutterEngine flutterEngine;
+  @NonNull
+  private final Set<FlutterEngineAttachmentListener> flutterEngineAttachmentListeners = new HashSet<>();
 
   // Components that process various types of Android View input and events,
   // possibly storing intermediate state, and communicating those events to Flutter.
@@ -162,17 +167,17 @@ public class FlutterView extends FrameLayout {
   }
 
   private void init() {
-    Log.d(TAG, "Initializing FlutterView");
+    Log.v(TAG, "Initializing FlutterView");
 
     switch (renderMode) {
       case surface:
-        Log.d(TAG, "Internally creating a FlutterSurfaceView.");
+        Log.v(TAG, "Internally using a FlutterSurfaceView.");
         FlutterSurfaceView flutterSurfaceView = new FlutterSurfaceView(getContext(), transparencyMode == TransparencyMode.transparent);
         renderSurface = flutterSurfaceView;
         addView(flutterSurfaceView);
         break;
       case texture:
-        Log.d(TAG, "Internally creating a FlutterTextureView.");
+        Log.v(TAG, "Internally using a FlutterTextureView.");
         FlutterTextureView flutterTextureView = new FlutterTextureView(getContext());
         renderSurface = flutterTextureView;
         addView(flutterTextureView);
@@ -232,8 +237,9 @@ public class FlutterView extends FrameLayout {
    * change, device language change, device text scale factor change, etc.
    */
   @Override
-  protected void onConfigurationChanged(Configuration newConfig) {
+  protected void onConfigurationChanged(@NonNull Configuration newConfig) {
     super.onConfigurationChanged(newConfig);
+    Log.v(TAG, "Configuration changed. Sending locales and user settings to Flutter.");
     sendLocalesToFlutter(newConfig);
     sendUserSettingsToFlutter();
   }
@@ -252,6 +258,9 @@ public class FlutterView extends FrameLayout {
   @Override
   protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
     super.onSizeChanged(width, height, oldWidth, oldHeight);
+    Log.v(TAG, "Size changed. Sending Flutter new viewport metrics. FlutterView was "
+        + oldWidth + " x " + oldHeight
+        + ", it is now " + width + " x " + height);
     viewportMetrics.width = width;
     viewportMetrics.height = height;
     sendViewportMetricsToFlutter();
@@ -270,7 +279,8 @@ public class FlutterView extends FrameLayout {
   @Override
   @TargetApi(20)
   @RequiresApi(20)
-  public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
+  @NonNull
+  public final WindowInsets onApplyWindowInsets(@NonNull WindowInsets insets) {
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
 
     // Status bar (top) and left/right system insets should partially obscure the content (padding).
@@ -284,6 +294,13 @@ public class FlutterView extends FrameLayout {
     viewportMetrics.viewInsetRight = 0;
     viewportMetrics.viewInsetBottom = insets.getSystemWindowInsetBottom();
     viewportMetrics.viewInsetLeft = 0;
+
+    Log.v(TAG, "Updating window insets (onApplyWindowInsets()):\n"
+      + "Status bar insets: Top: " + viewportMetrics.paddingTop
+        + ", Left: " + viewportMetrics.paddingLeft + ", Right: " + viewportMetrics.paddingRight + "\n"
+      + "Keyboard insets: Bottom: " + viewportMetrics.viewInsetBottom
+        + ", Left: " + viewportMetrics.viewInsetLeft + ", Right: " + viewportMetrics.viewInsetRight);
+
     sendViewportMetricsToFlutter();
 
     return newInsets;
@@ -298,7 +315,7 @@ public class FlutterView extends FrameLayout {
    */
   @Override
   @SuppressWarnings("deprecation")
-  protected boolean fitSystemWindows(Rect insets) {
+  protected boolean fitSystemWindows(@NonNull Rect insets) {
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
       // Status bar, left/right system insets partially obscure content (padding).
       viewportMetrics.paddingTop = insets.top;
@@ -311,6 +328,13 @@ public class FlutterView extends FrameLayout {
       viewportMetrics.viewInsetRight = 0;
       viewportMetrics.viewInsetBottom = insets.bottom;
       viewportMetrics.viewInsetLeft = 0;
+
+      Log.v(TAG, "Updating window insets (fitSystemWindows()):\n"
+          + "Status bar insets: Top: " + viewportMetrics.paddingTop
+          + ", Left: " + viewportMetrics.paddingLeft + ", Right: " + viewportMetrics.paddingRight + "\n"
+          + "Keyboard insets: Bottom: " + viewportMetrics.viewInsetBottom
+          + ", Left: " + viewportMetrics.viewInsetLeft + ", Right: " + viewportMetrics.viewInsetRight);
+
       sendViewportMetricsToFlutter();
       return true;
     } else {
@@ -334,7 +358,8 @@ public class FlutterView extends FrameLayout {
    * rather than spread that logic throughout this {@code FlutterView}.
    */
   @Override
-  public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+  @Nullable
+  public InputConnection onCreateInputConnection(@NonNull EditorInfo outAttrs) {
     if (!isAttachedToFlutterEngine()) {
       return super.onCreateInputConnection(outAttrs);
     }
@@ -356,7 +381,7 @@ public class FlutterView extends FrameLayout {
    * character.
    */
   @Override
-  public boolean onKeyUp(int keyCode, KeyEvent event) {
+  public boolean onKeyUp(int keyCode, @NonNull KeyEvent event) {
     if (!isAttachedToFlutterEngine()) {
       return super.onKeyUp(keyCode, event);
     }
@@ -379,7 +404,7 @@ public class FlutterView extends FrameLayout {
    * character.
    */
   @Override
-  public boolean onKeyDown(int keyCode, KeyEvent event) {
+  public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
     if (!isAttachedToFlutterEngine()) {
       return super.onKeyDown(keyCode, event);
     }
@@ -395,7 +420,7 @@ public class FlutterView extends FrameLayout {
    * method forwards all {@link MotionEvent} data from Android to Flutter.
    */
   @Override
-  public boolean onTouchEvent(MotionEvent event) {
+  public boolean onTouchEvent(@NonNull MotionEvent event) {
     if (!isAttachedToFlutterEngine()) {
       return super.onTouchEvent(event);
     }
@@ -420,7 +445,7 @@ public class FlutterView extends FrameLayout {
    * method forwards all {@link MotionEvent} data from Android to Flutter.
    */
   @Override
-  public boolean onGenericMotionEvent(MotionEvent event) {
+  public boolean onGenericMotionEvent(@NonNull MotionEvent event) {
     boolean handled = isAttachedToFlutterEngine() && androidTouchProcessor.onGenericMotionEvent(event);
     return handled ? true : super.onGenericMotionEvent(event);
   }
@@ -437,7 +462,7 @@ public class FlutterView extends FrameLayout {
    * processed here for accessibility purposes.
    */
   @Override
-  public boolean onHoverEvent(MotionEvent event) {
+  public boolean onHoverEvent(@NonNull MotionEvent event) {
     if (!isAttachedToFlutterEngine()) {
       return super.onHoverEvent(event);
     }
@@ -453,6 +478,7 @@ public class FlutterView extends FrameLayout {
 
   //-------- Start: Accessibility -------
   @Override
+  @Nullable
   public AccessibilityNodeProvider getAccessibilityNodeProvider() {
     if (accessibilityBridge != null && accessibilityBridge.isAccessibilityEnabled()) {
       return accessibilityBridge;
@@ -486,7 +512,7 @@ public class FlutterView extends FrameLayout {
    * {@link FlutterEngine}.
    */
   public void attachToFlutterEngine(@NonNull FlutterEngine flutterEngine) {
-    Log.d(TAG, "attachToFlutterEngine()");
+    Log.d(TAG, "Attaching to a FlutterEngine: " + flutterEngine);
     if (isAttachedToFlutterEngine()) {
       if (flutterEngine == this.flutterEngine) {
         // We are already attached to this FlutterEngine
@@ -495,7 +521,8 @@ public class FlutterView extends FrameLayout {
       }
 
       // Detach from a previous FlutterEngine so we can attach to this new one.
-      Log.d(TAG, "Currently attached to a different engine. Detaching.");
+      Log.d(TAG, "Currently attached to a different engine. Detaching and then attaching"
+          + " to new engine.");
       detachFromFlutterEngine();
     }
 
@@ -541,6 +568,11 @@ public class FlutterView extends FrameLayout {
     sendUserSettingsToFlutter();
     sendLocalesToFlutter(getResources().getConfiguration());
     sendViewportMetricsToFlutter();
+
+    // Notify engine attachment listeners of the attachment.
+    for (FlutterEngineAttachmentListener listener : flutterEngineAttachmentListeners) {
+      listener.onFlutterEngineAttachedToFlutterView(flutterEngine);
+    }
   }
 
   /**
@@ -554,12 +586,16 @@ public class FlutterView extends FrameLayout {
    * {@link FlutterEngine}.
    */
   public void detachFromFlutterEngine() {
-    Log.d(TAG, "detachFromFlutterEngine()");
+    Log.d(TAG, "Detaching from a FlutterEngine: " + flutterEngine);
     if (!isAttachedToFlutterEngine()) {
       Log.d(TAG, "Not attached to an engine. Doing nothing.");
       return;
     }
-    Log.d(TAG, "Detaching from Flutter Engine");
+
+    // Notify engine attachment listeners of the detachment.
+    for (FlutterEngineAttachmentListener listener : flutterEngineAttachmentListeners) {
+      listener.onFlutterEngineDetachedFromFlutterView();
+    }
 
     // Disconnect and clean up the AccessibilityBridge.
     accessibilityBridge.release();
@@ -585,8 +621,40 @@ public class FlutterView extends FrameLayout {
 //    }
   }
 
-  private boolean isAttachedToFlutterEngine() {
+  /**
+   * Returns true if this {@code FlutterView} is currently attached to a {@link FlutterEngine}.
+   */
+  @VisibleForTesting
+  public boolean isAttachedToFlutterEngine() {
     return flutterEngine != null && flutterEngine.getRenderer().isAttachedTo(renderSurface);
+  }
+
+  /**
+   * Returns the {@link FlutterEngine} to which this {@code FlutterView} is currently attached,
+   * or null if this {@code FlutterView} is not currently attached to a {@link FlutterEngine}.
+   */
+  @VisibleForTesting
+  @Nullable
+  public FlutterEngine getAttachedFlutterEngine() {
+    return flutterEngine;
+  }
+
+  /**
+   * Adds a {@link FlutterEngineAttachmentListener}, which is notifed whenever this {@code FlutterView}
+   * attached to/detaches from a {@link FlutterEngine}.
+   */
+  @VisibleForTesting
+  public void addFlutterEngineAttachmentListener(@NonNull FlutterEngineAttachmentListener listener) {
+    flutterEngineAttachmentListeners.add(listener);
+  }
+
+  /**
+   * Removes a {@link FlutterEngineAttachmentListener} that was previously added with
+   * {@link #addFlutterEngineAttachmentListener(FlutterEngineAttachmentListener)}.
+   */
+  @VisibleForTesting
+  public void removeFlutterEngineAttachmentListener(@NonNull FlutterEngineAttachmentListener listener) {
+    flutterEngineAttachmentListeners.remove(listener);
   }
 
   /**
@@ -595,7 +663,7 @@ public class FlutterView extends FrameLayout {
    * FlutterEngine must be non-null when this method is invoked.
    */
   @SuppressWarnings("deprecation")
-  private void sendLocalesToFlutter(Configuration config) {
+  private void sendLocalesToFlutter(@NonNull Configuration config) {
     List<Locale> locales = new ArrayList<>();
     if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
       LocaleList localeList = config.getLocales();
@@ -627,9 +695,9 @@ public class FlutterView extends FrameLayout {
 
   // TODO(mattcarroll): consider introducing a system channel for this communication instead of JNI
   private void sendViewportMetricsToFlutter() {
-    Log.d(TAG, "sendViewportMetricsToFlutter()");
     if (!isAttachedToFlutterEngine()) {
-      Log.w(TAG, "Tried to send viewport metrics from Android to Flutter but this FlutterView was not attached to a FlutterEngine.");
+      Log.w(TAG, "Tried to send viewport metrics from Android to Flutter but this "
+          + "FlutterView was not attached to a FlutterEngine.");
       return;
     }
 
@@ -692,5 +760,23 @@ public class FlutterView extends FrameLayout {
      * switch {@code Fragment}s at runtime that contain a Flutter UI.
      */
     transparent
+  }
+
+  /**
+   * Listener that is notified when a {@link FlutterEngine} is attached to/detached from
+   * a given {@code FlutterView}.
+   */
+  @VisibleForTesting
+  public interface FlutterEngineAttachmentListener {
+    /**
+     * The given {@code engine} has been attached to the associated {@code FlutterView}.
+     */
+    void onFlutterEngineAttachedToFlutterView(@NonNull FlutterEngine engine);
+
+    /**
+     * A previously attached {@link FlutterEngine} has been detached from the associated
+     * {@code FlutterView}.
+     */
+    void onFlutterEngineDetachedFromFlutterView();
   }
 }

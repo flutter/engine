@@ -495,10 +495,6 @@
                               arguments:@[@(client), @(start), @(end)]];
 }
 
-- (void)showAutocorrectionPromptWithClient:(int)client {
-
-}
-
 #pragma mark - Screenshot Delegate
 
 - (flutter::Rasterizer::Screenshot)takeScreenshot:(flutter::Rasterizer::ScreenshotType)type

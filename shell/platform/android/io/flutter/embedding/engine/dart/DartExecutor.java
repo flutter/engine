@@ -8,10 +8,10 @@ import android.content.res.AssetManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
-import android.util.Log;
 
 import java.nio.ByteBuffer;
 
+import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.StringCodec;
@@ -45,7 +45,9 @@ public class DartExecutor implements BinaryMessenger {
   @NonNull
   private final DartMessenger messenger;
   private boolean isApplicationRunning = false;
+  @Nullable
   private String isolateServiceId;
+  @Nullable
   private IsolateServiceIdListener isolateServiceIdListener;
 
   private final BinaryMessenger.BinaryMessageHandler isolateChannelMessageHandler =
@@ -77,6 +79,7 @@ public class DartExecutor implements BinaryMessenger {
    * </ul>
    */
   public void onAttachedToJNI() {
+    Log.v(TAG, "Attached to JNI. Registering the platform message handler for this Dart execution context.");
     flutterJNI.setPlatformMessageHandler(messenger);
   }
 
@@ -88,6 +91,7 @@ public class DartExecutor implements BinaryMessenger {
    * the Dart execution context.
    */
   public void onDetachedFromJNI() {
+    Log.v(TAG, "Detached from JNI. De-registering the platform message handler for this Dart execution context.");
     flutterJNI.setPlatformMessageHandler(null);
   }
 
@@ -112,6 +116,8 @@ public class DartExecutor implements BinaryMessenger {
       Log.w(TAG, "Attempted to run a DartExecutor that is already running.");
       return;
     }
+
+    Log.v(TAG, "Executing Dart entrypoint: " + dartEntrypoint);
 
     flutterJNI.runBundleAndSnapshotFromLibrary(
         new String[]{
@@ -138,6 +144,8 @@ public class DartExecutor implements BinaryMessenger {
       Log.w(TAG, "Attempted to run a DartExecutor that is already running.");
       return;
     }
+
+    Log.v(TAG, "Executing Dart callback: " + dartCallback);
 
     flutterJNI.runBundleAndSnapshotFromLibrary(
         new String[]{
@@ -200,6 +208,7 @@ public class DartExecutor implements BinaryMessenger {
    * Returns an identifier for this executor's primary isolate.  This identifier can be used
    * in queries to the Dart service protocol.
    */
+  @Nullable
   public String getIsolateServiceId() {
     return isolateServiceId;
   }
@@ -208,14 +217,14 @@ public class DartExecutor implements BinaryMessenger {
    * Callback interface invoked when the isolate identifier becomes available.
    */
   interface IsolateServiceIdListener {
-    void onIsolateServiceIdAvailable(String isolateServiceId);
+    void onIsolateServiceIdAvailable(@NonNull String isolateServiceId);
   }
 
   /**
    * Set a listener that will be notified when an isolate identifier is available for this
    * executor's primary isolate.
    */
-  public void setIsolateServiceIdListener(IsolateServiceIdListener listener) {
+  public void setIsolateServiceIdListener(@Nullable IsolateServiceIdListener listener) {
     isolateServiceIdListener = listener;
     if (isolateServiceIdListener != null && isolateServiceId != null) {
       isolateServiceIdListener.onIsolateServiceIdAvailable(isolateServiceId);
@@ -275,6 +284,12 @@ public class DartExecutor implements BinaryMessenger {
       this.pathToFallbackBundle = pathToFallbackBundle;
       this.dartEntrypointFunctionName = dartEntrypointFunctionName;
     }
+
+    @Override
+    @NonNull
+    public String toString() {
+      return "DartEntrypoint( bundle path: " + pathToPrimaryBundle + ", function: " + dartEntrypointFunctionName + " )";
+    }
   }
 
   /**
@@ -325,6 +340,14 @@ public class DartExecutor implements BinaryMessenger {
       this.pathToPrimaryBundle = pathToPrimaryBundle;
       this.pathToFallbackBundle = pathToFallbackBundle;
       this.callbackHandle = callbackHandle;
+    }
+
+    @Override
+    @NonNull
+    public String toString() {
+      return "DartCallback( bundle path: " + pathToPrimaryBundle
+          + ", library path: " + callbackHandle.callbackLibraryPath
+          + ", function: " + callbackHandle.callbackName + " )";
     }
   }
 }

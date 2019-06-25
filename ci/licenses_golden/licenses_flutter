@@ -132,9 +132,10 @@ FILE: ../../../flutter/fml/message_loop.cc
 FILE: ../../../flutter/fml/message_loop.h
 FILE: ../../../flutter/fml/message_loop_impl.cc
 FILE: ../../../flutter/fml/message_loop_impl.h
-FILE: ../../../flutter/fml/message_loop_task_queue.cc
-FILE: ../../../flutter/fml/message_loop_task_queue.h
-FILE: ../../../flutter/fml/message_loop_task_queue_unittests.cc
+FILE: ../../../flutter/fml/message_loop_task_queues.cc
+FILE: ../../../flutter/fml/message_loop_task_queues.h
+FILE: ../../../flutter/fml/message_loop_task_queues_benchmark.cc
+FILE: ../../../flutter/fml/message_loop_task_queues_unittests.cc
 FILE: ../../../flutter/fml/message_loop_unittests.cc
 FILE: ../../../flutter/fml/message_unittests.cc
 FILE: ../../../flutter/fml/native_library.h
@@ -686,6 +687,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbac
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterEngineTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterHeadlessDartRunner.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h
@@ -917,6 +919,8 @@ FILE: ../../../flutter/shell/platform/glfw/flutter_glfw.cc
 FILE: ../../../flutter/shell/platform/glfw/key_event_handler.cc
 FILE: ../../../flutter/shell/platform/glfw/key_event_handler.h
 FILE: ../../../flutter/shell/platform/glfw/keyboard_hook_handler.h
+FILE: ../../../flutter/shell/platform/glfw/platform_handler.cc
+FILE: ../../../flutter/shell/platform/glfw/platform_handler.h
 FILE: ../../../flutter/shell/platform/glfw/public/flutter_glfw.h
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.h
