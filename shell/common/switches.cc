@@ -207,7 +207,8 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.disable_dart_asserts =
       command_line.HasOption(FlagForSwitch(Switch::DisableDartAsserts));
 
-  settings.ipv6 = command_line.HasOption(FlagForSwitch(Switch::IPv6));
+  settings.observatory_host =
+      command_line.HasOption(FlagForSwitch(Switch::IPv6)) ? "::1" : "127.0.0.1";
 
   settings.start_paused =
       command_line.HasOption(FlagForSwitch(Switch::StartPaused));
