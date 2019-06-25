@@ -199,12 +199,12 @@ int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_sta
 
 UIView* FlutterPlatformViewsController::ReconstructClipViewsChain(int number_of_clips,
                                                                   UIView* platform_view,
-                                                                  UIView* head_clip_view) {
+                                                                  UIView* head_clip_view, int64_t view_id) {
   NSInteger indexInFlutterView = -1;
   if (head_clip_view.superview) {
     // TODO(cyanglaz): potentially cache the index of oldPlatformViewRoot to make this a O(1).
     // https://github.com/flutter/flutter/issues/35023
-    indexInFlutterView = [flutter_view_.get().subviews indexOfObject:head_clip_view];
+    indexInFlutterView = root_views_indices_[view_id]
     [head_clip_view removeFromSuperview];
   }
   UIView* head = platform_view;

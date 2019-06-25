@@ -172,8 +172,8 @@ class FlutterPlatformViewsController {
   //
   // Returns the new head of the clip views chain.
   UIView* ReconstructClipViewsChain(int number_of_clips,
-                                    UIView* platform_view,
-                                    UIView* head_clip_view);
+                                                                    UIView* platform_view,
+                                                                    UIView* head_clip_view, int64_t view_id);
 
   // Applies the mutators in the mutators_stack to the UIView chain that was constructed by
   // `ReconstructClipViewsChain`
