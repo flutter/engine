@@ -6,6 +6,8 @@
 
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 
+static int kMaxPointsInVerb = 4;
+
 namespace flutter {
 
 FlutterPlatformViewLayer::FlutterPlatformViewLayer(fml::scoped_nsobject<UIView> overlay_view,
@@ -144,7 +146,7 @@ void ResetAnchor(CALayer* layer) {
 
   // Loop through all verbs and translate them into CGPath
   SkPath::Iter iter(path, true);
-  SkPoint pts[4];
+  SkPoint pts[kMaxPointsInVerb];
   SkPath::Verb verb = iter.next(pts);
   while (verb != SkPath::kDone_Verb) {
     switch (verb) {
