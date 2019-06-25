@@ -46,6 +46,8 @@ class ShellIOManager final : public IOManager {
 
   fml::WeakPtr<ShellIOManager> GetWeakPtr();
 
+  void PurgeCaches() const;
+
  private:
   // Resource context management.
   sk_sp<GrContext> resource_context_;

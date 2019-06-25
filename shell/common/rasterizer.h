@@ -46,6 +46,8 @@ class Rasterizer final : public SnapshotDelegate {
 
   void Teardown();
 
+  void PurgeCaches() const;
+
   fml::WeakPtr<Rasterizer> GetWeakPtr() const;
 
   fml::WeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;

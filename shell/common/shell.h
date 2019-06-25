@@ -78,6 +78,8 @@ class Shell final : public PlatformView::Delegate,
 
   DartVM* GetDartVM();
 
+  void PurgeCaches() const;
+
   bool IsSetup() const;
 
   Rasterizer::Screenshot Screenshot(Rasterizer::ScreenshotType type,

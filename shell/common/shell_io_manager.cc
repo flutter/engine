@@ -100,4 +100,11 @@ fml::RefPtr<flutter::SkiaUnrefQueue> ShellIOManager::GetSkiaUnrefQueue() const {
 fml::WeakPtr<ShellIOManager> ShellIOManager::GetWeakPtr() {
   return weak_factory_.GetWeakPtr();
 }
+
+void ShellIOManager::PurgeCaches() const {
+  if (!resource_context_) {
+    return;
+  }
+  resource_context_->freeGpuResources();
+}
 }  // namespace flutter

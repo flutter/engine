@@ -369,6 +369,21 @@ Shell::~Shell() {
   platform_latch.Wait();
 }
 
+void Shell::PurgeCaches() const {
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [rasterizer = rasterizer_->GetWeakPtr()]() {
+        if (rasterizer) {
+          rasterizer->PurgeCaches();
+        }
+      });
+  task_runners_.GetIOTaskRunner()->PostTask(
+      [io_manager = io_manager_->GetWeakPtr()]() {
+        if (io_manager) {
+          io_manager->PurgeCaches();
+        }
+      });
+}
+
 bool Shell::IsSetup() const {
   return is_setup_;
 }

@@ -68,6 +68,17 @@ void Rasterizer::Teardown() {
   last_layer_tree_.reset();
 }
 
+void Rasterizer::PurgeCaches() const {
+  if (!surface_) {
+    return;
+  }
+  auto context = surface_->GetContext();
+  if (!context) {
+    return;
+  }
+  context->freeGpuResources();
+}
+
 flutter::TextureRegistry* Rasterizer::GetTextureRegistry() {
   return &compositor_context_->texture_registry();
 }

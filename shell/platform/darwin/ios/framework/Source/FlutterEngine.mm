@@ -93,6 +93,12 @@
 
   [self setupChannels];
 
+  NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+  [center addObserver:self
+             selector:@selector(onMemoryWarning:)
+                 name:UIApplicationDidReceiveMemoryWarningNotification
+               object:nil];
+
   return self;
 }
 
@@ -572,6 +578,13 @@
 
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
   return _pluginPublications[pluginKey];
+}
+
+#pragma mark - Memory Notifications
+
+- (void)onMemoryWarning:(NSNotification*)notification {
+  self.shell.PurgeCaches();
+  [_systemChannel sendMessage:@{@"type" : @"memoryPressure"}];
 }
 
 @end
