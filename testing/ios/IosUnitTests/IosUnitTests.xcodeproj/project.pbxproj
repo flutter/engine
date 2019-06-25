@@ -339,7 +339,6 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"$(TARGET_FRAMEWORKS_PATH)",
 			);
 			outputFileListPaths = (
 			);
