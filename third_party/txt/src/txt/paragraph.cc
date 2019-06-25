@@ -403,7 +403,7 @@ bool Paragraph::ComputeBidiRuns(std::vector<BidiRun>* result) {
     return false;
 
   // Detect if final trailing run is a single ambiguous whitespace.
-  // We want to bundle the final ambiguous whitespace with the preceeding
+  // We want to bundle the final ambiguous whitespace with the preceding
   // run in order to maintain logical typing behavior when mixing RTL and LTR
   // text. We do not want this to be a true ghost run since the contrasting
   // directionality causes the trailing space to not render at the visual end of
