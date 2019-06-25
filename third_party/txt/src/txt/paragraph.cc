@@ -436,7 +436,6 @@ bool Paragraph::ComputeBidiRuns(std::vector<BidiRun>* result) {
 
   for (int32_t bidi_run_index = 0; bidi_run_index < bidi_run_count;
        ++bidi_run_index) {
-    int32_t bidi_run_start, bidi_run_length;
     UBiDiDirection direction = ubidi_getVisualRun(
         bidi.get(), bidi_run_index, &bidi_run_start, &bidi_run_length);
     if (!U_SUCCESS(status))
