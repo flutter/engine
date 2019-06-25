@@ -16,6 +16,8 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 
+static int64_t number_of_views_for_each_platform_view = 2;
+
 namespace flutter {
 
 void FlutterPlatformViewsController::SetFlutterView(UIView* flutter_view) {
@@ -369,6 +371,7 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
       [flutter_view addSubview:platform_view_root];
       [flutter_view addSubview:overlay];
     }
+    root_views_indices_[view_id] = i*number_of_views_for_each_platform_view;
 
     active_composition_order_.push_back(view_id);
   }

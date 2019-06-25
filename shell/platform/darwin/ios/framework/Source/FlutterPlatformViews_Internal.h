@@ -109,6 +109,12 @@ class FlutterPlatformViewsController {
   std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
   std::map<int64_t, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> views_;
   std::map<int64_t, fml::scoped_nsobject<FlutterTouchInterceptingView>> touch_interceptors_;
+  // Mapping a platform view ID to the index of the root_view under `flutter_view_.subviews`
+  //
+  // 0 index means represents the first item in the `flutter_view_.subviews`.
+  // See also:
+  // * `root_views_`
+  std::map<int64_t, int64_t> root_views_indices_;
   // Mapping a platform view ID to the top most parent view (root_view) who is a direct child to the
   // `flutter_view_`.
   //
