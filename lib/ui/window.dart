@@ -478,6 +478,7 @@ class Locale {
   int get hashCode => hashValues(languageCode, scriptCode, countryCode);
 
   static Locale cachedLocale;
+  static String cachedSeparator;
   static String cachedLocaleString;
 
   /// Returns a string representing the locale.
@@ -496,8 +497,9 @@ class Locale {
   String toLanguageTag() => _toLanguageTag();
 
   String _toLanguageTag([String separator = '-']) {
-    if (!identical(cachedLocale, this)) {
+    if (!identical(cachedLocale, this) || cachedSeparator != separator) {
       cachedLocale = this;
+      cachedSeparator = separator;
       cachedLocaleString = _rawToString(separator);
     }
     return cachedLocaleString;
