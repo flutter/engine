@@ -94,6 +94,28 @@ void main() {
       expect(error.toString(), contains('The layer is already being used'));
     }
     builder3.build();
+
+    // Test: addRetained twice
+    final SceneBuilder builder4 = SceneBuilder();
+    builder4.addRetained(layer);
+    try {
+      builder4.addRetained(layer);
+      fail('Expected second addRetained to throw AssertionError but it returned successully');
+    } on AssertionError catch (error) {
+      expect(error.toString(), contains('The layer is already being used'));
+    }
+    builder4.build();
+
+    // Test: push twice
+    final SceneBuilder builder5 = SceneBuilder();
+    pushFunction(builder5, layer);
+    try {
+      pushFunction(builder5, layer);
+      fail('Expected push to throw AssertionError but it returned successully');
+    } on AssertionError catch (error) {
+      expect(error.toString(), contains('The layer is already being used'));
+    }
+    builder5.build();
   }
 
   test('SceneBuilder does not share a layer between addRetained and push*', () {
