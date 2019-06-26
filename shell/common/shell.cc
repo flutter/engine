@@ -278,7 +278,6 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
     : task_runners_(std::move(task_runners)),
       settings_(std::move(settings)),
       vm_(std::move(vm)),
-      raster_cache_max_bytes_user_value_(-1),
       weak_factory_(this) {
   FML_CHECK(vm_) << "Must have access to VM to create a shell.";
   FML_DCHECK(task_runners_.IsValid());
@@ -611,17 +610,15 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  // Only set this if the user has _not_ requested a specific value.
-  if (raster_cache_max_bytes_user_value_ == -1) {
-    // This is the formula Android uses.
-    int max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
-    task_runners_.GetGPUTaskRunner()->PostTask(
-        [rasterizer = rasterizer_->GetWeakPtr(), max_bytes] {
-          if (rasterizer) {
-            rasterizer->SetResourceCacheMaxBytes(max_bytes);
-          }
-        });
-  }
+  // This is the formula Android uses.
+  // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
+  int max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [rasterizer = rasterizer_->GetWeakPtr(), max_bytes] {
+        if (rasterizer) {
+          rasterizer->SetResourceCacheMaxBytes(max_bytes, false);
+        }
+      });
 
   task_runners_.GetUITaskRunner()->PostTask(
       [engine = engine_->GetWeakPtr(), metrics]() {
@@ -872,12 +869,11 @@ void Shell::HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message) {
   if (args == root.MemberEnd() || !args->value.IsInt())
     return;
 
-  raster_cache_max_bytes_user_value_ = args->value.GetInt();
   task_runners_.GetGPUTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(),
-       max_bytes = raster_cache_max_bytes_user_value_] {
+       max_bytes = args->value.GetInt()] {
         if (rasterizer) {
-          rasterizer->SetResourceCacheMaxBytes(max_bytes);
+          rasterizer->SetResourceCacheMaxBytes(max_bytes, true);
         }
       });
 }

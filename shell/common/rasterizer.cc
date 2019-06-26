@@ -43,6 +43,7 @@ Rasterizer::Rasterizer(
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
       compositor_context_(std::move(compositor_context)),
+      user_override_resource_cache_bytes_(false),
       weak_factory_(this) {
   FML_DCHECK(compositor_context_);
 }
@@ -405,13 +406,32 @@ void Rasterizer::FireNextFrameCallbackIfPresent() {
   callback();
 }
 
-void Rasterizer::SetResourceCacheMaxBytes(int max_bytes) {
+void Rasterizer::SetResourceCacheMaxBytes(int max_bytes, bool from_user) {
+  user_override_resource_cache_bytes_ |= from_user;
+
+  if (!from_user && user_override_resource_cache_bytes_) {
+    // We should not update the setting here if a user has explicitly set a
+    // value for this over the flutter/skia channel.
+    return;
+  }
+
   GrContext* context = surface_->GetContext();
   if (context) {
     int max_resources;
     context->getResourceCacheLimits(&max_resources, nullptr);
     context->setResourceCacheLimits(max_resources, max_bytes);
   }
+}
+
+int Rasterizer::GetResourceCacheMaxBytes() const {
+  GrContext* context = surface_->GetContext();
+  if (context) {
+    int max_resources;
+    context->getResourceCacheLimits(&max_resources, nullptr);
+    return max_resources;
+  }
+  FML_DLOG(ERROR) << "There is no context?!";
+  return 0;
 }
 
 Rasterizer::Screenshot::Screenshot() {}
