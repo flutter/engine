@@ -90,7 +90,8 @@ class Shell final : public PlatformView::Delegate,
   Rasterizer::Screenshot Screenshot(Rasterizer::ScreenshotType type,
                                     bool base64_encode);
 
-  /// Returns true on timeout.
+  /// Schedules a frame to be rendered and waits for it to finish.
+  ///\returns true when there has been a timeout.
   bool WaitForFrameRender(fml::TimeDelta timeout);
 
  private:

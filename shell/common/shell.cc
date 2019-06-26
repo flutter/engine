@@ -1248,7 +1248,7 @@ bool Shell::WaitForFrameRender(fml::TimeDelta timeout) {
   bool success = waiting_for_frame_condition_.wait_for(
       lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
       [this] { return !waiting_for_frame_; });
-  return success;
+  return !success;
 }
 
 }  // namespace flutter
