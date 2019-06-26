@@ -1421,10 +1421,10 @@ void Paragraph::ComputeWavyDecoration(SkPath& path,
   // https://github.com/flutter/engine/pull/9468#discussion_r297879129
 
   double x1 = remaining / 2;
-  double y1 = remaining / 2 * (wave_count % 2 != 0 ? 1 : -1);
+  double y1 = remaining / 2 * (wave_count % 2 == 0 ? -1 : 1);
   double x2 = remaining;
   double y2 = (remaining - remaining * remaining / (quarter * 2)) *
-              (wave_count % 2 != 0 ? 1 : -1);
+              (wave_count % 2 == 0 ? -1 : 1);
   path.rQuadTo(x1, y1, x2, y2);
 }
 
