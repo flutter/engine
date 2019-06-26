@@ -69,6 +69,8 @@ void main() {
   void testNoSharing(_TestNoSharingFunction pushFunction) {
     final SceneBuilder builder1 = SceneBuilder();
     final EngineLayer layer = pushFunction(builder1, null);
+    final EngineLayer childLayer = builder1.pushOpacity(123);
+    builder1.pop();
     builder1.pop();
     builder1.build();
 
@@ -116,6 +118,29 @@ void main() {
       expect(error.toString(), contains('The layer is already being used'));
     }
     builder5.build();
+
+    // Test: child layer of a retained layer also pushed
+    final SceneBuilder builder6 = SceneBuilder();
+    builder6.addRetained(layer);
+    try {
+      builder6.pushOpacity(321, oldLayer: childLayer);
+      fail('Expected pushOpacity to throw AssertionError but it returned successully');
+    } on AssertionError catch (error) {
+      expect(error.toString(), contains('The layer is already being used'));
+    }
+    builder6.build();
+
+    // Test: pushed layer's parent being also added as retained
+    final SceneBuilder builder7 = SceneBuilder();
+    builder7.pushOpacity(234, oldLayer: childLayer);
+    builder7.pop();
+    try {
+      builder7.addRetained(layer);
+      fail('Expected addRetained to throw AssertionError but it returned successully');
+    } on AssertionError catch (error) {
+      expect(error.toString(), contains('The layer is already being used'));
+    }
+    builder7.build();
   }
 
   test('SceneBuilder does not share a layer between addRetained and push*', () {
