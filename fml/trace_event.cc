@@ -11,6 +11,27 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 
+#ifdef FLUTTER_TRACE_STDOUT
+#include <chrono>
+
+namespace {
+int64_t GetCurrentTimeMS() {
+  std::chrono::time_point<std::chrono::system_clock> now =
+      std::chrono::system_clock::now();
+  std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>
+      now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+  std::chrono::duration<int64_t, std::ratio<1, 1000>> epoch =
+      now_ms.time_since_epoch();
+  return epoch.count();
+}
+}  // namespace
+
+#define FLUTTER_TRACE_LOG(PREFIX, CATEGORY_GROUP, NAME) \
+  printf("[%lld] %s%s:%s\n", GetCurrentTimeMS(), PREFIX, CATEGORY_GROUP, NAME);
+#else
+#define FLUTTER_TRACE_LOG(PREFIX, CATEGORY_GROUP, NAME)
+#endif
+
 namespace fml {
 namespace tracing {
 
@@ -25,6 +46,7 @@ void TraceTimelineEvent(TraceArg category_group,
                         Dart_Timeline_Event_Type type,
                         const std::vector<const char*>& c_names,
                         const std::vector<std::string>& values) {
+  FLUTTER_TRACE_LOG("", category_group, name);
   const auto argument_count = std::min(c_names.size(), values.size());
 
   std::vector<const char*> c_values;
@@ -46,6 +68,7 @@ void TraceTimelineEvent(TraceArg category_group,
 }
 
 void TraceEvent0(TraceArg category_group, TraceArg name) {
+  FLUTTER_TRACE_LOG("", category_group, name);
   Dart_TimelineEvent(name,                       // label
                      Dart_TimelineGetMicros(),   // timestamp0
                      0,                          // timestamp1_or_async_id
@@ -60,6 +83,7 @@ void TraceEvent1(TraceArg category_group,
                  TraceArg name,
                  TraceArg arg1_name,
                  TraceArg arg1_val) {
+  FLUTTER_TRACE_LOG("", category_group, name);
   const char* arg_names[] = {arg1_name};
   const char* arg_values[] = {arg1_val};
   Dart_TimelineEvent(name,                       // label
@@ -78,6 +102,7 @@ void TraceEvent2(TraceArg category_group,
                  TraceArg arg1_val,
                  TraceArg arg2_name,
                  TraceArg arg2_val) {
+  FLUTTER_TRACE_LOG("", category_group, name);
   const char* arg_names[] = {arg1_name, arg2_name};
   const char* arg_values[] = {arg1_val, arg2_val};
   Dart_TimelineEvent(name,                       // label
@@ -91,6 +116,7 @@ void TraceEvent2(TraceArg category_group,
 }
 
 void TraceEventEnd(TraceArg name) {
+  FLUTTER_TRACE_LOG("event end - ", "", name);
   Dart_TimelineEvent(name,                      // label
                      Dart_TimelineGetMicros(),  // timestamp0
                      0,                         // timestamp1_or_async_id
@@ -105,6 +131,7 @@ void TraceEventAsyncComplete(TraceArg category_group,
                              TraceArg name,
                              TimePoint begin,
                              TimePoint end) {
+  FLUTTER_TRACE_LOG("async complete - ", category_group, name);
   auto identifier = TraceNonce();
 
   if (begin > end) {
@@ -132,6 +159,7 @@ void TraceEventAsyncComplete(TraceArg category_group,
 void TraceEventAsyncBegin0(TraceArg category_group,
                            TraceArg name,
                            TraceIDArg id) {
+  FLUTTER_TRACE_LOG("async begin - ", category_group, name);
   Dart_TimelineEvent(name,                             // label
                      Dart_TimelineGetMicros(),         // timestamp0
                      id,                               // timestamp1_or_async_id
@@ -145,6 +173,7 @@ void TraceEventAsyncBegin0(TraceArg category_group,
 void TraceEventAsyncEnd0(TraceArg category_group,
                          TraceArg name,
                          TraceIDArg id) {
+  FLUTTER_TRACE_LOG("async end - ", category_group, name);
   Dart_TimelineEvent(name,                           // label
                      Dart_TimelineGetMicros(),       // timestamp0
                      id,                             // timestamp1_or_async_id
@@ -160,6 +189,7 @@ void TraceEventAsyncBegin1(TraceArg category_group,
                            TraceIDArg id,
                            TraceArg arg1_name,
                            TraceArg arg1_val) {
+  FLUTTER_TRACE_LOG("async begin - ", category_group, name);
   const char* arg_names[] = {arg1_name};
   const char* arg_values[] = {arg1_val};
   Dart_TimelineEvent(name,                             // label
@@ -177,6 +207,7 @@ void TraceEventAsyncEnd1(TraceArg category_group,
                          TraceIDArg id,
                          TraceArg arg1_name,
                          TraceArg arg1_val) {
+  FLUTTER_TRACE_LOG("async end - ", category_group, name);
   const char* arg_names[] = {arg1_name};
   const char* arg_values[] = {arg1_val};
   Dart_TimelineEvent(name,                           // label
@@ -190,6 +221,7 @@ void TraceEventAsyncEnd1(TraceArg category_group,
 }
 
 void TraceEventInstant0(TraceArg category_group, TraceArg name) {
+  FLUTTER_TRACE_LOG("", category_group, name);
   Dart_TimelineEvent(name,                         // label
                      Dart_TimelineGetMicros(),     // timestamp0
                      0,                            // timestamp1_or_async_id
@@ -203,6 +235,7 @@ void TraceEventInstant0(TraceArg category_group, TraceArg name) {
 void TraceEventFlowBegin0(TraceArg category_group,
                           TraceArg name,
                           TraceIDArg id) {
+  FLUTTER_TRACE_LOG("flow begin - ", category_group, name);
   Dart_TimelineEvent(name,                            // label
                      Dart_TimelineGetMicros(),        // timestamp0
                      id,                              // timestamp1_or_async_id
@@ -216,6 +249,7 @@ void TraceEventFlowBegin0(TraceArg category_group,
 void TraceEventFlowStep0(TraceArg category_group,
                          TraceArg name,
                          TraceIDArg id) {
+  FLUTTER_TRACE_LOG("flow step - ", category_group, name);
   Dart_TimelineEvent(name,                           // label
                      Dart_TimelineGetMicros(),       // timestamp0
                      id,                             // timestamp1_or_async_id
@@ -227,6 +261,7 @@ void TraceEventFlowStep0(TraceArg category_group,
 }
 
 void TraceEventFlowEnd0(TraceArg category_group, TraceArg name, TraceIDArg id) {
+  FLUTTER_TRACE_LOG("flow end - ", category_group, name);
   Dart_TimelineEvent(name,                          // label
                      Dart_TimelineGetMicros(),      // timestamp0
                      id,                            // timestamp1_or_async_id
