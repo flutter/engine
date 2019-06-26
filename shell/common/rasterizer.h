@@ -107,7 +107,7 @@ class Rasterizer final : public SnapshotDelegate {
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
   std::unique_ptr<flutter::LayerTree> last_layer_tree_;
   fml::closure next_frame_callback_;
-  bool user_override_resource_cache_bytes_;
+  std::atomic<bool> user_override_resource_cache_bytes_;
   fml::WeakPtrFactory<Rasterizer> weak_factory_;
 
   // |SnapshotDelegate|
