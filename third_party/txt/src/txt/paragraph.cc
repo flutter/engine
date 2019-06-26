@@ -1397,7 +1397,7 @@ void Paragraph::ComputeWavyDecoration(SkPath& path,
   double quarter = thickness;
   path.moveTo(x, y);
   double remaining = width;
-  while (x_start + quarter * 2 < width) {
+  while (x_start + (quarter * 2) < width) {
     path.rQuadTo(quarter, wave_count % 2 == 0 ? -quarter : quarter, quarter * 2,
                  0);
     x_start += quarter * 2;
