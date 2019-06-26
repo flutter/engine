@@ -536,7 +536,6 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 // physical keyboard.
 
 - (CGRect)firstRectForRange:(UITextRange*)range {
-  // TODO(cbracken) Implement.
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
   FlutterTextPromptRectAppearCause cause;
@@ -550,6 +549,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
                                          end:end
                                        cause:cause
                                   withClient:_textInputClient];
+  // TODO(cbracken) Implement.
   return CGRectZero;
 }
 
