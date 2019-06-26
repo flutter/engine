@@ -8,10 +8,10 @@
 
 #include <utility>
 
-#include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/message_loop_impl.h"
+#include "flutter/fml/synchronization/count_down_latch.h"
 
 namespace fml {
 
@@ -26,7 +26,7 @@ void TaskRunner::PostTask(fml::closure task) {
 
 void TaskRunner::AwaitTask(fml::closure task) {
   CountDownLatch latch(1);
-  PostTask([&]{
+  PostTask([&] {
     task();
     latch.CountDown();
   });
