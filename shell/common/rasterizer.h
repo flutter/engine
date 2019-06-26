@@ -96,9 +96,9 @@ class Rasterizer final : public SnapshotDelegate {
   // originating from the user, e.g. over the flutter/skia system channel,
   // set from_user to true and the value will take precedence over system
   // generated values, e.g. from a display resolution change.
-  void SetResourceCacheMaxBytes(int max_bytes, bool from_user);
+  void SetResourceCacheMaxBytes(size_t max_bytes, bool from_user);
 
-  int GetResourceCacheMaxBytes() const;
+  size_t GetResourceCacheMaxBytes() const;
 
  private:
   Delegate& delegate_;

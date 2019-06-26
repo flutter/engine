@@ -873,7 +873,8 @@ void Shell::HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message) {
       [rasterizer = rasterizer_->GetWeakPtr(),
        max_bytes = args->value.GetInt()] {
         if (rasterizer) {
-          rasterizer->SetResourceCacheMaxBytes(max_bytes, true);
+          rasterizer->SetResourceCacheMaxBytes(static_cast<size_t>(max_bytes),
+                                               true);
         }
       });
 }

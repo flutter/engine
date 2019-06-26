@@ -406,7 +406,7 @@ void Rasterizer::FireNextFrameCallbackIfPresent() {
   callback();
 }
 
-void Rasterizer::SetResourceCacheMaxBytes(int max_bytes, bool from_user) {
+void Rasterizer::SetResourceCacheMaxBytes(size_t max_bytes, bool from_user) {
   user_override_resource_cache_bytes_ |= from_user;
 
   if (!from_user && user_override_resource_cache_bytes_) {
@@ -423,14 +423,13 @@ void Rasterizer::SetResourceCacheMaxBytes(int max_bytes, bool from_user) {
   }
 }
 
-int Rasterizer::GetResourceCacheMaxBytes() const {
+size_t Rasterizer::GetResourceCacheMaxBytes() const {
   GrContext* context = surface_->GetContext();
   if (context) {
-    int max_resources;
-    context->getResourceCacheLimits(&max_resources, nullptr);
-    return max_resources;
+    size_t max_bytes;
+    context->getResourceCacheLimits(nullptr, &max_bytes);
+    return max_bytes;
   }
-  FML_DLOG(ERROR) << "There is no context?!";
   return 0;
 }
 
