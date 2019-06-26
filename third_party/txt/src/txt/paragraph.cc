@@ -413,17 +413,19 @@ bool Paragraph::ComputeBidiRuns(std::vector<BidiRun>* result) {
   // no longer ambiguous when surrounded by additional text.
   bool has_trailing_whitespace = false;
   int32_t bidi_run_start, bidi_run_length;
-  ubidi_getVisualRun(bidi.get(), bidi_run_count - 1, &bidi_run_start,
-                     &bidi_run_length);
-  if (!U_SUCCESS(status))
-    return false;
-  if (bidi_run_length == 1) {
-    UChar32 last_char;
-    U16_GET(text_.data(), 0, bidi_run_start + bidi_run_length - 1,
-            static_cast<int>(text_.size()), last_char);
-    if (u_hasBinaryProperty(last_char, UCHAR_WHITE_SPACE)) {
-      has_trailing_whitespace = true;
-      bidi_run_count--;
+  if (bidi_run_count > 1) {
+    ubidi_getVisualRun(bidi.get(), bidi_run_count - 1, &bidi_run_start,
+                       &bidi_run_length);
+    if (!U_SUCCESS(status))
+      return false;
+    if (bidi_run_length == 1) {
+      UChar32 last_char;
+      U16_GET(text_.data(), 0, bidi_run_start + bidi_run_length - 1,
+              static_cast<int>(text_.size()), last_char);
+      if (u_hasBinaryProperty(last_char, UCHAR_WHITE_SPACE)) {
+        has_trailing_whitespace = true;
+        bidi_run_count--;
+      }
     }
   }
 
