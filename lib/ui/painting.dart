@@ -1390,6 +1390,23 @@ class Paint {
 
   /// The [ImageFilter] to use when drawing raster images.
   ///
+  /// For example, to blur an image using [Canvas.drawImage], apply an
+  /// [ImageFilter.blur]:
+  ///
+  /// ```dart
+  /// import 'dart:ui' as ui;
+  ///
+  /// ui.Image image;
+  ///
+  /// void paint(Canvas canvas, Size size) {
+  ///   canvas.drawImage(
+  ///     image,
+  ///     Offset.zero,
+  ///     Paint()..imageFilter = ui.ImageFilter.blur(sigmaX: .5, sigmaY: .5),
+  ///   );
+  /// }
+  /// ```
+  ///
   /// See also:
   ///
   ///  * [MaskFilter], which is used for drawing geometry.
