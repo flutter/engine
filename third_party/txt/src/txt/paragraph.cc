@@ -1400,8 +1400,8 @@ void Paragraph::ComputeWavyDecoration(SkPath& path,
   while (x_start + quarter * 2 < width) {
     path.rQuadTo(quarter, wave_count % 2 == 0 ? -quarter : quarter, quarter * 2,
                  0);
-    remaining = width - (x_start + quarter * 2);
     x_start += quarter * 2;
+    remaining = width - x_start;
     ++wave_count;
   }
   // Manually add a final partial quad for the remaining width that do
