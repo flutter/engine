@@ -407,8 +407,7 @@ void Rasterizer::FireNextFrameCallbackIfPresent() {
 }
 
 void Rasterizer::SetResourceCacheMaxBytes(size_t max_bytes, bool from_user) {
-  user_override_resource_cache_bytes_.store(
-      user_override_resource_cache_bytes_ || from_user);
+  user_override_resource_cache_bytes_ |= from_user;
 
   if (!from_user && user_override_resource_cache_bytes_) {
     // We should not update the setting here if a user has explicitly set a
