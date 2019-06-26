@@ -70,10 +70,12 @@ void Rasterizer::Teardown() {
 
 void Rasterizer::PurgeCaches() const {
   if (!surface_) {
+    FML_DLOG(INFO) << "Rasterizer::PurgeCaches called with no surface.";
     return;
   }
   auto context = surface_->GetContext();
   if (!context) {
+    FML_DLOG(INFO) << "Rasterizer::PurgeCaches called with GrContext.";
     return;
   }
   context->freeGpuResources();

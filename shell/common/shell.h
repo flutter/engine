@@ -78,6 +78,11 @@ class Shell final : public PlatformView::Delegate,
 
   DartVM* GetDartVM();
 
+  // Embedders should call this under low memory conditions to free up
+  // internal caches used.
+  //
+  // This method posts tasks to the GPU and IO threads to signal the Rasterizer
+  // and IO Manager on the appropriate threads.
   void PurgeCaches() const;
 
   bool IsSetup() const;

@@ -104,6 +104,10 @@
 
 - (void)dealloc {
   [_pluginPublications release];
+
+  NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+  [center removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+
   [super dealloc];
 }
 
