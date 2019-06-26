@@ -1413,7 +1413,7 @@ void Paragraph::ComputeWavyDecoration(SkPath& path,
   //  * P(x) = -2x^2 - 2x
   //  * P0 = (0, 0)
   //  * P1 = 2P(0.5) - 0.5 * P0 - 0.5 * P2
-  //  * P2 = P(1)
+  //  * P2 = P(remaining / (wavelength / 2))
   double normalized_remaining = remaining / (quarter * 2);
   double p2_x = remaining;
   double p2_y = (wave_count % 2 != 0 ? -1 : 1) * quarter *
