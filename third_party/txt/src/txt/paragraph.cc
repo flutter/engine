@@ -1407,21 +1407,25 @@ void Paragraph::ComputeWavyDecoration(SkPath& path,
   // Manually add a final partial quad for the remaining width that do
   // not fit nicely into a half-wavelength.
   // The following math is based off of quadratic bezier equations:
-  //   Let P0 = start (0,0), P1 = control point, P2 = end, and P(x) be the
-  //   equation for the curve. P(x) = -2x^2 - 2x P1 = 2P(0.5) - 0.5 * P0 - 0.5 *
-  //   P2
+  //
+  //  * Let P(x) be the equation for the curve.
+  //  * Let P0 = start, P1 = control point, P2 = end
+  //  * P(x) = -2x^2 - 2x
+  //  * P0 = (0, 0)
+  //  * P1 = 2P(0.5) - 0.5 * P0 - 0.5 * P2
+  //  * P2 = P(1)
   double normalized_remaining = remaining / (quarter * 2);
-  double end_x = remaining;
-  double end_y = (wave_count % 2 != 0 ? -1 : 1) * quarter *
-                 (2 * normalized_remaining * normalized_remaining -
-                  2 * normalized_remaining);
+  double p2_x = remaining;
+  double p2_y = (wave_count % 2 != 0 ? -1 : 1) * quarter *
+                (2 * normalized_remaining * normalized_remaining -
+                 2 * normalized_remaining);
   double mid_x = remaining / 2;
   double mid_y =
       (wave_count % 2 != 0 ? -1 : 1) * quarter *
       (normalized_remaining * normalized_remaining / 2 - normalized_remaining);
-  double control_x = 2 * mid_x - end_x / 2;
-  double control_y = 2 * mid_y - end_y / 2;
-  path.rQuadTo(control_x, control_y, end_x, end_y);
+  double p1_x = 2 * mid_x - p2_x / 2;
+  double p1_y = 2 * mid_y - p2_y / 2;
+  path.rQuadTo(p1_x, p1_y, p2_x, p2_y);
 }
 
 void Paragraph::PaintBackground(SkCanvas* canvas,
