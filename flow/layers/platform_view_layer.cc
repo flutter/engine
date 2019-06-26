@@ -32,15 +32,13 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
                       "does not support embedding";
     return;
   }
-  EmbeddedViewParams params;
   SkMatrix transform = context.leaf_nodes_canvas->getTotalMatrix();
-  params.offsetPixels =
+  context.view_embedder->embedded_view_params.offsetPixels =
       SkPoint::Make(transform.getTranslateX(), transform.getTranslateY());
-  params.sizePoints = size_;
-  params.mutatorsStack = context.mutators_stack;
+  context.view_embedder->embedded_view_params.sizePoints = size_;
 
   SkCanvas* canvas =
-      context.view_embedder->CompositeEmbeddedView(view_id_, params);
+      context.view_embedder->CompositeEmbeddedView(view_id_, context.view_embedder->embedded_view_params);
   context.leaf_nodes_canvas = canvas;
 }
 }  // namespace flutter
