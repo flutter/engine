@@ -199,11 +199,11 @@ int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_sta
 
 UIView* FlutterPlatformViewsController::ReconstructClipViewsChain(int number_of_clips,
                                                                   UIView* platform_view,
-                                                                  UIView* head_clip_view, int64_t view_id) {
+                                                                  UIView* head_clip_view,
+                                                                  int64_t view_id) {
   NSInteger indexInFlutterView = -1;
   if (head_clip_view.superview) {
     indexInFlutterView = root_views_indices_[view_id];
-    NSLog(@"index reset %@", @(indexInFlutterView));
     [head_clip_view removeFromSuperview];
   }
   UIView* head = platform_view;
@@ -215,7 +215,8 @@ UIView* FlutterPlatformViewsController::ReconstructClipViewsChain(int number_of_
   }
   // If there were not enough existing clip views, add more.
   while (clipIndex < number_of_clips) {
-    ChildClippingView* clippingView = [[ChildClippingView alloc] initWithFrame: flutter_view_.get().frame];
+    ChildClippingView* clippingView =
+        [[ChildClippingView alloc] initWithFrame:flutter_view_.get().frame];
     [clippingView addSubview:head];
     head = clippingView;
     clipIndex++;
@@ -279,21 +280,19 @@ void FlutterPlatformViewsController::CompositeWithParams(
     const flutter::EmbeddedViewParams& params) {
   CGRect frame = CGRectMake(0, 0, params.sizePoints.width(), params.sizePoints.height());
   UIView* touchInterceptor = touch_interceptors_[view_id].get();
+  touchInterceptor.layer.transform = CATransform3DIdentity;
   touchInterceptor.frame = frame;
 
   int currentClippingCount = CountClips(params.mutatorsStack);
   int previousClippingCount = clip_count_[view_id];
-  NSLog(@"previousClippingCount %d", previousClippingCount);
-  NSLog(@"currentClippingCount  %d", currentClippingCount);
 
   if (currentClippingCount != previousClippingCount) {
     clip_count_[view_id] = currentClippingCount;
-    NSLog(@"clip count resetted");
     // If we have a different clipping count in this frame, we need to reconstruct the
     // ClippingChildView chain to prepare for `ApplyMutators`.
     UIView* oldPlatformViewRoot = root_views_[view_id].get();
-    UIView* newPlatformViewRoot =
-        ReconstructClipViewsChain(currentClippingCount, touchInterceptor, oldPlatformViewRoot, view_id);
+    UIView* newPlatformViewRoot = ReconstructClipViewsChain(currentClippingCount, touchInterceptor,
+                                                            oldPlatformViewRoot, view_id);
     root_views_[view_id] = fml::scoped_nsobject<UIView>([newPlatformViewRoot retain]);
   }
   ApplyMutators(params.mutatorsStack, touchInterceptor);
@@ -328,7 +327,6 @@ void FlutterPlatformViewsController::Reset() {
   picture_recorders_.clear();
   current_composition_params_.clear();
   clip_count_.clear();
-  NSLog(@"cleared");
 }
 
 bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
@@ -375,7 +373,7 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
       [flutter_view addSubview:platform_view_root];
       [flutter_view addSubview:overlay];
     }
-    root_views_indices_[view_id] = i*number_of_views_for_each_platform_view;
+    root_views_indices_[view_id] = i * number_of_views_for_each_platform_view;
 
     active_composition_order_.push_back(view_id);
   }
@@ -419,7 +417,6 @@ void FlutterPlatformViewsController::DisposeViews() {
     overlays_.erase(viewId);
     current_composition_params_.erase(viewId);
     clip_count_.erase(viewId);
-    NSLog(@"disposed");
   }
   views_to_dispose_.clear();
 }
