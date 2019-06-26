@@ -147,7 +147,8 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
 
     Dart_Handle image_filter = values[kImageFilterIndex];
     if (!Dart_IsNull(image_filter)) {
-      ImageFilter* decoded = tonic::DartConverter<ImageFilter*>::FromDart(image_filter);
+      ImageFilter* decoded =
+          tonic::DartConverter<ImageFilter*>::FromDart(image_filter);
       paint_.setImageFilter(decoded->filter());
     }
   }
