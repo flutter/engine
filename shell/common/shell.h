@@ -106,10 +106,10 @@ class Shell final : public PlatformView::Delegate,
   fml::WeakPtr<Engine> weak_engine_;          // to be shared across threads
   fml::WeakPtr<Rasterizer> weak_rasterizer_;  // to be shared across threads
   fml::WeakPtr<PlatformView>
-      weak_platform_view_;                   // to be shared across threads
+      weak_platform_view_;                 // to be shared across threads
   int raster_cache_max_bytes_user_value_;  // The user-requested value for the
-                                             // Skia resource cache. -1 if not
-                                             // set.
+                                           // Skia resource cache. -1 if not
+                                           // set.
 
   std::unordered_map<std::string,  // method
                      std::pair<fml::RefPtr<fml::TaskRunner>,
