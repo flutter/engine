@@ -1414,18 +1414,18 @@ void Paragraph::ComputeWavyDecoration(SkPath& path,
   //  * P0 = (0, 0)
   //  * P1 = 2P(0.5) - 0.5 * P0 - 0.5 * P2
   //  * P2 = P(remaining / (wavelength / 2))
-  double normalized_remaining = remaining / (quarter * 2);
-  double p2_x = remaining;
-  double p2_y = (wave_count % 2 != 0 ? -1 : 1) * quarter *
-                (2 * normalized_remaining * normalized_remaining -
-                 2 * normalized_remaining);
-  double mid_x = remaining / 2;
-  double mid_y =
-      (wave_count % 2 != 0 ? -1 : 1) * quarter *
-      (normalized_remaining * normalized_remaining / 2 - normalized_remaining);
-  double p1_x = 2 * mid_x - p2_x / 2;
-  double p1_y = 2 * mid_y - p2_y / 2;
-  path.rQuadTo(p1_x, p1_y, p2_x, p2_y);
+  //
+  // Simplified implementation coursesy of @jim-flar at
+  // https://github.com/flutter/engine/pull/9468#discussion_r297872739
+  // Unsimplified original version at
+  // https://github.com/flutter/engine/pull/9468#discussion_r297879129
+
+  double x1 = remaining / 2;
+  double y1 = remaining / 2 * (wave_count % 2 != 0 ? 1 : -1);
+  double x2 = remaining;
+  double y2 = (remaining - remaining * remaining / (quarter * 2)) *
+              (wave_count % 2 != 0 ? 1 : -1);
+  path.rQuadTo(x1, y1, x2, y2);
 }
 
 void Paragraph::PaintBackground(SkCanvas* canvas,
