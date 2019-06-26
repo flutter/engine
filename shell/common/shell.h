@@ -122,7 +122,7 @@ class Shell final : public PlatformView::Delegate,
   uint64_t next_pointer_flow_id_ = 0;
 
   bool first_frame_rasterized_ = false;
-  bool waiting_for_frame_ = false;
+  std::atomic<bool> waiting_for_frame_ = false;
   std::mutex waiting_for_frame_mutex_;
   std::condition_variable waiting_for_frame_condition_;
 
