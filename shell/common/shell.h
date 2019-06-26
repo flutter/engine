@@ -81,9 +81,9 @@ class Shell final : public PlatformView::Delegate,
   // Embedders should call this under low memory conditions to free up
   // internal caches used.
   //
-  // This method posts tasks to the GPU and IO threads to signal the Rasterizer
-  // and IO Manager on the appropriate threads.
-  void PurgeCaches() const;
+  // This method posts a task to the GPU threads to signal the Rasterizer to
+  // free resources.
+  void NotifyLowMemoryWarning() const;
 
   bool IsSetup() const;
 

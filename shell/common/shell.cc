@@ -369,19 +369,15 @@ Shell::~Shell() {
   platform_latch.Wait();
 }
 
-void Shell::PurgeCaches() const {
+void Shell::NotifyLowMemoryWarning() const {
   task_runners_.GetGPUTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr()]() {
         if (rasterizer) {
-          rasterizer->PurgeCaches();
+          rasterizer->NotifyLowMemoryWarning();
         }
       });
-  task_runners_.GetIOTaskRunner()->PostTask(
-      [io_manager = io_manager_->GetWeakPtr()]() {
-        if (io_manager) {
-          io_manager->PurgeCaches();
-        }
-      });
+  // The IO Manager uses resource cache limits of 0, so it is not necessary
+  // to purge them.
 }
 
 bool Shell::IsSetup() const {

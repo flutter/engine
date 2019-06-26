@@ -49,7 +49,7 @@ class Rasterizer final : public SnapshotDelegate {
   // Frees up Skia GPU resources.
   //
   // This method must be called from the GPU task runner.
-  void PurgeCaches() const;
+  void NotifyLowMemoryWarning() const;
 
   fml::WeakPtr<Rasterizer> GetWeakPtr() const;
 

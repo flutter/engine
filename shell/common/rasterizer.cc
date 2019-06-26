@@ -68,7 +68,7 @@ void Rasterizer::Teardown() {
   last_layer_tree_.reset();
 }
 
-void Rasterizer::PurgeCaches() const {
+void Rasterizer::NotifyLowMemoryWarning() const {
   if (!surface_) {
     FML_DLOG(INFO) << "Rasterizer::PurgeCaches called with no surface.";
     return;

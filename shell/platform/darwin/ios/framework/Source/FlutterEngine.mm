@@ -587,7 +587,9 @@
 #pragma mark - Memory Notifications
 
 - (void)onMemoryWarning:(NSNotification*)notification {
-  self.shell.PurgeCaches();
+  if (_shell) {
+    _shell->NotifyLowMemoryWarning();
+  }
   [_systemChannel sendMessage:@{@"type" : @"memoryPressure"}];
 }
 
