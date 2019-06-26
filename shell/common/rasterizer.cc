@@ -75,7 +75,7 @@ void Rasterizer::NotifyLowMemoryWarning() const {
   }
   auto context = surface_->GetContext();
   if (!context) {
-    FML_DLOG(INFO) << "Rasterizer::PurgeCaches called with GrContext.";
+    FML_DLOG(INFO) << "Rasterizer::PurgeCaches called with no GrContext.";
     return;
   }
   context->freeGpuResources();
