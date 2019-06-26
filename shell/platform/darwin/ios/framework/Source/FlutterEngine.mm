@@ -490,9 +490,12 @@
                               arguments:@[ @(client), actionString ]];
 }
 
-- (void)showPromptRectForStart:(NSUInteger)start end:(NSUInteger)end withClient:(int)client {
+- (void)showPromptRectForStart:(NSUInteger)start
+                           end:(NSUInteger)end
+                         cause:(FlutterTextPromptRectAppearCause)cause
+                    withClient:(int)client {
   [_textInputChannel.get() invokeMethod:@"TextInputClient.showPromptRect"
-                              arguments:@[@(client), @(start), @(end)]];
+                              arguments:@[@(client), @(start), @(end), @(cause)]];
 }
 
 #pragma mark - Screenshot Delegate

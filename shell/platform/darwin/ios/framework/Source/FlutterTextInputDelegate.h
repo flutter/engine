@@ -27,6 +27,12 @@ typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
   FlutterFloatingCursorDragStateEnd,
 };
 
+typedef NS_ENUM(NSInteger, FlutterTextPromptRectAppearCause) {
+  FlutterTextPromptRectAppearCauseUnspecified,
+  FlutterTextPromptRectAppearCauseAutocorrection,
+  FlutterTextPromptRectAppearCauseMultistageTextInput,
+};
+
 @protocol FlutterTextInputDelegate <NSObject>
 
 - (void)updateEditingClient:(int)client withState:(NSDictionary*)state;
@@ -36,6 +42,7 @@ typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
                 withPosition:(NSDictionary*)point;
 - (void)showPromptRectForStart:(NSUInteger)start
                            end:(NSUInteger)end
+                         cause:(FlutterTextPromptRectAppearCause)cause
                     withClient:(int)client;
 @end
 
