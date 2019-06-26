@@ -100,5 +100,4 @@ fml::RefPtr<flutter::SkiaUnrefQueue> ShellIOManager::GetSkiaUnrefQueue() const {
 fml::WeakPtr<ShellIOManager> ShellIOManager::GetWeakPtr() {
   return weak_factory_.GetWeakPtr();
 }
-
 }  // namespace flutter
