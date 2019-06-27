@@ -6,7 +6,6 @@ import android.support.annotation.Nullable;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 
 public class FlutterSplashView extends FrameLayout {
@@ -80,16 +79,12 @@ public class FlutterSplashView extends FrameLayout {
    * has been set and that {@link FlutterView} has yet to render its first Flutter frame.
    */
   private void showSplashScreen() {
-    Log.d(TAG, "showSplashScreen()");
     // If we were given a splash screen to display, and if Flutter's first frame
     // has yet to be rendered, then show the splash screen.
     if (splashScreen != null && flutterView != null && !flutterView.hasRenderedFirstFrame()) {
-      Log.d(TAG, "Showing splash screen because first frame hasn't rendered.");
       splashScreenView = splashScreen.createSplashView(getContext());
       addView(splashScreenView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
       flutterView.addOnFirstFrameRenderedListener(onFirstFrameRenderedListener);
-    } else {
-      Log.d(TAG, "Not showing splash screen.");
     }
   }
 
@@ -98,7 +93,6 @@ public class FlutterSplashView extends FrameLayout {
    * our {@code OnFirstFrameRenderedListener}, if it is registered.
    */
   private void removeSplashScreen() {
-    Log.d(TAG, "removeSplashScreen()");
     if (splashScreenView != null) {
       removeView(splashScreenView);
     }
