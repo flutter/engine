@@ -76,8 +76,6 @@ source_set("flow") {
 
   if (is_fuchsia) {
     sources += [
-      "export_node.cc",
-      "export_node.h",
       "layers/child_scene_layer.cc",
       "layers/child_scene_layer.h",
       "scene_update_context.cc",
@@ -116,6 +114,7 @@ executable("flow_unittests") {
     "layers/performance_overlay_layer_unittests.cc",
     "layers/physical_shape_layer_unittests.cc",
     "matrix_decomposition_unittests.cc",
+    "mutators_stack_unittests.cc",
     "raster_cache_unittests.cc",
   ]
 

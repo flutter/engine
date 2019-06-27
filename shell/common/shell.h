@@ -34,6 +34,8 @@
 
 namespace flutter {
 
+/// Wraps up all the different components of Flutter engine and coordinates them
+/// through a series of delegates.
 class Shell final : public PlatformView::Delegate,
                     public Animator::Delegate,
                     public Engine::Delegate,
@@ -76,6 +78,13 @@ class Shell final : public PlatformView::Delegate,
 
   DartVM* GetDartVM();
 
+  // Embedders should call this under low memory conditions to free up
+  // internal caches used.
+  //
+  // This method posts a task to the GPU threads to signal the Rasterizer to
+  // free resources.
+  void NotifyLowMemoryWarning() const;
+
   bool IsSetup() const;
 
   Rasterizer::Screenshot Screenshot(Rasterizer::ScreenshotType type,
@@ -94,7 +103,10 @@ class Shell final : public PlatformView::Delegate,
   std::unique_ptr<Rasterizer> rasterizer_;       // on GPU task runner
   std::unique_ptr<ShellIOManager> io_manager_;   // on IO task runner
 
-  fml::WeakPtr<Engine> weak_engine_;  // to be shared across threads
+  fml::WeakPtr<Engine> weak_engine_;          // to be shared across threads
+  fml::WeakPtr<Rasterizer> weak_rasterizer_;  // to be shared across threads
+  fml::WeakPtr<PlatformView>
+      weak_platform_view_;  // to be shared across threads
 
   std::unordered_map<std::string,  // method
                      std::pair<fml::RefPtr<fml::TaskRunner>,
@@ -104,6 +116,8 @@ class Shell final : public PlatformView::Delegate,
       service_protocol_handlers_;
   bool is_setup_ = false;
   uint64_t next_pointer_flow_id_ = 0;
+
+  bool first_frame_rasterized_ = false;
 
   // Written in the UI thread and read from the GPU thread. Hence make it
   // atomic.
@@ -121,7 +135,6 @@ class Shell final : public PlatformView::Delegate,
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;
 
-  Shell(TaskRunners task_runners, Settings settings);
   Shell(DartVMRef vm, TaskRunners task_runners, Settings settings);
 
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(

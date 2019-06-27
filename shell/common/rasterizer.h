@@ -20,6 +20,7 @@
 
 namespace flutter {
 
+/// Takes |LayerTree|s and draws its contents.
 class Rasterizer final : public SnapshotDelegate {
  public:
   class Delegate {
@@ -44,6 +45,11 @@ class Rasterizer final : public SnapshotDelegate {
   void Setup(std::unique_ptr<Surface> surface);
 
   void Teardown();
+
+  // Frees up Skia GPU resources.
+  //
+  // This method must be called from the GPU task runner.
+  void NotifyLowMemoryWarning() const;
 
   fml::WeakPtr<Rasterizer> GetWeakPtr() const;
 

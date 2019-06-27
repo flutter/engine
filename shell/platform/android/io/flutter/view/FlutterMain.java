@@ -15,7 +15,10 @@ import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.view.WindowManager;
+
 import io.flutter.BuildConfig;
+import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.util.PathUtils;
 
 import java.io.File;
@@ -118,13 +121,17 @@ public class FlutterMain {
 
         System.loadLibrary("flutter");
 
+        VsyncWaiter
+            .getInstance((WindowManager) applicationContext.getSystemService(Context.WINDOW_SERVICE))
+            .init();
+
         // We record the initialization time using SystemClock because at the start of the
         // initialization we have not yet loaded the native library to call into dart_tools_api.h.
         // To get Timeline timestamp of the start of initialization we simply subtract the delta
         // from the Timeline timestamp at the current moment (the assumption is that the overhead
         // of the JNI call is negligible).
         long initTimeMillis = SystemClock.uptimeMillis() - initStartTimestampMillis;
-        nativeRecordStartTimestamp(initTimeMillis);
+        FlutterJNI.nativeRecordStartTimestamp(initTimeMillis);
     }
 
     /**
@@ -143,7 +150,9 @@ public class FlutterMain {
             return;
         }
         try {
-            sResourceExtractor.waitForCompletion();
+            if (sResourceExtractor != null) {
+                sResourceExtractor.waitForCompletion();
+            }
 
             List<String> shellArgs = new ArrayList<>();
             shellArgs.add("--icu-symbol-prefix=_binary_icudtl_dat");
@@ -154,8 +163,12 @@ public class FlutterMain {
             if (args != null) {
                 Collections.addAll(shellArgs, args);
             }
+
+            String kernelPath = null;
             if (BuildConfig.DEBUG) {
-                shellArgs.add("--" + SNAPSHOT_ASSET_PATH_KEY + "=" + PathUtils.getDataDirectory(applicationContext) + "/" + sFlutterAssetsDir);
+                String snapshotAssetPath = PathUtils.getDataDirectory(applicationContext) + File.separator + sFlutterAssetsDir;
+                kernelPath = snapshotAssetPath + File.separator + DEFAULT_KERNEL_BLOB;
+                shellArgs.add("--" + SNAPSHOT_ASSET_PATH_KEY + "=" + snapshotAssetPath);
                 shellArgs.add("--" + VM_SNAPSHOT_DATA_KEY + "=" + sVmSnapshotData);
                 shellArgs.add("--" + ISOLATE_SNAPSHOT_DATA_KEY + "=" + sIsolateSnapshotData);
             } else {
@@ -167,11 +180,10 @@ public class FlutterMain {
                 shellArgs.add("--log-tag=" + sSettings.getLogTag());
             }
 
-            String appBundlePath = findAppBundlePath(applicationContext);
             String appStoragePath = PathUtils.getFilesDir(applicationContext);
             String engineCachesPath = PathUtils.getCacheDirectory(applicationContext);
-            nativeInit(applicationContext, shellArgs.toArray(new String[0]),
-                appBundlePath, appStoragePath, engineCachesPath);
+            FlutterJNI.nativeInit(applicationContext, shellArgs.toArray(new String[0]),
+                kernelPath, appStoragePath, engineCachesPath);
 
             sInitialized = true;
         } catch (Exception e) {
@@ -216,9 +228,6 @@ public class FlutterMain {
         }).start();
     }
 
-    private static native void nativeInit(Context context, String[] args, String bundlePath, String appStoragePath, String engineCachesPath);
-    private static native void nativeRecordStartTimestamp(long initTimeMillis);
-
     @NonNull
     private static ApplicationInfo getApplicationInfo(@NonNull Context applicationContext) {
         try {
@@ -257,31 +266,27 @@ public class FlutterMain {
     private static void initResources(@NonNull Context applicationContext) {
         new ResourceCleaner(applicationContext).start();
 
-        final String dataDirPath = PathUtils.getDataDirectory(applicationContext);
-        final String packageName = applicationContext.getPackageName();
-        final PackageManager packageManager = applicationContext.getPackageManager();
-        final AssetManager assetManager = applicationContext.getResources().getAssets();
-        sResourceExtractor = new ResourceExtractor(dataDirPath, packageName, packageManager, assetManager);
-
-        // In debug/JIT mode these assets will be written to disk and then
-        // mapped into memory so they can be provided to the Dart VM.
-        // AOT modes obtain compiled Dart assets from a ELF library that does
-        // not need to be extracted out of the APK.
         if (BuildConfig.DEBUG) {
-          sResourceExtractor
-              .addResource(fromFlutterAssets(sVmSnapshotData))
-              .addResource(fromFlutterAssets(sIsolateSnapshotData))
-              .addResource(fromFlutterAssets(DEFAULT_KERNEL_BLOB));
-        }
+            final String dataDirPath = PathUtils.getDataDirectory(applicationContext);
+            final String packageName = applicationContext.getPackageName();
+            final PackageManager packageManager = applicationContext.getPackageManager();
+            final AssetManager assetManager = applicationContext.getResources().getAssets();
+            sResourceExtractor = new ResourceExtractor(dataDirPath, packageName, packageManager, assetManager);
 
-        sResourceExtractor.start();
+            // In debug/JIT mode these assets will be written to disk and then
+            // mapped into memory so they can be provided to the Dart VM.
+            sResourceExtractor
+                .addResource(fromFlutterAssets(sVmSnapshotData))
+                .addResource(fromFlutterAssets(sIsolateSnapshotData))
+                .addResource(fromFlutterAssets(DEFAULT_KERNEL_BLOB));
+
+            sResourceExtractor.start();
+        }
     }
 
     @Nullable
     public static String findAppBundlePath(@NonNull Context applicationContext) {
-        String dataDirectory = PathUtils.getDataDirectory(applicationContext);
-        File appBundle = new File(dataDirectory, sFlutterAssetsDir);
-        return appBundle.exists() ? appBundle.getPath() : null;
+        return sFlutterAssetsDir;
     }
 
     /**

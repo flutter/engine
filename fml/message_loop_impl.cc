@@ -39,13 +39,24 @@ fml::RefPtr<MessageLoopImpl> MessageLoopImpl::Create() {
 #endif
 }
 
-MessageLoopImpl::MessageLoopImpl() : order_(0), terminated_(false) {}
+MessageLoopImpl::MessageLoopImpl()
+    : task_queue_(MessageLoopTaskQueues::GetInstance()),
+      queue_id_(task_queue_->CreateTaskQueue()),
+      terminated_(false) {
+  task_queue_->SetWakeable(queue_id_, this);
+}
 
 MessageLoopImpl::~MessageLoopImpl() = default;
 
 void MessageLoopImpl::PostTask(fml::closure task, fml::TimePoint target_time) {
   FML_DCHECK(task != nullptr);
-  RegisterTask(task, target_time);
+  FML_DCHECK(task != nullptr);
+  if (terminated_) {
+    // If the message loop has already been terminated, PostTask should destruct
+    // |task| synchronously within this function.
+    return;
+  }
+  task_queue_->RegisterTask(queue_id_, task, target_time);
 }
 
 void MessageLoopImpl::AddTaskObserver(intptr_t key, fml::closure callback) {
@@ -53,16 +64,14 @@ void MessageLoopImpl::AddTaskObserver(intptr_t key, fml::closure callback) {
   FML_DCHECK(MessageLoop::GetCurrent().GetLoopImpl().get() == this)
       << "Message loop task observer must be added on the same thread as the "
          "loop.";
-  std::lock_guard<std::mutex> observers_lock(observers_mutex_);
-  task_observers_[key] = std::move(callback);
+  task_queue_->AddTaskObserver(queue_id_, key, callback);
 }
 
 void MessageLoopImpl::RemoveTaskObserver(intptr_t key) {
   FML_DCHECK(MessageLoop::GetCurrent().GetLoopImpl().get() == this)
       << "Message loop task observer must be removed from the same thread as "
          "the loop.";
-  std::lock_guard<std::mutex> observers_lock(observers_mutex_);
-  task_observers_.erase(key);
+  task_queue_->RemoveTaskObserver(queue_id_, key);
 }
 
 void MessageLoopImpl::DoRun() {
@@ -88,8 +97,7 @@ void MessageLoopImpl::DoRun() {
   // should be destructed on the message loop's thread. We have just returned
   // from the implementations |Run| method which we know is on the correct
   // thread. Drop all pending tasks on the floor.
-  std::lock_guard<std::mutex> lock(delayed_tasks_mutex_);
-  delayed_tasks_ = {};
+  task_queue_->Dispose(queue_id_);
 }
 
 void MessageLoopImpl::DoTerminate() {
@@ -109,31 +117,8 @@ void MessageLoopImpl::SwapTaskQueues(const fml::RefPtr<MessageLoopImpl>& other)
   std::unique_lock<std::mutex> t2(other->tasks_flushing_mutex_,
                                   std::defer_lock);
 
-  // task_observers locks
-  std::unique_lock<std::mutex> o1(observers_mutex_, std::defer_lock);
-  std::unique_lock<std::mutex> o2(other->observers_mutex_, std::defer_lock);
-
-  // delayed_tasks locks
-  std::unique_lock<std::mutex> d1(delayed_tasks_mutex_, std::defer_lock);
-  std::unique_lock<std::mutex> d2(other->delayed_tasks_mutex_, std::defer_lock);
-
-  std::lock(t1, t2, o1, o2, d1, d2);
-
-  std::swap(task_observers_, other->task_observers_);
-  std::swap(delayed_tasks_, other->delayed_tasks_);
-}
-
-void MessageLoopImpl::RegisterTask(fml::closure task,
-                                   fml::TimePoint target_time) {
-  FML_DCHECK(task != nullptr);
-  if (terminated_) {
-    // If the message loop has already been terminated, PostTask should destruct
-    // |task| synchronously within this function.
-    return;
-  }
-  std::lock_guard<std::mutex> lock(delayed_tasks_mutex_);
-  delayed_tasks_.push({++order_, std::move(task), target_time});
-  WakeUp(delayed_tasks_.top().GetTargetTime());
+  std::lock(t1, t2);
+  task_queue_->Swap(queue_id_, other->queue_id_);
 }
 
 void MessageLoopImpl::FlushTasks(FlushType type) {
@@ -146,38 +131,12 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
   // where:
   // gather invocations -> Swap -> execute invocations
   // will lead us to run invocations on the wrong thread.
-  std::lock_guard<std::mutex> task_flush_lock(tasks_flushing_mutex_);
-
-  {
-    std::lock_guard<std::mutex> lock(delayed_tasks_mutex_);
-
-    if (delayed_tasks_.empty()) {
-      return;
-    }
-
-    auto now = fml::TimePoint::Now();
-    while (!delayed_tasks_.empty()) {
-      const auto& top = delayed_tasks_.top();
-      if (top.GetTargetTime() > now) {
-        break;
-      }
-      invocations.emplace_back(std::move(top.GetTask()));
-      delayed_tasks_.pop();
-      if (type == FlushType::kSingle) {
-        break;
-      }
-    }
-
-    WakeUp(delayed_tasks_.empty() ? fml::TimePoint::Max()
-                                  : delayed_tasks_.top().GetTargetTime());
-  }
+  std::scoped_lock task_flush_lock(tasks_flushing_mutex_);
+  task_queue_->GetTasksToRunNow(queue_id_, type, invocations);
 
   for (const auto& invocation : invocations) {
     invocation();
-    std::lock_guard<std::mutex> observers_lock(observers_mutex_);
-    for (const auto& observer : task_observers_) {
-      observer.second();
-    }
+    task_queue_->NotifyObservers(queue_id_);
   }
 }
 

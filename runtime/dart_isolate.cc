@@ -141,6 +141,13 @@ DartIsolate::Phase DartIsolate::GetPhase() const {
   return phase_;
 }
 
+std::string DartIsolate::GetServiceId() {
+  const char* service_id_buf = Dart_IsolateServiceId(isolate());
+  std::string service_id(service_id_buf);
+  free(const_cast<char*>(service_id_buf));
+  return service_id;
+}
+
 bool DartIsolate::Initialize(Dart_Isolate dart_isolate, bool is_root_isolate) {
   TRACE_EVENT0("flutter", "DartIsolate::Initialize");
   if (phase_ != Phase::Uninitialized) {
@@ -606,9 +613,9 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
 
   tonic::DartState::Scope scope(service_isolate);
   if (!DartServiceIsolate::Startup(
-          settings.ipv6 ? "::1" : "127.0.0.1",  // server IP address
-          settings.observatory_port,            // server observatory port
-          tonic::DartState::HandleLibraryTag,   // embedder library tag handler
+          settings.observatory_host,           // server IP address
+          settings.observatory_port,           // server observatory port
+          tonic::DartState::HandleLibraryTag,  // embedder library tag handler
           false,  //  disable websocket origin check
           settings.disable_service_auth_codes,  // disable VM service auth codes
           error                                 // error (out)

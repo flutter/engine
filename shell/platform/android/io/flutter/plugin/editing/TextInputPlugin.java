@@ -237,6 +237,21 @@ public class TextInputPlugin {
         return lastInputConnection;
     }
 
+    /**
+     * Clears a platform view text input client if it is the current input target.
+     *
+     * This is called when a platform view is disposed to make sure we're not hanging to a stale input
+     * connection.
+     */
+    public void clearPlatformViewClient(int platformViewId) {
+        if (inputTarget.type == InputTarget.Type.PLATFORM_VIEW && inputTarget.id == platformViewId) {
+            inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
+            hideTextInput(mView);
+            mImm.restartInput(mView);
+            mRestartInputPending = false;
+        }
+    }
+
     private void showTextInput(View view) {
         view.requestFocus();
         mImm.showSoftInput(view, 0);
@@ -262,6 +277,10 @@ public class TextInputPlugin {
     }
 
     private void setPlatformViewTextInputClient(int platformViewId) {
+        // We need to make sure that the Flutter view is focused so that no imm operations get short circuited.
+        // Not asking for focus here specifically manifested in a but on API 28 devices where the platform view's
+        // request to show a keyboard was ignored.
+        mView.requestFocus();
         inputTarget = new InputTarget(InputTarget.Type.PLATFORM_VIEW, platformViewId);
         mImm.restartInput(mView);
         mRestartInputPending = false;
