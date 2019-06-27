@@ -249,6 +249,23 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// an optimization. It has no effect on the correctness of rendering.
   /// {@endtemplate}
   ///
+  /// {@template dart.ui.sceneBuilder.oldLayerVsRetained}
+  /// Passing a layer to [addRetained] or as `oldLayer` argument to a push
+  /// method counts as _usage_. A layer be used no more than once in a scene.
+  /// For example, it may not be passed simultaneously to two push methods, or
+  /// to a push method and to `addRetained`.
+  ///
+  /// When a layer is passed to [addRetained] all descendant layers are also
+  /// considered as used in this scene. The same single-usage restriction
+  /// applies to descendants.
+  ///
+  /// When a layer is passed as an `oldLayer` argument to a push method, it may
+  /// no longer be used in subsequent frames. If you would like to continue
+  /// reusing the resources associated layer, store the layer object returned
+  /// by the push method and use that in the next frame instead of the original
+  /// object.
+  /// {@endtemplate}
+  ///
   /// See [pop] for details about the operation stack.
   TransformEngineLayer pushTransform(Float64List matrix4, { TransformEngineLayer oldLayer }) {
     assert(_matrix4IsValid(matrix4));
@@ -265,6 +282,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
+  /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
+  ///
   /// See [pop] for details about the operation stack.
   OffsetEngineLayer pushOffset(double dx, double dy, { OffsetEngineLayer oldLayer }) {
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushOffset'));
@@ -279,6 +298,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Rasterization outside the given rectangle is discarded.
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
+  ///
+  /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
@@ -302,6 +323,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
+  /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
+  ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
   ClipRRectEngineLayer pushClipRRect(RRect rrect, {Clip clipBehavior = Clip.antiAlias, ClipRRectEngineLayer oldLayer}) {
@@ -319,6 +342,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Rasterization outside the given path is discarded.
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
+  ///
+  /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack. See [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
@@ -341,6 +366,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
+  /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
+  ///
   /// See [pop] for details about the operation stack.
   OpacityEngineLayer pushOpacity(int alpha, {Offset offset = Offset.zero, OpacityEngineLayer oldLayer}) {
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushOpacity'));
@@ -356,6 +383,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// blend mode.
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
+  ///
+  /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
   ColorFilterEngineLayer pushColorFilter(Color color, BlendMode blendMode, { ColorFilterEngineLayer oldLayer }) {
@@ -373,6 +402,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
+  /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
+  ///
   /// See [pop] for details about the operation stack.
   BackdropFilterEngineLayer pushBackdropFilter(ImageFilter filter, { BackdropFilterEngineLayer oldLayer }) {
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushBackdropFilter'));
@@ -388,6 +419,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// rectangle using the given blend mode.
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
+  ///
+  /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
   ShaderMaskEngineLayer pushShaderMask(Shader shader, Rect maskRect, BlendMode blendMode, { ShaderMaskEngineLayer oldLayer }) {
@@ -420,6 +453,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// color of the layer background.
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
+  ///
+  /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   // ignore: deprecated_member_use
@@ -454,6 +489,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Therefore, when implementing a subclass of the [Layer] concept defined in
   /// the rendering layer of Flutter's framework, once this is called, there's
   /// no need to call [addToScene] for its children layers.
+  ///
+  /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   void addRetained(EngineLayer retainedLayer) {
     assert(retainedLayer is _EngineLayerWrapper);
     assert(() {
