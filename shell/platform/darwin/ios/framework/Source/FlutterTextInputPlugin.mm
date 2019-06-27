@@ -545,10 +545,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     cause = FlutterTextPromptRectAppearCauseMultistageTextInput;
   }
 
-  [_textInputDelegate showPromptRectForStart:start
-                                         end:end
-                                       cause:cause
-                                  withClient:_textInputClient];
+  [_textInputDelegate showPromptRectForStart:start end:end cause:cause withClient:_textInputClient];
   // TODO(cbracken) Implement.
   return CGRectZero;
 }

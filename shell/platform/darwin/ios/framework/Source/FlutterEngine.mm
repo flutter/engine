@@ -495,7 +495,7 @@
                          cause:(FlutterTextPromptRectAppearCause)cause
                     withClient:(int)client {
   [_textInputChannel.get() invokeMethod:@"TextInputClient.showPromptRect"
-                              arguments:@[@(client), @(start), @(end), @(cause)]];
+                              arguments:@[ @(client), @(start), @(end), @(cause) ]];
 }
 
 #pragma mark - Screenshot Delegate
