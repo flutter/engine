@@ -55,6 +55,24 @@ abstract class _EngineLayerWrapper implements EngineLayer {
   // Null if this layer has no children. This field is populated only in debug
   // mode.
   List<_EngineLayerWrapper> _debugChildren;
+
+  // Whether this layer was used as `oldLayer` in a past frame.
+  //
+  // It is illegal to use a layer object again after it is passed as an
+  // `oldLayer` argument.
+  bool _debugWasUsedAsOldLayer = false;
+
+  bool _debugCheckNotUsedAsOldLayer() {
+    assert(
+      !_debugWasUsedAsOldLayer,
+      'Layer $runtimeType was previously used as oldLayer.\n'
+      'Once a layer is used as oldLayer, it may not be used again. Instead, '
+      'after calling one of the SceneBuilder.push* methods and passing an oldLayer '
+      'to it, use the layer returned by the method as oldLayer in subsequent '
+      'frames.'
+    );
+    return true;
+  }
 }
 
 /// An opaque handle to a transform engine layer.
@@ -180,7 +198,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
       assert(
         !_usedLayers.containsKey(layer),
         'Layer ${layer.runtimeType} already used.\n'
-        'The layer is already being used for ${_usedLayers[layer]} in this scene.\n'
+        'The layer is already being used as ${_usedLayers[layer]} in this scene.\n'
         'A layer may only be used once in a given scene.'
       );
 
@@ -188,6 +206,19 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
       return true;
     }());
 
+    return true;
+  }
+
+  bool _debugCheckCanBeUsedAsOldLayer(_EngineLayerWrapper layer, String methodName) {
+    assert(() {
+      if (layer == null) {
+        return true;
+      }
+      layer._debugCheckNotUsedAsOldLayer();
+      assert(_debugCheckUsedOnce(layer, 'oldLayer in $methodName'));
+      layer._debugWasUsedAsOldLayer = true;
+      return true;
+    }());
     return true;
   }
 
@@ -221,7 +252,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// See [pop] for details about the operation stack.
   TransformEngineLayer pushTransform(Float64List matrix4, { TransformEngineLayer oldLayer }) {
     assert(_matrix4IsValid(matrix4));
-    assert(_debugCheckUsedOnce(oldLayer, 'oldLayer in pushTransform'));
+    assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushTransform'));
     final TransformEngineLayer layer = TransformEngineLayer._(_pushTransform(matrix4));
     assert(_debugPushLayer(layer));
     return layer;
@@ -236,7 +267,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack.
   OffsetEngineLayer pushOffset(double dx, double dy, { OffsetEngineLayer oldLayer }) {
-    assert(_debugCheckUsedOnce(oldLayer, 'oldLayer in pushOffset'));
+    assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushOffset'));
     final OffsetEngineLayer layer = OffsetEngineLayer._(_pushOffset(dx, dy));
     assert(_debugPushLayer(layer));
     return layer;
@@ -254,7 +285,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ClipRectEngineLayer pushClipRect(Rect rect, {Clip clipBehavior = Clip.antiAlias, ClipRectEngineLayer oldLayer }) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
-    assert(_debugCheckUsedOnce(oldLayer, 'oldLayer in pushClipRect'));
+    assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushClipRect'));
     final ClipRectEngineLayer layer = ClipRectEngineLayer._(_pushClipRect(rect.left, rect.right, rect.top, rect.bottom, clipBehavior.index));
     assert(_debugPushLayer(layer));
     return layer;
@@ -276,7 +307,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ClipRRectEngineLayer pushClipRRect(RRect rrect, {Clip clipBehavior = Clip.antiAlias, ClipRRectEngineLayer oldLayer}) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
-    assert(_debugCheckUsedOnce(oldLayer, 'oldLayer in pushClipRRect'));
+    assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushClipRRect'));
     final ClipRRectEngineLayer layer = ClipRRectEngineLayer._(_pushClipRRect(rrect._value32, clipBehavior.index));
     assert(_debugPushLayer(layer));
     return layer;
@@ -294,7 +325,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ClipPathEngineLayer pushClipPath(Path path, {Clip clipBehavior = Clip.antiAlias, ClipPathEngineLayer oldLayer}) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
-    assert(_debugCheckUsedOnce(oldLayer, 'oldLayer in pushClipPath'));
+    assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushClipPath'));
     final ClipPathEngineLayer layer = ClipPathEngineLayer._(_pushClipPath(path, clipBehavior.index));
     assert(_debugPushLayer(layer));
     return layer;
@@ -312,7 +343,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack.
   OpacityEngineLayer pushOpacity(int alpha, {Offset offset = Offset.zero, OpacityEngineLayer oldLayer}) {
-    assert(_debugCheckUsedOnce(oldLayer, 'oldLayer in pushOpacity'));
+    assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushOpacity'));
     final OpacityEngineLayer layer = OpacityEngineLayer._(_pushOpacity(alpha, offset.dx, offset.dy));
     assert(_debugPushLayer(layer));
     return layer;
@@ -328,7 +359,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack.
   ColorFilterEngineLayer pushColorFilter(Color color, BlendMode blendMode, { ColorFilterEngineLayer oldLayer }) {
-    assert(_debugCheckUsedOnce(oldLayer, 'oldLayer in pushColorFilter'));
+    assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushColorFilter'));
     final ColorFilterEngineLayer layer = ColorFilterEngineLayer._(_pushColorFilter(color.value, blendMode.index));
     assert(_debugPushLayer(layer));
     return layer;
@@ -344,7 +375,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack.
   BackdropFilterEngineLayer pushBackdropFilter(ImageFilter filter, { BackdropFilterEngineLayer oldLayer }) {
-    assert(_debugCheckUsedOnce(oldLayer, 'oldLayer in pushBackdropFilter'));
+    assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushBackdropFilter'));
     final BackdropFilterEngineLayer layer = BackdropFilterEngineLayer._(_pushBackdropFilter(filter));
     assert(_debugPushLayer(layer));
     return layer;
@@ -360,7 +391,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack.
   ShaderMaskEngineLayer pushShaderMask(Shader shader, Rect maskRect, BlendMode blendMode, { ShaderMaskEngineLayer oldLayer }) {
-    assert(_debugCheckUsedOnce(oldLayer, 'oldLayer in pushShaderMask'));
+    assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushShaderMask'));
     final ShaderMaskEngineLayer layer = ShaderMaskEngineLayer._(_pushShaderMask(shader,
                            maskRect.left,
                            maskRect.right,
@@ -393,7 +424,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   // ignore: deprecated_member_use
   PhysicalShapeEngineLayer pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, Clip clipBehavior = Clip.none, PhysicalShapeEngineLayer oldLayer }) {
-    assert(_debugCheckUsedOnce(oldLayer, 'oldLayer in pushPhysicalShape'));
+    assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushPhysicalShape'));
     final PhysicalShapeEngineLayer layer = PhysicalShapeEngineLayer._(_pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000, clipBehavior.index));
     assert(_debugPushLayer(layer));
     return layer;
@@ -426,19 +457,20 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   void addRetained(EngineLayer retainedLayer) {
     assert(retainedLayer is _EngineLayerWrapper);
     assert(() {
-      _debugCheckUsedOnce(retainedLayer, 'addRetained');
+      final _EngineLayerWrapper layer = retainedLayer;
 
       void recursivelyCheckChildrenUsedOnce(_EngineLayerWrapper parentLayer) {
+        _debugCheckUsedOnce(parentLayer, 'retained layer');
+        parentLayer._debugCheckNotUsedAsOldLayer();
+
         if (parentLayer._debugChildren == null || parentLayer._debugChildren.isEmpty) {
           return;
         }
 
-        for (_EngineLayerWrapper childLayer in parentLayer._debugChildren) {
-          _debugCheckUsedOnce(childLayer, 'retaining an ancestor layer');
-        }
+        parentLayer._debugChildren.forEach(recursivelyCheckChildrenUsedOnce);
       }
 
-      recursivelyCheckChildrenUsedOnce(retainedLayer);
+      recursivelyCheckChildrenUsedOnce(layer);
 
       return true;
     }());
