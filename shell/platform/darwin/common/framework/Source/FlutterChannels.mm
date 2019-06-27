@@ -267,17 +267,15 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
   [super dealloc];
 }
 
-- (void)setStreamHandler:(NSObject<FlutterStreamHandler>*)handler {
-  if (!handler) {
-    [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:nil];
-    return;
-  }
+static void SetStreamHandlerMessageHandlerOnChannel(NSObject<FlutterStreamHandler>* handler,
+                                                    NSString* name,
+                                                    NSObject<FlutterBinaryMessenger>* messenger,
+                                                    NSObject<FlutterMethodCodec>* codec) {
   __block FlutterEventSink currentSink = nil;
   // self retains _messenger, _messenger retains this block, so it is safe to use a weak reference
   // to self.
-  __block FlutterEventChannel* blockSelf = self;
   FlutterBinaryMessageHandler messageHandler = ^(NSData* message, FlutterBinaryReply callback) {
-    FlutterMethodCall* call = [blockSelf->_codec decodeMethodCall:message];
+    FlutterMethodCall* call = [codec decodeMethodCall:message];
     if ([call.method isEqual:@"listen"]) {
       if (currentSink) {
         FlutterError* error = [handler onCancelWithArguments:nil];
@@ -287,38 +285,43 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
       }
       currentSink = ^(id event) {
         if (event == FlutterEndOfEventStream)
-          [blockSelf->_messenger sendOnChannel:blockSelf->_name message:nil];
+          [messenger sendOnChannel:name message:nil];
         else if ([event isKindOfClass:[FlutterError class]])
-          [blockSelf->_messenger
-              sendOnChannel:blockSelf->_name
-                    message:[blockSelf->_codec encodeErrorEnvelope:(FlutterError*)event]];
+          [messenger sendOnChannel:name message:[codec encodeErrorEnvelope:(FlutterError*)event]];
         else
-          [blockSelf->_messenger sendOnChannel:blockSelf->_name
-                                       message:[blockSelf->_codec encodeSuccessEnvelope:event]];
+          [messenger sendOnChannel:name message:[codec encodeSuccessEnvelope:event]];
       };
       FlutterError* error = [handler onListenWithArguments:call.arguments eventSink:currentSink];
       if (error)
-        callback([blockSelf->_codec encodeErrorEnvelope:error]);
+        callback([codec encodeErrorEnvelope:error]);
       else
-        callback([blockSelf->_codec encodeSuccessEnvelope:nil]);
+        callback([codec encodeSuccessEnvelope:nil]);
     } else if ([call.method isEqual:@"cancel"]) {
       if (!currentSink) {
-        callback([blockSelf->_codec
-            encodeErrorEnvelope:[FlutterError errorWithCode:@"error"
-                                                    message:@"No active stream to cancel"
-                                                    details:nil]]);
+        callback(
+            [codec encodeErrorEnvelope:[FlutterError errorWithCode:@"error"
+                                                           message:@"No active stream to cancel"
+                                                           details:nil]]);
         return;
       }
       currentSink = nil;
       FlutterError* error = [handler onCancelWithArguments:call.arguments];
       if (error)
-        callback([blockSelf->_codec encodeErrorEnvelope:error]);
+        callback([codec encodeErrorEnvelope:error]);
       else
-        callback([blockSelf->_codec encodeSuccessEnvelope:nil]);
+        callback([codec encodeSuccessEnvelope:nil]);
     } else {
       callback(nil);
     }
   };
-  [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
+  [messenger setMessageHandlerOnChannel:name binaryMessageHandler:messageHandler];
+}
+
+- (void)setStreamHandler:(NSObject<FlutterStreamHandler>*)handler {
+  if (!handler) {
+    [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:nil];
+    return;
+  }
+  SetStreamHandlerMessageHandlerOnChannel(handler, _name, _messenger, _codec);
 }
 @end
