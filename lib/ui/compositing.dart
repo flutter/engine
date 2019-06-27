@@ -251,7 +251,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// {@template dart.ui.sceneBuilder.oldLayerVsRetained}
   /// Passing a layer to [addRetained] or as `oldLayer` argument to a push
-  /// method counts as _usage_. A layer be used no more than once in a scene.
+  /// method counts as _usage_. A layer can be used no more than once in a scene.
   /// For example, it may not be passed simultaneously to two push methods, or
   /// to a push method and to `addRetained`.
   ///
@@ -261,9 +261,9 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// When a layer is passed as an `oldLayer` argument to a push method, it may
   /// no longer be used in subsequent frames. If you would like to continue
-  /// reusing the resources associated layer, store the layer object returned
-  /// by the push method and use that in the next frame instead of the original
-  /// object.
+  /// reusing the resources associated with the layer, store the layer object
+  /// returned by the push method and use that in the next frame instead of the
+  /// original object.
   /// {@endtemplate}
   ///
   /// See [pop] for details about the operation stack.
