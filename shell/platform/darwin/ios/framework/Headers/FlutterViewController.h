@@ -167,8 +167,12 @@ FLUTTER_EXPORT
 /**
  * The `FlutterBinaryMessenger` associated with this FlutterViewController (used for communicating
  * with channels).
+ *
+ * @deprecated Since |FlutterViewController| just forwards binary messenger calls to the
+ * |FlutterEngine|, just use the FlutterEngine.binaryMessenger.
  */
-@property(nonatomic, readonly) NSObject<FlutterBinaryMessenger>* binaryMessenger;
+@property(nonatomic, readonly) NSObject<FlutterBinaryMessenger>* binaryMessenger
+    __attribute__((deprecated));
 
 @end
 
