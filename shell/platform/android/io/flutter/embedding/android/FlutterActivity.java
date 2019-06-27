@@ -70,7 +70,7 @@ import io.flutter.view.FlutterMain;
 public class FlutterActivity extends FragmentActivity
     implements FlutterFragment.FlutterEngineProvider,
     FlutterFragment.FlutterEngineConfigurator,
-    OnFirstFrameRenderedListener {
+    FlutterFragment.SplashScreenProvider {
   private static final String TAG = "FlutterActivity";
 
   // Meta-data arguments, processed from manifest XML.
@@ -93,11 +93,6 @@ public class FlutterActivity extends FragmentActivity
   private static final int FRAGMENT_CONTAINER_ID = 609893468; // random number
   @Nullable
   private FlutterFragment flutterFragment;
-
-  // Used to cover the Activity until the 1st frame is rendered so as to
-  // avoid a brief black flicker from a SurfaceView version of FlutterView.
-  @Nullable
-  private View coverView;
 
   /**
    * Creates an {@link Intent} that launches a {@code FlutterActivity}, which executes
@@ -187,12 +182,54 @@ public class FlutterActivity extends FragmentActivity
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
+    switchLaunchThemeForNormalTheme();
+
     super.onCreate(savedInstanceState);
+
     configureWindowForTransparency();
     setContentView(createFragmentContainer());
-    showCoverView();
     configureStatusBarForFullscreenFlutterExperience();
     ensureFlutterFragmentCreated();
+  }
+
+  /**
+   * Switches themes for this {@code Activity} from the theme used to launch this
+   * {@code Activity} to a "normal theme" that is intended for regular {@code Activity}
+   * operation.
+   * <p>
+   * This behavior is offered so that a "launch screen" can be displayed while the
+   * application initially loads. To utilize this behavior in an app, do the following:
+   * <ol>
+   *   <li>Create 2 different themes in style.xml: one theme for the launch screen and
+   *   one theme for normal display.
+   *   <li>In the launch screen theme, set the "windowBackground" property to a {@code Drawable}
+   *   of your choice.
+   *   <li>In the normal theme, customize however you'd like.
+   *   <li>In the AndroidManifest.xml, set the theme of your {@code FlutterActivity} to
+   *   your launch theme.
+   *   <li>Add a {@code <meta-data>} property to your {@code FlutterActivity} with a name
+   *   of "io.flutter.embedding.android.NormalTheme" and set the resource to your normal
+   *   theme, e.g., {@code android:resource="@style/MyNormalTheme}.
+   * </ol>
+   * With the above settings, your launch theme will be used when loading the app, and
+   * then the theme will be switched to your normal theme once the app has initialized.
+   */
+  private void switchLaunchThemeForNormalTheme() {
+    try {
+      ActivityInfo activityInfo = getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
+      int normalThemeRID = activityInfo.metaData.getInt("io.flutter.embedding.android.NormalTheme", -1);
+      if (normalThemeRID != -1) {
+        setTheme(normalThemeRID);
+      }
+    } catch (PackageManager.NameNotFoundException exception) {
+      Log.e(TAG, "Could not read meta-data for FlutterActivity.");
+    }
+  }
+
+  @Nullable
+  @Override
+  public SplashScreen provideSplashScreen() {
+    return null;
   }
 
   /**
@@ -210,68 +247,6 @@ public class FlutterActivity extends FragmentActivity
         WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
         WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
       );
-    }
-  }
-
-  /**
-   * Cover all visible {@code Activity} area with a {@code View} that paints everything the same
-   * color as the {@code Window}.
-   * <p>
-   * This cover {@code View} should be displayed at the very beginning of the {@code Activity}'s
-   * lifespan and then hidden once Flutter renders its first frame. The purpose of this cover is to
-   * cover {@link FlutterSurfaceView}, which briefly displays a black rectangle before it can make
-   * itself transparent.
-   */
-  private void showCoverView() {
-    if (getBackgroundMode() == BackgroundMode.transparent) {
-      // Don't display an opaque cover view if the Activity is intended to be transparent.
-      return;
-    }
-
-    Log.v(TAG, "Showing cover view until first frame is rendered.");
-
-    // Create the coverView.
-    if (coverView == null) {
-      coverView = new View(this);
-      addContentView(coverView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-    }
-
-    // Pain the coverView with the Window's background.
-    Drawable background = createCoverViewBackground();
-    if (background != null) {
-      coverView.setBackground(background);
-    } else {
-      // If we can't obtain a window background to replicate then we'd be guessing as to the least
-      // intrusive color. But there is no way to make an accurate guess. In this case we don't
-      // give the coverView any color, which means a brief black rectangle will be visible upon
-      // Activity launch.
-    }
-  }
-
-  @Nullable
-  private Drawable createCoverViewBackground() {
-    TypedValue typedValue = new TypedValue();
-    boolean hasBackgroundColor = getTheme().resolveAttribute(
-        android.R.attr.windowBackground,
-        typedValue,
-        true
-    );
-    if (hasBackgroundColor && typedValue.resourceId != 0) {
-      return getResources().getDrawable(typedValue.resourceId, getTheme());
-    } else {
-      return null;
-    }
-  }
-
-  /**
-   * Hides the cover {@code View}.
-   * <p>
-   * This method should be called when Flutter renders its first frame. See {@link #showCoverView()}
-   * for details.
-   */
-  private void hideCoverView() {
-    if (coverView != null) {
-      coverView.setVisibility(View.GONE);
     }
   }
 
@@ -548,12 +523,6 @@ public class FlutterActivity extends FragmentActivity
    */
   private boolean isDebuggable() {
     return (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-  }
-
-  @Override
-  public void onFirstFrameRendered() {
-    Log.v(TAG, "First frame has been rendered. Hiding cover view.");
-    hideCoverView();
   }
 
   /**

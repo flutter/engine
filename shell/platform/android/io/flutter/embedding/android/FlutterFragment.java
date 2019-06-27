@@ -10,6 +10,7 @@ import android.app.Activity;
 import android.arch.lifecycle.Lifecycle;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -295,6 +296,8 @@ public class FlutterFragment extends Fragment {
   private FlutterEngine flutterEngine;
   private boolean isFlutterEngineFromActivity;
   @Nullable
+  private FlutterSplashView flutterSplashView;
+  @Nullable
   private FlutterView flutterView;
   @Nullable
   private PlatformPlugin platformPlugin;
@@ -470,7 +473,22 @@ public class FlutterFragment extends Fragment {
     Log.v(TAG, "Creating FlutterView.");
     flutterView = new FlutterView(getActivity(), getRenderMode(), getTransparencyMode());
     flutterView.addOnFirstFrameRenderedListener(onFirstFrameRenderedListener);
-    return flutterView;
+
+    flutterSplashView = new FlutterSplashView(getContext(), provideSplashScreen());
+    flutterSplashView.setFlutterView(flutterView);
+
+    return flutterSplashView;
+  }
+
+  @Nullable
+  protected SplashScreen provideSplashScreen() {
+    FragmentActivity parentActivity = getActivity();
+    if (parentActivity instanceof SplashScreenProvider) {
+      SplashScreenProvider splashScreenProvider = (SplashScreenProvider) parentActivity;
+      return splashScreenProvider.provideSplashScreen();
+    }
+
+    return null;
   }
 
   /**
@@ -852,5 +870,10 @@ public class FlutterFragment extends Fragment {
      * {@code Activity} at the time that this method is invoked.
      */
     void configureFlutterEngine(@NonNull FlutterEngine flutterEngine);
+  }
+
+  public interface SplashScreenProvider {
+    @Nullable
+    SplashScreen provideSplashScreen();
   }
 }
