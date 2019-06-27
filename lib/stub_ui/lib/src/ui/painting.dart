@@ -1100,11 +1100,11 @@ class Paint {
   ///
   ///  * [MaskFilter], which is used for drawing geometry.
   ImageFilter get imageFilter {
-    // TODO(dnfield): Implement ImageFilter
+    // TODO(flutter/flutter#35156): Implement ImageFilter.
     return null;
   }
   set imageFilter(ImageFilter value) {
-    // TODO(dnfield): Implement ImageFilter
+    // TODO(flutter/flutter#35156): Implement ImageFilter.
   }
 
   /// A mask filter (for example, a blur) to apply to a shape after it has been
