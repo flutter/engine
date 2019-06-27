@@ -513,7 +513,6 @@
   return _shell->Screenshot(type, base64Encode);
 }
 
-#pragma mark - FlutterBinaryMessengerContainer
 - (NSObject<FlutterBinaryMessenger>*)binaryMessenger {
   return _binaryMessenger;
 }

@@ -987,7 +987,6 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   return [_engine.get() platformViewsController];
 }
 
-#pragma mark - FlutterBinaryMessengerContainer
 - (NSObject<FlutterBinaryMessenger>*)binaryMessenger {
   return _binaryMessenger;
 }
