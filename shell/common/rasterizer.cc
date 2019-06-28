@@ -182,53 +182,58 @@ void Rasterizer::DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree) {
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
   persistent_cache->ResetStoredNewShaders();
 
-  RasterStatus draw_status = DrawToSurfaceOnGPU(*layer_tree);
-  if (draw_status == RasterStatus::kResubmit) {
-    // TODO (kaushikiska): merge threads here, since we are on the ui thread.
-    const RasterStatus redraw_status = DrawToSurfaceOnGPU(*layer_tree);
-    FML_CHECK(draw_status == RasterStatus::kFailed ||
-              draw_status == RasterStatus::kSuccess)
-        << "Invalid re-draw status. It has to be success or failure.";
-    draw_status = redraw_status;
-  }
-
-  if (draw_status == RasterStatus::kSuccess) {
-    last_layer_tree_ = std::move(layer_tree);
-  } else {
-    FML_DLOG(ERROR) << "Failed to rasterize the layer tree.";
-    return;
-  }
-
-  task_runners_.GetGPUTaskRunner()->PostTask(
-      [weak_this = weak_factory_.GetWeakPtr(), &persistent_cache, &timing]() {
-        if (!weak_this) {
-          return;
-        }
-        if (persistent_cache->IsDumpingSkp() &&
-            persistent_cache->StoredNewShaders()) {
-          auto screenshot = weak_this->ScreenshotLastLayerTree(
-              ScreenshotType::SkiaPicture, false);
-          persistent_cache->DumpSkp(*screenshot.data);
-        }
-
-        // TODO(liyuqian): in Fuchsia, the rasterization doesn't finish when
-        // Rasterizer::DoDraw finishes. Future work is needed to adapt the
-        // timestamp for Fuchsia to capture
-        // SceneUpdateContext::ExecutePaintTasks.
-        timing.Set(FrameTiming::kRasterFinish, fml::TimePoint::Now());
-        weak_this->delegate_.OnFrameRasterized(timing);
-      });
-}
-
-RasterStatus Rasterizer::DrawToSurfaceOnGPU(flutter::LayerTree& layer_tree) {
   RasterStatus draw_status = RasterStatus::kFailed;
 
+  // task - 1
   task_runners_.GetGPUTaskRunner()->PostTask(
       [weak_this = weak_factory_.GetWeakPtr(), &layer_tree, &draw_status]() {
         if (weak_this) {
-          draw_status = weak_this->DrawToSurface(layer_tree);
+          draw_status = weak_this->DrawToSurface(*layer_tree);
         }
       });
+
+  // task runner guarantees that this will run after task-1, hence draw-status
+  // is valid.
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [weak_this = weak_factory_.GetWeakPtr(), &draw_status, &layer_tree,
+       &persistent_cache, &timing]() {
+        if (weak_this) {
+          switch (draw_status) {
+            case RasterStatus::kFailed:
+              return;
+            case RasterStatus::kResubmit:
+              // TODO (kaushikiska): merge threads here, since we are on the
+              // IO thread. Gpu tasks after this task will run on platform
+              // thread.
+              // ----------------------- MERGE ----------------------------
+
+              // TODO (kaushikiska) : pipeline.pushFront(layer_tree);
+              return;
+            case RasterStatus::kSuccess:
+              weak_this->last_layer_tree_ = std::move(layer_tree);
+              if (persistent_cache->IsDumpingSkp() &&
+                  persistent_cache->StoredNewShaders()) {
+                auto screenshot = weak_this->ScreenshotLastLayerTree(
+                    ScreenshotType::SkiaPicture, false);
+                persistent_cache->DumpSkp(*screenshot.data);
+              }
+
+              // TODO(liyuqian): in Fuchsia, the rasterization doesn't finish
+              // when Rasterizer::DoDraw finishes. Future work is needed to
+              // adapt the timestamp for Fuchsia to capture
+              // SceneUpdateContext::ExecutePaintTasks.
+              timing.Set(FrameTiming::kRasterFinish, fml::TimePoint::Now());
+              weak_this->delegate_.OnFrameRasterized(timing);
+              return;
+          }
+        }
+      });
+}
+
+RasterStatus Rasterizer::DrawToSurfaceOnGPU(
+    flutter::LayerTree& layer_tree,
+    fml::AutoResetWaitableEvent& latch) {
+  RasterStatus draw_status = RasterStatus::kFailed;
 
   return draw_status;
 }

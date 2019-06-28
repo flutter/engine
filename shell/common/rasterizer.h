@@ -116,7 +116,8 @@ class Rasterizer final : public SnapshotDelegate {
 
   void DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree);
 
-  RasterStatus DrawToSurfaceOnGPU(flutter::LayerTree& layer_tree);
+  RasterStatus DrawToSurfaceOnGPU(flutter::LayerTree& layer_tree,
+                                  fml::AutoResetWaitableEvent& latch);
 
   RasterStatus DrawToSurface(flutter::LayerTree& layer_tree);
 
