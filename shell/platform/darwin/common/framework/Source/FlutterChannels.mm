@@ -272,8 +272,6 @@ static void SetStreamHandlerMessageHandlerOnChannel(NSObject<FlutterStreamHandle
                                                     NSObject<FlutterBinaryMessenger>* messenger,
                                                     NSObject<FlutterMethodCodec>* codec) {
   __block FlutterEventSink currentSink = nil;
-  // self retains _messenger, _messenger retains this block, so it is safe to use a weak reference
-  // to self.
   FlutterBinaryMessageHandler messageHandler = ^(NSData* message, FlutterBinaryReply callback) {
     FlutterMethodCall* call = [codec decodeMethodCall:message];
     if ([call.method isEqual:@"listen"]) {
