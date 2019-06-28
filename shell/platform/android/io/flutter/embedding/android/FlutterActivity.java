@@ -382,6 +382,8 @@ public class FlutterActivity extends FragmentActivity
   /**
    * Hook for subclasses to easily configure a {@code FlutterEngine}, e.g., register
    * plugins.
+   * <p>
+   * This method is called after {@link #provideFlutterEngine(Context)}.
    */
   @Override
   public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
