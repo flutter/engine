@@ -58,6 +58,9 @@ class IOSSurfaceSoftware final : public IOSSurface,
   SkCanvas* CompositeEmbeddedView(int view_id, const flutter::EmbeddedViewParams& params) override;
 
   // |flutter::ExternalViewEmbedder|
+  bool MergeThreads() override;
+
+  // |flutter::ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;
 
  private:

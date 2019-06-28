@@ -119,4 +119,10 @@ bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
   return submitted;
 }
 
+bool IOSSurfaceGL::MergeThreads() {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  return platform_views_controller->UIViewBoundsModifiedInFrame();
+}
+
 }  // namespace flutter

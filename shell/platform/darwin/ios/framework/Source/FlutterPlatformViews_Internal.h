@@ -82,6 +82,8 @@ class FlutterPlatformViewsController {
 
   void PrerollCompositeEmbeddedView(int view_id);
 
+  bool UIViewBoundsModifiedInFrame();
+
   // Returns the `FlutterPlatformView` object associated with the view_id.
   //
   // If the `FlutterPlatformViewsController` does not contain any `FlutterPlatformView` object or
@@ -137,6 +139,11 @@ class FlutterPlatformViewsController {
 
   // The latest composition order that was presented in Present().
   std::vector<int64_t> active_composition_order_;
+
+  // Preroll sets this to false. In paint if any of the bounds for any of the platform views
+  // have changed. This is set to true. This is then used to determine if we need to merge the
+  // platform and gpu threads.
+  bool ui_view_bounds_modified_in_frame_;
 
   std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
 
