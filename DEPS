@@ -26,7 +26,7 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '9acfb33ad8c6f5fc6097dff57c0de5e51ea590fd',
+  'skia_revision': '842e92e2921682553e32904b455cf36df8079f28',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -81,7 +81,7 @@ vars = {
   'dart_pub_rev': 'ecd5b413271f2699f8cd9e23aa4eebb5030c964f',
   'dart_pub_semver_tag': '1.4.2',
   'dart_quiver-dart_tag': '2.0.0+1',
-  'dart_resource_rev': '2.1.5',
+  'dart_resource_rev': 'f8e37558a1c4f54550aa463b88a6a831e3e33cd6',
   'dart_root_certificates_rev': '16ef64be64c7dfdff2b9f4b910726e635ccc519e',
   'dart_shelf_packages_handler_tag': '1.0.4',
   'dart_shelf_static_rev': 'v0.2.8',
@@ -126,7 +126,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '5383f9c6ad891c28d0d2f3103864ff6ff377ceff',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'ad2256a52991dd857aea2aba3240604543ffe232',
 
    # Fuchsia compatibility
    #
@@ -480,7 +480,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'Cx51FRV5TCoqQ9nfs4E2QMfYkJ1JWt7arQXhV01tr7cC'
+        'version': '6WJ2NCb9uaOzVw20XC4kJqNcD4EP2VxT-PBocGsA6JsC'
        }
      ],
      'condition': 'host_os == "mac"',
@@ -500,7 +500,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'udf6w2VmM5E8PyQm5ggugW_jjiEdWs-Xl6efeLf2JdkC'
+        'version': 'N9HpdqEHzWZIcSV_3JN4PNlUNeoK-Pism-mc-a7L-IoC'
        }
      ],
      'condition': 'host_os == "linux"',
