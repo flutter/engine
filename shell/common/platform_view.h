@@ -27,17 +27,17 @@ class Shell;
 
 //------------------------------------------------------------------------------
 /// @brief      Platform views are created by the shell on the platform task
-///             runner. Unless explcitly specified, all platform view methods
+///             runner. Unless explicitly specified, all platform view methods
 ///             are called on the platform task runner as well. Platform views
-///             are usually subclassed on a per platform basis and the bulk of
-///             thw window system integration happens using that subclass. Since
+///             are usually sub-classed on a per platform basis and the bulk of
+///             the window system integration happens using that subclass. Since
 ///             most platform window toolkits are usually only safe to access on
 ///             a single "main" thread, any interaction that requires access to
 ///             the underlying platform's window toolkit is routed through the
 ///             platform view associated with that shell. This involves
 ///             operations like settings up and tearing down the render surface,
 ///             platform messages, interacting with accessibility features on
-///             the platform, input events, etc..
+///             the platform, input events, etc.
 ///
 class PlatformView {
  public:
@@ -72,7 +72,7 @@ class PlatformView {
     ///             be invoked after the rasterizer is done rendering the next
     ///             frame. This callback will be called on the render thread and
     ///             it is caller responsibility to perform any re-threading as
-    ///             necessary. Due to the asynchrnous nature of rendering in
+    ///             necessary. Due to the asynchronous nature of rendering in
     ///             Flutter, embedders usually add a placeholder over the
     ///             contents in which Flutter is going to render when Flutter is
     ///             first initialized. This callback may be used as a signal to
@@ -110,7 +110,7 @@ class PlatformView {
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view has encountered
-    ///             a pointer event. This pointer event needs to be forwared to
+    ///             a pointer event. This pointer event needs to be forwarded to
     ///             the running root isolate hosted by the engine on the UI
     ///             thread.
     ///
@@ -121,16 +121,16 @@ class PlatformView {
         std::unique_ptr<PointerDataPacket> packet) = 0;
 
     //--------------------------------------------------------------------------
-    /// @brief      Notifies the delegate that the platform view has encounted
-    ///             an accessibility related action on the specifed node. This
-    ///             event must be forwared to the running root isolate hosted by
-    ///             the engine on the UI thread.
+    /// @brief      Notifies the delegate that the platform view has encountered
+    ///             an accessibility related action on the specified node. This
+    ///             event must be forwarded to the running root isolate hosted
+    ///             by the engine on the UI thread.
     ///
     /// @param[in]  id      The identifier of the accessibility node.
     /// @param[in]  action  The accessibility related action performed on the
     ///                     node of the specified ID.
     /// @param[in]  args    An optional list of argument that apply to the
-    ///                     sepcified action.
+    ///                     specified action.
     ///
     virtual void OnPlatformViewDispatchSemanticsAction(
         int32_t id,
@@ -139,11 +139,11 @@ class PlatformView {
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the embedder has expressed an
-    ///             opinion about whether the accessiblity tree needs to be
+    ///             opinion about whether the accessibility tree needs to be
     ///             enabled or disabled. This information needs to be forwarded
     ///             to the root isolate running on the UI thread.
     ///
-    /// @param[in]  enabled  Whether the acceessibility tree is enabled or
+    /// @param[in]  enabled  Whether the accessibility tree is enabled or
     ///                      disabled.
     ///
     virtual void OnPlatformViewSetSemanticsEnabled(bool enabled) = 0;
@@ -153,11 +153,11 @@ class PlatformView {
     ///             opinion about the features to enable in the accessibility
     ///             tree.
     ///
-    ///             The engine does not care about the accesibilty feature flags
-    ///             as all it does is forward this information from the embedder
-    ///             to the framework. However, curious readers may refer to
-    ///             `AccessibilityFeatures` in `window.dart` for currently
-    ///             supported accessibility feature flags.
+    ///             The engine does not care about the accessibility feature
+    ///             flags as all it does is forward this information from the
+    ///             embedder to the framework. However, curious readers may
+    ///             refer to `AccessibilityFeatures` in `window.dart` for
+    ///             currently supported accessibility feature flags.
     ///
     /// @param[in]  flags  The features to enable in the accessibility tree.
     ///
@@ -170,7 +170,7 @@ class PlatformView {
     ///             identifier. When the rasterizer encounters an external
     ///             texture within its hierarchy, it gives the embedder a chance
     ///             to update that texture on the GPU thread before it
-    ///             composites the same onscreen.
+    ///             composites the same on-screen.
     ///
     /// @param[in]  texture  The texture that is being updated by the embedder
     ///                      but composited by Flutter in its own hierarchy.
@@ -184,7 +184,7 @@ class PlatformView {
     ///             tree. This allows the rasterizer to collect associated
     ///             resources.
     ///
-    /// @param[in]  texture_id  The identifer of the texture to unregister. If
+    /// @param[in]  texture_id  The identifier of the texture to unregister. If
     ///                         the texture has not been previously registered,
     ///                         this call does nothing.
     ///
@@ -211,7 +211,7 @@ class PlatformView {
   //----------------------------------------------------------------------------
   /// @brief      Creates a platform view with the specified delegate and task
   ///             runner. The base class by itself does not do much but is
-  ///             suutable for use in test environments where full platform
+  ///             suitable for use in test environments where full platform
   ///             integration may not be necessary. The platform view may only
   ///             be created, accessed and destroyed on the platform task
   ///             runner.
@@ -232,13 +232,13 @@ class PlatformView {
   /// @brief      Invoked by the shell to obtain a platform specific vsync
   ///             waiter. It is optional for platforms to override this method
   ///             and provide a custom vsync waiter because a timer based
-  ///             fallback waiter is used by default. However, it is highly
+  ///             fall-back waiter is used by default. However, it is highly
   ///             recommended that platform provide their own Vsync waiter as
-  ///             the timer based fallback will not render frames aligned with
+  ///             the timer based fall-back will not render frames aligned with
   ///             vsync boundaries.
   ///
-  /// @attention  If a timer based fallback is used, a warning is logged to the
-  ///             console. In case this method is overriden in a subclass, it
+  /// @attention  If a timer based fall-back is used, a warning is logged to the
+  ///             console. In case this method is overridden in a subclass, it
   ///             must return a valid vsync waiter. Returning null will lead to
   ///             internal errors. If a valid vsync waiter cannot be returned,
   ///             subclasses should just call the based class method instead.
@@ -261,7 +261,7 @@ class PlatformView {
   ///
   ///             For embedders that wish to respond to platform message
   ///             directed from the framework to the embedder, the
-  ///             `HandlePlatformMessage` method may be overriden.
+  ///             `HandlePlatformMessage` method may be overridden.
   ///
   /// @see        HandlePlatformMessage()
   ///
@@ -270,7 +270,7 @@ class PlatformView {
   void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
-  /// @brief      Overriden by embedders to perform actions in response to
+  /// @brief      Overridden by embedders to perform actions in response to
   ///             platform messages sent from the framework to the embedder.
   ///             Default implementation of this method simply returns an empty
   ///             response.
@@ -300,24 +300,24 @@ class PlatformView {
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedder to notify the running isolate hosted by the
-  ///             engine on the UI thread that the accesibility tree needs to be
-  ///             generated.
+  ///             engine on the UI thread that the accessibility tree needs to
+  ///             be generated.
   ///
   /// @attention  Subclasses may choose to override this method to perform
   ///             platform specific functions. However, they must call the base
   ///             class method at some point in their implementation.
   ///
-  /// @param[in]  enabled  Whether the accessiblity tree needs to be generated.
+  /// @param[in]  enabled  Whether the accessibility tree needs to be generated.
   ///
   virtual void SetSemanticsEnabled(bool enabled);
 
   //----------------------------------------------------------------------------
-  /// @brief      Used by the embedder to sepcify the features to enable in the
+  /// @brief      Used by the embedder to specify the features to enable in the
   ///             accessibility tree generated by the isolate. This information
   ///             is forwarded to the root isolate hosted by the engine on the
   ///             UI thread.
   ///
-  ///             The engine does not care about the accesibilty feature flags
+  ///             The engine does not care about the accessibility feature flags
   ///             as all it does is forward this information from the embedder
   ///             to the framework. However, curious readers may refer to
   ///             `AccessibilityFeatures` in `window.dart` for currently
@@ -327,7 +327,7 @@ class PlatformView {
   ///             platform specific functions. However, they must call the base
   ///             class method at some point in their implementation.
   ///
-  /// @param[in]  flags  The fetures to enable in the accessibility tree.
+  /// @param[in]  flags  The features to enable in the accessibility tree.
   ///
   virtual void SetAccessibilityFeatures(int32_t flags);
 
@@ -371,7 +371,7 @@ class PlatformView {
   /// @brief      Used by embedders to notify the shell that the platform view
   ///             has been destroyed. This notification used to collect the
   ///             rendering surface and all associated resources. Frame
-  ///             scheduling is also suspsended.
+  ///             scheduling is also suspended.
   ///
   /// @attention  Subclasses may choose to override this method to perform
   ///             platform specific functions. However, they must call the base
@@ -382,9 +382,9 @@ class PlatformView {
   //----------------------------------------------------------------------------
   /// @brief      Used by the shell to obtain a Skia GPU context that is capable
   ///             of operating on the IO thread. The context must be in the same
-  ///             sharegroup as the Skia GPU context used on the render thread.
+  ///             share-group as the Skia GPU context used on the render thread.
   ///             This context will always be used on the IO thread. Because it
-  ///             is in the same sharegroup as the separate render thread
+  ///             is in the same share-group as the separate render thread
   ///             context, any GPU resources uploaded in this context will be
   ///             visible to the render thread context (synchronization of GPU
   ///             resources is managed by Skia).
@@ -399,9 +399,9 @@ class PlatformView {
   /// @attention  Unlike all other methods on the platform view, this will be
   ///             called on IO task runner.
   ///
-  /// @return     The Skia GPU context that is in the same sharegroup as the
-  ///             main render thread GPU context. May be nullptr in case such a
-  ///             context cannot be created.
+  /// @return     The Skia GPU context that is in the same share-group as the
+  ///             main render thread GPU context. May be `nullptr` in case such
+  ///             a context cannot be created.
   ///
   virtual sk_sp<GrContext> CreateResourceContext() const;
 
@@ -421,7 +421,7 @@ class PlatformView {
   /// @brief      Returns a weak pointer to the platform view. Since the
   ///             platform view may only be created, accessed and destroyed on
   ///             the platform thread, any access to the platform view from a
-  ///             non-platform task runner need a weak pointer to the platform
+  ///             non-platform task runner needs a weak pointer to the platform
   ///             view along with a reference to the platform task runner. A
   ///             task must be posted to the platform task runner with the weak
   ///             pointer captured in the same. The platform view method may
@@ -445,13 +445,13 @@ class PlatformView {
 
   //----------------------------------------------------------------------------
   /// @brief      Sets a callback that gets executed when the rasterizer renders
-  ///             the next frame. Due to the asynchrnous nature of rendering in
+  ///             the next frame. Due to the asynchronous nature of rendering in
   ///             Flutter, embedders usually add a placeholder over the
   ///             contents in which Flutter is going to render when Flutter is
   ///             first initialized. This callback may be used as a signal to
   ///             remove that placeholder. The callback is executed on the
   ///             render task runner and not the platform task runner. It is
-  ///             embedder responsibility to re-thread as necessary.
+  ///             the embedder's responsibility to re-thread as necessary.
   ///
   /// @attention  The callback is executed on the render task runner and not the
   ///             platform task runner. Embedders must re-thread as necessary.
@@ -462,7 +462,7 @@ class PlatformView {
   void SetNextFrameCallback(fml::closure closure);
 
   //----------------------------------------------------------------------------
-  /// @brief      Dispatches a pointer events from the embedder to the
+  /// @brief      Dispatches pointer events from the embedder to the
   ///             framework. Each pointer data packet may contain multiple
   ///             pointer input events. Each call to this method wakes up the UI
   ///             thread.
@@ -477,13 +477,13 @@ class PlatformView {
   ///             textures must have a unique identifier. When the rasterizer
   ///             encounters an external texture within its hierarchy, it gives
   ///             the embedder a chance to update that texture on the GPU thread
-  ///             before it composites the same onscreen.
+  ///             before it composites the same on-screen.
   ///
   /// @attention  This method must only be called once per texture. When the
   ///             texture is updated, calling `MarkTextureFrameAvailable` with
   ///             the specified texture identifier is sufficient to make Flutter
   ///             re-render the frame with the updated texture composited
-  ///             inline.
+  ///             in-line.
   ///
   /// @see        UnregisterTexture, MarkTextureFrameAvailable
   ///
@@ -502,7 +502,7 @@ class PlatformView {
   ///
   /// @see        RegisterTexture, MarkTextureFrameAvailable
   ///
-  /// @param[in]  texture_id  The identifer of the texture to unregister. If
+  /// @param[in]  texture_id  The identifier of the texture to unregister. If
   ///                         the texture has not been previously registered,
   ///                         this call does nothing.
   ///

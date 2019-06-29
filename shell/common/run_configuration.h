@@ -29,13 +29,13 @@ namespace flutter {
 class RunConfiguration {
  public:
   //----------------------------------------------------------------------------
-  /// @brief      Attempt to infer a run configuration from the settings object.
-  ///             This tries to create a run configuration with sensible
+  /// @brief      Attempts to infer a run configuration from the settings
+  ///             object. This tries to create a run configuration with sensible
   ///             defaults for the given Dart VM runtime mode. In JIT mode, this
   ///             will attempt to look for the VM and isolate snapshots in the
   ///             assets directory (must be specified in settings). In AOT mode,
   ///             it will attempt to look for known snapshot symbols in the
-  ///             currently currently loaded process. The entrypoint default to
+  ///             currently currently loaded process. The entrypoint defaults to
   ///             the "main" method in the root library.
   ///
   /// @param[in]  settings   The settings object used to look for the various
@@ -46,11 +46,11 @@ class RunConfiguration {
   ///                        worker will ensure that realization of these
   ///                        snapshots happens on a worker thread instead of the
   ///                        calling thread. Note that the work done to realize
-  ///                        the snapshots may occur after this call returns. It
-  ///                        is embedder responsibility to make sure the thread
-  ///                        for the serial worker is kept alive for as long as
-  ///                        the shell of the engine this run configuration is
-  ///                        given to is alive.
+  ///                        the snapshots may occur after this call returns. If
+  ///                        is the embedder's responsibility to make sure the
+  ///                        serial worker is kept alive for the lifetime of the
+  ///                        shell associated with the engine that this run
+  ///                        configuration is given to.
   ///
   /// @return     A run configuration. Depending on the completeness of the
   ///             settings, This object may potentially be invalid.
@@ -60,7 +60,7 @@ class RunConfiguration {
       fml::RefPtr<fml::TaskRunner> io_worker = nullptr);
 
   //----------------------------------------------------------------------------
-  /// @brief      Creates an run configuration with only an isolate
+  /// @brief      Creates a run configuration with only an isolate
   ///             configuration. There is no asset manager and default
   ///             entrypoint and root library are used ("main" in root library).
   ///
@@ -69,7 +69,7 @@ class RunConfiguration {
   RunConfiguration(std::unique_ptr<IsolateConfiguration> configuration);
 
   //----------------------------------------------------------------------------
-  /// @brief      Creates a run configuration with the spcified isolate
+  /// @brief      Creates a run configuration with the specified isolate
   ///             configuration and asset manager. The default entrypoint and
   ///             root library are used ("main" in root library).
   ///
@@ -92,7 +92,7 @@ class RunConfiguration {
 
   //----------------------------------------------------------------------------
   /// @brief      There are no threading restrictions on the destruction of the
-  ///             run configuraion.
+  ///             run configuration.
   ///
   ~RunConfiguration();
 
@@ -103,15 +103,16 @@ class RunConfiguration {
   ///             the snapshot cannot be determined yet. That determination can
   ///             only be made when the configuration is used to run the root
   ///             isolate in the engine. However, the engine will always reject
-  ///             an invalid run configration.
+  ///             an invalid run configuration.
   ///
-  /// @attention  A valid run configuration does no mean that the root isolate
+  /// @attention  A valid run configuration does not mean that the root isolate
   ///             will always be launched. It only indicates that the various
   ///             snapshots are isolate snapshots and asset managers are present
   ///             and accounted for. The validity of the snapshots will only be
-  ///             checked when the engine attempts to launch the isolate.
+  ///             checked when the engine attempts to launch the root isolate.
   ///
-  /// @return     Returns if the snapshots is valid.
+  /// @return     Returns whether the snapshots and asset manager registrations
+  ///             are valid.
   ///
   bool IsValid() const;
 
@@ -123,23 +124,24 @@ class RunConfiguration {
   /// @param[in]  resolver  The asset resolver to add to the engine of the list
   ///                       resolvers maintained by the asset manager.
   ///
-  /// @return     Returns if the resolver was successfully registered. The
+  /// @return     Returns whether the resolver was successfully registered. The
   ///             resolver must be valid for its registration to be successful.
   ///
   bool AddAssetResolver(std::unique_ptr<AssetResolver> resolver);
 
   //----------------------------------------------------------------------------
-  /// @brief      Update the main appication entrypoint. If this is not set, the
+  /// @brief      Updates the main application entrypoint. If this is not set,
+  /// the
   ///             "main" method is used as the entrypoint.
   ///
   /// @param[in]  entrypoint  The entrypoint to use.
   void SetEntrypoint(std::string entrypoint);
 
   //----------------------------------------------------------------------------
-  /// @brief      Specify the main Dart entrypoint and the library to find that
-  ///             entrypoint in. By default, this is the "main" method in the
-  ///             root library. The root library may be specified by entering
-  ///             the empty string as the second argument.
+  /// @brief      Specifies the main Dart entrypoint and the library to find
+  ///             that entrypoint in. By default, this is the "main" method in
+  ///             the root library. The root library may be specified by
+  ///             entering the empty string as the second argument.
   ///
   /// @see        SetEntrypoint()
   ///

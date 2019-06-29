@@ -20,7 +20,7 @@
 namespace flutter {
 
 //------------------------------------------------------------------------------
-/// @brief      An isolate configration is a collection of snapshots and asset
+/// @brief      An isolate configuration is a collection of snapshots and asset
 ///             managers that the engine will use to configure the isolate
 ///             before invoking its root entrypoint. The set of snapshots must
 ///             be sufficient for the engine to move the isolate from the
@@ -31,27 +31,27 @@ namespace flutter {
 ///             isolate are collected. The engine may ask the configuration to
 ///             prepare multiple isolates. All subclasses of this class must be
 ///             thread safe as the configuration may be created, collected and
-///             used on multiple thread. Usually these threads are engine or VM
+///             used on multiple threads. Usually these threads are engine or VM
 ///             managed so care must be taken to ensure that subclasses do not
-///             reference any thred local state.
+///             reference any thread local state.
 ///
 class IsolateConfiguration {
  public:
   //----------------------------------------------------------------------------
-  /// @brief      Attempts to infer the isolate configuration from the settings
-  ///             object. If the VM is configured for AOT mode, snapshot
-  ///             resolution is attempted with predefined symbols present in the
-  ///             currently loaded process. In JIT mode, Dart kernel file
-  ///             resolution is attempted in the assets directory. If an IO
-  ///             worker is specified, snapshot resolution may be attempted on
-  ///             the serial worker task runner. The worker task runner thread
-  ///             must remain valid and running till after the shell associated
-  ///             with the engine used to launch the isolate for which this run
-  ///             configuration is used is collected.
+  /// @brief      Attempts to infer the isolate configuration from the
+  ///             `Settings` object. If the VM is configured for AOT mode,
+  ///             snapshot resolution is attempted with predefined symbols
+  ///             present in the currently loaded process. In JIT mode, Dart
+  ///             kernel file resolution is attempted in the assets directory.
+  ///             If an IO worker is specified, snapshot resolution may be
+  ///             attempted on the serial worker task runner. The worker task
+  ///             runner thread must remain valid and running till after the
+  ///             shell associated with the engine used to launch the isolate
+  ///             for which this run configuration is used is collected.
   ///
   /// @param[in]  settings       The settings
   /// @param[in]  asset_manager  The asset manager
-  /// @param[in]  io_worker      An optional IO worker. Sepcify `nullptr` is a
+  /// @param[in]  io_worker      An optional IO worker. Specify `nullptr` is a
   ///                            worker should not be used or one is not
   ///                            available.
   ///
@@ -64,7 +64,7 @@ class IsolateConfiguration {
       fml::RefPtr<fml::TaskRunner> io_worker);
 
   //----------------------------------------------------------------------------
-  /// @brief      Create an AOT isolate configuration using snapshot symbols
+  /// @brief      Creates an AOT isolate configuration using snapshot symbols
   ///             present in the currently loaded process. These symbols need to
   ///             be given to the Dart VM on bootstrap and hence have already
   ///             been resolved.
@@ -74,9 +74,9 @@ class IsolateConfiguration {
   static std::unique_ptr<IsolateConfiguration> CreateForAppSnapshot();
 
   //----------------------------------------------------------------------------
-  /// @brief      Create a JIT isolate configuration using a list of futures to
+  /// @brief      Creates a JIT isolate configuration using a list of futures to
   ///             snapshots defining the ready isolate state. In environments
-  ///             where snapshot resolution in extremely expensive, embedders
+  ///             where snapshot resolution is extremely expensive, embedders
   ///             attempt to resolve snapshots on worker thread(s) and return
   ///             the future of the promise of snapshot resolution to this
   ///             method. That way, snapshot resolution begins well before
@@ -98,7 +98,7 @@ class IsolateConfiguration {
   ///
   /// @see        CreateForKernelList()
   ///
-  /// @param[in]  kernel  The kernel shapshot.
+  /// @param[in]  kernel  The kernel snapshot.
   ///
   /// @return     A JIT isolate configuration.
   ///
@@ -106,7 +106,7 @@ class IsolateConfiguration {
       std::unique_ptr<const fml::Mapping> kernel);
 
   //----------------------------------------------------------------------------
-  /// @brief      Create a JIT isolate configuration using the specified
+  /// @brief      Creates a JIT isolate configuration using the specified
   ///              snapshots. This is a convenience method for the
   ///             `CreateForKernelList` method that takes a list of futures to
   ///             Dart kernel snapshots.
@@ -127,7 +127,7 @@ class IsolateConfiguration {
   IsolateConfiguration();
 
   //----------------------------------------------------------------------------
-  /// @brief      Destroy an isolate configuration. This has no threading
+  /// @brief      Destroys an isolate configuration. This has no threading
   ///             restrictions and may be collection of configurations may occur
   ///             on any thread (and usually happens on an internal VM managed
   ///             thread pool thread).
