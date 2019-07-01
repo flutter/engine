@@ -24,13 +24,6 @@ public interface ActivityPluginBinding {
   Activity getActivity();
 
   /**
-   * Returns the {@link PlatformViewsController} that is currently connected to the Flutter UI
-   * being displayed in the given {@code Activity}.
-   */
-  @NonNull
-  PlatformViewsController getPlatformViewsController();
-
-  /**
    * Adds a listener that is invoked whenever the associated {@link Activity}'s
    * {@code onRequestPermissionsResult(...)} method is invoked.
    */

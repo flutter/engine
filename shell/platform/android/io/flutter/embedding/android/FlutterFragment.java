@@ -29,7 +29,6 @@ import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 import io.flutter.plugin.platform.PlatformPlugin;
-import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.FlutterMain;
 
 /**
@@ -299,8 +298,6 @@ public class FlutterFragment extends Fragment {
   private FlutterView flutterView;
   @Nullable
   private PlatformPlugin platformPlugin;
-  @NonNull
-  private final PlatformViewsController platformViewsController = new PlatformViewsController();
 
   private final OnFirstFrameRenderedListener onFirstFrameRenderedListener = new OnFirstFrameRenderedListener() {
     @Override
@@ -366,8 +363,7 @@ public class FlutterFragment extends Fragment {
       Log.d(TAG, "Attaching FlutterEngine to the Activity that owns this Fragment.");
       flutterEngine.getActivityControlSurface().attachToActivity(
           getActivity(),
-          getLifecycle(),
-          platformViewsController
+          getLifecycle()
       );
     }
 
@@ -450,7 +446,7 @@ public class FlutterFragment extends Fragment {
    * <p>
    * This method is called after the given {@link FlutterEngine} has been attached to the
    * owning {@code FragmentActivity}. See
-   * {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(Activity, Lifecycle, PlatformViewsController)}.
+   * {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(Activity, Lifecycle)}.
    * <p>
    * It is possible that the owning {@code FragmentActivity} opted not to connect itself as
    * an {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface}. In that
@@ -580,11 +576,7 @@ public class FlutterFragment extends Fragment {
       @Override
       public void run() {
         Log.v(TAG, "Attaching FlutterEngine to FlutterView.");
-        flutterView.attachToFlutterEngine(flutterEngine, platformViewsController);
-
-        // TODO(mattcarroll): the following call should exist here, but the plugin system needs to be revamped.
-        //                    The existing attach() method does not know how to handle this kind of FlutterView.
-        //flutterEngine.getPlugins().attach(this, getActivity());
+        flutterView.attachToFlutterEngine(flutterEngine);
 
         doInitialFlutterViewRun();
       }
@@ -852,7 +844,7 @@ public class FlutterFragment extends Fragment {
      * <p>
      * This method is called after the given {@link FlutterEngine} has been attached to the
      * owning {@code FragmentActivity}. See
-     * {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(Activity, Lifecycle, PlatformViewsController)}.
+     * {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(Activity, Lifecycle)}.
      * <p>
      * It is possible that the owning {@code FragmentActivity} opted not to connect itself as
      * an {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface}. In that

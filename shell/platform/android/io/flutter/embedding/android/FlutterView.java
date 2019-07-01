@@ -5,7 +5,6 @@
 package io.flutter.embedding.android;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Rect;
@@ -74,8 +73,6 @@ public class FlutterView extends FrameLayout {
   @Nullable
   private FlutterRenderer.RenderSurface renderSurface;
   private boolean didRenderFirstFrame;
-  @Nullable
-  private PlatformViewsController platformViewsController;
 
   // Connections to a Flutter execution context.
   @Nullable
@@ -529,8 +526,7 @@ public class FlutterView extends FrameLayout {
    * {@link FlutterEngine}.
    */
   public void attachToFlutterEngine(
-      @NonNull FlutterEngine flutterEngine,
-      @NonNull PlatformViewsController platformViewsController
+      @NonNull FlutterEngine flutterEngine
   ) {
     Log.d(TAG, "Attaching to a FlutterEngine: " + flutterEngine);
     if (isAttachedToFlutterEngine()) {
@@ -547,7 +543,6 @@ public class FlutterView extends FrameLayout {
     }
 
     this.flutterEngine = flutterEngine;
-    this.platformViewsController = platformViewsController;
 
     // Instruct our FlutterRenderer that we are now its designated RenderSurface.
     didRenderFirstFrame = false;
@@ -558,7 +553,7 @@ public class FlutterView extends FrameLayout {
     textInputPlugin = new TextInputPlugin(
         this,
         this.flutterEngine.getDartExecutor(),
-        platformViewsController
+        this.flutterEngine.getPlatformViewsController()
     );
     androidKeyProcessor = new AndroidKeyProcessor(
         this.flutterEngine.getKeyEventChannel(),
@@ -570,7 +565,7 @@ public class FlutterView extends FrameLayout {
         flutterEngine.getAccessibilityChannel(),
         (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE),
         getContext().getContentResolver(),
-        platformViewsController
+        this.flutterEngine.getPlatformViewsController()
     );
     accessibilityBridge.setOnAccessibilityChangeListener(onAccessibilityChangeListener);
     resetWillNotDraw(
@@ -580,7 +575,7 @@ public class FlutterView extends FrameLayout {
 
     // Connect AccessibilityBridge to the PlatformViewsController within the FlutterEngine.
     // This allows platform Views to hook into Flutter's overall accessibility system.
-    platformViewsController.attachAccessibilityBridge(accessibilityBridge);
+    this.flutterEngine.getPlatformViewsController().attachAccessibilityBridge(accessibilityBridge);
 
     // Inform the Android framework that it should retrieve a new InputConnection
     // now that an engine is attached.
@@ -621,7 +616,7 @@ public class FlutterView extends FrameLayout {
     }
 
     // Disconnect the FlutterEngine's PlatformViewsController from the AccessibilityBridge.
-    platformViewsController.detachAccessibiltyBridge();
+    flutterEngine.getPlatformViewsController().detachAccessibiltyBridge();
 
     // Disconnect and clean up the AccessibilityBridge.
     accessibilityBridge.release();

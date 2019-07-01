@@ -280,8 +280,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
   @Override
   public void attachToActivity(
       @NonNull Activity activity,
-      @NonNull Lifecycle lifecycle,
-      @NonNull PlatformViewsController platformViewsController
+      @NonNull Lifecycle lifecycle
   ) {
     Log.v(TAG, "Attaching to an Activity: " + activity + "."
         + (isWaitingForActivityReattachment ? " This is after a config change." : ""));
@@ -289,16 +288,13 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
     detachFromAndroidComponent();
 
     this.activity = activity;
-    this.activityPluginBinding = new FlutterEngineActivityPluginBinding(
-        activity,
-        platformViewsController
-    );
+    this.activityPluginBinding = new FlutterEngineActivityPluginBinding(activity);
     this.flutterEngineAndroidLifecycle.setBackingLifecycle(lifecycle);
 
     // Activate the PlatformViewsController. This must happen before any plugins attempt
-    // to use it, otherwise an error strack trace will appear that says there is no
+    // to use it, otherwise an error stack trace will appear that says there is no
     // flutter/platform_views channel.
-    platformViewsController.attach(
+    pluginBinding.getFlutterEngine().getPlatformViewsController().attach(
         activity,
         pluginBinding.getFlutterEngine().getRenderer(),
         pluginBinding.getFlutterEngine().getDartExecutor()
@@ -326,7 +322,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
       }
 
       // Deactivate PlatformViewsController.
-      activityPluginBinding.platformViewsController.detach();
+      pluginBinding.getFlutterEngine().getPlatformViewsController().detach();
 
       flutterEngineAndroidLifecycle.setBackingLifecycle(null);
       activity = null;
@@ -343,6 +339,9 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
       for (ActivityAware activityAware : activityAwarePlugins.values()) {
         activityAware.onDetachedFromActivity();
       }
+
+      // Deactivate PlatformViewsController.
+      pluginBinding.getFlutterEngine().getPlatformViewsController().detach();
 
       flutterEngineAndroidLifecycle.setBackingLifecycle(null);
       activity = null;
@@ -524,8 +523,6 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
     @NonNull
     private final Activity activity;
     @NonNull
-    private final PlatformViewsController platformViewsController;
-    @NonNull
     private final Set<io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener> onRequestPermissionsResultListeners = new HashSet<>();
     @NonNull
     private final Set<io.flutter.plugin.common.PluginRegistry.ActivityResultListener> onActivityResultListeners = new HashSet<>();
@@ -534,21 +531,14 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
     @NonNull
     private final Set<io.flutter.plugin.common.PluginRegistry.UserLeaveHintListener> onUserLeaveHintListeners = new HashSet<>();
 
-    public FlutterEngineActivityPluginBinding(@NonNull Activity activity, @NonNull PlatformViewsController platformViewsController) {
+    public FlutterEngineActivityPluginBinding(@NonNull Activity activity) {
       this.activity = activity;
-      this.platformViewsController = platformViewsController;
     }
 
     @Override
     @NonNull
     public Activity getActivity() {
       return activity;
-    }
-
-    @NonNull
-    @Override
-    public PlatformViewsController getPlatformViewsController() {
-      return platformViewsController;
     }
 
     @Override
