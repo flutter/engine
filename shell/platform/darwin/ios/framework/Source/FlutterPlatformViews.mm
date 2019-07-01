@@ -161,10 +161,15 @@ void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
 }
 
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(int view_id) {
+  ui_view_bounds_modified_in_frame_ = false;
   picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
   picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_));
   picture_recorders_[view_id]->getRecordingCanvas()->clear(SK_ColorTRANSPARENT);
   composition_order_.push_back(view_id);
+}
+
+bool FlutterPlatformViewsController::UIViewBoundsModifiedInFrame() {
+  return ui_view_bounds_modified_in_frame_;
 }
 
 NSObject<FlutterPlatformView>* FlutterPlatformViewsController::GetPlatformViewByID(int view_id) {
@@ -307,6 +312,7 @@ SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
       current_composition_params_[view_id] == params) {
     return picture_recorders_[view_id]->getRecordingCanvas();
   }
+  ui_view_bounds_modified_in_frame_ = true;
   current_composition_params_[view_id] = EmbeddedViewParams(params);
   CompositeWithParams(view_id, params);
 
@@ -351,6 +357,7 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
     composition_order_.clear();
     return did_submit;
   }
+  ui_view_bounds_modified_in_frame_ = true;
   DetachUnusedLayers();
   active_composition_order_.clear();
   UIView* flutter_view = flutter_view_.get();

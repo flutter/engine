@@ -196,6 +196,8 @@ class ExternalViewEmbedder {
 
   virtual bool SubmitFrame(GrContext* context);
 
+  virtual bool MergeThreads() = 0;
+
   virtual ~ExternalViewEmbedder() = default;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);

@@ -160,6 +160,12 @@ SkCanvas* IOSSurfaceSoftware::CompositeEmbeddedView(int view_id,
   return platform_views_controller->CompositeEmbeddedView(view_id, params);
 }
 
+bool IOSSurfaceSoftware::MergeThreads() {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  return platform_views_controller->UIViewBoundsModifiedInFrame();
+}
+
 bool IOSSurfaceSoftware::SubmitFrame(GrContext* context) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   if (platform_views_controller == nullptr) {

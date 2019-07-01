@@ -107,12 +107,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   // between successive tries.
   switch (pipeline->Consume(consumer)) {
     case PipelineConsumeResult::MoreAvailable: {
-      task_runners_.GetGPUTaskRunner()->PostTask(
-          [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
-            if (weak_this) {
-              weak_this->Draw(pipeline);
-            }
-          });
+      Draw(pipeline);
       break;
     }
     default:
@@ -173,6 +168,8 @@ sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(sk_sp<SkPicture> picture,
 }
 
 void Rasterizer::DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree) {
+  FML_CHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+
   if (!layer_tree || !surface_) {
     return;
   }
@@ -185,31 +182,71 @@ void Rasterizer::DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree) {
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
   persistent_cache->ResetStoredNewShaders();
 
-  if (DrawToSurface(*layer_tree)) {
-    last_layer_tree_ = std::move(layer_tree);
-  }
+  RasterStatus draw_status = RasterStatus::kFailed;
+  flutter::LayerTree& layer_tree_raw = *layer_tree;
 
-  if (persistent_cache->IsDumpingSkp() &&
-      persistent_cache->StoredNewShaders()) {
-    auto screenshot =
-        ScreenshotLastLayerTree(ScreenshotType::SkiaPicture, false);
-    persistent_cache->DumpSkp(*screenshot.data);
-  }
+  // task - 1
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [weak_this = weak_factory_.GetWeakPtr(), &layer_tree_raw,
+       &draw_status]() {
+        if (weak_this) {
+          draw_status = weak_this->DrawToSurface(layer_tree_raw);
+        }
+      });
 
-  // TODO(liyuqian): in Fuchsia, the rasterization doesn't finish when
-  // Rasterizer::DoDraw finishes. Future work is needed to adapt the timestamp
-  // for Fuchsia to capture SceneUpdateContext::ExecutePaintTasks.
-  timing.Set(FrameTiming::kRasterFinish, fml::TimePoint::Now());
-  delegate_.OnFrameRasterized(timing);
+  // task runner guarantees that this will run after task-1, hence draw-status
+  // is valid.
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [weak_this = weak_factory_.GetWeakPtr(), &draw_status, &layer_tree,
+       &persistent_cache, &timing]() {
+        if (weak_this) {
+          switch (draw_status) {
+            case RasterStatus::kFailed:
+              return;
+            case RasterStatus::kResubmit:
+              // TODO (kaushikiska): merge threads here, since we are on the
+              // IO thread. Gpu tasks after this task will run on platform
+              // thread.
+              // ----------------------- MERGE ----------------------------
+
+              // TODO (kaushikiska) : pipeline.pushFront(layer_tree);
+              return;
+            case RasterStatus::kSuccess:
+              weak_this->last_layer_tree_ = std::move(layer_tree);
+              if (persistent_cache->IsDumpingSkp() &&
+                  persistent_cache->StoredNewShaders()) {
+                auto screenshot = weak_this->ScreenshotLastLayerTree(
+                    ScreenshotType::SkiaPicture, false);
+                persistent_cache->DumpSkp(*screenshot.data);
+              }
+
+              // TODO(liyuqian): in Fuchsia, the rasterization doesn't finish
+              // when Rasterizer::DoDraw finishes. Future work is needed to
+              // adapt the timestamp for Fuchsia to capture
+              // SceneUpdateContext::ExecutePaintTasks.
+              timing.Set(FrameTiming::kRasterFinish, fml::TimePoint::Now());
+              weak_this->delegate_.OnFrameRasterized(timing);
+              return;
+          }
+        }
+      });
 }
 
-bool Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
+RasterStatus Rasterizer::DrawToSurfaceOnGPU(
+    flutter::LayerTree& layer_tree,
+    fml::AutoResetWaitableEvent& latch) {
+  RasterStatus draw_status = RasterStatus::kFailed;
+
+  return draw_status;
+}
+
+RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   FML_DCHECK(surface_);
 
   auto frame = surface_->AcquireFrame(layer_tree.frame_size());
 
   if (frame == nullptr) {
-    return false;
+    return RasterStatus::kFailed;
   }
 
   // There is no way for the compositor to know how long the layer tree
@@ -229,7 +266,11 @@ bool Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
       surface_->GetContext(), canvas, external_view_embedder,
       surface_->GetRootTransformation(), true);
 
-  if (compositor_frame && compositor_frame->Raster(layer_tree, false)) {
+  if (compositor_frame) {
+    RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
+    if (raster_status != RasterStatus::kSuccess) {
+      return raster_status;
+    }
     frame->Submit();
     if (external_view_embedder != nullptr) {
       external_view_embedder->SubmitFrame(surface_->GetContext());
@@ -239,10 +280,10 @@ bool Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
     if (surface_->GetContext())
       surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
 
-    return true;
+    return RasterStatus::kSuccess;
   }
 
-  return false;
+  return RasterStatus::kFailed;
 }
 
 static sk_sp<SkData> SerializeTypeface(SkTypeface* typeface, void* ctx) {
