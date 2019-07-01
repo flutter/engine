@@ -172,6 +172,8 @@ void ResetAnchor(CALayer* layer) {
       }
       case SkPath::kConic_Verb: {
         // Conic is not available in quartz, we use quad to approximate.
+        // TODO(cyanglaz): Better approximate the conic path.
+        // https://github.com/flutter/flutter/issues/35062
         CGPathAddQuadCurveToPoint(pathRef, nil, pts[1].x(), pts[1].y(), pts[2].x(), pts[2].y());
         last_pt_from_last_verb = pts[2];
         break;
