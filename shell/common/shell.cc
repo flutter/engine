@@ -1238,6 +1238,8 @@ Rasterizer::Screenshot Shell::Screenshot(
 }
 
 bool Shell::WaitForFrameRender(fml::TimeDelta timeout) {
+  FML_DCHECK(!task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(!task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
   task_runners_.GetUITaskRunner()->PostTask(
       [this] { engine_->GetAnimator()->ForceVSync(); });
   std::unique_lock<std::mutex> lock(waiting_for_frame_mutex_);
