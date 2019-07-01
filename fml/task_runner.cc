@@ -49,4 +49,8 @@ void TaskRunner::RunNowOrPostTask(fml::RefPtr<fml::TaskRunner> runner,
   }
 }
 
+TaskQueueId TaskRunner::GetTaskQueueId() {
+  return loop_->GetTaskQueueId();
+}
+
 }  // namespace fml

@@ -13,6 +13,7 @@
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/message_loop_task_queues.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
@@ -103,6 +104,7 @@ class Rasterizer final : public SnapshotDelegate {
  private:
   Delegate& delegate_;
   TaskRunners task_runners_;
+  fml::RefPtr<fml::MessageLoopTaskQueues> task_queues_;
   std::unique_ptr<Surface> surface_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
   std::unique_ptr<flutter::LayerTree> last_layer_tree_;

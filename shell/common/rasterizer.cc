@@ -42,6 +42,7 @@ Rasterizer::Rasterizer(
     std::unique_ptr<flutter::CompositorContext> compositor_context)
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
+      task_queues_(fml::MessageLoopTaskQueues::GetInstance()),
       compositor_context_(std::move(compositor_context)),
       user_override_resource_cache_bytes_(false),
       weak_factory_(this) {
@@ -194,19 +195,26 @@ void Rasterizer::DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree) {
         }
       });
 
+  const fml::TaskQueueId platform_queue_id =
+      task_runners_.GetPlatformTaskRunner()->GetTaskQueueId();
+
+  const fml::TaskQueueId gpu_queue_id =
+      task_runners_.GetGPUTaskRunner()->GetTaskQueueId();
+
   // task runner guarantees that this will run after task-1, hence draw-status
   // is valid.
   task_runners_.GetGPUTaskRunner()->PostTask(
       [weak_this = weak_factory_.GetWeakPtr(), &draw_status, &layer_tree,
-       &persistent_cache, &timing]() {
+       &persistent_cache, &timing, &platform_queue_id, &gpu_queue_id]() {
         if (weak_this) {
           switch (draw_status) {
             case RasterStatus::kFailed:
               return;
             case RasterStatus::kResubmit:
-              // TODO (kaushikiska): merge threads here, since we are on the
-              // IO thread. Gpu tasks after this task will run on platform
-              // thread.
+              // TODO(kaushikiska): schedule un-merge after X frames.
+              FML_LOG(ERROR) << "MERGING::: " << platform_queue_id << " and  "
+                             << gpu_queue_id;
+              weak_this->task_queues_->Merge(platform_queue_id, gpu_queue_id);
               // ----------------------- MERGE ----------------------------
 
               // TODO (kaushikiska) : pipeline.pushFront(layer_tree);

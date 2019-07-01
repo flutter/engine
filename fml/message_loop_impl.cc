@@ -148,4 +148,8 @@ void MessageLoopImpl::RunSingleExpiredTaskNow() {
   FlushTasks(FlushType::kSingle);
 }
 
+TaskQueueId MessageLoopImpl::GetTaskQueueId() {
+  return queue_id_;
+}
+
 }  // namespace fml
