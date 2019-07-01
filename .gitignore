@@ -21,3 +21,4 @@ Thumbs.db
 .idea
 pubspec.lock
 .vscode/
+compile_commands.json

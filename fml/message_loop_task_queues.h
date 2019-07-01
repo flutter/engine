@@ -69,7 +69,27 @@ class MessageLoopTaskQueues
 
   void SetWakeable(TaskQueueId queue_id, fml::Wakeable* wakeable);
 
+  // Invariants for merge and un-merge
+  //  1. RegisterTask will always submit to the queue_id that is passed
+  //     to it. It is not aware of whether a queue is merged or not. Same with
+  //     task observers.
+  //  2. When we get the tasks to run now, we look at both the queue_ids
+  //     for the owner, subsumed will spin.
+  //  3. Each task queue can only be merged and subsumed once.
+  //
+  //  Methods currently aware of the merged state of the queues:
+  //  HasPendingTasks, GetTasksToRunNow, GetNumPendingTasks
+
+  // This method returns false if either the owner or subsumed has already been
+  // merged with something else.
+  bool Merge(TaskQueueId owner, TaskQueueId subsumed);
+
+  // Will return false if the owner has not been merged before.
+  bool Unmerge(TaskQueueId owner);
+
  private:
+  class MergedQueuesRunner;
+
   enum class MutexType {
     kTasks,
     kObservers,
@@ -84,6 +104,13 @@ class MessageLoopTaskQueues
   ~MessageLoopTaskQueues();
 
   void WakeUp(TaskQueueId queue_id, fml::TimePoint time);
+
+  bool HasPendingTasksUnlocked(TaskQueueId queue_id);
+
+  const DelayedTask& PeekNextTaskUnlocked(TaskQueueId queue_id,
+                                          TaskQueueId& top_queue_id);
+
+  fml::TimePoint GetNextWakeTimeUnlocked(TaskQueueId queue_id);
 
   std::mutex& GetMutex(TaskQueueId queue_id, MutexType type);
 
@@ -103,6 +130,11 @@ class MessageLoopTaskQueues
   std::vector<Wakeable*> wakeables_;
   std::vector<TaskObservers> task_observers_;
   std::vector<DelayedTaskQueue> delayed_tasks_;
+
+  static const size_t _kUnmerged = ULONG_MAX;
+  // These are guarded by delayed_tasks_mutexes_
+  std::vector<size_t> owner_to_subsumed_;
+  std::vector<size_t> subsumed_to_owner_;
 
   std::atomic_int order_;
 
