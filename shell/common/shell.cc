@@ -457,18 +457,21 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // This is a synchronous operation because certain platforms depend on
   // setup/suspension of all activities that may be interacting with the GPU in
   // a synchronous fashion.
-
   fml::AutoResetWaitableEvent latch;
-  auto gpu_task = fml::MakeCopyable([rasterizer = rasterizer_->GetWeakPtr(),  //
-                                     surface = std::move(surface),            //
-                                     &latch]() mutable {
-    if (rasterizer) {
-      rasterizer->Setup(std::move(surface));
-    }
-    // Step 3: All done. Signal the latch that the platform thread is waiting
-    // on.
-    latch.Signal();
-  });
+  auto gpu_task =
+      fml::MakeCopyable([this, rasterizer = rasterizer_->GetWeakPtr(),  //
+                         surface = std::move(surface),                  //
+                         &latch]() mutable {
+        if (rasterizer) {
+          rasterizer->Setup(std::move(surface));
+        }
+
+        waiting_for_first_frame_.store(true);
+
+        // Step 3: All done. Signal the latch that the platform thread is
+        // waiting on.
+        latch.Signal();
+      });
 
   // The normal flow executed by this method is that the platform thread is
   // starting the sequence and waiting on the latch. Later the UI thread posts
@@ -790,10 +793,15 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   FML_DCHECK(is_setup_);
 
   task_runners_.GetGPUTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr(),
+      [this, rasterizer = rasterizer_->GetWeakPtr(),
        pipeline = std::move(pipeline)]() {
         if (rasterizer) {
           rasterizer->Draw(pipeline);
+
+          if (waiting_for_first_frame_.load()) {
+            waiting_for_first_frame_.store(false);
+            waiting_for_first_frame_condition_.notify_all();
+          }
         }
       });
 }
@@ -921,14 +929,6 @@ size_t Shell::UnreportedFramesCount() const {
 void Shell::OnFrameRasterized(const FrameTiming& timing) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
-
-  if (waiting_for_frame_.load()) {
-    {
-      std::lock_guard<std::mutex> lock(waiting_for_frame_mutex_);
-      waiting_for_frame_.store(false);
-    }
-    waiting_for_frame_condition_.notify_all();
-  }
 
   // The C++ callback defined in settings.h and set by Flutter runner. This is
   // independent of the timings report to the Dart side.
@@ -1237,16 +1237,14 @@ Rasterizer::Screenshot Shell::Screenshot(
   return screenshot;
 }
 
-bool Shell::WaitForFrameRender(fml::TimeDelta timeout) {
+bool Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
+  FML_DCHECK(is_setup_);
   FML_DCHECK(!task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   FML_DCHECK(!task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
-  task_runners_.GetUITaskRunner()->PostTask(
-      [this] { engine_->GetAnimator()->ForceVSync(); });
-  std::unique_lock<std::mutex> lock(waiting_for_frame_mutex_);
-  waiting_for_frame_.store(true);
-  bool success = waiting_for_frame_condition_.wait_for(
+  std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
+  bool success = waiting_for_first_frame_condition_.wait_for(
       lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
-      [this] { return !waiting_for_frame_.load(); });
+      [this] { return !waiting_for_first_frame_.load(); });
   return !success;
 }
 

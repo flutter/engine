@@ -94,7 +94,7 @@ class Shell final : public PlatformView::Delegate,
   ///\details Don't call this from the GPU thread or the UI thread or you will
   ///         create a deadlock.
   ///\returns true when there has been a timeout.
-  bool WaitForFrameRender(fml::TimeDelta timeout);
+  bool WaitForFirstFrame(fml::TimeDelta timeout);
 
  private:
   using ServiceProtocolHandler =
@@ -124,9 +124,9 @@ class Shell final : public PlatformView::Delegate,
   uint64_t next_pointer_flow_id_ = 0;
 
   bool first_frame_rasterized_ = false;
-  std::atomic<bool> waiting_for_frame_ = false;
-  std::mutex waiting_for_frame_mutex_;
-  std::condition_variable waiting_for_frame_condition_;
+  std::atomic<bool> waiting_for_first_frame_ = true;
+  std::mutex waiting_for_first_frame_mutex_;
+  std::condition_variable waiting_for_first_frame_condition_;
 
   // Written in the UI thread and read from the GPU thread. Hence make it
   // atomic.

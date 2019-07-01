@@ -127,8 +127,6 @@ class Engine final : public RuntimeDelegate {
   // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
 
-  Animator* GetAnimator() { return animator_.get(); }
-
  private:
   Engine::Delegate& delegate_;
   const Settings settings_;

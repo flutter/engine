@@ -700,7 +700,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #else
         fml::TimeDelta::FromMilliseconds(200);
 #endif
-    if (shell.WaitForFrameRender(waitTime)) {
+    if (shell.WaitForFirstFrame(waitTime)) {
       FML_LOG(INFO) << "Timeout waiting for first frame.  This is possible in debug builds but "
                     << "should be reported as an error on release builds.";
     }

@@ -239,11 +239,4 @@ void Animator::AwaitVSync() {
   delegate_.OnAnimatorNotifyIdle(dart_frame_deadline_);
 }
 
-void Animator::ForceVSync() {
-  regenerate_layer_tree_ = true;
-  frame_scheduled_ = true;
-  AwaitVSync();
-  waiter_->ForceVSync();
-}
-
 }  // namespace flutter
