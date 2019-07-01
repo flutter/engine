@@ -148,28 +148,38 @@ void ResetAnchor(CALayer* layer) {
   SkPath::Iter iter(path, true);
   SkPoint pts[kMaxPointsInVerb];
   SkPath::Verb verb = iter.next(pts);
+  SkPoint last_pt_from_last_verb;
   while (verb != SkPath::kDone_Verb) {
+    if (verb == SkPath::kLine_Verb || verb == SkPath::kQuad_Verb || verb == SkPath::kConic_Verb ||
+        verb == SkPath::kCubic_Verb) {
+      FML_DCHECK(last_pt_from_last_verb == pts[0]);
+    }
     switch (verb) {
       case SkPath::kMove_Verb: {
         CGPathMoveToPoint(pathRef, nil, pts[0].x(), pts[0].y());
+        last_pt_from_last_verb = pts[0];
         break;
       }
       case SkPath::kLine_Verb: {
         CGPathAddLineToPoint(pathRef, nil, pts[1].x(), pts[1].y());
+        last_pt_from_last_verb = pts[1];
         break;
       }
       case SkPath::kQuad_Verb: {
         CGPathAddQuadCurveToPoint(pathRef, nil, pts[1].x(), pts[1].y(), pts[2].x(), pts[2].y());
+        last_pt_from_last_verb = pts[2];
         break;
       }
       case SkPath::kConic_Verb: {
         // Conic is not available in quartz, we use quad to approximate.
         CGPathAddQuadCurveToPoint(pathRef, nil, pts[1].x(), pts[1].y(), pts[2].x(), pts[2].y());
+        last_pt_from_last_verb = pts[2];
         break;
       }
       case SkPath::kCubic_Verb: {
         CGPathAddCurveToPoint(pathRef, nil, pts[1].x(), pts[1].y(), pts[2].x(), pts[2].y(),
                               pts[3].x(), pts[3].y());
+        last_pt_from_last_verb = pts[3];
         break;
       }
       case SkPath::kClose_Verb: {

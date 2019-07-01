@@ -260,6 +260,13 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
     }
     ++iter;
   }
+  // Reverse scale based on screen scale.
+  //
+  // The UIKit frame is set based on the logical resolution instead of physical.
+  // (https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html).
+  // However, flow is based on the physical resolution. For eaxmple, 1000 pixels in flow equals
+  // 500 points in UIKit. And until this point, we did all the calculation based on the flow
+  // resolution. So we need to scale down to match UIKit's logical resolution.
   CGFloat screenScale = [UIScreen mainScreen].scale;
   head.layer.transform = CATransform3DConcat(
       head.layer.transform, CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1));
