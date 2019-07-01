@@ -51,6 +51,9 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, SceneBuilder);
   V(SceneBuilder, pushClipPath)                     \
   V(SceneBuilder, pushOpacity)                      \
   V(SceneBuilder, pushColorFilter)                  \
+  V(SceneBuilder, pushColorFilterMatrix)            \
+  V(SceneBuilder, pushColorFilterLinearToSrgbGamma) \
+  V(SceneBuilder, pushColorFilterSrgbToLinearGamma) \
   V(SceneBuilder, pushBackdropFilter)               \
   V(SceneBuilder, pushShaderMask)                   \
   V(SceneBuilder, pushPhysicalShape)                \
@@ -143,8 +146,31 @@ fml::RefPtr<EngineLayer> SceneBuilder::pushOpacity(int alpha,
 
 fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilter(int color,
                                                        int blendMode) {
+  auto layer =
+      std::make_shared<flutter::ColorFilterLayer>(SkColorFilters::Blend(
+          static_cast<SkColor>(color), static_cast<SkBlendMode>(blendMode)));
+  PushLayer(layer);
+  return EngineLayer::MakeRetained(layer);
+}
+
+fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilterMatrix(
+    const tonic::Float32List& matrix) {
   auto layer = std::make_shared<flutter::ColorFilterLayer>(
-      static_cast<SkColor>(color), static_cast<SkBlendMode>(blendMode));
+      MakeColorMatrixFilter255(matrix));
+  PushLayer(layer);
+  return EngineLayer::MakeRetained(layer);
+}
+
+fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilterLinearToSrgbGamma() {
+  auto layer = std::make_shared<flutter::ColorFilterLayer>(
+      SkColorFilters::LinearToSRGBGamma());
+  PushLayer(layer);
+  return EngineLayer::MakeRetained(layer);
+}
+
+fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilterSrgbToLinearGamma() {
+  auto layer = std::make_shared<flutter::ColorFilterLayer>(
+      SkColorFilters::SRGBToLinearGamma());
   PushLayer(layer);
   return EngineLayer::MakeRetained(layer);
 }

@@ -38,4 +38,19 @@ tonic::Float64List ToMatrix4(const SkMatrix& sk_matrix) {
   return matrix4;
 }
 
+sk_sp<SkColorFilter> MakeColorMatrixFilter255(
+    const tonic::Float32List& color_matrix) {
+  return MakeColorMatrixFilter255(color_matrix.data());
+}
+
+sk_sp<SkColorFilter> MakeColorMatrixFilter255(const float color_matrix[20]) {
+  float tmp[20];
+  memcpy(tmp, color_matrix, sizeof(tmp));
+  tmp[4] *= 1.0f / 255;
+  tmp[9] *= 1.0f / 255;
+  tmp[14] *= 1.0f / 255;
+  tmp[19] *= 1.0f / 255;
+  return SkColorFilters::Matrix(tmp);
+}
+
 }  // namespace flutter

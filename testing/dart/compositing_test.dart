@@ -274,7 +274,13 @@ void main() {
       return builder.pushOpacity(100, oldLayer: oldLayer);
     });
     testNoSharing((SceneBuilder builder, EngineLayer oldLayer) {
-      return builder.pushColorFilter(const Color.fromARGB(0, 0, 0, 0), BlendMode.color, oldLayer: oldLayer);
+      return builder.pushColorFilter(
+        ColorFilter.mode(
+          const Color.fromARGB(0, 0, 0, 0),
+          BlendMode.color,
+        ),
+        oldLayer: oldLayer,
+      );
     });
     testNoSharing((SceneBuilder builder, EngineLayer oldLayer) {
       return builder.pushBackdropFilter(ImageFilter.blur(), oldLayer: oldLayer);
