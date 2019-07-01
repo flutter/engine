@@ -32,7 +32,8 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
                       "does not support embedding";
     return;
   }
-  std::unique_ptr<EmbeddedViewParams> params = std::make_unique<EmbeddedViewParams>();
+  std::unique_ptr<EmbeddedViewParams> params =
+      std::make_unique<EmbeddedViewParams>();
   SkMatrix transform = context.leaf_nodes_canvas->getTotalMatrix();
   params->offsetPixels =
       SkPoint::Make(transform.getTranslateX(), transform.getTranslateY());
@@ -40,7 +41,7 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
   params->mutatorsStack = context.mutators_stack;
 
   SkCanvas* canvas =
-  context.view_embedder->CompositeEmbeddedView(view_id_, std::move(params));
+      context.view_embedder->CompositeEmbeddedView(view_id_, std::move(params));
   context.leaf_nodes_canvas = canvas;
 }
 }  // namespace flutter
