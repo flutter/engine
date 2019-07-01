@@ -90,7 +90,7 @@ class Shell final : public PlatformView::Delegate,
   Rasterizer::Screenshot Screenshot(Rasterizer::ScreenshotType type,
                                     bool base64_encode);
 
-  /// Schedules a frame to be rendered and waits for it to finish.
+  /// Pauses the calling thread until the first frame is presented.
   ///\details Don't call this from the GPU thread or the UI thread or you will
   ///         create a deadlock.
   ///\returns true when there has been a timeout.
