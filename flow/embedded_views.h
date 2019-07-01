@@ -150,6 +150,10 @@ class MutatorsStack {
     return !operator==(other);
   }
 
+  int size() const {
+    return vector_.size();
+  }
+
  private:
   std::vector<std::shared_ptr<Mutator>> vector_;
 };  // MutatorsStack
@@ -192,7 +196,7 @@ class ExternalViewEmbedder {
 
   // Must be called on the UI thread.
   virtual SkCanvas* CompositeEmbeddedView(int view_id,
-                                          const EmbeddedViewParams& params) = 0;
+                                          std::unique_ptr<flutter::EmbeddedViewParams> params) = 0;
 
   virtual bool SubmitFrame(GrContext* context);
 
