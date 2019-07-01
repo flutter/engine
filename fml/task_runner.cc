@@ -11,7 +11,6 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/message_loop_impl.h"
-#include "flutter/fml/synchronization/count_down_latch.h"
 
 namespace fml {
 
@@ -22,15 +21,6 @@ TaskRunner::~TaskRunner() = default;
 
 void TaskRunner::PostTask(fml::closure task) {
   loop_->PostTask(std::move(task), fml::TimePoint::Now());
-}
-
-void TaskRunner::AwaitTask(fml::closure task) {
-  CountDownLatch latch(1);
-  PostTask([&] {
-    task();
-    latch.CountDown();
-  });
-  latch.Wait();
 }
 
 void TaskRunner::PostTaskForTime(fml::closure task,

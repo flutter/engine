@@ -1238,9 +1238,9 @@ Rasterizer::Screenshot Shell::Screenshot(
 }
 
 bool Shell::WaitForFrameRender(fml::TimeDelta timeout) {
-  std::unique_lock<std::mutex> lock(waiting_for_frame_mutex_);
-  task_runners_.GetUITaskRunner()->AwaitTask(
+  task_runners_.GetUITaskRunner()->PostTask(
       [this] { engine_->GetAnimator()->ForceVSync(); });
+  std::unique_lock<std::mutex> lock(waiting_for_frame_mutex_);
   waiting_for_frame_.store(true);
   bool success = waiting_for_frame_condition_.wait_for(
       lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
