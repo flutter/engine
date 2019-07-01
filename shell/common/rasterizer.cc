@@ -183,12 +183,14 @@ void Rasterizer::DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree) {
   persistent_cache->ResetStoredNewShaders();
 
   RasterStatus draw_status = RasterStatus::kFailed;
+  flutter::LayerTree& layer_tree_raw = *layer_tree;
 
   // task - 1
   task_runners_.GetGPUTaskRunner()->PostTask(
-      [weak_this = weak_factory_.GetWeakPtr(), &layer_tree, &draw_status]() {
+      [weak_this = weak_factory_.GetWeakPtr(), &layer_tree_raw,
+       &draw_status]() {
         if (weak_this) {
-          draw_status = weak_this->DrawToSurface(*layer_tree);
+          draw_status = weak_this->DrawToSurface(layer_tree_raw);
         }
       });
 

@@ -798,14 +798,9 @@ void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
 // |Animator::Delegate|
 void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
-  task_runners_.GetGPUTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr(),
-       pipeline = std::move(pipeline)]() {
-        if (rasterizer) {
-          rasterizer->Draw(pipeline);
-        }
-      });
+  rasterizer_->Draw(pipeline);
 }
 
 // |Animator::Delegate|
