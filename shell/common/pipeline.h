@@ -124,7 +124,7 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
     {
       std::scoped_lock lock(queue_mutex_);
       std::tie(resource, trace_id) = std::move(queue_.front());
-      queue_.pop_back();
+      queue_.pop_front();
       items_count = queue_.size();
     }
 
