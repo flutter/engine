@@ -184,7 +184,6 @@ class FlutterPlatformViewsController {
   //
   // After each clip operation, we update the head to the super view of the current head.
   void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
-
   void CompositeWithParams(int view_id, std::unique_ptr<flutter::EmbeddedViewParams> params);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
