@@ -474,7 +474,8 @@ public class FlutterFragment extends Fragment {
     flutterView = new FlutterView(getActivity(), getRenderMode(), getTransparencyMode());
     flutterView.addOnFirstFrameRenderedListener(onFirstFrameRenderedListener);
 
-    flutterSplashView = new FlutterSplashView(getContext(), provideSplashScreen());
+    flutterSplashView = new FlutterSplashView(getContext());
+    flutterSplashView.setSplashScreen(provideSplashScreen());
     flutterSplashView.setFlutterView(flutterView);
 
     return flutterSplashView;

@@ -9,17 +9,21 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewCompat;
+import android.util.AttributeSet;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import io.flutter.app.BuildConfig;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 
+/**
+ * {@code View} that displays a {@link SplashScreen} until a given {@link FlutterView}
+ * renders its first frame.
+ */
 public class FlutterSplashView extends FrameLayout {
   private static String TAG = "FlutterSplashView";
 
   @Nullable
-  private final SplashScreen splashScreen;
+  private SplashScreen splashScreen;
   @Nullable
   private FlutterView flutterView;
   @Nullable
@@ -43,12 +47,35 @@ public class FlutterSplashView extends FrameLayout {
     }
   };
 
-  public FlutterSplashView(
-      @NonNull Context context,
-      @Nullable SplashScreen splashScreen
-  ) {
+  public FlutterSplashView(@NonNull Context context) {
     super(context);
+  }
+
+  public FlutterSplashView(@NonNull Context context, @Nullable AttributeSet attrs) {
+    super(context, attrs);
+  }
+
+  public FlutterSplashView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    super(context, attrs, defStyleAttr);
+  }
+
+  /**
+   * Displays the given {@link SplashScreen} until Flutter renders its first frame.
+   * <p>
+   * The given {@link SplashScreen} is displayed as soon as this method is invoked, or
+   * upon attachment to the {@code Window}, whichever happens last.
+   * <p>
+   * If Flutter has already rendered its first frame, this method does not have any
+   * visual impact.
+   */
+  public void setSplashScreen(@NonNull SplashScreen splashScreen) {
+    removeSplashScreen();
+
     this.splashScreen = splashScreen;
+
+    if (isAttachedToWindow()) {
+      showSplashScreen();
+    }
   }
 
   /**
