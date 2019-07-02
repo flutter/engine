@@ -518,5 +518,57 @@ TEST_F(ShellTest, ReportTimingsIsCalledImmediatelyAfterTheFirstFrame) {
   ASSERT_EQ(timestamps.size(), FrameTiming::kCount);
 }
 
+TEST_F(ShellTest, WaitForFirstFrame) {
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+  bool result =
+      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+  ASSERT_FALSE(result);
+}
+
+TEST_F(ShellTest, WaitForFirstFrameTimeout) {
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+  bool result =
+      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(10));
+  ASSERT_TRUE(result);
+}
+
+TEST_F(ShellTest, WaitForFirstFrameMultiple) {
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+  for (int i = 0; i < 100; ++i) {
+    bool result =
+        shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+    ASSERT_FALSE(result);
+  }
+}
+
 }  // namespace testing
 }  // namespace flutter
