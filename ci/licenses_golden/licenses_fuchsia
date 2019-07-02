@@ -1,4 +1,4 @@
-Signature: 222370f3932b5018ed6023a77be4a443
+Signature: 817f6d2b3ae78000f1acccb6046198f2
 
 UNUSED LICENSES:
 
@@ -1795,6 +1795,7 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_services/lib/src/outgoing.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_services/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_vfs/lib/src/composed_pseudo_dir.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_vfs/lib/src/internal/_flags.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_vfs/lib/src/pseudo_vmo_file.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_vfs/lib/src/vmo_file.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_vfs/meta.json
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/sl4f.dart
@@ -1944,6 +1945,8 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/include/lib/fidl/cpp/internal/message_sender.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/internal/message_sender.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/meta.json
+FILE: ../../../fuchsia/sdk/linux/pkg/fit/barrier.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/barrier.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/constructors_internal.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/in_place_internal.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/storage_internal.h
@@ -1951,8 +1954,10 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/utility_internal.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/images_cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/memfs/meta.json
+FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/view_ref_pair.h
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/view_token_pair.h
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/meta.json
+FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/view_ref_pair.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/svc/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/sync/include/lib/sync/internal/mutex-internal.h
 FILE: ../../../fuchsia/sdk/linux/pkg/sync/meta.json
@@ -3238,6 +3243,11 @@ FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/resour
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/session.h
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/resources.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/session.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/trace-engine/include/lib/trace-engine/context.h
+FILE: ../../../fuchsia/sdk/linux/pkg/trace-engine/include/lib/trace-engine/fields.h
+FILE: ../../../fuchsia/sdk/linux/pkg/trace-engine/include/lib/trace-engine/handler.h
+FILE: ../../../fuchsia/sdk/linux/pkg/trace-engine/include/lib/trace-engine/instrumentation.h
+FILE: ../../../fuchsia/sdk/linux/pkg/trace-engine/include/lib/trace-engine/types.h
 FILE: ../../../fuchsia/sdk/linux/pkg/zx/fifo.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/zx/include/lib/zx/fifo.h
 FILE: ../../../fuchsia/sdk/linux/pkg/zx/include/lib/zx/handle.h

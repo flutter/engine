@@ -1,4 +1,4 @@
-Signature: 7306773d9878069b3e05a227d401193a
+Signature: 5cc2ffd86f5d9e77ae2d2ea1729886d8
 
 UNUSED LICENSES:
 
@@ -1467,14 +1467,13 @@ FILE: ../../../third_party/skia/modules/skottie/src/SkottieAdapter.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieAdapter.h
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieJson.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieJson.h
-FILE: ../../../third_party/skia/modules/skottie/src/SkottieLayer.cpp
-FILE: ../../../third_party/skia/modules/skottie/src/SkottiePrecompLayer.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottiePriv.h
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieProperty.cpp
-FILE: ../../../third_party/skia/modules/skottie/src/SkottieShapeLayer.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieTest.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieTool.cpp
-FILE: ../../../third_party/skia/modules/skottie/src/text/TextLayer.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/PrecompLayer.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/ShapeLayer.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/TextLayer.cpp
 FILE: ../../../third_party/skia/modules/skottie/utils/SkottieUtils.cpp
 FILE: ../../../third_party/skia/modules/skottie/utils/SkottieUtils.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGClipEffect.h
@@ -2019,6 +2018,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/run/examples/full.expe
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.expected/Build-Debian9-Clang-x86_64-Release-SKNX_NO_SIMD.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.expected/Housekeeper-Weekly-RecreateSKPs.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.expected/win_test.json
+FILE: ../../../third_party/skia/infra/bots/recipes.isolate
 FILE: ../../../third_party/skia/infra/bots/recipes/android_compile.expected/android_compile_nontrybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/android_compile.expected/android_compile_sdk_trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/android_compile.expected/android_compile_trybot.json
@@ -2168,6 +2168,7 @@ FILE: ../../../third_party/skia/infra/bots/recipes/upload_nano_results.expected/
 FILE: ../../../third_party/skia/infra/bots/recipes/upload_skiaserve.expected/normal_bot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/upload_skiaserve.expected/trybot.json
 FILE: ../../../third_party/skia/infra/bots/resources.isolate
+FILE: ../../../third_party/skia/infra/bots/run_recipe.isolate
 FILE: ../../../third_party/skia/infra/bots/skpbench_skia_bundled.isolate
 FILE: ../../../third_party/skia/infra/bots/swarm_recipe.isolate
 FILE: ../../../third_party/skia/infra/bots/task_drivers.isolate
@@ -5366,7 +5367,7 @@ FILE: ../../../third_party/skia/src/gpu/GrSwizzle.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrColorMatrixFragmentProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrColorMatrixFragmentProcessor.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrColorMatrixFragmentProcessor.h
-FILE: ../../../third_party/skia/src/gpu/geometry/GrQuadList.h
+FILE: ../../../third_party/skia/src/gpu/geometry/GrQuadBuffer.h
 FILE: ../../../third_party/skia/src/gpu/geometry/GrQuadUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/geometry/GrQuadUtils.h
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleGLESInterfaceAutogen.cpp
@@ -5446,6 +5447,8 @@ FILE: ../../../third_party/skia/include/private/GrContext_Base.h
 FILE: ../../../third_party/skia/include/private/GrImageContext.h
 FILE: ../../../third_party/skia/include/private/GrRecordingContext.h
 FILE: ../../../third_party/skia/include/private/SkVx.h
+FILE: ../../../third_party/skia/modules/skottie/src/Composition.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/Layer.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/DropShadowEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/Effects.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/Effects.h
@@ -5460,6 +5463,9 @@ FILE: ../../../third_party/skia/modules/skottie/src/effects/TintEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/TransformEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/TritoneEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/VenetianBlindsEffect.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/ImageLayer.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/NullLayer.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/SolidLayer.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/text/RangeSelector.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/text/RangeSelector.h
 FILE: ../../../third_party/skia/modules/skottie/src/text/SkottieShaper.cpp
@@ -5516,7 +5522,6 @@ FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCommandBuffer.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlDepthStencil.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.h
-FILE: ../../../third_party/skia/src/opts/SkVM_opts.h
 FILE: ../../../third_party/skia/src/shaders/SkRTShader.cpp
 FILE: ../../../third_party/skia/src/shaders/SkRTShader.h
 FILE: ../../../third_party/skia/src/sksl/SkSLDefines.h
