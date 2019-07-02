@@ -139,7 +139,7 @@ class FlutterPlatformViewsController {
   std::vector<int64_t> active_composition_order_;
 
   // Only compoiste platform views in this set.
-  std::unordered_set<int64_t> views_need_recomposite;
+  std::unordered_set<int64_t> views_to_recomposite_;
 
   std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
 

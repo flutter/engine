@@ -15,17 +15,17 @@ ClipRectLayer::~ClipRectLayer() = default;
 
 void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkRect previous_cull_rect = context->cull_rect;
-  context->mutators_stack.pushClipRect(clip_rect_);
   if (context->cull_rect.intersect(clip_rect_)) {
+    context->mutators_stack.pushClipRect(clip_rect_);
     SkRect child_paint_bounds = SkRect::MakeEmpty();
     PrerollChildren(context, matrix, &child_paint_bounds);
 
     if (child_paint_bounds.intersect(clip_rect_)) {
       set_paint_bounds(child_paint_bounds);
     }
+    context->mutators_stack.pop();
   }
   context->cull_rect = previous_cull_rect;
-  context->mutators_stack.pop();
 }
 
 #if defined(OS_FUCHSIA)

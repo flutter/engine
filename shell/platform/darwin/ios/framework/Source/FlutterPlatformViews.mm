@@ -174,7 +174,7 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
     return;
   }
   current_composition_params_[view_id] = EmbeddedViewParams(*params.get());
-  views_need_recomposite.insert(view_id);
+  views_to_recomposite_.insert(view_id);
 }
 
 NSObject<FlutterPlatformView>* FlutterPlatformViewsController::GetPlatformViewByID(int view_id) {
@@ -308,11 +308,11 @@ SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
   // embedded views thread configuration.
 
   // Do nothing if the view doesn't need to be composited.
-  if (views_need_recomposite.count(view_id) == 0) {
+  if (views_to_recomposite_.count(view_id) == 0) {
     return picture_recorders_[view_id]->getRecordingCanvas();
   }
   CompositeWithParams(view_id, current_composition_params_[view_id]);
-  views_need_recomposite.erase(view_id);
+  views_to_recomposite_.erase(view_id);
   return picture_recorders_[view_id]->getRecordingCanvas();
 }
 
@@ -328,7 +328,7 @@ void FlutterPlatformViewsController::Reset() {
   picture_recorders_.clear();
   current_composition_params_.clear();
   clip_count_.clear();
-  views_need_recomposite.clear();
+  views_to_recomposite_.clear();
 }
 
 bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
@@ -420,7 +420,7 @@ void FlutterPlatformViewsController::DisposeViews() {
     overlays_.erase(viewId);
     current_composition_params_.erase(viewId);
     clip_count_.erase(viewId);
-    views_need_recomposite.erase(viewId);
+    views_to_recomposite_.erase(viewId);
   }
   views_to_dispose_.clear();
 }
