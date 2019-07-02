@@ -275,8 +275,8 @@ void main() {
     });
     testNoSharing((SceneBuilder builder, EngineLayer oldLayer) {
       return builder.pushColorFilter(
-        ColorFilter.mode(
-          const Color.fromARGB(0, 0, 0, 0),
+        const ColorFilter.mode(
+          Color.fromARGB(0, 0, 0, 0),
           BlendMode.color,
         ),
         oldLayer: oldLayer,
