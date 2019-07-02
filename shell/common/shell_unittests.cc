@@ -546,8 +546,7 @@ TEST_F(ShellTest, WaitForFirstFrameTimeout) {
   configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
-  bool result =
-      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(10));
+  bool result = shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(10));
   ASSERT_TRUE(result);
 }
 
@@ -563,9 +562,11 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
 
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
+  bool result =
+      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+  ASSERT_FALSE(result);
   for (int i = 0; i < 100; ++i) {
-    bool result =
-        shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+    result = shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1));
     ASSERT_FALSE(result);
   }
 }
