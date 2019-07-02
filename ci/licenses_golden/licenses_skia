@@ -1,4 +1,4 @@
-Signature: 78e53cf2b76d91a7eddd68be5591d91d
+Signature: 7306773d9878069b3e05a227d401193a
 
 UNUSED LICENSES:
 
@@ -1888,6 +1888,7 @@ FILE: ../../../third_party/skia/infra/bots/assets/cmake_linux/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/cmake_mac/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/gcloud_linux/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/go/VERSION
+FILE: ../../../third_party/skia/infra/bots/assets/go_win/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/linux_vulkan_sdk/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/lottie-samples/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/mesa_intel_driver_linux/VERSION
@@ -2124,6 +2125,7 @@ FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Ubuntu17-C
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Ubuntu17-Clang-Golo-GPU-QuadroP400-x86_64-Debug-All-Vulkan_Coverage.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Ubuntu17-GCC-Golo-GPU-QuadroP400-x86_64-Release-All-Valgrind_AbandonGpuContext_SK_CPU_LIMIT_SSE41.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Ubuntu17-GCC-Golo-GPU-QuadroP400-x86_64-Release-All-Valgrind_PreAbandonGpuContext_SK_CPU_LIMIT_SSE41.json
+FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-Golo-GPU-QuadroP400-x86_64-Debug-All-NonNVPR.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-Golo-GPU-QuadroP400-x86_64-Release-All-BonusConfigs.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-Golo-GPU-QuadroP400-x86_64-Release-All-ReleaseAndAbandonGpuContext.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-NUC5i7RYH-CPU-AVX2-x86_64-Debug-All-NativeFonts_GDI.json
@@ -5457,6 +5459,7 @@ FILE: ../../../third_party/skia/modules/skottie/src/effects/RadialWipeEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/TintEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/TransformEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/TritoneEffect.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/effects/VenetianBlindsEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/text/RangeSelector.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/text/RangeSelector.h
 FILE: ../../../third_party/skia/modules/skottie/src/text/SkottieShaper.cpp
