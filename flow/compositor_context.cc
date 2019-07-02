@@ -62,6 +62,9 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
 
 bool CompositorContext::ScopedFrame::Raster(flutter::LayerTree& layer_tree,
                                             bool ignore_raster_cache) {
+  if (view_embedder_) {
+    view_embedder_->ResetEmbeddedViewsMutated();
+  }
   layer_tree.Preroll(*this, ignore_raster_cache);
   // Clearing canvas after preroll reduces one render target switch when preroll
   // paints some raster cache.

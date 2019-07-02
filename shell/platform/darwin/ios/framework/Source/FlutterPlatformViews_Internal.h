@@ -79,6 +79,10 @@ class FlutterPlatformViewsController {
 
   void SetFrameSize(SkISize frame_size);
 
+  void ResetEmbeddedViewsMutated();
+
+  bool HaveEmbeddedViewsMutated();
+
   void PrerollCompositeEmbeddedView(int view_id,
                                     std::unique_ptr<flutter::EmbeddedViewParams> params);
 
@@ -140,6 +144,9 @@ class FlutterPlatformViewsController {
 
   // Only compoiste platform views in this set.
   std::unordered_set<int64_t> views_to_recomposite_;
+
+  // After |PrerollCompositeEmbeddedView| this is true if the embedded views have mutated.
+  bool embedded_views_mutated_;
 
   std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
 

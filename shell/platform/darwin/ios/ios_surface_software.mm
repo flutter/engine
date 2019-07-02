@@ -135,6 +135,18 @@ flutter::ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
   }
 }
 
+void IOSSurfaceSoftware::ResetEmbeddedViewsMutated() {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  platform_views_controller->ResetEmbeddedViewsMutated();
+}
+
+bool IOSSurfaceSoftware::HaveEmbeddedViewsMutated() {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  return platform_views_controller->HaveEmbeddedViewsMutated();
+}
+
 void IOSSurfaceSoftware::BeginFrame(SkISize frame_size) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
