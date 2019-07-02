@@ -116,6 +116,11 @@ size_t MessageLoopTaskQueues::GetNumPendingTasks(TaskQueueId queue_id) {
   return total_tasks;
 }
 
+bool MessageLoopTaskQueues::Owns(TaskQueueId owner, TaskQueueId subsumed) {
+  MergedQueuesRunner merged_tasks = MergedQueuesRunner(this, owner);
+  return owner_to_subsumed_[owner] == subsumed;
+}
+
 void MessageLoopTaskQueues::AddTaskObserver(TaskQueueId queue_id,
                                             intptr_t key,
                                             fml::closure callback) {

@@ -50,6 +50,7 @@ struct PrerollContext {
   ExternalViewEmbedder* view_embedder;
   SkColorSpace* dst_color_space;
   SkRect cull_rect;
+  MutatorsStack& mutators_stack;
 
   // The following allows us to paint in the end of subtree preroll
   const Stopwatch& raster_time;

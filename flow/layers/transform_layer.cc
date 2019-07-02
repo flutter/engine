@@ -40,6 +40,7 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
     context->cull_rect = kGiantRect;
   }
 
+  context->mutators_stack.pushTransform(transform_);
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, child_matrix, &child_paint_bounds);
 
@@ -47,6 +48,8 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(child_paint_bounds);
 
   context->cull_rect = previous_cull_rect;
+
+  context->mutators_stack.pop();
 }
 
 #if defined(OS_FUCHSIA)

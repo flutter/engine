@@ -63,7 +63,20 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
 RasterStatus CompositorContext::ScopedFrame::Raster(
     flutter::LayerTree& layer_tree,
     bool ignore_raster_cache) {
+  if (view_embedder_) {
+    view_embedder_->ResetBoundsChanged();
+  }
   layer_tree.Preroll(*this, ignore_raster_cache);
+
+  if (view_embedder_) {
+    bool needs_merge = view_embedder_->MergeThreads();
+    // TODO (kaushikiska) check if they are already merged,
+    // if they are we don't need to ask for re-submit!
+    if (needs_merge) {
+      FML_LOG(ERROR) << "RASTER_STATUS_RESUBMIT!!!!";
+      return RasterStatus::kResubmit;
+    }
+  }
 
   // Clearing canvas after preroll reduces one render target switch when preroll
   // paints some raster cache.
@@ -71,15 +84,6 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
     canvas()->clear(SK_ColorTRANSPARENT);
   }
   layer_tree.Paint(*this, ignore_raster_cache);
-
-  if (view_embedder_) {
-    bool needs_merge = view_embedder_->MergeThreads();
-    // TODO (kaushikiska) check if they are already merged,
-    // if they are we don't need to ask for re-submit!
-    if (needs_merge) {
-      return RasterStatus::kResubmit;
-    }
-  }
 
   return RasterStatus::kSuccess;
 }

@@ -11,6 +11,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <iostream>
 
 #include "FlutterPlatformViews_Internal.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -160,22 +161,34 @@ void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
   frame_size_ = frame_size;
 }
 
-void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(int view_id) {
+void FlutterPlatformViewsController::ResetBoundsChanged() {
   ui_view_bounds_modified_in_frame_ = false;
+  composition_order_.clear();
+}
+
+void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
+    int view_id,
+    const EmbeddedViewParams& params) {
   FML_LOG(ERROR) << "re-creating picture_recorders for " << view_id;
   picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
   picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_));
   picture_recorders_[view_id]->getRecordingCanvas()->clear(SK_ColorTRANSPARENT);
-  auto it = std::find(composition_order_.begin(), composition_order_.end(), view_id);
-  if (it != composition_order_.end()) {
-    composition_order_.erase(it);
-    composition_order_.push_back(view_id);
-  } else {
-    composition_order_.push_back(view_id);
+  composition_order_.push_back(view_id);
+
+  if (!(current_composition_params_.count(view_id) == 1 &&
+        current_composition_params_[view_id] == params)) {
+    ui_view_bounds_modified_in_frame_ = true;
+    current_composition_params_[view_id] = params;
+    has_been_composited_.erase(view_id);
   }
 }
 
 bool FlutterPlatformViewsController::UIViewBoundsModifiedInFrame() {
+  FML_LOG(ERROR) << "UIViewBoundsModifiedInFrame: " << ui_view_bounds_modified_in_frame_;
+  for (auto x: has_been_composited_) {
+    std::cout << x << " ";
+  }
+  std::cout << std::endl;
   return ui_view_bounds_modified_in_frame_;
 }
 
@@ -308,21 +321,19 @@ void FlutterPlatformViewsController::CompositeWithParams(
   ApplyMutators(params.mutatorsStack, touchInterceptor);
 }
 
-SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
-    int view_id,
-    const flutter::EmbeddedViewParams& params) {
+SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
   // TODO(amirh): assert that this is running on the platform thread once we support the iOS
   // embedded views thread configuration.
 
-  // Do nothing if the params didn't change.
-  if (current_composition_params_.count(view_id) == 1 &&
-      current_composition_params_[view_id] == params) {
-    return picture_recorders_[view_id]->getRecordingCanvas();
-  }
-  ui_view_bounds_modified_in_frame_ = true;
-  current_composition_params_[view_id] = EmbeddedViewParams(params);
-  CompositeWithParams(view_id, params);
+  FML_LOG(ERROR) << "starting to composit";
 
+  // Do nothing if the params didn't change.
+  // if (has_been_composited_.count(view_id)) {
+  //   return picture_recorders_[view_id]->getRecordingCanvas();
+  // }
+  has_been_composited_.insert(view_id);
+  FML_LOG(ERROR) << "COMPOSITING: " << view_id;
+  CompositeWithParams(view_id, current_composition_params_[view_id]);
   return picture_recorders_[view_id]->getRecordingCanvas();
 }
 
@@ -365,7 +376,6 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
     composition_order_.clear();
     return did_submit;
   }
-  ui_view_bounds_modified_in_frame_ = true;
   DetachUnusedLayers();
   active_composition_order_.clear();
   UIView* flutter_view = flutter_view_.get();

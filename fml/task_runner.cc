@@ -15,7 +15,8 @@
 namespace fml {
 
 TaskRunner::TaskRunner(fml::RefPtr<MessageLoopImpl> loop)
-    : loop_(std::move(loop)) {}
+    : loop_(std::move(loop)),
+      task_queues_(fml::MessageLoopTaskQueues::GetInstance()) {}
 
 TaskRunner::~TaskRunner() = default;
 
@@ -36,7 +37,10 @@ bool TaskRunner::RunsTasksOnCurrentThread() {
   if (!fml::MessageLoop::IsInitializedForCurrentThread()) {
     return false;
   }
-  return MessageLoop::GetCurrent().GetLoopImpl() == loop_;
+  const auto qid_1 = MessageLoop::GetCurrent().GetLoopImpl()->GetTaskQueueId();
+  const auto qid_2 = loop_->GetTaskQueueId();
+  return qid_1 == qid_2 || task_queues_->Owns(qid_1, qid_2) ||
+         task_queues_->Owns(qid_2, qid_1);
 }
 
 void TaskRunner::RunNowOrPostTask(fml::RefPtr<fml::TaskRunner> runner,

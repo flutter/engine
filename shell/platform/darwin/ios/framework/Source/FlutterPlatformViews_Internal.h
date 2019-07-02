@@ -80,7 +80,9 @@ class FlutterPlatformViewsController {
 
   void SetFrameSize(SkISize frame_size);
 
-  void PrerollCompositeEmbeddedView(int view_id);
+  void ResetBoundsChanged();
+
+  void PrerollCompositeEmbeddedView(int view_id, const EmbeddedViewParams& params);
 
   bool UIViewBoundsModifiedInFrame();
 
@@ -93,7 +95,7 @@ class FlutterPlatformViewsController {
 
   std::vector<SkCanvas*> GetCurrentCanvases();
 
-  SkCanvas* CompositeEmbeddedView(int view_id, const flutter::EmbeddedViewParams& params);
+  SkCanvas* CompositeEmbeddedView(int view_id);
 
   // Discards all platform views instances and auxiliary resources.
   void Reset();
@@ -123,6 +125,8 @@ class FlutterPlatformViewsController {
   // platform view last time it was composited.
   std::map<int64_t, int64_t> clip_count_;
   std::map<int64_t, std::unique_ptr<FlutterPlatformViewLayer>> overlays_;
+  std::set<int64_t> has_been_composited_;
+
   // The GrContext that is currently used by all of the overlay surfaces.
   // We track this to know when the GrContext for the Flutter app has changed
   // so we can update the overlays with the new context.

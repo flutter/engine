@@ -31,12 +31,14 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       frame.canvas() ? frame.canvas()->imageInfo().colorSpace() : nullptr;
   frame.context().raster_cache().SetCheckboardCacheImages(
       checkerboard_raster_cache_images_);
+  MutatorsStack stack;
   PrerollContext context = {
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
       frame.gr_context(),
       frame.view_embedder(),
       color_space,
       kGiantRect,
+      stack,
       frame.context().raster_time(),
       frame.context().ui_time(),
       frame.context().texture_registry(),
@@ -117,12 +119,14 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   // No root surface transformation. So assume identity.
   root_surface_transformation.reset();
 
+  MutatorsStack stack;
   PrerollContext preroll_context{
-      nullptr,                  // raster_cache (don't consult the cache)
-      nullptr,                  // gr_context  (used for the raster cache)
-      nullptr,                  // external view embedder
-      nullptr,                  // SkColorSpace* dst_color_space
-      kGiantRect,               // SkRect cull_rect
+      nullptr,  // raster_cache (don't consult the cache)
+      nullptr,  // gr_context  (used for the raster cache)
+      nullptr,  // external view embedder
+      nullptr,  // SkColorSpace* dst_color_space
+      kGiantRect,
+      stack,                    // SkRect cull_rect
       unused_stopwatch,         // frame time (dont care)
       unused_stopwatch,         // engine time (dont care)
       unused_texture_registry,  // texture registry (not supported)

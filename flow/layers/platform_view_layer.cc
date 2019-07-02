@@ -15,6 +15,12 @@ PlatformViewLayer::~PlatformViewLayer() = default;
 
 void PlatformViewLayer::Preroll(PrerollContext* context,
                                 const SkMatrix& matrix) {
+  EmbeddedViewParams params;
+  params.offsetPixels =
+      SkPoint::Make(matrix.getTranslateX(), matrix.getTranslateY());
+  params.sizePoints = size_;
+  params.mutatorsStack = context->mutators_stack;
+
   set_paint_bounds(SkRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
                                     size_.height()));
 
@@ -23,7 +29,7 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
                       "does not support embedding";
     return;
   }
-  context->view_embedder->PrerollCompositeEmbeddedView(view_id_);
+  context->view_embedder->PrerollCompositeEmbeddedView(view_id_, params);
 }
 
 void PlatformViewLayer::Paint(PaintContext& context) const {
@@ -32,15 +38,9 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
                       "does not support embedding";
     return;
   }
-  EmbeddedViewParams params;
-  SkMatrix transform = context.leaf_nodes_canvas->getTotalMatrix();
-  params.offsetPixels =
-      SkPoint::Make(transform.getTranslateX(), transform.getTranslateY());
-  params.sizePoints = size_;
-  params.mutatorsStack = context.mutators_stack;
 
   SkCanvas* canvas =
-      context.view_embedder->CompositeEmbeddedView(view_id_, params);
+      context.view_embedder->CompositeEmbeddedView(view_id_);
   context.leaf_nodes_canvas = canvas;
 }
 }  // namespace flutter

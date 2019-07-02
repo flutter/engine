@@ -65,6 +65,8 @@ class MessageLoopTaskQueues
 
   // Misc.
 
+  bool Owns(TaskQueueId owner, TaskQueueId subsumed);
+
   void Swap(TaskQueueId primary, TaskQueueId secondary);
 
   void SetWakeable(TaskQueueId queue_id, fml::Wakeable* wakeable);

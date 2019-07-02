@@ -42,6 +42,7 @@ Rasterizer::Rasterizer(
     std::unique_ptr<flutter::CompositorContext> compositor_context)
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
+      task_queues_(fml::MessageLoopTaskQueues::GetInstance()),
       compositor_context_(std::move(compositor_context)),
       user_override_resource_cache_bytes_(false),
       weak_factory_(this) {
@@ -212,6 +213,10 @@ void Rasterizer::DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree,
       return;
     case RasterStatus::kResubmit:
       FML_LOG(ERROR) << "Resubmitting frame.";
+      const auto pid = task_runners_.GetPlatformTaskRunner()->GetTaskQueueId();
+      const auto gid = task_runners_.GetGPUTaskRunner()->GetTaskQueueId();
+      task_queues_->Merge(pid, gid);
+      FML_LOG(ERROR) << "merged the threads!!!!!!!!!";
       pipeline->ProduceToFront(std::move(layer_tree));
       return;
   }
@@ -260,9 +265,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
     const RasterStatus raster_status =
         compositor_frame->Raster(layer_tree, false);
     if (raster_status != RasterStatus::kSuccess) {
-    //   if (external_view_embedder != nullptr) {
-    //   external_view_embedder->SubmitFrame(surface_->GetContext());
-    // }
+      external_view_embedder->EndFrame();
       return raster_status;
     }
     frame->Submit();
