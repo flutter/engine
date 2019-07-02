@@ -126,7 +126,7 @@ class Rasterizer final : public SnapshotDelegate {
   RasterStatus DrawToSurfaceOnGPU(flutter::LayerTree& layer_tree,
                                   fml::AutoResetWaitableEvent& latch);
 
-  RasterStatus DrawToSurface(flutter::LayerTree& layer_tree);
+  RasterStatus DrawToSurface(flutter::LayerTree& layer_tree, bool are_merged);
 
   void FireNextFrameCallbackIfPresent();
 

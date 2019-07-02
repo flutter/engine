@@ -95,7 +95,10 @@ void Rasterizer::DrawLastLayerTree() {
   if (!last_layer_tree_ || !surface_) {
     return;
   }
-  DrawToSurface(*last_layer_tree_);
+  const auto pid = task_runners_.GetPlatformTaskRunner()->GetTaskQueueId();
+  const auto gid = task_runners_.GetGPUTaskRunner()->GetTaskQueueId();
+  bool are_merged = task_queues_->Owns(pid, gid);
+  DrawToSurface(*last_layer_tree_, are_merged);
 }
 
 void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
@@ -202,7 +205,11 @@ void Rasterizer::DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree,
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
   persistent_cache->ResetStoredNewShaders();
 
-  const RasterStatus raster_status = DrawToSurface(*layer_tree);
+  const auto pid = task_runners_.GetPlatformTaskRunner()->GetTaskQueueId();
+  const auto gid = task_runners_.GetGPUTaskRunner()->GetTaskQueueId();
+  bool are_merged = task_queues_->Owns(pid, gid);
+
+  const RasterStatus raster_status = DrawToSurface(*layer_tree, are_merged);
   switch (raster_status) {
     case RasterStatus::kSuccess:
       FML_LOG(ERROR) << "successfully rastered.";
@@ -213,11 +220,13 @@ void Rasterizer::DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree,
       return;
     case RasterStatus::kResubmit:
       FML_LOG(ERROR) << "Resubmitting frame.";
-      const auto pid = task_runners_.GetPlatformTaskRunner()->GetTaskQueueId();
-      const auto gid = task_runners_.GetGPUTaskRunner()->GetTaskQueueId();
-      task_queues_->Merge(pid, gid);
+      // task_queues_->Merge(pid, gid);
       FML_LOG(ERROR) << "merged the threads!!!!!!!!!";
-      pipeline->ProduceToFront(std::move(layer_tree));
+      // task_runners_.GetGPUTaskRunner()->PostDelayedTask([&]() {
+      //   task_queues_->Unmerge(pid);
+      //   FML_LOG(ERROR) << "UNUNUNUNUNUNUNUNNUUNUN Unmerged the threads!!!!!";
+      // }, fml::TimeDelta::FromSeconds(500));
+      // pipeline->ProduceToFront(std::move(layer_tree));
       return;
   }
 
@@ -235,7 +244,8 @@ void Rasterizer::DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree,
   delegate_.OnFrameRasterized(timing);
 }
 
-RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
+RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree,
+                                       bool are_merged) {
   FML_DCHECK(surface_);
 
   auto frame = surface_->AcquireFrame(layer_tree.frame_size());
@@ -263,8 +273,10 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
 
   if (compositor_frame) {
     const RasterStatus raster_status =
-        compositor_frame->Raster(layer_tree, false);
-    if (raster_status != RasterStatus::kSuccess) {
+        compositor_frame->Raster(layer_tree, false, are_merged);
+    if (raster_status == RasterStatus::kFailed) {
+      return raster_status;
+    } else if (raster_status == RasterStatus::kResubmit) {
       external_view_embedder->EndFrame();
       return raster_status;
     }
@@ -304,7 +316,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
       nullptr, recorder.getRecordingCanvas(), nullptr,
       root_surface_transformation, false);
 
-  frame->Raster(*tree, true);
+  frame->Raster(*tree, true, true);
 
   SkSerialProcs procs = {0};
   procs.fTypefaceProc = SerializeTypeface;
@@ -355,7 +367,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsImage(
   auto frame = compositor_context.AcquireFrame(
       surface_context, canvas, nullptr, root_surface_transformation, false);
   canvas->clear(SK_ColorTRANSPARENT);
-  frame->Raster(*tree, true);
+  frame->Raster(*tree, true, true);
   canvas->flush();
 
   // Prepare an image from the surface, this image may potentially be on th GPU.
