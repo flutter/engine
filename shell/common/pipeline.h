@@ -12,7 +12,7 @@
 
 #include <memory>
 #include <mutex>
-#include <queue>
+#include <deque>
 
 namespace flutter {
 
@@ -124,7 +124,7 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
     {
       std::scoped_lock lock(queue_mutex_);
       std::tie(resource, trace_id) = std::move(queue_.front());
-      queue_.pop();
+      queue_.pop_back();
       items_count = queue_.size();
     }
 
@@ -146,12 +146,12 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
   fml::Semaphore empty_;
   fml::Semaphore available_;
   std::mutex queue_mutex_;
-  std::queue<std::pair<ResourcePtr, size_t>> queue_;
+  std::deque<std::pair<ResourcePtr, size_t>> queue_;
 
   void ProducerCommit(ResourcePtr resource, size_t trace_id) {
     {
       std::scoped_lock lock(queue_mutex_);
-      queue_.emplace(std::move(resource), trace_id);
+      queue_.emplace_back(std::move(resource), trace_id);
     }
 
     // Ensure the queue mutex is not held as that would be a pessimization.
