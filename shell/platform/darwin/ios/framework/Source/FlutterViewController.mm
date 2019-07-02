@@ -704,10 +704,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
     flutter::Shell& shell = [_engine.get() shell];
     fml::TimeDelta waitTime =
-#if NDEBUG
-        fml::TimeDelta::FromMilliseconds(100);
-#else
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
         fml::TimeDelta::FromMilliseconds(200);
+#else
+        fml::TimeDelta::FromMilliseconds(100);
 #endif
     if (shell.WaitForFirstFrame(waitTime)) {
       FML_LOG(INFO) << "Timeout waiting for the first frame to render.  This may happen in "
