@@ -161,21 +161,18 @@ void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
 }
 
 bool FlutterPlatformViewsController::HaveEmbeddedViewsMutated() {
-  return embedded_views_mutated_;
-}
-
-// This gets called prior to pre-roll.
-void FlutterPlatformViewsController::ResetEmbeddedViewsMutated() {
-  embedded_views_mutated_ = false;
-  // pre-roll will populate the composition order.
-  composition_order_.clear();
-}
-
-static void CheckElementEquals(std::vector<int64_t> v1, std::vector<int64_t> v2, size_t index) {
-  if (v1.size() <= index || v2.size() <= index) {
-    return false;
+  if (!views_to_recomposite_.empty()) {
+    return true;
   }
-  return v1[index] == v2[index];
+  if (active_composition_order_.size() != composition_order_.size()) {
+    return true;
+  }
+  for (size_t i = 0; i < composition_order_.size(); i++) {
+    if (composition_order_[i] != active_composition_order_[i]) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
@@ -186,16 +183,11 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
   picture_recorders_[view_id]->getRecordingCanvas()->clear(SK_ColorTRANSPARENT);
   composition_order_.push_back(view_id);
 
-  // check if the composition order has changed.
-  embedded_views_mutated_ |= CheckElementEquals(composition_order_, active_composition_order_,
-                                                composition_order_.size() - 1);
-
   if (current_composition_params_.count(view_id) == 1 &&
       current_composition_params_[view_id] == *params.get()) {
     // Do nothing if the params didn't change.
     return;
   }
-  embedded_views_mutated_ = true;
   current_composition_params_[view_id] = EmbeddedViewParams(*params.get());
   views_to_recomposite_.insert(view_id);
 }

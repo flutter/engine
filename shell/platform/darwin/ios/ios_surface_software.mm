@@ -135,12 +135,6 @@ flutter::ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
   }
 }
 
-void IOSSurfaceSoftware::ResetEmbeddedViewsMutated() {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  FML_CHECK(platform_views_controller != nullptr);
-  platform_views_controller->ResetEmbeddedViewsMutated();
-}
-
 bool IOSSurfaceSoftware::HaveEmbeddedViewsMutated() {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);

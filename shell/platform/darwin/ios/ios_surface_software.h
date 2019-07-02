@@ -46,9 +46,6 @@ class IOSSurfaceSoftware final : public IOSSurface,
   flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   // |flutter::ExternalViewEmbedder|
-  void ResetEmbeddedViewsMutated() override;
-
-  // |flutter::ExternalViewEmbedder|
   bool HaveEmbeddedViewsMutated() override;
 
   // |flutter::ExternalViewEmbedder|

@@ -183,8 +183,6 @@ class ExternalViewEmbedder {
  public:
   ExternalViewEmbedder() = default;
 
-  virtual void ResetEmbeddedViewsMutated() = 0;
-
   virtual bool HaveEmbeddedViewsMutated() = 0;
 
   virtual void BeginFrame(SkISize frame_size) = 0;
