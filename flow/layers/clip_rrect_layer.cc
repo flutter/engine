@@ -16,6 +16,7 @@ ClipRRectLayer::~ClipRRectLayer() = default;
 void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkRect previous_cull_rect = context->cull_rect;
   SkRect clip_rrect_bounds = clip_rrect_.getBounds();
+  context->mutators_stack.pushClipRRect(clip_rrect_);
   if (context->cull_rect.intersect(clip_rrect_bounds)) {
     SkRect child_paint_bounds = SkRect::MakeEmpty();
     PrerollChildren(context, matrix, &child_paint_bounds);
@@ -25,6 +26,7 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
     }
   }
   context->cull_rect = previous_cull_rect;
+  context->mutators_stack.pop();
 }
 
 #if defined(OS_FUCHSIA)
@@ -58,7 +60,6 @@ void ClipRRectLayer::Paint(PaintContext& context) const {
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->clipRRect(clip_rrect_,
                                            clip_behavior_ != Clip::hardEdge);
-  context.mutators_stack.pushClipRRect(clip_rrect_);
 
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->saveLayer(paint_bounds(), nullptr);
@@ -67,7 +68,6 @@ void ClipRRectLayer::Paint(PaintContext& context) const {
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->restore();
   }
-  context.mutators_stack.pop();
 }
 
 }  // namespace flutter

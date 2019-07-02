@@ -79,7 +79,8 @@ class FlutterPlatformViewsController {
 
   void SetFrameSize(SkISize frame_size);
 
-  void PrerollCompositeEmbeddedView(int view_id);
+  void PrerollCompositeEmbeddedView(int view_id,
+                                    const flutter::EmbeddedViewParams& params);
 
   // Returns the `FlutterPlatformView` object associated with the view_id.
   //
@@ -90,7 +91,7 @@ class FlutterPlatformViewsController {
 
   std::vector<SkCanvas*> GetCurrentCanvases();
 
-  SkCanvas* CompositeEmbeddedView(int view_id, const flutter::EmbeddedViewParams& params);
+  SkCanvas* CompositeEmbeddedView(int view_id);
 
   // Discards all platform views instances and auxiliary resources.
   void Reset();
@@ -136,6 +137,9 @@ class FlutterPlatformViewsController {
 
   // The latest composition order that was presented in Present().
   std::vector<int64_t> active_composition_order_;
+
+  // Only compoiste platform views in this set.
+  std::unordered_set<int64_t> views_need_recomposite;
 
   std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
 

@@ -160,11 +160,20 @@ void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
   frame_size_ = frame_size;
 }
 
-void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(int view_id) {
+void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(int view_id,
+                                                                    const flutter::EmbeddedViewParams& params) {
   picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
   picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_));
   picture_recorders_[view_id]->getRecordingCanvas()->clear(SK_ColorTRANSPARENT);
   composition_order_.push_back(view_id);
+
+  if (current_composition_params_.count(view_id) == 1 &&
+      current_composition_params_[view_id] == params) {
+    // Do nothing if the params didn't change.
+    return;
+  }
+  current_composition_params_[view_id] = EmbeddedViewParams(params);
+  views_need_recomposite.insert(view_id);
 }
 
 NSObject<FlutterPlatformView>* FlutterPlatformViewsController::GetPlatformViewByID(int view_id) {
@@ -296,19 +305,16 @@ void FlutterPlatformViewsController::CompositeWithParams(
 }
 
 SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
-    int view_id,
-    const flutter::EmbeddedViewParams& params) {
+    int view_id) {
   // TODO(amirh): assert that this is running on the platform thread once we support the iOS
   // embedded views thread configuration.
 
-  // Do nothing if the params didn't change.
-  if (current_composition_params_.count(view_id) == 1 &&
-      current_composition_params_[view_id] == params) {
+  // Do nothing if the view doesn't need to be composited.
+  if (views_need_recomposite.count(view_id) == 0) {
     return picture_recorders_[view_id]->getRecordingCanvas();
   }
-  current_composition_params_[view_id] = EmbeddedViewParams(params);
-  CompositeWithParams(view_id, params);
-
+  CompositeWithParams(view_id, current_composition_params_[view_id]);
+  views_need_recomposite.erase(view_id);
   return picture_recorders_[view_id]->getRecordingCanvas();
 }
 
@@ -324,6 +330,7 @@ void FlutterPlatformViewsController::Reset() {
   picture_recorders_.clear();
   current_composition_params_.clear();
   clip_count_.clear();
+  views_need_recomposite.clear();
 }
 
 bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
@@ -415,6 +422,7 @@ void FlutterPlatformViewsController::DisposeViews() {
     overlays_.erase(viewId);
     current_composition_params_.erase(viewId);
     clip_count_.erase(viewId);
+    views_need_recomposite.erase(viewId);
   }
   views_to_dispose_.clear();
 }
