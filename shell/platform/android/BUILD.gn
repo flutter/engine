@@ -123,6 +123,7 @@ action("flutter_shell_java") {
     "io/flutter/app/FlutterPluginRegistry.java",
     "io/flutter/embedding/android/AndroidKeyProcessor.java",
     "io/flutter/embedding/android/AndroidTouchProcessor.java",
+    "io/flutter/embedding/android/DrawableSplashScreen.java",
     "io/flutter/embedding/android/FlutterActivity.java",
     "io/flutter/embedding/android/FlutterFragment.java",
     "io/flutter/embedding/android/FlutterSplashView.java",

@@ -9,14 +9,17 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -101,6 +104,17 @@ import io.flutter.view.FlutterMain;
  * Flutter also requires initialization time. To specify a splash screen for Flutter initialization,
  * subclass {@code FlutterActivity} and override {@link #provideSplashScreen()}. See
  * {@link SplashScreen} for details on implementing a splash screen.
+ * <p>
+ * Flutter ships with a splash screen that automatically displays the exact same
+ * {@code windowBackground} as the launch theme discussed previously. To use that splash screen,
+ * include the following metadata in AndroidManifest.xml for this {@code FlutterActivity}:
+ *
+ * {@code
+ *   <meta-data
+ *     android:name="io.flutter.app.android.SplashScreenUntilFirstFrame"
+ *     android:value="true"
+ *     />
+ * }
  */
 // TODO(mattcarroll): explain each call forwarded to Fragment (first requires resolution of PluginRegistry API).
 public class FlutterActivity extends FragmentActivity
@@ -112,6 +126,7 @@ public class FlutterActivity extends FragmentActivity
   // Meta-data arguments, processed from manifest XML.
   protected static final String DART_ENTRYPOINT_META_DATA_KEY = "io.flutter.Entrypoint";
   protected static final String INITIAL_ROUTE_META_DATA_KEY = "io.flutter.InitialRoute";
+  protected static final String SPLASH_SCREEN_META_DATA_KEY = "io.flutter.app.android.SplashScreenUntilFirstFrame";
 
   // Intent extra arguments.
   protected static final String EXTRA_DART_ENTRYPOINT = "dart_entrypoint";
@@ -122,6 +137,9 @@ public class FlutterActivity extends FragmentActivity
   protected static final String DEFAULT_DART_ENTRYPOINT = "main";
   protected static final String DEFAULT_INITIAL_ROUTE = "/";
   protected static final String DEFAULT_BACKGROUND_MODE = BackgroundMode.opaque.name();
+
+  // Splash screen behavior.
+  private Drawable launchScreenDrawable;
 
   // FlutterFragment management.
   private static final String TAG_FLUTTER_FRAGMENT = "flutter_fragment";
@@ -257,6 +275,11 @@ public class FlutterActivity extends FragmentActivity
    * jarring visual changes during app startup.
    */
   private void switchLaunchThemeForNormalTheme() {
+    // Get a reference to the Drawable that was displayed for the launch screen. We don't know at
+    // this point if we'll need this Drawable, but this is our only opportunity to look it up
+    // before we switch to a different theme.
+    launchScreenDrawable = getLaunchScreenDrawableFromActivityTheme();
+
     try {
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
       if (activityInfo.metaData != null) {
@@ -272,10 +295,56 @@ public class FlutterActivity extends FragmentActivity
     }
   }
 
+  /**
+   * Extracts a {@link Drawable} from the {@code Activity}'s {@code windowBackground}.
+   * <p>
+   * Returns null if no {@code windowBackground} is set for the activity.
+   */
+  @SuppressWarnings("deprecation")
+  private Drawable getLaunchScreenDrawableFromActivityTheme() {
+    TypedValue typedValue = new TypedValue();
+    if (!getTheme().resolveAttribute(
+        android.R.attr.windowBackground,
+        typedValue,
+        true)) {
+      return null;
+    }
+    if (typedValue.resourceId == 0) {
+      return null;
+    }
+    try {
+      return getResources().getDrawable(typedValue.resourceId);
+    } catch (Resources.NotFoundException e) {
+      Log.e(TAG, "Splash screen requested in AndroidManifest.xml, but no windowBackground"
+          + " is available in the theme.");
+      return null;
+    }
+  }
+
   @Nullable
   @Override
   public SplashScreen provideSplashScreen() {
-    return null;
+    if (manifestRequestsSplashscreen() && launchScreenDrawable != null) {
+      return new DrawableSplashScreen(launchScreenDrawable);
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Returns true if AndroidManifest.xml metadata for this {@code FlutterActivity} requests a splash
+   * screen that matches the launch theme for this {@code FlutterActivity}. Returns false otherwise.
+   */
+  private boolean manifestRequestsSplashscreen() {
+    try {
+      ActivityInfo activityInfo = getPackageManager().getActivityInfo(
+          getComponentName(),
+          PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES);
+      Bundle metadata = activityInfo.metaData;
+      return metadata != null && metadata.getBoolean(SPLASH_SCREEN_META_DATA_KEY);
+    } catch (PackageManager.NameNotFoundException e) {
+      return false;
+    }
   }
 
   /**
