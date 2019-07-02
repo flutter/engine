@@ -162,10 +162,17 @@ void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
 
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(int view_id) {
   ui_view_bounds_modified_in_frame_ = false;
+  FML_LOG(ERROR) << "re-creating picture_recorders for " << view_id;
   picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
   picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_));
   picture_recorders_[view_id]->getRecordingCanvas()->clear(SK_ColorTRANSPARENT);
-  composition_order_.push_back(view_id);
+  auto it = std::find(composition_order_.begin(), composition_order_.end(), view_id);
+  if (it != composition_order_.end()) {
+    composition_order_.erase(it);
+    composition_order_.push_back(view_id);
+  } else {
+    composition_order_.push_back(view_id);
+  }
 }
 
 bool FlutterPlatformViewsController::UIViewBoundsModifiedInFrame() {
@@ -341,6 +348,7 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
   bool did_submit = true;
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t view_id = composition_order_[i];
+    FML_LOG(ERROR) << "at composition_item: " << view_id;
     if (gl_rendering) {
       EnsureGLOverlayInitialized(view_id, gl_context, gr_context);
     } else {
@@ -364,6 +372,7 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
 
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int view_id = composition_order_[i];
+    FML_LOG(ERROR) << "ADDING VIEW: " << view_id;
     // We added a chain of super views to the platform view to handle clipping.
     // The `platform_view_root` is the view at the top of the chain which is a direct subview of the
     // `FlutterView`.

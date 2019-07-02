@@ -10,9 +10,9 @@
 #include "flutter/fml/synchronization/semaphore.h"
 #include "flutter/fml/trace_event.h"
 
+#include <deque>
 #include <memory>
 #include <mutex>
-#include <queue>
 
 namespace flutter {
 
@@ -105,7 +105,19 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
         GetNextPipelineTraceID()};         // trace id
   }
 
-  using Consumer = std::function<void(ResourcePtr)>;
+  using Consumer = std::function<void(ResourcePtr, fml::RefPtr<Pipeline<R>>)>;
+
+  void ProduceToFront(ResourcePtr resource) {
+    const auto trace_id = GetNextPipelineTraceID();
+
+    {
+      std::scoped_lock lock(queue_mutex_);
+      queue_.emplace_front(std::move(resource), trace_id);
+    }
+
+    // Ensure the queue mutex is not held as that would be a pessimization.
+    available_.Signal();
+  }
 
   FML_WARN_UNUSED_RESULT
   PipelineConsumeResult Consume(Consumer consumer) {
@@ -124,13 +136,13 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
     {
       std::scoped_lock lock(queue_mutex_);
       std::tie(resource, trace_id) = std::move(queue_.front());
-      queue_.pop();
+      queue_.pop_front();
       items_count = queue_.size();
     }
 
     {
       TRACE_EVENT0("flutter", "PipelineConsume");
-      consumer(std::move(resource));
+      consumer(std::move(resource), fml::RefPtr<Pipeline<R>>(this));
     }
 
     empty_.Signal();
@@ -146,12 +158,12 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
   fml::Semaphore empty_;
   fml::Semaphore available_;
   std::mutex queue_mutex_;
-  std::queue<std::pair<ResourcePtr, size_t>> queue_;
+  std::deque<std::pair<ResourcePtr, size_t>> queue_;
 
   void ProducerCommit(ResourcePtr resource, size_t trace_id) {
     {
       std::scoped_lock lock(queue_mutex_);
-      queue_.emplace(std::move(resource), trace_id);
+      queue_.emplace_back(std::move(resource), trace_id);
     }
 
     // Ensure the queue mutex is not held as that would be a pessimization.

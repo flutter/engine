@@ -165,6 +165,10 @@ void MessageLoopTaskQueues::SetWakeable(TaskQueueId queue_id,
 }
 
 bool MessageLoopTaskQueues::Merge(TaskQueueId owner, TaskQueueId subsumed) {
+  if (owner == subsumed) {
+    return true;
+  }
+
   // task_observers locks
   std::mutex& o1 = GetMutex(owner, MutexType::kObservers);
   std::mutex& o2 = GetMutex(subsumed, MutexType::kObservers);

@@ -12,6 +12,7 @@
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/closure.h"
+#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/message_loop_task_queues.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -116,7 +117,11 @@ class Rasterizer final : public SnapshotDelegate {
   sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
                                     SkISize picture_size) override;
 
-  void DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree);
+  void DoDrawOnGPU(std::unique_ptr<flutter::LayerTree> layer_tree,
+                   fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline);
+
+  void DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree,
+              fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline);
 
   RasterStatus DrawToSurfaceOnGPU(flutter::LayerTree& layer_tree,
                                   fml::AutoResetWaitableEvent& latch);
