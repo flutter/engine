@@ -154,9 +154,12 @@ fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilter(int color,
 }
 
 fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilterMatrix(
-    const tonic::Float32List& matrix) {
+    tonic::Float32List& matrix) {
+  FML_DCHECK(matrix.num_elements() == 25);
+
   auto layer = std::make_shared<flutter::ColorFilterLayer>(
-      MakeColorMatrixFilter255(matrix));
+      MakeColorMatrixFilter255(matrix.data()));
+  matrix.Release();
   PushLayer(layer);
   return EngineLayer::MakeRetained(layer);
 }

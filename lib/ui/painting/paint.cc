@@ -96,7 +96,7 @@ sk_sp<SkColorFilter> ExtractColorFilter(const uint32_t* uint_data,
         FML_CHECK(length == 20);
 
         tonic::Float32List decoded(matrixHandle);
-        return MakeColorMatrixFilter255(decoded);
+        return MakeColorMatrixFilter255(decoded.data());
       }
       return nullptr;
     }

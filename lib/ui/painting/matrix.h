@@ -17,9 +17,8 @@ tonic::Float64List ToMatrix4(const SkMatrix& sk_matrix);
 // Flutter still defines the matrix to be biased by 255 in the last column
 // (translate). skia is normalized, treating the last column as 0...1, so we
 // post-scale here before calling the skia factory.
-sk_sp<SkColorFilter> MakeColorMatrixFilter255(
-    const tonic::Float32List& color_matrix);
 sk_sp<SkColorFilter> MakeColorMatrixFilter255(const float color_matrix[20]);
+
 }  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_MATRIX_H_

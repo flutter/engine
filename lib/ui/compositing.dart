@@ -397,7 +397,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
         engineLayer = _pushColorFilter(filter._color.value, filter._blendMode.index);
         break;
       case ColorFilter._TypeMatrix:
-        engineLayer = _pushColorFilterMatrix(filter._matrix);
+        engineLayer = _pushColorFilterMatrix(Float32List.fromList(filter._matrix));
         break;
       case ColorFilter._TypeLinearToSrgbGamma:
         engineLayer = _pushColorFilterLinearToSrgbGamma();

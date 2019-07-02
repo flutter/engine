@@ -49,8 +49,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                                         int clipBehavior);
   fml::RefPtr<EngineLayer> pushOpacity(int alpha, double dx = 0, double dy = 0);
   fml::RefPtr<EngineLayer> pushColorFilter(int color, int blendMode);
-  fml::RefPtr<EngineLayer> pushColorFilterMatrix(
-      const tonic::Float32List& matrix);
+  fml::RefPtr<EngineLayer> pushColorFilterMatrix(tonic::Float32List& matrix);
   fml::RefPtr<EngineLayer> pushColorFilterLinearToSrgbGamma();
   fml::RefPtr<EngineLayer> pushColorFilterSrgbToLinearGamma();
   fml::RefPtr<EngineLayer> pushBackdropFilter(ImageFilter* filter);
