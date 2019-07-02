@@ -62,11 +62,13 @@ public class FlutterSplashView extends FrameLayout {
   /**
    * Displays the given {@link SplashScreen} until Flutter renders its first frame.
    * <p>
-   * The given {@link SplashScreen} is displayed as soon as this method is invoked, or
-   * upon attachment to the {@code Window}, whichever happens last.
+   * The display of the given {@link SplashScreen} requires that a {@link FlutterView} be set on
+   * this {@code FlutterSplashView}, and that this {@code FlutterSplashView} be attached to the
+   * {@code Window}. If both of these conditions are met then this {@link SplashScreen} is displayed
+   * as soon as this method is invoked. Otherwise, it is displayed as soon as the preconditions are
+   * met.
    * <p>
-   * If Flutter has already rendered its first frame, this method does not have any
-   * visual impact.
+   * If Flutter has already rendered its first frame, this method does not have any visual impact.
    */
   public void setSplashScreen(@NonNull SplashScreen splashScreen) {
     removeSplashScreen();
@@ -81,6 +83,10 @@ public class FlutterSplashView extends FrameLayout {
   /**
    * Displays the given {@link FlutterView} in this {@code FlutterSplashView}, or removes
    * an existing {@link FlutterView} if {@code flutterView} is {@code null}.
+   * <p>
+   * If the given {@link FlutterView} has not yet rendered its first frame, and a
+   * {@link SplashScreen} has been set on this {@code FlutterSplashView}, then a splash screen
+   * {@code View} is displayed instead.
    */
   public void setFlutterView(@Nullable FlutterView flutterView) {
     if (this.flutterView != null) {

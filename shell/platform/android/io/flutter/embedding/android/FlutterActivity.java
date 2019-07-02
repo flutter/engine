@@ -11,15 +11,12 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
-import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -29,7 +26,6 @@ import android.widget.FrameLayout;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
-import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.FlutterMain;
 
@@ -65,6 +61,46 @@ import io.flutter.view.FlutterMain;
  * {@link FlutterView}. Using a {@link FlutterView} requires forwarding some calls from an
  * {@code Activity}, as well as forwarding lifecycle calls from an {@code Activity} or a
  * {@code Fragment}.
+ * <p>
+ * <strong>Launch Screen and Splash Screen</strong>
+ * <p>
+ * {@code FlutterActivity} supports the display of an Android "launch screen" as well as a
+ * Flutter-specific "splash screen". The launch screen is displayed while the Android application
+ * loads. It is only applicable if {@code FlutterActivity} is the first {@code Activity} displayed
+ * upon loading the app. After the launch screen passes, a splash screen is optionally displayed.
+ * The splash screen is displayed for as long as it takes Flutter to initialize and render its
+ * first frame.
+ * <p>
+ * Use Android themes to display a launch screen. Create two themes: a launch theme and a normal
+ * theme. In the launch theme, set {@code windowBackground} to the desired {@code Drawable} for
+ * the launch screen. In the normal theme, set {@code windowBackground} to any desired background
+ * color that should normally appear behind your Flutter content. In most cases this background
+ * color will never be seen, but for possible transition edge cases it is a good idea to explicitly
+ * replace the launch screen window background with a neutral color.
+ * <p>
+ * Do not change aspects of system chrome between a launch theme and normal theme. Either define
+ * both themes to be fullscreen or not, and define both themes to display the same status bar and
+ * navigation bar settings. To adjust system chrome once the Flutter app renders, use platform
+ * channels to instruct Android to do so at the appropriate time. This will avoid any jarring visual
+ * changes during app startup.
+ * <p>
+ * In the AndroidManifest.xml, set the theme of {@code FlutterActivity} to the defined launch theme.
+ * In the metadata section for {@code FlutterActivity}, defined the following reference to your
+ * normal theme:
+ *
+ * {@code
+ *   <meta-data
+ *     android:name="io.flutter.embedding.android.NormalTheme"
+ *     android:resource="@style/YourNormalTheme"
+ *     />
+ * }
+ *
+ * With themes defined, and AndroidManifest.xml updated, Flutter displays the specified launch
+ * screen until the Android application is initialized.
+ * <p>
+ * Flutter also requires initialization time. To specify a splash screen for Flutter initialization,
+ * subclass {@code FlutterActivity} and override {@link #provideSplashScreen()}. See
+ * {@link SplashScreen} for details on implementing a splash screen.
  */
 // TODO(mattcarroll): explain each call forwarded to Fragment (first requires resolution of PluginRegistry API).
 public class FlutterActivity extends FragmentActivity
@@ -213,16 +249,26 @@ public class FlutterActivity extends FragmentActivity
    * </ol>
    * With the above settings, your launch theme will be used when loading the app, and
    * then the theme will be switched to your normal theme once the app has initialized.
+   * <p>
+   * Do not change aspects of system chrome between a launch theme and normal theme. Either define
+   * both themes to be fullscreen or not, and define both themes to display the same status bar and
+   * navigation bar settings. If you wish to adjust system chrome once your Flutter app renders, use
+   * platform channels to instruct Android to do so at the appropriate time. This will avoid any
+   * jarring visual changes during app startup.
    */
   private void switchLaunchThemeForNormalTheme() {
     try {
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      int normalThemeRID = activityInfo.metaData.getInt("io.flutter.embedding.android.NormalTheme", -1);
-      if (normalThemeRID != -1) {
-        setTheme(normalThemeRID);
+      if (activityInfo.metaData != null) {
+        int normalThemeRID = activityInfo.metaData.getInt("io.flutter.embedding.android.NormalTheme", -1);
+        if (normalThemeRID != -1) {
+          setTheme(normalThemeRID);
+        }
+      } else {
+        Log.d(TAG, "Using the launch theme as normal theme.");
       }
     } catch (PackageManager.NameNotFoundException exception) {
-      Log.e(TAG, "Could not read meta-data for FlutterActivity.");
+      Log.e(TAG, "Could not read meta-data for FlutterActivity. Using the launch theme as normal theme.");
     }
   }
 

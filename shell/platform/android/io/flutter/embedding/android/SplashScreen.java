@@ -20,6 +20,11 @@ public interface SplashScreen {
   /**
    * Creates a {@code View} to be displayed as a splash screen before
    * Flutter renders its first frame.
+   * <p>
+   * This method can be called at any time, and may be called multiple times depending on Android
+   * configuration changes that require recreation of a view hierarchy. Implementers that provide
+   * a stateful splash view, such as one with animations, should take care to migrate that
+   * animation state from the previously returned splash view to the newly created splash view.
    */
   @Nullable
   View createSplashView(@NonNull Context context);

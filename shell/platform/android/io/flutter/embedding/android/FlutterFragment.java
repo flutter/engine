@@ -873,7 +873,15 @@ public class FlutterFragment extends Fragment {
     void configureFlutterEngine(@NonNull FlutterEngine flutterEngine);
   }
 
+  /**
+   * Provides a {@link SplashScreen} to display while Flutter initializes and renders its first
+   * frame.
+   */
   public interface SplashScreenProvider {
+    /**
+     * Provides a {@link SplashScreen} to display while Flutter initializes and renders its first
+     * frame.
+     */
     @Nullable
     SplashScreen provideSplashScreen();
   }
