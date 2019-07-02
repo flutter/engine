@@ -2530,7 +2530,7 @@ class ColorFilter {
   /// unnormalized, 0...255, space.
   const ColorFilter.matrix(List<double> matrix)
       : assert(matrix != null, 'Color Matrix argument was null.'),
-        assert(matrix.length == 25, 'Color Matrix must have 25 entries.'),
+        assert(matrix.length == 20, 'Color Matrix must have 20 entries.'),
         _color = null,
         _blendMode = null,
         _matrix = matrix,
