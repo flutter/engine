@@ -121,7 +121,7 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
       nullptr,                  // raster_cache (don't consult the cache)
       nullptr,                  // gr_context  (used for the raster cache)
       nullptr,                  // external view embedder
-      unused_stack,              // mutator stack
+      unused_stack,             // mutator stack
       nullptr,                  // SkColorSpace* dst_color_space
       kGiantRect,               // SkRect cull_rect
       unused_stopwatch,         // frame time (dont care)

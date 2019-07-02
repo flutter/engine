@@ -23,12 +23,14 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
                       "does not support embedding";
     return;
   }
-  EmbeddedViewParams params;
-  params.offsetPixels =
-  SkPoint::Make(matrix.getTranslateX(), matrix.getTranslateY());
-  params.sizePoints = size_;
-  params.mutatorsStack = context->mutators_stack;
-  context->view_embedder->PrerollCompositeEmbeddedView(view_id_, params);
+  std::unique_ptr<EmbeddedViewParams> params =
+      std::make_unique<EmbeddedViewParams>();
+  params->offsetPixels =
+      SkPoint::Make(matrix.getTranslateX(), matrix.getTranslateY());
+  params->sizePoints = size_;
+  params->mutatorsStack = context->mutators_stack;
+  context->view_embedder->PrerollCompositeEmbeddedView(view_id_,
+                                                       std::move(params));
 }
 
 void PlatformViewLayer::Paint(PaintContext& context) const {

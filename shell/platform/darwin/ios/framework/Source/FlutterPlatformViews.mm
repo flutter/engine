@@ -160,19 +160,20 @@ void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
   frame_size_ = frame_size;
 }
 
-void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(int view_id,
-                                                                    const flutter::EmbeddedViewParams& params) {
+void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
+    int view_id,
+    std::unique_ptr<EmbeddedViewParams> params) {
   picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
   picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_));
   picture_recorders_[view_id]->getRecordingCanvas()->clear(SK_ColorTRANSPARENT);
   composition_order_.push_back(view_id);
 
   if (current_composition_params_.count(view_id) == 1 &&
-      current_composition_params_[view_id] == params) {
+      current_composition_params_[view_id] == *params.get()) {
     // Do nothing if the params didn't change.
     return;
   }
-  current_composition_params_[view_id] = EmbeddedViewParams(params);
+  current_composition_params_[view_id] = EmbeddedViewParams(*params.get());
   views_need_recomposite.insert(view_id);
 }
 
@@ -240,7 +241,6 @@ UIView* FlutterPlatformViewsController::ReconstructClipViewsChain(int number_of_
 void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
                                                    UIView* embedded_view) {
   FML_DCHECK(CATransform3DEqualToTransform(embedded_view.layer.transform, CATransform3DIdentity));
-
   UIView* head = embedded_view;
   head.clipsToBounds = YES;
   ResetAnchor(head.layer);
@@ -282,9 +282,8 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
       head.layer.transform, CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1));
 }
 
-void FlutterPlatformViewsController::CompositeWithParams(
-    int view_id,
-    const flutter::EmbeddedViewParams& params) {
+void FlutterPlatformViewsController::CompositeWithParams(int view_id,
+                                                         const EmbeddedViewParams& params) {
   CGRect frame = CGRectMake(0, 0, params.sizePoints.width(), params.sizePoints.height());
   UIView* touchInterceptor = touch_interceptors_[view_id].get();
   touchInterceptor.layer.transform = CATransform3DIdentity;
@@ -304,8 +303,7 @@ void FlutterPlatformViewsController::CompositeWithParams(
   ApplyMutators(params.mutatorsStack, touchInterceptor);
 }
 
-SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
-    int view_id) {
+SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
   // TODO(amirh): assert that this is running on the platform thread once we support the iOS
   // embedded views thread configuration.
 

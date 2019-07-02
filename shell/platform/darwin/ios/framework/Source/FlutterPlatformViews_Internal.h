@@ -80,7 +80,7 @@ class FlutterPlatformViewsController {
   void SetFrameSize(SkISize frame_size);
 
   void PrerollCompositeEmbeddedView(int view_id,
-                                    const flutter::EmbeddedViewParams& params);
+                                    std::unique_ptr<flutter::EmbeddedViewParams> params);
 
   // Returns the `FlutterPlatformView` object associated with the view_id.
   //
@@ -188,7 +188,7 @@ class FlutterPlatformViewsController {
   //
   // After each clip operation, we update the head to the super view of the current head.
   void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
-  void CompositeWithParams(int view_id, const flutter::EmbeddedViewParams& params);
+  void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };

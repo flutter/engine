@@ -49,8 +49,8 @@ class IOSSurfaceSoftware final : public IOSSurface,
   void BeginFrame(SkISize frame_size) override;
 
   // |flutter::ExternalViewEmbedder|
-                                   void PrerollCompositeEmbeddedView(int view_id,
-                                                                     const flutter::EmbeddedViewParams& params) override;
+  void PrerollCompositeEmbeddedView(int view_id,
+                                    std::unique_ptr<EmbeddedViewParams> params) override;
 
   // |flutter::ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;

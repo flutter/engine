@@ -141,11 +141,12 @@ void IOSSurfaceSoftware::BeginFrame(SkISize frame_size) {
   platform_views_controller->SetFrameSize(frame_size);
 }
 
-  void IOSSurfaceSoftware::PrerollCompositeEmbeddedView(int view_id,
-                                                        const flutter::EmbeddedViewParams& params) {
+void IOSSurfaceSoftware::PrerollCompositeEmbeddedView(
+    int view_id,
+    std::unique_ptr<flutter::EmbeddedViewParams> params) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
-  platform_views_controller->PrerollCompositeEmbeddedView(view_id, params);
+  platform_views_controller->PrerollCompositeEmbeddedView(view_id, std::move(params));
 }
 
 std::vector<SkCanvas*> IOSSurfaceSoftware::GetCurrentCanvases() {

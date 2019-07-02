@@ -185,8 +185,9 @@ class ExternalViewEmbedder {
 
   virtual void BeginFrame(SkISize frame_size) = 0;
 
-  virtual void PrerollCompositeEmbeddedView(int view_id,
-                                            const flutter::EmbeddedViewParams& params) = 0;
+  virtual void PrerollCompositeEmbeddedView(
+      int view_id,
+      std::unique_ptr<EmbeddedViewParams> params) = 0;
 
   virtual std::vector<SkCanvas*> GetCurrentCanvases() = 0;
 
