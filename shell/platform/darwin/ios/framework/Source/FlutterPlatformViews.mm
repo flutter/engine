@@ -261,7 +261,6 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
     }
     ++iter;
   }
-
   // Reverse scale based on screen scale.
   //
   // The UIKit frame is set based on the logical resolution instead of physical.
@@ -363,7 +362,6 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
     UIView* platform_view_root = root_views_[view_id].get();
     UIView* overlay = overlays_[view_id]->overlay_view;
     FML_CHECK(platform_view_root.superview == overlay.superview);
-
     if (platform_view_root.superview == flutter_view) {
       [flutter_view bringSubviewToFront:platform_view_root];
       [flutter_view bringSubviewToFront:overlay];
@@ -411,6 +409,9 @@ void FlutterPlatformViewsController::DisposeViews() {
     views_.erase(viewId);
     touch_interceptors_.erase(viewId);
     root_views_.erase(viewId);
+    if (overlays_.find(viewId) != overlays_.end()) {
+      [overlays_[viewId]->overlay_view.get() removeFromSuperview];
+    }
     overlays_.erase(viewId);
     current_composition_params_.erase(viewId);
     clip_count_.erase(viewId);
