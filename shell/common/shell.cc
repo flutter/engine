@@ -459,14 +459,15 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // a synchronous fashion.
   fml::AutoResetWaitableEvent latch;
   auto gpu_task =
-      fml::MakeCopyable([this, rasterizer = rasterizer_->GetWeakPtr(),  //
-                         surface = std::move(surface),                  //
+      fml::MakeCopyable([& waiting_for_first_frame = waiting_for_first_frame_,
+                         rasterizer = rasterizer_->GetWeakPtr(),  //
+                         surface = std::move(surface),            //
                          &latch]() mutable {
         if (rasterizer) {
           rasterizer->Setup(std::move(surface));
         }
 
-        waiting_for_first_frame_.store(true);
+        waiting_for_first_frame.store(true);
 
         // Step 3: All done. Signal the latch that the platform thread is
         // waiting on.
@@ -567,7 +568,7 @@ void Shell::OnPlatformViewDestroyed() {
   };
 
   // The normal flow executed by this method is that the platform thread is
-  // starting the sequence and waiting on the latch. Later the UI thread posts
+  // starting the sequence and w on the latch. Later the UI thread posts
   // gpu_task to the GPU thread triggers signaling the latch(on the IO thread).
   // If the GPU the and platform threads are the same this results in a deadlock
   // as the gpu_task will never be posted to the plaform/gpu thread that is
@@ -803,14 +804,16 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   FML_DCHECK(is_setup_);
 
   task_runners_.GetGPUTaskRunner()->PostTask(
-      [this, rasterizer = rasterizer_->GetWeakPtr(),
+      [& waiting_for_first_frame = waiting_for_first_frame_,
+       &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
+       rasterizer = rasterizer_->GetWeakPtr(),
        pipeline = std::move(pipeline)]() {
         if (rasterizer) {
           rasterizer->Draw(pipeline);
 
-          if (waiting_for_first_frame_.load()) {
-            waiting_for_first_frame_.store(false);
-            waiting_for_first_frame_condition_.notify_all();
+          if (waiting_for_first_frame.load()) {
+            waiting_for_first_frame.store(false);
+            waiting_for_first_frame_condition.notify_all();
           }
         }
       });
@@ -1255,7 +1258,9 @@ bool Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
   bool success = waiting_for_first_frame_condition_.wait_for(
       lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
-      [this] { return !waiting_for_first_frame_.load(); });
+      [& waiting_for_first_frame = waiting_for_first_frame_] {
+        return !waiting_for_first_frame.load();
+      });
   return !success;
 }
 
