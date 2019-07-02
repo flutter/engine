@@ -712,7 +712,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     if (shell.WaitForFirstFrame(waitTime)) {
       FML_LOG(INFO) << "Timeout waiting for the first frame to render.  This may happen in "
                     << "unoptimized builds.  If this is a release build, you should load a less "
-                    << "complex frame to avoid the timeout."
+                    << "complex frame to avoid the timeout.";
     }
   }
 }
