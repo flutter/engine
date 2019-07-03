@@ -58,6 +58,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
 
   SkPaint paint;
   paint.setAlpha(alpha_);
+  FML_DLOG(ERROR) << "alpha "<< paint.getAlphaf();
 
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->translate(offset_.fX, offset_.fY);

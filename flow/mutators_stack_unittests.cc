@@ -60,6 +60,14 @@ TEST(MutatorsStack, PushTransform) {
   ASSERT_TRUE(iter->get()->matrix() == matrix);
 }
 
+TEST(MutatorsStack, PushOpacity) {
+  MutatorsStack stack;
+  stack.pushAlph(240);
+  auto iter = stack.bottom();
+  ASSERT_TRUE(iter->get()->type() == MutatorType::opacity);
+  ASSERT_TRUE(iter->get()->matrix() == matrix);
+}
+
 TEST(MutatorsStack, Pop) {
   MutatorsStack stack;
   SkMatrix matrix;
