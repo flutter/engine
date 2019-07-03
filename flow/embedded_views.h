@@ -185,7 +185,7 @@ class ExternalViewEmbedder {
 
   // This will return true after pre-roll if any of the embedded views
   // have mutated for last layer tree.
-  virtual bool HaveEmbeddedViewsMutated() = 0;
+  virtual bool HasPendingViewOperations() = 0;
 
   virtual void BeginFrame(SkISize frame_size) = 0;
 

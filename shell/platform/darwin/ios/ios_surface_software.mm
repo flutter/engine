@@ -135,10 +135,10 @@ flutter::ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
   }
 }
 
-bool IOSSurfaceSoftware::HaveEmbeddedViewsMutated() {
+bool IOSSurfaceSoftware::HasPendingViewOperations() {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
-  return platform_views_controller->HaveEmbeddedViewsMutated();
+  return platform_views_controller->HasPendingViewOperations();
 }
 
 void IOSSurfaceSoftware::BeginFrame(SkISize frame_size) {

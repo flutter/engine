@@ -79,7 +79,7 @@ class FlutterPlatformViewsController {
 
   void SetFrameSize(SkISize frame_size);
 
-  bool HaveEmbeddedViewsMutated();
+  bool HasPendingViewOperations();
 
   void PrerollCompositeEmbeddedView(int view_id,
                                     std::unique_ptr<flutter::EmbeddedViewParams> params);

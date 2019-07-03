@@ -52,7 +52,7 @@ class IOSSurfaceGL final : public IOSSurface,
   flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   // |flutter::ExternalViewEmbedder|
-  bool HaveEmbeddedViewsMutated() override;
+  bool HasPendingViewOperations() override;
 
   // |flutter::ExternalViewEmbedder|
   void BeginFrame(SkISize frame_size) override;

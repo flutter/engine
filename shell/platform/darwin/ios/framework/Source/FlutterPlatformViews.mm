@@ -160,7 +160,7 @@ void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
   frame_size_ = frame_size;
 }
 
-bool FlutterPlatformViewsController::HaveEmbeddedViewsMutated() {
+bool FlutterPlatformViewsController::HasPendingViewOperations() {
   if (!views_to_recomposite_.empty()) {
     return true;
   }
