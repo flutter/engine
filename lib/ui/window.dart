@@ -515,8 +515,12 @@ class Locale {
 
 /// The most basic interface to the host operating system's user interface.
 ///
+/// It exposes the size of the display, the core scheduler API, the input event
+/// callback, the graphics drawing API, and other such core services.
+///
 /// There is a single Window instance in the system, which you can
-/// obtain from the [window] property.
+/// obtain from `WidgetsBinding.instance.window`, or `window` in `dart:ui` if
+/// `WidgetsBinding` is unavailable.
 ///
 /// ## Insets and Padding
 ///
@@ -1220,7 +1224,19 @@ enum Brightness {
   light,
 }
 
-/// The [Window] singleton. This object exposes the size of the display, the
-/// core scheduler API, the input event callback, the graphics drawing API, and
-/// other such core services.
+/// The [Window] singleton.
+///
+/// Please try to avoid statically referencing this and instead use a
+/// binding for dependency resolution such as `WidgetsBinding.instance.window`.
+///
+/// Static access of this "window" object means that Flutter has few, if any
+/// options to fake or mock the given object in tests. Even in cases where Dart
+/// offers special language constructs to forcefully shadow such properties,
+/// those mechanisms would only be reasonable for tests and they would not be
+/// reasonable for a future of Flutter where we legitimately want to select an
+/// appropriate implementation at runtime.
+///
+/// The only place that `WidgetsBinding.instance.window` is inappropriate is if
+/// a `Window` is required before invoking `runApp()`. In that case, it is
+/// acceptable (though unfortunate) to use this object statically.
 final Window window = Window._();
