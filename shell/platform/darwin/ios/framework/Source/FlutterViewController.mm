@@ -23,6 +23,7 @@
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
+static double kTouchTrackerCheckInterval = 1.f;
 
 @implementation FlutterViewController {
   std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
@@ -40,6 +41,8 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
   NSMutableSet<NSNumber*>* _ongoingTouches;
+  NSMutableSet* _touchTrackerSet;
+  NSMutableDictionary<NSValue*, NSNumber*>* _touchTrackerDict;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -119,7 +122,8 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
-
+  _touchTrackerSet = [[NSMutableSet set] retain];
+  _touchTrackerDict = [[NSMutableDictionary dictionary] retain];
   [self setupNotificationCenterObservers];
 }
 
@@ -471,6 +475,8 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 - (void)dealloc {
   [_engine.get() notifyViewControllerDeallocated];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+  [_touchTrackerSet release];
+  [_touchTrackerDict release];
   [super dealloc];
 }
 
@@ -540,17 +546,40 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 // in the status bar area are available to framework code. The change type (optional) of the faked
 // touch is specified in the second argument.
 - (void)dispatchTouches:(NSSet*)touches
-    pointerDataChangeOverride:(flutter::PointerData::Change*)overridden_change {
+    pointerDataChangeOverride:(blink::PointerData::Change*)overridden_change
+                 trackTouches:(BOOL)bTrack {
   const CGFloat scale = [UIScreen mainScreen].scale;
   auto packet = std::make_unique<flutter::PointerDataPacket>(touches.count);
-
+  NSTimeInterval tsNow = [[NSDate date] timeIntervalSinceReferenceDate];
   size_t pointer_index = 0;
 
   for (UITouch* touch in touches) {
     CGPoint windowCoordinates = [touch locationInView:self.view];
 
+    UITouchPhase phase = touch.phase;
+    NSValue* key = [NSValue valueWithPointer:(void*)touch];
     flutter::PointerData pointer_data;
     pointer_data.Clear();
+
+    switch (phase) {
+      case UITouchPhaseBegan:
+      case UITouchPhaseMoved:
+      case UITouchPhaseStationary:
+        if (bTrack) {
+          [_touchTrackerSet addObject:touch];
+          _touchTrackerDict[key] = @(tsNow + kTouchTrackerCheckInterval);
+        }
+        break;
+      case UITouchPhaseEnded:
+      case UITouchPhaseCancelled:
+        if (bTrack) {
+          [_touchTrackerDict removeObjectForKey:key];
+          [_touchTrackerSet removeObject:touch];
+        }
+        break;
+      default:
+        break;
+    }
 
     constexpr int kMicrosecondsPerSecond = 1000 * 1000;
     pointer_data.time_stamp = touch.timestamp * kMicrosecondsPerSecond;
@@ -647,19 +676,45 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self dispatchTouches:touches pointerDataChangeOverride:nullptr];
+  [self dispatchTouches:touches pointerDataChangeOverride:nullptr trackTouches:TRUE];
+  [self checkIfCompleteTouches];
 }
 
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self dispatchTouches:touches pointerDataChangeOverride:nullptr];
+  [self dispatchTouches:touches pointerDataChangeOverride:nullptr trackTouches:TRUE];
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self dispatchTouches:touches pointerDataChangeOverride:nullptr];
+  [self dispatchTouches:touches pointerDataChangeOverride:nullptr trackTouches:TRUE];
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self dispatchTouches:touches pointerDataChangeOverride:nullptr];
+  [self dispatchTouches:touches pointerDataChangeOverride:nullptr trackTouches:TRUE];
+}
+
+- (BOOL)checkIfCompleteTouches {
+  NSInteger cnt = _touchTrackerSet.count;
+  if (cnt <= 0)
+    return FALSE;
+  NSTimeInterval tsNow = [[NSDate date] timeIntervalSinceReferenceDate];
+  NSSet* tmpTrackingTouches = [_touchTrackerSet copy];
+  NSMutableSet* set = [NSMutableSet set];
+  for (UITouch* touch in tmpTrackingTouches) {
+    NSValue* key = [NSValue valueWithPointer:(void*)touch];
+    NSNumber* expiredTime = [_touchTrackerDict objectForKey:key];
+    if (expiredTime.doubleValue <= tsNow) {
+      [touch setValue:@(UITouchPhaseEnded) forKey:@"phase"];
+      [set addObject:touch];
+      [_touchTrackerDict removeObjectForKey:key];
+      [_touchTrackerSet removeObject:touch];
+    }
+  }
+  if (set.count > 0) {
+    [self dispatchTouches:set pointerDataChangeOverride:nullptr trackTouches:FALSE];
+    [self dispatchTouches:set pointerDataChangeOverride:nullptr trackTouches:FALSE];
+    return TRUE;
+  }
+  return FALSE;
 }
 
 #pragma mark - Handle view resizing
@@ -955,9 +1010,9 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
         NSSet* statusbarTouches = [NSSet setWithObject:touch];
 
         flutter::PointerData::Change change = flutter::PointerData::Change::kDown;
-        [self dispatchTouches:statusbarTouches pointerDataChangeOverride:&change];
+        [self dispatchTouches:statusbarTouches pointerDataChangeOverride:&change trackTouches:TRUE];
         change = flutter::PointerData::Change::kUp;
-        [self dispatchTouches:statusbarTouches pointerDataChangeOverride:&change];
+        [self dispatchTouches:statusbarTouches pointerDataChangeOverride:&change trackTouches:TRUE];
         return;
       }
     }
