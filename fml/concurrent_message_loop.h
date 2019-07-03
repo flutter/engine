@@ -41,6 +41,9 @@ class ConcurrentMessageLoop : public MessageLoopImpl {
   // |fml::MessageLoopImpl|
   void WakeUp(fml::TimePoint time_point) override;
 
+  // |fml::MessageLoopImpl|
+  TaskQueueId GetTaskQueueId() const override;
+
   static void WorkerMain(ConcurrentMessageLoop* loop);
 
   void WorkerMain();

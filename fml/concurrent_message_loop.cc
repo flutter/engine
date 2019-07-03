@@ -67,4 +67,10 @@ void ConcurrentMessageLoop::WorkerMain() {
   shutdown_latch_.CountDown();
 }
 
+TaskQueueId ConcurrentMessageLoop::GetTaskQueueId() const {
+  FML_CHECK(false)
+      << "ConcurrentMessageLoop is not backed by MessageLoopTaskQueues.";
+  return 0;
+}
+
 }  // namespace fml
