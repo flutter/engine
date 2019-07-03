@@ -254,6 +254,39 @@ void main() {
     testRetainsParentOfOldLayer(pushFunction);
   }
 
+  test('SceneBuilder pushColorFilter handles all four types', () {
+    testNoSharing((SceneBuilder builder, EngineLayer oldLayer) {
+      return builder.pushColorFilter(
+        const ColorFilter.mode(
+          Color.fromARGB(0, 0, 0, 0),
+          BlendMode.color,
+        ),
+        oldLayer: oldLayer,
+      );
+    });
+    testNoSharing((SceneBuilder builder, EngineLayer oldLayer) {
+      return builder.pushColorFilter(
+        const ColorFilter.matrix(<double>[
+          1, 0, 0, 0, 0,
+          0, 1, 0, 0, 0,
+          0, 0, 1, 0, 0,
+          0, 0, 0, 1, 0,
+        ]),
+        oldLayer: oldLayer,
+      );
+    });
+    testNoSharing((SceneBuilder builder, EngineLayer oldLayer) {
+      return builder.pushColorFilter(
+        const ColorFilter.linearToSrgbGamma(),
+      );
+    });
+    testNoSharing((SceneBuilder builder, EngineLayer oldLayer) {
+      return builder.pushColorFilter(
+        const ColorFilter.srgbToLinearGamma(),
+      );
+    });
+  });
+
   test('SceneBuilder does not share a layer between addRetained and push*', () {
     testNoSharing((SceneBuilder builder, EngineLayer oldLayer) {
       return builder.pushOffset(0, 0, oldLayer: oldLayer);
@@ -272,15 +305,6 @@ void main() {
     });
     testNoSharing((SceneBuilder builder, EngineLayer oldLayer) {
       return builder.pushOpacity(100, oldLayer: oldLayer);
-    });
-    testNoSharing((SceneBuilder builder, EngineLayer oldLayer) {
-      return builder.pushColorFilter(
-        const ColorFilter.mode(
-          Color.fromARGB(0, 0, 0, 0),
-          BlendMode.color,
-        ),
-        oldLayer: oldLayer,
-      );
     });
     testNoSharing((SceneBuilder builder, EngineLayer oldLayer) {
       return builder.pushBackdropFilter(ImageFilter.blur(), oldLayer: oldLayer);
