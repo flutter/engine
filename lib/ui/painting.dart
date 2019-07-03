@@ -2589,8 +2589,11 @@ class ColorFilter {
 }
 
 /// A [ColorFilter] that is backed by a native SkColorFilter.
-// We could not make [ColorFilter] be this, because it would no longer be const
-// constructible and would complicate the == and hashCode implementations.
+///
+/// This is a private class, rather than being the implementation of the public
+/// ColorFilter, because we want ColorFilter to be const constructible and
+/// efficiently comparable, so that widgets can check for ColorFilter equality to
+// avoid repainting.
 class _ColorFilter extends NativeFieldWrapperClass2 {
   _ColorFilter.mode(this.creator)
     : assert(creator != null),
