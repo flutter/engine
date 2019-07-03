@@ -187,6 +187,10 @@ class ExternalViewEmbedder {
   // have mutated for last layer tree.
   virtual bool HasPendingViewOperations() = 0;
 
+  // Needs to be called before |SubmitFrame|. Clears pre-roll state and
+  // sets the stage for the next pre-roll.
+  virtual void CancelFrame() = 0;
+
   virtual void BeginFrame(SkISize frame_size) = 0;
 
   virtual void PrerollCompositeEmbeddedView(
