@@ -169,7 +169,6 @@ TEST(Mutator, Initialization) {
   int alpha = 240;
   Mutator mutator5 = Mutator(OpacityParams{alpha, point});
   ASSERT_TRUE(mutator5.GetType() == MutatorType::opacity);
-  //  ASSERT_TRUE(fabs(mutator5.GetAlphaF()-alpha/255) < EPSILON);
 }
 
 TEST(Mutator, CopyConstructor) {
