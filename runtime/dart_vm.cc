@@ -368,9 +368,8 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
         vm_data_->GetVMSnapshot().GetInstructionsMapping();
     params.create = reinterpret_cast<decltype(params.create)>(
         DartIsolate::DartIsolateCreateCallback);
-    params.shutdown =
-        reinterpret_cast<decltype(params.shutdown)>(
-            DartIsolate::DartIsolateShutdownCallback);
+    params.shutdown = reinterpret_cast<decltype(params.shutdown)>(
+        DartIsolate::DartIsolateShutdownCallback);
     params.cleanup = reinterpret_cast<decltype(params.cleanup)>(
         DartIsolate::DartIsolateCleanupCallback);
     params.thread_exit = ThreadExitCallback;
