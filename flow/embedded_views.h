@@ -123,7 +123,6 @@ class Mutator {
     SkRRect rrect_;
     SkMatrix matrix_;
     OpacityParams opacityParams_;
-    int alpha_;
     SkPath* path_;
   };
 

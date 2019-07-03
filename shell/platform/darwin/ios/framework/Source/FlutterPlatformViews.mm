@@ -280,6 +280,9 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
       }
       case opacity:
         embedded_view.alpha = (*iter)->GetOpacityParams().GetAlphaF() * embedded_view.alpha;
+        if ((*iter)->GetOpacityParams().offset.get().isZero()) {
+          break;
+        }
         CATransform3D transform =
             CATransform3DMakeTranslation((*iter)->GetOpacityParams().offset.get().fX,
                                          (*iter)->GetOpacityParams().offset.get().fY, 0);
