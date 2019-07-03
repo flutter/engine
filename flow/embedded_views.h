@@ -70,7 +70,7 @@ class Mutator {
       case clip_rrect:
         return rrect_ == other.rrect_;
       case clip_path:
-        return  *path_ == *other.path_;
+        return *path_ == *other.path_;
       case transform:
         return matrix_ == other.matrix_;
     }
