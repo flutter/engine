@@ -37,7 +37,8 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   EnsureSingleChild();
   SkMatrix child_matrix = matrix;
   child_matrix.postTranslate(offset_.fX, offset_.fY);
-  context->mutators_stack.PushOpacity(alpha_);
+  // If any non-zero offset is applied to the matrix. Reverse the translate to the embedded view.
+  context->mutators_stack.PushOpacity(OpacityParams{alpha_, offset_});
   ContainerLayer::Preroll(context, child_matrix);
   context->mutators_stack.Pop();
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
@@ -60,7 +61,6 @@ void OpacityLayer::Paint(PaintContext& context) const {
 
   SkPaint paint;
   paint.setAlpha(alpha_);
-  FML_DLOG(ERROR) << "alpha " << paint.getAlphaf();
 
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->translate(offset_.fX, offset_.fY);
