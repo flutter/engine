@@ -164,15 +164,7 @@ bool FlutterPlatformViewsController::HaveEmbeddedViewsMutated() {
   if (!views_to_recomposite_.empty()) {
     return true;
   }
-  if (active_composition_order_.size() != composition_order_.size()) {
-    return true;
-  }
-  for (size_t i = 0; i < composition_order_.size(); i++) {
-    if (composition_order_[i] != active_composition_order_[i]) {
-      return true;
-    }
-  }
-  return false;
+  return active_composition_order_ != composition_order_;
 }
 
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
