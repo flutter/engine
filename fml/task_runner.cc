@@ -39,6 +39,14 @@ bool TaskRunner::RunsTasksOnCurrentThread() {
   return MessageLoop::GetCurrent().GetLoopImpl() == loop_;
 }
 
+void TaskRunner::EnableMessageLoop(bool isEnable) {
+  loop_->EnableMessageLoop(isEnable);
+}
+
+MessageLoopImpl* TaskRunner::getMessageLoop() {
+  return loop_.get();
+}
+
 void TaskRunner::RunNowOrPostTask(fml::RefPtr<fml::TaskRunner> runner,
                                   fml::closure task) {
   FML_DCHECK(runner);

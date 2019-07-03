@@ -39,7 +39,8 @@ fml::RefPtr<MessageLoopImpl> MessageLoopImpl::Create() {
 #endif
 }
 
-MessageLoopImpl::MessageLoopImpl() : order_(0), terminated_(false) {}
+MessageLoopImpl::MessageLoopImpl()
+    : order_(0), terminated_(false), task_limit_per_looprun_(10000) {}
 
 MessageLoopImpl::~MessageLoopImpl() = default;
 
@@ -112,28 +113,39 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
   TRACE_EVENT0("fml", "MessageLoop::FlushTasks");
   std::vector<fml::closure> invocations;
 
+  int i_tasks_cnt = 0;
+  bool need_call_run_again = false;
+  auto now = fml::TimePoint::Now();
+
   {
     std::lock_guard<std::mutex> lock(delayed_tasks_mutex_);
 
-    if (delayed_tasks_.empty()) {
+    if (delayed_tasks_.empty() || !IsMessageLoopEnabled()) {
       return;
     }
 
-    auto now = fml::TimePoint::Now();
-    while (!delayed_tasks_.empty()) {
+    is_runninging_expired_tasks_ = true;
+    while (!delayed_tasks_.empty() && i_tasks_cnt < task_limit_per_looprun_) {
       const auto& top = delayed_tasks_.top();
       if (top.target_time > now) {
         break;
       }
       invocations.emplace_back(std::move(top.task));
       delayed_tasks_.pop();
+      i_tasks_cnt++;
       if (type == FlushType::kSingle) {
         break;
       }
     }
 
-    WakeUp(delayed_tasks_.empty() ? fml::TimePoint::Max()
-                                  : delayed_tasks_.top().target_time);
+    // WakeUp(delayed_tasks_.empty() ? fml::TimePoint::Max()
+    //                               : delayed_tasks_.top().target_time);
+    if (i_tasks_cnt >= task_limit_per_looprun_ && !delayed_tasks_.empty()) {
+      need_call_run_again = true;
+    } else {
+      WakeUp(delayed_tasks_.empty() ? fml::TimePoint::Max()
+                                    : delayed_tasks_.top().target_time);
+    }
   }
 
   for (const auto& invocation : invocations) {
@@ -141,6 +153,10 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
     for (const auto& observer : task_observers_) {
       observer.second();
     }
+  }
+  is_runninging_expired_tasks_ = false;
+  if (need_call_run_again) {
+    FlushTasks(FlushType::kAll);
   }
 }
 

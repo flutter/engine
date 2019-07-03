@@ -1109,6 +1109,14 @@ Rasterizer::Screenshot Shell::Screenshot(
     Rasterizer::ScreenshotType screenshot_type,
     bool base64_encode) {
   TRACE_EVENT0("flutter", "Shell::Screenshot");
+  fml::TaskRunner* taskRunner =
+      (fml::TaskRunner*)this->GetTaskRunners().GetUITaskRunner().get();
+  taskRunner->EnableMessageLoop(true);
+
+  taskRunner =
+      (fml::TaskRunner*)this->GetTaskRunners().GetGPUTaskRunner().get();
+  taskRunner->EnableMessageLoop(true);
+
   fml::AutoResetWaitableEvent latch;
   Rasterizer::Screenshot screenshot;
   fml::TaskRunner::RunNowOrPostTask(
