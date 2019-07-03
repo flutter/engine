@@ -150,8 +150,6 @@ struct MouseState {
 #pragma mark - FLEViewController implementation.
 
 @implementation FLEViewController {
-  FLEEngine* _engine;
-
   // The additional context provided to the Flutter engine for resource loading.
   NSOpenGLContext* _resourceContext;
 
