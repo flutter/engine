@@ -258,7 +258,6 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 
   std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.Bottom();
   while (iter != mutators_stack.Top()) {
-    FML_DLOG(ERROR) << "type " << (*iter)->GetType();
     switch ((*iter)->GetType()) {
       case transform: {
         CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->GetMatrix());
@@ -280,8 +279,10 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         break;
       }
       case opacity:
-        embedded_view.alpha = (*iter)->GetOpacityParams().GetAlphaF() *  embedded_view.alpha;
-        CATransform3D transform = CATransform3DMakeTranslation((*iter)->GetOpacityParams().offset.fX, (*iter)->GetOpacityParams().offset.fY, 0);
+        embedded_view.alpha = (*iter)->GetOpacityParams().GetAlphaF() * embedded_view.alpha;
+        CATransform3D transform =
+            CATransform3DMakeTranslation((*iter)->GetOpacityParams().offset.get().fX,
+                                         (*iter)->GetOpacityParams().offset.get().fY, 0);
         head.layer.transform = CATransform3DConcat(head.layer.transform, transform);
         break;
     }

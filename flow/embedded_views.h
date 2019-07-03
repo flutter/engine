@@ -19,15 +19,19 @@ namespace flutter {
 
 enum MutatorType { clip_rect, clip_rrect, clip_path, transform, opacity };
 
+// Stores information required for an opacity Mutator.
+// Matches the members in a `OpacityLayer`.
 struct OpacityParams {
-  int alpha;
-  s=SkPoint offset;
+  std::reference_wrapper<int> alpha;
+  std::reference_wrapper<SkPoint> offset;
 
   bool operator==(const OpacityParams& other) const {
     return alpha == other.alpha && offset == other.offset;
   }
 
-  bool operator!=(const OpacityParams& other) const { return !operator==(other); }
+  bool operator!=(const OpacityParams& other) const {
+    return !operator==(other);
+  }
 
   float GetAlphaF() const { return (alpha / 255.0); }
 };
@@ -56,7 +60,8 @@ class Mutator {
         matrix_ = other.matrix_;
         break;
       case opacity:
-        opacityParams_ = OpacityParams{other.opacityParams_.alpha, other.opacityParams_.offset};
+        opacityParams_ = OpacityParams{other.opacityParams_.alpha,
+                                       other.opacityParams_.offset};
       default:
         break;
     }
@@ -68,7 +73,8 @@ class Mutator {
       : type_(clip_path), path_(new SkPath(path)) {}
   explicit Mutator(const SkMatrix& matrix)
       : type_(transform), matrix_(matrix) {}
-  explicit Mutator(const OpacityParams& opacityParams) : type_(opacity), opacityParams_(opacityParams) {}
+  explicit Mutator(const OpacityParams& opacityParams)
+      : type_(opacity), opacityParams_(opacityParams) {}
 
   const MutatorType& GetType() const { return type_; }
   const SkRect& GetRect() const { return rect_; }

@@ -63,7 +63,8 @@ TEST(MutatorsStack, PushTransform) {
 TEST(MutatorsStack, PushOpacity) {
   MutatorsStack stack;
   SkPoint point = SkPoint::Make(0, 0);
-  stack.PushOpacity(OpacityParams{240, point});
+  int alpha = 240;
+  stack.PushOpacity(OpacityParams{alpha, point});
   auto iter = stack.Bottom();
   ASSERT_TRUE(iter->get()->GetType() == MutatorType::opacity);
   ASSERT_TRUE(iter->get()->GetOpacityParams().alpha == 240);
@@ -122,8 +123,9 @@ TEST(MutatorsStack, Equality) {
   stack.PushClipRRect(rrect);
   SkPath path;
   stack.PushClipPath(path);
+  int alpha = 240;
   SkPoint point = SkPoint::Make(0, 0);
-  stack.PushOpacity(OpacityParams{240, point});
+  stack.PushOpacity(OpacityParams{alpha, point});
 
   MutatorsStack stackOther;
   SkMatrix matrixOther = SkMatrix::MakeScale(1, 1);
@@ -134,8 +136,9 @@ TEST(MutatorsStack, Equality) {
   stackOther.PushClipRRect(rrectOther);
   SkPath otherPath;
   stackOther.PushClipPath(otherPath);
+  int otherAlpha = 240;
   SkPoint ohterPoint = SkPoint::Make(0, 0);
-  stackOther.PushOpacity(OpacityParams{240, ohterPoint});
+  stackOther.PushOpacity(OpacityParams{otherAlpha, ohterPoint});
 
   ASSERT_TRUE(stack == stackOther);
 }
@@ -163,7 +166,8 @@ TEST(Mutator, Initialization) {
   ASSERT_TRUE(mutator4.GetMatrix() == matrix);
 
   SkPoint point = SkPoint::Make(0, 0);
-  Mutator mutator5 = Mutator(OpacityParams{240, point});
+  int alpha = 240;
+  Mutator mutator5 = Mutator(OpacityParams{alpha, point});
   ASSERT_TRUE(mutator5.GetType() == MutatorType::opacity);
   //  ASSERT_TRUE(fabs(mutator5.GetAlphaF()-alpha/255) < EPSILON);
 }
@@ -191,7 +195,8 @@ TEST(Mutator, CopyConstructor) {
   ASSERT_TRUE(mutator4 == copy4);
 
   SkPoint point = SkPoint::Make(0, 0);
-  Mutator mutator5 = Mutator(OpacityParams{240, point});
+  int alpha = 240;
+  Mutator mutator5 = Mutator(OpacityParams{alpha, point});
   Mutator copy5 = Mutator(mutator5);
   ASSERT_TRUE(mutator5 == copy5);
 }
@@ -218,10 +223,10 @@ TEST(Mutator, Equality) {
   flutter::Mutator otherMutator4 = flutter::Mutator(path);
   ASSERT_TRUE(mutator4 == otherMutator4);
   ASSERT_FALSE(mutator2 == mutator);
-
+  int alpha = 240;
   SkPoint point = SkPoint::Make(0, 0);
-  Mutator mutator5 = Mutator(OpacityParams{240, point});
-  Mutator otherMutator5 = Mutator(OpacityParams{240, point});
+  Mutator mutator5 = Mutator(OpacityParams{alpha, point});
+  Mutator otherMutator5 = Mutator(OpacityParams{alpha, point});
   ASSERT_TRUE(mutator5 == otherMutator5);
 }
 
@@ -233,11 +238,15 @@ TEST(Mutator, UnEquality) {
   Mutator notEqualMutator = Mutator(matrix);
   ASSERT_TRUE(notEqualMutator != mutator);
 
+  int alpha = 240;
+  int alpha2 = 241;
   SkPoint point = SkPoint::Make(0, 0);
   SkPoint point2 = SkPoint::Make(1, 0);
-  Mutator mutator2 = Mutator(OpacityParams{240, point});
-  Mutator otherMutator2 = Mutator(OpacityParams{240, point2});
+  Mutator mutator2 = Mutator(OpacityParams{alpha, point});
+  Mutator otherMutator2 = Mutator(OpacityParams{alpha, point2});
+  Mutator otherMutator3 = Mutator(OpacityParams{alpha2, point});
   ASSERT_TRUE(mutator2 != otherMutator2);
+  ASSERT_TRUE(mutator2 != otherMutator3);
 }
 
 }  // namespace testing
