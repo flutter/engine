@@ -557,8 +557,8 @@ void PlatformView::DeactivateIme() {
 }
 
 // |flutter::PlatformView|
-std::unique_ptr<flutter::VsyncWaiter> PlatformView::CreateVSyncWaiter() {
-  return std::make_unique<flutter_runner::VsyncWaiter>(
+std::shared_ptr<flutter::VsyncWaiter> PlatformView::CreateVSyncWaiter() {
+  return std::make_shared<flutter_runner::VsyncWaiter>(
       debug_label_, vsync_event_handle_, task_runners_);
 }
 

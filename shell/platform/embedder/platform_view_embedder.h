@@ -71,7 +71,7 @@ class PlatformViewEmbedder final : public PlatformView {
   sk_sp<GrContext> CreateResourceContext() const override;
 
   // |PlatformView|
-  std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
+  std::shared_ptr<VsyncWaiter> CreateVSyncWaiter() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewEmbedder);
 };

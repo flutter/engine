@@ -128,8 +128,8 @@ void PlatformViewIOS::UpdateSemantics(flutter::SemanticsNodeUpdates update,
 }
 
 // |PlatformView|
-std::unique_ptr<VsyncWaiter> PlatformViewIOS::CreateVSyncWaiter() {
-  return std::make_unique<VsyncWaiterIOS>(task_runners_);
+std::shared_ptr<VsyncWaiter> PlatformViewIOS::CreateVSyncWaiter() {
+  return std::make_shared<VsyncWaiterIOS>(task_runners_);
 }
 
 void PlatformViewIOS::OnPreEngineRestart() const {

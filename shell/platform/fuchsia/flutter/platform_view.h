@@ -132,7 +132,7 @@ class PlatformView final : public flutter::PlatformView,
   void DeactivateIme();
 
   // |flutter::PlatformView|
-  std::unique_ptr<flutter::VsyncWaiter> CreateVSyncWaiter() override;
+  std::shared_ptr<flutter::VsyncWaiter> CreateVSyncWaiter() override;
 
   // |flutter::PlatformView|
   std::unique_ptr<flutter::Surface> CreateRenderingSurface() override;

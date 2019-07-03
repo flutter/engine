@@ -377,8 +377,8 @@ void PlatformViewAndroid::RegisterExternalTexture(
 }
 
 // |PlatformView|
-std::unique_ptr<VsyncWaiter> PlatformViewAndroid::CreateVSyncWaiter() {
-  return std::make_unique<VsyncWaiterAndroid>(task_runners_);
+std::shared_ptr<VsyncWaiter> PlatformViewAndroid::CreateVSyncWaiter() {
+  return std::make_shared<VsyncWaiterAndroid>(task_runners_);
 }
 
 // |PlatformView|

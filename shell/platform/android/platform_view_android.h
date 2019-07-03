@@ -94,7 +94,7 @@ class PlatformViewAndroid final : public PlatformView {
   void OnPreEngineRestart() const override;
 
   // |PlatformView|
-  std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
+  std::shared_ptr<VsyncWaiter> CreateVSyncWaiter() override;
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;

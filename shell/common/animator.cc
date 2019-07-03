@@ -21,7 +21,7 @@ constexpr fml::TimeDelta kNotifyIdleTaskWaitTime =
 
 Animator::Animator(Delegate& delegate,
                    TaskRunners task_runners,
-                   std::unique_ptr<VsyncWaiter> waiter)
+                   std::shared_ptr<VsyncWaiter> waiter)
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
       waiter_(std::move(waiter)),

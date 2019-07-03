@@ -116,7 +116,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                          shell = shell.get(),                               //
                          isolate_snapshot = std::move(isolate_snapshot),    //
                          shared_snapshot = std::move(shared_snapshot),      //
-                         vsync_waiter = std::move(vsync_waiter),            //
+                         vsync_waiter = vsync_waiter,                       //
                          snapshot_delegate = std::move(snapshot_delegate),  //
                          io_manager = io_manager->GetWeakPtr()              //
   ]() mutable {

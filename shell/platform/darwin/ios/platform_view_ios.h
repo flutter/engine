@@ -70,7 +70,7 @@ class PlatformViewIOS final : public PlatformView {
                        flutter::CustomAccessibilityActionUpdates actions) override;
 
   // |PlatformView|
-  std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
+  std::shared_ptr<VsyncWaiter> CreateVSyncWaiter() override;
 
   // |PlatformView|
   void OnPreEngineRestart() const override;

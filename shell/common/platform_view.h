@@ -246,7 +246,7 @@ class PlatformView {
   /// @return     A vsync waiter. If is an internal error to return a null
   ///             waiter.
   ///
-  virtual std::unique_ptr<VsyncWaiter> CreateVSyncWaiter();
+  virtual std::shared_ptr<VsyncWaiter> CreateVSyncWaiter();
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to dispatch a platform message to a
