@@ -727,9 +727,7 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
       (*embedder_isolate)->GetIsolateSnapshot()->GetInstructionsMapping(),
       (*embedder_isolate)->GetSharedSnapshot()->GetDataMapping(),
       (*embedder_isolate)->GetSharedSnapshot()->GetInstructionsMapping(), flags,
-      embedder_isolate.get(),  // isolate_group_data
-      embedder_isolate.get(),  // isolate_data
-      error);
+      embedder_isolate.get(), error);
 
   if (isolate == nullptr) {
     FML_DLOG(ERROR) << *error;
