@@ -506,7 +506,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             // For platform views we delegate the node creation to the accessibility view embedder.
             View embeddedView = platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
             Rect bounds = semanticsNode.getGlobalRect();
-            return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
+            if (embeddedView!=null && bounds!=null) {
+                return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
+            }
         }
 
         AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(rootAccessibilityView, virtualViewId);
@@ -1116,10 +1118,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             return false;
         }
 
-        SemanticsNode semanticsNodeUnderCursor = getRootSemanticsNode().hitTest(new float[] {event.getX(), event.getY(), 0, 1});
-        if (semanticsNodeUnderCursor.platformViewId != -1) {
-            return accessibilityViewEmbedder.onAccessibilityHoverEvent(semanticsNodeUnderCursor.id, event);
+        if (getRootSemanticsNode()!=null){
+            SemanticsNode semanticsNodeUnderCursor = getRootSemanticsNode().hitTest(new float[] {event.getX(), event.getY(), 0, 1});
+            if (semanticsNodeUnderCursor.platformViewId != -1) {
+                return accessibilityViewEmbedder.onAccessibilityHoverEvent(semanticsNodeUnderCursor.id, event);
+            }
         }
+
 
         if (event.getAction() == MotionEvent.ACTION_HOVER_ENTER || event.getAction() == MotionEvent.ACTION_HOVER_MOVE) {
             handleTouchExploration(event.getX(), event.getY());
@@ -1441,7 +1446,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             return;
         }
         // TODO(mattcarroll): why are we explicitly talking to the root view's parent?
-        rootAccessibilityView.getParent().requestSendAccessibilityEvent(rootAccessibilityView, event);
+        if (rootAccessibilityView.getParent()!=null) {
+            rootAccessibilityView.getParent().requestSendAccessibilityEvent(rootAccessibilityView, event);
+        }
     }
 
     /**
@@ -2015,8 +2022,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 if (globalTransform == null) {
                     globalTransform = new float[16];
                 }
-                Matrix.multiplyMM(globalTransform, 0, ancestorTransform, 0, transform, 0);
-
+                if (globalTransform!=null && ancestorTransform!=null && transform!=null) {
+                    Matrix.multiplyMM(globalTransform, 0, ancestorTransform, 0, transform, 0);
+                }
                 final float[] sample = new float[4];
                 sample[2] = 0;
                 sample[3] = 1;
