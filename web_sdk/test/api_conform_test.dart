@@ -150,7 +150,7 @@ void main() {
       }
       // check return type.
       if (uiMethod.returnType?.toString() != webMethod.returnType?.toString()) {
-        // allow dynmaic.
+        // allow dynamic in web implementation.
         if (webMethod.returnType?.toString() != 'dynamic') {
           failed = true;
           print('Warning: lib/ui/ui.dart $className.$methodName return type'
