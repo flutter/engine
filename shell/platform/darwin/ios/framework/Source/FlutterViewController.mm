@@ -8,9 +8,10 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
 #include <memory>
-
+#include "flutter/common/task_runners.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/message_loop.h"
+#include "flutter/fml/message_loop_impl.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/thread_host.h"
@@ -609,7 +610,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 // in the status bar area are available to framework code. The change type (optional) of the faked
 // touch is specified in the second argument.
 - (void)dispatchTouches:(NSSet*)touches
-    pointerDataChangeOverride:(blink::PointerData::Change*)overridden_change
+    pointerDataChangeOverride:(flutter::PointerData::Change*)overridden_change
                  trackTouches:(BOOL)bTrack {
   const CGFloat scale = [UIScreen mainScreen].scale;
   auto packet = std::make_unique<flutter::PointerDataPacket>(touches.count);
@@ -646,7 +647,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
     constexpr int kMicrosecondsPerSecond = 1000 * 1000;
     pointer_data.time_stamp = touch.timestamp * kMicrosecondsPerSecond;
-
+    
     pointer_data.change = overridden_change != nullptr
                               ? *overridden_change
                               : PointerDataChangeFromUITouchPhase(touch.phase);
