@@ -1104,6 +1104,7 @@ enum PathOperation {
 /// used to create clip regions using [Canvas.clipPath].
 class Path {
   final List<engine.Subpath> subpaths;
+  PathFillType _fillType = PathFillType.nonZero;
 
   engine.Subpath get _currentSubpath => subpaths.isEmpty ? null : subpaths.last;
 
@@ -1136,12 +1137,15 @@ class Path {
   Path.from(Path source)
       : subpaths = List<engine.Subpath>.from(source.subpaths);
 
-  Path._clone(this.subpaths, this.fillType);
+  Path._clone(this.subpaths, this._fillType);
 
   /// Determines how the interior of this path is calculated.
   ///
   /// Defaults to the non-zero winding rule, [PathFillType.nonZero].
-  PathFillType fillType = PathFillType.nonZero;
+  PathFillType get fillType => _fillType;
+  set fillType(PathFillType value) {
+    _fillType = value;
+  }
 
   /// Opens a new subpath with starting point (x, y).
   void _openNewSubpath(double x, double y) {

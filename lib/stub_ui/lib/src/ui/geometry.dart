@@ -1452,7 +1452,7 @@ class RRect {
   //
   // Inspired from:
   //   https://github.com/google/skia/blob/master/src/core/SkRRect.cpp#L164
-  RRect _scaleRadii() {
+  RRect scaleRadii() {
     double scale = 1.0;
     scale = _getMin(scale, blRadiusY, tlRadiusY, height);
     scale = _getMin(scale, tlRadiusX, trRadiusX, width);
@@ -1507,7 +1507,7 @@ class RRect {
       return false; // outside bounding box
     }
 
-    final RRect scaled = _scaleRadii();
+    final RRect scaled = scaleRadii();
 
     double x;
     double y;

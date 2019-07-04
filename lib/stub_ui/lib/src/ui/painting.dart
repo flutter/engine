@@ -1058,11 +1058,7 @@ class Paint {
     return false;
   }
 
-  set invertColors(bool _) {
-    if (engine.assertionsEnabled) {
-      throw UnsupportedError('Paint.invertColors is not supported.');
-    }
-  }
+  set invertColors(bool value) { }
 
   Color _color = _defaultPaintColor;
   static const Color _defaultPaintColor = Color(0xFF000000);
@@ -1136,6 +1132,36 @@ class Paint {
 
   set strokeMiterLimit(double value) {
     assert(value != null);
+  }
+
+  /// The [ImageFilter] to use when drawing raster images.
+  ///
+  /// For example, to blur an image using [Canvas.drawImage], apply an
+  /// [ImageFilter.blur]:
+  ///
+  /// ```dart
+  /// import 'dart:ui' as ui;
+  ///
+  /// ui.Image image;
+  ///
+  /// void paint(Canvas canvas, Size size) {
+  ///   canvas.drawImage(
+  ///     image,
+  ///     Offset.zero,
+  ///     Paint()..imageFilter = ui.ImageFilter.blur(sigmaX: .5, sigmaY: .5),
+  ///   );
+  /// }
+  /// ```
+  ///
+  /// See also:
+  ///
+  ///  * [MaskFilter], which is used for drawing geometry.
+  ImageFilter get imageFilter {
+    // TODO(flutter/flutter#35156): Implement ImageFilter.
+    return null;
+  }
+  set imageFilter(ImageFilter value) {
+    // TODO(flutter/flutter#35156): Implement ImageFilter.
   }
 
   // True if Paint instance has used in RecordingCanvas.
@@ -1508,14 +1534,31 @@ class ColorFilter {
       : _color = color,
         _blendMode = blendMode;
 
+  /// Construct a color filter that transforms a color by a 4x5 matrix. The
+  /// matrix is in row-major order and the translation column is specified in
+  /// unnormalized, 0...255, space.
+  const ColorFilter.matrix(List<double> matrix)
+      : _color = null,
+        _blendMode = null;
+
+  /// Construct a color filter that applies the sRGB gamma curve to the RGB
+  /// channels.
+  const ColorFilter.linearToSrgbGamma()
+      : _color = null,
+        _blendMode = null;
+
+  /// Creates a color filter that applies the inverse of the sRGB gamma curve
+  /// to the RGB channels.
+  const ColorFilter.srgbToLinearGamma()
+      : _color = null,
+        _blendMode = null;
+
   final Color _color;
   final BlendMode _blendMode;
 
   @override
   bool operator ==(dynamic other) {
-    if (other is! ColorFilter) {
-      return false;
-    }
+    if (other is! ColorFilter) return false;
     final ColorFilter typedOther = other;
     return _color == typedOther._color && _blendMode == typedOther._blendMode;
   }
@@ -1523,7 +1566,7 @@ class ColorFilter {
   @override
   int get hashCode => hashValues(_color, _blendMode);
 
-  List<dynamic> webOnlySerializeToCssPaint() {
+  List webOnlySerializeToCssPaint() {
     throw UnsupportedError('ColorFilter for CSS paint not yet supported');
   }
 

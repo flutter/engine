@@ -257,7 +257,7 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   OpacityEngineLayer pushOpacity(int alpha,
-      {OpacityEngineLayer oldLayer, Offset offset = Offset.zero}) {
+      {Offset offset = Offset.zero, OpacityEngineLayer oldLayer}) {
     return _pushSurface(engine.PersistedOpacity(oldLayer, alpha, offset));
   }
 
@@ -583,31 +583,51 @@ class SceneBuilder {
 /// A handle for the framework to hold and retain an engine layer across frames.
 class EngineLayer {}
 
-/// (Fuchsia-only) Hosts content provided by another application.
+//// (Fuchsia-only) Hosts content provided by another application.
 class SceneHost {
-  /// Creates a host for a child scene.
+  /// Creates a host for a child scene's content.
   ///
-  /// The export token is bound to a scene graph node which acts as a container
-  /// for the child's content.  The creator of the scene host is responsible for
-  /// sending the corresponding import token (the other endpoint of the event
-  /// pair) to the child.
+  /// The ViewHolder token is bound to a ViewHolder scene graph node which acts
+  /// as a container for the child's content.  The creator of the SceneHost is
+  /// responsible for sending the corresponding ViewToken to the child.
   ///
-  /// The export token is a dart:zircon Handle, but that type isn't
+  /// The ViewHolder token is a dart:zircon Handle, but that type isn't
   /// available here. This is called by ChildViewConnection in
-  /// //topaz/public/lib/ui/flutter/.
+  /// //topaz/public/dart/fuchsia_scenic_flutter/.
   ///
-  /// The scene host takes ownership of the provided export token handle.
-  SceneHost(dynamic exportTokenHandle);
+  /// The SceneHost takes ownership of the provided ViewHolder token.
+  SceneHost(dynamic viewHolderToken,
+    void Function() viewConnectedCallback,
+    void Function() viewDisconnectedCallback,
+    void Function(bool) viewStateChangedCallback);
 
-  /// Releases the resources associated with the child scene host.
+  SceneHost.fromViewHolderToken(
+    dynamic viewHolderToken,
+    void Function() viewConnectedCallback,
+    void Function() viewDisconnectedCallback,
+    void Function(bool) viewStateChangedCallback);
+
+  /// Releases the resources associated with the SceneHost.
   ///
-  /// After calling this function, the child scene host cannot be used further.
+  /// After calling this function, the SceneHost cannot be used further.
   void dispose() {}
 
   /// Set properties on the linked scene.  These properties include its bounds,
   /// as well as whether it can be the target of focus events or not.
-  void setProperties(double width, double height, double insetTop,
-      double insetRight, double insetBottom, double insetLeft, bool focusable) {
+  void setProperties(
+    double width,
+    double height,
+    double insetTop,
+    double insetRight,
+    double insetBottom,
+    double insetLeft,
+    bool focusable) {
+      throw UnimplementedError();
+    }
+
+  /// Set the opacity of the linked scene.  This opacity value is applied only
+  /// once, when the child scene is composited into our own.
+  void setOpacity(double opacity) {
     throw UnimplementedError();
   }
 }
