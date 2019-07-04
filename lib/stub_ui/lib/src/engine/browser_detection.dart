@@ -1,4 +1,4 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2019 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -23,12 +23,7 @@ BrowserEngine _browserEngine;
 /// Returns the [BrowserEngine] used by the current browser.
 ///
 /// This is used to implement browser-specific behavior.
-BrowserEngine get browserEngine {
-  if (_browserEngine == null) {
-    _browserEngine = _detectBrowserEngine();
-  }
-  return _browserEngine;
-}
+BrowserEngine get browserEngine => _browserEngine ??= _detectBrowserEngine();
 
 BrowserEngine _detectBrowserEngine() {
   final String vendor = html.window.navigator.vendor;

@@ -1,13 +1,14 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2018 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 part of engine;
 
 /// A surface that makes its children transparent.
-class PersistedOpacity extends PersistedContainerSurface implements ui.OpacityEngineLayer {
-  PersistedOpacity(Object paintedBy, this.alpha, this.offset)
-      : super(paintedBy);
+class PersistedOpacity extends PersistedContainerSurface
+    implements ui.OpacityEngineLayer {
+  PersistedOpacity(PersistedOpacity oldLayer, this.alpha, this.offset)
+      : super(oldLayer);
 
   final int alpha;
   final ui.Offset offset;

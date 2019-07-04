@@ -1,12 +1,13 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2018 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 part of engine;
 
 /// A surface that translates its children using CSS transform and translate.
-class PersistedOffset extends PersistedContainerSurface implements ui.OffsetEngineLayer {
-  PersistedOffset(Object paintedBy, this.dx, this.dy) : super(paintedBy);
+class PersistedOffset extends PersistedContainerSurface
+    implements ui.OffsetEngineLayer {
+  PersistedOffset(PersistedOffset oldLayer, this.dx, this.dy) : super(oldLayer);
 
   /// Horizontal displacement.
   final double dx;

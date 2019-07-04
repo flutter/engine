@@ -1,4 +1,4 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2018 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -88,9 +88,9 @@ class HashLocationStrategy extends LocationStrategy {
   String get path {
     // the hash value is always prefixed with a `#`
     // and if it is empty then it will stay empty
-    var path = _platformLocation.hash ?? '';
+    String path = _platformLocation.hash ?? '';
     // Dart will complain if a call to substring is
-    // executed with a position value that extends the
+    // executed with a position value that exceeds the
     // length of string.
     path = path.isEmpty ? path : path.substring(1);
     // The path, by convention, should always contain a leading '/'.

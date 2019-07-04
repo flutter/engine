@@ -1,12 +1,14 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2018 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 part of engine;
 
 /// A surface that transforms its children using CSS transform.
-class PersistedTransform extends PersistedContainerSurface implements ui.TransformEngineLayer {
-  PersistedTransform(Object paintedBy, this.matrix4) : super(paintedBy);
+class PersistedTransform extends PersistedContainerSurface
+    implements ui.TransformEngineLayer {
+  PersistedTransform(PersistedTransform oldLayer, this.matrix4)
+      : super(oldLayer);
 
   final Float64List matrix4;
 

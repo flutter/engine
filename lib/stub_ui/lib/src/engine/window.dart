@@ -1,4 +1,4 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2018 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -90,6 +90,10 @@ class EngineWindow extends ui.Window {
     ByteData data,
     ui.PlatformMessageResponseCallback callback,
   ) {
+    // In widget tests we want to bypass processing of platform messages.
+    if (assertionsEnabled && ui.debugEmulateFlutterTesterEnvironment) {
+      return;
+    }
     if (_debugPrintPlatformMessages) {
       print('Sent platform message on channel: "$name"');
     }
@@ -124,11 +128,21 @@ class EngineWindow extends ui.Window {
             final Map<String, dynamic> arguments = decoded.arguments;
             domRenderer.setTitle(arguments['label']);
             domRenderer.setThemeColor(ui.Color(arguments['primaryColor']));
+            return;
         }
         break;
 
       case 'flutter/textinput':
         textEditing.handleTextInput(data);
+        return;
+
+      case 'flutter/platform_views':
+        handlePlatformViewCall(data, callback);
+        return;
+
+      case 'flutter/accessibility':
+        // In widget tests we want to bypass processing of platform messages.
+        accessibilityAnnouncements.handleMessage(data);
         break;
     }
 

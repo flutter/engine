@@ -1,4 +1,4 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2018 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,8 +6,8 @@ part of engine;
 
 /// A frame which contains a canvas to be drawn into.
 class SurfaceFrame {
-  final void Function(BitmapCanvas) submitFn;
-  final BitmapCanvas canvas;
+  final void Function(SkCanvas) submitFn;
+  final SkCanvas canvas;
   SurfaceFrame(this.submitFn, this.canvas);
 
   /// Submit this frame to be drawn.
@@ -26,13 +26,13 @@ class Surface {
 
   /// This function is called with the canvas once drawing on it has been
   /// completed for a frame.
-  final void Function(BitmapCanvas) submitFunction;
+  final void Function(SkCanvas) submitFunction;
 
   Surface(this.submitFunction);
 
   /// Acquire a frame of the given [size] containing a drawable canvas.
   SurfaceFrame acquireFrame(ui.Size size) {
-    final canvas = canvasCache.acquireCanvas(size);
+    final SkCanvas canvas = canvasCache.acquireCanvas(size);
     return SurfaceFrame(submitFunction, canvas);
   }
 
@@ -40,12 +40,21 @@ class Surface {
 }
 
 class _CanvasCache {
-  BitmapCanvas _canvas;
+  SkCanvas _canvas;
 
-  BitmapCanvas acquireCanvas(ui.Size size) {
+  SkCanvas acquireCanvas(ui.Size size) {
     assert(size != null);
-    if (size == _canvas?.size) return _canvas;
-    _canvas = BitmapCanvas(ui.Offset.zero & size);
+    if (size == _canvas?.size) {
+      return _canvas;
+    }
+    final html.CanvasElement htmlCanvas =
+        html.CanvasElement(width: size.width.ceil(), height: size.height.ceil())
+          ..id = 'flt-sk-canvas';
+    domRenderer.renderScene(htmlCanvas);
+    final js.JsObject surface =
+        canvasKit.callMethod('MakeCanvasSurface', <String>['flt-sk-canvas']);
+    final js.JsObject skCanvas = surface.callMethod('getCanvas');
+    _canvas = SkCanvas(skCanvas, htmlCanvas, surface, size);
     return _canvas;
   }
 }

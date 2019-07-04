@@ -1,4 +1,4 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2019 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -76,6 +76,10 @@ class LabelAndValue extends RoleManager {
     semanticsObject.element
         .setAttribute('aria-label', combinedValue.toString());
 
+    if (semanticsObject.hasFlag(ui.SemanticsFlag.isHeader)) {
+      semanticsObject.setAriaRole('heading', true);
+    }
+
     if (_auxiliaryValueElement == null) {
       _auxiliaryValueElement = html.Element.tag('flt-semantics-value');
       // Absolute positioning and sizing of leaf text elements confuses
@@ -103,6 +107,7 @@ class LabelAndValue extends RoleManager {
       _auxiliaryValueElement = null;
     }
     semanticsObject.element.attributes.remove('aria-label');
+    semanticsObject.setAriaRole('heading', false);
   }
 
   @override

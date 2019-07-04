@@ -1,4 +1,4 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2019 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -97,13 +97,13 @@ class TextField extends RoleManager {
 
     _textFieldElement.addEventListener('touchstart', (html.Event event) {
       textEditing.useCustomEditableElement(persistentTextEditingElement);
-      html.TouchEvent touchEvent = event;
+      final html.TouchEvent touchEvent = event;
       lastTouchStartOffsetX = touchEvent.changedTouches.last.client.x;
       lastTouchStartOffsetY = touchEvent.changedTouches.last.client.y;
     }, true);
 
     _textFieldElement.addEventListener('touchend', (html.Event event) {
-      html.TouchEvent touchEvent = event;
+      final html.TouchEvent touchEvent = event;
 
       if (lastTouchStartOffsetX != null) {
         assert(lastTouchStartOffsetY != null);
