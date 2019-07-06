@@ -163,7 +163,7 @@ void platform_messages_no_response() {
     signalNativeMessage(utf8.decode(list));
     // This does nothing because no one is listening on the other side. But complete the loop anyway
     // to make sure all null checking on response handles in the engine is in place.
-    callback(data); 
+    callback(data);
   };
   signalNativeTest();
 }
