@@ -475,8 +475,11 @@ public class FlutterFragment extends Fragment {
     flutterView.addOnFirstFrameRenderedListener(onFirstFrameRenderedListener);
 
     flutterSplashView = new FlutterSplashView(getContext());
-    flutterSplashView.setSplashScreen(provideSplashScreen());
-    flutterSplashView.setFlutterView(flutterView);
+    // TODO(mattcarroll): Find a better solution to this ID. This is a random, static ID.
+    // It might conflict with other Views, and it means that only a single FlutterSplashView
+    // can exist in a View hierarchy at one time.
+    flutterSplashView.setId(486947586);
+    flutterSplashView.displayFlutterViewWithSplash(flutterView, provideSplashScreen());
 
     return flutterSplashView;
   }

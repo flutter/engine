@@ -7,6 +7,7 @@ package io.flutter.embedding.android;
 import android.animation.Animator;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -20,6 +21,7 @@ import android.widget.ImageView;
  */
 public class DrawableSplashScreen implements SplashScreen {
   private final Drawable drawable;
+  private final ImageView.ScaleType scaleType;
   private final long crossfadeDurationInMillis;
   private DrawableSplashScreenView splashView;
 
@@ -28,30 +30,34 @@ public class DrawableSplashScreen implements SplashScreen {
    * crossfades to Flutter content in 500 milliseconds.
    */
   public DrawableSplashScreen(@NonNull Drawable drawable) {
-    this(drawable, 500);
+    this(drawable, ImageView.ScaleType.FIT_XY, 500);
   }
 
   /**
    * Constructs a {@code DrawableSplashScreen} that displays the given {@code drawable} and
    * crossfades to Flutter content in the given {@code crossfadeDurationInMillis}.
    */
-  public DrawableSplashScreen(@NonNull Drawable drawable, long crossfadeDurationInMillis) {
+  public DrawableSplashScreen(@NonNull Drawable drawable, @NonNull ImageView.ScaleType scaleType, long crossfadeDurationInMillis) {
     this.drawable = drawable;
+    this.scaleType = scaleType;
     this.crossfadeDurationInMillis = crossfadeDurationInMillis;
   }
 
   @Nullable
   @Override
-  public View createSplashView(@NonNull Context context) {
-    if (splashView == null) {
-      splashView = new DrawableSplashScreenView(context);
-      splashView.setSplashDrawable(drawable);
-    }
+  public View createSplashView(@NonNull Context context, @Nullable Bundle savedInstanceState) {
+    splashView = new DrawableSplashScreenView(context);
+    splashView.setSplashDrawable(drawable, scaleType);
     return splashView;
   }
 
   @Override
   public void transitionToFlutter(@NonNull Runnable onTransitionComplete) {
+    if (splashView == null) {
+      onTransitionComplete.run();
+      return;
+    }
+
     splashView.animate()
         .alpha(0.0f)
         .setDuration(crossfadeDurationInMillis)
@@ -75,6 +81,7 @@ public class DrawableSplashScreen implements SplashScreen {
     );
   }
 
+  // Public for Android OS requirements. This View should not be used by external developers.
   public static class DrawableSplashScreenView extends FrameLayout {
     private final ImageView imageView;
 
@@ -97,7 +104,7 @@ public class DrawableSplashScreen implements SplashScreen {
       setSplashDrawable(drawable, ImageView.ScaleType.FIT_XY);
     }
 
-    public void setSplashDrawable(@Nullable Drawable drawable, ImageView.ScaleType scaleType) {
+    public void setSplashDrawable(@Nullable Drawable drawable, @NonNull ImageView.ScaleType scaleType) {
       imageView.setScaleType(scaleType);
       imageView.setImageDrawable(drawable);
     }

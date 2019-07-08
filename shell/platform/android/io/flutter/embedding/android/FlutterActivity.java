@@ -127,6 +127,7 @@ public class FlutterActivity extends FragmentActivity
   protected static final String DART_ENTRYPOINT_META_DATA_KEY = "io.flutter.Entrypoint";
   protected static final String INITIAL_ROUTE_META_DATA_KEY = "io.flutter.InitialRoute";
   protected static final String SPLASH_SCREEN_META_DATA_KEY = "io.flutter.app.android.SplashScreenUntilFirstFrame";
+  protected static final String NORMAL_THEME_META_DATA_KEY = "io.flutter.embedding.android.NormalTheme";
 
   // Intent extra arguments.
   protected static final String EXTRA_DART_ENTRYPOINT = "dart_entrypoint";
@@ -283,7 +284,7 @@ public class FlutterActivity extends FragmentActivity
     try {
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
       if (activityInfo.metaData != null) {
-        int normalThemeRID = activityInfo.metaData.getInt("io.flutter.embedding.android.NormalTheme", -1);
+        int normalThemeRID = activityInfo.metaData.getInt(NORMAL_THEME_META_DATA_KEY, -1);
         if (normalThemeRID != -1) {
           setTheme(normalThemeRID);
         }
