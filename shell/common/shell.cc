@@ -369,6 +369,17 @@ Shell::~Shell() {
   platform_latch.Wait();
 }
 
+void Shell::NotifyLowMemoryWarning() const {
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [rasterizer = rasterizer_->GetWeakPtr()]() {
+        if (rasterizer) {
+          rasterizer->NotifyLowMemoryWarning();
+        }
+      });
+  // The IO Manager uses resource cache limits of 0, so it is not necessary
+  // to purge them.
+}
+
 bool Shell::IsSetup() const {
   return is_setup_;
 }
@@ -392,10 +403,9 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
 
   // The weak ptr must be generated in the platform thread which owns the unique
   // ptr.
-  //
-  // TODO(liyuqian): make weak_rasterizer_ and weak_platform_view_ and use
-  // them in the getters.
   weak_engine_ = engine_->GetWeakPtr();
+  weak_rasterizer_ = rasterizer_->GetWeakPtr();
+  weak_platform_view_ = platform_view_->GetWeakPtr();
 
   is_setup_ = true;
 
@@ -420,7 +430,7 @@ const TaskRunners& Shell::GetTaskRunners() const {
 
 fml::WeakPtr<Rasterizer> Shell::GetRasterizer() {
   FML_DCHECK(is_setup_);
-  return rasterizer_->GetWeakPtr();
+  return weak_rasterizer_;
 }
 
 fml::WeakPtr<Engine> Shell::GetEngine() {
@@ -430,7 +440,7 @@ fml::WeakPtr<Engine> Shell::GetEngine() {
 
 fml::WeakPtr<PlatformView> Shell::GetPlatformView() {
   FML_DCHECK(is_setup_);
-  return platform_view_->GetWeakPtr();
+  return weak_platform_view_;
 }
 
 DartVM* Shell::GetDartVM() {
@@ -599,6 +609,16 @@ void Shell::OnPlatformViewDestroyed() {
 void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  // This is the formula Android uses.
+  // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
+  int max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [rasterizer = rasterizer_->GetWeakPtr(), max_bytes] {
+        if (rasterizer) {
+          rasterizer->SetResourceCacheMaxBytes(max_bytes, false);
+        }
+      });
 
   task_runners_.GetUITaskRunner()->PostTask(
       [engine = engine_->GetWeakPtr(), metrics]() {
@@ -853,7 +873,8 @@ void Shell::HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message) {
       [rasterizer = rasterizer_->GetWeakPtr(),
        max_bytes = args->value.GetInt()] {
         if (rasterizer) {
-          rasterizer->SetResourceCacheMaxBytes(max_bytes);
+          rasterizer->SetResourceCacheMaxBytes(static_cast<size_t>(max_bytes),
+                                               true);
         }
       });
 }
@@ -939,7 +960,8 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
   // require a latency of no more than 100ms. Hence we lower that 1-second
   // threshold to 100ms because performance overhead isn't that critical in
   // those cases.
-  if (UnreportedFramesCount() >= 100) {
+  if (!first_frame_rasterized_ || UnreportedFramesCount() >= 100) {
+    first_frame_rasterized_ = true;
     ReportTimings();
   } else if (!frame_timings_report_scheduled_) {
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE

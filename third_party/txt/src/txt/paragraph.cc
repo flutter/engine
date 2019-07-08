@@ -402,6 +402,33 @@ bool Paragraph::ComputeBidiRuns(std::vector<BidiRun>* result) {
   if (!U_SUCCESS(status))
     return false;
 
+  // Detect if final trailing run is a single ambiguous whitespace.
+  // We want to bundle the final ambiguous whitespace with the preceding
+  // run in order to maintain logical typing behavior when mixing RTL and LTR
+  // text. We do not want this to be a true ghost run since the contrasting
+  // directionality causes the trailing space to not render at the visual end of
+  // the paragraph.
+  //
+  // This only applies to the final whitespace at the end as other whitespace is
+  // no longer ambiguous when surrounded by additional text.
+  bool has_trailing_whitespace = false;
+  int32_t bidi_run_start, bidi_run_length;
+  if (bidi_run_count > 1) {
+    ubidi_getVisualRun(bidi.get(), bidi_run_count - 1, &bidi_run_start,
+                       &bidi_run_length);
+    if (!U_SUCCESS(status))
+      return false;
+    if (bidi_run_length == 1) {
+      UChar32 last_char;
+      U16_GET(text_.data(), 0, bidi_run_start + bidi_run_length - 1,
+              static_cast<int>(text_.size()), last_char);
+      if (u_hasBinaryProperty(last_char, UCHAR_WHITE_SPACE)) {
+        has_trailing_whitespace = true;
+        bidi_run_count--;
+      }
+    }
+  }
+
   // Build a map of styled runs indexed by start position.
   std::map<size_t, StyledRuns::Run> styled_run_map;
   for (size_t i = 0; i < runs_.size(); ++i) {
@@ -411,7 +438,6 @@ bool Paragraph::ComputeBidiRuns(std::vector<BidiRun>* result) {
 
   for (int32_t bidi_run_index = 0; bidi_run_index < bidi_run_count;
        ++bidi_run_index) {
-    int32_t bidi_run_start, bidi_run_length;
     UBiDiDirection direction = ubidi_getVisualRun(
         bidi.get(), bidi_run_index, &bidi_run_start, &bidi_run_length);
     if (!U_SUCCESS(status))
@@ -437,6 +463,11 @@ bool Paragraph::ComputeBidiRuns(std::vector<BidiRun>* result) {
     }
     if (bidi_run_length == 0)
       continue;
+
+    // Attach the final trailing whitespace as part of this run.
+    if (has_trailing_whitespace && bidi_run_index == bidi_run_count - 1) {
+      bidi_run_length++;
+    }
 
     size_t bidi_run_end = bidi_run_start + bidi_run_length;
     TextDirection text_direction =
@@ -1316,17 +1347,9 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
       break;
     }
     case TextDecorationStyle::kWavy: {
-      int wave_count = 0;
-      double x_start = 0;
-      double wavelength =
-          underline_thickness * record.style().decoration_thickness_multiplier;
-      path.moveTo(x, y);
-      while (x_start + wavelength * 2 < width) {
-        path.rQuadTo(wavelength, wave_count % 2 != 0 ? wavelength : -wavelength,
-                     wavelength * 2, 0);
-        x_start += wavelength * 2;
-        ++wave_count;
-      }
+      ComputeWavyDecoration(
+          path, x, y, width,
+          underline_thickness * record.style().decoration_thickness_multiplier);
       break;
     }
   }
@@ -1392,6 +1415,48 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
       y_offset = y_offset_original;
     }
   }
+}
+
+void Paragraph::ComputeWavyDecoration(SkPath& path,
+                                      double x,
+                                      double y,
+                                      double width,
+                                      double thickness) {
+  int wave_count = 0;
+  double x_start = 0;
+  // One full wavelength is 4 * thickness.
+  double quarter = thickness;
+  path.moveTo(x, y);
+  double remaining = width;
+  while (x_start + (quarter * 2) < width) {
+    path.rQuadTo(quarter, wave_count % 2 == 0 ? -quarter : quarter, quarter * 2,
+                 0);
+    x_start += quarter * 2;
+    remaining = width - x_start;
+    ++wave_count;
+  }
+  // Manually add a final partial quad for the remaining width that do
+  // not fit nicely into a half-wavelength.
+  // The following math is based off of quadratic bezier equations:
+  //
+  //  * Let P(x) be the equation for the curve.
+  //  * Let P0 = start, P1 = control point, P2 = end
+  //  * P(x) = -2x^2 - 2x
+  //  * P0 = (0, 0)
+  //  * P1 = 2P(0.5) - 0.5 * P0 - 0.5 * P2
+  //  * P2 = P(remaining / (wavelength / 2))
+  //
+  // Simplified implementation coursesy of @jim-flar at
+  // https://github.com/flutter/engine/pull/9468#discussion_r297872739
+  // Unsimplified original version at
+  // https://github.com/flutter/engine/pull/9468#discussion_r297879129
+
+  double x1 = remaining / 2;
+  double y1 = remaining / 2 * (wave_count % 2 == 0 ? -1 : 1);
+  double x2 = remaining;
+  double y2 = (remaining - remaining * remaining / (quarter * 2)) *
+              (wave_count % 2 == 0 ? -1 : 1);
+  path.rQuadTo(x1, y1, x2, y2);
 }
 
 void Paragraph::PaintBackground(SkCanvas* canvas,

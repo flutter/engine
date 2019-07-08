@@ -4,17 +4,19 @@
 
 package io.flutter.embedding.engine.plugins.shim;
 
-import android.app.Activity;
 import android.support.annotation.NonNull;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.PluginRegistry;
-import io.flutter.plugin.platform.PlatformViewsController;
-import io.flutter.view.FlutterView;
 
 /**
  * A {@link PluginRegistry} that is shimmed to use the new Android embedding and plugin API behind
@@ -36,23 +38,13 @@ public class ShimPluginRegistry implements PluginRegistry {
   private static final String TAG = "ShimPluginRegistry";
 
   private final FlutterEngine flutterEngine;
-  private final PlatformViewsController platformViewsController;
   private final Map<String, Object> pluginMap = new HashMap<>();
-  private final FlutterEngine.EngineLifecycleListener engineLifecycleListener = new FlutterEngine.EngineLifecycleListener() {
-    @Override
-    public void onPreEngineRestart() {
-      Log.v(TAG, "onPreEngineRestart()");
-      ShimPluginRegistry.this.onPreEngineRestart();
-    }
-  };
+  private final ShimRegistrarAggregate shimRegistrarAggregate;
 
-  public ShimPluginRegistry(
-      @NonNull FlutterEngine flutterEngine,
-      @NonNull PlatformViewsController platformViewsController
-  ) {
+  public ShimPluginRegistry(@NonNull FlutterEngine flutterEngine) {
     this.flutterEngine = flutterEngine;
-    this.flutterEngine.addEngineLifecycleListener(engineLifecycleListener);
-    this.platformViewsController = platformViewsController;
+    this.shimRegistrarAggregate = new ShimRegistrarAggregate();
+    this.flutterEngine.getPlugins().add(shimRegistrarAggregate);
   }
 
   @Override
@@ -63,7 +55,7 @@ public class ShimPluginRegistry implements PluginRegistry {
     }
     pluginMap.put(pluginKey, null);
     ShimRegistrar registrar = new ShimRegistrar(pluginKey, pluginMap);
-    flutterEngine.getPlugins().add(registrar);
+    shimRegistrarAggregate.addPlugin(registrar);
     return registrar;
   }
 
@@ -78,23 +70,80 @@ public class ShimPluginRegistry implements PluginRegistry {
     return (T) pluginMap.get(pluginKey);
   }
 
-  //----- From FlutterPluginRegistry that aren't in the PluginRegistry interface ----//
-  public void attach(FlutterView flutterView, Activity activity) {
-    Log.v(TAG, "Attaching to a FlutterView and an Activity.");
-    platformViewsController.attach(activity, flutterEngine.getRenderer(), flutterEngine.getDartExecutor());
-  }
+  /**
+   * Aggregates all {@link ShimRegistrar}s within one single {@link FlutterPlugin}.
+   * <p>
+   * The reason we need this aggregate is because the new embedding uniquely identifies
+   * plugins by their plugin class, but the plugin shim system represents every plugin
+   * with a {@link ShimRegistrar}. Therefore, every plugin we would register after the first
+   * plugin, would overwrite the previous plugin, because they're all {@link ShimRegistrar}
+   * instances.
+   * <p>
+   * {@code ShimRegistrarAggregate} multiplexes {@link FlutterPlugin} and {@link ActivityAware}
+   * calls so that we can register just one {@code ShimRegistrarAggregate} with a
+   * {@link FlutterEngine}, while forwarding the relevant plugin resources to any number
+   * of {@link ShimRegistrar}s within this {@code ShimRegistrarAggregate}.
+   */
+  private static class ShimRegistrarAggregate implements FlutterPlugin, ActivityAware {
+    private final Set<ShimRegistrar> shimRegistrars = new HashSet<>();
+    private FlutterPluginBinding flutterPluginBinding;
+    private ActivityPluginBinding activityPluginBinding;
 
-  public void detach() {
-    Log.v(TAG, "Detaching from a FlutterView and an Activity.");
-    platformViewsController.detach();
-    platformViewsController.onFlutterViewDestroyed();
-  }
+    public void addPlugin(@NonNull ShimRegistrar shimRegistrar) {
+      shimRegistrars.add(shimRegistrar);
 
-  private void onPreEngineRestart() {
-    platformViewsController.onPreEngineRestart();
-  }
+      if (flutterPluginBinding != null) {
+        shimRegistrar.onAttachedToEngine(flutterPluginBinding);
+      }
+      if (activityPluginBinding != null) {
+        shimRegistrar.onAttachedToActivity(activityPluginBinding);
+      }
+    }
 
-  public PlatformViewsController getPlatformViewsController() {
-    return platformViewsController;
+    @Override
+    public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
+      flutterPluginBinding = binding;
+      for (ShimRegistrar shimRegistrar : shimRegistrars) {
+        shimRegistrar.onAttachedToEngine(binding);
+      }
+    }
+
+    @Override
+    public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+      for (ShimRegistrar shimRegistrar : shimRegistrars) {
+        shimRegistrar.onDetachedFromEngine(binding);
+      }
+      flutterPluginBinding = null;
+    }
+
+    @Override
+    public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+      activityPluginBinding = binding;
+      for (ShimRegistrar shimRegistrar : shimRegistrars) {
+        shimRegistrar.onAttachedToActivity(binding);
+      }
+    }
+
+    @Override
+    public void onDetachedFromActivityForConfigChanges() {
+      for (ShimRegistrar shimRegistrar : shimRegistrars) {
+        shimRegistrar.onDetachedFromActivity();
+      }
+      activityPluginBinding = null;
+    }
+
+    @Override
+    public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+      for (ShimRegistrar shimRegistrar : shimRegistrars) {
+        shimRegistrar.onReattachedToActivityForConfigChanges(binding);
+      }
+    }
+
+    @Override
+    public void onDetachedFromActivity() {
+      for (ShimRegistrar shimRegistrar : shimRegistrars) {
+        shimRegistrar.onDetachedFromActivity();
+      }
+    }
   }
 }

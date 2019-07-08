@@ -20,6 +20,7 @@
 #include "render_test.h"
 #include "third_party/icu/source/common/unicode/unistr.h"
 #include "third_party/skia/include/core/SkColor.h"
+#include "third_party/skia/include/core/SkPath.h"
 #include "txt/font_style.h"
 #include "txt/font_weight.h"
 #include "txt/paragraph.h"
@@ -1825,31 +1826,31 @@ TEST_F(ParagraphTest, DecorationsParagraph) {
   text_style.decoration_color = SK_ColorBLACK;
   text_style.decoration_thickness_multiplier = 2.0;
   builder.PushStyle(text_style);
-  builder.AddText("This text should be");
+  builder.AddText(u"This text should be");
 
   text_style.decoration_style = txt::TextDecorationStyle::kDouble;
   text_style.decoration_color = SK_ColorBLUE;
   text_style.decoration_thickness_multiplier = 1.0;
   builder.PushStyle(text_style);
-  builder.AddText(" decorated even when");
+  builder.AddText(u" decorated even when");
 
   text_style.decoration_style = txt::TextDecorationStyle::kDotted;
   text_style.decoration_color = SK_ColorBLACK;
   builder.PushStyle(text_style);
-  builder.AddText(" wrapped around to");
+  builder.AddText(u" wrapped around to");
 
   text_style.decoration_style = txt::TextDecorationStyle::kDashed;
   text_style.decoration_color = SK_ColorBLACK;
   text_style.decoration_thickness_multiplier = 3.0;
   builder.PushStyle(text_style);
-  builder.AddText(" the next line.");
+  builder.AddText(u" the next line.");
 
   text_style.decoration_style = txt::TextDecorationStyle::kWavy;
   text_style.decoration_color = SK_ColorRED;
   text_style.decoration_thickness_multiplier = 1.0;
   builder.PushStyle(text_style);
 
-  builder.AddText(" Otherwise, bad things happen.");
+  builder.AddText(u" Otherwise, bad things happen.");
 
   builder.Pop();
 
@@ -1902,6 +1903,144 @@ TEST_F(ParagraphTest, DecorationsParagraph) {
             1.0);
 }
 
+TEST_F(ParagraphTest, WavyDecorationParagraph) {
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 14;
+  paragraph_style.text_align = TextAlign::left;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 26;
+  text_style.letter_spacing = 0;
+  text_style.word_spacing = 5;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 2;
+  text_style.decoration = TextDecoration::kUnderline |
+                          TextDecoration::kOverline |
+                          TextDecoration::kLineThrough;
+
+  text_style.decoration_style = txt::TextDecorationStyle::kWavy;
+  text_style.decoration_color = SK_ColorRED;
+  text_style.decoration_thickness_multiplier = 1.0;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u" Otherwise, bad things happen.");
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth() - 100);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  ASSERT_TRUE(Snapshot());
+  ASSERT_EQ(paragraph->runs_.size(), 1ull);
+  ASSERT_EQ(paragraph->records_.size(), 1ull);
+
+  for (size_t i = 0; i < 1; ++i) {
+    ASSERT_EQ(paragraph->records_[i].style().decoration,
+              TextDecoration::kUnderline | TextDecoration::kOverline |
+                  TextDecoration::kLineThrough);
+  }
+
+  ASSERT_EQ(paragraph->records_[0].style().decoration_style,
+            txt::TextDecorationStyle::kWavy);
+
+  ASSERT_EQ(paragraph->records_[0].style().decoration_color, SK_ColorRED);
+
+  ASSERT_EQ(paragraph->records_[0].style().decoration_thickness_multiplier,
+            1.0);
+
+  SkPath path0;
+  SkPath canonical_path0;
+  paragraph->ComputeWavyDecoration(path0, 1, 1, 9.56, 1);
+
+  canonical_path0.moveTo(1, 1);
+  canonical_path0.rQuadTo(1, -1, 2, 0);
+  canonical_path0.rQuadTo(1, 1, 2, 0);
+  canonical_path0.rQuadTo(1, -1, 2, 0);
+  canonical_path0.rQuadTo(1, 1, 2, 0);
+  canonical_path0.rQuadTo(0.78, -0.78, 1.56, -0.3432);
+
+  ASSERT_EQ(path0.countPoints(), canonical_path0.countPoints());
+  for (int i = 0; i < canonical_path0.countPoints(); ++i) {
+    ASSERT_EQ(path0.getPoint(i).x(), canonical_path0.getPoint(i).x());
+    ASSERT_EQ(path0.getPoint(i).y(), canonical_path0.getPoint(i).y());
+  }
+
+  SkPath path1;
+  SkPath canonical_path1;
+  paragraph->ComputeWavyDecoration(path1, 1, 1, 8.35, 1);
+
+  canonical_path1.moveTo(1, 1);
+  canonical_path1.rQuadTo(1, -1, 2, 0);
+  canonical_path1.rQuadTo(1, 1, 2, 0);
+  canonical_path1.rQuadTo(1, -1, 2, 0);
+  canonical_path1.rQuadTo(1, 1, 2, 0);
+  canonical_path1.rQuadTo(0.175, -0.175, 0.35, -0.28875);
+
+  ASSERT_EQ(path1.countPoints(), canonical_path1.countPoints());
+  for (int i = 0; i < canonical_path1.countPoints(); ++i) {
+    ASSERT_EQ(path1.getPoint(i).x(), canonical_path1.getPoint(i).x());
+    ASSERT_EQ(path1.getPoint(i).y(), canonical_path1.getPoint(i).y());
+  }
+
+  SkPath path2;
+  SkPath canonical_path2;
+  paragraph->ComputeWavyDecoration(path2, 1, 1, 10.59, 1);
+
+  canonical_path2.moveTo(1, 1);
+  canonical_path2.rQuadTo(1, -1, 2, 0);
+  canonical_path2.rQuadTo(1, 1, 2, 0);
+  canonical_path2.rQuadTo(1, -1, 2, 0);
+  canonical_path2.rQuadTo(1, 1, 2, 0);
+  canonical_path2.rQuadTo(1, -1, 2, 0);
+  canonical_path2.rQuadTo(0.295, 0.295, 0.59, 0.41595);
+
+  ASSERT_EQ(path2.countPoints(), canonical_path2.countPoints());
+  for (int i = 0; i < canonical_path2.countPoints(); ++i) {
+    ASSERT_EQ(path2.getPoint(i).x(), canonical_path2.getPoint(i).x());
+    ASSERT_EQ(path2.getPoint(i).y(), canonical_path2.getPoint(i).y());
+  }
+
+  SkPath path3;
+  SkPath canonical_path3;
+  paragraph->ComputeWavyDecoration(path3, 1, 1, 11.2, 1);
+
+  canonical_path3.moveTo(1, 1);
+  canonical_path3.rQuadTo(1, -1, 2, 0);
+  canonical_path3.rQuadTo(1, 1, 2, 0);
+  canonical_path3.rQuadTo(1, -1, 2, 0);
+  canonical_path3.rQuadTo(1, 1, 2, 0);
+  canonical_path3.rQuadTo(1, -1, 2, 0);
+  canonical_path3.rQuadTo(0.6, 0.6, 1.2, 0.48);
+
+  ASSERT_EQ(path3.countPoints(), canonical_path3.countPoints());
+  for (int i = 0; i < canonical_path3.countPoints(); ++i) {
+    ASSERT_EQ(path3.getPoint(i).x(), canonical_path3.getPoint(i).x());
+    ASSERT_EQ(path3.getPoint(i).y(), canonical_path3.getPoint(i).y());
+  }
+
+  SkPath path4;
+  SkPath canonical_path4;
+  paragraph->ComputeWavyDecoration(path4, 1, 1, 12, 1);
+
+  canonical_path4.moveTo(1, 1);
+  canonical_path4.rQuadTo(1, -1, 2, 0);
+  canonical_path4.rQuadTo(1, 1, 2, 0);
+  canonical_path4.rQuadTo(1, -1, 2, 0);
+  canonical_path4.rQuadTo(1, 1, 2, 0);
+  canonical_path4.rQuadTo(1, -1, 2, 0);
+  canonical_path4.rQuadTo(1, 1, 2, 0);
+
+  ASSERT_EQ(path4.countPoints(), canonical_path4.countPoints());
+  for (int i = 0; i < canonical_path4.countPoints(); ++i) {
+    ASSERT_EQ(path4.getPoint(i).x(), canonical_path4.getPoint(i).x());
+    ASSERT_EQ(path4.getPoint(i).y(), canonical_path4.getPoint(i).y());
+  }
+}
+
 TEST_F(ParagraphTest, ItalicsParagraph) {
   txt::ParagraphStyle paragraph_style;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
@@ -1911,14 +2050,14 @@ TEST_F(ParagraphTest, ItalicsParagraph) {
   text_style.color = SK_ColorRED;
   text_style.font_size = 10;
   builder.PushStyle(text_style);
-  builder.AddText("No italic ");
+  builder.AddText(u"No italic ");
 
   text_style.font_style = txt::FontStyle::italic;
   builder.PushStyle(text_style);
-  builder.AddText("Yes Italic ");
+  builder.AddText(u"Yes Italic ");
 
   builder.Pop();
-  builder.AddText("No Italic again.");
+  builder.AddText(u"No Italic again.");
 
   auto paragraph = builder.Build();
   paragraph->Layout(GetTestCanvasWidth());
@@ -2090,6 +2229,137 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(ArabicRectsParagraph)) {
   EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 44);
 
   EXPECT_FLOAT_EQ(boxes[1].rect.left(), 510.09375);
+  EXPECT_FLOAT_EQ(boxes[1].rect.top(), -0.26855469);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 557.04688);
+  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 44);
+
+  ASSERT_EQ(paragraph_style.text_align,
+            paragraph->GetParagraphStyle().text_align);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+// Trailing space at the end of the arabic rtl run should be at the left end of
+// the arabic run.
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(ArabicRectsLTRLeftAlignParagraph)) {
+  const char* text = "Helloبمباركة التقليدية قام عن. تصفح يد ";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 14;
+  paragraph_style.text_align = TextAlign::left;
+  paragraph_style.text_direction = TextDirection::ltr;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Noto Naskh Arabic");
+  text_style.font_size = 26;
+  text_style.letter_spacing = 1;
+  text_style.word_spacing = 5;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  text_style.decoration = TextDecoration::kUnderline;
+  text_style.decoration_color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth() - 100);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(36, 40, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 89.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), -0.26855469);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 121.87891);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 44);
+
+  ASSERT_EQ(paragraph_style.text_align,
+            paragraph->GetParagraphStyle().text_align);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+// Trailing space at the end of the arabic rtl run should be at the left end of
+// the arabic run and be a ghost space.
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(ArabicRectsLTRRightAlignParagraph)) {
+  const char* text = "Helloبمباركة التقليدية قام عن. تصفح يد ";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 14;
+  paragraph_style.text_align = TextAlign::right;
+  paragraph_style.text_direction = TextDirection::ltr;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Noto Naskh Arabic");
+  text_style.font_size = 26;
+  text_style.letter_spacing = 1;
+  text_style.word_spacing = 5;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  text_style.decoration = TextDecoration::kUnderline;
+  text_style.decoration_color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth() - 100);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(36, 40, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 2ull);
+
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 556.54688);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), -0.26855469);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 577.78125);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 44);
+
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 545.30859);
   EXPECT_FLOAT_EQ(boxes[1].rect.top(), -0.26855469);
   EXPECT_FLOAT_EQ(boxes[1].rect.right(), 557.04688);
   EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 44);
@@ -3493,28 +3763,28 @@ TEST_F(ParagraphTest, SpacingParagraph) {
   text_style.letter_spacing = 0;
   text_style.word_spacing = 0;
   builder.PushStyle(text_style);
-  builder.AddText("|");
+  builder.AddText(u"|");
   builder.Pop();
 
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 20;
   builder.PushStyle(text_style);
-  builder.AddText("H ");
+  builder.AddText(u"H ");
   builder.Pop();
 
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 0;
   builder.PushStyle(text_style);
-  builder.AddText("H ");
+  builder.AddText(u"H ");
   builder.Pop();
 
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 20;
   builder.PushStyle(text_style);
-  builder.AddText("H ");
+  builder.AddText(u"H ");
   builder.Pop();
 
   auto paragraph = builder.Build();
@@ -3598,16 +3868,16 @@ TEST_F(ParagraphTest, KernScaleParagraph) {
   text_style.color = SK_ColorBLACK;
   text_style.height = 1;
   builder.PushStyle(text_style);
-  builder.AddText("AVAVAWAH A0 V0 VA To The Lo");
+  builder.AddText(u"AVAVAWAH A0 V0 VA To The Lo");
   builder.PushStyle(text_style);
-  builder.AddText("A");
+  builder.AddText(u"A");
   builder.PushStyle(text_style);
-  builder.AddText("V");
+  builder.AddText(u"V");
   text_style.font_size = 14 / scale;
   builder.PushStyle(text_style);
   builder.AddText(
-      " Dialog Text List lots of words to see if kerning works on a bigger set "
-      "of characters AVAVAW");
+      u" Dialog Text List lots of words to see if kerning works on a bigger "
+      u"set of characters AVAVAW");
 
   builder.Pop();
 
@@ -3641,7 +3911,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(NewlineParagraph)) {
   text_style.height = 1;
   builder.PushStyle(text_style);
   builder.AddText(
-      "line1\nline2 test1 test2 test3 test4 test5 test6 test7\nline3\n\nline4 "
+      u"line1\nline2 test1 test2 test3 test4 test5 test6 test7\nline3\n\nline4 "
       "test1 test2 test3 test4");
 
   builder.Pop();

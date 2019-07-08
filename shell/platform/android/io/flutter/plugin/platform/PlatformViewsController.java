@@ -135,8 +135,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                     + viewId);
             }
 
-            contextToPlatformView.remove(vdController.getView().getContext());
+            if (textInputPlugin != null) {
+                textInputPlugin.clearPlatformViewClient(viewId);
+            }
 
+            contextToPlatformView.remove(vdController.getView().getContext());
             vdController.dispose();
             vdControllers.remove(viewId);
         }
@@ -189,11 +192,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                 parsePointerCoordsList(touch.rawPointerCoords, density)
                     .toArray(new PointerCoords[touch.pointerCount]);
 
-            View view = vdControllers.get(touch.viewId).getView();
-            if (view == null) {
-                throw new IllegalStateException("Sending touch to an unknown view with id: "
-                    + touch.viewId);
+            if (!vdControllers.containsKey(touch.viewId)) {
+                throw new IllegalStateException("Sending touch to an unknown view with id: " + touch.viewId);
             }
+            View view = vdControllers.get(touch.viewId).getView();
 
             MotionEvent event = MotionEvent.obtain(
                 touch.downTime.longValue(),

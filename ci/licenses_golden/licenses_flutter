@@ -15,8 +15,6 @@ FILE: ../../../flutter/assets/asset_manager.h
 FILE: ../../../flutter/assets/asset_resolver.h
 FILE: ../../../flutter/assets/directory_asset_bundle.cc
 FILE: ../../../flutter/assets/directory_asset_bundle.h
-FILE: ../../../flutter/assets/zip_asset_store.cc
-FILE: ../../../flutter/assets/zip_asset_store.h
 FILE: ../../../flutter/benchmarking/benchmarking.cc
 FILE: ../../../flutter/benchmarking/benchmarking.h
 FILE: ../../../flutter/common/exported_symbols.sym
@@ -71,6 +69,7 @@ FILE: ../../../flutter/flow/layers/transform_layer.h
 FILE: ../../../flutter/flow/matrix_decomposition.cc
 FILE: ../../../flutter/flow/matrix_decomposition.h
 FILE: ../../../flutter/flow/matrix_decomposition_unittests.cc
+FILE: ../../../flutter/flow/mutators_stack_unittests.cc
 FILE: ../../../flutter/flow/paint_utils.cc
 FILE: ../../../flutter/flow/paint_utils.h
 FILE: ../../../flutter/flow/raster_cache.cc
@@ -86,7 +85,6 @@ FILE: ../../../flutter/flow/texture.cc
 FILE: ../../../flutter/flow/texture.h
 FILE: ../../../flutter/flow/view_holder.cc
 FILE: ../../../flutter/flow/view_holder.h
-FILE: ../../../flutter/flutter_kernel_transformers/lib/track_widget_constructor_locations.dart
 FILE: ../../../flutter/fml/base32.cc
 FILE: ../../../flutter/fml/base32.h
 FILE: ../../../flutter/fml/base32_unittest.cc
@@ -457,6 +455,7 @@ FILE: ../../../flutter/shell/common/persistent_cache.cc
 FILE: ../../../flutter/shell/common/persistent_cache.h
 FILE: ../../../flutter/shell/common/pipeline.cc
 FILE: ../../../flutter/shell/common/pipeline.h
+FILE: ../../../flutter/shell/common/pipeline_unittests.cc
 FILE: ../../../flutter/shell/common/platform_view.cc
 FILE: ../../../flutter/shell/common/platform_view.h
 FILE: ../../../flutter/shell/common/rasterizer.cc
@@ -684,6 +683,9 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewCo
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Info.plist
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelayTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbackCache.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbackCache_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject.mm
@@ -739,6 +741,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_software.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/FlutterMacOS.podspec
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEDartProject.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEEngine.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEOpenGLContextHandling.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEReshapeListener.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEView.h
@@ -747,6 +751,10 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterMacO
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginMacOS.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginRegistrarMacOS.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Info.plist
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEDartProject.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEDartProject_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEEngine.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEEngine_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputModel.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputModel.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputPlugin.h
@@ -764,6 +772,8 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_engine.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_include.c
+FILE: ../../../flutter/shell/platform/embedder/embedder_platform_message_response.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_platform_message_response.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_safe_access.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.h
@@ -918,6 +928,8 @@ FILE: ../../../flutter/shell/platform/glfw/client_wrapper/include/flutter/flutte
 FILE: ../../../flutter/shell/platform/glfw/client_wrapper/include/flutter/flutter_window_controller.h
 FILE: ../../../flutter/shell/platform/glfw/client_wrapper/include/flutter/plugin_registrar_glfw.h
 FILE: ../../../flutter/shell/platform/glfw/flutter_glfw.cc
+FILE: ../../../flutter/shell/platform/glfw/glfw_event_loop.cc
+FILE: ../../../flutter/shell/platform/glfw/glfw_event_loop.h
 FILE: ../../../flutter/shell/platform/glfw/key_event_handler.cc
 FILE: ../../../flutter/shell/platform/glfw/key_event_handler.h
 FILE: ../../../flutter/shell/platform/glfw/keyboard_hook_handler.h

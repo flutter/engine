@@ -22,3 +22,5 @@ Thumbs.db
 pubspec.lock
 .vscode/
 compile_commands.json
+docs/doxygen/
+xcuserdata

@@ -186,7 +186,8 @@ class DartIsolate : public UIDartState {
 
   // |Dart_IsolateShutdownCallback|
   static void DartIsolateShutdownCallback(
-      std::shared_ptr<DartIsolate>* embedder_isolate);
+      std::shared_ptr<DartIsolate>* isolate_group_data,
+      std::shared_ptr<DartIsolate>* isolate_data);
 
   // |Dart_IsolateCleanupCallback|
   static void DartIsolateCleanupCallback(
