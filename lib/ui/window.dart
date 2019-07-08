@@ -522,7 +522,7 @@ class Locale {
 /// obtain from `WidgetsBinding.instance.window`.
 ///
 /// There is also a [window] singleton object in `dart:ui` if `WidgetsBinding`
-/// is unavailable. But we strongly advice to avoid statically referencing it.
+/// is unavailable. But we strongly advise to avoid statically referencing it.
 /// See the document of [window] for more details of why it should be avoided.
 ///
 /// ## Insets and Padding
