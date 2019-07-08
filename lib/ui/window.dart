@@ -519,8 +519,11 @@ class Locale {
 /// callback, the graphics drawing API, and other such core services.
 ///
 /// There is a single Window instance in the system, which you can
-/// obtain from `WidgetsBinding.instance.window`, or `window` in `dart:ui` if
-/// `WidgetsBinding` is unavailable.
+/// obtain from `WidgetsBinding.instance.window`.
+///
+/// There is also a [window] singleton object in `dart:ui` if `WidgetsBinding`
+/// is unavailable. But we strongly advice to avoid statically referencing it.
+/// See the document of [window] for more details of why it should be avoided.
 ///
 /// ## Insets and Padding
 ///
