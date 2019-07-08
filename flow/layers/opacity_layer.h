@@ -22,9 +22,9 @@ class OpacityLayer : public ContainerLayer {
   // some parent TransformLayers. But we allow the offset to be non-zero for
   // backward compatibility. If it's non-zero, the old behavior is to propage
   // that offset to all the leaf layers (e.g., PictureLayer). That will make
-  // the retained rendering inefficient as a small offset change could propgate
+  // the retained rendering inefficient as a small offset change could propagate
   // to many leaf layers. Therefore we try to capture that offset here to stop
-  // the propgation as repainting the OpacityLayer is expensive.
+  // the propagation as repainting the OpacityLayer is expensive.
   OpacityLayer(int alpha, const SkPoint& offset);
   ~OpacityLayer() override;
 
