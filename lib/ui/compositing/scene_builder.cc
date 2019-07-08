@@ -51,9 +51,6 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, SceneBuilder);
   V(SceneBuilder, pushClipPath)                     \
   V(SceneBuilder, pushOpacity)                      \
   V(SceneBuilder, pushColorFilter)                  \
-  V(SceneBuilder, pushColorFilterMatrix)            \
-  V(SceneBuilder, pushColorFilterLinearToSrgbGamma) \
-  V(SceneBuilder, pushColorFilterSrgbToLinearGamma) \
   V(SceneBuilder, pushBackdropFilter)               \
   V(SceneBuilder, pushShaderMask)                   \
   V(SceneBuilder, pushPhysicalShape)                \
@@ -144,36 +141,10 @@ fml::RefPtr<EngineLayer> SceneBuilder::pushOpacity(int alpha,
   return EngineLayer::MakeRetained(layer);
 }
 
-fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilter(int color,
-                                                       int blendMode) {
+fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilter(
+    const ColorFilter* color_filter) {
   auto layer =
-      std::make_shared<flutter::ColorFilterLayer>(SkColorFilters::Blend(
-          static_cast<SkColor>(color), static_cast<SkBlendMode>(blendMode)));
-  PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
-}
-
-fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilterMatrix(
-    tonic::Float32List& matrix) {
-  FML_DCHECK(matrix.num_elements() == 20);
-
-  auto layer = std::make_shared<flutter::ColorFilterLayer>(
-      MakeColorMatrixFilter255(matrix.data()));
-  matrix.Release();
-  PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
-}
-
-fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilterLinearToSrgbGamma() {
-  auto layer = std::make_shared<flutter::ColorFilterLayer>(
-      SkColorFilters::LinearToSRGBGamma());
-  PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
-}
-
-fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilterSrgbToLinearGamma() {
-  auto layer = std::make_shared<flutter::ColorFilterLayer>(
-      SkColorFilters::SRGBToLinearGamma());
+      std::make_shared<flutter::ColorFilterLayer>(color_filter->filter());
   PushLayer(layer);
   return EngineLayer::MakeRetained(layer);
 }

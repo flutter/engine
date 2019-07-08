@@ -391,31 +391,12 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     assert(filter != null);
     assert(filter._type != null && filter._type != ColorFilter._TypeNone);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushColorFilter'));
-    EngineLayer engineLayer;
-    switch(filter._type) {
-      case ColorFilter._TypeMode:
-        engineLayer = _pushColorFilter(filter._color.value, filter._blendMode.index);
-        break;
-      case ColorFilter._TypeMatrix:
-        engineLayer = _pushColorFilterMatrix(Float32List.fromList(filter._matrix));
-        break;
-      case ColorFilter._TypeLinearToSrgbGamma:
-        engineLayer = _pushColorFilterLinearToSrgbGamma();
-        break;
-      case ColorFilter._TypeSrgbToLinearGamma:
-        engineLayer = _pushColorFilterSrgbToLinearGamma();
-        break;
-      default:
-        assert(false);
-    }
+    final EngineLayer engineLayer = _pushColorFilter(filter._toNativeColorFilter());
     final ColorFilterEngineLayer layer = ColorFilterEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
-  EngineLayer _pushColorFilter(int color, int blendMode) native 'SceneBuilder_pushColorFilter';
-  EngineLayer _pushColorFilterMatrix(Float32List matrix) native 'SceneBuilder_pushColorFilterMatrix';
-  EngineLayer _pushColorFilterLinearToSrgbGamma() native 'SceneBuilder_pushColorFilterLinearToSrgbGamma';
-  EngineLayer _pushColorFilterSrgbToLinearGamma() native 'SceneBuilder_pushColorFilterSrgbToLinearGamma';
+  EngineLayer _pushColorFilter(_ColorFilter filter) native 'SceneBuilder_pushColorFilter';
 
   /// Pushes a backdrop filter operation onto the operation stack.
   ///
