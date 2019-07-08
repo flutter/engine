@@ -369,6 +369,17 @@ Shell::~Shell() {
   platform_latch.Wait();
 }
 
+void Shell::NotifyLowMemoryWarning() const {
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [rasterizer = rasterizer_->GetWeakPtr()]() {
+        if (rasterizer) {
+          rasterizer->NotifyLowMemoryWarning();
+        }
+      });
+  // The IO Manager uses resource cache limits of 0, so it is not necessary
+  // to purge them.
+}
+
 bool Shell::IsSetup() const {
   return is_setup_;
 }
@@ -598,6 +609,16 @@ void Shell::OnPlatformViewDestroyed() {
 void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  // This is the formula Android uses.
+  // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
+  int max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [rasterizer = rasterizer_->GetWeakPtr(), max_bytes] {
+        if (rasterizer) {
+          rasterizer->SetResourceCacheMaxBytes(max_bytes, false);
+        }
+      });
 
   task_runners_.GetUITaskRunner()->PostTask(
       [engine = engine_->GetWeakPtr(), metrics]() {
@@ -852,7 +873,8 @@ void Shell::HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message) {
       [rasterizer = rasterizer_->GetWeakPtr(),
        max_bytes = args->value.GetInt()] {
         if (rasterizer) {
-          rasterizer->SetResourceCacheMaxBytes(max_bytes);
+          rasterizer->SetResourceCacheMaxBytes(static_cast<size_t>(max_bytes),
+                                               true);
         }
       });
 }

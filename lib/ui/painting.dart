@@ -1056,13 +1056,10 @@ class Paint {
   static const int _kStrokeJoinIndex = 6;
   static const int _kStrokeMiterLimitIndex = 7;
   static const int _kFilterQualityIndex = 8;
-  static const int _kColorFilterIndex = 9;
-  static const int _kColorFilterColorIndex = 10;
-  static const int _kColorFilterBlendModeIndex = 11;
-  static const int _kMaskFilterIndex = 12;
-  static const int _kMaskFilterBlurStyleIndex = 13;
-  static const int _kMaskFilterSigmaIndex = 14;
-  static const int _kInvertColorIndex = 15;
+  static const int _kMaskFilterIndex = 9;
+  static const int _kMaskFilterBlurStyleIndex = 10;
+  static const int _kMaskFilterSigmaIndex = 11;
+  static const int _kInvertColorIndex = 12;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
   static const int _kColorOffset = _kColorIndex << 2;
@@ -1073,21 +1070,19 @@ class Paint {
   static const int _kStrokeJoinOffset = _kStrokeJoinIndex << 2;
   static const int _kStrokeMiterLimitOffset = _kStrokeMiterLimitIndex << 2;
   static const int _kFilterQualityOffset = _kFilterQualityIndex << 2;
-  static const int _kColorFilterOffset = _kColorFilterIndex << 2;
-  static const int _kColorFilterColorOffset = _kColorFilterColorIndex << 2;
-  static const int _kColorFilterBlendModeOffset = _kColorFilterBlendModeIndex << 2;
   static const int _kMaskFilterOffset = _kMaskFilterIndex << 2;
   static const int _kMaskFilterBlurStyleOffset = _kMaskFilterBlurStyleIndex << 2;
   static const int _kMaskFilterSigmaOffset = _kMaskFilterSigmaIndex << 2;
   static const int _kInvertColorOffset = _kInvertColorIndex << 2;
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 75;
+  static const int _kDataByteCount = 52;
 
   // Binary format must match the deserialization code in paint.cc.
   List<dynamic> _objects;
   static const int _kShaderIndex = 0;
-  static const int _kColorFilterMatrixIndex = 1;
-  static const int _kObjectCount = 2; // Must be one larger than the largest index.
+  static const int _kColorFilterIndex = 1;
+  static const int _kImageFilterIndex = 2;
+  static const int _kObjectCount = 3; // Must be one larger than the largest index.
 
   /// Whether to apply anti-aliasing to lines and images drawn on the
   /// canvas.
@@ -1341,51 +1336,59 @@ class Paint {
   ///
   /// When a shape is being drawn, [colorFilter] overrides [color] and [shader].
   ColorFilter get colorFilter {
-    switch (_data.getInt32(_kColorFilterOffset, _kFakeHostEndian)) {
-      case ColorFilter._TypeNone:
-        return null;
-      case ColorFilter._TypeMode:
-        return ColorFilter.mode(
-          Color(_data.getInt32(_kColorFilterColorOffset, _kFakeHostEndian)),
-          BlendMode.values[_data.getInt32(_kColorFilterBlendModeOffset, _kFakeHostEndian)],
-        );
-      case ColorFilter._TypeMatrix:
-        return ColorFilter.matrix(_objects[_kColorFilterMatrixIndex]);
-      case ColorFilter._TypeLinearToSrgbGamma:
-        return const ColorFilter.linearToSrgbGamma();
-      case ColorFilter._TypeSrgbToLinearGamma:
-        return const ColorFilter.srgbToLinearGamma();
+    if (_objects == null || _objects[_kColorFilterIndex] == null) {
+      return null;
     }
-
-    return null;
+    return _objects[_kColorFilterIndex].creator;
   }
 
   set colorFilter(ColorFilter value) {
     if (value == null) {
-      _data.setInt32(_kColorFilterOffset, ColorFilter._TypeNone, _kFakeHostEndian);
-      _data.setInt32(_kColorFilterColorOffset, 0, _kFakeHostEndian);
-      _data.setInt32(_kColorFilterBlendModeOffset, 0, _kFakeHostEndian);
-
       if (_objects != null) {
-        _objects[_kColorFilterMatrixIndex] = null;
+        _objects[_kColorFilterIndex] = null;
       }
     } else {
-      _data.setInt32(_kColorFilterOffset, value._type, _kFakeHostEndian);
-
-      if (value._type == ColorFilter._TypeMode) {
-        assert(value._color != null);
-        assert(value._blendMode != null);
-
-        _data.setInt32(_kColorFilterColorOffset, value._color.value, _kFakeHostEndian);
-        _data.setInt32(_kColorFilterBlendModeOffset, value._blendMode.index, _kFakeHostEndian);
-      } else if (value._type == ColorFilter._TypeMatrix) {
-        assert(value._matrix != null);
-
-        _objects ??= List<dynamic>(_kObjectCount);
-        _objects[_kColorFilterMatrixIndex] = Float32List.fromList(value._matrix);
+      if (_objects == null) {
+        _objects = List<dynamic>(_kObjectCount);
+        _objects[_kColorFilterIndex] = value._toNativeColorFilter();
+      } else if (_objects[_kColorFilterIndex]?.creator != value) {
+        _objects[_kColorFilterIndex] = value._toNativeColorFilter();
       }
     }
   }
+
+  /// The [ImageFilter] to use when drawing raster images.
+  ///
+  /// For example, to blur an image using [Canvas.drawImage], apply an
+  /// [ImageFilter.blur]:
+  ///
+  /// ```dart
+  /// import 'dart:ui' as ui;
+  ///
+  /// ui.Image image;
+  ///
+  /// void paint(Canvas canvas, Size size) {
+  ///   canvas.drawImage(
+  ///     image,
+  ///     Offset.zero,
+  ///     Paint()..imageFilter = ui.ImageFilter.blur(sigmaX: .5, sigmaY: .5),
+  ///   );
+  /// }
+  /// ```
+  ///
+  /// See also:
+  ///
+  ///  * [MaskFilter], which is used for drawing geometry.
+  ImageFilter get imageFilter {
+    if (_objects == null)
+      return null;
+    return _objects[_kImageFilterIndex];
+  }
+  set imageFilter(ImageFilter value) {
+    _objects ??= List<dynamic>(_kObjectCount);
+    _objects[_kImageFilterIndex] = value;
+  }
+
 
   /// Whether the colors of the image are inverted when drawn.
   ///
@@ -1449,6 +1452,10 @@ class Paint {
     }
     if (shader != null) {
       result.write('${semicolon}shader: $shader');
+      semicolon = '; ';
+    }
+    if (imageFilter != null) {
+      result.write('${semicolon}imageFilter: $imageFilter');
       semicolon = '; ';
     }
     if (invertColors)
@@ -2482,7 +2489,9 @@ class ColorFilter {
   /// to the [Paint.blendMode], using the output of this filter as the source
   /// and the background as the destination.
   const ColorFilter.mode(Color color, BlendMode blendMode)
-      : _color = color,
+      : assert(color != null),
+        assert(blendMode != null),
+        _color = color,
         _blendMode = blendMode,
         _matrix = null,
         _type = _TypeMode;
@@ -2491,7 +2500,9 @@ class ColorFilter {
   /// matrix is in row-major order and the translation column is specified in
   /// unnormalized, 0...255, space.
   const ColorFilter.matrix(List<double> matrix)
-      : _color = null,
+      : assert(matrix != null),
+        assert(matrix.length == 20),
+        _color = null,
         _blendMode = null,
         _matrix = matrix,
         _type = _TypeMatrix;
@@ -2542,6 +2553,21 @@ class ColorFilter {
     return _color == typedOther._color && _blendMode == typedOther._blendMode;
   }
 
+  _ColorFilter _toNativeColorFilter() {
+    switch (_type) {
+      case _TypeMode:
+        return _ColorFilter.mode(this);
+      case _TypeMatrix:
+        return _ColorFilter.matrix(this);
+      case _TypeLinearToSrgbGamma:
+        return _ColorFilter.linearToSrgbGamma(this);
+      case _TypeSrgbToLinearGamma:
+        return _ColorFilter.srgbToLinearGamma(this);
+      default:
+        throw StateError('Unknown mode $_type for ColorFilter.');
+    }
+  }
+
   @override
   int get hashCode => hashValues(_color, _blendMode, hashList(_matrix), _type);
 
@@ -2560,6 +2586,51 @@ class ColorFilter {
         return 'Unknown ColorFilter type. This is an error. If you\'re seeing this, please file an issue at https://github.com/flutter/flutter/issues/new.';
     }
   }
+}
+
+/// A [ColorFilter] that is backed by a native SkColorFilter.
+///
+/// This is a private class, rather than being the implementation of the public
+/// ColorFilter, because we want ColorFilter to be const constructible and
+/// efficiently comparable, so that widgets can check for ColorFilter equality to
+// avoid repainting.
+class _ColorFilter extends NativeFieldWrapperClass2 {
+  _ColorFilter.mode(this.creator)
+    : assert(creator != null),
+      assert(creator._type == ColorFilter._TypeMode) {
+    _constructor();
+    _initMode(creator._color.value, creator._blendMode.index);
+  }
+
+  _ColorFilter.matrix(this.creator)
+    : assert(creator != null),
+      assert(creator._type == ColorFilter._TypeMatrix) {
+    _constructor();
+    _initMatrix(Float32List.fromList(creator._matrix));
+  }
+  _ColorFilter.linearToSrgbGamma(this.creator)
+    : assert(creator != null),
+      assert(creator._type == ColorFilter._TypeLinearToSrgbGamma) {
+    _constructor();
+    _initLinearToSrgbGamma();
+  }
+
+  _ColorFilter.srgbToLinearGamma(this.creator)
+    : assert(creator != null),
+      assert(creator._type == ColorFilter._TypeSrgbToLinearGamma) {
+    _constructor();
+    _initSrgbToLinearGamma();
+  }
+
+  /// The original Dart object that created the native wrapper, which retains
+  /// the values used for the filter.
+  final ColorFilter creator;
+
+  void _constructor() native 'ColorFilter_constructor';
+  void _initMode(int color, int blendMode) native 'ColorFilter_initMode';
+  void _initMatrix(Float32List matrix) native 'ColorFilter_initMatrix';
+  void _initLinearToSrgbGamma() native 'ColorFilter_initLinearToSrgbGamma';
+  void _initSrgbToLinearGamma() native 'ColorFilter_initSrgbToLinearGamma';
 }
 
 /// A filter operation to apply to a raster image.

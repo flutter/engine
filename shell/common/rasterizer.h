@@ -46,6 +46,11 @@ class Rasterizer final : public SnapshotDelegate {
 
   void Teardown();
 
+  // Frees up Skia GPU resources.
+  //
+  // This method must be called from the GPU task runner.
+  void NotifyLowMemoryWarning() const;
+
   fml::WeakPtr<Rasterizer> GetWeakPtr() const;
 
   fml::WeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
@@ -87,7 +92,13 @@ class Rasterizer final : public SnapshotDelegate {
     return compositor_context_.get();
   }
 
-  void SetResourceCacheMaxBytes(int max_bytes);
+  // Sets the max size in bytes of the Skia resource cache. If this call is
+  // originating from the user, e.g. over the flutter/skia system channel,
+  // set from_user to true and the value will take precedence over system
+  // generated values, e.g. from a display resolution change.
+  void SetResourceCacheMaxBytes(size_t max_bytes, bool from_user);
+
+  size_t GetResourceCacheMaxBytes() const;
 
  private:
   Delegate& delegate_;
@@ -96,6 +107,7 @@ class Rasterizer final : public SnapshotDelegate {
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
   std::unique_ptr<flutter::LayerTree> last_layer_tree_;
   fml::closure next_frame_callback_;
+  bool user_override_resource_cache_bytes_;
   fml::WeakPtrFactory<Rasterizer> weak_factory_;
 
   // |SnapshotDelegate|
@@ -104,7 +116,7 @@ class Rasterizer final : public SnapshotDelegate {
 
   void DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree);
 
-  bool DrawToSurface(flutter::LayerTree& layer_tree);
+  RasterStatus DrawToSurface(flutter::LayerTree& layer_tree);
 
   void FireNextFrameCallbackIfPresent();
 
