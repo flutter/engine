@@ -120,7 +120,6 @@ class MutatorsStack {
   void pushClipRect(const SkRect& rect);
   void pushClipRRect(const SkRRect& rrect);
   void pushClipPath(const SkPath& path);
-
   void pushTransform(const SkMatrix& matrix);
 
   // Removes the `Mutator` on the top of the stack
@@ -184,15 +183,24 @@ class ExternalViewEmbedder {
  public:
   ExternalViewEmbedder() = default;
 
+  // This will return true after pre-roll if any of the embedded views
+  // have mutated for last layer tree.
+  virtual bool HasPendingViewOperations() = 0;
+
+  // Call this in-lieu of |SubmitFrame| to clear pre-roll state and
+  // sets the stage for the next pre-roll.
+  virtual void CancelFrame() = 0;
+
   virtual void BeginFrame(SkISize frame_size) = 0;
 
-  virtual void PrerollCompositeEmbeddedView(int view_id) = 0;
+  virtual void PrerollCompositeEmbeddedView(
+      int view_id,
+      std::unique_ptr<EmbeddedViewParams> params) = 0;
 
   virtual std::vector<SkCanvas*> GetCurrentCanvases() = 0;
 
   // Must be called on the UI thread.
-  virtual SkCanvas* CompositeEmbeddedView(int view_id,
-                                          const EmbeddedViewParams& params) = 0;
+  virtual SkCanvas* CompositeEmbeddedView(int view_id) = 0;
 
   virtual bool SubmitFrame(GrContext* context);
 

@@ -1,4 +1,4 @@
-Signature: 8edc904126bf9ea0c9079e0c06944ffd
+Signature: 1cc4fbd5fb683d3d955ace2966efe5e6
 
 UNUSED LICENSES:
 
@@ -1467,14 +1467,13 @@ FILE: ../../../third_party/skia/modules/skottie/src/SkottieAdapter.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieAdapter.h
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieJson.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieJson.h
-FILE: ../../../third_party/skia/modules/skottie/src/SkottieLayer.cpp
-FILE: ../../../third_party/skia/modules/skottie/src/SkottiePrecompLayer.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottiePriv.h
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieProperty.cpp
-FILE: ../../../third_party/skia/modules/skottie/src/SkottieShapeLayer.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieTest.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieTool.cpp
-FILE: ../../../third_party/skia/modules/skottie/src/text/TextLayer.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/PrecompLayer.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/ShapeLayer.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/TextLayer.cpp
 FILE: ../../../third_party/skia/modules/skottie/utils/SkottieUtils.cpp
 FILE: ../../../third_party/skia/modules/skottie/utils/SkottieUtils.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGClipEffect.h
@@ -2114,6 +2113,7 @@ FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Debian9-Cl
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Debian9-Clang-GCE-GPU-SwiftShader-x86_64-Release-All-SwiftShader.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Debian9-Clang-NUC5PPYH-GPU-IntelHD405-x86_64-Release-All-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Debian9-Clang-NUC7i5BNK-GPU-IntelIris640-x86_64-Debug-All-Vulkan.json
+FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Mac10.13-Clang-MacBook10.1-GPU-IntelHD615-x86_64-Debug-All-CommandBuffer.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Mac10.13-Clang-MacBook10.1-GPU-IntelHD615-x86_64-Release-All-NativeFonts.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Mac10.13-Clang-MacBookPro11.5-CPU-AVX2-x86_64-Release-All.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Mac10.13-Clang-MacBookPro11.5-GPU-RadeonHD8870M-x86_64-Debug-All-Metal.json
@@ -5448,6 +5448,8 @@ FILE: ../../../third_party/skia/include/private/GrContext_Base.h
 FILE: ../../../third_party/skia/include/private/GrImageContext.h
 FILE: ../../../third_party/skia/include/private/GrRecordingContext.h
 FILE: ../../../third_party/skia/include/private/SkVx.h
+FILE: ../../../third_party/skia/modules/skottie/src/Composition.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/Layer.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/DropShadowEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/Effects.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/Effects.h
@@ -5462,6 +5464,9 @@ FILE: ../../../third_party/skia/modules/skottie/src/effects/TintEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/TransformEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/TritoneEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/VenetianBlindsEffect.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/ImageLayer.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/NullLayer.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/SolidLayer.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/text/RangeSelector.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/text/RangeSelector.h
 FILE: ../../../third_party/skia/modules/skottie/src/text/SkottieShaper.cpp
@@ -5518,7 +5523,6 @@ FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCommandBuffer.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlDepthStencil.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.h
-FILE: ../../../third_party/skia/src/opts/SkVM_opts.h
 FILE: ../../../third_party/skia/src/shaders/SkRTShader.cpp
 FILE: ../../../third_party/skia/src/shaders/SkRTShader.h
 FILE: ../../../third_party/skia/src/sksl/SkSLDefines.h
