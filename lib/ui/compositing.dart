@@ -389,7 +389,6 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// See [pop] for details about the operation stack.
   ColorFilterEngineLayer pushColorFilter(ColorFilter filter, { ColorFilterEngineLayer oldLayer }) {
     assert(filter != null);
-    assert(filter._type != null && filter._type != ColorFilter._TypeNone);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushColorFilter'));
     final ColorFilterEngineLayer layer = ColorFilterEngineLayer._(_pushColorFilter(filter._toNativeColorFilter()));
     assert(_debugPushLayer(layer));
