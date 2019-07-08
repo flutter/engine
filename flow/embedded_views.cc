@@ -30,8 +30,8 @@ void MutatorsStack::PushTransform(const SkMatrix& matrix) {
   vector_.push_back(element);
 };
 
-void MutatorsStack::PushOpacity(const OpacityParams& opacityParams) {
-  std::shared_ptr<Mutator> element = std::make_shared<Mutator>(opacityParams);
+void MutatorsStack::PushOpacity(const int& alpha) {
+  std::shared_ptr<Mutator> element = std::make_shared<Mutator>(alpha);
   vector_.push_back(element);
 };
 
