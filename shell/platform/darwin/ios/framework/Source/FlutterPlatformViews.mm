@@ -16,6 +16,7 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 
+// For each platform view, we create 2 views: the platform view itself and the overlay view.
 static int64_t number_of_views_for_each_platform_view = 2;
 
 namespace flutter {
