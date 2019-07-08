@@ -85,7 +85,6 @@ FILE: ../../../flutter/flow/texture.cc
 FILE: ../../../flutter/flow/texture.h
 FILE: ../../../flutter/flow/view_holder.cc
 FILE: ../../../flutter/flow/view_holder.h
-FILE: ../../../flutter/flutter_kernel_transformers/lib/track_widget_constructor_locations.dart
 FILE: ../../../flutter/fml/base32.cc
 FILE: ../../../flutter/fml/base32.h
 FILE: ../../../flutter/fml/base32_unittest.cc
@@ -742,6 +741,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_software.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/FlutterMacOS.podspec
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEDartProject.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEEngine.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEOpenGLContextHandling.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEReshapeListener.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEView.h
@@ -750,6 +751,10 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterMacO
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginMacOS.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginRegistrarMacOS.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Info.plist
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEDartProject.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEDartProject_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEEngine.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEEngine_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputModel.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputModel.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputPlugin.h
@@ -767,6 +772,8 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_engine.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_include.c
+FILE: ../../../flutter/shell/platform/embedder/embedder_platform_message_response.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_platform_message_response.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_safe_access.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.h
