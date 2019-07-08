@@ -279,7 +279,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         break;
       }
       case opacity:
-        embedded_view.alpha = (*iter)->GetAlphaF() * embedded_view.alpha;
+        embedded_view.alpha = (*iter)->GetAlphaFloat() * embedded_view.alpha;
         break;
     }
     ++iter;

@@ -64,7 +64,7 @@ class Mutator {
   const SkPath& GetPath() const { return *path_; }
   const SkMatrix& GetMatrix() const { return matrix_; }
   const int& GetAlpha() const { return alpha_; }
-  float GetAlphaF() const { return (alpha_ / 255.0); }
+  float GetAlphaFloat() const { return (alpha_ / 255.0); }
 
   bool operator==(const Mutator& other) const {
     if (type_ != other.type_) {
