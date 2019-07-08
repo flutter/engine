@@ -148,9 +148,9 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
   if (uint_data[kInvertColorIndex]) {
     sk_sp<SkColorFilter> invert_filter =
         ColorFilter::MakeColorMatrixFilter255(invert_colors);
-    SkColorFilter* current_filter = paint_.getColorFilter();
+    sk_sp<SkColorFilter> current_filter = paint_.refColorFilter();
     if (current_filter) {
-      invert_filter = invert_filter->makeComposed(sk_sp(current_filter));
+      invert_filter = invert_filter->makeComposed(current_filter);
     }
     paint_.setColorFilter(invert_filter);
   }
