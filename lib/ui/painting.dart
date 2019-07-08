@@ -2630,7 +2630,7 @@ class _ColorFilter extends NativeFieldWrapperClass2 {
   void _initMode(int color, int blendMode) native 'ColorFilter_initMode';
   void _initMatrix(Float32List matrix) native 'ColorFilter_initMatrix';
   void _initLinearToSrgbGamma() native 'ColorFilter_initLinearToSrgbGamma';
-  void _initSrgbToLinearGamma() native 'ColorFilter_initSrgToLinearGamma';
+  void _initSrgbToLinearGamma() native 'ColorFilter_initSrgbToLinearGamma';
 }
 
 /// A filter operation to apply to a raster image.
