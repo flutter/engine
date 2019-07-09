@@ -21,7 +21,8 @@
 
 namespace fml {
 
-// A string-like object that points to a sized piece of memory.
+/// A string-like object that points to a sized piece of memory.
+/// @deprecated used std::string_view
 class StringView {
  public:
   // Types.

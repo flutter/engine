@@ -5,7 +5,7 @@
 #ifndef FLUTTER_FML_STATUS_H_
 #define FLUTTER_FML_STATUS_H_
 
-#include "flutter/fml/string_view.h"
+#include <string_view>
 
 namespace fml {
 
@@ -40,7 +40,7 @@ class Status final {
   /// Creates an 'ok' status.
   Status();
 
-  Status(fml::StatusCode code, fml::StringView message);
+  Status(fml::StatusCode code, std::string_view message);
 
   fml::StatusCode code() const;
 
@@ -53,17 +53,17 @@ class Status final {
   /// @return 'true' when the code is kOk.
   bool ok() const;
 
-  fml::StringView message() const;
+  std::string_view message() const;
 
  private:
   int code_;
-  fml::StringView message_;
+  std::string_view message_;
 };
 
 inline Status::Status()
     : code_(static_cast<int>(fml::StatusCode::kOk)), message_() {}
 
-inline Status::Status(fml::StatusCode code, fml::StringView message)
+inline Status::Status(fml::StatusCode code, std::string_view message)
     : code_(static_cast<int>(code)), message_(message) {}
 
 inline fml::StatusCode Status::code() const {
@@ -82,7 +82,7 @@ inline bool Status::ok() const {
   return code_ == static_cast<int>(fml::StatusCode::kOk);
 }
 
-inline fml::StringView Status::message() const {
+inline std::string_view Status::message() const {
   return message_;
 }
 
