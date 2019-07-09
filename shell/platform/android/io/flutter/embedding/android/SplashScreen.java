@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.android;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -67,6 +68,8 @@ public interface SplashScreen {
    * these requirements, and returning {@code true} from this method, the splash screen
    * experience will be completely seamless, including configuration changes.
    */
+  // We suppress NewApi because the CI linter thinks that "default" methods are unsupported.
+  @SuppressLint("NewApi")
   default boolean doesSplashViewRememberItsTransition() {
     return false;
   }
@@ -75,6 +78,8 @@ public interface SplashScreen {
    * Returns whatever state is necessary to restore a splash {@code View} after destruction
    * and recreation, e.g., orientation change.
    */
+  // We suppress NewApi because the CI linter thinks that "default" methods are unsupported.
+  @SuppressLint("NewApi")
   @Nullable
   default Bundle saveSplashScreenState() {
     return null;
