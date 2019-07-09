@@ -1251,17 +1251,25 @@ Rasterizer::Screenshot Shell::Screenshot(
   return screenshot;
 }
 
-bool Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
+fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(!task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
-  FML_DCHECK(!task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+  if (task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread()) {
+    return fml::Status(fml::StatusCode::kFailedPrecondition,
+                       "WaitForFirstFrame called from thread that can't wait "
+                       "because it is responsible for generating the frame.");
+  }
+
   std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
   bool success = waiting_for_first_frame_condition_.wait_for(
       lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
       [& waiting_for_first_frame = waiting_for_first_frame_] {
         return !waiting_for_first_frame.load();
       });
-  return !success;
+  if (success) {
+    return fml::Status();
+  } else {
+    return fml::Status(fml::StatusCode::kDeadlineExceeded, "timeout");
+  }
 }
 
 }  // namespace flutter

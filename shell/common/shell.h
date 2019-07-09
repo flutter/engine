@@ -16,6 +16,7 @@
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/fml/memory/thread_checker.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/status.h"
 #include "flutter/fml/string_view.h"
 #include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -251,7 +252,7 @@ class Shell final : public PlatformView::Delegate,
   ///
   /// @return  'true' when there has been a timeout.
   ///
-  bool WaitForFirstFrame(fml::TimeDelta timeout);
+  fml::Status WaitForFirstFrame(fml::TimeDelta timeout);
 
  private:
   using ServiceProtocolHandler =

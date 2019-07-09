@@ -530,9 +530,9 @@ TEST_F(ShellTest, WaitForFirstFrame) {
 
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
-  bool result =
+  fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
-  ASSERT_FALSE(result);
+  ASSERT_TRUE(result.ok());
 }
 
 TEST_F(ShellTest, WaitForFirstFrameTimeout) {
@@ -546,8 +546,9 @@ TEST_F(ShellTest, WaitForFirstFrameTimeout) {
   configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
-  bool result = shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(10));
-  ASSERT_TRUE(result);
+  fml::Status result =
+      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(10));
+  ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
 }
 
 TEST_F(ShellTest, WaitForFirstFrameMultiple) {
@@ -562,13 +563,44 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
 
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
-  bool result =
+  fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
-  ASSERT_FALSE(result);
+  ASSERT_TRUE(result.ok());
   for (int i = 0; i < 100; ++i) {
     result = shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1));
-    ASSERT_FALSE(result);
+    ASSERT_TRUE(result.ok());
   }
+}
+
+// /// Makes sure that WaitForFirstFrame works if we rendered a frame with the
+// /// single-thread setup.
+TEST_F(ShellTest, WaitForFirstFrameInlined) {
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::Platform | ThreadHost::Type::GPU |
+                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+  fml::AutoResetWaitableEvent event;
+  thread_host.platform_thread->GetTaskRunner()->PostTask([&shell, &event] {
+    fml::Status result =
+        shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+    ASSERT_EQ(result.code(), fml::StatusCode::kFailedPrecondition);
+    event.Signal();
+  });
+  event.Wait();
 }
 
 }  // namespace testing
