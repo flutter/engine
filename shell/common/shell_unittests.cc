@@ -572,8 +572,8 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
   }
 }
 
-// /// Makes sure that WaitForFirstFrame works if we rendered a frame with the
-// /// single-thread setup.
+/// Makes sure that WaitForFirstFrame works if we rendered a frame with the
+/// single-thread setup.
 TEST_F(ShellTest, WaitForFirstFrameInlined) {
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
