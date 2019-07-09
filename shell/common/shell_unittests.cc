@@ -600,7 +600,7 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
     ASSERT_EQ(result.code(), fml::StatusCode::kFailedPrecondition);
     event.Signal();
   });
-  event.Wait();
+  ASSERT_FALSE(event.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(1000)));
 }
 
 }  // namespace testing
