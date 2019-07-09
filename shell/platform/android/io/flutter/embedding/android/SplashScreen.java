@@ -13,7 +13,7 @@ import android.view.View;
 /**
  * Splash screen configuration for a given Flutter experience.
  * <p>
- * Implementations provides a visual representation of a splash screen in
+ * Implementations provide a visual representation of a splash screen in
  * {@link #createSplashView(Context, Bundle)}, and implement a transition from the
  * splash UI to Flutter's UI in {@link #transitionToFlutter(Runnable)}.
  */
