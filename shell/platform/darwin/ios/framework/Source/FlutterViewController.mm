@@ -411,7 +411,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     [_engine.get() setViewController:self];
     _engineNeedsLaunch = NO;
   }
-    
+
   [self onUserSettingsChanged:nil];
 
   // Only recreate surface on subsequent appearances when viewport metrics are known.
@@ -688,8 +688,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)updateViewConstraints {
-    [super updateViewConstraints];
-    [self onUserSettingsChanged:nil];
+  [super updateViewConstraints];
+  [self onUserSettingsChanged:nil];
 }
 
 - (CGFloat)statusBarPadding {
@@ -881,8 +881,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #pragma mark - Set user settings
 
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
-    [super traitCollectionDidChange:previousTraitCollection];
-    [self onUserSettingsChanged:nil];
+  [super traitCollectionDidChange:previousTraitCollection];
+  [self onUserSettingsChanged:nil];
 }
 
 - (void)onUserSettingsChanged:(NSNotification*)notification {
@@ -966,7 +966,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (NSString*)brightnessMode {
   if (@available(iOS 13, *)) {
     UIUserInterfaceStyle style = UITraitCollection.currentTraitCollection.userInterfaceStyle;
-      
+  
     if (style == UIUserInterfaceStyleDark) {
       return @"dark";
     } else {
