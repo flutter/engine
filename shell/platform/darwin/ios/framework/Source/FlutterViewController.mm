@@ -412,8 +412,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     _engineNeedsLaunch = NO;
   }
 
-  [self onUserSettingsChanged:nil];
-
   // Only recreate surface on subsequent appearances when viewport metrics are known.
   // First time surface creation is done on viewDidLayoutSubviews.
   if (_viewportMetrics.physical_width) {
@@ -507,15 +505,11 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
-
-  [self onUserSettingsChanged:nil];
 }
 
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
-
-  [self onUserSettingsChanged:nil];
 }
 
 #pragma mark - Touch event handling
