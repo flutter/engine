@@ -73,6 +73,29 @@ class TestIOManager final : public IOManager {
   FML_DISALLOW_COPY_AND_ASSIGN(TestIOManager);
 };
 
+static sk_sp<SkData> OpenFixtureAsSkData(const char* name) {
+  auto fixtures_directory =
+      fml::OpenFile(GetFixturesPath(), false, fml::FilePermission::kRead);
+  if (!fixtures_directory.is_valid()) {
+    return nullptr;
+  }
+
+  auto fixture_mapping =
+      fml::FileMapping::CreateReadOnly(fixtures_directory, name);
+
+  if (!fixture_mapping) {
+    return nullptr;
+  }
+
+  SkData::ReleaseProc on_release = [](const void* ptr, void* context) -> void {
+    delete reinterpret_cast<fml::FileMapping*>(context);
+  };
+
+  return SkData::MakeWithProc(fixture_mapping->GetMapping(),
+                              fixture_mapping->GetSize(), on_release,
+                              fixture_mapping.release());
+}
+
 TEST_F(ImageDecoderFixtureTest, CanCreateImageDecoder) {
   auto loop = fml::ConcurrentMessageLoop::Create();
   TaskRunners runners(GetCurrentTestName(),   // label
@@ -109,8 +132,7 @@ TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
                          manager.GetWeakIOManager());
 
     ImageDecoder::ImageDescriptor image_descriptor;
-    image_descriptor.data =
-        SkData::MakeFromFD(OpenFixture("ThisDoesNotExist.jpg").get());
+    image_descriptor.data = OpenFixtureAsSkData("ThisDoesNotExist.jpg");
 
     ASSERT_FALSE(image_descriptor.data);
 
@@ -143,8 +165,7 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
         runners, loop->GetTaskRunner(), io_manager->GetWeakIOManager());
 
     ImageDecoder::ImageDescriptor image_descriptor;
-    image_descriptor.data =
-        SkData::MakeFromFD(OpenFixture("DashInNooglerHat.jpg").get());
+    image_descriptor.data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
     ASSERT_TRUE(image_descriptor.data);
     ASSERT_GE(image_descriptor.data->size(), 0u);
@@ -186,8 +207,7 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
         runners, loop->GetTaskRunner(), io_manager->GetWeakIOManager());
 
     ImageDecoder::ImageDescriptor image_descriptor;
-    image_descriptor.data =
-        SkData::MakeFromFD(OpenFixture("DashInNooglerHat.jpg").get());
+    image_descriptor.data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
     ASSERT_TRUE(image_descriptor.data);
     ASSERT_GE(image_descriptor.data->size(), 0u);
@@ -213,8 +233,7 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
 
 TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
   const auto image_dimensions =
-      SkImage::MakeFromEncoded(
-          SkData::MakeFromFD(OpenFixture("DashInNooglerHat.jpg").get()))
+      SkImage::MakeFromEncoded(OpenFixtureAsSkData("DashInNooglerHat.jpg"))
           ->dimensions();
 
   ASSERT_FALSE(image_dimensions.isEmpty());
@@ -257,8 +276,7 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
       ImageDecoder::ImageDescriptor image_descriptor;
       image_descriptor.target_width = target_width;
       image_descriptor.target_height = target_height;
-      image_descriptor.data =
-          SkData::MakeFromFD(OpenFixture("DashInNooglerHat.jpg").get());
+      image_descriptor.data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
       ASSERT_TRUE(image_descriptor.data);
       ASSERT_GE(image_descriptor.data->size(), 0u);
@@ -288,8 +306,7 @@ TEST_F(ImageDecoderFixtureTest, CanResizeWithoutDecode) {
   SkISize image_dimensions = SkISize::MakeEmpty();
   {
     auto image =
-        SkImage::MakeFromEncoded(
-            SkData::MakeFromFD(OpenFixture("DashInNooglerHat.jpg").get()))
+        SkImage::MakeFromEncoded(OpenFixtureAsSkData("DashInNooglerHat.jpg"))
             ->makeRasterImage();
     image_dimensions = image->dimensions();
     SkPixmap pixmap;
