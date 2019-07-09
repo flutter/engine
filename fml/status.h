@@ -32,6 +32,9 @@ enum class StatusCode : int {
   kDoNotUseReservedForFutureExpansionUseDefaultInSwitchInstead_ = 20
 };
 
+/// Class that represents the resolution of the execution of a procedure.  This
+/// is used similarly to how exceptions might be used, typically as the return
+/// value to a synchronous procedure or an argument to a asynchronous callback.
 class Status final {
  public:
   /// Creates an 'ok' status.
