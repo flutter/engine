@@ -366,6 +366,30 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         return controller.getView();
     }
 
+    /**
+    * Callback fired when the platform's input connection is locked, or should be used. See also
+    * {@link TextInputPlugin#lockPlatformViewInputConnection}.
+    */
+    public void onInputConnectionLocked(int viewId) {
+        VirtualDisplayController controller = vdControllers.get(viewId);
+        if (controller == null) {
+            return;
+        }
+        controller.onInputConnectionLocked();
+    }
+
+    /**
+    * Callback fired when the platform input connection has been unlocked. See also
+    * {@link TextInputPlugin#lockPlatformViewInputConnection}.
+    */
+    public void onInputConnectionUnlocked(int viewId) {
+        VirtualDisplayController controller = vdControllers.get(viewId);
+        if (controller == null) {
+            return;
+        }
+        controller.onInputConnectionUnlocked();
+    }
+
     private static boolean validateDirection(int direction) {
         return direction == View.LAYOUT_DIRECTION_LTR || direction == View.LAYOUT_DIRECTION_RTL;
     }

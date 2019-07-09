@@ -97,28 +97,36 @@ public class TextInputPlugin {
     }
 
     /***
-     * Use the current platform view input connection until unlockPlatformViewInputConnection is called.
+     * Use the current platform view input connection until unlockPlatformViewInputConnection is
+     * called.
      *
-     * The current input connection instance is cached and any following call to @{link createInputConnection} returns
-     * the cached connection until unlockPlatformViewInputConnection is called.
+     * The current input connection instance is cached and any following call to
+     * {@link createInputConnection} returns the cached connection until
+     * unlockPlatformViewInputConnection is called.
      *
      * This is a no-op if the current input target isn't a platform view.
      *
-     * This is used to preserve an input connection when moving a platform view from one virtual display to another.
+     * This is used to preserve an input connection when moving a platform view from one virtual
+     * display to another.
+     *
+     * This triggers {@link PlatformView#onInputConnectionLocked}.
      */
     public void lockPlatformViewInputConnection() {
-        if (inputTarget.type == InputTarget.Type.PLATFORM_VIEW) {
-            isInputConnectionLocked = true;
+        if (inputTarget.type != InputTarget.Type.PLATFORM_VIEW) {
+            return;
         }
+        isInputConnectionLocked = true;
+        platformViewsController.onInputConnectionLocked(inputTarget.id);
     }
 
     /**
-     * Unlocks the input connection.
+     * Unlocks the input connection. This triggers {@link PlatformView#onInputConnectionUnlocked}.
      *
-     * See also: @{link lockPlatformViewInputConnection}.
+     * See also: {@link lockPlatformViewInputConnection}.
      */
     public void unlockPlatformViewInputConnection() {
         isInputConnectionLocked = false;
+        platformViewsController.onInputConnectionUnlocked(inputTarget.id);
     }
 
     /**
