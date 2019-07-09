@@ -568,7 +568,7 @@ void Shell::OnPlatformViewDestroyed() {
   };
 
   // The normal flow executed by this method is that the platform thread is
-  // starting the sequence and w on the latch. Later the UI thread posts
+  // starting the sequence and waiting on the latch. Later the UI thread posts
   // gpu_task to the GPU thread triggers signaling the latch(on the IO thread).
   // If the GPU the and platform threads are the same this results in a deadlock
   // as the gpu_task will never be posted to the plaform/gpu thread that is
@@ -1253,7 +1253,8 @@ Rasterizer::Screenshot Shell::Screenshot(
 
 fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   FML_DCHECK(is_setup_);
-  if (task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread()) {
+  if (task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread() ||
+      task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread()) {
     return fml::Status(fml::StatusCode::kFailedPrecondition,
                        "WaitForFirstFrame called from thread that can't wait "
                        "because it is responsible for generating the frame.");
