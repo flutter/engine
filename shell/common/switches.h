@@ -48,7 +48,9 @@ DEF_SWITCH(IsolateSnapshotInstructions,
            "isolate-snapshot-instr",
            "The isolate instructions snapshot that will be memory mapped as "
            "read and executable. SnapshotAssetPath must be present.")
-DEF_SWITCH(CacheDirPath, "cache-dir-path", "Path to the cache directory. "
+DEF_SWITCH(CacheDirPath,
+           "cache-dir-path",
+           "Path to the cache directory. "
            "This is different from the persistent_cache_path in embedder.h, "
            "which is used for Skia shader cache.")
 DEF_SWITCH(ICUDataFilePath, "icu-data-file-path", "Path to the ICU data file.")
