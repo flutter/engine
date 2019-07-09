@@ -44,8 +44,6 @@ class Status final {
 
   fml::StatusCode code() const;
 
-  int raw_code() const;
-
   /// A noop that helps with static analysis tools if you decide to ignore an
   /// error.
   void IgnoreError() const;
@@ -56,21 +54,16 @@ class Status final {
   std::string_view message() const;
 
  private:
-  int code_;
+  fml::StatusCode code_;
   std::string_view message_;
 };
 
-inline Status::Status()
-    : code_(static_cast<int>(fml::StatusCode::kOk)), message_() {}
+inline Status::Status() : code_(fml::StatusCode::kOk), message_() {}
 
 inline Status::Status(fml::StatusCode code, std::string_view message)
-    : code_(static_cast<int>(code)), message_(message) {}
+    : code_(code), message_(message) {}
 
 inline fml::StatusCode Status::code() const {
-  return static_cast<fml::StatusCode>(code_);
-}
-
-inline int Status::raw_code() const {
   return code_;
 }
 
@@ -79,7 +72,7 @@ inline void Status::IgnoreError() const {
 }
 
 inline bool Status::ok() const {
-  return code_ == static_cast<int>(fml::StatusCode::kOk);
+  return code_ == fml::StatusCode::kOk;
 }
 
 inline std::string_view Status::message() const {
