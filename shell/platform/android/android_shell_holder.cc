@@ -179,9 +179,9 @@ void AndroidShellHolder::SetViewportMetrics(
   }
 
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [engine = shell_->GetEngine(), metrics]() {
-        if (engine) {
-          engine->SetViewportMetrics(metrics);
+      [platform_view = platform_view_, metrics]() {
+        if (platform_view) {
+          platform_view->SetViewportMetrics(metrics);
         }
       });
 }
