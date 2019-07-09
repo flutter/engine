@@ -187,6 +187,7 @@ FILE: ../../../flutter/fml/platform/win/native_library_win.cc
 FILE: ../../../flutter/fml/platform/win/paths_win.cc
 FILE: ../../../flutter/fml/platform/win/wstring_conversion.h
 FILE: ../../../flutter/fml/size.h
+FILE: ../../../flutter/fml/status.h
 FILE: ../../../flutter/fml/string_view.cc
 FILE: ../../../flutter/fml/string_view.h
 FILE: ../../../flutter/fml/string_view_unittest.cc
