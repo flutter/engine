@@ -247,10 +247,9 @@ class Shell final : public PlatformView::Delegate,
   //----------------------------------------------------------------------------
   /// @brief   Pauses the calling thread until the first frame is presented.
   ///
-  /// @details Don't call this from the GPU thread or the UI thread or you will
-  ///          create a deadlock.
-  ///
-  /// @return  'true' when there has been a timeout.
+  /// @return  'kOk' when the first frame has been presented before the timeout
+  ///          successfully, 'kFailedPrecondition' if called from the GPU or UI
+  ///          thread, 'kDeadlineExceeded' if there is a timeout.
   ///
   fml::Status WaitForFirstFrame(fml::TimeDelta timeout);
 
