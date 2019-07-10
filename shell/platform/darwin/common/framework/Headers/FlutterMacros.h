@@ -15,7 +15,8 @@
 
 #endif  // defined(FLUTTER_SDK)
 
-#if defined(FLUTTER_FRAMEWORK) && FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+#if defined(FLUTTER_FRAMEWORK) && \
+    FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
 #define FLUTTER_DEBUG_EXPORT __attribute__((visibility("default")))
 
