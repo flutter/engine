@@ -23,6 +23,8 @@ source_set("embedder") {
     "embedder_external_texture_gl.cc",
     "embedder_external_texture_gl.h",
     "embedder_include.c",
+    "embedder_platform_message_response.cc",
+    "embedder_platform_message_response.h",
     "embedder_safe_access.h",
     "embedder_surface.cc",
     "embedder_surface.h",
@@ -46,6 +48,7 @@ source_set("embedder") {
     "$flutter_root/common",
     "$flutter_root/flow",
     "$flutter_root/fml",
+    "$flutter_root/lib/ui",
     "$flutter_root/runtime:libdart",
     "$flutter_root/shell/common",
     "//third_party/dart/runtime/bin:dart_io_api",
@@ -64,10 +67,7 @@ if (current_toolchain == host_toolchain) {
   executable("embedder_unittests") {
     testonly = true
 
-    configs += [
-      "$flutter_root:export_dynamic_symbols",
-      "//third_party/swiftshader_flutter:swiftshader_config",
-    ]
+    configs += [ "$flutter_root:export_dynamic_symbols" ]
 
     include_dirs = [ "." ]
 
@@ -79,8 +79,6 @@ if (current_toolchain == host_toolchain) {
       "tests/embedder_context.h",
       "tests/embedder_test.cc",
       "tests/embedder_test.h",
-      "tests/embedder_test_gl_surface.cc",
-      "tests/embedder_test_gl_surface.h",
       "tests/embedder_unittests.cc",
     ]
 
@@ -90,8 +88,8 @@ if (current_toolchain == host_toolchain) {
       "$flutter_root/lib/ui",
       "$flutter_root/runtime",
       "$flutter_root/testing:dart",
+      "$flutter_root/testing:opengl",
       "//third_party/skia",
-      "//third_party/swiftshader_flutter:swiftshader",
       "//third_party/tonic",
     ]
   }

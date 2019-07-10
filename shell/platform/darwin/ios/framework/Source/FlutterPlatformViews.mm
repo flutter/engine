@@ -160,11 +160,32 @@ void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
   frame_size_ = frame_size;
 }
 
-void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(int view_id) {
+void FlutterPlatformViewsController::CancelFrame() {
+  composition_order_.clear();
+}
+
+bool FlutterPlatformViewsController::HasPendingViewOperations() {
+  if (!views_to_recomposite_.empty()) {
+    return true;
+  }
+  return active_composition_order_ != composition_order_;
+}
+
+void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
+    int view_id,
+    std::unique_ptr<EmbeddedViewParams> params) {
   picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
   picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_));
   picture_recorders_[view_id]->getRecordingCanvas()->clear(SK_ColorTRANSPARENT);
   composition_order_.push_back(view_id);
+
+  if (current_composition_params_.count(view_id) == 1 &&
+      current_composition_params_[view_id] == *params.get()) {
+    // Do nothing if the params didn't change.
+    return;
+  }
+  current_composition_params_[view_id] = EmbeddedViewParams(*params.get());
+  views_to_recomposite_.insert(view_id);
 }
 
 NSObject<FlutterPlatformView>* FlutterPlatformViewsController::GetPlatformViewByID(int view_id) {
@@ -184,10 +205,10 @@ std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
 }
 
 int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_stack) {
-  std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.bottom();
+  std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.Bottom();
   int clipCount = 0;
-  while (iter != mutators_stack.top()) {
-    if ((*iter)->isClipType()) {
+  while (iter != mutators_stack.Top()) {
+    if ((*iter)->IsClipType()) {
       clipCount++;
     }
     ++iter;
@@ -231,16 +252,15 @@ UIView* FlutterPlatformViewsController::ReconstructClipViewsChain(int number_of_
 void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
                                                    UIView* embedded_view) {
   FML_DCHECK(CATransform3DEqualToTransform(embedded_view.layer.transform, CATransform3DIdentity));
-
   UIView* head = embedded_view;
   head.clipsToBounds = YES;
   ResetAnchor(head.layer);
 
-  std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.bottom();
-  while (iter != mutators_stack.top()) {
-    switch ((*iter)->type()) {
+  std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.Bottom();
+  while (iter != mutators_stack.Top()) {
+    switch ((*iter)->GetType()) {
       case transform: {
-        CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->matrix());
+        CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->GetMatrix());
         head.layer.transform = CATransform3DConcat(head.layer.transform, transform);
         break;
       }
@@ -249,15 +269,18 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
       case clip_path: {
         ChildClippingView* clipView = (ChildClippingView*)head.superview;
         clipView.layer.transform = CATransform3DIdentity;
-        [clipView setClip:(*iter)->type()
-                     rect:(*iter)->rect()
-                    rrect:(*iter)->rrect()
-                     path:(*iter)->path()];
+        [clipView setClip:(*iter)->GetType()
+                     rect:(*iter)->GetRect()
+                    rrect:(*iter)->GetRRect()
+                     path:(*iter)->GetPath()];
         head.clipsToBounds = YES;
         ResetAnchor(clipView.layer);
         head = clipView;
         break;
       }
+      case opacity:
+        embedded_view.alpha = (*iter)->GetAlphaFloat() * embedded_view.alpha;
+        break;
     }
     ++iter;
   }
@@ -273,13 +296,13 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
       head.layer.transform, CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1));
 }
 
-void FlutterPlatformViewsController::CompositeWithParams(
-    int view_id,
-    const flutter::EmbeddedViewParams& params) {
+void FlutterPlatformViewsController::CompositeWithParams(int view_id,
+                                                         const EmbeddedViewParams& params) {
   CGRect frame = CGRectMake(0, 0, params.sizePoints.width(), params.sizePoints.height());
   UIView* touchInterceptor = touch_interceptors_[view_id].get();
   touchInterceptor.layer.transform = CATransform3DIdentity;
   touchInterceptor.frame = frame;
+  touchInterceptor.alpha = 1;
 
   int currentClippingCount = CountClips(params.mutatorsStack);
   int previousClippingCount = clip_count_[view_id];
@@ -295,20 +318,16 @@ void FlutterPlatformViewsController::CompositeWithParams(
   ApplyMutators(params.mutatorsStack, touchInterceptor);
 }
 
-SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
-    int view_id,
-    const flutter::EmbeddedViewParams& params) {
+SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
   // TODO(amirh): assert that this is running on the platform thread once we support the iOS
   // embedded views thread configuration.
 
-  // Do nothing if the params didn't change.
-  if (current_composition_params_.count(view_id) == 1 &&
-      current_composition_params_[view_id] == params) {
+  // Do nothing if the view doesn't need to be composited.
+  if (views_to_recomposite_.count(view_id) == 0) {
     return picture_recorders_[view_id]->getRecordingCanvas();
   }
-  current_composition_params_[view_id] = EmbeddedViewParams(params);
-  CompositeWithParams(view_id, params);
-
+  CompositeWithParams(view_id, current_composition_params_[view_id]);
+  views_to_recomposite_.erase(view_id);
   return picture_recorders_[view_id]->getRecordingCanvas();
 }
 
@@ -324,6 +343,7 @@ void FlutterPlatformViewsController::Reset() {
   picture_recorders_.clear();
   current_composition_params_.clear();
   clip_count_.clear();
+  views_to_recomposite_.clear();
 }
 
 bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
@@ -415,6 +435,7 @@ void FlutterPlatformViewsController::DisposeViews() {
     overlays_.erase(viewId);
     current_composition_params_.erase(viewId);
     clip_count_.erase(viewId);
+    views_to_recomposite_.erase(viewId);
   }
   views_to_dispose_.clear();
 }

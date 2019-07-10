@@ -85,7 +85,6 @@ FILE: ../../../flutter/flow/texture.cc
 FILE: ../../../flutter/flow/texture.h
 FILE: ../../../flutter/flow/view_holder.cc
 FILE: ../../../flutter/flow/view_holder.h
-FILE: ../../../flutter/flutter_kernel_transformers/lib/track_widget_constructor_locations.dart
 FILE: ../../../flutter/fml/base32.cc
 FILE: ../../../flutter/fml/base32.h
 FILE: ../../../flutter/fml/base32_unittest.cc
@@ -188,9 +187,6 @@ FILE: ../../../flutter/fml/platform/win/paths_win.cc
 FILE: ../../../flutter/fml/platform/win/wstring_conversion.h
 FILE: ../../../flutter/fml/size.h
 FILE: ../../../flutter/fml/status.h
-FILE: ../../../flutter/fml/string_view.cc
-FILE: ../../../flutter/fml/string_view.h
-FILE: ../../../flutter/fml/string_view_unittest.cc
 FILE: ../../../flutter/fml/synchronization/atomic_object.h
 FILE: ../../../flutter/fml/synchronization/count_down_latch.cc
 FILE: ../../../flutter/fml/synchronization/count_down_latch.h
@@ -318,6 +314,8 @@ FILE: ../../../flutter/lib/ui/dart_runtime_hooks.h
 FILE: ../../../flutter/lib/ui/dart_ui.cc
 FILE: ../../../flutter/lib/ui/dart_ui.h
 FILE: ../../../flutter/lib/ui/dart_wrapper.h
+FILE: ../../../flutter/lib/ui/fixtures/DashInNooglerHat.jpg
+FILE: ../../../flutter/lib/ui/fixtures/ui_test.dart
 FILE: ../../../flutter/lib/ui/geometry.dart
 FILE: ../../../flutter/lib/ui/hash_codes.dart
 FILE: ../../../flutter/lib/ui/hooks.dart
@@ -334,6 +332,8 @@ FILE: ../../../flutter/lib/ui/painting/canvas.cc
 FILE: ../../../flutter/lib/ui/painting/canvas.h
 FILE: ../../../flutter/lib/ui/painting/codec.cc
 FILE: ../../../flutter/lib/ui/painting/codec.h
+FILE: ../../../flutter/lib/ui/painting/color_filter.cc
+FILE: ../../../flutter/lib/ui/painting/color_filter.h
 FILE: ../../../flutter/lib/ui/painting/engine_layer.cc
 FILE: ../../../flutter/lib/ui/painting/engine_layer.h
 FILE: ../../../flutter/lib/ui/painting/frame_info.cc
@@ -342,6 +342,9 @@ FILE: ../../../flutter/lib/ui/painting/gradient.cc
 FILE: ../../../flutter/lib/ui/painting/gradient.h
 FILE: ../../../flutter/lib/ui/painting/image.cc
 FILE: ../../../flutter/lib/ui/painting/image.h
+FILE: ../../../flutter/lib/ui/painting/image_decoder.cc
+FILE: ../../../flutter/lib/ui/painting/image_decoder.h
+FILE: ../../../flutter/lib/ui/painting/image_decoder_unittests.cc
 FILE: ../../../flutter/lib/ui/painting/image_encoding.cc
 FILE: ../../../flutter/lib/ui/painting/image_encoding.h
 FILE: ../../../flutter/lib/ui/painting/image_filter.cc
@@ -350,6 +353,8 @@ FILE: ../../../flutter/lib/ui/painting/image_shader.cc
 FILE: ../../../flutter/lib/ui/painting/image_shader.h
 FILE: ../../../flutter/lib/ui/painting/matrix.cc
 FILE: ../../../flutter/lib/ui/painting/matrix.h
+FILE: ../../../flutter/lib/ui/painting/multi_frame_codec.cc
+FILE: ../../../flutter/lib/ui/painting/multi_frame_codec.h
 FILE: ../../../flutter/lib/ui/painting/paint.cc
 FILE: ../../../flutter/lib/ui/painting/paint.h
 FILE: ../../../flutter/lib/ui/painting/path.cc
@@ -364,6 +369,8 @@ FILE: ../../../flutter/lib/ui/painting/rrect.cc
 FILE: ../../../flutter/lib/ui/painting/rrect.h
 FILE: ../../../flutter/lib/ui/painting/shader.cc
 FILE: ../../../flutter/lib/ui/painting/shader.h
+FILE: ../../../flutter/lib/ui/painting/single_frame_codec.cc
+FILE: ../../../flutter/lib/ui/painting/single_frame_codec.h
 FILE: ../../../flutter/lib/ui/painting/vertices.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.h
 FILE: ../../../flutter/lib/ui/plugins.dart
@@ -455,6 +462,7 @@ FILE: ../../../flutter/shell/common/persistent_cache.cc
 FILE: ../../../flutter/shell/common/persistent_cache.h
 FILE: ../../../flutter/shell/common/pipeline.cc
 FILE: ../../../flutter/shell/common/pipeline.h
+FILE: ../../../flutter/shell/common/pipeline_unittests.cc
 FILE: ../../../flutter/shell/common/platform_view.cc
 FILE: ../../../flutter/shell/common/platform_view.h
 FILE: ../../../flutter/shell/common/rasterizer.cc
@@ -740,6 +748,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_software.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/FlutterMacOS.podspec
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEDartProject.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEEngine.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEOpenGLContextHandling.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEReshapeListener.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEView.h
@@ -748,6 +758,10 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterMacO
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginMacOS.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginRegistrarMacOS.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Info.plist
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEDartProject.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEDartProject_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEEngine.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEEngine_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputModel.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputModel.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputPlugin.h
@@ -765,6 +779,8 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_engine.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_include.c
+FILE: ../../../flutter/shell/platform/embedder/embedder_platform_message_response.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_platform_message_response.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_safe_access.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.h
