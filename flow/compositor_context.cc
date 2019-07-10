@@ -63,8 +63,8 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
 RasterStatus CompositorContext::ScopedFrame::Raster(
     flutter::LayerTree& layer_tree,
     bool ignore_raster_cache) {
-  std::shared_ptr<RasterOperations> raster_ops =
-      std::make_shared<RasterOperations>();
+  std::shared_ptr<PrerollRasterOperations> raster_ops =
+      std::make_shared<PrerollRasterOperations>();
   layer_tree.Preroll(*this, raster_ops, ignore_raster_cache);
 
   RasterCache* raster_cache =

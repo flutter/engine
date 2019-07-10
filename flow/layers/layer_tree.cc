@@ -25,7 +25,7 @@ void LayerTree::RecordBuildTime(fml::TimePoint start) {
 }
 
 void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
-                        std::shared_ptr<RasterOperations> raster_ops,
+                        std::shared_ptr<PrerollRasterOperations> raster_ops,
                         bool ignore_raster_cache) {
   TRACE_EVENT0("flutter", "LayerTree::Preroll");
   MutatorsStack stack;

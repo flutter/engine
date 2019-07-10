@@ -54,20 +54,23 @@ struct RasterContext {
   const bool checkerboard_offscreen_layers;
 };
 
-using RasterOperation = std::function<void(RasterContext* raster_context)>;
+using PrerollRasterOperation =
+    std::function<void(RasterContext* raster_context)>;
 
-class RasterOperations {
+class PrerollRasterOperations {
  public:
-  RasterOperations() = default;
-  void PushOperation(RasterOperation&& oper) { operations.push_back(oper); }
-  std::vector<RasterOperation> operations;
+  PrerollRasterOperations() = default;
+  void PushOperation(PrerollRasterOperation&& oper) {
+    operations.push_back(oper);
+  }
+  std::vector<PrerollRasterOperation> operations;
 };
 
 struct PrerollContext {
   ExternalViewEmbedder* view_embedder;
   MutatorsStack& mutators_stack;
   SkRect cull_rect;
-  std::shared_ptr<RasterOperations> raster_ops;
+  std::shared_ptr<PrerollRasterOperations> raster_ops;
 
   // The following allows us to paint in the end of subtree preroll
   float total_elevation = 0.0f;

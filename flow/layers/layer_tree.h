@@ -25,7 +25,7 @@ class LayerTree {
   ~LayerTree();
 
   void Preroll(CompositorContext::ScopedFrame& frame,
-               std::shared_ptr<RasterOperations> raster_ops,
+               std::shared_ptr<PrerollRasterOperations> raster_ops,
                bool ignore_raster_cache = false);
 
 #if defined(OS_FUCHSIA)
