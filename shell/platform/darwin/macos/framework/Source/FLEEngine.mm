@@ -120,6 +120,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
   // The embedding-API-level engine object.
   FlutterEngine _engine;
 
+  // The context provided to the Flutter engine for resource loading.
+  NSOpenGLContext* _resourceContext;
+
   // A mapping of channel names to the registered handlers for those channels.
   NSMutableDictionary<NSString*, FlutterBinaryMessageHandler>* _messageHandlers;
 }
@@ -151,7 +154,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
 }
 
 - (BOOL)run {
-  if (_engine != NULL) {
+  if (self.running) {
     return NO;
   }
 
@@ -192,6 +195,23 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
 }
 
 #pragma mark - Framework-internal methods
+
+- (BOOL)running {
+  return _engine != nullptr;
+}
+
+- (NSOpenGLContext*)resourceContext {
+  if (!_resourceContext) {
+    NSOpenGLPixelFormatAttribute attributes[] = {
+      NSOpenGLPFAColorSize, 24, NSOpenGLPFAAlphaSize, 8,
+      NSOpenGLPFADoubleBuffer, 0,
+  };
+  NSOpenGLPixelFormat* pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
+    _resourceContext = [[NSOpenGLContext alloc] initWithFormat:pixelFormat
+                                                  shareContext:nil];
+  }
+  return _resourceContext;
+}
 
 - (void)updateWindowMetricsWithSize:(CGSize)size pixelRatio:(double)pixelRatio {
   const FlutterWindowMetricsEvent event = {
@@ -237,7 +257,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
   if (!_viewController.flutterView) {
     return false;
   }
-  [_viewController makeResourceContextCurrent];
+  [self.resourceContext makeCurrentContext];
   return true;
 }
 

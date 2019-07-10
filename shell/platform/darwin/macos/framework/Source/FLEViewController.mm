@@ -96,11 +96,6 @@ struct MouseState {
 - (void)addInternalPlugins;
 
 /**
- * Creates the OpenGL context used as the resource context by the engine.
- */
-- (void)createResourceContext;
-
-/**
  * Calls dispatchMouseEvent:phase: with a phase determined by self.mouseState.
  *
  * mouseState.buttons should be updated before calling this method.
@@ -149,9 +144,6 @@ struct MouseState {
 #pragma mark - FLEViewController implementation.
 
 @implementation FLEViewController {
-  // The additional context provided to the Flutter engine for resource loading.
-  NSOpenGLContext* _resourceContext;
-
   // The plugin used to handle text input. This is not an FlutterPlugin, so must be owned
   // separately.
   FLETextInputPlugin* _textInputPlugin;
@@ -195,7 +187,13 @@ static void CommonInit(FLEViewController* controller) {
 }
 
 - (void)loadView {
-  FlutterView* flutterView = [[FlutterView alloc] initWithReshapeListener:self];
+  NSOpenGLContext* resourceContext = _engine.resourceContext;
+  if (!resourceContext) {
+    NSLog(@"Unable to create FlutterView; no resource context available.");
+    return;
+  }
+  FlutterView* flutterView = [[FlutterView alloc] initWithShareContext:resourceContext
+                                                       reshapeListener:self];
   self.view = flutterView;
 }
 
@@ -214,11 +212,6 @@ static void CommonInit(FLEViewController* controller) {
 }
 
 - (BOOL)launchEngineWithProject:(nullable FLEDartProject*)project {
-  // Set up the resource context. This is done here rather than in viewDidLoad as there's no
-  // guarantee that viewDidLoad will be called before the engine is started, and the context must
-  // be valid by that point.
-  [self createResourceContext];
-
   // Register internal plugins before starting the engine.
   [self addInternalPlugins];
 
@@ -226,6 +219,8 @@ static void CommonInit(FLEViewController* controller) {
   if (![_engine run]) {
     return NO;
   }
+  // Send an initial window metrics event.
+  [self viewDidReshape:self.view];
   // Send the initial user settings such as brightness and text scale factor
   // to the engine.
   [self sendInitialSettings];
@@ -244,10 +239,6 @@ static void CommonInit(FLEViewController* controller) {
 
 - (void)removeKeyResponder:(NSResponder*)responder {
   [self.additionalKeyResponders removeObject:responder];
-}
-
-- (void)makeResourceContextCurrent {
-  [_resourceContext makeCurrentContext];
 }
 
 #pragma mark - Private methods
@@ -299,12 +290,6 @@ static void CommonInit(FLEViewController* controller) {
   [_platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [weakSelf handleMethodCall:call result:result];
   }];
-}
-
-- (void)createResourceContext {
-  NSOpenGLContext* viewContext = ((NSOpenGLView*)self.view).openGLContext;
-  _resourceContext = [[NSOpenGLContext alloc] initWithFormat:viewContext.pixelFormat
-                                                shareContext:viewContext];
 }
 
 - (void)dispatchMouseEvent:(nonnull NSEvent*)event {
@@ -455,6 +440,9 @@ static void CommonInit(FLEViewController* controller) {
  * Responds to view reshape by notifying the engine of the change in dimensions.
  */
 - (void)viewDidReshape:(NSView*)view {
+  if (!_engine.running) {
+    return;
+  }
   CGSize scaledSize = [view convertRectToBacking:view.bounds].size;
   double pixelRatio = view.bounds.size.width == 0 ? 1 : scaledSize.width / view.bounds.size.width;
   [_engine updateWindowMetricsWithSize:scaledSize pixelRatio:pixelRatio];

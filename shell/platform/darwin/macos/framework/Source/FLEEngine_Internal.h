@@ -4,9 +4,22 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FLEEngine.h"
 
+#import <Cocoa/Cocoa.h>
+
 #import "flutter/shell/platform/embedder/embedder.h"
 
 @interface FLEEngine ()
+
+/**
+ * True if the engine is currently running.
+ */
+@property(nonatomic, readonly) BOOL running;
+
+/**
+ * The resource context used by the engine for texture uploads. FlutterViews associated with this
+ * engine should be created to share with this context.
+ */
+@property(nonatomic, readonly, nullable) NSOpenGLContext* resourceContext;
 
 /**
  * Informs the engine that the display region's size has changed.
