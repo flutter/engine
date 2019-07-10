@@ -49,6 +49,7 @@ class DartIsolate : public UIDartState {
       std::unique_ptr<Window> window,
       fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
       fml::WeakPtr<IOManager> io_manager,
+      fml::WeakPtr<ImageDecoder> image_decoder,
       std::string advisory_script_uri,
       std::string advisory_script_entrypoint,
       Dart_IsolateFlags* flags,
@@ -61,6 +62,7 @@ class DartIsolate : public UIDartState {
               TaskRunners task_runners,
               fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
               fml::WeakPtr<IOManager> io_manager,
+              fml::WeakPtr<ImageDecoder> image_decoder,
               std::string advisory_script_uri,
               std::string advisory_script_entrypoint,
               ChildIsolatePreparer child_isolate_preparer,
@@ -191,7 +193,7 @@ class DartIsolate : public UIDartState {
 
   // |Dart_IsolateGroupCleanupCallback|
   static void DartIsolateGroupCleanupCallback(
-      std::shared_ptr<DartIsolate>* embedder_isolate);
+      std::shared_ptr<DartIsolate>* isolate_group_data);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DartIsolate);
 };

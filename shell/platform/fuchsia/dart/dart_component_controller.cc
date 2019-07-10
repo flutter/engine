@@ -327,7 +327,8 @@ bool DartComponentController::CreateIsolate(
   isolate_ = Dart_CreateIsolateGroup(
       url_.c_str(), label_.c_str(), isolate_snapshot_data,
       isolate_snapshot_instructions, shared_snapshot_data,
-      shared_snapshot_instructions, nullptr /* flags */, state, &error);
+      shared_snapshot_instructions, nullptr /* flags */,
+      state /* isolate_group_data */, state /* isolate_data */, &error);
   if (!isolate_) {
     FX_LOGF(ERROR, LOG_TAG, "Dart_CreateIsolateGroup failed: %s", error);
     return false;

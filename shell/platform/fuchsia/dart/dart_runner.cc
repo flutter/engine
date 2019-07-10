@@ -81,7 +81,7 @@ Dart_Isolate IsolateGroupCreateCallback(const char* uri,
   return NULL;
 }
 
-void IsolateShutdownCallback(void* callback_data) {
+void IsolateShutdownCallback(void* isolate_group_data, void* isolate_data) {
   // The service isolate (and maybe later the kernel isolate) doesn't have an
   // async loop.
   auto dispatcher = async_get_default_dispatcher();
@@ -92,8 +92,8 @@ void IsolateShutdownCallback(void* callback_data) {
   }
 }
 
-void IsolateGroupCleanupCallback(void* callback_data) {
-  delete static_cast<std::shared_ptr<tonic::DartState>*>(callback_data);
+void IsolateGroupCleanupCallback(void* isolate_group_data) {
+  delete static_cast<std::shared_ptr<tonic::DartState>*>(isolate_group_data);
 }
 
 void RunApplication(
