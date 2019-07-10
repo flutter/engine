@@ -142,7 +142,7 @@ template("shell_host_executable") {
 shell_gpu_configuration("shell_unittests_gpu_configuration") {
   enable_software = true
   enable_vulkan = false
-  enable_gl = false
+  enable_gl = true
   enable_metal = false
 }
 
@@ -165,6 +165,7 @@ shell_host_executable("shell_unittests") {
     "$flutter_root/flow",
     "$flutter_root/shell",
     "$flutter_root/testing:dart",
+    "$flutter_root/testing:opengl",
   ]
 }
 
