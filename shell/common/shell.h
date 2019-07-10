@@ -164,6 +164,17 @@ class Shell final : public PlatformView::Delegate,
   ///
   ~Shell();
 
+  //----------------------------------------------------------------------------
+  /// @brief      Starts an isolate for the given RunConfiguration.
+  ///
+  /// @return     The status of the run operation. Re-entrant calls will return
+  ///             Engine::RunStatus::FailureAlreadyRunning. Otherwise, calls
+  ///             return Engine::RunStatus::Success on success or
+  ///             Engine::RunStatus::Failure on failure.
+  ///
+  FML_WARN_UNUSED_RESULT
+  Engine::RunStatus RunEngine(RunConfiguration run_configuration);
+
   //------------------------------------------------------------------------------
   /// @return     The settings used to launch this shell.
   ///
@@ -189,13 +200,6 @@ class Shell final : public PlatformView::Delegate,
   /// @return     A weak pointer to the rasterizer.
   ///
   fml::WeakPtr<Rasterizer> GetRasterizer();
-
-  //------------------------------------------------------------------------------
-  /// @brief      Engines may only be accessed on the UI thread.
-  ///
-  /// @return     A weak pointer to the engine.
-  ///
-  fml::WeakPtr<Engine> GetEngine();
 
   //----------------------------------------------------------------------------
   /// @brief      Platform views may only be accessed on the platform task

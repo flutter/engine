@@ -100,8 +100,6 @@ class Engine final : public RuntimeDelegate {
 
   bool UIIsolateHasLivePorts();
 
-  tonic::DartErrorHandleType GetUIIsolateLastError();
-
   std::pair<bool, uint32_t> GetUIIsolateReturnCode();
 
   void OnOutputSurfaceCreated();

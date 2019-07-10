@@ -156,54 +156,20 @@ void AndroidShellHolder::Launch(RunConfiguration config) {
   if (!IsValid()) {
     return;
   }
-
+  const auto* shell = shell_;
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = shell_->GetEngine(),  //
-                         config = std::move(config)     //
+      fml::MakeCopyable([&shell,                     //
+                         config = std::move(config)  //
   ]() mutable {
         FML_LOG(INFO) << "Attempting to launch engine configuration...";
-        if (!engine ||
-            engine->Run(std::move(config)) == Engine::RunStatus::Failure) {
+        if (!shell ||
+            shell->RunEngine(std::move(config)) == Engine::RunStatus::Failure) {
           FML_LOG(ERROR) << "Could not launch engine in configuration.";
         } else {
           FML_LOG(INFO) << "Isolate for engine configuration successfully "
                            "started and run.";
         }
       }));
-}
-
-void AndroidShellHolder::SetViewportMetrics(
-    const flutter::ViewportMetrics& metrics) {
-  if (!IsValid()) {
-    return;
-  }
-
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [platform_view = platform_view_, metrics]() {
-        if (platform_view) {
-          platform_view->SetViewportMetrics(metrics);
-        }
-      });
-}
-
-void AndroidShellHolder::DispatchPointerDataPacket(
-    std::unique_ptr<flutter::PointerDataPacket> packet) {
-  if (!IsValid()) {
-    return;
-  }
-
-  TRACE_EVENT0("flutter", "AndroidShellHolder::DispatchPointerDataPacket");
-  TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
-
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = shell_->GetEngine(), packet = std::move(packet),
-       flow_id = next_pointer_flow_id_] {
-        if (engine) {
-          engine->DispatchPointerDataPacket(*packet, flow_id);
-        }
-      }));
-
-  next_pointer_flow_id_++;
 }
 
 Rasterizer::Screenshot AndroidShellHolder::Screenshot(

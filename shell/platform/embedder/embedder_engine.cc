@@ -63,13 +63,13 @@ bool EmbedderEngine::Run(RunConfiguration run_configuration) {
   if (!IsValid() || !run_configuration.IsValid()) {
     return false;
   }
-
+  const auto& shell = shell_;
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = shell_->GetEngine(),          // engine
+      fml::MakeCopyable([&shell,                                 // shell
                          config = std::move(run_configuration)  // config
   ]() mutable {
-        if (engine) {
-          auto result = engine->Run(std::move(config));
+        if (shell) {
+          auto result = shell->RunEngine(std::move(config));
           if (result == Engine::RunStatus::Failure) {
             FML_LOG(ERROR) << "Could not launch the engine with configuration.";
           }
@@ -84,12 +84,11 @@ bool EmbedderEngine::SetViewportMetrics(flutter::ViewportMetrics metrics) {
     return false;
   }
 
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [engine = shell_->GetEngine(), metrics = std::move(metrics)]() {
-        if (engine) {
-          engine->SetViewportMetrics(std::move(metrics));
-        }
-      });
+  auto platform_view = shell_->GetPlatformView();
+  if (!platform_view) {
+    return false;
+  }
+  platform_view->SetViewportMetrics(std::move(metrics));
   return true;
 }
 
@@ -99,18 +98,12 @@ bool EmbedderEngine::DispatchPointerDataPacket(
     return false;
   }
 
-  TRACE_EVENT0("flutter", "EmbedderEngine::DispatchPointerDataPacket");
-  TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
+  auto platform_view = shell_->GetPlatformView();
+  if (!platform_view) {
+    return false;
+  }
 
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = shell_->GetEngine(), packet = std::move(packet),
-       flow_id = next_pointer_flow_id_] {
-        if (engine) {
-          engine->DispatchPointerDataPacket(*packet, flow_id);
-        }
-      }));
-  next_pointer_flow_id_++;
-
+  platform_view->DispatchPointerDataPacket(std::move(packet));
   return true;
 }
 
@@ -120,13 +113,12 @@ bool EmbedderEngine::SendPlatformMessage(
     return false;
   }
 
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [engine = shell_->GetEngine(), message] {
-        if (engine) {
-          engine->DispatchPlatformMessage(message);
-        }
-      });
+  auto platform_view = shell_->GetPlatformView();
+  if (!platform_view) {
+    return false;
+  }
 
+  platform_view->DispatchPlatformMessage(message);
   return true;
 }
 
@@ -160,12 +152,12 @@ bool EmbedderEngine::SetSemanticsEnabled(bool enabled) {
   if (!IsValid()) {
     return false;
   }
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [engine = shell_->GetEngine(), enabled] {
-        if (engine) {
-          engine->SetSemanticsEnabled(enabled);
-        }
-      });
+
+  auto platform_view = shell_->GetPlatformView();
+  if (!platform_view) {
+    return false;
+  }
+  platform_view->SetSemanticsEnabled(enabled);
   return true;
 }
 
@@ -173,12 +165,11 @@ bool EmbedderEngine::SetAccessibilityFeatures(int32_t flags) {
   if (!IsValid()) {
     return false;
   }
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [engine = shell_->GetEngine(), flags] {
-        if (engine) {
-          engine->SetAccessibilityFeatures(flags);
-        }
-      });
+  auto platform_view = shell_->GetPlatformView();
+  if (!platform_view) {
+    return false;
+  }
+  platform_view->SetAccessibilityFeatures(flags);
   return true;
 }
 
@@ -188,16 +179,11 @@ bool EmbedderEngine::DispatchSemanticsAction(int id,
   if (!IsValid()) {
     return false;
   }
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = shell_->GetEngine(),  // engine
-                         id,                            // id
-                         action,                        // action
-                         args = std::move(args)         // args
-  ]() mutable {
-        if (engine) {
-          engine->DispatchSemanticsAction(id, action, std::move(args));
-        }
-      }));
+  auto platform_view = shell_->GetPlatformView();
+  if (!platform_view) {
+    return false;
+  }
+  platform_view->DispatchSemanticsAction(id, action, std::move(args));
   return true;
 }
 

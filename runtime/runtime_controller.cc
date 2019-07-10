@@ -348,20 +348,6 @@ std::string RuntimeController::GetIsolateName() {
   return root_isolate ? root_isolate->debug_name() : "";
 }
 
-bool RuntimeController::HasLivePorts() {
-  std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
-  if (!root_isolate) {
-    return false;
-  }
-  tonic::DartState::Scope scope(root_isolate);
-  return Dart_HasLivePorts();
-}
-
-tonic::DartErrorHandleType RuntimeController::GetLastError() {
-  std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
-  return root_isolate ? root_isolate->GetLastError() : tonic::kNoError;
-}
-
 std::weak_ptr<DartIsolate> RuntimeController::GetRootIsolate() {
   return root_isolate_;
 }

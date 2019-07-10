@@ -30,8 +30,7 @@ class ScriptCompletionTaskObserver {
   ScriptCompletionTaskObserver(Shell& shell,
                                fml::RefPtr<fml::TaskRunner> main_task_runner,
                                bool run_forever)
-      : engine_(shell.GetEngine()),
-        main_task_runner_(std::move(main_task_runner)),
+      : main_task_runner_(std::move(main_task_runner)),
         run_forever_(run_forever) {}
 
   int GetExitCodeForLastError() const {
@@ -52,9 +51,11 @@ class ScriptCompletionTaskObserver {
   }
 
   void DidProcessTask() {
-    if (engine_) {
-      last_error_ = engine_->GetUIIsolateLastError();
-      if (engine_->UIIsolateHasLivePorts()) {
+    auto dart_state = UIDartState::Current();
+    if (!dart_state) {
+      last_error_ = dart_state->GetLastError();
+      tonic::DartState::Scope scope(dart_state);
+      if (Dart_HasLivePorts()) {
         // The UI isolate still has live ports and is running. Nothing to do
         // just yet.
         return;
@@ -76,7 +77,6 @@ class ScriptCompletionTaskObserver {
   }
 
  private:
-  fml::WeakPtr<Engine> engine_;
   fml::RefPtr<fml::TaskRunner> main_task_runner_;
   bool run_forever_ = false;
   tonic::DartErrorHandleType last_error_ = tonic::kUnknownErrorType;
@@ -178,14 +178,13 @@ int RunTester(const flutter::Settings& settings, bool run_forever) {
   fml::AutoResetWaitableEvent sync_run_latch;
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetUITaskRunner(),
-      fml::MakeCopyable([&sync_run_latch, &completion_observer,
-                         engine = shell->GetEngine(),
+      fml::MakeCopyable([&sync_run_latch, &completion_observer, &shell,
                          config = std::move(run_configuration),
                          &engine_did_run]() mutable {
         fml::MessageLoop::GetCurrent().AddTaskObserver(
             reinterpret_cast<intptr_t>(&completion_observer),
             [&completion_observer]() { completion_observer.DidProcessTask(); });
-        if (engine->Run(std::move(config)) !=
+        if (shell->RunEngine(std::move(config)) !=
             flutter::Engine::RunStatus::Failure) {
           engine_did_run = true;
 
@@ -193,7 +192,7 @@ int RunTester(const flutter::Settings& settings, bool run_forever) {
           metrics.device_pixel_ratio = 3.0;
           metrics.physical_width = 2400;   // 800 at 3x resolution
           metrics.physical_height = 1800;  // 600 at 3x resolution
-          engine->SetViewportMetrics(metrics);
+          shell->GetPlatformView()->SetViewportMetrics(metrics);
 
         } else {
           FML_DLOG(ERROR) << "Could not launch the engine with configuration.";

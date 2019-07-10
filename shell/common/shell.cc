@@ -380,6 +380,17 @@ void Shell::NotifyLowMemoryWarning() const {
   // to purge them.
 }
 
+Engine::RunStatus Shell::RunEngine(RunConfiguration run_configuration) {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+
+  if (!weak_engine_) {
+    return Engine::RunStatus::Failure;
+  }
+
+  return weak_engine_->Run(std::move(run_configuration));
+}
+
 bool Shell::IsSetup() const {
   return is_setup_;
 }
@@ -431,11 +442,6 @@ const TaskRunners& Shell::GetTaskRunners() const {
 fml::WeakPtr<Rasterizer> Shell::GetRasterizer() {
   FML_DCHECK(is_setup_);
   return weak_rasterizer_;
-}
-
-fml::WeakPtr<Engine> Shell::GetEngine() {
-  FML_DCHECK(is_setup_);
-  return weak_engine_;
 }
 
 fml::WeakPtr<PlatformView> Shell::GetPlatformView() {
@@ -915,7 +921,7 @@ void Shell::ReportTimings() {
 
   auto timings = std::move(unreported_timings_);
   unreported_timings_ = {};
-  task_runners_.GetUITaskRunner()->PostTask([timings, engine = GetEngine()] {
+  task_runners_.GetUITaskRunner()->PostTask([timings, engine = weak_engine_] {
     if (engine) {
       engine->ReportTimings(std::move(timings));
     }
