@@ -47,7 +47,7 @@ public class FlutterJUnitRunner extends Runner {
   public void run(RunNotifier notifier) {
     Description d = Description.createTestDescription(MainActivity.class, "example");
     notifier.fireTestStarted(d);
-   try {
+    try {
       Integer result = testResult.get();
       if (!result.equals(42)) {
         notifier.fireTestFailure(new Failure(d, new Exception("failure of test")));
