@@ -32,11 +32,18 @@ void TaskRunner::PostDelayedTask(fml::closure task, fml::TimeDelta delay) {
   loop_->PostTask(std::move(task), fml::TimePoint::Now() + delay);
 }
 
+TaskQueueId TaskRunner::GetTaskQueueId() {
+  FML_DCHECK(loop_);
+  return loop_->GetTaskQueueId();
+}
+
 bool TaskRunner::RunsTasksOnCurrentThread() {
   if (!fml::MessageLoop::IsInitializedForCurrentThread()) {
     return false;
   }
-  return MessageLoop::GetCurrent().GetLoopImpl() == loop_;
+  const auto current_loop_id =
+      MessageLoop::GetCurrent().GetLoopImpl()->GetTaskQueueId();
+  return current_loop_id == loop_->GetTaskQueueId();
 }
 
 void TaskRunner::RunNowOrPostTask(fml::RefPtr<fml::TaskRunner> runner,
