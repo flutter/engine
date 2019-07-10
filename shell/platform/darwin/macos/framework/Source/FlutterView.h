@@ -21,13 +21,13 @@
 @interface FlutterView : NSOpenGLView
 
 - (nullable instancetype)initWithFrame:(NSRect)frame
-shareContext:(nonnull NSOpenGLContext*)shareContext
+                          shareContext:(nonnull NSOpenGLContext*)shareContext
                        reshapeListener:(nonnull id<FlutterViewReshapeListener>)reshapeListener
     NS_DESIGNATED_INITIALIZER;
 
 - (nullable instancetype)initWithShareContext:(nonnull NSOpenGLContext*)shareContext
-reshapeListener:
-    (nonnull id<FlutterViewReshapeListener>)reshapeListener;
+                              reshapeListener:
+                                  (nonnull id<FlutterViewReshapeListener>)reshapeListener;
 
 - (nullable instancetype)initWithFrame:(NSRect)frameRect
                            pixelFormat:(nullable NSOpenGLPixelFormat*)format NS_UNAVAILABLE;

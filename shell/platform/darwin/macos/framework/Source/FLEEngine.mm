@@ -44,7 +44,7 @@
 /**
  * Shuts the Flutter engine if it is running.
  */
- - (void)shutDownEngine;
+- (void)shutDownEngine;
 
 @end
 
@@ -138,13 +138,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
   BOOL _allowHeadlessExecution;
 }
 
-- (instancetype)initWithName:(NSString*)labelPrefix
-                             project:(FLEDartProject*)project {
+- (instancetype)initWithName:(NSString*)labelPrefix project:(FLEDartProject*)project {
   return [self initWithName:labelPrefix project:project allowHeadlessExecution:YES];
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix
-                             project:(FLEDartProject*)project
+                     project:(FLEDartProject*)project
       allowHeadlessExecution:(BOOL)allowHeadlessExecution {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
@@ -224,12 +223,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
 - (NSOpenGLContext*)resourceContext {
   if (!_resourceContext) {
     NSOpenGLPixelFormatAttribute attributes[] = {
-      NSOpenGLPFAColorSize, 24, NSOpenGLPFAAlphaSize, 8,
-      NSOpenGLPFADoubleBuffer, 0,
-  };
-  NSOpenGLPixelFormat* pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
-    _resourceContext = [[NSOpenGLContext alloc] initWithFormat:pixelFormat
-                                                  shareContext:nil];
+        NSOpenGLPFAColorSize, 24, NSOpenGLPFAAlphaSize, 8, NSOpenGLPFADoubleBuffer, 0,
+    };
+    NSOpenGLPixelFormat* pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
+    _resourceContext = [[NSOpenGLContext alloc] initWithFormat:pixelFormat shareContext:nil];
   }
   return _resourceContext;
 }
@@ -241,7 +238,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
   NSView* view = _viewController.view;
   CGSize scaledSize = [view convertRectToBacking:view.bounds].size;
   double pixelRatio = view.bounds.size.width == 0 ? 1 : scaledSize.width / view.bounds.size.width;
-  
+
   const FlutterWindowMetricsEvent event = {
       .struct_size = sizeof(event),
       .width = static_cast<size_t>(scaledSize.width),

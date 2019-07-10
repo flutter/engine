@@ -174,8 +174,8 @@ struct MouseState {
  */
 static void CommonInit(FLEViewController* controller) {
   controller->_engine = [[FLEEngine alloc] initWithName:@"io.flutter"
-   project:controller->_project
-   allowHeadlessExecution:NO];
+                                                project:controller->_project
+                                 allowHeadlessExecution:NO];
   controller->_additionalKeyResponders = [[NSMutableOrderedSet alloc] init];
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
 }

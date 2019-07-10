@@ -42,7 +42,7 @@ FLUTTER_EXPORT
  */
 - (nonnull instancetype)initWithName:(nonnull NSString*)labelPrefix
                              project:(nullable FLEDartProject*)project
-      allowHeadlessExecution:(BOOL)allowHeadlessExecution NS_DESIGNATED_INITIALIZER;
+              allowHeadlessExecution:(BOOL)allowHeadlessExecution NS_DESIGNATED_INITIALIZER;
 
 - (nonnull instancetype)init NS_UNAVAILABLE;
 

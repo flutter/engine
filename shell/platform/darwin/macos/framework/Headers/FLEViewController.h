@@ -42,13 +42,15 @@ FLUTTER_EXPORT
 
 /**
  * Initializes a controller that will run the given project.
- * 
+ *
  * @param project The project to run in this view controller. If nil, a default `FLEDartProject`
  *                will be used.
  */
 - (nonnull instancetype)initWithProject:(nullable FLEDartProject*)project NS_DESIGNATED_INITIALIZER;
 
-- (nonnull instancetype)initWithNibName:(nullable NSString*)nibNameOrNil bundle:(nullable NSBundle*)nibBundleOrNil NS_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithNibName:(nullable NSString*)nibNameOrNil
+                                 bundle:(nullable NSBundle*)nibBundleOrNil
+    NS_DESIGNATED_INITIALIZER;
 - (nonnull instancetype)initWithCoder:(nonnull NSCoder*)nibNameOrNil NS_DESIGNATED_INITIALIZER;
 
 @end

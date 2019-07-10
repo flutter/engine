@@ -9,17 +9,17 @@
 }
 
 - (instancetype)initWithShareContext:(NSOpenGLContext*)shareContext
-reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
+                     reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
   return [self initWithFrame:NSZeroRect shareContext:shareContext reshapeListener:reshapeListener];
 }
 
 - (instancetype)initWithFrame:(NSRect)frame
-shareContext:(NSOpenGLContext*)shareContext
+                 shareContext:(NSOpenGLContext*)shareContext
               reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
   self = [super initWithFrame:frame];
   if (self) {
     self.openGLContext = [[NSOpenGLContext alloc] initWithFormat:shareContext.pixelFormat
-                                                  shareContext:shareContext];
+                                                    shareContext:shareContext];
     _reshapeListener = reshapeListener;
     self.wantsBestResolutionOpenGLSurface = YES;
   }
