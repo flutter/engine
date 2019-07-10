@@ -47,7 +47,7 @@ public class FlutterJUnitRunner extends Runner {
 
   @Override
   public void run(RunNotifier notifier) {
-    Description description = Description.createTestDescription(MainActivity.class, "example");
+    Description description = Description.createTestDescription(MainActivity.class, "smoke test");
     notifier.fireTestStarted(description);
     try {
       Integer result = testResult.get();
