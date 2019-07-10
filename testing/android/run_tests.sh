@@ -3,7 +3,14 @@
 pushd android_host_app
 
 # Required to create gradlew script
-# $FRAMEWORK_PATH/bin/flutter build apk
+if [ "$FRAMEWORK_PATH" = "" ]
+then
+  FLUTTER_BIN=flutter
+else
+  FLUTTER_BIN=$FRAMEWORK_PATH/bin/flutter
+fi
+# Creates android/gradlew
+$FLUTTER_BIN build apk --debug
 
 pushd android
 
