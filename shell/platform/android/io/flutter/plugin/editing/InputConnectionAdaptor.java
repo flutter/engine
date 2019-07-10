@@ -175,12 +175,12 @@ class InputConnectionAdaptor extends BaseInputConnection {
                             Selection.extendLeft(mEditable, mLayout);
                         }
                     } catch (IndexOutOfBoundsException e) {
-                        // Unable to move Left or Right, so we will fall back to the simple
-                        // way of decrementing the buffer index. This will generally only
-                        // occur on Chinese keyboards, primarily on Huawei devices, when
-                        // attempting to delete with "obscureText" set to true. In this case,
-                        // the simple method should work well enough because the obscured text
-                        // dots will usually not be long emoji clusters.
+                        // On Huaewi devices on initial app startup before focus is lost,
+                        // The Selection.extendLeft and extendRight calls always extend
+                        // from the index of the initial contents of mEditable. This
+                        // try-catch will prevent crashing on Huawei devices by falling
+                        // back to a simple way of deletion, although this a hack and will
+                        // not handle emojis.
                         Selection.setSelection(mEditable, selStart, selStart - 1);
                     }
                     int newStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
