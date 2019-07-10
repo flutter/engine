@@ -231,7 +231,7 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
   NSArray* backgroundModesArray =
       [[NSBundle mainBundle] objectForInfoDictionaryKey:kUIBackgroundMode];
   NSSet* backgroundModesSet = [[[NSSet alloc] initWithArray:backgroundModesArray] autorelease];
-  if (selector == @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:)) {
+  if (selector == NSSelectorWithString(@"application:didReceiveRemoteNotification:fetchCompletionHandler:"))) {
     if (![backgroundModesSet containsObject:kRemoteNotificationCapabitiliy]) {
       NSLog(
           @"You've implemented -[<UIApplicationDelegate> "
@@ -239,7 +239,7 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
           @"to add \"remote-notification\" to the list of your supported UIBackgroundModes in your "
           @"Info.plist.");
     }
-  } else if (selector == @selector(application:performFetchWithCompletionHandler:)) {
+  } else if (selector == NSSelectorWithString(@"application:performFetchWithCompletionHandler:")) {
     if (![backgroundModesSet containsObject:kBackgroundFetchCapatibility]) {
       NSLog(@"You've implemented -[<UIApplicationDelegate> "
             @"application:performFetchWithCompletionHandler:], but you still need to add \"fetch\" "

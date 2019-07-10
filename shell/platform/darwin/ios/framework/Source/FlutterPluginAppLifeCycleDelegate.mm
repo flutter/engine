@@ -11,9 +11,10 @@
 
 static const char* kCallbackCacheSubDir = "Library/Caches/";
 
-static const SEL selectorsHandledByPlugins[] = {
-    @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:),
-    @selector(application:performFetchWithCompletionHandler:)};
+static const NSString *selectorsHandledByPlugins[] = {
+    NSSelectorWithString(@"application:didReceiveRemoteNotification:fetchCompletionHandler:"),
+    NSSelectorWithString(@"application:performFetchWithCompletionHandler:")
+};
 
 @implementation FlutterPluginAppLifeCycleDelegate {
   UIBackgroundTaskIdentifier _debugBackgroundTask;

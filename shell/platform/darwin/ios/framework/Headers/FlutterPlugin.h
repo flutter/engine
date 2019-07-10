@@ -136,10 +136,11 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
  * Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
  *
  * @return `YES` if this plugin handles the request.
- */
-- (BOOL)application:(UIApplication*)application
-    didReceiveRemoteNotification:(NSDictionary*)userInfo
-          fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler;
+ *
+// Not included here to avoid review warning email about missing entitlement.
+//- (BOOL)application:(UIApplication*)application
+//    didReceiveRemoteNotification:(NSDictionary*)userInfo
+//          fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler;
 
 /**
  * Calls all plugins registered for `UIApplicationDelegate` callbacks.
@@ -209,8 +210,9 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
  *
  * @return `YES` if this plugin handles the request.
  */
-- (BOOL)application:(UIApplication*)application
-    performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler;
+// Not included here to avoid review warning email about missing entitlement.
+//- (BOOL)application:(UIApplication*)application
+//    performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler;
 
 /**
  * Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
