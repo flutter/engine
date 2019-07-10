@@ -175,7 +175,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
                             Selection.extendLeft(mEditable, mLayout);
                         }
                     } catch (IndexOutOfBoundsException e) {
-                        // On Huaewi devices on initial app startup before focus is lost,
+                        // On Huawei devices on initial app startup before focus is lost,
                         // The Selection.extendLeft and extendRight calls always extend
                         // from the index of the initial contents of mEditable. This
                         // try-catch will prevent crashing on Huawei devices by falling
