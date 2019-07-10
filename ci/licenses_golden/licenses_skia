@@ -1,4 +1,4 @@
-Signature: 26df36ec78956d7d0c67926ab14be23c
+Signature: de43dcf5b1ccdefb5a996471060be523
 
 UNUSED LICENSES:
 
@@ -1911,6 +1911,7 @@ FILE: ../../../third_party/skia/infra/bots/assets/win_toolchain_2015/VERSION
 FILE: ../../../third_party/skia/infra/bots/calmbench.isolate
 FILE: ../../../third_party/skia/infra/bots/cfg.json
 FILE: ../../../third_party/skia/infra/bots/empty.isolate
+FILE: ../../../third_party/skia/infra/bots/infra_tests.isolate
 FILE: ../../../third_party/skia/infra/bots/infrabots.isolate
 FILE: ../../../third_party/skia/infra/bots/ios_bin.isolate
 FILE: ../../../third_party/skia/infra/bots/isolate_android_sdk_linux.isolate
@@ -2256,10 +2257,9 @@ FILE: ../../../third_party/skia/modules/skparagraph/include/TextShadow.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TextStyle.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TypefaceFontProvider.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/FontCollection.cpp
-FILE: ../../../third_party/skia/modules/skparagraph/src/FontIterator.cpp
-FILE: ../../../third_party/skia/modules/skparagraph/src/FontIterator.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/FontResolver.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/FontResolver.h
+FILE: ../../../third_party/skia/modules/skparagraph/src/Iterators.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphBuilderImpl.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphBuilderImpl.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphCache.h
@@ -2503,7 +2503,6 @@ FILE: ../../../third_party/skia/samplecode/SampleHairline.cpp
 FILE: ../../../third_party/skia/samplecode/SampleLCD.cpp
 FILE: ../../../third_party/skia/samplecode/SampleLayerMask.cpp
 FILE: ../../../third_party/skia/samplecode/SampleLayers.cpp
-FILE: ../../../third_party/skia/samplecode/SampleLines.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePatch.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePath.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePathClip.cpp
@@ -5374,6 +5373,7 @@ FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleGLInterfaceAutogen.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleHelpers.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleWebGLInterfaceAutogen.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLTypesPriv.cpp
+FILE: ../../../third_party/skia/src/gpu/mock/GrMockTypes.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrTransferFromOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrTransferFromOp.h
 FILE: ../../../third_party/skia/src/sksl/SkSLASTFile.h
@@ -5456,6 +5456,8 @@ FILE: ../../../third_party/skia/modules/skottie/src/effects/GaussianBlurEffect.c
 FILE: ../../../third_party/skia/modules/skottie/src/effects/GradientEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/LevelsEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/LinearWipeEffect.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/effects/MotionBlurEffect.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/effects/MotionBlurEffect.h
 FILE: ../../../third_party/skia/modules/skottie/src/effects/MotionTileEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/RadialWipeEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/TintEffect.cpp
