@@ -40,6 +40,20 @@ static BOOL isPowerOfTwo(NSUInteger x) {
   return x != 0 && (x & (x - 1)) == 0;
 }
 
+- (id)forwardingTargetForSelector:(SEL)selector {
+  if ([self isSelectorAddedDynamically:selector]) {
+    for (id<FlutterPlugin> plugin in [_pluginDelegates allObjects]) {
+      if (!plugin) {
+        continue;
+      }
+      if ([plugin respondsToSelector:selector]) {
+        return plugin;
+      }
+    }
+  }
+  return [super forwardingTargetForSelector:selector];
+}
+
 - (BOOL)isSelectorAddedDynamically:(SEL)selector {
   for (const SEL& aSelector : selectorsHandledByPlugins) {
     if (selector == aSelector) {
@@ -211,23 +225,6 @@ static BOOL isPowerOfTwo(NSUInteger x) {
   }
 }
 
-- (void)application:(UIApplication*)application
-    didReceiveRemoteNotification:(NSDictionary*)userInfo
-          fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
-    if (!plugin) {
-      continue;
-    }
-    if ([plugin respondsToSelector:_cmd]) {
-      if ([plugin application:application
-              didReceiveRemoteNotification:userInfo
-                    fetchCompletionHandler:completionHandler]) {
-        return;
-      }
-    }
-  }
-}
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 - (void)application:(UIApplication*)application
@@ -339,21 +336,6 @@ static BOOL isPowerOfTwo(NSUInteger x) {
       if ([plugin application:application
               handleEventsForBackgroundURLSession:identifier
                                 completionHandler:completionHandler]) {
-        return YES;
-      }
-    }
-  }
-  return NO;
-}
-
-- (BOOL)application:(UIApplication*)application
-    performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
-    if (!plugin) {
-      continue;
-    }
-    if ([plugin respondsToSelector:_cmd]) {
-      if ([plugin application:application performFetchWithCompletionHandler:completionHandler]) {
         return YES;
       }
     }

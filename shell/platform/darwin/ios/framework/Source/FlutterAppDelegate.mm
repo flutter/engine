@@ -215,7 +215,8 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 }
 
 - (id)forwardingTargetForSelector:(SEL)aSelector {
-  if ([_lifeCycleDelegate isSelectorAddedDynamically:aSelector]) {
+  if ([_lifeCycleDelegate isSelectorAddedDynamically:aSelector] &&
+      [_lifeCycleDelegate hasPluginThatRespondsToSelector:aSelector]) {
     [self logCapabilityConfigurationWarningIfNeeded:aSelector];
     return _lifeCycleDelegate;
   }

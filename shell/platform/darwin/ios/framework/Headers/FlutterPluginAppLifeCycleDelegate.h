@@ -83,13 +83,6 @@ FLUTTER_EXPORT
  * Calls all plugins registered for `UIApplicationDelegate` callbacks.
  */
 - (void)application:(UIApplication*)application
-    didReceiveRemoteNotification:(NSDictionary*)userInfo
-          fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler;
-
-/**
- * Calls all plugins registered for `UIApplicationDelegate` callbacks.
- */
-- (void)application:(UIApplication*)application
     didReceiveLocalNotification:(UILocalNotification*)notification
     API_DEPRECATED(
         "See -[UIApplicationDelegate application:didReceiveLocalNotification:] deprecation",
@@ -150,15 +143,6 @@ FLUTTER_EXPORT
 - (BOOL)application:(UIApplication*)application
     handleEventsForBackgroundURLSession:(nonnull NSString*)identifier
                       completionHandler:(nonnull void (^)(void))completionHandler;
-
-/**
- * Calls all plugins registered for `UIApplicationDelegate` callbacks in order of registration until
- * some plugin handles the request.
- *
- * @returns `YES` if any plugin handles the request.
- */
-- (BOOL)application:(UIApplication*)application
-    performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler;
 
 /**
  * Calls all plugins registered for `UIApplicationDelegate` callbacks in order of registration until
