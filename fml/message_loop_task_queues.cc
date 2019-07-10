@@ -58,7 +58,11 @@ void MessageLoopTaskQueues::RegisterTask(TaskQueueId queue_id,
   std::scoped_lock lock(GetMutex(queue_id, MutexType::kTasks));
   size_t order = order_++;
   delayed_tasks_[queue_id].push({order, std::move(task), target_time});
-  WakeUp(queue_id, delayed_tasks_[queue_id].top().GetTargetTime());
+  TaskQueueId loop_to_wake = queue_id;
+  if (subsumed_to_owner_[queue_id] != _kUnmerged) {
+    loop_to_wake = subsumed_to_owner_[queue_id];
+  }
+  WakeUp(loop_to_wake, delayed_tasks_[queue_id].top().GetTargetTime());
 }
 
 bool MessageLoopTaskQueues::HasPendingTasks(TaskQueueId queue_id) {
@@ -229,6 +233,11 @@ bool MessageLoopTaskQueues::Unmerge(TaskQueueId owner) {
   }
 
   return true;
+}
+
+bool MessageLoopTaskQueues::Owns(TaskQueueId owner, TaskQueueId subsumed) {
+  MergedQueuesRunner merged_observers = MergedQueuesRunner(this, owner);
+  return subsumed == owner_to_subsumed_[owner];
 }
 
 // Subsumed queues will never have pending tasks.

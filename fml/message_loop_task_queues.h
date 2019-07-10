@@ -87,6 +87,9 @@ class MessageLoopTaskQueues
   // Will return false if the owner has not been merged before.
   bool Unmerge(TaskQueueId owner);
 
+  // Returns true if owner owns the subsumed task queue.
+  bool Owns(TaskQueueId owner, TaskQueueId subsumed);
+
  private:
   class MergedQueuesRunner;
 
