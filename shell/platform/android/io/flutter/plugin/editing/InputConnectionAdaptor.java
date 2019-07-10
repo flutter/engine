@@ -168,10 +168,20 @@ class InputConnectionAdaptor extends BaseInputConnection {
                     // isRTLCharAt() call below is returning blanket direction assumption
                     // based on the first character in the line.
                     boolean isRtl = mLayout.isRtlCharAt(mLayout.getLineForOffset(selStart));
-                    if (isRtl) {
-                        Selection.extendRight(mEditable, mLayout);
-                    } else {
-                        Selection.extendLeft(mEditable, mLayout);
+                    try {
+                        if (isRtl) {
+                            Selection.extendRight(mEditable, mLayout);
+                        } else {
+                            Selection.extendLeft(mEditable, mLayout);
+                        }
+                    } catch (IndexOutOfBoundsException e) {
+                        // Unable to move Left or Right, so we will fall back to the simple
+                        // way of decrementing the buffer index. This will generally only
+                        // occur on Chinese keyboards, primarily on Huawei devices, when
+                        // attempting to delete with "obscureText" set to true. In this case,
+                        // the simple method should work well enough because the obscured text
+                        // dots will usually not be long emoji clusters.
+                        Selection.setSelection(mEditable, selStart, selStart - 1);
                     }
                     int newStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
                     int newEnd = clampIndexToEditable(Selection.getSelectionEnd(mEditable), mEditable);
