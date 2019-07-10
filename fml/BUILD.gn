@@ -59,7 +59,6 @@ source_set("fml") {
     "synchronization/count_down_latch.h",
     "synchronization/semaphore.cc",
     "synchronization/semaphore.h",
-    "synchronization/shared_mutex.h",
     "synchronization/thread_annotations.h",
     "synchronization/waitable_event.cc",
     "synchronization/waitable_event.h",
@@ -97,12 +96,6 @@ source_set("fml") {
   ]
 
   libs = []
-
-  if (is_ios || is_mac) {
-    sources += [ "platform/posix/shared_mutex_posix.cc" ]
-  } else {
-    sources += [ "synchronization/shared_mutex_std.cc" ]
-  }
 
   if (is_ios || is_mac) {
     sources += [
