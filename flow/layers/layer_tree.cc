@@ -25,25 +25,12 @@ void LayerTree::RecordBuildTime(fml::TimePoint start) {
 }
 
 void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
+                        std::shared_ptr<RasterOperations> raster_ops,
                         bool ignore_raster_cache) {
   TRACE_EVENT0("flutter", "LayerTree::Preroll");
-  SkColorSpace* color_space =
-      frame.canvas() ? frame.canvas()->imageInfo().colorSpace() : nullptr;
-  frame.context().raster_cache().SetCheckboardCacheImages(
-      checkerboard_raster_cache_images_);
   MutatorsStack stack;
-  PrerollContext context = {
-      ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
-      frame.gr_context(),
-      frame.view_embedder(),
-      stack,
-      color_space,
-      kGiantRect,
-      frame.context().raster_time(),
-      frame.context().ui_time(),
-      frame.context().texture_registry(),
-      checkerboard_offscreen_layers_};
-
+  PrerollContext context = {frame.view_embedder(), stack, kGiantRect,
+                            raster_ops};
   root_layer_->Preroll(&context, frame.root_surface_transformation());
 }
 
@@ -118,16 +105,10 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   root_surface_transformation.reset();
 
   PrerollContext preroll_context{
-      nullptr,                  // raster_cache (don't consult the cache)
-      nullptr,                  // gr_context  (used for the raster cache)
-      nullptr,                  // external view embedder
-      unused_stack,             // mutator stack
-      nullptr,                  // SkColorSpace* dst_color_space
-      kGiantRect,               // SkRect cull_rect
-      unused_stopwatch,         // frame time (dont care)
-      unused_stopwatch,         // engine time (dont care)
-      unused_texture_registry,  // texture registry (not supported)
-      false,                    // checkerboard_offscreen_layers
+      nullptr,       // external view embedder
+      unused_stack,  // mutator stack
+      kGiantRect,    // SkRect cull_rect
+      nullptr,       // raster operations (don't care)
   };
 
   SkISize canvas_size = canvas->getBaseLayerSize();

@@ -148,35 +148,38 @@ static inline size_t ClampSize(size_t value, size_t min, size_t max) {
   return value;
 }
 
-void RasterCache::Prepare(PrerollContext* context,
+void RasterCache::Prepare(RasterContext* raster_context,
                           Layer* layer,
                           const SkMatrix& ctm) {
+  GrContext* gr_context = raster_context->gr_context;
   LayerRasterCacheKey cache_key(layer->unique_id(), ctm);
   Entry& entry = layer_cache_[cache_key];
   entry.access_count = ClampSize(entry.access_count + 1, 0, access_threshold_);
   entry.used_this_frame = true;
   if (!entry.image.is_valid()) {
-    entry.image = Rasterize(context->gr_context, ctm, context->dst_color_space,
-                            checkerboard_images_, layer->paint_bounds(),
-                            [layer, context](SkCanvas* canvas) {
-                              SkISize canvas_size = canvas->getBaseLayerSize();
-                              SkNWayCanvas internal_nodes_canvas(
-                                  canvas_size.width(), canvas_size.height());
-                              internal_nodes_canvas.addCanvas(canvas);
-                              Layer::PaintContext paintContext = {
-                                  (SkCanvas*)&internal_nodes_canvas,
-                                  canvas,
-                                  context->gr_context,
-                                  nullptr,
-                                  context->raster_time,
-                                  context->ui_time,
-                                  context->texture_registry,
-                                  context->raster_cache,
-                                  context->checkerboard_offscreen_layers};
-                              if (layer->needs_painting()) {
-                                layer->Paint(paintContext);
-                              }
-                            });
+    entry.image =
+        Rasterize(gr_context, ctm, raster_context->dst_color_space,
+                  checkerboard_images_, layer->paint_bounds(),
+                  [layer, raster_context, gr_context,
+                   raster_cache = this](SkCanvas* canvas) {
+                    SkISize canvas_size = canvas->getBaseLayerSize();
+                    SkNWayCanvas internal_nodes_canvas(canvas_size.width(),
+                                                       canvas_size.height());
+                    internal_nodes_canvas.addCanvas(canvas);
+                    Layer::PaintContext paintContext = {
+                        (SkCanvas*)&internal_nodes_canvas,
+                        canvas,
+                        gr_context,
+                        nullptr,
+                        raster_context->raster_time,
+                        raster_context->ui_time,
+                        raster_context->texture_registry,
+                        raster_cache,
+                        raster_context->checkerboard_offscreen_layers};
+                    if (layer->needs_painting()) {
+                      layer->Paint(paintContext);
+                    }
+                  });
   }
 }
 

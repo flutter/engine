@@ -22,15 +22,19 @@ PictureLayer::~PictureLayer() = default;
 void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkPicture* sk_picture = picture();
 
-  if (auto* cache = context->raster_cache) {
-    SkMatrix ctm = matrix;
-    ctm.postTranslate(offset_.x(), offset_.y());
+  context->raster_ops->PushOperation(
+      [sk_picture = sk_picture, offset = offset_, is_complex = is_complex_,
+       will_change = will_change_,
+       matrix = matrix](RasterContext* raster_context) {
+        SkMatrix ctm = matrix;
+        ctm.postTranslate(offset.x(), offset.y());
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    ctm = RasterCache::GetIntegralTransCTM(ctm);
+        ctm = RasterCache::GetIntegralTransCTM(ctm);
 #endif
-    cache->Prepare(context->gr_context, sk_picture, ctm,
-                   context->dst_color_space, is_complex_, will_change_);
-  }
+        raster_context->raster_cache->Prepare(
+            raster_context->gr_context, sk_picture, ctm,
+            raster_context->dst_color_space, is_complex, will_change);
+      });
 
   SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
   set_paint_bounds(bounds);

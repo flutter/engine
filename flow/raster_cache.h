@@ -42,7 +42,7 @@ class RasterCacheResult {
   SkRect logical_rect_;
 };
 
-struct PrerollContext;
+struct RasterContext;
 
 class RasterCache {
  public:
@@ -88,7 +88,9 @@ class RasterCache {
                bool is_complex,
                bool will_change);
 
-  void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
+  void Prepare(RasterContext* raster_context,
+               Layer* layer,
+               const SkMatrix& ctm);
 
   RasterCacheResult Get(const SkPicture& picture, const SkMatrix& ctm) const;
 

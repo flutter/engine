@@ -25,6 +25,7 @@ class LayerTree {
   ~LayerTree();
 
   void Preroll(CompositorContext::ScopedFrame& frame,
+               std::shared_ptr<RasterOperations> raster_ops,
                bool ignore_raster_cache = false);
 
 #if defined(OS_FUCHSIA)
@@ -69,6 +70,14 @@ class LayerTree {
 
   void set_checkerboard_offscreen_layers(bool checkerboard) {
     checkerboard_offscreen_layers_ = checkerboard;
+  }
+
+  bool ShouldCheckerboardOffscreenLayers() const {
+    return checkerboard_offscreen_layers_;
+  }
+
+  bool ShouldCheckerboardRasterCacheImages() const {
+    return checkerboard_raster_cache_images_;
   }
 
  private:

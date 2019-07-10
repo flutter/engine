@@ -63,7 +63,31 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
 RasterStatus CompositorContext::ScopedFrame::Raster(
     flutter::LayerTree& layer_tree,
     bool ignore_raster_cache) {
-  layer_tree.Preroll(*this, ignore_raster_cache);
+  std::shared_ptr<RasterOperations> raster_ops =
+      std::make_shared<RasterOperations>();
+  layer_tree.Preroll(*this, raster_ops, ignore_raster_cache);
+
+  RasterCache* raster_cache =
+      ignore_raster_cache ? nullptr : &context_.raster_cache();
+  if (raster_cache) {
+    bool checkerboard_offscreen_layers =
+        layer_tree.ShouldCheckerboardOffscreenLayers();
+    raster_cache->SetCheckboardCacheImages(
+        layer_tree.ShouldCheckerboardRasterCacheImages());
+    SkColorSpace* color_space =
+        canvas() ? canvas()->imageInfo().colorSpace() : nullptr;
+    RasterContext raster_context = {raster_cache,
+                                    gr_context_,
+                                    color_space,
+                                    context_.raster_time(),
+                                    context_.ui_time(),
+                                    context_.texture_registry(),
+                                    checkerboard_offscreen_layers};
+    for (const auto raster_op : raster_ops->operations) {
+      raster_op(&raster_context);
+    }
+  }
+
   // Clearing canvas after preroll reduces one render target switch when preroll
   // paints some raster cache.
   if (canvas()) {

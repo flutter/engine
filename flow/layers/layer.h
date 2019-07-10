@@ -44,19 +44,35 @@ enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
 
 class ContainerLayer;
 
-struct PrerollContext {
+struct RasterContext {
   RasterCache* raster_cache;
   GrContext* gr_context;
-  ExternalViewEmbedder* view_embedder;
-  MutatorsStack& mutators_stack;
   SkColorSpace* dst_color_space;
-  SkRect cull_rect;
-
-  // The following allows us to paint in the end of subtree preroll
   const Stopwatch& raster_time;
   const Stopwatch& ui_time;
   TextureRegistry& texture_registry;
   const bool checkerboard_offscreen_layers;
+};
+
+using RasterOperation = std::function<void(RasterContext* raster_context)>;
+
+class RasterOperations {
+ public:
+  RasterOperations() = default;
+
+  // TODO(iskakaushik): is there a more efficient way to
+  // copy functions in c++? emplace??
+  void PushOperation(RasterOperation&& oper) { operations.push_back(oper); }
+  std::vector<RasterOperation> operations;
+};
+
+struct PrerollContext {
+  ExternalViewEmbedder* view_embedder;
+  MutatorsStack& mutators_stack;
+  SkRect cull_rect;
+  std::shared_ptr<RasterOperations> raster_ops;
+
+  // The following allows us to paint in the end of subtree preroll
   float total_elevation = 0.0f;
 };
 

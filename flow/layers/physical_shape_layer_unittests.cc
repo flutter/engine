@@ -30,17 +30,11 @@ TEST(PhysicalShapeLayer, TotalElevation) {
   TextureRegistry unused_texture_registry;
   MutatorsStack unused_stack;
   PrerollContext preroll_context{
-      nullptr,                  // raster_cache (don't consult the cache)
-      nullptr,                  // gr_context  (used for the raster cache)
-      nullptr,                  // external view embedder
-      unused_stack,             // mutator stack
-      nullptr,                  // SkColorSpace* dst_color_space
-      kGiantRect,               // SkRect cull_rect
-      unused_stopwatch,         // frame time (dont care)
-      unused_stopwatch,         // engine time (dont care)
-      unused_texture_registry,  // texture registry (not supported)
-      false,                    // checkerboard_offscreen_layers
-      0.0f,                     // total elevation
+      nullptr,       // external view embedder
+      unused_stack,  // mutator stack
+      kGiantRect,    // SkRect cull_rect
+      nullptr,       // raster operations (don't care)
+      0.0f,          // total elevation
   };
 
   SkMatrix identity;

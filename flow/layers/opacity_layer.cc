@@ -46,15 +46,19 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
   // See |EnsureSingleChild|.
   FML_DCHECK(layers().size() == 1);
-  if (context->raster_cache &&
-      SkRect::Intersects(context->cull_rect, paint_bounds())) {
-    Layer* child = layers()[0].get();
-    SkMatrix ctm = child_matrix;
+
+  context->raster_ops->PushOperation(
+      [cull_rect = context->cull_rect, bounds = paint_bounds(),
+       child = layers()[0].get(),
+       child_matrix = child_matrix](RasterContext* raster_context) {
+        if (SkRect::Intersects(cull_rect, bounds)) {
+          SkMatrix ctm = child_matrix;
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    ctm = RasterCache::GetIntegralTransCTM(ctm);
+          ctm = RasterCache::GetIntegralTransCTM(ctm);
 #endif
-    context->raster_cache->Prepare(context, child, ctm);
-  }
+          raster_context->raster_cache->Prepare(raster_context, child, ctm);
+        }
+      });
 }
 
 void OpacityLayer::Paint(PaintContext& context) const {
