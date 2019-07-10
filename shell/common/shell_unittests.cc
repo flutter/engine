@@ -576,10 +576,7 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
 /// single-thread setup.
 TEST_F(ShellTest, WaitForFirstFrameInlined) {
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::GPU |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
-  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+  auto task_runner = GetThreadTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
   std::unique_ptr<Shell> shell =
@@ -594,7 +591,7 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
   fml::AutoResetWaitableEvent event;
-  thread_host.platform_thread->GetTaskRunner()->PostTask([&shell, &event] {
+  task_runner->PostTask([&shell, &event] {
     fml::Status result =
         shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
     ASSERT_EQ(result.code(), fml::StatusCode::kFailedPrecondition);
