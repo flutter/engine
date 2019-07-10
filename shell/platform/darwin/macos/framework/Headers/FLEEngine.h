@@ -26,13 +26,25 @@ FLUTTER_EXPORT
 /**
  * Initializes an engine with the given viewController.
  *
- * @param viewController The view controller associated with this engine. If nil, the engine
- *                       will be run headless.
+ * @param labelPrefix Currently unused; in the future, may be used for labelling threads
+ *                    as with the iOS FlutterEngine.
  * @param project The project configuration. If nil, a default FLEDartProject will be used.
  */
-- (nonnull instancetype)initWithViewController:(nullable FLEViewController*)viewController
-                                       project:(nullable FLEDartProject*)project
-    NS_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithName:(nonnull NSString*)labelPrefix
+                             project:(nullable FLEDartProject*)project;
+
+/**
+ * Initializes an engine with the given viewController.
+ *
+ * @param labelPrefix Currently unused; in the future, may be used for labelling threads
+ *                    as with the iOS FlutterEngine.
+ * @param project The project configuration. If nil, a default FLEDartProject will be used.
+ */
+- (nonnull instancetype)initWithName:(nonnull NSString*)labelPrefix
+                             project:(nullable FLEDartProject*)project
+      allowHeadlessExecution:(BOOL)allowHeadlessExecution NS_DESIGNATED_INITIALIZER;
+
+- (nonnull instancetype)init NS_UNAVAILABLE;
 
 /**
  * Runs `main()` from this engine's project.
@@ -42,18 +54,9 @@ FLUTTER_EXPORT
 - (BOOL)run;
 
 /**
- * The `FLEDartProject` associated with this engine. If nil, a default will be used for `run`.
- *
- * TODO(stuartmorgan): Remove this once FLEViewController takes the project as an initializer
- * argument. Blocked on currently needing to create it from a XIB due to the view issues
- * described in https://github.com/google/flutter-desktop-embedding/issues/10.
- */
-@property(nonatomic, nullable) FLEDartProject* project;
-
-/**
  * The `FLEViewController` associated with this engine, if any.
  */
-@property(nonatomic, nullable, readonly, weak) FLEViewController* viewController;
+@property(nonatomic, nullable, weak) FLEViewController* viewController;
 
 /**
  * The `FlutterBinaryMessenger` for communicating with this engine.

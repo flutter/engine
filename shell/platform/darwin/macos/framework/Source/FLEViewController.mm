@@ -173,33 +173,35 @@ struct MouseState {
  * Performs initialization that's common between the different init paths.
  */
 static void CommonInit(FLEViewController* controller) {
-  controller->_engine = [[FLEEngine alloc] initWithViewController:controller project:controller->_project];
+  controller->_engine = [[FLEEngine alloc] initWithName:@"io.flutter"
+   project:controller->_project
+   allowHeadlessExecution:NO];
   controller->_additionalKeyResponders = [[NSMutableOrderedSet alloc] init];
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
 }
 
 - (instancetype)initWithCoder:(NSCoder*)coder {
   self = [super initWithCoder:coder];
-  if (self != nil) {
-    CommonInit(self);
-  }
+  NSAssert(self, @"Super init cannot be nil");
+
+  CommonInit(self);
   return self;
 }
 
 - (instancetype)initWithNibName:(NSString*)nibNameOrNil bundle:(NSBundle*)nibBundleOrNil {
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
-  if (self != nil) {
-    CommonInit(self);
-  }
+  NSAssert(self, @"Super init cannot be nil");
+
+  CommonInit(self);
   return self;
 }
 
 - (instancetype)initWithProject:(nullable FLEDartProject*)project {
   self = [super initWithNibName:nil bundle:nil];
-  if (self != nil) {
-    _project = project;
-    CommonInit(self);
-  }
+  NSAssert(self, @"Super init cannot be nil");
+
+  _project = project;
+  CommonInit(self);
   return self;
 }
 
@@ -223,6 +225,10 @@ static void CommonInit(FLEViewController* controller) {
   if (!_engine.running) {
     [self launchEngine];
   }
+}
+
+- (void)dealloc {
+  _engine.viewController = nil;
 }
 
 #pragma mark - Public methods
@@ -255,11 +261,10 @@ static void CommonInit(FLEViewController* controller) {
   // Register internal plugins before starting the engine.
   [self addInternalPlugins];
 
+  _engine.viewController = self;
   if (![_engine run]) {
     return NO;
   }
-  // Send an initial window metrics event.
-  [self viewDidReshape:self.view];
   // Send the initial user settings such as brightness and text scale factor
   // to the engine.
   [self sendInitialSettings];
@@ -463,12 +468,7 @@ static void CommonInit(FLEViewController* controller) {
  * Responds to view reshape by notifying the engine of the change in dimensions.
  */
 - (void)viewDidReshape:(NSView*)view {
-  if (!_engine.running) {
-    return;
-  }
-  CGSize scaledSize = [view convertRectToBacking:view.bounds].size;
-  double pixelRatio = view.bounds.size.width == 0 ? 1 : scaledSize.width / view.bounds.size.width;
-  [_engine updateWindowMetricsWithSize:scaledSize pixelRatio:pixelRatio];
+  [_engine updateWindowMetrics];
 }
 
 #pragma mark - FlutterPluginRegistry

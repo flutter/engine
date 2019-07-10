@@ -22,12 +22,9 @@
 @property(nonatomic, readonly, nullable) NSOpenGLContext* resourceContext;
 
 /**
- * Informs the engine that the display region's size has changed.
- *
- * @param size The size of the display, in pixels.
- * @param pixelRatio The number of pixels per screen coordinate.
+ * Informs the engine that the associated view controller's view size has changed.
  */
-- (void)updateWindowMetricsWithSize:(CGSize)size pixelRatio:(double)pixelRatio;
+- (void)updateWindowMetrics;
 
 /**
  * Dispatches the given pointer event data to engine.
