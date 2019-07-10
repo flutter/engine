@@ -1,3 +1,7 @@
+// Copyright 2019 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package com.example.android_test_adapter;
 import com.example.android_host_app.MainActivity;
 import androidx.test.rule.ActivityTestRule;
@@ -6,10 +10,8 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.view.FlutterView;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
 import org.junit.runner.notification.Failure;
@@ -45,18 +47,18 @@ public class FlutterJUnitRunner extends Runner {
 
   @Override
   public void run(RunNotifier notifier) {
-    Description d = Description.createTestDescription(MainActivity.class, "example");
-    notifier.fireTestStarted(d);
+    Description description = Description.createTestDescription(MainActivity.class, "example");
+    notifier.fireTestStarted(description);
     try {
       Integer result = testResult.get();
       if (!result.equals(42)) {
         notifier.fireTestFailure(new Failure(d, new Exception("failure of test")));
       }
     } catch (ExecutionException e) {
-        e.printStackTrace();
+        notifier.fireTestFailure(new Failure(description, e));
     } catch (InterruptedException e) {
-        e.printStackTrace();
+        notifier.fireTestFailure(new Failure(description, e));
     }
-    notifier.fireTestFinished(d);
+    notifier.fireTestFinished(description);
   }
 }
