@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 pushd android_host_app
 
@@ -19,7 +20,7 @@ case $1 in
       -Pverbose=true \
       -Ptrack-widget-creation=false \
       -Pfilesystem-scheme=org-dartlang-root \
-      assembleAndroidTest || exit 1
+      assembleAndroidTest
     popd
     echo $GCLOUD_FIREBASE_TESTLAB_KEY > ${HOME}/gcloud-service-key.json
     gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
