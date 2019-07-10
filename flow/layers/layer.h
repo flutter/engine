@@ -59,9 +59,6 @@ using RasterOperation = std::function<void(RasterContext* raster_context)>;
 class RasterOperations {
  public:
   RasterOperations() = default;
-
-  // TODO(iskakaushik): is there a more efficient way to
-  // copy functions in c++? emplace??
   void PushOperation(RasterOperation&& oper) { operations.push_back(oper); }
   std::vector<RasterOperation> operations;
 };
