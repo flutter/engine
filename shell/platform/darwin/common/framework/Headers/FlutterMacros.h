@@ -18,7 +18,7 @@
 #if defined(FLUTTER_FRAMEWORK) && \
     FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
-#define FLUTTER_DEBUG_EXPORT __attribute__((visibility("default")))
+#define FLUTTER_DEBUG_EXPORT FLUTTER_EXPORT
 
 #else
 
