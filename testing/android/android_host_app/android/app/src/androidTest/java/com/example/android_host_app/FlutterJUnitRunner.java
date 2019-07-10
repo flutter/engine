@@ -17,53 +17,46 @@ import org.junit.runner.notification.RunNotifier;
 
 public class FlutterJUnitRunner extends Runner {
 
-  private static final String CHANNEL = "com.example.foo/bar";
-  CompletableFuture<Map<String, String>> testResults;
+  private static final String CHANNEL = "dev.flutter.engine/test";
+
+  CompletableFuture<Integer> testResult = new CompletableFuture<>();
+
   public FlutterJUnitRunner(Class<?> klass) {
-    ActivityTestRule<MainActivity> rule = new ActivityTestRule<>(MainActivity.class);
-    MainActivity fa = rule.launchActivity(null);
-    FlutterView fv = fa.getFlutterView();
-    MethodChannel methodChannel = new MethodChannel(fv, CHANNEL);
-    testResults = new CompletableFuture<>();
-    methodChannel.setMethodCallHandler(
-        new MethodCallHandler() {
-          @Override
-          public void onMethodCall(MethodCall call, Result result) {
-            if (call.method.equals("testFinished")) {
-              Map<String, String> results = call.argument("results");
-              testResults.complete(results);
-              result.success(null);
-            } else {
-              result.notImplemented();
-            }
-          }
-        });
+      ActivityTestRule<MainActivity> rule = new ActivityTestRule<>(MainActivity.class);
+      MainActivity activity = rule.launchActivity(null);
+      FlutterView view = activity.getFlutterView();
+      MethodChannel channel = new MethodChannel(view, CHANNEL);
+      channel.setMethodCallHandler(
+          new MethodCallHandler() {
+              @Override
+              public void onMethodCall(MethodCall call, Result result) {
+                  if (call.method.equals("testMethodChannel")) {
+                      testResult.complete(call.arguments());
+                  } else {
+                      result.notImplemented();
+                  }
+              }
+          });
   }
+
   @Override
-  public Description getDescription() {
-    return Description.createTestDescription(MainActivity.class, "foobar");
+  public Description getDescription() { return Description.createTestDescription(MainActivity.class, "methodChannel");
   }
 
   @Override
   public void run(RunNotifier notifier) {
-    Map<String, String> results = null;
-    try {
-      results = testResults.get();
-    } catch (ExecutionException e) {
-      e.printStackTrace();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-    for (String name : results.keySet()) {
-      Description d = Description.createTestDescription(MainActivity.class, name);
-      notifier.fireTestStarted(d);
-      // TODO: test execution should happened here.
-      String outcome = results.get(name);
-      if (outcome.equals("failed")) {
-        Exception dummyException = new Exception();
-        notifier.fireTestFailure(new Failure(d, dummyException));
+    Description d = Description.createTestDescription(MainActivity.class, "example");
+    notifier.fireTestStarted(d);
+   try {
+      Integer result = testResult.get();
+      if (!result.equals(42)) {
+        notifier.fireTestFailure(new Failure(d, new Exception("failure of test")));
       }
-      notifier.fireTestFinished(d);
+    } catch (ExecutionException e) {
+        e.printStackTrace();
+    } catch (InterruptedException e) {
+        e.printStackTrace();
     }
+    notifier.fireTestFinished(d);
   }
 }
