@@ -285,33 +285,30 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
 
   // Install service protocol handlers.
 
-  service_protocol_handlers_[ServiceProtocol::kScreenshotExtensionName
-                                 .ToString()] = {
+  service_protocol_handlers_[ServiceProtocol::kScreenshotExtensionName] = {
       task_runners_.GetGPUTaskRunner(),
       std::bind(&Shell::OnServiceProtocolScreenshot, this,
                 std::placeholders::_1, std::placeholders::_2)};
-  service_protocol_handlers_[ServiceProtocol::kScreenshotSkpExtensionName
-                                 .ToString()] = {
+  service_protocol_handlers_[ServiceProtocol::kScreenshotSkpExtensionName] = {
       task_runners_.GetGPUTaskRunner(),
       std::bind(&Shell::OnServiceProtocolScreenshotSKP, this,
                 std::placeholders::_1, std::placeholders::_2)};
-  service_protocol_handlers_[ServiceProtocol::kRunInViewExtensionName
-                                 .ToString()] = {
+  service_protocol_handlers_[ServiceProtocol::kRunInViewExtensionName] = {
       task_runners_.GetUITaskRunner(),
       std::bind(&Shell::OnServiceProtocolRunInView, this, std::placeholders::_1,
                 std::placeholders::_2)};
-  service_protocol_handlers_[ServiceProtocol::kFlushUIThreadTasksExtensionName
-                                 .ToString()] = {
-      task_runners_.GetUITaskRunner(),
-      std::bind(&Shell::OnServiceProtocolFlushUIThreadTasks, this,
-                std::placeholders::_1, std::placeholders::_2)};
-  service_protocol_handlers_[ServiceProtocol::kSetAssetBundlePathExtensionName
-                                 .ToString()] = {
-      task_runners_.GetUITaskRunner(),
-      std::bind(&Shell::OnServiceProtocolSetAssetBundlePath, this,
-                std::placeholders::_1, std::placeholders::_2)};
   service_protocol_handlers_
-      [ServiceProtocol::kGetDisplayRefreshRateExtensionName.ToString()] = {
+      [ServiceProtocol::kFlushUIThreadTasksExtensionName] = {
+          task_runners_.GetUITaskRunner(),
+          std::bind(&Shell::OnServiceProtocolFlushUIThreadTasks, this,
+                    std::placeholders::_1, std::placeholders::_2)};
+  service_protocol_handlers_
+      [ServiceProtocol::kSetAssetBundlePathExtensionName] = {
+          task_runners_.GetUITaskRunner(),
+          std::bind(&Shell::OnServiceProtocolSetAssetBundlePath, this,
+                    std::placeholders::_1, std::placeholders::_2)};
+  service_protocol_handlers_
+      [ServiceProtocol::kGetDisplayRefreshRateExtensionName] = {
           task_runners_.GetUITaskRunner(),
           std::bind(&Shell::OnServiceProtocolGetDisplayRefreshRate, this,
                     std::placeholders::_1, std::placeholders::_2)};
@@ -990,9 +987,9 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
 
 // |ServiceProtocol::Handler|
 fml::RefPtr<fml::TaskRunner> Shell::GetServiceProtocolHandlerTaskRunner(
-    fml::StringView method) const {
+    std::string_view method) const {
   FML_DCHECK(is_setup_);
-  auto found = service_protocol_handlers_.find(method.ToString());
+  auto found = service_protocol_handlers_.find(method);
   if (found != service_protocol_handlers_.end()) {
     return found->second.first;
   }
@@ -1001,10 +998,10 @@ fml::RefPtr<fml::TaskRunner> Shell::GetServiceProtocolHandlerTaskRunner(
 
 // |ServiceProtocol::Handler|
 bool Shell::HandleServiceProtocolMessage(
-    fml::StringView method,  // one if the extension names specified above.
+    std::string_view method,  // one if the extension names specified above.
     const ServiceProtocolMap& params,
     rapidjson::Document& response) {
-  auto found = service_protocol_handlers_.find(method.ToString());
+  auto found = service_protocol_handlers_.find(method);
   if (found != service_protocol_handlers_.end()) {
     return found->second.second(params, response);
   }
@@ -1114,11 +1111,11 @@ bool Shell::OnServiceProtocolRunInView(
   }
 
   std::string main_script_path =
-      fml::paths::FromURI(params.at("mainScript").ToString());
+      fml::paths::FromURI(params.at("mainScript").data());
   std::string packages_path =
-      fml::paths::FromURI(params.at("packagesFile").ToString());
+      fml::paths::FromURI(params.at("packagesFile").data());
   std::string asset_directory_path =
-      fml::paths::FromURI(params.at("assetDirectory").ToString());
+      fml::paths::FromURI(params.at("assetDirectory").data());
 
   auto main_script_file_mapping =
       std::make_unique<fml::FileMapping>(fml::OpenFile(
@@ -1197,7 +1194,7 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
   auto asset_manager = std::make_shared<AssetManager>();
 
   asset_manager->PushFront(std::make_unique<DirectoryAssetBundle>(
-      fml::OpenDirectory(params.at("assetDirectory").ToString().c_str(), false,
+      fml::OpenDirectory(params.at("assetDirectory").data(), false,
                          fml::FilePermission::kRead)));
 
   if (engine_->UpdateAssetManager(std::move(asset_manager))) {
