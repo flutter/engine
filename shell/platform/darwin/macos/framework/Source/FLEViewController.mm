@@ -262,7 +262,7 @@ static void CommonInit(FLEViewController* controller) {
   [self addInternalPlugins];
 
   _engine.viewController = self;
-  if (![_engine run]) {
+  if (![_engine runWithEntrypoint:nil]) {
     return NO;
   }
   // Send the initial user settings such as brightness and text scale factor

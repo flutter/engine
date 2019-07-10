@@ -158,7 +158,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
   [self shutDownEngine];
 }
 
-- (BOOL)run {
+- (BOOL)runWithEntrypoint:(NSString*)entrypoint {
   if (self.running) {
     return NO;
   }
@@ -188,6 +188,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
   flutterArguments.command_line_argc = static_cast<int>(arguments.size());
   flutterArguments.command_line_argv = &arguments[0];
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
+  flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
 
   FlutterEngineResult result = FlutterEngineRun(
       FLUTTER_ENGINE_VERSION, &rendererConfig, &flutterArguments, (__bridge void*)(self), &_engine);

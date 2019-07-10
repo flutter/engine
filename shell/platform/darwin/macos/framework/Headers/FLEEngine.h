@@ -47,11 +47,20 @@ FLUTTER_EXPORT
 - (nonnull instancetype)init NS_UNAVAILABLE;
 
 /**
- * Runs `main()` from this engine's project.
+ * Runs a Dart program on an Isolate from the main Dart library (i.e. the library that
+ * contains `main()`).
  *
- * @return YES if the engine launched successfully.
+ * The first call to this method will create a new Isolate. Subsequent calls will return
+ * immediately.
+ *
+ * @param entrypoint The name of a top-level function from the same Dart
+ *   library that contains the app's main() function.  If this is nil, it will
+ *   default to `main()`.  If it is not the app's main() function, that function
+ *   must be decorated with `@pragma(vm:entry-point)` to ensure the method is not
+ *   tree-shaken by the Dart compiler.
+ * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
  */
-- (BOOL)run;
+- (BOOL)runWithEntrypoint:(nullable NSString*)entrypoint;
 
 /**
  * The `FLEViewController` associated with this engine, if any.
