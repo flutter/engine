@@ -83,7 +83,7 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
                                     context_.ui_time(),
                                     context_.texture_registry(),
                                     checkerboard_offscreen_layers};
-    for (const auto raster_op : raster_ops->operations) {
+    for (const auto raster_op : raster_ops->GetOperations()) {
       raster_op(&raster_context);
     }
   }

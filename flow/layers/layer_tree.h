@@ -24,6 +24,9 @@ class LayerTree {
 
   ~LayerTree();
 
+  // This is not guaranteed to happen on the GPU threads.
+  // For parts of preroll that need to happen on the GPU thread,
+  // add them to PrerollRasterOperations.
   void Preroll(CompositorContext::ScopedFrame& frame,
                std::shared_ptr<PrerollRasterOperations> raster_ops,
                bool ignore_raster_cache = false);

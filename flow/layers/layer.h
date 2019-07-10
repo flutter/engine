@@ -61,9 +61,15 @@ class PrerollRasterOperations {
  public:
   PrerollRasterOperations() = default;
   void PushOperation(PrerollRasterOperation&& oper) {
-    operations.push_back(oper);
+    operations_.push_back(oper);
   }
-  std::vector<PrerollRasterOperation> operations;
+  const std::vector<PrerollRasterOperation>& GetOperations() const {
+    return operations_;
+  }
+
+ private:
+  std::vector<PrerollRasterOperation> operations_;
+  FML_DISALLOW_COPY_AND_ASSIGN(PrerollRasterOperations);
 };
 
 struct PrerollContext {
