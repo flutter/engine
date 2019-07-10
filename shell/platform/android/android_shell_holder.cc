@@ -156,20 +156,8 @@ void AndroidShellHolder::Launch(RunConfiguration config) {
   if (!IsValid()) {
     return;
   }
-  const auto* shell = shell_;
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([&shell,                     //
-                         config = std::move(config)  //
-  ]() mutable {
-        FML_LOG(INFO) << "Attempting to launch engine configuration...";
-        if (!shell ||
-            shell->RunEngine(std::move(config)) == Engine::RunStatus::Failure) {
-          FML_LOG(ERROR) << "Could not launch engine in configuration.";
-        } else {
-          FML_LOG(INFO) << "Isolate for engine configuration successfully "
-                           "started and run.";
-        }
-      }));
+
+  shell_->RunEngine(std::move(config));
 }
 
 Rasterizer::Screenshot AndroidShellHolder::Screenshot(

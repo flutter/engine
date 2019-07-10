@@ -63,19 +63,7 @@ bool EmbedderEngine::Run(RunConfiguration run_configuration) {
   if (!IsValid() || !run_configuration.IsValid()) {
     return false;
   }
-  const auto& shell = shell_;
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([&shell,                                 // shell
-                         config = std::move(run_configuration)  // config
-  ]() mutable {
-        if (shell) {
-          auto result = shell->RunEngine(std::move(config));
-          if (result == Engine::RunStatus::Failure) {
-            FML_LOG(ERROR) << "Could not launch the engine with configuration.";
-          }
-        }
-      }));
-
+  shell_->RunEngine(std::move(run_configuration));
   return true;
 }
 

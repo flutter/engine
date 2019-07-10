@@ -380,15 +380,40 @@ void Shell::NotifyLowMemoryWarning() const {
   // to purge them.
 }
 
-Engine::RunStatus Shell::RunEngine(RunConfiguration run_configuration) {
+void Shell::RunEngine(RunConfiguration run_configuration) {
+  RunEngine(std::move(run_configuration), nullptr);
+}
+
+void Shell::RunEngine(RunConfiguration run_configuration,
+                      std::function<void(Engine::RunStatus)> result_callback) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   if (!weak_engine_) {
-    return Engine::RunStatus::Failure;
+    result_callback(Engine::RunStatus::Failure);
   }
-
-  return weak_engine_->Run(std::move(run_configuration));
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      fml::MakeCopyable([run_configuration = std::move(run_configuration),
+                         weak_engine = weak_engine_,
+                         result_callback =
+                             std::move(result_callback)]() mutable {
+        if (!weak_engine) {
+          if (result_callback) {
+            FML_LOG(ERROR)
+                << "Could not launch engine with configuration - no engine.";
+            result_callback(Engine::RunStatus::Failure);
+          }
+          return;
+        }
+        auto result = weak_engine->Run(std::move(run_configuration));
+        if (result == flutter::Engine::RunStatus::Failure) {
+          FML_LOG(ERROR) << "Could not launch engine with configuration.";
+        }
+        if (result_callback) {
+          result_callback(result);
+        }
+      }));
 }
 
 bool Shell::IsSetup() const {

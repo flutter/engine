@@ -127,14 +127,14 @@
   if (!self.platformView) {
     return;
   }
-  self.platformView->updateViewportMetrics(std::move(viewportMetrics));
+  self.platformView->SetViewportMetrics(std::move(viewportMetrics));
 }
 
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet {
   if (!self.platformView) {
     return;
   }
-  self.platformView->DispatchPointerDataPacket(*packet, flow_id);
+  self.platformView->DispatchPointerDataPacket(std::move(packet));
 }
 
 - (fml::WeakPtr<flutter::PlatformView>)platformView {
@@ -303,18 +303,8 @@
 
 - (void)launchEngine:(NSString*)entrypoint libraryURI:(NSString*)libraryOrNil {
   // Launch the Dart application with the inferred run configuration.
-  self.shell.GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = _shell->GetEngine(),
-       config = [_dartProject.get() runConfigurationForEntrypoint:entrypoint
-                                                     libraryOrNil:libraryOrNil]  //
-  ]() mutable {
-        if (engine) {
-          auto result = engine->Run(std::move(config));
-          if (result == flutter::Engine::RunStatus::Failure) {
-            FML_LOG(ERROR) << "Could not launch engine with configuration.";
-          }
-        }
-      }));
+  self.shell.RunEngine([_dartProject.get() runConfigurationForEntrypoint:entrypoint
+                                                            libraryOrNil:libraryOrNil]);
 }
 
 - (BOOL)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {

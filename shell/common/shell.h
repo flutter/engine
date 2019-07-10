@@ -167,13 +167,15 @@ class Shell final : public PlatformView::Delegate,
   //----------------------------------------------------------------------------
   /// @brief      Starts an isolate for the given RunConfiguration.
   ///
-  /// @return     The status of the run operation. Re-entrant calls will return
-  ///             Engine::RunStatus::FailureAlreadyRunning. Otherwise, calls
-  ///             return Engine::RunStatus::Success on success or
-  ///             Engine::RunStatus::Failure on failure.
+  void RunEngine(RunConfiguration run_configuration);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Starts an isolate for the given RunConfiguration. The
+  ///             result_callback will be called with the status of the
+  ///             operation.
   ///
-  FML_WARN_UNUSED_RESULT
-  Engine::RunStatus RunEngine(RunConfiguration run_configuration);
+  void RunEngine(RunConfiguration run_configuration,
+                 std::function<void(Engine::RunStatus)> result_callback);
 
   //------------------------------------------------------------------------------
   /// @return     The settings used to launch this shell.
