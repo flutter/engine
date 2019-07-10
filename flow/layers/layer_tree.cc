@@ -24,6 +24,37 @@ void LayerTree::RecordBuildTime(fml::TimePoint start) {
   build_finish_ = fml::TimePoint::Now();
 }
 
+void LayerTree::PrerollDryrun(ExternalViewEmbedder* view_embedder) {
+  TRACE_EVENT0("flutter", "LayerTree::PrerollDryrun");
+
+  SkColorSpace* color_space = nullptr;
+  MutatorsStack stack;
+  TextureRegistry texture_registry;
+  Stopwatch raster_time;
+
+  Stopwatch ui_time;
+  ui_time.SetLapTime(build_time());
+
+  // We disable raster cache for dry-run.
+  RasterCache* raster_cache = nullptr;
+  // GrContext is only used when raster cache is enabled.
+  GrContext* gr_context = nullptr;
+  bool checkerboard_offscreen_layers = false;
+
+  PrerollContext context = {raster_cache,     gr_context,
+                            view_embedder,    stack,
+                            color_space,      kGiantRect,
+                            raster_time,      ui_time,
+                            texture_registry, checkerboard_offscreen_layers};
+
+  // For backends where we make decisions on |PrerollDryrun|,
+  // root surface transformation is identity.
+  SkMatrix matrix;
+  matrix.reset();
+
+  root_layer_->Preroll(&context, matrix);
+}
+
 void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
                         bool ignore_raster_cache) {
   TRACE_EVENT0("flutter", "LayerTree::Preroll");

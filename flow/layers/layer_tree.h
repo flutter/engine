@@ -24,6 +24,9 @@ class LayerTree {
 
   ~LayerTree();
 
+  // This version of preroll can occur on a non-gpu thread.
+  void PrerollDryrun(ExternalViewEmbedder* view_embedder);
+
   void Preroll(CompositorContext::ScopedFrame& frame,
                bool ignore_raster_cache = false);
 
