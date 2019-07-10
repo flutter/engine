@@ -85,6 +85,11 @@ struct MouseState {
 @property(nonatomic) MouseState mouseState;
 
 /**
+ * Starts running |engine|, including any initial setup.
+ */
+- (BOOL)launchEngine;
+
+/**
  * Updates |trackingArea| for the current tracking settings, creating it with
  * the correct mode if tracking is enabled, or removing it if not.
  */
@@ -144,6 +149,9 @@ struct MouseState {
 #pragma mark - FLEViewController implementation.
 
 @implementation FLEViewController {
+  // The project to run in this controller's engine.
+  FLEDartProject* _project;
+
   // The plugin used to handle text input. This is not an FlutterPlugin, so must be owned
   // separately.
   FLETextInputPlugin* _textInputPlugin;
@@ -165,7 +173,7 @@ struct MouseState {
  * Performs initialization that's common between the different init paths.
  */
 static void CommonInit(FLEViewController* controller) {
-  controller->_engine = [[FLEEngine alloc] initWithViewController:controller project:nil];
+  controller->_engine = [[FLEEngine alloc] initWithViewController:controller project:controller->_project];
   controller->_additionalKeyResponders = [[NSMutableOrderedSet alloc] init];
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
 }
@@ -186,6 +194,15 @@ static void CommonInit(FLEViewController* controller) {
   return self;
 }
 
+- (instancetype)initWithProject:(nullable FLEDartProject*)project {
+  self = [super initWithNibName:nil bundle:nil];
+  if (self != nil) {
+    _project = project;
+    CommonInit(self);
+  }
+  return self;
+}
+
 - (void)loadView {
   NSOpenGLContext* resourceContext = _engine.resourceContext;
   if (!resourceContext) {
@@ -201,6 +218,13 @@ static void CommonInit(FLEViewController* controller) {
   [self configureTrackingArea];
 }
 
+- (void)viewWillAppear {
+  [super viewWillAppear];
+  if (!_engine.running) {
+    [self launchEngine];
+  }
+}
+
 #pragma mark - Public methods
 
 - (void)setMouseTrackingMode:(FlutterMouseTrackingMode)mode {
@@ -209,22 +233,6 @@ static void CommonInit(FLEViewController* controller) {
   }
   _mouseTrackingMode = mode;
   [self configureTrackingArea];
-}
-
-- (BOOL)launchEngineWithProject:(nullable FLEDartProject*)project {
-  // Register internal plugins before starting the engine.
-  [self addInternalPlugins];
-
-  _engine.project = project;
-  if (![_engine run]) {
-    return NO;
-  }
-  // Send an initial window metrics event.
-  [self viewDidReshape:self.view];
-  // Send the initial user settings such as brightness and text scale factor
-  // to the engine.
-  [self sendInitialSettings];
-  return YES;
 }
 
 #pragma mark - Framework-internal methods
@@ -242,6 +250,21 @@ static void CommonInit(FLEViewController* controller) {
 }
 
 #pragma mark - Private methods
+
+- (BOOL)launchEngine {
+  // Register internal plugins before starting the engine.
+  [self addInternalPlugins];
+
+  if (![_engine run]) {
+    return NO;
+  }
+  // Send an initial window metrics event.
+  [self viewDidReshape:self.view];
+  // Send the initial user settings such as brightness and text scale factor
+  // to the engine.
+  [self sendInitialSettings];
+  return YES;
+}
 
 - (void)configureTrackingArea {
   if (_mouseTrackingMode != FlutterMouseTrackingModeNone && self.view) {
