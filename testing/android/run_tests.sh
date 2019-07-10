@@ -12,15 +12,15 @@ fi
 # Creates android/gradlew
 $FLUTTER_BIN build apk --debug
 
-pushd android
-
 case $1 in
   "--firebase" )  # Use Firebase Test Lab
+    pushd android
     ./gradlew \
       -Pverbose=true \
       -Ptrack-widget-creation=false \
       -Pfilesystem-scheme=org-dartlang-root \
       assembleAndroidTest
+    popd
     echo $GCLOUD_FIREBASE_TESTLAB_KEY > ${HOME}/gcloud-service-key.json
     gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
     gcloud --quiet config set project flutter-infra
@@ -34,12 +34,13 @@ case $1 in
     gsutil cp gs://flutter_firebase_testlab/release_smoke_test/$GIT_REVISION/$CIRRUS_BUILD_ID/walleye-26-en-portrait/logcat /tmp/logcat
     ! grep "E/flutter" /tmp/logcat || false
     grep "I/flutter" /tmp/logcat;;
-  *)  # Use local device instead
+  *)  # Default behavior: test using a local device
+    pushd android
     ./gradlew \
       -Pverbose=true \
       -Ptrack-widget-creation=false \
       -Pfilesystem-scheme=org-dartlang-root \
-      connectedAndroidTest;;
+      connectedAndroidTest
+    popd;;
 esac
 
-popd
