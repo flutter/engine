@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package com.example.android_test_adapter;
+package com.example.android_host_app;
 import com.example.android_host_app.MainActivity;
 import androidx.test.rule.ActivityTestRule;
 import io.flutter.plugin.common.MethodCall;
@@ -52,7 +52,7 @@ public class FlutterJUnitRunner extends Runner {
     try {
       Integer result = testResult.get();
       if (!result.equals(42)) {
-        notifier.fireTestFailure(new Failure(d, new Exception("failure of test")));
+        notifier.fireTestFailure(new Failure(description, new Exception("test failed")));
       }
     } catch (ExecutionException e) {
         notifier.fireTestFailure(new Failure(description, e));
