@@ -123,10 +123,4 @@ void ConcurrentTaskRunner::PostTask(fml::closure task) {
   task();
 }
 
-TaskQueueId ConcurrentMessageLoop::GetTaskQueueId() const {
-  FML_CHECK(false)
-      << "ConcurrentMessageLoop is not backed by MessageLoopTaskQueues.";
-  return 0;
-}
-
 }  // namespace fml
