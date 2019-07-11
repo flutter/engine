@@ -267,7 +267,7 @@ class SceneBuilder {
   /// blend mode.
   ///
   /// See [pop] for details about the operation stack.
-  ColorFilterEngineLayer pushColorFilter(Color color, BlendMode blendMode,
+  ColorFilterEngineLayer pushColorFilter(ColorFilter filter,
       {ColorFilterEngineLayer oldLayer}) {
     throw UnimplementedError();
   }

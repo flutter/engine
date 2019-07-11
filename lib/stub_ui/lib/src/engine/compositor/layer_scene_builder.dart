@@ -117,8 +117,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
   }
 
   @override
-  ui.ColorFilterEngineLayer pushColorFilter(
-      ui.Color color, ui.BlendMode blendMode,
+  ui.ColorFilterEngineLayer pushColorFilter(ui.ColorFilter filter,
       {ui.EngineLayer oldLayer}) {
     throw UnimplementedError();
   }
