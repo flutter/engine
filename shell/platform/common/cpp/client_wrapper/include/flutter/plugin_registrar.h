@@ -12,6 +12,7 @@
 #include <flutter_plugin_registrar.h>
 
 #include "binary_messenger.h"
+#include "texture_registrar.h"
 
 namespace flutter {
 
@@ -39,6 +40,8 @@ class PluginRegistrar {
   //
   // This pointer will remain valid for the lifetime of this instance.
   BinaryMessenger* messenger() { return messenger_.get(); }
+  
+  TextureRegistrar* textures() { return textures_.get(); }
 
   // Takes ownership of |plugin|.
   //
@@ -58,6 +61,8 @@ class PluginRegistrar {
   FlutterDesktopPluginRegistrarRef registrar_;
 
   std::unique_ptr<BinaryMessenger> messenger_;
+  
+  std::unique_ptr<TextureRegistrar> textures_;
 
   // Plugins registered for ownership.
   std::set<std::unique_ptr<Plugin>> plugins_;

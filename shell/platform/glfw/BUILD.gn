@@ -32,6 +32,8 @@ source_set("flutter_glfw_headers") {
 
 source_set("flutter_glfw") {
   sources = [
+    "external_texture_gl.h",
+    "external_texture_gl.cc",
     "flutter_glfw.cc",
     "glfw_event_loop.cc",
     "glfw_event_loop.h",

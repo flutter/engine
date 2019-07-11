@@ -103,12 +103,52 @@ void BinaryMessengerImpl::SetMessageHandler(const std::string& channel,
                                      ForwardToHandler, message_handler);
 }
 
+// Wrapper around a FlutterDesktopTextureRegistrarRef that implements the
+// TextureRegistrar API.
+class TextureRegistrarImpl : public TextureRegistrar {
+ public:
+  explicit TextureRegistrarImpl(FlutterDesktopTextureRegistrarRef texture_registrar)
+      : texture_registrar_(texture_registrar) {}
+
+  virtual ~TextureRegistrarImpl() = default;
+
+  // Prevent copying.
+  TextureRegistrarImpl(TextureRegistrarImpl const&) = delete;
+  TextureRegistrarImpl& operator=(TextureRegistrarImpl const&) = delete;
+
+  virtual int64_t RegisterTexture(Texture* texture) override {
+    FlutterTexutreCallback callback =
+        [](size_t width, size_t height,
+           void* user_data) -> std::shared_ptr<uint8_t> {
+      return ((Texture*)user_data)->CopyTextureBuffer(width, height);
+    };
+    int64_t texture_id =
+        FlutterDesktopRegisterExternalTexture(texture_registrar_, callback, texture);
+    return texture_id;
+  }
+
+  virtual void MarkTextureFrameAvailable(int64_t texture_id) override {
+    FlutterDesktopMarkExternalTextureFrameAvailable(texture_registrar_,
+                                                    texture_id);
+  }
+
+  virtual void UnregisterTexture(int64_t texture_id) override {
+    FlutterDesktopUnregisterExternalTexture(texture_registrar_, texture_id);
+  }
+
+ private:
+  // Handle for interacting with the C API.
+  FlutterDesktopTextureRegistrarRef texture_registrar_;
+};
+
 // PluginRegistrar:
 
 PluginRegistrar::PluginRegistrar(FlutterDesktopPluginRegistrarRef registrar)
     : registrar_(registrar) {
   auto core_messenger = FlutterDesktopRegistrarGetMessenger(registrar_);
   messenger_ = std::make_unique<BinaryMessengerImpl>(core_messenger);
+  auto texture_registrar = FlutterDesktopGetTextureRegistrar(registrar_);
+  textures_ = std::make_unique<TextureRegistrarImpl>(texture_registrar);
 }
 
 PluginRegistrar::~PluginRegistrar() {}

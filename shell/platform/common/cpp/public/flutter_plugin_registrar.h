@@ -10,6 +10,7 @@
 
 #include "flutter_export.h"
 #include "flutter_messenger.h"
+#include "flutter_texture_registrar.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -21,6 +22,10 @@ typedef struct FlutterDesktopPluginRegistrar* FlutterDesktopPluginRegistrarRef;
 // Returns the engine messenger associated with this registrar.
 FLUTTER_EXPORT FlutterDesktopMessengerRef
 FlutterDesktopRegistrarGetMessenger(FlutterDesktopPluginRegistrarRef registrar);
+
+// Returns the texture registrar associated with this registrar.
+FLUTTER_EXPORT FlutterDesktopTextureRegistrarRef
+FlutterDesktopGetTextureRegistrar(FlutterDesktopPluginRegistrarRef registrar);
 
 // Enables input blocking on the given channel.
 //
