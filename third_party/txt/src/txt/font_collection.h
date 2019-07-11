@@ -30,6 +30,10 @@
 #include "txt/asset_font_manager.h"
 #include "txt/text_style.h"
 
+#if FLUTTER_ENABLE_SKSHAPER
+#include "third_party/skia/modules/skparagraph/include/FontCollection.h"
+#endif
+
 namespace txt {
 
 class FontCollection : public std::enable_shared_from_this<FontCollection> {
@@ -62,6 +66,13 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
 
   // Remove all entries in the font family cache.
   void ClearFontFamilyCache();
+
+#if FLUTTER_ENABLE_SKSHAPER
+
+  // Construct a Skia text layout FontCollection based on this collection.
+  sk_sp<skia::textlayout::FontCollection> CreateSktFontCollection();
+
+#endif  // FLUTTER_ENABLE_SKSHAPER
 
  private:
   struct FamilyKey {

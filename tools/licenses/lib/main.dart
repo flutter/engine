@@ -54,7 +54,7 @@ abstract class _RepositoryLicensedFile extends _RepositoryFile {
   // file names that we are confident won't be included in the final build product
   static final RegExp _readmeNamePattern = RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
   static final RegExp _buildTimePattern = RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties)$', caseSensitive: false);
-  static final RegExp _docsPattern = RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|.+\.spec(?:\.in)?)$', caseSensitive: false);
+  static final RegExp _docsPattern = RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|Doxyfile|.+\.spec(?:\.in)?)$', caseSensitive: false);
   static final RegExp _devPattern = RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml)$', caseSensitive: false);
   static final RegExp _testsPattern = RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
 
@@ -1652,6 +1652,7 @@ class _RepositorySkiaThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
     return entry.name != 'giflib' // contains nothing that ends up in the binary executable
         && entry.name != 'freetype' // we use our own version
         && entry.name != 'freetype2' // we use our own version
+        && entry.name != 'gif' // not linked in
         && entry.name != 'icu' // we use our own version
         && entry.name != 'libjpeg-turbo' // we use our own version
         && entry.name != 'libpng' // we use our own version
@@ -2258,8 +2259,8 @@ class _Progress {
 Future<String> _readSignature(String goldenPath) async {
   try {
     final system.File goldenFile = system.File(goldenPath);
-    final String goldenSignature = await goldenFile.openRead()
-        .transform(utf8.decoder).transform(const LineSplitter()).first;
+    final String goldenSignature = await utf8.decoder.bind(goldenFile.openRead())
+        .transform(const LineSplitter()).first;
     final RegExp signaturePattern = RegExp(r'Signature: (\w+)');
     final Match goldenMatch = signaturePattern.matchAsPrefix(goldenSignature);
     if (goldenMatch != null)

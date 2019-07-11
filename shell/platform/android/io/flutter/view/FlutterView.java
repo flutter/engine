@@ -15,9 +15,8 @@ import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Handler;
-import android.provider.Settings;
-import android.support.annotation.NonNull;
 import android.os.LocaleList;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.annotation.UiThread;
 import android.text.format.DateFormat;
@@ -30,9 +29,9 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import io.flutter.app.FlutterPluginRegistry;
-import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.android.AndroidTouchProcessor;
+import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
@@ -600,38 +599,6 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
       preRun();
       mNativeView.runFromBundle(args);
       postRun();
-    }
-
-    /**
-     * @deprecated
-     * Please use runFromBundle with `FlutterRunArguments`.
-     */
-    @Deprecated
-    public void runFromBundle(String bundlePath, String defaultPath) {
-        runFromBundle(bundlePath, defaultPath, "main", false);
-    }
-
-    /**
-     * @deprecated
-     * Please use runFromBundle with `FlutterRunArguments`.
-     */
-    @Deprecated
-    public void runFromBundle(String bundlePath, String defaultPath, String entrypoint) {
-        runFromBundle(bundlePath, defaultPath, entrypoint, false);
-    }
-
-    /**
-     * @deprecated
-     * Please use runFromBundle with `FlutterRunArguments`.
-     * Parameter `reuseRuntimeController` has no effect.
-     */
-    @Deprecated
-    public void runFromBundle(String bundlePath, String defaultPath, String entrypoint, boolean reuseRuntimeController) {
-        FlutterRunArguments args = new FlutterRunArguments();
-        args.bundlePath = bundlePath;
-        args.entrypoint = entrypoint;
-        args.defaultPath = defaultPath;
-        runFromBundle(args);
     }
 
     /**

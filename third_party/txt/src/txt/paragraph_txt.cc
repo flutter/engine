@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "paragraph.h"
+#include "paragraph_txt.h"
 
 #include <hb.h>
 #include <minikin/Layout.h>
@@ -190,27 +190,27 @@ void FindWords(const std::vector<uint16_t>& text,
 
 static const float kDoubleDecorationSpacing = 3.0f;
 
-Paragraph::GlyphPosition::GlyphPosition(double x_start,
-                                        double x_advance,
-                                        size_t code_unit_index,
-                                        size_t code_unit_width)
+ParagraphTxt::GlyphPosition::GlyphPosition(double x_start,
+                                           double x_advance,
+                                           size_t code_unit_index,
+                                           size_t code_unit_width)
     : code_units(code_unit_index, code_unit_index + code_unit_width),
       x_pos(x_start, x_start + x_advance) {}
 
-void Paragraph::GlyphPosition::Shift(double delta) {
+void ParagraphTxt::GlyphPosition::Shift(double delta) {
   x_pos.Shift(delta);
 }
 
-Paragraph::GlyphLine::GlyphLine(std::vector<GlyphPosition>&& p, size_t tcu)
+ParagraphTxt::GlyphLine::GlyphLine(std::vector<GlyphPosition>&& p, size_t tcu)
     : positions(std::move(p)), total_code_units(tcu) {}
 
-Paragraph::CodeUnitRun::CodeUnitRun(std::vector<GlyphPosition>&& p,
-                                    Range<size_t> cu,
-                                    Range<double> x,
-                                    size_t line,
-                                    const SkFontMetrics& metrics,
-                                    TextDirection dir,
-                                    const PlaceholderRun* placeholder)
+ParagraphTxt::CodeUnitRun::CodeUnitRun(std::vector<GlyphPosition>&& p,
+                                       Range<size_t> cu,
+                                       Range<double> x,
+                                       size_t line,
+                                       const SkFontMetrics& metrics,
+                                       TextDirection dir,
+                                       const PlaceholderRun* placeholder)
     : positions(std::move(p)),
       code_units(cu),
       x_pos(x),
@@ -219,19 +219,19 @@ Paragraph::CodeUnitRun::CodeUnitRun(std::vector<GlyphPosition>&& p,
       direction(dir),
       placeholder_run(placeholder) {}
 
-void Paragraph::CodeUnitRun::Shift(double delta) {
+void ParagraphTxt::CodeUnitRun::Shift(double delta) {
   x_pos.Shift(delta);
   for (GlyphPosition& position : positions)
     position.Shift(delta);
 }
 
-Paragraph::Paragraph() {
+ParagraphTxt::ParagraphTxt() {
   breaker_.setLocale(icu::Locale(), nullptr);
 }
 
-Paragraph::~Paragraph() = default;
+ParagraphTxt::~ParagraphTxt() = default;
 
-void Paragraph::SetText(std::vector<uint16_t> text, StyledRuns runs) {
+void ParagraphTxt::SetText(std::vector<uint16_t> text, StyledRuns runs) {
   needs_layout_ = true;
   if (text.size() == 0)
     return;
@@ -239,7 +239,7 @@ void Paragraph::SetText(std::vector<uint16_t> text, StyledRuns runs) {
   runs_ = std::move(runs);
 }
 
-void Paragraph::SetInlinePlaceholders(
+void ParagraphTxt::SetInlinePlaceholders(
     std::vector<PlaceholderRun> inline_placeholders,
     std::unordered_set<size_t> obj_replacement_char_indexes) {
   needs_layout_ = true;
@@ -247,7 +247,7 @@ void Paragraph::SetInlinePlaceholders(
   obj_replacement_char_indexes_ = std::move(obj_replacement_char_indexes);
 }
 
-bool Paragraph::ComputeLineBreaks() {
+bool ParagraphTxt::ComputeLineBreaks() {
   line_ranges_.clear();
   line_widths_.clear();
   max_intrinsic_width_ = 0;
@@ -379,7 +379,7 @@ bool Paragraph::ComputeLineBreaks() {
   return true;
 }
 
-bool Paragraph::ComputeBidiRuns(std::vector<BidiRun>* result) {
+bool ParagraphTxt::ComputeBidiRuns(std::vector<BidiRun>* result) {
   if (text_.empty())
     return true;
 
@@ -402,6 +402,33 @@ bool Paragraph::ComputeBidiRuns(std::vector<BidiRun>* result) {
   if (!U_SUCCESS(status))
     return false;
 
+  // Detect if final trailing run is a single ambiguous whitespace.
+  // We want to bundle the final ambiguous whitespace with the preceding
+  // run in order to maintain logical typing behavior when mixing RTL and LTR
+  // text. We do not want this to be a true ghost run since the contrasting
+  // directionality causes the trailing space to not render at the visual end of
+  // the paragraph.
+  //
+  // This only applies to the final whitespace at the end as other whitespace is
+  // no longer ambiguous when surrounded by additional text.
+  bool has_trailing_whitespace = false;
+  int32_t bidi_run_start, bidi_run_length;
+  if (bidi_run_count > 1) {
+    ubidi_getVisualRun(bidi.get(), bidi_run_count - 1, &bidi_run_start,
+                       &bidi_run_length);
+    if (!U_SUCCESS(status))
+      return false;
+    if (bidi_run_length == 1) {
+      UChar32 last_char;
+      U16_GET(text_.data(), 0, bidi_run_start + bidi_run_length - 1,
+              static_cast<int>(text_.size()), last_char);
+      if (u_hasBinaryProperty(last_char, UCHAR_WHITE_SPACE)) {
+        has_trailing_whitespace = true;
+        bidi_run_count--;
+      }
+    }
+  }
+
   // Build a map of styled runs indexed by start position.
   std::map<size_t, StyledRuns::Run> styled_run_map;
   for (size_t i = 0; i < runs_.size(); ++i) {
@@ -411,7 +438,6 @@ bool Paragraph::ComputeBidiRuns(std::vector<BidiRun>* result) {
 
   for (int32_t bidi_run_index = 0; bidi_run_index < bidi_run_count;
        ++bidi_run_index) {
-    int32_t bidi_run_start, bidi_run_length;
     UBiDiDirection direction = ubidi_getVisualRun(
         bidi.get(), bidi_run_index, &bidi_run_start, &bidi_run_length);
     if (!U_SUCCESS(status))
@@ -437,6 +463,11 @@ bool Paragraph::ComputeBidiRuns(std::vector<BidiRun>* result) {
     }
     if (bidi_run_length == 0)
       continue;
+
+    // Attach the final trailing whitespace as part of this run.
+    if (has_trailing_whitespace && bidi_run_index == bidi_run_count - 1) {
+      bidi_run_length++;
+    }
 
     size_t bidi_run_end = bidi_run_start + bidi_run_length;
     TextDirection text_direction =
@@ -465,13 +496,13 @@ bool Paragraph::ComputeBidiRuns(std::vector<BidiRun>* result) {
   return true;
 }
 
-bool Paragraph::IsStrutValid() const {
+bool ParagraphTxt::IsStrutValid() const {
   // Font size must be positive.
   return (paragraph_style_.strut_enabled &&
           paragraph_style_.strut_font_size >= 0);
 }
 
-void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
+void ParagraphTxt::ComputeStrut(StrutMetrics* strut, SkFont& font) {
   strut->ascent = 0;
   strut->descent = 0;
   strut->leading = 0;
@@ -507,22 +538,38 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
     SkFontMetrics strut_metrics;
     font.getMetrics(&strut_metrics);
 
-    strut->ascent = paragraph_style_.strut_height * -strut_metrics.fAscent;
-    strut->descent = paragraph_style_.strut_height * strut_metrics.fDescent;
-    strut->leading =
-        // Use font's leading if there is no user specified strut leading.
-        paragraph_style_.strut_leading < 0
-            ? strut_metrics.fLeading
-            : (paragraph_style_.strut_leading *
-               (strut_metrics.fDescent - strut_metrics.fAscent));
+    if (paragraph_style_.strut_has_height_override) {
+      double metrics_height = -strut_metrics.fAscent + strut_metrics.fDescent;
+      strut->ascent = (-strut_metrics.fAscent / metrics_height) *
+                      paragraph_style_.strut_height *
+                      paragraph_style_.strut_font_size;
+      strut->descent = (strut_metrics.fDescent / metrics_height) *
+                       paragraph_style_.strut_height *
+                       paragraph_style_.strut_font_size;
+      strut->leading =
+          // Zero leading if there is no user specified strut leading.
+          paragraph_style_.strut_leading < 0
+              ? 0
+              : (paragraph_style_.strut_leading *
+                 paragraph_style_.strut_font_size);
+    } else {
+      strut->ascent = -strut_metrics.fAscent;
+      strut->descent = strut_metrics.fDescent;
+      strut->leading =
+          // Use font's leading if there is no user specified strut leading.
+          paragraph_style_.strut_leading < 0
+              ? strut_metrics.fLeading
+              : (paragraph_style_.strut_leading *
+                 paragraph_style_.strut_font_size);
+    }
     strut->half_leading = strut->leading / 2;
     strut->line_height = strut->ascent + strut->descent + strut->leading;
   }
 }
 
-void Paragraph::ComputePlaceholder(PlaceholderRun* placeholder_run,
-                                   double& ascent,
-                                   double& descent) {
+void ParagraphTxt::ComputePlaceholder(PlaceholderRun* placeholder_run,
+                                      double& ascent,
+                                      double& descent) {
   if (placeholder_run != nullptr) {
     // Calculate how much to shift the ascent and descent to account
     // for the baseline choice.
@@ -594,10 +641,10 @@ void Paragraph::ComputePlaceholder(PlaceholderRun* placeholder_run,
 //   -Apply letter spacing, alignment, justification, etc
 //   -Calculate line vertical layout (ascent, descent, etc)
 //   -Store per-line metrics
-void Paragraph::Layout(double width, bool force) {
+void ParagraphTxt::Layout(double width) {
   double rounded_width = floor(width);
   // Do not allow calling layout multiple times without changing anything.
-  if (!needs_layout_ && rounded_width == width_ && !force) {
+  if (!needs_layout_ && rounded_width == width_) {
     return;
   }
 
@@ -1042,11 +1089,21 @@ void Paragraph::Layout(double width, bool force) {
                                    const TextStyle& style,
                                    PlaceholderRun* placeholder_run) {
       if (!strut_.force_strut) {
-        double ascent =
-            (-metrics.fAscent + metrics.fLeading / 2) * style.height;
-        double descent =
-            (metrics.fDescent + metrics.fLeading / 2) * style.height;
-
+        double ascent;
+        double descent;
+        if (style.has_height_override) {
+          // Scale the ascent and descent such that the sum of ascent and
+          // descent is `fontsize * style.height * style.font_size`.
+          double metrics_height = -metrics.fAscent + metrics.fDescent;
+          ascent = (-metrics.fAscent / metrics_height) * style.height *
+                   style.font_size;
+          descent = (metrics.fDescent / metrics_height) * style.height *
+                    style.font_size;
+        } else {
+          // Use the font-provided ascent, descent, and leading directly.
+          ascent = (-metrics.fAscent + metrics.fLeading / 2);
+          descent = (metrics.fDescent + metrics.fLeading / 2);
+        }
         ComputePlaceholder(placeholder_run, ascent, descent);
 
         max_ascent = std::max(ascent, max_ascent);
@@ -1117,7 +1174,7 @@ void Paragraph::Layout(double width, bool force) {
   longest_line_ = max_right_ - min_left_;
 }
 
-double Paragraph::GetLineXOffset(double line_total_advance) {
+double ParagraphTxt::GetLineXOffset(double line_total_advance) {
   if (isinf(width_))
     return 0;
 
@@ -1132,56 +1189,56 @@ double Paragraph::GetLineXOffset(double line_total_advance) {
   }
 }
 
-const ParagraphStyle& Paragraph::GetParagraphStyle() const {
+const ParagraphStyle& ParagraphTxt::GetParagraphStyle() const {
   return paragraph_style_;
 }
 
-double Paragraph::GetAlphabeticBaseline() const {
+double ParagraphTxt::GetAlphabeticBaseline() {
   // Currently -fAscent
   return alphabetic_baseline_;
 }
 
-double Paragraph::GetIdeographicBaseline() const {
+double ParagraphTxt::GetIdeographicBaseline() {
   // TODO(garyq): Currently -fAscent + fUnderlinePosition. Verify this.
   return ideographic_baseline_;
 }
 
-double Paragraph::GetMaxIntrinsicWidth() const {
+double ParagraphTxt::GetMaxIntrinsicWidth() {
   return max_intrinsic_width_;
 }
 
-double Paragraph::GetMinIntrinsicWidth() const {
+double ParagraphTxt::GetMinIntrinsicWidth() {
   return min_intrinsic_width_;
 }
 
-size_t Paragraph::TextSize() const {
+size_t ParagraphTxt::TextSize() const {
   return text_.size();
 }
 
-double Paragraph::GetHeight() const {
+double ParagraphTxt::GetHeight() {
   return line_heights_.size() ? line_heights_.back() : 0;
 }
 
-double Paragraph::GetMaxWidth() const {
+double ParagraphTxt::GetMaxWidth() {
   return width_;
 }
 
-double Paragraph::GetLongestLine() const {
+double ParagraphTxt::GetLongestLine() {
   return longest_line_;
 }
 
-void Paragraph::SetParagraphStyle(const ParagraphStyle& style) {
+void ParagraphTxt::SetParagraphStyle(const ParagraphStyle& style) {
   needs_layout_ = true;
   paragraph_style_ = style;
 }
 
-void Paragraph::SetFontCollection(
+void ParagraphTxt::SetFontCollection(
     std::shared_ptr<FontCollection> font_collection) {
   font_collection_ = std::move(font_collection);
 }
 
 std::shared_ptr<minikin::FontCollection>
-Paragraph::GetMinikinFontCollectionForStyle(const TextStyle& style) {
+ParagraphTxt::GetMinikinFontCollectionForStyle(const TextStyle& style) {
   std::string locale;
   if (!style.locale.empty()) {
     uint32_t language_list_id =
@@ -1197,7 +1254,7 @@ Paragraph::GetMinikinFontCollectionForStyle(const TextStyle& style) {
       style.font_families, locale);
 }
 
-sk_sp<SkTypeface> Paragraph::GetDefaultSkiaTypeface(const TextStyle& style) {
+sk_sp<SkTypeface> ParagraphTxt::GetDefaultSkiaTypeface(const TextStyle& style) {
   std::shared_ptr<minikin::FontCollection> collection =
       GetMinikinFontCollectionForStyle(style);
   if (!collection) {
@@ -1210,7 +1267,7 @@ sk_sp<SkTypeface> Paragraph::GetDefaultSkiaTypeface(const TextStyle& style) {
 
 // The x,y coordinates will be the very top left corner of the rendered
 // paragraph.
-void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
+void ParagraphTxt::Paint(SkCanvas* canvas, double x, double y) {
   SkPoint base_offset = SkPoint::Make(x, y);
   SkPaint paint;
   // Paint the background first before painting any text to prevent
@@ -1234,9 +1291,9 @@ void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
   }
 }
 
-void Paragraph::PaintDecorations(SkCanvas* canvas,
-                                 const PaintRecord& record,
-                                 SkPoint base_offset) {
+void ParagraphTxt::PaintDecorations(SkCanvas* canvas,
+                                    const PaintRecord& record,
+                                    SkPoint base_offset) {
   if (record.style().decoration == TextDecoration::kNone)
     return;
 
@@ -1316,17 +1373,9 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
       break;
     }
     case TextDecorationStyle::kWavy: {
-      int wave_count = 0;
-      double x_start = 0;
-      double wavelength =
-          underline_thickness * record.style().decoration_thickness_multiplier;
-      path.moveTo(x, y);
-      while (x_start + wavelength * 2 < width) {
-        path.rQuadTo(wavelength, wave_count % 2 != 0 ? wavelength : -wavelength,
-                     wavelength * 2, 0);
-        x_start += wavelength * 2;
-        ++wave_count;
-      }
+      ComputeWavyDecoration(
+          path, x, y, width,
+          underline_thickness * record.style().decoration_thickness_multiplier);
       break;
     }
   }
@@ -1394,9 +1443,51 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
   }
 }
 
-void Paragraph::PaintBackground(SkCanvas* canvas,
-                                const PaintRecord& record,
-                                SkPoint base_offset) {
+void ParagraphTxt::ComputeWavyDecoration(SkPath& path,
+                                         double x,
+                                         double y,
+                                         double width,
+                                         double thickness) {
+  int wave_count = 0;
+  double x_start = 0;
+  // One full wavelength is 4 * thickness.
+  double quarter = thickness;
+  path.moveTo(x, y);
+  double remaining = width;
+  while (x_start + (quarter * 2) < width) {
+    path.rQuadTo(quarter, wave_count % 2 == 0 ? -quarter : quarter, quarter * 2,
+                 0);
+    x_start += quarter * 2;
+    remaining = width - x_start;
+    ++wave_count;
+  }
+  // Manually add a final partial quad for the remaining width that do
+  // not fit nicely into a half-wavelength.
+  // The following math is based off of quadratic bezier equations:
+  //
+  //  * Let P(x) be the equation for the curve.
+  //  * Let P0 = start, P1 = control point, P2 = end
+  //  * P(x) = -2x^2 - 2x
+  //  * P0 = (0, 0)
+  //  * P1 = 2P(0.5) - 0.5 * P0 - 0.5 * P2
+  //  * P2 = P(remaining / (wavelength / 2))
+  //
+  // Simplified implementation coursesy of @jim-flar at
+  // https://github.com/flutter/engine/pull/9468#discussion_r297872739
+  // Unsimplified original version at
+  // https://github.com/flutter/engine/pull/9468#discussion_r297879129
+
+  double x1 = remaining / 2;
+  double y1 = remaining / 2 * (wave_count % 2 == 0 ? -1 : 1);
+  double x2 = remaining;
+  double y2 = (remaining - remaining * remaining / (quarter * 2)) *
+              (wave_count % 2 == 0 ? -1 : 1);
+  path.rQuadTo(x1, y1, x2, y2);
+}
+
+void ParagraphTxt::PaintBackground(SkCanvas* canvas,
+                                   const PaintRecord& record,
+                                   SkPoint base_offset) {
   if (!record.style().has_background)
     return;
 
@@ -1407,9 +1498,9 @@ void Paragraph::PaintBackground(SkCanvas* canvas,
   canvas->drawRect(rect, record.style().background);
 }
 
-void Paragraph::PaintShadow(SkCanvas* canvas,
-                            const PaintRecord& record,
-                            SkPoint offset) {
+void ParagraphTxt::PaintShadow(SkCanvas* canvas,
+                               const PaintRecord& record,
+                               SkPoint offset) {
   if (record.style().text_shadows.size() == 0)
     return;
   for (TextShadow text_shadow : record.style().text_shadows) {
@@ -1428,11 +1519,11 @@ void Paragraph::PaintShadow(SkCanvas* canvas,
   }
 }
 
-std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
+std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     size_t start,
     size_t end,
     RectHeightStyle rect_height_style,
-    RectWidthStyle rect_width_style) const {
+    RectWidthStyle rect_width_style) {
   // Struct that holds calculated metrics for each line.
   struct LineBoxMetrics {
     std::vector<Paragraph::TextBox> boxes;
@@ -1651,9 +1742,9 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
   return boxes;
 }
 
-Paragraph::PositionWithAffinity Paragraph::GetGlyphPositionAtCoordinate(
+Paragraph::PositionWithAffinity ParagraphTxt::GetGlyphPositionAtCoordinate(
     double dx,
-    double dy) const {
+    double dy) {
   if (line_heights_.empty())
     return PositionWithAffinity(0, DOWNSTREAM);
 
@@ -1712,7 +1803,7 @@ Paragraph::PositionWithAffinity Paragraph::GetGlyphPositionAtCoordinate(
 
 // We don't cache this because since this returns all boxes, it is usually
 // unnecessary to call this multiple times in succession.
-std::vector<Paragraph::TextBox> Paragraph::GetRectsForPlaceholders() const {
+std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForPlaceholders() {
   // Struct that holds calculated metrics for each line.
   struct LineBoxMetrics {
     std::vector<Paragraph::TextBox> boxes;
@@ -1750,7 +1841,7 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForPlaceholders() const {
   return boxes;
 }
 
-Paragraph::Range<size_t> Paragraph::GetWordBoundary(size_t offset) const {
+Paragraph::Range<size_t> ParagraphTxt::GetWordBoundary(size_t offset) {
   if (text_.size() == 0)
     return Range<size_t>(0, 0);
 
@@ -1773,15 +1864,15 @@ Paragraph::Range<size_t> Paragraph::GetWordBoundary(size_t offset) const {
   return Range<size_t>(prev_boundary, next_boundary);
 }
 
-size_t Paragraph::GetLineCount() const {
+size_t ParagraphTxt::GetLineCount() {
   return line_heights_.size();
 }
 
-bool Paragraph::DidExceedMaxLines() const {
+bool ParagraphTxt::DidExceedMaxLines() {
   return did_exceed_max_lines_;
 }
 
-void Paragraph::SetDirty(bool dirty) {
+void ParagraphTxt::SetDirty(bool dirty) {
   needs_layout_ = dirty;
 }
 

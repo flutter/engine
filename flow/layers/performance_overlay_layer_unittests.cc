@@ -47,7 +47,6 @@ TEST(PerformanceOverlayLayer, Gold) {
   ASSERT_TRUE(surface != nullptr);
 
   flutter::TextureRegistry unused_texture_registry;
-
   flutter::Layer::PaintContext paintContext = {
       nullptr,        surface->getCanvas(),    nullptr, nullptr, mock_stopwatch,
       mock_stopwatch, unused_texture_registry, nullptr, false};

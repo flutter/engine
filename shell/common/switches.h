@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <string_view>
+
 #include "flutter/common/settings.h"
 #include "flutter/fml/command_line.h"
-#include "flutter/fml/string_view.h"
 
 #ifndef SHELL_COMMON_SWITCHES_H_
 #define SHELL_COMMON_SWITCHES_H_
@@ -61,6 +62,11 @@ DEF_SWITCH(DartFlags,
            "dart-flags",
            "Flags passed directly to the Dart VM without being interpreted "
            "by the Flutter shell.")
+DEF_SWITCH(DeviceObservatoryHost,
+           "observatory-host",
+           "The hostname/IP address on which the Dart Observatory should "
+           "be served. If not set, defaults to 127.0.0.1 or ::1 depending on "
+           "whether --ipv6 is specified.")
 DEF_SWITCH(DeviceObservatoryPort,
            "observatory-port",
            "A custom Dart Observatory port. The default is to pick a randomly "
@@ -71,7 +77,8 @@ DEF_SWITCH(DisableObservatory,
            "in release mode.")
 DEF_SWITCH(IPv6,
            "ipv6",
-           "Bind to the IPv6 localhost address for the Dart Observatory.")
+           "Bind to the IPv6 localhost address for the Dart Observatory. "
+           "Ignored if --observatory-host is set.")
 DEF_SWITCH(EnableDartProfiling,
            "enable-dart-profiling",
            "Enable Dart profiling. Profiling information can be viewed from "
@@ -151,7 +158,7 @@ DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);
 
-const fml::StringView FlagForSwitch(Switch swtch);
+const std::string_view FlagForSwitch(Switch swtch);
 
 Settings SettingsFromCommandLine(const fml::CommandLine& command_line);
 

@@ -46,6 +46,11 @@ class Rasterizer final : public SnapshotDelegate {
 
   void Teardown();
 
+  // Frees up Skia GPU resources.
+  //
+  // This method must be called from the GPU task runner.
+  void NotifyLowMemoryWarning() const;
+
   fml::WeakPtr<Rasterizer> GetWeakPtr() const;
 
   fml::WeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
@@ -104,7 +109,7 @@ class Rasterizer final : public SnapshotDelegate {
 
   void DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree);
 
-  bool DrawToSurface(flutter::LayerTree& layer_tree);
+  RasterStatus DrawToSurface(flutter::LayerTree& layer_tree);
 
   void FireNextFrameCallbackIfPresent();
 
