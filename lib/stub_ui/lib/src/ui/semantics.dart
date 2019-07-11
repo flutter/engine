@@ -292,6 +292,7 @@ class SemanticsFlag {
   static const int _kIsToggledIndex = 1 << 17;
   static const int _kHasImplicitScrollingIndex = 1 << 18;
   static const int _kIsMultilineIndex = 1 << 19;
+  static const int _kIsReadOnlyIndex = 1 << 20;
 
   const SemanticsFlag._(this.index);
 
@@ -358,6 +359,12 @@ class SemanticsFlag {
   /// therefore does not have an "enabled" state.
   static const SemanticsFlag hasEnabledState =
       SemanticsFlag._(_kHasEnabledStateIndex);
+
+  /// Whether the semantic node is read only.
+  ///
+  /// Only applicable when [isTextField] is true.
+  static const SemanticsFlag isReadOnly =
+      const SemanticsFlag._(_kIsReadOnlyIndex);
 
   /// Whether a semantic node that [hasEnabledState] is currently enabled.
   ///
