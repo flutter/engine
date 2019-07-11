@@ -64,7 +64,6 @@ FlutterViewController.html"
 ACTUAL_CLASSES=$(ls "$1/Classes" | sort)
 
 if [[ $EXPECTED_CLASSES != $ACTUAL_CLASSES ]]; then
-
   echo "Expected classes did not match actual classes"
   echo
   diff <(echo "$EXPECTED_CLASSES") <(echo "$ACTUAL_CLASSES")
