@@ -45,14 +45,14 @@ namespace flutter {
 ///
 /// The engine is responsible for the entire life-cycle of the root isolate.
 /// When the engine is collected, its owner assumes that the root isolate has
-/// been shutdown and appropriate resource collected. While each engine instance
-/// can only manage a single instance of a root isolate, it may restart that
-/// isolate on request. This is how the cold-restart development scenario is
-/// supported.
+/// been shutdown and appropriate resources collected. While each engine
+/// instance can only manage a single instance of a root isolate, it may restart
+/// that isolate on request. This is how the cold-restart development scenario
+/// is supported.
 ///
 /// When the engine instance is initially created, the root isolate is created
 /// but it is not in the |DartIsolate::Phase::Running| phase yet. It only moves
-/// into that phase when a successful call to Engine::Run is made.
+/// into that phase when a successful call to `Engine::Run` is made.
 ///
 /// @see      `Shell`
 ///
@@ -138,7 +138,7 @@ class Engine final : public RuntimeDelegate {
     ///             the underlying platform. The engine delegates this task to
     ///             the shell via this call. The engine cannot access the
     ///             underlying platform directly because of threading
-    ///             considerations. Most platform specific API's to convey
+    ///             considerations. Most platform specific APIs to convey
     ///             accessibility information are only safe to access on the
     ///             platform task runner while the engine is running on the UI
     ///             task runner.
@@ -485,8 +485,8 @@ class Engine final : public RuntimeDelegate {
   ///
   //  TODO(chinmaygarde): The use `int64_t` is added for ease of conversion to
   //  Dart but hurts readability. The phases and the units of the timepoints are
-  //  not obvious without some sleuthing. The conversion can happen at th native
-  //  interface boundary instead.
+  //  not obvious without some sleuthing. The conversion can happen at the
+  //  native interface boundary instead.
   ///
   /// @param[in]  timings  Collection of `FrameTiming::kCount` * `n` timestamps
   ///                      for `n` frames whose timings have not been reported
@@ -535,7 +535,7 @@ class Engine final : public RuntimeDelegate {
   ///             mean termination of the process. Besides, the return value of
   ///             the main entrypoint is discarded.
   ///
-  ///             Once technique used by embedders to determine "liveness" is to
+  ///             One technique used by embedders to determine "liveness" is to
   ///             count the outstanding live ports dedicated to the application.
   ///             These ports may be live as a result of pending timers,
   ///             scheduled tasks, pending IO on sockets, channels open with
@@ -585,7 +585,7 @@ class Engine final : public RuntimeDelegate {
   /// @brief      Indicates to the Flutter application that it has obtained a
   ///             rendering surface. This is a good opportunity for the engine
   ///             to start servicing any outstanding frame requests from the
-  ///             Flutter application. Flutter application that have no
+  ///             Flutter applications. Flutter application that have no
   ///             rendering concerns may never get a rendering surface. In such
   ///             cases, while their root isolate can perform as normal, any
   ///             frame requests made by them will never be serviced and layer
@@ -663,8 +663,7 @@ class Engine final : public RuntimeDelegate {
   /// @param[in]  id      The identifier of the accessibility node.
   /// @param[in]  action  The accessibility related action performed on the
   ///                     node of the specified ID.
-  /// @param[in]  args    An optional list of argument that apply to the
-  ///                     specified action.
+  /// @param[in]  args    Optional data that applies to the specified action.
   ///
   void DispatchSemanticsAction(int id,
                                SemanticsAction action,
