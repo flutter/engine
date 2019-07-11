@@ -36,7 +36,7 @@ then
     echo "changed, no diffs are typically expected in the output of the"
     echo "script. Verify the output, and if it looks correct, update the"
     echo "license tool signature golden file:"
-    echo "  ci/licences_golden/tool_signature"
+    echo "  ci/licenses_golden/tool_signature"
     echo "For more information, see the script in:"
     echo "  https://github.com/flutter/engine/tree/master/tools/licenses"
     echo ""
@@ -46,7 +46,7 @@ fi
 
 echo "Checking license count in licenses_flutter..."
 actualLicenseCount=`tail -n 1 flutter/ci/licenses_golden/licenses_flutter | tr -dc '0-9'`
-expectedLicenseCount=3 # When changing this number: Update the error message below as well describing all expected license types.
+expectedLicenseCount=2 # When changing this number: Update the error message below as well describing all expected license types.
 
 if [ "$actualLicenseCount" -ne "$expectedLicenseCount" ]
 then
@@ -57,8 +57,6 @@ then
     echo "double-check that all newly added files have a BSD-style license"
     echo "header with the following copyright:"
     echo "    Copyright 2013 The Flutter Authors. All rights reserved."
-    echo "Files in 'third_party/bsdiff' may have the following copyright instead:"
-    echo "    Copyright 2003-2005 Colin Percival. All rights reserved."
     echo "Files in 'third_party/txt' may have an Apache license header instead."
     echo "If you're absolutely sure that the change in license count is"
     echo "intentional, update 'flutter/ci/licenses.sh' with the new count."

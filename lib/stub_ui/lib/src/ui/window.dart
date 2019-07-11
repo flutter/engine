@@ -4,9 +4,6 @@
 
 part of ui;
 
-/// When set to true, all platform messages will be printed to the console.
-const _debugPrintPlatformMessages = false;
-
 /// Signature of callbacks that have no arguments and return no data.
 typedef VoidCallback = void Function();
 
@@ -17,6 +14,9 @@ typedef VoidCallback = void Function();
 /// timelines so that all the animations in the system are synchronized to a
 /// common time base.
 typedef FrameCallback = void Function(Duration duration);
+
+/// Signature for [Window.onReportTimings].
+typedef TimingsCallback = void Function(List<FrameTiming> timings);
 
 /// Signature for [Window.onPointerDataPacket].
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
@@ -34,6 +34,98 @@ typedef PlatformMessageResponseCallback = void Function(ByteData data);
 /// Signature for [Window.onPlatformMessage].
 typedef PlatformMessageCallback = void Function(
     String name, ByteData data, PlatformMessageResponseCallback callback);
+
+/// Various important time points in the lifetime of a frame.
+///
+/// [FrameTiming] records a timestamp of each phase for performance analysis.
+enum FramePhase {
+  /// When the UI thread starts building a frame.
+  ///
+  /// See also [FrameTiming.buildDuration].
+  buildStart,
+
+  /// When the UI thread finishes building a frame.
+  ///
+  /// See also [FrameTiming.buildDuration].
+  buildFinish,
+
+  /// When the GPU thread starts rasterizing a frame.
+  ///
+  /// See also [FrameTiming.rasterDuration].
+  rasterStart,
+
+  /// When the GPU thread finishes rasterizing a frame.
+  ///
+  /// See also [FrameTiming.rasterDuration].
+  rasterFinish,
+}
+
+/// Time-related performance metrics of a frame.
+///
+/// See [Window.onReportTimings] for how to get this.
+///
+/// The metrics in debug mode (`flutter run` without any flags) may be very
+/// different from those in profile and release modes due to the debug overhead.
+/// Therefore it's recommended to only monitor and analyze performance metrics
+/// in profile and release modes.
+class FrameTiming {
+  /// Construct [FrameTiming] with raw timestamps in microseconds.
+  ///
+  /// List [timestamps] must have the same number of elements as
+  /// [FramePhase.values].
+  ///
+  /// This constructor is usually only called by the Flutter engine, or a test.
+  /// To get the [FrameTiming] of your app, see [Window.onReportTimings].
+  FrameTiming(List<int> timestamps)
+      : assert(timestamps.length == FramePhase.values.length), _timestamps = timestamps;
+
+  /// This is a raw timestamp in microseconds from some epoch. The epoch in all
+  /// [FrameTiming] is the same, but it may not match [DateTime]'s epoch.
+  int timestampInMicroseconds(FramePhase phase) => _timestamps[phase.index];
+
+  Duration _rawDuration(FramePhase phase) => Duration(microseconds: _timestamps[phase.index]);
+
+  /// The duration to build the frame on the UI thread.
+  ///
+  /// The build starts approximately when [Window.onBeginFrame] is called. The
+  /// [Duration] in the [Window.onBeginFrame] callback is exactly the
+  /// `Duration(microseconds: timestampInMicroseconds(FramePhase.buildStart))`.
+  ///
+  /// The build finishes when [Window.render] is called.
+  ///
+  /// {@template dart.ui.FrameTiming.fps_smoothness_milliseconds}
+  /// To ensure smooth animations of X fps, this should not exceed 1000/X
+  /// milliseconds.
+  /// {@endtemplate}
+  /// {@template dart.ui.FrameTiming.fps_milliseconds}
+  /// That's about 16ms for 60fps, and 8ms for 120fps.
+  /// {@endtemplate}
+  Duration get buildDuration => _rawDuration(FramePhase.buildFinish) - _rawDuration(FramePhase.buildStart);
+
+  /// The duration to rasterize the frame on the GPU thread.
+  ///
+  /// {@macro dart.ui.FrameTiming.fps_smoothness_milliseconds}
+  /// {@macro dart.ui.FrameTiming.fps_milliseconds}
+  Duration get rasterDuration => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.rasterStart);
+
+  /// The timespan between build start and raster finish.
+  ///
+  /// To achieve the lowest latency on an X fps display, this should not exceed
+  /// 1000/X milliseconds.
+  /// {@macro dart.ui.FrameTiming.fps_milliseconds}
+  ///
+  /// See also [buildDuration] and [rasterDuration].
+  Duration get totalSpan => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.buildStart);
+
+  final List<int> _timestamps;  // in microseconds
+
+  String _formatMS(Duration duration) => '${duration.inMicroseconds * 0.001}ms';
+
+  @override
+  String toString() {
+    return '$runtimeType(buildDuration: ${_formatMS(buildDuration)}, rasterDuration: ${_formatMS(rasterDuration)}, totalSpan: ${_formatMS(totalSpan)})';
+  }
+}
 
 /// States that an application can be in.
 ///
@@ -88,9 +180,10 @@ enum AppLifecycleState {
 
 /// A representation of distances for each of the four edges of a rectangle,
 /// used to encode the view insets and padding that applications should place
-/// around their user interface, as exposed by [Window.viewInsets] and
-/// [Window.padding]. View insets and padding are preferably read via
-/// [MediaQuery.of].
+/// around their user interface, as exposed by [Window.viewInsets],
+/// [Window.viewPadding], and [Window.padding]. View insets and padding are
+/// preferably read via [MediaQuery.of], since [MediaQuery] will notify its
+/// descendants when these values are updated.
 ///
 /// For a generic class that represents distances around a rectangle, see the
 /// [EdgeInsets] class.
@@ -126,7 +219,9 @@ class WindowPadding {
       const WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
 
   @override
-  String toString() => 'WindowPadding';
+  String toString() {
+    return 'WindowPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
+  }
 }
 
 /// An identifier used to select a user's language and formatting preferences.
@@ -482,39 +577,15 @@ class Locale {
     return out.toString();
   }
 
-  String toLanguageTag() {
-    throw UnimplementedError();
-  }
+  // TODO(yjbanov): implement to match flutter native.
+  String toLanguageTag() => '_';
 }
 
 /// The most basic interface to the host operating system's user interface.
 ///
 /// There is a single Window instance in the system, which you can
 /// obtain from the [window] property.
-class Window {
-  Window._();
-
-  /// Handles the browser history integration to allow users to use the back
-  /// button, etc.
-  final engine.BrowserHistory _browserHistory = engine.BrowserHistory();
-
-  /// Simulates clicking the browser's back button.
-  Future<void> webOnlyBack() => _browserHistory.back();
-
-  /// Change the strategy to use for handling browser history location.
-  /// Setting this member will automatically update [_browserHistory].
-  ///
-  /// By setting this to null, the browser history will be disabled.
-  set webOnlyLocationStrategy(LocationStrategy strategy) {
-    _browserHistory.locationStrategy = strategy;
-  }
-
-  /// This setter is used by [WebNavigatorObserver] to update the url to
-  /// reflect the [Navigator]'s current route name.
-  set webOnlyRouteName(String routeName) {
-    _browserHistory.setRouteName(routeName);
-  }
-
+abstract class Window {
   /// The number of device pixels for each logical pixel. This number might not
   /// be a power of two. Indeed, it might not even be an integer. For example,
   /// the Nexus 6 has a device pixel ratio of 3.5.
@@ -538,12 +609,7 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  double get devicePixelRatio => _devicePixelRatio;
-  double _devicePixelRatio = 1.0;
-  // TODO(yjbanov): Remove setter usage from engine.
-  set devicePixelRatio(double value) {
-    _devicePixelRatio = value;
-  }
+  double get devicePixelRatio;
 
   /// The dimensions of the rectangle into which the application will be drawn,
   /// in physical pixels.
@@ -562,43 +628,7 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  Size get physicalSize {
-    bool override = false;
-
-    assert(() {
-      if (webOnlyDebugPhysicalSizeOverride != null) {
-        _physicalSize = webOnlyDebugPhysicalSizeOverride;
-        override = true;
-      }
-      return true;
-    }());
-
-    if (!override) {
-      final int windowInnerWidth = html.window.innerWidth;
-      final int windowInnerHeight = html.window.innerHeight;
-      if (windowInnerWidth != _lastKnownWindowInnerWidth ||
-          windowInnerHeight != _lastKnownWindowInnerHeight) {
-        _lastKnownWindowInnerWidth = windowInnerWidth;
-        _lastKnownWindowInnerHeight = windowInnerHeight;
-        _physicalSize = Size(
-          windowInnerWidth.toDouble(),
-          windowInnerHeight.toDouble(),
-        );
-      }
-    }
-
-    return _physicalSize;
-  }
-
-  Size _physicalSize = Size.zero;
-  int _lastKnownWindowInnerWidth = -1;
-  int _lastKnownWindowInnerHeight = -1;
-
-  /// Overrides the value of [physicalSize] in tests.
-  // TODO(flutter_web): Move this into a Web-specific implementation of Window.
-  Size webOnlyDebugPhysicalSizeOverride;
-
-  String get initialLifecycleState => 'AppLifecycleState.resumed';
+  Size get physicalSize;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the application can render, but over which the operating system
@@ -616,11 +646,21 @@ class Window {
   ///    design applications.
   WindowPadding get viewInsets => WindowPadding.zero;
 
+  WindowPadding get viewPadding => WindowPadding.zero;
+
   /// The number of physical pixels on each side of the display rectangle into
   /// which the application can render, but which may be partially obscured by
   /// system UI (such as the system notification area), or or physical
   /// intrusions in the display (e.g. overscan regions on television screens or
   /// phone sensor housings).
+  ///
+  /// This value is calculated by taking
+  /// `max(0.0, Window.viewPadding - Window.viewInsets)`. This will treat a
+  /// system IME that increases the bottm inset as consuming that much of the
+  /// bottom padding. For example, on an iPhone X, [Window.padding.bottom] is
+  /// the same as [Window.viewPadding.bottom] when the soft keyboard is not
+  /// drawn (to account for the bottom soft button area), but will be `0.0` when
+  /// the soft keyboard is visible.
   ///
   /// When this changes, [onMetricsChanged] is called.
   ///
@@ -632,10 +672,6 @@ class Window {
   ///  * [Scaffold], which automatically applies the padding in material design
   ///    applications.
   WindowPadding get padding => WindowPadding.zero;
-
-  void setIsolateDebugName(String name) {
-    throw UnimplementedError();
-  }
 
   /// The system-reported text scale.
   ///
@@ -768,8 +804,6 @@ class Window {
     _onLocaleChanged = callback;
   }
 
-  VoidCallback webOnlyScheduleFrameCallback;
-
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame]
   /// and [onDrawFrame] callbacks be invoked.
   ///
@@ -830,6 +864,30 @@ class Window {
     _onDrawFrame = callback;
   }
 
+  /// A callback that is invoked to report the [FrameTiming] of recently
+  /// rasterized frames.
+  ///
+  /// This can be used to see if the application has missed frames (through
+  /// [FrameTiming.buildDuration] and [FrameTiming.rasterDuration]), or high
+  /// latencies (through [FrameTiming.totalSpan]).
+  ///
+  /// Unlike [Timeline], the timing information here is available in the release
+  /// mode (additional to the profile and the debug mode). Hence this can be
+  /// used to monitor the application's performance in the wild.
+  ///
+  /// The callback may not be immediately triggered after each frame. Instead,
+  /// it tries to batch frames together and send all their timings at once to
+  /// decrease the overhead (as this is available in the release mode). The
+  /// timing of any frame will be sent within about 1 second even if there are
+  /// no later frames to batch.
+  TimingsCallback get onReportTimings => _onReportTimings;
+  TimingsCallback _onReportTimings;
+  Zone _onReportTimingsZone;
+  set onReportTimings(TimingsCallback callback) {
+    _onReportTimings = callback;
+    _onReportTimingsZone = Zone.current;
+  }
+
   /// A callback that is invoked when pointer data is available.
   ///
   /// The framework invokes this callback in the same zone in which the
@@ -875,7 +933,7 @@ class Window {
   ///  * [Navigator], a widget that handles routing.
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
-  String get defaultRouteName => _browserHistory.currentPath;
+  String get defaultRouteName;
 
   /// Whether the user has requested that [updateSemantics] be called when
   /// the semantic contents of window changes.
@@ -944,25 +1002,13 @@ class Window {
 
   /// Change the retained semantics data about this window.
   ///
-  /// If [semanticsEnabled] is true, the user has requested that this funciton
+  /// If [semanticsEnabled] is true, the user has requested that this function
   /// be called whenever the semantic content of this window changes.
   ///
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
   void updateSemantics(SemanticsUpdate update) {
     engine.EngineSemanticsOwner.instance.updateSemantics(update);
-  }
-
-  /// In Flutter, platform messages are exchanged between threads so the
-  /// messages and responses have to be exchanged asynchronously. We simulate
-  /// that by adding a zero-length delay to the reply.
-  _replyToPlatformMessage(
-    PlatformMessageResponseCallback callback,
-    ByteData data,
-  ) {
-    Future<void>.delayed(Duration.zero).then((_) {
-      callback(data);
-    });
   }
 
   /// Sends a message to a platform-specific plugin.
@@ -978,72 +1024,7 @@ class Window {
     String name,
     ByteData data,
     PlatformMessageResponseCallback callback,
-  ) {
-    if (_debugPrintPlatformMessages) {
-      print('Sent platform message on channel: "$name"');
-    }
-    switch (name) {
-      case 'flutter/assets':
-        assert(webOnlyAssetManager != null);
-        String url = utf8.decode(data.buffer.asUint8List());
-        webOnlyAssetManager.load(url).then((assetData) {
-          _replyToPlatformMessage(callback, assetData);
-        }, onError: (e) {
-          html.window.console.warn('Error while trying to load an asset: $e');
-          _replyToPlatformMessage(callback, null);
-        });
-        return;
-
-      case 'flutter/platform':
-        engine.MethodCodec codec = const engine.JSONMethodCodec();
-        engine.MethodCall decoded = codec.decodeMethodCall(data);
-        switch (decoded.method) {
-          case 'SystemNavigator.pop':
-            _browserHistory.exit().then((_) {
-              _replyToPlatformMessage(
-                  callback, codec.encodeSuccessEnvelope(true));
-            });
-            return;
-          case 'HapticFeedback.vibrate':
-            String type = decoded.arguments;
-            engine.domRenderer.vibrate(_getHapticFeedbackDuration(type));
-            return;
-          case 'SystemChrome.setApplicationSwitcherDescription':
-            Map<String, dynamic> arguments = decoded.arguments;
-            engine.domRenderer.setTitle(arguments['label']);
-            engine.domRenderer.setThemeColor(Color(arguments['primaryColor']));
-        }
-        break;
-
-      case 'flutter/textinput':
-        engine.textEditing.handleTextInput(data);
-        break;
-    }
-
-    // TODO(flutter_web): Some Flutter widgets send platform messages that we
-    // don't handle on web. So for now, let's just ignore them. In the future,
-    // we should consider uncommenting the following "callback(null)" line.
-
-    // Passing [null] to [callback] indicates that the platform message isn't
-    // implemented. Look at [MethodChannel.invokeMethod] to see how [null] is
-    // handled.
-    // callback(null);
-  }
-
-  int _getHapticFeedbackDuration(String type) {
-    switch (type) {
-      case 'HapticFeedbackType.lightImpact':
-        return engine.DomRenderer.vibrateLightImpact;
-      case 'HapticFeedbackType.mediumImpact':
-        return engine.DomRenderer.vibrateMediumImpact;
-      case 'HapticFeedbackType.heavyImpact':
-        return engine.DomRenderer.vibrateHeavyImpact;
-      case 'HapticFeedbackType.selectionClick':
-        return engine.DomRenderer.vibrateSelectionClick;
-      default:
-        return engine.DomRenderer.vibrateLongPress;
-    }
-  }
+  );
 
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => _accessibilityFeatures;
@@ -1081,18 +1062,16 @@ class Window {
     }
   }
 
-  static engine.BitmapCanvas _previousCanvas;
-  static void _submitScene(engine.BitmapCanvas canvas) {
-    if (canvas == _previousCanvas) return;
-    if (_previousCanvas != null) {
-      _previousCanvas.rootElement.remove();
-    }
-    _previousCanvas = canvas;
-    engine.domRenderer
-        .append(engine.domRenderer.rootElement, canvas.rootElement);
-  }
+  final _rasterizer = engine.Rasterizer(engine.Surface(
+      (engine.BitmapCanvas canvas) =>
+          engine.domRenderer.renderScene(canvas.rootElement)));
 
-  final _rasterizer = engine.Rasterizer(engine.Surface(_submitScene));
+  String get initialLifecycleState {
+    return _initialLifecycleState;
+  }
+  String _initialLifecycleState;
+
+  void setIsolateDebugName(String name) {}
 }
 
 /// Additional accessibility features that may be enabled by the platform.
@@ -1197,10 +1176,12 @@ class PluginUtilities {
   }
 }
 
-class ImageShader {}
+class ImageShader {
+  ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4);
+}
 
 class IsolateNameServer {
- static SendPort lookupPortByName(String name) {
+ static dynamic lookupPortByName(String name) {
     assert(name != null, "'name' cannot be null.");
     throw UnimplementedError();
   }
@@ -1218,7 +1199,7 @@ class IsolateNameServer {
   /// name, as there is an inherent race condition in doing so.
   ///
   /// The `port` and `name` arguments must not be null.
-  static bool registerPortWithName(SendPort port, String name) {
+  static bool registerPortWithName(dynamic port, String name) {
     assert(port != null, "'port' cannot be null.");
     assert(name != null, "'name' cannot be null.");
     throw UnimplementedError();
@@ -1241,9 +1222,9 @@ class IsolateNameServer {
   }
 }
 
-//
+VoidCallback webOnlyScheduleFrameCallback;
 
 /// The [Window] singleton. This object exposes the size of the display, the
 /// core scheduler API, the input event callback, the graphics drawing API, and
 /// other such core services.
-final Window window = new Window._();
+Window get window => engine.window;

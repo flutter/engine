@@ -102,6 +102,145 @@ class FontWeight {
   }
 }
 
+/// A feature tag and value that affect the selection of glyphs in a font.
+class FontFeature {
+  /// Creates a [FontFeature] object, which can be added to a [TextStyle] to
+  /// change how the engine selects glyphs when rendering text.
+  ///
+  /// `feature` is the four-character tag that identifies the feature.
+  /// These tags are specified by font formats such as OpenType.
+  ///
+  /// `value` is the value that the feature will be set to.  The behavior
+  /// of the value depends on the specific feature.  Many features are
+  /// flags whose value can be 1 (when enabled) or 0 (when disabled).
+  ///
+  /// See <https://docs.microsoft.com/en-us/typography/opentype/spec/featuretags>
+  const FontFeature(this.feature, [ this.value = 1 ]) : assert(feature != null), assert(feature.length == 4), assert(value != null), assert(value >= 0);
+
+  /// Create a [FontFeature] object that enables the feature with the given tag.
+  const FontFeature.enable(String feature) : this(feature, 1);
+
+  /// Create a [FontFeature] object that disables the feature with the given tag.
+  const FontFeature.disable(String feature) : this(feature, 0);
+
+  /// Randomize the alternate forms used in text.
+  ///
+  /// For example, this can be used with suitably-prepared handwriting fonts to
+  /// vary the forms used for each character, so that, for instance, the word
+  /// "cross-section" would be rendered with two different "c"s, two different "o"s,
+  /// and three different "s"s.
+  ///
+  /// See also:
+  ///
+  ///  * <https://docs.microsoft.com/en-us/typography/opentype/spec/features_pt#rand>
+  const FontFeature.randomize() : feature = 'rand', value = 1;
+
+  /// Select a stylistic set.
+  ///
+  /// Fonts may have up to 20 stylistic sets, numbered 1 through 20.
+  ///
+  /// See also:
+  ///
+  ///  * <https://docs.microsoft.com/en-us/typography/opentype/spec/features_pt#ssxx>
+  factory FontFeature.stylisticSet(int value) {
+    assert(value >= 1);
+    assert(value <= 20);
+    return FontFeature('ss${value.toString().padLeft(2, "0")}');
+  }
+
+  /// Use the slashed zero.
+  ///
+  /// Some fonts contain both a circular zero and a zero with a slash. This
+  /// enables the use of the latter form.
+  ///
+  /// This is overridden by [FontFeature.oldstyleFigures].
+  ///
+  /// See also:
+  ///
+  ///  * <https://docs.microsoft.com/en-us/typography/opentype/spec/features_uz#zero>
+  const FontFeature.slashedZero() : feature = 'zero', value = 1;
+
+  /// Use oldstyle figures.
+  ///
+  /// Some fonts have variants of the figures (e.g. the digit 9) that, when
+  /// this feature is enabled, render with descenders under the baseline instead
+  /// of being entirely above the baseline.
+  ///
+  /// This overrides [FontFeature.slashedZero].
+  ///
+  /// See also:
+  ///
+  ///  * <https://docs.microsoft.com/en-us/typography/opentype/spec/features_ko#onum>
+  const FontFeature.oldstyleFigures() : feature = 'onum', value = 1;
+
+  /// Use proportional (varying width) figures.
+  ///
+  /// For fonts that have both proportional and tabular (monospace) figures,
+  /// this enables the proportional figures.
+  ///
+  /// This is mutually exclusive with [FontFeature.tabularFigures].
+  ///
+  /// The default behavior varies from font to font.
+  ///
+  /// See also:
+  ///
+  ///  * <https://docs.microsoft.com/en-us/typography/opentype/spec/features_pt#pnum>
+  const FontFeature.proportionalFigures() : feature = 'pnum', value = 1;
+
+  /// Use tabular (monospace) figures.
+  ///
+  /// For fonts that have both proportional (varying width) and tabular figures,
+  /// this enables the tabular figures.
+  ///
+  /// This is mutually exclusive with [FontFeature.proportionalFigures].
+  ///
+  /// The default behavior varies from font to font.
+  ///
+  /// See also:
+  ///
+  ///  * <https://docs.microsoft.com/en-us/typography/opentype/spec/features_pt#tnum>
+  const FontFeature.tabularFigures() : feature = 'tnum', value = 1;
+
+  /// The tag that identifies the effect of this feature.  Must consist of 4
+  /// ASCII characters (typically lowercase letters).
+  ///
+  /// See <https://docs.microsoft.com/en-us/typography/opentype/spec/featuretags>
+  final String feature;
+
+  /// The value assigned to this feature.
+  ///
+  /// Must be a positive integer.  Many features are Boolean values that accept
+  /// values of either 0 (feature is disabled) or 1 (feature is enabled).
+  final int value;
+
+  static const int _kEncodedSize = 8;
+
+  void _encode(ByteData byteData) {
+    assert(feature.codeUnits.every((int c) => c >= 0x20 && c <= 0x7F));
+    for (int i = 0; i < 4; i++) {
+      byteData.setUint8(i, feature.codeUnitAt(i));
+    }
+    byteData.setInt32(4, value, _kFakeHostEndian);
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    if (identical(this, other))
+      return true;
+    if (other.runtimeType != runtimeType)
+      return false;
+    final FontFeature typedOther = other;
+    return feature == typedOther.feature
+           && value == typedOther.value;
+  }
+
+  @override
+  int get hashCode => hashValues(feature, value);
+
+  @override
+  String toString() => 'FontFeature($feature, $value)';
+}
+
 /// Whether and how to align text horizontally.
 // The order of this enum must match the order of the values in RenderStyleConstants.h's ETextAlign.
 enum TextAlign {
@@ -242,7 +381,7 @@ bool _listEquals<T>(List<T> a, List<T> b) {
 //
 // The encoded array buffer has 8 elements.
 //
-//  - Element 0: A bit field where the ith bit indicates wheter the ith element
+//  - Element 0: A bit field where the ith bit indicates whether the ith element
 //    has a non-null value. Bits 8 to 12 indicate whether |fontFamily|,
 //    |fontSize|, |letterSpacing|, |wordSpacing|, and |height| are non-null,
 //    respectively. Bit 0 is unused.
@@ -281,7 +420,8 @@ Int32List _encodeTextStyle(
   Locale locale,
   Paint background,
   Paint foreground,
-  List<Shadow> shadows
+  List<Shadow> shadows,
+  List<FontFeature> fontFeatures,
 ) {
   final Int32List result = Int32List(8);
   if (color != null) {
@@ -351,6 +491,10 @@ Int32List _encodeTextStyle(
     result[0] |= 1 << 17;
     // Passed separately to native.
   }
+  if (fontFeatures != null) {
+    result[0] |= 1 << 18;
+    // Passed separately to native.
+  }
   return result;
 }
 
@@ -383,10 +527,12 @@ class TextStyle {
   /// * `letterSpacing`: The amount of space (in logical pixels) to add between each letter.
   /// * `wordSpacing`: The amount of space (in logical pixels) to add at each sequence of white-space (i.e. between each word).
   /// * `textBaseline`: The common baseline that should be aligned between this text span and its parent text span, or, for the root text spans, with the line box.
-  /// * `height`: The height of this text span, as a multiplier of the font size.
+  /// * `height`: The height of this text span, as a multiplier of the font size. Omitting `height` will allow the line height
+  ///   to take the height as defined by the font, which may not be exactly the height of the fontSize.
   /// * `locale`: The locale used to select region-specific glyphs.
   /// * `background`: The paint drawn as a background for the text.
   /// * `foreground`: The paint used to draw the text. If this is specified, `color` must be null.
+  /// * `fontFeatures`: The font features that should be applied to the text.
   TextStyle({
     Color color,
     TextDecoration decoration,
@@ -406,6 +552,7 @@ class TextStyle {
     Paint background,
     Paint foreground,
     List<Shadow> shadows,
+    List<FontFeature> fontFeatures,
   }) : assert(color == null || foreground == null,
          'Cannot provide both a color and a foreground\n'
          'The color argument is just a shorthand for "foreground: Paint()..color = color".'
@@ -429,6 +576,7 @@ class TextStyle {
          background,
          foreground,
          shadows,
+         fontFeatures,
        ),
        _fontFamily = fontFamily ?? '',
        _fontFamilyFallback = fontFamilyFallback,
@@ -440,7 +588,8 @@ class TextStyle {
        _locale = locale,
        _background = background,
        _foreground = foreground,
-       _shadows = shadows;
+       _shadows = shadows,
+       _fontFeatures = fontFeatures;
 
   final Int32List _encoded;
   final String _fontFamily;
@@ -454,6 +603,7 @@ class TextStyle {
   final Paint _background;
   final Paint _foreground;
   final List<Shadow> _shadows;
+  final List<FontFeature> _fontFeatures;
 
   @override
   bool operator ==(dynamic other) {
@@ -480,11 +630,13 @@ class TextStyle {
       return false;
     if (!_listEquals<String>(_fontFamilyFallback, typedOther._fontFamilyFallback))
       return false;
+    if (!_listEquals<FontFeature>(_fontFeatures, typedOther._fontFeatures))
+      return false;
     return true;
   }
 
   @override
-  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontFamilyFallback, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background, _foreground, _shadows, _decorationThickness);
+  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontFamilyFallback, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background, _foreground, hashList(_shadows), _decorationThickness, hashList(_fontFeatures));
 
   @override
   String toString() {
@@ -510,7 +662,8 @@ class TextStyle {
              'locale: ${             _encoded[0] & 0x04000 == 0x04000  ? _locale                                 : "unspecified"}, '
              'background: ${         _encoded[0] & 0x08000 == 0x08000  ? _background                             : "unspecified"}, '
              'foreground: ${         _encoded[0] & 0x10000 == 0x10000  ? _foreground                             : "unspecified"}, '
-             'shadows: ${            _encoded[0] & 0x20000 == 0x20000  ? _shadows                                : "unspecified"}'
+             'shadows: ${            _encoded[0] & 0x20000 == 0x20000  ? _shadows                                : "unspecified"}, '
+             'fontFeatures: ${       _encoded[0] & 0x40000 == 0x40000  ? _fontFeatures                           : "unspecified"}'
            ')';
   }
 }
@@ -624,9 +777,11 @@ class ParagraphStyle {
   /// * `fontSize`: The fallback size of glyphs (in logical pixels) to
   ///   use when painting the text. This is used when there is no [TextStyle].
   ///
-  /// * `height`: The height of the spans as a multiplier of the font size. The
-  ///   fallback height to use when no height is provided in through
-  ///   [TextStyle.height].
+  /// * `height`: The fallback height of the spans as a multiplier of the font
+  ///   size. The fallback height is used when no height is provided through
+  ///   [TextStyle.height]. Omitting `height` here and in [TextStyle] will allow
+  ///   the line height to take the height as defined by the font, which may not
+  ///   be exactly the height of the `fontSize`.
   ///
   /// * `fontWeight`: The typeface thickness to use when painting the text
   ///   (e.g., bold).
@@ -810,22 +965,24 @@ class StrutStyle {
   /// * `fontFamily`: The name of the font to use when painting the text (e.g.,
   ///   Roboto).
   ///
-  /// * `fontFamilyFallback`: An ordered list of font family names that will be searched for when
-  ///    the font in `fontFamily` cannot be found.
+  /// * `fontFamilyFallback`: An ordered list of font family names that will be
+  ///    searched for when the font in `fontFamily` cannot be found.
   ///
   /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting
   ///   the text.
   ///
   /// * `height`: The minimum height of the line boxes, as a multiplier of the
-  ///   font size. The lines of the paragraph will be at least `(height + leading)
-  ///   * fontSize` tall when fontSize is not null. When fontSize is null, there
-  ///   is no minimum line height. Tall glyphs due to baseline alignment or large
-  ///   [TextStyle.fontSize] may cause the actual line height after layout to be
-  ///   taller than specified here. [fontSize] must be provided for this property
-  ///   to take effect.
+  ///   font size. The lines of the paragraph will be at least
+  ///   `(height + leading) * fontSize` tall when `fontSize` is not null. Omitting
+  ///   `height` will allow the minimum line height to take the height as defined
+  ///   by the font, which may not be exactly the height of the `fontSize`. When
+  ///   `fontSize` is null, there is no minimum line height. Tall glyphs due to
+  ///   baseline alignment or large [TextStyle.fontSize] may cause the actual line
+  ///   height after layout to be taller than specified here. The `fontSize` must
+  ///   be provided for this property to take effect.
   ///
   /// * `leading`: The minimum amount of leading between lines as a multiple of
-  ///   the font size. [fontSize] must be provided for this property to take effect.
+  ///   the font size. `fontSize` must be provided for this property to take effect.
   ///
   /// * `fontWeight`: The typeface thickness to use when painting the text
   ///   (e.g., bold).
@@ -836,9 +993,9 @@ class StrutStyle {
   /// * `forceStrutHeight`: When true, the paragraph will force all lines to be exactly
   ///   `(height + leading) * fontSize` tall from baseline to baseline.
   ///   [TextStyle] is no longer able to influence the line height, and any tall
-  ///   glyphs may overlap with lines above. If a [fontFamily] is specified, the
+  ///   glyphs may overlap with lines above. If a `fontFamily` is specified, the
   ///   total ascent of the first line will be the min of the `Ascent + half-leading`
-  ///   of the [fontFamily] and `(height + leading) * fontSize`. Otherwise, it
+  ///   of the `fontFamily` and `(height + leading) * fontSize`. Otherwise, it
   ///   will be determined by the Ascent + half-leading of the first text.
   StrutStyle({
     String fontFamily,
@@ -1229,70 +1386,116 @@ class ParagraphConstraints {
 /// Defines various ways to vertically bound the boxes returned by
 /// [Paragraph.getBoxesForRange].
 enum BoxHeightStyle {
-    /// Provide tight bounding boxes that fit heights per run. This style may result
-    /// in uneven bounding boxes that do not nicely connect with adjacent boxes.
-    tight,
+  /// Provide tight bounding boxes that fit heights per run. This style may result
+  /// in uneven bounding boxes that do not nicely connect with adjacent boxes.
+  tight,
 
-    /// The height of the boxes will be the maximum height of all runs in the
-    /// line. All boxes in the same line will be the same height. This does not
-    /// guarantee that the boxes will cover the entire vertical height of the line
-    /// when there is additional line spacing.
-    ///
-    /// See [RectHeightStyle.includeLineSpacingTop], [RectHeightStyle.includeLineSpacingMiddle],
-    /// and [RectHeightStyle.includeLineSpacingBottom] for styles that will cover
-    /// the entire line.
-    max,
+  /// The height of the boxes will be the maximum height of all runs in the
+  /// line. All boxes in the same line will be the same height.
+  ///
+  /// This does not guarantee that the boxes will cover the entire vertical height of the line
+  /// when there is additional line spacing.
+  ///
+  /// See [RectHeightStyle.includeLineSpacingTop], [RectHeightStyle.includeLineSpacingMiddle],
+  /// and [RectHeightStyle.includeLineSpacingBottom] for styles that will cover
+  /// the entire line.
+  max,
 
-    /// Extends the top and bottom edge of the bounds to fully cover any line
-    /// spacing.
-    ///
-    /// The top and bottom of each box will cover half of the
-    /// space above and half of the space below the line.
-    ///
-    /// {@template flutter.dart:ui.boxHeightStyle.includeLineSpacing}
-    /// The top edge of each line should be the same as the bottom edge
-    /// of the line above. There should be no gaps in vertical coverage given any
-    /// amount of line spacing. Line spacing is not included above the first line
-    /// and below the last line due to no additional space present there.
-    /// {@endtemplate}
-    includeLineSpacingMiddle,
+  /// Extends the top and bottom edge of the bounds to fully cover any line
+  /// spacing.
+  ///
+  /// The top and bottom of each box will cover half of the
+  /// space above and half of the space below the line.
+  ///
+  /// {@template flutter.dart:ui.boxHeightStyle.includeLineSpacing}
+  /// The top edge of each line should be the same as the bottom edge
+  /// of the line above. There should be no gaps in vertical coverage given any
+  /// amount of line spacing. Line spacing is not included above the first line
+  /// and below the last line due to no additional space present there.
+  /// {@endtemplate}
+  includeLineSpacingMiddle,
 
-    /// Extends the top edge of the bounds to fully cover any line spacing.
-    ///
-    /// The line spacing will be added to the top of the box.
-    ///
-    /// {@macro flutter.dart:ui.rectHeightStyle.includeLineSpacing}
-    includeLineSpacingTop,
+  /// Extends the top edge of the bounds to fully cover any line spacing.
+  ///
+  /// The line spacing will be added to the top of the box.
+  ///
+  /// {@macro flutter.dart:ui.rectHeightStyle.includeLineSpacing}
+  includeLineSpacingTop,
 
-    /// Extends the bottom edge of the bounds to fully cover any line spacing.
-    ///
-    /// The line spacing will be added to the bottom of the box.
-    ///
-    /// {@macro flutter.dart:ui.boxHeightStyle.includeLineSpacing}
-    includeLineSpacingBottom,
+  /// Extends the bottom edge of the bounds to fully cover any line spacing.
+  ///
+  /// The line spacing will be added to the bottom of the box.
+  ///
+  /// {@macro flutter.dart:ui.boxHeightStyle.includeLineSpacing}
+  includeLineSpacingBottom,
 
-    /// Calculate box heights based on the metrics of this paragraph's [StrutStyle].
-    ///
-    /// Boxes based on the strut will have consistent heights throughout the
-    /// entire paragraph.  The top edge of each line will align with the bottom
-    /// edge of the previous line.  It is possible for glyphs to extend outside
-    /// these boxes.
-    strut,
+  /// Calculate box heights based on the metrics of this paragraph's [StrutStyle].
+  ///
+  /// Boxes based on the strut will have consistent heights throughout the
+  /// entire paragraph.  The top edge of each line will align with the bottom
+  /// edge of the previous line.  It is possible for glyphs to extend outside
+  /// these boxes.
+  strut,
 }
 
 /// Defines various ways to horizontally bound the boxes returned by
 /// [Paragraph.getBoxesForRange].
 enum BoxWidthStyle {
-    // Provide tight bounding boxes that fit widths to the runs of each line
-    // independently.
-    tight,
+  // Provide tight bounding boxes that fit widths to the runs of each line
+  // independently.
+  tight,
 
-    /// Adds up to two additional boxes as needed at the beginning and/or end
-    /// of each line so that the widths of the boxes in line are the same width
-    /// as the widest line in the paragraph. The additional boxes on each line
-    /// are only added when the relevant box at the relevant edge of that line
-    /// does not span the maximum width of the paragraph.
-    max,
+  /// Adds up to two additional boxes as needed at the beginning and/or end
+  /// of each line so that the widths of the boxes in line are the same width
+  /// as the widest line in the paragraph.
+  ///
+  /// The additional boxes on each line are only added when the relevant box
+  /// at the relevant edge of that line does not span the maximum width of
+  /// the paragraph.
+  max,
+}
+
+/// Where to vertically align the placeholder relative to the surrounding text.
+///
+/// Used by [ParagraphBuilder.addPlaceholder].
+enum PlaceholderAlignment {
+  /// Match the baseline of the placeholder with the baseline.
+  ///
+  /// The [TextBaseline] to use must be specified and non-null when using this
+  /// alignment mode.
+  baseline,
+
+  /// Align the bottom edge of the placeholder with the baseline such that the
+  /// placeholder sits on top of the baseline.
+  ///
+  /// The [TextBaseline] to use must be specified and non-null when using this
+  /// alignment mode.
+  aboveBaseline,
+
+  /// Align the top edge of the placeholder with the baseline specified
+  /// such that the placeholder hangs below the baseline.
+  ///
+  /// The [TextBaseline] to use must be specified and non-null when using this
+  /// alignment mode.
+  belowBaseline,
+
+  /// Align the top edge of the placeholder with the top edge of the font.
+  ///
+  /// When the placeholder is very tall, the extra space will hang from
+  /// the top and extend through the bottom of the line.
+  top,
+
+  /// Align the bottom edge of the placeholder with the top edge of the font.
+  ///
+  /// When the placeholder is very tall, the extra space will rise from the
+  /// bottom and extend through the top of the line.
+  bottom,
+
+  /// Align the middle of the placeholder with the middle of the text.
+  ///
+  /// When the placeholder is very tall, the extra space will grow equally
+  /// from the top and bottom of the line.
+  middle,
 }
 
 /// A paragraph of text.
@@ -1371,6 +1574,9 @@ class Paragraph extends NativeFieldWrapperClass2 {
   /// parameters default to the tight option, which will provide close-fitting
   /// boxes and will not account for any line spacing.
   ///
+  /// Coordinates of the TextBox are relative to the upper-left corner of the paragraph,
+  /// where positive y values indicate down.
+  ///
   /// The [boxHeightStyle] and [boxWidthStyle] parameters must not be null.
   ///
   /// See [BoxHeightStyle] and [BoxWidthStyle] for full descriptions of each option.
@@ -1379,8 +1585,15 @@ class Paragraph extends NativeFieldWrapperClass2 {
     assert(boxWidthStyle != null);
     return _getBoxesForRange(start, end, boxHeightStyle.index, boxWidthStyle.index);
   }
-
   List<TextBox> _getBoxesForRange(int start, int end, int boxHeightStyle, int boxWidthStyle) native 'Paragraph_getRectsForRange';
+
+  /// Returns a list of text boxes that enclose all placeholders in the paragraph.
+  ///
+  /// The order of the boxes are in the same order as passed in through [addPlaceholder].
+  ///
+  /// Coordinates of the [TextBox] are relative to the upper-left corner of the paragraph,
+  /// where positive y values indicate down.
+  List<TextBox> getBoxesForPlaceholders() native 'Paragraph_getRectsForPlaceholders';
 
   /// Returns the text position closest to the given offset.
   TextPosition getPositionForOffset(Offset offset) {
@@ -1422,6 +1635,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// [Paragraph].
   @pragma('vm:entry-point')
   ParagraphBuilder(ParagraphStyle style) {
+    _placeholderCount = 0;
     List<String> strutFontFamilies;
     if (style._strutStyle != null) {
       strutFontFamilies = <String>[];
@@ -1453,6 +1667,14 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
     String locale
   ) native 'ParagraphBuilder_constructor';
 
+  /// The number of placeholders currently in the paragraph.
+  int get placeholderCount => _placeholderCount;
+  int _placeholderCount;
+
+  /// The scales of the placeholders in the paragraph.
+  List<double> get placeholderScales => _placeholderScales;
+  List<double> _placeholderScales = <double>[];
+
   /// Applies the given style to the added text until [pop] is called.
   ///
   /// See [pop] for details.
@@ -1461,7 +1683,18 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
     if (style._fontFamily != null)
       fullFontFamilies.add(style._fontFamily);
     if (style._fontFamilyFallback != null)
-      fullFontFamilies.addAll(style._fontFamilyFallback);
+    fullFontFamilies.addAll(style._fontFamilyFallback);
+
+    ByteData encodedFontFeatures;
+    if (style._fontFeatures != null) {
+      encodedFontFeatures = ByteData(style._fontFeatures.length * FontFeature._kEncodedSize);
+      int byteOffset = 0;
+      for (FontFeature feature in style._fontFeatures) {
+        feature._encode(ByteData.view(encodedFontFeatures.buffer, byteOffset, FontFeature._kEncodedSize));
+        byteOffset += FontFeature._kEncodedSize;
+      }
+    }
+
     _pushStyle(
       style._encoded,
       fullFontFamilies,
@@ -1475,7 +1708,8 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
       style._background?._data,
       style._foreground?._objects,
       style._foreground?._data,
-      Shadow._encodeShadows(style._shadows)
+      Shadow._encodeShadows(style._shadows),
+      encodedFontFeatures,
     );
   }
 
@@ -1492,7 +1726,8 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
     ByteData backgroundData,
     List<dynamic> foregroundObjects,
     ByteData foregroundData,
-    ByteData shadowsData
+    ByteData shadowsData,
+    ByteData fontFeaturesData,
   ) native 'ParagraphBuilder_pushStyle';
 
   static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
@@ -1514,6 +1749,71 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
       throw ArgumentError(error);
   }
   String _addText(String text) native 'ParagraphBuilder_addText';
+
+  /// Adds an inline placeholder space to the paragraph.
+  ///
+  /// The paragraph will contain a rectangular space with no text of the dimensions
+  /// specified.
+  ///
+  /// The `width` and `height` parameters specify the size of the placeholder rectangle.
+  ///
+  /// The `alignment` parameter specifies how the placeholder rectangle will be vertically
+  /// aligned with the surrounding text. When [PlaceholderAlignment.baseline],
+  /// [PlaceholderAlignment.aboveBaseline], and [PlaceholderAlignment.belowBaseline]
+  /// alignment modes are used, the baseline needs to be set with the `baseline`.
+  /// When using [PlaceholderAlignment.baseline], `baselineOffset` indicates the distance
+  /// of the baseline down from the top of of the rectangle. The default `baselineOffset`
+  /// is the `height`.
+  ///
+  /// Examples:
+  ///
+  /// * For a 30x50 placeholder with the bottom edge aligned with the bottom of the text, use:
+  /// `addPlaceholder(30, 50, PlaceholderAlignment.bottom);`
+  /// * For a 30x50 placeholder that is vertically centered around the text, use:
+  /// `addPlaceholder(30, 50, PlaceholderAlignment.middle);`.
+  /// * For a 30x50 placeholder that sits completely on top of the alphabetic baseline, use:
+  /// `addPlaceholder(30, 50, PlaceholderAlignment.aboveBaseline, baseline: TextBaseline.alphabetic)`.
+  /// * For a 30x50 placeholder with 40 pixels above and 10 pixels below the alphabetic baseline, use:
+  /// `addPlaceholder(30, 50, PlaceholderAlignment.baseline, baseline: TextBaseline.alphabetic, baselineOffset: 40)`.
+  ///
+  /// Lines are permitted to break around each placeholder.
+  ///
+  /// Decorations will be drawn based on the font defined in the most recently
+  /// pushed [TextStyle]. The decorations are drawn as if unicode text were present
+  /// in the placeholder space, and will draw the same regardless of the height and
+  /// alignment of the placeholder. To hide or manually adjust decorations to fit,
+  /// a text style with the desired decoration behavior should be pushed before
+  /// adding a placeholder.
+  ///
+  /// Any decorations drawn through a placeholder will exist on the same canvas/layer
+  /// as the text. This means any content drawn on top of the space reserved by
+  /// the placeholder will be drawn over the decoration, possibly obscuring the
+  /// decoration.
+  ///
+  /// Placeholders are represented by a unicode 0xFFFC "object replacement character"
+  /// in the text buffer. For each placeholder, one object replacement character is
+  /// added on to the text buffer.
+  ///
+  /// The `scale` parameter will scale the `width` and `height` by the specified amount,
+  /// and keep track of the scale. The scales of placeholders added can be accessed
+  /// through [placeholderScales]. This is primarily used for acessibility scaling.
+  void addPlaceholder(double width, double height, PlaceholderAlignment alignment, {
+    double scale = 1.0,
+    double baselineOffset,
+    TextBaseline baseline,
+  }) {
+    // Require a baseline to be specified if using a baseline-based alignment.
+    assert((alignment == PlaceholderAlignment.aboveBaseline ||
+            alignment == PlaceholderAlignment.belowBaseline ||
+            alignment == PlaceholderAlignment.baseline) ? baseline != null : true);
+    // Default the baselineOffset to height if null. This will place the placeholder
+    // fully above the baseline, similar to [PlaceholderAlignment.aboveBaseline].
+    baselineOffset = baselineOffset ?? height;
+    _addPlaceholder(width * scale, height * scale, alignment.index, (baselineOffset == null ? height : baselineOffset) * scale, baseline == null ? null : baseline.index);
+    _placeholderCount++;
+    _placeholderScales.add(scale);
+  }
+  String _addPlaceholder(double width, double height, int alignment, double baselineOffset, int baseline) native 'ParagraphBuilder_addPlaceholder';
 
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.

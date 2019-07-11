@@ -127,15 +127,6 @@ public final class FlutterActivityDelegate
         return flutterView.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    /*
-     * Method onRequestPermissionResult(int, String[], int[]) was made
-     * unavailable on 2018-02-28, following deprecation. This comment is left as
-     * a temporary tombstone for reference, to be removed on 2018-03-28 (or at
-     * least four weeks after release of unavailability).
-     *
-     * https://github.com/flutter/flutter/wiki/Changelog#typo-fixed-in-flutter-engine-android-api
-     */
-
     @Override
     public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
         return flutterView.getPluginRegistry().onActivityResult(requestCode, resultCode, data);
@@ -321,6 +312,20 @@ public final class FlutterActivityDelegate
         if (intent.getBooleanExtra("verbose-logging", false)) {
             args.add("--verbose-logging");
         }
+        final int observatoryPort = intent.getIntExtra("observatory-port", 0);
+        if (observatoryPort > 0) {
+            args.add("--observatory-port=" + Integer.toString(observatoryPort));
+        }
+        if (intent.getBooleanExtra("disable-service-auth-codes", false)) {
+            args.add("--disable-service-auth-codes");
+        }
+        // NOTE: all flags provided with this argument are subject to filtering
+        // based on a whitelist in shell/common/switches.cc. If any flag provided
+        // is not present in the whitelist, the process will immediately
+        // terminate.
+        if (intent.hasExtra("dart-flags")) {
+            args.add("--dart-flags=" + intent.getStringExtra("dart-flags"));
+        }
         if (!args.isEmpty()) {
             String[] argsArray = new String[args.size()];
             return args.toArray(argsArray);
@@ -351,9 +356,7 @@ public final class FlutterActivityDelegate
     private void runBundle(String appBundlePath) {
         if (!flutterView.getFlutterNativeView().isApplicationRunning()) {
             FlutterRunArguments args = new FlutterRunArguments();
-            ArrayList<String> bundlePaths = new ArrayList<>();
-            bundlePaths.add(appBundlePath);
-            args.bundlePaths = bundlePaths.toArray(new String[0]);
+            args.bundlePath = appBundlePath;
             args.entrypoint = "main";
             flutterView.runFromBundle(args);
         }

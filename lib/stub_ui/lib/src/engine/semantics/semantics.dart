@@ -153,6 +153,9 @@ enum Role {
 
   /// A control that has a checked state, such as a check box or a radio button.
   checkable,
+
+  /// Visual only element.
+  image,
 }
 
 /// A function that creates a [RoleManager] for a [SemanticsObject].
@@ -165,6 +168,7 @@ final Map<Role, RoleManagerFactory> _roleFactories = <Role, RoleManagerFactory>{
   Role.tappable: (SemanticsObject object) => Tappable(object),
   Role.textField: (SemanticsObject object) => TextField(object),
   Role.checkable: (SemanticsObject object) => Checkable(object),
+  Role.image: (SemanticsObject object) => ImageRoleManager(object),
 };
 
 /// Provides the functionality associated with the role of the given
@@ -572,6 +576,17 @@ class SemanticsObject {
   /// Whether this object represents an editable text field.
   bool get isTextField => hasFlag(ui.SemanticsFlag.isTextField);
 
+  /// Whether this object is read only.
+  ///
+  /// Only applicable when [isTextField] is true.
+  bool get isReadOnly => hasFlag(ui.SemanticsFlag.isReadOnly);
+
+  /// Whether this object represents an image with no tappable functionality.
+  bool get isVisualOnly =>
+      hasFlag(ui.SemanticsFlag.isImage) &&
+      !hasAction(ui.SemanticsAction.tap) &&
+      !hasFlag(ui.SemanticsFlag.isButton);
+
   /// Updates this object from data received from a semantics [update].
   ///
   /// This method creates [SemanticsObject]s for the direct children of this
@@ -723,7 +738,7 @@ class SemanticsObject {
   /// Detects the roles that this semantics object corresponds to and manages
   /// the lifecycles of [SemanticsObjectRole] objects.
   void _updateRoles() {
-    _updateRole(Role.labelAndValue, hasLabel || hasValue);
+    _updateRole(Role.labelAndValue, (hasLabel || hasValue) && !isVisualOnly);
     _updateRole(Role.textField, isTextField);
     _updateRole(
         Role.tappable,
@@ -733,6 +748,7 @@ class SemanticsObject {
     _updateRole(Role.scrollable,
         isVerticalScrollContainer || isHorizontalScrollContainer);
     _updateRole(Role.checkable, hasFlag(ui.SemanticsFlag.hasCheckedState));
+    _updateRole(Role.image, isVisualOnly);
   }
 
   void _updateRole(Role role, bool enabled) {
@@ -1067,7 +1083,7 @@ class EngineSemanticsOwner {
 
   /// Declares that the [child] must be attached to the [parent].
   ///
-  /// Attachments take precendence over detachments (see [_detachObject]). This
+  /// Attachments take precedence over detachments (see [_detachObject]). This
   /// allows the same node to be detached from one parent in the tree and
   /// reattached to another parent.
   void _attachObject({SemanticsObject parent, SemanticsObject child}) {

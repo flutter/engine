@@ -15,6 +15,8 @@
 
 namespace flutter {
 
+/// Abstract Base Class that represents a platform specific mechanism for
+/// getting callbacks when a vsync event happens.
 class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
  public:
   using Callback = std::function<void(fml::TimePoint frame_start_time,
@@ -27,7 +29,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   static constexpr float kUnknownRefreshRateFPS = 0.0;
 
   // Get the display's maximum refresh rate in the unit of frame per second.
-  // Return kUnknownRefreshRateFPS if the refresh rate is unkonwn.
+  // Return kUnknownRefreshRateFPS if the refresh rate is unknown.
   virtual float GetDisplayRefreshRate() const;
 
  protected:

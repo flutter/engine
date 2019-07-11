@@ -32,6 +32,8 @@ class EmbedderEngine {
 
   ~EmbedderEngine();
 
+  const TaskRunners& GetTaskRunners() const;
+
   bool NotifyCreated();
 
   bool NotifyDestroyed();
@@ -71,11 +73,12 @@ class EmbedderEngine {
 
  private:
   const std::unique_ptr<EmbedderThreadHost> thread_host_;
+  TaskRunners task_runners_;
   std::unique_ptr<Shell> shell_;
   const EmbedderExternalTextureGL::ExternalTextureCallback
       external_texture_callback_;
   bool is_valid_ = false;
-  uint64_t next_pointer_flow_id_;
+  uint64_t next_pointer_flow_id_ = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderEngine);
 };

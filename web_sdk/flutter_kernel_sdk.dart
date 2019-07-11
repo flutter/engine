@@ -2,17 +2,28 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// These packages exist in the third_party/dart .package, but not locally
+// which confuses the analyzer.
+// ignore_for_file: uri_does_not_exist
 import 'dart:async';
 import 'dart:convert' show json;
 import 'dart:io';
 import 'package:args/args.dart' show ArgParser;
-import 'package:dev_compiler/src/compiler/module_builder.dart'; // ignore: uri_does_not_exist
-import 'package:dev_compiler/src/compiler/shared_command.dart' show SharedCompilerOptions; // ignore: uri_does_not_exist
-import 'package:dev_compiler/src/kernel/target.dart'; // ignore: uri_does_not_exist
-import 'package:dev_compiler/src/kernel/command.dart'; // ignore: uri_does_not_exist
-import 'package:dev_compiler/src/kernel/compiler.dart'; // ignore: uri_does_not_exist
-import 'package:front_end/src/api_unstable/ddc.dart' show CompilerOptions, kernelForComponent;
+import 'package:dev_compiler/src/compiler/module_builder.dart';
+import 'package:dev_compiler/src/compiler/shared_command.dart'
+    show SharedCompilerOptions;
+import 'package:dev_compiler/src/kernel/target.dart';
+import 'package:dev_compiler/src/kernel/command.dart';
+import 'package:dev_compiler/src/kernel/compiler.dart';
+import 'package:front_end/src/api_unstable/ddc.dart'
+    show
+        CompilerOptions,
+        kernelForComponent,
+        DiagnosticMessage,
+        printDiagnosticMessage,
+        Severity;
 import 'package:kernel/kernel.dart';
+import 'package:kernel/target/targets.dart';
 import 'package:path/path.dart' as path;
 
 // This script is forked from https://github.com/dart-lang/sdk/blob/master/pkg/dev_compiler/tool/kernel_sdk.dart
@@ -26,7 +37,6 @@ Future main(List<String> args) async {
     ..addOption('libraries',
         defaultsTo: path.join(ddcPath, '../../sdk/lib/libraries.json'));
   var parserOptions = parser.parse(args);
-
   var outputPath = parserOptions['output'] as String;
   if (outputPath == null) {
     var sdkRoot = path.absolute(path.dirname(path.dirname(ddcPath)));
@@ -36,14 +46,24 @@ Future main(List<String> args) async {
   }
 
   var librarySpecPath = parserOptions['libraries'] as String;
+  var packagesPath = path.join(ddcPath, '../third_party/dart/.packages');
+  void onDiagnostic(DiagnosticMessage message) {
+    printDiagnosticMessage(message, print);
+    if (message.severity == Severity.error ||
+        message.severity == Severity.internalProblem) {
+      exitCode = 1;
+    }
+  }
 
   var target = FlutterDevCompilerTarget();
   var options = CompilerOptions()
     ..compileSdk = true
     // TODO(sigmund): remove this unnecessary option when possible.
     ..sdkRoot = Uri.base
+    ..packagesFileUri = Uri.base.resolveUri(Uri.file(packagesPath))
     ..librariesSpecificationUri = Uri.base.resolveUri(Uri.file(librarySpecPath))
-    ..target = target;
+    ..target = target
+    ..onDiagnostic = onDiagnostic;
 
   var inputs = target.extraRequiredLibraries.map(Uri.parse).toList();
   var component = await kernelForComponent(inputs, options);
@@ -73,6 +93,8 @@ Future main(List<String> args) async {
 }
 
 class FlutterDevCompilerTarget extends DevCompilerTarget {
+  FlutterDevCompilerTarget() : super(TargetFlags());
+
   @override
   List<String> get extraRequiredLibraries => const [
         'dart:_runtime',

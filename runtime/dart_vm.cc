@@ -37,8 +37,7 @@
 namespace dart {
 namespace observatory {
 
-#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE) && \
-    (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE)
+#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE)
 
 // These two symbols are defined in |observatory_archive.cc| which is generated
 // by the |//third_party/dart/runtime/observatory:archive_observatory| rule.
@@ -48,8 +47,7 @@ extern unsigned int observatory_assets_archive_len;
 extern const uint8_t* observatory_assets_archive;
 
 #endif  // !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE !=
-        // FLUTTER_RUNTIME_MODE_RELEASE) && (FLUTTER_RUNTIME_MODE !=
-        // FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE)
+        // FLUTTER_RUNTIME_MODE_RELEASE)
 
 }  // namespace observatory
 }  // namespace dart
@@ -143,8 +141,7 @@ bool DartFileModifiedCallback(const char* source_url, int64_t since_ms) {
 void ThreadExitCallback() {}
 
 Dart_Handle GetVMServiceAssetsArchiveCallback() {
-#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE) || \
-    (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE)
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE)
   return nullptr;
 #elif OS_FUCHSIA
   fml::UniqueFD fd = fml::OpenFile("pkg/data/observatory.tar", false,
@@ -256,6 +253,7 @@ size_t DartVM::GetVMLaunchCount() {
 DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
                std::shared_ptr<IsolateNameServer> isolate_name_server)
     : settings_(vm_data->GetSettings()),
+      concurrent_message_loop_(fml::ConcurrentMessageLoop::Create()),
       vm_data_(vm_data),
       isolate_name_server_(std::move(isolate_name_server)),
       service_protocol_(std::make_shared<ServiceProtocol>()) {
@@ -302,11 +300,6 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   // Enable Dart assertions if we are not running precompiled code. We run non-
   // precompiled code only in the debug product mode.
   bool enable_asserts = !settings_.disable_dart_asserts;
-
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_PROFILE || \
-    FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
-  enable_asserts = false;
-#endif
 
 #if !OS_FUCHSIA
   if (IsRunningPrecompiledCode()) {
@@ -374,12 +367,13 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     params.vm_snapshot_data = vm_data_->GetVMSnapshot().GetDataMapping();
     params.vm_snapshot_instructions =
         vm_data_->GetVMSnapshot().GetInstructionsMapping();
-    params.create = reinterpret_cast<decltype(params.create)>(
-        DartIsolate::DartIsolateCreateCallback);
-    params.shutdown = reinterpret_cast<decltype(params.shutdown)>(
-        DartIsolate::DartIsolateShutdownCallback);
-    params.cleanup = reinterpret_cast<decltype(params.cleanup)>(
-        DartIsolate::DartIsolateCleanupCallback);
+    params.create_group = reinterpret_cast<decltype(params.create_group)>(
+        DartIsolate::DartIsolateGroupCreateCallback);
+    params.shutdown_isolate =
+        reinterpret_cast<decltype(params.shutdown_isolate)>(
+            DartIsolate::DartIsolateShutdownCallback);
+    params.cleanup_group = reinterpret_cast<decltype(params.cleanup_group)>(
+        DartIsolate::DartIsolateGroupCleanupCallback);
     params.thread_exit = ThreadExitCallback;
     params.get_service_assets = GetVMServiceAssetsArchiveCallback;
     params.entropy_source = dart::bin::GetEntropy;
@@ -457,6 +451,11 @@ std::shared_ptr<ServiceProtocol> DartVM::GetServiceProtocol() const {
 
 std::shared_ptr<IsolateNameServer> DartVM::GetIsolateNameServer() const {
   return isolate_name_server_;
+}
+
+std::shared_ptr<fml::ConcurrentTaskRunner>
+DartVM::GetConcurrentWorkerTaskRunner() const {
+  return concurrent_message_loop_->GetTaskRunner();
 }
 
 }  // namespace flutter

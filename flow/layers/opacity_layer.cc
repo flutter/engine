@@ -8,7 +8,8 @@
 
 namespace flutter {
 
-OpacityLayer::OpacityLayer() = default;
+OpacityLayer::OpacityLayer(int alpha, const SkPoint& offset)
+    : alpha_(alpha), offset_(offset) {}
 
 OpacityLayer::~OpacityLayer() = default;
 
@@ -19,14 +20,12 @@ void OpacityLayer::EnsureSingleChild() {
     return;
   }
 
-  auto new_child = std::make_shared<flutter::TransformLayer>();
-
   // Be careful: SkMatrix's default constructor doesn't initialize the matrix to
   // identity. Hence we have to explicitly call SkMatrix::setIdentity.
   SkMatrix identity;
   identity.setIdentity();
+  auto new_child = std::make_shared<flutter::TransformLayer>(identity);
 
-  new_child->set_transform(identity);
   for (auto& child : layers()) {
     new_child->Add(child);
   }
@@ -38,7 +37,12 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   EnsureSingleChild();
   SkMatrix child_matrix = matrix;
   child_matrix.postTranslate(offset_.fX, offset_.fY);
+  context->mutators_stack.PushTransform(
+      SkMatrix::MakeTrans(offset_.fX, offset_.fY));
+  context->mutators_stack.PushOpacity(alpha_);
   ContainerLayer::Preroll(context, child_matrix);
+  context->mutators_stack.Pop();
+  context->mutators_stack.Pop();
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
   // See |EnsureSingleChild|.
   FML_DCHECK(layers().size() == 1);

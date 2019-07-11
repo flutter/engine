@@ -12,6 +12,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
@@ -29,6 +30,9 @@
 
 namespace flutter {
 
+/// Manager of the root Dart isolate and the relay of platform messages.
+///
+/// Also setups up dart::ui bindings and handles restarts.
 class Engine final : public RuntimeDelegate {
  public:
   // Used by Engine::Run
@@ -52,6 +56,8 @@ class Engine final : public RuntimeDelegate {
 
     virtual void UpdateIsolateDescription(const std::string isolate_name,
                                           int64_t isolate_port) = 0;
+
+    virtual void SetNeedsReportTimings(bool value) = 0;
   };
 
   Engine(Delegate& delegate,
@@ -83,6 +89,8 @@ class Engine final : public RuntimeDelegate {
   bool UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager);
 
   void BeginFrame(fml::TimePoint frame_time);
+
+  void ReportTimings(std::vector<int64_t> timings);
 
   void NotifyIdle(int64_t deadline);
 
@@ -131,6 +139,7 @@ class Engine final : public RuntimeDelegate {
   bool activity_running_;
   bool have_surface_;
   FontCollection font_collection_;
+  ImageDecoder image_decoder_;
   fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|
@@ -150,6 +159,8 @@ class Engine final : public RuntimeDelegate {
   void UpdateIsolateDescription(const std::string isolate_name,
                                 int64_t isolate_port) override;
 
+  void SetNeedsReportTimings(bool value) override;
+
   void StopAnimator();
 
   void StartAnimatorIfPossible();
@@ -167,6 +178,8 @@ class Engine final : public RuntimeDelegate {
   bool GetAssetAsBuffer(const std::string& name, std::vector<uint8_t>* data);
 
   RunStatus PrepareAndLaunchIsolate(RunConfiguration configuration);
+
+  friend class testing::ShellTest;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);
 };

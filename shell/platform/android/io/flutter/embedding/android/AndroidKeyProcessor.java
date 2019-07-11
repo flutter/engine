@@ -13,7 +13,9 @@ import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 
 public class AndroidKeyProcessor {
+  @NonNull
   private final KeyEventChannel keyEventChannel;
+  @NonNull
   private final TextInputPlugin textInputPlugin;
   private int combiningCharacter;
 
@@ -30,11 +32,9 @@ public class AndroidKeyProcessor {
   }
 
   public void onKeyDown(@NonNull KeyEvent keyEvent) {
-    if (keyEvent.getDeviceId() != KeyCharacterMap.VIRTUAL_KEYBOARD) {
-      if (textInputPlugin.getLastInputConnection() != null
-          && textInputPlugin.getInputMethodManager().isAcceptingText()) {
-        textInputPlugin.getLastInputConnection().sendKeyEvent(keyEvent);
-      }
+    if (textInputPlugin.getLastInputConnection() != null
+        && textInputPlugin.getInputMethodManager().isAcceptingText()) {
+      textInputPlugin.getLastInputConnection().sendKeyEvent(keyEvent);
     }
 
     Character complexCharacter = applyCombiningCharacterToBaseCharacter(keyEvent.getUnicodeChar());

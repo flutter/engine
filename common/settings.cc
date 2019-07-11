@@ -8,6 +8,8 @@
 
 namespace flutter {
 
+constexpr FrameTiming::Phase FrameTiming::kPhases[FrameTiming::kCount];
+
 Settings::Settings() = default;
 
 Settings::Settings(const Settings& other) = default;
@@ -40,8 +42,8 @@ std::string Settings::ToString() const {
   stream << "enable_dart_profiling: " << enable_dart_profiling << std::endl;
   stream << "disable_dart_asserts: " << disable_dart_asserts << std::endl;
   stream << "enable_observatory: " << enable_observatory << std::endl;
+  stream << "observatory_host: " << observatory_host << std::endl;
   stream << "observatory_port: " << observatory_port << std::endl;
-  stream << "ipv6: " << ipv6 << std::endl;
   stream << "use_test_fonts: " << use_test_fonts << std::endl;
   stream << "enable_software_rendering: " << enable_software_rendering
          << std::endl;
@@ -51,6 +53,8 @@ std::string Settings::ToString() const {
   stream << "icu_data_path: " << icu_data_path << std::endl;
   stream << "assets_dir: " << assets_dir << std::endl;
   stream << "assets_path: " << assets_path << std::endl;
+  stream << "frame_rasterized_callback set: " << !!frame_rasterized_callback
+         << std::endl;
   return stream.str();
 }
 

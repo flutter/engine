@@ -34,6 +34,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_engine.h"
+#include "flutter/shell/platform/embedder/embedder_platform_message_response.h"
 #include "flutter/shell/platform/embedder/embedder_safe_access.h"
 #include "flutter/shell/platform/embedder/embedder_task_runner.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
@@ -340,6 +341,7 @@ FlutterEngineResult FlutterEngineRun(size_t version,
   }
 
   if (!IsRendererValid(config)) {
+    FML_LOG(WARNING) << "Invalid renderer config.";
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
@@ -527,7 +529,8 @@ FlutterEngineResult FlutterEngineRun(size_t version,
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       [](flutter::Shell& shell) {
-        return std::make_unique<flutter::Rasterizer>(shell.GetTaskRunners());
+        return std::make_unique<flutter::Rasterizer>(shell,
+                                                     shell.GetTaskRunners());
       };
 
   // TODO(chinmaygarde): This is the wrong spot for this. It belongs in the
@@ -699,6 +702,19 @@ inline flutter::PointerData::Change ToPointerDataChange(
   return flutter::PointerData::Change::kCancel;
 }
 
+// Returns the flutter::PointerData::DeviceKind for the given
+// FlutterPointerDeviceKind.
+inline flutter::PointerData::DeviceKind ToPointerDataKind(
+    FlutterPointerDeviceKind device_kind) {
+  switch (device_kind) {
+    case kFlutterPointerDeviceKindMouse:
+      return flutter::PointerData::DeviceKind::kMouse;
+    case kFlutterPointerDeviceKindTouch:
+      return flutter::PointerData::DeviceKind::kTouch;
+  }
+  return flutter::PointerData::DeviceKind::kMouse;
+}
+
 // Returns the flutter::PointerData::SignalKind for the given
 // FlutterPointerSignaKind.
 inline flutter::PointerData::SignalKind ToPointerDataSignalKind(
@@ -712,33 +728,24 @@ inline flutter::PointerData::SignalKind ToPointerDataSignalKind(
   return flutter::PointerData::SignalKind::kNone;
 }
 
-// Returns the buttons for PointerData for the given buttons and change from a
-// FlutterPointerEvent.
-inline int64_t ToPointerDataButtons(int64_t buttons,
-                                    flutter::PointerData::Change change) {
+// Returns the buttons to synthesize for a PointerData from a
+// FlutterPointerEvent with no type or buttons set.
+inline int64_t PointerDataButtonsForLegacyEvent(
+    flutter::PointerData::Change change) {
   switch (change) {
     case flutter::PointerData::Change::kDown:
     case flutter::PointerData::Change::kMove:
       // These kinds of change must have a non-zero `buttons`, otherwise gesture
-      // recognizers will ignore these events. To avoid breaking legacy
-      // embedders, it synthesizes a primary button when seeing `button = 0` and
-      // logs a warning to inform them to update.
-      if (buttons == 0) {
-        // TODO: Log a warning to inform the embedder to send the
-        // correct buttons. See
-        // https://github.com/flutter/flutter/issues/32052#issuecomment-489278965
-        return flutter::kPointerButtonMousePrimary;
-      }
-      return buttons;
-
+      // recognizers will ignore these events.
+      return flutter::kPointerButtonMousePrimary;
     case flutter::PointerData::Change::kCancel:
     case flutter::PointerData::Change::kAdd:
     case flutter::PointerData::Change::kRemove:
     case flutter::PointerData::Change::kHover:
     case flutter::PointerData::Change::kUp:
-      return buttons;
+      return 0;
   }
-  return buttons;
+  return 0;
 }
 
 FlutterEngineResult FlutterEngineSendPointerEvent(
@@ -759,7 +766,6 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     pointer_data.time_stamp = SAFE_ACCESS(current, timestamp, 0);
     pointer_data.change = ToPointerDataChange(
         SAFE_ACCESS(current, phase, FlutterPointerPhase::kCancel));
-    pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
     pointer_data.physical_x = SAFE_ACCESS(current, x, 0.0);
     pointer_data.physical_y = SAFE_ACCESS(current, y, 0.0);
     pointer_data.device = SAFE_ACCESS(current, device, 0);
@@ -767,10 +773,29 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
         SAFE_ACCESS(current, signal_kind, kFlutterPointerSignalKindNone));
     pointer_data.scroll_delta_x = SAFE_ACCESS(current, scroll_delta_x, 0.0);
     pointer_data.scroll_delta_y = SAFE_ACCESS(current, scroll_delta_y, 0.0);
-    // TODO: Change 0 to a SAFE_ACCESS to current.buttons once this
-    // field is added. See
-    // https://github.com/flutter/flutter/issues/32052#issuecomment-489278965
-    pointer_data.buttons = ToPointerDataButtons(0, pointer_data.change);
+    FlutterPointerDeviceKind device_kind = SAFE_ACCESS(current, device_kind, 0);
+    // For backwards compatibility with embedders written before the device kind
+    // and buttons were exposed, if the device kind is not set treat it as a
+    // mouse, with a synthesized primary button state based on the phase.
+    if (device_kind == 0) {
+      pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
+      pointer_data.buttons =
+          PointerDataButtonsForLegacyEvent(pointer_data.change);
+
+    } else {
+      pointer_data.kind = ToPointerDataKind(device_kind);
+      if (pointer_data.kind == flutter::PointerData::DeviceKind::kTouch) {
+        // For touch events, set the button internally rather than requiring
+        // it at the API level, since it's a confusing construction to expose.
+        if (pointer_data.change == flutter::PointerData::Change::kDown ||
+            pointer_data.change == flutter::PointerData::Change::kMove) {
+          pointer_data.buttons = flutter::kPointerButtonTouchContact;
+        }
+      } else {
+        // Buttons use the same mask values, so pass them through directly.
+        pointer_data.buttons = SAFE_ACCESS(current, buttons, 0);
+      }
+    }
     packet->SetPointerData(i, pointer_data);
     current = reinterpret_cast<const FlutterPointerEvent*>(
         reinterpret_cast<const uint8_t*>(current) + current->struct_size);
@@ -794,17 +819,66 @@ FlutterEngineResult FlutterEngineSendPlatformMessage(
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
+  const FlutterPlatformMessageResponseHandle* response_handle =
+      SAFE_ACCESS(flutter_message, response_handle, nullptr);
+
+  fml::RefPtr<flutter::PlatformMessageResponse> response;
+  if (response_handle && response_handle->message) {
+    response = response_handle->message->response();
+  }
+
   auto message = fml::MakeRefCounted<flutter::PlatformMessage>(
       flutter_message->channel,
       std::vector<uint8_t>(
           flutter_message->message,
           flutter_message->message + flutter_message->message_size),
-      nullptr);
+      response);
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)
                  ->SendPlatformMessage(std::move(message))
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInvalidArguments);
+}
+
+FlutterEngineResult FlutterPlatformMessageCreateResponseHandle(
+    FlutterEngine engine,
+    FlutterDataCallback data_callback,
+    void* user_data,
+    FlutterPlatformMessageResponseHandle** response_out) {
+  if (engine == nullptr || data_callback == nullptr ||
+      response_out == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
+  }
+
+  flutter::EmbedderPlatformMessageResponse::Callback response_callback =
+      [user_data, data_callback](const uint8_t* data, size_t size) {
+        data_callback(data, size, user_data);
+      };
+
+  auto platform_task_runner = reinterpret_cast<flutter::EmbedderEngine*>(engine)
+                                  ->GetTaskRunners()
+                                  .GetPlatformTaskRunner();
+
+  auto handle = new FlutterPlatformMessageResponseHandle();
+
+  handle->message = fml::MakeRefCounted<flutter::PlatformMessage>(
+      "",  // The channel is empty and unused as the response handle is going to
+           // referenced directly in the |FlutterEngineSendPlatformMessage| with
+           // the container message discarded.
+      fml::MakeRefCounted<flutter::EmbedderPlatformMessageResponse>(
+          std::move(platform_task_runner), response_callback));
+  *response_out = handle;
+  return kSuccess;
+}
+
+FlutterEngineResult FlutterPlatformMessageReleaseResponseHandle(
+    FlutterEngine engine,
+    FlutterPlatformMessageResponseHandle* response) {
+  if (engine == nullptr || response == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
+  }
+  delete response;
+  return kSuccess;
 }
 
 FlutterEngineResult FlutterEngineSendPlatformMessageResponse(
@@ -818,11 +892,13 @@ FlutterEngineResult FlutterEngineSendPlatformMessageResponse(
 
   auto response = handle->message->response();
 
-  if (data_length == 0) {
-    response->CompleteEmpty();
-  } else {
-    response->Complete(std::make_unique<fml::DataMapping>(
-        std::vector<uint8_t>({data, data + data_length})));
+  if (response) {
+    if (data_length == 0) {
+      response->CompleteEmpty();
+    } else {
+      response->Complete(std::make_unique<fml::DataMapping>(
+          std::vector<uint8_t>({data, data + data_length})));
+    }
   }
 
   delete handle;

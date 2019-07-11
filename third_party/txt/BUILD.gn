@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("$flutter_root/common/config.gni")
+
 declare_args() {
   flutter_use_fontconfig = false
 }
@@ -26,14 +28,12 @@ config("txt_config") {
 }
 
 source_set("txt") {
-  if (current_toolchain == host_toolchain && !is_mac) {
-    defines = [ "DIRECTORY_FONT_MANAGER_AVAILABLE" ]
-  }
-  if (is_android) {
-    defines = [ "ANDROID_FONT_MANAGER_AVAILABLE" ]
-  }
+  defines = []
   if (flutter_use_fontconfig) {
-    defines = [ "FONTCONFIG_FONT_MANAGER_AVAILABLE" ]
+    defines += [ "FLUTTER_USE_FONTCONFIG" ]
+  }
+  if (flutter_enable_skshaper) {
+    defines += [ "FLUTTER_ENABLE_SKSHAPER" ]
   }
 
   sources = [
@@ -81,18 +81,25 @@ source_set("txt") {
     "src/txt/font_asset_provider.h",
     "src/txt/font_collection.cc",
     "src/txt/font_collection.h",
+    "src/txt/font_features.cc",
+    "src/txt/font_features.h",
     "src/txt/font_skia.cc",
     "src/txt/font_skia.h",
     "src/txt/font_style.h",
     "src/txt/font_weight.h",
     "src/txt/paint_record.cc",
     "src/txt/paint_record.h",
-    "src/txt/paragraph.cc",
     "src/txt/paragraph.h",
     "src/txt/paragraph_builder.cc",
     "src/txt/paragraph_builder.h",
+    "src/txt/paragraph_builder_txt.cc",
+    "src/txt/paragraph_builder_txt.h",
     "src/txt/paragraph_style.cc",
     "src/txt/paragraph_style.h",
+    "src/txt/paragraph_txt.cc",
+    "src/txt/paragraph_txt.h",
+    "src/txt/placeholder_run.cc",
+    "src/txt/placeholder_run.h",
     "src/txt/platform.h",
     "src/txt/styled_runs.cc",
     "src/txt/styled_runs.h",
@@ -131,6 +138,17 @@ source_set("txt") {
     deps += [ "//third_party/fontconfig" ]
   }
 
+  if (flutter_enable_skshaper) {
+    sources += [
+      "src/skia/paragraph_builder_skia.cc",
+      "src/skia/paragraph_builder_skia.h",
+      "src/skia/paragraph_skia.cc",
+      "src/skia/paragraph_skia.h",
+    ]
+
+    deps += [ "//third_party/skia/modules/skparagraph" ]
+  }
+
   if (is_mac || is_ios) {
     sources += [ "src/txt/platform_mac.mm" ]
     deps += [ "$flutter_root/fml" ]
@@ -138,6 +156,8 @@ source_set("txt") {
     sources += [ "src/txt/platform_android.cc" ]
   } else if (is_linux) {
     sources += [ "src/txt/platform_linux.cc" ]
+  } else if (is_fuchsia) {
+    sources += [ "src/txt/platform_fuchsia.cc" ]
   } else {
     sources += [ "src/txt/platform.cc" ]
   }

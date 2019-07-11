@@ -16,6 +16,7 @@ import android.view.Surface;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.flutter.Log;
 import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.view.TextureRegistry;
@@ -35,6 +36,7 @@ import io.flutter.view.TextureRegistry;
  */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public class FlutterRenderer implements TextureRegistry {
+  private static final String TAG = "FlutterRenderer";
 
   private final FlutterJNI flutterJNI;
   private final AtomicLong nextTextureId = new AtomicLong(0L);
@@ -53,8 +55,10 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   public void attachToRenderSurface(@NonNull RenderSurface renderSurface) {
+    Log.v(TAG, "Attaching to RenderSurface.");
     // TODO(mattcarroll): determine desired behavior when attaching to an already attached renderer
     if (this.renderSurface != null) {
+      Log.v(TAG, "Already attached to a RenderSurface. Detaching from old one and attaching to new one.");
       detachFromRenderSurface();
     }
 
@@ -64,6 +68,7 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   public void detachFromRenderSurface() {
+    Log.v(TAG, "Detaching from RenderSurface.");
     // TODO(mattcarroll): determine desired behavior if we're asked to detach without first being attached
     if (this.renderSurface != null) {
       this.renderSurface.detachFromRenderer();
@@ -86,22 +91,25 @@ public class FlutterRenderer implements TextureRegistry {
   @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
   @Override
   public SurfaceTextureEntry createSurfaceTexture() {
+    Log.v(TAG, "Creating a SurfaceTexture.");
     final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
     surfaceTexture.detachFromGLContext();
     final SurfaceTextureRegistryEntry entry = new SurfaceTextureRegistryEntry(
         nextTextureId.getAndIncrement(),
         surfaceTexture
     );
+    Log.v(TAG, "New SurfaceTexture ID: " + entry.id());
     registerTexture(entry.id(), surfaceTexture);
     return entry;
   }
 
   final class SurfaceTextureRegistryEntry implements TextureRegistry.SurfaceTextureEntry {
     private final long id;
+    @NonNull
     private final SurfaceTexture surfaceTexture;
     private boolean released;
 
-    SurfaceTextureRegistryEntry(long id, SurfaceTexture surfaceTexture) {
+    SurfaceTextureRegistryEntry(long id, @NonNull SurfaceTexture surfaceTexture) {
       this.id = id;
       this.surfaceTexture = surfaceTexture;
 
@@ -120,7 +128,7 @@ public class FlutterRenderer implements TextureRegistry {
 
     private SurfaceTexture.OnFrameAvailableListener onFrameListener = new SurfaceTexture.OnFrameAvailableListener() {
       @Override
-      public void onFrameAvailable(SurfaceTexture texture) {
+      public void onFrameAvailable(@NonNull SurfaceTexture texture) {
         if (released) {
           // Even though we make sure to unregister the callback before releasing, as of Android O
           // SurfaceTexture has a data race when accessing the callback, so the callback may
@@ -132,6 +140,7 @@ public class FlutterRenderer implements TextureRegistry {
     };
 
     @Override
+    @NonNull
     public SurfaceTexture surfaceTexture() {
       return surfaceTexture;
     }
@@ -146,6 +155,7 @@ public class FlutterRenderer implements TextureRegistry {
       if (released) {
         return;
       }
+      Log.v(TAG, "Releasing a SurfaceTexture (" + id + ").");
       surfaceTexture.release();
       unregisterTexture(id);
       released = true;
@@ -154,7 +164,7 @@ public class FlutterRenderer implements TextureRegistry {
   //------ END TextureRegistry IMPLEMENTATION ----
 
   // TODO(mattcarroll): describe the native behavior that this invokes
-  public void surfaceCreated(Surface surface) {
+  public void surfaceCreated(@NonNull Surface surface) {
     flutterJNI.onSurfaceCreated(surface);
   }
 
@@ -170,6 +180,13 @@ public class FlutterRenderer implements TextureRegistry {
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   public void setViewportMetrics(@NonNull ViewportMetrics viewportMetrics) {
+    Log.v(TAG, "Setting viewport metrics\n"
+      + "Size: " + viewportMetrics.width + " x " + viewportMetrics.height + "\n"
+      + "Padding - L: " + viewportMetrics.paddingLeft + ", T: " + viewportMetrics.paddingTop
+        + ", R: " + viewportMetrics.paddingRight + ", B: " + viewportMetrics.paddingBottom + "\n"
+      + "Insets - L: " + viewportMetrics.viewInsetLeft + ", T: " + viewportMetrics.viewInsetTop
+        + ", R: " + viewportMetrics.viewInsetRight + ", B: " + viewportMetrics.viewInsetBottom);
+
     flutterJNI.setViewportMetrics(
         viewportMetrics.devicePixelRatio,
         viewportMetrics.width,
@@ -186,17 +203,18 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
+  // TODO(mattcarroll): determine if this is nullable or nonnull
   public Bitmap getBitmap() {
     return flutterJNI.getBitmap();
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
-  public void dispatchPointerDataPacket(ByteBuffer buffer, int position) {
+  public void dispatchPointerDataPacket(@NonNull ByteBuffer buffer, int position) {
     flutterJNI.dispatchPointerDataPacket(buffer, position);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
-  private void registerTexture(long textureId, SurfaceTexture surfaceTexture) {
+  private void registerTexture(long textureId, @NonNull SurfaceTexture surfaceTexture) {
     flutterJNI.registerTexture(textureId, surfaceTexture);
   }
 
@@ -228,7 +246,7 @@ public class FlutterRenderer implements TextureRegistry {
   // TODO(mattcarroll): describe the native behavior that this invokes
   public void dispatchSemanticsAction(int id,
                                       int action,
-                                      ByteBuffer args,
+                                      @Nullable ByteBuffer args,
                                       int argsPosition) {
     flutterJNI.dispatchSemanticsAction(
         id,

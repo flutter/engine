@@ -21,10 +21,10 @@ dynamic _decodeJSON(String message) {
 void _updateWindowMetrics(double devicePixelRatio,
                           double width,
                           double height,
-                          double paddingTop,
-                          double paddingRight,
-                          double paddingBottom,
-                          double paddingLeft,
+                          double viewPaddingTop,
+                          double viewPaddingRight,
+                          double viewPaddingBottom,
+                          double viewPaddingLeft,
                           double viewInsetTop,
                           double viewInsetRight,
                           double viewInsetBottom,
@@ -32,16 +32,21 @@ void _updateWindowMetrics(double devicePixelRatio,
   window
     .._devicePixelRatio = devicePixelRatio
     .._physicalSize = Size(width, height)
-    .._padding = WindowPadding._(
-        top: paddingTop,
-        right: paddingRight,
-        bottom: paddingBottom,
-        left: paddingLeft)
+    .._viewPadding = WindowPadding._(
+        top: viewPaddingTop,
+        right: viewPaddingRight,
+        bottom: viewPaddingBottom,
+        left: viewPaddingLeft)
     .._viewInsets = WindowPadding._(
         top: viewInsetTop,
         right: viewInsetRight,
         bottom: viewInsetBottom,
-        left: viewInsetLeft);
+        left: viewInsetLeft)
+    .._padding = WindowPadding._(
+        top: math.max(0.0, viewPaddingTop - viewInsetTop),
+        right: math.max(0.0, viewPaddingRight - viewInsetRight),
+        bottom: math.max(0.0, viewPaddingBottom - viewInsetBottom),
+        left: math.max(0.0, viewPaddingLeft - viewInsetLeft));
   _invoke(window.onMetricsChanged, window._onMetricsChangedZone);
 }
 
@@ -174,6 +179,17 @@ void _beginFrame(int microseconds) {
 
 @pragma('vm:entry-point')
 // ignore: unused_element
+void _reportTimings(List<int> timings) {
+  assert(timings.length % FramePhase.values.length == 0);
+  final List<FrameTiming> frameTimings = <FrameTiming>[];
+  for (int i = 0; i < timings.length; i += FramePhase.values.length) {
+    frameTimings.add(FrameTiming(timings.sublist(i, i + FramePhase.values.length)));
+  }
+  _invoke1(window.onReportTimings, window._onReportTimingsZone, frameTimings);
+}
+
+@pragma('vm:entry-point')
+// ignore: unused_element
 void _drawFrame() {
   _invoke(window.onDrawFrame, window._onDrawFrameZone);
 }
@@ -189,7 +205,7 @@ void _runMainZoned(Function startMainIsolateFunction,
                    Function userMainFunction,
                    List<String> args) {
   startMainIsolateFunction((){
-    runZoned<Future<void>>(() {
+    runZoned<void>(() {
       if (userMainFunction is _BinaryFunction) {
         // This seems to be undocumented but supported by the command line VM.
         // Let's do the same in case old entry-points are ported to Flutter.

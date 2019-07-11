@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/layer_tree.h"
@@ -19,11 +20,24 @@
 
 namespace flutter {
 
+/// Takes |LayerTree|s and draws its contents.
 class Rasterizer final : public SnapshotDelegate {
  public:
-  Rasterizer(TaskRunners task_runners);
-
+  class Delegate {
+   public:
+    virtual void OnFrameRasterized(const FrameTiming&) = 0;
+  };
+  // TODO(dnfield): remove once embedders have caught up.
+  class DummyDelegate : public Delegate {
+    void OnFrameRasterized(const FrameTiming&) override {}
+  };
   Rasterizer(TaskRunners task_runners,
+             std::unique_ptr<flutter::CompositorContext> compositor_context);
+
+  Rasterizer(Delegate& delegate, TaskRunners task_runners);
+
+  Rasterizer(Delegate& delegate,
+             TaskRunners task_runners,
              std::unique_ptr<flutter::CompositorContext> compositor_context);
 
   ~Rasterizer();
@@ -31,6 +45,11 @@ class Rasterizer final : public SnapshotDelegate {
   void Setup(std::unique_ptr<Surface> surface);
 
   void Teardown();
+
+  // Frees up Skia GPU resources.
+  //
+  // This method must be called from the GPU task runner.
+  void NotifyLowMemoryWarning() const;
 
   fml::WeakPtr<Rasterizer> GetWeakPtr() const;
 
@@ -76,6 +95,7 @@ class Rasterizer final : public SnapshotDelegate {
   void SetResourceCacheMaxBytes(int max_bytes);
 
  private:
+  Delegate& delegate_;
   TaskRunners task_runners_;
   std::unique_ptr<Surface> surface_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
@@ -89,7 +109,7 @@ class Rasterizer final : public SnapshotDelegate {
 
   void DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree);
 
-  bool DrawToSurface(flutter::LayerTree& layer_tree);
+  RasterStatus DrawToSurface(flutter::LayerTree& layer_tree);
 
   void FireNextFrameCallbackIfPresent();
 

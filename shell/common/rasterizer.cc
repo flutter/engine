@@ -22,14 +22,26 @@ namespace flutter {
 // used within this interval.
 static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
-Rasterizer::Rasterizer(TaskRunners task_runners)
-    : Rasterizer(std::move(task_runners),
-                 std::make_unique<flutter::CompositorContext>()) {}
-
+// TODO(dnfield): Remove this once internal embedders have caught up.
+static Rasterizer::DummyDelegate dummy_delegate_;
 Rasterizer::Rasterizer(
     TaskRunners task_runners,
     std::unique_ptr<flutter::CompositorContext> compositor_context)
-    : task_runners_(std::move(task_runners)),
+    : Rasterizer(dummy_delegate_,
+                 std::move(task_runners),
+                 std::move(compositor_context)) {}
+
+Rasterizer::Rasterizer(Delegate& delegate, TaskRunners task_runners)
+    : Rasterizer(delegate,
+                 std::move(task_runners),
+                 std::make_unique<flutter::CompositorContext>()) {}
+
+Rasterizer::Rasterizer(
+    Delegate& delegate,
+    TaskRunners task_runners,
+    std::unique_ptr<flutter::CompositorContext> compositor_context)
+    : delegate_(delegate),
+      task_runners_(std::move(task_runners)),
       compositor_context_(std::move(compositor_context)),
       weak_factory_(this) {
   FML_DCHECK(compositor_context_);
@@ -54,6 +66,19 @@ void Rasterizer::Teardown() {
   compositor_context_->OnGrContextDestroyed();
   surface_.reset();
   last_layer_tree_.reset();
+}
+
+void Rasterizer::NotifyLowMemoryWarning() const {
+  if (!surface_) {
+    FML_DLOG(INFO) << "Rasterizer::PurgeCaches called with no surface.";
+    return;
+  }
+  auto context = surface_->GetContext();
+  if (!context) {
+    FML_DLOG(INFO) << "Rasterizer::PurgeCaches called with no GrContext.";
+    return;
+  }
+  context->freeGpuResources();
 }
 
 flutter::TextureRegistry* Rasterizer::GetTextureRegistry() {
@@ -147,14 +172,21 @@ sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(sk_sp<SkPicture> picture,
 }
 
 void Rasterizer::DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree) {
+  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+
   if (!layer_tree || !surface_) {
     return;
   }
 
+  FrameTiming timing;
+  timing.Set(FrameTiming::kBuildStart, layer_tree->build_start());
+  timing.Set(FrameTiming::kBuildFinish, layer_tree->build_finish());
+  timing.Set(FrameTiming::kRasterStart, fml::TimePoint::Now());
+
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
   persistent_cache->ResetStoredNewShaders();
 
-  if (DrawToSurface(*layer_tree)) {
+  if (DrawToSurface(*layer_tree) == RasterStatus::kSuccess) {
     last_layer_tree_ = std::move(layer_tree);
   }
 
@@ -164,21 +196,27 @@ void Rasterizer::DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree) {
         ScreenshotLastLayerTree(ScreenshotType::SkiaPicture, false);
     persistent_cache->DumpSkp(*screenshot.data);
   }
+
+  // TODO(liyuqian): in Fuchsia, the rasterization doesn't finish when
+  // Rasterizer::DoDraw finishes. Future work is needed to adapt the timestamp
+  // for Fuchsia to capture SceneUpdateContext::ExecutePaintTasks.
+  timing.Set(FrameTiming::kRasterFinish, fml::TimePoint::Now());
+  delegate_.OnFrameRasterized(timing);
 }
 
-bool Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
+RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   FML_DCHECK(surface_);
 
   auto frame = surface_->AcquireFrame(layer_tree.frame_size());
 
   if (frame == nullptr) {
-    return false;
+    return RasterStatus::kFailed;
   }
 
   // There is no way for the compositor to know how long the layer tree
   // construction took. Fortunately, the layer tree does. Grab that time
   // for instrumentation.
-  compositor_context_->ui_time().SetLapTime(layer_tree.construction_time());
+  compositor_context_->ui_time().SetLapTime(layer_tree.build_time());
 
   auto* canvas = frame->SkiaCanvas();
 
@@ -192,7 +230,11 @@ bool Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
       surface_->GetContext(), canvas, external_view_embedder,
       surface_->GetRootTransformation(), true);
 
-  if (compositor_frame && compositor_frame->Raster(layer_tree, false)) {
+  if (compositor_frame) {
+    RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
+    if (raster_status == RasterStatus::kFailed) {
+      return raster_status;
+    }
     frame->Submit();
     if (external_view_embedder != nullptr) {
       external_view_embedder->SubmitFrame(surface_->GetContext());
@@ -202,10 +244,10 @@ bool Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
     if (surface_->GetContext())
       surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
 
-    return true;
+    return raster_status;
   }
 
-  return false;
+  return RasterStatus::kFailed;
 }
 
 static sk_sp<SkData> SerializeTypeface(SkTypeface* typeface, void* ctx) {

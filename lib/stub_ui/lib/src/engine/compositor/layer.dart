@@ -8,7 +8,7 @@ part of engine;
 ///
 /// A layer is the lowest-level rendering primitive. It represents an atomic
 /// painting command.
-abstract class Layer {
+abstract class Layer implements ui.EngineLayer {
   /// The layer that contains us as a child.
   ContainerLayer parent;
 
@@ -173,7 +173,7 @@ class ClipRRectLayer extends ContainerLayer {
 }
 
 /// A layer that transforms its child layers by the given transform matrix.
-class TransformLayer extends ContainerLayer {
+class TransformLayer extends ContainerLayer implements ui.OffsetEngineLayer, ui.TransformEngineLayer {
   /// The matrix with which to transform the child layers.
   final Matrix4 _transform;
 
@@ -181,8 +181,8 @@ class TransformLayer extends ContainerLayer {
 
   @override
   void preroll(PrerollContext context, Matrix4 matrix) {
-    final childMatrix = matrix * _transform;
-    final childPaintBounds = prerollChildren(context, childMatrix);
+    final Matrix4 childMatrix = matrix * _transform;
+    final ui.Rect childPaintBounds = prerollChildren(context, childMatrix);
     paintBounds = _transformRect(_transform, childPaintBounds);
   }
 
@@ -251,11 +251,11 @@ class PictureLayer extends Layer {
 
   @override
   void preroll(PrerollContext context, Matrix4 matrix) {
-    final cache = context.rasterCache;
+    final RasterCache cache = context.rasterCache;
     if (cache != null) {
       final translateMatrix = Matrix4.identity()
         ..setTranslationRaw(offset.dx, offset.dy, 0);
-      final cacheMatrix = translateMatrix * matrix;
+      final Matrix4 cacheMatrix = translateMatrix * matrix;
       cache.prepare(picture, cacheMatrix, isComplex, willChange);
     }
 
@@ -287,7 +287,7 @@ class PictureLayer extends Layer {
 ///
 /// The shape clips its children to a given [Path], and casts a shadow based
 /// on the given elevation.
-class PhysicalShapeLayer extends ContainerLayer {
+class PhysicalShapeLayer extends ContainerLayer implements ui.PhysicalShapeEngineLayer {
   final double _elevation;
   final ui.Color _color;
   final ui.Color _shadowColor;
