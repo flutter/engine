@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FLEEngine.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FLEEngine_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 
 #include <vector>
 
@@ -12,9 +12,9 @@
 #import "flutter/shell/platform/embedder/embedder.h"
 
 /**
- * Private interface declaration for FLEEngine.
+ * Private interface declaration for FlutterEngine.
  */
-@interface FLEEngine () <FlutterBinaryMessenger>
+@interface FlutterEngine () <FlutterBinaryMessenger>
 
 /**
  * Called by the engine to make the context the engine should draw into current.
@@ -55,15 +55,15 @@
  */
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
 - (instancetype)initWithPlugin:(nonnull NSString*)pluginKey
-                 flutterEngine:(nonnull FLEEngine*)flutterEngine;
+                 flutterEngine:(nonnull FlutterEngine*)flutterEngine;
 @end
 
 @implementation FlutterEngineRegistrar {
   NSString* _pluginKey;
-  FLEEngine* _flutterEngine;
+  FlutterEngine* _flutterEngine;
 }
 
-- (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FLEEngine*)flutterEngine {
+- (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine {
   self = [super init];
   if (self) {
     _pluginKey = [pluginKey copy];
@@ -94,34 +94,34 @@
 // Callbacks provided to the engine. See the called methods for documentation.
 #pragma mark - Static methods provided to engine configuration
 
-static bool OnMakeCurrent(FLEEngine* engine) {
+static bool OnMakeCurrent(FlutterEngine* engine) {
   return [engine engineCallbackOnMakeCurrent];
 }
 
-static bool OnClearCurrent(FLEEngine* engine) {
+static bool OnClearCurrent(FlutterEngine* engine) {
   return [engine engineCallbackOnClearCurrent];
 }
 
-static bool OnPresent(FLEEngine* engine) {
+static bool OnPresent(FlutterEngine* engine) {
   return [engine engineCallbackOnPresent];
 }
 
-static uint32_t OnFBO(FLEEngine* engine) {
+static uint32_t OnFBO(FlutterEngine* engine) {
   // There is currently no case where a different FBO is used, so no need to forward.
   return 0;
 }
 
-static bool OnMakeResourceCurrent(FLEEngine* engine) {
+static bool OnMakeResourceCurrent(FlutterEngine* engine) {
   return [engine engineCallbackOnMakeResourceCurrent];
 }
 
-static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* engine) {
+static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngine* engine) {
   [engine engineCallbackOnPlatformMessage:message];
 }
 
-#pragma mark - FLEEngine implementation
+#pragma mark -
 
-@implementation FLEEngine {
+@implementation FlutterEngine {
   // The embedding-API-level engine object.
   FLUTTER_API_SYMBOL(FlutterEngine) _engine;
 

@@ -4,7 +4,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "FLEEngine.h"
+#import "FlutterEngine.h"
 #import "FlutterMacros.h"
 #import "FlutterPluginRegistrarMacOS.h"
 
@@ -32,7 +32,7 @@ FLUTTER_EXPORT
 /**
  * The Flutter engine associated with this view controller.
  */
-@property(nonatomic, nonnull, readonly) FLEEngine* engine;
+@property(nonatomic, nonnull, readonly) FlutterEngine* engine;
 
 /**
  * The style of mouse tracking to use for the view. Defaults to

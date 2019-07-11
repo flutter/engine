@@ -7,8 +7,8 @@
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FLEEngine.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FLEEngine_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FLETextInputPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
@@ -173,7 +173,7 @@ struct MouseState {
  * Performs initialization that's common between the different init paths.
  */
 static void CommonInit(FLEViewController* controller) {
-  controller->_engine = [[FLEEngine alloc] initWithName:@"io.flutter"
+  controller->_engine = [[FlutterEngine alloc] initWithName:@"io.flutter"
                                                 project:controller->_project
                                  allowHeadlessExecution:NO];
   controller->_additionalKeyResponders = [[NSMutableOrderedSet alloc] init];

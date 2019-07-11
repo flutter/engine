@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLEENGINE_H_
-#define FLUTTER_FLEENGINE_H_
+#ifndef FLUTTER_FLUTTERENGINE_H_
+#define FLUTTER_FLUTTERENGINE_H_
 
 #import <Foundation/Foundation.h>
 
@@ -12,16 +12,15 @@
 #include "FlutterMacros.h"
 #include "FlutterPluginRegistrarMacOS.h"
 
+// TODO: Merge this file with the iOS FlutterEngine.h.
+
 @class FLEViewController;
 
 /**
  * Coordinates a single instance of execution of a Flutter engine.
- *
- * TODO(stuartmorgan): Finish aligning this (and ideally merging) with FlutterEngine. Currently
- * this is largely usable only as an implementation detail of FLEViewController.
  */
 FLUTTER_EXPORT
-@interface FLEEngine : NSObject <FlutterPluginRegistry>
+@interface FlutterEngine : NSObject <FlutterPluginRegistry>
 
 /**
  * Initializes an engine with the given viewController.
@@ -74,4 +73,4 @@ FLUTTER_EXPORT
 
 @end
 
-#endif  // FLUTTER_FLEENGINE_H_
+#endif  // FLUTTER_FLUTTERENGINE_H_
