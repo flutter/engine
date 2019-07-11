@@ -818,8 +818,8 @@ FlutterEngineResult FlutterEngineSendPlatformMessage(
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
-  auto message_size = SAFE_ACCESS(flutter_message, message_size, 0);
-  auto message_data = SAFE_ACCESS(flutter_message, message, nullptr);
+  size_t message_size = SAFE_ACCESS(flutter_message, message_size, 0);
+  const uint8_t* message_data = SAFE_ACCESS(flutter_message, message, nullptr);
 
   if (message_size != 0 && message_data == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
