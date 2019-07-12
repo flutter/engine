@@ -364,6 +364,9 @@ class ParagraphTxt : public Paragraph {
   // alignment.
   double GetLineXOffset(double line_total_advance);
 
+  // Draws the stroke.
+  void PaintStroke(SkCanvas* canvas, const PaintRecord& record, SkPoint offset);
+
   // Creates and draws the decorations onto the canvas.
   void PaintDecorations(SkCanvas* canvas,
                         const PaintRecord& record,

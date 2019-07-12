@@ -23,6 +23,7 @@
 #include "font_features.h"
 #include "font_style.h"
 #include "font_weight.h"
+#include "stroke_type.h"
 #include "text_baseline.h"
 #include "text_decoration.h"
 #include "text_shadow.h"
@@ -60,6 +61,11 @@ class TextStyle {
   // An ordered list of shadows where the first shadow will be drawn first (at
   // the bottom).
   std::vector<TextShadow> text_shadows;
+
+  StrokeType stroke_type = StrokeType::kNone;
+  SkColor stroke_color = SK_ColorWHITE;
+  double stroke_width = 1.0;
+
   FontFeatures font_features;
 
   TextStyle();
