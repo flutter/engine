@@ -41,9 +41,23 @@ bool TaskRunner::RunsTasksOnCurrentThread() {
   if (!fml::MessageLoop::IsInitializedForCurrentThread()) {
     return false;
   }
-  const auto current_loop_id =
+  const auto current_queue_id =
       MessageLoop::GetCurrent().GetLoopImpl()->GetTaskQueueId();
-  return current_loop_id == loop_->GetTaskQueueId();
+  const auto loop_queue_id = loop_->GetTaskQueueId();
+
+  if (current_queue_id == loop_queue_id) {
+    return true;
+  }
+
+  auto queues = MessageLoopTaskQueues::GetInstance();
+  if (queues->Owns(current_queue_id, loop_queue_id)) {
+    return true;
+  }
+  if (queues->Owns(loop_queue_id, current_queue_id)) {
+    return true;
+  }
+
+  return false;
 }
 
 void TaskRunner::RunNowOrPostTask(fml::RefPtr<fml::TaskRunner> runner,

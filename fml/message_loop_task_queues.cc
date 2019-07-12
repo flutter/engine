@@ -234,7 +234,7 @@ bool MessageLoopTaskQueues::Unmerge(TaskQueueId owner) {
 
 bool MessageLoopTaskQueues::Owns(TaskQueueId owner, TaskQueueId subsumed) {
   MergedQueuesRunner merged_observers = MergedQueuesRunner(*this, owner);
-  return subsumed == owner_to_subsumed_[owner];
+  return subsumed == owner_to_subsumed_[owner] || owner == subsumed;
 }
 
 // Subsumed queues will never have pending tasks.
