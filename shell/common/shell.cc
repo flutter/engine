@@ -88,18 +88,15 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // Create the rasterizer on the GPU thread.
   fml::AutoResetWaitableEvent gpu_latch;
   std::unique_ptr<Rasterizer> rasterizer;
-  fml::WeakPtr<SnapshotDelegate> snapshot_delegate;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners.GetGPUTaskRunner(), [&gpu_latch,            //
                                         &rasterizer,           //
                                         on_create_rasterizer,  //
-                                        shell = shell.get(),   //
-                                        &snapshot_delegate     //
+                                        shell = shell.get()    //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
         if (auto new_rasterizer = on_create_rasterizer(*shell)) {
           rasterizer = std::move(new_rasterizer);
-          snapshot_delegate = rasterizer->GetSnapshotDelegate();
         }
         gpu_latch.Signal();
       });
@@ -117,7 +114,6 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                          isolate_snapshot = std::move(isolate_snapshot),    //
                          shared_snapshot = std::move(shared_snapshot),      //
                          vsync_waiter = std::move(vsync_waiter),            //
-                         snapshot_delegate = std::move(snapshot_delegate),  //
                          io_manager = io_manager->GetWeakPtr()              //
   ]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
@@ -135,7 +131,6 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                                           task_runners,                  //
                                           shell->GetSettings(),          //
                                           std::move(animator),           //
-                                          std::move(snapshot_delegate),  //
                                           std::move(io_manager)          //
         );
         ui_latch.Signal();
