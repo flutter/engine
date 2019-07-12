@@ -10,6 +10,7 @@
 #include <string>
 
 #include <flutter_plugin_registrar.h>
+#include <flutter_texture_registrar.h>
 
 #include "binary_messenger.h"
 #include "texture_registrar.h"

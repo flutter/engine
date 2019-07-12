@@ -21,8 +21,7 @@ namespace flutter {
 
 class ExternalTextureGL {
  public:
-  ExternalTextureGL(FlutterTexutreCallback texture_callback,
-                    void* user_data);
+  ExternalTextureGL(FlutterTexutreCallback texture_callback, void* user_data);
 
   virtual ~ExternalTextureGL();
 
@@ -35,7 +34,7 @@ class ExternalTextureGL {
   FlutterTexutreCallback texture_callback_ = nullptr;
   void* user_data_ = nullptr;
   GLuint glTexture = 0;
-  GLFWwindow* window_;
+  GLFWwindow* window_ = nullptr;
 };
 
 }  // namespace flutter

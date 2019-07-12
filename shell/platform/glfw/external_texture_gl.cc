@@ -14,45 +14,56 @@ static void OnGLBufferRelease(void* user_data) {}
 
 ExternalTextureGL::ExternalTextureGL(FlutterTexutreCallback texture_callback,
                                      void* user_data)
-    : texture_callback_(texture_callback), user_data_(user_data){
-  window_ = glfwGetCurrentContext();
-  /*Create offscreen contexts*/
-  if (!window_) {
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    window_ = glfwCreateWindow(1, 1, "", NULL, NULL);
-    glfwMakeContextCurrent(window_);
-    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-  }
-  glGenTextures(1, &glTexture);
-  glBindTexture(GL_TEXTURE_2D, glTexture);
-  // set the texture wrapping parameters
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-  // set texture filtering parameters
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    : texture_callback_(texture_callback),
+      user_data_(user_data) {
 }
 
 ExternalTextureGL::~ExternalTextureGL() {
-  glDeleteTextures(1, &glTexture);
+  if(glTexture!=0)
+      glDeleteTextures(1, &glTexture);
 }
 
 bool ExternalTextureGL::PopulateTextureWithIdentifier(
     size_t width,
     size_t height,
     FlutterOpenGLTexture* texture) {
-  if (!texture_callback_)
-    return false;
-  std::shared_ptr<uint8_t> buffer =
+
+  if (!window_) {
+    window_ = glfwGetCurrentContext();
+    if (window_) {
+      glfwMakeContextCurrent(window_);
+      gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    }
+  } else {
+    glfwMakeContextCurrent(window_);
+  }
+
+  if(!window_) return false;
+  
+  std::shared_ptr<GLFWPixelBuffer> pixel_buffer =
       texture_callback_(width, height, user_data_);
-  if (!buffer)
-    return false;
+
+  if (!pixel_buffer.get()) return false;
+  
+  if (glTexture == 0) {
+    glGenTextures(1, &glTexture);
+    glBindTexture(GL_TEXTURE_2D, glTexture);
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  }
+
   /*Fill texture.*/
   {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBindTexture(GL_TEXTURE_2D, glTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, buffer.get());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pixel_buffer->width,
+                 pixel_buffer->height, 0,
+                 GL_RGBA,
+                 GL_UNSIGNED_BYTE, pixel_buffer->buffer.get());
     glEnable(GL_TEXTURE_2D);
   }
   texture->target = GL_TEXTURE_2D;

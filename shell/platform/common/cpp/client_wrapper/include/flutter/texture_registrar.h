@@ -16,7 +16,7 @@ class Texture {
  public:
   virtual ~Texture(){}
   
-  virtual std::shared_ptr<uint8_t> CopyTextureBuffer(size_t width, size_t height) = 0;
+  virtual std::shared_ptr<GLFWPixelBuffer> CopyTextureBuffer(size_t width, size_t height) = 0;
 };
 
 class TextureRegistrar {
