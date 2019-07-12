@@ -11,7 +11,7 @@
 namespace fml {
 
 std::mutex MessageLoopTaskQueues::creation_mutex_;
-const size_t MessageLoopTaskQueues::_kUnmerged;
+const TaskQueueId MessageLoopTaskQueues::_kUnmerged = TaskQueueId(ULONG_MAX);
 fml::RefPtr<MessageLoopTaskQueues> MessageLoopTaskQueues::instance_;
 
 fml::RefPtr<MessageLoopTaskQueues> MessageLoopTaskQueues::GetInstance() {
@@ -24,7 +24,7 @@ fml::RefPtr<MessageLoopTaskQueues> MessageLoopTaskQueues::GetInstance() {
 
 TaskQueueId MessageLoopTaskQueues::CreateTaskQueue() {
   std::scoped_lock creation(queue_meta_mutex_);
-  TaskQueueId loop_id = task_queue_id_counter_;
+  TaskQueueId loop_id = TaskQueueId(task_queue_id_counter_);
   ++task_queue_id_counter_;
 
   observers_mutexes_.push_back(std::make_unique<std::mutex>());
@@ -47,7 +47,7 @@ MessageLoopTaskQueues::MessageLoopTaskQueues()
 MessageLoopTaskQueues::~MessageLoopTaskQueues() = default;
 
 void MessageLoopTaskQueues::Dispose(TaskQueueId queue_id) {
-  MergedQueuesRunner merged_tasks = MergedQueuesRunner(this, queue_id);
+  MergedQueuesRunner merged_tasks = MergedQueuesRunner(*this, queue_id);
   merged_tasks.InvokeMerged(
       [&](TaskQueueId queue_id) { delayed_tasks_[queue_id] = {}; });
 }
@@ -66,7 +66,7 @@ void MessageLoopTaskQueues::RegisterTask(TaskQueueId queue_id,
 }
 
 bool MessageLoopTaskQueues::HasPendingTasks(TaskQueueId queue_id) {
-  MergedQueuesRunner merged_tasks = MergedQueuesRunner(this, queue_id);
+  MergedQueuesRunner merged_tasks = MergedQueuesRunner(*this, queue_id);
   return HasPendingTasksUnlocked(queue_id);
 }
 
@@ -74,7 +74,7 @@ void MessageLoopTaskQueues::GetTasksToRunNow(
     TaskQueueId queue_id,
     FlushType type,
     std::vector<fml::closure>& invocations) {
-  MergedQueuesRunner merged_tasks = MergedQueuesRunner(this, queue_id);
+  MergedQueuesRunner merged_tasks = MergedQueuesRunner(*this, queue_id);
 
   if (!HasPendingTasksUnlocked(queue_id)) {
     return;
@@ -83,7 +83,7 @@ void MessageLoopTaskQueues::GetTasksToRunNow(
   const auto now = fml::TimePoint::Now();
 
   while (HasPendingTasksUnlocked(queue_id)) {
-    TaskQueueId top_queue;
+    TaskQueueId top_queue = _kUnmerged;
     const auto& top = PeekNextTaskUnlocked(queue_id, top_queue);
     if (top.GetTargetTime() > now) {
       break;
@@ -110,7 +110,7 @@ void MessageLoopTaskQueues::WakeUp(TaskQueueId queue_id, fml::TimePoint time) {
 }
 
 size_t MessageLoopTaskQueues::GetNumPendingTasks(TaskQueueId queue_id) {
-  MergedQueuesRunner merged_tasks = MergedQueuesRunner(this, queue_id);
+  MergedQueuesRunner merged_tasks = MergedQueuesRunner(*this, queue_id);
   if (subsumed_to_owner_[queue_id] != _kUnmerged) {
     return 0;
   }
@@ -135,7 +135,7 @@ void MessageLoopTaskQueues::RemoveTaskObserver(TaskQueueId queue_id,
 
 void MessageLoopTaskQueues::NotifyObservers(TaskQueueId queue_id) {
   MergedQueuesRunner merged_observers =
-      MergedQueuesRunner(this, queue_id, MutexType::kObservers);
+      MergedQueuesRunner(*this, queue_id, MutexType::kObservers);
 
   merged_observers.InvokeMerged([&](TaskQueueId queue) {
     for (const auto& observer : task_observers_[queue]) {
@@ -155,7 +155,7 @@ void MessageLoopTaskQueues::Swap(TaskQueueId primary, TaskQueueId secondary)
   std::mutex& t1 = GetMutex(primary, MutexType::kTasks);
   std::mutex& t2 = GetMutex(secondary, MutexType::kTasks);
 
-  std::scoped_lock(o1, o2, t1, t2);
+  std::scoped_lock lock(o1, o2, t1, t2);
 
   std::swap(task_observers_[primary], task_observers_[secondary]);
   std::swap(delayed_tasks_[primary], delayed_tasks_[secondary]);
@@ -177,7 +177,7 @@ bool MessageLoopTaskQueues::Merge(TaskQueueId owner, TaskQueueId subsumed) {
   std::mutex& t1 = GetMutex(owner, MutexType::kTasks);
   std::mutex& t2 = GetMutex(subsumed, MutexType::kTasks);
 
-  std::scoped_lock(o1, o2, t1, t2);
+  std::scoped_lock lock(o1, o2, t1, t2);
 
   if (owner == subsumed) {
     return true;
@@ -187,7 +187,7 @@ bool MessageLoopTaskQueues::Merge(TaskQueueId owner, TaskQueueId subsumed) {
     return true;
   }
 
-  std::vector<size_t> owner_subsumed_keys = {
+  std::vector<TaskQueueId> owner_subsumed_keys = {
       owner_to_subsumed_[owner], owner_to_subsumed_[subsumed],
       subsumed_to_owner_[owner], subsumed_to_owner_[subsumed]};
 
@@ -208,19 +208,16 @@ bool MessageLoopTaskQueues::Merge(TaskQueueId owner, TaskQueueId subsumed) {
 }
 
 bool MessageLoopTaskQueues::Unmerge(TaskQueueId owner) {
-  // task_observers locks
-  std::mutex& o = GetMutex(owner, MutexType::kObservers);
+  MergedQueuesRunner merged_observers =
+      MergedQueuesRunner(*this, owner, MutexType::kObservers);
+  MergedQueuesRunner merged_tasks =
+      MergedQueuesRunner(*this, owner, MutexType::kTasks);
 
-  // delayed_tasks locks
-  std::mutex& t = GetMutex(owner, MutexType::kTasks);
-
-  std::scoped_lock(o, t);
-
-  if (owner_to_subsumed_[owner] == _kUnmerged) {
+  const TaskQueueId subsumed = owner_to_subsumed_[owner];
+  if (subsumed == _kUnmerged) {
     return false;
   }
 
-  const size_t subsumed = owner_to_subsumed_[owner];
   subsumed_to_owner_[subsumed] = _kUnmerged;
   owner_to_subsumed_[owner] = _kUnmerged;
 
@@ -236,7 +233,7 @@ bool MessageLoopTaskQueues::Unmerge(TaskQueueId owner) {
 }
 
 bool MessageLoopTaskQueues::Owns(TaskQueueId owner, TaskQueueId subsumed) {
-  MergedQueuesRunner merged_observers = MergedQueuesRunner(this, owner);
+  MergedQueuesRunner merged_observers = MergedQueuesRunner(*this, owner);
   return subsumed == owner_to_subsumed_[owner];
 }
 
@@ -251,7 +248,7 @@ bool MessageLoopTaskQueues::HasPendingTasksUnlocked(TaskQueueId queue_id) {
     return true;
   }
 
-  const size_t subsumed = owner_to_subsumed_[queue_id];
+  const TaskQueueId subsumed = owner_to_subsumed_[queue_id];
   if (subsumed == _kUnmerged) {
     // this is not an owner and queue is empty.
     return false;
@@ -262,7 +259,7 @@ bool MessageLoopTaskQueues::HasPendingTasksUnlocked(TaskQueueId queue_id) {
 
 fml::TimePoint MessageLoopTaskQueues::GetNextWakeTimeUnlocked(
     TaskQueueId queue_id) {
-  TaskQueueId tmp;
+  TaskQueueId tmp = _kUnmerged;
   return PeekNextTaskUnlocked(queue_id, tmp).GetTargetTime();
 }
 
@@ -270,7 +267,7 @@ const DelayedTask& MessageLoopTaskQueues::PeekNextTaskUnlocked(
     TaskQueueId owner,
     TaskQueueId& top_queue_id) {
   FML_DCHECK(HasPendingTasksUnlocked(owner));
-  const size_t subsumed = owner_to_subsumed_[owner];
+  const TaskQueueId subsumed = owner_to_subsumed_[owner];
   if (subsumed == _kUnmerged) {
     top_queue_id = owner;
     return delayed_tasks_[owner].top();

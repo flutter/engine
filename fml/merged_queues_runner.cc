@@ -13,14 +13,17 @@ class MessageLoopTaskQueues::MergedQueuesRunner {
  public:
   // TODO (kaushikiska): refactor mutexes out side of MessageLoopTaskQueues
   // for better DI.
-  MergedQueuesRunner(MessageLoopTaskQueues* task_queues,
+  MergedQueuesRunner(MessageLoopTaskQueues& task_queues,
                      TaskQueueId owner,
                      MutexType type = MutexType::kTasks)
-      : owner_(owner), task_queues_(task_queues), type_(type) {
-    task_queues_->GetMutex(owner, type).lock();
-    subsumed_ = task_queues->owner_to_subsumed_[owner];
+      : owner_(owner),
+        subsumed_(task_queues_._kUnmerged),
+        task_queues_(task_queues),
+        type_(type) {
+    task_queues_.GetMutex(owner, type).lock();
+    subsumed_ = task_queues_.owner_to_subsumed_[owner];
     if (isMerged(subsumed_)) {
-      task_queues_->GetMutex(subsumed_, type).lock();
+      task_queues_.GetMutex(subsumed_, type).lock();
     }
   }
 
@@ -34,9 +37,9 @@ class MessageLoopTaskQueues::MergedQueuesRunner {
 
   ~MergedQueuesRunner() {
     if (isMerged(subsumed_)) {
-      task_queues_->GetMutex(subsumed_, type_).unlock();
+      task_queues_.GetMutex(subsumed_, type_).unlock();
     }
-    task_queues_->GetMutex(owner_, type_).unlock();
+    task_queues_.GetMutex(owner_, type_).unlock();
   }
 
  private:
@@ -46,7 +49,7 @@ class MessageLoopTaskQueues::MergedQueuesRunner {
 
   const TaskQueueId owner_;
   TaskQueueId subsumed_;
-  MessageLoopTaskQueues* task_queues_;
+  MessageLoopTaskQueues& task_queues_;
   const MutexType type_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(MergedQueuesRunner);

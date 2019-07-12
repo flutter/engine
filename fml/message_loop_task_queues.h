@@ -18,7 +18,15 @@
 
 namespace fml {
 
-typedef size_t TaskQueueId;
+class TaskQueueId {
+ public:
+  explicit TaskQueueId(size_t value) : value_(value) {}
+
+  operator int() const { return value_; }
+
+ private:
+  size_t value_;
+};
 
 enum class FlushType {
   kSingle,
@@ -134,10 +142,10 @@ class MessageLoopTaskQueues
   std::vector<TaskObservers> task_observers_;
   std::vector<DelayedTaskQueue> delayed_tasks_;
 
-  static const size_t _kUnmerged = ULONG_MAX;
+  static const TaskQueueId _kUnmerged;
   // These are guarded by delayed_tasks_mutexes_
-  std::vector<size_t> owner_to_subsumed_;
-  std::vector<size_t> subsumed_to_owner_;
+  std::vector<TaskQueueId> owner_to_subsumed_;
+  std::vector<TaskQueueId> subsumed_to_owner_;
 
   std::atomic_int order_;
 
