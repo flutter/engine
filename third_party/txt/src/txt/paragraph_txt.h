@@ -24,11 +24,13 @@
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
 #include "font_collection.h"
+#include "line_metrics.h"
 #include "minikin/LineBreaker.h"
 #include "paint_record.h"
 #include "paragraph.h"
 #include "paragraph_style.h"
 #include "placeholder_run.h"
+#include "run_metrics.h"
 #include "styled_runs.h"
 #include "third_party/googletest/googletest/include/gtest/gtest_prod.h"  // nogncheck
 #include "third_party/skia/include/core/SkFontMetrics.h"
