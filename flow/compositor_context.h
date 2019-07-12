@@ -13,6 +13,7 @@
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/texture.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/task_runner_merger.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
@@ -20,7 +21,7 @@ namespace flutter {
 
 class LayerTree;
 
-enum class RasterStatus { kSuccess, kFailed };
+enum class RasterStatus { kSuccess, kResubmit, kEnqueuePipeline, kFailed };
 
 class CompositorContext {
  public:
@@ -31,7 +32,8 @@ class CompositorContext {
                 SkCanvas* canvas,
                 ExternalViewEmbedder* view_embedder,
                 const SkMatrix& root_surface_transformation,
-                bool instrumentation_enabled);
+                bool instrumentation_enabled,
+                fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger);
 
     virtual ~ScopedFrame();
 
@@ -57,6 +59,18 @@ class CompositorContext {
     ExternalViewEmbedder* view_embedder_;
     const SkMatrix& root_surface_transformation_;
     const bool instrumentation_enabled_;
+    fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger_;
+
+    // This is the number of frames the task runners will stay
+    // merged after a frame where we see a mutation to the embedded views.
+    static const int kDefaultMergedLeaseDuration = 10;
+
+    // Returns true if this frame needs to be resubmitted.
+    // Will merge the task runners if there have been any mutations to the
+    // embedded views and our current thread configuration doesn't allow them.
+    // Extends lease on the merged threads if there has been a mutation in the
+    // current frame.
+    bool MergeTaskRunnersForEmbeddedViews();
 
     FML_DISALLOW_COPY_AND_ASSIGN(ScopedFrame);
   };
@@ -70,7 +84,8 @@ class CompositorContext {
       SkCanvas* canvas,
       ExternalViewEmbedder* view_embedder,
       const SkMatrix& root_surface_transformation,
-      bool instrumentation_enabled);
+      bool instrumentation_enabled,
+      fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger);
 
   void OnGrContextCreated();
 
