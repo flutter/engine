@@ -9,19 +9,17 @@
 @interface ViewControllerRelease : XCTestCase
 @end
 
-
 @implementation ViewControllerRelease
 
 - (void)testReleaseFlutterViewController {
- __weak FlutterEngine* weakEngine;
- @autoreleasepool {
-   FlutterViewController* viewController = [[FlutterViewController alloc]
-   init];
-   weakEngine = viewController.engine;
-   [viewController viewWillAppear:NO];
-   [viewController viewDidDisappear:NO];
- }
- XCTAssertNil(weakEngine);
+  __weak FlutterEngine* weakEngine;
+  @autoreleasepool {
+    FlutterViewController* viewController = [[FlutterViewController alloc] init];
+    weakEngine = viewController.engine;
+    [viewController viewWillAppear:NO];
+    [viewController viewDidDisappear:NO];
+  }
+  XCTAssertNil(weakEngine);
 }
 
 @end

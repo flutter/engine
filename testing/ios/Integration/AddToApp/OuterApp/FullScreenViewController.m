@@ -10,14 +10,14 @@
 
 @implementation FullScreenViewController
 
--(void)viewWillAppear:(BOOL)animated {
+- (void)viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
   self.title = @"Full Screen Flutter";
   self.navigationController.navigationBarHidden = YES;
   self.navigationController.hidesBarsOnSwipe = YES;
 }
 
--(void)viewWillDisappear:(BOOL)animated {
+- (void)viewWillDisappear:(BOOL)animated {
   [super viewWillDisappear:animated];
   self.navigationController.navigationBarHidden = NO;
   self.navigationController.hidesBarsOnSwipe = NO;
@@ -32,7 +32,7 @@
   }
 }
 
--(BOOL)prefersStatusBarHidden {
+- (BOOL)prefersStatusBarHidden {
   return true;
 }
 

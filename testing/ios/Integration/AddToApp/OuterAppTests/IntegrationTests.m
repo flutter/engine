@@ -8,10 +8,10 @@
 #import "../OuterApp/AppDelegate.h"
 #import "../OuterApp/DualFlutterViewController.h"
 #import "../OuterApp/FullScreenViewController.h"
-#import "../OuterApp/MainViewController.h"
 #import "../OuterApp/HybridViewController.h"
+#import "../OuterApp/MainViewController.h"
 
-static void waitForFlutterSemanticsTree(FlutterViewController *viewController) {
+static void waitForFlutterSemanticsTree(FlutterViewController* viewController) {
   int tries = 10;
   double delay = 1.0;
 
@@ -28,7 +28,7 @@ static void waitForFlutterSemanticsTree(FlutterViewController *viewController) {
       addObserverForName:@"FlutterSemanticsUpdate"
                   object:viewController
                    queue:nil
-              usingBlock:^(NSNotification *notification) {
+              usingBlock:^(NSNotification* notification) {
                 semanticsAvailable = YES;
                 [[NSNotificationCenter defaultCenter] removeObserver:observer];
               }];
@@ -65,22 +65,17 @@ static void waitForFlutterSemanticsTree(FlutterViewController *viewController) {
   [[EarlGrey selectElementWithMatcher:grey_buttonTitle(@"Full Screen (Cold)")]
       performAction:grey_tap()];
 
-  __weak FlutterViewController *weakViewController;
+  __weak FlutterViewController* weakViewController;
   @autoreleasepool {
-    UINavigationController *navController =
-        (UINavigationController *)((AppDelegate *)
-                                       [[UIApplication sharedApplication]
-                                           delegate])
+    UINavigationController* navController =
+        (UINavigationController*)((AppDelegate*)[[UIApplication sharedApplication] delegate])
             .window.rootViewController;
-    weakViewController =
-        (FullScreenViewController *)navController.visibleViewController;
+    weakViewController = (FullScreenViewController*)navController.visibleViewController;
     waitForFlutterSemanticsTree(weakViewController);
-    GREYAssertNotNil(weakViewController,
-                     @"Expected non-nil FullScreenViewController.");
+    GREYAssertNotNil(weakViewController, @"Expected non-nil FullScreenViewController.");
   }
 
-  [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(@"POP")]
-      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(@"POP")] performAction:grey_tap()];
   // EarlGrey v1 isn't good at detecting this yet - 2.0 will be able to do it
   int tries = 10;
   double delay = 1.0;
@@ -90,42 +85,34 @@ static void waitForFlutterSemanticsTree(FlutterViewController *viewController) {
   }
   [[EarlGrey selectElementWithMatcher:grey_buttonTitle(@"Native iOS View")]
       assertWithMatcher:grey_sufficientlyVisible()];
-  GREYAssertNil(weakViewController,
-                @"Expected FullScreenViewController to be deallocated.");
+  GREYAssertNil(weakViewController, @"Expected FullScreenViewController to be deallocated.");
 }
 
 - (void)testDualFlutterView {
   [[EarlGrey selectElementWithMatcher:grey_keyWindow()]
       assertWithMatcher:grey_sufficientlyVisible()];
 
-  [[EarlGrey
-      selectElementWithMatcher:grey_buttonTitle(@"Dual Flutter View (Cold)")]
+  [[EarlGrey selectElementWithMatcher:grey_buttonTitle(@"Dual Flutter View (Cold)")]
       performAction:grey_tap()];
 
   @autoreleasepool {
-    UINavigationController *navController =
-        (UINavigationController *)((AppDelegate *)
-                                       [[UIApplication sharedApplication]
-                                           delegate])
+    UINavigationController* navController =
+        (UINavigationController*)((AppDelegate*)[[UIApplication sharedApplication] delegate])
             .window.rootViewController;
-    DualFlutterViewController *viewController =
-        (DualFlutterViewController *)navController.visibleViewController;
-    GREYAssertNotNil(viewController,
-                     @"Expected non-nil DualFlutterViewController.");
+    DualFlutterViewController* viewController =
+        (DualFlutterViewController*)navController.visibleViewController;
+    GREYAssertNotNil(viewController, @"Expected non-nil DualFlutterViewController.");
     waitForFlutterSemanticsTree(viewController.topFlutterViewController);
     waitForFlutterSemanticsTree(viewController.bottomFlutterViewController);
   }
 
   // Verify that there are two Flutter views with the expected marquee text.
-  [[[EarlGrey
-      selectElementWithMatcher:grey_accessibilityLabel(@"This is Marquee")]
-      atIndex:0] assertWithMatcher:grey_notNil()];
-  [[[EarlGrey
-      selectElementWithMatcher:grey_accessibilityLabel(@"This is Marquee")]
-      atIndex:1] assertWithMatcher:grey_notNil()];
+  [[[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(@"This is Marquee")] atIndex:0]
+      assertWithMatcher:grey_notNil()];
+  [[[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(@"This is Marquee")] atIndex:1]
+      assertWithMatcher:grey_notNil()];
 
-  [[EarlGrey selectElementWithMatcher:grey_buttonTitle(@"Back")]
-      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:grey_buttonTitle(@"Back")] performAction:grey_tap()];
 
   [[EarlGrey selectElementWithMatcher:grey_buttonTitle(@"Native iOS View")]
       assertWithMatcher:grey_sufficientlyVisible()];
@@ -139,13 +126,11 @@ static void waitForFlutterSemanticsTree(FlutterViewController *viewController) {
       performAction:grey_tap()];
 
   @autoreleasepool {
-    UINavigationController *navController =
-        (UINavigationController *)((AppDelegate *)
-                                       [[UIApplication sharedApplication]
-                                           delegate])
+    UINavigationController* navController =
+        (UINavigationController*)((AppDelegate*)[[UIApplication sharedApplication] delegate])
             .window.rootViewController;
-    HybridViewController *viewController =
-        (HybridViewController *)navController.visibleViewController;
+    HybridViewController* viewController =
+        (HybridViewController*)navController.visibleViewController;
     GREYAssertNotNil(viewController.flutterViewController,
                      @"Expected non-nil FlutterViewController.");
     waitForFlutterSemanticsTree(viewController.flutterViewController);
@@ -157,10 +142,8 @@ static void waitForFlutterSemanticsTree(FlutterViewController *viewController) {
   static const int platformTapCount = 4;
   static const int flutterTapCount = 6;
 
-  for (int i = _flutterWarmEngineTaps; i < flutterTapCount;
-       i++, _flutterWarmEngineTaps++) {
-    [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(
-                                            @"Increment via Flutter")]
+  for (int i = _flutterWarmEngineTaps; i < flutterTapCount; i++, _flutterWarmEngineTaps++) {
+    [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(@"Increment via Flutter")]
         performAction:grey_tap()];
   }
 
@@ -168,26 +151,23 @@ static void waitForFlutterSemanticsTree(FlutterViewController *viewController) {
   [self validateCountsPlatform:@"Flutter" count:_flutterWarmEngineTaps];
 
   for (int i = 0; i < platformTapCount; i++) {
-    [[EarlGrey
-        selectElementWithMatcher:grey_accessibilityLabel(@"Increment via iOS")]
+    [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(@"Increment via iOS")]
         performAction:grey_tap()];
   }
 
   [self validateCountsFlutter:@"Platform" count:platformTapCount];
   [self validateCountsPlatform:@"Flutter" count:_flutterWarmEngineTaps];
 
-  [[EarlGrey selectElementWithMatcher:grey_buttonTitle(@"Back")]
-      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:grey_buttonTitle(@"Back")] performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:grey_buttonTitle(@"Native iOS View")]
       assertWithMatcher:grey_sufficientlyVisible()];
 }
 
 /** Validates that the text labels showing the number of button taps match the
  * expected counts. */
-- (void)validateCountsFlutter:(NSString *)labelPrefix count:(int)flutterCount {
-  NSString *flutterCountStr =
-      [NSString stringWithFormat:@"%@ button tapped %d times.", labelPrefix,
-                                 flutterCount];
+- (void)validateCountsFlutter:(NSString*)labelPrefix count:(int)flutterCount {
+  NSString* flutterCountStr =
+      [NSString stringWithFormat:@"%@ button tapped %d times.", labelPrefix, flutterCount];
 
   // TODO(https://github.com/flutter/flutter/issues/17988): Flutter doesn't
   // expose accessibility IDs, so the best we can do is to search for an element
@@ -196,15 +176,12 @@ static void waitForFlutterSemanticsTree(FlutterViewController *viewController) {
       assertWithMatcher:grey_sufficientlyVisible()];
 }
 
-- (void)validateCountsPlatform:(NSString *)labelPrefix
-                         count:(int)platformCount {
-  NSString *platformCountStr =
-      [NSString stringWithFormat:@"%@ button tapped %d times.", labelPrefix,
-                                 platformCount];
+- (void)validateCountsPlatform:(NSString*)labelPrefix count:(int)platformCount {
+  NSString* platformCountStr =
+      [NSString stringWithFormat:@"%@ button tapped %d times.", labelPrefix, platformCount];
 
   [[[EarlGrey selectElementWithMatcher:grey_accessibilityID(@"counter_on_iOS")]
-      assertWithMatcher:grey_text(platformCountStr)]
-      assertWithMatcher:grey_sufficientlyVisible()];
+      assertWithMatcher:grey_text(platformCountStr)] assertWithMatcher:grey_sufficientlyVisible()];
 }
 
 @end

@@ -9,40 +9,40 @@
 
 @end
 
-static NSString *_kReloadChannelName = @"reload";
+static NSString* _kReloadChannelName = @"reload";
 
 @implementation AppDelegate {
-  MainViewController *_mainViewController;
-  UINavigationController *_navigationController;
-  FlutterEngine *_engine;
-  FlutterBasicMessageChannel *_reloadMessageChannel;
+  MainViewController* _mainViewController;
+  UINavigationController* _navigationController;
+  FlutterEngine* _engine;
+  FlutterBasicMessageChannel* _reloadMessageChannel;
 }
 
-- (FlutterEngine *)engine {
+- (FlutterEngine*)engine {
   return _engine;
 }
 
-- (FlutterBasicMessageChannel *)reloadMessabeChannel {
+- (FlutterBasicMessageChannel*)reloadMessabeChannel {
   return _reloadMessageChannel;
 }
 
-- (BOOL)application:(UIApplication *)application
-    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+- (BOOL)application:(UIApplication*)application
+    didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
   self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
 
   _mainViewController = [[MainViewController alloc] init];
-  _navigationController = [[UINavigationController alloc]
-      initWithRootViewController:_mainViewController];
+  _navigationController =
+      [[UINavigationController alloc] initWithRootViewController:_mainViewController];
 
   _navigationController.navigationBar.translucent = NO;
 
   _engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
   [_engine runWithEntrypoint:nil];
 
-  _reloadMessageChannel = [[FlutterBasicMessageChannel alloc]
-         initWithName:_kReloadChannelName
-      binaryMessenger:_engine.binaryMessenger
-                codec:[FlutterStringCodec sharedInstance]];
+  _reloadMessageChannel =
+      [[FlutterBasicMessageChannel alloc] initWithName:_kReloadChannelName
+                                       binaryMessenger:_engine.binaryMessenger
+                                                 codec:[FlutterStringCodec sharedInstance]];
 
   self.window.rootViewController = _navigationController;
   [self.window makeKeyAndVisible];

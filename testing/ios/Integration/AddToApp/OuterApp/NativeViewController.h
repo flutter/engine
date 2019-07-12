@@ -6,7 +6,7 @@
 
 @protocol NativeViewControllerDelegate
 /// Triggered when the increment button from the NativeViewController is tapped.
--(void)didTapIncrementButton;
+- (void)didTapIncrementButton;
 
 @end
 
@@ -17,6 +17,6 @@
 
 @property(nonatomic, weak) id<NativeViewControllerDelegate> delegate;
 
--(void)didReceiveIncrement;
+- (void)didReceiveIncrement;
 
 @end

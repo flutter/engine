@@ -11,53 +11,50 @@
 
 @end
 
-static NSString *_kChannel = @"increment";
-static NSString *_kPing = @"ping";
+static NSString* _kChannel = @"increment";
+static NSString* _kPing = @"ping";
 
 @implementation HybridViewController {
-  FlutterBasicMessageChannel *_messageChannel;
+  FlutterBasicMessageChannel* _messageChannel;
 }
 
-- (FlutterEngine *)engine {
-  return [(AppDelegate *)[[UIApplication sharedApplication] delegate] engine];
+- (FlutterEngine*)engine {
+  return [(AppDelegate*)[[UIApplication sharedApplication] delegate] engine];
 }
 
-- (FlutterBasicMessageChannel *)reloadMessageChannel {
-  return [(AppDelegate *)[[UIApplication sharedApplication] delegate]
-      reloadMessageChannel];
+- (FlutterBasicMessageChannel*)reloadMessageChannel {
+  return [(AppDelegate*)[[UIApplication sharedApplication] delegate] reloadMessageChannel];
 }
 
 - (void)viewDidLoad {
   [super viewDidLoad];
   self.title = @"Hybrid Flutter/Native";
-  UIStackView *stackView = [[UIStackView alloc] initWithFrame:self.view.frame];
+  UIStackView* stackView = [[UIStackView alloc] initWithFrame:self.view.frame];
   stackView.axis = UILayoutConstraintAxisVertical;
   stackView.distribution = UIStackViewDistributionFillEqually;
   stackView.layoutMargins = UIEdgeInsetsMake(0, 0, 50, 0);
   stackView.layoutMarginsRelativeArrangement = YES;
   [self.view addSubview:stackView];
 
-  NativeViewController *nativeViewController =
-      [[NativeViewController alloc] initWithDelegate:self];
+  NativeViewController* nativeViewController = [[NativeViewController alloc] initWithDelegate:self];
   [self addChildViewController:nativeViewController];
   [stackView addArrangedSubview:nativeViewController.view];
   [nativeViewController didMoveToParentViewController:self];
 
-  _flutterViewController =
-      [[FlutterViewController alloc] initWithEngine:[self engine]
-                                            nibName:nil
-                                             bundle:nil];
+  _flutterViewController = [[FlutterViewController alloc] initWithEngine:[self engine]
+                                                                 nibName:nil
+                                                                  bundle:nil];
   [[self reloadMessageChannel] sendMessage:@"hybrid"];
 
-  _messageChannel = [[FlutterBasicMessageChannel alloc]
-         initWithName:_kChannel
-      binaryMessenger:[self engine].binaryMessenger
-                codec:[FlutterStringCodec sharedInstance]];
+  _messageChannel =
+      [[FlutterBasicMessageChannel alloc] initWithName:_kChannel
+                                       binaryMessenger:[self engine].binaryMessenger
+                                                 codec:[FlutterStringCodec sharedInstance]];
   [self addChildViewController:_flutterViewController];
   [stackView addArrangedSubview:_flutterViewController.view];
   [_flutterViewController didMoveToParentViewController:self];
 
-  __weak NativeViewController *weakNativeViewController = nativeViewController;
+  __weak NativeViewController* weakNativeViewController = nativeViewController;
   [_messageChannel setMessageHandler:^(id message, FlutterReply reply) {
     [weakNativeViewController didReceiveIncrement];
     reply(@"");

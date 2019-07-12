@@ -8,9 +8,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface HybridViewController : UIViewController<NativeViewControllerDelegate>
+@interface HybridViewController : UIViewController <NativeViewControllerDelegate>
 
-@property (readonly, strong, nonatomic) FlutterViewController* flutterViewController;
+@property(readonly, strong, nonatomic) FlutterViewController* flutterViewController;
 
 @end
 
