@@ -108,13 +108,13 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   std::unique_ptr<Engine> engine;
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetUITaskRunner(),
-      fml::MakeCopyable([&ui_latch,                                         //
-                         &engine,                                           //
-                         shell = shell.get(),                               //
-                         isolate_snapshot = std::move(isolate_snapshot),    //
-                         shared_snapshot = std::move(shared_snapshot),      //
-                         vsync_waiter = std::move(vsync_waiter),            //
-                         io_manager = io_manager->GetWeakPtr()              //
+      fml::MakeCopyable([&ui_latch,                                       //
+                         &engine,                                         //
+                         shell = shell.get(),                             //
+                         isolate_snapshot = std::move(isolate_snapshot),  //
+                         shared_snapshot = std::move(shared_snapshot),    //
+                         vsync_waiter = std::move(vsync_waiter),          //
+                         io_manager = io_manager->GetWeakPtr()            //
   ]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
         const auto& task_runners = shell->GetTaskRunners();
@@ -124,14 +124,14 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
         auto animator = std::make_unique<Animator>(*shell, task_runners,
                                                    std::move(vsync_waiter));
 
-        engine = std::make_unique<Engine>(*shell,                        //
-                                          *shell->GetDartVM(),           //
-                                          std::move(isolate_snapshot),   //
-                                          std::move(shared_snapshot),    //
-                                          task_runners,                  //
-                                          shell->GetSettings(),          //
-                                          std::move(animator),           //
-                                          std::move(io_manager)          //
+        engine = std::make_unique<Engine>(*shell,                       //
+                                          *shell->GetDartVM(),          //
+                                          std::move(isolate_snapshot),  //
+                                          std::move(shared_snapshot),   //
+                                          task_runners,                 //
+                                          shell->GetSettings(),         //
+                                          std::move(animator),          //
+                                          std::move(io_manager)         //
         );
         ui_latch.Signal();
       }));
