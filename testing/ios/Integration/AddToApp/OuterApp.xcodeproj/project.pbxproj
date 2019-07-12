@@ -30,7 +30,7 @@
 			containerPortal = 24E221AD21A28A0B008ADF09 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 24E221B421A28A0B008ADF09;
-			remoteInfo = ios_add2app;
+			remoteInfo = OuterApp;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -194,7 +194,7 @@
 				24D2933B21A29628008787A5 /* PBXTargetDependency */,
 			);
 			name = OuterAppTests;
-			productName = ios_add2appTests;
+			productName = OuterAppTests;
 			productReference = 24D2933521A29627008787A5 /* OuterAppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -214,7 +214,7 @@
 			dependencies = (
 			);
 			name = OuterApp;
-			productName = ios_add2app;
+			productName = OuterApp;
 			productReference = 24E221B521A28A0B008ADF09 /* OuterApp.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -418,13 +418,13 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
-				INFOPLIST_FILE = ios_add2appTests/Info.plist;
+				INFOPLIST_FILE = OuterAppTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "org.test.ios-add2appTests";
+				PRODUCT_BUNDLE_IDENTIFIER = org.test.ios.OuterAppTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OuterApp.app/OuterApp";
@@ -438,13 +438,13 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
-				INFOPLIST_FILE = ios_add2appTests/Info.plist;
+				INFOPLIST_FILE = OuterAppTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "org.test.ios-add2appTests";
+				PRODUCT_BUNDLE_IDENTIFIER = org.test.ios.OuterAppTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OuterApp.app/OuterApp";

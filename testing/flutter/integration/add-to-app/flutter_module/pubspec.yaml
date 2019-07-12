@@ -51,4 +51,4 @@ flutter:
   uses-material-design: true
   module:
     androidPackage: com.example.iosadd2appflutter
-    iosBundleIdentifier: org.test.ios.OuterApp
+    iosBundleIdentifier: org.test.ios.FlutterModule

@@ -5,11 +5,11 @@
 #import <EarlGrey/EarlGrey.h>
 #import <XCTest/XCTest.h>
 
-#import "../ios_add2app/AppDelegate.h"
-#import "../ios_add2app/DualFlutterViewController.h"
-#import "../ios_add2app/FullScreenViewController.h"
-#import "../ios_add2app/MainViewController.h"
-#import "../ios_add2app/HybridViewController.h"
+#import "../OuterApp/AppDelegate.h"
+#import "../OuterApp/DualFlutterViewController.h"
+#import "../OuterApp/FullScreenViewController.h"
+#import "../OuterApp/MainViewController.h"
+#import "../OuterApp/HybridViewController.h"
 
 static void waitForFlutterSemanticsTree(FlutterViewController *viewController) {
   int tries = 10;
