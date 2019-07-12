@@ -1,6 +1,7 @@
-# ios_add2app_flutter
+# Add-to-app Flutter module
 
-A new flutter module project.
+A Flutter module to be embedded into Android/iOS apps for add-to-app integration
+testing.
 
 ## Getting Started
 

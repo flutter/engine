@@ -1,0 +1,29 @@
+PODS:
+  - EarlGrey (1.15.0)
+  - Flutter (1.0.0)
+  - FlutterPluginRegistrant (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - EarlGrey
+  - Flutter (from `FlutterModule/.ios/Flutter/engine`)
+  - FlutterPluginRegistrant (from `FlutterModule/.ios/Flutter/FlutterPluginRegistrant`)
+
+SPEC REPOS:
+  https://github.com/cocoapods/specs.git:
+    - EarlGrey
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: FlutterModule/.ios/Flutter/engine
+  FlutterPluginRegistrant:
+    :path: FlutterModule/.ios/Flutter/FlutterPluginRegistrant
+
+SPEC CHECKSUMS:
+  EarlGrey: 289a16cc7d08a54b962d72881b21e36d5103b549
+  Flutter: 58dd7d1b27887414a370fcccb9e645c08ffd7a6a
+  FlutterPluginRegistrant: 8855ca2b426d228cb41aa6c26c0c83b8c49e3593
+
+PODFILE CHECKSUM: a07351f7b62fc9e0419f5fcc0e3d6c8aee9dc6a5
+
+COCOAPODS: 1.6.1
