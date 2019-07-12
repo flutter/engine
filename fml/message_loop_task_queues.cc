@@ -11,7 +11,9 @@
 namespace fml {
 
 std::mutex MessageLoopTaskQueues::creation_mutex_;
-const TaskQueueId MessageLoopTaskQueues::_kUnmerged = TaskQueueId(ULONG_MAX);
+const size_t TaskQueueId::kUnmerged = ULONG_MAX;
+const TaskQueueId MessageLoopTaskQueues::_kUnmerged =
+    TaskQueueId(TaskQueueId::kUnmerged);
 fml::RefPtr<MessageLoopTaskQueues> MessageLoopTaskQueues::instance_;
 
 fml::RefPtr<MessageLoopTaskQueues> MessageLoopTaskQueues::GetInstance() {
