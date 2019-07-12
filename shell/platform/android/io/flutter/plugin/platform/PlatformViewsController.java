@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.platform;
 
+import static android.content.Context.INPUT_METHOD_SERVICE;
 import static android.view.MotionEvent.PointerCoords;
 import static android.view.MotionEvent.PointerProperties;
 
@@ -14,6 +15,7 @@ import android.support.annotation.UiThread;
 import android.util.DisplayMetrics;
 import android.support.annotation.NonNull;
 import android.util.Log;
+import android.view.inputmethod.InputMethodManager;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -170,6 +172,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                         @Override
                         public void run() {
                             unlockInputConnection(vdController);
+                            InputMethodManager imm =
+                                (InputMethodManager) context.getSystemService(INPUT_METHOD_SERVICE);
+                            imm.restartInput(getPlatformViewById(request.viewId));
                             onComplete.run();
                         }
                     }
