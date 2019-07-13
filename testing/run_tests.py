@@ -71,10 +71,6 @@ def RunEngineTests(build_dir, filter):
   if IsMac():
     RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter)
 
-
-  if IsLinux():
-    RunEngineExecutable(build_dir, 'txt_benchmarks', filter, [ fonts_dir_flag ])
-
   if IsLinux():
     RunEngineExecutable(build_dir, 'txt_unittests', filter, [ fonts_dir_flag ])
 
@@ -85,6 +81,10 @@ def RunEngineBenchmarks(build_dir, filter):
   RunEngineExecutable(build_dir, 'shell_benchmarks', filter)
   
   RunEngineExecutable(build_dir, 'fml_benchmarks', filter)
+
+  if IsLinux():
+    RunEngineExecutable(build_dir, 'txt_benchmarks', filter, [ fonts_dir_flag ])
+
 
 
 def SnapshotTest(build_dir, dart_file, kernel_file_output):
