@@ -5,8 +5,8 @@
 
 #include "flutter/shell/platform/glfw/external_texture_gl.h"
 
-#include "glad/glad.h"
 #include "GLFW/glfw3.h"
+#include "glad/glad.h"
 
 namespace flutter {
 
@@ -14,20 +14,14 @@ static void OnGLBufferRelease(void* user_data) {}
 
 ExternalTextureGL::ExternalTextureGL(FlutterTexutreCallback texture_callback,
                                      void* user_data)
-    : texture_callback_(texture_callback),
-      user_data_(user_data) {
-}
+    : texture_callback_(texture_callback), user_data_(user_data) {}
 
 ExternalTextureGL::~ExternalTextureGL() {
-  if(glTexture!=0)
-      glDeleteTextures(1, &glTexture);
+  if (glTexture != 0) glDeleteTextures(1, &glTexture);
 }
 
 bool ExternalTextureGL::PopulateTextureWithIdentifier(
-    size_t width,
-    size_t height,
-    FlutterOpenGLTexture* texture) {
-
+    size_t width, size_t height, FlutterOpenGLTexture* texture) {
   if (!window_) {
     window_ = glfwGetCurrentContext();
     if (window_) {
@@ -38,13 +32,13 @@ bool ExternalTextureGL::PopulateTextureWithIdentifier(
     glfwMakeContextCurrent(window_);
   }
 
-  if(!window_) return false;
-  
+  if (!window_) return false;
+
   std::shared_ptr<GLFWPixelBuffer> pixel_buffer =
       texture_callback_(width, height, user_data_);
 
   if (!pixel_buffer.get()) return false;
-  
+
   if (glTexture == 0) {
     glGenTextures(1, &glTexture);
     glBindTexture(GL_TEXTURE_2D, glTexture);
@@ -61,9 +55,8 @@ bool ExternalTextureGL::PopulateTextureWithIdentifier(
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBindTexture(GL_TEXTURE_2D, glTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pixel_buffer->width,
-                 pixel_buffer->height, 0,
-                 GL_RGBA,
-                 GL_UNSIGNED_BYTE, pixel_buffer->buffer.get());
+                 pixel_buffer->height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 pixel_buffer->buffer.get());
     glEnable(GL_TEXTURE_2D);
   }
   texture->target = GL_TEXTURE_2D;

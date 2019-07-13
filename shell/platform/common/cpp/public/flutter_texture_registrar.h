@@ -16,7 +16,8 @@ extern "C" {
 #endif
 
 // Opaque reference to a texture registrar.
-typedef struct FlutterDesktopTextureRegistrar* FlutterDesktopTextureRegistrarRef;
+typedef struct FlutterDesktopTextureRegistrar*
+    FlutterDesktopTextureRegistrarRef;
 
 struct GLFWPixelBuffer {
   std::shared_ptr<uint8_t> buffer;
@@ -24,21 +25,19 @@ struct GLFWPixelBuffer {
   size_t height;
 };
 
-typedef std::shared_ptr<GLFWPixelBuffer> (*FlutterTexutreCallback)(size_t width, size_t height, void* user_data);
+typedef std::shared_ptr<GLFWPixelBuffer> (*FlutterTexutreCallback)(
+    size_t width, size_t height, void* user_data);
 
 FLUTTER_EXPORT int64_t FlutterDesktopRegisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
-    FlutterTexutreCallback texture_callback,
-    void* user_data);
+    FlutterTexutreCallback texture_callback, void* user_data);
 
 FLUTTER_EXPORT bool FlutterDesktopUnregisterExternalTexture(
-    FlutterDesktopTextureRegistrarRef texture_registrar,
-    int64_t texture_id);
+    FlutterDesktopTextureRegistrarRef texture_registrar, int64_t texture_id);
 
 // Mark that a new texture frame is available for a given texture identifier.
 FLUTTER_EXPORT bool FlutterDesktopMarkExternalTextureFrameAvailable(
-    FlutterDesktopTextureRegistrarRef texture_registrar,
-    int64_t texture_id);
+    FlutterDesktopTextureRegistrarRef texture_registrar, int64_t texture_id);
 
 #if defined(__cplusplus)
 }  // extern "C"

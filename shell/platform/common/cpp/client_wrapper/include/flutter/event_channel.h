@@ -18,20 +18,17 @@
 namespace flutter {
 
 template <typename T>
-using SuccessHandler =
-        std::function<void(const T* event)>;
+using SuccessHandler = std::function<void(const T *event)>;
 
 template <typename T>
 using ErrorHandler =
-std::function<void(
-    const std::string& errorCode,
-    const std::string& errorMessage,
-    const T* errorDetails)>;
+    std::function<void(const std::string &errorCode,
+                       const std::string &errorMessage, const T *errorDetails)>;
 
 template <typename T>
 struct EventSink {
-    SuccessHandler<T> Success;
-    ErrorHandler<T> Error;
+  SuccessHandler<T> Success;
+  ErrorHandler<T> Error;
 };
 
 template <typename T>
@@ -47,9 +44,7 @@ class EventChannel {
  public:
   EventChannel(BinaryMessenger *messenger, const std::string &name,
                const MethodCodec<T> *codec)
-      : messenger_(messenger),
-        name_(name),
-        codec_(codec){}
+      : messenger_(messenger), name_(name), codec_(codec) {}
   ~EventChannel() {}
 
   // Prevent copying.
@@ -60,24 +55,23 @@ class EventChannel {
     stream_handler_ = stream_handler;
     const auto messenger = messenger_;
     std::string channel_name = name_;
-    const auto* codec = codec_;
- 
+    const auto *codec = codec_;
+
     EventSink<T> event_sink = {};
 
-    event_sink.Success = [messenger, channel_name, codec](const T* events) {
-        std::unique_ptr<std::vector<uint8_t>> message =
-            codec->EncodeSuccessEnvelope(events);
-        messenger->Send(channel_name, message->data(), message->size());
+    event_sink.Success = [messenger, channel_name, codec](const T *events) {
+      std::unique_ptr<std::vector<uint8_t>> message =
+          codec->EncodeSuccessEnvelope(events);
+      messenger->Send(channel_name, message->data(), message->size());
     };
 
     event_sink.Error = [messenger, channel_name, codec](
-        const std::string& errorCode,
-        const std::string& errorMessage,
-        const T* errorDetails) {
-        std::unique_ptr<std::vector<uint8_t>> message =
-            codec->EncodeErrorEnvelope(errorCode, errorMessage,
-                errorDetails);
-        messenger->Send(channel_name, message->data(), message->size());
+                           const std::string &errorCode,
+                           const std::string &errorMessage,
+                           const T *errorDetails) {
+      std::unique_ptr<std::vector<uint8_t>> message =
+          codec->EncodeErrorEnvelope(errorCode, errorMessage, errorDetails);
+      messenger->Send(channel_name, message->data(), message->size());
     };
 
     BinaryMessageHandler binary_handler = [&, event_sink, codec, channel_name](

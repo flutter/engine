@@ -107,7 +107,8 @@ void BinaryMessengerImpl::SetMessageHandler(const std::string& channel,
 // TextureRegistrar API.
 class TextureRegistrarImpl : public TextureRegistrar {
  public:
-  explicit TextureRegistrarImpl(FlutterDesktopTextureRegistrarRef texture_registrar)
+  explicit TextureRegistrarImpl(
+      FlutterDesktopTextureRegistrarRef texture_registrar)
       : texture_registrar_(texture_registrar) {}
 
   virtual ~TextureRegistrarImpl() = default;
@@ -122,8 +123,8 @@ class TextureRegistrarImpl : public TextureRegistrar {
            void* user_data) -> std::shared_ptr<GLFWPixelBuffer> {
       return ((Texture*)user_data)->CopyTextureBuffer(width, height);
     };
-    int64_t texture_id =
-        FlutterDesktopRegisterExternalTexture(texture_registrar_, callback, texture);
+    int64_t texture_id = FlutterDesktopRegisterExternalTexture(
+        texture_registrar_, callback, texture);
     return texture_id;
   }
 

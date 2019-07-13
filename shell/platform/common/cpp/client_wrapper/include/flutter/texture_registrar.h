@@ -7,36 +7,37 @@
 
 #include <flutter_texture_registrar.h>
 
-#include <memory>
 #include <stdint.h>
+#include <memory>
 
 namespace flutter {
 
 class Texture {
  public:
-  virtual ~Texture(){}
-  
-  virtual std::shared_ptr<GLFWPixelBuffer> CopyTextureBuffer(size_t width, size_t height) = 0;
+  virtual ~Texture() {}
+
+  virtual std::shared_ptr<GLFWPixelBuffer> CopyTextureBuffer(size_t width,
+                                                             size_t height) = 0;
 };
 
 class TextureRegistrar {
  public:
   virtual ~TextureRegistrar() {}
-  
-   /**
-	* Register a |texture| object and return textureId.
-	*/
-    virtual int64_t RegisterTexture(Texture *texture) = 0;
 
-	/**
-	 * Mark a texture buffer is ready.
-	 */
-    virtual void MarkTextureFrameAvailable(int64_t texture_id) = 0;
+  /**
+   * Register a |texture| object and return textureId.
+   */
+  virtual int64_t RegisterTexture(Texture *texture) = 0;
 
-	/**
-	 * Unregister an existing Texture object.
-	 */
-    virtual void UnregisterTexture(int64_t texture_id) = 0;
+  /**
+   * Mark a texture buffer is ready.
+   */
+  virtual void MarkTextureFrameAvailable(int64_t texture_id) = 0;
+
+  /**
+   * Unregister an existing Texture object.
+   */
+  virtual void UnregisterTexture(int64_t texture_id) = 0;
 };
 
 }  // namespace flutter

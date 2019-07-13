@@ -27,9 +27,9 @@ class ExternalTextureGL {
 
   int64_t texutre_id() { return reinterpret_cast<int64_t>(this); }
 
-  virtual bool PopulateTextureWithIdentifier(size_t width,
-                                             size_t height,
+  virtual bool PopulateTextureWithIdentifier(size_t width, size_t height,
                                              FlutterOpenGLTexture* texture);
+
  private:
   FlutterTexutreCallback texture_callback_ = nullptr;
   void* user_data_ = nullptr;
