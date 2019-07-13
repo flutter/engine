@@ -5,8 +5,6 @@
 #import <Cocoa/Cocoa.h>
 
 #import "FLEEngine.h"
-#import "FLEOpenGLContextHandling.h"
-#import "FLEReshapeListener.h"
 #import "FlutterMacros.h"
 #import "FlutterPluginRegistrarMacOS.h"
 
@@ -29,13 +27,7 @@ typedef NS_ENUM(NSInteger, FlutterMouseTrackingMode) {
  * Flutter engine in non-interactive mode, or with a drawable Flutter canvas.
  */
 FLUTTER_EXPORT
-@interface FLEViewController : NSViewController <FlutterPluginRegistry, FLEReshapeListener>
-
-/**
- * The view this controller manages. Must be capable of handling text input events, and the OpenGL
- * context handling protocols.
- */
-@property(nullable) NSView<FLEOpenGLContextHandling>* view;
+@interface FLEViewController : NSViewController <FlutterPluginRegistry>
 
 /**
  * The Flutter engine associated with this view controller.
@@ -49,12 +41,16 @@ FLUTTER_EXPORT
 @property(nonatomic) FlutterMouseTrackingMode mouseTrackingMode;
 
 /**
- * Launches the Flutter engine with the provided project.
+ * Initializes a controller that will run the given project.
  *
  * @param project The project to run in this view controller. If nil, a default `FLEDartProject`
  *                will be used.
- * @return YES if the engine launched successfully.
  */
-- (BOOL)launchEngineWithProject:(nullable FLEDartProject*)project;
+- (nonnull instancetype)initWithProject:(nullable FLEDartProject*)project NS_DESIGNATED_INITIALIZER;
+
+- (nonnull instancetype)initWithNibName:(nullable NSString*)nibNameOrNil
+                                 bundle:(nullable NSBundle*)nibBundleOrNil
+    NS_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithCoder:(nonnull NSCoder*)nibNameOrNil NS_DESIGNATED_INITIALIZER;
 
 @end

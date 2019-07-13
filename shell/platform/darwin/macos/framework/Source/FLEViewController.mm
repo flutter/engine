@@ -8,10 +8,9 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FLEEngine.h"
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FLEReshapeListener.h"
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FLEView.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FLEEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FLETextInputPlugin.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
 namespace {
@@ -68,7 +67,7 @@ struct MouseState {
 /**
  * Private interface declaration for FLEViewController.
  */
-@interface FLEViewController ()
+@interface FLEViewController () <FlutterViewReshapeListener>
 
 /**
  * A list of additional responders to keyboard events. Keybord events are forwarded to all of them.
@@ -86,6 +85,11 @@ struct MouseState {
 @property(nonatomic) MouseState mouseState;
 
 /**
+ * Starts running |engine|, including any initial setup.
+ */
+- (BOOL)launchEngine;
+
+/**
  * Updates |trackingArea| for the current tracking settings, creating it with
  * the correct mode if tracking is enabled, or removing it if not.
  */
@@ -95,11 +99,6 @@ struct MouseState {
  * Creates and registers plugins used by this view controller.
  */
 - (void)addInternalPlugins;
-
-/**
- * Creates the OpenGL context used as the resource context by the engine.
- */
-- (void)createResourceContext;
 
 /**
  * Calls dispatchMouseEvent:phase: with a phase determined by self.mouseState.
@@ -150,8 +149,8 @@ struct MouseState {
 #pragma mark - FLEViewController implementation.
 
 @implementation FLEViewController {
-  // The additional context provided to the Flutter engine for resource loading.
-  NSOpenGLContext* _resourceContext;
+  // The project to run in this controller's engine.
+  FLEDartProject* _project;
 
   // The plugin used to handle text input. This is not an FlutterPlugin, so must be owned
   // separately.
@@ -174,37 +173,62 @@ struct MouseState {
  * Performs initialization that's common between the different init paths.
  */
 static void CommonInit(FLEViewController* controller) {
-  controller->_engine = [[FLEEngine alloc] initWithViewController:controller project:nil];
+  controller->_engine = [[FLEEngine alloc] initWithName:@"io.flutter"
+                                                project:controller->_project
+                                 allowHeadlessExecution:NO];
   controller->_additionalKeyResponders = [[NSMutableOrderedSet alloc] init];
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
 }
 
 - (instancetype)initWithCoder:(NSCoder*)coder {
   self = [super initWithCoder:coder];
-  if (self != nil) {
-    CommonInit(self);
-  }
+  NSAssert(self, @"Super init cannot be nil");
+
+  CommonInit(self);
   return self;
 }
 
 - (instancetype)initWithNibName:(NSString*)nibNameOrNil bundle:(NSBundle*)nibBundleOrNil {
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
-  if (self != nil) {
-    CommonInit(self);
-  }
+  NSAssert(self, @"Super init cannot be nil");
+
+  CommonInit(self);
   return self;
 }
 
-- (void)setView:(NSView*)view {
-  if (_trackingArea) {
-    [self.view removeTrackingArea:_trackingArea];
-  }
-  [super setView:view];
-  [self configureTrackingArea];
+- (instancetype)initWithProject:(nullable FLEDartProject*)project {
+  self = [super initWithNibName:nil bundle:nil];
+  NSAssert(self, @"Super init cannot be nil");
+
+  _project = project;
+  CommonInit(self);
+  return self;
 }
 
 - (void)loadView {
-  self.view = [[FLEView alloc] init];
+  NSOpenGLContext* resourceContext = _engine.resourceContext;
+  if (!resourceContext) {
+    NSLog(@"Unable to create FlutterView; no resource context available.");
+    return;
+  }
+  FlutterView* flutterView = [[FlutterView alloc] initWithShareContext:resourceContext
+                                                       reshapeListener:self];
+  self.view = flutterView;
+}
+
+- (void)viewDidLoad {
+  [self configureTrackingArea];
+}
+
+- (void)viewWillAppear {
+  [super viewWillAppear];
+  if (!_engine.running) {
+    [self launchEngine];
+  }
+}
+
+- (void)dealloc {
+  _engine.viewController = nil;
 }
 
 #pragma mark - Public methods
@@ -217,26 +241,11 @@ static void CommonInit(FLEViewController* controller) {
   [self configureTrackingArea];
 }
 
-- (BOOL)launchEngineWithProject:(nullable FLEDartProject*)project {
-  // Set up the resource context. This is done here rather than in viewDidLoad as there's no
-  // guarantee that viewDidLoad will be called before the engine is started, and the context must
-  // be valid by that point.
-  [self createResourceContext];
-
-  // Register internal plugins before starting the engine.
-  [self addInternalPlugins];
-
-  _engine.project = project;
-  if (![_engine run]) {
-    return NO;
-  }
-  // Send the initial user settings such as brightness and text scale factor
-  // to the engine.
-  [self sendInitialSettings];
-  return YES;
-}
-
 #pragma mark - Framework-internal methods
+
+- (FlutterView*)flutterView {
+  return static_cast<FlutterView*>(self.view);
+}
 
 - (void)addKeyResponder:(NSResponder*)responder {
   [self.additionalKeyResponders addObject:responder];
@@ -246,11 +255,21 @@ static void CommonInit(FLEViewController* controller) {
   [self.additionalKeyResponders removeObject:responder];
 }
 
-- (void)makeResourceContextCurrent {
-  [_resourceContext makeCurrentContext];
-}
-
 #pragma mark - Private methods
+
+- (BOOL)launchEngine {
+  // Register internal plugins before starting the engine.
+  [self addInternalPlugins];
+
+  _engine.viewController = self;
+  if (![_engine runWithEntrypoint:nil]) {
+    return NO;
+  }
+  // Send the initial user settings such as brightness and text scale factor
+  // to the engine.
+  [self sendInitialSettings];
+  return YES;
+}
 
 - (void)configureTrackingArea {
   if (_mouseTrackingMode != FlutterMouseTrackingModeNone && self.view) {
@@ -299,12 +318,6 @@ static void CommonInit(FLEViewController* controller) {
   [_platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [weakSelf handleMethodCall:call result:result];
   }];
-}
-
-- (void)createResourceContext {
-  NSOpenGLContext* viewContext = ((NSOpenGLView*)self.view).openGLContext;
-  _resourceContext = [[NSOpenGLContext alloc] initWithFormat:viewContext.pixelFormat
-                                                shareContext:viewContext];
 }
 
 - (void)dispatchMouseEvent:(nonnull NSEvent*)event {
@@ -449,15 +462,13 @@ static void CommonInit(FLEViewController* controller) {
   }
 }
 
-#pragma mark - FLEReshapeListener
+#pragma mark - FlutterViewReshapeListener
 
 /**
  * Responds to view reshape by notifying the engine of the change in dimensions.
  */
-- (void)viewDidReshape:(NSOpenGLView*)view {
-  CGSize scaledSize = [view convertRectToBacking:view.bounds].size;
-  double pixelRatio = view.bounds.size.width == 0 ? 1 : scaledSize.width / view.bounds.size.width;
-  [_engine updateWindowMetricsWithSize:scaledSize pixelRatio:pixelRatio];
+- (void)viewDidReshape:(NSView*)view {
+  [_engine updateWindowMetrics];
 }
 
 #pragma mark - FlutterPluginRegistry
