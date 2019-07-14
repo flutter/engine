@@ -19,13 +19,13 @@ extern "C" {
 typedef struct FlutterDesktopTextureRegistrar*
     FlutterDesktopTextureRegistrarRef;
 
-struct GLFWPixelBuffer {
+struct PixelBuffer {
   std::shared_ptr<uint8_t> buffer;
   size_t width;
   size_t height;
 };
 
-typedef std::shared_ptr<GLFWPixelBuffer> (*FlutterTexutreCallback)(
+typedef std::shared_ptr<PixelBuffer> (*FlutterTexutreCallback)(
     size_t width, size_t height, void* user_data);
 
 FLUTTER_EXPORT int64_t FlutterDesktopRegisterExternalTexture(

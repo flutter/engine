@@ -5,9 +5,6 @@
 
 #include "flutter/shell/platform/glfw/external_texture_gl.h"
 
-#include "GLFW/glfw3.h"
-#include "glad/glad.h"
-
 namespace flutter {
 
 static void OnGLBufferRelease(void* user_data) {}
@@ -34,7 +31,7 @@ bool ExternalTextureGL::PopulateTextureWithIdentifier(
 
   if (!window_) return false;
 
-  std::shared_ptr<GLFWPixelBuffer> pixel_buffer =
+  std::shared_ptr<PixelBuffer> pixel_buffer =
       texture_callback_(width, height, user_data_);
 
   if (!pixel_buffer.get()) return false;
