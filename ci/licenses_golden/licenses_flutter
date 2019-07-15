@@ -206,6 +206,9 @@ FILE: ../../../flutter/fml/synchronization/waitable_event.h
 FILE: ../../../flutter/fml/synchronization/waitable_event_unittest.cc
 FILE: ../../../flutter/fml/task_runner.cc
 FILE: ../../../flutter/fml/task_runner.h
+FILE: ../../../flutter/fml/task_runner_merger.cc
+FILE: ../../../flutter/fml/task_runner_merger.h
+FILE: ../../../flutter/fml/task_runner_merger_unittests.cc
 FILE: ../../../flutter/fml/thread.cc
 FILE: ../../../flutter/fml/thread.h
 FILE: ../../../flutter/fml/thread_local.cc
