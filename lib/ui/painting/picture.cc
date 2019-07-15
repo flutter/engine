@@ -34,6 +34,13 @@ sk_sp<SkSurface> MakeSnapshotSurface(const SkISize& picture_size,
   }
 }
 
+/// Makes a RAM backed (Raster) image of a picture.
+/// @param[in] picture The picture that will get converted to an image.
+/// @param[in] surface The surface tha will be used to render the picture.  This
+///                    will be CPU or GPU based.
+/// @todo Currently this creates a RAM backed image regardless of what type of
+///       surface is used.  In certain instances we may want a GPU backed image
+///       from a GPU surface to avoid the conversion.
 sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
                                   sk_sp<SkSurface> surface) {
   TRACE_EVENT0("flutter", __FUNCTION__);
