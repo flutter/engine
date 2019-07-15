@@ -171,16 +171,16 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
     delete image_callback;
   });
 
-  fml::TaskRunner::RunNowOrPostTask(io_task_runner, [ui_task_runner, picture,
-                                                     picture_bounds, ui_task,
-                                                     resource_context] {
-    sk_sp<SkSurface> surface =
-        MakeSnapshotSurface(picture_bounds, resource_context);
-    sk_sp<SkImage> raster_image = MakeRasterSnapshot(picture, surface);
+  fml::TaskRunner::RunNowOrPostTask(
+      io_task_runner,
+      [ui_task_runner, picture, picture_bounds, ui_task, resource_context] {
+        sk_sp<SkSurface> surface =
+            MakeSnapshotSurface(picture_bounds, resource_context);
+        sk_sp<SkImage> raster_image = MakeRasterSnapshot(picture, surface);
 
-    fml::TaskRunner::RunNowOrPostTask(
-        ui_task_runner, [ui_task, raster_image]() { ui_task(raster_image); });
-  });
+        ui_task_runner->PostTask(
+            [ui_task, raster_image]() { ui_task(raster_image); });
+      });
 
   return Dart_Null();
 }
