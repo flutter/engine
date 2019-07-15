@@ -49,7 +49,7 @@ def RunEngineExecutable(build_dir, executable_name, filter, flags=[], cwd=buildr
   subprocess.check_call(test_command, cwd=cwd)
 
 
-def RunEngineTests(build_dir, filter):
+def RunCCTests(build_dir, filter):
   print "Running Engine Unit-tests."    
 
   RunEngineExecutable(build_dir, 'client_wrapper_glfw_unittests', filter)
@@ -190,7 +190,7 @@ def RunDartTests(build_dir, filter):
 
 def RunTests(build_dir, filter, run_engine_tests, run_dart_tests, run_benchmarks):
   if run_engine_tests:
-    RunEngineTests(build_dir, filter)
+    RunCCTests(build_dir, filter)
 
   if run_dart_tests:
     RunDartTests(build_dir, filter)
@@ -210,15 +210,9 @@ def main():
 
   args = parser.parse_args()
   
-  run_engine_tests = args.type == 'engine'
-  run_dart_tests = args.type == 'dart'
-  run_benchmarks = args.type == 'benchmarks'
-
-  if args.type == 'all':
-    run_engine_tests = True
-    run_dart_tests = True
-    run_benchmarks = True
-
+  run_engine_tests = args.type in ['engine', 'all']
+  run_dart_tests = args.type in ['dart', 'all']
+  run_benchmarks = args.type in ['benchmarks', 'all']
 
   build_dir = os.path.join(out_dir, args.variant)
   assert os.path.exists(build_dir), 'Build variant directory %s does not exist!' % build_dir
