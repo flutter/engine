@@ -53,6 +53,9 @@ sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
 
   surface->getCanvas()->flush();
 
+  // Here device could mean GPU or CPU (depending on the supplied surface) and
+  // host means CPU; this is different from use cases like Flutter driver tests
+  // where device means mobile devices and host means laptops/desktops.
   sk_sp<SkImage> device_snapshot;
   {
     TRACE_EVENT0("flutter", "MakeDeviceSnpashot");
