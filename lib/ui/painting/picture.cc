@@ -23,7 +23,7 @@ namespace {
 sk_sp<SkSurface> MakeSnapshotSurface(const SkISize& picture_size,
                                      fml::WeakPtr<GrContext> resource_context) {
   SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      picture_size.width(), picture_size.height(), nullptr);
+      picture_size.width(), picture_size.height(), SkColorSpace::MakeSRGB());
   if (resource_context) {
     return SkSurface::MakeRenderTarget(resource_context.get(),  // context
                                        SkBudgeted::kNo,         // budgeted
