@@ -1047,7 +1047,6 @@ void ParagraphTxt::Layout(double width) {
       // advance subtracted, so we do add the advance here to reset the
       // run_x_offset. We do keep the record though so GetRectsForRange() can
       // find metrics for trailing spaces.
-      // if (!run.is_ghost() || run.is_rtl()) {
       if ((!run.is_ghost() || run.is_rtl()) && !run.is_placeholder_run()) {
         run_x_offset += layout.getAdvance();
       }
@@ -1180,7 +1179,9 @@ double ParagraphTxt::GetLineXOffset(double line_total_advance) {
 
   TextAlign align = paragraph_style_.effective_align();
 
-  if (align == TextAlign::right) {
+  if (align == TextAlign::right ||
+      (align == TextAlign::justify &&
+       paragraph_style_.text_direction == TextDirection::rtl)) {
     return width_ - line_total_advance;
   } else if (align == TextAlign::center) {
     return (width_ - line_total_advance) / 2;
