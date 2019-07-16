@@ -13,7 +13,6 @@
 #include <GLFW/glfw3.h>
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/texture_registrar.h"
-#include "flutter/shell/platform/common/cpp/public/flutter_texture_registrar.h"
 #include "flutter/shell/platform/glfw/public/flutter_glfw.h"
 
 namespace flutter {
