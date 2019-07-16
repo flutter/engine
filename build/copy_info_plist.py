@@ -25,9 +25,7 @@ def main():
   text = open(sys.argv[1]).read()
   engine_path = os.path.join(os.getcwd(), "..", "..", "flutter")
   revision = git_revision.GetRepositoryVersion(engine_path)
-  text = text.replace("</dict>", """  <key>EngineVersion</key>
-  <string>{}</string>
-</dict>""".format(revision))
+  text = text.format(revision)
   with open(sys.argv[2], "w") as outfile:
     outfile.write(text)
 
