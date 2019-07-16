@@ -126,7 +126,7 @@ public class FlutterActivity extends FragmentActivity
   // Meta-data arguments, processed from manifest XML.
   protected static final String DART_ENTRYPOINT_META_DATA_KEY = "io.flutter.Entrypoint";
   protected static final String INITIAL_ROUTE_META_DATA_KEY = "io.flutter.InitialRoute";
-  protected static final String SPLASH_SCREEN_META_DATA_KEY = "io.flutter.app.android.SplashScreenUntilFirstFrame";
+  protected static final String SPLASH_SCREEN_META_DATA_KEY = "io.flutter.embedding.android.SplashScreenDrawable";
   protected static final String NORMAL_THEME_META_DATA_KEY = "io.flutter.embedding.android.NormalTheme";
 
   // Intent extra arguments.
@@ -138,9 +138,6 @@ public class FlutterActivity extends FragmentActivity
   protected static final String DEFAULT_DART_ENTRYPOINT = "main";
   protected static final String DEFAULT_INITIAL_ROUTE = "/";
   protected static final String DEFAULT_BACKGROUND_MODE = BackgroundMode.opaque.name();
-
-  // Splash screen behavior.
-  private Drawable launchScreenDrawable;
 
   // FlutterFragment management.
   private static final String TAG_FLUTTER_FRAGMENT = "flutter_fragment";
@@ -276,11 +273,6 @@ public class FlutterActivity extends FragmentActivity
    * jarring visual changes during app startup.
    */
   private void switchLaunchThemeForNormalTheme() {
-    // Get a reference to the Drawable that was displayed for the launch screen. We don't know at
-    // this point if we'll need this Drawable, but this is our only opportunity to look it up
-    // before we switch to a different theme.
-    launchScreenDrawable = getLaunchScreenDrawableFromActivityTheme();
-
     try {
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
       if (activityInfo.metaData != null) {
@@ -325,26 +317,33 @@ public class FlutterActivity extends FragmentActivity
   @Nullable
   @Override
   public SplashScreen provideSplashScreen() {
-    if (manifestRequestsSplashscreen() && launchScreenDrawable != null) {
-      return new DrawableSplashScreen(launchScreenDrawable);
+    Drawable manifestSplashDrawable = getSplashScreenFromManifest();
+    if (manifestSplashDrawable != null) {
+      return new DrawableSplashScreen(manifestSplashDrawable);
     } else {
       return null;
     }
   }
 
   /**
-   * Returns true if AndroidManifest.xml metadata for this {@code FlutterActivity} requests a splash
-   * screen that matches the launch theme for this {@code FlutterActivity}. Returns false otherwise.
+   * Returns a {@link Drawable} to be used as a splash screen as requested by meta-data in the
+   * {@code AndroidManifest.xml} file, or null if no such splash screen is requested.
+   * <p>
+   * See {@link #SPLASH_SCREEN_META_DATA_KEY} for the meta-data key to be used in a
+   * manifest file.
    */
-  private boolean manifestRequestsSplashscreen() {
+  @Nullable
+  private Drawable getSplashScreenFromManifest() {
     try {
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(
           getComponentName(),
-          PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES);
+          PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES
+      );
       Bundle metadata = activityInfo.metaData;
-      return metadata != null && metadata.getBoolean(SPLASH_SCREEN_META_DATA_KEY);
+      Integer splashScreenId = metadata != null ? metadata.getInt(SPLASH_SCREEN_META_DATA_KEY) : null;
+      return splashScreenId != null ? getResources().getDrawable(splashScreenId, getTheme()) : null;
     } catch (PackageManager.NameNotFoundException e) {
-      return false;
+      return null;
     }
   }
 
