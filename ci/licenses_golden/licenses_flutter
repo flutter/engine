@@ -750,6 +750,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/FlutterMacOS.podspec
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEDartProject.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEEngine.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLETexture.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEViewController.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterMacOS.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginMacOS.h
@@ -759,6 +760,8 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEDartProje
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEDartProject_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEEngine.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEEngine_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEExternalTextureGL.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEExternalTextureGL.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputModel.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputModel.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputPlugin.h
