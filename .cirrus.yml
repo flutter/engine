@@ -105,7 +105,8 @@ task:
         cd %ENGINE_PATH%/src
         python flutter/tools/gn --runtime-mode debug --unoptimized
         ninja -C out/host_debug_unopt
-      test_host_script: $ENGINE_PATH/src/flutter/testing/run_tests.py --variant host_debug_unopt
+      test_host_script: |
+        %ENGINE_PATH%/src/flutter/testing/run_tests.py --variant host_debug_unopt
 
 task:
   gke_container:
