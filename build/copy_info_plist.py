@@ -8,6 +8,8 @@
 Copies the Info.plist and adds extra fields to it like the git hash of the
 engine.
 
+Precondition: $CWD/../../flutter is the path to the flutter engine repo.
+
 usage: copy_info_plist.py <src_path> <dest_path>
 """
 
