@@ -14,15 +14,22 @@
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/thread_host.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
-#include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
+#import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
+
+// This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
+// change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
+// just a warning.
+@interface FlutterViewController () <FlutterBinaryMessenger>
+@end
 
 @implementation FlutterViewController {
   std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
@@ -206,11 +213,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   [center addObserver:self
              selector:@selector(onAccessibilityStatusChanged:)
                  name:UIAccessibilityBoldTextStatusDidChangeNotification
-               object:nil];
-
-  [center addObserver:self
-             selector:@selector(onMemoryWarning:)
-                 name:UIApplicationDidReceiveMemoryWarningNotification
                object:nil];
 
   [center addObserver:self
@@ -404,8 +406,9 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 
   // Only recreate surface on subsequent appearances when viewport metrics are known.
   // First time surface creation is done on viewDidLayoutSubviews.
-  if (_viewportMetrics.physical_width)
+  if (_viewportMetrics.physical_width) {
     [self surfaceUpdated:YES];
+  }
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 
   [super viewWillAppear:animated];
@@ -694,8 +697,22 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   // This must run after updateViewportMetrics so that the surface creation tasks are queued after
   // the viewport metrics update tasks.
-  if (firstViewBoundsUpdate)
+  if (firstViewBoundsUpdate) {
     [self surfaceUpdated:YES];
+
+    flutter::Shell& shell = [_engine.get() shell];
+    fml::TimeDelta waitTime =
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+        fml::TimeDelta::FromMilliseconds(200);
+#else
+        fml::TimeDelta::FromMilliseconds(100);
+#endif
+    if (shell.WaitForFirstFrame(waitTime).code() == fml::StatusCode::kDeadlineExceeded) {
+      FML_LOG(INFO) << "Timeout waiting for the first frame to render.  This may happen in "
+                    << "unoptimized builds.  If this is a release build, you should load a less "
+                    << "complex frame to avoid the timeout.";
+    }
+  }
 }
 
 - (void)viewSafeAreaInsetsDidChange {
@@ -792,12 +809,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   platformView->SetSemanticsEnabled(enabled || UIAccessibilityIsSpeakScreenEnabled());
   platformView->SetAccessibilityFeatures(flags);
 #endif
-}
-
-#pragma mark - Memory Notifications
-
-- (void)onMemoryWarning:(NSNotification*)notification {
-  [[_engine.get() systemChannel] sendMessage:@{@"type" : @"memoryPressure"}];
 }
 
 #pragma mark - Locale updates
@@ -989,23 +1000,27 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   return [_engine.get() platformViewsController];
 }
 
+- (NSObject<FlutterBinaryMessenger>*)binaryMessenger {
+  return _engine.get().binaryMessenger;
+}
+
 #pragma mark - FlutterBinaryMessenger
 
 - (void)sendOnChannel:(NSString*)channel message:(NSData*)message {
-  [_engine.get() sendOnChannel:channel message:message];
+  [_engine.get().binaryMessenger sendOnChannel:channel message:message];
 }
 
 - (void)sendOnChannel:(NSString*)channel
               message:(NSData*)message
           binaryReply:(FlutterBinaryReply)callback {
   NSAssert(channel, @"The channel must not be null");
-  [_engine.get() sendOnChannel:channel message:message binaryReply:callback];
+  [_engine.get().binaryMessenger sendOnChannel:channel message:message binaryReply:callback];
 }
 
 - (void)setMessageHandlerOnChannel:(NSString*)channel
               binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
   NSAssert(channel, @"The channel must not be null");
-  [_engine.get() setMessageHandlerOnChannel:channel binaryMessageHandler:handler];
+  [_engine.get().binaryMessenger setMessageHandlerOnChannel:channel binaryMessageHandler:handler];
 }
 
 #pragma mark - FlutterTextureRegistry

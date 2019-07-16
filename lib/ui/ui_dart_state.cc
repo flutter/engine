@@ -17,8 +17,8 @@ UIDartState::UIDartState(
     TaskRunners task_runners,
     TaskObserverAdd add_callback,
     TaskObserverRemove remove_callback,
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::WeakPtr<IOManager> io_manager,
+    fml::WeakPtr<ImageDecoder> image_decoder,
     std::string advisory_script_uri,
     std::string advisory_script_entrypoint,
     std::string logger_prefix,
@@ -27,8 +27,8 @@ UIDartState::UIDartState(
     : task_runners_(std::move(task_runners)),
       add_callback_(std::move(add_callback)),
       remove_callback_(std::move(remove_callback)),
-      snapshot_delegate_(std::move(snapshot_delegate)),
       io_manager_(std::move(io_manager)),
+      image_decoder_(std::move(image_decoder)),
       advisory_script_uri_(std::move(advisory_script_uri)),
       advisory_script_entrypoint_(std::move(advisory_script_entrypoint)),
       logger_prefix_(std::move(logger_prefix)),
@@ -113,15 +113,15 @@ void UIDartState::AddOrRemoveTaskObserver(bool add) {
   }
 }
 
-fml::WeakPtr<SnapshotDelegate> UIDartState::GetSnapshotDelegate() const {
-  return snapshot_delegate_;
-}
-
 fml::WeakPtr<GrContext> UIDartState::GetResourceContext() const {
   if (!io_manager_) {
     return {};
   }
   return io_manager_->GetResourceContext();
+}
+
+fml::WeakPtr<ImageDecoder> UIDartState::GetImageDecoder() const {
+  return image_decoder_;
 }
 
 std::shared_ptr<IsolateNameServer> UIDartState::GetIsolateNameServer() const {

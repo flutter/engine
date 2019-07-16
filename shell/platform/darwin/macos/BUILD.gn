@@ -6,7 +6,7 @@ assert(is_mac)
 
 import("//build/config/mac/mac_sdk.gni")
 import("$flutter_root/common/config.gni")
-import("$flutter_root/shell/platform/darwin/framework_shared.gni")
+import("$flutter_root/shell/platform/darwin/common/framework_shared.gni")
 import("$flutter_root/shell/platform/glfw/config.gni")
 
 group("macos") {
@@ -33,9 +33,8 @@ _flutter_framework_headers = [
   "framework/Headers/FlutterMacOS.h",
   "framework/Headers/FlutterPluginMacOS.h",
   "framework/Headers/FlutterPluginRegistrarMacOS.h",
-  "framework/Headers/FLEOpenGLContextHandling.h",
-  "framework/Headers/FLEReshapeListener.h",
-  "framework/Headers/FLEView.h",
+  "framework/Headers/FLEDartProject.h",
+  "framework/Headers/FLEEngine.h",
   "framework/Headers/FLEViewController.h",
 ]
 
@@ -48,19 +47,24 @@ shared_library("create_flutter_framework_dylib") {
   output_name = "$_flutter_framework_name"
 
   sources = [
+    "framework/Source/FLEDartProject.mm",
+    "framework/Source/FLEDartProject_Internal.h",
+    "framework/Source/FLEEngine.mm",
+    "framework/Source/FLEEngine_Internal.h",
     "framework/Source/FLETextInputModel.h",
     "framework/Source/FLETextInputModel.mm",
     "framework/Source/FLETextInputPlugin.h",
     "framework/Source/FLETextInputPlugin.mm",
-    "framework/Source/FLEView.mm",
     "framework/Source/FLEViewController.mm",
     "framework/Source/FLEViewController_Internal.h",
+    "framework/Source/FlutterView.h",
+    "framework/Source/FlutterView.mm",
   ]
 
   sources += _flutter_framework_headers
 
   deps = [
-    "$flutter_root/shell/platform/darwin:framework_shared",
+    "$flutter_root/shell/platform/darwin/common:framework_shared",
     "$flutter_root/shell/platform/embedder:embedder",
   ]
 

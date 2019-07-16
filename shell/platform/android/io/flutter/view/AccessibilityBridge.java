@@ -529,9 +529,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
         if (semanticsNode.hasFlag(Flag.IS_TEXT_FIELD)) {
             result.setPassword(semanticsNode.hasFlag(Flag.IS_OBSCURED));
-            result.setClassName("android.widget.EditText");
+            if (!semanticsNode.hasFlag(Flag.IS_READ_ONLY)) {
+                result.setClassName("android.widget.EditText");
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                result.setEditable(true);
+                result.setEditable(!semanticsNode.hasFlag(Flag.IS_READ_ONLY));
                 if (semanticsNode.textSelectionBase != -1 && semanticsNode.textSelectionExtent != -1) {
                     result.setTextSelection(semanticsNode.textSelectionBase, semanticsNode.textSelectionExtent);
                 }
@@ -1183,11 +1185,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     /**
      * Updates the Android cache of Flutter's currently registered custom accessibility actions.
+     *
+     * The buffer received here is encoded by PlatformViewAndroid::UpdateSemantics, and the
+     * decode logic here must be kept in sync with that method's encoding logic.
      */
     // TODO(mattcarroll): Consider introducing ability to delete custom actions because they can
     //                    probably come and go in Flutter, so we may want to reflect that here in
     //                    the Android cache as well.
-    // TODO(mattcarroll): where is the encoding code for reference?
     void updateCustomAccessibilityActions(@NonNull ByteBuffer buffer, @NonNull String[] strings) {
         while (buffer.hasRemaining()) {
             int id = buffer.getInt();
@@ -1203,9 +1207,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     /**
      * Updates {@link #flutterSemanticsTree} to reflect the latest state of Flutter's semantics tree.
      *
-     * The latest state of Flutter's semantics tree is encoded in the given {@code buffer}.
+     * The latest state of Flutter's semantics tree is encoded in the given {@code buffer}. The buffer
+     * is encoded by PlatformViewAndroid::UpdateSemantics, and the decode logic must be kept in sync
+     * with that method's encoding logic.
      */
-    // TODO(mattcarroll): where is the encoding code for reference?
     void updateSemantics(@NonNull ByteBuffer buffer, @NonNull String[] strings) {
         ArrayList<SemanticsNode> updated = new ArrayList<>();
         while (buffer.hasRemaining()) {
@@ -1608,7 +1613,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         IS_LIVE_REGION(1 << 15),
         HAS_TOGGLED_STATE(1 << 16),
         IS_TOGGLED(1 << 17),
-        HAS_IMPLICIT_SCROLLING(1 << 18);
+        HAS_IMPLICIT_SCROLLING(1 << 18),
+        IS_READ_ONLY(1 << 20);
 
         final int value;
 

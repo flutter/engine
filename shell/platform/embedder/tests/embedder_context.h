@@ -15,6 +15,7 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/testing/test_dart_native_resolver.h"
+#include "flutter/testing/test_gl_surface.h"
 
 namespace flutter {
 namespace testing {
@@ -48,6 +49,9 @@ class EmbedderContext {
   void SetSemanticsCustomActionCallback(
       SemanticsActionCallback semantics_custom_action);
 
+  void SetPlatformMessageCallback(
+      std::function<void(const FlutterPlatformMessage*)> callback);
+
  private:
   // This allows the builder to access the hooks.
   friend class EmbedderConfigBuilder;
@@ -61,6 +65,8 @@ class EmbedderContext {
   std::shared_ptr<TestDartNativeResolver> native_resolver_;
   SemanticsNodeCallback update_semantics_node_callback_;
   SemanticsActionCallback update_semantics_custom_action_callback_;
+  std::function<void(const FlutterPlatformMessage*)> platform_message_callback_;
+  std::unique_ptr<TestGLSurface> gl_surface_;
 
   static VoidCallback GetIsolateCreateCallbackHook();
 
@@ -73,6 +79,22 @@ class EmbedderContext {
   void FireIsolateCreateCallbacks();
 
   void SetNativeResolver();
+
+  void SetupOpenGLSurface();
+
+  bool GLMakeCurrent();
+
+  bool GLClearCurrent();
+
+  bool GLPresent();
+
+  uint32_t GLGetFramebuffer();
+
+  bool GLMakeResourceCurrent();
+
+  void* GLGetProcAddress(const char* name);
+
+  void PlatformMessageCallback(const FlutterPlatformMessage* message);
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderContext);
 };

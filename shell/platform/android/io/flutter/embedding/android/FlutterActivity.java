@@ -16,9 +16,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,6 +26,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 
+import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
@@ -66,7 +67,10 @@ import io.flutter.view.FlutterMain;
  * {@code Fragment}.
  */
 // TODO(mattcarroll): explain each call forwarded to Fragment (first requires resolution of PluginRegistry API).
-public class FlutterActivity extends FragmentActivity implements OnFirstFrameRenderedListener {
+public class FlutterActivity extends FragmentActivity
+    implements FlutterFragment.FlutterEngineProvider,
+    FlutterFragment.FlutterEngineConfigurator,
+    OnFirstFrameRenderedListener {
   private static final String TAG = "FlutterActivity";
 
   // Meta-data arguments, processed from manifest XML.
@@ -87,16 +91,19 @@ public class FlutterActivity extends FragmentActivity implements OnFirstFrameRen
   private static final String TAG_FLUTTER_FRAGMENT = "flutter_fragment";
   // TODO(mattcarroll): replace ID with R.id when build system supports R.java
   private static final int FRAGMENT_CONTAINER_ID = 609893468; // random number
+  @Nullable
   private FlutterFragment flutterFragment;
 
   // Used to cover the Activity until the 1st frame is rendered so as to
   // avoid a brief black flicker from a SurfaceView version of FlutterView.
+  @Nullable
   private View coverView;
 
   /**
    * Creates an {@link Intent} that launches a {@code FlutterActivity}, which executes
    * a {@code main()} Dart entrypoint, and displays the "/" route as Flutter's initial route.
    */
+  @NonNull
   public static Intent createDefaultIntent(@NonNull Context launchContext) {
     return createBuilder().build(launchContext);
   }
@@ -105,6 +112,7 @@ public class FlutterActivity extends FragmentActivity implements OnFirstFrameRen
    * Creates an {@link IntentBuilder}, which can be used to configure an {@link Intent} to
    * launch a {@code FlutterActivity}.
    */
+  @NonNull
   public static IntentBuilder createBuilder() {
     return new IntentBuilder(FlutterActivity.class);
   }
@@ -178,8 +186,7 @@ public class FlutterActivity extends FragmentActivity implements OnFirstFrameRen
   }
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    Log.d(TAG, "onCreate()");
+  protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     configureWindowForTransparency();
     setContentView(createFragmentContainer());
@@ -220,6 +227,8 @@ public class FlutterActivity extends FragmentActivity implements OnFirstFrameRen
       // Don't display an opaque cover view if the Activity is intended to be transparent.
       return;
     }
+
+    Log.v(TAG, "Showing cover view until first frame is rendered.");
 
     // Create the coverView.
     if (coverView == null) {
@@ -322,6 +331,13 @@ public class FlutterActivity extends FragmentActivity implements OnFirstFrameRen
   protected FlutterFragment createFlutterFragment() {
     BackgroundMode backgroundMode = getBackgroundMode();
 
+    Log.d(TAG, "Creating FlutterFragment:\n"
+        + "Background transparency mode: " + backgroundMode + "\n"
+        + "Dart entrypoint: " + getDartEntrypoint() + "\n"
+        + "Initial route: " + getInitialRoute() + "\n"
+        + "App bundle path: " + getAppBundlePath() + "\n"
+        + "Will attach FlutterEngine to Activity: " + shouldAttachEngineToActivity());
+
     return new FlutterFragment.Builder()
         .dartEntrypoint(getDartEntrypoint())
         .initialRoute(getInitialRoute())
@@ -353,6 +369,27 @@ public class FlutterActivity extends FragmentActivity implements OnFirstFrameRen
     return true;
   }
 
+  /**
+   * Hook for subclasses to easily provide a custom {@code FlutterEngine}.
+   */
+  @Nullable
+  @Override
+  public FlutterEngine provideFlutterEngine(@NonNull Context context) {
+    // No-op. Hook for subclasses.
+    return null;
+  }
+
+  /**
+   * Hook for subclasses to easily configure a {@code FlutterEngine}, e.g., register
+   * plugins.
+   * <p>
+   * This method is called after {@link #provideFlutterEngine(Context)}.
+   */
+  @Override
+  public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    // No-op. Hook for subclasses.
+  }
+
   @Override
   public void onPostResume() {
     super.onPostResume();
@@ -360,7 +397,7 @@ public class FlutterActivity extends FragmentActivity implements OnFirstFrameRen
   }
 
   @Override
-  protected void onNewIntent(Intent intent) {
+  protected void onNewIntent(@NonNull Intent intent) {
     // Forward Intents to our FlutterFragment in case it cares.
     flutterFragment.onNewIntent(intent);
   }
@@ -515,6 +552,7 @@ public class FlutterActivity extends FragmentActivity implements OnFirstFrameRen
 
   @Override
   public void onFirstFrameRendered() {
+    Log.v(TAG, "First frame has been rendered. Hiding cover view.");
     hideCoverView();
   }
 

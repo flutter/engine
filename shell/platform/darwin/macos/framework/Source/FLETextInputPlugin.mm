@@ -6,7 +6,7 @@
 
 #import <objc/message.h>
 
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterCodecs.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FLETextInputModel.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FLEViewController_Internal.h"
 
@@ -72,7 +72,7 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
   if (self != nil) {
     _flutterViewController = viewController;
     _channel = [FlutterMethodChannel methodChannelWithName:kTextInputChannel
-                                           binaryMessenger:viewController
+                                           binaryMessenger:viewController.engine.binaryMessenger
                                                      codec:[FlutterJSONMethodCodec sharedInstance]];
     __weak FLETextInputPlugin* weakSelf = self;
     [_channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {

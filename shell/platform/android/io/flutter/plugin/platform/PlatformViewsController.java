@@ -19,14 +19,10 @@ import android.view.View;
 
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel;
-import io.flutter.plugin.common.BinaryMessenger;
-import io.flutter.plugin.common.MethodCall;
-import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.StandardMethodCodec;
+import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.TextureRegistry;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,6 +47,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // The texture registry maintaining the textures into which the embedded views will be rendered.
     private TextureRegistry textureRegistry;
 
+    private TextInputPlugin textInputPlugin;
+
     // The system channel used to communicate with the framework about platform views.
     private PlatformViewsChannel platformViewsChannel;
 
@@ -58,6 +56,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     private final AccessibilityEventsDelegate accessibilityEventsDelegate;
 
     private final HashMap<Integer, VirtualDisplayController> vdControllers;
+
+    // Maps a virtual display's context to the platform view hosted in this virtual display.
+    // Since each virtual display has it's unique context this allows associating any view with the platform view that
+    // it is associated with(e.g if a platform view creates other views in the same virtual display.
+    private final HashMap<Context, View> contextToPlatformView;
 
     private final PlatformViewsChannel.PlatformViewsHandler channelHandler = new PlatformViewsChannel.PlatformViewsHandler() {
         @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -92,14 +95,19 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
             TextureRegistry.SurfaceTextureEntry textureEntry = textureRegistry.createSurfaceTexture();
             VirtualDisplayController vdController = VirtualDisplayController.create(
-                context,
-                accessibilityEventsDelegate,
-                viewFactory,
-                textureEntry,
-                toPhysicalPixels(request.logicalWidth),
-                toPhysicalPixels(request.logicalHeight),
-                request.viewId,
-                createParams
+                    context,
+                    accessibilityEventsDelegate,
+                    viewFactory,
+                    textureEntry,
+                    physicalWidth,
+                    physicalHeight,
+                    request.viewId,
+                    createParams,
+                    (view, hasFocus) -> {
+                        if (hasFocus) {
+                            platformViewsChannel.invokeViewFocused(request.viewId);
+                        }
+                    }
             );
 
             if (vdController == null) {
@@ -108,7 +116,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             }
 
             vdControllers.put(request.viewId, vdController);
-            vdController.getView().setLayoutDirection(request.direction);
+            View platformView = vdController.getView();
+            platformView.setLayoutDirection(request.direction);
+            contextToPlatformView.put(platformView.getContext(), platformView);
 
             // TODO(amirh): copy accessibility nodes to the FlutterView's accessibility tree.
 
@@ -125,6 +135,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                     + viewId);
             }
 
+            if (textInputPlugin != null) {
+                textInputPlugin.clearPlatformViewClient(viewId);
+            }
+
+            contextToPlatformView.remove(vdController.getView().getContext());
             vdController.dispose();
             vdControllers.remove(viewId);
         }
@@ -133,7 +148,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         public void resizePlatformView(@NonNull PlatformViewsChannel.PlatformViewResizeRequest request, @NonNull Runnable onComplete) {
             ensureValidAndroidVersion();
 
-            VirtualDisplayController vdController = vdControllers.get(request.viewId);
+            final VirtualDisplayController vdController = vdControllers.get(request.viewId);
             if (vdController == null) {
                 throw new IllegalStateException("Trying to resize a platform view with unknown id: "
                     + request.viewId);
@@ -143,10 +158,21 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             int physicalHeight = toPhysicalPixels(request.newLogicalHeight);
             validateVirtualDisplayDimensions(physicalWidth, physicalHeight);
 
+            // Resizing involved moving the platform view to a new virtual display. Doing so
+            // potentially results in losing an active input connection. To make sure we preserve
+            // the input connection when resizing we lock it here and unlock after the resize is
+            // complete.
+            lockInputConnection(vdController);
             vdController.resize(
-                physicalWidth,
-                physicalHeight,
-                onComplete
+                    physicalWidth,
+                    physicalHeight,
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            unlockInputConnection(vdController);
+                            onComplete.run();
+                        }
+                    }
             );
         }
 
@@ -162,11 +188,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                 parsePointerCoordsList(touch.rawPointerCoords, density)
                     .toArray(new PointerCoords[touch.pointerCount]);
 
-            View view = vdControllers.get(touch.viewId).getView();
-            if (view == null) {
-                throw new IllegalStateException("Sending touch to an unknown view with id: "
-                    + touch.viewId);
+            if (!vdControllers.containsKey(touch.viewId)) {
+                throw new IllegalStateException("Sending touch to an unknown view with id: " + touch.viewId);
             }
+            View view = vdControllers.get(touch.viewId).getView();
 
             MotionEvent event = MotionEvent.obtain(
                 touch.downTime.longValue(),
@@ -207,6 +232,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             view.setLayoutDirection(direction);
         }
 
+        @Override
+        public void clearFocus(int viewId) {
+            View view = vdControllers.get(viewId).getView();
+            view.clearFocus();
+        }
+
         private void ensureValidAndroidVersion() {
             if (Build.VERSION.SDK_INT < MINIMAL_SDK) {
                 Log.e(TAG, "Trying to use platform views with API " + Build.VERSION.SDK_INT
@@ -221,6 +252,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         registry = new PlatformViewRegistryImpl();
         vdControllers = new HashMap<>();
         accessibilityEventsDelegate = new AccessibilityEventsDelegate();
+        contextToPlatformView = new HashMap<>();
     }
 
     /**
@@ -270,6 +302,45 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         accessibilityEventsDelegate.setAccessibilityBridge(null);
     }
 
+    /**
+     * Attaches this controller to a text input plugin.
+     *
+     * While a text input plugin is available, the platform views controller interacts with it to facilitate
+     * delegation of text input connections to platform views.
+     *
+     * A platform views controller should be attached to a text input plugin whenever it is possible for the Flutter
+     * framework to receive text input.
+     */
+    public void attachTextInputPlugin(TextInputPlugin textInputPlugin) {
+        this.textInputPlugin = textInputPlugin;
+    }
+
+    /**
+     * Detaches this controller from the currently attached text input plugin.
+     */
+    public void detachTextInputPlugin() {
+        textInputPlugin = null;
+    }
+
+    /**
+     * Returns true if Flutter should perform input connection proxying for the view.
+     *
+     * If the view is a platform view managed by this platform views controller returns true.
+     * Else if the view was created in a platform view's VD, delegates the decision to the platform view's
+     * {@link View#checkInputConnectionProxy(View)} method.
+     * Else returns false.
+     */
+    public boolean checkInputConnectionProxy(View view) {
+        if(!contextToPlatformView.containsKey(view.getContext())) {
+            return false;
+        }
+        View platformView = contextToPlatformView.get(view.getContext());
+        if (platformView == view) {
+            return true;
+        }
+        return platformView.checkInputConnectionProxy(view);
+    }
+
     public PlatformViewRegistry getRegistry() {
         return registry;
     }
@@ -289,6 +360,22 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             return null;
         }
         return controller.getView();
+    }
+
+    private void lockInputConnection(@NonNull VirtualDisplayController controller) {
+        if (textInputPlugin == null) {
+            return;
+        }
+        textInputPlugin.lockPlatformViewInputConnection();
+        controller.onInputConnectionLocked();
+    }
+
+    private void unlockInputConnection(@NonNull VirtualDisplayController controller) {
+        if (textInputPlugin == null) {
+            return;
+        }
+        textInputPlugin.unlockPlatformViewInputConnection();
+        controller.onInputConnectionUnlocked();
     }
 
     private static boolean validateDirection(int direction) {

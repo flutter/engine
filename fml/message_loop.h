@@ -18,10 +18,6 @@ class MessageLoop {
   FML_EMBEDDER_ONLY
   static MessageLoop& GetCurrent();
 
-  enum class Type { kConcurrent };
-
-  MessageLoop(Type type);
-
   bool IsValid() const;
 
   void Run();
@@ -37,6 +33,8 @@ class MessageLoop {
   // Exposed for the embedder shell which allows clients to poll for events
   // instead of dedicating a thread to the message loop.
   void RunExpiredTasksNow();
+
+  void SwapTaskQueues(MessageLoop* other);
 
   static void EnsureInitializedForCurrentThread();
 

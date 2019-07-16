@@ -33,9 +33,13 @@ source_set("flutter_glfw_headers") {
 source_set("flutter_glfw") {
   sources = [
     "flutter_glfw.cc",
+    "glfw_event_loop.cc",
+    "glfw_event_loop.h",
     "key_event_handler.cc",
     "key_event_handler.h",
     "keyboard_hook_handler.h",
+    "platform_handler.cc",
+    "platform_handler.h",
     "text_input_plugin.cc",
     "text_input_plugin.h",
   ]
@@ -62,6 +66,11 @@ source_set("flutter_glfw") {
     configs += [
       "$flutter_root/shell/platform/linux/config:gtk3",
       "$flutter_root/shell/platform/linux/config:x11",
+    ]
+  } else if (is_mac) {
+    libs = [
+      "CoreVideo.framework",
+      "IOKit.framework",
     ]
   }
 }

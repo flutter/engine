@@ -153,6 +153,10 @@ typedef enum {
   // |PageView| widget does not have implicit scrolling, so that users don't
   // navigate to the next page when reaching the end of the current one.
   kFlutterSemanticsFlagHasImplicitScrolling = 1 << 18,
+  // Whether the semantic node is read only.
+  //
+  // Only applicable when kFlutterSemanticsFlagIsTextField flag is on.
+  kFlutterSemanticsFlagIsReadOnly = 1 << 20,
 } FlutterSemanticsFlag;
 
 typedef enum {
@@ -369,21 +373,23 @@ typedef struct {
   size_t struct_size;
   const char* channel;
   const uint8_t* message;
-  const size_t message_size;
+  size_t message_size;
   // The response handle on which to invoke
-  // |FlutterEngineSendPlatformMessageResponse| when the response is ready. This
-  // field is ignored for messages being sent from the embedder to the
-  // framework. If the embedder ever receives a message with a non-null response
-  // handle, that handle must always be used with a
-  // |FlutterEngineSendPlatformMessageResponse| call. If not, this is a memory
-  // leak. It is not safe to send multiple responses on a single response
-  // object.
+  // |FlutterEngineSendPlatformMessageResponse| when the response is ready.
+  // |FlutterEngineSendPlatformMessageResponse| must be called for all messages
+  // received by the embedder. Failure to call
+  // |FlutterEngineSendPlatformMessageResponse| will cause a memory leak. It is
+  // not safe to send multiple responses on a single response object.
   const FlutterPlatformMessageResponseHandle* response_handle;
 } FlutterPlatformMessage;
 
 typedef void (*FlutterPlatformMessageCallback)(
     const FlutterPlatformMessage* /* message*/,
     void* /* user data */);
+
+typedef void (*FlutterDataCallback)(const uint8_t* /* data */,
+                                    size_t /* size */,
+                                    void* /* user data */);
 
 typedef struct {
   double left;
@@ -647,6 +653,9 @@ typedef struct {
   // Path to a directory used to store data that is cached across runs of a
   // Flutter application (such as compiled shader programs used by Skia).
   // This is optional.  The string must be NULL terminated.
+  //
+  // This is different from the cache-path-dir argument defined in switches.h,
+  // which is used in |flutter::Settings| as |temp_directory_path|.
   const char* persistent_cache_path;
 
   // If true, we'll only read the existing cache, but not write new ones.
@@ -703,6 +712,33 @@ FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPlatformMessage(
     FlutterEngine engine,
     const FlutterPlatformMessage* message);
+
+// Creates a platform message response handle that allows the embedder to set a
+// native callback for a response to a message. This handle may be set on the
+// |response_handle| field of any |FlutterPlatformMessage| sent to the engine.
+//
+// The handle must be collected via a call to
+// |FlutterPlatformMessageReleaseResponseHandle|. This may be done immediately
+// after a call to |FlutterEngineSendPlatformMessage| with a platform message
+// whose response handle contains the handle created using this call. In case a
+// handle is created but never sent in a message, the release call must still be
+// made. Not calling release on the handle results in a small memory leak.
+//
+// The user data baton passed to the data callback is the one specified in this
+// call as the third argument.
+FLUTTER_EXPORT
+FlutterEngineResult FlutterPlatformMessageCreateResponseHandle(
+    FlutterEngine engine,
+    FlutterDataCallback data_callback,
+    void* user_data,
+    FlutterPlatformMessageResponseHandle** response_out);
+
+// Collects the handle created using
+// |FlutterPlatformMessageCreateResponseHandle|.
+FLUTTER_EXPORT
+FlutterEngineResult FlutterPlatformMessageReleaseResponseHandle(
+    FlutterEngine engine,
+    FlutterPlatformMessageResponseHandle* response);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPlatformMessageResponse(

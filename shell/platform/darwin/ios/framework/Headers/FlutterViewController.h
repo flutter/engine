@@ -18,7 +18,7 @@
 @class FlutterEngine;
 
 /**
- * The name used for semantic update nofications via `NSNotificationCenter`.
+ * The name used for semantic update notifications via `NSNotificationCenter`.
  *
  * The object passed as the sender is the `FlutterViewController` associated
  * with the update.
@@ -41,8 +41,7 @@ extern NSNotificationName const FlutterSemanticsUpdateNotification;
  * forth between a FlutterViewController and other `UIViewController`s.
  */
 FLUTTER_EXPORT
-@interface FlutterViewController
-    : UIViewController <FlutterBinaryMessenger, FlutterTextureRegistry, FlutterPluginRegistry>
+@interface FlutterViewController : UIViewController <FlutterTextureRegistry, FlutterPluginRegistry>
 
 /**
  * Initializes this FlutterViewController with the specified `FlutterEngine`.
@@ -164,6 +163,14 @@ FLUTTER_EXPORT
  * The `FlutterEngine` instance for this view controller.
  */
 @property(weak, nonatomic, readonly) FlutterEngine* engine;
+
+/**
+ * The `FlutterBinaryMessenger` associated with this FlutterViewController (used for communicating
+ * with channels).
+ *
+ * This is just a convenient way to get the |FlutterEngine|'s binary messenger.
+ */
+@property(nonatomic, readonly) NSObject<FlutterBinaryMessenger>* binaryMessenger;
 
 @end
 

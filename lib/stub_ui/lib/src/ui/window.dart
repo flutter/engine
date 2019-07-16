@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// Synced 2019-05-30T14:20:57.841444.
 
 part of ui;
 
@@ -14,6 +15,9 @@ typedef VoidCallback = void Function();
 /// timelines so that all the animations in the system are synchronized to a
 /// common time base.
 typedef FrameCallback = void Function(Duration duration);
+
+/// Signature for [Window.onReportTimings].
+typedef TimingsCallback = void Function(List<FrameTiming> timings);
 
 /// Signature for [Window.onPointerDataPacket].
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
@@ -85,10 +89,9 @@ enum AppLifecycleState {
 
 /// A representation of distances for each of the four edges of a rectangle,
 /// used to encode the view insets and padding that applications should place
-/// around their user interface, as exposed by [Window.viewInsets],
-/// [Window.viewPadding], and [Window.padding]. View insets and padding are
-/// preferably read via [MediaQuery.of], since [MediaQuery] will notify its
-/// descendants when these values are updated.
+/// around their user interface, as exposed by [Window.viewInsets] and
+/// [Window.padding]. View insets and padding are preferably read via
+/// [MediaQuery.of].
 ///
 /// For a generic class that represents distances around a rectangle, see the
 /// [EdgeInsets] class.
@@ -121,7 +124,7 @@ class WindowPadding {
 
   /// A window padding that has zeros for each edge.
   static const WindowPadding zero =
-      const WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
+      WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
 
   @override
   String toString() {
@@ -463,8 +466,12 @@ class Locale {
 
   @override
   bool operator ==(dynamic other) {
-    if (identical(this, other)) return true;
-    if (other is! Locale) return false;
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Locale) {
+      return false;
+    }
     final Locale typedOther = other;
     return languageCode == typedOther.languageCode &&
         scriptCode == typedOther.scriptCode &&
@@ -558,14 +565,6 @@ abstract class Window {
   /// system UI (such as the system notification area), or or physical
   /// intrusions in the display (e.g. overscan regions on television screens or
   /// phone sensor housings).
-  ///
-  /// This value is calculated by taking
-  /// `max(0.0, Window.viewPadding - Window.viewInsets)`. This will treat a
-  /// system IME that increases the bottm inset as consuming that much of the
-  /// bottom padding. For example, on an iPhone X, [Window.padding.bottom] is
-  /// the same as [Window.viewPadding.bottom] when the soft keyboard is not
-  /// drawn (to account for the bottom soft button area), but will be `0.0` when
-  /// the soft keyboard is visible.
   ///
   /// When this changes, [onMetricsChanged] is called.
   ///
@@ -709,8 +708,6 @@ abstract class Window {
     _onLocaleChanged = callback;
   }
 
-  VoidCallback webOnlyScheduleFrameCallback;
-
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame]
   /// and [onDrawFrame] callbacks be invoked.
   ///
@@ -749,6 +746,30 @@ abstract class Window {
   FrameCallback _onBeginFrame;
   set onBeginFrame(FrameCallback callback) {
     _onBeginFrame = callback;
+  }
+
+  /// A callback that is invoked to report the [FrameTiming] of recently
+  /// rasterized frames.
+  ///
+  /// This can be used to see if the application has missed frames (through
+  /// [FrameTiming.buildDuration] and [FrameTiming.rasterDuration]), or high
+  /// latencies (through [FrameTiming.totalSpan]).
+  ///
+  /// Unlike [Timeline], the timing information here is available in the release
+  /// mode (additional to the profile and the debug mode). Hence this can be
+  /// used to monitor the application's performance in the wild.
+  ///
+  /// The callback may not be immediately triggered after each frame. Instead,
+  /// it tries to batch frames together and send all their timings at once to
+  /// decrease the overhead (as this is available in the release mode). The
+  /// timing of any frame will be sent within about 1 second even if there are
+  /// no later frames to batch.
+  TimingsCallback get onReportTimings => _onReportTimings;
+  TimingsCallback _onReportTimings;
+  Zone _onReportTimingsZone;
+  set onReportTimings(TimingsCallback callback) {
+    _onReportTimings = callback;
+    _onReportTimingsZone = Zone.current;
   }
 
   /// A callback that is invoked for each frame after [onBeginFrame] has
@@ -885,7 +906,7 @@ abstract class Window {
 
   /// Change the retained semantics data about this window.
   ///
-  /// If [semanticsEnabled] is true, the user has requested that this function
+  /// If [semanticsEnabled] is true, the user has requested that this funciton
   /// be called whenever the semantic content of this window changes.
   ///
   /// In either case, this function disposes the given update, which means the
@@ -938,24 +959,29 @@ abstract class Window {
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
   void render(Scene scene) {
-    if (scene is engine.LayerScene) {
-      _rasterizer.draw(scene.layerTree);
+    if (engine.experimentalUseSkia) {
+      final engine.LayerScene layerScene = scene;
+      _rasterizer.draw(layerScene.layerTree);
     } else {
       engine.domRenderer.renderScene(scene.webOnlyRootElement);
     }
   }
 
-  final _rasterizer = engine.Rasterizer(engine.Surface(
-      (engine.BitmapCanvas canvas) =>
-          engine.domRenderer.renderScene(canvas.rootElement)));
+  final engine.Rasterizer _rasterizer = engine.experimentalUseSkia
+      ? engine.Rasterizer(engine.Surface((engine.SkCanvas canvas) {
+          engine.domRenderer.renderScene(canvas.htmlCanvas);
+          canvas.skSurface.callMethod('flush');
+        }))
+      : null;
 
-  String get initialLifecycleState {
-    return _initialLifecycleState;
-  }
+  String get initialLifecycleState => _initialLifecycleState;
+
   String _initialLifecycleState;
 
   void setIsolateDebugName(String name) {}
 }
+
+VoidCallback webOnlyScheduleFrameCallback;
 
 /// Additional accessibility features that may be enabled by the platform.
 ///
@@ -1035,6 +1061,7 @@ enum Brightness {
 }
 
 // Unimplemented classes.
+// TODO(flutter_web): see https://github.com/flutter/flutter/issues/33614.
 class CallbackHandle {
   CallbackHandle.fromRawHandle(this._handle);
 
@@ -1049,59 +1076,138 @@ class CallbackHandle {
   int get hashCode => super.hashCode;
 }
 
+// TODO(flutter_web): see https://github.com/flutter/flutter/issues/33615.
 class PluginUtilities {
   static CallbackHandle getCallbackHandle(Function callback) {
     throw UnimplementedError();
   }
 
   static Function getCallbackFromHandle(CallbackHandle handle) {
-   throw UnimplementedError();
+    throw UnimplementedError();
   }
 }
 
+// TODO(flutter_web): see https://github.com/flutter/flutter/issues/33616.
 class ImageShader {
   ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4);
 }
 
+// TODO(flutter_web): probably dont implement this one.
 class IsolateNameServer {
- static dynamic lookupPortByName(String name) {
+  static dynamic lookupPortByName(String name) {
     assert(name != null, "'name' cannot be null.");
     throw UnimplementedError();
   }
 
-  /// Registers a [SendPort] with a given name.
-  ///
-  /// Returns true if registration is successful, and false if the name entry
-  /// already existed (in which case the earlier registration is left
-  /// unchanged). To remove a registration, consider [removePortNameMapping].
-  ///
-  /// Once a port has been registered with a name, it can be obtained from any
-  /// [Isolate] using [lookupPortByName].
-  ///
-  /// Multiple isolates should avoid attempting to register ports with the same
-  /// name, as there is an inherent race condition in doing so.
-  ///
-  /// The `port` and `name` arguments must not be null.
   static bool registerPortWithName(dynamic port, String name) {
     assert(port != null, "'port' cannot be null.");
     assert(name != null, "'name' cannot be null.");
     throw UnimplementedError();
   }
 
-  /// Removes a name-to-[SendPort] mapping given its name.
-  ///
-  /// Returns true if the mapping was successfully removed, false if the mapping
-  /// did not exist. To add a registration, consider [registerPortWithName].
-  ///
-  /// Generally, removing a port name mapping is an inherently racy operation
-  /// (another isolate could have obtained the name just prior to the name being
-  /// removed, and thus would still be able to communicate over the port even
-  /// after it has been removed).
-  ///
-  /// The `name` argument must not be null.
   static bool removePortNameMapping(String name) {
     assert(name != null, "'name' cannot be null.");
     throw UnimplementedError();
+  }
+}
+
+/// Various important time points in the lifetime of a frame.
+///
+/// [FrameTiming] records a timestamp of each phase for performance analysis.
+enum FramePhase {
+  /// When the UI thread starts building a frame.
+  ///
+  /// See also [FrameTiming.buildDuration].
+  buildStart,
+
+  /// When the UI thread finishes building a frame.
+  ///
+  /// See also [FrameTiming.buildDuration].
+  buildFinish,
+
+  /// When the GPU thread starts rasterizing a frame.
+  ///
+  /// See also [FrameTiming.rasterDuration].
+  rasterStart,
+
+  /// When the GPU thread finishes rasterizing a frame.
+  ///
+  /// See also [FrameTiming.rasterDuration].
+  rasterFinish,
+}
+
+/// Time-related performance metrics of a frame.
+///
+/// See [Window.onReportTimings] for how to get this.
+///
+/// The metrics in debug mode (`flutter run` without any flags) may be very
+/// different from those in profile and release modes due to the debug overhead.
+/// Therefore it's recommended to only monitor and analyze performance metrics
+/// in profile and release modes.
+class FrameTiming {
+  /// Construct [FrameTiming] with raw timestamps in microseconds.
+  ///
+  /// List [timestamps] must have the same number of elements as
+  /// [FramePhase.values].
+  ///
+  /// This constructor is usually only called by the Flutter engine, or a test.
+  /// To get the [FrameTiming] of your app, see [Window.onReportTimings].
+  FrameTiming(List<int> timestamps)
+      : assert(timestamps.length == FramePhase.values.length),
+        _timestamps = timestamps;
+
+  /// This is a raw timestamp in microseconds from some epoch. The epoch in all
+  /// [FrameTiming] is the same, but it may not match [DateTime]'s epoch.
+  int timestampInMicroseconds(FramePhase phase) => _timestamps[phase.index];
+
+  Duration _rawDuration(FramePhase phase) =>
+      Duration(microseconds: _timestamps[phase.index]);
+
+  /// The duration to build the frame on the UI thread.
+  ///
+  /// The build starts approximately when [Window.onBeginFrame] is called. The
+  /// [Duration] in the [Window.onBeginFrame] callback is exactly the
+  /// `Duration(microseconds: timestampInMicroseconds(FramePhase.buildStart))`.
+  ///
+  /// The build finishes when [Window.render] is called.
+  ///
+  /// {@template dart.ui.FrameTiming.fps_smoothness_milliseconds}
+  /// To ensure smooth animations of X fps, this should not exceed 1000/X
+  /// milliseconds.
+  /// {@endtemplate}
+  /// {@template dart.ui.FrameTiming.fps_milliseconds}
+  /// That's about 16ms for 60fps, and 8ms for 120fps.
+  /// {@endtemplate}
+  Duration get buildDuration =>
+      _rawDuration(FramePhase.buildFinish) -
+      _rawDuration(FramePhase.buildStart);
+
+  /// The duration to rasterize the frame on the GPU thread.
+  ///
+  /// {@macro dart.ui.FrameTiming.fps_smoothness_milliseconds}
+  /// {@macro dart.ui.FrameTiming.fps_milliseconds}
+  Duration get rasterDuration =>
+      _rawDuration(FramePhase.rasterFinish) -
+      _rawDuration(FramePhase.rasterStart);
+
+  /// The timespan between build start and raster finish.
+  ///
+  /// To achieve the lowest latency on an X fps display, this should not exceed
+  /// 1000/X milliseconds.
+  /// {@macro dart.ui.FrameTiming.fps_milliseconds}
+  ///
+  /// See also [buildDuration] and [rasterDuration].
+  Duration get totalSpan =>
+      _rawDuration(FramePhase.rasterFinish) -
+      _rawDuration(FramePhase.buildStart);
+
+  final List<int> _timestamps; // in microseconds
+
+  String _formatMS(Duration duration) => '${duration.inMicroseconds * 0.001}ms';
+
+  @override
+  String toString() {
+    return '$runtimeType(buildDuration: ${_formatMS(buildDuration)}, rasterDuration: ${_formatMS(rasterDuration)}, totalSpan: ${_formatMS(totalSpan)})';
   }
 }
 

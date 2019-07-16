@@ -18,6 +18,14 @@
 
 namespace flutter {
 
+namespace testing {
+class ShellTest;
+}
+
+/// Executor of animations.
+///
+/// In conjunction with the |VsyncWaiter| it allows callers (typically Dart
+/// code) to schedule work that ends up generating a |LayerTree|.
 class Animator final {
  public:
   class Delegate {
@@ -86,6 +94,8 @@ class Animator final {
   std::deque<uint64_t> trace_flow_ids_;
 
   fml::WeakPtrFactory<Animator> weak_factory_;
+
+  friend class testing::ShellTest;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Animator);
 };

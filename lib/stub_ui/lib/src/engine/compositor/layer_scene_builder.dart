@@ -4,12 +4,6 @@
 
 part of engine;
 
-class EngineLayerImpl extends ui.EngineLayer {
-  final ContainerLayer _layer;
-
-  EngineLayerImpl(this._layer);
-}
-
 class LayerScene implements ui.Scene {
   final LayerTree layerTree;
 
@@ -38,29 +32,28 @@ class LayerSceneBuilder implements ui.SceneBuilder {
       double height = 0.0,
       ui.SceneHost sceneHost,
       bool hitTestable = true}) {
-    throw new UnimplementedError();
+    throw UnimplementedError();
   }
 
   @override
-  void addPerformanceOverlay(int enabledOptions, ui.Rect bounds,
-      {Object webOnlyPaintedBy}) {
+  void addPerformanceOverlay(int enabledOptions, ui.Rect bounds) {
     // We don't plan to implement this on the web.
     throw UnimplementedError();
   }
 
   @override
   void addPicture(ui.Offset offset, ui.Picture picture,
-      {bool isComplexHint = false,
-      bool willChangeHint = false,
-      Object webOnlyPaintedBy}) {
+      {bool isComplexHint = false, bool willChangeHint = false}) {
     currentLayer
         .add(PictureLayer(picture, offset, isComplexHint, willChangeHint));
   }
 
   @override
   void addRetained(ui.EngineLayer retainedLayer) {
-    if (currentLayer == null) return;
-    currentLayer.add((retainedLayer as EngineLayerImpl)._layer);
+    if (currentLayer == null) {
+      return;
+    }
+    currentLayer.add(retainedLayer);
   }
 
   @override
@@ -68,8 +61,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
       {ui.Offset offset = ui.Offset.zero,
       double width = 0.0,
       double height = 0.0,
-      bool freeze = false,
-      Object webOnlyPaintedBy}) {
+      bool freeze = false}) {
     // TODO(b/128315641): implement addTexture.
   }
 
@@ -79,6 +71,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
     double width = 0.0,
     double height = 0.0,
+    Object webOnlyPaintedBy,
   }) {
     // TODO(b/128317425): implement addPlatformView.
   }
@@ -90,83 +83,88 @@ class LayerSceneBuilder implements ui.SceneBuilder {
 
   @override
   void pop() {
-    if (currentLayer == null) return;
+    if (currentLayer == null) {
+      return;
+    }
     currentLayer = currentLayer.parent;
   }
 
   @override
-  ui.EngineLayer pushBackdropFilter(ui.ImageFilter filter,
-      {Object webOnlyPaintedBy}) {
-    throw new UnimplementedError();
+  ui.BackdropFilterEngineLayer pushBackdropFilter(ui.ImageFilter filter,
+      {ui.EngineLayer oldLayer}) {
+    throw UnimplementedError();
   }
 
   @override
-  ui.EngineLayer pushClipPath(ui.Path path,
-      {ui.Clip clipBehavior = ui.Clip.antiAlias, Object webOnlyPaintedBy}) {
+  ui.ClipPathEngineLayer pushClipPath(ui.Path path,
+      {ui.Clip clipBehavior = ui.Clip.antiAlias, ui.EngineLayer oldLayer}) {
     pushLayer(ClipPathLayer(path));
     return null;
   }
 
   @override
-  ui.EngineLayer pushClipRRect(ui.RRect rrect,
-      {ui.Clip clipBehavior, Object webOnlyPaintedBy}) {
+  ui.ClipRRectEngineLayer pushClipRRect(ui.RRect rrect,
+      {ui.Clip clipBehavior, ui.EngineLayer oldLayer}) {
     pushLayer(ClipRRectLayer(rrect));
     return null;
   }
 
   @override
-  ui.EngineLayer pushClipRect(ui.Rect rect,
-      {ui.Clip clipBehavior = ui.Clip.antiAlias, Object webOnlyPaintedBy}) {
+  ui.ClipRectEngineLayer pushClipRect(ui.Rect rect,
+      {ui.Clip clipBehavior = ui.Clip.antiAlias, ui.EngineLayer oldLayer}) {
     pushLayer(ClipRectLayer(rect));
     return null;
   }
 
   @override
-  ui.EngineLayer pushColorFilter(ui.Color color, ui.BlendMode blendMode,
-      {Object webOnlyPaintedBy}) {
-    throw new UnimplementedError();
+  ui.ColorFilterEngineLayer pushColorFilter(ui.ColorFilter filter,
+      {ui.EngineLayer oldLayer}) {
+    throw UnimplementedError();
   }
 
   @override
-  ui.EngineLayer pushOffset(double dx, double dy, {Object webOnlyPaintedBy}) {
-    final matrix = Matrix4.translationValues(dx, dy, 0.0);
-    final layer = TransformLayer(matrix);
+  ui.OffsetEngineLayer pushOffset(double dx, double dy,
+      {ui.EngineLayer oldLayer}) {
+    final Matrix4 matrix = Matrix4.translationValues(dx, dy, 0.0);
+    final TransformLayer layer = TransformLayer(matrix);
     pushLayer(layer);
-    return EngineLayerImpl(layer);
+    return layer;
   }
 
   @override
-  ui.EngineLayer pushOpacity(int alpha,
-      {Object webOnlyPaintedBy, ui.Offset offset = ui.Offset.zero}) {
+  ui.OpacityEngineLayer pushOpacity(int alpha,
+      {ui.EngineLayer oldLayer, ui.Offset offset = ui.Offset.zero}) {
     // TODO(het): Implement opacity
     pushOffset(0.0, 0.0);
     return null;
   }
 
   @override
-  ui.EngineLayer pushPhysicalShape(
-      {ui.Path path,
-      double elevation,
-      ui.Color color,
-      ui.Color shadowColor,
-      ui.Clip clipBehavior = ui.Clip.none,
-      Object webOnlyPaintedBy}) {
-    final layer =
+  ui.PhysicalShapeEngineLayer pushPhysicalShape({
+    ui.Path path,
+    double elevation,
+    ui.Color color,
+    ui.Color shadowColor,
+    ui.Clip clipBehavior = ui.Clip.none,
+    ui.EngineLayer oldLayer,
+  }) {
+    final PhysicalShapeLayer layer =
         PhysicalShapeLayer(elevation, color, shadowColor, path, clipBehavior);
     pushLayer(layer);
-    return EngineLayerImpl(layer);
+    return layer;
   }
 
   @override
-  ui.EngineLayer pushShaderMask(
+  ui.ShaderMaskEngineLayer pushShaderMask(
       ui.Shader shader, ui.Rect maskRect, ui.BlendMode blendMode,
-      {Object webOnlyPaintedBy}) {
-    throw new UnimplementedError();
+      {ui.EngineLayer oldLayer}) {
+    throw UnimplementedError();
   }
 
   @override
-  ui.EngineLayer pushTransform(Float64List matrix4, {Object webOnlyPaintedBy}) {
-    final matrix = Matrix4.fromList(matrix4);
+  ui.TransformEngineLayer pushTransform(Float64List matrix4,
+      {ui.EngineLayer oldLayer}) {
+    final Matrix4 matrix = Matrix4.fromList(matrix4);
     pushLayer(TransformLayer(matrix));
     return null;
   }
@@ -192,9 +190,17 @@ class LayerSceneBuilder implements ui.SceneBuilder {
       return;
     }
 
-    if (currentLayer == null) return;
+    if (currentLayer == null) {
+      return;
+    }
 
     currentLayer.add(layer);
     currentLayer = layer;
+  }
+
+  @override
+  void setProperties(double width, double height, double insetTop,
+      double insetRight, double insetBottom, double insetLeft, bool focusable) {
+    throw UnimplementedError();
   }
 }

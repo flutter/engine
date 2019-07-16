@@ -12,6 +12,7 @@ import android.support.annotation.NonNull;
 import java.util.HashSet;
 import java.util.Set;
 
+import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.plugins.PluginRegistry;
 import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
@@ -28,6 +29,7 @@ import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
+import io.flutter.plugin.platform.PlatformViewsController;
 
 /**
  * A single Flutter execution environment.
@@ -87,10 +89,18 @@ public class FlutterEngine implements LifecycleOwner {
   @NonNull
   private final TextInputChannel textInputChannel;
 
+  // Platform Views.
+  @NonNull
+  private final PlatformViewsController platformViewsController;
+
+  // Engine Lifecycle.
+  @NonNull
   private final Set<EngineLifecycleListener> engineLifecycleListeners = new HashSet<>();
+  @NonNull
   private final EngineLifecycleListener engineLifecycleListener = new EngineLifecycleListener() {
     @SuppressWarnings("unused")
     public void onPreEngineRestart() {
+      Log.v(TAG, "onPreEngineRestart()");
       for (EngineLifecycleListener lifecycleListener : engineLifecycleListeners) {
         lifecycleListener.onPreEngineRestart();
       }
@@ -134,6 +144,8 @@ public class FlutterEngine implements LifecycleOwner {
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
 
+    platformViewsController = new PlatformViewsController();
+
     androidLifecycle = new FlutterEngineAndroidLifecycle(this);
     this.pluginRegistry = new FlutterEnginePluginRegistry(
       context.getApplicationContext(),
@@ -143,6 +155,7 @@ public class FlutterEngine implements LifecycleOwner {
   }
 
   private void attachToJni() {
+    Log.v(TAG, "Attaching to JNI.");
     // TODO(mattcarroll): update native call to not take in "isBackgroundView"
     flutterJNI.attachToNative(false);
 
@@ -163,6 +176,7 @@ public class FlutterEngine implements LifecycleOwner {
    * This {@code FlutterEngine} instance should be discarded after invoking this method.
    */
   public void destroy() {
+    Log.d(TAG, "Destroying.");
     // The order that these things are destroyed is important.
     pluginRegistry.destroy();
     dartExecutor.onDetachedFromJNI();
@@ -292,6 +306,15 @@ public class FlutterEngine implements LifecycleOwner {
   @NonNull
   public PluginRegistry getPlugins() {
     return pluginRegistry;
+  }
+
+  /**
+   * {@code PlatformViewsController}, which controls all platform views running within
+   * this {@code FlutterEngine}.
+   */
+  @NonNull
+  public PlatformViewsController getPlatformViewsController() {
+    return platformViewsController;
   }
 
   @NonNull
