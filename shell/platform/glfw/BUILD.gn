@@ -32,8 +32,8 @@ source_set("flutter_glfw_headers") {
 
 source_set("flutter_glfw") {
   sources = [
-    "external_texture_gl.h",
     "external_texture_gl.cc",
+    "external_texture_gl.h",
     "flutter_glfw.cc",
     "glfw_event_loop.cc",
     "glfw_event_loop.h",
@@ -46,7 +46,10 @@ source_set("flutter_glfw") {
     "text_input_plugin.h",
   ]
 
-  defines = [ "USE_RAPID_JSON", "GLFW_INCLUDE_NONE" ]
+  defines = [
+    "USE_RAPID_JSON",
+    "GLFW_INCLUDE_NONE",
+  ]
 
   configs += [
     "$flutter_root/shell/platform/common/cpp:desktop_library_implementation",
@@ -62,8 +65,8 @@ source_set("flutter_glfw") {
     "//third_party/rapidjson",
   ]
   if (is_win) {
-     deps += [ "//build/secondary/third_party/glfw:glad" ]
-  }else if (is_linux) {
+    deps += [ "//build/secondary/third_party/glfw:glad" ]
+  } else if (is_linux) {
     libs = [ "GL" ]
 
     configs += [

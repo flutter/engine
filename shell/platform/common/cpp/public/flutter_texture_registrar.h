@@ -37,15 +37,18 @@ typedef const PixelBuffer* (*FlutterTexutreCallback)(size_t width,
 // function to copy the pixel buffer from the plugin caller.
 FLUTTER_EXPORT int64_t FlutterDesktopRegisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
-    FlutterTexutreCallback texture_callback, void* user_data);
+    FlutterTexutreCallback texture_callback,
+    void* user_data);
 
 // Unregister an existing texture from the flutter engine for a |texture_id|.
 FLUTTER_EXPORT bool FlutterDesktopUnregisterExternalTexture(
-    FlutterDesktopTextureRegistrarRef texture_registrar, int64_t texture_id);
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    int64_t texture_id);
 
 // Mark that a new texture frame is available for a given |texture_id|.
 FLUTTER_EXPORT bool FlutterDesktopMarkExternalTextureFrameAvailable(
-    FlutterDesktopTextureRegistrarRef texture_registrar, int64_t texture_id);
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    int64_t texture_id);
 
 #if defined(__cplusplus)
 }  // extern "C"

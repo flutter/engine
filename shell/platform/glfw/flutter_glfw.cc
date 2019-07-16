@@ -500,8 +500,8 @@ static bool OnAcquireExternalTexture(void* user_data,
                                      FlutterOpenGLTexture* texture) {
   GLFWwindow* window = reinterpret_cast<GLFWwindow*>(user_data);
   auto state = GetSavedWindowState(window);
-  return state->plugin_registrar->texture_registrar->textures[texture_id]->PopulateTextureWithIdentifier(
-      width, height, texture);
+  return state->plugin_registrar->texture_registrar->textures[texture_id]
+      ->PopulateTextureWithIdentifier(width, height, texture);
 }
 
 static void GLFWErrorCallback(int error_code, const char* description) {
@@ -876,7 +876,8 @@ void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
 
 int64_t FlutterDesktopRegisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
-    FlutterTexutreCallback texture_callback, void* user_data) {
+    FlutterTexutreCallback texture_callback,
+    void* user_data) {
   std::unique_ptr<flutter::ExternalTextureGL> texture_gl(
       new flutter::ExternalTextureGL(texture_callback, user_data));
   int64_t texture_id = texture_gl->texutre_id();
@@ -889,7 +890,8 @@ int64_t FlutterDesktopRegisterExternalTexture(
 }
 
 bool FlutterDesktopUnregisterExternalTexture(
-    FlutterDesktopTextureRegistrarRef texture_registrar, int64_t texture_id) {
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    int64_t texture_id) {
   auto it = texture_registrar->textures.find(texture_id);
   if (it != texture_registrar->textures.end())
     texture_registrar->textures.erase(it);
@@ -898,7 +900,8 @@ bool FlutterDesktopUnregisterExternalTexture(
 }
 
 bool FlutterDesktopMarkExternalTextureFrameAvailable(
-    FlutterDesktopTextureRegistrarRef texture_registrar, int64_t texture_id) {
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    int64_t texture_id) {
   return (FlutterEngineMarkExternalTextureFrameAvailable(
               texture_registrar->engine, texture_id) == kSuccess);
 }

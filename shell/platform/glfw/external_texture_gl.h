@@ -5,15 +5,13 @@
 #ifndef FLUTTER_SHELL_PLATFORM_GLFW_EXTERNAL_TEXTURE_GL_H_
 #define FLUTTER_SHELL_PLATFORM_GLFW_EXTERNAL_TEXTURE_GL_H_
 
-#include "flutter/shell/platform/embedder/embedder.h"
-
 #include <stdint.h>
 
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glad/glad.h>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/texture_registrar.h"
-#include "flutter/shell/platform/glfw/public/flutter_glfw.h"
+#include "flutter/shell/platform/common/cpp/public/flutter_texture_registrar.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 
 namespace flutter {
 
@@ -23,7 +21,7 @@ class ExternalTextureGL {
   ExternalTextureGL(FlutterTexutreCallback texture_callback, void* user_data);
 
   virtual ~ExternalTextureGL();
- 
+
   int64_t texutre_id();
 
   bool PopulateTextureWithIdentifier(size_t width,

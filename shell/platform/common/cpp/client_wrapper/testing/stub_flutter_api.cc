@@ -47,26 +47,26 @@ FlutterDesktopMessengerRef FlutterDesktopRegistrarGetMessenger(
 FlutterDesktopTextureRegistrarRef FlutterDesktopGetTextureRegistrar(
     FlutterDesktopPluginRegistrarRef registrar) {
   return reinterpret_cast<FlutterDesktopTextureRegistrarRef>(1);
- }
+}
 
 int64_t FlutterDesktopRegisterExternalTexture(
-     FlutterDesktopTextureRegistrarRef texture_registrar,
-     FlutterTexutreCallback texture_callback,
-     void* user_data) {
-   return -1;
- }
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    FlutterTexutreCallback texture_callback,
+    void* user_data) {
+  return -1;
+}
 
- bool FlutterDesktopUnregisterExternalTexture(
-     FlutterDesktopTextureRegistrarRef texture_registrar,
-     int64_t texture_id) {
-   return false;
- }
+bool FlutterDesktopUnregisterExternalTexture(
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    int64_t texture_id) {
+  return false;
+}
 
- bool FlutterDesktopMarkExternalTextureFrameAvailable(
-     FlutterDesktopTextureRegistrarRef texture_registrar,
-     int64_t texture_id) {
-   return false;
- }
+bool FlutterDesktopMarkExternalTextureFrameAvailable(
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    int64_t texture_id) {
+  return false;
+}
 
 void FlutterDesktopRegistrarEnableInputBlocking(
     FlutterDesktopPluginRegistrarRef registrar,
