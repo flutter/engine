@@ -160,6 +160,14 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
     API_AVAILABLE(ios(10));
 
 /**
+ * Calls all plugins registered for `UNUserNotificationCenterDelegate` callbacks.
+ */
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center
+    didReceiveNotificationResponse:(UNNotificationResponse *)response
+             withCompletionHandler:(void (^)(void))completionHandler
+    API_AVAILABLE(ios(10));
+
+/**
  * Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
  *
  * @return `YES` if this plugin handles the request.
