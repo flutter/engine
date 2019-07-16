@@ -77,7 +77,10 @@ shared_library("create_flutter_framework_dylib") {
 
   cflags_objcc = [ "-fobjc-arc" ]
 
-  libs = [ "Cocoa.framework", "CoreVideo.framework" ]
+  libs = [
+    "Cocoa.framework",
+    "CoreVideo.framework",
+  ]
 }
 
 copy("copy_framework_dylib") {
