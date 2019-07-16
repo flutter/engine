@@ -14,31 +14,35 @@ ExternalTextureGL::ExternalTextureGL(FlutterTexutreCallback texture_callback,
     : texture_callback_(texture_callback), user_data_(user_data) {}
 
 ExternalTextureGL::~ExternalTextureGL() {
-  if (glTexture != 0) glDeleteTextures(1, &glTexture);
+  if (gl_texture_ != 0) glDeleteTextures(1, &gl_texture_);
+}
+
+ int64_t ExternalTextureGL::texutre_id() {
+  return reinterpret_cast<int64_t>(this);
 }
 
 bool ExternalTextureGL::PopulateTextureWithIdentifier(
     size_t width, size_t height, FlutterOpenGLTexture* texture) {
+  // Confirm that the current window context is available.
   if (!window_) {
     window_ = glfwGetCurrentContext();
     if (window_) {
       glfwMakeContextCurrent(window_);
+      // Load glad functions.
       gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     }
-  } else {
-    glfwMakeContextCurrent(window_);
   }
 
   if (!window_) return false;
 
-  std::shared_ptr<PixelBuffer> pixel_buffer =
+  const PixelBuffer* pixel_buffer =
       texture_callback_(width, height, user_data_);
 
-  if (!pixel_buffer.get()) return false;
+  if (!pixel_buffer || !pixel_buffer->buffer) return false;
 
-  if (glTexture == 0) {
-    glGenTextures(1, &glTexture);
-    glBindTexture(GL_TEXTURE_2D, glTexture);
+  if (gl_texture_ == 0) {
+    glGenTextures(1, &gl_texture_);
+    glBindTexture(GL_TEXTURE_2D, gl_texture_);
     // set the texture wrapping parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
@@ -47,17 +51,13 @@ bool ExternalTextureGL::PopulateTextureWithIdentifier(
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   }
 
-  /*Fill texture.*/
-  {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glBindTexture(GL_TEXTURE_2D, glTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pixel_buffer->width,
-                 pixel_buffer->height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                 pixel_buffer->buffer.get());
-    glEnable(GL_TEXTURE_2D);
-  }
+  glBindTexture(GL_TEXTURE_2D, gl_texture_);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pixel_buffer->width,
+               pixel_buffer->height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+               pixel_buffer->buffer);
+
   texture->target = GL_TEXTURE_2D;
-  texture->name = glTexture;
+  texture->name = gl_texture_;
   texture->format = GL_RGBA8;
   texture->destruction_callback = (VoidCallback)&OnGLBufferRelease;
   texture->user_data = (void*)this;

@@ -108,8 +108,8 @@ void BinaryMessengerImpl::SetMessageHandler(const std::string& channel,
 class TextureRegistrarImpl : public TextureRegistrar {
  public:
   explicit TextureRegistrarImpl(
-      FlutterDesktopTextureRegistrarRef texture_registrar)
-      : texture_registrar_(texture_registrar) {}
+      FlutterDesktopTextureRegistrarRef texture_registrar_ref)
+      : texture_registrar_ref_(texture_registrar_ref) {}
 
   virtual ~TextureRegistrarImpl() = default;
 
@@ -119,27 +119,26 @@ class TextureRegistrarImpl : public TextureRegistrar {
 
   virtual int64_t RegisterTexture(Texture* texture) override {
     FlutterTexutreCallback callback =
-        [](size_t width, size_t height,
-           void* user_data) -> std::shared_ptr<PixelBuffer> {
-      return ((Texture*)user_data)->CopyTextureBuffer(width, height);
+        [](size_t width, size_t height, void* user_data) -> const PixelBuffer* {
+      return ((Texture*)user_data)->CopyPixelBuffer(width, height);
     };
     int64_t texture_id = FlutterDesktopRegisterExternalTexture(
-        texture_registrar_, callback, texture);
+        texture_registrar_ref_, callback, texture);
     return texture_id;
   }
 
   virtual void MarkTextureFrameAvailable(int64_t texture_id) override {
-    FlutterDesktopMarkExternalTextureFrameAvailable(texture_registrar_,
+    FlutterDesktopMarkExternalTextureFrameAvailable(texture_registrar_ref_,
                                                     texture_id);
   }
 
   virtual void UnregisterTexture(int64_t texture_id) override {
-    FlutterDesktopUnregisterExternalTexture(texture_registrar_, texture_id);
+    FlutterDesktopUnregisterExternalTexture(texture_registrar_ref_, texture_id);
   }
 
  private:
   // Handle for interacting with the C API.
-  FlutterDesktopTextureRegistrarRef texture_registrar_;
+  FlutterDesktopTextureRegistrarRef texture_registrar_ref_;
 };
 
 // PluginRegistrar:

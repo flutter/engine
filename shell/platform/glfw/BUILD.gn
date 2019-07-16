@@ -46,7 +46,7 @@ source_set("flutter_glfw") {
     "text_input_plugin.h",
   ]
 
-  defines = [ "USE_RAPID_JSON" ]
+  defines = [ "USE_RAPID_JSON", "GLFW_INCLUDE_NONE" ]
 
   configs += [
     "$flutter_root/shell/platform/common/cpp:desktop_library_implementation",
@@ -61,14 +61,16 @@ source_set("flutter_glfw") {
     "//build/secondary/third_party/glfw",
     "//third_party/rapidjson",
   ]
-
-  if (is_linux) {
+  if (is_win) {
+     deps += [ "//build/secondary/third_party/glfw:glad" ]
+  }else if (is_linux) {
     libs = [ "GL" ]
 
     configs += [
       "$flutter_root/shell/platform/linux/config:gtk3",
       "$flutter_root/shell/platform/linux/config:x11",
     ]
+    deps += [ "//build/secondary/third_party/glfw:glad" ]
   } else if (is_mac) {
     libs = [
       "CoreVideo.framework",

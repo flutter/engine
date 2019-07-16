@@ -12,12 +12,15 @@
 
 namespace flutter {
 
+// An external texture interface declaration.
 class Texture {
  public:
   virtual ~Texture() {}
-
-  virtual std::shared_ptr<PixelBuffer> CopyTextureBuffer(size_t width,
-                                                             size_t height) = 0;
+  // This is in response to the texture copy request interface, providing the
+  // |height | and |width| parameters of bounds.
+  // In some cases, we need to scale the texture to the bounds size to reduce
+  // memory usage.
+  virtual const PixelBuffer* CopyPixelBuffer(size_t width, size_t height) = 0;
 };
 
 class TextureRegistrar {
@@ -27,7 +30,7 @@ class TextureRegistrar {
   /**
    * Register a |texture| object and return textureId.
    */
-  virtual int64_t RegisterTexture(Texture *texture) = 0;
+  virtual int64_t RegisterTexture(Texture* texture) = 0;
 
   /**
    * Mark a texture buffer is ready.
