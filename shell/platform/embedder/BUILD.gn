@@ -17,10 +17,9 @@ shell_gpu_configuration("embedder_gpu_configuration") {
 # Template for the embedder build. Used to allow building it multiple times with
 # different flags.
 template("embedder_source_set") {
-  template_target_name = target_name
   forward_variables_from(invoker, "*")
 
-  source_set(template_target_name) {
+  source_set(target_name) {
     sources = [
       "embedder.cc",
       "embedder.h",
@@ -75,7 +74,7 @@ embedder_source_set("embedder_with_symbol_prefix") {
 }
 
 config("embedder_prefix_config") {
-  defines = [ "FLUTTER_EMBEDDING_API_PREFIX=Embedder" ]
+  defines = [ "FLUTTER_API_SYMBOL_PREFIX=Embedder" ]
 }
 
 test_fixtures("fixtures") {

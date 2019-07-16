@@ -17,14 +17,14 @@ extern "C" {
 #define FLUTTER_EXPORT
 #endif  // FLUTTER_EXPORT
 
-#ifdef FLUTTER_EMBEDDING_API_PREFIX
+#ifdef FLUTTER_API_SYMBOL_PREFIX
 #define FLUTTER_EMBEDDING_CONCAT(a, b) a##b
 #define FLUTTER_EMBEDDING_ADD_PREFIX(symbol, prefix) \
   FLUTTER_EMBEDDING_CONCAT(prefix, symbol)
-#define FLUTTER_EMBEDDING_API(symbol) \
-  FLUTTER_EMBEDDING_ADD_PREFIX(symbol, FLUTTER_EMBEDDING_API_PREFIX)
+#define FLUTTER_API_SYMBOL(symbol) \
+  FLUTTER_EMBEDDING_ADD_PREFIX(symbol, FLUTTER_API_SYMBOL_PREFIX)
 #else
-#define FLUTTER_EMBEDDING_API(symbol) symbol
+#define FLUTTER_API_SYMBOL(symbol) symbol
 #endif
 
 #define FLUTTER_ENGINE_VERSION 1
@@ -178,7 +178,7 @@ typedef enum {
   kFlutterTextDirectionLTR = 2,
 } FlutterTextDirection;
 
-typedef struct _FlutterEngine* FLUTTER_EMBEDDING_API(FlutterEngine);
+typedef struct _FlutterEngine* FLUTTER_API_SYMBOL(FlutterEngine);
 
 typedef struct {
   //   horizontal scale factor
@@ -699,27 +699,27 @@ FlutterEngineResult FlutterEngineRun(size_t version,
                                      const FlutterRendererConfig* config,
                                      const FlutterProjectArgs* args,
                                      void* user_data,
-                                     FLUTTER_EMBEDDING_API(FlutterEngine) *
+                                     FLUTTER_API_SYMBOL(FlutterEngine) *
                                          engine_out);
 
 FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineShutdown(FLUTTER_EMBEDDING_API(FlutterEngine)
+FlutterEngineResult FlutterEngineShutdown(FLUTTER_API_SYMBOL(FlutterEngine)
                                               engine);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
-    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterWindowMetricsEvent* event);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPointerEvent(
-    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPointerEvent* events,
     size_t events_count);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPlatformMessage(
-    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPlatformMessage* message);
 
 // Creates a platform message response handle that allows the embedder to set a
@@ -737,7 +737,7 @@ FlutterEngineResult FlutterEngineSendPlatformMessage(
 // call as the third argument.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterPlatformMessageCreateResponseHandle(
-    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     FlutterDataCallback data_callback,
     void* user_data,
     FlutterPlatformMessageResponseHandle** response_out);
@@ -746,12 +746,12 @@ FlutterEngineResult FlutterPlatformMessageCreateResponseHandle(
 // |FlutterPlatformMessageCreateResponseHandle|.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterPlatformMessageReleaseResponseHandle(
-    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     FlutterPlatformMessageResponseHandle* response);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPlatformMessageResponse(
-    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPlatformMessageResponseHandle* handle,
     const uint8_t* data,
     size_t data_length);
@@ -769,19 +769,19 @@ FlutterEngineResult __FlutterEngineFlushPendingTasksNow();
 // |FlutterEngineMarkExternalTextureFrameAvailable|.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineRegisterExternalTexture(
-    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     int64_t texture_identifier);
 
 // Unregister a previous texture registration.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineUnregisterExternalTexture(
-    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     int64_t texture_identifier);
 
 // Mark that a new texture frame is available for a given texture identifier.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineMarkExternalTextureFrameAvailable(
-    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     int64_t texture_identifier);
 
 // Enable or disable accessibility semantics.
@@ -791,19 +791,19 @@ FlutterEngineResult FlutterEngineMarkExternalTextureFrameAvailable(
 // |update_semantics_node_callback| in |FlutterProjectArgs|;
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineUpdateSemanticsEnabled(
-    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     bool enabled);
 
 // Sets additional accessibility features.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
-    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     FlutterAccessibilityFeature features);
 
 // Dispatch a semantics action to the specified semantics node.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineDispatchSemanticsAction(
-    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     uint64_t id,
     FlutterSemanticsAction action,
     const uint8_t* data,
@@ -826,7 +826,7 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
 //
 // That frame timepoints are in nanoseconds.
 FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineOnVsync(FLUTTER_EMBEDDING_API(FlutterEngine)
+FlutterEngineResult FlutterEngineOnVsync(FLUTTER_API_SYMBOL(FlutterEngine)
                                              engine,
                                          intptr_t baton,
                                          uint64_t frame_start_time_nanos,
@@ -863,7 +863,7 @@ void FlutterEngineTraceEventInstant(const char* name);
 // has not already been initiated.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEnginePostRenderThreadTask(
-    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     VoidCallback callback,
     void* callback_data);
 
@@ -877,7 +877,7 @@ uint64_t FlutterEngineGetCurrentTime();
 // call must only be made at the target time specified in that callback. Running
 // the task before that time is undefined behavior.
 FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineRunTask(FLUTTER_EMBEDDING_API(FlutterEngine)
+FlutterEngineResult FlutterEngineRunTask(FLUTTER_API_SYMBOL(FlutterEngine)
                                              engine,
                                          const FlutterTask* task);
 
