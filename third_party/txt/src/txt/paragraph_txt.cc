@@ -1053,7 +1053,8 @@ void ParagraphTxt::Layout(double width) {
     }  // for each in line_runs
 
     // Adjust the glyph positions based on the alignment of the line.
-    double line_x_offset = GetLineXOffset(run_x_offset);
+    double line_x_offset =
+        GetLineXOffset(run_x_offset, line_number, line_limit);
     if (line_x_offset) {
       for (CodeUnitRun& code_unit_run : line_code_unit_runs) {
         code_unit_run.Shift(line_x_offset);
@@ -1173,7 +1174,9 @@ void ParagraphTxt::Layout(double width) {
   longest_line_ = max_right_ - min_left_;
 }
 
-double ParagraphTxt::GetLineXOffset(double line_total_advance) {
+double ParagraphTxt::GetLineXOffset(double line_total_advance,
+                                    size_t line_number,
+                                    size_t line_limit) {
   if (isinf(width_))
     return 0;
 
@@ -1181,7 +1184,8 @@ double ParagraphTxt::GetLineXOffset(double line_total_advance) {
 
   if (align == TextAlign::right ||
       (align == TextAlign::justify &&
-       paragraph_style_.text_direction == TextDirection::rtl)) {
+       paragraph_style_.text_direction == TextDirection::rtl &&
+       line_number == line_limit - 1)) {
     return width_ - line_total_advance;
   } else if (align == TextAlign::center) {
     return (width_ - line_total_advance) / 2;
