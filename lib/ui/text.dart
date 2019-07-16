@@ -696,7 +696,7 @@ class TextStyle {
        _locale = locale,
        _background = background,
        _foreground = foreground,
-       _strokeWidth = strokeWidth.
+       _strokeWidth = strokeWidth,
        _shadows = shadows,
        _fontFeatures = fontFeatures;
 
