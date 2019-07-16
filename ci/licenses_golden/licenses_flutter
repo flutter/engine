@@ -645,6 +645,7 @@ FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/standard_message_codec.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/standard_method_codec.h
+FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/texture_registrar.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/json_message_codec.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/json_method_codec.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/method_call_unittests.cc
@@ -659,6 +660,7 @@ FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.h
 FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_export.h
 FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_messenger.h
 FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_plugin_registrar.h
+FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_texture_registrar.h
 FILE: ../../../flutter/shell/platform/common/cpp/text_input_model.cc
 FILE: ../../../flutter/shell/platform/common/cpp/text_input_model.h
 FILE: ../../../flutter/shell/platform/darwin/common/buffer_conversions.h
@@ -932,6 +934,8 @@ FILE: ../../../flutter/shell/platform/glfw/client_wrapper/flutter_window_control
 FILE: ../../../flutter/shell/platform/glfw/client_wrapper/include/flutter/flutter_window.h
 FILE: ../../../flutter/shell/platform/glfw/client_wrapper/include/flutter/flutter_window_controller.h
 FILE: ../../../flutter/shell/platform/glfw/client_wrapper/include/flutter/plugin_registrar_glfw.h
+FILE: ../../../flutter/shell/platform/glfw/external_texture_gl.cc
+FILE: ../../../flutter/shell/platform/glfw/external_texture_gl.h
 FILE: ../../../flutter/shell/platform/glfw/flutter_glfw.cc
 FILE: ../../../flutter/shell/platform/glfw/glfw_event_loop.cc
 FILE: ../../../flutter/shell/platform/glfw/glfw_event_loop.h
