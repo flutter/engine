@@ -82,6 +82,8 @@ class StyledRuns {
   FRIEND_TEST(ParagraphTest, SimpleShadow);
   FRIEND_TEST(ParagraphTest, ComplexShadow);
   FRIEND_TEST(ParagraphTest, FontFallbackParagraph);
+  FRIEND_TEST(ParagraphTest, StrokeOverParagraph);
+  FRIEND_TEST(ParagraphTest, StrokeUnderParagraph);
 
   struct IndexedRun {
     size_t style_index = 0;

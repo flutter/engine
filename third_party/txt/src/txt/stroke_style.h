@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef LIB_TXT_SRC_STROKE_TYPE_H_
-#define LIB_TXT_SRC_STROKE_TYPE_H_
+#ifndef LIB_TXT_SRC_STROKE_STYLE_H_
+#define LIB_TXT_SRC_STROKE_STYLE_H_
 
 namespace txt {
 
-enum class StrokeType {
+enum class StrokeStyle {
   // No stroke
   kNone,
   // The stroke is drawn under the fill text. The stroke appears as an
@@ -35,4 +35,4 @@ enum class StrokeType {
 
 }  // namespace txt
 
-#endif  // LIB_TXT_SRC_STROKE_TYPE_H_
+#endif  // LIB_TXT_SRC_STROKE_STYLE_H_

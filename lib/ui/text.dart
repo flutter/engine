@@ -431,6 +431,23 @@ enum TextDecorationStyle {
   wavy
 }
 
+
+/// The type of Stroke to draw.
+enum StrokeStyle {
+  /// No stroke.
+  kNone,
+
+  /// The stroke is drawn under the fill text.
+  ///
+  /// The stroke appears as an "outset" to the fill.
+  kUnder,
+
+  /// The stroke is drawn over the fill text.
+  ///
+  /// The fill text will be partially covered by the stroke.
+  kOver,
+}
+
 /// Determines if lists [a] and [b] are deep equivalent.
 ///
 /// Returns true if the lists are both null, or if they are both non-null, have
@@ -491,6 +508,9 @@ Int32List _encodeTextStyle(
   Locale locale,
   Paint background,
   Paint foreground,
+  StrokeStyle strokeStyle,
+  double strokeWidth,
+  Color strokeColor,
   List<Shadow> shadows,
   List<FontFeature> fontFeatures,
 ) {
@@ -523,47 +543,58 @@ Int32List _encodeTextStyle(
     result[0] |= 1 << 7;
     result[7] = textBaseline.index;
   }
-  if (decorationThickness != null) {
+  if (strokeStyle != null) {
     result[0] |= 1 << 8;
+    result[8] = strokeStyle.index;
+  }
+  if (strokeColor != null) {
+    result[0] |= 1 << 9;
+    result[9] = strokeColor.value;
+  }
+  if (strokeWidth != null) {
+    result[0] |= 1 << 10;
+  }
+  if (decorationThickness != null) {
+    result[0] |= 1 << 11;
   }
   if (fontFamily != null || (fontFamilyFallback != null && fontFamilyFallback.isNotEmpty)) {
-    result[0] |= 1 << 9;
-    // Passed separately to native.
-  }
-  if (fontSize != null) {
-    result[0] |= 1 << 10;
-    // Passed separately to native.
-  }
-  if (letterSpacing != null) {
-    result[0] |= 1 << 11;
-    // Passed separately to native.
-  }
-  if (wordSpacing != null) {
     result[0] |= 1 << 12;
     // Passed separately to native.
   }
-  if (height != null) {
+  if (fontSize != null) {
     result[0] |= 1 << 13;
     // Passed separately to native.
   }
-  if (locale != null) {
+  if (letterSpacing != null) {
     result[0] |= 1 << 14;
     // Passed separately to native.
   }
-  if (background != null) {
+  if (wordSpacing != null) {
     result[0] |= 1 << 15;
     // Passed separately to native.
   }
-  if (foreground != null) {
+  if (height != null) {
     result[0] |= 1 << 16;
     // Passed separately to native.
   }
-  if (shadows != null) {
+  if (locale != null) {
     result[0] |= 1 << 17;
     // Passed separately to native.
   }
-  if (fontFeatures != null) {
+  if (background != null) {
     result[0] |= 1 << 18;
+    // Passed separately to native.
+  }
+  if (foreground != null) {
+    result[0] |= 1 << 19;
+    // Passed separately to native.
+  }
+  if (shadows != null) {
+    result[0] |= 1 << 20;
+    // Passed separately to native.
+  }
+  if (fontFeatures != null) {
+    result[0] |= 1 << 21;
     // Passed separately to native.
   }
   return result;
@@ -622,6 +653,9 @@ class TextStyle {
     Locale locale,
     Paint background,
     Paint foreground,
+    StrokeStyle strokeStyle,
+    double strokeWidth,
+    Color strokeColor,
     List<Shadow> shadows,
     List<FontFeature> fontFeatures,
   }) : assert(color == null || foreground == null,
@@ -646,6 +680,9 @@ class TextStyle {
          locale,
          background,
          foreground,
+         strokeStyle,
+         strokeWidth,
+         strokeColor,
          shadows,
          fontFeatures,
        ),
@@ -659,6 +696,7 @@ class TextStyle {
        _locale = locale,
        _background = background,
        _foreground = foreground,
+       _strokeWidth = strokeWidth.
        _shadows = shadows,
        _fontFeatures = fontFeatures;
 
@@ -673,6 +711,7 @@ class TextStyle {
   final Locale _locale;
   final Paint _background;
   final Paint _foreground;
+  final double _strokeWidth;
   final List<Shadow> _shadows;
   final List<FontFeature> _fontFeatures;
 
@@ -1774,6 +1813,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
       style._wordSpacing,
       style._height,
       style._decorationThickness,
+      style._strokeWidth,
       _encodeLocale(style._locale),
       style._background?._objects,
       style._background?._data,
@@ -1792,6 +1832,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
     double wordSpacing,
     double height,
     double decorationThickness,
+    double strokeWidth,
     String locale,
     List<dynamic> backgroundObjects,
     ByteData backgroundData,

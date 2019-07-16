@@ -101,7 +101,7 @@ source_set("txt") {
     "src/txt/placeholder_run.cc",
     "src/txt/placeholder_run.h",
     "src/txt/platform.h",
-    "src/txt/stroke_type.h",
+    "src/txt/stroke_style.h",
     "src/txt/styled_runs.cc",
     "src/txt/styled_runs.h",
     "src/txt/test_font_manager.cc",

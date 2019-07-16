@@ -5159,11 +5159,12 @@ TEST_F(ParagraphTest, StrokeUnderParagraph) {
   // be Arial default though as it is one of the most common fonts on host
   // platforms. On real devices/apps, Arial should be able to be resolved.
   text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_families.push_back("Source Han Serif CN");
   text_style.font_size = 70;
-  text_style.color = SK_ColorBLACK;
-  text_style.stroke_color = SK_ColorRED;
-  text_style.stroke_width = 3;
-  text_style.stroke_type = txt::StrokeType::kUnder;
+  text_style.color = SK_ColorGRAY;
+  text_style.stroke_color = SK_ColorBLACK;
+  text_style.stroke_width = 10;
+  text_style.stroke_style = txt::StrokeStyle::kUnder;
   builder.PushStyle(text_style);
   builder.AddText(u16_text);
 
@@ -5175,13 +5176,60 @@ TEST_F(ParagraphTest, StrokeUnderParagraph) {
   paragraph->Paint(GetCanvas(), 10.0, 15.0);
 
   // ASSERT_EQ(paragraph->text_.size(), std::string{text}.length());
-  // for (size_t i = 0; i < u16_text.length(); i++) {
-  //   ASSERT_EQ(paragraph->text_[i], u16_text[i]);
-  // }
-  // ASSERT_EQ(paragraph->runs_.runs_.size(), 1ull);
-  // ASSERT_EQ(paragraph->runs_.styles_.size(), 2ull);
-  // ASSERT_TRUE(paragraph->runs_.styles_[1].equals(text_style));
-  // ASSERT_EQ(paragraph->records_[0].style().color, text_style.color);
+  for (size_t i = 0; i < u16_text.length(); i++) {
+    ASSERT_EQ(paragraph->text_[i], u16_text[i]);
+  }
+  ASSERT_EQ(paragraph->runs_.runs_.size(), 1ull);
+  ASSERT_EQ(paragraph->runs_.styles_.size(), 2ull);
+  ASSERT_TRUE(paragraph->runs_.styles_[1].equals(text_style));
+  ASSERT_EQ(paragraph->records_[0].style().stroke_color, text_style.stroke_color);
+  ASSERT_EQ(paragraph->records_[0].style().stroke_style, text_style.stroke_style);
+  ASSERT_EQ(paragraph->records_[0].style().stroke_width, text_style.stroke_width);
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest, StrokeOverParagraph) {
+  const char* text = "Stroke is a cool thing! 土豆很好吃";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  // We must supply a font here, as the default is Arial, and we do not
+  // include Arial in our test fonts as it is proprietary. We want it to
+  // be Arial default though as it is one of the most common fonts on host
+  // platforms. On real devices/apps, Arial should be able to be resolved.
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_families.push_back("Source Han Serif CN");
+  text_style.font_size = 70;
+  text_style.color = SK_ColorGRAY;
+  text_style.stroke_color = SK_ColorBLACK;
+  text_style.stroke_width = 5;
+  text_style.stroke_style = txt::StrokeStyle::kOver;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(GetTestCanvasWidth());
+
+  paragraph->Paint(GetCanvas(), 10.0, 15.0);
+
+  // ASSERT_EQ(paragraph->text_.size(), std::string{text}.length());
+  for (size_t i = 0; i < u16_text.length(); i++) {
+    ASSERT_EQ(paragraph->text_[i], u16_text[i]);
+  }
+  ASSERT_EQ(paragraph->runs_.runs_.size(), 1ull);
+  ASSERT_EQ(paragraph->runs_.styles_.size(), 2ull);
+  ASSERT_TRUE(paragraph->runs_.styles_[1].equals(text_style));
+  ASSERT_EQ(paragraph->records_[0].style().color, text_style.color);
+  ASSERT_EQ(paragraph->records_[0].style().stroke_color, text_style.stroke_color);
+  ASSERT_EQ(paragraph->records_[0].style().stroke_style, text_style.stroke_style);
+  ASSERT_EQ(paragraph->records_[0].style().stroke_width, text_style.stroke_width);
   ASSERT_TRUE(Snapshot());
 }
 

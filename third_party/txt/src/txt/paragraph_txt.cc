@@ -1285,11 +1285,11 @@ void ParagraphTxt::Paint(SkCanvas* canvas, double x, double y) {
     SkPoint offset = base_offset + record.offset();
     if (record.GetPlaceholderRun() == nullptr) {
       PaintShadow(canvas, record, offset);
-      if (record.style().stroke_type == StrokeType::kUnder) {
+      if (record.style().stroke_style == StrokeStyle::kUnder) {
         PaintStroke(canvas, record, offset);
       }
       canvas->drawTextBlob(record.text(), offset.x(), offset.y(), paint);
-      if (record.style().stroke_type == StrokeType::kOver) {
+      if (record.style().stroke_style == StrokeStyle::kOver) {
         PaintStroke(canvas, record, offset);
       }
     }
@@ -1300,7 +1300,7 @@ void ParagraphTxt::Paint(SkCanvas* canvas, double x, double y) {
 void ParagraphTxt::PaintStroke(SkCanvas* canvas,
                                const PaintRecord& record,
                                SkPoint offset) {
-  if (record.style().stroke_type == StrokeType::kNone) {
+  if (record.style().stroke_style == StrokeStyle::kNone) {
     return;
   }
   SkPaint paint;

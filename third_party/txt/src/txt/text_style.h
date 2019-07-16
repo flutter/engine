@@ -23,7 +23,7 @@
 #include "font_features.h"
 #include "font_style.h"
 #include "font_weight.h"
-#include "stroke_type.h"
+#include "stroke_style.h"
 #include "text_baseline.h"
 #include "text_decoration.h"
 #include "text_shadow.h"
@@ -62,7 +62,7 @@ class TextStyle {
   // the bottom).
   std::vector<TextShadow> text_shadows;
 
-  StrokeType stroke_type = StrokeType::kNone;
+  StrokeStyle stroke_style = StrokeStyle::kNone;
   SkColor stroke_color = SK_ColorWHITE;
   double stroke_width = 1.0;
 

@@ -37,22 +37,28 @@ const int tsTextDecorationStyleIndex = 4;
 const int tsFontWeightIndex = 5;
 const int tsFontStyleIndex = 6;
 const int tsTextBaselineIndex = 7;
-const int tsTextDecorationThicknessIndex = 8;
-const int tsFontFamilyIndex = 9;
-const int tsFontSizeIndex = 10;
-const int tsLetterSpacingIndex = 11;
-const int tsWordSpacingIndex = 12;
-const int tsHeightIndex = 13;
-const int tsLocaleIndex = 14;
-const int tsBackgroundIndex = 15;
-const int tsForegroundIndex = 16;
-const int tsTextShadowsIndex = 17;
-const int tsFontFeaturesIndex = 18;
+const int tsStrokeStyleIndex = 8;
+const int tsStrokeColorIndex = 9;
+const int tsStrokeWidthIndex = 10;
+const int tsTextDecorationThicknessIndex = 11;
+const int tsFontFamilyIndex = 12;
+const int tsFontSizeIndex = 13;
+const int tsLetterSpacingIndex = 14;
+const int tsWordSpacingIndex = 15;
+const int tsHeightIndex = 16;
+const int tsLocaleIndex = 17;
+const int tsBackgroundIndex = 18;
+const int tsForegroundIndex = 19;
+const int tsTextShadowsIndex = 20;
+const int tsFontFeaturesIndex = 21;
 
 const int tsColorMask = 1 << tsColorIndex;
 const int tsTextDecorationMask = 1 << tsTextDecorationIndex;
 const int tsTextDecorationColorMask = 1 << tsTextDecorationColorIndex;
 const int tsTextDecorationStyleMask = 1 << tsTextDecorationStyleIndex;
+const int tsStrokeStyleMask = 1 << tsStrokeStyleIndex;
+const int tsStrokeColorMask = 1 << tsStrokeColorIndex;
+const int tsStrokeWidthMask = 1 << tsStrokeWidthIndex;
 const int tsTextDecorationThicknessMask = 1 << tsTextDecorationThicknessIndex;
 const int tsFontWeightMask = 1 << tsFontWeightIndex;
 const int tsFontStyleMask = 1 << tsFontStyleIndex;
@@ -345,6 +351,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
                                  double wordSpacing,
                                  double height,
                                  double decorationThickness,
+                                 double strokeWidth,
                                  const std::string& locale,
                                  Dart_Handle background_objects,
                                  Dart_Handle background_data,
@@ -382,6 +389,18 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 
   if (mask & tsTextDecorationThicknessMask) {
     style.decoration_thickness_multiplier = decorationThickness;
+  }
+
+  if (mask & tsStrokeStyleMask) {
+    style.stroke_style =
+        static_cast<txt::StrokeStyle>(encoded[tsStrokeStyleIndex]);
+  }
+  if (mask & tsStrokeColorMask) {
+    style.stroke_color = encoded[tsStrokeColorIndex];
+  }
+
+  if (mask & tsStrokeWidthMask) {
+    style.stroke_width = strokeWidth;
   }
 
   if (mask & tsTextBaselineMask) {
