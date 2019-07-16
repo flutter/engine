@@ -312,7 +312,8 @@ FlutterEngineResult FlutterEngineRun(size_t version,
                                      const FlutterRendererConfig* config,
                                      const FlutterProjectArgs* args,
                                      void* user_data,
-                                     FlutterEngine* engine_out) {
+                                     FLUTTER_EMBEDDING_API(FlutterEngine) *
+                                         engine_out) {
   // Step 0: Figure out arguments for shell creation.
   if (version != FLUTTER_ENGINE_VERSION) {
     return LOG_EMBEDDER_ERROR(kInvalidLibraryVersion);
@@ -647,11 +648,13 @@ FlutterEngineResult FlutterEngineRun(size_t version,
   }
 
   // Finally! Release the ownership of the embedder engine to the caller.
-  *engine_out = reinterpret_cast<FlutterEngine>(embedder_engine.release());
+  *engine_out = reinterpret_cast<FLUTTER_EMBEDDING_API(FlutterEngine)>(
+      embedder_engine.release());
   return kSuccess;
 }
 
-FlutterEngineResult FlutterEngineShutdown(FlutterEngine engine) {
+FlutterEngineResult FlutterEngineShutdown(FLUTTER_EMBEDDING_API(FlutterEngine)
+                                              engine) {
   if (engine == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
@@ -662,7 +665,7 @@ FlutterEngineResult FlutterEngineShutdown(FlutterEngine engine) {
 }
 
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
-    FlutterEngine engine,
+    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
     const FlutterWindowMetricsEvent* flutter_metrics) {
   if (engine == nullptr || flutter_metrics == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
@@ -749,7 +752,7 @@ inline int64_t PointerDataButtonsForLegacyEvent(
 }
 
 FlutterEngineResult FlutterEngineSendPointerEvent(
-    FlutterEngine engine,
+    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
     const FlutterPointerEvent* pointers,
     size_t events_count) {
   if (engine == nullptr || pointers == nullptr || events_count == 0) {
@@ -808,7 +811,7 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
 }
 
 FlutterEngineResult FlutterEngineSendPlatformMessage(
-    FlutterEngine engine,
+    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
     const FlutterPlatformMessage* flutter_message) {
   if (engine == nullptr || flutter_message == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
@@ -841,7 +844,7 @@ FlutterEngineResult FlutterEngineSendPlatformMessage(
 }
 
 FlutterEngineResult FlutterPlatformMessageCreateResponseHandle(
-    FlutterEngine engine,
+    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
     FlutterDataCallback data_callback,
     void* user_data,
     FlutterPlatformMessageResponseHandle** response_out) {
@@ -872,7 +875,7 @@ FlutterEngineResult FlutterPlatformMessageCreateResponseHandle(
 }
 
 FlutterEngineResult FlutterPlatformMessageReleaseResponseHandle(
-    FlutterEngine engine,
+    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
     FlutterPlatformMessageResponseHandle* response) {
   if (engine == nullptr || response == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
@@ -882,7 +885,7 @@ FlutterEngineResult FlutterPlatformMessageReleaseResponseHandle(
 }
 
 FlutterEngineResult FlutterEngineSendPlatformMessageResponse(
-    FlutterEngine engine,
+    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
     const FlutterPlatformMessageResponseHandle* handle,
     const uint8_t* data,
     size_t data_length) {
@@ -912,7 +915,7 @@ FlutterEngineResult __FlutterEngineFlushPendingTasksNow() {
 }
 
 FlutterEngineResult FlutterEngineRegisterExternalTexture(
-    FlutterEngine engine,
+    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
     int64_t texture_identifier) {
   if (engine == nullptr || texture_identifier == 0) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
@@ -925,7 +928,7 @@ FlutterEngineResult FlutterEngineRegisterExternalTexture(
 }
 
 FlutterEngineResult FlutterEngineUnregisterExternalTexture(
-    FlutterEngine engine,
+    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
     int64_t texture_identifier) {
   if (engine == nullptr || texture_identifier == 0) {
     return kInvalidArguments;
@@ -940,7 +943,7 @@ FlutterEngineResult FlutterEngineUnregisterExternalTexture(
 }
 
 FlutterEngineResult FlutterEngineMarkExternalTextureFrameAvailable(
-    FlutterEngine engine,
+    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
     int64_t texture_identifier) {
   if (engine == nullptr || texture_identifier == 0) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
@@ -952,8 +955,9 @@ FlutterEngineResult FlutterEngineMarkExternalTextureFrameAvailable(
   return kSuccess;
 }
 
-FlutterEngineResult FlutterEngineUpdateSemanticsEnabled(FlutterEngine engine,
-                                                        bool enabled) {
+FlutterEngineResult FlutterEngineUpdateSemanticsEnabled(
+    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    bool enabled) {
   if (engine == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
@@ -965,7 +969,7 @@ FlutterEngineResult FlutterEngineUpdateSemanticsEnabled(FlutterEngine engine,
 }
 
 FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
-    FlutterEngine engine,
+    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
     FlutterAccessibilityFeature flags) {
   if (engine == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
@@ -978,7 +982,7 @@ FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
 }
 
 FlutterEngineResult FlutterEngineDispatchSemanticsAction(
-    FlutterEngine engine,
+    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
     uint64_t id,
     FlutterSemanticsAction action,
     const uint8_t* data,
@@ -996,7 +1000,8 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
   return kSuccess;
 }
 
-FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
+FlutterEngineResult FlutterEngineOnVsync(FLUTTER_EMBEDDING_API(FlutterEngine)
+                                             engine,
                                          intptr_t baton,
                                          uint64_t frame_start_time_nanos,
                                          uint64_t frame_target_time_nanos) {
@@ -1032,9 +1037,10 @@ void FlutterEngineTraceEventInstant(const char* name) {
   fml::tracing::TraceEventInstant0("flutter", name);
 }
 
-FlutterEngineResult FlutterEnginePostRenderThreadTask(FlutterEngine engine,
-                                                      VoidCallback callback,
-                                                      void* baton) {
+FlutterEngineResult FlutterEnginePostRenderThreadTask(
+    FLUTTER_EMBEDDING_API(FlutterEngine) engine,
+    VoidCallback callback,
+    void* baton) {
   if (engine == nullptr || callback == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
@@ -1051,7 +1057,8 @@ uint64_t FlutterEngineGetCurrentTime() {
   return fml::TimePoint::Now().ToEpochDelta().ToNanoseconds();
 }
 
-FlutterEngineResult FlutterEngineRunTask(FlutterEngine engine,
+FlutterEngineResult FlutterEngineRunTask(FLUTTER_EMBEDDING_API(FlutterEngine)
+                                             engine,
                                          const FlutterTask* task) {
   if (engine == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments);

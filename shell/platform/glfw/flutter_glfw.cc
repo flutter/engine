@@ -59,7 +59,7 @@ struct FlutterDesktopWindowControllerState {
       UniqueGLFWwindowPtr(nullptr, glfwDestroyWindow);
 
   // The handle to the Flutter engine instance.
-  FlutterEngine engine;
+  EmbedderFlutterEngine engine;
 
   // The window handle given to API clients.
   std::unique_ptr<FlutterDesktopWindow> window_wrapper;
@@ -113,7 +113,7 @@ struct FlutterDesktopWindow {
 // Struct for storing state of a Flutter engine instance.
 struct FlutterDesktopEngineState {
   // The handle to the Flutter engine instance.
-  FlutterEngine engine;
+  EmbedderFlutterEngine engine;
 };
 
 // State associated with the plugin registrar.
@@ -128,7 +128,7 @@ struct FlutterDesktopPluginRegistrar {
 // State associated with the messenger used to communicate with the engine.
 struct FlutterDesktopMessenger {
   // The Flutter engine this messenger sends outgoing messages to.
-  FlutterEngine engine;
+  EmbedderFlutterEngine engine;
 
   // The message dispatcher for handling incoming messages.
   flutter::IncomingMessageDispatcher* dispatcher;
@@ -493,7 +493,7 @@ static void GLFWErrorCallback(int error_code, const char* description) {
 // provided).
 //
 // Returns a caller-owned pointer to the engine.
-static FlutterEngine RunFlutterEngine(
+static EmbedderFlutterEngine RunFlutterEngine(
     GLFWwindow* window,
     const char* assets_path,
     const char* icu_data_path,
@@ -535,7 +535,7 @@ static FlutterEngine RunFlutterEngine(
   args.command_line_argv = &argv[0];
   args.platform_message_callback = GLFWOnFlutterPlatformMessage;
   args.custom_task_runners = custom_task_runners;
-  FlutterEngine engine = nullptr;
+  EmbedderFlutterEngine engine = nullptr;
   auto result =
       FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config, &args, window, &engine);
   if (result != kSuccess || engine == nullptr) {
