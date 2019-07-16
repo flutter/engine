@@ -10,6 +10,8 @@
         ],
         "services": [
             "fuchsia.device.manager.Administrator",
+            "fuchsia.accessibility.SettingsManager",
+            "fuchsia.accessibility.semantics.SemanticsManager",
             "fuchsia.crash.Analyzer",
             "fuchsia.fonts.Provider",
             "fuchsia.posix.socket.Provider",

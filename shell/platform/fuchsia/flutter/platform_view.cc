@@ -11,6 +11,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/lib/ui/compositing/scene_host.h"
 #include "flutter/lib/ui/window/pointer_data.h"
+#include "fuchsia/ui/views/cpp/fidl.h"
 #include "logging.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
@@ -78,7 +79,10 @@ void SetInterfaceErrorHandler(fidl::Binding<T>& binding, std::string name) {
 PlatformView::PlatformView(
     PlatformView::Delegate& delegate,
     std::string debug_label,
+    fuchsia::ui::views::ViewRefControl view_ref_control,
+    fuchsia::ui::views::ViewRef view_ref,
     flutter::TaskRunners task_runners,
+    std::shared_ptr<sys::ServiceDirectory> runner_services,
     fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
         parent_environment_service_provider_handle,
     fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener>
@@ -89,6 +93,8 @@ PlatformView::PlatformView(
     zx_handle_t vsync_event_handle)
     : flutter::PlatformView(delegate, std::move(task_runners)),
       debug_label_(std::move(debug_label)),
+      view_ref_control_(std::move(view_ref_control)),
+      view_ref_(std::move(view_ref)),
       session_listener_binding_(this, std::move(session_listener_request)),
       session_listener_error_callback_(
           std::move(session_listener_error_callback)),
@@ -118,10 +124,10 @@ PlatformView::PlatformView(
   // Finally! Register the native platform message handlers.
   RegisterPlatformMessageHandlers();
 
-  // TODO(SCN-975): Re-enable.  Likely that Engine should clone the ViewToken
-  // and pass the clone in here.
-  //   view_->GetToken(std::bind(&PlatformView::ConnectSemanticsProvider, this,
-  //                             std::placeholders::_1));
+  fuchsia::ui::views::ViewRef accessibility_view_ref;
+  view_ref_.Clone(&accessibility_view_ref);
+  accessibility_holder_ = FuchsiaAccessibility::Create(
+      std::move(runner_services), std::move(accessibility_view_ref));
 }
 
 PlatformView::~PlatformView() = default;
@@ -328,7 +334,8 @@ void PlatformView::OnScenicEvent(
                                  "an invalid GFX event.";
             break;
           default:
-            // We don't care about some event types, so not handling them is OK.
+            // We don't care about some event types, so not handling them is
+            // OK.
             break;
         }
         break;
@@ -347,9 +354,9 @@ void PlatformView::OnScenicEvent(
             break;
           }
           case fuchsia::ui::input::InputEvent::Tag::Invalid: {
-            FML_DCHECK(false)
-                << "Flutter PlatformView::OnScenicEvent: Got an invalid INPUT "
-                   "event.";
+            FML_DCHECK(false) << "Flutter PlatformView::OnScenicEvent: Got "
+                                 "an invalid INPUT "
+                                 "event.";
           }
         }
         break;
@@ -523,7 +530,8 @@ bool PlatformView::OnHandleKeyboardEvent(
 
 bool PlatformView::OnHandleFocusEvent(
     const fuchsia::ui::input::FocusEvent& focus) {
-  // Ensure last_text_state_ is set to make sure Flutter actually wants an IME.
+  // Ensure last_text_state_ is set to make sure Flutter actually wants an
+  // IME.
   if (focus.focused && last_text_state_ != nullptr) {
     ActivateIme();
     return true;
@@ -564,9 +572,9 @@ std::unique_ptr<flutter::VsyncWaiter> PlatformView::CreateVSyncWaiter() {
 
 // |flutter::PlatformView|
 std::unique_ptr<flutter::Surface> PlatformView::CreateRenderingSurface() {
-  // This platform does not repeatly lose and gain a surface connection. So the
-  // surface is setup once during platform view setup and and returned to the
-  // shell on the initial (and only) |NotifyCreated| call.
+  // This platform does not repeatly lose and gain a surface connection. So
+  // the surface is setup once during platform view setup and and returned to
+  // the shell on the initial (and only) |NotifyCreated| call.
   return std::move(surface_);
 }
 
@@ -592,8 +600,8 @@ void PlatformView::HandlePlatformMessage(
 void PlatformView::UpdateSemantics(
     flutter::SemanticsNodeUpdates update,
     flutter::CustomAccessibilityActionUpdates actions) {
-  // TODO(MIT-1539): Uncomment/Reimplement following code, to add A11y support.
-  // semantics_bridge_.UpdateSemantics(update);
+  // TODO(MIT-1539): Uncomment/Reimplement following code, to add A11y
+  // support. semantics_bridge_.UpdateSemantics(update);
 }
 
 // Channel handler for kAccessibilityChannel
@@ -713,8 +721,8 @@ void PlatformView::HandleFlutterTextInputChannelPlatformMessage(
         state.selection.affinity = fuchsia::ui::input::TextAffinity::UPSTREAM;
       else
         state.selection.affinity = fuchsia::ui::input::TextAffinity::DOWNSTREAM;
-      // We ignore selectionIsDirectional because that concept doesn't exist on
-      // Fuchsia.
+      // We ignore selectionIsDirectional because that concept doesn't exist
+      // on Fuchsia.
       auto composing_base = args.FindMember("composingBase");
       if (composing_base != args.MemberEnd() && composing_base->value.IsInt())
         state.composing.start = composing_base->value.GetInt();
