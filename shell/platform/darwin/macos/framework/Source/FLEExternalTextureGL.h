@@ -26,7 +26,7 @@
  */
 - (BOOL)populateTextureWithWidth:(size_t)width
                           height:(size_t)height
-                         openGLTexture:(nonnull FlutterOpenGLTexture*)openGLTexture;
+                   openGLTexture:(nonnull FlutterOpenGLTexture*)openGLTexture;
 
 /**
  * Returns the ID for the FLETexture instance.

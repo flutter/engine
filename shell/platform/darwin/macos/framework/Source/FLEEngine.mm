@@ -53,7 +53,7 @@
 - (BOOL)populateTextureWithIdentifier:(int64_t)textureID
                                 width:(size_t)width
                                height:(size_t)height
-                              openGLTexture:(FlutterOpenGLTexture*)openGLTexture;
+                        openGLTexture:(FlutterOpenGLTexture*)openGLTexture;
 
 @end
 
@@ -138,9 +138,9 @@ static bool OnAcquireExternalTexture(FLEEngine* engine,
                                      size_t height,
                                      FlutterOpenGLTexture* openGLTexture) {
   return [engine populateTextureWithIdentifier:texture_identifier
-                                             width:width
-                                            height:height
-                                           openGLTexture:openGLTexture];
+                                         width:width
+                                        height:height
+                                 openGLTexture:openGLTexture];
 }
 
 #pragma mark - FLEEngine implementation
@@ -204,8 +204,7 @@ static bool OnAcquireExternalTexture(FLEEngine* engine,
       .open_gl.present = (BoolCallback)OnPresent,
       .open_gl.fbo_callback = (UIntCallback)OnFBO,
       .open_gl.make_resource_current = (BoolCallback)OnMakeResourceCurrent,
-      .open_gl.gl_external_texture_frame_callback =
-            (TextureFrameCallback)OnAcquireExternalTexture,
+      .open_gl.gl_external_texture_frame_callback = (TextureFrameCallback)OnAcquireExternalTexture,
   };
 
   // TODO(stuartmorgan): Move internal channel registration from FLEViewController to here.
@@ -390,8 +389,10 @@ static bool OnAcquireExternalTexture(FLEEngine* engine,
 - (BOOL)populateTextureWithIdentifier:(int64_t)textureID
                                 width:(size_t)width
                                height:(size_t)height
-                              openGLTexture:(FlutterOpenGLTexture*)openGLTexture {
-  return [_textures[@(textureID)] populateTextureWithWidth:width height:height openGLTexture:openGLTexture];
+                        openGLTexture:(FlutterOpenGLTexture*)openGLTexture {
+  return [_textures[@(textureID)] populateTextureWithWidth:width
+                                                    height:height
+                                             openGLTexture:openGLTexture];
 }
 
 - (int64_t)registerTexture:(id<FLETexture>)texture {

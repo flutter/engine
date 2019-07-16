@@ -42,7 +42,7 @@ static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
 
 - (BOOL)populateTextureWithWidth:(size_t)width
                           height:(size_t)height
-                         openGLTexture:(FlutterOpenGLTexture*)openGLTexture {
+                   openGLTexture:(FlutterOpenGLTexture*)openGLTexture {
   // Copy the pixel buffer from the FLETexture instance implemented on the user side.
   _pixelBuffer = [_texture copyPixelBuffer:width height:height];
 
