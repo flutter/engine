@@ -233,7 +233,7 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   command_line.GetOptionValue(FlagForSwitch(Switch::FlutterAssetsDir),
                               &settings.assets_path);
 
-  std::vector<std::string_view> aot_shared_library_name =
+  std::vector<fml::StringView> aot_shared_library_name =
       command_line.GetOptionValues(FlagForSwitch(Switch::AotSharedLibraryName));
 
   std::string snapshot_asset_path;
@@ -258,8 +258,8 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       &isolate_snapshot_instr_filename);
 
   if (aot_shared_library_name.size() > 0) {
-    for (std::string_view name : aot_shared_library_name) {
-      settings.application_library_path.emplace_back(name);
+    for (fml::StringView name : aot_shared_library_name) {
+      settings.application_library_path.emplace_back(name.ToString());
     }
   } else if (snapshot_asset_path.size() > 0) {
     settings.vm_snapshot_data_path =
