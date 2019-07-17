@@ -254,11 +254,6 @@ public class FlutterActivity extends Activity
     }
   }
 
-  // Used to cover the Activity until the 1st frame is rendered so as to
-  // avoid a brief black flicker from a SurfaceView version of FlutterView.
-  @Nullable
-  private View coverView;
-
   // Delegate that runs all lifecycle and OS hook logic that is common between
   // FlutterActivity and FlutterFragment. See the FlutterActivityAndFragmentDelegate
   // implementation for details about why it exists.
