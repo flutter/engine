@@ -115,10 +115,9 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 /**
  * Calls all plugins registered for `UNUserNotificationCenterDelegate` callbacks.
  */
-- (void)userNotificationCenter:(UNUserNotificationCenter *)center
-    didReceiveNotificationResponse:(UNNotificationResponse *)response
-             withCompletionHandler:(void (^)(void))completionHandler
-    API_AVAILABLE(ios(10)) {
+- (void)userNotificationCenter:(UNUserNotificationCenter*)center
+    didReceiveNotificationResponse:(UNNotificationResponse*)response
+             withCompletionHandler:(void (^)(void))completionHandler API_AVAILABLE(ios(10)) {
   if (@available(iOS 10.0, *)) {
     [_lifeCycleDelegate userNotificationCenter:center
                 didReceiveNotificationResponse:response
