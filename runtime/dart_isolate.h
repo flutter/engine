@@ -165,6 +165,11 @@ class DartIsolate : public UIDartState {
       std::shared_ptr<DartIsolate>* embedder_isolate,
       char** error);
 
+  // |Dart_IsolateInitializeCallback|
+  static bool DartIsolateInitializeCallback(
+    void** child_callback_data,
+    char** error);
+
   static Dart_Isolate DartCreateAndStartServiceIsolate(
       const char* package_root,
       const char* package_config,
@@ -180,6 +185,12 @@ class DartIsolate : public UIDartState {
       const char* package_config,
       Dart_IsolateFlags* flags,
       std::shared_ptr<DartIsolate>* parent_embedder_isolate,
+      bool is_root_isolate,
+      char** error);
+
+  static bool InitializeIsolate(
+      std::shared_ptr<DartIsolate> embedder_isolate,
+      Dart_Isolate& isolate,
       bool is_root_isolate,
       char** error);
 

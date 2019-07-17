@@ -162,12 +162,6 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate, bool is_root_isolate) {
     return false;
   }
 
-  auto* isolate_data = static_cast<std::shared_ptr<DartIsolate>*>(
-      Dart_IsolateGroupData(dart_isolate));
-  if (isolate_data->get() != this) {
-    return false;
-  }
-
   // After this point, isolate scopes can be safely used.
   SetIsolate(dart_isolate);
 
@@ -672,6 +666,53 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
       .first;
 }
 
+// |Dart_IsolateInitializeCallback|
+bool DartIsolate::DartIsolateInitializeCallback(
+    void** child_callback_data,
+    char** error) {
+  Dart_Isolate isolate = Dart_CurrentIsolate();
+  if (isolate == nullptr) {
+    *error = strdup("Isolate should be available in initialize callback.");
+    FML_DLOG(ERROR) << *error;
+    return false;
+  }
+
+  auto* raw_embedder_isolate = reinterpret_cast<std::shared_ptr<DartIsolate>*>(
+      Dart_CurrentIsolateGroupData());
+
+  TaskRunners null_task_runners((*raw_embedder_isolate)->GetAdvisoryScriptURI(),
+      /* platform= */ nullptr, /* gpu= */ nullptr, /* ui= */ nullptr,
+      /* io= */ nullptr);
+
+  std::unique_ptr<std::shared_ptr<DartIsolate>> embedder_isolate =
+      std::make_unique<std::shared_ptr<DartIsolate>>(
+          std::make_shared<DartIsolate>(
+              (*raw_embedder_isolate)->GetSettings(),         // settings
+              (*raw_embedder_isolate)->GetIsolateSnapshot(),  // isolate_snapshot
+              (*raw_embedder_isolate)->GetSharedSnapshot(),   // shared_snapshot
+              null_task_runners,                              // task_runners
+              fml::WeakPtr<IOManager>{},                      // io_manager
+              fml::WeakPtr<ImageDecoder>{},                   // io_manager
+              (*raw_embedder_isolate)->GetAdvisoryScriptURI(),         // advisory_script_uri
+              (*raw_embedder_isolate)->GetAdvisoryScriptEntrypoint(),  // advisory_script_entrypoint
+              (*raw_embedder_isolate)->child_isolate_preparer_,    // preparer
+              (*raw_embedder_isolate)->isolate_create_callback_,   // on create
+              (*raw_embedder_isolate)->isolate_shutdown_callback_  // on shutdown
+          )
+      );
+
+  // root isolate should have been created via CreateRootIsolate and CreateDartVMAndEmbedderObjectPair
+  if (!InitializeIsolate(*embedder_isolate, isolate, /*is_root_isolate=*/ false,
+      error)) {
+    return false;
+  }
+
+  *child_callback_data = embedder_isolate.release();
+
+  Dart_EnterIsolate(isolate);
+  return true;
+}
+
 std::pair<Dart_Isolate, std::weak_ptr<DartIsolate>>
 DartIsolate::CreateDartVMAndEmbedderObjectPair(
     const char* advisory_script_uri,
@@ -736,38 +777,57 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
     return {nullptr, {}};
   }
 
-  if (!(*embedder_isolate)->Initialize(isolate, is_root_isolate)) {
-    *error = strdup("Embedder could not initialize the Dart isolate.");
-    FML_DLOG(ERROR) << *error;
+  if (!InitializeIsolate(*embedder_isolate, isolate, is_root_isolate, error)) {
     return {nullptr, {}};
   }
 
-  if (!(*embedder_isolate)->LoadLibraries(is_root_isolate)) {
-    *error =
-        strdup("Embedder could not load libraries in the new Dart isolate.");
+  auto* isolate_data = static_cast<std::shared_ptr<DartIsolate>*>(
+      Dart_IsolateGroupData(isolate));
+  if (isolate_data->get() != embedder_isolate->get()) {
+    *error = strdup("Unexpected isolate data during initialization.");
     FML_DLOG(ERROR) << *error;
     return {nullptr, {}};
   }
 
   auto weak_embedder_isolate = (*embedder_isolate)->GetWeakIsolatePtr();
 
-  // Root isolates will be setup by the engine and the service isolate (which is
-  // also a root isolate) by the utility routines in the VM. However, secondary
-  // isolates will be run by the VM if they are marked as runnable.
-  if (!is_root_isolate) {
-    FML_DCHECK((*embedder_isolate)->child_isolate_preparer_);
-    if (!(*embedder_isolate)
-             ->child_isolate_preparer_((*embedder_isolate).get())) {
-      *error = strdup("Could not prepare the child isolate to run.");
-      FML_DLOG(ERROR) << *error;
-      return {nullptr, {}};
-    }
-  }
-
   // The ownership of the embedder object is controlled by the Dart VM. So the
   // only reference returned to the caller is weak.
   embedder_isolate.release();
   return {isolate, weak_embedder_isolate};
+}
+
+bool DartIsolate::InitializeIsolate(
+    std::shared_ptr<DartIsolate> embedder_isolate,
+    Dart_Isolate& isolate,
+    bool is_root_isolate,
+    char** error) {
+  if (!embedder_isolate->Initialize(isolate, is_root_isolate)) {
+    *error = strdup("Embedder could not initialize the Dart isolate.");
+    FML_DLOG(ERROR) << *error;
+    return false;
+  }
+
+  if (!embedder_isolate->LoadLibraries(is_root_isolate)) {
+    *error =
+        strdup("Embedder could not load libraries in the new Dart isolate.");
+    FML_DLOG(ERROR) << *error;
+    return false;
+  }
+
+  // Root isolates will be setup by the engine and the service isolate (which is
+  // also a root isolate) by the utility routines in the VM. However, secondary
+  // isolates will be run by the VM if they are marked as runnable.
+  if (!is_root_isolate) {
+    FML_DCHECK(embedder_isolate->child_isolate_preparer_);
+    if (!embedder_isolate->child_isolate_preparer_(embedder_isolate.get())) {
+      *error = strdup("Could not prepare the child isolate to run.");
+      FML_DLOG(ERROR) << *error;
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // |Dart_IsolateShutdownCallback|
