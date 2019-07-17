@@ -345,8 +345,10 @@ def parse_args(args):
 def main(argv):
   args = parse_args(argv)
 
+  exe = '.exe' if sys.platform.startswith(('cygwin', 'win')) else ''
+
   command = [
-    '%s/buildtools/gn' % (SRC_ROOT),
+    '%s/buildtools/gn%s' % (SRC_ROOT, exe),
     'gen',
     '--check',
   ]
