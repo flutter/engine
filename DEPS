@@ -468,14 +468,13 @@ deps = {
      'dep_type': 'cipd',
    },
 
-  'src/buildtools/{host_os}-x64': {
+  'src/buildtools': {
     'packages': [
       {
         'package': 'gn/gn/${{platform}}',
         'version': 'git_revision:bdb0fd02324b120cacde634a9235405061c8ea06'
       },
     ],
-    'condition': 'host_os == "mac" or host_os == "linux"',
     'dep_type': 'cipd',
   },
 
