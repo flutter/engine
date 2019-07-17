@@ -1,10 +1,10 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/flow/texture.h"
 
-namespace flow {
+namespace flutter {
 
 TextureRegistry::TextureRegistry() = default;
 
@@ -39,4 +39,4 @@ Texture::Texture(int64_t id) : id_(id) {}
 
 Texture::~Texture() = default;
 
-}  // namespace flow
+}  // namespace flutter

@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,17 +6,21 @@
 #define FLUTTER_RUNTIME_RUNTIME_CONTROLLER_H_
 
 #include <memory>
+#include <vector>
 
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/layers/layer_tree.h"
-#include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/fml/macros.h"
+#include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/text/font_collection.h"
+#include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/window.h"
 #include "flutter/runtime/dart_vm.h"
-#include "lib/fxl/macros.h"
+#include "rapidjson/document.h"
+#include "rapidjson/stringbuffer.h"
 
-namespace blink {
+namespace flutter {
 class Scene;
 class RuntimeDelegate;
 class View;
@@ -26,34 +30,42 @@ class RuntimeController final : public WindowClient {
  public:
   RuntimeController(RuntimeDelegate& client,
                     DartVM* vm,
-                    fxl::RefPtr<DartSnapshot> isolate_snapshot,
-                    fxl::RefPtr<DartSnapshot> shared_snapshot,
+                    fml::RefPtr<const DartSnapshot> isolate_snapshot,
+                    fml::RefPtr<const DartSnapshot> shared_snapshot,
                     TaskRunners task_runners,
-                    fml::WeakPtr<GrContext> resource_context,
-                    fxl::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+                    fml::WeakPtr<IOManager> io_manager,
+                    fml::WeakPtr<ImageDecoder> iamge_decoder,
                     std::string advisory_script_uri,
-                    std::string advisory_script_entrypoint);
+                    std::string advisory_script_entrypoint,
+                    std::function<void(int64_t)> idle_notification_callback,
+                    fml::closure isolate_create_callback,
+                    fml::closure isolate_shutdown_callback);
 
-  ~RuntimeController();
+  ~RuntimeController() override;
 
   std::unique_ptr<RuntimeController> Clone() const;
 
   bool SetViewportMetrics(const ViewportMetrics& metrics);
 
-  bool SetLocale(const std::string& language_code,
-                 const std::string& country_code);
+  bool SetLocales(const std::vector<std::string>& locale_data);
 
   bool SetUserSettingsData(const std::string& data);
 
+  bool SetLifecycleState(const std::string& data);
+
   bool SetSemanticsEnabled(bool enabled);
 
-  bool BeginFrame(fxl::TimePoint frame_time);
+  bool SetAccessibilityFeatures(int32_t flags);
+
+  bool BeginFrame(fml::TimePoint frame_time);
+
+  bool ReportTimings(std::vector<int64_t> timings);
 
   bool NotifyIdle(int64_t deadline);
 
   bool IsRootIsolateRunning() const;
 
-  bool DispatchPlatformMessage(fxl::RefPtr<PlatformMessage> message);
+  bool DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
 
   bool DispatchPointerDataPacket(const PointerDataPacket& packet);
 
@@ -69,68 +81,110 @@ class RuntimeController final : public WindowClient {
 
   tonic::DartErrorHandleType GetLastError();
 
-  fml::WeakPtr<DartIsolate> GetRootIsolate();
+  std::weak_ptr<DartIsolate> GetRootIsolate();
 
   std::pair<bool, uint32_t> GetRootIsolateReturnCode();
 
  private:
+  struct Locale {
+    Locale(std::string language_code_,
+           std::string country_code_,
+           std::string script_code_,
+           std::string variant_code_);
+
+    ~Locale();
+
+    std::string language_code;
+    std::string country_code;
+    std::string script_code;
+    std::string variant_code;
+  };
+
+  // Stores data about the window to be used at startup
+  // as well as on hot restarts. Data kept here will persist
+  // after hot restart.
   struct WindowData {
+    WindowData();
+
+    WindowData(const WindowData& other);
+
+    ~WindowData();
+
     ViewportMetrics viewport_metrics;
     std::string language_code;
     std::string country_code;
+    std::string script_code;
+    std::string variant_code;
+    std::vector<std::string> locale_data;
     std::string user_settings_data = "{}";
+    std::string lifecycle_state;
     bool semantics_enabled = false;
+    bool assistive_technology_enabled = false;
+    int32_t accessibility_feature_flags_ = 0;
   };
 
   RuntimeDelegate& client_;
   DartVM* const vm_;
-  fxl::RefPtr<DartSnapshot> isolate_snapshot_;
-  fxl::RefPtr<DartSnapshot> shared_snapshot_;
+  fml::RefPtr<const DartSnapshot> isolate_snapshot_;
+  fml::RefPtr<const DartSnapshot> shared_snapshot_;
   TaskRunners task_runners_;
-  fml::WeakPtr<GrContext> resource_context_;
-  fxl::RefPtr<flow::SkiaUnrefQueue> unref_queue_;
+  fml::WeakPtr<IOManager> io_manager_;
+  fml::WeakPtr<ImageDecoder> image_decoder_;
   std::string advisory_script_uri_;
   std::string advisory_script_entrypoint_;
+  std::function<void(int64_t)> idle_notification_callback_;
   WindowData window_data_;
-  fml::WeakPtr<DartIsolate> root_isolate_;
+  std::weak_ptr<DartIsolate> root_isolate_;
   std::pair<bool, uint32_t> root_isolate_return_code_ = {false, 0};
+  const fml::closure isolate_create_callback_;
+  const fml::closure isolate_shutdown_callback_;
 
   RuntimeController(RuntimeDelegate& client,
                     DartVM* vm,
-                    fxl::RefPtr<DartSnapshot> isolate_snapshot,
-                    fxl::RefPtr<DartSnapshot> shared_snapshot,
+                    fml::RefPtr<const DartSnapshot> isolate_snapshot,
+                    fml::RefPtr<const DartSnapshot> shared_snapshot,
                     TaskRunners task_runners,
-                    fml::WeakPtr<GrContext> resource_context,
-                    fxl::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+                    fml::WeakPtr<IOManager> io_manager,
+                    fml::WeakPtr<ImageDecoder> image_decoder,
                     std::string advisory_script_uri,
                     std::string advisory_script_entrypoint,
-                    WindowData data);
+                    std::function<void(int64_t)> idle_notification_callback,
+                    WindowData data,
+                    fml::closure isolate_create_callback,
+                    fml::closure isolate_shutdown_callback);
 
   Window* GetWindowIfAvailable();
 
   bool FlushRuntimeStateToIsolate();
 
-  // |blink::WindowClient|
+  // |WindowClient|
   std::string DefaultRouteName() override;
 
-  // |blink::WindowClient|
+  // |WindowClient|
   void ScheduleFrame() override;
 
-  // |blink::WindowClient|
+  // |WindowClient|
   void Render(Scene* scene) override;
 
-  // |blink::WindowClient|
+  // |WindowClient|
   void UpdateSemantics(SemanticsUpdate* update) override;
 
-  // |blink::WindowClient|
-  void HandlePlatformMessage(fxl::RefPtr<PlatformMessage> message) override;
+  // |WindowClient|
+  void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) override;
 
-  // |blink::WindowClient|
+  // |WindowClient|
   FontCollection& GetFontCollection() override;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(RuntimeController);
+  // |WindowClient|
+  void UpdateIsolateDescription(const std::string isolate_name,
+                                int64_t isolate_port) override;
+
+  // |WindowClient|
+  void SetNeedsReportTimings(bool value) override;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(RuntimeController);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_RUNTIME_RUNTIME_CONTROLLER_H_

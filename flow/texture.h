@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,10 +7,11 @@
 
 #include <map>
 
-#include "lib/fxl/synchronization/waitable_event.h"
+#include "flutter/fml/macros.h"
+#include "flutter/fml/synchronization/waitable_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
-namespace flow {
+namespace flutter {
 
 class Texture {
  protected:
@@ -21,7 +22,10 @@ class Texture {
   virtual ~Texture();
 
   // Called from GPU thread.
-  virtual void Paint(SkCanvas& canvas, const SkRect& bounds) = 0;
+  virtual void Paint(SkCanvas& canvas,
+                     const SkRect& bounds,
+                     bool freeze,
+                     GrContext* context) = 0;
 
   // Called from GPU thread.
   virtual void OnGrContextCreated() = 0;
@@ -37,7 +41,7 @@ class Texture {
  private:
   int64_t id_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(Texture);
+  FML_DISALLOW_COPY_AND_ASSIGN(Texture);
 };
 
 class TextureRegistry {
@@ -63,9 +67,9 @@ class TextureRegistry {
  private:
   std::map<int64_t, std::shared_ptr<Texture>> mapping_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(TextureRegistry);
+  FML_DISALLOW_COPY_AND_ASSIGN(TextureRegistry);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_TEXTURE_H_

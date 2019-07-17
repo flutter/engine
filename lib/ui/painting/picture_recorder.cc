@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,12 +6,12 @@
 
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/painting/picture.h"
-#include "lib/tonic/converter/dart_converter.h"
-#include "lib/tonic/dart_args.h"
-#include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/dart_library_natives.h"
+#include "third_party/tonic/converter/dart_converter.h"
+#include "third_party/tonic/dart_args.h"
+#include "third_party/tonic/dart_binding_macros.h"
+#include "third_party/tonic/dart_library_natives.h"
 
-namespace blink {
+namespace flutter {
 
 static void PictureRecorder_constructor(Dart_NativeArguments args) {
   DartCallConstructor(&PictureRecorder::Create, args);
@@ -31,8 +31,8 @@ void PictureRecorder::RegisterNatives(tonic::DartLibraryNatives* natives) {
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-fxl::RefPtr<PictureRecorder> PictureRecorder::Create() {
-  return fxl::MakeRefCounted<PictureRecorder>();
+fml::RefPtr<PictureRecorder> PictureRecorder::Create() {
+  return fml::MakeRefCounted<PictureRecorder>();
 }
 
 PictureRecorder::PictureRecorder() {}
@@ -47,11 +47,11 @@ SkCanvas* PictureRecorder::BeginRecording(SkRect bounds) {
   return picture_recorder_.beginRecording(bounds, &rtree_factory_);
 }
 
-fxl::RefPtr<Picture> PictureRecorder::endRecording() {
+fml::RefPtr<Picture> PictureRecorder::endRecording() {
   if (!isRecording())
     return nullptr;
 
-  fxl::RefPtr<Picture> picture = Picture::Create(UIDartState::CreateGPUObject(
+  fml::RefPtr<Picture> picture = Picture::Create(UIDartState::CreateGPUObject(
       picture_recorder_.finishRecordingAsPicture()));
   canvas_->Clear();
   canvas_->ClearDartWrapper();
@@ -60,4 +60,4 @@ fxl::RefPtr<Picture> PictureRecorder::endRecording() {
   return picture;
 }
 
-}  // namespace blink
+}  // namespace flutter

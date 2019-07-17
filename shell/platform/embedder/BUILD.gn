@@ -1,14 +1,17 @@
-# Copyright 2017 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("$flutter_root/testing/testing.gni")
+import("$flutter_root/common/config.gni")
 import("$flutter_root/shell/gpu/gpu.gni")
+import("$flutter_root/shell/platform/embedder/embedder.gni")
+import("$flutter_root/testing/testing.gni")
 
 shell_gpu_configuration("embedder_gpu_configuration") {
-  enable_software = false
+  enable_software = true
   enable_vulkan = false
   enable_gl = true
+  enable_metal = false
 }
 
 source_set("embedder") {
@@ -17,50 +20,78 @@ source_set("embedder") {
     "embedder.h",
     "embedder_engine.cc",
     "embedder_engine.h",
+    "embedder_external_texture_gl.cc",
+    "embedder_external_texture_gl.h",
     "embedder_include.c",
+    "embedder_platform_message_response.cc",
+    "embedder_platform_message_response.h",
+    "embedder_safe_access.h",
+    "embedder_surface.cc",
+    "embedder_surface.h",
+    "embedder_surface_gl.cc",
+    "embedder_surface_gl.h",
+    "embedder_surface_software.cc",
+    "embedder_surface_software.h",
+    "embedder_task_runner.cc",
+    "embedder_task_runner.h",
+    "embedder_thread_host.cc",
+    "embedder_thread_host.h",
     "platform_view_embedder.cc",
     "platform_view_embedder.h",
+    "vsync_waiter_embedder.cc",
+    "vsync_waiter_embedder.h",
   ]
 
   deps = [
     ":embedder_gpu_configuration",
     "$flutter_root/assets",
     "$flutter_root/common",
+    "$flutter_root/flow",
     "$flutter_root/fml",
-    "$flutter_root/lib/snapshot",
+    "$flutter_root/lib/ui",
+    "$flutter_root/runtime:libdart",
     "$flutter_root/shell/common",
-    "//garnet/public/lib/fxl",
-    "//third_party/dart/runtime:libdart_jit",
-    "//third_party/dart/runtime/bin:embedded_dart_io",
+    "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/skia",
-    "//third_party/skia:gpu",
-    "//topaz/lib/tonic",
+    "//third_party/tonic",
   ]
 
   public_configs = [ "$flutter_root:config" ]
 }
 
 test_fixtures("fixtures") {
-  fixtures = [ "fixtures/simple_main.dart" ]
+  dart_main = "fixtures/main.dart"
 }
 
-executable("embedder_unittests") {
-  testonly = true
+if (current_toolchain == host_toolchain) {
+  executable("embedder_unittests") {
+    testonly = true
 
-  include_dirs = [ "." ]
+    configs += [ "$flutter_root:export_dynamic_symbols" ]
 
-  sources = [
-    "tests/embedder_unittests.cc",
-  ]
+    include_dirs = [ "." ]
 
-  deps = [
-    ":embedder",
-    ":fixtures",
-    "$flutter_root/testing",
-  ]
+    sources = [
+      "tests/embedder_a11y_unittests.cc",
+      "tests/embedder_config_builder.cc",
+      "tests/embedder_config_builder.h",
+      "tests/embedder_context.cc",
+      "tests/embedder_context.h",
+      "tests/embedder_test.cc",
+      "tests/embedder_test.h",
+      "tests/embedder_unittests.cc",
+    ]
 
-  if (is_linux) {
-    ldflags = [ "-rdynamic" ]
+    deps = [
+      ":embedder",
+      ":fixtures",
+      "$flutter_root/lib/ui",
+      "$flutter_root/runtime",
+      "$flutter_root/testing:dart",
+      "$flutter_root/testing:opengl",
+      "//third_party/skia",
+      "//third_party/tonic",
+    ]
   }
 }
 
@@ -86,7 +117,7 @@ copy("copy_headers") {
   ]
 }
 
-if (is_mac) {
+if (is_mac && !embedder_for_target) {
   _flutter_embedder_framework_dir = "$root_out_dir/FlutterEmbedder.framework"
 
   copy("copy_dylib") {
@@ -115,20 +146,25 @@ if (is_mac) {
   copy("copy_icu") {
     visibility = [ ":*" ]
     sources = [
-      "//third_party/icu/common/icudtl.dat",
+      "//third_party/icu/flutter/icudtl.dat",
     ]
     outputs = [
       "$_flutter_embedder_framework_dir/Versions/A/Resources/icudtl.dat",
     ]
   }
 
-  copy("copy_info_plist") {
+  action("copy_info_plist") {
+    script = "$flutter_root/build/copy_info_plist.py"
     visibility = [ ":*" ]
     sources = [
       "assets/EmbedderInfo.plist",
     ]
     outputs = [
       "$_flutter_embedder_framework_dir/Versions/A/Resources/Info.plist",
+    ]
+    args = [
+      rebase_path(sources[0]),
+      rebase_path(outputs[0]),
     ]
   }
 
@@ -206,14 +242,21 @@ if (is_mac) {
 }
 
 group("flutter_engine") {
-  # All platforms require the embedder dylib and headers.
-  deps = [
-    ":copy_headers",
-    ":flutter_engine_library",
-  ]
+  deps = []
 
-  # For the Mac, the dylib is packaged in a framework with the appropriate headers.
-  if (is_mac) {
-    deps += [ ":flutter_embedder_framework" ]
+  build_embedder_api =
+      current_toolchain == host_toolchain || embedder_for_target
+
+  if (build_embedder_api) {
+    # All platforms require the embedder dylib and headers.
+    deps += [
+      ":copy_headers",
+      ":flutter_engine_library",
+    ]
+
+    # For the Mac, the dylib is packaged in a framework with the appropriate headers.
+    if (is_mac && !embedder_for_target) {
+      deps += [ ":flutter_embedder_framework" ]
+    }
   }
 }

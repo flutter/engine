@@ -1,11 +1,14 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 package io.flutter.plugin.common;
 
+import android.support.annotation.Nullable;
 import java.util.Map;
 import org.json.JSONObject;
+
+import io.flutter.BuildConfig;
 
 /**
  * Command object representing a method call on a {@link MethodChannel}.
@@ -32,7 +35,9 @@ public final class MethodCall {
      * @param arguments the arguments, a value supported by the channel's message codec.
      */
     public MethodCall(String method, Object arguments) {
-        assert method != null;
+        if (BuildConfig.DEBUG && method == null) {
+            throw new AssertionError("Parameter method must not be null.");
+        }
         this.method = method;
         this.arguments = arguments;
     }
@@ -61,6 +66,7 @@ public final class MethodCall {
      * {@link JSONObject}.
      */
     @SuppressWarnings("unchecked")
+    @Nullable
     public <T> T argument(String key) {
         if (arguments == null) {
             return null;

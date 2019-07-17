@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -18,13 +18,13 @@
 #include <string>
 
 #include "flutter/fml/message_loop.h"
-#include "lib/fxl/synchronization/waitable_event.h"
+#include "flutter/fml/synchronization/waitable_event.h"
 
 namespace fml {
 
 Thread::Thread(const std::string& name) : joined_(false) {
-  fxl::AutoResetWaitableEvent latch;
-  fxl::RefPtr<fml::TaskRunner> runner;
+  fml::AutoResetWaitableEvent latch;
+  fml::RefPtr<fml::TaskRunner> runner;
   thread_ = std::make_unique<std::thread>([&latch, &runner, name]() -> void {
     SetCurrentThreadName(name);
     fml::MessageLoop::EnsureInitializedForCurrentThread();
@@ -41,7 +41,7 @@ Thread::~Thread() {
   Join();
 }
 
-fxl::RefPtr<fml::TaskRunner> Thread::GetTaskRunner() const {
+fml::RefPtr<fml::TaskRunner> Thread::GetTaskRunner() const {
   return task_runner_;
 }
 
@@ -86,7 +86,7 @@ void Thread::SetCurrentThreadName(const std::string& name) {
   } __except (EXCEPTION_CONTINUE_EXECUTION) {
   }
 #else
-  FXL_DLOG(INFO) << "Could not set the thread name to '" << name
+  FML_DLOG(INFO) << "Could not set the thread name to '" << name
                  << "' on this platform.";
 #endif
 }

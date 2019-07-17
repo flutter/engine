@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,14 +6,14 @@
 
 #include <utility>
 
+#include "flutter/fml/logging.h"
 #include "flutter/shell/gpu/gpu_surface_vulkan.h"
 #include "flutter/vulkan/vulkan_native_surface_android.h"
-#include "lib/fxl/logging.h"
 
-namespace shell {
+namespace flutter {
 
 AndroidSurfaceVulkan::AndroidSurfaceVulkan()
-    : proc_table_(fxl::MakeRefCounted<vulkan::VulkanProcTable>()) {}
+    : proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {}
 
 AndroidSurfaceVulkan::~AndroidSurfaceVulkan() = default;
 
@@ -21,12 +21,12 @@ bool AndroidSurfaceVulkan::IsValid() const {
   return proc_table_->HasAcquiredMandatoryProcAddresses();
 }
 
-// |shell::AndroidSurface|
+// |AndroidSurface|
 void AndroidSurfaceVulkan::TeardownOnScreenContext() {
   // Nothing to do.
 }
 
-// |shell::AndroidSurface|
+// |AndroidSurface|
 std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface() {
   if (!IsValid()) {
     return nullptr;
@@ -54,22 +54,28 @@ std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface() {
   return gpu_surface;
 }
 
-// |shell::AndroidSurface|
+// |AndroidSurface|
 bool AndroidSurfaceVulkan::OnScreenSurfaceResize(const SkISize& size) const {
   return true;
 }
 
-// |shell::AndroidSurface|
+// |AndroidSurface|
 bool AndroidSurfaceVulkan::ResourceContextMakeCurrent() {
-  FXL_DLOG(ERROR) << "The vulkan backend does not support resource contexts.";
+  FML_DLOG(ERROR) << "The vulkan backend does not support resource contexts.";
   return false;
 }
 
-// |shell::AndroidSurface|
+// |AndroidSurface|
+bool AndroidSurfaceVulkan::ResourceContextClearCurrent() {
+  FML_DLOG(ERROR) << "The vulkan backend does not support resource contexts.";
+  return false;
+}
+
+// |AndroidSurface|
 bool AndroidSurfaceVulkan::SetNativeWindow(
-    fxl::RefPtr<AndroidNativeWindow> window) {
+    fml::RefPtr<AndroidNativeWindow> window) {
   native_window_ = std::move(window);
   return native_window_ && native_window_->IsValid();
 }
 
-}  // namespace shell
+}  // namespace flutter

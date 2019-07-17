@@ -1,13 +1,49 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/fml/trace_event.h"
 
-#include "third_party/dart/runtime/include/dart_tools_api.h"
+#include <algorithm>
+#include <atomic>
+#include <utility>
+
+#include "flutter/fml/build_config.h"
+#include "flutter/fml/logging.h"
 
 namespace fml {
 namespace tracing {
+
+size_t TraceNonce() {
+  static std::atomic_size_t gLastItem;
+  return ++gLastItem;
+}
+
+void TraceTimelineEvent(TraceArg category_group,
+                        TraceArg name,
+                        TraceIDArg identifier,
+                        Dart_Timeline_Event_Type type,
+                        const std::vector<const char*>& c_names,
+                        const std::vector<std::string>& values) {
+  const auto argument_count = std::min(c_names.size(), values.size());
+
+  std::vector<const char*> c_values;
+  c_values.resize(argument_count, nullptr);
+
+  for (size_t i = 0; i < argument_count; i++) {
+    c_values[i] = values[i].c_str();
+  }
+
+  Dart_TimelineEvent(
+      name,                                      // label
+      Dart_TimelineGetMicros(),                  // timestamp0
+      identifier,                                // timestamp1_or_async_id
+      type,                                      // event type
+      argument_count,                            // argument_count
+      const_cast<const char**>(c_names.data()),  // argument_names
+      c_values.data()                            // argument_values
+  );
+}
 
 void TraceEvent0(TraceArg category_group, TraceArg name) {
   Dart_TimelineEvent(name,                       // label
@@ -62,6 +98,34 @@ void TraceEventEnd(TraceArg name) {
                      0,                         // argument_count
                      nullptr,                   // argument_names
                      nullptr                    // argument_values
+  );
+}
+
+void TraceEventAsyncComplete(TraceArg category_group,
+                             TraceArg name,
+                             TimePoint begin,
+                             TimePoint end) {
+  auto identifier = TraceNonce();
+
+  if (begin > end) {
+    std::swap(begin, end);
+  }
+
+  Dart_TimelineEvent(name,                                   // label
+                     begin.ToEpochDelta().ToMicroseconds(),  // timestamp0
+                     identifier,                       // timestamp1_or_async_id
+                     Dart_Timeline_Event_Async_Begin,  // event type
+                     0,                                // argument_count
+                     nullptr,                          // argument_names
+                     nullptr                           // argument_values
+  );
+  Dart_TimelineEvent(name,                                 // label
+                     end.ToEpochDelta().ToMicroseconds(),  // timestamp0
+                     identifier,                     // timestamp1_or_async_id
+                     Dart_Timeline_Event_Async_End,  // event type
+                     0,                              // argument_count
+                     nullptr,                        // argument_names
+                     nullptr                         // argument_values
   );
 }
 

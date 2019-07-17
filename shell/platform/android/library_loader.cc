@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -16,16 +16,16 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
   bool result = false;
 
   // Register FlutterMain.
-  result = shell::FlutterMain::Register(env);
-  FXL_CHECK(result);
+  result = flutter::FlutterMain::Register(env);
+  FML_CHECK(result);
 
   // Register PlatformView
-  result = shell::PlatformViewAndroid::Register(env);
-  FXL_CHECK(result);
+  result = flutter::PlatformViewAndroid::Register(env);
+  FML_CHECK(result);
 
   // Register VSyncWaiter.
-  result = shell::VsyncWaiterAndroid::Register(env);
-  FXL_CHECK(result);
+  result = flutter::VsyncWaiterAndroid::Register(env);
+  FML_CHECK(result);
 
   return JNI_VERSION_1_4;
 }

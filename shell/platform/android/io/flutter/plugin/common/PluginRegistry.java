@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -117,21 +117,21 @@ public interface PluginRegistry {
         /**
          * Returns the file name for the given asset.
          * The returned file name can be used to access the asset in the APK
-         * through the {@link AssetManager} API.
+         * through the {@link android.content.res.AssetManager} API.
          *
          * @param asset the name of the asset. The name can be hierarchical
-         * @return      the filename to be used with {@link AssetManager}
+         * @return      the filename to be used with {@link android.content.res.AssetManager}
          */
         String lookupKeyForAsset(String asset);
 
         /**
          * Returns the file name for the given asset which originates from the
          * specified packageName. The returned file name can be used to access
-         * the asset in the APK through the {@link AssetManager} API.
+         * the asset in the APK through the {@link android.content.res.AssetManager} API.
          *
          * @param asset       the name of the asset. The name can be hierarchical
          * @param packageName the name of the package from which the asset originates
-         * @return            the file name to be used with {@link AssetManager}
+         * @return            the file name to be used with {@link android.content.res.AssetManager}
          */
         String lookupKeyForAsset(String asset, String packageName);
 
@@ -162,26 +162,6 @@ public interface PluginRegistry {
          * @return this {@link Registrar}.
          */
         Registrar addRequestPermissionsResultListener(RequestPermissionsResultListener listener);
-
-        /*
-         * Method addRequestPermissionResultListener(RequestPermissionResultListener listener)
-         * was made unavailable on 2018-02-28, leaving this comment as a temporary
-         * tombstone for reference. This comment will be removed on 2018-03-28
-         * (or at least four weeks after the unavailability is released).
-         *
-         * https://github.com/flutter/flutter/wiki/Changelog#typo-fixed-in-flutter-engine-android-api
-         *
-         * Adds a callback allowing the plugin to take part in handling incoming
-         * calls to {@code Activity#onRequestPermissionsResult(int, String[], int[])}
-         * or {@code android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback#onRequestPermissionsResult(int, String[], int[])}.
-         *
-         * @param listener a {@link RequestPermissionResultListener} callback.
-         * @return this {@link Registrar}.
-
-         * @deprecated on 2018-01-02 because of misspelling. This method will be made unavailable
-         * on 2018-02-06 (or at least four weeks after the deprecation is released). Use
-         * {@link #addRequestPermissionsResultListener(RequestPermissionsResultListener)} instead.
-         */
 
         /**
          * Adds a callback allowing the plugin to take part in handling incoming
@@ -230,22 +210,6 @@ public interface PluginRegistry {
          */
         boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults);
     }
-
-    /*
-     * interface RequestPermissionResultListener was made unavailable on
-     * 2018-02-28, leaving this comment as a temporary tombstone for reference.
-     * This comment will be removed on 2018-03-28 (or at least four weeks after
-     * the unavailability is released).
-     *
-     * https://github.com/flutter/flutter/wiki/Changelog#typo-fixed-in-flutter-engine-android-api
-     *
-     * Delegate interface for handling result of permissions requests on
-     * behalf of the main {@link Activity}.
-     *
-     * Deprecated on 2018-01-02 because of misspelling. This interface will be made
-     * unavailable on 2018-02-06 (or at least four weeks after the deprecation is released).
-     * Use {@link RequestPermissionsResultListener} instead.
-     */
 
     /**
      * Delegate interface for handling activity results on behalf of the main

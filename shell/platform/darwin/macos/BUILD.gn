@@ -1,0 +1,232 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+assert(is_mac)
+
+import("//build/config/mac/mac_sdk.gni")
+import("$flutter_root/common/config.gni")
+import("$flutter_root/shell/platform/darwin/common/framework_shared.gni")
+import("$flutter_root/shell/platform/glfw/config.gni")
+
+group("macos") {
+  deps = [
+    ":flutter_framework",
+  ]
+  if (build_glfw_shell) {
+    deps += [
+      ":flutter_macos_glfw",
+      "$flutter_root/shell/platform/common/cpp/client_wrapper:publish_wrapper",
+      "$flutter_root/shell/platform/glfw:publish_headers_glfw",
+      "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
+    ]
+  }
+}
+
+_flutter_framework_name = "FlutterMacOS"
+_flutter_framework_filename = "$_flutter_framework_name.framework"
+_flutter_framework_dir = "$root_out_dir/$_flutter_framework_filename"
+
+# The headers that will be copied to the framework and be accessed from outside
+# the Flutter engine source root.
+_flutter_framework_headers = [
+  "framework/Headers/FlutterMacOS.h",
+  "framework/Headers/FlutterPluginMacOS.h",
+  "framework/Headers/FlutterPluginRegistrarMacOS.h",
+  "framework/Headers/FLEDartProject.h",
+  "framework/Headers/FLEEngine.h",
+  "framework/Headers/FLEViewController.h",
+]
+
+_flutter_framework_headers_copy_dir =
+    "$_flutter_framework_dir/Versions/A/Headers"
+
+shared_library("create_flutter_framework_dylib") {
+  visibility = [ ":*" ]
+
+  output_name = "$_flutter_framework_name"
+
+  sources = [
+    "framework/Source/FLEDartProject.mm",
+    "framework/Source/FLEDartProject_Internal.h",
+    "framework/Source/FLEEngine.mm",
+    "framework/Source/FLEEngine_Internal.h",
+    "framework/Source/FLETextInputModel.h",
+    "framework/Source/FLETextInputModel.mm",
+    "framework/Source/FLETextInputPlugin.h",
+    "framework/Source/FLETextInputPlugin.mm",
+    "framework/Source/FLEViewController.mm",
+    "framework/Source/FLEViewController_Internal.h",
+    "framework/Source/FlutterView.h",
+    "framework/Source/FlutterView.mm",
+  ]
+
+  sources += _flutter_framework_headers
+
+  deps = [
+    "$flutter_root/shell/platform/darwin/common:framework_shared",
+    "$flutter_root/shell/platform/embedder:embedder",
+  ]
+
+  public_configs = [ "$flutter_root:config" ]
+
+  defines = [ "FLUTTER_FRAMEWORK" ]
+
+  cflags_objcc = [ "-fobjc-arc" ]
+
+  libs = [ "Cocoa.framework" ]
+}
+
+copy("copy_framework_dylib") {
+  visibility = [ ":*" ]
+
+  sources = [
+    "$root_out_dir/lib$_flutter_framework_name.dylib",
+  ]
+  outputs = [
+    "$_flutter_framework_dir/Versions/A/$_flutter_framework_name",
+  ]
+
+  deps = [
+    ":create_flutter_framework_dylib",
+  ]
+}
+
+action("copy_dylib_and_update_framework_install_name") {
+  visibility = [ ":*" ]
+  stamp_file = "$root_out_dir/flutter_install_name_stamp"
+  script = "$flutter_root/sky/tools/change_install_name.py"
+
+  inputs = [
+    "$_flutter_framework_dir/Versions/A/$_flutter_framework_name",
+  ]
+  outputs = [
+    stamp_file,
+  ]
+
+  args = [
+    "--dylib",
+    rebase_path("$_flutter_framework_dir/Versions/A/$_flutter_framework_name"),
+    "--install_name",
+    "@rpath/$_flutter_framework_filename/Versions/A/$_flutter_framework_name",
+    "--stamp",
+    rebase_path(stamp_file),
+  ]
+
+  deps = [
+    ":copy_framework_dylib",
+  ]
+}
+
+copy("copy_framework_info_plist") {
+  visibility = [ ":*" ]
+  sources = [
+    "framework/Info.plist",
+  ]
+  outputs = [
+    "$_flutter_framework_dir/Versions/A/Resources/Info.plist",
+  ]
+}
+
+copy("copy_framework_module_map") {
+  visibility = [ ":*" ]
+  sources = [
+    "framework/module.modulemap",
+  ]
+  outputs = [
+    "$_flutter_framework_dir/Versions/A/Modules/module.modulemap",
+  ]
+}
+
+action("copy_framework_headers") {
+  script = "$flutter_root/sky/tools/install_framework_headers.py"
+  visibility = [ ":*" ]
+  sources = get_path_info(_flutter_framework_headers, "abspath") +
+            framework_shared_headers
+  outputs = []
+  foreach(header, sources) {
+    header_basename = get_path_info(header, "file")
+    outputs += [ "$_flutter_framework_headers_copy_dir/$header_basename" ]
+  }
+  args = [
+           "--location",
+           rebase_path("$_flutter_framework_headers_copy_dir"),
+           "--headers",
+         ] + rebase_path(sources, "", "//")
+}
+
+copy("copy_framework_icu") {
+  visibility = [ ":*" ]
+  sources = [
+    "//third_party/icu/flutter/icudtl.dat",
+  ]
+  outputs = [
+    "$_flutter_framework_dir/Versions/A/Resources/{{source_file_part}}",
+  ]
+}
+
+copy("copy_license") {
+  visibility = [ ":*" ]
+  sources = [
+    "//LICENSE",
+  ]
+  outputs = [
+    "$root_out_dir/LICENSE",
+  ]
+}
+
+action("_generate_symlinks") {
+  visibility = [ ":*" ]
+  script = "//build/config/mac/package_framework.py"
+  outputs = [
+    "$root_build_dir/$_flutter_framework_name.stamp",
+  ]
+  args = [
+    "--framework",
+    "$_flutter_framework_filename",
+    "--version",
+    "A",
+    "--contents",
+    "$_flutter_framework_name",
+    "Resources",
+    "Headers",
+    "Modules",
+    "--stamp",
+    "$_flutter_framework_name.stamp",
+  ]
+  deps = [
+    ":copy_dylib_and_update_framework_install_name",
+    ":copy_framework_headers",
+    ":copy_framework_icu",
+    ":copy_framework_info_plist",
+    ":copy_framework_module_map",
+    ":copy_license",
+  ]
+}
+
+copy("copy_framework_podspec") {
+  visibility = [ ":*" ]
+  sources = [
+    "framework/FlutterMacOS.podspec",
+  ]
+  outputs = [
+    "$root_out_dir/FlutterMacOS.podspec",
+  ]
+}
+
+group("flutter_framework") {
+  deps = [
+    ":_generate_symlinks",
+    ":copy_framework_podspec",
+  ]
+}
+
+if (build_glfw_shell) {
+  shared_library("flutter_macos_glfw") {
+    deps = [
+      "$flutter_root/shell/platform/glfw:flutter_glfw",
+    ]
+
+    public_configs = [ "$flutter_root:config" ]
+  }
+}

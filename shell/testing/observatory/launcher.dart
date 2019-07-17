@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,7 +9,7 @@ import 'dart:convert';
 import 'dart:io';
 
 class ShellProcess {
-  final Completer<Uri> _observatoryUriCompleter = new Completer<Uri>();
+  final Completer<Uri> _observatoryUriCompleter = Completer<Uri>();
   final Process _process;
 
   ShellProcess(this._process) : assert(_process != null) {
@@ -42,6 +42,7 @@ class ShellLauncher {
     '--observatory-port=0',
     '--non-interactive',
     '--run-forever',
+    '--disable-service-auth-codes',
   ];
   final String shellExecutablePath;
   final String mainDartPath;
@@ -66,7 +67,7 @@ class ShellLauncher {
       shellArguments.addAll(args);
       print('Launching $shellExecutablePath $shellArguments');
       final Process process = await Process.start(shellExecutablePath, shellArguments);
-      return new ShellProcess(process);
+      return ShellProcess(process);
     } catch (e) {
       print('Error launching shell: $e');
     }

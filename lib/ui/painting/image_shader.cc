@@ -1,18 +1,18 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/image_shader.h"
 
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "lib/tonic/converter/dart_converter.h"
-#include "lib/tonic/dart_args.h"
-#include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/dart_library_natives.h"
+#include "third_party/tonic/converter/dart_converter.h"
+#include "third_party/tonic/dart_args.h"
+#include "third_party/tonic/dart_binding_macros.h"
+#include "third_party/tonic/dart_library_natives.h"
 
 using tonic::ToDart;
 
-namespace blink {
+namespace flutter {
 
 static void ImageShader_constructor(Dart_NativeArguments args) {
   DartCallConstructor(&ImageShader::Create, args);
@@ -30,13 +30,13 @@ void ImageShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-fxl::RefPtr<ImageShader> ImageShader::Create() {
-  return fxl::MakeRefCounted<ImageShader>();
+fml::RefPtr<ImageShader> ImageShader::Create() {
+  return fml::MakeRefCounted<ImageShader>();
 }
 
 void ImageShader::initWithImage(CanvasImage* image,
-                                SkShader::TileMode tmx,
-                                SkShader::TileMode tmy,
+                                SkTileMode tmx,
+                                SkTileMode tmy,
                                 const tonic::Float64List& matrix4) {
   if (!image) {
     Dart_ThrowException(
@@ -51,4 +51,4 @@ ImageShader::ImageShader() = default;
 
 ImageShader::~ImageShader() = default;
 
-}  // namespace blink
+}  // namespace flutter

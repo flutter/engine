@@ -1,10 +1,10 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/android/android_native_window.h"
 
-namespace shell {
+namespace flutter {
 
 AndroidNativeWindow::AndroidNativeWindow(Handle window) : window_(window) {}
 
@@ -29,4 +29,4 @@ SkISize AndroidNativeWindow::GetSize() const {
                                             ANativeWindow_getHeight(window_));
 }
 
-}  // namespace shell
+}  // namespace flutter

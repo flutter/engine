@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,11 +6,11 @@
 
 #include <dlfcn.h>
 
-#include "lib/fxl/logging.h"
+#include "flutter/fml/logging.h"
 
 #define ACQUIRE_PROC(name, context)                          \
   if (!(name = AcquireProc("vk" #name, context))) {          \
-    FXL_DLOG(INFO) << "Could not acquire proc: vk" << #name; \
+    FML_DLOG(INFO) << "Could not acquire proc: vk" << #name; \
     return false;                                            \
   }
 
@@ -56,7 +56,7 @@ bool VulkanProcTable::SetupLoaderProcAddresses() {
 #endif  // VULKAN_LINK_STATICALLY
 
   if (!GetInstanceProcAddr) {
-    FXL_DLOG(WARNING) << "Could not acquire vkGetInstanceProcAddr.";
+    FML_DLOG(WARNING) << "Could not acquire vkGetInstanceProcAddr.";
     return false;
   }
 
@@ -74,28 +74,19 @@ bool VulkanProcTable::SetupInstanceProcAddresses(
   ACQUIRE_PROC(CreateDevice, handle);
   ACQUIRE_PROC(DestroyDevice, handle);
   ACQUIRE_PROC(DestroyInstance, handle);
-  ACQUIRE_PROC(DestroySurfaceKHR, handle);
   ACQUIRE_PROC(EnumerateDeviceLayerProperties, handle);
   ACQUIRE_PROC(EnumeratePhysicalDevices, handle);
   ACQUIRE_PROC(GetDeviceProcAddr, handle);
   ACQUIRE_PROC(GetPhysicalDeviceFeatures, handle);
   ACQUIRE_PROC(GetPhysicalDeviceQueueFamilyProperties, handle);
+#if OS_ANDROID
   ACQUIRE_PROC(GetPhysicalDeviceSurfaceCapabilitiesKHR, handle);
   ACQUIRE_PROC(GetPhysicalDeviceSurfaceFormatsKHR, handle);
   ACQUIRE_PROC(GetPhysicalDeviceSurfacePresentModesKHR, handle);
   ACQUIRE_PROC(GetPhysicalDeviceSurfaceSupportKHR, handle);
-
-#if OS_ANDROID
+  ACQUIRE_PROC(DestroySurfaceKHR, handle);
   ACQUIRE_PROC(CreateAndroidSurfaceKHR, handle);
 #endif  // OS_ANDROID
-
-#if OS_FUCHSIA
-  [this, &handle]() -> bool {
-    ACQUIRE_PROC(CreateMagmaSurfaceKHR, handle);
-    ACQUIRE_PROC(GetPhysicalDeviceMagmaPresentationSupportKHR, handle);
-    return true;
-  }();
-#endif  // OS_FUCHSIA
 
   // The debug report functions are optional. We don't want proc acquisition to
   // fail here because the optional methods were not present (since ACQUIRE_PROC
@@ -114,7 +105,6 @@ bool VulkanProcTable::SetupInstanceProcAddresses(
 
 bool VulkanProcTable::SetupDeviceProcAddresses(
     const VulkanHandle<VkDevice>& handle) {
-  ACQUIRE_PROC(AcquireNextImageKHR, handle);
   ACQUIRE_PROC(AllocateCommandBuffers, handle);
   ACQUIRE_PROC(AllocateMemory, handle);
   ACQUIRE_PROC(BeginCommandBuffer, handle);
@@ -124,28 +114,31 @@ bool VulkanProcTable::SetupDeviceProcAddresses(
   ACQUIRE_PROC(CreateFence, handle);
   ACQUIRE_PROC(CreateImage, handle);
   ACQUIRE_PROC(CreateSemaphore, handle);
-  ACQUIRE_PROC(CreateSwapchainKHR, handle);
   ACQUIRE_PROC(DestroyCommandPool, handle);
   ACQUIRE_PROC(DestroyFence, handle);
   ACQUIRE_PROC(DestroyImage, handle);
   ACQUIRE_PROC(DestroySemaphore, handle);
-  ACQUIRE_PROC(DestroySwapchainKHR, handle);
   ACQUIRE_PROC(DeviceWaitIdle, handle);
   ACQUIRE_PROC(EndCommandBuffer, handle);
   ACQUIRE_PROC(FreeCommandBuffers, handle);
   ACQUIRE_PROC(FreeMemory, handle);
   ACQUIRE_PROC(GetDeviceQueue, handle);
   ACQUIRE_PROC(GetImageMemoryRequirements, handle);
-  ACQUIRE_PROC(GetSwapchainImagesKHR, handle);
-  ACQUIRE_PROC(QueuePresentKHR, handle);
   ACQUIRE_PROC(QueueSubmit, handle);
   ACQUIRE_PROC(QueueWaitIdle, handle);
   ACQUIRE_PROC(ResetCommandBuffer, handle);
   ACQUIRE_PROC(ResetFences, handle);
   ACQUIRE_PROC(WaitForFences, handle);
+#if OS_ANDROID
+  ACQUIRE_PROC(AcquireNextImageKHR, handle);
+  ACQUIRE_PROC(CreateSwapchainKHR, handle);
+  ACQUIRE_PROC(DestroySwapchainKHR, handle);
+  ACQUIRE_PROC(GetSwapchainImagesKHR, handle);
+  ACQUIRE_PROC(QueuePresentKHR, handle);
+#endif  // OS_ANDROID
 #if OS_FUCHSIA
-  ACQUIRE_PROC(GetMemoryFuchsiaHandleKHR, handle);
-  ACQUIRE_PROC(ImportSemaphoreFuchsiaHandleKHR, handle);
+  ACQUIRE_PROC(GetMemoryZirconHandleFUCHSIA, handle);
+  ACQUIRE_PROC(ImportSemaphoreZirconHandleFUCHSIA, handle);
 #endif  // OS_FUCHSIA
   device_ = {handle, nullptr};
   return true;
@@ -160,7 +153,7 @@ bool VulkanProcTable::OpenLibraryHandle() {
   dlerror();  // clear existing errors on thread.
   handle_ = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
   if (handle_ == nullptr) {
-    FXL_DLOG(WARNING) << "Could not open the vulkan library: " << dlerror();
+    FML_DLOG(WARNING) << "Could not open the vulkan library: " << dlerror();
     return false;
   }
   return true;
@@ -175,9 +168,9 @@ bool VulkanProcTable::CloseLibraryHandle() {
   if (handle_ != nullptr) {
     dlerror();  // clear existing errors on thread.
     if (dlclose(handle_) != 0) {
-      FXL_DLOG(ERROR) << "Could not close the vulkan library handle. This "
+      FML_DLOG(ERROR) << "Could not close the vulkan library handle. This "
                          "indicates a leak.";
-      FXL_DLOG(ERROR) << dlerror();
+      FML_DLOG(ERROR) << dlerror();
     }
     handle_ = nullptr;
   }
@@ -206,13 +199,12 @@ PFN_vkVoidFunction VulkanProcTable::AcquireProc(
   return GetDeviceProcAddr(device, proc_name);
 }
 
-sk_sp<GrVkInterface> VulkanProcTable::CreateSkiaInterface() const {
+GrVkGetProc VulkanProcTable::CreateSkiaGetProc() const {
   if (!IsValid()) {
     return nullptr;
   }
 
-  GrVkInterface::GetProc proc = [this](const char* proc_name,
-                                       VkInstance instance, VkDevice device) {
+  return [this](const char* proc_name, VkInstance instance, VkDevice device) {
     if (device != VK_NULL_HANDLE) {
       auto result = AcquireProc(proc_name, {device, nullptr});
       if (result != nullptr) {
@@ -222,9 +214,6 @@ sk_sp<GrVkInterface> VulkanProcTable::CreateSkiaInterface() const {
 
     return AcquireProc(proc_name, {instance, nullptr});
   };
-
-  return sk_make_sp<GrVkInterface>(proc, instance_, device_,
-                                   0 /* extensions */);
 }
 
 }  // namespace vulkan

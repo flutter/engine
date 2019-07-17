@@ -1,33 +1,54 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/shell/common/animator.h"
 
-#include "flutter/glue/trace_event.h"
-#include "lib/fxl/time/stopwatch.h"
+#include "flutter/fml/trace_event.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
-namespace shell {
+namespace flutter {
+
+namespace {
+
+// Wait 51 milliseconds (which is 1 more milliseconds than 3 frames at 60hz)
+// before notifying the engine that we are idle.  See comments in |BeginFrame|
+// for further discussion on why this is necessary.
+constexpr fml::TimeDelta kNotifyIdleTaskWaitTime =
+    fml::TimeDelta::FromMilliseconds(51);
+
+}  // namespace
 
 Animator::Animator(Delegate& delegate,
-                   blink::TaskRunners task_runners,
+                   TaskRunners task_runners,
                    std::unique_ptr<VsyncWaiter> waiter)
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
       waiter_(std::move(waiter)),
       last_begin_frame_time_(),
       dart_frame_deadline_(0),
-      layer_tree_pipeline_(fxl::MakeRefCounted<LayerTreePipeline>(2)),
+      // TODO(dnfield): We should remove this logic and set the pipeline depth
+      // back to 2 in this case. See https://github.com/flutter/engine/pull/9132
+      // for discussion.
+      layer_tree_pipeline_(fml::MakeRefCounted<LayerTreePipeline>(
+          task_runners.GetPlatformTaskRunner() ==
+                  task_runners.GetGPUTaskRunner()
+              ? 1
+              : 2)),
       pending_frame_semaphore_(1),
       frame_number_(1),
       paused_(false),
       regenerate_layer_tree_(false),
       frame_scheduled_(false),
+      notify_idle_task_id_(0),
       dimension_change_pending_(false),
       weak_factory_(this) {}
 
 Animator::~Animator() = default;
+
+float Animator::GetDisplayRefreshRate() const {
+  return waiter_->GetDisplayRefreshRate();
+}
 
 void Animator::Stop() {
   paused_ = true;
@@ -48,23 +69,42 @@ void Animator::SetDimensionChangePending() {
   dimension_change_pending_ = true;
 }
 
+void Animator::EnqueueTraceFlowId(uint64_t trace_flow_id) {
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      [self = weak_factory_.GetWeakPtr(), trace_flow_id] {
+        if (!self) {
+          return;
+        }
+        self->trace_flow_ids_.push_back(trace_flow_id);
+      });
+}
+
 // This Parity is used by the timeline component to correctly align
 // GPU Workloads events with their respective Framework Workload.
 const char* Animator::FrameParity() {
   return (frame_number_ % 2) ? "even" : "odd";
 }
 
-static int64_t FxlToDartOrEarlier(fxl::TimePoint time) {
+static int64_t FxlToDartOrEarlier(fml::TimePoint time) {
   int64_t dart_now = Dart_TimelineGetMicros();
-  fxl::TimePoint fxl_now = fxl::TimePoint::Now();
+  fml::TimePoint fxl_now = fml::TimePoint::Now();
   return (time - fxl_now).ToMicroseconds() + dart_now;
 }
 
-void Animator::BeginFrame(fxl::TimePoint frame_start_time,
-                          fxl::TimePoint frame_target_time) {
+void Animator::BeginFrame(fml::TimePoint frame_start_time,
+                          fml::TimePoint frame_target_time) {
   TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending", frame_number_++);
 
+  TRACE_EVENT0("flutter", "Animator::BeginFrame");
+  while (!trace_flow_ids_.empty()) {
+    uint64_t trace_flow_id = trace_flow_ids_.front();
+    TRACE_FLOW_END("flutter", "PointerEvent", trace_flow_id);
+    trace_flow_ids_.pop_front();
+  }
+
   frame_scheduled_ = false;
+  notify_idle_task_id_++;
   regenerate_layer_tree_ = false;
   pending_frame_semaphore_.Signal();
 
@@ -85,24 +125,46 @@ void Animator::BeginFrame(fxl::TimePoint frame_start_time,
 
   // We have acquired a valid continuation from the pipeline and are ready
   // to service potential frame.
-  FXL_DCHECK(producer_continuation_);
+  FML_DCHECK(producer_continuation_);
 
   last_begin_frame_time_ = frame_start_time;
   dart_frame_deadline_ = FxlToDartOrEarlier(frame_target_time);
   {
     TRACE_EVENT2("flutter", "Framework Workload", "mode", "basic", "frame",
                  FrameParity());
-    delegate_.OnAnimatorBeginFrame(*this, last_begin_frame_time_);
+    delegate_.OnAnimatorBeginFrame(last_begin_frame_time_);
   }
 
   if (!frame_scheduled_) {
-    // We don't have another frame pending, so we're waiting on user input
-    // or I/O. Allow the Dart VM 100 ms.
-    delegate_.OnAnimatorNotifyIdle(*this, dart_frame_deadline_ + 100000);
+    // Under certain workloads (such as our parent view resizing us, which is
+    // communicated to us by repeat viewport metrics events), we won't
+    // actually have a frame scheduled yet, despite the fact that we *will* be
+    // producing a frame next vsync (it will be scheduled once we receive the
+    // viewport event).  Because of this, we hold off on calling
+    // |OnAnimatorNotifyIdle| for a little bit, as that could cause garbage
+    // collection to trigger at a highly undesirable time.
+    task_runners_.GetUITaskRunner()->PostDelayedTask(
+        [self = weak_factory_.GetWeakPtr(),
+         notify_idle_task_id = notify_idle_task_id_]() {
+          if (!self.get()) {
+            return;
+          }
+          // If our (this task's) task id is the same as the current one
+          // (meaning there were no follow up frames to the |BeginFrame| call
+          // that posted this task) and no frame is currently scheduled, then
+          // assume that we are idle, and notify the engine of this.
+          if (notify_idle_task_id == self->notify_idle_task_id_ &&
+              !self->frame_scheduled_) {
+            TRACE_EVENT0("flutter", "BeginFrame idle callback");
+            self->delegate_.OnAnimatorNotifyIdle(Dart_TimelineGetMicros() +
+                                                 100000);
+          }
+        },
+        kNotifyIdleTaskWaitTime);
   }
 }
 
-void Animator::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
+void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
   if (dimension_change_pending_ &&
       layer_tree->frame_size() != last_layer_tree_size_) {
     dimension_change_pending_ = false;
@@ -111,14 +173,13 @@ void Animator::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
 
   if (layer_tree) {
     // Note the frame time for instrumentation.
-    layer_tree->set_construction_time(fxl::TimePoint::Now() -
-                                      last_begin_frame_time_);
+    layer_tree->RecordBuildTime(last_begin_frame_time_);
   }
 
   // Commit the pending continuation.
   producer_continuation_.Complete(std::move(layer_tree));
 
-  delegate_.OnAnimatorDraw(*this, layer_tree_pipeline_);
+  delegate_.OnAnimatorDraw(layer_tree_pipeline_);
 }
 
 bool Animator::CanReuseLastLayerTree() {
@@ -127,7 +188,7 @@ bool Animator::CanReuseLastLayerTree() {
 
 void Animator::DrawLastLayerTree() {
   pending_frame_semaphore_.Signal();
-  delegate_.OnAnimatorDrawLastLayerTree(*this);
+  delegate_.OnAnimatorDrawLastLayerTree();
 }
 
 void Animator::RequestFrame(bool regenerate_layer_tree) {
@@ -164,8 +225,8 @@ void Animator::RequestFrame(bool regenerate_layer_tree) {
 
 void Animator::AwaitVSync() {
   waiter_->AsyncWaitForVsync(
-      [self = weak_factory_.GetWeakPtr()](fxl::TimePoint frame_start_time,
-                                          fxl::TimePoint frame_target_time) {
+      [self = weak_factory_.GetWeakPtr()](fml::TimePoint frame_start_time,
+                                          fml::TimePoint frame_target_time) {
         if (self) {
           if (self->CanReuseLastLayerTree()) {
             self->DrawLastLayerTree();
@@ -175,7 +236,7 @@ void Animator::AwaitVSync() {
         }
       });
 
-  delegate_.OnAnimatorNotifyIdle(*this, dart_frame_deadline_);
+  delegate_.OnAnimatorNotifyIdle(dart_frame_deadline_);
 }
 
-}  // namespace shell
+}  // namespace flutter

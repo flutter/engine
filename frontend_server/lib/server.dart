@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -10,7 +10,6 @@ import 'dart:io' hide FileSystemEntity;
 import 'package:args/args.dart';
 import 'package:path/path.dart' as path;
 
-import 'package:flutter_kernel_transformers/track_widget_constructor_locations.dart';
 import 'package:vm/incremental_compiler.dart';
 import 'package:vm/frontend_server.dart' as frontend show FrontendCompiler,
     CompilerInterface, listenAndCompile, argParser, usage;
@@ -20,9 +19,10 @@ import 'package:vm/frontend_server.dart' as frontend show FrontendCompiler,
 class _FlutterFrontendCompiler implements frontend.CompilerInterface{
   final frontend.CompilerInterface _compiler;
 
-  _FlutterFrontendCompiler(StringSink output, {bool trackWidgetCreation: false}):
-      _compiler = new frontend.FrontendCompiler(output,
-          transformer: trackWidgetCreation ? new WidgetCreatorTracker() : null);
+  _FlutterFrontendCompiler(StringSink output,
+      {bool unsafePackageSerialization}) :
+          _compiler = frontend.FrontendCompiler(output,
+          unsafePackageSerialization: unsafePackageSerialization);
 
   @override
   Future<bool> compile(String filename, ArgResults options, {IncrementalCompiler generator}) async {
@@ -30,13 +30,18 @@ class _FlutterFrontendCompiler implements frontend.CompilerInterface{
   }
 
   @override
-  Future<Null> recompileDelta({String filename}) async {
-    return _compiler.recompileDelta(filename: filename);
+  Future<Null> recompileDelta({String entryPoint}) async {
+    return _compiler.recompileDelta(entryPoint: entryPoint);
   }
 
   @override
   void acceptLastDelta() {
     _compiler.acceptLastDelta();
+  }
+
+  @override
+  Future<void> rejectLastDelta() async {
+    return _compiler.rejectLastDelta();
   }
 
   @override
@@ -73,16 +78,11 @@ class _FlutterFrontendCompiler implements frontend.CompilerInterface{
 /// version for testing.
 Future<int> starter(
     List<String> args, {
-      _FlutterFrontendCompiler compiler,
+      frontend.CompilerInterface compiler,
       Stream<List<int>> input,
       StringSink output,
     }) async {
   ArgResults options;
-  frontend.argParser
-    ..addFlag('track-widget-creation',
-      help: 'Run a kernel transformer to track creation locations for widgets.',
-      defaultsTo: false);
-
   try {
     options = frontend.argParser.parse(args);
   } catch (error) {
@@ -100,8 +100,10 @@ Future<int> starter(
         '--incremental',
         '--sdk-root=$sdkRoot',
         '--output-dill=$outputTrainingDill',
-        '--target=flutter']);
-      compiler ??= new _FlutterFrontendCompiler(output, trackWidgetCreation: true);
+        '--target=flutter',
+        '--track-widget-creation',
+      ]);
+      compiler ??= _FlutterFrontendCompiler(output);
 
       await compiler.compile(Platform.script.toFilePath(), options);
       compiler.acceptLastDelta();
@@ -118,14 +120,14 @@ Future<int> starter(
     }
   }
 
-  compiler ??= new _FlutterFrontendCompiler(output, trackWidgetCreation: options['track-widget-creation']);
+  compiler ??= _FlutterFrontendCompiler(output,
+      unsafePackageSerialization: options['unsafe-package-serialization']);
 
   if (options.rest.isNotEmpty) {
-    exit(await compiler.compile(options.rest[0], options)
-        ? 0
-        : 254);
+    return await compiler.compile(options.rest[0], options) ? 0 : 254;
   }
 
-  frontend.listenAndCompile(compiler, input ?? stdin, options, () { exit(0); } );
-  return 0;
+  final Completer<int> completer = Completer<int>();
+  frontend.listenAndCompile(compiler, input ?? stdin, options, completer);
+  return completer.future;
 }

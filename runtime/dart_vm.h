@@ -1,80 +1,72 @@
-// Copyright 2017 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_RUNTIME_DART_VM_H_
 #define FLUTTER_RUNTIME_DART_VM_H_
 
-#include <functional>
+#include <memory>
 #include <string>
-#include <vector>
 
 #include "flutter/common/settings.h"
+#include "flutter/fml/build_config.h"
+#include "flutter/fml/closure.h"
+#include "flutter/fml/macros.h"
+#include "flutter/fml/memory/ref_counted.h"
+#include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/message_loop.h"
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server.h"
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_snapshot.h"
+#include "flutter/runtime/dart_vm_data.h"
 #include "flutter/runtime/service_protocol.h"
-#include "lib/fxl/build_config.h"
-#include "lib/fxl/functional/closure.h"
-#include "lib/fxl/macros.h"
-#include "lib/fxl/memory/ref_counted.h"
-#include "lib/fxl/memory/ref_ptr.h"
-#include "lib/fxl/memory/weak_ptr.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 
-namespace blink {
+namespace flutter {
 
-class DartVM : public fxl::RefCountedThreadSafe<DartVM> {
+class DartVM {
  public:
-  static fxl::RefPtr<DartVM> ForProcess(Settings settings);
-
-  static fxl::RefPtr<DartVM> ForProcess(
-      Settings settings,
-      fxl::RefPtr<DartSnapshot> vm_snapshot,
-      fxl::RefPtr<DartSnapshot> isolate_snapshot,
-      fxl::RefPtr<DartSnapshot> shared_snapshot);
-
-  static fxl::RefPtr<DartVM> ForProcessIfInitialized();
+  ~DartVM();
 
   static bool IsRunningPrecompiledCode();
 
+  static size_t GetVMLaunchCount();
+
   const Settings& GetSettings() const;
 
-  const fml::Mapping& GetPlatformKernel() const;
+  std::shared_ptr<const DartVMData> GetVMData() const;
 
-  const DartSnapshot& GetVMSnapshot() const;
+  std::shared_ptr<ServiceProtocol> GetServiceProtocol() const;
 
-  IsolateNameServer* GetIsolateNameServer();
+  std::shared_ptr<IsolateNameServer> GetIsolateNameServer() const;
 
-  fxl::RefPtr<DartSnapshot> GetIsolateSnapshot() const;
-  fxl::RefPtr<DartSnapshot> GetSharedSnapshot() const;
-
-  fxl::WeakPtr<DartVM> GetWeakPtr();
-
-  ServiceProtocol& GetServiceProtocol();
+  std::shared_ptr<fml::ConcurrentTaskRunner> GetConcurrentWorkerTaskRunner()
+      const;
 
  private:
   const Settings settings_;
-  const fxl::RefPtr<DartSnapshot> vm_snapshot_;
-  IsolateNameServer isolate_name_server_;
-  const fxl::RefPtr<DartSnapshot> isolate_snapshot_;
-  const fxl::RefPtr<DartSnapshot> shared_snapshot_;
-  std::unique_ptr<fml::Mapping> platform_kernel_mapping_;
-  ServiceProtocol service_protocol_;
-  fxl::WeakPtrFactory<DartVM> weak_factory_;
+  std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_message_loop_;
+  std::shared_ptr<const DartVMData> vm_data_;
+  const std::shared_ptr<IsolateNameServer> isolate_name_server_;
+  const std::shared_ptr<ServiceProtocol> service_protocol_;
 
-  DartVM(const Settings& settings,
-         fxl::RefPtr<DartSnapshot> vm_snapshot,
-         fxl::RefPtr<DartSnapshot> isolate_snapshot,
-         fxl::RefPtr<DartSnapshot> shared_snapshot);
+  friend class DartVMRef;
+  friend class DartIsolate;
 
-  ~DartVM();
+  static std::shared_ptr<DartVM> Create(
+      Settings settings,
+      fml::RefPtr<DartSnapshot> vm_snapshot,
+      fml::RefPtr<DartSnapshot> isolate_snapshot,
+      fml::RefPtr<DartSnapshot> shared_snapshot,
+      std::shared_ptr<IsolateNameServer> isolate_name_server);
 
-  FRIEND_REF_COUNTED_THREAD_SAFE(DartVM);
-  FRIEND_MAKE_REF_COUNTED(DartVM);
-  FXL_DISALLOW_COPY_AND_ASSIGN(DartVM);
+  DartVM(std::shared_ptr<const DartVMData> data,
+         std::shared_ptr<IsolateNameServer> isolate_name_server);
+
+  FML_DISALLOW_COPY_AND_ASSIGN(DartVM);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_RUNTIME_DART_VM_H_

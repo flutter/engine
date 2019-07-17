@@ -43,20 +43,38 @@ enum class TextDirection {
 
 class ParagraphStyle {
  public:
+  // Default TextStyle. Used in GetTextStyle() to obtain the base TextStyle to
+  // inherit off of.
   FontWeight font_weight = FontWeight::w400;
   FontStyle font_style = FontStyle::normal;
   std::string font_family = "";
   double font_size = 14;
+  double height = 1;
+  bool has_height_override = false;
 
+  // Strut properties. strut_enabled must be set to true for the rest of the
+  // properties to take effect.
+  // TODO(garyq): Break the strut properties into a separate class.
+  bool strut_enabled = false;
+  FontWeight strut_font_weight = FontWeight::w400;
+  FontStyle strut_font_style = FontStyle::normal;
+  std::vector<std::string> strut_font_families;
+  double strut_font_size = 14;
+  double strut_height = 1;
+  bool strut_has_height_override = false;
+  double strut_leading = -1;  // Negative to use font's default leading. [0,inf)
+                              // to use custom leading as a ratio of font size.
+  bool force_strut_height = false;
+
+  // General paragraph properties.
   TextAlign text_align = TextAlign::start;
   TextDirection text_direction = TextDirection::ltr;
   size_t max_lines = std::numeric_limits<size_t>::max();
-  double line_height = 1.0;
   std::u16string ellipsis;
   std::string locale;
 
   // Default strategy is kBreakStrategy_Greedy. Sometimes,
-  // kBreakStrategy_HighQuality will produce more desireable layouts (eg, very
+  // kBreakStrategy_HighQuality will produce more desirable layouts (e.g., very
   // long words are more likely to be reasonably placed).
   // kBreakStrategy_Balanced will balance between the two.
   minikin::BreakStrategy break_strategy =

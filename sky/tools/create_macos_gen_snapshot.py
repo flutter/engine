@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2018 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -30,7 +30,7 @@ def main():
     print 'Cannot find i386 (armv7) gen_snapshot at', armv7_gen_snapshot
     return 1
 
-  subprocess.call([
+  subprocess.check_call([
     'lipo',
     arm64_gen_snapshot,
     armv7_gen_snapshot,

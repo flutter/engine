@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-namespace blink {
+namespace flutter {
 
 // The earliest available timestamp in the application's lifecycle. The
 // difference between this timestamp and the time we render the very first
@@ -19,6 +19,6 @@ namespace blink {
 // user code prior to initializing Flutter.
 extern int64_t engine_main_enter_ts;
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_RUNTIME_START_UP_H_

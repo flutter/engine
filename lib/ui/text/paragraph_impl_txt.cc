@@ -1,20 +1,20 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/text/paragraph_impl_txt.h"
 
 #include "flutter/common/task_runners.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/task_runner.h"
 #include "flutter/lib/ui/text/paragraph.h"
 #include "flutter/lib/ui/text/paragraph_impl.h"
-#include "lib/fxl/logging.h"
-#include "lib/fxl/tasks/task_runner.h"
-#include "lib/tonic/converter/dart_converter.h"
 #include "third_party/skia/include/core/SkPoint.h"
+#include "third_party/tonic/converter/dart_converter.h"
 
 using tonic::ToDart;
 
-namespace blink {
+namespace flutter {
 
 ParagraphImplTxt::ParagraphImplTxt(std::unique_ptr<txt::Paragraph> paragraph)
     : m_paragraph(std::move(paragraph)) {}
@@ -27,6 +27,10 @@ double ParagraphImplTxt::width() {
 
 double ParagraphImplTxt::height() {
   return m_paragraph->GetHeight();
+}
+
+double ParagraphImplTxt::longestLine() {
+  return m_paragraph->GetLongestLine();
 }
 
 double ParagraphImplTxt::minIntrinsicWidth() {
@@ -61,14 +65,27 @@ void ParagraphImplTxt::paint(Canvas* canvas, double x, double y) {
   m_paragraph->Paint(sk_canvas, x, y);
 }
 
-std::vector<TextBox> ParagraphImplTxt::getRectsForRange(unsigned start,
-                                                        unsigned end) {
+std::vector<TextBox> ParagraphImplTxt::getRectsForRange(
+    unsigned start,
+    unsigned end,
+    txt::Paragraph::RectHeightStyle rect_height_style,
+    txt::Paragraph::RectWidthStyle rect_width_style) {
+  std::vector<TextBox> result;
+  std::vector<txt::Paragraph::TextBox> boxes = m_paragraph->GetRectsForRange(
+      start, end, rect_height_style, rect_width_style);
+  for (const txt::Paragraph::TextBox& box : boxes) {
+    result.emplace_back(box.rect, static_cast<TextDirection>(box.direction));
+  }
+  return result;
+}
+
+std::vector<TextBox> ParagraphImplTxt::getRectsForPlaceholders() {
   std::vector<TextBox> result;
   std::vector<txt::Paragraph::TextBox> boxes =
-      m_paragraph->GetRectsForRange(start, end);
+      m_paragraph->GetRectsForPlaceholders();
   for (const txt::Paragraph::TextBox& box : boxes) {
     result.emplace_back(box.rect,
-                        static_cast<blink::TextDirection>(box.direction));
+                        static_cast<flutter::TextDirection>(box.direction));
   }
   return result;
 }
@@ -90,4 +107,4 @@ Dart_Handle ParagraphImplTxt::getWordBoundary(unsigned offset) {
   return result;
 }
 
-}  // namespace blink
+}  // namespace flutter

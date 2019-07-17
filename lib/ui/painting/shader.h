@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,33 +6,32 @@
 #define FLUTTER_LIB_UI_PAINTING_SHADER_H_
 
 #include "flutter/flow/skia_gpu_object.h"
+#include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "lib/tonic/dart_wrappable.h"
 #include "third_party/skia/include/core/SkShader.h"
 
-namespace blink {
+namespace flutter {
 
-class Shader : public fxl::RefCountedThreadSafe<Shader>,
-               public tonic::DartWrappable {
+class Shader : public RefCountedDartWrappable<Shader> {
   DEFINE_WRAPPERTYPEINFO();
-  FRIEND_MAKE_REF_COUNTED(Shader);
+  FML_FRIEND_MAKE_REF_COUNTED(Shader);
 
  public:
   ~Shader() override;
 
   sk_sp<SkShader> shader() { return shader_.get(); }
 
-  void set_shader(flow::SkiaGPUObject<SkShader> shader) {
+  void set_shader(flutter::SkiaGPUObject<SkShader> shader) {
     shader_ = std::move(shader);
   }
 
  protected:
-  Shader(flow::SkiaGPUObject<SkShader> shader = {});
+  Shader(flutter::SkiaGPUObject<SkShader> shader = {});
 
  private:
-  flow::SkiaGPUObject<SkShader> shader_;
+  flutter::SkiaGPUObject<SkShader> shader_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_SHADER_H_

@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -10,34 +10,54 @@
 #include <mutex>
 
 #include "flutter/common/task_runners.h"
-#include "lib/fxl/time/time_point.h"
+#include "flutter/fml/synchronization/thread_annotations.h"
+#include "flutter/fml/time/time_point.h"
 
-namespace shell {
+namespace flutter {
 
-class VsyncWaiter {
+/// Abstract Base Class that represents a platform specific mechanism for
+/// getting callbacks when a vsync event happens.
+class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
  public:
-  using Callback = std::function<void(fxl::TimePoint frame_start_time,
-                                      fxl::TimePoint frame_target_time)>;
+  using Callback = std::function<void(fml::TimePoint frame_start_time,
+                                      fml::TimePoint frame_target_time)>;
 
   virtual ~VsyncWaiter();
 
   void AsyncWaitForVsync(Callback callback);
 
+  static constexpr float kUnknownRefreshRateFPS = 0.0;
+
+  // Get the display's maximum refresh rate in the unit of frame per second.
+  // Return kUnknownRefreshRateFPS if the refresh rate is unknown.
+  virtual float GetDisplayRefreshRate() const;
+
  protected:
-  const blink::TaskRunners task_runners_;
-  std::mutex callback_mutex_;
-  Callback callback_;
+  // On some backends, the |FireCallback| needs to be made from a static C
+  // method.
+  friend class VsyncWaiterAndroid;
+  friend class VsyncWaiterEmbedder;
 
-  VsyncWaiter(blink::TaskRunners task_runners);
+  const TaskRunners task_runners_;
 
+  VsyncWaiter(TaskRunners task_runners);
+
+  // Implementations are meant to override this method and arm their vsync
+  // latches when in response to this invocation. On vsync, they are meant to
+  // invoke the |FireCallback| method once (and only once) with the appropriate
+  // arguments.
   virtual void AwaitVSync() = 0;
 
-  void FireCallback(fxl::TimePoint frame_start_time,
-                    fxl::TimePoint frame_target_time);
+  void FireCallback(fml::TimePoint frame_start_time,
+                    fml::TimePoint frame_target_time);
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(VsyncWaiter);
+ private:
+  std::mutex callback_mutex_;
+  Callback callback_ FML_GUARDED_BY(callback_mutex_);
+
+  FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiter);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_COMMON_VSYNC_WAITER_H_

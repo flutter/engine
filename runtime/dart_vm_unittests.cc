@@ -1,28 +1,28 @@
-// Copyright 2017 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/runtime/dart_vm_lifecycle.h"
+#include "flutter/runtime/runtime_test.h"
 #include "gtest/gtest.h"
 
-namespace blink {
+namespace flutter {
+namespace testing {
 
-TEST(DartVM, SimpleInitialization) {
-  Settings settings = {};
-  settings.task_observer_add = [](intptr_t, fxl::Closure) {};
-  settings.task_observer_remove = [](intptr_t) {};
-  auto vm = DartVM::ForProcess(settings);
+using DartVMTest = RuntimeTest;
+
+TEST_F(DartVMTest, SimpleInitialization) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  auto vm = DartVMRef::Create(CreateSettingsForFixture());
   ASSERT_TRUE(vm);
-  ASSERT_EQ(vm, DartVM::ForProcess(settings));
-  ASSERT_FALSE(DartVM::IsRunningPrecompiledCode());
-  ASSERT_EQ(vm->GetPlatformKernel().GetSize(), 0u);
 }
 
-TEST(DartVM, SimpleIsolateNameServer) {
-  Settings settings = {};
-  settings.task_observer_add = [](intptr_t, fxl::Closure) {};
-  settings.task_observer_remove = [](intptr_t) {};
-  auto vm = DartVM::ForProcess(settings);
+TEST_F(DartVMTest, SimpleIsolateNameServer) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  auto vm = DartVMRef::Create(CreateSettingsForFixture());
+  ASSERT_TRUE(vm);
+  ASSERT_TRUE(vm.GetVMData());
   auto ns = vm->GetIsolateNameServer();
   ASSERT_EQ(ns->LookupIsolatePortByName("foobar"), ILLEGAL_PORT);
   ASSERT_FALSE(ns->RemoveIsolateNameMapping("foobar"));
@@ -32,4 +32,5 @@ TEST(DartVM, SimpleIsolateNameServer) {
   ASSERT_TRUE(ns->RemoveIsolateNameMapping("foobar"));
 }
 
-}  // namespace blink
+}  // namespace testing
+}  // namespace flutter

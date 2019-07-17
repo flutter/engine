@@ -1,23 +1,30 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/shell/gpu/gpu_surface_software.h"
 
 #include <memory>
-#include "lib/fxl/logging.h"
+#include "flutter/fml/logging.h"
 
-namespace shell {
+namespace flutter {
+
+flutter::ExternalViewEmbedder*
+GPUSurfaceSoftwareDelegate::GetExternalViewEmbedder() {
+  return nullptr;
+}
 
 GPUSurfaceSoftware::GPUSurfaceSoftware(GPUSurfaceSoftwareDelegate* delegate)
     : delegate_(delegate), weak_factory_(this) {}
 
 GPUSurfaceSoftware::~GPUSurfaceSoftware() = default;
 
+// |Surface|
 bool GPUSurfaceSoftware::IsValid() {
   return delegate_ != nullptr;
 }
 
+// |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceSoftware::AcquireFrame(
     const SkISize& logical_size) {
   if (!IsValid()) {
@@ -58,9 +65,24 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceSoftware::AcquireFrame(
   return std::make_unique<SurfaceFrame>(backing_store, on_submit);
 }
 
+// |Surface|
+SkMatrix GPUSurfaceSoftware::GetRootTransformation() const {
+  // This backend does not currently support root surface transformations. Just
+  // return identity.
+  SkMatrix matrix;
+  matrix.reset();
+  return matrix;
+}
+
+// |Surface|
 GrContext* GPUSurfaceSoftware::GetContext() {
   // There is no GrContext associated with a software surface.
   return nullptr;
 }
 
-}  // namespace shell
+// |Surface|
+flutter::ExternalViewEmbedder* GPUSurfaceSoftware::GetExternalViewEmbedder() {
+  return delegate_->GetExternalViewEmbedder();
+}
+
+}  // namespace flutter

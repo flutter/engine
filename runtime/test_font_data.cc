@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -1215,7 +1215,7 @@ static const unsigned int kAhemFontLength = 0;
 
 #endif  // EMBED_TEST_FONT_DATA
 
-namespace blink {
+namespace flutter {
 
 std::unique_ptr<SkStreamAsset> GetTestFontData() {
   if (kAhemFontLength == 0) {
@@ -1229,4 +1229,4 @@ std::string GetTestFontFamilyName() {
   return "Ahem";
 }
 
-}  // namespace blink
+}  // namespace flutter

@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,42 +6,48 @@
 #define FLUTTER_LIB_UI_PAINTING_PICTURE_H_
 
 #include "flutter/flow/skia_gpu_object.h"
+#include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/image.h"
-#include "lib/tonic/dart_wrappable.h"
 #include "third_party/skia/include/core/SkPicture.h"
 
 namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 class Canvas;
 
-class Picture : public fxl::RefCountedThreadSafe<Picture>,
-                public tonic::DartWrappable {
+class Picture : public RefCountedDartWrappable<Picture> {
   DEFINE_WRAPPERTYPEINFO();
-  FRIEND_MAKE_REF_COUNTED(Picture);
+  FML_FRIEND_MAKE_REF_COUNTED(Picture);
 
  public:
   ~Picture() override;
-  static fxl::RefPtr<Picture> Create(flow::SkiaGPUObject<SkPicture> picture);
+  static fml::RefPtr<Picture> Create(flutter::SkiaGPUObject<SkPicture> picture);
 
   sk_sp<SkPicture> picture() const { return picture_.get(); }
 
-  fxl::RefPtr<CanvasImage> toImage(int width, int height);
+  Dart_Handle toImage(uint32_t width,
+                      uint32_t height,
+                      Dart_Handle raw_image_callback);
 
   void dispose();
 
-  virtual size_t GetAllocationSize() override;
+  size_t GetAllocationSize() override;
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
- private:
-  explicit Picture(flow::SkiaGPUObject<SkPicture> picture);
+  static Dart_Handle RasterizeToImage(sk_sp<SkPicture> picture,
+                                      uint32_t width,
+                                      uint32_t height,
+                                      Dart_Handle raw_image_callback);
 
-  flow::SkiaGPUObject<SkPicture> picture_;
+ private:
+  explicit Picture(flutter::SkiaGPUObject<SkPicture> picture);
+
+  flutter::SkiaGPUObject<SkPicture> picture_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_PICTURE_H_

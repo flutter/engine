@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -11,13 +11,13 @@
 #include <mach/mach_time.h>
 
 #include "flutter/common/task_runners.h"
-#include "flutter/glue/trace_event.h"
-#include "lib/fxl/logging.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/trace_event.h"
 
 @interface VSyncClient : NSObject
 
-- (instancetype)initWithTaskRunner:(fxl::RefPtr<fxl::TaskRunner>)task_runner
-                          callback:(shell::VsyncWaiter::Callback)callback;
+- (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
+                          callback:(flutter::VsyncWaiter::Callback)callback;
 
 - (void)await;
 
@@ -25,9 +25,9 @@
 
 @end
 
-namespace shell {
+namespace flutter {
 
-VsyncWaiterIOS::VsyncWaiterIOS(blink::TaskRunners task_runners)
+VsyncWaiterIOS::VsyncWaiterIOS(flutter::TaskRunners task_runners)
     : VsyncWaiter(std::move(task_runners)),
       client_([[VSyncClient alloc] initWithTaskRunner:task_runners_.GetUITaskRunner()
                                              callback:std::bind(&VsyncWaiterIOS::FireCallback,
@@ -45,15 +45,15 @@ void VsyncWaiterIOS::AwaitVSync() {
   [client_.get() await];
 }
 
-}  // namespace shell
+}  // namespace flutter
 
 @implementation VSyncClient {
-  shell::VsyncWaiter::Callback callback_;
+  flutter::VsyncWaiter::Callback callback_;
   fml::scoped_nsobject<CADisplayLink> display_link_;
 }
 
-- (instancetype)initWithTaskRunner:(fxl::RefPtr<fxl::TaskRunner>)task_runner
-                          callback:(shell::VsyncWaiter::Callback)callback {
+- (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
+                          callback:(flutter::VsyncWaiter::Callback)callback {
   self = [super init];
 
   if (self) {
@@ -78,8 +78,8 @@ void VsyncWaiterIOS::AwaitVSync() {
 }
 
 - (void)onDisplayLink:(CADisplayLink*)link {
-  fxl::TimePoint frame_start_time = fxl::TimePoint::Now();
-  fxl::TimePoint frame_target_time = frame_start_time + fxl::TimeDelta::FromSecondsF(link.duration);
+  fml::TimePoint frame_start_time = fml::TimePoint::Now();
+  fml::TimePoint frame_target_time = frame_start_time + fml::TimeDelta::FromSecondsF(link.duration);
 
   display_link_.get().paused = YES;
 

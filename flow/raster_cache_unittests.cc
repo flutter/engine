@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -18,13 +18,13 @@ sk_sp<SkPicture> GetSamplePicture() {
 }
 
 TEST(RasterCache, SimpleInitialization) {
-  flow::RasterCache cache;
+  flutter::RasterCache cache;
   ASSERT_TRUE(true);
 }
 
 TEST(RasterCache, ThresholdIsRespected) {
   size_t threshold = 3;
-  flow::RasterCache cache(threshold);
+  flutter::RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
 
@@ -33,20 +33,20 @@ TEST(RasterCache, ThresholdIsRespected) {
   sk_sp<SkImage> image;
 
   sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
-  ASSERT_FALSE(cache.GetPrerolledImage(NULL, picture.get(), matrix, srgb.get(),
-                                       true, false));  // 1
+  ASSERT_FALSE(cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true,
+                             false));  // 1
   cache.SweepAfterFrame();
-  ASSERT_FALSE(cache.GetPrerolledImage(NULL, picture.get(), matrix, srgb.get(),
-                                       true, false));  // 2
+  ASSERT_FALSE(cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true,
+                             false));  // 2
   cache.SweepAfterFrame();
-  ASSERT_TRUE(cache.GetPrerolledImage(NULL, picture.get(), matrix, srgb.get(),
-                                      true, false));  // 3
+  ASSERT_TRUE(cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true,
+                            false));  // 3
   cache.SweepAfterFrame();
 }
 
 TEST(RasterCache, ThresholdIsRespectedWhenZero) {
   size_t threshold = 0;
-  flow::RasterCache cache(threshold);
+  flutter::RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
 
@@ -55,20 +55,20 @@ TEST(RasterCache, ThresholdIsRespectedWhenZero) {
   sk_sp<SkImage> image;
 
   sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
-  ASSERT_FALSE(cache.GetPrerolledImage(NULL, picture.get(), matrix, srgb.get(),
-                                       true, false));  // 1
+  ASSERT_FALSE(cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true,
+                             false));  // 1
   cache.SweepAfterFrame();
-  ASSERT_FALSE(cache.GetPrerolledImage(NULL, picture.get(), matrix, srgb.get(),
-                                       true, false));  // 2
+  ASSERT_FALSE(cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true,
+                             false));  // 2
   cache.SweepAfterFrame();
-  ASSERT_FALSE(cache.GetPrerolledImage(NULL, picture.get(), matrix, srgb.get(),
-                                       true, false));  // 3
+  ASSERT_FALSE(cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true,
+                             false));  // 3
   cache.SweepAfterFrame();
 }
 
 TEST(RasterCache, SweepsRemoveUnusedFrames) {
   size_t threshold = 3;
-  flow::RasterCache cache(threshold);
+  flutter::RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
 
@@ -77,19 +77,19 @@ TEST(RasterCache, SweepsRemoveUnusedFrames) {
   sk_sp<SkImage> image;
 
   sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
-  ASSERT_FALSE(cache.GetPrerolledImage(NULL, picture.get(), matrix, srgb.get(),
-                                       true, false));  // 1
+  ASSERT_FALSE(cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true,
+                             false));  // 1
   cache.SweepAfterFrame();
-  ASSERT_FALSE(cache.GetPrerolledImage(NULL, picture.get(), matrix, srgb.get(),
-                                       true, false));  // 2
+  ASSERT_FALSE(cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true,
+                             false));  // 2
   cache.SweepAfterFrame();
-  ASSERT_TRUE(cache.GetPrerolledImage(NULL, picture.get(), matrix, srgb.get(),
-                                      true, false));  // 3
+  ASSERT_TRUE(cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true,
+                            false));  // 3
   cache.SweepAfterFrame();
-  ASSERT_TRUE(cache.GetPrerolledImage(NULL, picture.get(), matrix, srgb.get(),
-                                      true, false));  // 4
+  ASSERT_TRUE(cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true,
+                            false));  // 4
   cache.SweepAfterFrame();
   cache.SweepAfterFrame();  // Extra frame without a preroll image access.
-  ASSERT_FALSE(cache.GetPrerolledImage(NULL, picture.get(), matrix, srgb.get(),
-                                       true, false));  // 5
+  ASSERT_FALSE(cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true,
+                             false));  // 5
 }

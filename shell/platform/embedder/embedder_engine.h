@@ -1,4 +1,4 @@
-// Copyright 2017 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,24 +6,33 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_ENGINE_H_
 
 #include <memory>
+#include <unordered_map>
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "lib/fxl/macros.h"
+#include "flutter/shell/platform/embedder/embedder_engine.h"
+#include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
+#include "flutter/shell/platform/embedder/embedder_thread_host.h"
 
-namespace shell {
+namespace flutter {
 
 // The object that is returned to the embedder as an opaque pointer to the
 // instance of the Flutter engine.
 class EmbedderEngine {
  public:
-  EmbedderEngine(ThreadHost thread_host, blink::TaskRunners task_runners,
-                 blink::Settings settings,
+  EmbedderEngine(std::unique_ptr<EmbedderThreadHost> thread_host,
+                 flutter::TaskRunners task_runners,
+                 flutter::Settings settings,
                  Shell::CreateCallback<PlatformView> on_create_platform_view,
-                 Shell::CreateCallback<Rasterizer> on_create_rasterizer);
+                 Shell::CreateCallback<Rasterizer> on_create_rasterizer,
+                 EmbedderExternalTextureGL::ExternalTextureCallback
+                     external_texture_callback);
 
   ~EmbedderEngine();
+
+  const TaskRunners& GetTaskRunners() const;
 
   bool NotifyCreated();
 
@@ -33,21 +42,47 @@ class EmbedderEngine {
 
   bool IsValid() const;
 
-  bool SetViewportMetrics(blink::ViewportMetrics metrics);
+  bool SetViewportMetrics(flutter::ViewportMetrics metrics);
 
   bool DispatchPointerDataPacket(
-      std::unique_ptr<blink::PointerDataPacket> packet);
+      std::unique_ptr<flutter::PointerDataPacket> packet);
 
-  bool SendPlatformMessage(fxl::RefPtr<blink::PlatformMessage> message);
+  bool SendPlatformMessage(fml::RefPtr<flutter::PlatformMessage> message);
+
+  bool RegisterTexture(int64_t texture);
+
+  bool UnregisterTexture(int64_t texture);
+
+  bool MarkTextureFrameAvailable(int64_t texture);
+
+  bool SetSemanticsEnabled(bool enabled);
+
+  bool SetAccessibilityFeatures(int32_t flags);
+
+  bool DispatchSemanticsAction(int id,
+                               flutter::SemanticsAction action,
+                               std::vector<uint8_t> args);
+
+  bool OnVsyncEvent(intptr_t baton,
+                    fml::TimePoint frame_start_time,
+                    fml::TimePoint frame_target_time);
+
+  bool PostRenderThreadTask(fml::closure task);
+
+  bool RunTask(const FlutterTask* task);
 
  private:
-  const ThreadHost thread_host_;
+  const std::unique_ptr<EmbedderThreadHost> thread_host_;
+  TaskRunners task_runners_;
   std::unique_ptr<Shell> shell_;
+  const EmbedderExternalTextureGL::ExternalTextureCallback
+      external_texture_callback_;
   bool is_valid_ = false;
+  uint64_t next_pointer_flow_id_ = 0;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(EmbedderEngine);
+  FML_DISALLOW_COPY_AND_ASSIGN(EmbedderEngine);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_ENGINE_H_

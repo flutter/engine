@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,13 +8,13 @@
 #include <jni.h>
 #include <memory>
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 #include "flutter/shell/platform/android/android_context_gl.h"
 #include "flutter/shell/platform/android/android_environment_gl.h"
 #include "flutter/shell/platform/android/android_surface.h"
-#include "lib/fxl/macros.h"
 
-namespace shell {
+namespace flutter {
 
 class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
                                public AndroidSurface {
@@ -25,44 +25,46 @@ class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
 
   bool IsOffscreenContextValid() const;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool IsValid() const override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   std::unique_ptr<Surface> CreateGPUSurface() override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   void TeardownOnScreenContext() override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool OnScreenSurfaceResize(const SkISize& size) const override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool ResourceContextMakeCurrent() override;
 
-  // |shell::AndroidSurface|
-  bool SetNativeWindow(fxl::RefPtr<AndroidNativeWindow> window) override;
+  // |AndroidSurface|
+  bool ResourceContextClearCurrent() override;
 
-  // |shell::GPUSurfaceGLDelegate|
+  // |AndroidSurface|
+  bool SetNativeWindow(fml::RefPtr<AndroidNativeWindow> window) override;
+
+  // |GPUSurfaceGLDelegate|
   bool GLContextMakeCurrent() override;
 
-  // |shell::GPUSurfaceGLDelegate|
+  // |GPUSurfaceGLDelegate|
   bool GLContextClearCurrent() override;
 
-  // |shell::GPUSurfaceGLDelegate|
+  // |GPUSurfaceGLDelegate|
   bool GLContextPresent() override;
 
-  // |shell::GPUSurfaceGLDelegate|
+  // |GPUSurfaceGLDelegate|
   intptr_t GLContextFBO() const override;
 
  private:
-  fxl::RefPtr<AndroidContextGL> onscreen_context_;
-  fxl::RefPtr<AndroidContextGL> offscreen_context_;
-  sk_sp<GrContext> gr_context_;
+  fml::RefPtr<AndroidContextGL> onscreen_context_;
+  fml::RefPtr<AndroidContextGL> offscreen_context_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceGL);
+  FML_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceGL);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_GL_H_

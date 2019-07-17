@@ -1,4 +1,4 @@
-// Copyright 2016 The Fuchsia Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -21,8 +21,8 @@ namespace fml {
 //
 // |~Foo()| *may* be made private (e.g., to avoid accidental deletion of objects
 // while there are still references to them), |Foo| should friend
-// |RefCountedThreadSafe<Foo>|; use |FML_FRIEND_REF_COUNTED_THREAD_SAFE()| for
-// this:
+// |RefCountedThreadSafe<Foo>|; use |FML_FRIEND_REF_COUNTED_THREAD_SAFE()|
+// for this:
 //
 //   class Foo : public RefCountedThreadSafe<Foo> {
 //     ...

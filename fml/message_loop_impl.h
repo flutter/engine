@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -12,17 +12,22 @@
 #include <queue>
 #include <utility>
 
+#include "flutter/fml/closure.h"
+#include "flutter/fml/delayed_task.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/message_loop.h"
-#include "lib/fxl/functional/closure.h"
-#include "lib/fxl/memory/ref_counted.h"
-#include "lib/fxl/time/time_point.h"
+#include "flutter/fml/message_loop_task_queues.h"
+#include "flutter/fml/synchronization/thread_annotations.h"
+#include "flutter/fml/time/time_point.h"
+#include "flutter/fml/wakeable.h"
 
 namespace fml {
 
-class MessageLoopImpl : public fxl::RefCountedThreadSafe<MessageLoopImpl> {
+class MessageLoopImpl : public Wakeable,
+                        public fml::RefCountedThreadSafe<MessageLoopImpl> {
  public:
-  static fxl::RefPtr<MessageLoopImpl> Create();
+  static fml::RefPtr<MessageLoopImpl> Create();
 
   virtual ~MessageLoopImpl();
 
@@ -30,11 +35,9 @@ class MessageLoopImpl : public fxl::RefCountedThreadSafe<MessageLoopImpl> {
 
   virtual void Terminate() = 0;
 
-  virtual void WakeUp(fxl::TimePoint time_point) = 0;
+  void PostTask(fml::closure task, fml::TimePoint target_time);
 
-  void PostTask(fxl::Closure task, fxl::TimePoint target_time);
-
-  void AddTaskObserver(intptr_t key, fxl::Closure callback);
+  void AddTaskObserver(intptr_t key, fml::closure callback);
 
   void RemoveTaskObserver(intptr_t key);
 
@@ -42,44 +45,31 @@ class MessageLoopImpl : public fxl::RefCountedThreadSafe<MessageLoopImpl> {
 
   void DoTerminate();
 
+  virtual TaskQueueId GetTaskQueueId() const;
+
+  void SwapTaskQueues(const fml::RefPtr<MessageLoopImpl>& other);
+
+ protected:
   // Exposed for the embedder shell which allows clients to poll for events
   // instead of dedicating a thread to the message loop.
+  friend class MessageLoop;
+
   void RunExpiredTasksNow();
+
+  void RunSingleExpiredTaskNow();
 
  protected:
   MessageLoopImpl();
 
  private:
-  struct DelayedTask {
-    size_t order;
-    fxl::Closure task;
-    fxl::TimePoint target_time;
+  fml::RefPtr<MessageLoopTaskQueues> task_queue_;
+  TaskQueueId queue_id_;
 
-    DelayedTask(size_t p_order,
-                fxl::Closure p_task,
-                fxl::TimePoint p_target_time)
-        : order(p_order), task(std::move(p_task)), target_time(p_target_time) {}
-  };
+  std::mutex tasks_flushing_mutex_;
 
-  struct DelayedTaskCompare {
-    bool operator()(const DelayedTask& a, const DelayedTask& b) {
-      return a.target_time == b.target_time ? a.order > b.order
-                                            : a.target_time > b.target_time;
-    }
-  };
-
-  using DelayedTaskQueue = std::
-      priority_queue<DelayedTask, std::deque<DelayedTask>, DelayedTaskCompare>;
-
-  std::map<intptr_t, fxl::Closure> task_observers_;
-  std::mutex delayed_tasks_mutex_;
-  DelayedTaskQueue delayed_tasks_;
-  size_t order_;
   std::atomic_bool terminated_;
 
-  void RegisterTask(fxl::Closure task, fxl::TimePoint target_time);
-
-  void RunExpiredTasks();
+  void FlushTasks(FlushType type);
 
   FML_DISALLOW_COPY_AND_ASSIGN(MessageLoopImpl);
 };

@@ -1,8 +1,8 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// See README in this directory for information on how this code is organised.
+// See README in this directory for information on how this code is organized.
 
 import 'dart:async';
 import 'dart:collection';
@@ -12,31 +12,32 @@ import 'dart:math' as math;
 
 import 'package:args/args.dart';
 import 'package:crypto/crypto.dart' as crypto;
+import 'package:licenses/patterns.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 
 import 'filesystem.dart' as fs;
 import 'licenses.dart';
-import 'patterns.dart';
 
 
 // REPOSITORY OBJECTS
 
-abstract class RepositoryEntry implements Comparable<RepositoryEntry> {
-  RepositoryEntry(this.parent, this.io);
-  final RepositoryDirectory parent;
+abstract class _RepositoryEntry implements Comparable<_RepositoryEntry> {
+  _RepositoryEntry(this.parent, this.io);
+  final _RepositoryDirectory parent;
   final fs.IoNode io;
   String get name => io.name;
   String get libraryName;
 
   @override
-  int compareTo(RepositoryEntry other) => toString().compareTo(other.toString());
+  int compareTo(_RepositoryEntry other) => toString().compareTo(other.toString());
 
   @override
   String toString() => io.fullName;
 }
 
-abstract class RepositoryFile extends RepositoryEntry {
-  RepositoryFile(RepositoryDirectory parent, fs.File io) : super(parent, io);
+abstract class _RepositoryFile extends _RepositoryEntry {
+  _RepositoryFile(_RepositoryDirectory parent, fs.File io) : super(parent, io);
 
   Iterable<License> get licenses;
 
@@ -47,15 +48,15 @@ abstract class RepositoryFile extends RepositoryEntry {
   fs.File get io => super.io;
 }
 
-abstract class RepositoryLicensedFile extends RepositoryFile {
-  RepositoryLicensedFile(RepositoryDirectory parent, fs.File io) : super(parent, io);
+abstract class _RepositoryLicensedFile extends _RepositoryFile {
+  _RepositoryLicensedFile(_RepositoryDirectory parent, fs.File io) : super(parent, io);
 
   // file names that we are confident won't be included in the final build product
-  static final RegExp _readmeNamePattern = new RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
-  static final RegExp _buildTimePattern = new RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties)$', caseSensitive: false);
-  static final RegExp _docsPattern = new RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|.+\.spec(?:\.in)?)$', caseSensitive: false);
-  static final RegExp _devPattern = new RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml)$', caseSensitive: false);
-  static final RegExp _testsPattern = new RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
+  static final RegExp _readmeNamePattern = RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
+  static final RegExp _buildTimePattern = RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties)$', caseSensitive: false);
+  static final RegExp _docsPattern = RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|Doxyfile|.+\.spec(?:\.in)?)$', caseSensitive: false);
+  static final RegExp _devPattern = RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml)$', caseSensitive: false);
+  static final RegExp _testsPattern = RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
 
   bool get isIncludedInBuildProducts {
     return !io.name.contains(_readmeNamePattern)
@@ -69,13 +70,13 @@ abstract class RepositoryLicensedFile extends RepositoryFile {
   bool get isShellScript => false;
 }
 
-class RepositorySourceFile extends RepositoryLicensedFile {
-  RepositorySourceFile(RepositoryDirectory parent, fs.TextFile io) : super(parent, io);
+class _RepositorySourceFile extends _RepositoryLicensedFile {
+  _RepositorySourceFile(_RepositoryDirectory parent, fs.TextFile io) : super(parent, io);
 
   @override
   fs.TextFile get io => super.io;
 
-  static final RegExp _hashBangPattern = new RegExp(r'^#! *(?:/bin/sh|/bin/bash|/usr/bin/env +(?:python|bash))\b');
+  static final RegExp _hashBangPattern = RegExp(r'^#! *(?:/bin/sh|/bin/bash|/usr/bin/env +(?:python|bash))\b');
 
   @override
   bool get isShellScript {
@@ -102,17 +103,15 @@ class RepositorySourceFile extends RepositoryLicensedFile {
         throw 'file has no detectable license and no in-scope default license file';
     }
     _licenses.sort();
-    _licenses.forEach((License license) => license.markUsed(io.fullName, libraryName));
+    for (License license in licenses)
+      license.markUsed(io.fullName, libraryName);
     assert(_licenses != null && _licenses.isNotEmpty);
     return _licenses;
   }
 }
 
-class RepositoryBinaryFile extends RepositoryLicensedFile {
-  RepositoryBinaryFile(RepositoryDirectory parent, fs.File io) : super(parent, io);
-
-  @override
-  fs.File get io => super.io;
+class _RepositoryBinaryFile extends _RepositoryLicensedFile {
+  _RepositoryBinaryFile(_RepositoryDirectory parent, fs.File io) : super(parent, io);
 
   List<License> _licenses;
 
@@ -122,7 +121,8 @@ class RepositoryBinaryFile extends RepositoryLicensedFile {
       _licenses = parent.nearestLicensesFor(name);
       if (_licenses == null || _licenses.isEmpty)
         throw 'no license file found in scope for ${io.fullName}';
-      _licenses.forEach((License license) => license.markUsed(io.fullName, libraryName));
+      for (License license in licenses)
+        license.markUsed(io.fullName, libraryName);
     }
     return _licenses;
   }
@@ -131,8 +131,8 @@ class RepositoryBinaryFile extends RepositoryLicensedFile {
 
 // LICENSES
 
-abstract class RepositoryLicenseFile extends RepositoryFile {
-  RepositoryLicenseFile(RepositoryDirectory parent, fs.File io) : super(parent, io);
+abstract class _RepositoryLicenseFile extends _RepositoryFile {
+  _RepositoryLicenseFile(_RepositoryDirectory parent, fs.File io) : super(parent, io);
 
   List<License> licensesFor(String name);
   License licenseOfType(LicenseType type);
@@ -141,8 +141,8 @@ abstract class RepositoryLicenseFile extends RepositoryFile {
   License get defaultLicense;
 }
 
-abstract class RepositorySingleLicenseFile extends RepositoryLicenseFile {
-  RepositorySingleLicenseFile(RepositoryDirectory parent, fs.TextFile io, this.license)
+abstract class _RepositorySingleLicenseFile extends _RepositoryLicenseFile {
+  _RepositorySingleLicenseFile(_RepositoryDirectory parent, fs.TextFile io, this.license)
     : super(parent, io);
 
   final License license;
@@ -168,11 +168,11 @@ abstract class RepositorySingleLicenseFile extends RepositoryLicenseFile {
   Iterable<License> get licenses sync* { yield license; }
 }
 
-class RepositoryGeneralSingleLicenseFile extends RepositorySingleLicenseFile {
-  RepositoryGeneralSingleLicenseFile(RepositoryDirectory parent, fs.TextFile io)
-    : super(parent, io, new License.fromBodyAndName(io.readString(), io.name, origin: io.fullName));
+class _RepositoryGeneralSingleLicenseFile extends _RepositorySingleLicenseFile {
+  _RepositoryGeneralSingleLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
+    : super(parent, io, License.fromBodyAndName(io.readString(), io.name, origin: io.fullName));
 
-  RepositoryGeneralSingleLicenseFile.fromLicense(RepositoryDirectory parent, fs.TextFile io, License license)
+  _RepositoryGeneralSingleLicenseFile.fromLicense(_RepositoryDirectory parent, fs.TextFile io, License license)
     : super(parent, io, license);
 
   @override
@@ -183,14 +183,14 @@ class RepositoryGeneralSingleLicenseFile extends RepositorySingleLicenseFile {
   }
 }
 
-class RepositoryApache4DNoticeFile extends RepositorySingleLicenseFile {
-  RepositoryApache4DNoticeFile(RepositoryDirectory parent, fs.TextFile io)
+class _RepositoryApache4DNoticeFile extends _RepositorySingleLicenseFile {
+  _RepositoryApache4DNoticeFile(_RepositoryDirectory parent, fs.TextFile io)
     : super(parent, io, _parseLicense(io));
 
   @override
   License licenseOfType(LicenseType type) => null;
 
-  static final RegExp _pattern = new RegExp(
+  static final RegExp _pattern = RegExp(
     r'^(// ------------------------------------------------------------------\n'
     r'// NOTICE file corresponding to the section 4d of The Apache License,\n'
     r'// Version 2\.0, in this case for (?:.+)\n'
@@ -207,12 +207,12 @@ class RepositoryApache4DNoticeFile extends RepositorySingleLicenseFile {
   static License _parseLicense(fs.TextFile io) {
     final Match match = _pattern.allMatches(io.readString()).single;
     assert(match.groupCount == 2);
-    return new License.unique(match.group(2), LicenseType.apacheNotice, origin: io.fullName);
+    return License.unique(match.group(2), LicenseType.apacheNotice, origin: io.fullName);
   }
 }
 
-class RepositoryLicenseRedirectFile extends RepositorySingleLicenseFile {
-  RepositoryLicenseRedirectFile(RepositoryDirectory parent, fs.TextFile io, License license)
+class _RepositoryLicenseRedirectFile extends _RepositorySingleLicenseFile {
+  _RepositoryLicenseRedirectFile(_RepositoryDirectory parent, fs.TextFile io, License license)
     : super(parent, io, license);
 
   @override
@@ -222,17 +222,17 @@ class RepositoryLicenseRedirectFile extends RepositorySingleLicenseFile {
     return null;
   }
 
-  static RepositoryLicenseRedirectFile maybeCreateFrom(RepositoryDirectory parent, fs.TextFile io) {
-    String contents = io.readString();
-    License license = interpretAsRedirectLicense(contents, parent, origin: io.fullName);
+  static _RepositoryLicenseRedirectFile maybeCreateFrom(_RepositoryDirectory parent, fs.TextFile io) {
+    final String contents = io.readString();
+    final License license = interpretAsRedirectLicense(contents, parent, origin: io.fullName);
     if (license != null)
-      return new RepositoryLicenseRedirectFile(parent, io, license);
+      return _RepositoryLicenseRedirectFile(parent, io, license);
     return null;
   }
 }
 
-class RepositoryLicenseFileWithLeader extends RepositorySingleLicenseFile {
-  RepositoryLicenseFileWithLeader(RepositoryDirectory parent, fs.TextFile io, RegExp leader)
+class _RepositoryLicenseFileWithLeader extends _RepositorySingleLicenseFile {
+  _RepositoryLicenseFileWithLeader(_RepositoryDirectory parent, fs.TextFile io, RegExp leader)
     : super(parent, io, _parseLicense(io, leader));
 
   @override
@@ -243,15 +243,15 @@ class RepositoryLicenseFileWithLeader extends RepositorySingleLicenseFile {
     final Match match = leader.firstMatch(body);
     if (match == null)
       throw 'failed to strip leader from $io\nleader: /$leader/\nbody:\n---\n$body\n---';
-    return new License.fromBodyAndName(body.substring(match.end), io.name, origin: io.fullName);
+    return License.fromBodyAndName(body.substring(match.end), io.name, origin: io.fullName);
   }
 }
 
-class RepositoryReadmeIjgFile extends RepositorySingleLicenseFile {
-  RepositoryReadmeIjgFile(RepositoryDirectory parent, fs.TextFile io)
+class _RepositoryReadmeIjgFile extends _RepositorySingleLicenseFile {
+  _RepositoryReadmeIjgFile(_RepositoryDirectory parent, fs.TextFile io)
     : super(parent, io, _parseLicense(io));
 
-  static final RegExp _pattern = new RegExp(
+  static final RegExp _pattern = RegExp(
     r'Permission is hereby granted to use, copy, modify, and distribute this\n'
     r'software \(or portions thereof\) for any purpose, without fee, subject to these\n'
     r'conditions:\n'
@@ -269,10 +269,10 @@ class RepositoryReadmeIjgFile extends RepositorySingleLicenseFile {
   );
 
   static License _parseLicense(fs.TextFile io) {
-    String body = io.readString();
+    final String body = io.readString();
     if (!body.contains(_pattern))
       throw 'unexpected contents in IJG README';
-    return new License.message(body, LicenseType.ijg, origin: io.fullName);
+    return License.message(body, LicenseType.ijg, origin: io.fullName);
   }
 
   @override
@@ -288,11 +288,11 @@ class RepositoryReadmeIjgFile extends RepositorySingleLicenseFile {
   }
 }
 
-class RepositoryDartLicenseFile extends RepositorySingleLicenseFile {
-  RepositoryDartLicenseFile(RepositoryDirectory parent, fs.TextFile io)
+class _RepositoryDartLicenseFile extends _RepositorySingleLicenseFile {
+  _RepositoryDartLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
     : super(parent, io, _parseLicense(io));
 
-  static final RegExp _pattern = new RegExp(
+  static final RegExp _pattern = RegExp(
     r'^This license applies to all parts of Dart that are not externally\n'
     r'maintained libraries\. The external maintained libraries used by\n'
     r'Dart are:\n'
@@ -310,7 +310,7 @@ class RepositoryDartLicenseFile extends RepositorySingleLicenseFile {
     final Match match = _pattern.firstMatch(io.readString());
     if (match == null || match.groupCount != 1)
       throw 'unexpected Dart license file contents';
-    return new License.template(match.group(1), LicenseType.bsd, origin: io.fullName);
+    return License.template(match.group(1), LicenseType.bsd, origin: io.fullName);
   }
 
   @override
@@ -319,9 +319,9 @@ class RepositoryDartLicenseFile extends RepositorySingleLicenseFile {
   }
 }
 
-class RepositoryLibPngLicenseFile extends RepositorySingleLicenseFile {
-  RepositoryLibPngLicenseFile(RepositoryDirectory parent, fs.TextFile io)
-    : super(parent, io, new License.blank(io.readString(), LicenseType.libpng, origin: io.fullName)) {
+class _RepositoryLibPngLicenseFile extends _RepositorySingleLicenseFile {
+  _RepositoryLibPngLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
+    : super(parent, io, License.blank(io.readString(), LicenseType.libpng, origin: io.fullName)) {
     _verifyLicense(io);
   }
 
@@ -341,9 +341,9 @@ class RepositoryLibPngLicenseFile extends RepositorySingleLicenseFile {
   }
 }
 
-class RepositoryBlankLicenseFile extends RepositorySingleLicenseFile {
-  RepositoryBlankLicenseFile(RepositoryDirectory parent, fs.TextFile io, String sanityCheck)
-    : super(parent, io, new License.blank(io.readString(), LicenseType.unknown)) {
+class _RepositoryBlankLicenseFile extends _RepositorySingleLicenseFile {
+  _RepositoryBlankLicenseFile(_RepositoryDirectory parent, fs.TextFile io, String sanityCheck)
+    : super(parent, io, License.blank(io.readString(), LicenseType.unknown)) {
     _verifyLicense(io, sanityCheck);
   }
 
@@ -357,11 +357,11 @@ class RepositoryBlankLicenseFile extends RepositorySingleLicenseFile {
   License licenseOfType(LicenseType type) => null;
 }
 
-class RepositoryCatapultApiClientLicenseFile extends RepositorySingleLicenseFile {
-  RepositoryCatapultApiClientLicenseFile(RepositoryDirectory parent, fs.TextFile io)
+class _RepositoryCatapultApiClientLicenseFile extends _RepositorySingleLicenseFile {
+  _RepositoryCatapultApiClientLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
     : super(parent, io, _parseLicense(io));
 
-  static final RegExp _pattern = new RegExp(
+  static final RegExp _pattern = RegExp(
     r' *Licensed under the Apache License, Version 2\.0 \(the "License"\);\n'
     r' *you may not use this file except in compliance with the License\.\n'
     r' *You may obtain a copy of the License at\n'
@@ -381,7 +381,7 @@ class RepositoryCatapultApiClientLicenseFile extends RepositorySingleLicenseFile
     final Match match = _pattern.firstMatch(io.readString());
     if (match == null || match.groupCount != 1)
       throw 'unexpected apiclient license file contents';
-    return new License.fromUrl(match.group(1), origin: io.fullName);
+    return License.fromUrl(match.group(1), origin: io.fullName);
   }
 
   @override
@@ -390,11 +390,11 @@ class RepositoryCatapultApiClientLicenseFile extends RepositorySingleLicenseFile
   }
 }
 
-class RepositoryCatapultCoverageLicenseFile extends RepositorySingleLicenseFile {
-  RepositoryCatapultCoverageLicenseFile(RepositoryDirectory parent, fs.TextFile io)
+class _RepositoryCatapultCoverageLicenseFile extends _RepositorySingleLicenseFile {
+  _RepositoryCatapultCoverageLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
     : super(parent, io, _parseLicense(io));
 
-  static final RegExp _pattern = new RegExp(
+  static final RegExp _pattern = RegExp(
     r' *Except where noted otherwise, this software is licensed under the Apache\n'
     r' *License, Version 2.0 \(the "License"\); you may not use this work except in\n'
     r' *compliance with the License\.  You may obtain a copy of the License at\n'
@@ -414,7 +414,7 @@ class RepositoryCatapultCoverageLicenseFile extends RepositorySingleLicenseFile 
     final Match match = _pattern.firstMatch(io.readString());
     if (match == null || match.groupCount != 1)
       throw 'unexpected coverage license file contents';
-    return new License.fromUrl(match.group(1), origin: io.fullName);
+    return License.fromUrl(match.group(1), origin: io.fullName);
   }
 
   @override
@@ -423,13 +423,13 @@ class RepositoryCatapultCoverageLicenseFile extends RepositorySingleLicenseFile 
   }
 }
 
-class RepositoryLibJpegTurboLicense extends RepositoryLicenseFile {
-  RepositoryLibJpegTurboLicense(RepositoryDirectory parent, fs.TextFile io)
+class _RepositoryLibJpegTurboLicense extends _RepositoryLicenseFile {
+  _RepositoryLibJpegTurboLicense(_RepositoryDirectory parent, fs.TextFile io)
     : super(parent, io) {
     _parseLicense(io);
   }
 
-  static final RegExp _pattern = new RegExp(
+  static final RegExp _pattern = RegExp(
     r'libjpeg-turbo is covered by three compatible BSD-style open source licenses:\n'
     r'\n'
     r'- The IJG \(Independent JPEG Group\) License, which is listed in\n'
@@ -450,7 +450,7 @@ class RepositoryLibJpegTurboLicense extends RepositoryLicenseFile {
   );
 
   static void _parseLicense(fs.TextFile io) {
-    String body = io.readString();
+    final String body = io.readString();
     if (!body.contains(_pattern))
       throw 'unexpected contents in libjpeg-turbo LICENSE';
   }
@@ -460,10 +460,10 @@ class RepositoryLibJpegTurboLicense extends RepositoryLicenseFile {
   @override
   List<License> get licenses {
     if (_licenses == null) {
-      final RepositoryReadmeIjgFile readme = parent.getChildByName('README.ijg');
-      final RepositorySourceFile main = parent.getChildByName('turbojpeg.c');
-      final RepositoryDirectory simd = parent.getChildByName('simd');
-      final RepositorySourceFile zlib = simd.getChildByName('jsimdext.inc');
+      final _RepositoryReadmeIjgFile readme = parent.getChildByName('README.ijg');
+      final _RepositorySourceFile main = parent.getChildByName('turbojpeg.c');
+      final _RepositoryDirectory simd = parent.getChildByName('simd');
+      final _RepositorySourceFile zlib = simd.getChildByName('jsimdext.inc');
       _licenses = <License>[];
       _licenses.add(readme.license);
       _licenses.add(main.licenses.single);
@@ -491,46 +491,48 @@ class RepositoryLibJpegTurboLicense extends RepositoryLicenseFile {
   License get defaultLicense => null;
 }
 
-class RepositoryFreetypeLicenseFile extends RepositoryLicenseFile {
-  RepositoryFreetypeLicenseFile(RepositoryDirectory parent, fs.TextFile io)
+class _RepositoryFreetypeLicenseFile extends _RepositoryLicenseFile {
+  _RepositoryFreetypeLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
     : _target = _parseLicense(io), super(parent, io);
 
-  static final RegExp _pattern = new RegExp(
-    r"The  FreeType 2  font  engine is  copyrighted  work and  cannot be  used\n"
-    r"legally  without a  software license\.   In  order to  make this  project\n"
-    r"usable  to a vast  majority of  developers, we  distribute it  under two\n"
-    r"mutually exclusive open-source licenses\.\n"
-    r"\n"
-    r"This means  that \*you\* must choose  \*one\* of the  two licenses described\n"
-    r"below, then obey  all its terms and conditions when  using FreeType 2 in\n"
-    r"any of your projects or products.\n"
-    r"\n"
+  static final RegExp _pattern = RegExp(
+    r'The  FreeType 2  font  engine is  copyrighted  work and  cannot be  used\n'
+    r'legally  without a  software license\.   In  order to  make this  project\n'
+    r'usable  to a vast  majority of  developers, we  distribute it  under two\n'
+    r'mutually exclusive open-source licenses\.\n'
+    r'\n'
+    r'This means  that \*you\* must choose  \*one\* of the  two licenses described\n'
+    r'below, then obey  all its terms and conditions when  using FreeType 2 in\n'
+    r'any of your projects or products.\n'
+    r'\n'
     r"  - The FreeType License, found in  the file `(FTL\.TXT)', which is similar\n"
-    r"    to the original BSD license \*with\* an advertising clause that forces\n"
+    r'    to the original BSD license \*with\* an advertising clause that forces\n'
     r"    you  to  explicitly cite  the  FreeType  project  in your  product's\n"
-    r"    documentation\.  All  details are in the license  file\.  This license\n"
+    r'    documentation\.  All  details are in the license  file\.  This license\n'
     r"    is  suited  to products  which  don't  use  the GNU  General  Public\n"
-    r"    License\.\n"
-    r"\n"
-    r"    Note that  this license  is  compatible  to the  GNU General  Public\n"
-    r"    License version 3, but not version 2\.\n"
-    r"\n"
+    r'    License\.\n'
+    r'\n'
+    r'    Note that  this license  is  compatible  to the  GNU General  Public\n'
+    r'    License version 3, but not version 2\.\n'
+    r'\n'
     r"  - The GNU General Public License version 2, found in  `GPLv2\.TXT' \(any\n"
-    r"    later version can be used  also\), for programs which already use the\n"
-    r"    GPL\.  Note  that the  FTL is  incompatible  with  GPLv2 due  to  its\n"
-    r"    advertisement clause\.\n"
-    r"\n"
-    r"The contributed BDF and PCF drivers come with a license similar  to that\n"
-    r"of the X Window System\.  It is compatible to the above two licenses \(see\n"
-    r"file src/bdf/README and src/pcf/README\)\.\n"
-    r"\n"
-    r"The gzip module uses the zlib license \(see src/gzip/zlib\.h\) which too is\n"
-    r"compatible to the above two licenses\.\n"
-    r"\n"
-    r"The MD5 checksum support \(only used for debugging in development builds\)\n"
-    r"is in the public domain\.\n"
-    r"\n*"
-    r"--- end of LICENSE\.TXT ---\n*$"
+    r'    later version can be used  also\), for programs which already use the\n'
+    r'    GPL\.  Note  that the  FTL is  incompatible  with  GPLv2 due  to  its\n'
+    r'    advertisement clause\.\n'
+    r'\n'
+    r'The contributed BDF and PCF drivers  come with a license similar to that\n'
+    r'of the X Window System\.  It is compatible to the above two licenses \(see\n'
+    r'file src/bdf/README and  src/pcf/README\)\.  The same holds  for the files\n'
+    r"`fthash\.c' and  `fthash\.h'; their  code was  part of  the BDF  driver in\n"
+    r'earlier FreeType versions\.\n'
+    r'\n'
+    r'The gzip module uses the zlib license \(see src/gzip/zlib\.h\) which too is\n'
+    r'compatible to the above two licenses\.\n'
+    r'\n'
+    r'The MD5 checksum support \(only used for debugging in development builds\)\n'
+    r'is in the public domain\.\n'
+    r'\n*'
+    r'--- end of LICENSE\.TXT ---\n*$'
   );
 
   static String _parseLicense(fs.TextFile io) {
@@ -569,8 +571,8 @@ class RepositoryFreetypeLicenseFile extends RepositoryLicenseFile {
   Iterable<License> get licenses sync* { }
 }
 
-class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
-  RepositoryIcuLicenseFile(RepositoryDirectory parent, fs.TextFile io)
+class _RepositoryIcuLicenseFile extends _RepositoryLicenseFile {
+  _RepositoryIcuLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
     : _licenses = _parseLicense(io),
       super(parent, io);
 
@@ -579,7 +581,7 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
 
   final List<License> _licenses;
 
-  static final RegExp _pattern = new RegExp(
+  static final RegExp _pattern = RegExp(
     r'^COPYRIGHT AND PERMISSION NOTICE \(ICU 58 and later\)\n+'
     r'( *Copyright (?:.|\n)+?)\n+' // 1
     r'Third-Party Software Licenses\n+'
@@ -615,7 +617,7 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
     r' #  ---------COPYING\.libtabe ---- BEGIN--------------------\n'
     r' #\n'
     r' # +/\*\n'
-    r'( # +\* Copyrighy (?:.|\n)+?)\n' // yeah, that's a typo in the license. // 4
+    r'( # +\* Copyright (?:.|\n)+?)\n' // 4
     r' # +\*/\n'
     r' #\n'
     r' # +/\*\n'
@@ -642,13 +644,17 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
     r'( # +Copyright(?:.|\n)+?)\n' // 9
     r'\n'
     r' *5\. Time Zone Database\n'
-    r'((?:.|\n)+)$',
+    r'((?:.|\n)+)\n' // 10
+    r'\n'
+    r' *6\. Google double-conversion\n'
+    r'\n'
+    r'(Copyright(?:.|\n)+)\n$', // 11
     multiLine: true,
     caseSensitive: false
   );
 
-  static final RegExp _unexpectedHash = new RegExp(r'^.+ #', multiLine: true);
-  static final RegExp _newlineHash = new RegExp(r' # ?');
+  static final RegExp _unexpectedHash = RegExp(r'^.+ #', multiLine: true);
+  static final RegExp _newlineHash = RegExp(r' # ?');
 
   static String _dewrap(String s) {
     if (!s.startsWith(' # '))
@@ -664,19 +670,20 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
     final Match match = _pattern.firstMatch(io.readString());
     if (match == null)
       throw 'could not parse ICU license file';
-    assert(match.groupCount == 10);
-    if (match.group(10).contains(copyrightMentionPattern))
+    assert(match.groupCount == 11);
+    if (match.group(10).contains(copyrightMentionPattern) || match.group(11).contains('7.'))
       throw 'unexpected copyright in ICU license file';
     final List<License> result = <License>[
-      new License.fromBodyAndType(_dewrap(match.group(1)), LicenseType.unknown, origin: io.fullName),
-      new License.fromBodyAndType(_dewrap(match.group(2)), LicenseType.icu, origin: io.fullName),
-      new License.fromBodyAndType(_dewrap(match.group(3)), LicenseType.bsd, origin: io.fullName),
-      new License.fromBodyAndType(_dewrap(match.group(4)), LicenseType.bsd, origin: io.fullName),
-      new License.fromBodyAndType(_dewrap(match.group(5)), LicenseType.bsd, origin: io.fullName),
-      new License.fromBodyAndType(_dewrap(match.group(6)), LicenseType.unknown, origin: io.fullName),
-      new License.fromBodyAndType(_dewrap(match.group(7)), LicenseType.unknown, origin: io.fullName),
-      new License.fromBodyAndType(_dewrap(match.group(8)), LicenseType.bsd, origin: io.fullName),
-      new License.fromBodyAndType(_dewrap(match.group(9)), LicenseType.bsd, origin: io.fullName),
+      License.fromBodyAndType(_dewrap(match.group(1)), LicenseType.unknown, origin: io.fullName),
+      License.fromBodyAndType(_dewrap(match.group(2)), LicenseType.icu, origin: io.fullName),
+      License.fromBodyAndType(_dewrap(match.group(3)), LicenseType.bsd, origin: io.fullName),
+      License.fromBodyAndType(_dewrap(match.group(4)), LicenseType.bsd, origin: io.fullName),
+      License.fromBodyAndType(_dewrap(match.group(5)), LicenseType.bsd, origin: io.fullName),
+      License.fromBodyAndType(_dewrap(match.group(6)), LicenseType.unknown, origin: io.fullName),
+      License.fromBodyAndType(_dewrap(match.group(7)), LicenseType.unknown, origin: io.fullName),
+      License.fromBodyAndType(_dewrap(match.group(8)), LicenseType.bsd, origin: io.fullName),
+      License.fromBodyAndType(_dewrap(match.group(9)), LicenseType.bsd, origin: io.fullName),
+      License.fromBodyAndType(_dewrap(match.group(11)), LicenseType.bsd, origin: io.fullName),
     ];
     return result;
   }
@@ -708,7 +715,7 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
 Iterable<List<int>> splitIntList(List<int> data, int boundary) sync* {
   int index = 0;
   List<int> getOne() {
-    int start = index;
+    final int start = index;
     int end = index;
     while ((end < data.length) && (data[end] != boundary))
       end += 1;
@@ -720,13 +727,10 @@ Iterable<List<int>> splitIntList(List<int> data, int boundary) sync* {
     yield getOne();
 }
 
-class RepositoryMultiLicenseNoticesForFilesFile extends RepositoryLicenseFile {
-  RepositoryMultiLicenseNoticesForFilesFile(RepositoryDirectory parent, fs.File io)
+class _RepositoryMultiLicenseNoticesForFilesFile extends _RepositoryLicenseFile {
+  _RepositoryMultiLicenseNoticesForFilesFile(_RepositoryDirectory parent, fs.File io)
     : _licenses = _parseLicense(io),
       super(parent, io);
-
-  @override
-  fs.File get io => super.io;
 
   final Map<String, License> _licenses;
 
@@ -736,35 +740,35 @@ class RepositoryMultiLicenseNoticesForFilesFile extends RepositoryLicenseFile {
     // "Notices for files contained in the"
     // ...then have a second line which is 60 "=" characters
     final List<List<int>> contents = splitIntList(io.readBytes(), 0x0A).toList();
-    if (!ASCII.decode(contents[0]).startsWith('Notices for files contained in') ||
-        ASCII.decode(contents[1]) != '============================================================\n')
+    if (!ascii.decode(contents[0]).startsWith('Notices for files contained in') ||
+        ascii.decode(contents[1]) != '============================================================\n')
       throw 'unrecognised syntax: ${io.fullName}';
     int index = 2;
     while (index < contents.length) {
-      if (ASCII.decode(contents[index]) != 'Notices for file(s):\n')
+      if (ascii.decode(contents[index]) != 'Notices for file(s):\n')
         throw 'unrecognised syntax on line ${index + 1}: ${io.fullName}';
       index += 1;
       final List<String> names = <String>[];
       do {
-        names.add(ASCII.decode(contents[index]));
+        names.add(ascii.decode(contents[index]));
         index += 1;
-      } while (ASCII.decode(contents[index]) != '------------------------------------------------------------\n');
+      } while (ascii.decode(contents[index]) != '------------------------------------------------------------\n');
       index += 1;
       final List<List<int>> body = <List<int>>[];
       do {
         body.add(contents[index]);
         index += 1;
       } while (index < contents.length &&
-               ASCII.decode(contents[index], allowInvalid: true) != '============================================================\n');
+          ascii.decode(contents[index], allowInvalid: true) != '============================================================\n');
       index += 1;
       final List<int> bodyBytes = body.expand((List<int> line) => line).toList();
       String bodyText;
       try {
-        bodyText = UTF8.decode(bodyBytes);
+        bodyText = utf8.decode(bodyBytes);
       } on FormatException {
-        bodyText = LATIN1.decode(bodyBytes);
+        bodyText = latin1.decode(bodyBytes);
       }
-      License license = new License.unique(bodyText, LicenseType.unknown, origin: io.fullName);
+      final License license = License.unique(bodyText, LicenseType.unknown, origin: io.fullName);
       for (String name in names) {
         if (result[name] != null)
           throw 'conflicting license information for $name in ${io.fullName}';
@@ -776,7 +780,7 @@ class RepositoryMultiLicenseNoticesForFilesFile extends RepositoryLicenseFile {
 
   @override
   List<License> licensesFor(String name) {
-    License license = _licenses[name];
+    final License license = _licenses[name];
     if (license != null)
       return <License>[license];
     return null;
@@ -802,11 +806,11 @@ class RepositoryMultiLicenseNoticesForFilesFile extends RepositoryLicenseFile {
   Iterable<License> get licenses => _licenses.values;
 }
 
-class RepositoryCxxStlDualLicenseFile extends RepositoryLicenseFile {
-  RepositoryCxxStlDualLicenseFile(RepositoryDirectory parent, fs.TextFile io)
+class _RepositoryCxxStlDualLicenseFile extends _RepositoryLicenseFile {
+  _RepositoryCxxStlDualLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
     : _licenses = _parseLicenses(io), super(parent, io);
 
-  static final RegExp _pattern = new RegExp(
+  static final RegExp _pattern = RegExp(
     r'^'
     r'==============================================================================\n'
     r'.+ License\n'
@@ -831,8 +835,8 @@ class RepositoryCxxStlDualLicenseFile extends RepositoryLicenseFile {
     if (match == null || match.groupCount != 2)
       throw 'unexpected dual license file contents';
     return <License>[
-      new License.fromBodyAndType(match.group(1), LicenseType.bsd),
-      new License.fromBodyAndType(match.group(2), LicenseType.mit),
+      License.fromBodyAndType(match.group(1), LicenseType.bsd),
+      License.fromBodyAndType(match.group(2), LicenseType.mit),
     ];
   }
 
@@ -863,41 +867,41 @@ class RepositoryCxxStlDualLicenseFile extends RepositoryLicenseFile {
 
 // DIRECTORIES
 
-class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
-  RepositoryDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io) {
+class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
+  _RepositoryDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io) {
     crawl();
   }
 
   @override
   fs.Directory get io => super.io;
 
-  final List<RepositoryDirectory> _subdirectories = <RepositoryDirectory>[];
-  final List<RepositoryLicensedFile> _files = <RepositoryLicensedFile>[];
-  final List<RepositoryLicenseFile> _licenses = <RepositoryLicenseFile>[];
+  final List<_RepositoryDirectory> _subdirectories = <_RepositoryDirectory>[];
+  final List<_RepositoryLicensedFile> _files = <_RepositoryLicensedFile>[];
+  final List<_RepositoryLicenseFile> _licenses = <_RepositoryLicenseFile>[];
 
-  List<RepositoryDirectory> get subdirectories => _subdirectories;
+  List<_RepositoryDirectory> get subdirectories => _subdirectories;
 
-  final Map<String, RepositoryEntry> _childrenByName = <String, RepositoryEntry>{};
+  final Map<String, _RepositoryEntry> _childrenByName = <String, _RepositoryEntry>{};
 
   // the bit at the beginning excludes files like "license.py".
-  static final RegExp _licenseNamePattern = new RegExp(r'^(?!.*\.py$)(?!.*(?:no|update)-copyright)(?!.*mh-bsd-gcc).*\b_*(?:license(?!\.html)|copying|copyright|notice|l?gpl|bsd|mpl?|ftl\.txt)_*\b', caseSensitive: false);
+  static final RegExp _licenseNamePattern = RegExp(r'^(?!.*\.py$)(?!.*(?:no|update)-copyright)(?!.*mh-bsd-gcc).*\b_*(?:license(?!\.html)|copying|copyright|notice|l?gpl|bsd|mpl?|ftl\.txt)_*\b', caseSensitive: false);
 
   void crawl() {
     for (fs.IoNode entry in io.walk) {
       if (shouldRecurse(entry)) {
         assert(!_childrenByName.containsKey(entry.name));
         if (entry is fs.Directory) {
-          RepositoryDirectory child = createSubdirectory(entry);
+          final _RepositoryDirectory child = createSubdirectory(entry);
           _subdirectories.add(child);
           _childrenByName[child.name] = child;
         } else if (entry is fs.File) {
           try {
-            RepositoryFile child = createFile(entry);
+            final _RepositoryFile child = createFile(entry);
             assert(child != null);
-            if (child is RepositoryLicensedFile) {
+            if (child is _RepositoryLicensedFile) {
               _files.add(child);
             } else {
-              assert(child is RepositoryLicenseFile);
+              assert(child is _RepositoryLicenseFile);
               _licenses.add(child);
             }
             _childrenByName[child.name] = child;
@@ -910,13 +914,23 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
         }
       }
     }
+
+    for (_RepositoryDirectory child in virtualSubdirectories) {
+      _subdirectories.add(child);
+      _childrenByName[child.name] = child;
+    }
   }
+
+  // Override this to add additional child directories that do not represent a
+  // direct child of this directory's filesystem node.
+  List<_RepositoryDirectory> get virtualSubdirectories => <_RepositoryDirectory>[];
 
   bool shouldRecurse(fs.IoNode entry) {
     return entry.name != '.cipd' &&
            entry.name != '.git' &&
            entry.name != '.github' &&
            entry.name != '.gitignore' &&
+           entry.name != '.vscode' &&
            entry.name != 'test' &&
            entry.name != 'test.disabled' &&
            entry.name != 'test_support' &&
@@ -925,38 +939,38 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
            entry.name != 'testing';
   }
 
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'third_party')
-      return new RepositoryGenericThirdPartyDirectory(this, entry);
-    return new RepositoryDirectory(this, entry);
+      return _RepositoryGenericThirdPartyDirectory(this, entry);
+    return _RepositoryDirectory(this, entry);
   }
 
-  RepositoryFile createFile(fs.IoNode entry) {
+  _RepositoryFile createFile(fs.IoNode entry) {
     if (entry is fs.TextFile) {
-      if (RepositoryApache4DNoticeFile.consider(entry)) {
-        return new RepositoryApache4DNoticeFile(this, entry);
+      if (_RepositoryApache4DNoticeFile.consider(entry)) {
+        return _RepositoryApache4DNoticeFile(this, entry);
       } else {
-        RepositoryFile result;
+        _RepositoryFile result;
         if (entry.name == 'NOTICE')
-          result = RepositoryLicenseRedirectFile.maybeCreateFrom(this, entry);
+          result = _RepositoryLicenseRedirectFile.maybeCreateFrom(this, entry);
         if (result != null) {
           return result;
         } else if (entry.name.contains(_licenseNamePattern)) {
-          return new RepositoryGeneralSingleLicenseFile(this, entry);
+          return _RepositoryGeneralSingleLicenseFile(this, entry);
         } else if (entry.name == 'README.ijg') {
-          return new RepositoryReadmeIjgFile(this, entry);
+          return _RepositoryReadmeIjgFile(this, entry);
         } else {
-          return new RepositorySourceFile(this, entry);
+          return _RepositorySourceFile(this, entry);
         }
       }
     } else if (entry.name == 'NOTICE.txt') {
-      return new RepositoryMultiLicenseNoticesForFilesFile(this, entry);
+      return _RepositoryMultiLicenseNoticesForFilesFile(this, entry);
     } else {
-      return new RepositoryBinaryFile(this, entry);
+      return _RepositoryBinaryFile(this, entry);
     }
   }
 
-  int get count => _files.length + _subdirectories.fold(0, (int count, RepositoryDirectory child) => count + child.count);
+  int get count => _files.length + _subdirectories.fold<int>(0, (int count, _RepositoryDirectory child) => count + child.count);
 
   @override
   List<License> nearestLicensesFor(String name) {
@@ -967,8 +981,8 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
     }
     if (_licenses.length == 1)
       return _licenses.single.licensesFor(name);
-    List<License> licenses = _licenses.expand/*License*/((RepositoryLicenseFile license) sync* {
-      List<License> licenses = license.licensesFor(name);
+    final List<License> licenses = _licenses.expand((_RepositoryLicenseFile license) sync* {
+      final List<License> licenses = license.licensesFor(name);
       if (licenses != null)
         yield* licenses;
     }).toList();
@@ -985,7 +999,7 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
   License nearestLicenseOfType(LicenseType type) {
     License result = _nearestAncestorLicenseWithType(type);
     if (result == null) {
-      for (RepositoryDirectory directory in _subdirectories) {
+      for (_RepositoryDirectory directory in _subdirectories) {
         result = directory._localLicenseWithType(type);
         if (result != null)
           break;
@@ -998,7 +1012,7 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
   /// Searches the current and all parent directories (up to the license root)
   /// for a license of the specified type.
   License _nearestAncestorLicenseWithType(LicenseType type) {
-    License result = _localLicenseWithType(type);
+    final License result = _localLicenseWithType(type);
     if (result != null)
       return result;
     if (_canGoUp(null))
@@ -1019,7 +1033,7 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
   License _fullWalkDownForLicenseWithType(LicenseType type) {
     License result = _localLicenseWithType(type);
     if (result == null) {
-      for (RepositoryDirectory directory in _subdirectories) {
+      for (_RepositoryDirectory directory in _subdirectories) {
         result = directory._fullWalkDownForLicenseWithType(type);
         if (result != null)
           break;
@@ -1030,8 +1044,8 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
 
   /// Searches the current directory for licenses of the specified type.
   License _localLicenseWithType(LicenseType type) {
-    List<License> licenses = _licenses.expand/*License*/((RepositoryLicenseFile license) sync* {
-      License result = license.licenseOfType(type);
+    final List<License> licenses = _licenses.expand((_RepositoryLicenseFile license) sync* {
+      final License result = license.licenseOfType(type);
       if (result != null)
         yield result;
     }).toList();
@@ -1048,7 +1062,7 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
   License nearestLicenseWithName(String name, { String authors }) {
     License result = _nearestAncestorLicenseWithName(name, authors: authors);
     if (result == null) {
-      for (RepositoryDirectory directory in _subdirectories) {
+      for (_RepositoryDirectory directory in _subdirectories) {
         result = directory._localLicenseWithName(name, authors: authors);
         if (result != null)
           break;
@@ -1073,7 +1087,7 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
   }
 
   License _nearestAncestorLicenseWithName(String name, { String authors }) {
-    License result = _localLicenseWithName(name, authors: authors);
+    final License result = _localLicenseWithName(name, authors: authors);
     if (result != null)
       return result;
     if (_canGoUp(authors))
@@ -1081,16 +1095,16 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
     return null;
   }
 
-  License _fullWalkUpForLicenseWithName(String name, { String authors, bool ignoreCase: false }) {
+  License _fullWalkUpForLicenseWithName(String name, { String authors, bool ignoreCase = false }) {
     return _canGoUp(authors)
             ? parent._fullWalkUpForLicenseWithName(name, authors: authors, ignoreCase: ignoreCase)
             : _fullWalkDownForLicenseWithName(name, authors: authors, ignoreCase: ignoreCase);
   }
 
-  License _fullWalkDownForLicenseWithName(String name, { String authors, bool ignoreCase: false }) {
+  License _fullWalkDownForLicenseWithName(String name, { String authors, bool ignoreCase = false }) {
     License result = _localLicenseWithName(name, authors: authors, ignoreCase: ignoreCase);
     if (result == null) {
-      for (RepositoryDirectory directory in _subdirectories) {
+      for (_RepositoryDirectory directory in _subdirectories) {
         result = directory._fullWalkDownForLicenseWithName(name, authors: authors, ignoreCase: ignoreCase);
         if (result != null)
           break;
@@ -1124,12 +1138,12 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
   /// to the LICENSE in the root of the repo.
   bool get isLicenseRootException => false;
 
-  License _localLicenseWithName(String name, { String authors, bool ignoreCase: false }) {
-    Map<String, RepositoryEntry> map;
+  License _localLicenseWithName(String name, { String authors, bool ignoreCase = false }) {
+    Map<String, _RepositoryEntry> map;
     if (ignoreCase) {
       // we get here if we're trying a last-ditch effort at finding a file.
       // so this should happen only rarely.
-      map = new HashMap<String, RepositoryEntry>(
+      map = HashMap<String, _RepositoryEntry>(
         equals: (String n1, String n2) => n1.toLowerCase() == n2.toLowerCase(),
         hashCode: (String n) => n.toLowerCase().hashCode
       )
@@ -1137,11 +1151,11 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
     } else {
       map = _childrenByName;
     }
-    final RepositoryEntry entry = map[name];
+    final _RepositoryEntry entry = map[name];
     License license;
-    if (entry is RepositoryLicensedFile) {
+    if (entry is _RepositoryLicensedFile) {
       license = entry.licenses.single;
-    } else if (entry is RepositoryLicenseFile) {
+    } else if (entry is _RepositoryLicenseFile) {
       license = entry.defaultLicense;
     } else if (entry != null) {
       if (authors == null)
@@ -1154,60 +1168,60 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
     return license;
   }
 
-  RepositoryEntry getChildByName(String name) {
+  _RepositoryEntry getChildByName(String name) {
     return _childrenByName[name];
   }
 
-  Set<License> getLicenses(Progress progress) {
-    Set<License> result = new Set<License>();
-    for (RepositoryDirectory directory in _subdirectories)
+  Set<License> getLicenses(_Progress progress) {
+    final Set<License> result = <License>{};
+    for (_RepositoryDirectory directory in _subdirectories)
       result.addAll(directory.getLicenses(progress));
-    for (RepositoryLicensedFile file in _files) {
+    for (_RepositoryLicensedFile file in _files) {
       if (file.isIncludedInBuildProducts) {
         try {
           progress.label = '$file';
-          List<License> licenses = file.licenses;
+          final List<License> licenses = file.licenses;
           assert(licenses != null && licenses.isNotEmpty);
           result.addAll(licenses);
-          progress.advance(true);
+          progress.advance(success: true);
         } catch (e, stack) {
-          system.stderr.writeln('error searching for copyright in: ${file.io}\n$e');
+          system.stderr.writeln('\nerror searching for copyright in: ${file.io}\n$e');
           if (e is! String)
             system.stderr.writeln(stack);
           system.stderr.writeln('\n');
-          progress.advance(false);
+          progress.advance(success: false);
         }
       }
     }
-    for (RepositoryLicenseFile file in _licenses)
+    for (_RepositoryLicenseFile file in _licenses)
       result.addAll(file.licenses);
     return result;
   }
 
   int get fileCount {
     int result = 0;
-    for (RepositoryLicensedFile file in _files) {
+    for (_RepositoryLicensedFile file in _files) {
       if (file.isIncludedInBuildProducts)
         result += 1;
     }
-    for (RepositoryDirectory directory in _subdirectories)
+    for (_RepositoryDirectory directory in _subdirectories)
       result += directory.fileCount;
     return result;
   }
 
-  Iterable<RepositoryLicensedFile> get _signatureFiles sync* {
-    for (RepositoryLicensedFile file in _files) {
+  Iterable<_RepositoryLicensedFile> get _signatureFiles sync* {
+    for (_RepositoryLicensedFile file in _files) {
       if (file.isIncludedInBuildProducts)
         yield file;
     }
-    for (RepositoryDirectory directory in _subdirectories) {
+    for (_RepositoryDirectory directory in _subdirectories) {
       if (directory.includeInSignature)
         yield* directory._signatureFiles;
     }
   }
 
-  Stream<List<int>> _signatureStream(List<RepositoryLicensedFile> files) async* {
-    for (RepositoryLicensedFile file in files) {
+  Stream<List<int>> _signatureStream(List<_RepositoryLicensedFile> files) async* {
+    for (_RepositoryLicensedFile file in files) {
       yield file.io.fullName.codeUnits;
       yield file.io.readBytes();
     }
@@ -1216,10 +1230,10 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
   /// Compute a signature representing a hash of all the licensed files within
   /// this directory tree.
   Future<String> get signature async {
-    List<RepositoryLicensedFile> allFiles = _signatureFiles.toList();
-    allFiles.sort((RepositoryLicensedFile a, RepositoryLicensedFile b) =>
+    final List<_RepositoryLicensedFile> allFiles = _signatureFiles.toList();
+    allFiles.sort((_RepositoryLicensedFile a, _RepositoryLicensedFile b) =>
         a.io.fullName.compareTo(b.io.fullName));
-    crypto.Digest digest = await crypto.md5.bind(_signatureStream(allFiles)).single;
+    final crypto.Digest digest = await crypto.md5.bind(_signatureStream(allFiles)).single;
     return digest.bytes.map((int e) => e.toRadixString(16).padLeft(2, '0')).join();
   }
 
@@ -1227,24 +1241,21 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
   bool get includeInSignature => true;
 }
 
-class RepositoryGenericThirdPartyDirectory extends RepositoryDirectory {
-  RepositoryGenericThirdPartyDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryGenericThirdPartyDirectory extends _RepositoryDirectory {
+  _RepositoryGenericThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool get subdirectoriesAreLicenseRoots => true;
 }
 
-class RepositoryReachOutFile extends RepositoryLicensedFile {
-  RepositoryReachOutFile(RepositoryDirectory parent, fs.File io, this.offset) : super(parent, io);
-
-  @override
-  fs.File get io => super.io;
+class _RepositoryReachOutFile extends _RepositoryLicensedFile {
+  _RepositoryReachOutFile(_RepositoryDirectory parent, fs.File io, this.offset) : super(parent, io);
 
   final int offset;
 
   @override
   List<License> get licenses {
-    RepositoryDirectory directory = parent;
+    _RepositoryDirectory directory = parent;
     int index = offset;
     while (index > 1) {
       if (directory == null)
@@ -1256,22 +1267,22 @@ class RepositoryReachOutFile extends RepositoryLicensedFile {
   }
 }
 
-class RepositoryReachOutDirectory extends RepositoryDirectory {
-  RepositoryReachOutDirectory(RepositoryDirectory parent, fs.Directory io, this.reachOutFilenames, this.offset) : super(parent, io);
+class _RepositoryReachOutDirectory extends _RepositoryDirectory {
+  _RepositoryReachOutDirectory(_RepositoryDirectory parent, fs.Directory io, this.reachOutFilenames, this.offset) : super(parent, io);
 
   final Set<String> reachOutFilenames;
   final int offset;
 
   @override
-  RepositoryFile createFile(fs.IoNode entry) {
+  _RepositoryFile createFile(fs.IoNode entry) {
     if (reachOutFilenames.contains(entry.name))
-      return new RepositoryReachOutFile(this, entry, offset);
+      return _RepositoryReachOutFile(this, entry, offset);
     return super.createFile(entry);
   }
 }
 
-class RepositoryExcludeSubpathDirectory extends RepositoryDirectory {
-  RepositoryExcludeSubpathDirectory(RepositoryDirectory parent, fs.Directory io, this.paths, [ this.index = 0 ]) : super(parent, io);
+class _RepositoryExcludeSubpathDirectory extends _RepositoryDirectory {
+  _RepositoryExcludeSubpathDirectory(_RepositoryDirectory parent, fs.Directory io, this.paths, [ this.index = 0 ]) : super(parent, io);
 
   final List<String> paths;
   final int index;
@@ -1284,9 +1295,9 @@ class RepositoryExcludeSubpathDirectory extends RepositoryDirectory {
   }
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == paths[index] && (index < paths.length - 1))
-      return new RepositoryExcludeSubpathDirectory(this, entry, paths, index + 1);
+      return _RepositoryExcludeSubpathDirectory(this, entry, paths, index + 1);
     return super.createSubdirectory(entry);
   }
 }
@@ -1294,276 +1305,8 @@ class RepositoryExcludeSubpathDirectory extends RepositoryDirectory {
 
 // WHAT TO CRAWL AND WHAT NOT TO CRAWL
 
-class RepositoryAndroidSdkPlatformsWithJarDirectory extends RepositoryDirectory {
-  RepositoryAndroidSdkPlatformsWithJarDirectory(RepositoryDirectory parent, fs.Directory io)
-    : _jarLicense = <License>[new License.fromUrl('http://www.apache.org/licenses/LICENSE-2.0', origin: 'implicit android.jar license')],
-      super(parent, io);
-
-  final List<License> _jarLicense;
-
-  @override
-  List<License> nearestLicensesFor(String name) => _jarLicense;
-
-  @override
-  License nearestLicenseOfType(LicenseType type) {
-    if (_jarLicense.single.type == type)
-      return _jarLicense.single;
-    return null;
-  }
-
-  @override
-  License nearestLicenseWithName(String name, { String authors }) {
-    return null;
-  }
-
-  @override
-  bool shouldRecurse(fs.IoNode entry) {
-    // we only use android.jar from the SDK, everything else we ignore
-    return entry.name == 'android.jar';
-  }
-}
-
-class RepositoryAndroidSdkPlatformsDirectory extends RepositoryDirectory {
-  RepositoryAndroidSdkPlatformsDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'android-22') // chinmay says we only use 22 for the SDK
-      return new RepositoryAndroidSdkPlatformsWithJarDirectory(this, entry);
-    throw 'unknown Android SDK version: ${entry.name}';
-  }
-}
-
-class RepositoryAndroidSdkDirectory extends RepositoryDirectory {
-  RepositoryAndroidSdkDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  bool shouldRecurse(fs.IoNode entry) {
-    // We don't link with any of the Android SDK tools, Google-specific
-    // packages, system images, samples, etc, when building the engine. We do
-    // use some (especially those in build-tools/), but it is our understanding
-    // that nothing from those files actually ends up in our final build output,
-    // and therefore we don't worry about their licenses.
-    return entry.name != 'add-ons'
-        && entry.name != 'build-tools'
-        && entry.name != 'extras'
-        && entry.name != 'platform-tools'
-        && entry.name != 'samples'
-        && entry.name != 'system-images'
-        && entry.name != 'tools'
-        && super.shouldRecurse(entry);
-  }
-
-  @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'platforms')
-      return new RepositoryAndroidSdkPlatformsDirectory(this, entry);
-    return super.createSubdirectory(entry);
-  }
-}
-
-class RepositoryAndroidNdkPlatformsDirectory extends RepositoryDirectory {
-  RepositoryAndroidNdkPlatformsDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  bool shouldRecurse(fs.IoNode entry) {
-    if (entry.name == 'android-9' ||
-        entry.name == 'android-12' ||
-        entry.name == 'android-13' ||
-        entry.name == 'android-14' ||
-        entry.name == 'android-15' ||
-        entry.name == 'android-17' ||
-        entry.name == 'android-18' ||
-        entry.name == 'android-19' ||
-        entry.name == 'android-21' ||
-        entry.name == 'android-23' ||
-        entry.name == 'android-24')
-      return false;
-    if (entry.name == 'android-16' || // chinmay says we use this for armv7
-        entry.name == 'android-22') // chinmay says we use this for everything else
-      return true;
-    throw 'unknown Android NDK version: ${entry.name}';
-  }
-}
-
-class RepositoryAndroidNdkSourcesAndroidSupportDirectory extends RepositoryDirectory {
-  RepositoryAndroidNdkSourcesAndroidSupportDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  RepositoryFile createFile(fs.IoNode entry) {
-    if (entry.name == 'NOTICE' && entry is fs.TextFile) {
-      return new RepositoryGeneralSingleLicenseFile.fromLicense(
-        this,
-        entry,
-        new License.unique(
-          entry.readString(),
-          LicenseType.unknown,
-          origin: entry.fullName,
-          yesWeKnowWhatItLooksLikeButItIsNot: true, // lawyer said to include this file verbatim
-        )
-      );
-    }
-    return super.createFile(entry);
-  }
-
-}
-
-class RepositoryAndroidNdkSourcesAndroidDirectory extends RepositoryDirectory {
-  RepositoryAndroidNdkSourcesAndroidDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'libthread_db' // README in that directory says we aren't using this
-        && entry.name != 'crazy_linker' // build-time only (not that we use it anyway)
-        && super.shouldRecurse(entry);
-  }
-
-  @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'support')
-      return new RepositoryAndroidNdkSourcesAndroidSupportDirectory(this, entry);
-    return super.createSubdirectory(entry);
-  }
-}
-
-class RepositoryAndroidNdkSourcesCxxStlSubsubdirectory extends RepositoryDirectory {
-  RepositoryAndroidNdkSourcesCxxStlSubsubdirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  RepositoryFile createFile(fs.IoNode entry) {
-    if (entry.name == 'LICENSE.TXT')
-      return new RepositoryCxxStlDualLicenseFile(this, entry);
-    return super.createFile(entry);
-  }
-}
-
-class RepositoryAndroidNdkSourcesCxxStlSubdirectory extends RepositoryDirectory {
-  RepositoryAndroidNdkSourcesCxxStlSubdirectory(RepositoryDirectory parent, fs.Directory io, this.subdirectoryName) : super(parent, io);
-
-  final String subdirectoryName;
-
-  @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == subdirectoryName)
-      return new RepositoryAndroidNdkSourcesCxxStlSubsubdirectory(this, entry);
-    return super.createSubdirectory(entry);
-  }
-}
-
-class RepositoryAndroidNdkSourcesCxxStlDirectory extends RepositoryDirectory {
-  RepositoryAndroidNdkSourcesCxxStlDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  bool get subdirectoriesAreLicenseRoots => true;
-
-  @override
-  bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'gabi++' // abarth says jamesr says we don't use these two
-        && entry.name != 'stlport'
-        && super.shouldRecurse(entry);
-  }
-
-  @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'llvm-libc++abi')
-      return new RepositoryAndroidNdkSourcesCxxStlSubdirectory(this, entry, 'libcxxabi');
-    if (entry.name == 'llvm-libc++')
-      return new RepositoryAndroidNdkSourcesCxxStlSubdirectory(this, entry, 'libcxx');
-    return super.createSubdirectory(entry);
-  }
-}
-
-class RepositoryAndroidNdkSourcesThirdPartyDirectory extends RepositoryGenericThirdPartyDirectory {
-  RepositoryAndroidNdkSourcesThirdPartyDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  bool shouldRecurse(fs.IoNode entry) {
-    if (entry.name == 'googletest')
-      return false; // testing infrastructure, not shipped with flutter engine
-    if (entry.name == 'shaderc')
-      return false; // abarth says we don't use any shader stuff
-    if (entry.name == 'vulkan')
-      return false; // abath says we do use vulkan so might use this
-    throw 'unexpected Android NDK third-party package: ${entry.name}';
-  }
-}
-
-class RepositoryAndroidNdkSourcesDirectory extends RepositoryDirectory {
-  RepositoryAndroidNdkSourcesDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'android')
-      return new RepositoryAndroidNdkSourcesAndroidDirectory(this, entry);
-    if (entry.name == 'cxx-stl')
-      return new RepositoryAndroidNdkSourcesCxxStlDirectory(this, entry);
-    if (entry.name == 'third_party')
-      return new RepositoryAndroidNdkSourcesThirdPartyDirectory(this, entry);
-    return super.createSubdirectory(entry);
-  }
-}
-
-
-class RepositoryAndroidNdkDirectory extends RepositoryDirectory {
-  RepositoryAndroidNdkDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  bool shouldRecurse(fs.IoNode entry) {
-    // we don't link with or use any of the Android NDK samples
-    return entry.name != 'build'
-        && entry.name != 'docs'
-        && entry.name != 'prebuilt' // only used by engine debug builds, which we don't ship
-        && entry.name != 'samples'
-        && entry.name != 'tests'
-        && entry.name != 'toolchains' // only used at build time, doesn't seem to contain anything that gets shipped with the build output
-        && super.shouldRecurse(entry);
-  }
-
-  @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'platforms')
-      return new RepositoryAndroidNdkPlatformsDirectory(this, entry);
-    if (entry.name == 'sources')
-      return new RepositoryAndroidNdkSourcesDirectory(this, entry);
-    return super.createSubdirectory(entry);
-  }
-}
-
-class RepositoryAndroidToolsDirectory extends RepositoryDirectory {
-  RepositoryAndroidToolsDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  bool get subdirectoriesAreLicenseRoots => true;
-
-  @override
-  bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'VERSION_LINUX_SDK'
-        && entry.name != 'VERSION_LINUX_NDK'
-        && entry.name != 'VERSION_MACOSX_SDK'
-        && entry.name != 'VERSION_MACOSX_NDK'
-        && super.shouldRecurse(entry);
-  }
-
-  @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'sdk')
-      return new RepositoryAndroidSdkDirectory(this, entry);
-    if (entry.name == 'ndk')
-      return new RepositoryAndroidNdkDirectory(this, entry);
-    return super.createSubdirectory(entry);
-  }
-
-  // This directory's contents are different on each host platform.  We assume
-  // that the components of the Android SDK that are linked into our releases
-  // are consistent among all host platforms.  Given that the host SDK will not
-  // affect the signature, be sure to force a regeneration of the third_party
-  // golden licenses if the SDK is ever updated.
-  @override
-  bool get includeInSignature => false;
-}
-
-class RepositoryAndroidPlatformDirectory extends RepositoryDirectory {
-  RepositoryAndroidPlatformDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryAndroidPlatformDirectory extends _RepositoryDirectory {
+  _RepositoryAndroidPlatformDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -1574,8 +1317,8 @@ class RepositoryAndroidPlatformDirectory extends RepositoryDirectory {
   }
 }
 
-class RepositoryExpatDirectory extends RepositoryDirectory {
-  RepositoryExpatDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryExpatDirectory extends _RepositoryDirectory {
+  _RepositoryExpatDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool get isLicenseRootException => true;
@@ -1584,13 +1327,13 @@ class RepositoryExpatDirectory extends RepositoryDirectory {
   bool get subdirectoriesAreLicenseRoots => true;
 }
 
-class RepositoryFreetypeDocsDirectory extends RepositoryDirectory {
-  RepositoryFreetypeDocsDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryFreetypeDocsDirectory extends _RepositoryDirectory {
+  _RepositoryFreetypeDocsDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryFile createFile(fs.IoNode entry) {
+  _RepositoryFile createFile(fs.IoNode entry) {
     if (entry.name == 'LICENSE.TXT')
-      return new RepositoryFreetypeLicenseFile(this, entry);
+      return _RepositoryFreetypeLicenseFile(this, entry);
     return super.createFile(entry);
   }
 
@@ -1598,23 +1341,23 @@ class RepositoryFreetypeDocsDirectory extends RepositoryDirectory {
   int get fileCount => 0;
 
   @override
-  Set<License> getLicenses(Progress progress) {
+  Set<License> getLicenses(_Progress progress) {
     // We don't ship anything in this directory so don't bother looking for licenses there.
     // However, there are licenses in this directory referenced from elsewhere, so we do
     // want to crawl it and expose them.
-    return new Set<License>();
+    return <License>{};
   }
 }
 
-class RepositoryFreetypeSrcGZipDirectory extends RepositoryDirectory {
-  RepositoryFreetypeSrcGZipDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryFreetypeSrcGZipDirectory extends _RepositoryDirectory {
+  _RepositoryFreetypeSrcGZipDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   // advice was to make this directory's inffixed.h file (which has no license)
   // use the license in zlib.h.
 
   @override
   List<License> nearestLicensesFor(String name) {
-    License zlib = nearestLicenseWithName('zlib.h');
+    final License zlib = nearestLicenseWithName('zlib.h');
     assert(zlib != null);
     if (zlib != null)
       return <License>[zlib];
@@ -1624,7 +1367,7 @@ class RepositoryFreetypeSrcGZipDirectory extends RepositoryDirectory {
   @override
   License nearestLicenseOfType(LicenseType type) {
     if (type == LicenseType.zlib) {
-      License result = nearestLicenseWithName('zlib.h');
+      final License result = nearestLicenseWithName('zlib.h');
       assert(result != null);
       return result;
     }
@@ -1632,13 +1375,13 @@ class RepositoryFreetypeSrcGZipDirectory extends RepositoryDirectory {
   }
 }
 
-class RepositoryFreetypeSrcDirectory extends RepositoryDirectory {
-  RepositoryFreetypeSrcDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryFreetypeSrcDirectory extends _RepositoryDirectory {
+  _RepositoryFreetypeSrcDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'gzip')
-      return new RepositoryFreetypeSrcGZipDirectory(this, entry);
+      return _RepositoryFreetypeSrcGZipDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 
@@ -1649,14 +1392,14 @@ class RepositoryFreetypeSrcDirectory extends RepositoryDirectory {
   }
 }
 
-class RepositoryFreetypeDirectory extends RepositoryDirectory {
-  RepositoryFreetypeDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryFreetypeDirectory extends _RepositoryDirectory {
+  _RepositoryFreetypeDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   List<License> nearestLicensesFor(String name) {
-    List<License> result = super.nearestLicensesFor(name);
+    final List<License> result = super.nearestLicensesFor(name);
     if (result == null) {
-      License license = nearestLicenseWithName('LICENSE.TXT');
+      final License license = nearestLicenseWithName('LICENSE.TXT');
       assert(license != null);
       if (license != null)
         return <License>[license];
@@ -1667,7 +1410,7 @@ class RepositoryFreetypeDirectory extends RepositoryDirectory {
   @override
   License nearestLicenseOfType(LicenseType type) {
     if (type == LicenseType.freetype) {
-      License result = nearestLicenseWithName('FTL.TXT');
+      final License result = nearestLicenseWithName('FTL.TXT');
       assert(result != null);
       return result;
     }
@@ -1681,17 +1424,29 @@ class RepositoryFreetypeDirectory extends RepositoryDirectory {
   }
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'src')
-      return new RepositoryFreetypeSrcDirectory(this, entry);
+      return _RepositoryFreetypeSrcDirectory(this, entry);
     if (entry.name == 'docs')
-      return new RepositoryFreetypeDocsDirectory(this, entry);
+      return _RepositoryFreetypeDocsDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryIcuDirectory extends RepositoryDirectory {
-  RepositoryIcuDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryGlfwDirectory extends _RepositoryDirectory {
+  _RepositoryGlfwDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'examples' // Not linked in build.
+        && entry.name != 'tests' // Not linked in build.
+        && entry.name != 'deps' // Only used by examples and tests; not linked in build.
+        && super.shouldRecurse(entry);
+  }
+}
+
+class _RepositoryIcuDirectory extends _RepositoryDirectory {
+  _RepositoryIcuDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -1700,26 +1455,36 @@ class RepositoryIcuDirectory extends RepositoryDirectory {
   }
 
   @override
-  RepositoryFile createFile(fs.IoNode entry) {
+  _RepositoryFile createFile(fs.IoNode entry) {
     if (entry.name == 'LICENSE')
-      return new RepositoryIcuLicenseFile(this, entry);
+      return _RepositoryIcuLicenseFile(this, entry);
     return super.createFile(entry);
   }
 }
 
-class RepositoryJSR305Directory extends RepositoryDirectory {
-  RepositoryJSR305Directory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryHarfbuzzDirectory extends _RepositoryDirectory {
+  _RepositoryHarfbuzzDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'util' // utils are command line tools that do not end up in the binary
+        && super.shouldRecurse(entry);
+  }
+}
+
+class _RepositoryJSR305Directory extends _RepositoryDirectory {
+  _RepositoryJSR305Directory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'src')
-      return new RepositoryJSR305SrcDirectory(this, entry);
+      return _RepositoryJSR305SrcDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryJSR305SrcDirectory extends RepositoryDirectory {
-  RepositoryJSR305SrcDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryJSR305SrcDirectory extends _RepositoryDirectory {
+  _RepositoryJSR305SrcDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -1729,26 +1494,82 @@ class RepositoryJSR305SrcDirectory extends RepositoryDirectory {
   }
 }
 
-class RepositoryLibJpegDirectory extends RepositoryDirectory {
-  RepositoryLibJpegDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryLibcxxDirectory extends _RepositoryDirectory {
+  _RepositoryLibcxxDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryFile createFile(fs.IoNode entry) {
-    if (entry.name == 'README')
-      return new RepositoryReadmeIjgFile(this, entry);
-    if (entry.name == 'LICENSE')
-      return new RepositoryLicenseFileWithLeader(this, entry, new RegExp(r'^\(Copied from the README\.\)\n+-+\n+'));
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'utils'
+        && super.shouldRecurse(entry);
+  }
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'src')
+      return _RepositoryLibcxxSrcDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+
+  @override
+  _RepositoryFile createFile(fs.IoNode entry) {
+    if (entry.name == 'LICENSE.TXT')
+      return _RepositoryCxxStlDualLicenseFile(this, entry);
     return super.createFile(entry);
   }
 }
 
-class RepositoryLibJpegTurboDirectory extends RepositoryDirectory {
-  RepositoryLibJpegTurboDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryLibcxxSrcDirectory extends _RepositoryDirectory {
+  _RepositoryLibcxxSrcDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryFile createFile(fs.IoNode entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'support')
+      return _RepositoryLibcxxSrcSupportDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryLibcxxSrcSupportDirectory extends _RepositoryDirectory {
+  _RepositoryLibcxxSrcSupportDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'solaris'
+        && super.shouldRecurse(entry);
+  }
+}
+
+class _RepositoryLibcxxabiDirectory extends _RepositoryDirectory {
+  _RepositoryLibcxxabiDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  _RepositoryFile createFile(fs.IoNode entry) {
+    if (entry.name == 'LICENSE.TXT')
+      return _RepositoryCxxStlDualLicenseFile(this, entry);
+    return super.createFile(entry);
+  }
+}
+
+class _RepositoryLibJpegDirectory extends _RepositoryDirectory {
+  _RepositoryLibJpegDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  _RepositoryFile createFile(fs.IoNode entry) {
+    if (entry.name == 'README')
+      return _RepositoryReadmeIjgFile(this, entry);
+    if (entry.name == 'LICENSE')
+      return _RepositoryLicenseFileWithLeader(this, entry, RegExp(r'^\(Copied from the README\.\)\n+-+\n+'));
+    return super.createFile(entry);
+  }
+}
+
+class _RepositoryLibJpegTurboDirectory extends _RepositoryDirectory {
+  _RepositoryLibJpegTurboDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  _RepositoryFile createFile(fs.IoNode entry) {
     if (entry.name == 'LICENSE.md')
-      return new RepositoryLibJpegTurboLicense(this, entry);
+      return _RepositoryLibJpegTurboLicense(this, entry);
     return super.createFile(entry);
   }
 
@@ -1761,19 +1582,19 @@ class RepositoryLibJpegTurboDirectory extends RepositoryDirectory {
   }
 }
 
-class RepositoryLibPngDirectory extends RepositoryDirectory {
-  RepositoryLibPngDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryLibPngDirectory extends _RepositoryDirectory {
+  _RepositoryLibPngDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryFile createFile(fs.IoNode entry) {
+  _RepositoryFile createFile(fs.IoNode entry) {
     if (entry.name == 'LICENSE' || entry.name == 'png.h')
-      return new RepositoryLibPngLicenseFile(this, entry);
+      return _RepositoryLibPngLicenseFile(this, entry);
     return super.createFile(entry);
   }
 }
 
-class RepositoryLibWebpDirectory extends RepositoryDirectory {
-  RepositoryLibWebpDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryLibWebpDirectory extends _RepositoryDirectory {
+  _RepositoryLibWebpDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -1784,19 +1605,19 @@ class RepositoryLibWebpDirectory extends RepositoryDirectory {
   }
 }
 
-class RepositoryPkgDirectory extends RepositoryDirectory {
-  RepositoryPkgDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryPkgDirectory extends _RepositoryDirectory {
+  _RepositoryPkgDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'when')
-      return new RepositoryPkgWhenDirectory(this, entry);
+      return _RepositoryPkgWhenDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryPkgWhenDirectory extends RepositoryDirectory {
-  RepositoryPkgWhenDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryPkgWhenDirectory extends _RepositoryDirectory {
+  _RepositoryPkgWhenDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -1805,32 +1626,33 @@ class RepositoryPkgWhenDirectory extends RepositoryDirectory {
   }
 }
 
-class RepositorySkiaLibWebPDirectory extends RepositoryDirectory {
-  RepositorySkiaLibWebPDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositorySkiaLibWebPDirectory extends _RepositoryDirectory {
+  _RepositorySkiaLibWebPDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'webp')
-      return new RepositoryReachOutDirectory(this, entry, new Set<String>.from(const <String>['config.h']), 3);
+      return _RepositoryReachOutDirectory(this, entry, const <String>{'config.h'}, 3);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositorySkiaLibSdlDirectory extends RepositoryDirectory {
-  RepositorySkiaLibSdlDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositorySkiaLibSdlDirectory extends _RepositoryDirectory {
+  _RepositorySkiaLibSdlDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool get isLicenseRootException => true;
 }
 
-class RepositorySkiaThirdPartyDirectory extends RepositoryGenericThirdPartyDirectory {
-  RepositorySkiaThirdPartyDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositorySkiaThirdPartyDirectory extends _RepositoryGenericThirdPartyDirectory {
+  _RepositorySkiaThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
     return entry.name != 'giflib' // contains nothing that ends up in the binary executable
         && entry.name != 'freetype' // we use our own version
         && entry.name != 'freetype2' // we use our own version
+        && entry.name != 'gif' // not linked in
         && entry.name != 'icu' // we use our own version
         && entry.name != 'libjpeg-turbo' // we use our own version
         && entry.name != 'libpng' // we use our own version
@@ -1840,21 +1662,21 @@ class RepositorySkiaThirdPartyDirectory extends RepositoryGenericThirdPartyDirec
   }
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'ktx')
-      return new RepositoryReachOutDirectory(this, entry, new Set<String>.from(const <String>['ktx.h', 'ktx.cpp']), 2);
+      return _RepositoryReachOutDirectory(this, entry, const <String>{'ktx.h', 'ktx.cpp'}, 2);
     if (entry.name == 'libmicrohttpd')
-      return new RepositoryReachOutDirectory(this, entry, new Set<String>.from(const <String>['MHD_config.h']), 2);
+      return _RepositoryReachOutDirectory(this, entry, const <String>{'MHD_config.h'}, 2);
     if (entry.name == 'libwebp')
-      return new RepositorySkiaLibWebPDirectory(this, entry);
+      return _RepositorySkiaLibWebPDirectory(this, entry);
     if (entry.name == 'libsdl')
-      return new RepositorySkiaLibSdlDirectory(this, entry);
+      return _RepositorySkiaLibSdlDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositorySkiaDirectory extends RepositoryDirectory {
-  RepositorySkiaDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositorySkiaDirectory extends _RepositoryDirectory {
+  _RepositorySkiaDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -1865,33 +1687,50 @@ class RepositorySkiaDirectory extends RepositoryDirectory {
   }
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'third_party')
-      return new RepositorySkiaThirdPartyDirectory(this, entry);
+      return _RepositorySkiaThirdPartyDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryVulkanDirectory extends RepositoryDirectory {
-  RepositoryVulkanDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryVulkanDirectory extends _RepositoryDirectory {
+  _RepositoryVulkanDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'doc' // documentation
-        && entry.name != 'out' // documentation
+    // Flutter only uses the headers in the include directory.
+    return entry.name == 'include'
         && super.shouldRecurse(entry);
   }
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'src')
-      return new RepositoryExcludeSubpathDirectory(this, entry, const <String>['spec']);
+      return _RepositoryExcludeSubpathDirectory(this, entry, const <String>['spec']);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryRootThirdPartyDirectory extends RepositoryGenericThirdPartyDirectory {
-  RepositoryRootThirdPartyDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryWuffsDirectory extends _RepositoryDirectory {
+  _RepositoryWuffsDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'CONTRIBUTORS' // not linked in
+        && super.shouldRecurse(entry);
+  }
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'src')
+      return _RepositoryExcludeSubpathDirectory(this, entry, const <String>['spec']);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDirectory {
+  _RepositoryRootThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -1912,50 +1751,63 @@ class RepositoryRootThirdPartyDirectory extends RepositoryGenericThirdPartyDirec
         && entry.name != 'binutils' // build-time dependency only
         && entry.name != 'instrumented_libraries' // unused according to chinmay
         && entry.name != 'android_tools' // excluded on advice
+        && entry.name != 'android_support' // build-time only
         && entry.name != 'googletest' // only used by tests
+        && entry.name != 'skia' // treated as a separate component
+        && entry.name != 'fontconfig' // not used in standard configurations
+        && entry.name != 'swiftshader' // only used on hosts for tests
+        && entry.name != 'ocmock' // only used for tests
         && super.shouldRecurse(entry);
   }
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'android_platform')
-      return new RepositoryAndroidPlatformDirectory(this, entry);
+      return _RepositoryAndroidPlatformDirectory(this, entry);
     if (entry.name == 'boringssl')
-      return new RepositoryBoringSSLDirectory(this, entry);
+      return _RepositoryBoringSSLDirectory(this, entry);
     if (entry.name == 'catapult')
-      return new RepositoryCatapultDirectory(this, entry);
+      return _RepositoryCatapultDirectory(this, entry);
     if (entry.name == 'dart')
-      return new RepositoryDartDirectory(this, entry);
+      return _RepositoryDartDirectory(this, entry);
     if (entry.name == 'expat')
-      return new RepositoryExpatDirectory(this, entry);
+      return _RepositoryExpatDirectory(this, entry);
     if (entry.name == 'freetype-android')
       throw '//third_party/freetype-android is no longer part of this client: remove it';
     if (entry.name == 'freetype2')
-      return new RepositoryFreetypeDirectory(this, entry);
+      return _RepositoryFreetypeDirectory(this, entry);
+    if (entry.name == 'glfw')
+      return _RepositoryGlfwDirectory(this, entry);
+    if (entry.name == 'harfbuzz')
+      return _RepositoryHarfbuzzDirectory(this, entry);
     if (entry.name == 'icu')
-      return new RepositoryIcuDirectory(this, entry);
+      return _RepositoryIcuDirectory(this, entry);
     if (entry.name == 'jsr-305')
-      return new RepositoryJSR305Directory(this, entry);
+      return _RepositoryJSR305Directory(this, entry);
+    if (entry.name == 'libcxx')
+      return _RepositoryLibcxxDirectory(this, entry);
+    if (entry.name == 'libcxxabi')
+      return _RepositoryLibcxxabiDirectory(this, entry);
     if (entry.name == 'libjpeg')
-      return new RepositoryLibJpegDirectory(this, entry);
+      return _RepositoryLibJpegDirectory(this, entry);
     if (entry.name == 'libjpeg_turbo' || entry.name == 'libjpeg-turbo')
-      return new RepositoryLibJpegTurboDirectory(this, entry);
+      return _RepositoryLibJpegTurboDirectory(this, entry);
     if (entry.name == 'libpng')
-      return new RepositoryLibPngDirectory(this, entry);
+      return _RepositoryLibPngDirectory(this, entry);
     if (entry.name == 'libwebp')
-      return new RepositoryLibWebpDirectory(this, entry);
+      return _RepositoryLibWebpDirectory(this, entry);
     if (entry.name == 'pkg')
-      return new RepositoryPkgDirectory(this, entry);
-    if (entry.name == 'skia')
-      return new RepositorySkiaDirectory(this, entry);
+      return _RepositoryPkgDirectory(this, entry);
     if (entry.name == 'vulkan')
-      return new RepositoryVulkanDirectory(this, entry);
+      return _RepositoryVulkanDirectory(this, entry);
+    if (entry.name == 'wuffs')
+      return _RepositoryWuffsDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryBoringSSLThirdPartyDirectory extends RepositoryDirectory {
-  RepositoryBoringSSLThirdPartyDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryBoringSSLThirdPartyDirectory extends _RepositoryDirectory {
+  _RepositoryBoringSSLThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -1964,8 +1816,8 @@ class RepositoryBoringSSLThirdPartyDirectory extends RepositoryDirectory {
   }
 }
 
-class RepositoryBoringSSLSourceDirectory extends RepositoryDirectory {
-  RepositoryBoringSSLSourceDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryBoringSSLSourceDirectory extends _RepositoryDirectory {
+  _RepositoryBoringSSLSourceDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   String get libraryName => 'boringssl';
@@ -1980,16 +1832,16 @@ class RepositoryBoringSSLSourceDirectory extends RepositoryDirectory {
   }
 
   @override
-  RepositoryFile createFile(fs.IoNode entry) {
+  _RepositoryFile createFile(fs.IoNode entry) {
     if (entry.name == 'LICENSE')
-      return new RepositoryOpenSSLLicenseFile(this, entry);
+      return _RepositoryOpenSSLLicenseFile(this, entry);
     return super.createFile(entry);
   }
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'third_party')
-      return new RepositoryBoringSSLThirdPartyDirectory(this, entry);
+      return _RepositoryBoringSSLThirdPartyDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
@@ -2001,10 +1853,10 @@ class RepositoryBoringSSLSourceDirectory extends RepositoryDirectory {
 /// It also has a trailer that mentions licenses that are used during build
 /// time of BoringSSL - those can be ignored as well since they don't apply
 /// to code that is distributed.
-class RepositoryOpenSSLLicenseFile extends RepositorySingleLicenseFile {
-  RepositoryOpenSSLLicenseFile(RepositoryDirectory parent, fs.TextFile io)
+class _RepositoryOpenSSLLicenseFile extends _RepositorySingleLicenseFile {
+  _RepositoryOpenSSLLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
     : super(parent, io,
-        new License.fromBodyAndType(
+        License.fromBodyAndType(
             LineSplitter.split(io.readString())
                 .skip(23)
                 .takeWhile((String s) => !s.startsWith('BoringSSL uses the Chromium test infrastructure to run a continuous build,'))
@@ -2028,72 +1880,72 @@ class RepositoryOpenSSLLicenseFile extends RepositorySingleLicenseFile {
   }
 }
 
-class RepositoryBoringSSLDirectory extends RepositoryDirectory {
-  RepositoryBoringSSLDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryBoringSSLDirectory extends _RepositoryDirectory {
+  _RepositoryBoringSSLDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryFile createFile(fs.IoNode entry) {
+  _RepositoryFile createFile(fs.IoNode entry) {
     if (entry.name == 'README')
-      return new RepositoryBlankLicenseFile(this, entry, 'This repository contains the files generated by boringssl for its build.');
+      return _RepositoryBlankLicenseFile(this, entry, 'This repository contains the files generated by boringssl for its build.');
     return super.createFile(entry);
   }
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'src')
-      return new RepositoryBoringSSLSourceDirectory(this, entry);
+      return _RepositoryBoringSSLSourceDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryCatapultThirdPartyApiClientDirectory extends RepositoryDirectory {
-  RepositoryCatapultThirdPartyApiClientDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryCatapultThirdPartyApiClientDirectory extends _RepositoryDirectory {
+  _RepositoryCatapultThirdPartyApiClientDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryFile createFile(fs.IoNode entry) {
+  _RepositoryFile createFile(fs.IoNode entry) {
     if (entry.name == 'LICENSE')
-      return new RepositoryCatapultApiClientLicenseFile(this, entry);
+      return _RepositoryCatapultApiClientLicenseFile(this, entry);
     return super.createFile(entry);
   }
 }
 
-class RepositoryCatapultThirdPartyCoverageDirectory extends RepositoryDirectory {
-  RepositoryCatapultThirdPartyCoverageDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryCatapultThirdPartyCoverageDirectory extends _RepositoryDirectory {
+  _RepositoryCatapultThirdPartyCoverageDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryFile createFile(fs.IoNode entry) {
+  _RepositoryFile createFile(fs.IoNode entry) {
     if (entry.name == 'NOTICE.txt')
-      return new RepositoryCatapultCoverageLicenseFile(this, entry);
+      return _RepositoryCatapultCoverageLicenseFile(this, entry);
     return super.createFile(entry);
   }
 }
 
-class RepositoryCatapultThirdPartyDirectory extends RepositoryDirectory {
-  RepositoryCatapultThirdPartyDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryCatapultThirdPartyDirectory extends _RepositoryDirectory {
+  _RepositoryCatapultThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'apiclient')
-      return new RepositoryCatapultThirdPartyApiClientDirectory(this, entry);
+      return _RepositoryCatapultThirdPartyApiClientDirectory(this, entry);
     if (entry.name == 'coverage')
-      return new RepositoryCatapultThirdPartyCoverageDirectory(this, entry);
+      return _RepositoryCatapultThirdPartyCoverageDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryCatapultDirectory extends RepositoryDirectory {
-  RepositoryCatapultDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryCatapultDirectory extends _RepositoryDirectory {
+  _RepositoryCatapultDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'third_party')
-      return new RepositoryCatapultThirdPartyDirectory(this, entry);
+      return _RepositoryCatapultThirdPartyDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryDartRuntimeThirdPartyDirectory extends RepositoryGenericThirdPartyDirectory {
-  RepositoryDartRuntimeThirdPartyDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryDartRuntimeThirdPartyDirectory extends _RepositoryGenericThirdPartyDirectory {
+  _RepositoryDartRuntimeThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -2103,8 +1955,8 @@ class RepositoryDartRuntimeThirdPartyDirectory extends RepositoryGenericThirdPar
   }
 }
 
-class RepositoryDartThirdPartyDirectory extends RepositoryGenericThirdPartyDirectory {
-  RepositoryDartThirdPartyDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryDartThirdPartyDirectory extends _RepositoryGenericThirdPartyDirectory {
+  _RepositoryDartThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -2118,34 +1970,34 @@ class RepositoryDartThirdPartyDirectory extends RepositoryGenericThirdPartyDirec
   }
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'boringssl')
-      return new RepositoryBoringSSLDirectory(this, entry);
+      return _RepositoryBoringSSLDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryDartRuntimeDirectory extends RepositoryDirectory {
-  RepositoryDartRuntimeDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryDartRuntimeDirectory extends _RepositoryDirectory {
+  _RepositoryDartRuntimeDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'third_party')
-      return new RepositoryDartRuntimeThirdPartyDirectory(this, entry);
+      return _RepositoryDartRuntimeThirdPartyDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryDartDirectory extends RepositoryDirectory {
-  RepositoryDartDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryDartDirectory extends _RepositoryDirectory {
+  _RepositoryDartDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool get isLicenseRoot => true;
 
   @override
-  RepositoryFile createFile(fs.IoNode entry) {
+  _RepositoryFile createFile(fs.IoNode entry) {
     if (entry.name == 'LICENSE')
-      return new RepositoryDartLicenseFile(this, entry);
+      return _RepositoryDartLicenseFile(this, entry);
     return super.createFile(entry);
   }
 
@@ -2161,17 +2013,17 @@ class RepositoryDartDirectory extends RepositoryDirectory {
   }
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'third_party')
-      return new RepositoryDartThirdPartyDirectory(this, entry);
+      return _RepositoryDartThirdPartyDirectory(this, entry);
     if (entry.name == 'runtime')
-      return new RepositoryDartRuntimeDirectory(this, entry);
+      return _RepositoryDartRuntimeDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryFlutterDirectory extends RepositoryDirectory {
-  RepositoryFlutterDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryFlutterDirectory extends _RepositoryDirectory {
+  _RepositoryFlutterDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   String get libraryName => 'engine';
@@ -2186,48 +2038,95 @@ class RepositoryFlutterDirectory extends RepositoryDirectory {
         && entry.name != 'docs'
         && entry.name != 'examples'
         && entry.name != 'build'
-        && entry.name != 'travis'
+        && entry.name != 'ci'
         && entry.name != 'frontend_server'
         && super.shouldRecurse(entry);
   }
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'sky')
-      return new RepositoryExcludeSubpathDirectory(this, entry, const <String>['packages', 'sky_engine', 'LICENSE']); // that's the output of this script!
+      return _RepositoryExcludeSubpathDirectory(this, entry, const <String>['packages', 'sky_engine', 'LICENSE']); // that's the output of this script!
     if (entry.name == 'third_party')
-      return new RepositoryFlutterThirdPartyDirectory(this, entry);
+      return _RepositoryFlutterThirdPartyDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryFlutterThirdPartyDirectory extends RepositoryDirectory {
-  RepositoryFlutterThirdPartyDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryFuchsiaDirectory extends _RepositoryDirectory {
+  _RepositoryFuchsiaDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  String get libraryName => 'fuchsia_sdk';
+
+  @override
+  bool get isLicenseRoot => true;
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'toolchain'
+        && super.shouldRecurse(entry);
+  }
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'sdk')
+      return _RepositoryFuchsiaSdkDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryFuchsiaSdkDirectory extends _RepositoryDirectory {
+  _RepositoryFuchsiaSdkDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'linux' || entry.name == 'mac')
+      return _RepositoryFuchsiaSdkLinuxDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryFuchsiaSdkLinuxDirectory extends _RepositoryDirectory {
+  _RepositoryFuchsiaSdkLinuxDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != '.build-id'
+        && entry.name != 'docs'
+        && entry.name != 'images'
+        && entry.name != 'meta'
+        && entry.name != 'tools';
+  }
+}
+
+class _RepositoryFlutterThirdPartyDirectory extends _RepositoryDirectory {
+  _RepositoryFlutterThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool get subdirectoriesAreLicenseRoots => true;
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'txt')
-      return new RepositoryFlutterTxtDirectory(this, entry);
+      return _RepositoryFlutterTxtDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryFlutterTxtDirectory extends RepositoryDirectory {
-  RepositoryFlutterTxtDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryFlutterTxtDirectory extends _RepositoryDirectory {
+  _RepositoryFlutterTxtDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'third_party')
-      return new RepositoryFlutterTxtThirdPartyDirectory(this, entry);
+      return _RepositoryFlutterTxtThirdPartyDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
-class RepositoryFlutterTxtThirdPartyDirectory extends RepositoryDirectory {
-  RepositoryFlutterTxtThirdPartyDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+class _RepositoryFlutterTxtThirdPartyDirectory extends _RepositoryDirectory {
+  _RepositoryFlutterTxtThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -2235,125 +2134,25 @@ class RepositoryFlutterTxtThirdPartyDirectory extends RepositoryDirectory {
   }
 }
 
-class RepositoryGarnetDirectory extends RepositoryDirectory {
-  RepositoryGarnetDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+/// The license tool directory.
+///
+/// This is a special-case root node that is not used for license aggregation,
+/// but simply to compute a signature for the license tool itself. When this
+/// signature changes, we force re-run license collection for all components in
+/// order to verify the tool itself still produces the same output.
+class _RepositoryFlutterLicenseToolDirectory extends _RepositoryDirectory {
+  _RepositoryFlutterLicenseToolDirectory(fs.Directory io) : super(null, io);
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'bin'
-        && entry.name != 'docs'
-        && entry.name != 'drivers'
-        && entry.name != 'examples'
-        && entry.name != 'go'
-        && entry.name != 'lib'
-        && entry.name != 'packages'
+    return entry.name != '.dart_tool'
+        && entry.name != 'data'
         && super.shouldRecurse(entry);
   }
-
-  @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'public')
-      return new RepositoryGarnetPublicDirectory(this, entry);
-    return super.createSubdirectory(entry);
-  }
 }
 
-class RepositoryGarnetPublicDirectory extends RepositoryDirectory {
-  RepositoryGarnetPublicDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'dart-pkg'
-        && entry.name != 'build'
-        && entry.name != 'rust'
-        && super.shouldRecurse(entry);
-  }
-
-  @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'lib')
-      return new RepositoryGarnetLibDirectory(this, entry);
-    return super.createSubdirectory(entry);
-  }
-}
-
-class RepositoryGarnetLibDirectory extends RepositoryDirectory {
-  RepositoryGarnetLibDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'app'
-        && entry.name != 'escher'
-        && entry.name != 'url'
-        && super.shouldRecurse(entry);
-  }
-
-  @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'fidl')
-      return new RepositoryGarnetFidlDirectory(this, entry);
-    return super.createSubdirectory(entry);
-  }
-}
-
-class RepositoryGarnetFidlDirectory extends RepositoryDirectory {
-  RepositoryGarnetFidlDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'compiler'
-        && entry.name != 'fuzz'
-        && super.shouldRecurse(entry);
-  }
-
-  @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'public')
-      return new RepositoryGarnetPublicDirectory(this, entry);
-    return super.createSubdirectory(entry);
-  }
-}
-
-class RepositoryTopazDirectory extends RepositoryDirectory {
-  RepositoryTopazDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  bool shouldRecurse(fs.IoNode entry) {
-      return entry.name != 'tools'
-          && super.shouldRecurse(entry);
-  }
-
-  @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'shell')
-      return new RepositoryTopazShellDirectory(this, entry);
-    return super.createSubdirectory(entry);
-  }
-}
-
-class RepositoryTopazShellDirectory extends RepositoryDirectory {
-  RepositoryTopazShellDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'third_party')
-      return new RepositoryTopazShellThirdPartyDirectory(this, entry);
-    return super.createSubdirectory(entry);
-  }
-}
-
-class RepositoryTopazShellThirdPartyDirectory extends RepositoryDirectory {
-  RepositoryTopazShellThirdPartyDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
-
-  @override
-  bool shouldRecurse(fs.IoNode entry) {
-      return entry.name != 'QR-Code-generator'
-          && super.shouldRecurse(entry);
-  }
-}
-
-class RepositoryRoot extends RepositoryDirectory {
-  RepositoryRoot(fs.Directory io) : super(null, io);
+class _RepositoryRoot extends _RepositoryDirectory {
+  _RepositoryRoot(fs.Directory io) : super(null, io);
 
   @override
   String get libraryName {
@@ -2379,28 +2178,35 @@ class RepositoryRoot extends RepositoryDirectory {
   }
 
   @override
-  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'base')
       throw '//base is no longer part of this client: remove it';
     if (entry.name == 'third_party')
-      return new RepositoryRootThirdPartyDirectory(this, entry);
+      return _RepositoryRootThirdPartyDirectory(this, entry);
     if (entry.name == 'flutter')
-      return new RepositoryFlutterDirectory(this, entry);
-    if (entry.name == 'garnet')
-      return new RepositoryGarnetDirectory(this, entry);
-    if (entry.name == 'topaz')
-      return new RepositoryTopazDirectory(this, entry);
+      return _RepositoryFlutterDirectory(this, entry);
+    if (entry.name == 'fuchsia')
+      return _RepositoryFuchsiaDirectory(this, entry);
     return super.createSubdirectory(entry);
+  }
+
+  @override
+  List<_RepositoryDirectory> get virtualSubdirectories {
+    // Skia is updated more frequently than other third party libraries and
+    // is therefore represented as a separate top-level component.
+    final fs.Directory thirdPartyNode = io.walk.firstWhere((fs.IoNode node) => node.name == 'third_party');
+    final fs.IoNode skiaNode = thirdPartyNode.walk.firstWhere((fs.IoNode node) => node.name == 'skia');
+    return <_RepositoryDirectory>[_RepositorySkiaDirectory(this, skiaNode)];
   }
 }
 
 
-class Progress {
-  Progress(this.max) {
+class _Progress {
+  _Progress(this.max) {
     // This may happen when a git client contains left-over empty component
     // directories after DEPS file changes.
     if (max <= 0)
-      throw new ArgumentError('Progress.max must be > 0 but was: $max');
+      throw ArgumentError('Progress.max must be > 0 but was: $max');
   }
 
   final int max;
@@ -2419,7 +2225,8 @@ class Progress {
       update();
     }
   }
-  void advance(bool success) {
+  void advance({@required bool success}) {
+    assert(success != null);
     if (success)
       _withLicense += 1;
     else
@@ -2429,7 +2236,7 @@ class Progress {
   Stopwatch _lastUpdate;
   void update({bool flush = false}) {
     if (_lastUpdate == null || _lastUpdate.elapsedMilliseconds > 90 || flush) {
-      _lastUpdate ??= new Stopwatch();
+      _lastUpdate ??= Stopwatch();
       final String line = toString();
       system.stderr.write('\r$line');
       if (_lastLength > line.length)
@@ -2443,23 +2250,149 @@ class Progress {
   bool get hadErrors => _withoutLicense > 0;
   @override
   String toString() {
-    int percent = (100.0 * (_withLicense + _withoutLicense) / max).round();
+    final int percent = (100.0 * (_withLicense + _withoutLicense) / max).round();
     return '${(_withLicense + _withoutLicense).toString().padLeft(10)} of $max ${'█' * (percent ~/ 10)}${'░' * (10 - (percent ~/ 10))} $percent% ($_withoutLicense missing licenses)  $label';
   }
+}
+
+/// Reads the signature from a golden file.
+Future<String> _readSignature(String goldenPath) async {
+  try {
+    final system.File goldenFile = system.File(goldenPath);
+    final String goldenSignature = await utf8.decoder.bind(goldenFile.openRead())
+        .transform(const LineSplitter()).first;
+    final RegExp signaturePattern = RegExp(r'Signature: (\w+)');
+    final Match goldenMatch = signaturePattern.matchAsPrefix(goldenSignature);
+    if (goldenMatch != null)
+      return goldenMatch.group(1);
+  } on system.FileSystemException {
+    system.stderr.writeln('    Failed to read signature file.');
+    return null;
+  }
+  return null;
+}
+
+/// Writes a signature to an [system.IOSink] in the expected format.
+void _writeSignature(String signature, system.IOSink sink) {
+  if (signature != null)
+    sink.writeln('Signature: $signature\n');
+}
+
+// Checks for changes to the license tool itself.
+//
+// Returns true if changes are detected.
+Future<bool> _computeLicenseToolChanges(_RepositoryDirectory root, {String goldenSignaturePath, String outputSignaturePath}) async {
+  system.stderr.writeln('Computing signature for license tool');
+  final fs.Directory flutterNode = root.io.walk.firstWhere((fs.IoNode node) => node.name == 'flutter');
+  final fs.Directory toolsNode = flutterNode.walk.firstWhere((fs.IoNode node) => node.name == 'tools');
+  final fs.Directory licenseNode = toolsNode.walk.firstWhere((fs.IoNode node) => node.name == 'licenses');
+  final _RepositoryFlutterLicenseToolDirectory licenseToolDirectory = _RepositoryFlutterLicenseToolDirectory(licenseNode);
+
+  final String toolSignature = await licenseToolDirectory.signature;
+  final system.IOSink sink = system.File(outputSignaturePath).openWrite();
+  _writeSignature(toolSignature, sink);
+  await sink.close();
+
+  final String goldenSignature = await _readSignature(goldenSignaturePath);
+  return toolSignature != goldenSignature;
+}
+
+/// Collects licenses for the specified component.
+///
+/// If [writeSignature] is set, the signature is written to the output file.
+/// If [force] is set, collection is run regardless of whether or not the signature matches.
+Future<void> _collectLicensesForComponent(_RepositoryDirectory componentRoot, {
+  String inputGoldenPath,
+  String outputGoldenPath,
+  bool writeSignature,
+  bool force,
+}) async {
+  // Check whether the golden file matches the signature of the current contents of this directory.
+  final String goldenSignature = await _readSignature(inputGoldenPath);
+  final String signature = await componentRoot.signature;
+  if (!force && goldenSignature == signature) {
+    system.stderr.writeln('    Skipping this component - no change in signature');
+    return;
+  }
+
+  final _Progress progress = _Progress(componentRoot.fileCount);
+
+  final system.File outFile = system.File(outputGoldenPath);
+  final system.IOSink sink = outFile.openWrite();
+  if (writeSignature)
+    _writeSignature(signature, sink);
+
+  final List<License> licenses = Set<License>.from(componentRoot.getLicenses(progress).toList()).toList();
+
+  if (progress.hadErrors)
+    throw 'Had failures while collecting licenses.';
+
+  sink.writeln('UNUSED LICENSES:\n');
+  final List<String> unusedLicenses = licenses
+    .where((License license) => !license.isUsed)
+    .map((License license) => license.toString())
+    .toList();
+  unusedLicenses.sort();
+  sink.writeln(unusedLicenses.join('\n\n'));
+  sink.writeln('~' * 80);
+
+  sink.writeln('USED LICENSES:\n');
+  final List<License> usedLicenses = licenses.where((License license) => license.isUsed).toList();
+  final List<String> output = usedLicenses.map((License license) => license.toString()).toList();
+  for (int index = 0; index < output.length; index += 1) {
+    // The strings we look for here are strings which we do not expect to see in
+    // any of the licenses we use. They either represent examples of misparsing
+    // licenses (issues we've previously run into and fixed), or licenses we
+    // know we are trying to avoid (e.g. the GPL, or licenses that only apply to
+    // test content which shouldn't get built at all).
+    // If you find that one of these tests is getting hit, and it's not obvious
+    // to you why the relevant license is a problem, please ask around (e.g. try
+    // asking Hixie). Do not merely remove one of these checks, sometimes the
+    // issues involved are relatively subtle.
+    if (output[index].contains('Version: MPL 1.1/GPL 2.0/LGPL 2.1'))
+      throw 'Unexpected trilicense block found in: ${usedLicenses[index].origin}';
+    if (output[index].contains('The contents of this file are subject to the Mozilla Public License Version'))
+      throw 'Unexpected MPL block found in: ${usedLicenses[index].origin}';
+    if (output[index].contains('You should have received a copy of the GNU'))
+      throw 'Unexpected GPL block found in: ${usedLicenses[index].origin}';
+    if (output[index].contains('BoringSSL is a fork of OpenSSL'))
+      throw 'Unexpected legacy BoringSSL block found in: ${usedLicenses[index].origin}';
+    if (output[index].contains('Contents of this folder are ported from'))
+      throw 'Unexpected block found in: ${usedLicenses[index].origin}';
+    if (output[index].contains('https://github.com/w3c/web-platform-tests/tree/master/selectors-api'))
+      throw 'Unexpected W3C content found in: ${usedLicenses[index].origin}';
+    if (output[index].contains('http://www.w3.org/Consortium/Legal/2008/04-testsuite-copyright.html'))
+      throw 'Unexpected W3C copyright found in: ${usedLicenses[index].origin}';
+    if (output[index].contains('It is based on commit'))
+      throw 'Unexpected content found in: ${usedLicenses[index].origin}';
+    if (output[index].contains('The original code is covered by the dual-licensing approach described in:'))
+      throw 'Unexpected old license reference found in: ${usedLicenses[index].origin}';
+    if (output[index].contains('must choose'))
+      throw 'Unexpected indecisiveness found in: ${usedLicenses[index].origin}';
+  }
+
+  output.sort();
+  sink.writeln(output.join('\n\n'));
+  sink.writeln('Total license count: ${licenses.length}');
+
+  await sink.close();
+  progress.label = 'Done.';
+  progress.flush();
+  system.stderr.writeln('');
 }
 
 
 // MAIN
 
-Future<Null> main(List<String> arguments) async {
-  final ArgParser parser = new ArgParser()
+Future<void> main(List<String> arguments) async {
+  final ArgParser parser = ArgParser()
     ..addOption('src', help: 'The root of the engine source')
     ..addOption('out', help: 'The directory where output is written')
     ..addOption('golden', help: 'The directory containing golden results')
     ..addFlag('release', help: 'Print output in the format used for product releases');
 
-  ArgResults argResults = parser.parse(arguments);
-  bool releaseMode = argResults['release'];
+  final ArgResults argResults = parser.parse(arguments);
+  final bool releaseMode = argResults['release'];
   if (argResults['src'] == null) {
     print('Flutter license script: Must provide --src directory');
     print(parser.usage);
@@ -2476,25 +2409,25 @@ Future<Null> main(List<String> arguments) async {
       print(parser.usage);
       system.exit(1);
     }
-    system.Directory out = new system.Directory(argResults['out']);
+    final system.Directory out = system.Directory(argResults['out']);
     if (!out.existsSync())
       out.createSync(recursive: true);
   }
 
   try {
     system.stderr.writeln('Finding files...');
-    fs.FileSystemDirectory rootDirectory = new fs.FileSystemDirectory.fromPath(argResults['src']);
-    final RepositoryDirectory root = new RepositoryRoot(rootDirectory);
+    final fs.FileSystemDirectory rootDirectory = fs.FileSystemDirectory.fromPath(argResults['src']);
+    final _RepositoryDirectory root = _RepositoryRoot(rootDirectory);
 
     if (releaseMode) {
       system.stderr.writeln('Collecting licenses...');
-      Progress progress = new Progress(root.fileCount);
-      List<License> licenses = new Set<License>.from(root.getLicenses(progress).toList()).toList();
+      final _Progress progress = _Progress(root.fileCount);
+      final List<License> licenses = Set<License>.from(root.getLicenses(progress).toList()).toList();
       if (progress.hadErrors)
         throw 'Had failures while collecting licenses.';
       progress.label = 'Dumping results...';
       progress.flush();
-      List<String> output = licenses
+      final List<String> output = licenses
         .where((License license) => license.isUsed)
         .map((License license) => license.toStringFormal())
         .where((String text) => text != null)
@@ -2505,84 +2438,59 @@ Future<Null> main(List<String> arguments) async {
       progress.flush();
       system.stderr.writeln('');
     } else {
-      RegExp signaturePattern = new RegExp(r'Signature: (\w+)');
+      // If changes are detected to the license tool itself, force collection
+      // for all components in order to check we're still generating correct
+      // output.
+      const String toolSignatureFilename = 'tool_signature';
+      final bool forceRunAll = await _computeLicenseToolChanges(
+          root,
+          goldenSignaturePath: path.join(argResults['golden'], toolSignatureFilename),
+          outputSignaturePath: path.join(argResults['out'], toolSignatureFilename),
+      );
+      if (forceRunAll)
+        system.stderr.writeln('    Detected changes to license tool. Forcing license collection for all components.');
 
+      final List<String> usedGoldens = <String>[];
       bool isFirstComponent = true;
-      for (RepositoryDirectory component in root.subdirectories) {
+      for (_RepositoryDirectory component in root.subdirectories) {
         system.stderr.writeln('Collecting licenses for ${component.io.name}');
 
-        String signature;
-        if (component.io.name == 'flutter') {
-          // Always run the full license check on the flutter tree.  This tree is
-          // relatively small but changes frequently in ways that do not affect
-          // the license output, and we don't want to require updates to the golden
-          // signature for those changes.
-          signature = null;
-        } else {
-          signature = await component.signature;
-        }
-
-        // Check whether the golden file matches the signature of the current contents
-        // of this directory.
-        try {
-          system.File goldenFile = new system.File(
-              path.join(argResults['golden'], 'licenses_${component.io.name}'));
-          String goldenSignature = await goldenFile.openRead()
-              .transform(UTF8.decoder).transform(new LineSplitter()).first;
-          Match goldenMatch = signaturePattern.matchAsPrefix(goldenSignature);
-          if (goldenMatch != null && goldenMatch.group(1) == signature) {
-            system.stderr.writeln('    Skipping this component - no change in signature');
-            continue;
-          }
-        } on system.FileSystemException {
-            system.stderr.writeln('    Failed to read signature file, scanning directory.');
-        }
-
-        Progress progress = new Progress(component.fileCount);
-
-        system.File outFile = new system.File(
-            path.join(argResults['out'], 'licenses_${component.name}'));
-        system.IOSink sink = outFile.openWrite();
-        if (signature != null)
-          sink.writeln('Signature: $signature\n');
-
-        RepositoryDirectory componentRoot;
+        _RepositoryDirectory componentRoot;
         if (isFirstComponent) {
-          // For the first component, we can use the results of the initial
-          // repository crawl.
+          // For the first component, we can use the results of the initial repository crawl.
           isFirstComponent = false;
           componentRoot = component;
         } else {
           // For other components, we need a clean repository that does not
           // contain any state left over from previous components.
           clearLicenseRegistry();
-          componentRoot = new RepositoryRoot(rootDirectory).subdirectories.firstWhere(
-            (RepositoryDirectory dir) => dir.name == component.name
-          );
+          componentRoot = _RepositoryRoot(rootDirectory).subdirectories
+              .firstWhere((_RepositoryDirectory dir) => dir.name == component.name);
         }
-        List<License> licenses = new Set<License>.from(
-            componentRoot.getLicenses(progress).toList()).toList();
 
-        sink.writeln('UNUSED LICENSES:\n');
-        List<String> unusedLicenses = licenses
-          .where((License license) => !license.isUsed)
-          .map((License license) => license.toString())
-          .toList();
-        unusedLicenses.sort();
-        sink.writeln(unusedLicenses.join('\n\n'));
-        sink.writeln('~' * 80);
+        // Always run the full license check on the flutter tree. The flutter
+        // tree is relatively small and changes frequently in ways that do not
+        // affect the license output, and we don't want to require updates to
+        // the golden signature for those changes.
+        final String goldenFileName = 'licenses_${component.io.name}';
+        await _collectLicensesForComponent(
+            componentRoot,
+            inputGoldenPath: path.join(argResults['golden'], goldenFileName),
+            outputGoldenPath: path.join(argResults['out'], goldenFileName),
+            writeSignature: component.io.name != 'flutter',
+            force: forceRunAll || component.io.name == 'flutter',
+        );
+        usedGoldens.add(goldenFileName);
+      }
 
-        sink.writeln('USED LICENSES:\n');
-        List<License> usedLicenses = licenses.where((License license) => license.isUsed).toList();
-        List<String> output = usedLicenses.map((License license) => license.toString()).toList();
-        output.sort();
-        sink.writeln(output.join('\n\n'));
-        sink.writeln('Total license count: ${licenses.length}');
-
-        await sink.close();
-        progress.label = 'Done.';
-        progress.flush();
-        system.stderr.writeln('');
+      final Set<String> unusedGoldens = system.Directory(argResults['golden']).listSync()
+        .map((system.FileSystemEntity file) => path.basename(file.path)).toSet()
+        ..removeAll(usedGoldens)
+        ..remove(toolSignatureFilename);
+      if (unusedGoldens.isNotEmpty) {
+        system.stderr.writeln('The following golden files in ${argResults['golden']} are unused and need to be deleted:');
+        unusedGoldens.map((String s) => ' * $s').forEach(system.stderr.writeln);
+        system.exit(1);
       }
     }
   } catch (e, stack) {
@@ -2591,17 +2499,3 @@ Future<Null> main(List<String> arguments) async {
     system.exit(1);
   }
 }
-
-// Sanity checks:
-//
-// The following substrings shouldn't be in the output:
-//   Version: MPL 1.1/GPL 2.0/LGPL 2.1
-//   The contents of this file are subject to the Mozilla Public License Version
-//   You should have received a copy of the GNU
-//   BoringSSL is a fork of OpenSSL
-//   Contents of this folder are ported from
-//   https://github.com/w3c/web-platform-tests/tree/master/selectors-api
-//   It is based on commit
-//   The original code is covered by the dual-licensing approach described in:
-//   http://www.w3.org/Consortium/Legal/2008/04-testsuite-copyright.html
-//   must choose

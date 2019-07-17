@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -25,7 +25,7 @@ VulkanCommandBuffer::VulkanCommandBuffer(
 
   if (VK_CALL_LOG_ERROR(vk.AllocateCommandBuffers(device_, &allocate_info,
                                                   &buffer)) != VK_SUCCESS) {
-    FXL_DLOG(INFO) << "Could not allocate command buffers.";
+    FML_DLOG(INFO) << "Could not allocate command buffers.";
     return;
   }
 

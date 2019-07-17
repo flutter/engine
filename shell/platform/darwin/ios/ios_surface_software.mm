@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,15 +8,16 @@
 
 #include <memory>
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/trace_event.h"
-#include "lib/fxl/logging.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
-namespace shell {
+namespace flutter {
 
-IOSSurfaceSoftware::IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer)
-    : layer_(std::move(layer)) {
+IOSSurfaceSoftware::IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
+                                       FlutterPlatformViewsController* platform_views_controller)
+    : IOSSurface(platform_views_controller), layer_(std::move(layer)) {
   UpdateStorageSizeIfNecessary();
 }
 
@@ -63,7 +64,8 @@ sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const SkISize& size) {
     return sk_surface_;
   }
 
-  SkImageInfo info = SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType);
+  SkImageInfo info = SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType,
+                                          SkColorSpace::MakeSRGB());
   sk_surface_ = SkSurface::MakeRaster(info, nullptr);
   return sk_surface_;
 }
@@ -125,4 +127,58 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
   return true;
 }
 
-}  // namespace shell
+flutter::ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
+  if (IsIosEmbeddedViewsPreviewEnabled()) {
+    return this;
+  } else {
+    return nullptr;
+  }
+}
+
+void IOSSurfaceSoftware::CancelFrame() {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  platform_views_controller->CancelFrame();
+}
+
+bool IOSSurfaceSoftware::HasPendingViewOperations() {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  return platform_views_controller->HasPendingViewOperations();
+}
+
+void IOSSurfaceSoftware::BeginFrame(SkISize frame_size) {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  platform_views_controller->SetFrameSize(frame_size);
+}
+
+void IOSSurfaceSoftware::PrerollCompositeEmbeddedView(
+    int view_id,
+    std::unique_ptr<flutter::EmbeddedViewParams> params) {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  platform_views_controller->PrerollCompositeEmbeddedView(view_id, std::move(params));
+}
+
+std::vector<SkCanvas*> IOSSurfaceSoftware::GetCurrentCanvases() {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  return platform_views_controller->GetCurrentCanvases();
+}
+
+SkCanvas* IOSSurfaceSoftware::CompositeEmbeddedView(int view_id) {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  return platform_views_controller->CompositeEmbeddedView(view_id);
+}
+
+bool IOSSurfaceSoftware::SubmitFrame(GrContext* context) {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  if (platform_views_controller == nullptr) {
+    return true;
+  }
+  return platform_views_controller->SubmitFrame(false, nullptr, nullptr);
+}
+
+}  // namespace flutter

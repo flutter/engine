@@ -1,66 +1,92 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/embedder/platform_view_embedder.h"
 
-#include "flutter/shell/common/io_manager.h"
+namespace flutter {
 
-namespace shell {
-
-PlatformViewEmbedder::PlatformViewEmbedder(PlatformView::Delegate& delegate,
-                                           blink::TaskRunners task_runners,
-                                           DispatchTable dispatch_table)
+PlatformViewEmbedder::PlatformViewEmbedder(
+    PlatformView::Delegate& delegate,
+    flutter::TaskRunners task_runners,
+    EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table,
+    bool fbo_reset_after_present,
+    PlatformDispatchTable platform_dispatch_table)
     : PlatformView(delegate, std::move(task_runners)),
-      dispatch_table_(dispatch_table) {}
+      embedder_surface_(
+          std::make_unique<EmbedderSurfaceGL>(gl_dispatch_table,
+                                              fbo_reset_after_present)),
+      platform_dispatch_table_(platform_dispatch_table) {}
+
+PlatformViewEmbedder::PlatformViewEmbedder(
+    PlatformView::Delegate& delegate,
+    flutter::TaskRunners task_runners,
+    EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table,
+    PlatformDispatchTable platform_dispatch_table)
+    : PlatformView(delegate, std::move(task_runners)),
+      embedder_surface_(
+          std::make_unique<EmbedderSurfaceSoftware>(software_dispatch_table)),
+      platform_dispatch_table_(platform_dispatch_table) {}
 
 PlatformViewEmbedder::~PlatformViewEmbedder() = default;
 
-bool PlatformViewEmbedder::GLContextMakeCurrent() {
-  return dispatch_table_.gl_make_current_callback();
-}
-
-bool PlatformViewEmbedder::GLContextClearCurrent() {
-  return dispatch_table_.gl_clear_current_callback();
-}
-
-bool PlatformViewEmbedder::GLContextPresent() {
-  return dispatch_table_.gl_present_callback();
-}
-
-intptr_t PlatformViewEmbedder::GLContextFBO() const {
-  return dispatch_table_.gl_fbo_callback();
+void PlatformViewEmbedder::UpdateSemantics(
+    flutter::SemanticsNodeUpdates update,
+    flutter::CustomAccessibilityActionUpdates actions) {
+  if (platform_dispatch_table_.update_semantics_nodes_callback != nullptr) {
+    platform_dispatch_table_.update_semantics_nodes_callback(std::move(update));
+  }
+  if (platform_dispatch_table_.update_semantics_custom_actions_callback !=
+      nullptr) {
+    platform_dispatch_table_.update_semantics_custom_actions_callback(
+        std::move(actions));
+  }
 }
 
 void PlatformViewEmbedder::HandlePlatformMessage(
-    fxl::RefPtr<blink::PlatformMessage> message) {
+    fml::RefPtr<flutter::PlatformMessage> message) {
   if (!message) {
     return;
   }
 
-  if (!message->response()) {
+  if (platform_dispatch_table_.platform_message_response_callback == nullptr) {
+    if (message->response()) {
+      message->response()->CompleteEmpty();
+    }
     return;
   }
 
-  if (dispatch_table_.platform_message_response_callback == nullptr) {
-    message->response()->CompleteEmpty();
-    return;
-  }
-
-  dispatch_table_.platform_message_response_callback(std::move(message));
+  platform_dispatch_table_.platform_message_response_callback(
+      std::move(message));
 }
 
+// |PlatformView|
 std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface() {
-  return std::make_unique<GPUSurfaceGL>(this);
-}
-
-sk_sp<GrContext> PlatformViewEmbedder::CreateResourceContext() const {
-  auto callback = dispatch_table_.gl_make_resource_current_callback;
-  if (callback && callback()) {
-    return IOManager::CreateCompatibleResourceLoadingContext(
-        GrBackend::kOpenGL_GrBackend);
+  if (embedder_surface_ == nullptr) {
+    FML_LOG(ERROR) << "Embedder surface was null.";
+    return nullptr;
   }
-  return nullptr;
+  return embedder_surface_->CreateGPUSurface();
 }
 
-}  // namespace shell
+// |PlatformView|
+sk_sp<GrContext> PlatformViewEmbedder::CreateResourceContext() const {
+  if (embedder_surface_ == nullptr) {
+    FML_LOG(ERROR) << "Embedder surface was null.";
+    return nullptr;
+  }
+  return embedder_surface_->CreateResourceContext();
+}
+
+// |PlatformView|
+std::unique_ptr<VsyncWaiter> PlatformViewEmbedder::CreateVSyncWaiter() {
+  if (!platform_dispatch_table_.vsync_callback) {
+    // Superclass implementation creates a timer based fallback.
+    return PlatformView::CreateVSyncWaiter();
+  }
+
+  return std::make_unique<VsyncWaiterEmbedder>(
+      platform_dispatch_table_.vsync_callback, task_runners_);
+}
+
+}  // namespace flutter

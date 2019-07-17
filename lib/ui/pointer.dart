@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -49,31 +49,51 @@ enum PointerDeviceKind {
 
   /// A pointer device with a stylus that has been inverted.
   invertedStylus,
+
+  /// An unknown pointer device.
+  unknown
+}
+
+/// The kind of [PointerDeviceKind.signal].
+enum PointerSignalKind {
+  /// The event is not associated with a pointer signal.
+  none,
+
+  /// A pointer-generated scroll (e.g., mouse wheel or trackpad scroll).
+  scroll,
+
+  /// An unknown pointer signal kind.
+  unknown
 }
 
 /// Information about the state of a pointer.
 class PointerData {
   /// Creates an object that represents the state of a pointer.
   const PointerData({
-    this.timeStamp: Duration.zero,
-    this.change: PointerChange.cancel,
-    this.kind: PointerDeviceKind.touch,
-    this.device: 0,
-    this.physicalX: 0.0,
-    this.physicalY: 0.0,
-    this.buttons: 0,
-    this.obscured: false,
-    this.pressure: 0.0,
-    this.pressureMin: 0.0,
-    this.pressureMax: 0.0,
-    this.distance: 0.0,
-    this.distanceMax: 0.0,
-    this.radiusMajor: 0.0,
-    this.radiusMinor: 0.0,
-    this.radiusMin: 0.0,
-    this.radiusMax: 0.0,
-    this.orientation: 0.0,
-    this.tilt: 0.0
+    this.timeStamp = Duration.zero,
+    this.change = PointerChange.cancel,
+    this.kind = PointerDeviceKind.touch,
+    this.signalKind,
+    this.device = 0,
+    this.physicalX = 0.0,
+    this.physicalY = 0.0,
+    this.buttons = 0,
+    this.obscured = false,
+    this.pressure = 0.0,
+    this.pressureMin = 0.0,
+    this.pressureMax = 0.0,
+    this.distance = 0.0,
+    this.distanceMax = 0.0,
+    this.size = 0.0,
+    this.radiusMajor = 0.0,
+    this.radiusMinor = 0.0,
+    this.radiusMin = 0.0,
+    this.radiusMax = 0.0,
+    this.orientation = 0.0,
+    this.tilt = 0.0,
+    this.platformData = 0,
+    this.scrollDeltaX = 0.0,
+    this.scrollDeltaY = 0.0,
   });
 
   /// Time of event dispatch, relative to an arbitrary timeline.
@@ -84,6 +104,9 @@ class PointerData {
 
   /// The kind of input device for which the event was generated.
   final PointerDeviceKind kind;
+
+  /// The kind of signal for a pointer signal event.
+  final PointerSignalKind signalKind;
 
   /// Unique identifier for the pointing device, reused across interactions.
   final int device;
@@ -133,6 +156,14 @@ class PointerData {
   /// input device cannot detect "hover touch" input events, then this will be
   /// 0.0.
   final double distanceMax;
+
+  /// The area of the screen being pressed, scaled to a value between 0 and 1.
+  /// The value of size can be used to determine fat touch events. This value
+  /// is only set on Android, and is a device specific approximation within
+  /// the range of detectable values. So, for example, the value of 0.1 could
+  /// mean a touch with the tip of the finger, 0.2 a touch with full finger,
+  /// and 0.3 the full palm.
+  final double size;
 
   /// The radius of the contact ellipse along the major axis, in logical pixels.
   final double radiusMajor;
@@ -187,8 +218,21 @@ class PointerData {
   /// the stylus is flat on that surface).
   final double tilt;
 
+  /// Opaque platform-specific data associated with the event.
+  final int platformData;
+
+  /// For events with signalKind of PointerSignalKind.scroll:
+  ///
+  /// The amount to scroll in the x direction, in physical pixels.
+  final double scrollDeltaX;
+
+  /// For events with signalKind of PointerSignalKind.scroll:
+  ///
+  /// The amount to scroll in the y direction, in physical pixels.
+  final double scrollDeltaY;
+
   @override
-  String toString() => '$runtimeType(x: $physicalX, y: $physicalY)';
+  String toString() => 'PointerData(x: $physicalX, y: $physicalY)';
 
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {
@@ -196,6 +240,7 @@ class PointerData {
              'timeStamp: $timeStamp, '
              'change: $change, '
              'kind: $kind, '
+             'signalKind: $signalKind, '
              'device: $device, '
              'physicalX: $physicalX, '
              'physicalY: $physicalY, '
@@ -205,12 +250,16 @@ class PointerData {
              'pressureMax: $pressureMax, '
              'distance: $distance, '
              'distanceMax: $distanceMax, '
+             'size: $size, '
              'radiusMajor: $radiusMajor, '
              'radiusMinor: $radiusMinor, '
              'radiusMin: $radiusMin, '
              'radiusMax: $radiusMax, '
              'orientation: $orientation, '
-             'tilt: $tilt'
+             'tilt: $tilt, '
+             'platformData: $platformData, '
+             'scrollDeltaX: $scrollDeltaX, '
+             'scrollDeltaY: $scrollDeltaY'
            ')';
   }
 }
@@ -218,7 +267,7 @@ class PointerData {
 /// A sequence of reports about the state of pointers.
 class PointerDataPacket {
   /// Creates a packet of pointer data reports.
-  const PointerDataPacket({ this.data: const <PointerData>[] });
+  const PointerDataPacket({ this.data = const <PointerData>[] });
 
   /// Data about the individual pointers in this packet.
   ///

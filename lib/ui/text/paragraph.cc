@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,31 +6,33 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
-#include "lib/fxl/logging.h"
-#include "lib/fxl/tasks/task_runner.h"
-#include "lib/tonic/converter/dart_converter.h"
-#include "lib/tonic/dart_args.h"
-#include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/dart_library_natives.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/task_runner.h"
+#include "third_party/tonic/converter/dart_converter.h"
+#include "third_party/tonic/dart_args.h"
+#include "third_party/tonic/dart_binding_macros.h"
+#include "third_party/tonic/dart_library_natives.h"
 
 using tonic::ToDart;
 
-namespace blink {
+namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Paragraph);
 
-#define FOR_EACH_BINDING(V)         \
-  V(Paragraph, width)               \
-  V(Paragraph, height)              \
-  V(Paragraph, minIntrinsicWidth)   \
-  V(Paragraph, maxIntrinsicWidth)   \
-  V(Paragraph, alphabeticBaseline)  \
-  V(Paragraph, ideographicBaseline) \
-  V(Paragraph, didExceedMaxLines)   \
-  V(Paragraph, layout)              \
-  V(Paragraph, paint)               \
-  V(Paragraph, getWordBoundary)     \
-  V(Paragraph, getRectsForRange)    \
+#define FOR_EACH_BINDING(V)             \
+  V(Paragraph, width)                   \
+  V(Paragraph, height)                  \
+  V(Paragraph, longestLine)             \
+  V(Paragraph, minIntrinsicWidth)       \
+  V(Paragraph, maxIntrinsicWidth)       \
+  V(Paragraph, alphabeticBaseline)      \
+  V(Paragraph, ideographicBaseline)     \
+  V(Paragraph, didExceedMaxLines)       \
+  V(Paragraph, layout)                  \
+  V(Paragraph, paint)                   \
+  V(Paragraph, getWordBoundary)         \
+  V(Paragraph, getRectsForRange)        \
+  V(Paragraph, getRectsForPlaceholders) \
   V(Paragraph, getPositionForOffset)
 
 DART_BIND_ALL(Paragraph, FOR_EACH_BINDING)
@@ -54,6 +56,10 @@ double Paragraph::width() {
 
 double Paragraph::height() {
   return m_paragraphImpl->height();
+}
+
+double Paragraph::longestLine() {
+  return m_paragraphImpl->longestLine();
 }
 
 double Paragraph::minIntrinsicWidth() {
@@ -84,8 +90,17 @@ void Paragraph::paint(Canvas* canvas, double x, double y) {
   m_paragraphImpl->paint(canvas, x, y);
 }
 
-std::vector<TextBox> Paragraph::getRectsForRange(unsigned start, unsigned end) {
-  return m_paragraphImpl->getRectsForRange(start, end);
+std::vector<TextBox> Paragraph::getRectsForRange(unsigned start,
+                                                 unsigned end,
+                                                 unsigned boxHeightStyle,
+                                                 unsigned boxWidthStyle) {
+  return m_paragraphImpl->getRectsForRange(
+      start, end, static_cast<txt::Paragraph::RectHeightStyle>(boxHeightStyle),
+      static_cast<txt::Paragraph::RectWidthStyle>(boxWidthStyle));
+}
+
+std::vector<TextBox> Paragraph::getRectsForPlaceholders() {
+  return m_paragraphImpl->getRectsForPlaceholders();
 }
 
 Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {
@@ -96,4 +111,4 @@ Dart_Handle Paragraph::getWordBoundary(unsigned offset) {
   return m_paragraphImpl->getWordBoundary(offset);
 }
 
-}  // namespace blink
+}  // namespace flutter

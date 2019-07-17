@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -82,7 +82,7 @@ void MessageLoopAndroid::Terminate() {
   ALooper_wake(looper_.get());
 }
 
-void MessageLoopAndroid::WakeUp(fxl::TimePoint time_point) {
+void MessageLoopAndroid::WakeUp(fml::TimePoint time_point) {
   bool result = TimerRearm(timer_fd_.get(), time_point);
   FML_DCHECK(result);
 }

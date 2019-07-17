@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -11,20 +11,15 @@
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/skia_gpu_object.h"
 
-namespace flow {
+namespace flutter {
 
 class PictureLayer : public Layer {
  public:
-  PictureLayer();
+  PictureLayer(const SkPoint& offset,
+               SkiaGPUObject<SkPicture> picture,
+               bool is_complex,
+               bool will_change);
   ~PictureLayer() override;
-
-  void set_offset(const SkPoint& offset) { offset_ = offset; }
-  void set_picture(SkiaGPUObject<SkPicture> picture) {
-    picture_ = std::move(picture);
-  }
-
-  void set_is_complex(bool value) { is_complex_ = value; }
-  void set_will_change(bool value) { will_change_ = value; }
 
   SkPicture* picture() const { return picture_.get().get(); }
 
@@ -39,11 +34,10 @@ class PictureLayer : public Layer {
   SkiaGPUObject<SkPicture> picture_;
   bool is_complex_ = false;
   bool will_change_ = false;
-  RasterCacheResult raster_cache_result_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(PictureLayer);
+  FML_DISALLOW_COPY_AND_ASSIGN(PictureLayer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_PICTURE_LAYER_H_

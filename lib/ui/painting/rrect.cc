@@ -1,21 +1,21 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/rrect.h"
 
-#include "lib/fxl/logging.h"
-#include "lib/tonic/logging/dart_error.h"
-#include "lib/tonic/typed_data/float32_list.h"
+#include "flutter/fml/logging.h"
+#include "third_party/tonic/logging/dart_error.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
-using namespace blink;
+using namespace flutter;
 
 namespace tonic {
 
 // Construct an SkRRect from a Dart RRect object.
 // The Dart RRect is a Float32List containing
 //   [left, top, right, bottom, xRadius, yRadius]
-RRect DartConverter<RRect>::FromDart(Dart_Handle value) {
+RRect DartConverter<flutter::RRect>::FromDart(Dart_Handle value) {
   Float32List buffer(value);
 
   RRect result;
@@ -35,11 +35,11 @@ RRect DartConverter<RRect>::FromDart(Dart_Handle value) {
   return result;
 }
 
-RRect DartConverter<RRect>::FromArguments(Dart_NativeArguments args,
-                                          int index,
-                                          Dart_Handle& exception) {
+RRect DartConverter<flutter::RRect>::FromArguments(Dart_NativeArguments args,
+                                                   int index,
+                                                   Dart_Handle& exception) {
   Dart_Handle value = Dart_GetNativeArgument(args, index);
-  FXL_DCHECK(!LogIfError(value));
+  FML_DCHECK(!LogIfError(value));
   return FromDart(value);
 }
 

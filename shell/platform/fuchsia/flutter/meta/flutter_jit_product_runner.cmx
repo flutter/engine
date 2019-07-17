@@ -1,0 +1,24 @@
+{
+    "program": {
+        "data": "data"
+    },
+    "sandbox": {
+        "features": [
+            "root-ssl-certificates",
+            "vulkan",
+            "deprecated-ambient-replace-as-executable"
+        ],
+        "services": [
+            "fuchsia.device.manager.Administrator",
+            "fuchsia.crash.Analyzer",
+            "fuchsia.fonts.Provider",
+            "fuchsia.posix.socket.Provider",
+            "fuchsia.net.NameLookup",
+            "fuchsia.net.SocketProvider",
+            "fuchsia.sysmem.Allocator",
+            "fuchsia.timezone.Timezone",
+            "fuchsia.tracing.provider.Registry",
+            "fuchsia.vulkan.loader.Loader"
+        ]
+    }
+}

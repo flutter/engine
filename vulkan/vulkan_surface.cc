@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -18,7 +18,7 @@ VulkanSurface::VulkanSurface(
       native_surface_(std::move(native_surface)),
       valid_(false) {
   if (native_surface_ == nullptr || !native_surface_->IsValid()) {
-    FXL_DLOG(INFO) << "Native surface was invalid.";
+    FML_DLOG(INFO) << "Native surface was invalid.";
     return;
   }
 
@@ -26,7 +26,7 @@ VulkanSurface::VulkanSurface(
       native_surface_->CreateSurfaceHandle(vk, application.GetInstance());
 
   if (surface == VK_NULL_HANDLE) {
-    FXL_DLOG(INFO) << "Could not create the surface handle.";
+    FML_DLOG(INFO) << "Could not create the surface handle.";
     return;
   }
 

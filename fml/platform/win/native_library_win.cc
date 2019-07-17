@@ -1,4 +1,4 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -32,21 +32,21 @@ NativeLibrary::Handle NativeLibrary::GetHandle() const {
   return handle_;
 }
 
-fxl::RefPtr<NativeLibrary> NativeLibrary::Create(const char* path) {
-  auto library = fxl::AdoptRef(new NativeLibrary(path));
+fml::RefPtr<NativeLibrary> NativeLibrary::Create(const char* path) {
+  auto library = fml::AdoptRef(new NativeLibrary(path));
   return library->GetHandle() != nullptr ? library : nullptr;
 }
 
-fxl::RefPtr<NativeLibrary> NativeLibrary::CreateWithHandle(
+fml::RefPtr<NativeLibrary> NativeLibrary::CreateWithHandle(
     Handle handle,
     bool close_handle_when_done) {
   auto library =
-      fxl::AdoptRef(new NativeLibrary(handle, close_handle_when_done));
+      fml::AdoptRef(new NativeLibrary(handle, close_handle_when_done));
   return library->GetHandle() != nullptr ? library : nullptr;
 }
 
-fxl::RefPtr<NativeLibrary> NativeLibrary::CreateForCurrentProcess() {
-  return fxl::AdoptRef(new NativeLibrary(::GetModuleHandle(nullptr), false));
+fml::RefPtr<NativeLibrary> NativeLibrary::CreateForCurrentProcess() {
+  return fml::AdoptRef(new NativeLibrary(::GetModuleHandle(nullptr), false));
 }
 
 const uint8_t* NativeLibrary::ResolveSymbol(const char* symbol) {

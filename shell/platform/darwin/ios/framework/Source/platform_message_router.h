@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,19 +7,20 @@
 
 #include <unordered_map>
 
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/platform/darwin/scoped_block.h"
 #include "flutter/lib/ui/window/platform_message.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterBinaryMessenger.h"
-#include "lib/fxl/memory/weak_ptr.h"
+#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 
-namespace shell {
+namespace flutter {
 
 class PlatformMessageRouter {
  public:
   PlatformMessageRouter();
   ~PlatformMessageRouter();
 
-  void HandlePlatformMessage(fxl::RefPtr<blink::PlatformMessage> message) const;
+  void HandlePlatformMessage(
+      fml::RefPtr<flutter::PlatformMessage> message) const;
 
   void SetMessageHandler(const std::string& channel,
                          FlutterBinaryMessageHandler handler);
@@ -28,9 +29,9 @@ class PlatformMessageRouter {
   std::unordered_map<std::string, fml::ScopedBlock<FlutterBinaryMessageHandler>>
       message_handlers_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(PlatformMessageRouter);
+  FML_DISALLOW_COPY_AND_ASSIGN(PlatformMessageRouter);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_H_

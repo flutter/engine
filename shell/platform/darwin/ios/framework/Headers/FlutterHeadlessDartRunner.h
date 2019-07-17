@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,27 +7,70 @@
 
 #import <Foundation/Foundation.h>
 
+#include "FlutterBinaryMessenger.h"
 #include "FlutterDartProject.h"
+#include "FlutterEngine.h"
 #include "FlutterMacros.h"
 
 /**
- The FlutterHeadlessDartRunner runs Flutter Dart code with a null rasterizer,
- and no native drawing surface. It is appropriate for use in running Dart
- code e.g. in the background from a plugin.
-*/
-FLUTTER_EXPORT
-@interface FlutterHeadlessDartRunner : NSObject
+ * A callback for when FlutterHeadlessDartRunner has attempted to start a Dart
+ * Isolate in the background.
+ *
+ * @param success YES if the Isolate was started and run successfully, NO
+ *   otherwise.
+ */
+typedef void (^FlutterHeadlessDartRunnerCallback)(BOOL success);
 
 /**
- Runs a Dart function on an Isolate that is not the main application's Isolate.
- The first call will create a new Isolate. Subsequent calls will reuse that
- Isolate. The Isolate is destroyed when the FlutterHeadlessDartRunner is
- destroyed.
+ * The FlutterHeadlessDartRunner runs Flutter Dart code with a null rasterizer,
+ * and no native drawing surface. It is appropriate for use in running Dart
+ * code e.g. in the background from a plugin.
+ *
+ * Most callers should prefer using `FlutterEngine` directly; this interface exists
+ * for legacy support.
+ */
+FLUTTER_EXPORT
+FLUTTER_DEPRECATED("FlutterEngine should be used rather than FlutterHeadlessDartRunner")
+@interface FlutterHeadlessDartRunner : FlutterEngine
 
- - Parameter entrypoint: The name of a top-level function from the same Dart
-   library that contains the app's main() function.
-*/
-- (void)runWithEntrypoint:(NSString*)entrypoint;
+/**
+ * Iniitalize this FlutterHeadlessDartRunner with a `FlutterDartProject`.
+ *
+ * If the FlutterDartProject is not specified, the FlutterHeadlessDartRunner will attempt to locate
+ * the project in a default location.
+ *
+ * A newly initialized engine will not run the `FlutterDartProject` until either
+ * `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI` is called.
+ *
+ * @param labelPrefix The label prefix used to identify threads for this instance. Should
+ * be unique across FlutterEngine instances
+ * @param projectOrNil The `FlutterDartProject` to run.
+ */
+- (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)projectOrNil;
+
+/**
+ * Iniitalize this FlutterHeadlessDartRunner with a `FlutterDartProject`.
+ *
+ * If the FlutterDartProject is not specified, the FlutterHeadlessDartRunner will attempt to locate
+ * the project in a default location.
+ *
+ * A newly initialized engine will not run the `FlutterDartProject` until either
+ * `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI` is called.
+ *
+ * @param labelPrefix The label prefix used to identify threads for this instance. Should
+ * be unique across FlutterEngine instances
+ * @param projectOrNil The `FlutterDartProject` to run.
+ * @param allowHeadlessExecution Must be set to `YES`.
+ */
+- (instancetype)initWithName:(NSString*)labelPrefix
+                     project:(FlutterDartProject*)projectOrNil
+      allowHeadlessExecution:(BOOL)allowHeadlessExecution NS_DESIGNATED_INITIALIZER;
+
+/**
+ * Not recommended for use - will initialize with a default label ("io.flutter.headless")
+ * and the default FlutterDartProject.
+ */
+- (instancetype)init;
 
 @end
 

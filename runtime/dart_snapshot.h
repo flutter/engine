@@ -1,4 +1,4 @@
-// Copyright 2017 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,53 +9,48 @@
 #include <string>
 
 #include "flutter/common/settings.h"
-#include "flutter/runtime/dart_snapshot_buffer.h"
-#include "lib/fxl/macros.h"
-#include "lib/fxl/memory/ref_counted.h"
+#include "flutter/fml/macros.h"
+#include "flutter/fml/memory/ref_counted.h"
 
-namespace blink {
+namespace flutter {
 
-class DartSnapshot : public fxl::RefCountedThreadSafe<DartSnapshot> {
+class DartSnapshot : public fml::RefCountedThreadSafe<DartSnapshot> {
  public:
   static const char* kVMDataSymbol;
   static const char* kVMInstructionsSymbol;
   static const char* kIsolateDataSymbol;
   static const char* kIsolateInstructionsSymbol;
 
-  static fxl::RefPtr<DartSnapshot> VMSnapshotFromSettings(
+  static fml::RefPtr<DartSnapshot> VMSnapshotFromSettings(
       const Settings& settings);
 
-  static fxl::RefPtr<DartSnapshot> IsolateSnapshotFromSettings(
+  static fml::RefPtr<DartSnapshot> IsolateSnapshotFromSettings(
       const Settings& settings);
 
-  static fxl::RefPtr<DartSnapshot> Empty();
+  static fml::RefPtr<DartSnapshot> Empty();
 
   bool IsValid() const;
 
   bool IsValidForAOT() const;
 
-  const DartSnapshotBuffer* GetData() const;
+  const uint8_t* GetDataMapping() const;
 
-  const DartSnapshotBuffer* GetInstructions() const;
-
-  const uint8_t* GetDataIfPresent() const;
-
-  const uint8_t* GetInstructionsIfPresent() const;
+  const uint8_t* GetInstructionsMapping() const;
 
  private:
-  std::unique_ptr<DartSnapshotBuffer> data_;
-  std::unique_ptr<DartSnapshotBuffer> instructions_;
+  std::shared_ptr<const fml::Mapping> data_;
+  std::shared_ptr<const fml::Mapping> instructions_;
 
-  DartSnapshot(std::unique_ptr<DartSnapshotBuffer> data,
-               std::unique_ptr<DartSnapshotBuffer> instructions);
+  DartSnapshot(std::shared_ptr<const fml::Mapping> data,
+               std::shared_ptr<const fml::Mapping> instructions);
 
   ~DartSnapshot();
 
-  FRIEND_REF_COUNTED_THREAD_SAFE(DartSnapshot);
-  FRIEND_MAKE_REF_COUNTED(DartSnapshot);
-  FXL_DISALLOW_COPY_AND_ASSIGN(DartSnapshot);
+  FML_FRIEND_REF_COUNTED_THREAD_SAFE(DartSnapshot);
+  FML_FRIEND_MAKE_REF_COUNTED(DartSnapshot);
+  FML_DISALLOW_COPY_AND_ASSIGN(DartSnapshot);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_RUNTIME_DART_SNAPSHOT_H_

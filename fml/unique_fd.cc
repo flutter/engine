@@ -1,4 +1,4 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -11,23 +11,23 @@ namespace internal {
 
 #if OS_WIN
 
-namespace win {
+namespace os_win {
 
 void UniqueFDTraits::Free(HANDLE fd) {
   CloseHandle(fd);
 }
 
-}  // namespace win
+}  // namespace os_win
 
 #else  // OS_WIN
 
-namespace unix {
+namespace os_unix {
 
 void UniqueFDTraits::Free(int fd) {
   close(fd);
 }
 
-}  // namespace unix
+}  // namespace os_unix
 
 #endif  // OS_WIN
 

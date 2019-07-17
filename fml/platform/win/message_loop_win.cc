@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -26,12 +26,12 @@ void MessageLoopWin::Run() {
 
 void MessageLoopWin::Terminate() {
   running_ = false;
-  WakeUp(fxl::TimePoint::Now());
+  WakeUp(fml::TimePoint::Now());
 }
 
-void MessageLoopWin::WakeUp(fxl::TimePoint time_point) {
+void MessageLoopWin::WakeUp(fml::TimePoint time_point) {
   LARGE_INTEGER due_time = {0};
-  fxl::TimePoint now = fxl::TimePoint::Now();
+  fml::TimePoint now = fml::TimePoint::Now();
   if (time_point > now) {
     due_time.QuadPart = (time_point - now).ToNanoseconds() / -100;
   }

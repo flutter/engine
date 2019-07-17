@@ -1,13 +1,17 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server.h"
 
-namespace blink {
+namespace flutter {
+
+IsolateNameServer::IsolateNameServer() {}
+
+IsolateNameServer::~IsolateNameServer() = default;
 
 Dart_Port IsolateNameServer::LookupIsolatePortByName(const std::string& name) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  std::scoped_lock lock(mutex_);
   return LookupIsolatePortByNameUnprotected(name);
 }
 
@@ -22,7 +26,7 @@ Dart_Port IsolateNameServer::LookupIsolatePortByNameUnprotected(
 
 bool IsolateNameServer::RegisterIsolatePortWithName(Dart_Port port,
                                                     const std::string& name) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  std::scoped_lock lock(mutex_);
   if (LookupIsolatePortByNameUnprotected(name) != ILLEGAL_PORT) {
     // Name is already registered.
     return false;
@@ -32,7 +36,7 @@ bool IsolateNameServer::RegisterIsolatePortWithName(Dart_Port port,
 }
 
 bool IsolateNameServer::RemoveIsolateNameMapping(const std::string& name) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  std::scoped_lock lock(mutex_);
   auto port_iterator = port_mapping_.find(name);
   if (port_iterator == port_mapping_.end()) {
     return false;
@@ -41,4 +45,4 @@ bool IsolateNameServer::RemoveIsolateNameMapping(const std::string& name) {
   return true;
 }
 
-}  // namespace blink
+}  // namespace flutter

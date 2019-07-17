@@ -1,8 +1,12 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 package io.flutter.plugin.common;
+
+import android.util.Log;
+
+import io.flutter.BuildConfig;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
@@ -14,8 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import android.util.Log;
 
 /**
  * MessageCodec using the Flutter standard binary encoding.
@@ -30,6 +32,7 @@ import android.util.Log;
  *     <li>null</li>
  *     <li>Booleans</li>
  *     <li>Bytes, Shorts, Integers, Longs</li>
+ *     <li>BigIntegers (see below)</li>
  *     <li>Floats, Doubles</li>
  *     <li>Strings</li>
  *     <li>byte[], int[], long[], double[]</li>
@@ -53,15 +56,13 @@ import android.util.Log;
  *     <li>Map: Map</li>
  * </ul>
  *
- * <p>Direct support for BigIntegers has been deprecated on 2018-01-09 to be made
- * unavailable four weeks after this change is available on the Flutter alpha
- * branch. BigIntegers were needed because the Dart 1.0 int type had no size
- * limit. With Dart 2.0, the int type is a fixed-size, 64-bit signed integer.
- * If you need to communicate larger integers, use String encoding instead.</p>
+ * <p>BigIntegers are represented in Dart as strings with the
+ * hexadecimal representation of the integer's value.</p>
  *
  * <p>To extend the codec, overwrite the writeValue and readValueOfType methods.</p>
  */
 public class StandardMessageCodec implements MessageCodec<Object> {
+    private static final String TAG = "StandardMessageCodec#";
     public static final StandardMessageCodec INSTANCE = new StandardMessageCodec();
 
     @Override
@@ -96,7 +97,6 @@ public class StandardMessageCodec implements MessageCodec<Object> {
     private static final byte FALSE = 2;
     private static final byte INT = 3;
     private static final byte LONG = 4;
-    @Deprecated
     private static final byte BIGINT = 5;
     private static final byte DOUBLE = 6;
     private static final byte STRING = 7;
@@ -112,7 +112,9 @@ public class StandardMessageCodec implements MessageCodec<Object> {
      * Uses an expanding code of 1 to 5 bytes to optimize for small values.
      */
     protected static final void writeSize(ByteArrayOutputStream stream, int value) {
-        assert 0 <= value;
+        if (BuildConfig.DEBUG && 0 > value) {
+            Log.e(TAG, "Attempted to write a negative size.");
+        }
         if (value < 254) {
             stream.write(value);
         } else if (value <= 0xffff) {
@@ -237,7 +239,6 @@ public class StandardMessageCodec implements MessageCodec<Object> {
                 writeAlignment(stream, 8);
                 writeDouble(stream, ((Number) value).doubleValue());
             } else if (value instanceof BigInteger) {
-                Log.w("Flutter", "Support for BigIntegers has been deprecated. Use String encoding instead.");
                 stream.write(BIGINT);
                 writeBytes(stream,
                     ((BigInteger) value).toString(16).getBytes(UTF8));
@@ -285,7 +286,7 @@ public class StandardMessageCodec implements MessageCodec<Object> {
             stream.write(MAP);
             final Map<?, ?> map = (Map) value;
             writeSize(stream, map.size());
-            for (final Entry entry: map.entrySet()) {
+            for (final Entry<?, ?> entry: map.entrySet()) {
                 writeValue(stream, entry.getKey());
                 writeValue(stream, entry.getValue());
             }
@@ -367,7 +368,6 @@ public class StandardMessageCodec implements MessageCodec<Object> {
                 result = buffer.getLong();
                 break;
             case BIGINT: {
-                Log.w("Flutter", "Support for BigIntegers has been deprecated. Use String encoding instead.");
                 final byte[] hex = readBytes(buffer);
                 result = new BigInteger(new String(hex, UTF8), 16);
                 break;

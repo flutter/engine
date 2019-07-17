@@ -1,95 +1,154 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:typed_data';
 import 'dart:ui';
+import 'dart:io';
+import 'package:image/image.dart' as dart_image;
 
+import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
-class FakeEverything implements Canvas, PictureRecorder, Color {
-  dynamic noSuchMethod(Invocation invocation) {
-    return new FakeEverything();
-  }
-}
+typedef CanvasCallback = void Function(Canvas canvas);
 
-class NegativeSpace implements Canvas, PictureRecorder, Color {
-  dynamic noSuchMethod(Invocation invocation) {
-    return false;
-  }
-}
-
-void testCanvas(callback(Canvas canvas)) {
+void testCanvas(CanvasCallback callback) {
   try {
-    callback(new Canvas(new PictureRecorder(), new Rect.fromLTRB(0.0, 0.0, 0.0, 0.0)));
-  } catch (error) { }
+    callback(Canvas(PictureRecorder(), const Rect.fromLTRB(0.0, 0.0, 0.0, 0.0)));
+  } catch (error) { } // ignore: empty_catches
 }
 
-void main() {
-  test("canvas APIs should not crash", () {
-    dynamic fake = new FakeEverything();
-    dynamic no = new NegativeSpace();
-    Paint paint = new Paint();
-    Rect rect = new Rect.fromLTRB(double.NAN, double.NAN, double.NAN, double.NAN);
-    List<dynamic> list = <dynamic>[fake, fake];
-    Offset offset = new Offset(double.NAN, double.NAN);
-    Path path = new Path();
+void testNoCrashes() {
+  test('canvas APIs should not crash', () async {
+    final Paint paint = Paint();
+    const Rect rect = Rect.fromLTRB(double.nan, double.nan, double.nan, double.nan);
+    final RRect rrect = RRect.fromRectAndCorners(rect);
+    const Offset offset = Offset(double.nan, double.nan);
+    final Path path = Path();
+    const Color color = Color(0);
+    final Paragraph paragraph = ParagraphBuilder(ParagraphStyle()).build();
 
-    try { new Canvas(null, null); } catch (error) { }
-    try { new Canvas(null, rect); } catch (error) { }
-    try { new Canvas(null, fake); } catch (error) { }
-    try { new Canvas(fake, rect); } catch (error) { }
-    try { new Canvas(no, rect); } catch (error) { }
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas recorderCanvas = Canvas(recorder);
+    recorderCanvas.scale(1.0, 1.0);
+    final Picture picture = recorder.endRecording();
+    final Image image = await picture.toImage(1, 1);
+
+    try { Canvas(null, null); } catch (error) { } // ignore: empty_catches
+    try { Canvas(null, rect); } catch (error) { } // ignore: empty_catches
+    try { Canvas(PictureRecorder(), null); } catch (error) { } // ignore: empty_catches
+    try { Canvas(PictureRecorder(), rect); } catch (error) { } // ignore: empty_catches
 
     try {
-      new PictureRecorder()
+      PictureRecorder()
         ..endRecording()
         ..endRecording()
         ..endRecording();
-    } catch (error) { }
+    } catch (error) { } // ignore: empty_catches
 
-    testCanvas((Canvas canvas) => canvas.clipPath(fake));
-    testCanvas((Canvas canvas) => canvas.clipRect(fake));
-    testCanvas((Canvas canvas) => canvas.clipRRect(fake));
-    testCanvas((Canvas canvas) => canvas.drawArc(fake, 0.0, 0.0, false, paint));
-    testCanvas((Canvas canvas) => canvas.drawArc(rect, 0.0, 0.0, false, fake));
-    testCanvas((Canvas canvas) => canvas.drawAtlas(fake, list, list, list, fake, rect, paint));
-    testCanvas((Canvas canvas) => canvas.drawCircle(offset, double.NAN, paint));
-    testCanvas((Canvas canvas) => canvas.drawColor(fake, fake));
-    testCanvas((Canvas canvas) => canvas.drawDRRect(fake, fake, fake));
-    testCanvas((Canvas canvas) => canvas.drawImage(fake, offset, paint));
-    testCanvas((Canvas canvas) => canvas.drawImageNine(fake, rect, rect, paint));
-    testCanvas((Canvas canvas) => canvas.drawImageRect(fake, rect, rect, paint));
+    testCanvas((Canvas canvas) => canvas.clipPath(path));
+    testCanvas((Canvas canvas) => canvas.clipRect(rect));
+    testCanvas((Canvas canvas) => canvas.clipRRect(rrect));
+    testCanvas((Canvas canvas) => canvas.drawArc(rect, 0.0, 0.0, false, paint));
+    testCanvas((Canvas canvas) => canvas.drawAtlas(image, <RSTransform>[], <Rect>[], <Color>[], BlendMode.src, rect, paint));
+    testCanvas((Canvas canvas) => canvas.drawCircle(offset, double.nan, paint));
+    testCanvas((Canvas canvas) => canvas.drawColor(color, BlendMode.src));
+    testCanvas((Canvas canvas) => canvas.drawDRRect(rrect, rrect, paint));
+    testCanvas((Canvas canvas) => canvas.drawImage(image, offset, paint));
+    testCanvas((Canvas canvas) => canvas.drawImageNine(image, rect, rect, paint));
+    testCanvas((Canvas canvas) => canvas.drawImageRect(image, rect, rect, paint));
     testCanvas((Canvas canvas) => canvas.drawLine(offset, offset, paint));
     testCanvas((Canvas canvas) => canvas.drawOval(rect, paint));
     testCanvas((Canvas canvas) => canvas.drawPaint(paint));
-    testCanvas((Canvas canvas) => canvas.drawPaint(fake));
-    testCanvas((Canvas canvas) => canvas.drawPaint(no));
-    testCanvas((Canvas canvas) => canvas.drawParagraph(fake, offset));
-    testCanvas((Canvas canvas) => canvas.drawPath(fake, paint));
-    testCanvas((Canvas canvas) => canvas.drawPicture(fake));
-    testCanvas((Canvas canvas) => canvas.drawPoints(fake, list, fake));
-    testCanvas((Canvas canvas) => canvas.drawRawAtlas(fake, fake, fake, fake, fake, fake, fake));
-    testCanvas((Canvas canvas) => canvas.drawRawPoints(fake, list, paint));
+    testCanvas((Canvas canvas) => canvas.drawParagraph(paragraph, offset));
+    testCanvas((Canvas canvas) => canvas.drawPath(path, paint));
+    testCanvas((Canvas canvas) => canvas.drawPicture(picture));
+    testCanvas((Canvas canvas) => canvas.drawPoints(PointMode.points, <Offset>[], paint));
+    testCanvas((Canvas canvas) => canvas.drawRawAtlas(image, Float32List(0), Float32List(0), Int32List(0), BlendMode.src, rect, paint));
+    testCanvas((Canvas canvas) => canvas.drawRawPoints(PointMode.points, Float32List(0), paint));
     testCanvas((Canvas canvas) => canvas.drawRect(rect, paint));
-    testCanvas((Canvas canvas) => canvas.drawRRect(fake, paint));
-    testCanvas((Canvas canvas) => canvas.drawShadow(path, color, double.NAN, null));
-    testCanvas((Canvas canvas) => canvas.drawShadow(path, color, double.NAN, false));
-    testCanvas((Canvas canvas) => canvas.drawShadow(path, color, double.NAN, true));
-    testCanvas((Canvas canvas) => canvas.drawShadow(path, color, double.NAN, no));
-    testCanvas((Canvas canvas) => canvas.drawShadow(path, color, double.NAN, fake));
-    testCanvas((Canvas canvas) => canvas.drawVertices(fake, null, paint));
+    testCanvas((Canvas canvas) => canvas.drawRRect(rrect, paint));
+    testCanvas((Canvas canvas) => canvas.drawShadow(path, color, double.nan, null));
+    testCanvas((Canvas canvas) => canvas.drawShadow(path, color, double.nan, false));
+    testCanvas((Canvas canvas) => canvas.drawShadow(path, color, double.nan, true));
+    testCanvas((Canvas canvas) => canvas.drawVertices(Vertices(VertexMode.triangles, <Offset>[]), null, paint));
     testCanvas((Canvas canvas) => canvas.getSaveCount());
     testCanvas((Canvas canvas) => canvas.restore());
-    testCanvas((Canvas canvas) => canvas.rotate(double.NAN));
+    testCanvas((Canvas canvas) => canvas.rotate(double.nan));
     testCanvas((Canvas canvas) => canvas.save());
     testCanvas((Canvas canvas) => canvas.saveLayer(rect, paint));
-    testCanvas((Canvas canvas) => canvas.saveLayer(fake, fake));
     testCanvas((Canvas canvas) => canvas.saveLayer(null, null));
-    testCanvas((Canvas canvas) => canvas.scale(double.NAN, double.NAN));
-    testCanvas((Canvas canvas) => canvas.skew(double.NAN, double.NAN));
-    testCanvas((Canvas canvas) => canvas.transform(fake));
-    testCanvas((Canvas canvas) => canvas.transform(no));
+    testCanvas((Canvas canvas) => canvas.scale(double.nan, double.nan));
+    testCanvas((Canvas canvas) => canvas.skew(double.nan, double.nan));
     testCanvas((Canvas canvas) => canvas.transform(null));
-    testCanvas((Canvas canvas) => canvas.translate(double.NAN, double.NAN));
+    testCanvas((Canvas canvas) => canvas.translate(double.nan, double.nan));
+  });
+}
+
+/// @returns true When the images are resonably similar.
+/// @todo Make the search actually fuzzy to a certain degree.
+Future<bool> fuzzyCompareImages(Image golden, Image img) async {
+  if (golden.width != img.width || golden.height != img.height) {
+    return false;
+  }
+  int getPixel(ByteData data, int x, int y) => data.getUint32((x + y * golden.width) * 4);
+  final ByteData goldenData = await golden.toByteData();
+  final ByteData imgData = await img.toByteData();
+  for (int y = 0; y < golden.height; y++) {
+    for (int x = 0; x < golden.width; x++) {
+      if (getPixel(goldenData, x, y) != getPixel(imgData, x, y)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+/// @returns true When the images are resonably similar.
+Future<bool> fuzzyGoldenImageCompare(
+    Image image, String goldenImageName) async {
+  final String imagesPath = path.join('flutter', 'testing', 'resources');
+  final File file = File(path.join(imagesPath, goldenImageName));
+  final Uint8List goldenData = await file.readAsBytes();
+
+  final Codec codec = await instantiateImageCodec(goldenData);
+  final FrameInfo frame = await codec.getNextFrame();
+  expect(frame.image.height, equals(image.width));
+  expect(frame.image.width, equals(image.height));
+
+  final bool areEqual = await fuzzyCompareImages(frame.image, image);
+  if (!areEqual) {
+    final ByteData pngData = await image.toByteData();
+    final ByteBuffer buffer = pngData.buffer;
+    final dart_image.Image png = dart_image.Image.fromBytes(
+        image.width, image.height, buffer.asUint8List());
+    final String outPath = path.join(imagesPath, 'found_' + goldenImageName);
+    File(outPath)..writeAsBytesSync(dart_image.encodePng(png));
+    print('wrote: ' + outPath);
+  }
+  return areEqual;
+}
+
+void main() {
+  testNoCrashes();
+
+  test('Simple .toImage', () async {
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    final Path circlePath = Path()
+      ..addOval(
+          Rect.fromCircle(center: const Offset(40.0, 40.0), radius: 20.0));
+    final Paint paint = Paint()
+      ..isAntiAlias = false
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(circlePath, paint);
+    final Picture picture = recorder.endRecording();
+    final Image image = await picture.toImage(100, 100);
+    expect(image.width, equals(100));
+    expect(image.height, equals(100));
+
+    final bool areEqual =
+        await fuzzyGoldenImageCompare(image, 'canvas_test_toImage.png');
+    expect(areEqual, true);
   });
 }

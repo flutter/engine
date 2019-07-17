@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,8 +7,8 @@
 
 #include <functional>
 
-#include "lib/fxl/logging.h"
-#include "lib/fxl/macros.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/macros.h"
 #include "vulkan_interface.h"
 
 namespace vulkan {
@@ -72,7 +72,7 @@ class VulkanHandle {
     disposer_ = nullptr;
   }
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(VulkanHandle);
+  FML_DISALLOW_COPY_AND_ASSIGN(VulkanHandle);
 };
 
 }  // namespace vulkan

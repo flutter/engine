@@ -1,12 +1,18 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 package io.flutter.plugin.common;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.UiThread;
 import android.util.Log;
+
+import io.flutter.BuildConfig;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -51,9 +57,17 @@ public final class MethodChannel {
      * @param codec a {@link MessageCodec}.
      */
     public MethodChannel(BinaryMessenger messenger, String name, MethodCodec codec) {
-        assert messenger != null;
-        assert name != null;
-        assert codec != null;
+        if (BuildConfig.DEBUG) {
+            if (messenger == null) {
+                Log.e(TAG, "Parameter messenger must not be null.");
+            }
+            if (name == null) {
+                Log.e(TAG, "Parameter name must not be null.");
+            }
+            if (codec == null) {
+                Log.e(TAG, "Parameter codec must not be null.");
+            }
+        }
         this.messenger = messenger;
         this.name = name;
         this.codec = codec;
@@ -65,7 +79,8 @@ public final class MethodChannel {
      * @param method the name String of the method.
      * @param arguments the arguments for the invocation, possibly null.
      */
-    public void invokeMethod(String method, Object arguments) {
+    @UiThread
+    public void invokeMethod(@NonNull String method, @Nullable Object arguments) {
         invokeMethod(method, arguments, null);
     }
 
@@ -78,7 +93,8 @@ public final class MethodChannel {
      * @param arguments the arguments for the invocation, possibly null.
      * @param callback a {@link Result} callback for the invocation result, or null.
      */
-    public void invokeMethod(String method, Object arguments, Result callback) {
+    @UiThread
+    public void invokeMethod(String method, @Nullable Object arguments, Result callback) {
         messenger.send(name, codec.encodeMethodCall(new MethodCall(method, arguments)),
             callback == null ? null : new IncomingResultHandler(callback));
     }
@@ -97,7 +113,8 @@ public final class MethodChannel {
      *
      * @param handler a {@link MethodCallHandler}, or null to deregister.
      */
-    public void setMethodCallHandler(final MethodCallHandler handler) {
+    @UiThread
+    public void setMethodCallHandler(final @Nullable MethodCallHandler handler) {
         messenger.setMessageHandler(name,
             handler == null ? null : new IncomingMethodCallHandler(handler));
     }
@@ -117,10 +134,15 @@ public final class MethodChannel {
          * <p>Any uncaught exception thrown by this method will be caught by the channel implementation and
          * logged, and an error result will be sent back to Flutter.</p>
          *
+         * <p>The handler is called on the platform thread (Android main thread). For more details see
+         * <a href="https://github.com/flutter/engine/wiki/Threading-in-the-Flutter-Engine">Threading in the Flutter
+         * Engine</a>.</p>
+         *
          * @param call A {@link MethodCall}.
          * @param result A {@link Result} used for submitting the result of the call.
          */
-        void onMethodCall(MethodCall call, Result result);
+        @UiThread
+        void onMethodCall(@NonNull MethodCall call, @NonNull Result result);
     }
 
     /**
@@ -128,6 +150,10 @@ public final class MethodChannel {
      * to be invoked by Flutter act as clients of this interface for sending results
      * back to Flutter. Invokers of Flutter methods provide implementations of this
      * interface for handling results received from Flutter.
+     *
+     * <p>All methods of this class must be called on the platform thread (Android main thread). For more details see
+     * <a href="https://github.com/flutter/engine/wiki/Threading-in-the-Flutter-Engine">Threading in the Flutter
+     * Engine</a>.</p>
      */
     public interface Result {
         /**
@@ -135,7 +161,8 @@ public final class MethodChannel {
          *
          * @param result The result, possibly null.
          */
-        void success(Object result);
+        @UiThread
+        void success(@Nullable Object result);
 
         /**
          * Handles an error result.
@@ -144,11 +171,13 @@ public final class MethodChannel {
          * @param errorMessage A human-readable error message String, possibly null.
          * @param errorDetails Error details, possibly null
          */
-        void error(String errorCode, String errorMessage, Object errorDetails);
+        @UiThread
+        void error(String errorCode, @Nullable String errorMessage, @Nullable Object errorDetails);
 
         /**
          * Handles a call to an unimplemented method.
          */
+        @UiThread
         void notImplemented();
     }
 
@@ -160,6 +189,7 @@ public final class MethodChannel {
         }
 
         @Override
+        @UiThread
         public void reply(ByteBuffer reply) {
             try {
                 if (reply == null) {
@@ -185,6 +215,7 @@ public final class MethodChannel {
         }
 
         @Override
+        @UiThread
         public void onMessage(ByteBuffer message, final BinaryReply reply) {
             final MethodCall call = codec.decodeMethodCall(message);
             try {

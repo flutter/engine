@@ -1,23 +1,18 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/shell/common/surface.h"
 
-#include "lib/fxl/logging.h"
-#include "third_party/skia/include/core/SkColorSpaceXformCanvas.h"
+#include "flutter/fml/logging.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-namespace shell {
+namespace flutter {
 
 SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
                            SubmitCallback submit_callback)
     : submitted_(false), surface_(surface), submit_callback_(submit_callback) {
-  FXL_DCHECK(submit_callback_);
-  if (surface_) {
-    xform_canvas_ = SkCreateColorSpaceXformCanvas(surface_->getCanvas(),
-                                                  SkColorSpace::MakeSRGB());
-  }
+  FML_DCHECK(submit_callback_);
 }
 
 SurfaceFrame::~SurfaceFrame() {
@@ -38,9 +33,6 @@ bool SurfaceFrame::Submit() {
 }
 
 SkCanvas* SurfaceFrame::SkiaCanvas() {
-  if (xform_canvas_) {
-    return xform_canvas_.get();
-  }
   return surface_ != nullptr ? surface_->getCanvas() : nullptr;
 }
 
@@ -64,4 +56,12 @@ Surface::Surface() = default;
 
 Surface::~Surface() = default;
 
-}  // namespace shell
+flutter::ExternalViewEmbedder* Surface::GetExternalViewEmbedder() {
+  return nullptr;
+}
+
+bool Surface::MakeRenderContextCurrent() {
+  return true;
+}
+
+}  // namespace flutter

@@ -1,39 +1,37 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 assert(is_mac || is_ios)
 
+import("$flutter_root/testing/testing.gni")
+
 group("darwin") {
-  if (is_mac) {
-    if (!is_fuchsia_host) {
-      deps = [
-        "desktop:shell_application_bundle",
-      ]
-    }
-  } else if (is_ios) {
+  if (is_ios) {
     deps = [
       "ios:flutter_framework",
     ]
-  } else {
-    assert(false, "Unknown darwin platform type.")
+  }
+  if (is_mac) {
+    deps = [
+      "macos",
+    ]
   }
 }
 
 source_set("flutter_channels") {
-  set_sources_assignment_filter([])
   sources = [
     "common/buffer_conversions.h",
     "common/buffer_conversions.mm",
-    "ios/framework/Headers/FlutterBinaryMessenger.h",
-    "ios/framework/Headers/FlutterChannels.h",
-    "ios/framework/Headers/FlutterCodecs.h",
-    "ios/framework/Source/FlutterChannels.mm",
-    "ios/framework/Source/FlutterCodecs.mm",
-    "ios/framework/Source/FlutterStandardCodec.mm",
-    "ios/framework/Source/FlutterStandardCodec_Internal.h",
+    "common/framework/Headers/FlutterBinaryMessenger.h",
+    "common/framework/Headers/FlutterChannels.h",
+    "common/framework/Headers/FlutterCodecs.h",
+    "common/framework/Headers/FlutterMacros.h",
+    "common/framework/Source/FlutterChannels.mm",
+    "common/framework/Source/FlutterCodecs.mm",
+    "common/framework/Source/FlutterStandardCodec.mm",
+    "common/framework/Source/FlutterStandardCodec_Internal.h",
   ]
-  set_sources_assignment_filter(sources_assignment_filter)
 
   deps = [
     "$flutter_root/common",
@@ -41,26 +39,30 @@ source_set("flutter_channels") {
     "$flutter_root/fml",
     "$flutter_root/runtime",
     "$flutter_root/shell/common",
-    "//garnet/public/lib/fxl",
     "//third_party/skia",
   ]
 
   public_configs = [ "$flutter_root:config" ]
 }
 
+test_fixtures("flutter_channels_fixtures") {
+  fixtures = []
+}
+
 executable("flutter_channels_unittests") {
   testonly = true
 
-  set_sources_assignment_filter([])
   sources = [
-    "ios/framework/Source/flutter_codecs_unittest.mm",
-    "ios/framework/Source/flutter_standard_codec_unittest.mm",
+    "common/framework/Source/flutter_codecs_unittest.mm",
+    "common/framework/Source/flutter_standard_codec_unittest.mm",
   ]
-  set_sources_assignment_filter(sources_assignment_filter)
 
   deps = [
     ":flutter_channels",
+    ":flutter_channels_fixtures",
     "$flutter_root/testing",
     "//third_party/dart/runtime:libdart_jit",
   ]
+
+  public_configs = [ "$flutter_root:config" ]
 }

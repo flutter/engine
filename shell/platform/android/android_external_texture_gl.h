@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,9 +9,9 @@
 #include "flutter/flow/texture.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 
-namespace shell {
+namespace flutter {
 
-class AndroidExternalTextureGL : public flow::Texture {
+class AndroidExternalTextureGL : public flutter::Texture {
  public:
   AndroidExternalTextureGL(
       int64_t id,
@@ -19,11 +19,14 @@ class AndroidExternalTextureGL : public flow::Texture {
 
   ~AndroidExternalTextureGL() override;
 
-  virtual void Paint(SkCanvas& canvas, const SkRect& bounds) override;
+  void Paint(SkCanvas& canvas,
+             const SkRect& bounds,
+             bool freeze,
+             GrContext* context) override;
 
-  virtual void OnGrContextCreated() override;
+  void OnGrContextCreated() override;
 
-  virtual void OnGrContextDestroyed() override;
+  void OnGrContextDestroyed() override;
 
   void MarkNewFrameAvailable() override;
 
@@ -48,9 +51,9 @@ class AndroidExternalTextureGL : public flow::Texture {
 
   SkMatrix transform;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(AndroidExternalTextureGL);
+  FML_DISALLOW_COPY_AND_ASSIGN(AndroidExternalTextureGL);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_ANDROID_EXTERNAL_TEXTURE_GL_H_

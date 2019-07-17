@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -10,7 +10,7 @@
 #include "flutter/fml/file.h"
 #include "flutter/fml/mapping.h"
 
-namespace blink {
+namespace flutter {
 
 DirectoryAssetBundle::DirectoryAssetBundle(fml::UniqueFD descriptor)
     : descriptor_(std::move(descriptor)) {
@@ -22,12 +22,12 @@ DirectoryAssetBundle::DirectoryAssetBundle(fml::UniqueFD descriptor)
 
 DirectoryAssetBundle::~DirectoryAssetBundle() = default;
 
-// |blink::AssetResolver|
+// |AssetResolver|
 bool DirectoryAssetBundle::IsValid() const {
   return is_valid_;
 }
 
-// |blink::AssetResolver|
+// |AssetResolver|
 std::unique_ptr<fml::Mapping> DirectoryAssetBundle::GetAsMapping(
     const std::string& asset_name) const {
   if (!is_valid_) {
@@ -35,10 +35,8 @@ std::unique_ptr<fml::Mapping> DirectoryAssetBundle::GetAsMapping(
     return nullptr;
   }
 
-  auto mapping = std::make_unique<fml::FileMapping>(
-      fml::OpenFile(descriptor_, asset_name.c_str(), fml::OpenPermission::kRead,
-                    false /* directory */),
-      false /* executable */);
+  auto mapping = std::make_unique<fml::FileMapping>(fml::OpenFile(
+      descriptor_, asset_name.c_str(), false, fml::FilePermission::kRead));
 
   if (mapping->GetMapping() == nullptr) {
     return nullptr;
@@ -47,4 +45,4 @@ std::unique_ptr<fml::Mapping> DirectoryAssetBundle::GetAsMapping(
   return mapping;
 }
 
-}  // namespace blink
+}  // namespace flutter

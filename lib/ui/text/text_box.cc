@@ -1,15 +1,15 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/text/text_box.h"
 
-#include "lib/fxl/logging.h"
-#include "lib/tonic/dart_class_library.h"
-#include "lib/tonic/dart_state.h"
-#include "lib/tonic/logging/dart_error.h"
+#include "flutter/fml/logging.h"
+#include "third_party/tonic/dart_class_library.h"
+#include "third_party/tonic/dart_state.h"
+#include "third_party/tonic/logging/dart_error.h"
 
-using namespace blink;
+using namespace flutter;
 
 namespace tonic {
 
@@ -19,13 +19,14 @@ Dart_Handle GetTextBoxType() {
   DartClassLibrary& class_library = DartState::Current()->class_library();
   Dart_Handle type =
       Dart_HandleFromPersistent(class_library.GetClass("ui", "TextBox"));
-  FXL_DCHECK(!LogIfError(type));
+  FML_DCHECK(!LogIfError(type));
   return type;
 }
 
 }  // anonymous namespace
 
-Dart_Handle DartConverter<TextBox>::ToDart(const TextBox& val) {
+Dart_Handle DartConverter<flutter::TextBox>::ToDart(
+    const flutter::TextBox& val) {
   constexpr int argc = 5;
   Dart_Handle argv[argc] = {
       tonic::ToDart(val.rect.fLeft),
@@ -37,7 +38,7 @@ Dart_Handle DartConverter<TextBox>::ToDart(const TextBox& val) {
   return Dart_New(GetTextBoxType(), tonic::ToDart("_"), argc, argv);
 }
 
-Dart_Handle DartListFactory<TextBox>::NewList(intptr_t length) {
+Dart_Handle DartListFactory<flutter::TextBox>::NewList(intptr_t length) {
   return Dart_NewListOfType(GetTextBoxType(), length);
 }
 

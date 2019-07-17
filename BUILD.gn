@@ -1,8 +1,18 @@
-# Copyright 2014 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 import("$flutter_root/common/config.gni")
+
+if (is_fuchsia) {
+  import("//build/fuchsia/sdk.gni")
+}
+
+# Whether to build the dartdevc sdk, libraries, and source files
+# required for the flutter web sdk.
+declare_args() {
+  full_dart_sdk = false
+}
 
 group("flutter") {
   testonly = true
@@ -10,6 +20,7 @@ group("flutter") {
   public_deps = [
     "$flutter_root/lib/snapshot:generate_snapshot_bin",
     "$flutter_root/lib/snapshot:kernel_platform_files",
+    "$flutter_root/shell/platform/embedder:flutter_engine",
     "$flutter_root/sky",
   ]
 
@@ -17,10 +28,8 @@ group("flutter") {
     public_deps += [ "$flutter_root/shell/testing" ]
   }
 
-  if (flutter_runtime_mode != "debug" &&
-      flutter_runtime_mode != "dynamic_profile" &&
-      flutter_runtime_mode != "dynamic_release") {
-    public_deps += [ "$flutter_root/lib/snapshot:entry_points_json_files" ]
+  if (is_fuchsia && using_fuchsia_sdk) {
+    public_deps += [ "$flutter_root/shell/platform/fuchsia" ]
   }
 
   if (!is_fuchsia && !is_fuchsia_host) {
@@ -29,6 +38,10 @@ group("flutter") {
         "$flutter_root/frontend_server",
         "//third_party/dart:create_sdk",
       ]
+
+      if (full_dart_sdk) {
+        public_deps += [ "$flutter_root/web_sdk" ]
+      }
     }
   }
 
@@ -42,19 +55,36 @@ group("flutter") {
     public_deps += [
       "$flutter_root/flow:flow_unittests",
       "$flutter_root/fml:fml_unittests",
+      "$flutter_root/lib/ui:ui_unittests",
       "$flutter_root/runtime:runtime_unittests",
       "$flutter_root/shell/common:shell_unittests",
+      "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_unittests",
       "$flutter_root/shell/platform/embedder:embedder_unittests",
-      "$flutter_root/shell/platform/embedder:flutter_engine",
-      "$flutter_root/synchronization:synchronization_unittests",
+      "$flutter_root/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
       "$flutter_root/third_party/txt:txt_unittests",
-      "//garnet/public/lib/fxl:fxl_unittests",
     ]
+
+    if (!is_win) {
+      public_deps += [
+        "$flutter_root/fml:fml_benchmarks",
+        "$flutter_root/shell/common:shell_benchmarks",
+        "$flutter_root/third_party/txt:txt_benchmarks",
+      ]
+    }
   }
 }
 
 config("config") {
   include_dirs = [ ".." ]
+}
+
+config("export_dynamic_symbols") {
+  if (is_linux) {
+    inputs = [
+      "$flutter_root/common/exported_symbols.sym",
+    ]
+    ldflags = [ "-Wl,--dynamic-list=" + rebase_path(inputs[0], root_build_dir) ]
+  }
 }
 
 group("dist") {

@@ -1,8 +1,8 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "lib/fxl/build_config.h"
+#include "flutter/fml/build_config.h"
 
 #if defined(OS_WIN)
 #define _USE_MATH_DEFINES
@@ -18,7 +18,7 @@ TEST(MatrixDecomposition, Rotation) {
   const auto angle = M_PI_4;
   matrix.setRotateAbout(0.0, 0.0, 1.0, angle);
 
-  flow::MatrixDecomposition decomposition(matrix);
+  flutter::MatrixDecomposition decomposition(matrix);
   ASSERT_TRUE(decomposition.IsValid());
 
   const auto sine = sin(angle * 0.5);
@@ -35,7 +35,7 @@ TEST(MatrixDecomposition, Scale) {
   const auto scale = 5.0;
   matrix.setScale(scale + 0, scale + 1, scale + 2);
 
-  flow::MatrixDecomposition decomposition(matrix);
+  flutter::MatrixDecomposition decomposition(matrix);
   ASSERT_TRUE(decomposition.IsValid());
 
   ASSERT_FLOAT_EQ(scale + 0, decomposition.scale().fX);
@@ -49,7 +49,7 @@ TEST(MatrixDecomposition, Translate) {
   const auto translate = 125.0;
   matrix.setTranslate(translate + 0, translate + 1, translate + 2);
 
-  flow::MatrixDecomposition decomposition(matrix);
+  flutter::MatrixDecomposition decomposition(matrix);
   ASSERT_TRUE(decomposition.IsValid());
 
   ASSERT_FLOAT_EQ(translate + 0, decomposition.translation().fX);
@@ -58,8 +58,6 @@ TEST(MatrixDecomposition, Translate) {
 }
 
 TEST(MatrixDecomposition, Combination) {
-  SkMatrix44 matrix = SkMatrix44::I();
-
   const auto rotation = M_PI_4;
   const auto scale = 5;
   const auto translate = 125.0;
@@ -75,7 +73,7 @@ TEST(MatrixDecomposition, Combination) {
 
   SkMatrix44 combined = m3 * m2 * m1;
 
-  flow::MatrixDecomposition decomposition(combined);
+  flutter::MatrixDecomposition decomposition(combined);
   ASSERT_TRUE(decomposition.IsValid());
 
   ASSERT_FLOAT_EQ(translate, decomposition.translation().fX);
@@ -94,14 +92,44 @@ TEST(MatrixDecomposition, Combination) {
   ASSERT_FLOAT_EQ(cos(rotation * 0.5), decomposition.rotation().fData[3]);
 }
 
-TEST(MatrixDecomposition, DISABLED_ScaleFloatError) {
-  SkMatrix44 matrix = SkMatrix44::I();
+TEST(MatrixDecomposition, ScaleFloatError) {
+  for (float scale = 0.0001f; scale < 2.0f; scale += 0.000001f) {
+    SkMatrix44 matrix = SkMatrix44::I();
+    matrix.setScale(scale, scale, 1.0f);
 
+    flutter::MatrixDecomposition decomposition3(matrix);
+    ASSERT_TRUE(decomposition3.IsValid());
+
+    ASSERT_FLOAT_EQ(scale, decomposition3.scale().fX);
+    ASSERT_FLOAT_EQ(scale, decomposition3.scale().fY);
+    ASSERT_FLOAT_EQ(1.f, decomposition3.scale().fZ);
+    ASSERT_FLOAT_EQ(0, decomposition3.rotation().fData[0]);
+    ASSERT_FLOAT_EQ(0, decomposition3.rotation().fData[1]);
+    ASSERT_FLOAT_EQ(0, decomposition3.rotation().fData[2]);
+  }
+
+  SkMatrix44 matrix = SkMatrix44::I();
   const auto scale = 1.7734375f;
   matrix.setScale(scale, scale, 1.f);
 
-  flow::MatrixDecomposition decomposition(matrix);
+  // Bug upper bound (empirical)
+  const auto scale2 = 1.773437559603f;
+  SkMatrix44 matrix2 = SkMatrix44::I();
+  matrix2.setScale(scale2, scale2, 1.f);
+
+  // Bug lower bound (empirical)
+  const auto scale3 = 1.7734374403954f;
+  SkMatrix44 matrix3 = SkMatrix44::I();
+  matrix3.setScale(scale3, scale3, 1.f);
+
+  flutter::MatrixDecomposition decomposition(matrix);
   ASSERT_TRUE(decomposition.IsValid());
+
+  flutter::MatrixDecomposition decomposition2(matrix2);
+  ASSERT_TRUE(decomposition2.IsValid());
+
+  flutter::MatrixDecomposition decomposition3(matrix3);
+  ASSERT_TRUE(decomposition3.IsValid());
 
   ASSERT_FLOAT_EQ(scale, decomposition.scale().fX);
   ASSERT_FLOAT_EQ(scale, decomposition.scale().fY);
@@ -109,4 +137,18 @@ TEST(MatrixDecomposition, DISABLED_ScaleFloatError) {
   ASSERT_FLOAT_EQ(0, decomposition.rotation().fData[0]);
   ASSERT_FLOAT_EQ(0, decomposition.rotation().fData[1]);
   ASSERT_FLOAT_EQ(0, decomposition.rotation().fData[2]);
+
+  ASSERT_FLOAT_EQ(scale2, decomposition2.scale().fX);
+  ASSERT_FLOAT_EQ(scale2, decomposition2.scale().fY);
+  ASSERT_FLOAT_EQ(1.f, decomposition2.scale().fZ);
+  ASSERT_FLOAT_EQ(0, decomposition2.rotation().fData[0]);
+  ASSERT_FLOAT_EQ(0, decomposition2.rotation().fData[1]);
+  ASSERT_FLOAT_EQ(0, decomposition2.rotation().fData[2]);
+
+  ASSERT_FLOAT_EQ(scale3, decomposition3.scale().fX);
+  ASSERT_FLOAT_EQ(scale3, decomposition3.scale().fY);
+  ASSERT_FLOAT_EQ(1.f, decomposition3.scale().fZ);
+  ASSERT_FLOAT_EQ(0, decomposition3.rotation().fData[0]);
+  ASSERT_FLOAT_EQ(0, decomposition3.rotation().fData[1]);
+  ASSERT_FLOAT_EQ(0, decomposition3.rotation().fData[2]);
 }

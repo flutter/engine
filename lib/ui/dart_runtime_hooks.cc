@@ -1,4 +1,4 @@
-// Copyright 2014 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -12,20 +12,21 @@
 #include <sstream>
 
 #include "flutter/common/settings.h"
+#include "flutter/fml/build_config.h"
+#include "flutter/fml/logging.h"
+#include "flutter/lib/ui/plugins/callback_cache.h"
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "lib/fxl/build_config.h"
-#include "lib/fxl/logging.h"
-#include "lib/tonic/converter/dart_converter.h"
-#include "lib/tonic/dart_library_natives.h"
-#include "lib/tonic/dart_microtask_queue.h"
-#include "lib/tonic/dart_state.h"
-#include "lib/tonic/logging/dart_error.h"
-#include "lib/tonic/logging/dart_invoke.h"
-#include "lib/tonic/scopes/dart_api_scope.h"
-#include "lib/tonic/scopes/dart_isolate_scope.h"
-#include "third_party/dart/runtime/bin/embedded_dart_io.h"
+#include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
+#include "third_party/tonic/converter/dart_converter.h"
+#include "third_party/tonic/dart_library_natives.h"
+#include "third_party/tonic/dart_microtask_queue.h"
+#include "third_party/tonic/dart_state.h"
+#include "third_party/tonic/logging/dart_error.h"
+#include "third_party/tonic/logging/dart_invoke.h"
+#include "third_party/tonic/scopes/dart_api_scope.h"
+#include "third_party/tonic/scopes/dart_isolate_scope.h"
 
 #if defined(OS_ANDROID)
 #include <android/log.h>
@@ -36,10 +37,11 @@ extern void syslog(int, const char*, ...);
 }
 #endif
 
+using tonic::DartConverter;
 using tonic::LogIfError;
 using tonic::ToDart;
 
-namespace blink {
+namespace flutter {
 
 #define REGISTER_FUNCTION(name, count) {"" #name, name, count, true},
 #define DECLARE_FUNCTION(name, count) \
@@ -48,7 +50,9 @@ namespace blink {
 #define BUILTIN_NATIVE_LIST(V) \
   V(Logger_PrintString, 1)     \
   V(SaveCompilationTrace, 0)   \
-  V(ScheduleMicrotask, 1)
+  V(ScheduleMicrotask, 1)      \
+  V(GetCallbackHandle, 1)      \
+  V(GetCallbackFromHandle, 1)
 
 BUILTIN_NATIVE_LIST(DECLARE_FUNCTION);
 
@@ -56,36 +60,42 @@ void DartRuntimeHooks::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({BUILTIN_NATIVE_LIST(REGISTER_FUNCTION)});
 }
 
-static Dart_Handle GetClosure(Dart_Handle builtin_library, const char* name) {
+static void PropagateIfError(Dart_Handle result) {
+  if (Dart_IsError(result)) {
+    Dart_PropagateError(result);
+  }
+}
+
+static Dart_Handle GetFunction(Dart_Handle builtin_library, const char* name) {
   Dart_Handle getter_name = ToDart(name);
-  Dart_Handle closure = Dart_Invoke(builtin_library, getter_name, 0, nullptr);
-  DART_CHECK_VALID(closure);
-  return closure;
+  return Dart_Invoke(builtin_library, getter_name, 0, nullptr);
 }
 
 static void InitDartInternal(Dart_Handle builtin_library, bool is_ui_isolate) {
-  Dart_Handle print = GetClosure(builtin_library, "_getPrintClosure");
+  Dart_Handle print = GetFunction(builtin_library, "_getPrintClosure");
 
   Dart_Handle internal_library = Dart_LookupLibrary(ToDart("dart:_internal"));
 
-  DART_CHECK_VALID(
-      Dart_SetField(internal_library, ToDart("_printClosure"), print));
+  Dart_Handle result =
+      Dart_SetField(internal_library, ToDart("_printClosure"), print);
+  PropagateIfError(result);
 
   if (is_ui_isolate) {
     // Call |_setupHooks| to configure |VMLibraryHooks|.
     Dart_Handle method_name = Dart_NewStringFromCString("_setupHooks");
-    DART_CHECK_VALID(Dart_Invoke(builtin_library, method_name, 0, NULL))
+    result = Dart_Invoke(builtin_library, method_name, 0, NULL);
+    PropagateIfError(result);
   }
 
   Dart_Handle setup_hooks = Dart_NewStringFromCString("_setupHooks");
 
   Dart_Handle io_lib = Dart_LookupLibrary(ToDart("dart:io"));
-  DART_CHECK_VALID(io_lib);
-  DART_CHECK_VALID(Dart_Invoke(io_lib, setup_hooks, 0, NULL));
+  result = Dart_Invoke(io_lib, setup_hooks, 0, NULL);
+  PropagateIfError(result);
 
   Dart_Handle isolate_lib = Dart_LookupLibrary(ToDart("dart:isolate"));
-  DART_CHECK_VALID(isolate_lib);
-  DART_CHECK_VALID(Dart_Invoke(isolate_lib, setup_hooks, 0, NULL));
+  result = Dart_Invoke(isolate_lib, setup_hooks, 0, NULL);
+  PropagateIfError(result);
 }
 
 static void InitDartCore(Dart_Handle builtin, const std::string& script_uri) {
@@ -93,15 +103,16 @@ static void InitDartCore(Dart_Handle builtin, const std::string& script_uri) {
   Dart_Handle get_base_url =
       Dart_Invoke(io_lib, ToDart("_getUriBaseClosure"), 0, NULL);
   Dart_Handle core_library = Dart_LookupLibrary(ToDart("dart:core"));
-  DART_CHECK_VALID(
-      Dart_SetField(core_library, ToDart("_uriBaseClosure"), get_base_url));
+  Dart_Handle result =
+      Dart_SetField(core_library, ToDart("_uriBaseClosure"), get_base_url);
+  PropagateIfError(result);
 }
 
 static void InitDartAsync(Dart_Handle builtin_library, bool is_ui_isolate) {
   Dart_Handle schedule_microtask;
   if (is_ui_isolate) {
     schedule_microtask =
-        GetClosure(builtin_library, "_getScheduleMicrotaskClosure");
+        GetFunction(builtin_library, "_getScheduleMicrotaskClosure");
   } else {
     Dart_Handle isolate_lib = Dart_LookupLibrary(ToDart("dart:isolate"));
     Dart_Handle method_name =
@@ -110,30 +121,31 @@ static void InitDartAsync(Dart_Handle builtin_library, bool is_ui_isolate) {
   }
   Dart_Handle async_library = Dart_LookupLibrary(ToDart("dart:async"));
   Dart_Handle set_schedule_microtask = ToDart("_setScheduleImmediateClosure");
-  DART_CHECK_VALID(Dart_Invoke(async_library, set_schedule_microtask, 1,
-                               &schedule_microtask));
+  Dart_Handle result = Dart_Invoke(async_library, set_schedule_microtask, 1,
+                                   &schedule_microtask);
+  PropagateIfError(result);
 }
 
 static void InitDartIO(Dart_Handle builtin_library,
                        const std::string& script_uri) {
   Dart_Handle io_lib = Dart_LookupLibrary(ToDart("dart:io"));
-  DART_CHECK_VALID(io_lib);
   Dart_Handle platform_type =
       Dart_GetType(io_lib, ToDart("_Platform"), 0, nullptr);
-  DART_CHECK_VALID(platform_type);
   if (!script_uri.empty()) {
-    DART_CHECK_VALID(Dart_SetField(platform_type, ToDart("_nativeScript"),
-                                   ToDart(script_uri)));
+    Dart_Handle result = Dart_SetField(platform_type, ToDart("_nativeScript"),
+                                       ToDart(script_uri));
+    PropagateIfError(result);
   }
-  Dart_Handle locale_closure = GetClosure(builtin_library, "_getLocaleClosure");
-  DART_CHECK_VALID(
-      Dart_SetField(platform_type, ToDart("_localeClosure"), locale_closure));
+  Dart_Handle locale_closure =
+      GetFunction(builtin_library, "_getLocaleClosure");
+  Dart_Handle result =
+      Dart_SetField(platform_type, ToDart("_localeClosure"), locale_closure);
+  PropagateIfError(result);
 }
 
 void DartRuntimeHooks::Install(bool is_ui_isolate,
                                const std::string& script_uri) {
   Dart_Handle builtin = Dart_LookupLibrary(ToDart("dart:ui"));
-  DART_CHECK_VALID(builtin);
   InitDartInternal(builtin, is_ui_isolate);
   InitDartCore(builtin, script_uri);
   InitDartAsync(builtin, is_ui_isolate);
@@ -209,12 +221,23 @@ void SaveCompilationTrace(Dart_NativeArguments args) {
     return;
   }
 
-  result = Dart_NewExternalTypedData(Dart_TypedData_kUint8, buffer, length);
+  result = Dart_NewTypedData(Dart_TypedData_kUint8, length);
   if (Dart_IsError(result)) {
     Dart_SetReturnValue(args, result);
     return;
   }
 
+  Dart_TypedData_Type type;
+  void* data = nullptr;
+  intptr_t size = 0;
+  Dart_Handle status = Dart_TypedDataAcquireData(result, &type, &data, &size);
+  if (Dart_IsError(status)) {
+    Dart_SetReturnValue(args, status);
+    return;
+  }
+
+  memcpy(data, buffer, length);
+  Dart_TypedDataReleaseData(result);
   Dart_SetReturnValue(args, result);
 }
 
@@ -223,4 +246,102 @@ void ScheduleMicrotask(Dart_NativeArguments args) {
   UIDartState::Current()->ScheduleMicrotask(closure);
 }
 
-}  // namespace blink
+static std::string GetFunctionLibraryUrl(Dart_Handle closure) {
+  if (Dart_IsClosure(closure)) {
+    closure = Dart_ClosureFunction(closure);
+    PropagateIfError(closure);
+  }
+
+  if (!Dart_IsFunction(closure)) {
+    return "";
+  }
+
+  Dart_Handle url = Dart_Null();
+  Dart_Handle owner = Dart_FunctionOwner(closure);
+  if (Dart_IsInstance(owner)) {
+    owner = Dart_ClassLibrary(owner);
+  }
+  if (Dart_IsLibrary(owner)) {
+    url = Dart_LibraryUrl(owner);
+    PropagateIfError(url);
+  }
+  return DartConverter<std::string>::FromDart(url);
+}
+
+static std::string GetFunctionClassName(Dart_Handle closure) {
+  Dart_Handle result;
+
+  if (Dart_IsClosure(closure)) {
+    closure = Dart_ClosureFunction(closure);
+    PropagateIfError(closure);
+  }
+
+  if (!Dart_IsFunction(closure)) {
+    return "";
+  }
+
+  bool is_static = false;
+  result = Dart_FunctionIsStatic(closure, &is_static);
+  PropagateIfError(result);
+  if (!is_static) {
+    return "";
+  }
+
+  result = Dart_FunctionOwner(closure);
+  PropagateIfError(result);
+
+  if (Dart_IsLibrary(result) || !Dart_IsInstance(result)) {
+    return "";
+  }
+  return DartConverter<std::string>::FromDart(Dart_ClassName(result));
+}
+
+static std::string GetFunctionName(Dart_Handle func) {
+  if (Dart_IsClosure(func)) {
+    func = Dart_ClosureFunction(func);
+    PropagateIfError(func);
+  }
+
+  if (!Dart_IsFunction(func)) {
+    return "";
+  }
+
+  bool is_static = false;
+  Dart_Handle result = Dart_FunctionIsStatic(func, &is_static);
+  PropagateIfError(result);
+  if (!is_static) {
+    return "";
+  }
+
+  result = Dart_FunctionName(func);
+  PropagateIfError(result);
+
+  return DartConverter<std::string>::FromDart(result);
+}
+
+void GetCallbackHandle(Dart_NativeArguments args) {
+  Dart_Handle func = Dart_GetNativeArgument(args, 0);
+  std::string name = GetFunctionName(func);
+  std::string class_name = GetFunctionClassName(func);
+  std::string library_path = GetFunctionLibraryUrl(func);
+
+  // `name` is empty if `func` can't be used as a callback. This is the case
+  // when `func` is not a function object or is not a static function. Anonymous
+  // closures (e.g. `(int a, int b) => a + b;`) also cannot be used as
+  // callbacks, so `func` must be a tear-off of a named static function.
+  if (!Dart_IsTearOff(func) || name.empty()) {
+    Dart_SetReturnValue(args, Dart_Null());
+    return;
+  }
+  Dart_SetReturnValue(
+      args, DartConverter<int64_t>::ToDart(DartCallbackCache::GetCallbackHandle(
+                name, class_name, library_path)));
+}
+
+void GetCallbackFromHandle(Dart_NativeArguments args) {
+  Dart_Handle h = Dart_GetNativeArgument(args, 0);
+  int64_t handle = DartConverter<int64_t>::FromDart(h);
+  Dart_SetReturnValue(args, DartCallbackCache::GetCallback(handle));
+}
+
+}  // namespace flutter

@@ -1,16 +1,16 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/container_layer.h"
 
-namespace flow {
+namespace flutter {
 
 ContainerLayer::ContainerLayer() {}
 
 ContainerLayer::~ContainerLayer() = default;
 
-void ContainerLayer::Add(std::unique_ptr<Layer> layer) {
+void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
   layer->set_parent(this);
   layers_.push_back(std::move(layer));
 }
@@ -27,8 +27,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
                                      const SkMatrix& child_matrix,
                                      SkRect* child_paint_bounds) {
   for (auto& layer : layers_) {
-    PrerollContext child_context = *context;
-    layer->Preroll(&child_context, child_matrix);
+    layer->Preroll(context, child_matrix);
 
     if (layer->needs_system_composite()) {
       set_needs_system_composite(true);
@@ -38,7 +37,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 }
 
 void ContainerLayer::PaintChildren(PaintContext& context) const {
-  FXL_DCHECK(needs_painting());
+  FML_DCHECK(needs_painting());
 
   // Intentionally not tracing here as there should be no self-time
   // and the trace event on this common function has a small overhead.
@@ -56,7 +55,7 @@ void ContainerLayer::UpdateScene(SceneUpdateContext& context) {
 }
 
 void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
-  FXL_DCHECK(needs_system_composite());
+  FML_DCHECK(needs_system_composite());
 
   // Paint all of the layers which need to be drawn into the container.
   // These may be flattened down to a containing
@@ -69,4 +68,4 @@ void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
 
 #endif  // defined(OS_FUCHSIA)
 
-}  // namespace flow
+}  // namespace flutter

@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,14 +8,14 @@
 #include <math.h>
 
 #include "flutter/lib/ui/painting/matrix.h"
-#include "lib/tonic/converter/dart_converter.h"
-#include "lib/tonic/dart_args.h"
-#include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/dart_library_natives.h"
+#include "third_party/tonic/converter/dart_converter.h"
+#include "third_party/tonic/dart_args.h"
+#include "third_party/tonic/dart_binding_macros.h"
+#include "third_party/tonic/dart_library_natives.h"
 
 using tonic::ToDart;
 
-namespace blink {
+namespace flutter {
 
 typedef CanvasPath Path;
 
@@ -213,9 +213,14 @@ void CanvasPath::addPath(CanvasPath* path, double dx, double dy) {
   path_.addPath(path->path(), dx, dy, SkPath::kAppend_AddPathMode);
 }
 
-void CanvasPath::addPathWithMatrix(CanvasPath* path, double dx, double dy, tonic::Float64List& matrix4) {
-  if (!path)
-    Dart_ThrowException(ToDart("Path.addPathWithMatrix called with non-genuine Path."));
+void CanvasPath::addPathWithMatrix(CanvasPath* path,
+                                   double dx,
+                                   double dy,
+                                   tonic::Float64List& matrix4) {
+  if (!path) {
+    Dart_ThrowException(
+        ToDart("Path.addPathWithMatrix called with non-genuine Path."));
+  }
 
   SkMatrix matrix = ToSkMatrix(matrix4);
   matrix.setTranslateX(matrix.getTranslateX() + dx);
@@ -231,9 +236,14 @@ void CanvasPath::extendWithPath(CanvasPath* path, double dx, double dy) {
   path_.addPath(path->path(), dx, dy, SkPath::kExtend_AddPathMode);
 }
 
-void CanvasPath::extendWithPathAndMatrix(CanvasPath* path, double dx, double dy, tonic::Float64List& matrix4) {
-  if (!path)
-    Dart_ThrowException(ToDart("Path.addPathWithMatrix called with non-genuine Path."));
+void CanvasPath::extendWithPathAndMatrix(CanvasPath* path,
+                                         double dx,
+                                         double dy,
+                                         tonic::Float64List& matrix4) {
+  if (!path) {
+    Dart_ThrowException(
+        ToDart("Path.addPathWithMatrix called with non-genuine Path."));
+  }
 
   SkMatrix matrix = ToSkMatrix(matrix4);
   matrix.setTranslateX(matrix.getTranslateX() + dx);
@@ -254,14 +264,14 @@ bool CanvasPath::contains(double x, double y) {
   return path_.contains(x, y);
 }
 
-fxl::RefPtr<CanvasPath> CanvasPath::shift(double dx, double dy) {
-  fxl::RefPtr<CanvasPath> path = CanvasPath::Create();
+fml::RefPtr<CanvasPath> CanvasPath::shift(double dx, double dy) {
+  fml::RefPtr<CanvasPath> path = CanvasPath::Create();
   path_.offset(dx, dy, &path->path_);
   return path;
 }
 
-fxl::RefPtr<CanvasPath> CanvasPath::transform(tonic::Float64List& matrix4) {
-  fxl::RefPtr<CanvasPath> path = CanvasPath::Create();
+fml::RefPtr<CanvasPath> CanvasPath::transform(tonic::Float64List& matrix4) {
+  fml::RefPtr<CanvasPath> path = CanvasPath::Create();
   path_.transform(ToSkMatrix(matrix4), &path->path_);
   matrix4.Release();
   return path;
@@ -277,17 +287,16 @@ tonic::Float32List CanvasPath::getBounds() {
   return rect;
 }
 
-
 bool CanvasPath::op(CanvasPath* path1, CanvasPath* path2, int operation) {
   return Op(path1->path(), path2->path(), (SkPathOp)operation, &path_);
 }
 
-fxl::RefPtr<CanvasPath> CanvasPath::clone() {
-  fxl::RefPtr<CanvasPath> path = CanvasPath::Create();
+fml::RefPtr<CanvasPath> CanvasPath::clone() {
+  fml::RefPtr<CanvasPath> path = CanvasPath::Create();
   // per Skia docs, this will create a fast copy
   // data is shared until the source path or dest path are mutated
   path->path_ = path_;
   return path;
 }
 
-}  // namespace blink
+}  // namespace flutter

@@ -1,14 +1,13 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_FML_THREAD_LOCAL_H_
 #define FLUTTER_FML_THREAD_LOCAL_H_
 
-#include <functional>
+#include <memory>
 
 #include "flutter/fml/build_config.h"
-#include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 
 #define FML_THREAD_LOCAL_PTHREADS OS_MACOSX || OS_LINUX || OS_ANDROID
@@ -19,132 +18,60 @@
 
 namespace fml {
 
-using ThreadLocalDestroyCallback = std::function<void(intptr_t)>;
-
 #if FML_THREAD_LOCAL_PTHREADS
-
-// thread_local is unavailable and we have to resort to pthreads.
 
 #define FML_THREAD_LOCAL static
 
-class ThreadLocal {
- private:
-  class Box {
-   public:
-    Box(ThreadLocalDestroyCallback destroy, intptr_t value)
-        : destroy_(destroy), value_(value) {}
+namespace internal {
 
-    intptr_t Value() const { return value_; }
-
-    void SetValue(intptr_t value) {
-      if (value == value_) {
-        return;
-      }
-
-      DestroyValue();
-      value_ = value;
-    }
-
-    void DestroyValue() {
-      if (destroy_) {
-        destroy_(value_);
-      }
-    }
-
-   private:
-    ThreadLocalDestroyCallback destroy_;
-    intptr_t value_;
-
-    FML_DISALLOW_COPY_AND_ASSIGN(Box);
-  };
-
-  static inline void ThreadLocalDestroy(void* value) {
-    FML_CHECK(value != nullptr);
-    auto box = reinterpret_cast<Box*>(value);
-    box->DestroyValue();
-    delete box;
-  }
-
+class ThreadLocalPointer {
  public:
-  ThreadLocal() : ThreadLocal(nullptr) {}
+  ThreadLocalPointer(void (*destroy)(void*));
+  ~ThreadLocalPointer();
 
-  ThreadLocal(ThreadLocalDestroyCallback destroy) : destroy_(destroy) {
-    auto callback =
-        reinterpret_cast<void (*)(void*)>(&ThreadLocal::ThreadLocalDestroy);
-    FML_CHECK(pthread_key_create(&_key, callback) == 0);
-  }
-
-  void Set(intptr_t value) {
-    auto box = reinterpret_cast<Box*>(pthread_getspecific(_key));
-    if (box == nullptr) {
-      box = new Box(destroy_, value);
-      FML_CHECK(pthread_setspecific(_key, box) == 0);
-    } else {
-      box->SetValue(value);
-    }
-  }
-
-  intptr_t Get() {
-    auto box = reinterpret_cast<Box*>(pthread_getspecific(_key));
-    return box != nullptr ? box->Value() : 0;
-  }
-
-  ~ThreadLocal() {
-    // This will NOT call the destroy callbacks on thread local values still
-    // active in other threads. Those must be cleared manually. The usage
-    // of this class should be similar to the thread_local keyword but with
-    // with a static storage specifier
-
-    // Collect the container
-    delete reinterpret_cast<Box*>(pthread_getspecific(_key));
-
-    // Finally, collect the key
-    FML_CHECK(pthread_key_delete(_key) == 0);
-  }
+  void* get() const;
+  void* swap(void* ptr);
 
  private:
-  pthread_key_t _key;
-  ThreadLocalDestroyCallback destroy_;
+  pthread_key_t key_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ThreadLocal);
+  FML_DISALLOW_COPY_AND_ASSIGN(ThreadLocalPointer);
+};
+
+}  // namespace internal
+
+template <typename T>
+class ThreadLocalUniquePtr {
+ public:
+  ThreadLocalUniquePtr() : ptr_(destroy) {}
+
+  T* get() const { return reinterpret_cast<T*>(ptr_.get()); }
+  void reset(T* ptr) { destroy(ptr_.swap(ptr)); }
+
+ private:
+  static void destroy(void* ptr) { delete reinterpret_cast<T*>(ptr); }
+
+  internal::ThreadLocalPointer ptr_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(ThreadLocalUniquePtr);
 };
 
 #else  // FML_THREAD_LOCAL_PTHREADS
 
-#define FML_THREAD_LOCAL thread_local
+#define FML_THREAD_LOCAL static thread_local
 
-class ThreadLocal {
+template <typename T>
+class ThreadLocalUniquePtr {
  public:
-  ThreadLocal() : ThreadLocal(nullptr) {}
+  ThreadLocalUniquePtr() = default;
 
-  ThreadLocal(ThreadLocalDestroyCallback destroy)
-      : destroy_(destroy), value_(0) {}
-
-  void Set(intptr_t value) {
-    if (value_ == value) {
-      return;
-    }
-
-    if (value_ != 0 && destroy_) {
-      destroy_(value_);
-    }
-
-    value_ = value;
-  }
-
-  intptr_t Get() { return value_; }
-
-  ~ThreadLocal() {
-    if (value_ != 0 && destroy_) {
-      destroy_(value_);
-    }
-  }
+  T* get() const { return ptr_.get(); }
+  void reset(T* ptr) { ptr_.reset(ptr); }
 
  private:
-  ThreadLocalDestroyCallback destroy_;
-  intptr_t value_;
+  std::unique_ptr<T> ptr_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ThreadLocal);
+  FML_DISALLOW_COPY_AND_ASSIGN(ThreadLocalUniquePtr);
 };
 
 #endif  // FML_THREAD_LOCAL_PTHREADS

@@ -1,4 +1,4 @@
-// Copyright 2017 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,11 +7,12 @@
 
 #include <memory>
 
+#include "flutter/fml/macros.h"
 #include "flutter/fml/thread.h"
-#include "lib/fxl/macros.h"
 
-namespace shell {
+namespace flutter {
 
+/// The collection of all the threads used by the engine.
 struct ThreadHost {
   enum Type {
     Platform = 1 << 0,
@@ -27,7 +28,7 @@ struct ThreadHost {
 
   ThreadHost();
 
-  ThreadHost(ThreadHost&&) = default;
+  ThreadHost(ThreadHost&&);
 
   ThreadHost& operator=(ThreadHost&&) = default;
 
@@ -38,6 +39,6 @@ struct ThreadHost {
   void Reset();
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_COMMON_THREAD_HOST_H_

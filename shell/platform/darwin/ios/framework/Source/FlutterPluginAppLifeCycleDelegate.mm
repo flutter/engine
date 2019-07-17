@@ -1,10 +1,19 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/paths.h"
+#include "flutter/lib/ui/plugins/callback_cache.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
-#include "lib/fxl/logging.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbackCache_Internal.h"
+
+static const char* kCallbackCacheSubDir = "Library/Caches/";
+
+static const SEL selectorsHandledByPlugins[] = {
+    @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:),
+    @selector(application:performFetchWithCompletionHandler:)};
 
 @implementation FlutterPluginAppLifeCycleDelegate {
   UIBackgroundTaskIdentifier _debugBackgroundTask;
@@ -15,6 +24,8 @@
 
 - (instancetype)init {
   if (self = [super init]) {
+    std::string cachePath = fml::paths::JoinPaths({getenv("HOME"), kCallbackCacheSubDir});
+    [FlutterCallbackCache setCachePath:[NSString stringWithUTF8String:cachePath.c_str()]];
     _pluginDelegates = [[NSPointerArray weakObjectsPointerArray] retain];
   }
   return self;
@@ -27,6 +38,27 @@
 
 static BOOL isPowerOfTwo(NSUInteger x) {
   return x != 0 && (x & (x - 1)) == 0;
+}
+
+- (BOOL)isSelectorAddedDynamically:(SEL)selector {
+  for (const SEL& aSelector : selectorsHandledByPlugins) {
+    if (selector == aSelector) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
+- (BOOL)hasPluginThatRespondsToSelector:(SEL)selector {
+  for (id<FlutterPlugin> plugin in [_pluginDelegates allObjects]) {
+    if (!plugin) {
+      continue;
+    }
+    if ([plugin respondsToSelector:selector]) {
+      return YES;
+    }
+  }
+  return NO;
 }
 
 - (void)addDelegate:(NSObject<FlutterPlugin>*)delegate {
@@ -44,6 +76,22 @@ static BOOL isPowerOfTwo(NSUInteger x) {
     }
     if ([plugin respondsToSelector:_cmd]) {
       if (![plugin application:application didFinishLaunchingWithOptions:launchOptions]) {
+        return NO;
+      }
+    }
+  }
+  return YES;
+}
+
+- (BOOL)application:(UIApplication*)application
+    willFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
+  flutter::DartCallbackCache::LoadCacheFromDisk();
+  for (id<FlutterPlugin> plugin in [_pluginDelegates allObjects]) {
+    if (!plugin) {
+      continue;
+    }
+    if ([plugin respondsToSelector:_cmd]) {
+      if (![plugin application:application willFinishLaunchingWithOptions:launchOptions]) {
         return NO;
       }
     }
@@ -71,7 +119,8 @@ static BOOL isPowerOfTwo(NSUInteger x) {
   _debugBackgroundTask = [application
       beginBackgroundTaskWithName:@"Flutter debug task"
                 expirationHandler:^{
-                  FXL_LOG(WARNING)
+                  [application endBackgroundTask:_debugBackgroundTask];
+                  FML_LOG(WARNING)
                       << "\nThe OS has terminated the Flutter debug connection for being "
                          "inactive in the background for too long.\n\n"
                          "There are no errors with your Flutter application.\n\n"
@@ -135,6 +184,8 @@ static BOOL isPowerOfTwo(NSUInteger x) {
   }
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 - (void)application:(UIApplication*)application
     didRegisterUserNotificationSettings:(UIUserNotificationSettings*)notificationSettings {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
@@ -146,6 +197,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
     }
   }
 }
+#pragma GCC diagnostic pop
 
 - (void)application:(UIApplication*)application
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken {
@@ -171,6 +223,39 @@ static BOOL isPowerOfTwo(NSUInteger x) {
               didReceiveRemoteNotification:userInfo
                     fetchCompletionHandler:completionHandler]) {
         return;
+      }
+    }
+  }
+}
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+- (void)application:(UIApplication*)application
+    didReceiveLocalNotification:(UILocalNotification*)notification {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if (!plugin) {
+      continue;
+    }
+    if ([plugin respondsToSelector:_cmd]) {
+      [plugin application:application didReceiveLocalNotification:notification];
+    }
+  }
+}
+#pragma GCC diagnostic pop
+
+- (void)userNotificationCenter:(UNUserNotificationCenter*)center
+       willPresentNotification:(UNNotification*)notification
+         withCompletionHandler:
+             (void (^)(UNNotificationPresentationOptions options))completionHandler {
+  if (@available(iOS 10.0, *)) {
+    for (id<FlutterPlugin> plugin in _pluginDelegates) {
+      if (!plugin) {
+        continue;
+      }
+      if ([plugin respondsToSelector:_cmd]) {
+        [plugin userNotificationCenter:center
+               willPresentNotification:notification
+                 withCompletionHandler:completionHandler];
       }
     }
   }

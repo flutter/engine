@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,14 +8,14 @@
 #include <vector>
 
 #include "flutter/fml/mapping.h"
-#include "lib/fxl/memory/ref_counted.h"
-#include "lib/fxl/memory/ref_ptr.h"
+#include "flutter/fml/memory/ref_counted.h"
+#include "flutter/fml/memory/ref_ptr.h"
 
-namespace blink {
+namespace flutter {
 
 class PlatformMessageResponse
-    : public fxl::RefCountedThreadSafe<PlatformMessageResponse> {
-  FRIEND_REF_COUNTED_THREAD_SAFE(PlatformMessageResponse);
+    : public fml::RefCountedThreadSafe<PlatformMessageResponse> {
+  FML_FRIEND_REF_COUNTED_THREAD_SAFE(PlatformMessageResponse);
 
  public:
   // Callable on any thread.
@@ -31,6 +31,6 @@ class PlatformMessageResponse
   bool is_complete_ = false;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PLATFORM_PLATFORM_MESSAGE_RESPONSE_H_

@@ -1,12 +1,12 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/matrix.h"
 
-#include "lib/fxl/logging.h"
+#include "flutter/fml/logging.h"
 
-namespace blink {
+namespace flutter {
 
 // Mappings from SkMatrix-index to input-index.
 static const int kSkMatrixIndexToMatrix4Index[] = {
@@ -18,7 +18,7 @@ static const int kSkMatrixIndexToMatrix4Index[] = {
 };
 
 SkMatrix ToSkMatrix(const tonic::Float64List& matrix4) {
-  FXL_DCHECK(matrix4.data());
+  FML_DCHECK(matrix4.data());
   SkMatrix sk_matrix;
   for (int i = 0; i < 9; ++i) {
     int matrix4_index = kSkMatrixIndexToMatrix4Index[i];
@@ -38,4 +38,4 @@ tonic::Float64List ToMatrix4(const SkMatrix& sk_matrix) {
   return matrix4;
 }
 
-}  // namespace blink
+}  // namespace flutter

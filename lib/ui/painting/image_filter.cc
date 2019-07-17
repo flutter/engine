@@ -1,19 +1,19 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/image_filter.h"
 
 #include "flutter/lib/ui/painting/matrix.h"
-#include "lib/tonic/converter/dart_converter.h"
-#include "lib/tonic/dart_args.h"
-#include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/dart_library_natives.h"
 #include "third_party/skia/include/effects/SkBlurImageFilter.h"
 #include "third_party/skia/include/effects/SkImageSource.h"
 #include "third_party/skia/include/effects/SkPictureImageFilter.h"
+#include "third_party/tonic/converter/dart_converter.h"
+#include "third_party/tonic/dart_args.h"
+#include "third_party/tonic/dart_binding_macros.h"
+#include "third_party/tonic/dart_library_natives.h"
 
-namespace blink {
+namespace flutter {
 
 static void ImageFilter_constructor(Dart_NativeArguments args) {
   DartCallConstructor(&ImageFilter::Create, args);
@@ -35,8 +35,8 @@ void ImageFilter::RegisterNatives(tonic::DartLibraryNatives* natives) {
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-fxl::RefPtr<ImageFilter> ImageFilter::Create() {
-  return fxl::MakeRefCounted<ImageFilter>();
+fml::RefPtr<ImageFilter> ImageFilter::Create() {
+  return fml::MakeRefCounted<ImageFilter>();
 }
 
 ImageFilter::ImageFilter() {}
@@ -63,4 +63,4 @@ void ImageFilter::initMatrix(const tonic::Float64List& matrix4,
       nullptr);
 }
 
-}  // namespace blink
+}  // namespace flutter

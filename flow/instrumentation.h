@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,13 +7,15 @@
 
 #include <vector>
 
-#include "lib/fxl/macros.h"
-#include "lib/fxl/time/time_delta.h"
-#include "lib/fxl/time/time_point.h"
+#include "flutter/fml/macros.h"
+#include "flutter/fml/time/time_delta.h"
+#include "flutter/fml/time/time_point.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
-namespace flow {
+namespace flutter {
 
+// DEPRECATED
+// The frame per second FPS could be different than 60 (e.g., 120).
 static const double kOneFrameMS = 1e3 / 60.0;
 
 class Stopwatch {
@@ -22,11 +24,15 @@ class Stopwatch {
 
   ~Stopwatch();
 
-  const fxl::TimeDelta& LastLap() const;
+  const fml::TimeDelta& LastLap() const;
 
-  fxl::TimeDelta CurrentLap() const { return fxl::TimePoint::Now() - start_; }
+  fml::TimeDelta CurrentLap() const { return fml::TimePoint::Now() - start_; }
 
-  fxl::TimeDelta MaxDelta() const;
+  fml::TimeDelta MaxDelta() const;
+
+  fml::TimeDelta AverageDelta() const;
+
+  void InitVisualizeSurface(const SkRect& rect) const;
 
   void Visualize(SkCanvas& canvas, const SkRect& rect) const;
 
@@ -34,14 +40,19 @@ class Stopwatch {
 
   void Stop();
 
-  void SetLapTime(const fxl::TimeDelta& delta);
+  void SetLapTime(const fml::TimeDelta& delta);
 
  private:
-  fxl::TimePoint start_;
-  std::vector<fxl::TimeDelta> laps_;
+  fml::TimePoint start_;
+  std::vector<fml::TimeDelta> laps_;
   size_t current_sample_;
+  // Mutable data cache for performance optimization of the graphs. Prevents
+  // expensive redrawing of old data.
+  mutable bool cache_dirty_;
+  mutable sk_sp<SkSurface> visualize_cache_surface_;
+  mutable size_t prev_drawn_sample_index_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(Stopwatch);
+  FML_DISALLOW_COPY_AND_ASSIGN(Stopwatch);
 };
 
 class Counter {
@@ -57,7 +68,7 @@ class Counter {
  private:
   size_t count_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(Counter);
+  FML_DISALLOW_COPY_AND_ASSIGN(Counter);
 };
 
 class CounterValues {
@@ -80,9 +91,9 @@ class CounterValues {
   std::vector<int64_t> values_;
   size_t current_sample_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(CounterValues);
+  FML_DISALLOW_COPY_AND_ASSIGN(CounterValues);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_INSTRUMENTATION_H_

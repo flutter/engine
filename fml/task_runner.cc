@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -14,35 +14,54 @@
 
 namespace fml {
 
-TaskRunner::TaskRunner(fxl::RefPtr<MessageLoopImpl> loop)
-    : loop_(std::move(loop)) {
-  FML_CHECK(loop_);
-}
+TaskRunner::TaskRunner(fml::RefPtr<MessageLoopImpl> loop)
+    : loop_(std::move(loop)) {}
 
 TaskRunner::~TaskRunner() = default;
 
-void TaskRunner::PostTask(fxl::Closure task) {
-  loop_->PostTask(std::move(task), fxl::TimePoint::Now());
+void TaskRunner::PostTask(fml::closure task) {
+  loop_->PostTask(std::move(task), fml::TimePoint::Now());
 }
 
-void TaskRunner::PostTaskForTime(fxl::Closure task,
-                                 fxl::TimePoint target_time) {
+void TaskRunner::PostTaskForTime(fml::closure task,
+                                 fml::TimePoint target_time) {
   loop_->PostTask(std::move(task), target_time);
 }
 
-void TaskRunner::PostDelayedTask(fxl::Closure task, fxl::TimeDelta delay) {
-  loop_->PostTask(std::move(task), fxl::TimePoint::Now() + delay);
+void TaskRunner::PostDelayedTask(fml::closure task, fml::TimeDelta delay) {
+  loop_->PostTask(std::move(task), fml::TimePoint::Now() + delay);
+}
+
+TaskQueueId TaskRunner::GetTaskQueueId() {
+  FML_DCHECK(loop_);
+  return loop_->GetTaskQueueId();
 }
 
 bool TaskRunner::RunsTasksOnCurrentThread() {
   if (!fml::MessageLoop::IsInitializedForCurrentThread()) {
     return false;
   }
-  return MessageLoop::GetCurrent().GetLoopImpl() == loop_;
+  const auto current_queue_id =
+      MessageLoop::GetCurrent().GetLoopImpl()->GetTaskQueueId();
+  const auto loop_queue_id = loop_->GetTaskQueueId();
+
+  if (current_queue_id == loop_queue_id) {
+    return true;
+  }
+
+  auto queues = MessageLoopTaskQueues::GetInstance();
+  if (queues->Owns(current_queue_id, loop_queue_id)) {
+    return true;
+  }
+  if (queues->Owns(loop_queue_id, current_queue_id)) {
+    return true;
+  }
+
+  return false;
 }
 
-void TaskRunner::RunNowOrPostTask(fxl::RefPtr<fxl::TaskRunner> runner,
-                                  fxl::Closure task) {
+void TaskRunner::RunNowOrPostTask(fml::RefPtr<fml::TaskRunner> runner,
+                                  fml::closure task) {
   FML_DCHECK(runner);
   if (runner->RunsTasksOnCurrentThread()) {
     task();

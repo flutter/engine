@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,30 +6,34 @@
 
 #include "flutter/fml/message_loop.h"
 #include "flutter/lib/ui/window/window.h"
-#include "lib/tonic/converter/dart_converter.h"
+#include "third_party/tonic/converter/dart_converter.h"
+#include "third_party/tonic/dart_message_handler.h"
 
 using tonic::ToDart;
 
-namespace blink {
+namespace flutter {
 
-UIDartState::UIDartState(TaskRunners task_runners,
-                         TaskObserverAdd add_callback,
-                         TaskObserverRemove remove_callback,
-                         fml::WeakPtr<GrContext> resource_context,
-                         fxl::RefPtr<flow::SkiaUnrefQueue> skia_unref_queue,
-                         std::string advisory_script_uri,
-                         std::string advisory_script_entrypoint,
-                         std::string logger_prefix,
-                         IsolateNameServer* isolate_name_server)
+UIDartState::UIDartState(
+    TaskRunners task_runners,
+    TaskObserverAdd add_callback,
+    TaskObserverRemove remove_callback,
+    fml::WeakPtr<IOManager> io_manager,
+    fml::WeakPtr<ImageDecoder> image_decoder,
+    std::string advisory_script_uri,
+    std::string advisory_script_entrypoint,
+    std::string logger_prefix,
+    UnhandledExceptionCallback unhandled_exception_callback,
+    std::shared_ptr<IsolateNameServer> isolate_name_server)
     : task_runners_(std::move(task_runners)),
       add_callback_(std::move(add_callback)),
       remove_callback_(std::move(remove_callback)),
-      resource_context_(std::move(resource_context)),
+      io_manager_(std::move(io_manager)),
+      image_decoder_(std::move(image_decoder)),
       advisory_script_uri_(std::move(advisory_script_uri)),
       advisory_script_entrypoint_(std::move(advisory_script_entrypoint)),
       logger_prefix_(std::move(logger_prefix)),
-      skia_unref_queue_(std::move(skia_unref_queue)),
-      isolate_name_server_(isolate_name_server) {
+      unhandled_exception_callback_(unhandled_exception_callback),
+      isolate_name_server_(std::move(isolate_name_server)) {
   AddOrRemoveTaskObserver(true /* add */);
 }
 
@@ -51,7 +55,13 @@ void UIDartState::DidSetIsolate() {
   // main.dart$main-1234
   debug_name << advisory_script_uri_ << "$" << advisory_script_entrypoint_
              << "-" << main_port_;
-  debug_name_ = debug_name.str();
+  SetDebugName(debug_name.str());
+}
+
+void UIDartState::SetDebugName(const std::string debug_name) {
+  debug_name_ = debug_name;
+  if (window_)
+    window_->client()->UpdateIsolateDescription(debug_name_, main_port_);
 }
 
 UIDartState* UIDartState::Current() {
@@ -60,14 +70,19 @@ UIDartState* UIDartState::Current() {
 
 void UIDartState::SetWindow(std::unique_ptr<Window> window) {
   window_ = std::move(window);
+  if (window_)
+    window_->client()->UpdateIsolateDescription(debug_name_, main_port_);
 }
 
 const TaskRunners& UIDartState::GetTaskRunners() const {
   return task_runners_;
 }
 
-fxl::RefPtr<flow::SkiaUnrefQueue> UIDartState::GetSkiaUnrefQueue() const {
-  return skia_unref_queue_;
+fml::RefPtr<flutter::SkiaUnrefQueue> UIDartState::GetSkiaUnrefQueue() const {
+  if (!io_manager_) {
+    return nullptr;
+  }
+  return io_manager_->GetSkiaUnrefQueue();
 }
 
 void UIDartState::ScheduleMicrotask(Dart_Handle closure) {
@@ -89,7 +104,7 @@ void UIDartState::AddOrRemoveTaskObserver(bool add) {
     // the service isolate).
     return;
   }
-  FXL_DCHECK(add_callback_ && remove_callback_);
+  FML_DCHECK(add_callback_ && remove_callback_);
   if (add) {
     add_callback_(reinterpret_cast<intptr_t>(this),
                   [this]() { this->FlushMicrotasksNow(); });
@@ -99,11 +114,39 @@ void UIDartState::AddOrRemoveTaskObserver(bool add) {
 }
 
 fml::WeakPtr<GrContext> UIDartState::GetResourceContext() const {
-  return resource_context_;
+  if (!io_manager_) {
+    return {};
+  }
+  return io_manager_->GetResourceContext();
 }
 
-IsolateNameServer* UIDartState::GetIsolateNameServer() {
+fml::WeakPtr<ImageDecoder> UIDartState::GetImageDecoder() const {
+  return image_decoder_;
+}
+
+std::shared_ptr<IsolateNameServer> UIDartState::GetIsolateNameServer() const {
   return isolate_name_server_;
 }
 
-}  // namespace blink
+tonic::DartErrorHandleType UIDartState::GetLastError() {
+  tonic::DartErrorHandleType error = message_handler().isolate_last_error();
+  if (error == tonic::kNoError) {
+    error = microtask_queue_.GetLastError();
+  }
+  return error;
+}
+
+void UIDartState::ReportUnhandledException(const std::string& error,
+                                           const std::string& stack_trace) {
+  if (unhandled_exception_callback_ &&
+      unhandled_exception_callback_(error, stack_trace)) {
+    return;
+  }
+
+  // Either the exception handler was not set or it could not handle the error,
+  // just log the exception.
+  FML_LOG(ERROR) << "Unhandled Exception: " << error << std::endl
+                 << stack_trace;
+}
+
+}  // namespace flutter

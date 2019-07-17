@@ -18,10 +18,11 @@
 #define TXT_ASSET_FONT_MANAGER_H_
 
 #include <memory>
-#include "lib/fxl/macros.h"
+#include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkStream.h"
 #include "txt/font_asset_provider.h"
+#include "txt/typeface_font_asset_provider.h"
 
 namespace txt {
 
@@ -35,9 +36,9 @@ class AssetFontManager : public SkFontMgr {
   // |SkFontMgr|
   SkFontStyleSet* onMatchFamily(const char familyName[]) const override;
 
- private:
   std::unique_ptr<FontAssetProvider> font_provider_;
 
+ private:
   // |SkFontMgr|
   int onCountFamilies() const override;
 
@@ -81,7 +82,17 @@ class AssetFontManager : public SkFontMgr {
   sk_sp<SkTypeface> onLegacyMakeTypeface(const char familyName[],
                                          SkFontStyle) const override;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(AssetFontManager);
+  FML_DISALLOW_COPY_AND_ASSIGN(AssetFontManager);
+};
+
+class DynamicFontManager : public AssetFontManager {
+ public:
+  DynamicFontManager()
+      : AssetFontManager(std::make_unique<TypefaceFontAssetProvider>()) {}
+
+  TypefaceFontAssetProvider& font_provider() {
+    return static_cast<TypefaceFontAssetProvider&>(*font_provider_);
+  }
 };
 
 }  // namespace txt

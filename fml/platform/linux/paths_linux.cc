@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,7 +6,7 @@
 
 #include <unistd.h>
 
-#include "lib/fxl/files/path.h"
+#include "flutter/fml/paths.h"
 
 namespace fml {
 namespace paths {
@@ -18,8 +18,13 @@ std::pair<bool, std::string> GetExecutableDirectoryPath() {
   if (read_size == -1) {
     return {false, ""};
   }
-  return {true, files::GetDirectoryName(
+  return {true, fml::paths::GetDirectoryName(
                     std::string{path, static_cast<size_t>(read_size)})};
+}
+
+fml::UniqueFD GetCachesDirectory() {
+  // Unsupported on this platform.
+  return {};
 }
 
 }  // namespace paths

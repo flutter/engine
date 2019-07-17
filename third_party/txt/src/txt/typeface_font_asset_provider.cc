@@ -16,7 +16,7 @@
 
 #include "txt/typeface_font_asset_provider.h"
 
-#include "lib/fxl/logging.h"
+#include "flutter/fml/logging.h"
 #include "third_party/skia/include/core/SkString.h"
 #include "third_party/skia/include/core/SkTypeface.h"
 
@@ -39,11 +39,12 @@ std::string TypefaceFontAssetProvider::GetFamilyName(int index) const {
 // |FontAssetProvider|
 SkFontStyleSet* TypefaceFontAssetProvider::MatchFamily(
     const std::string& family_name) {
-  auto found = registered_families_.find(family_name);
+  auto found = registered_families_.find(CanonicalFamilyName(family_name));
   if (found == registered_families_.end()) {
     return nullptr;
   }
-  return SkRef(&found->second);
+  sk_sp<TypefaceFontStyleSet> font_style_set = found->second;
+  return font_style_set.release();
 }
 
 void TypefaceFontAssetProvider::RegisterTypeface(sk_sp<SkTypeface> typeface) {
@@ -65,16 +66,15 @@ void TypefaceFontAssetProvider::RegisterTypeface(
     return;
   }
 
-  auto family_it = registered_families_.find(family_name_alias);
+  std::string canonical_name = CanonicalFamilyName(family_name_alias);
+  auto family_it = registered_families_.find(canonical_name);
   if (family_it == registered_families_.end()) {
     family_names_.push_back(family_name_alias);
-    family_it = registered_families_
-                    .emplace(std::piecewise_construct,
-                             std::forward_as_tuple(family_name_alias),
-                             std::forward_as_tuple())
-                    .first;
+    auto value =
+        std::make_pair(canonical_name, sk_make_sp<TypefaceFontStyleSet>());
+    family_it = registered_families_.emplace(value).first;
   }
-  family_it->second.registerTypeface(std::move(typeface));
+  family_it->second->registerTypeface(std::move(typeface));
 }
 
 TypefaceFontStyleSet::TypefaceFontStyleSet() = default;
@@ -93,7 +93,7 @@ int TypefaceFontStyleSet::count() {
 }
 
 void TypefaceFontStyleSet::getStyle(int index, SkFontStyle*, SkString* style) {
-  FXL_DCHECK(false);
+  FML_DCHECK(false);
 }
 
 SkTypeface* TypefaceFontStyleSet::createTypeface(int i) {

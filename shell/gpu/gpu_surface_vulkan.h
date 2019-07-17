@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,34 +7,40 @@
 
 #include <memory>
 
+#include "flutter/fml/macros.h"
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/common/surface.h"
 #include "flutter/vulkan/vulkan_native_surface.h"
 #include "flutter/vulkan/vulkan_window.h"
-#include "lib/fxl/macros.h"
-#include "lib/fxl/memory/weak_ptr.h"
 
-namespace shell {
+namespace flutter {
 
 class GPUSurfaceVulkan : public Surface {
  public:
-  GPUSurfaceVulkan(fxl::RefPtr<vulkan::VulkanProcTable> proc_table,
+  GPUSurfaceVulkan(fml::RefPtr<vulkan::VulkanProcTable> proc_table,
                    std::unique_ptr<vulkan::VulkanNativeSurface> native_surface);
 
   ~GPUSurfaceVulkan() override;
 
+  // |Surface|
   bool IsValid() override;
 
+  // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
 
+  // |Surface|
+  SkMatrix GetRootTransformation() const override;
+
+  // |Surface|
   GrContext* GetContext() override;
 
  private:
   vulkan::VulkanWindow window_;
-  fxl::WeakPtrFactory<GPUSurfaceVulkan> weak_factory_;
+  fml::WeakPtrFactory<GPUSurfaceVulkan> weak_factory_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceVulkan);
+  FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceVulkan);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_GPU_GPU_SURFACE_VULKAN_H_

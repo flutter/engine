@@ -41,9 +41,6 @@
 #include "LayoutUtils.h"
 #include "MinikinInternal.h"
 
-using std::string;
-using std::vector;
-
 namespace minikin {
 
 const int kDirection_Mask = 0x1;
@@ -170,20 +167,10 @@ class LayoutCache : private android::OnEntryRemoved<LayoutCacheKey, Layout*> {
   static const size_t kMaxEntries = 5000;
 };
 
-static unsigned int disabledDecomposeCompatibility(hb_unicode_funcs_t*,
-                                                   hb_codepoint_t,
-                                                   hb_codepoint_t*,
-                                                   void*) {
-  return 0;
-}
-
 class LayoutEngine {
  public:
   LayoutEngine() {
     unicodeFunctions = hb_unicode_funcs_create(hb_icu_get_unicode_funcs());
-    /* Disable the function used for compatibility decomposition */
-    hb_unicode_funcs_set_decompose_compatibility_func(
-        unicodeFunctions, disabledDecomposeCompatibility, NULL, NULL);
     hbBuffer = hb_buffer_create();
     hb_buffer_set_unicode_funcs(hbBuffer, unicodeFunctions);
   }
@@ -299,8 +286,7 @@ hb_font_funcs_t* getHbFontFuncs(bool forColorBitmapFont) {
 
 static bool isColorBitmapFont(hb_font_t* font) {
   hb_face_t* face = hb_font_get_face(font);
-  HbBlob cbdt(hb_face_reference_table(face, HB_TAG('C', 'B', 'D', 'T')));
-  return cbdt.size() > 0;
+  return hb_ot_color_has_png(face);
 }
 
 static float HBFixedToFloat(hb_position_t v) {
@@ -604,7 +590,7 @@ void Layout::doLayout(const uint16_t* buf,
                       const FontStyle& style,
                       const MinikinPaint& paint,
                       const std::shared_ptr<FontCollection>& collection) {
-  std::lock_guard<std::recursive_mutex> _l(gMinikinLock);
+  std::scoped_lock _l(gMinikinLock);
 
   LayoutContext ctx;
   ctx.style = style;
@@ -628,7 +614,7 @@ float Layout::measureText(const uint16_t* buf,
                           const MinikinPaint& paint,
                           const std::shared_ptr<FontCollection>& collection,
                           float* advances) {
-  std::lock_guard<std::recursive_mutex> _l(gMinikinLock);
+  std::scoped_lock _l(gMinikinLock);
 
   LayoutContext ctx;
   ctx.style = style;
@@ -755,7 +741,8 @@ float Layout::doLayoutWord(const uint16_t* buf,
   return advance;
 }
 
-static void addFeatures(const string& str, vector<hb_feature_t>* features) {
+static void addFeatures(const std::string& str,
+                        std::vector<hb_feature_t>* features) {
   if (!str.size())
     return;
 
@@ -935,10 +922,10 @@ void Layout::doLayoutRun(const uint16_t* buf,
                          LayoutContext* ctx,
                          const std::shared_ptr<FontCollection>& collection) {
   hb_buffer_t* buffer = LayoutEngine::getInstance().hbBuffer;
-  vector<FontCollection::Run> items;
+  std::vector<FontCollection::Run> items;
   collection->itemize(buf + start, count, ctx->style, &items);
 
-  vector<hb_feature_t> features;
+  std::vector<hb_feature_t> features;
   // Disable default-on non-required ligature features if letter-spacing
   // See http://dev.w3.org/csswg/css-text-3/#letter-spacing-property
   // "When the effective spacing between two characters is not zero (due to
@@ -1132,7 +1119,9 @@ void Layout::appendLayout(Layout* src, size_t start, float extraAdvance) {
     int font_ix = findFace(src->mFaces[i], NULL);
     fontMap[i] = font_ix;
   }
-  int x0 = mAdvance;
+  // LibTxt: Changed x0 from int to float to prevent rounding that causes text
+  // jitter.
+  float x0 = mAdvance;
   for (size_t i = 0; i < src->mGlyphs.size(); i++) {
     LayoutGlyph& srcGlyph = src->mGlyphs[i];
     int font_ix = fontMap[srcGlyph.font_ix];
@@ -1206,7 +1195,7 @@ void Layout::getBounds(MinikinRect* bounds) const {
 }
 
 void Layout::purgeCaches() {
-  std::lock_guard<std::recursive_mutex> _l(gMinikinLock);
+  std::scoped_lock _l(gMinikinLock);
   LayoutCache& layoutCache = LayoutEngine::getInstance().layoutCache;
   layoutCache.clear();
   purgeHbFontCacheLocked();

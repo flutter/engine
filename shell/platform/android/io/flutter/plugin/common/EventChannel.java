@@ -1,10 +1,13 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 package io.flutter.plugin.common;
 
+import android.support.annotation.UiThread;
 import android.util.Log;
+
+import io.flutter.BuildConfig;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
 
@@ -55,9 +58,17 @@ public final class EventChannel {
      * @param codec a {@link MessageCodec}.
      */
     public EventChannel(BinaryMessenger messenger, String name, MethodCodec codec) {
-        assert messenger != null;
-        assert name != null;
-        assert codec != null;
+        if (BuildConfig.DEBUG) {
+            if (messenger == null) {
+                Log.e(TAG, "Parameter messenger must not be null.");
+            }
+            if (name == null) {
+                Log.e(TAG, "Parameter name must not be null.");
+            }
+            if (codec == null) {
+                Log.e(TAG, "Parameter codec must not be null.");
+            }
+        }
         this.messenger = messenger;
         this.name = name;
         this.codec = codec;
@@ -73,6 +84,7 @@ public final class EventChannel {
      *
      * @param handler a {@link StreamHandler}, or null to deregister.
      */
+    @UiThread
     public void setStreamHandler(final StreamHandler handler) {
         messenger.setMessageHandler(name, handler == null ? null : new IncomingStreamRequestHandler(handler));
     }
@@ -206,6 +218,7 @@ public final class EventChannel {
              final AtomicBoolean hasEnded = new AtomicBoolean(false);
 
              @Override
+             @UiThread
              public void success(Object event) {
                  if (hasEnded.get() || activeSink.get() != this) {
                      return;
@@ -214,6 +227,7 @@ public final class EventChannel {
              }
 
              @Override
+             @UiThread
              public void error(String errorCode, String errorMessage, Object errorDetails) {
                  if (hasEnded.get() || activeSink.get() != this) {
                      return;
@@ -224,6 +238,7 @@ public final class EventChannel {
              }
 
              @Override
+             @UiThread
              public void endOfStream() {
                  if (hasEnded.getAndSet(true) || activeSink.get() != this) {
                      return;

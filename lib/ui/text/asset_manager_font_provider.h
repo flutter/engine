@@ -1,24 +1,26 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_LIB_UI_TEXT_ASSET_MANAGER_FONT_PROVIDER_H_
 #define FLUTTER_LIB_UI_TEXT_ASSET_MANAGER_FONT_PROVIDER_H_
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "flutter/assets/asset_manager.h"
-#include "lib/fxl/macros.h"
+#include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
+#include "third_party/skia/include/core/SkTypeface.h"
 #include "txt/font_asset_provider.h"
 
-namespace blink {
+namespace flutter {
 
 class AssetManagerFontStyleSet : public SkFontStyleSet {
  public:
-  AssetManagerFontStyleSet(fml::RefPtr<blink::AssetManager> asset_manager);
+  AssetManagerFontStyleSet(std::shared_ptr<AssetManager> asset_manager);
 
   ~AssetManagerFontStyleSet() override;
 
@@ -37,21 +39,27 @@ class AssetManagerFontStyleSet : public SkFontStyleSet {
   SkTypeface* matchStyle(const SkFontStyle& pattern) override;
 
  private:
-  fml::RefPtr<blink::AssetManager> asset_manager_;
+  std::shared_ptr<AssetManager> asset_manager_;
 
   struct TypefaceAsset {
-    TypefaceAsset(std::string a) : asset(std::move(a)) {}
+    TypefaceAsset(std::string a);
+
+    TypefaceAsset(const TypefaceAsset& other);
+
+    ~TypefaceAsset();
+
     std::string asset;
     sk_sp<SkTypeface> typeface;
   };
   std::vector<TypefaceAsset> assets_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(AssetManagerFontStyleSet);
+  FML_DISALLOW_COPY_AND_ASSIGN(AssetManagerFontStyleSet);
 };
 
 class AssetManagerFontProvider : public txt::FontAssetProvider {
  public:
-  AssetManagerFontProvider(fml::RefPtr<blink::AssetManager> asset_manager);
+  AssetManagerFontProvider(std::shared_ptr<AssetManager> asset_manager);
+
   ~AssetManagerFontProvider() override;
 
   void RegisterAsset(std::string family_name, std::string asset);
@@ -66,14 +74,14 @@ class AssetManagerFontProvider : public txt::FontAssetProvider {
   SkFontStyleSet* MatchFamily(const std::string& family_name) override;
 
  private:
-  fml::RefPtr<AssetManager> asset_manager_;
-  std::unordered_map<std::string, AssetManagerFontStyleSet>
+  std::shared_ptr<AssetManager> asset_manager_;
+  std::unordered_map<std::string, sk_sp<AssetManagerFontStyleSet>>
       registered_families_;
   std::vector<std::string> family_names_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(AssetManagerFontProvider);
+  FML_DISALLOW_COPY_AND_ASSIGN(AssetManagerFontProvider);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_TEXT_ASSET_MANAGER_FONT_PROVIDER_H_

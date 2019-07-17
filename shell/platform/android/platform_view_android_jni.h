@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,10 +6,10 @@
 #define FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_H_
 
 #include <jni.h>
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
-#include "lib/fxl/macros.h"
 
-namespace shell {
+namespace flutter {
 
 void FlutterViewHandlePlatformMessage(JNIEnv* env,
                                       jobject obj,
@@ -34,6 +34,8 @@ void FlutterViewUpdateCustomAccessibilityActions(JNIEnv* env,
 
 void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj);
 
+void FlutterViewOnPreEngineRestart(JNIEnv* env, jobject obj);
+
 void SurfaceTextureAttachToGLContext(JNIEnv* env, jobject obj, jint textureId);
 
 void SurfaceTextureUpdateTexImage(JNIEnv* env, jobject obj);
@@ -44,6 +46,6 @@ void SurfaceTextureGetTransformMatrix(JNIEnv* env,
 
 void SurfaceTextureDetachFromGLContext(JNIEnv* env, jobject obj);
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_H_

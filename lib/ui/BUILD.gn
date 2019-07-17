@@ -1,6 +1,10 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+
+import("//build/fuchsia/sdk.gni")
+import("$flutter_root/common/config.gni")
+import("$flutter_root/testing/testing.gni")
 
 source_set("ui") {
   sources = [
@@ -8,12 +12,12 @@ source_set("ui") {
     "compositing/scene.h",
     "compositing/scene_builder.cc",
     "compositing/scene_builder.h",
-    "compositing/scene_host.cc",
-    "compositing/scene_host.h",
     "dart_runtime_hooks.cc",
     "dart_runtime_hooks.h",
     "dart_ui.cc",
     "dart_ui.h",
+    "dart_wrapper.h",
+    "io_manager.h",
     "isolate_name_server/isolate_name_server.cc",
     "isolate_name_server/isolate_name_server.h",
     "isolate_name_server/isolate_name_server_natives.cc",
@@ -22,12 +26,18 @@ source_set("ui") {
     "painting/canvas.h",
     "painting/codec.cc",
     "painting/codec.h",
+    "painting/color_filter.cc",
+    "painting/color_filter.h",
+    "painting/engine_layer.cc",
+    "painting/engine_layer.h",
     "painting/frame_info.cc",
     "painting/frame_info.h",
     "painting/gradient.cc",
     "painting/gradient.h",
     "painting/image.cc",
     "painting/image.h",
+    "painting/image_decoder.cc",
+    "painting/image_decoder.h",
     "painting/image_encoding.cc",
     "painting/image_encoding.h",
     "painting/image_filter.cc",
@@ -36,6 +46,8 @@ source_set("ui") {
     "painting/image_shader.h",
     "painting/matrix.cc",
     "painting/matrix.h",
+    "painting/multi_frame_codec.cc",
+    "painting/multi_frame_codec.h",
     "painting/paint.cc",
     "painting/paint.h",
     "painting/path.cc",
@@ -50,16 +62,20 @@ source_set("ui") {
     "painting/rrect.h",
     "painting/shader.cc",
     "painting/shader.h",
+    "painting/single_frame_codec.cc",
+    "painting/single_frame_codec.h",
     "painting/vertices.cc",
     "painting/vertices.h",
+    "plugins/callback_cache.cc",
+    "plugins/callback_cache.h",
+    "semantics/custom_accessibility_action.cc",
+    "semantics/custom_accessibility_action.h",
     "semantics/semantics_node.cc",
     "semantics/semantics_node.h",
     "semantics/semantics_update.cc",
     "semantics/semantics_update.h",
     "semantics/semantics_update_builder.cc",
     "semantics/semantics_update_builder.h",
-    "semantics/custom_accessibility_action.cc",
-    "semantics/custom_accessibility_action.h",
     "text/asset_manager_font_provider.cc",
     "text/asset_manager_font_provider.h",
     "text/font_collection.cc",
@@ -86,6 +102,7 @@ source_set("ui") {
     "window/pointer_data.h",
     "window/pointer_data_packet.cc",
     "window/pointer_data_packet.h",
+    "window/viewport_metrics.cc",
     "window/viewport_metrics.h",
     "window/window.cc",
     "window/window.h",
@@ -98,18 +115,58 @@ source_set("ui") {
     "$flutter_root/common",
     "$flutter_root/flow",
     "$flutter_root/fml",
-    "$flutter_root/glue",
     "$flutter_root/runtime:test_font",
-    "//third_party/dart/runtime/bin:embedded_dart_io",
+    "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/rapidjson",
     "//third_party/skia",
-    "//third_party/skia:effects",
-    "//third_party/skia:gpu",
-    "//topaz/lib/tonic",
+    "//third_party/tonic",
   ]
-  if (is_fuchsia) {
-    deps += [ "//topaz/public/dart-pkg/zircon" ]
+
+  public_deps = [
+    "$flutter_root/third_party/txt",
+  ]
+
+  if (flutter_enable_skshaper) {
+    defines = [ "FLUTTER_ENABLE_SKSHAPER" ]
   }
 
-  public_deps = ["$flutter_root/third_party/txt"]
+  if (is_fuchsia) {
+    sources += [
+      "compositing/scene_host.cc",
+      "compositing/scene_host.h",
+    ]
+
+    if (using_fuchsia_sdk) {
+      deps += [
+        "$flutter_root/shell/platform/fuchsia/dart-pkg/fuchsia",
+        "$flutter_root/shell/platform/fuchsia/dart-pkg/zircon",
+        "$fuchsia_sdk_root/pkg:async-cpp",
+      ]
+    } else {
+      deps += [ "//topaz/public/dart-pkg/zircon" ]
+    }
+  }
+}
+
+if (current_toolchain == host_toolchain) {
+  test_fixtures("ui_unittests_fixtures") {
+    dart_main = "fixtures/ui_test.dart"
+    fixtures = [ "fixtures/DashInNooglerHat.jpg" ]
+  }
+
+  executable("ui_unittests") {
+    testonly = true
+
+    sources = [
+      "painting/image_decoder_unittests.cc",
+    ]
+
+    deps = [
+      ":ui",
+      ":ui_unittests_fixtures",
+      "$flutter_root/common",
+      "$flutter_root/testing:dart",
+      "$flutter_root/testing:opengl",
+    ]
+  }
 }

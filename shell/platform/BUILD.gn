@@ -1,6 +1,8 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+
+import("//build/fuchsia/sdk.gni")
 
 group("platform") {
   if (is_mac || is_ios) {
@@ -12,12 +14,24 @@ group("platform") {
       "android",
     ]
   } else if (is_linux) {
-    deps = [
-      "embedder",
-    ]
+    if (is_fuchsia_host) {
+      # The linux build is not supported as part of the Fuchsia host build.
+      deps = []
+    } else {
+      deps = [
+        "linux",
+      ]
+    }
   } else if (is_win) {
-    # There is no platform target on windows. Instead, only a tester is used.
-    deps = []
+    deps = [
+      "windows",
+    ]
+  } else if (is_fuchsia) {
+    if (using_fuchsia_sdk) {
+      deps = [
+        "fuchsia",
+      ]
+    }
   } else {
     assert(false, "Unknown/Unsupported platform.")
   }

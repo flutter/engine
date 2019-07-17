@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="4" by="lint 26.1.1">
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 18 (current min is 16): `android.content.pm.ActivityInfo#SCREEN_ORIENTATION_USER_PORTRAIT`"
+        errorLine1="        return ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT;"
+        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
+            line="221"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 18 (current min is 16): `android.content.pm.ActivityInfo#SCREEN_ORIENTATION_USER_LANDSCAPE`"
+        errorLine1="        return ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE;"
+        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
+            line="225"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 18 (current min is 16): `android.content.pm.ActivityInfo#SCREEN_ORIENTATION_FULL_USER`"
+        errorLine1="        return ActivityInfo.SCREEN_ORIENTATION_FULL_USER;"
+        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
+            line="229"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 21 (current min is 16): `android.view.HapticFeedbackConstants#CLOCK_TICK`"
+        errorLine1="                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformPlugin.java"
+            line="121"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 19 (current min is 16): `android.view.View#SYSTEM_UI_FLAG_IMMERSIVE_STICKY`"
+        errorLine1="            enabledOverlays |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformPlugin.java"
+            line="154"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 17 (current min is 16): `android.view.View#LAYOUT_DIRECTION_LTR`"
+        errorLine1="        return direction == View.LAYOUT_DIRECTION_LTR || direction == View.LAYOUT_DIRECTION_RTL;"
+        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
+            line="370"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 17 (current min is 16): `android.view.View#LAYOUT_DIRECTION_RTL`"
+        errorLine1="        return direction == View.LAYOUT_DIRECTION_LTR || direction == View.LAYOUT_DIRECTION_RTL;"
+        errorLine2="                                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
+            line="370"
+            column="71"/>
+    </issue>
+
+    <issue
+        id="OldTargetApi"
+        message="Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the `android.os.Build.VERSION_CODES` javadoc for details."
+        errorLine1="    &lt;uses-sdk android:minSdkVersion=&quot;16&quot; android:targetSdkVersion=&quot;21&quot; />"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/AndroidManifest.xml"
+            line="8"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="HardcodedDebugMode"
+        message="Avoid hardcoding the debug mode; leaving it out allows debug and release builds to automatically assign one"
+        errorLine1="    &lt;application android:label=&quot;Flutter Shell&quot; android:name=&quot;FlutterApplication&quot; android:debuggable=&quot;true&quot;>"
+        errorLine2="                                                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/AndroidManifest.xml"
+            line="13"
+            column="82"/>
+    </issue>
+
+    <issue
+        id="UseSparseArrays"
+        message="Use `new SparseArray&lt;SemanticsNode>(...)` instead for better performance"
+        errorLine1="    private final Map&lt;Integer, SemanticsNode> flutterSemanticsTree = new HashMap&lt;>();"
+        errorLine2="                                                                     ~~~~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            line="130"
+            column="70"/>
+    </issue>
+
+    <issue
+        id="UseSparseArrays"
+        message="Use `new SparseArray&lt;CustomAccessibilityAction>(...)` instead for better performance"
+        errorLine1="    private final Map&lt;Integer, CustomAccessibilityAction> customAccessibilityActions = new HashMap&lt;>();"
+        errorLine2="                                                                                       ~~~~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            line="155"
+            column="88"/>
+    </issue>
+
+    <issue
+        id="UseSparseArrays"
+        message="Use `new SparseArray&lt;BinaryReply>(...)` instead for better performance"
+        errorLine1="    this.pendingReplies = new HashMap&lt;>();"
+        errorLine2="                          ~~~~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartMessenger.java"
+            line="43"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UseSparseArrays"
+        message="Use `new SparseArray&lt;VirtualDisplayController>(...)` instead for better performance"
+        errorLine1="        vdControllers = new HashMap&lt;>();"
+        errorLine2="                        ~~~~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
+            line="61"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="ClickableViewAccessibility"
+        message="Custom view `FlutterView` overrides `onTouchEvent` but not `performClick`"
+        errorLine1="  public boolean onTouchEvent(MotionEvent event) {"
+        errorLine2="                 ~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterView.java"
+            line="367"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="ClickableViewAccessibility"
+        message="Custom view `FlutterView` overrides `onTouchEvent` but not `performClick`"
+        errorLine1="    public boolean onTouchEvent(MotionEvent event) {"
+        errorLine2="                   ~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/io/flutter/view/FlutterView.java"
+            line="391"
+            column="20"/>
+    </issue>
+
+</issues>

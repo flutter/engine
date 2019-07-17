@@ -1,4 +1,4 @@
-// Copyright 2016 The Fuchsia Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -55,7 +55,9 @@ class ThreadChecker final {
 #endif
 };
 
-#ifndef NDEBUG
+// TODO(chinmaygarde): Re-enable this after auditing all new users of
+// fml::WeakPtr.
+#if !defined(NDEBUG) && false
 #define FML_DECLARE_THREAD_CHECKER(c) fml::ThreadChecker c
 #define FML_DCHECK_CREATION_THREAD_IS_CURRENT(c) \
   FML_DCHECK((c).IsCreationThreadCurrent())

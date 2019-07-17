@@ -1,0 +1,13 @@
+{
+    "program": {
+        "binary": "test/flutter_runner_tests"
+    },
+    "sandbox": {
+        "features": [
+            "deprecated-ambient-replace-as-executable"
+        ],
+        "services": [
+            "fuchsia.sys.Launcher"
+        ]
+    }
+}

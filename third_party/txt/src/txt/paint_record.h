@@ -17,16 +17,17 @@
 #ifndef LIB_TXT_SRC_PAINT_RECORD_H_
 #define LIB_TXT_SRC_PAINT_RECORD_H_
 
-#include "lib/fxl/logging.h"
-#include "lib/fxl/macros.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/macros.h"
+#include "placeholder_run.h"
 #include "text_style.h"
-#include "third_party/skia/include/core/SkPaint.h"
+#include "third_party/skia/include/core/SkFontMetrics.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
 namespace txt {
 
 // PaintRecord holds the layout data after Paragraph::Layout() is called. This
-// stores all nessecary offsets, blobs, metrics, and more for Skia to draw the
+// stores all necessary offsets, blobs, metrics, and more for Skia to draw the
 // text.
 class PaintRecord {
  public:
@@ -37,15 +38,29 @@ class PaintRecord {
   PaintRecord(TextStyle style,
               SkPoint offset,
               sk_sp<SkTextBlob> text,
-              SkPaint::FontMetrics metrics,
+              SkFontMetrics metrics,
               size_t line,
-              double run_width);
+              double x_start,
+              double x_end,
+              bool is_ghost);
+
+  PaintRecord(TextStyle style,
+              SkPoint offset,
+              sk_sp<SkTextBlob> text,
+              SkFontMetrics metrics,
+              size_t line,
+              double x_start,
+              double x_end,
+              bool is_ghost,
+              PlaceholderRun* placeholder_run);
 
   PaintRecord(TextStyle style,
               sk_sp<SkTextBlob> text,
-              SkPaint::FontMetrics metrics,
+              SkFontMetrics metrics,
               size_t line,
-              double run_width);
+              double x_start,
+              double x_end,
+              bool is_ghost);
 
   PaintRecord(PaintRecord&& other);
 
@@ -57,13 +72,21 @@ class PaintRecord {
 
   SkTextBlob* text() const { return text_.get(); }
 
-  const SkPaint::FontMetrics& metrics() const { return metrics_; }
+  const SkFontMetrics& metrics() const { return metrics_; }
 
   const TextStyle& style() const { return style_; }
 
   size_t line() const { return line_; }
 
-  size_t GetRunWidth() const { return run_width_; }
+  double x_start() const { return x_start_; }
+  double x_end() const { return x_end_; }
+  double GetRunWidth() const { return x_end_ - x_start_; }
+
+  PlaceholderRun* GetPlaceholderRun() const { return placeholder_run_; }
+
+  bool isGhost() const { return is_ghost_; }
+
+  bool isPlaceholder() const { return placeholder_run_ == nullptr; }
 
  private:
   TextStyle style_;
@@ -72,11 +95,19 @@ class PaintRecord {
   // SkTextBlob stores the glyphs and coordinates to draw them.
   sk_sp<SkTextBlob> text_;
   // FontMetrics stores the measurements of the font used.
-  SkPaint::FontMetrics metrics_;
+  SkFontMetrics metrics_;
   size_t line_;
-  double run_width_ = 0.0f;
+  double x_start_ = 0.0f;
+  double x_end_ = 0.0f;
+  // 'Ghost' runs represent trailing whitespace. 'Ghost' runs should not have
+  // decorations painted on them and do not impact layout of visible glyphs.
+  bool is_ghost_ = false;
+  // Stores the corresponding PlaceholderRun that the record corresponds to.
+  // When this is nullptr, then the record is of normal text and does not
+  // represent an inline placeholder.
+  PlaceholderRun* placeholder_run_ = nullptr;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(PaintRecord);
+  FML_DISALLOW_COPY_AND_ASSIGN(PaintRecord);
 };
 
 }  // namespace txt

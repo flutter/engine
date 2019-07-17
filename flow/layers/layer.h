@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,13 +8,15 @@
 #include <memory>
 #include <vector>
 
+#include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/texture.h"
-#include "flutter/glue/trace_event.h"
-#include "lib/fxl/build_config.h"
-#include "lib/fxl/logging.h"
-#include "lib/fxl/macros.h"
+#include "flutter/fml/build_config.h"
+#include "flutter/fml/compiler_specific.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/macros.h"
+#include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
@@ -23,18 +25,40 @@
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
+#include "third_party/skia/include/utils/SkNWayCanvas.h"
 
 #if defined(OS_FUCHSIA)
 
 #include "flutter/flow/scene_update_context.h"  //nogncheck
-#include "lib/ui/scenic/cpp/resources.h"     //nogncheck
-#include "lib/ui/scenic/cpp/session.h"       //nogncheck
+#include "lib/ui/scenic/cpp/resources.h"        //nogncheck
+#include "lib/ui/scenic/cpp/session.h"          //nogncheck
 
 #endif  // defined(OS_FUCHSIA)
 
-namespace flow {
+namespace flutter {
+
+static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
+
+// This should be an exact copy of the Clip enum in painting.dart.
+enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
 
 class ContainerLayer;
+
+struct PrerollContext {
+  RasterCache* raster_cache;
+  GrContext* gr_context;
+  ExternalViewEmbedder* view_embedder;
+  MutatorsStack& mutators_stack;
+  SkColorSpace* dst_color_space;
+  SkRect cull_rect;
+
+  // The following allows us to paint in the end of subtree preroll
+  const Stopwatch& raster_time;
+  const Stopwatch& ui_time;
+  TextureRegistry& texture_registry;
+  const bool checkerboard_offscreen_layers;
+  float total_elevation = 0.0f;
+};
 
 // Represents a single composited layer. Created on the UI thread but then
 // subquently used on the Rasterizer thread.
@@ -43,20 +67,27 @@ class Layer {
   Layer();
   virtual ~Layer();
 
-  struct PrerollContext {
-    RasterCache* raster_cache;
-    GrContext* gr_context;
-    SkColorSpace* dst_color_space;
-    SkRect child_paint_bounds;
-  };
-
   virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
 
   struct PaintContext {
-    SkCanvas& canvas;
-    const Stopwatch& frame_time;
-    const Stopwatch& engine_time;
+    // When splitting the scene into multiple canvases (e.g when embedding
+    // a platform view on iOS) during the paint traversal we apply the non leaf
+    // flow layers to all canvases, and leaf layers just to the "current"
+    // canvas. Applying the non leaf layers to all canvases ensures that when
+    // we switch a canvas (when painting a PlatformViewLayer) the next canvas
+    // has the exact same state as the current canvas.
+    // The internal_nodes_canvas is a SkNWayCanvas which is used by non leaf
+    // and applies the operations to all canvases.
+    // The leaf_nodes_canvas is the "current" canvas and is used by leaf
+    // layers.
+    SkCanvas* internal_nodes_canvas;
+    SkCanvas* leaf_nodes_canvas;
+    GrContext* gr_context;
+    ExternalViewEmbedder* view_embedder;
+    const Stopwatch& raster_time;
+    const Stopwatch& ui_time;
     TextureRegistry& texture_registry;
+    const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
   };
 
@@ -64,6 +95,18 @@ class Layer {
   // draws a checkerboard over the layer if that is enabled in the PaintContext.
   class AutoSaveLayer {
    public:
+    FML_WARN_UNUSED_RESULT static AutoSaveLayer Create(
+        const PaintContext& paint_context,
+        const SkRect& bounds,
+        const SkPaint* paint);
+
+    FML_WARN_UNUSED_RESULT static AutoSaveLayer Create(
+        const PaintContext& paint_context,
+        const SkCanvas::SaveLayerRec& layer_rec);
+
+    ~AutoSaveLayer();
+
+   private:
     AutoSaveLayer(const PaintContext& paint_context,
                   const SkRect& bounds,
                   const SkPaint* paint);
@@ -71,9 +114,6 @@ class Layer {
     AutoSaveLayer(const PaintContext& paint_context,
                   const SkCanvas::SaveLayerRec& layer_rec);
 
-    ~AutoSaveLayer();
-
-   private:
     const PaintContext& paint_context_;
     const SkRect bounds_;
   };
@@ -104,14 +144,19 @@ class Layer {
 
   bool needs_painting() const { return !paint_bounds_.isEmpty(); }
 
+  uint64_t unique_id() const { return unique_id_; }
+
  private:
   ContainerLayer* parent_;
   bool needs_system_composite_;
   SkRect paint_bounds_;
+  uint64_t unique_id_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(Layer);
+  static uint64_t NextUniqueID();
+
+  FML_DISALLOW_COPY_AND_ASSIGN(Layer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_LAYER_H_

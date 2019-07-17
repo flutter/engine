@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,10 +7,12 @@
 
 #include <string>
 
-#include "lib/fxl/build_config.h"
-#include "lib/fxl/logging.h"
+#include "flutter/fml/build_config.h"
+#include "flutter/fml/logging.h"
 
+#if !defined(FUCHSIA_SDK)
 #define VULKAN_LINK_STATICALLY OS_FUCHSIA
+#endif  //  !defined(FUCHSIA_SDK)
 
 #if OS_ANDROID
 #ifndef VK_USE_PLATFORM_ANDROID_KHR
@@ -22,6 +24,9 @@
 #ifndef VK_USE_PLATFORM_MAGMA_KHR
 #define VK_USE_PLATFORM_MAGMA_KHR 1
 #endif  // VK_USE_PLATFORM_MAGMA_KHR
+#ifndef VK_USE_PLATFORM_FUCHSIA
+#define VK_USE_PLATFORM_FUCHSIA 1
+#endif  // VK_USE_PLATFORM_FUCHSIA
 #endif  // OS_FUCHSIA
 
 #if !VULKAN_LINK_STATICALLY
@@ -36,7 +41,7 @@
   ({                                                       \
     __typeof__(expression) _rc = (expression);             \
     if (_rc != VK_SUCCESS) {                               \
-      FXL_DLOG(INFO) << "Vulkan call '" << #expression     \
+      FML_DLOG(INFO) << "Vulkan call '" << #expression     \
                      << "' failed with error "             \
                      << vulkan::VulkanResultToString(_rc); \
     }                                                      \

@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -43,6 +43,7 @@ bool MessageLoopLinux::AddOrRemoveTimerSource(bool add) {
   return ctl_result == 0;
 }
 
+// |fml::MessageLoopImpl|
 void MessageLoopLinux::Run() {
   running_ = true;
 
@@ -71,12 +72,14 @@ void MessageLoopLinux::Run() {
   }
 }
 
+// |fml::MessageLoopImpl|
 void MessageLoopLinux::Terminate() {
   running_ = false;
-  WakeUp(fxl::TimePoint::Now());
+  WakeUp(fml::TimePoint::Now());
 }
 
-void MessageLoopLinux::WakeUp(fxl::TimePoint time_point) {
+// |fml::MessageLoopImpl|
+void MessageLoopLinux::WakeUp(fml::TimePoint time_point) {
   bool result = TimerRearm(timer_fd_.get(), time_point);
   FML_DCHECK(result);
 }

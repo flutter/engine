@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -17,6 +17,8 @@ def main():
   parser.add_argument('--arm64-out-dir', type=str, required=True)
   parser.add_argument('--armv7-out-dir', type=str, required=True)
   parser.add_argument('--simulator-out-dir', type=str, required=True)
+  parser.add_argument('--strip', action="store_true", default=False)
+  parser.add_argument('--dsym', action="store_true", default=False)
 
   args = parser.parse_args()
 
@@ -56,15 +58,28 @@ def main():
   shutil.rmtree(fat_framework, True)
   shutil.copytree(arm64_framework, fat_framework)
 
-  subprocess.call([
+  linker_out = os.path.join(fat_framework, 'Flutter')
+
+  subprocess.check_call([
     'lipo',
     arm64_dylib,
     armv7_dylib,
     simulator_dylib,
     '-create',
     '-output',
-    os.path.join(fat_framework, 'Flutter')
+    linker_out
   ])
+
+  if args.dsym:
+    dsym_out = os.path.splitext(fat_framework)[0] + '.dSYM'
+    subprocess.check_call(['dsymutil', '-o', dsym_out, linker_out])
+
+  if args.strip:
+    # copy unstripped
+    unstripped_out = os.path.join(args.dst, 'Flutter.unstripped')
+    shutil.copyfile(linker_out, unstripped_out)
+
+    subprocess.check_call(["strip", "-x", "-S", linker_out])
 
 
 if __name__ == '__main__':

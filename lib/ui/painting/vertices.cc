@@ -1,13 +1,15 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/vertices.h"
 
-#include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/dart_library_natives.h"
+#include <algorithm>
 
-namespace blink {
+#include "third_party/tonic/dart_binding_macros.h"
+#include "third_party/tonic/dart_library_natives.h"
+
+namespace flutter {
 
 namespace {
 
@@ -43,15 +45,15 @@ void Vertices::RegisterNatives(tonic::DartLibraryNatives* natives) {
                      FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-fxl::RefPtr<Vertices> Vertices::Create() {
-  return fxl::MakeRefCounted<Vertices>();
+fml::RefPtr<Vertices> Vertices::Create() {
+  return fml::MakeRefCounted<Vertices>();
 }
 
-void Vertices::init(SkVertices::VertexMode vertex_mode,
+bool Vertices::init(SkVertices::VertexMode vertex_mode,
                     const tonic::Float32List& positions,
                     const tonic::Float32List& texture_coordinates,
                     const tonic::Int32List& colors,
-                    const tonic::Int32List& indices) {
+                    const tonic::Uint16List& indices) {
   uint32_t builderFlags = 0;
   if (texture_coordinates.data())
     builderFlags |= SkVertices::kHasTexCoords_BuilderFlag;
@@ -61,26 +63,33 @@ void Vertices::init(SkVertices::VertexMode vertex_mode,
   SkVertices::Builder builder(vertex_mode, positions.num_elements() / 2,
                               indices.num_elements(), builderFlags);
 
+  if (!builder.isValid())
+    return false;
+
   // positions are required for SkVertices::Builder
-  FXL_DCHECK(positions.data());
+  FML_DCHECK(positions.data());
   if (positions.data())
     DecodePoints(positions, builder.positions());
 
   if (texture_coordinates.data()) {
     // SkVertices::Builder assumes equal numbers of elements
-    FXL_DCHECK(positions.num_elements() == texture_coordinates.num_elements());
+    FML_DCHECK(positions.num_elements() == texture_coordinates.num_elements());
     DecodePoints(texture_coordinates, builder.texCoords());
   }
   if (colors.data()) {
     // SkVertices::Builder assumes equal numbers of elements
-    FXL_DCHECK(positions.num_elements() == colors.num_elements());
+    FML_DCHECK(positions.num_elements() / 2 == colors.num_elements());
     DecodeInts<SkColor>(colors, builder.colors());
   }
 
-  if (indices.data())
-    DecodeInts<uint16_t>(indices, builder.indices());
+  if (indices.data()) {
+    std::copy(indices.data(), indices.data() + indices.num_elements(),
+              builder.indices());
+  }
 
   vertices_ = builder.detach();
+
+  return true;
 }
 
-}  // namespace blink
+}  // namespace flutter
