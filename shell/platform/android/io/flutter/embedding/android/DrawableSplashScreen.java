@@ -16,8 +16,8 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 /**
- * {@link SplashScreen} that displays a given {@link Drawable}, which then cross-fades to
- * Flutter's content.
+ * {@link SplashScreen} that displays a given {@link Drawable}, which then fades its alpha
+ * to zero when instructed to {@link #transitionToFlutter(Runnable)}.
  */
 public class DrawableSplashScreen implements SplashScreen {
   private final Drawable drawable;
