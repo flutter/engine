@@ -639,6 +639,7 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
     Dart_IsolateFlags* flags,
     std::shared_ptr<DartIsolate>* parent_embedder_isolate,
     char** error) {
+  TRACE_EVENT0("flutter", "DartIsolate::DartIsolateGroupCreateCallback");
   if (parent_embedder_isolate == nullptr &&
       strcmp(advisory_script_uri, DART_VM_SERVICE_ISOLATE_NAME) == 0) {
     // The VM attempts to start the VM service for us on |Dart_Initialize|. In
@@ -667,9 +668,9 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
 }
 
 // |Dart_IsolateInitializeCallback|
-bool DartIsolate::DartIsolateInitializeCallback(
-    void** child_callback_data,
-    char** error) {
+bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
+                                                char** error) {
+  TRACE_EVENT0("flutter", "DartIsolate::DartIsolateInitializeCallback");
   Dart_Isolate isolate = Dart_CurrentIsolate();
   if (isolate == nullptr) {
     *error = strdup("Isolate should be available in initialize callback.");
@@ -681,29 +682,32 @@ bool DartIsolate::DartIsolateInitializeCallback(
       Dart_CurrentIsolateGroupData());
 
   TaskRunners null_task_runners((*raw_embedder_isolate)->GetAdvisoryScriptURI(),
-      /* platform= */ nullptr, /* gpu= */ nullptr, /* ui= */ nullptr,
-      /* io= */ nullptr);
+                                /* platform= */ nullptr, /* gpu= */ nullptr,
+                                /* ui= */ nullptr,
+                                /* io= */ nullptr);
 
   std::unique_ptr<std::shared_ptr<DartIsolate>> embedder_isolate =
-      std::make_unique<std::shared_ptr<DartIsolate>>(
-          std::make_shared<DartIsolate>(
-              (*raw_embedder_isolate)->GetSettings(),         // settings
-              (*raw_embedder_isolate)->GetIsolateSnapshot(),  // isolate_snapshot
-              (*raw_embedder_isolate)->GetSharedSnapshot(),   // shared_snapshot
-              null_task_runners,                              // task_runners
-              fml::WeakPtr<IOManager>{},                      // io_manager
-              fml::WeakPtr<ImageDecoder>{},                   // io_manager
-              (*raw_embedder_isolate)->GetAdvisoryScriptURI(),         // advisory_script_uri
-              (*raw_embedder_isolate)->GetAdvisoryScriptEntrypoint(),  // advisory_script_entrypoint
-              (*raw_embedder_isolate)->child_isolate_preparer_,    // preparer
-              (*raw_embedder_isolate)->isolate_create_callback_,   // on create
-              (*raw_embedder_isolate)->isolate_shutdown_callback_  // on shutdown
-          )
-      );
+      std::make_unique<
+          std::shared_ptr<DartIsolate>>(std::make_shared<DartIsolate>(
+          (*raw_embedder_isolate)->GetSettings(),         // settings
+          (*raw_embedder_isolate)->GetIsolateSnapshot(),  // isolate_snapshot
+          (*raw_embedder_isolate)->GetSharedSnapshot(),   // shared_snapshot
+          null_task_runners,                              // task_runners
+          fml::WeakPtr<IOManager>{},                      // io_manager
+          fml::WeakPtr<ImageDecoder>{},                   // io_manager
+          (*raw_embedder_isolate)
+              ->GetAdvisoryScriptURI(),  // advisory_script_uri
+          (*raw_embedder_isolate)
+              ->GetAdvisoryScriptEntrypoint(),  // advisory_script_entrypoint
+          (*raw_embedder_isolate)->child_isolate_preparer_,    // preparer
+          (*raw_embedder_isolate)->isolate_create_callback_,   // on create
+          (*raw_embedder_isolate)->isolate_shutdown_callback_  // on shutdown
+          ));
 
-  // root isolate should have been created via CreateRootIsolate and CreateDartVMAndEmbedderObjectPair
-  if (!InitializeIsolate(*embedder_isolate, isolate, /*is_root_isolate=*/ false,
-      error)) {
+  // root isolate should have been created via CreateRootIsolate and
+  // CreateDartVMAndEmbedderObjectPair
+  if (!InitializeIsolate(*embedder_isolate, isolate, /*is_root_isolate=*/false,
+                         error)) {
     return false;
   }
 
@@ -802,6 +806,7 @@ bool DartIsolate::InitializeIsolate(
     Dart_Isolate& isolate,
     bool is_root_isolate,
     char** error) {
+  TRACE_EVENT0("flutter", "DartIsolate::InitializeIsolate");
   if (!embedder_isolate->Initialize(isolate, is_root_isolate)) {
     *error = strdup("Embedder could not initialize the Dart isolate.");
     FML_DLOG(ERROR) << *error;
