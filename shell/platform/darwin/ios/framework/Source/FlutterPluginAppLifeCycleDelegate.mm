@@ -15,23 +15,57 @@ static const SEL selectorsHandledByPlugins[] = {
     @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:),
     @selector(application:performFetchWithCompletionHandler:)};
 
+@interface FlutterPluginAppLifeCycleDelegate ()
+- (void)handleDidEnterBackground:(NSNotification*)notification;
+- (void)handleWillEnterForeground:(NSNotification*)notification;
+- (void)handleWillResignActive:(NSNotification*)notification;
+- (void)handleDidBecomeActive:(NSNotification*)notification;
+- (void)handleWillTerminate:(NSNotification*)notification;
+@end
+
 @implementation FlutterPluginAppLifeCycleDelegate {
+  NSMutableArray* _notificationUnsubscribers;
   UIBackgroundTaskIdentifier _debugBackgroundTask;
 
   // Weak references to registered plugins.
   NSPointerArray* _pluginDelegates;
 }
 
+- (void)addObserverFor:(NSString*)name selector:(SEL)selector {
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:selector name:name object:nil];
+  __block NSObject* blockSelf = self;
+  dispatch_block_t unsubscribe = ^{
+    [[NSNotificationCenter defaultCenter] removeObserver:blockSelf name:name object:nil];
+  };
+  [_notificationUnsubscribers addObject:[[unsubscribe copy] autorelease]];
+}
+
 - (instancetype)init {
   if (self = [super init]) {
+    _notificationUnsubscribers = [[NSMutableArray alloc] init];
     std::string cachePath = fml::paths::JoinPaths({getenv("HOME"), kCallbackCacheSubDir});
     [FlutterCallbackCache setCachePath:[NSString stringWithUTF8String:cachePath.c_str()]];
     _pluginDelegates = [[NSPointerArray weakObjectsPointerArray] retain];
+
+    [self addObserverFor:UIApplicationDidEnterBackgroundNotification
+                selector:@selector(handleDidEnterBackground:)];
+    [self addObserverFor:UIApplicationWillEnterForegroundNotification
+                selector:@selector(handleWillEnterForeground:)];
+    [self addObserverFor:UIApplicationWillResignActiveNotification
+                selector:@selector(handleWillResignActive:)];
+    [self addObserverFor:UIApplicationDidBecomeActiveNotification
+                selector:@selector(handleDidBecomeActive:)];
+    [self addObserverFor:UIApplicationWillTerminateNotification
+                selector:@selector(handleWillTerminate:)];
   }
   return self;
 }
 
 - (void)dealloc {
+  for (dispatch_block_t unsubscribe in _notificationUnsubscribers) {
+    unsubscribe();
+  }
+  [_notificationUnsubscribers release];
   [_pluginDelegates release];
   [super dealloc];
 }
@@ -109,7 +143,8 @@ static BOOL isPowerOfTwo(NSUInteger x) {
   return nil;
 }
 
-- (void)applicationDidEnterBackground:(UIApplication*)application {
+- (void)handleDidEnterBackground:(NSNotification*)notification {
+  UIApplication* application = [UIApplication sharedApplication];
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // The following keeps the Flutter session alive when the device screen locks
   // in debug mode. It allows continued use of features like hot reload and
@@ -131,13 +166,14 @@ static BOOL isPowerOfTwo(NSUInteger x) {
     if (!plugin) {
       continue;
     }
-    if ([plugin respondsToSelector:_cmd]) {
+    if ([plugin respondsToSelector:@selector(applicationDidEnterBackground:)]) {
       [plugin applicationDidEnterBackground:application];
     }
   }
 }
 
-- (void)applicationWillEnterForeground:(UIApplication*)application {
+- (void)handleWillEnterForeground:(NSNotification*)notification {
+  UIApplication* application = [UIApplication sharedApplication];
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   [application endBackgroundTask:_debugBackgroundTask];
 #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
@@ -145,40 +181,43 @@ static BOOL isPowerOfTwo(NSUInteger x) {
     if (!plugin) {
       continue;
     }
-    if ([plugin respondsToSelector:_cmd]) {
+    if ([plugin respondsToSelector:@selector(applicationWillEnterForeground:)]) {
       [plugin applicationWillEnterForeground:application];
     }
   }
 }
 
-- (void)applicationWillResignActive:(UIApplication*)application {
+- (void)handleWillResignActive:(NSNotification*)notification {
+  UIApplication* application = [UIApplication sharedApplication];
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
-    if ([plugin respondsToSelector:_cmd]) {
+    if ([plugin respondsToSelector:@selector(applicationWillResignActive:)]) {
       [plugin applicationWillResignActive:application];
     }
   }
 }
 
-- (void)applicationDidBecomeActive:(UIApplication*)application {
+- (void)handleDidBecomeActive:(NSNotification*)notification {
+  UIApplication* application = [UIApplication sharedApplication];
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
-    if ([plugin respondsToSelector:_cmd]) {
+    if ([plugin respondsToSelector:@selector(applicationDidBecomeActive:)]) {
       [plugin applicationDidBecomeActive:application];
     }
   }
 }
 
-- (void)applicationWillTerminate:(UIApplication*)application {
+- (void)handleWillTerminate:(NSNotification*)notification {
+  UIApplication* application = [UIApplication sharedApplication];
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
-    if ([plugin respondsToSelector:_cmd]) {
+    if ([plugin respondsToSelector:@selector(applicationWillTerminate:)]) {
       [plugin applicationWillTerminate:application];
     }
   }
