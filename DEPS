@@ -468,7 +468,7 @@ deps = {
      'dep_type': 'cipd',
    },
 
-  'src/buildtools': {
+  'src/flutter/third_party/gn': {
     'packages': [
       {
         'package': 'gn/gn/${{platform}}',

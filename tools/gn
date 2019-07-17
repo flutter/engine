@@ -348,7 +348,7 @@ def main(argv):
   exe = '.exe' if sys.platform.startswith(('cygwin', 'win')) else ''
 
   command = [
-    '%s/buildtools/gn%s' % (SRC_ROOT, exe),
+    '%s/flutter/third_party/gn/gn%s' % (SRC_ROOT, exe),
     'gen',
     '--check',
   ]
