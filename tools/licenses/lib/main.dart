@@ -888,7 +888,6 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
 
   void crawl() {
     for (fs.IoNode entry in io.walk) {
-      print(entry.fullName);
       if (shouldRecurse(entry)) {
         assert(!_childrenByName.containsKey(entry.name));
         if (entry is fs.Directory) {
