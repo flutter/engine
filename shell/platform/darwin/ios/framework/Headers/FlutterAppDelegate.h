@@ -25,7 +25,7 @@
  */
 FLUTTER_EXPORT
 @interface FlutterAppDelegate
-    : UIResponder <UIApplicationDelegate, FlutterPluginRegistry, FlutterAppLifeCycleProvider>
+    : UIResponder <UIApplicationDelegate, FlutterPluginRegistry, FlutterAppLifeCycleProvider, UNUserNotificationCenterDelegate>
 
 @property(strong, nonatomic) UIWindow* window;
 

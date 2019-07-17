@@ -211,6 +211,14 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
   [_lifeCycleDelegate addDelegate:delegate];
 }
 
+- (void)registerAsUserNotificationCenterDelegate {
+  if ([UNUserNotificationCenter class] != nil) {
+    // iOS 10 or later
+    // For iOS 10 display notification (sent via APNS)
+    [UNUserNotificationCenter currentNotificationCenter].delegate = self;
+  }
+}
+
 #pragma mark - UIApplicationDelegate method dynamic implementation
 
 - (BOOL)respondsToSelector:(SEL)selector {

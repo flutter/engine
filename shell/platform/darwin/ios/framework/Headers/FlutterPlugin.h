@@ -371,6 +371,12 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
  */
 @protocol FlutterAppLifeCycleProvider
 - (void)addApplicationLifeCycleDelegate:(NSObject<FlutterPlugin>*)delegate;
+
+/**
+ * Implement this in the `UIAppDelegate` of your app to enable Flutter plugins to receive
+ * calls as `UNUserNotificationCenterDelegate` when they are added to `addApplicationLifeCycleDelegate`.
+ */
+- (void)registerAsUserNotificationCenterDelegate;
 @end
 
 NS_ASSUME_NONNULL_END;
