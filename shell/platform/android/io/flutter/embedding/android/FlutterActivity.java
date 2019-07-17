@@ -293,7 +293,6 @@ public class FlutterActivity extends FragmentActivity
    * <p>
    * Returns null if no {@code windowBackground} is set for the activity.
    */
-  @SuppressWarnings("deprecation")
   private Drawable getLaunchScreenDrawableFromActivityTheme() {
     TypedValue typedValue = new TypedValue();
     if (!getTheme().resolveAttribute(
@@ -306,7 +305,7 @@ public class FlutterActivity extends FragmentActivity
       return null;
     }
     try {
-      return getResources().getDrawable(typedValue.resourceId);
+      return getResources().getDrawable(typedValue.resourceId, getTheme());
     } catch (Resources.NotFoundException e) {
       Log.e(TAG, "Splash screen requested in AndroidManifest.xml, but no windowBackground"
           + " is available in the theme.");
@@ -343,6 +342,7 @@ public class FlutterActivity extends FragmentActivity
       Integer splashScreenId = metadata != null ? metadata.getInt(SPLASH_SCREEN_META_DATA_KEY) : null;
       return splashScreenId != null ? getResources().getDrawable(splashScreenId, getTheme()) : null;
     } catch (PackageManager.NameNotFoundException e) {
+      // This is never expected to happen.
       return null;
     }
   }

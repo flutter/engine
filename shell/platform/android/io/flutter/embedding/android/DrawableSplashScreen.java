@@ -36,6 +36,10 @@ public class DrawableSplashScreen implements SplashScreen {
   /**
    * Constructs a {@code DrawableSplashScreen} that displays the given {@code drawable} and
    * crossfades to Flutter content in the given {@code crossfadeDurationInMillis}.
+   * <p>
+   * @param drawable The {@code Drawable} to be displayed as a splash screen.
+   * @param scaleType The {@link ImageView.ScaleType} to be applied to the {@code Drawable} when the
+   *                  {@code Drawable} is displayed full-screen.
    */
   public DrawableSplashScreen(@NonNull Drawable drawable, @NonNull ImageView.ScaleType scaleType, long crossfadeDurationInMillis) {
     this.drawable = drawable;
@@ -82,9 +86,7 @@ public class DrawableSplashScreen implements SplashScreen {
   }
 
   // Public for Android OS requirements. This View should not be used by external developers.
-  public static class DrawableSplashScreenView extends FrameLayout {
-    private final ImageView imageView;
-
+  public static class DrawableSplashScreenView extends ImageView {
     public DrawableSplashScreenView(@NonNull Context context) {
       this(context, null, 0);
     }
@@ -95,9 +97,6 @@ public class DrawableSplashScreen implements SplashScreen {
 
     public DrawableSplashScreenView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
       super(context, attrs, defStyleAttr);
-
-      imageView = new ImageView(context);
-      addView(imageView);
     }
 
     public void setSplashDrawable(@Nullable Drawable drawable) {
@@ -105,8 +104,8 @@ public class DrawableSplashScreen implements SplashScreen {
     }
 
     public void setSplashDrawable(@Nullable Drawable drawable, @NonNull ImageView.ScaleType scaleType) {
-      imageView.setScaleType(scaleType);
-      imageView.setImageDrawable(drawable);
+      setScaleType(scaleType);
+      setImageDrawable(drawable);
     }
   }
 }
