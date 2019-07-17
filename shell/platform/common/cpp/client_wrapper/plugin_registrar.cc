@@ -4,11 +4,11 @@
 
 #include "include/flutter/plugin_registrar.h"
 
-#include "include/flutter/engine_method_result.h"
-#include "include/flutter/method_channel.h"
-
 #include <iostream>
 #include <map>
+
+#include "include/flutter/engine_method_result.h"
+#include "include/flutter/method_channel.h"
 
 namespace flutter {
 
@@ -68,6 +68,12 @@ class BinaryMessengerImpl : public BinaryMessenger {
             const size_t message_size) const override;
 
   // |flutter::BinaryMessenger|
+  void Send(const std::string& channel,
+            const uint8_t* message,
+            const size_t message_size,
+            BinaryReply reply) const override;
+
+  // |flutter::BinaryMessenger|
   void SetMessageHandler(const std::string& channel,
                          BinaryMessageHandler handler) override;
 
@@ -85,6 +91,27 @@ void BinaryMessengerImpl::Send(const std::string& channel,
                                const size_t message_size) const {
   FlutterDesktopMessengerSend(messenger_, channel.c_str(), message,
                               message_size);
+}
+
+void BinaryMessengerImpl::Send(const std::string& channel,
+                               const uint8_t* message,
+                               const size_t message_size,
+                               BinaryReply reply) const {
+  struct Captures {
+    BinaryReply reply;
+  };
+  auto captures = new Captures();
+  captures->reply = reply;
+
+  auto message_reply = [](const uint8_t* data, size_t data_size,
+                          void* user_data) {
+    auto captures = reinterpret_cast<Captures*>(user_data);
+    captures->reply(data, data_size);
+    delete captures;
+  };
+  FlutterDesktopMessengerSendWithReply(messenger_, channel.c_str(), message,
+                                       message_size, std::move(message_reply),
+                                       captures);
 }
 
 void BinaryMessengerImpl::SetMessageHandler(const std::string& channel,

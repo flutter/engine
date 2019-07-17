@@ -38,6 +38,13 @@ class StubFlutterApi {
                              const uint8_t* message,
                              const size_t message_size) {}
 
+  // Called for FlutterDesktopMessengerSendWithReply.
+  virtual void MessengerSend(const char* channel,
+                             const uint8_t* message,
+                             const size_t message_siz,
+                             const FlutterDesktopBinaryReply reply,
+                             void* user_data) {}
+
   // Called for FlutterDesktopMessengerSendResponse.
   virtual void MessengerSendResponse(
       const FlutterDesktopMessageResponseHandle* handle,
