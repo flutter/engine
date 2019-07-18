@@ -30,7 +30,7 @@ bool FlutterWindowController::CreateWindow(
     const std::string& title,
     const std::string& assets_path,
     const std::vector<std::string>& arguments) {
-if (!init_succeeded_) {
+  if (!init_succeeded_) {
     std::cerr << "Could not create window; FlutterDesktopInit failed."
               << std::endl;
     return false;
@@ -61,7 +61,7 @@ if (!init_succeeded_) {
 
 FlutterDesktopPluginRegistrarRef FlutterWindowController::GetRegistrarForPlugin(
     const std::string& plugin_name) {
-   if (!controller_) {
+  if (!controller_) {
     std::cerr << "Cannot get plugin registrar without a window; call "
                  "CreateWindow first."
               << std::endl;

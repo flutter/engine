@@ -14,7 +14,7 @@ AngleSurfaceManager::AngleSurfaceManager()
 }
 
 AngleSurfaceManager::~AngleSurfaceManager() {
-  Cleanup();
+  CleanUp();
 }
 
 bool AngleSurfaceManager::Initialize() {
@@ -124,7 +124,7 @@ bool AngleSurfaceManager::Initialize() {
   return true;
 }
 
-void AngleSurfaceManager::Cleanup() {
+void AngleSurfaceManager::CleanUp() {
   if (egl_display_ != EGL_NO_DISPLAY && egl_context_ != EGL_NO_CONTEXT) {
     eglDestroyContext(egl_display_, egl_context_);
     egl_context_ = EGL_NO_CONTEXT;

@@ -33,7 +33,7 @@ class AngleSurfaceManager {
 
  private:
   bool Initialize();
-  void Cleanup();
+  void CleanUp();
 
  private:
   EGLDisplay egl_display_;
