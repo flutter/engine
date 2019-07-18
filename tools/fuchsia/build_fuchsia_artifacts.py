@@ -100,7 +100,7 @@ def ProcessCIPDPakcage(upload, engine_version):
       '-ref',
       'latest',
       '-tag',
-      'git_rev:%s' % engine_version
+      'git_revision:%s' % engine_version
     ]
   else:
     command = [
