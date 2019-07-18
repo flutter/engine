@@ -57,8 +57,16 @@ void KeyEventHandler::KeyboardHook(GLFWwindow* window,
   // layouts configured on their machines, will not always return the right
   // value. See: https://github.com/glfw/glfw/issues/1462
   const char* keyName = glfwGetKeyName(key, scancode);
+  std::string nameString(keyName);
+  int first = (int)nameString.at(0);
+  int total = first;
+  int second = 0;
+  if (nameString.size() > 1) {
+   second = (int)nameString.at(1);
+   total = (first << 16) | second;
+  }
   if (keyName != nullptr) {
-    event.AddMember(kCodePoint, std::string(keyName), allocator);
+    event.AddMember(kCodePoint, total, allocator);
   }
 
   switch (action) {
