@@ -4,6 +4,8 @@
 
 assert(is_win)
 
+import("$flutter_root/shell/platform/glfw/config.gni")
+
 _public_headers = [ "public/flutter_windows.h" ]
 
 _angle_dir = "//third_party/angle"
@@ -95,12 +97,8 @@ copy("publish_headers_windows") {
 }
 
 shared_library("flutter_windows_win32") {
-#shared_library("flutter_windows") {
   deps = [
     ":flutter_windows_source",
-    "$flutter_root/shell/platform/common/cpp/client_wrapper:publish_wrapper",
-    ":publish_headers_windows",
-    "$flutter_root/shell/platform/windows/client_wrapper:publish_wrapper_windows",
   ]
 
   public_configs = [ "$flutter_root:config" ]
@@ -114,9 +112,31 @@ shared_library("flutter_windows") {
   public_configs = [ "$flutter_root:config" ]
 }
 
-group("windows") {
+group("windows_win32") {
+  deps = [
+    ":flutter_windows_win32",
+    ":publish_headers_windows",
+    "$flutter_root/shell/platform/windows/client_wrapper:publish_wrapper_windows",
+  ]
+}
+
+group("windows_glfw") {
   deps = [
     ":flutter_windows",
-    ":flutter_windows_win32",
+    "$flutter_root/shell/platform/glfw:publish_headers_glfw",
+    "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_unprefixed",
+    "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
   ]
+
+}
+
+group("windows") {
+  deps = [
+    ":windows_win32",
+  ]
+  if (build_glfw_shell) {
+    deps += [
+    ":windows_glfw",
+    ]
+  }
 }
