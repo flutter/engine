@@ -63,6 +63,9 @@ FlutterDesktopWindowControllerRef FlutterWindow::SetState(FlutterEngine eng) {
                                                  // for same window pointer
                                                  // hence make_unique again
   state->window_wrapper->window = this;
+
+  process_events_ = true;
+
   return state.release();
 }
 
@@ -70,10 +73,34 @@ FlutterDesktopPluginRegistrarRef FlutterWindow::GetRegistrar() {
   return plugin_registrar_.get();
 }
 
-void FlutterWindow::HandleMessage(const FlutterDesktopMessage& message,
-                                  std::function<void(void)> input_block_cb,
-                                  std::function<void(void)> input_unblock_cb) {
-  message_dispatcher_->HandleMessage(message, input_block_cb, input_unblock_cb);
+// Converts a FlutterPlatformMessage to an equivalent FlutterDesktopMessage.
+static FlutterDesktopMessage ConvertToDesktopMessage(
+    const FlutterPlatformMessage& engine_message) {
+  FlutterDesktopMessage message = {};
+  message.struct_size = sizeof(message);
+  message.channel = engine_message.channel;
+  message.message = engine_message.message;
+  message.message_size = engine_message.message_size;
+  message.response_handle = engine_message.response_handle;
+  return message;
+}
+
+// The Flutter Engine calls out to this function when new platform messages
+// are / available
+void FlutterWindow::HandlePlatformMessage(
+    const FlutterPlatformMessage* engine_message) {
+  if (engine_message->struct_size != sizeof(FlutterPlatformMessage)) {
+    std::cerr << "Invalid message size received. Expected: "
+              << sizeof(FlutterPlatformMessage) << " but received "
+              << engine_message->struct_size << std::endl;
+    return;
+  }
+
+  auto message = ConvertToDesktopMessage(*engine_message);
+
+  message_dispatcher_->HandleMessage(message,
+                                     [this] { this->process_events_ = false; },
+                                     [this] { this->process_events_ = true; });
 }
 
 // When DesktopWindow notifies that a WM_Size message has come in
@@ -99,27 +126,39 @@ void FlutterWindow::OnDpiScale(unsigned int dpi) {
 }
 
 void FlutterWindow::OnPointerMove(double x, double y) {
-  SendPointerMove(x, y);
+  if (process_events_) {
+    SendPointerMove(x, y);
+  }
 }
 
 void FlutterWindow::OnPointerDown(double x, double y) {
-  SendPointerDown(x, y);
+  if (process_events_) {
+    SendPointerDown(x, y);
+  }
 }
 
 void FlutterWindow::OnPointerUp(double x, double y) {
-  SendPointerUp(x, y);
+  if (process_events_) {
+    SendPointerUp(x, y);
+  }
 }
 
 void FlutterWindow::OnChar(unsigned int code_point) {
-  SendChar(code_point);
+  if (process_events_) {
+    SendChar(code_point);
+  }
 }
 
 void FlutterWindow::OnKey(int key, int scancode, int action, int mods) {
-  SendKey(key, scancode, action, 0);
+  if (process_events_) {
+    SendKey(key, scancode, action, 0);
+  }
 }
 
 void FlutterWindow::OnScroll(double delta_x, double delta_y) {
-  SendScroll(delta_x, delta_y);
+  if (process_events_) {
+    SendScroll(delta_x, delta_y);
+  }
 }
 
 void FlutterWindow::FlutterMessageLoop() {

@@ -23,41 +23,6 @@
 
 static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 
-// Converts a FlutterPlatformMessage to an equivalent FlutterDesktopMessage.
-static FlutterDesktopMessage ConvertToDesktopMessage(
-    const FlutterPlatformMessage& engine_message) {
-  FlutterDesktopMessage message = {};
-  message.struct_size = sizeof(message);
-  message.channel = engine_message.channel;
-  message.message = engine_message.message;
-  message.message_size = engine_message.message_size;
-  message.response_handle = engine_message.response_handle;
-  return message;
-}
-
-// The Flutter Engine calls out to this function when new platform messages are
-// available
-static void WindowsOnFlutterPlatformMessage(
-    const FlutterPlatformMessage* engine_message,
-    void* user_data) {
-  if (engine_message->struct_size != sizeof(FlutterPlatformMessage)) {
-    std::cerr << "Invalid message size received. Expected: "
-              << sizeof(FlutterPlatformMessage) << " but received "
-              << engine_message->struct_size << std::endl;
-    return;
-  }
-
-  flutter::FlutterWindow* window =
-      reinterpret_cast<flutter::FlutterWindow*>(user_data);
-
-  auto message = ConvertToDesktopMessage(*engine_message);
-  window->HandleMessage(message,
-                        [window] {  // TODO Clear event callbacks
-                        },
-                        [window] {  // TODO assign event callbacks
-                        });
-}
-
 // Spins up an instance of the Flutter Engine.
 //
 // This function launches the Flutter Engine in a background thread, supplying
@@ -109,7 +74,13 @@ static FlutterEngine RunFlutterEngine(flutter::FlutterWindow* window,
   args.icu_data_path = icu_data_path;
   args.command_line_argc = static_cast<int>(argv.size());
   args.command_line_argv = &argv[0];
-  args.platform_message_callback = WindowsOnFlutterPlatformMessage;
+  args.platform_message_callback =
+      [](const FlutterPlatformMessage* engine_message,
+         void* user_data) -> void {
+    auto window = reinterpret_cast<flutter::FlutterWindow*>(user_data);
+    return window->HandlePlatformMessage(engine_message);
+  };
+
   // args.custom_task_runners = custom_task_runners; TODO
 
   FlutterEngine engine = nullptr;

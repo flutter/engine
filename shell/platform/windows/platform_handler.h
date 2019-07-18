@@ -12,7 +12,7 @@
 
 namespace flutter {
 
-struct FlutterWindow;
+class FlutterWindow;
 
 // Handler for internal system channels.
 class PlatformHandler {

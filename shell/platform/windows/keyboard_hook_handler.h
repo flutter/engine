@@ -9,7 +9,7 @@
 
 namespace flutter {
 
-struct FlutterWindow;
+class FlutterWindow;
 
 // Abstract class for handling keyboard input events.
 class KeyboardHookHandler {

@@ -15,7 +15,7 @@
 
 namespace flutter {
 
-struct FlutterWindow;
+class FlutterWindow;
 
 // Implements a KeyboardHookHandler
 //

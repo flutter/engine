@@ -31,8 +31,7 @@ constexpr int base_dpi = 96;  // the Windows DPI system is based on this
 // A win32 flutter window.  In the future, there will likely be a
 // CoreWindow-based FlutterWindow as well.  At the point may make sense to
 // dependency inject the native window rather than inherit.
-struct FlutterWindow
-    : public Win32Window {  // TODO: making this a class causes a linker error, figure it out
+class FlutterWindow : public Win32Window {
  public:
   FlutterWindow();
   FlutterWindow(const char* title,
@@ -56,9 +55,8 @@ struct FlutterWindow
 
   FlutterDesktopWindowControllerRef SetState(FlutterEngine state);
   FlutterDesktopPluginRegistrarRef GetRegistrar();
-  void HandleMessage(const FlutterDesktopMessage& message,
-                     std::function<void(void)> input_block_cb,
-                     std::function<void(void)> input_unblock_cb);
+
+  void HandlePlatformMessage(const FlutterPlatformMessage*);
 
   void CreateRenderSurface();
   void DestroyRenderSurface();
@@ -113,6 +111,9 @@ struct FlutterWindow
 
   // Handler for the flutter/platform channel.
   std::unique_ptr<flutter::PlatformHandler> platform_handler_;
+
+  // should we forword input messages or not
+  bool process_events_ = false;
 };
 
 }  // namespace flutter
