@@ -50,7 +50,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 }
 
 - (BOOL)hasPluginThatRespondsToSelector:(SEL)selector {
-  for (id<FlutterPlugin> plugin in [_pluginDelegates allObjects]) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in [_pluginDelegates allObjects]) {
     if (!plugin) {
       continue;
     }
@@ -61,7 +61,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
   return NO;
 }
 
-- (void)addDelegate:(NSObject<FlutterPlugin>*)delegate {
+- (void)addDelegate:(NSObject<FlutterApplicationLifeCycleDelegate>*)delegate {
   [_pluginDelegates addPointer:(__bridge void*)delegate];
   if (isPowerOfTwo([_pluginDelegates count])) {
     [_pluginDelegates compact];
@@ -70,7 +70,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
-  for (id<FlutterPlugin> plugin in [_pluginDelegates allObjects]) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in [_pluginDelegates allObjects]) {
     if (!plugin) {
       continue;
     }
@@ -86,7 +86,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 - (BOOL)application:(UIApplication*)application
     willFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
   flutter::DartCallbackCache::LoadCacheFromDisk();
-  for (id<FlutterPlugin> plugin in [_pluginDelegates allObjects]) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in [_pluginDelegates allObjects]) {
     if (!plugin) {
       continue;
     }
@@ -127,7 +127,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
                          "To reconnect, launch your application again via 'flutter run'";
                 }];
 #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -141,7 +141,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   [application endBackgroundTask:_debugBackgroundTask];
 #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -152,7 +152,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 }
 
 - (void)applicationWillResignActive:(UIApplication*)application {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -163,7 +163,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 }
 
 - (void)applicationDidBecomeActive:(UIApplication*)application {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -174,7 +174,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 }
 
 - (void)applicationWillTerminate:(UIApplication*)application {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -188,7 +188,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 - (void)application:(UIApplication*)application
     didRegisterUserNotificationSettings:(UIUserNotificationSettings*)notificationSettings {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -201,7 +201,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 
 - (void)application:(UIApplication*)application
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -214,7 +214,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 - (void)application:(UIApplication*)application
     didReceiveRemoteNotification:(NSDictionary*)userInfo
           fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -232,7 +232,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 - (void)application:(UIApplication*)application
     didReceiveLocalNotification:(UILocalNotification*)notification {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -248,7 +248,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
          withCompletionHandler:
              (void (^)(UNNotificationPresentationOptions options))completionHandler {
   if (@available(iOS 10.0, *)) {
-    for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
       if (!plugin) {
         continue;
       }
@@ -264,7 +264,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 - (BOOL)application:(UIApplication*)application
             openURL:(NSURL*)url
             options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -278,7 +278,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 }
 
 - (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -295,7 +295,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
               openURL:(NSURL*)url
     sourceApplication:(NSString*)sourceApplication
            annotation:(id)annotation {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -314,7 +314,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 - (void)application:(UIApplication*)application
     performActionForShortcutItem:(UIApplicationShortcutItem*)shortcutItem
                completionHandler:(void (^)(BOOL succeeded))completionHandler NS_AVAILABLE_IOS(9_0) {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -331,7 +331,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 - (BOOL)application:(UIApplication*)application
     handleEventsForBackgroundURLSession:(nonnull NSString*)identifier
                       completionHandler:(nonnull void (^)())completionHandler {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -348,7 +348,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 
 - (BOOL)application:(UIApplication*)application
     performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
@@ -364,7 +364,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 - (BOOL)application:(UIApplication*)application
     continueUserActivity:(NSUserActivity*)userActivity
       restorationHandler:(void (^)(NSArray*))restorationHandler {
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+  for (NSObject<FlutterApplicationLifeCycleDelegate>* plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
     }
