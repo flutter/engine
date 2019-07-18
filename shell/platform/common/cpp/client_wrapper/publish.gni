@@ -13,7 +13,7 @@ import("core_wrapper_files.gni")
 #
 # All public code is assumed to be in the 'flutter' namespace.
 template("publish_client_wrapper") {
-  forward_variables_from(invoker, [ "directory_suffix"])
+  forward_variables_from(invoker, [ "directory_suffix" ])
   if (defined(directory_suffix)) {
     publish_dir_root = "$root_out_dir/cpp_client_wrapper_$directory_suffix"
   } else {
@@ -23,7 +23,11 @@ template("publish_client_wrapper") {
   namespace = "flutter"
 
   group(template_target_name) {
-    forward_variables_from(invoker, [ "public_deps", "visibility"])
+    forward_variables_from(invoker,
+                           [
+                             "public_deps",
+                             "visibility",
+                           ])
     deps = [
       ":${template_target_name}_publish_includes",
       ":${template_target_name}_publish_sources",
@@ -67,7 +71,11 @@ _wrapper_readme = get_path_info("README", "abspath")
 # Copies the client wrapper code to the output directory.
 template("publish_client_wrapper_core") {
   publish_client_wrapper(target_name) {
-    forward_variables_from(invoker, [ "directory_suffix", "visibility"])
+    forward_variables_from(invoker,
+                           [
+                             "directory_suffix",
+                             "visibility",
+                           ])
     public = core_cpp_client_wrapper_includes
     sources = core_cpp_client_wrapper_sources + [ _wrapper_readme ]
   }
@@ -85,11 +93,18 @@ template("publish_client_wrapper_extension") {
 
   publish_client_wrapper_core(core_target_name) {
     visibility = [ ":$extension_target_name" ]
-    forward_variables_from(invoker, [ "directory_suffix"])
+    forward_variables_from(invoker, [ "directory_suffix" ])
   }
 
   publish_client_wrapper(extension_target_name) {
-    forward_variables_from(invoker, [ "public", "sources", "directory_suffix"])
-    public_deps = [ ":$core_target_name" ]
+    forward_variables_from(invoker,
+                           [
+                             "public",
+                             "sources",
+                             "directory_suffix",
+                           ])
+    public_deps = [
+      ":$core_target_name",
+    ]
   }
 }

@@ -67,8 +67,8 @@ executable("client_wrapper_windows_unittests") {
   ]
 
   deps = [
-    ":client_wrapper_windows",
     ":client_wrapper_library_stubs_windows",
+    ":client_wrapper_windows",
     "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_library_stubs",
     "$flutter_root/testing",
 

@@ -42,22 +42,22 @@ source_set("flutter_windows_headers") {
 
 source_set("flutter_windows_source") {
   sources = [
-    "angle_surface_manager.h",
     "angle_surface_manager.cc",
-    "flutter_windows.cc",
-    "flutter_window.h",
+    "angle_surface_manager.h",
     "flutter_window.cc",
-    "key_event_handler.h",
+    "flutter_window.h",
+    "flutter_windows.cc",
     "key_event_handler.cc",
+    "key_event_handler.h",
     "keyboard_hook_handler.h",
-    "platform_handler.h",
     "platform_handler.cc",
-    "text_input_plugin.h",
+    "platform_handler.h",
     "text_input_plugin.cc",
-    "win32_dpi_helper.h",
+    "text_input_plugin.h",
     "win32_dpi_helper.cc",
-    "win32_window.h",
+    "win32_dpi_helper.h",
     "win32_window.cc",
+    "win32_window.h",
     "window_state.h",
   ]
 
@@ -68,9 +68,7 @@ source_set("flutter_windows_source") {
     "//third_party/angle:gl_prototypes",
   ]
 
-  public_configs = [
-     ":relative_angle_headers"
-  ]
+  public_configs = [ ":relative_angle_headers" ]
 
   deps = [
     ":flutter_windows_headers",
@@ -78,7 +76,7 @@ source_set("flutter_windows_source") {
     "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper",
     "$flutter_root/shell/platform/embedder:embedder",
     "$flutter_root/shell/platform/windows/client_wrapper:client_wrapper_windows",
-    "//third_party/angle:libEGL_static", # the order of libEGL_static and libGLESv2_static is important.. if reversed, will cause a linker error DllMain already defined in LIBCMTD.lib
+    "//third_party/angle:libEGL_static",  # the order of libEGL_static and libGLESv2_static is important.. if reversed, will cause a linker error DllMain already defined in LIBCMTD.lib
     "//third_party/angle:libGLESv2_static",
     "//third_party/rapidjson",
   ]
@@ -124,10 +122,9 @@ group("windows_glfw") {
   deps = [
     ":flutter_windows",
     "$flutter_root/shell/platform/glfw:publish_headers_glfw",
-    "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_unprefixed",
     "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
+    "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_unprefixed",
   ]
-
 }
 
 group("windows") {
@@ -135,8 +132,6 @@ group("windows") {
     ":windows_win32",
   ]
   if (build_glfw_shell) {
-    deps += [
-    ":windows_glfw",
-    ]
+    deps += [ ":windows_glfw" ]
   }
 }
