@@ -408,9 +408,6 @@ deps = {
 
    'src/third_party/swiftshader':
    Var('swiftshader_git') + '/SwiftShader.git' + '@' + '95b1db9619fb0f5f232c09995bc00729273f74ee',
-   
-   'src/third_party/swiftshader':
-   Var('swiftshader_git') + '/SwiftShader.git' + '@' + '95b1db9619fb0f5f232c09995bc00729273f74ee',
 
    'src/third_party/angle':
    Var('github_git') + '/google/angle.git' + '@' + '2d0a9acb05511a8fdaf0cd27d0da22599516a68b',

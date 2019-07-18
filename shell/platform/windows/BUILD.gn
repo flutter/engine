@@ -117,5 +117,6 @@ shared_library("flutter_windows") {
 group("windows") {
   deps = [
     ":flutter_windows",
+    ":flutter_windows_win32",
   ]
 }
