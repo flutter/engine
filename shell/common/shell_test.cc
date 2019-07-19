@@ -248,5 +248,10 @@ GPUSurfaceGLDelegate::GLProcResolver ShellTestPlatformView::GetGLProcResolver()
   };
 }
 
+// |GPUSurfaceGLDelegate|
+ExternalViewEmbedder* ShellTestPlatformView::GetExternalViewEmbedder() {
+  return nullptr;
+}
+
 }  // namespace testing
 }  // namespace flutter

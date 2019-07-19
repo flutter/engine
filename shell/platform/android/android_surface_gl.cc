@@ -125,4 +125,9 @@ intptr_t AndroidSurfaceGL::GLContextFBO() const {
   return 0;
 }
 
+// |GPUSurfaceGLDelegate|
+ExternalViewEmbedder* AndroidSurfaceGL::GetExternalViewEmbedder() {
+  return nullptr;
+}
+
 }  // namespace flutter
