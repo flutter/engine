@@ -352,15 +352,22 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
   struct Captures {
     FlutterBinaryReply reply;
   };
-  auto captures = new Captures();
+  auto captures = std::make_unique<Captures>();
   captures->reply = callback;
   auto message_reply = [](const uint8_t* data, size_t data_size, void* user_data) {
     auto captures = reinterpret_cast<Captures*>(user_data);
-    NSData* reply_data = [NSData dataWithBytesNoCopy:(void*)data length:data_size freeWhenDone:NO];
+    NSData* reply_data = [NSData dataWithBytes:(void*)data length:data_size];
     captures->reply(reply_data);
     delete captures;
   };
-  FlutterPlatformMessageCreateResponseHandle(_engine, message_reply, captures, &response_handle);
+
+  FlutterEngineResult result = FlutterPlatformMessageCreateResponseHandle(
+      _engine, message_reply, captures.get(), &response_handle);
+  if (result != kSuccess) {
+    NSLog(@"Failed to create a FlutterPlatformMessageResponseHandle");
+    return;
+  }
+  captures.release();
 
   FlutterPlatformMessage platformMessage = {
       .struct_size = sizeof(FlutterPlatformMessage),
@@ -370,11 +377,15 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
       .response_handle = response_handle,
   };
 
-  FlutterEngineResult result = FlutterEngineSendPlatformMessage(_engine, &platformMessage);
+  result = FlutterEngineSendPlatformMessage(_engine, &platformMessage);
   if (result != kSuccess) {
     NSLog(@"Failed to send message to Flutter engine on channel '%@' (%d).", channel, result);
   }
-  FlutterPlatformMessageReleaseResponseHandle(_engine, response_handle);
+
+  result = FlutterPlatformMessageReleaseResponseHandle(_engine, response_handle);
+    if (result != kSuccess) {
+    NSLog(@"Failed to release the response handle");
+  };
 }
 
 - (void)setMessageHandlerOnChannel:(nonnull NSString*)channel
