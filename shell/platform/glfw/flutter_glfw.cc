@@ -817,8 +817,12 @@ void FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,
                                           const FlutterDesktopBinaryReply reply,
                                           void* user_data) {
   FlutterPlatformMessageResponseHandle* response_handle = nullptr;
-  FlutterPlatformMessageCreateResponseHandle(messenger->engine, reply,
-                                             user_data, &response_handle);
+  FlutterEngineResult result = FlutterPlatformMessageCreateResponseHandle(
+      messenger->engine, reply, user_data, &response_handle);
+  if (result != kSuccess) {
+    std::cout << "Faild to create response handle\n";
+    return;
+  }
 
   FlutterPlatformMessage platform_message = {
       sizeof(FlutterPlatformMessage),
