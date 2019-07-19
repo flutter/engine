@@ -5,6 +5,7 @@
 assert(is_ios)
 
 import("//build/config/ios/ios_sdk.gni")
+import("//build/toolchain/clang.gni")
 import("$flutter_root/common/config.gni")
 import("$flutter_root/shell/gpu/gpu.gni")
 import("$flutter_root/shell/platform/darwin/common/framework_shared.gni")
@@ -177,13 +178,19 @@ action("copy_dylib_and_update_framework_install_name") {
   ]
 }
 
-copy("copy_framework_info_plist") {
+action("copy_framework_info_plist") {
+  script = "$flutter_root/build/copy_info_plist.py"
   visibility = [ ":*" ]
   sources = [
     "framework/Info.plist",
   ]
   outputs = [
     "$_flutter_framework_dir/Info.plist",
+  ]
+  args = [
+    rebase_path(sources[0]),
+    rebase_path(outputs[0]),
+    "--bitcode=$enable_bitcode",
   ]
 }
 
