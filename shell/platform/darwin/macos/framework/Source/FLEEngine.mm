@@ -348,7 +348,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
 - (void)sendOnChannel:(NSString*)channel
               message:(NSData* _Nullable)message
           binaryReply:(FlutterBinaryReply _Nullable)callback {
-  FlutterPlatformMessageResponseHandle* response_handle = nullptr;
   struct Captures {
     FlutterBinaryReply reply;
   };
@@ -361,6 +360,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
     delete captures;
   };
 
+  FlutterPlatformMessageResponseHandle* response_handle = nullptr;
   FlutterEngineResult result = FlutterPlatformMessageCreateResponseHandle(
       _engine, message_reply, captures.get(), &response_handle);
   if (result != kSuccess) {
