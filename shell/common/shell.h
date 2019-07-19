@@ -253,6 +253,15 @@ class Shell final : public PlatformView::Delegate,
   ///
   fml::Status WaitForFirstFrame(fml::TimeDelta timeout);
 
+  //----------------------------------------------------------------------------
+  /// @brief   Sets a callback that is called when the first frame is presented.
+  ///
+  /// @details The callback is called on the GPU thread. Shells are reused with
+  ///          different surfaces so the callback can be called multiple times,
+  ///          once for each first frame of a new surface.
+  ///
+  void SetFirstFrameCallback(std::function<void()> callback);
+
  private:
   using ServiceProtocolHandler =
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
@@ -284,6 +293,7 @@ class Shell final : public PlatformView::Delegate,
   std::atomic<bool> waiting_for_first_frame_ = true;
   std::mutex waiting_for_first_frame_mutex_;
   std::condition_variable waiting_for_first_frame_condition_;
+  std::function<void()> first_frame_callback_ = nullptr;
 
   // Written in the UI thread and read from the GPU thread. Hence make it
   // atomic.

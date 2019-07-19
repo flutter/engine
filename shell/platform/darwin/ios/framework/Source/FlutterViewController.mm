@@ -29,6 +29,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
 @interface FlutterViewController () <FlutterBinaryMessenger>
+- (void)onFirstFrame;
 @end
 
 @implementation FlutterViewController {
@@ -128,6 +129,13 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   _statusBarStyle = UIStatusBarStyleDefault;
 
   [self setupNotificationCenterObservers];
+
+  flutter::Shell& shell = [_engine.get() shell];
+  shell.SetFirstFrameCallback([self] {
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [self onFirstFrame];
+    });
+  });
 }
 
 - (FlutterEngine*)engine {
@@ -275,10 +283,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
       completion:^(BOOL finished) {
         [_splashScreenView.get() removeFromSuperview];
         _splashScreenView.reset();
-        if (_flutterViewRenderedCallback != nil) {
-          _flutterViewRenderedCallback.get()();
-          _flutterViewRenderedCallback.reset();
-        }
       }];
 }
 
@@ -1061,6 +1065,13 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
   return [_engine.get() valuePublishedByPlugin:pluginKey];
+}
+
+- (void)onFirstFrame {
+  if (_flutterViewRenderedCallback != nil) {
+    _flutterViewRenderedCallback.get()();
+    _flutterViewRenderedCallback.reset();
+  }
 }
 
 @end

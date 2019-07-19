@@ -789,6 +789,7 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
       [& waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
+       &first_frame_callback = first_frame_callback_,
        pipeline = std::move(pipeline)]() {
         if (rasterizer) {
           rasterizer->Draw(pipeline);
@@ -796,6 +797,9 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
           if (waiting_for_first_frame.load()) {
             waiting_for_first_frame.store(false);
             waiting_for_first_frame_condition.notify_all();
+            if (first_frame_callback) {
+              first_frame_callback();
+            }
           }
         }
       });
@@ -1254,4 +1258,10 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   }
 }
 
+void Shell::SetFirstFrameCallback(std::function<void()> callback) {
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [& first_frame_callback = first_frame_callback_, callback] {
+        first_frame_callback = callback;
+      });
+}
 }  // namespace flutter
