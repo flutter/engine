@@ -83,6 +83,12 @@ def to_gn_args(args):
 
     gn_args = {}
 
+    if args.bitcode:
+      if args.target_os != 'ios':
+        raise Exception('Bitcode is only supported for iOS')
+
+    gn_args['enable_bitcode'] = args.bitcode
+
     # Skia GN args.
     gn_args['skia_enable_flutter_defines'] = True # Enable Flutter API guards in Skia.
     gn_args['skia_use_dng_sdk'] = False    # RAW image handling.
@@ -331,22 +337,18 @@ def parse_args(args):
   parser.add_argument('--build-glfw-shell', dest='build_glfw_shell', default=False, action='store_true',
                       help='Force building the GLFW shell on desktop platforms where it is not built by default.')
 
+  parser.add_argument('--bitcode', default=False, action='store_true',
+                      help='Enable bitcode for iOS targets.')
+
   return parser.parse_args(args)
 
 def main(argv):
   args = parse_args(argv)
 
-  if sys.platform.startswith(('cygwin', 'win')):
-    subdir = 'win'
-  elif sys.platform == 'darwin':
-    subdir = 'mac-x64'
-  elif sys.platform.startswith('linux'):
-     subdir = 'linux-x64'
-  else:
-    raise Error('Unknown platform: ' + sys.platform)
+  exe = '.exe' if sys.platform.startswith(('cygwin', 'win')) else ''
 
   command = [
-    '%s/buildtools/%s/gn' % (SRC_ROOT, subdir),
+    '%s/flutter/third_party/gn/gn%s' % (SRC_ROOT, exe),
     'gen',
     '--check',
   ]
@@ -382,7 +384,11 @@ def main(argv):
       'asm',
     ]
 
-    contents = subprocess.check_output(compile_cmd_gen_cmd, cwd=SRC_ROOT)
+    try:
+      contents = subprocess.check_output(compile_cmd_gen_cmd, cwd=SRC_ROOT)
+    except subprocess.CalledProcessError as exc:
+      print "Failed to run ninja: ", exc.returncode, exc.output
+      sys.exit(1)
     compile_commands = open('%s/out/compile_commands.json' % SRC_ROOT, 'w+')
     compile_commands.write(contents)
     compile_commands.close()
