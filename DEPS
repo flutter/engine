@@ -458,6 +458,17 @@ deps = {
      'dep_type': 'cipd',
    },
 
+  'src/third_party/robolectric': {
+     'packages': [
+       {
+        'package': 'flutter/android/robolectric_bundle',
+        'version': 'Tox1em5FbLcoLvIIKfpMYH8lk_yLSvFsHxTa5cBjR-QC'
+       }
+     ],
+     'condition': 'download_android_deps',
+     'dep_type': 'cipd',
+   },
+
    'src/third_party/dart/tools/sdks': {
      'packages': [
        {
