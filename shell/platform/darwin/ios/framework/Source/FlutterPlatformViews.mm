@@ -253,7 +253,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
                                                    UIView* embedded_view) {
   FML_DCHECK(CATransform3DEqualToTransform(embedded_view.layer.transform, CATransform3DIdentity));
   UIView* head = embedded_view;
-  head.clipsToBounds = YES;
+  //head.clipsToBounds = YES;
   ResetAnchor(head.layer);
 
   std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.Bottom();
@@ -273,7 +273,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
                      rect:(*iter)->GetRect()
                     rrect:(*iter)->GetRRect()
                      path:(*iter)->GetPath()];
-        head.clipsToBounds = YES;
+        //head.clipsToBounds = YES;
         ResetAnchor(clipView.layer);
         head = clipView;
         break;
