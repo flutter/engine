@@ -383,7 +383,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
   }
 
   result = FlutterPlatformMessageReleaseResponseHandle(_engine, response_handle);
-    if (result != kSuccess) {
+  if (result != kSuccess) {
     NSLog(@"Failed to release the response handle");
   };
 }
