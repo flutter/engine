@@ -7,7 +7,6 @@
 
 #include <memory>
 
-
 namespace flutter {
 namespace testing {
 

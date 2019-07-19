@@ -5,9 +5,9 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_PLUGIN_REGISTRAR_GLFW_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_PLUGIN_REGISTRAR_GLFW_H_
 
-#include <memory>
-
 #include <flutter_windows.h>
+
+#include <memory>
 
 #include "flutter_window.h"
 #include "plugin_registrar.h"
@@ -20,7 +20,8 @@ class PluginRegistrarWindows : public PluginRegistrar {
  public:
   // Creates a new PluginRegistrar. |core_registrar| and the messenger it
   // provides must remain valid as long as this object exists.
-  explicit PluginRegistrarWindows(FlutterDesktopPluginRegistrarRef core_registrar)
+  explicit PluginRegistrarWindows(
+      FlutterDesktopPluginRegistrarRef core_registrar)
       : PluginRegistrar(core_registrar) {
     window_ = std::make_unique<FlutterWindow>(
         FlutterDesktopRegistrarGetWindow(core_registrar));

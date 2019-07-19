@@ -5,10 +5,10 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_WINDOW_CONTROLLER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_WINDOW_CONTROLLER_H_
 
+#include <flutter_windows.h>
+
 #include <string>
 #include <vector>
-
-#include "flutter_windows.h"
 
 #include "flutter_window.h"
 #include "plugin_registrar.h"
@@ -34,7 +34,7 @@ class FlutterWindowController {
 
   ~FlutterWindowController();
 
-    // Prevent copying.
+  // Prevent copying.
   FlutterWindowController(FlutterWindowController const&) = delete;
   FlutterWindowController& operator=(FlutterWindowController const&) = delete;
 
@@ -54,7 +54,6 @@ class FlutterWindowController {
                     const std::string& title,
                     const std::string& assets_path,
                     const std::vector<std::string>& arguments);
-
 
   // Returns the FlutterDesktopPluginRegistrarRef to register a plugin with the
   // given name.

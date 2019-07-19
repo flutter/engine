@@ -26,7 +26,6 @@ typedef struct FlutterDesktopWindow* FlutterDesktopWindowRef;
 // Opaque reference to a Flutter engine instance.
 typedef struct FlutterDesktopEngineState* FlutterDesktopEngineRef;
 
-
 // TODO: remove once the embedder project has swiched to native windows
 FLUTTER_EXPORT bool FlutterDesktopInit();
 
@@ -157,7 +156,8 @@ FlutterDesktopRunEngine(const char* assets_path,
 FLUTTER_EXPORT bool FlutterDesktopShutDownEngine(
     FlutterDesktopEngineRef engine_ref);
 
-// TODO: remove once embedder project has switched to native windows imlpementation
+// TODO: remove once embedder project has switched to native windows
+// imlpementation
 FLUTTER_EXPORT FlutterDesktopWindowRef
 FlutterDesktopRegistrarGetWindow(FlutterDesktopPluginRegistrarRef registrar);
 
