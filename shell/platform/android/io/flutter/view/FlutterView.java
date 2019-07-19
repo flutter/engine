@@ -123,7 +123,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     private final AtomicLong nextTextureId = new AtomicLong(0L);
     private FlutterNativeView mNativeView;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
-    private boolean didRenderFirstFrame;
+    private boolean didRenderFirstFrame = false;
 
     private final AccessibilityBridge.OnAccessibilityChangeListener onAccessibilityChangeListener = new AccessibilityBridge.OnAccessibilityChangeListener() {
         @Override
