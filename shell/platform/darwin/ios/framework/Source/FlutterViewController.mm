@@ -264,7 +264,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 }
 
 - (void)callViewRenderedCallback {
-  NSLog(@"first frame rendered");
   if (_flutterViewRenderedCallback != nil) {
     _flutterViewRenderedCallback.get()();
     _flutterViewRenderedCallback.reset();
