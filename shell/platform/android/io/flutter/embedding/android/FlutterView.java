@@ -616,9 +616,7 @@ public class FlutterView extends FrameLayout {
     // Do this after all other initialization so that listeners don't inadvertently interact
     // with a FlutterView that is only partially attached to a FlutterEngine.
     if (didRenderFirstFrame) {
-      for (OnFirstFrameRenderedListener listener : onFirstFrameRenderedListeners) {
-        listener.onFirstFrameRendered();
-      }
+      onFirstFrameRenderedListener.onFirstFrameRendered();
     }
   }
 
