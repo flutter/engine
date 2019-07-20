@@ -811,9 +811,8 @@ class _RepositoryCxxStlDualLicenseFile extends _RepositoryLicenseFile {
     : _licenses = _parseLicenses(io), super(parent, io);
 
   static final RegExp _pattern = RegExp(
-    r'^'
     r'==============================================================================\n'
-    r'.+ License\n'
+    r'.+ License.*\n'
     r'==============================================================================\n'
     r'\n'
     r'The .+ library is dual licensed under both the University of Illinois\n'
@@ -926,17 +925,18 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
   List<_RepositoryDirectory> get virtualSubdirectories => <_RepositoryDirectory>[];
 
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != '.cipd' &&
-           entry.name != '.git' &&
-           entry.name != '.github' &&
-           entry.name != '.gitignore' &&
-           entry.name != '.vscode' &&
-           entry.name != 'test' &&
-           entry.name != 'test.disabled' &&
-           entry.name != 'test_support' &&
-           entry.name != 'tests' &&
-           entry.name != 'javatests' &&
-           entry.name != 'testing';
+    return !entry.fullName.endsWith('third_party/gn') &&
+            entry.name != '.cipd' &&
+            entry.name != '.git' &&
+            entry.name != '.github' &&
+            entry.name != '.gitignore' &&
+            entry.name != '.vscode' &&
+            entry.name != 'test' &&
+            entry.name != 'test.disabled' &&
+            entry.name != 'test_support' &&
+            entry.name != 'tests' &&
+            entry.name != 'javatests' &&
+            entry.name != 'testing';
   }
 
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
@@ -1652,6 +1652,7 @@ class _RepositorySkiaThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
     return entry.name != 'giflib' // contains nothing that ends up in the binary executable
         && entry.name != 'freetype' // we use our own version
         && entry.name != 'freetype2' // we use our own version
+        && entry.name != 'gif' // not linked in
         && entry.name != 'icu' // we use our own version
         && entry.name != 'libjpeg-turbo' // we use our own version
         && entry.name != 'libpng' // we use our own version

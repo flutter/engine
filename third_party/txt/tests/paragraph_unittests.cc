@@ -23,8 +23,8 @@
 #include "third_party/skia/include/core/SkPath.h"
 #include "txt/font_style.h"
 #include "txt/font_weight.h"
-#include "txt/paragraph.h"
-#include "txt/paragraph_builder.h"
+#include "txt/paragraph_builder_txt.h"
+#include "txt/paragraph_txt.h"
 #include "txt/placeholder_run.h"
 #include "txt_test_utils.h"
 
@@ -41,7 +41,7 @@ TEST_F(ParagraphTest, SimpleParagraph) {
                           icu_text.getBuffer() + icu_text.length());
 
   txt::ParagraphStyle paragraph_style;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   // We must supply a font here, as the default is Arial, and we do not
@@ -55,7 +55,7 @@ TEST_F(ParagraphTest, SimpleParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 10.0, 15.0);
@@ -79,7 +79,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderParagraph)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -129,7 +129,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -204,7 +204,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderBaselineParagraph)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -227,7 +227,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderBaselineParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -279,7 +279,7 @@ TEST_F(ParagraphTest,
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -303,7 +303,7 @@ TEST_F(ParagraphTest,
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -355,7 +355,7 @@ TEST_F(ParagraphTest,
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -379,7 +379,7 @@ TEST_F(ParagraphTest,
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -430,7 +430,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderBottomParagraph)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -453,7 +453,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderBottomParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -504,7 +504,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderTopParagraph)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -527,7 +527,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderTopParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -578,7 +578,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderMiddleParagraph)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -601,7 +601,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderMiddleParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -653,7 +653,7 @@ TEST_F(ParagraphTest,
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Source Han Serif CN");
@@ -676,7 +676,7 @@ TEST_F(ParagraphTest,
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -727,7 +727,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderBreakParagraph)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -809,7 +809,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderBreakParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() - 100);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -882,7 +882,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderGetRectsParagraph)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -954,7 +954,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderGetRectsParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -1032,7 +1032,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholder0xFFFCParagraph)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -1075,7 +1075,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholder0xFFFCParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -1120,7 +1120,7 @@ TEST_F(ParagraphTest, SimpleRedParagraph) {
                           icu_text.getBuffer() + icu_text.length());
 
   txt::ParagraphStyle paragraph_style;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -1131,7 +1131,7 @@ TEST_F(ParagraphTest, SimpleRedParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 10.0, 15.0);
@@ -1174,7 +1174,7 @@ TEST_F(ParagraphTest, RainbowParagraph) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 2;
   paragraph_style.text_align = TextAlign::left;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style1;
   text_style1.font_families = std::vector<std::string>(1, "Roboto");
@@ -1223,7 +1223,7 @@ TEST_F(ParagraphTest, RainbowParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
   paragraph->Paint(GetCanvas(), 0, 0);
 
@@ -1253,13 +1253,13 @@ TEST_F(ParagraphTest, DefaultStyleParagraph) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.font_family = "Roboto";
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   builder.AddText(u16_text);
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 10.0, 15.0);
@@ -1280,7 +1280,7 @@ TEST_F(ParagraphTest, BoldParagraph) {
                           icu_text.getBuffer() + icu_text.length());
 
   txt::ParagraphStyle paragraph_style;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -1294,7 +1294,7 @@ TEST_F(ParagraphTest, BoldParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 10.0, 60.0);
@@ -1331,7 +1331,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(HeightOverrideParagraph)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -1347,7 +1347,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(HeightOverrideParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -1410,7 +1410,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeftAlignParagraph)) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::left;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -1427,7 +1427,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeftAlignParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() - 100);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -1507,7 +1507,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(RightAlignParagraph)) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::right;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -1524,7 +1524,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(RightAlignParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   int available_width = GetTestCanvasWidth() - 100;
   paragraph->Layout(available_width);
 
@@ -1626,7 +1626,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(CenterAlignParagraph)) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::center;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -1643,7 +1643,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(CenterAlignParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() - 100);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -1735,7 +1735,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyAlignParagraph)) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::justify;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -1752,7 +1752,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyAlignParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() - 100);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -1812,7 +1812,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyRTL)) {
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::justify;
   paragraph_style.text_direction = TextDirection::rtl;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Ahem");
@@ -1825,7 +1825,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyRTL)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   size_t paragraph_width = GetTestCanvasWidth() - 100;
   paragraph->Layout(paragraph_width);
 
@@ -1856,22 +1856,32 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyRTL)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   ASSERT_EQ(boxes.size(), 5ull);
+
+  paint.setColor(SK_ColorBLUE);
+  boxes = paragraph->GetRectsForRange(240, 250, rect_height_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  ASSERT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 588);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 130);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 640);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 156);
   ASSERT_TRUE(Snapshot());
 
-  // All lines except the last should be justified to the width of the
+  // All lines should be justified to the width of the
   // paragraph.
-  for (size_t i = 0; i < paragraph->glyph_lines_.size() - 1; ++i) {
+  for (size_t i = 0; i < paragraph->glyph_lines_.size(); ++i) {
     ASSERT_EQ(glyph_line_width(i), paragraph_width);
   }
-  ASSERT_NE(glyph_line_width(paragraph->glyph_lines_.size() - 1),
-            paragraph_width);
 }
 
 TEST_F(ParagraphTest, DecorationsParagraph) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::left;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -1915,7 +1925,7 @@ TEST_F(ParagraphTest, DecorationsParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() - 100);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -1968,7 +1978,7 @@ TEST_F(ParagraphTest, WavyDecorationParagraph) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::left;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -1990,7 +2000,7 @@ TEST_F(ParagraphTest, WavyDecorationParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() - 100);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -2104,7 +2114,7 @@ TEST_F(ParagraphTest, WavyDecorationParagraph) {
 
 TEST_F(ParagraphTest, ItalicsParagraph) {
   txt::ParagraphStyle paragraph_style;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -2120,7 +2130,7 @@ TEST_F(ParagraphTest, ItalicsParagraph) {
   builder.Pop();
   builder.AddText(u"No Italic again.");
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -2148,7 +2158,7 @@ TEST_F(ParagraphTest, ChineseParagraph) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::justify;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.color = SK_ColorBLACK;
@@ -2166,7 +2176,7 @@ TEST_F(ParagraphTest, ChineseParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() - 100);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -2193,7 +2203,7 @@ TEST_F(ParagraphTest, DISABLED_ArabicParagraph) {
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::right;
   paragraph_style.text_direction = TextDirection::rtl;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.color = SK_ColorBLACK;
@@ -2211,7 +2221,7 @@ TEST_F(ParagraphTest, DISABLED_ArabicParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() - 100);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -2244,7 +2254,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(ArabicRectsParagraph)) {
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::right;
   paragraph_style.text_direction = TextDirection::rtl;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Noto Naskh Arabic");
@@ -2261,7 +2271,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(ArabicRectsParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() - 100);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -2312,7 +2322,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(ArabicRectsLTRLeftAlignParagraph)) {
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::left;
   paragraph_style.text_direction = TextDirection::ltr;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Noto Naskh Arabic");
@@ -2329,7 +2339,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(ArabicRectsLTRLeftAlignParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() - 100);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -2375,7 +2385,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(ArabicRectsLTRRightAlignParagraph)) {
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::right;
   paragraph_style.text_direction = TextDirection::ltr;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Noto Naskh Arabic");
@@ -2392,7 +2402,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(ArabicRectsLTRRightAlignParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() - 100);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -2442,7 +2452,7 @@ TEST_F(ParagraphTest, GetGlyphPositionAtCoordinateParagraph) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
   paragraph_style.text_align = TextAlign::left;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -2457,7 +2467,7 @@ TEST_F(ParagraphTest, GetGlyphPositionAtCoordinateParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -2510,7 +2520,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeParagraph)) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
   paragraph_style.text_align = TextAlign::left;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -2526,7 +2536,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -2640,7 +2650,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeTight)) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
   paragraph_style.text_align = TextAlign::left;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Noto Sans CJK JP");
@@ -2656,7 +2666,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeTight)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -2731,7 +2741,7 @@ TEST_F(ParagraphTest,
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
   paragraph_style.text_align = TextAlign::left;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -2748,7 +2758,7 @@ TEST_F(ParagraphTest,
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -2880,7 +2890,7 @@ TEST_F(ParagraphTest,
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
   paragraph_style.text_align = TextAlign::left;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -2897,7 +2907,7 @@ TEST_F(ParagraphTest,
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -3029,7 +3039,7 @@ TEST_F(ParagraphTest,
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
   paragraph_style.text_align = TextAlign::left;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -3046,7 +3056,7 @@ TEST_F(ParagraphTest,
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -3174,7 +3184,7 @@ TEST_F(ParagraphTest, GetRectsForRangeIncludeCombiningCharacter) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
   paragraph_style.text_align = TextAlign::left;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -3189,7 +3199,7 @@ TEST_F(ParagraphTest, GetRectsForRangeIncludeCombiningCharacter) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() - 100);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -3261,7 +3271,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeCenterParagraph)) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
   paragraph_style.text_align = TextAlign::center;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -3277,7 +3287,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeCenterParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -3368,7 +3378,7 @@ TEST_F(ParagraphTest,
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
   paragraph_style.text_align = TextAlign::center;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -3384,7 +3394,7 @@ TEST_F(ParagraphTest,
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -3446,7 +3456,7 @@ TEST_F(ParagraphTest,
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
   paragraph_style.text_align = TextAlign::center;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -3462,7 +3472,7 @@ TEST_F(ParagraphTest,
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -3578,7 +3588,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeStrut)) {
   paragraph_style.strut_enabled = true;
   paragraph_style.strut_font_families.push_back("Roboto");
   paragraph_style.strut_font_size = 14;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families.push_back("Noto Sans CJK JP");
@@ -3590,7 +3600,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeStrut)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -3635,7 +3645,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeStrutFallback)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.strut_enabled = false;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families.push_back("Noto Sans CJK JP");
@@ -3646,7 +3656,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeStrutFallback)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   std::vector<txt::Paragraph::TextBox> strut_boxes =
@@ -3661,8 +3671,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeStrutFallback)) {
   ASSERT_EQ(strut_boxes.front().rect, tight_boxes.front().rect);
 }
 
-SkRect GetCoordinatesForGlyphPosition(const txt::Paragraph& paragraph,
-                                      size_t pos) {
+SkRect GetCoordinatesForGlyphPosition(txt::Paragraph& paragraph, size_t pos) {
   std::vector<txt::Paragraph::TextBox> boxes =
       paragraph.GetRectsForRange(pos, pos + 1, Paragraph::RectHeightStyle::kMax,
                                  Paragraph::RectWidthStyle::kTight);
@@ -3680,7 +3689,7 @@ TEST_F(ParagraphTest, GetWordBoundaryParagraph) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
   paragraph_style.text_align = TextAlign::left;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -3696,7 +3705,7 @@ TEST_F(ParagraphTest, GetWordBoundaryParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -3787,7 +3796,7 @@ TEST_F(ParagraphTest, SpacingParagraph) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
   paragraph_style.text_align = TextAlign::left;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -3842,7 +3851,7 @@ TEST_F(ParagraphTest, SpacingParagraph) {
   builder.AddText(u"H ");
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -3876,7 +3885,7 @@ TEST_F(ParagraphTest, LongWordParagraph) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.break_strategy = minikin::kBreakStrategy_HighQuality;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -3890,7 +3899,7 @@ TEST_F(ParagraphTest, LongWordParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() / 2);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -3913,7 +3922,7 @@ TEST_F(ParagraphTest, KernScaleParagraph) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.break_strategy = minikin::kBreakStrategy_HighQuality;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Droid Serif");
@@ -3936,7 +3945,7 @@ TEST_F(ParagraphTest, KernScaleParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() / scale);
   GetCanvas()->scale(scale, scale);
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -3955,7 +3964,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(NewlineParagraph)) {
   paragraph_style.font_family = "Roboto";
   paragraph_style.break_strategy = minikin::kBreakStrategy_HighQuality;
 
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -3971,7 +3980,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(NewlineParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() - 300);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -4001,7 +4010,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(EmojiParagraph)) {
 
   txt::ParagraphStyle paragraph_style;
 
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.color = SK_ColorBLACK;
@@ -4013,7 +4022,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(EmojiParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -4046,7 +4055,7 @@ TEST_F(ParagraphTest, HyphenBreakParagraph) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.break_strategy = minikin::kBreakStrategy_HighQuality;
 
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -4060,7 +4069,7 @@ TEST_F(ParagraphTest, HyphenBreakParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() / 2);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -4090,7 +4099,7 @@ TEST_F(ParagraphTest, RepeatLayoutParagraph) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.break_strategy = minikin::kBreakStrategy_HighQuality;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -4105,7 +4114,7 @@ TEST_F(ParagraphTest, RepeatLayoutParagraph) {
   builder.Pop();
 
   // First Layout.
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(300);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -4150,7 +4159,7 @@ TEST_F(ParagraphTest, Ellipsize) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.ellipsis = u"\u2026";
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -4160,7 +4169,7 @@ TEST_F(ParagraphTest, Ellipsize) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -4191,7 +4200,7 @@ TEST_F(ParagraphTest, UnderlineShiftParagraph) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 2;
   paragraph_style.text_align = TextAlign::left;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style1;
   text_style1.color = SK_ColorBLACK;
@@ -4212,7 +4221,7 @@ TEST_F(ParagraphTest, UnderlineShiftParagraph) {
   builder.Pop();
 
   // Construct single run paragraph.
-  txt::ParagraphBuilder builder2(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder2(paragraph_style, GetTestFontCollection());
 
   builder2.PushStyle(text_style1);
 
@@ -4221,13 +4230,13 @@ TEST_F(ParagraphTest, UnderlineShiftParagraph) {
   builder2.Pop();
 
   // Build multi-run paragraph
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
 
   // Build single-run paragraph
-  auto paragraph2 = builder2.Build();
+  auto paragraph2 = BuildParagraph(builder2);
   paragraph2->Layout(GetTestCanvasWidth());
 
   paragraph2->Paint(GetCanvas(), 0, 25);
@@ -4261,7 +4270,7 @@ TEST_F(ParagraphTest, SimpleShadow) {
                           icu_text.getBuffer() + icu_text.length());
 
   txt::ParagraphStyle paragraph_style;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -4273,7 +4282,7 @@ TEST_F(ParagraphTest, SimpleShadow) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
   paragraph->Paint(GetCanvas(), 10.0, 15.0);
 
@@ -4300,7 +4309,7 @@ TEST_F(ParagraphTest, ComplexShadow) {
                           icu_text.getBuffer() + icu_text.length());
 
   txt::ParagraphStyle paragraph_style;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -4330,7 +4339,7 @@ TEST_F(ParagraphTest, ComplexShadow) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
   paragraph->Paint(GetCanvas(), 10.0, 15.0);
 
@@ -4375,7 +4384,7 @@ TEST_F(ParagraphTest, BaselineParagraph) {
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::justify;
   paragraph_style.height = 1.5;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.color = SK_ColorBLACK;
@@ -4390,7 +4399,7 @@ TEST_F(ParagraphTest, BaselineParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth() - 100);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -4430,7 +4439,7 @@ TEST_F(ParagraphTest, FontFallbackParagraph) {
                            icu_text.getBuffer() + icu_text.length());
 
   txt::ParagraphStyle paragraph_style;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   // No chinese fallback provided, should not be able to render the chinese.
@@ -4475,7 +4484,7 @@ TEST_F(ParagraphTest, FontFallbackParagraph) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 10.0, 15.0);
@@ -4523,7 +4532,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
   paragraph_style.strut_leading = 0.1;
   paragraph_style.strut_enabled = true;
 
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "ahem");
@@ -4540,7 +4549,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -4649,7 +4658,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
   paragraph_style.strut_height = 1.6;
   paragraph_style.strut_has_height_override = true;
   paragraph_style.strut_enabled = true;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "ahem");
@@ -4666,7 +4675,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -4775,7 +4784,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
   paragraph_style.strut_height = 1.2;
   paragraph_style.strut_has_height_override = true;
   paragraph_style.strut_enabled = true;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "ahem");
@@ -4792,7 +4801,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -4903,7 +4912,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
   paragraph_style.strut_leading = 0.1;
   paragraph_style.force_strut_height = true;
   paragraph_style.strut_enabled = true;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "ahem");
@@ -4919,7 +4928,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -5029,7 +5038,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutDefaultParagraph)) {
   paragraph_style.strut_leading = 0.1;
   paragraph_style.force_strut_height = false;
   paragraph_style.strut_enabled = true;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "ahem");
@@ -5045,7 +5054,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutDefaultParagraph)) {
 
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(550);
 
   paragraph->Paint(GetCanvas(), 0, 0);
@@ -5102,7 +5111,7 @@ TEST_F(ParagraphTest, FontFeaturesParagraph) {
                           icu_text.getBuffer() + icu_text.length());
 
   txt::ParagraphStyle paragraph_style;
-  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "Roboto");
@@ -5119,7 +5128,7 @@ TEST_F(ParagraphTest, FontFeaturesParagraph) {
   builder.Pop();
   builder.Pop();
 
-  auto paragraph = builder.Build();
+  auto paragraph = BuildParagraph(builder);
   paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 10.0, 15.0);
@@ -5127,13 +5136,13 @@ TEST_F(ParagraphTest, FontFeaturesParagraph) {
   ASSERT_EQ(paragraph->glyph_lines_.size(), 3ull);
 
   // Tabular numbers should have equal widths.
-  const txt::Paragraph::GlyphLine& tnum_line = paragraph->glyph_lines_[0];
+  const txt::ParagraphTxt::GlyphLine& tnum_line = paragraph->glyph_lines_[0];
   ASSERT_EQ(tnum_line.positions.size(), 4ull);
   EXPECT_FLOAT_EQ(tnum_line.positions[0].x_pos.width(),
                   tnum_line.positions[1].x_pos.width());
 
   // Proportional numbers should have variable widths.
-  const txt::Paragraph::GlyphLine& pnum_line = paragraph->glyph_lines_[1];
+  const txt::ParagraphTxt::GlyphLine& pnum_line = paragraph->glyph_lines_[1];
   ASSERT_EQ(pnum_line.positions.size(), 4ull);
   EXPECT_NE(pnum_line.positions[0].x_pos.width(),
             pnum_line.positions[1].x_pos.width());

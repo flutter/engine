@@ -25,6 +25,9 @@
 
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
 
+// This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
+// change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
+// just a warning.
 @interface FlutterViewController () <FlutterBinaryMessenger>
 @end
 
@@ -44,7 +47,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
   NSMutableSet<NSNumber*>* _ongoingTouches;
-  FlutterBinaryMessengerRelay* _binaryMessenger;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -55,7 +57,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   NSAssert(engine != nil, @"Engine is required");
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
-    _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
     _viewOpaque = YES;
     _engine.reset([engine retain]);
     _engineNeedsLaunch = NO;
@@ -75,7 +76,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
                          bundle:(NSBundle*)nibBundleOrNil {
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
-    _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
     _viewOpaque = YES;
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter"
@@ -406,8 +406,9 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 
   // Only recreate surface on subsequent appearances when viewport metrics are known.
   // First time surface creation is done on viewDidLayoutSubviews.
-  if (_viewportMetrics.physical_width)
+  if (_viewportMetrics.physical_width) {
     [self surfaceUpdated:YES];
+  }
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 
   [super viewWillAppear:animated];
@@ -473,8 +474,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 }
 
 - (void)dealloc {
-  _binaryMessenger.parent = nil;
-  [_binaryMessenger release];
   [_engine.get() notifyViewControllerDeallocated];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [super dealloc];
@@ -698,8 +697,22 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   // This must run after updateViewportMetrics so that the surface creation tasks are queued after
   // the viewport metrics update tasks.
-  if (firstViewBoundsUpdate)
+  if (firstViewBoundsUpdate) {
     [self surfaceUpdated:YES];
+
+    flutter::Shell& shell = [_engine.get() shell];
+    fml::TimeDelta waitTime =
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+        fml::TimeDelta::FromMilliseconds(200);
+#else
+        fml::TimeDelta::FromMilliseconds(100);
+#endif
+    if (shell.WaitForFirstFrame(waitTime).code() == fml::StatusCode::kDeadlineExceeded) {
+      FML_LOG(INFO) << "Timeout waiting for the first frame to render.  This may happen in "
+                    << "unoptimized builds.  If this is a release build, you should load a less "
+                    << "complex frame to avoid the timeout.";
+    }
+  }
 }
 
 - (void)viewSafeAreaInsetsDidChange {
@@ -988,7 +1001,7 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 }
 
 - (NSObject<FlutterBinaryMessenger>*)binaryMessenger {
-  return _binaryMessenger;
+  return _engine.get().binaryMessenger;
 }
 
 #pragma mark - FlutterBinaryMessenger

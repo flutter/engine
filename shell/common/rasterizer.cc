@@ -43,7 +43,6 @@ Rasterizer::Rasterizer(
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
       compositor_context_(std::move(compositor_context)),
-      user_override_resource_cache_bytes_(false),
       weak_factory_(this) {
   FML_DCHECK(compositor_context_);
 }
@@ -51,10 +50,6 @@ Rasterizer::Rasterizer(
 Rasterizer::~Rasterizer() = default;
 
 fml::WeakPtr<Rasterizer> Rasterizer::GetWeakPtr() const {
-  return weak_factory_.GetWeakPtr();
-}
-
-fml::WeakPtr<SnapshotDelegate> Rasterizer::GetSnapshotDelegate() const {
   return weak_factory_.GetWeakPtr();
 }
 
@@ -118,58 +113,6 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
     default:
       break;
   }
-}
-
-sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(sk_sp<SkPicture> picture,
-                                              SkISize picture_size) {
-  TRACE_EVENT0("flutter", __FUNCTION__);
-
-  sk_sp<SkSurface> surface;
-  SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      picture_size.width(), picture_size.height(), SkColorSpace::MakeSRGB());
-  if (surface_ == nullptr || surface_->GetContext() == nullptr) {
-    // Raster surface is fine if there is no on screen surface. This might
-    // happen in case of software rendering.
-    surface = SkSurface::MakeRaster(image_info);
-  } else {
-    if (!surface_->MakeRenderContextCurrent()) {
-      return nullptr;
-    }
-
-    // When there is an on screen surface, we need a render target SkSurface
-    // because we want to access texture backed images.
-    surface = SkSurface::MakeRenderTarget(surface_->GetContext(),  // context
-                                          SkBudgeted::kNo,         // budgeted
-                                          image_info               // image info
-    );
-  }
-
-  if (surface == nullptr || surface->getCanvas() == nullptr) {
-    return nullptr;
-  }
-
-  surface->getCanvas()->drawPicture(picture.get());
-
-  surface->getCanvas()->flush();
-
-  sk_sp<SkImage> device_snapshot;
-  {
-    TRACE_EVENT0("flutter", "MakeDeviceSnpashot");
-    device_snapshot = surface->makeImageSnapshot();
-  }
-
-  if (device_snapshot == nullptr) {
-    return nullptr;
-  }
-
-  {
-    TRACE_EVENT0("flutter", "DeviceHostTransfer");
-    if (auto raster_image = device_snapshot->makeRasterImage()) {
-      return raster_image;
-    }
-  }
-
-  return nullptr;
 }
 
 void Rasterizer::DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree) {
@@ -412,31 +355,13 @@ void Rasterizer::FireNextFrameCallbackIfPresent() {
   callback();
 }
 
-void Rasterizer::SetResourceCacheMaxBytes(size_t max_bytes, bool from_user) {
-  user_override_resource_cache_bytes_ |= from_user;
-
-  if (!from_user && user_override_resource_cache_bytes_) {
-    // We should not update the setting here if a user has explicitly set a
-    // value for this over the flutter/skia channel.
-    return;
-  }
-
+void Rasterizer::SetResourceCacheMaxBytes(int max_bytes) {
   GrContext* context = surface_->GetContext();
   if (context) {
     int max_resources;
     context->getResourceCacheLimits(&max_resources, nullptr);
     context->setResourceCacheLimits(max_resources, max_bytes);
   }
-}
-
-size_t Rasterizer::GetResourceCacheMaxBytes() const {
-  GrContext* context = surface_->GetContext();
-  if (context) {
-    size_t max_bytes;
-    context->getResourceCacheLimits(nullptr, &max_bytes);
-    return max_bytes;
-  }
-  return 0;
 }
 
 Rasterizer::Screenshot::Screenshot() {}

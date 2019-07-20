@@ -9,6 +9,7 @@ import android.app.Presentation;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -109,6 +110,7 @@ class SingleViewPresentation extends Presentation {
         );
     }
 
+
     /**
      * Creates a presentation that will attach an already existing view as
      * its root view.
@@ -139,6 +141,8 @@ class SingleViewPresentation extends Presentation {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // This makes sure we preserve alpha for the VD's content.
+        getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
         if (state.fakeWindowViewGroup == null) {
             state.fakeWindowViewGroup = new FakeWindowViewGroup(getContext());
         }

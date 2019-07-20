@@ -631,13 +631,6 @@ FlutterEngineResult FlutterEngineRun(size_t version,
     }
   }
 
-  run_configuration.AddAssetResolver(
-      std::make_unique<flutter::DirectoryAssetBundle>(
-          fml::Duplicate(settings.assets_dir)));
-
-  run_configuration.AddAssetResolver(
-      std::make_unique<flutter::DirectoryAssetBundle>(fml::OpenDirectory(
-          settings.assets_path.c_str(), false, fml::FilePermission::kRead)));
   if (!run_configuration.IsValid()) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
@@ -814,8 +807,14 @@ FlutterEngineResult FlutterEngineSendPlatformMessage(
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
-  if (SAFE_ACCESS(flutter_message, channel, nullptr) == nullptr ||
-      SAFE_ACCESS(flutter_message, message, nullptr) == nullptr) {
+  if (SAFE_ACCESS(flutter_message, channel, nullptr) == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
+  }
+
+  size_t message_size = SAFE_ACCESS(flutter_message, message_size, 0);
+  const uint8_t* message_data = SAFE_ACCESS(flutter_message, message, nullptr);
+
+  if (message_size != 0 && message_data == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
@@ -827,12 +826,16 @@ FlutterEngineResult FlutterEngineSendPlatformMessage(
     response = response_handle->message->response();
   }
 
-  auto message = fml::MakeRefCounted<flutter::PlatformMessage>(
-      flutter_message->channel,
-      std::vector<uint8_t>(
-          flutter_message->message,
-          flutter_message->message + flutter_message->message_size),
-      response);
+  fml::RefPtr<flutter::PlatformMessage> message;
+  if (message_size == 0) {
+    message = fml::MakeRefCounted<flutter::PlatformMessage>(
+        flutter_message->channel, response);
+  } else {
+    message = fml::MakeRefCounted<flutter::PlatformMessage>(
+        flutter_message->channel,
+        std::vector<uint8_t>(message_data, message_data + message_size),
+        response);
+  }
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)
                  ->SendPlatformMessage(std::move(message))

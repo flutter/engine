@@ -12,7 +12,6 @@
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/size.h"
-#include "flutter/fml/string_view.h"
 #include "flutter/shell/version/version.h"
 
 // Include once for the default enum definition.
@@ -22,7 +21,7 @@
 
 struct SwitchDesc {
   flutter::Switch sw;
-  const fml::StringView flag;
+  const std::string_view flag;
   const char* help;
 };
 
@@ -86,7 +85,9 @@ void PrintUsage(const std::string& executable_name) {
     auto desc = gSwitchDescs[i];
 
     std::cerr << std::setw(max_width)
-              << std::string("--") + desc.flag.ToString() << " : ";
+              << std::string("--") +
+                     std::string{desc.flag.data(), desc.flag.size()}
+              << " : ";
 
     std::istringstream stream(desc.help);
     int32_t remaining = help_width;
@@ -108,13 +109,13 @@ void PrintUsage(const std::string& executable_name) {
   std::cerr << std::string(column_width, '-') << std::endl;
 }
 
-const fml::StringView FlagForSwitch(Switch swtch) {
+const std::string_view FlagForSwitch(Switch swtch) {
   for (uint32_t i = 0; i < static_cast<uint32_t>(Switch::Sentinel); i++) {
     if (gSwitchDescs[i].sw == swtch) {
       return gSwitchDescs[i].flag;
     }
   }
-  return fml::StringView();
+  return std::string_view();
 }
 
 #if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
@@ -243,9 +244,8 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   command_line.GetOptionValue(FlagForSwitch(Switch::FlutterAssetsDir),
                               &settings.assets_path);
 
-  std::string aot_shared_library_name;
-  command_line.GetOptionValue(FlagForSwitch(Switch::AotSharedLibraryName),
-                              &aot_shared_library_name);
+  std::vector<std::string_view> aot_shared_library_name =
+      command_line.GetOptionValues(FlagForSwitch(Switch::AotSharedLibraryName));
 
   std::string snapshot_asset_path;
   command_line.GetOptionValue(FlagForSwitch(Switch::SnapshotAssetPath),
@@ -269,7 +269,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       &isolate_snapshot_instr_filename);
 
   if (aot_shared_library_name.size() > 0) {
-    settings.application_library_path = aot_shared_library_name;
+    for (std::string_view name : aot_shared_library_name) {
+      settings.application_library_path.emplace_back(name);
+    }
   } else if (snapshot_asset_path.size() > 0) {
     settings.vm_snapshot_data_path =
         fml::paths::JoinPaths({snapshot_asset_path, vm_snapshot_data_filename});

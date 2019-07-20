@@ -39,6 +39,9 @@ typedef PlatformMessageResponseCallback = void Function(ByteData data);
 /// Signature for [Window.onPlatformMessage].
 typedef PlatformMessageCallback = void Function(String name, ByteData data, PlatformMessageResponseCallback callback);
 
+// Signature for _setNeedsReportTimings.
+typedef _SetNeedsReportTimingsFunc = void Function(bool value);
+
 /// Various important time points in the lifetime of a frame.
 ///
 /// [FrameTiming] records a timestamp of each phase for performance analysis.
@@ -486,22 +489,20 @@ class Locale {
   /// underscores as separator, however it is intended to be used for debugging
   /// purposes only. For parseable results, use [toLanguageTag] instead.
   @override
-  String toString() => _toLanguageTag('_');
+  String toString() {
+    if (!identical(cachedLocale, this)) {
+      cachedLocale = this;
+      cachedLocaleString = _rawToString('_');
+    }
+    return cachedLocaleString;
+  }
 
   /// Returns a syntactically valid Unicode BCP47 Locale Identifier.
   ///
   /// Some examples of such identifiers: "en", "es-419", "hi-Deva-IN" and
   /// "zh-Hans-CN". See http://www.unicode.org/reports/tr35/ for technical
   /// details.
-  String toLanguageTag() => _toLanguageTag();
-
-  String _toLanguageTag([String separator = '-']) {
-    if (!identical(cachedLocale, this)) {
-      cachedLocale = this;
-      cachedLocaleString = _rawToString(separator);
-    }
-    return cachedLocaleString;
-  }
+  String toLanguageTag() => _rawToString('-');
 
   String _rawToString(String separator) {
     final StringBuffer out = StringBuffer(languageCode);
@@ -567,7 +568,9 @@ class Locale {
 /// [Window.viewPadding] anyway, so there is no need to account for that in the
 /// [Window.padding], which is always safe to use for such calculations.
 class Window {
-  Window._();
+  Window._() {
+    _setNeedsReportTimings = _nativeSetNeedsReportTimings;
+  }
 
   /// The number of device pixels for each logical pixel. This number might not
   /// be a power of two. Indeed, it might not even be an integer. For example,
@@ -922,7 +925,8 @@ class Window {
     _onReportTimingsZone = Zone.current;
   }
 
-  void _setNeedsReportTimings(bool value) native 'Window_setNeedsReportTimings';
+  _SetNeedsReportTimingsFunc _setNeedsReportTimings;
+  void _nativeSetNeedsReportTimings(bool value) native 'Window_setNeedsReportTimings';
 
   /// A callback that is invoked when pointer data is available.
   ///
