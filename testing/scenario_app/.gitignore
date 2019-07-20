@@ -1,0 +1,3 @@
+.packages
+pubspec.lock   # This only has local dependencies in it.
+build/
