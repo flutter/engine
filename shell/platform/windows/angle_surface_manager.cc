@@ -65,12 +65,11 @@ bool AngleSurfaceManager::Initialize() {
       EGL_NONE,
   };
 
-  EGLConfig config = nullptr;
-
   PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
       reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
           eglGetProcAddress("eglGetPlatformDisplayEXT"));
   if (!eglGetPlatformDisplayEXT) {
+    OutputDebugString(L"EGL: Failed to get a compatible EGLdisplay");
     return false;
   }
 
@@ -79,6 +78,7 @@ bool AngleSurfaceManager::Initialize() {
       eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY,
                                default_display_attributes);
   if (egl_display_ == EGL_NO_DISPLAY) {
+    OutputDebugString(L"EGL: Failed to get a compatible EGLdisplay");
     return false;
   }
 
@@ -89,6 +89,7 @@ bool AngleSurfaceManager::Initialize() {
         eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY,
                                  fl9_3_display_attributes);
     if (egl_display_ == EGL_NO_DISPLAY) {
+      OutputDebugString(L"EGL: Failed to get a compatible EGLdisplay");
       return false;
     }
 
@@ -99,10 +100,12 @@ bool AngleSurfaceManager::Initialize() {
                                               EGL_DEFAULT_DISPLAY,
                                               warp_display_attributes);
       if (egl_display_ == EGL_NO_DISPLAY) {
+        OutputDebugString(L"EGL: Failed to get a compatible EGLdisplay");
         return false;
       }
 
       if (eglInitialize(egl_display_, nullptr, nullptr) == EGL_FALSE) {
+        OutputDebugString(L"EGL: Failed to initialize EGL");
         return false;
       }
     }
@@ -112,12 +115,14 @@ bool AngleSurfaceManager::Initialize() {
   if ((eglChooseConfig(egl_display_, configAttributes, &egl_config_, 1,
                        &numConfigs) == EGL_FALSE) ||
       (numConfigs == 0)) {
+    OutputDebugString(L"EGL: Failed to choose first context");
     return false;
   }
 
   egl_context_ = eglCreateContext(egl_display_, egl_config_, EGL_NO_CONTEXT,
                                   display_context_attributes);
   if (egl_context_ == EGL_NO_CONTEXT) {
+    OutputDebugString(L"EGL: Failed to create EGL context");
     return false;
   }
 

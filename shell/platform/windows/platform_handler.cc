@@ -55,7 +55,7 @@ void PlatformHandler::HandleMethodCall(
 
     if (clipboardData.empty()) {
       result->Error(kUnknownClipboardFormatError,
-                    "Failed to retrieve clipboard data from GLFW api.");
+                    "Failed to retrieve clipboard data from win32 api.");
       return;
     }
     rapidjson::Document document;
