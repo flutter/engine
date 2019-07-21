@@ -8,10 +8,8 @@ import("$flutter_root/shell/platform/glfw/config.gni")
 
 _public_headers = [ "public/flutter_windows.h" ]
 
-_angle_dir = "//third_party/angle"
-
 config("relative_angle_headers") {
-  include_dirs = [ "$_angle_dir/include" ]
+  include_dirs = [ "//third_party/angle/include" ]
 }
 
 # Any files that are built by clients (client_wrapper code, library headers for
@@ -88,7 +86,7 @@ copy("publish_headers_windows") {
     "$root_out_dir/{{source_file_part}}",
   ]
 
-  # The GLFW header assumes the presence of the common headers.
+  # The Windows header assumes the presence of the common headers.
   deps = [
     "$flutter_root/shell/platform/common/cpp:publish_headers",
   ]

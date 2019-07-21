@@ -50,20 +50,20 @@ static FlutterEngine RunFlutterEngine(flutter::FlutterWindow* window,
   // Provide the necessary callbacks for rendering within a win32 window.
   config.type = kOpenGL;
   config.open_gl.struct_size = sizeof(config.open_gl);
-  config.open_gl.make_current = [](void* userData) -> bool {
-    auto host = static_cast<flutter::FlutterWindow*>(userData);
+  config.open_gl.make_current = [](void* user_data) -> bool {
+    auto host = static_cast<flutter::FlutterWindow*>(user_data);
     return host->MakeCurrent();
   };
-  config.open_gl.clear_current = [](void* userData) -> bool {
-    auto host = static_cast<flutter::FlutterWindow*>(userData);
+  config.open_gl.clear_current = [](void* user_data) -> bool {
+    auto host = static_cast<flutter::FlutterWindow*>(user_data);
     return host->ClearContext();
   };
-  config.open_gl.present = [](void* userData) -> bool {
-    auto host = static_cast<flutter::FlutterWindow*>(userData);
+  config.open_gl.present = [](void* user_data) -> bool {
+    auto host = static_cast<flutter::FlutterWindow*>(user_data);
     return host->SwapBuffers();
   };
-  config.open_gl.fbo_callback = [](void* userData) -> uint32_t { return 0; };
-  config.open_gl.gl_proc_resolver = [](void* userData,
+  config.open_gl.fbo_callback = [](void* user_data) -> uint32_t { return 0; };
+  config.open_gl.gl_proc_resolver = [](void* user_data,
                                        const char* what) -> void* {
     return eglGetProcAddress(what);
   };
