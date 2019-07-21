@@ -7,13 +7,12 @@
 
 #include <stdint.h>
 
-#include <GLFW/glfw3.h>
-#include <glad/glad.h>
-
 #include "flutter/shell/platform/common/cpp/public/flutter_texture_registrar.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 namespace flutter {
+
+typedef struct ExternalTextureGLState ExternalTextureGLState;
 
 // An adaptation class of flutter engine and external texture interface.
 class ExternalTextureGL {
@@ -31,8 +30,7 @@ class ExternalTextureGL {
  private:
   FlutterTexutreCallback texture_callback_ = nullptr;
   void* user_data_ = nullptr;
-  GLFWwindow* window_ = nullptr;
-  GLuint gl_texture_ = 0;
+  ExternalTextureGLState* state_ = nullptr;
 };
 
 }  // namespace flutter
