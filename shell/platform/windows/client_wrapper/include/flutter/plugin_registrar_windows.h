@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_PLUGIN_REGISTRAR_GLFW_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_PLUGIN_REGISTRAR_GLFW_H_
+#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_PLUGIN_REGISTRAR_WINDOWS_H_
+#define FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_PLUGIN_REGISTRAR_WINDOWS_H_
 
 #include <flutter_windows.h>
 
@@ -14,7 +14,7 @@
 
 namespace flutter {
 
-// An extension to PluginRegistrar providing access to GLFW-shell-specific
+// An extension to PluginRegistrar providing access to windows-shell-specific
 // functionality.
 class PluginRegistrarWindows : public PluginRegistrar {
  public:
@@ -30,8 +30,8 @@ class PluginRegistrarWindows : public PluginRegistrar {
   virtual ~PluginRegistrarWindows() = default;
 
   // Prevent copying.
-  PluginRegistrarWindows(PluginRegistrarGlfw const&) = delete;
-  PluginRegistrarWindows& operator=(PluginRegistrarGlfw const&) = delete;
+  PluginRegistrarWindows(PluginRegistrarWindows const&) = delete;
+  PluginRegistrarWindows& operator=(PluginRegistrarWindows const&) = delete;
 
   FlutterWindow* window() { return window_.get(); }
 
@@ -42,4 +42,4 @@ class PluginRegistrarWindows : public PluginRegistrar {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_PLUGIN_REGISTRAR_GLFW_H_
+#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_PLUGIN_REGISTRAR_WINDOWS_H_
