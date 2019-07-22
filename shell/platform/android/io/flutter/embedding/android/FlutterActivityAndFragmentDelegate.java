@@ -38,20 +38,12 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
  * <p>
  * One might ask why an {@code Activity} and {@code Fragment} delegate needs to exist. Given
  * that a {@code Fragment} can be placed within an {@code Activity}, it would make more sense
- * to use a {@link FlutterFragment} within a {@link FlutterActivity}. Then, the problem of
- * duplicated behavior is solved without extracting all of that logic into a 3rd party
- * {@code Object}.
+ * to use a {@link FlutterFragment} within a {@link FlutterActivity}.
  * <p>
- * The original solution for this embedding was exactly that - a {@link FlutterFragment}
- * embedded within a {@link FlutterActivity}. However, it was later discovered that the binary
- * impact of including {@code Fragment}s in a Flutter app was about 100k in release mode. This
- * binary hit would be fine for add-to-app cases because {@code Fragment}s are almost certainly
- * being used already. However, this 100k was deemed unacceptable for full-Flutter apps, which
- * would not otherwise have to pay that binary size cost. Therefore, it was concluded that
- * Flutter must provide a {@link FlutterActivity} based on the AOSP {@code Activity}, and an
- * independent {@link FlutterFragment} for add-to-app developers.
- * <p>
- * That is why {@code FlutterActivityAndFragmentDelegate} exists.
+ * The {@code Fragment} support library adds 100k of binary size to an app, and full-Flutter
+ * apps do not otherwise require that binary hit. Therefore, it was concluded that Flutter
+ * must provide a {@link FlutterActivity} based on the AOSP {@code Activity}, and an independent
+ * {@link FlutterFragment} for add-to-app developers.
  * <p>
  * If a time ever comes where the inclusion of {@code Fragment}s in a full-Flutter app is no
  * longer deemed an issue, this class should be immediately decomposed between
@@ -69,12 +61,14 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
  * <p>
  * Maintainers of this class should take care to only place code in this delegate that would
  * otherwise be placed in either {@link FlutterActivity} or {@link FlutterFragment}, and in
- * exactly the same form. Do not use this class as a convenient shortcut for any other
- * behavior.
+ * exactly the same form. <strong>Do not use this class as a convenient shortcut for any other
+ * behavior.</strong>
  */
-class FlutterActivityAndFragmentDelegate {
+/* package */ class FlutterActivityAndFragmentDelegate {
   private static final String TAG = "FlutterActivityAndFragmentDelegate";
 
+  // The FlutterActivity or FlutterFragment that is delegating most of its calls
+  // to this FlutterActivityAndFragmentDelegate.
   @NonNull
   private Host host;
   @Nullable
@@ -564,7 +558,7 @@ class FlutterActivityAndFragmentDelegate {
    * The {@link FlutterActivity} or {@link FlutterFragment} that owns this
    * {@code FlutterActivityAndFragmentDelegate}.
    */
-  interface Host extends SplashScreenProvider, FlutterEngineProvider, FlutterEngineConfigurator {
+  /* package */ interface Host extends SplashScreenProvider, FlutterEngineProvider, FlutterEngineConfigurator {
     /**
      * Returns the {@link Context} that backs the host {@link Activity} or {@code Fragment}.
      */
