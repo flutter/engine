@@ -13,6 +13,7 @@ import platform
 import shutil
 import subprocess
 import sys
+import tempfile
 
 from gather_flutter_runner_artifacts import GatherArtifacts
 from gen_package import CreateFarPackage
@@ -76,11 +77,14 @@ def RemoveDirectoryIfExists(path):
 
 def CopyToBucket(source, destination):
   source = os.path.join(_out_dir, source)
-  destination = os.path.join(_bucket_directory, destination)
-  GatherArtifacts(source, destination)
+  temp_artifact_dir = tempfile.mkdtemp()
+
+  GatherArtifacts(source, temp_artifact_dir)
   pm_bin = GetPMBinPath()
   key_path = os.path.join(_script_dir, 'development.key')
-  CreateFarPackage(pm_bin, destination, key_path)
+
+  destination = os.path.join(_bucket_directory, destination)
+  CreateFarPackage(pm_bin, temp_artifact_dir, key_path, destination)
 
 
 def BuildBucket():

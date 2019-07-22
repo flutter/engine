@@ -14,8 +14,10 @@ import subprocess
 import sys
 
 
-def CreateFarPackage(pm_bin, package_dir, signing_key):
-  pm_command_base = [pm_bin, '-m', package_dir, '-k', signing_key]
+def CreateFarPackage(pm_bin, package_dir, signing_key, dst_dir):
+  pm_command_base = [
+      pm_bin, '-m', package_dir, '-k', signing_key, '-o', dst_dir
+  ]
 
   # Build the package
   subprocess.check_call(pm_command_base + ['build'])
