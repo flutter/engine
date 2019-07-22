@@ -289,12 +289,13 @@ def main():
   if 'engine' in types:
     RunCCTests(build_dir, engine_filter)
 
-  # https://github.com/flutter/flutter/issues/36301
-  if 'dart' in types and not IsWindows():
+  if 'dart' in types:
+    assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
     RunDartTests(build_dir, dart_filter)
 
-  if 'java' in types and not IsWindows():
+  if 'java' in types:
+    assert not IsWindows(), "Android engine files can't be compiled on Windows."
     java_filter = args.java_filter
     if ',' in java_filter or '*' in java_filter:
       print('Can only filter JUnit4 tests by single entire class name, eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter)

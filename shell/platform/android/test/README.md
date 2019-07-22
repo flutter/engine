@@ -35,13 +35,13 @@ the tests, but it would add an extra point of failure.
 Your test is probably using a dependency that we haven't needed yet. You
 probably need to find the dependency you need, add it to the
 `flutter/android/robolectric_bundle` CIPD package, and then re-run `gclient
-sync`. See ["Updating a CIPD
-dependency"](https://chromium.googlesource.com/chromium/src/+/master/docs/cipd.md#Updating-a-CIPD-dependency).
+sync`. See ["Updating a CIPD dependency"](#Updating-a-CIPD-dependency) below.
 
 ### My new test won't compile. It can't find one of my imports.
 
-You could be using a brand new dependency. If so, first you'll want to grab the
-jar following the same pattern as in the "My new test won't run" section.
+You could be using a brand new dependency. If so, you'll need to add it to the
+CIPD package for the robolectric tests. See ["Updating a CIPD
+dependency"](#Updating-a-CIPD-dependency) below.
 
 Then you'll also need to add the jar to the `robolectric_tests` build target.
 Add `//third_party/robolectric/lib/<dependency.jar>` to
@@ -50,3 +50,46 @@ Add `//third_party/robolectric/lib/<dependency.jar>` to
 There's also a chance that you're using a dependency that we're relying on at
 runtime, but not compile time. If so you'll just need to update
 `_jar_dependencies` in `BUILD.gn`.
+
+### Updating a CIPD dependency
+
+See the Chromium instructions on ["Updating a CIPD
+dependency"](https://chromium.googlesource.com/chromium/src/+/master/docs/cipd.md#Updating-a-CIPD-dependency)
+for how to upload a package update to CIPD.
+
+Once you've done that, also make sure to tag the new package version with the
+updated timestamp and robolectric version (most likely still 3.8, unless you've
+migrated all the packges to 4+).
+
+    $ cipd set-tag --version=<new_version_hash> -tag "last_updated:<timestamp>"
+    $ cipd set-tag --version=<new_version_hash> -tag "robolectric_version:<robolectric_version>"
+
+You can run `cipd describe flutter/android/robolectric_bundle
+--version=<new_version_hash>` to verify. You should see:
+
+```
+Package:       flutter/android/robolectric_bundle
+Instance ID:   <new_version_hash>
+...
+Tags:
+ last_updated:<timestamp>
+ robolectric_version:<robolectric_version>
+```
+
+Then update the `DEPS` file to use the new version by pointing to your new
+`last_updated_at` tag.
+
+```
+  'src/third_party/robolectric': {
+     'packages': [
+       {
+        'package': 'flutter/android/robolectric_bundle',
+        'version': 'last_updated:<timestamp>'
+       }
+     ],
+     'condition': 'download_android_deps',
+     'dep_type': 'cipd',
+   },
+```
+
+You can now re-run `gclient sync` to fetch the latest package version.
