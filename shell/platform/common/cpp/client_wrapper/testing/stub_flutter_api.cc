@@ -68,8 +68,8 @@ void FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,
                                           const FlutterDesktopBinaryReply reply,
                                           void* user_data) {
   if (s_stub_implementation) {
-    s_stub_implementation->MessengerSend(channel, message, message_size, reply,
-                                         user_data);
+    s_stub_implementation->MessengerSendWithReply(
+        channel, message, message_size, reply, user_data);
   }
 }
 

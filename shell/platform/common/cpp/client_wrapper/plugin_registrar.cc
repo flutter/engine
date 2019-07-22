@@ -110,8 +110,7 @@ void BinaryMessengerImpl::Send(const std::string& channel,
     delete captures;
   };
   FlutterDesktopMessengerSendWithReply(messenger_, channel.c_str(), message,
-                                       message_size, std::move(message_reply),
-                                       captures);
+                                       message_size, message_reply, captures);
 }
 
 void BinaryMessengerImpl::SetMessageHandler(const std::string& channel,

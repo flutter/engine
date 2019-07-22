@@ -33,16 +33,12 @@ class BinaryMessenger {
 
   // Sends a binary message to the Flutter side on the specified channel,
   // expecting no reply.
-  //
-  // TODO: Consider adding absl as a dependency and using absl::Span.
   virtual void Send(const std::string& channel,
                     const uint8_t* message,
                     const size_t message_size) const = 0;
 
   // Sends a binary message to the Flutter side on the specified channel,
   // expecting a reply.
-  //
-  // TODO: Consider adding absl as a dependency and using absl::Span.
   virtual void Send(const std::string& channel,
                     const uint8_t* message,
                     const size_t message_size,
