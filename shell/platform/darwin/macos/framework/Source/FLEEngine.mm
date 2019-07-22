@@ -150,6 +150,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
 
   _project = project ?: [[FLEDartProject alloc] init];
   _messageHandlers = [[NSMutableDictionary alloc] init];
+  _allowHeadlessExecution = allowHeadlessExecution;
 
   return self;
 }
@@ -342,6 +343,49 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
   if (result != kSuccess) {
     NSLog(@"Failed to send message to Flutter engine on channel '%@' (%d).", channel, result);
   }
+}
+
+- (void)sendOnChannel:(NSString*)channel
+              message:(NSData* _Nullable)message
+          binaryReply:(FlutterBinaryReply _Nullable)callback {
+  struct Captures {
+    FlutterBinaryReply reply;
+  };
+  auto captures = std::make_unique<Captures>();
+  captures->reply = callback;
+  auto message_reply = [](const uint8_t* data, size_t data_size, void* user_data) {
+    auto captures = reinterpret_cast<Captures*>(user_data);
+    NSData* reply_data = [NSData dataWithBytes:(void*)data length:data_size];
+    captures->reply(reply_data);
+    delete captures;
+  };
+
+  FlutterPlatformMessageResponseHandle* response_handle = nullptr;
+  FlutterEngineResult result = FlutterPlatformMessageCreateResponseHandle(
+      _engine, message_reply, captures.get(), &response_handle);
+  if (result != kSuccess) {
+    NSLog(@"Failed to create a FlutterPlatformMessageResponseHandle");
+    return;
+  }
+  captures.release();
+
+  FlutterPlatformMessage platformMessage = {
+      .struct_size = sizeof(FlutterPlatformMessage),
+      .channel = [channel UTF8String],
+      .message = static_cast<const uint8_t*>(message.bytes),
+      .message_size = message.length,
+      .response_handle = response_handle,
+  };
+
+  result = FlutterEngineSendPlatformMessage(_engine, &platformMessage);
+  if (result != kSuccess) {
+    NSLog(@"Failed to send message to Flutter engine on channel '%@' (%d).", channel, result);
+  }
+
+  result = FlutterPlatformMessageReleaseResponseHandle(_engine, response_handle);
+  if (result != kSuccess) {
+    NSLog(@"Failed to release the response handle");
+  };
 }
 
 - (void)setMessageHandlerOnChannel:(nonnull NSString*)channel
