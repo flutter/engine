@@ -47,5 +47,5 @@ void _onBeginFrame(Duration duration) {
 }
 
 void _onDrawFrame() {
-  window.scheduleFrame();
+  _currentScenario.onDrawFrame();
 }

@@ -8,9 +8,16 @@ import 'scenario.dart';
 
 /// A square that animates it color and bounces off the sides of the
 /// device.
+///
+/// This scenario drives animation as quickly as possible, requesting new frames
+/// that are constantly changing.
 class AnimatedColorSquareScenario extends Scenario {
+  /// Creates the AnimatedColorSquare scenario.
   ///
-  AnimatedColorSquareScenario(Window window) : super(window);
+  /// The [window] parameter must not be null.
+  AnimatedColorSquareScenario(Window window)
+      : assert(window != null),
+        super(window);
 
   static const double _squareSize = 400;
   final _NumberSwinger<int> _r = _NumberSwinger<int>(0, 255);
@@ -34,6 +41,7 @@ class AnimatedColorSquareScenario extends Scenario {
       Paint()..color = Color.fromARGB(255, _r.swing(), 50, 50),
     );
     final Picture picture = recorder.endRecording();
+
     builder.pushOffset(_left.swing(), _top.swing());
     builder.addPicture(
       Offset.zero,
@@ -43,6 +51,11 @@ class AnimatedColorSquareScenario extends Scenario {
     final Scene scene = builder.build();
     window.render(scene);
     scene.dispose();
+  }
+
+  @override
+  void onDrawFrame() {
+    window.scheduleFrame();
   }
 }
 

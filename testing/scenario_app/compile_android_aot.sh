@@ -37,6 +37,6 @@ echo "Compiling kernel..."
 
 echo "Compiling ELF Shared Library..."
 
-"$DEVICE_TOOLS/gen_snapshot" --snapshot_kind=app-aot-elf --elf=$OUTDIR/app.so --strip $OUTDIR/app.dill
+"$DEVICE_TOOLS/gen_snapshot" --deterministic --snapshot_kind=app-aot-elf --elf=$OUTDIR/app.so --strip $OUTDIR/app.dill
 
 echo "Created $OUTDIR/app.so."

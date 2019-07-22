@@ -34,12 +34,12 @@ echo "Compiling kernel..."
   "$HOST_TOOLS/gen/frontend_server.dart.snapshot" \
   --sdk-root "$HOST_TOOLS/flutter_patched_sdk" \
   --aot --tfa --target=flutter \
-  --output-dill $OUTDIR/app.dill \
+  --output-dill "$OUTDIR/app.dill" \
   lib/main.dart
 
 echo "Compiling AOT Assembly..."
 
-"$DEVICE_TOOLS/gen_snapshot" --snapshot_kind=app-aot-assembly --assembly=$OUTDIR/snapshot_assembly.S $OUTDIR/app.dill
+"$DEVICE_TOOLS/gen_snapshot" --deterministic --snapshot_kind=app-aot-assembly --assembly=$OUTDIR/snapshot_assembly.S $OUTDIR/app.dill
 
 SYSROOT=$(xcrun --sdk iphoneos --show-sdk-path)
 echo "Using $SYSROOT as sysroot."
@@ -48,8 +48,8 @@ echo "Compiling Assembly..."
 cc -arch arm64 \
   -isysroot "$SYSROOT" \
   -miphoneos-version-min=8.0 \
-  -c $OUTDIR/snapshot_assembly.S \
-  -o $OUTDIR/snapshot_assembly.o
+  -c "$OUTDIR/snapshot_assembly.S" \
+  -o "$OUTDIR/snapshot_assembly.o"
 
 echo "Linking App using $SYSROOT..."
 
@@ -59,7 +59,9 @@ clang -arch arm64 \
   -dynamiclib -Xlinker -rpath -Xlinker @executable_path/Frameworks \
   -Xlinker -rpath -Xlinker @loader_path/Frameworks \
   -install_name @rpath/App.framework/App \
-  -o $OUTDIR/App.framework/.App \
-  $OUTDIR/snapshot_assembly.o
+  -o "$OUTDIR/App.framework/App" \
+  "$OUTDIR/snapshot_assembly.o"
 
-echo "Created $OUTDIR/App."
+strip "$OUTDIR/App.framework/App"
+
+echo "Created $OUTDIR/App.framework/App."
