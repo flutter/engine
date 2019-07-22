@@ -10,6 +10,7 @@
 import argparse
 import errno
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -21,6 +22,9 @@ _script_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..'))
 _src_root_dir = os.path.join(_script_dir, '..', '..', '..')
 _out_dir = os.path.join(_src_root_dir, 'out')
 _bucket_directory = os.path.join(_out_dir, 'fuchsia_bucket')
+
+def IsLinux():
+  return platform.system() == 'Linux'
 
 def RunExecutable(command):
   subprocess.check_call(command, cwd=_src_root_dir)
@@ -71,7 +75,7 @@ def ProcessCIPDPakcage(upload, engine_version):
   cipd_yaml = os.path.join(_script_dir, 'fuchsia.cipd.yaml')
   CopyFiles(cipd_yaml, os.path.join(_bucket_directory, 'fuchsia.cipd.yaml'))
 
-  if upload:
+  if upload and IsLinux():
     command = [
       'cipd',
       'create',
