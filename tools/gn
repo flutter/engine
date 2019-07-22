@@ -200,7 +200,7 @@ def to_gn_args(args):
     # is that 32-bit Mac binaries are deprecated, so we switch to simarm_x64.
     target_is_32_bit = gn_args['target_cpu'] == 'arm' or gn_args['target_cpu'] == 'x86'
     if target_is_32_bit:
-      if sys.platform == 'darwin' and gn_args['target_cpu'] == 'arm':
+      if args.enable_arm_on_x64 and sys.platform == 'darwin' and gn_args['target_cpu'] == 'arm':
         gn_args['dart_target_arch'] = 'arm'
       else:
         gn_args['host_cpu'] = 'x86'
@@ -319,6 +319,7 @@ def parse_args(args):
 
   parser.add_argument('--enable-fontconfig', action='store_true', default=False)
   parser.add_argument('--enable-skshaper', action='store_true', default=False)
+  parser.add_argument('--enable-arm-on-x64', action='store_true', default=False)
 
   parser.add_argument('--embedder-for-target', dest='embedder_for_target', action='store_true', default=False)
 
