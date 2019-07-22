@@ -332,22 +332,25 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
 #pragma mark - FlutterBinaryMessenger
 
 - (void)sendOnChannel:(nonnull NSString*)channel message:(nullable NSData*)message {
+  [self sendOnChannel:channel message:message binaryReply:nil];
+}
+
+- (void)sendOnChannel:(NSString*)channel
+              message:(NSData* _Nullable)message
+          binaryReply:(FlutterBinaryReply _Nullable)callback {
   FlutterPlatformMessage platformMessage = {
       .struct_size = sizeof(FlutterPlatformMessage),
       .channel = [channel UTF8String],
       .message = static_cast<const uint8_t*>(message.bytes),
       .message_size = message.length,
   };
-
-  FlutterEngineResult result = FlutterEngineSendPlatformMessage(_engine, &platformMessage);
-  if (result != kSuccess) {
-    NSLog(@"Failed to send message to Flutter engine on channel '%@' (%d).", channel, result);
+  if (!callback) {
+    FlutterEngineResult result = FlutterEngineSendPlatformMessage(_engine, &platformMessage);
+    if (result != kSuccess) {
+      NSLog(@"Failed to send message to Flutter engine on channel '%@' (%d).", channel, result);
+    }
+    return;
   }
-}
-
-- (void)sendOnChannel:(NSString*)channel
-              message:(NSData* _Nullable)message
-          binaryReply:(FlutterBinaryReply _Nullable)callback {
   struct Captures {
     FlutterBinaryReply reply;
   };
@@ -369,13 +372,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
   }
   captures.release();
 
-  FlutterPlatformMessage platformMessage = {
-      .struct_size = sizeof(FlutterPlatformMessage),
-      .channel = [channel UTF8String],
-      .message = static_cast<const uint8_t*>(message.bytes),
-      .message_size = message.length,
-      .response_handle = response_handle,
-  };
+  platformMessage.response_handle = response_handle;
 
   result = FlutterEngineSendPlatformMessage(_engine, &platformMessage);
   if (result != kSuccess) {
