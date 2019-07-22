@@ -3,6 +3,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+#TODO(dnfield): Get rid of this script and instead use proper build rules
+
 set -e
 
 HOST_TOOLS=$1
