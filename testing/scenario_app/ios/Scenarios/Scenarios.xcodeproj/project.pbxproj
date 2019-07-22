@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		242F37A222E636DE001E83D4 /* Flutter.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		242F37A322E636DE001E83D4 /* App.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 246B4E4122E3B5F700073EBF /* App.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		246B4E4222E3B5F700073EBF /* App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 246B4E4122E3B5F700073EBF /* App.framework */; };
 		246B4E4622E3B61000073EBF /* Flutter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; };
 		248D76CC22E388370012F0C1 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 248D76CB22E388370012F0C1 /* AppDelegate.m */; };
@@ -40,6 +42,8 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				242F37A222E636DE001E83D4 /* Flutter.framework in Embed Frameworks */,
+				242F37A322E636DE001E83D4 /* App.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -161,7 +165,6 @@
 				248D76C422E388370012F0C1 /* Frameworks */,
 				248D76C522E388370012F0C1 /* Resources */,
 				246B4E4422E3B5F700073EBF /* Embed Frameworks */,
-				246B4E4822E3B69300073EBF /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -274,26 +277,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		246B4E4822E3B69300073EBF /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "xcode_frameworks_dir=${BUILT_PRODUCTS_DIR}\"/\"${PRODUCT_NAME}\".app/Frameworks\"\nflutter_ios_out_folder=/Users/dnfield/src/engine/src/flutter/testing/scenario_app/build/ios\nflutter_ios_engine_folder=/Users/dnfield/src/engine/src/out/ios_profile/\nmkdir -p -- \"${xcode_frameworks_dir}\"\ncp -Rv -- \"${flutter_ios_out_folder}/App.framework\" \"${xcode_frameworks_dir}\"\ncp -Rv -- \"${flutter_ios_engine_folder}/Flutter.framework\" \"${xcode_frameworks_dir}/\"\ncodesign --force --verbose --sign \"${EXPANDED_CODE_SIGN_IDENTITY_NAME}\" -- \"${xcode_frameworks_dir}/App.framework/App\"\ncodesign --force --verbose --sign \"${EXPANDED_CODE_SIGN_IDENTITY_NAME}\" -- \"${xcode_frameworks_dir}/Flutter.framework/Flutter\"\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		248D76C322E388370012F0C1 /* Sources */ = {

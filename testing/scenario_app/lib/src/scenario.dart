@@ -22,4 +22,9 @@ abstract class Scenario {
   ///
   /// See [Window.onDrawFrame] for more details.
   void onDrawFrame();
+
+  /// Called by the program when the window metrics have changed.
+  ///
+  /// See [Window.onMetricsChanged].
+  void onMetricsChanged();
 }

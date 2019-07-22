@@ -20,6 +20,7 @@ void main() {
     ..onPlatformMessage = _handlePlatformMessage
     ..onBeginFrame = _onBeginFrame
     ..onDrawFrame = _onDrawFrame
+    ..onMetricsChanged = _onMetricsChanged
     ..scheduleFrame();
   final ByteData data = ByteData(1);
   data.setUint8(0, 1);
@@ -48,4 +49,8 @@ void _onBeginFrame(Duration duration) {
 
 void _onDrawFrame() {
   _currentScenario.onDrawFrame();
+}
+
+void _onMetricsChanged() {
+  _currentScenario.onMetricsChanged();
 }

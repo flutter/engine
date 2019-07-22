@@ -64,4 +64,12 @@ clang -arch arm64 \
 
 strip "$OUTDIR/App.framework/App"
 
+cp ios/AppFrameworkInfo.plist "$OUTDIR/App.framework/Info.plist"
+
 echo "Created $OUTDIR/App.framework/App."
+
+rm -rf ios/Scenarios/App.framework
+rm -rf ios/Scenarios/Flutter.framework
+cp -R "$OUTDIR/App.framework" ios/Scenarios
+cp -R "$DEVICE_TOOLS/../Flutter.framework" ios/Scenarios
+

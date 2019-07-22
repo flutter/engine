@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'scenario.dart';
@@ -19,13 +20,14 @@ class AnimatedColorSquareScenario extends Scenario {
       : assert(window != null),
         super(window);
 
-  static const double _squareSize = 400;
+  static const double _squareSize = 200;
+  /// Used to animate the red value in the color of the square.
   final _NumberSwinger<int> _r = _NumberSwinger<int>(0, 255);
-  final _NumberSwinger<double> _top = _NumberSwinger<double>(
+  _NumberSwinger<double> _top = _NumberSwinger<double>(
     0,
     window.physicalSize.height - _squareSize,
   );
-  final _NumberSwinger<double> _left = _NumberSwinger<double>(
+  _NumberSwinger<double> _left = _NumberSwinger<double>(
     0,
     window.physicalSize.width - _squareSize,
   );
@@ -57,18 +59,37 @@ class AnimatedColorSquareScenario extends Scenario {
   void onDrawFrame() {
     window.scheduleFrame();
   }
+
+  @override
+  void onMetricsChanged() {
+    _top = _NumberSwinger<double>(
+      0,
+      window.physicalSize.height - _squareSize,
+      math.min(_top.current, window.physicalSize.height - _squareSize),
+    );
+    _left = _NumberSwinger<double>(
+      0,
+      window.physicalSize.width - _squareSize,
+      math.min(_left.current, window.physicalSize.width - _squareSize),
+    );
+  }
 }
 
 class _NumberSwinger<T extends num> {
-  _NumberSwinger(this._begin, this._end)
+  _NumberSwinger(this._begin, this._end, [this._current])
       : assert(_begin != null),
         assert(_end != null),
-        _current = _begin,
-        _up = _begin < _end;
+        _up = _begin < _end {
+    _current ??= _begin;
+  }
 
   final T _begin;
   final T _end;
+
+  /// The current value of the swinger.
+  T get current => _current;
   T _current;
+
   bool _up;
 
   T swing() {
