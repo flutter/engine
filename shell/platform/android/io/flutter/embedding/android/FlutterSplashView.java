@@ -22,7 +22,7 @@ import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
  * {@code View} that displays a {@link SplashScreen} until a given {@link FlutterView}
  * renders its first frame.
  */
-class FlutterSplashView extends FrameLayout {
+/* package */ final class FlutterSplashView extends FrameLayout {
   private static String TAG = "FlutterSplashView";
 
   @Nullable

@@ -19,7 +19,7 @@ import android.widget.ImageView;
  * {@link SplashScreen} that displays a given {@link Drawable}, which then fades its alpha
  * to zero when instructed to {@link #transitionToFlutter(Runnable)}.
  */
-public class DrawableSplashScreen implements SplashScreen {
+public final class DrawableSplashScreen implements SplashScreen {
   private final Drawable drawable;
   private final ImageView.ScaleType scaleType;
   private final long crossfadeDurationInMillis;
