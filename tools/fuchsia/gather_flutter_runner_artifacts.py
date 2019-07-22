@@ -85,6 +85,7 @@ def main():
   assert os.path.exists(dst_parent)
 
   GatherArtifacts(args.artifacts_root, args.dst_dir)
+  return 0
 
 
 if __name__ == '__main__':
