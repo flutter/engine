@@ -14,6 +14,9 @@ import shutil
 import subprocess
 import sys
 
+from gather_flutter_runner_artifacts import GatherArtifacts
+
+
 _script_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..'))
 _src_root_dir = os.path.join(_script_dir, '..', '..', '..')
 _out_dir = os.path.join(_src_root_dir, 'out')
@@ -48,42 +51,19 @@ def RemoveDirectoryIfExists(path):
   else:
     shutil.rmtree(path)
 
-def CopyFiles(source, destination):
-  try:
-    shutil.copytree(source, destination)
-  except OSError as error:
-    if error.errno == errno.ENOTDIR:
-      shutil.copy(source, destination)
-    else:
-      raise
-
 def CopyToBucket(source, destination):
   source = os.path.join(_out_dir, source)
   destination = os.path.join(_bucket_directory, destination)
+  GatherArtifacts(source, destination)
 
-  assert os.path.exists(source), '"%s" does not exist!' % source
-
-  CopyFiles(source, destination)
 
 def BuildBucket():
   RemoveDirectoryIfExists(_bucket_directory)
 
-  CopyToBucket('fuchsia_debug/flutter_patched_sdk', 'flutter/debug/flutter_patched_sdk')
-  CopyToBucket('fuchsia_profile/flutter_patched_sdk', 'flutter/profile/flutter_patched_sdk')
-  CopyToBucket('fuchsia_release/flutter_patched_sdk', 'flutter/release/flutter_patched_sdk')
+  CopyToBucket('fuchsia_debug/', 'flutter/debug/')
+  CopyToBucket('fuchsia_profile/', 'flutter/profile/')
+  CopyToBucket('fuchsia_release/', 'flutter/release/')
 
-  CopyToBucket('fuchsia_debug/flutter_runner', 'flutter/debug/flutter_runner')
-  CopyToBucket('fuchsia_profile/flutter_runner', 'flutter/profile/flutter_runner')
-  CopyToBucket('fuchsia_release/flutter_runner', 'flutter/release/flutter_runner')
-
-  CopyToBucket('fuchsia_debug/dart_runner', 'flutter/debug/dart_runner')
-  CopyToBucket('fuchsia_profile/dart_runner', 'flutter/profile/dart_runner')
-  CopyToBucket('fuchsia_release/dart_runner', 'flutter/release/dart_runner')
-
-
-  CopyToBucket('fuchsia_debug/icudtl.dat', 'flutter/debug/icudtl.dat')
-  CopyToBucket('fuchsia_profile/icudtl.dat', 'flutter/profile/icudtl.dat')
-  CopyToBucket('fuchsia_release/icudtl.dat', 'flutter/release/icudtl.dat')
 
 def ProcessCIPDPakcage(upload, engine_version):
   # Copy the CIPD YAML template from the source directory to be next to the bucket
