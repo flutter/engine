@@ -34,11 +34,15 @@ echo "Compiling kernel..."
   "$HOST_TOOLS/gen/frontend_server.dart.snapshot" \
   --sdk-root "$HOST_TOOLS/flutter_patched_sdk" \
   --aot --tfa --target=flutter \
-  --output-dill $OUTDIR/app.dill \
+  --output-dill "$OUTDIR/app.dill" \
   lib/main.dart
 
 echo "Compiling ELF Shared Library..."
 
-"$DEVICE_TOOLS/gen_snapshot" --deterministic --snapshot_kind=app-aot-elf --elf=$OUTDIR/app.so --strip $OUTDIR/app.dill
+"$DEVICE_TOOLS/gen_snapshot" --deterministic --snapshot_kind=app-aot-elf --elf="$OUTDIR/libapp.so" --strip "$OUTDIR/app.dill"
 
-echo "Created $OUTDIR/app.so."
+mkdir -p "android/app/src/main/jniLibs/arm64-v8a"
+cp "$OUTDIR/libapp.so" "android/app/src/main/jniLibs/arm64-v8a/"
+cp "$DEVICE_TOOLS/../flutter.jar" "android/app/libs/"
+
+echo "Created $OUTDIR/libapp.so."
