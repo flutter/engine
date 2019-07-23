@@ -125,7 +125,7 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   state->window = std::move(win);
 
   // Trigger an initial size callback to send size information to Flutter.
-  window->OnResize();
+  window->SendWindowMetrics();
 
   return state;
 }

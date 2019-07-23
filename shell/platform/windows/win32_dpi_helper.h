@@ -35,12 +35,12 @@ class Win32DpiHelper {
   using GetDpiForWindow_ = UINT __stdcall(HWND);
   using SetProcessDpiAwarenessContext_ = BOOL __stdcall(DPI_AWARENESS_CONTEXT);
 
-  EnableNonClientDpiScaling_* fp_enablenonclientdpiscaling;
-  GetDpiForWindow_* fp_getdpiforwindow;
-  SetProcessDpiAwarenessContext_* fp_setprocessdpiawarenesscontext;
+  EnableNonClientDpiScaling_* fp_enablenonclientdpiscaling{nullptr};
+  GetDpiForWindow_* fp_getdpiforwindow{nullptr};
+  SetProcessDpiAwarenessContext_* fp_setprocessdpiawarenesscontext{nullptr};
 
-  HMODULE user32_module_;
-  bool permonitorv2_supported_;
+  HMODULE user32_module_{nullptr};
+  bool permonitorv2_supported_ = false;
 };
 
 }  // namespace flutter

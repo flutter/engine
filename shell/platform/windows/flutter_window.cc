@@ -1,10 +1,11 @@
 #include "flutter/shell/platform/windows/flutter_window.h"
-
 #include <chrono>
 
 namespace flutter {
 
-#define WINVER 0x0605
+// the Windows DPI system is based on this
+// constant for machines running at 100% scaling.
+constexpr int base_dpi = 96;
 
 FlutterWindow::FlutterWindow() {
   surface_manager = std::make_unique<AngleSurfaceManager>();
@@ -26,9 +27,6 @@ FlutterWindow::~FlutterWindow() {
 FlutterDesktopWindowControllerRef FlutterWindow::SetState(FlutterEngine eng) {
   engine_ = eng;
 
-  // TODO: Restructure the internals to follow the structure of the C++ API,
-  // so
-  // that this isn't a tangle of references.
   auto messenger = std::make_unique<FlutterDesktopMessenger>();
   message_dispatcher_ =
       std::make_unique<flutter::IncomingMessageDispatcher>(messenger.get());
@@ -40,8 +38,7 @@ FlutterDesktopWindowControllerRef FlutterWindow::SetState(FlutterEngine eng) {
 
   plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
   plugin_registrar_->messenger = std::move(messenger);
-  plugin_registrar_->window =
-      window_wrapper_.get();  // state->window_wrapper.get();
+  plugin_registrar_->window = window_wrapper_.get();
 
   internal_plugin_registrar_ =
       std::make_unique<flutter::PluginRegistrar>(plugin_registrar_.get());
@@ -57,12 +54,14 @@ FlutterDesktopWindowControllerRef FlutterWindow::SetState(FlutterEngine eng) {
 
   auto state = std::make_unique<FlutterDesktopWindowControllerState>();
   state->engine = engine_;
-  state->window = nullptr;  // null here as the caller owns the uniqueptr we'll
-                            // ultimately want to return
-  state->window_wrapper =
-      std::make_unique<FlutterDesktopWindow>();  // a different window wrapper
-                                                 // for same window pointer
-                                                 // hence make_unique again
+
+  // null here as the caller (FlutterDesktopCreateWindow) will fill in that
+  // member before returning to the host application
+  state->window = nullptr;
+
+  // a window wrapper for the state block, distinct from the
+  // window_wrapper handed to plugin_registrar
+  state->window_wrapper = std::make_unique<FlutterDesktopWindow>();
   state->window_wrapper->window = this;
 
   process_events_ = true;
@@ -99,9 +98,9 @@ void FlutterWindow::HandlePlatformMessage(
 
   auto message = ConvertToDesktopMessage(*engine_message);
 
-  message_dispatcher_->HandleMessage(
-      message, [this] { this->process_events_ = false; },
-      [this] { this->process_events_ = true; });
+  message_dispatcher_->HandleMessage(message,
+                                     [this] { this->process_events_ = false; },
+                                     [this] { this->process_events_ = true; });
 }
 
 // When DesktopWindow notifies that a WM_Size message has come in
@@ -109,11 +108,6 @@ void FlutterWindow::HandlePlatformMessage(
 void FlutterWindow::OnResize(unsigned int width, unsigned int height) {
   current_width_ = width;
   current_height_ = height;
-  SendWindowMetrics();
-}
-// When DesktopWindow notifies that a WM_Size message has come in
-// let FlutterEngine know about the new size.
-void FlutterWindow::OnResize() {
   SendWindowMetrics();
 }
 
@@ -165,6 +159,8 @@ void FlutterWindow::OnScroll(double delta_x, double delta_y) {
 void FlutterWindow::FlutterMessageLoop() {
   MSG message;
 
+  // TODO: need either non-blocking meesage loop or custom dispatch
+  // implementation per  https://github.com/flutter/flutter/issues/36420
   while (GetMessage(&message, nullptr, 0, 0)) {
     TranslateMessage(&message);
     DispatchMessage(&message);
@@ -284,8 +280,10 @@ void FlutterWindow::SendPointerEventWithData(
           std::chrono::high_resolution_clock::now().time_since_epoch())
           .count();
 
-  // Since the app is running in per-monitor V2 DPI mode, the application has a
-  // physical view of the system hence no need to scale input
+  // Windows passes all input in either physical pixels (Per-monitor, System
+  // DPI) or pre-scaled to match bitmap scaling of output where process is
+  // running in DPI unaware more.  In either case, no need to manually scale
+  // input here.  For more information see DPIHelper.
   event.scroll_delta_x;
   event.scroll_delta_y;
 

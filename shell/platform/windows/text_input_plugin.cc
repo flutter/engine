@@ -41,8 +41,7 @@ void TextInputPlugin::CharHook(FlutterWindow* window, unsigned int code_point) {
   if (active_model_ == nullptr) {
     return;
   }
-  // TODO(awdavies): Actually handle potential unicode characters. Probably
-  // requires some ICU data or something.
+  // TODO bug 30661
   active_model_->AddCharacter(static_cast<char>(code_point));
   SendStateUpdate(*active_model_);
 }
@@ -55,7 +54,7 @@ void TextInputPlugin::KeyboardHook(FlutterWindow* window,
   if (active_model_ == nullptr) {
     return;
   }
-  if (action == WM_KEYDOWN) {  // TODO repease
+  if (action == WM_KEYDOWN) {
     switch (key) {
       case VK_LEFT:
         if (active_model_->MoveCursorBack()) {
@@ -128,8 +127,6 @@ void TextInputPlugin::HandleMethodCall(
     const rapidjson::Document& args = *method_call.arguments();
 
     if (method.compare(kSetClientMethod) == 0) {
-      // TODO(awdavies): There's quite a wealth of arguments supplied with this
-      // method, and they should be inspected/used.
       const rapidjson::Value& client_id_json = args[0];
       const rapidjson::Value& client_config = args[1];
       if (client_id_json.IsNull()) {

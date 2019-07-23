@@ -2,18 +2,9 @@
 
 namespace flutter {
 
-Win32DpiHelper::Win32DpiHelper()
-    : fp_enablenonclientdpiscaling(nullptr),
-      permonitorv2_supported_(false),
-      fp_getdpiforwindow(nullptr),
-      fp_setprocessdpiawarenesscontext(nullptr),
-      user32_module_(nullptr) {
-  /* if (!IsWindows10OrGreater()) { // requires manifest setting in calling app
-     return;
-   }*/
-
+Win32DpiHelper::Win32DpiHelper() {
+  // TODO ensure that this helper works correctly on downlevel builds.
   user32_module_ = LoadLibraryA("User32.dll");
-
   if (user32_module_ == nullptr) {
     return;
   }
@@ -39,7 +30,6 @@ Win32DpiHelper::Win32DpiHelper()
 Win32DpiHelper::~Win32DpiHelper() {
   if (user32_module_ != nullptr) {
     FreeLibrary(user32_module_);
-    user32_module_ = nullptr;
   }
 }
 

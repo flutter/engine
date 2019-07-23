@@ -24,9 +24,6 @@
 
 namespace flutter {
 
-constexpr int base_dpi = 96;  // the Windows DPI system is based on this
-                              // constant for machines running at 100% scaling.
-
 // A win32 flutter window.  In the future, there will likely be a
 // CoreWindow-based FlutterWindow as well.  At the point may make sense to
 // dependency inject the native window rather than inherit.
@@ -40,40 +37,93 @@ class FlutterWindow : public Win32Window {
                 const int height) noexcept;
   ~FlutterWindow();
 
+  // Run a Windows message pump that also pumps plugin messages.
   void FlutterMessageLoop();
 
+  // Virtual method called by base Window when a resize occurs
   void OnResize(unsigned int width, unsigned int height) override;
-  void OnResize();
+
+  // Virtual method called by base Window when the DPI changes either when a
+  // user drags the window between monitors of differing DPI or when the user
+  // manually changes the scale factor.
   void OnDpiScale(unsigned int dpi) override;
+
+  // Virtual method called by base window when the pointer moves within the
+  // window bounds.
   void OnPointerMove(double x, double y) override;
+
+  // Virtual method called by base window when the left mouse button goes down
   void OnPointerDown(double x, double y) override;
+
+  // Virtual method called by base window when the left mouse button goes from
+  // down to up
   void OnPointerUp(double x, double y) override;
+
+  // Virtual method called by base window when character input occurs.
   void OnChar(unsigned int code_point) override;
+
+  // Virtual method called by base window when raw keyboard input occurs.
   void OnKey(int key, int scancode, int action, int mods) override;
+
+  // Virtual method called by base window when mouse scrollwheel input occurs.
   void OnScroll(double delta_x, double delta_y) override;
 
+  // Configures the window instance with an instance of a running Flutter engine
+  // returning a configured FlutterDesktopWindowControllerRef.
   FlutterDesktopWindowControllerRef SetState(FlutterEngine state);
+
+  // Returns the currently configured Plugin Registrar.
   FlutterDesktopPluginRegistrarRef GetRegistrar();
 
+  // Callback passed to Flutter engine for notifying window of platform
+  // messages.
   void HandlePlatformMessage(const FlutterPlatformMessage*);
 
+  // Create a surface for Flutter engine to render into.
   void CreateRenderSurface();
+
+  // Destroy current rendering surface if one has been allocated.
   void DestroyRenderSurface();
 
+  // Callbacks for clearing context, settings context and swapping buffers.
   bool ClearContext();
   bool MakeCurrent();
   bool SwapBuffers();
 
- private:
+  // Sends a window metrics update to the Flutter engine using current window
+  // dimensions in physical
   void SendWindowMetrics();
+
+ private:
+  // Reports a mouse movement to Flutter engine.
   void SendPointerMove(double x, double y);
+
+  // Reports mouse press to Flutter engine.
   void SendPointerDown(double x, double y);
+
+  // Reports mouse release to Flutter engine.
   void SendPointerUp(double x, double y);
+
+  // Reports a keyboard character to Flutter engine.
   void SendChar(unsigned int code_point);
+
+  // Reports a raw keyboard message to Flutter engine.
   void SendKey(int key, int scancode, int action, int mods);
+
+  // Reports scroll wheel events to Flutter engine.
   void SendScroll(double delta_x, double delta_y);
+
+  // Updates |event_data| with the current location of the mouse cursor.
   void SetEventLocationFromCursorPosition(FlutterPointerEvent* event_data);
+
+  // Set's |event_data|'s phase to either kMove or kHover depending on the
+  // current
+  // primary mouse button state.
   void SetEventPhaseFromCursorButtonState(FlutterPointerEvent* event_data);
+
+  // Sends a pointer event to the Flutter engine based on givern data.  Since
+  // all input messages are passed in physical pixel values, no translation is
+  // needed before passing on to engine.
   void SendPointerEventWithData(const FlutterPointerEvent& event_data);
 
   std::unique_ptr<AngleSurfaceManager> surface_manager{nullptr};
