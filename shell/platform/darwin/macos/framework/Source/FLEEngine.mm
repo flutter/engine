@@ -338,12 +338,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
 - (void)sendOnChannel:(NSString*)channel
               message:(NSData* _Nullable)message
           binaryReply:(FlutterBinaryReply _Nullable)callback {
-  FlutterPlatformMessage platformMessage = {
-      .struct_size = sizeof(FlutterPlatformMessage),
-      .channel = [channel UTF8String],
-      .message = static_cast<const uint8_t*>(message.bytes),
-      .message_size = message.length,
-  };
   FlutterPlatformMessageResponseHandle* response_handle = nullptr;
 
   if (callback) {
@@ -354,30 +348,39 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
     captures->reply = callback;
     auto message_reply = [](const uint8_t* data, size_t data_size, void* user_data) {
       auto captures = reinterpret_cast<Captures*>(user_data);
-      NSData* reply_data = [NSData dataWithBytes:(void*)data length:data_size];
+      NSData* reply_data = [NSData dataWithBytes:static_cast<const void*>(data) length:data_size];
       captures->reply(reply_data);
       delete captures;
     };
 
-    FlutterEngineResult result = FlutterPlatformMessageCreateResponseHandle(
+    FlutterEngineResult create_result = FlutterPlatformMessageCreateResponseHandle(
         _engine, message_reply, captures.get(), &response_handle);
-    if (result != kSuccess) {
-      NSLog(@"Failed to create a FlutterPlatformMessageResponseHandle");
+    if (create_result != kSuccess) {
+      NSLog(@"Failed to create a FlutterPlatformMessageResponseHandle (%d)", create_result);
       return;
     }
     captures.release();
+  }
 
-    platformMessage.response_handle = response_handle;
+  FlutterPlatformMessage platformMessage = {
+      .struct_size = sizeof(FlutterPlatformMessage),
+      .channel = [channel UTF8String],
+      .message = static_cast<const uint8_t*>(message.bytes),
+      .message_size = message.length,
+      .response_handle = response_handle,
+  };
+
+  FlutterEngineResult message_result = FlutterEngineSendPlatformMessage(_engine, &platformMessage);
+  if (message_result != kSuccess) {
+    NSLog(@"Failed to send message to Flutter engine on channel '%@' (%d).", channel,
+          message_result);
   }
-  result = FlutterEngineSendPlatformMessage(_engine, &platformMessage);
-  if (result != kSuccess) {
-    NSLog(@"Failed to send message to Flutter engine on channel '%@' (%d).", channel, result);
-  }
-  
+
   if (response_handle != nullptr) {
-    result = FlutterPlatformMessageReleaseResponseHandle(_engine, response_handle);
-    if (result != kSuccess) {
-      NSLog(@"Failed to release the response handle");
+    FlutterEngineResult release_result =
+        FlutterPlatformMessageReleaseResponseHandle(_engine, response_handle);
+    if (release_result != kSuccess) {
+      NSLog(@"Failed to release the response handle (%d).", release_result);
     };
   }
 }
