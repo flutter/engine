@@ -64,7 +64,7 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
  * exactly the same form. <strong>Do not use this class as a convenient shortcut for any other
  * behavior.</strong>
  */
-/* package */ class FlutterActivityAndFragmentDelegate {
+/* package */ final class FlutterActivityAndFragmentDelegate {
   private static final String TAG = "FlutterActivityAndFragmentDelegate";
 
   // The FlutterActivity or FlutterFragment that is delegating most of its calls
@@ -97,7 +97,7 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
    * Disconnects this {@code FlutterActivityAndFragmentDelegate} from its host {@code Activity}
    * or {@code Fragment}.
    * <p>
-   * No further methods invocations may occur on this {@code FlutterActivityAndFragmentDelegate}
+   * No further method invocations may occur on this {@code FlutterActivityAndFragmentDelegate}
    * after invoking this method. If a method is invoked, an exception will occur.
    * <p>
    * This method only clears out references. It does not destroy its {@link FlutterEngine}. The

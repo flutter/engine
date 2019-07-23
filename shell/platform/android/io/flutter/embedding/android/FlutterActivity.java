@@ -380,7 +380,10 @@ public class FlutterActivity extends Activity
 
   @NonNull
   private View createFlutterView() {
-    return delegate.onCreateView(null, null, null);
+    return delegate.onCreateView(
+        null /* inflater */,
+        null /* container */,
+        null /* savedInstanceState */);
   }
 
   private void configureStatusBarForFullscreenFlutterExperience() {
@@ -414,23 +417,23 @@ public class FlutterActivity extends Activity
 
   @Override
   protected void onPause() {
-    delegate.onPause();
     super.onPause();
+    delegate.onPause();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
   }
 
   @Override
   protected void onStop() {
-    delegate.onStop();
     super.onStop();
+    delegate.onStop();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
   }
 
   @Override
   protected void onDestroy() {
+    super.onDestroy();
     delegate.onDestroyView();
     delegate.onDetach();
-    super.onDestroy();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
   }
 

@@ -481,29 +481,6 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
 
   /**
    * {@link FlutterActivityAndFragmentDelegate.Host} method that is used by
-   * {@link FlutterActivityAndFragmentDelegate} to obtain a {@code Context} reference as
-   * needed.
-   */
-  @Override
-  @NonNull
-  public Context getContext() {
-    return super.getContext();
-  }
-
-  /**
-   * {@link FlutterActivityAndFragmentDelegate.Host} method that is used by
-   * {@link FlutterActivityAndFragmentDelegate} to obtain a {@code Lifecycle} reference as
-   * needed. This reference is used by the delegate to provide Flutter plugins with access
-   * to lifecycle events.
-   */
-  @Override
-  @NonNull
-  public Lifecycle getLifecycle() {
-    return super.getLifecycle();
-  }
-
-  /**
-   * {@link FlutterActivityAndFragmentDelegate.Host} method that is used by
    * {@link FlutterActivityAndFragmentDelegate} to obtain Flutter shell arguments when
    * initializing Flutter.
    */
