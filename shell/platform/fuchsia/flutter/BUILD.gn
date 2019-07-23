@@ -143,10 +143,7 @@ template("flutter_runner") {
 flutter_runner("jit") {
   output_name = "flutter_jit_runner"
 
-  extra_deps = [
-    "//third_party/dart/runtime:libdart_jit",
-    "//third_party/dart/runtime/platform:libdart_platform_jit",
-  ]
+  extra_deps = [ "$flutter_root/runtime:libdart" ]
 }
 
 template("jit_runner") {
