@@ -32,11 +32,16 @@ Currently, only AOT modes are supported.
 
 ## Building for Android
 
-In this folder, after building the `android_host` and `android_profile_arm64`
+In this folder, after building the `host_profile` and `android_profile_arm64`
 engine targets, run:
 
 ```bash
 ./compile_android_aot.sh ../../../out/host_profile ../../../out/android_profile_arm64/clang_x64/
 ```
 
-This will produce a suitable `app.so` for building with an Android app.
+This will produce a suitable `libapp.so` for building with an Android app and
+copy it (along with flutter.jar) to where Gradle will expect to find it to build
+the app in the `android/` folder. The app can be run by opening it in Android
+Studio and running it, or by running `./gradlew assemble` in the `android/`
+folder and installing the APK from the correct folder in
+`android/app/build/outputs/apk`.
