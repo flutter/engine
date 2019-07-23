@@ -120,8 +120,17 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
 
   /**
    * Returns the number of pending channel callback replies.
+   *
+   * <p>When sending messages to the Flutter application using {@link BinaryMessenger#send(String,
+   * ByteBuffer, io.flutter.plugin.common.BinaryMessenger.BinaryReply)}, devlopers can optional
+   * specify a reply callback if they expect a reply from the Flutter application.
+   *
+   * <p>This method tracks all the pending callbacks that are waiting for response, and is supposed
+   * to be called from the main thread (as other methods). Calling from a different thread could
+   * possibly capture an indeterministic internal state, and is strongly discouraged.
    */
-  public int getNumOfPendingChannelCallbacks() {
+  @UiThread
+  public int getPendingChannelResponseCount() {
     return pendingReplies.size();
   }
 
