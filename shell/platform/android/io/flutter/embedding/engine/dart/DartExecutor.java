@@ -196,6 +196,14 @@ public class DartExecutor implements BinaryMessenger {
   public void setMessageHandler(@NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
     messenger.setMessageHandler(channel, handler);
   }
+
+  /**
+   * Returns the number of pending platform channel callback replies.
+   */
+  public int getNumOfPendingChannelCallbacks() {
+    return messenger.getNumOfPendingChannelCallbacks();
+  }
+
   //------ END BinaryMessenger -----
 
   /**

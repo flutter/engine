@@ -118,6 +118,13 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     }
   }
 
+  /**
+   * Returns the number of pending channel callback replies.
+   */
+  public int getNumOfPendingChannelCallbacks() {
+    return pendingReplies.size();
+  }
+
   private static class Reply implements BinaryMessenger.BinaryReply {
     @NonNull
     private final FlutterJNI flutterJNI;
