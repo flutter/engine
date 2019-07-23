@@ -79,6 +79,7 @@ class StyledRuns {
   FRIEND_TEST(ParagraphTest, HyphenBreakParagraph);
   FRIEND_TEST(ParagraphTest, RepeatLayoutParagraph);
   FRIEND_TEST(ParagraphTest, Ellipsize);
+  FRIEND_TEST(ParagraphTest, EllipsizedByCharacter);
   FRIEND_TEST(ParagraphTest, SimpleShadow);
   FRIEND_TEST(ParagraphTest, ComplexShadow);
   FRIEND_TEST(ParagraphTest, FontFallbackParagraph);

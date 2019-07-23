@@ -142,6 +142,7 @@ class ParagraphTxt : public Paragraph {
   FRIEND_TEST(ParagraphTest, HyphenBreakParagraph);
   FRIEND_TEST(ParagraphTest, RepeatLayoutParagraph);
   FRIEND_TEST(ParagraphTest, Ellipsize);
+  FRIEND_TEST(ParagraphTest, EllipsizedByCharacter);
   FRIEND_TEST(ParagraphTest, UnderlineShiftParagraph);
   FRIEND_TEST(ParagraphTest, WavyDecorationParagraph);
   FRIEND_TEST(ParagraphTest, SimpleShadow);
@@ -172,16 +173,18 @@ class ParagraphTxt : public Paragraph {
   mutable std::unique_ptr<icu::BreakIterator> word_breaker_;
 
   struct LineRange {
-    LineRange(size_t s, size_t e, size_t eew, size_t ein, bool h)
+    LineRange(size_t s, size_t e, size_t eew, size_t ein, bool h, bool el)
         : start(s),
           end(e),
           end_excluding_whitespace(eew),
           end_including_newline(ein),
-          hard_break(h) {}
+          hard_break(h),
+          ellipsized(el) {}
     size_t start, end;
     size_t end_excluding_whitespace;
     size_t end_including_newline;
     bool hard_break;
+    bool ellipsized;
   };
   std::vector<LineRange> line_ranges_;
   std::vector<double> line_widths_;

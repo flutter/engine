@@ -266,7 +266,8 @@ bool ParagraphTxt::ComputeLineBreaks() {
   // Calculate and add any breaks due to a line being too long.
   size_t run_index = 0;
   size_t inline_placeholder_index = 0;
-  for (size_t newline_index = 0; newline_index < newline_positions.size();
+  bool ellipsized = false;
+  for (size_t newline_index = 0; newline_index < newline_positions.size() && !ellipsized;
        ++newline_index) {
     size_t block_start =
         (newline_index > 0) ? newline_positions[newline_index - 1] + 1 : 0;
@@ -275,7 +276,7 @@ bool ParagraphTxt::ComputeLineBreaks() {
 
     if (block_size == 0) {
       line_ranges_.emplace_back(block_start, block_end, block_end,
-                                block_end + 1, true);
+                                block_end + 1, true, false);
       line_widths_.push_back(0);
       continue;
     }
@@ -354,11 +355,31 @@ bool ParagraphTxt::ComputeLineBreaks() {
 
     size_t breaks_count = breaker_.computeBreaks();
     const int* breaks = breaker_.getBreaks();
-    for (size_t i = 0; i < breaks_count; ++i) {
+    for (size_t i = 0; i < breaks_count && !ellipsized; ++i) {
       size_t break_start = (i > 0) ? breaks[i - 1] : 0;
       size_t line_start = break_start + block_start;
       size_t line_end = breaks[i] + block_start;
       bool hard_break = i == breaks_count - 1;
+      double line_width = breaker_.getWidths()[i];
+      if (paragraph_style_.ellipsis.length() &&
+          i < breaks_count - 1 &&
+          (paragraph_style_.unlimited_lines() || line_ranges_.size() == paragraph_style_.max_lines - 1)) {
+        line_start = break_start + block_start;
+        // The width of current line is shorter than constraint. If we want to pack
+        // in as many characters as we can, we have to borrow more characters from
+        // next line.
+        //
+        // i < breaks_count - 1 implies there is at least one more line after, and
+        // it is guaranteed the width of current line + next line will exceed the
+        // width constraint; otherwise, they will not break into different lines
+        // in the first place.
+        i++;
+        line_end = breaks[i] + block_start;
+        line_width += breaker_.getWidths()[i];
+        // This is the short-circuit. the rest of paragraph is throw away
+        // once a line is early ellipsized.
+        ellipsized = true;
+      }
       size_t line_end_including_newline =
           (hard_break && line_end < text_.size()) ? line_end + 1 : line_end;
       size_t line_end_excluding_whitespace = line_end;
@@ -367,9 +388,11 @@ bool ParagraphTxt::ComputeLineBreaks() {
           minikin::isLineEndSpace(text_[line_end_excluding_whitespace - 1])) {
         line_end_excluding_whitespace--;
       }
+      // A line is ellipsized must imply the width exceed constraint width.
       line_ranges_.emplace_back(line_start, line_end,
                                 line_end_excluding_whitespace,
-                                line_end_including_newline, hard_break);
+                                line_end_including_newline, hard_break,
+                                ellipsized);
       line_widths_.push_back(breaker_.getWidths()[i]);
     }
 
@@ -687,7 +710,8 @@ void ParagraphTxt::Layout(double width) {
 
   // Paragraph bounds tracking.
   size_t line_limit = std::min(paragraph_style_.max_lines, line_ranges_.size());
-  did_exceed_max_lines_ = (line_ranges_.size() > paragraph_style_.max_lines);
+  did_exceed_max_lines_ = (line_ranges_.size() > paragraph_style_.max_lines) ||
+                          (line_ranges_.size() && line_ranges_.back().ellipsized);
 
   size_t placeholder_run_index = 0;
   for (size_t line_number = 0; line_number < line_limit; ++line_number) {
@@ -800,50 +824,45 @@ void ParagraphTxt::Layout(double width) {
       size_t text_count = run.end() - run.start();
       size_t text_size = text_.size();
 
-      // Apply ellipsizing if the run was not completely laid out and this
-      // is the last line (or lines are unlimited).
       const std::u16string& ellipsis = paragraph_style_.ellipsis;
       std::vector<uint16_t> ellipsized_text;
-      if (ellipsis.length() && !isinf(width_) && !line_range.hard_break &&
-          line_run_it == line_runs.end() - 1 &&
-          (line_number == line_limit - 1 ||
-           paragraph_style_.unlimited_lines())) {
-        float ellipsis_width = layout.measureText(
-            reinterpret_cast<const uint16_t*>(ellipsis.data()), 0,
-            ellipsis.length(), ellipsis.length(), run.is_rtl(), minikin_font,
-            minikin_paint, minikin_font_collection, nullptr);
-
+      if (line_range.ellipsized) {
         std::vector<float> text_advances(text_count);
         float text_width =
             layout.measureText(text_ptr, text_start, text_count, text_.size(),
                                run.is_rtl(), minikin_font, minikin_paint,
                                minikin_font_collection, text_advances.data());
+        float ellipsis_width = layout.measureText(
+              reinterpret_cast<const uint16_t*>(ellipsis.data()), 0,
+              ellipsis.length(), ellipsis.length(), run.is_rtl(), minikin_font,
+              minikin_paint, minikin_font_collection, nullptr);
+        // line_range.ellipsized is guaranteed that its line width exceed constraint.
+        // However, we still need to find the line_run that should do ellipsis.
+        //
+        // If current line_run can fit the constraint width and there is enough
+        // space for ellipsis, it is the job for next line_run to ellipsize.
+        // Including ellipsis_width will guarantee the next line_run can truncate
+        // enough space.
+        if (run_x_offset + text_width + ellipsis_width > width_ || line_run_it == line_runs.end() - 1) {
+          // Truncate characters from the text until the ellipsis fits.
+          size_t truncate_count = 0;
+          while (truncate_count < text_count &&
+                 run_x_offset + text_width + ellipsis_width > width_) {
+            text_width -= text_advances[text_count - truncate_count - 1];
+            truncate_count++;
+          }
 
-        // Truncate characters from the text until the ellipsis fits.
-        size_t truncate_count = 0;
-        while (truncate_count < text_count &&
-               run_x_offset + text_width + ellipsis_width > width_) {
-          text_width -= text_advances[text_count - truncate_count - 1];
-          truncate_count++;
-        }
-
-        ellipsized_text.reserve(text_count - truncate_count +
-                                ellipsis.length());
-        ellipsized_text.insert(ellipsized_text.begin(),
-                               text_.begin() + run.start(),
-                               text_.begin() + run.end() - truncate_count);
-        ellipsized_text.insert(ellipsized_text.end(), ellipsis.begin(),
-                               ellipsis.end());
-        text_ptr = ellipsized_text.data();
-        text_start = 0;
-        text_count = ellipsized_text.size();
-        text_size = text_count;
-
-        // If there is no line limit, then skip all lines after the ellipsized
-        // line.
-        if (paragraph_style_.unlimited_lines()) {
-          line_limit = line_number + 1;
-          did_exceed_max_lines_ = true;
+          ellipsized_text.reserve(text_count - truncate_count +
+                                  ellipsis.length());
+          ellipsized_text.insert(ellipsized_text.begin(),
+                                 text_.begin() + run.start(),
+                                 text_.begin() + run.start() + text_count - truncate_count);
+          ellipsized_text.insert(ellipsized_text.end(), ellipsis.begin(),
+                                 ellipsis.end());
+          text_ptr = ellipsized_text.data();
+          text_start = 0;
+          text_count = ellipsized_text.size();
+          text_size = text_count;
         }
       }
 

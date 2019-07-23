@@ -81,6 +81,7 @@ const int psHeightIndex = 8;
 const int psStrutStyleIndex = 9;
 const int psEllipsisIndex = 10;
 const int psLocaleIndex = 11;
+const int psEllipsizedByCharacterIndex = 10;
 
 const int psTextAlignMask = 1 << psTextAlignIndex;
 const int psTextDirectionMask = 1 << psTextDirectionIndex;
@@ -93,6 +94,7 @@ const int psHeightMask = 1 << psHeightIndex;
 const int psStrutStyleMask = 1 << psStrutStyleIndex;
 const int psEllipsisMask = 1 << psEllipsisIndex;
 const int psLocaleMask = 1 << psLocaleIndex;
+const int psEllipsizedByCharacterMask = 1 << psEllipsizedByCharacterIndex;
 
 // TextShadows decoding
 
@@ -144,7 +146,7 @@ FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
 void ParagraphBuilder::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register(
-      {{"ParagraphBuilder_constructor", ParagraphBuilder_constructor, 9, true},
+      {{"ParagraphBuilder_constructor", ParagraphBuilder_constructor, 10, true},
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
@@ -156,10 +158,12 @@ fml::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
     double fontSize,
     double height,
     const std::u16string& ellipsis,
-    const std::string& locale) {
+    const std::string& locale,
+    bool ellipsizedByCharacter) {
   return fml::MakeRefCounted<ParagraphBuilder>(encoded, strutData, fontFamily,
                                                strutFontFamilies, fontSize,
-                                               height, ellipsis, locale);
+                                               height, ellipsis, locale,
+                                               ellipsizedByCharacter);
 }
 
 // returns true if there is a font family defined. Font family is the only
@@ -231,7 +235,8 @@ ParagraphBuilder::ParagraphBuilder(
     double fontSize,
     double height,
     const std::u16string& ellipsis,
-    const std::string& locale) {
+    const std::string& locale,
+    bool ellipsizedByCharacter) {
   int32_t mask = encoded[0];
   txt::ParagraphStyle style;
 
@@ -279,6 +284,10 @@ ParagraphBuilder::ParagraphBuilder(
 
   if (mask & psLocaleMask) {
     style.locale = locale;
+  }
+
+  if (mask & psEllipsizedByCharacterMask) {
+    style.ellipsized_by_character = ellipsizedByCharacter;
   }
 
   FontCollection& font_collection =
