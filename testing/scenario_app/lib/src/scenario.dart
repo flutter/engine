@@ -12,7 +12,7 @@ abstract class Scenario {
   /// The window used by this scenario. May be mocked.
   final Window window;
 
-  /// Called by the progrem when a frame is ready to be drawn.
+  /// Called by the program when a frame is ready to be drawn.
   ///
   /// See [Window.onBeginFrame] for more details.
   void onBeginFrame(Duration duration);
