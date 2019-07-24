@@ -97,6 +97,11 @@ void BinaryMessengerImpl::Send(const std::string& channel,
                                const uint8_t* message,
                                const size_t message_size,
                                BinaryReply reply) const {
+  if (reply == nullptr) {
+    std::cerr << "Calling BinaryMessengerImpl::Send expecting a reply, but the "
+                 "callback is null.\n";
+    return;
+  }
   struct Captures {
     BinaryReply reply;
   };
@@ -109,8 +114,12 @@ void BinaryMessengerImpl::Send(const std::string& channel,
     captures->reply(data, data_size);
     delete captures;
   };
-  FlutterDesktopMessengerSendWithReply(messenger_, channel.c_str(), message,
-                                       message_size, message_reply, captures);
+  bool result = FlutterDesktopMessengerSendWithReply(
+      messenger_, channel.c_str(), message, message_size, message_reply,
+      captures);
+  if (!result) {
+    delete captures;
+  }
 }
 
 void BinaryMessengerImpl::SetMessageHandler(const std::string& channel,

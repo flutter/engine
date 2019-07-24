@@ -52,25 +52,30 @@ void FlutterDesktopRegistrarEnableInputBlocking(
   }
 }
 
-void FlutterDesktopMessengerSend(FlutterDesktopMessengerRef messenger,
+bool FlutterDesktopMessengerSend(FlutterDesktopMessengerRef messenger,
                                  const char* channel,
                                  const uint8_t* message,
                                  const size_t message_size) {
+  bool result = false;
   if (s_stub_implementation) {
-    s_stub_implementation->MessengerSend(channel, message, message_size);
+    result =
+        s_stub_implementation->MessengerSend(channel, message, message_size);
   }
+  return result;
 }
 
-void FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,
+bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,
                                           const char* channel,
                                           const uint8_t* message,
                                           const size_t message_size,
                                           const FlutterDesktopBinaryReply reply,
                                           void* user_data) {
+  bool result = false;
   if (s_stub_implementation) {
-    s_stub_implementation->MessengerSendWithReply(
+    result = s_stub_implementation->MessengerSendWithReply(
         channel, message, message_size, reply, user_data);
   }
+  return result;
 }
 
 void FlutterDesktopMessengerSendResponse(

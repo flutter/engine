@@ -45,15 +45,19 @@ class BasicMessageChannel {
   BasicMessageChannel(BasicMessageChannel const&) = delete;
   BasicMessageChannel& operator=(BasicMessageChannel const&) = delete;
 
+  // Sends a message to the Flutter engine on this channel.
+  void Send(const T& message) {
+    std::unique_ptr<std::vector<uint8_t>> raw_message =
+        codec_->EncodeMessage(message);
+    messenger_->Send(name_, raw_message->data(), raw_message->size());
+  }
+
   // Sends a message to the Flutter engine on this channel expecting a reply.
   void Send(const T& message, BinaryReply reply) {
     std::unique_ptr<std::vector<uint8_t>> raw_message =
         codec_->EncodeMessage(message);
     messenger_->Send(name_, raw_message->data(), raw_message->size(), reply);
   }
-
-  // Sends a message to the Flutter engine on this channel.
-  void Send(const T& message) { Send(message, nullptr); }
 
   // Registers a handler that should be called any time a message is
   // received on this channel.

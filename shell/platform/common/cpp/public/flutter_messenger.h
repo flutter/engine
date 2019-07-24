@@ -51,13 +51,13 @@ typedef void (*FlutterDesktopMessageCallback)(
     void* /* user data */);
 
 // Sends a binary message to the Flutter side on the specified channel.
-FLUTTER_EXPORT void FlutterDesktopMessengerSend(
+FLUTTER_EXPORT bool FlutterDesktopMessengerSend(
     FlutterDesktopMessengerRef messenger,
     const char* channel,
     const uint8_t* message,
     const size_t message_size);
 
-FLUTTER_EXPORT void FlutterDesktopMessengerSendWithReply(
+FLUTTER_EXPORT bool FlutterDesktopMessengerSendWithReply(
     FlutterDesktopMessengerRef messenger,
     const char* channel,
     const uint8_t* message,
