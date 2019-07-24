@@ -211,6 +211,17 @@ class Shell final : public PlatformView::Delegate,
   ///
   fml::WeakPtr<Rasterizer> GetRasterizer();
 
+  //------------------------------------------------------------------------------
+  /// @brief      Engines may only be accessed on the UI thread. This method is
+  ///             deprecated, and implementers should instead use other API
+  ///             available on the Shell or the PlatformView.
+  ///
+  /// @return     A weak pointer to the engine.
+  ///
+  [[deprecated(
+      "This will be removed - API expecting to call this should use "
+      "functionality exposed through the Shell instead.")]] fml::WeakPtr<Engine>
+  GetEngine();
   //----------------------------------------------------------------------------
   /// @brief      Platform views may only be accessed on the platform task
   ///             runner.

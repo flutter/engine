@@ -489,6 +489,11 @@ fml::WeakPtr<Rasterizer> Shell::GetRasterizer() {
   return weak_rasterizer_;
 }
 
+fml::WeakPtr<Engine> Shell::GetEngine() {
+  FML_DCHECK(is_setup_);
+  return weak_engine_;
+}
+
 fml::WeakPtr<PlatformView> Shell::GetPlatformView() {
   FML_DCHECK(is_setup_);
   return weak_platform_view_;
