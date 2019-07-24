@@ -77,6 +77,10 @@ class RuntimeController final : public WindowClient {
 
   std::string GetIsolateName();
 
+  bool HasLivePorts();
+
+  tonic::DartErrorHandleType GetLastError();
+
   std::weak_ptr<DartIsolate> GetRootIsolate();
 
   std::pair<bool, uint32_t> GetRootIsolateReturnCode();

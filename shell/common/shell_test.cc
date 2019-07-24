@@ -74,12 +74,15 @@ void ShellTest::PlatformViewNotifyCreated(Shell* shell) {
 
 void ShellTest::RunEngine(Shell* shell, RunConfiguration configuration) {
   fml::AutoResetWaitableEvent latch;
-
-  shell->RunEngine(std::move(configuration),
-                   [&latch](Engine::RunStatus run_status) {
-                     ASSERT_EQ(run_status, Engine::RunStatus::Success);
-                     latch.Signal();
-                   });
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [shell, &latch, &configuration]() {
+        shell->RunEngine(std::move(configuration),
+                         [&latch](Engine::RunStatus run_status) {
+                           ASSERT_EQ(run_status, Engine::RunStatus::Success);
+                           latch.Signal();
+                         });
+      });
   latch.Wait();
 }
 

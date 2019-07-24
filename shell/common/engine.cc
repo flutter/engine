@@ -235,6 +235,14 @@ std::string Engine::GetUIIsolateName() {
   return runtime_controller_->GetIsolateName();
 }
 
+bool Engine::UIIsolateHasLivePorts() {
+  return runtime_controller_->HasLivePorts();
+}
+
+tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
+  return runtime_controller_->GetLastError();
+}
+
 void Engine::OnOutputSurfaceCreated() {
   have_surface_ = true;
   StartAnimatorIfPossible();

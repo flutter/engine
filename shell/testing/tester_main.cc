@@ -20,6 +20,7 @@
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 
 namespace flutter {
 
@@ -30,36 +31,18 @@ class ScriptCompletionTaskObserver {
   ScriptCompletionTaskObserver(Shell& shell,
                                fml::RefPtr<fml::TaskRunner> main_task_runner,
                                bool run_forever)
-      : main_task_runner_(std::move(main_task_runner)),
+      : shell_(shell),
+        main_task_runner_(std::move(main_task_runner)),
         run_forever_(run_forever) {}
 
-  int GetExitCodeForLastError() const {
-    // Exit codes used by the Dart command line tool.
-    const int kApiErrorExitCode = 253;
-    const int kCompilationErrorExitCode = 254;
-    const int kErrorExitCode = 255;
-    switch (last_error_) {
-      case tonic::kCompilationErrorType:
-        return kCompilationErrorExitCode;
-      case tonic::kApiErrorType:
-        return kApiErrorExitCode;
-      case tonic::kUnknownErrorType:
-        return kErrorExitCode;
-      default:
-        return 0;
-    }
-  }
+  int GetExitCodeForLastError() const { return last_error_.value_or(0); }
 
   void DidProcessTask() {
-    auto dart_state = UIDartState::Current();
-    if (!dart_state) {
-      last_error_ = dart_state->GetLastError();
-      tonic::DartState::Scope scope(dart_state);
-      if (Dart_HasLivePorts()) {
-        // The UI isolate still has live ports and is running. Nothing to do
-        // just yet.
-        return;
-      }
+    last_error_ = shell_.GetUIIsolateLastError();
+    if (shell_.EngineHasLivePorts()) {
+      // The UI isolate still has live ports and is running. Nothing to do
+      // just yet.
+      return;
     }
 
     if (run_forever_) {
@@ -77,9 +60,10 @@ class ScriptCompletionTaskObserver {
   }
 
  private:
+  Shell& shell_;
   fml::RefPtr<fml::TaskRunner> main_task_runner_;
   bool run_forever_ = false;
-  tonic::DartErrorHandleType last_error_ = tonic::kUnknownErrorType;
+  std::optional<int> last_error_;
   bool has_terminated = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ScriptCompletionTaskObserver);

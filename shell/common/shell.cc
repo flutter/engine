@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #define RAPIDJSON_HAS_STDSTRING 1
-
 #include "flutter/shell/common/shell.h"
 
 #include <memory>
@@ -406,6 +405,35 @@ void Shell::RunEngine(RunConfiguration run_configuration,
           result_callback(result);
         }
       }));
+}
+
+std::optional<int> Shell::GetUIIsolateLastError() const {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  if (!weak_engine_) {
+    return std::nullopt;
+  }
+  switch (weak_engine_->GetUIIsolateLastError()) {
+    case tonic::kCompilationErrorType:
+      return kCompilationErrorExitCode;
+    case tonic::kApiErrorType:
+      return kApiErrorExitCode;
+    case tonic::kUnknownErrorType:
+      return kErrorExitCode;
+    default:
+      return 0;
+  }
+}
+
+bool Shell::EngineHasLivePorts() const {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  if (!weak_engine_) {
+    return false;
+  }
+  return weak_engine_->UIIsolateHasLivePorts();
 }
 
 bool Shell::IsSetup() const {

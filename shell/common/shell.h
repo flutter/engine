@@ -78,6 +78,13 @@ class Shell final : public PlatformView::Delegate,
                     public Rasterizer::Delegate,
                     public ServiceProtocol::Handler {
  public:
+  /// The Dart error code for an API error.
+  const int kApiErrorExitCode = 253;
+  /// The Dart error code for a compilation error.
+  const int kCompilationErrorExitCode = 254;
+  /// The Dart error code for an unkonwn error.
+  const int kErrorExitCode = 255;
+
   template <class T>
   using CreateCallback = std::function<std::unique_ptr<T>(Shell&)>;
 
@@ -258,6 +265,25 @@ class Shell final : public PlatformView::Delegate,
   ///          thread, 'kDeadlineExceeded' if there is a timeout.
   ///
   fml::Status WaitForFirstFrame(fml::TimeDelta timeout);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to get the last error from the Dart UI
+  ///             Isolate, if one exists.
+  ///
+  /// @return     Returns the last error code from the UI Isolate.
+  ///
+  std::optional<int> GetUIIsolateLastError() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to check if the Engine is running and has
+  ///             any live ports remaining. For example, the Flutter tester uses
+  ///             this method to check whether it should continue to wait for
+  ///             a running test or not.
+  ///
+  /// @return     Returns if the shell has an engine and the engine has any live
+  ///             Dart ports.
+  ///
+  bool EngineHasLivePorts() const;
 
  private:
   using ServiceProtocolHandler =
