@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 import 'dart:convert';
+import 'dart:developer' as developer;
+import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -40,7 +43,40 @@ void _handlePlatformMessage(String name, ByteData data, PlatformMessageResponseC
       data.setUint8(0, candidateScenario == null ? 0 : 1);
       callback(data);
     }
+  } else if (name == 'write_timeline') {
+    assert(data != null);
+    final String outputFileName = utf8.decode(data.buffer.asUint8List());
+    _writeTimelineData(outputFileName).then((_) {
+      final ByteData data = ByteData(1);
+      data.setUint8(0, 1);
+      callback(data);
+    });
   }
+}
+
+Future<void> _writeTimelineData(String outputFileName) async {
+  final String isolateId = developer.Service.getIsolateID(Isolate.current);
+  final developer.ServiceProtocolInfo info = await developer.Service.getInfo();
+  final Uri cpuProfileTimelineUri = info.serverUri.resolve(
+    '_getCpuProfileTimeline?tags=None&isolateId=$isolateId',
+  );
+  final Uri vmServiceTimelineUri = info.serverUri.resolve('getVMTimeline');
+  final Map<String, dynamic> cpuTimelineJson = await _getJson(cpuProfileTimelineUri);
+  final Map<String, dynamic> vmServiceTimelineJson = await _getJson(vmServiceTimelineUri);
+  // TODO(dnfield): Figure out how to enable the profiler for Firebase testlab.
+  print(cpuTimelineJson);
+  print(vmServiceTimelineJson);
+}
+
+Future<Map<String, dynamic>> _getJson(Uri uri) async {
+  final HttpClient client = HttpClient();
+  final HttpClientRequest request = await client.getUrl(uri);
+  final HttpClientResponse response = await request.close();
+  if (response.statusCode > 299) {
+    return null;
+  }
+  final String data = await utf8.decodeStream(response);
+  return json.decode(data);
 }
 
 void _onBeginFrame(Duration duration) {

@@ -24,7 +24,8 @@ gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
 gcloud --quiet config set project flutter-infra
 
 # Run the test.
-gcloud firebase test android run --type robo \
+gcloud firebase test android run \
+  --type game-loop \
   --app $1 \
   --timeout 2m \
   --results-bucket=gs://flutter_firebase_testlab \
