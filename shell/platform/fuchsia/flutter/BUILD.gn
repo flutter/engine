@@ -193,7 +193,9 @@ template("jit_runner") {
       },
     ]
 
-    fuchsia_sdk_lib = "//fuchsia/sdk/$host_os/arch/$host_cpu/lib"
+    fuchsia_sdk_base = "//fuchsia/sdk/$host_os/arch/$host_cpu"
+    fuchsia_sdk_lib = "$fuchsia_sdk_base/lib"
+    sysroot_lib = "$fuchsia_sdk_base/lib"
 
     libraries = [
       {
@@ -219,6 +221,14 @@ template("jit_runner") {
       {
         name = "libvulkan.so"
         path = rebase_path("$fuchsia_sdk_lib")
+      },
+      {
+        name = "libzircon.so"
+        path = rebase_path("$sysroot_lib")
+      },
+      {
+        name = "libc.so"
+        path = rebase_path("$sysroot_lib")
       },
     ]
 
