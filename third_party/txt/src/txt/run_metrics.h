@@ -22,31 +22,40 @@
 
 namespace txt {
 
+// Contains the font metrics and TextStyle of a unique run.
 class RunMetrics {
  public:
-  TextStyle* text_style = nullptr;
+  RunMetrics(const TextStyle& style, SkFontMetrics& metrics)
+      : text_style_(&style), font_metrics_(&metrics) {
+    assert(text_style_ != nullptr);
+    assert(font_metrics_ != nullptr);
+  }
 
-  // double Top;                 // distance to reserve above baseline
-  // double Ascent;              // distance to reserve below baseline
-  // double Descent;             // extent below baseline
-  // double Bottom;              // extent below baseline
-  // double Leading;             // distance to add between lines
-  // double AvgCharWidth;        // average character width
-  // double MaxCharWidth;        // maximum character width
-  // double XMin;                // minimum x
-  // double XMax;                // maximum x
-  // double XHeight;             // height of lower-case 'x'
-  // double CapHeight;           // height of an upper-case letter
-  // double UnderlineThickness;  // underline thickness
-  // double UnderlinePosition;   // underline position relative to baseline
-  // double StrikeoutThickness;  // strikeout thickness
-  // double StrikeoutPosition;   // strikeout position relative to baseline
-  SkFontMetrics* font_metrics = nullptr;
+  SkFontMetrics GetFontMetrics() const { return *font_metrics_; }
 
-  RunMetrics();
+  TextStyle GetTextStyle() const { return *text_style_; }
 
-  RunMetrics(TextStyle* style, SkFontMetrics* metrics)
-      : text_style(style), font_metrics(metrics) {}
+ private:
+  const TextStyle* text_style_ = nullptr;
+
+  // SkFontMetrics contains the following metrics:
+  //
+  // * Top                 distance to reserve above baseline
+  // * Ascent              distance to reserve below baseline
+  // * Descent             extent below baseline
+  // * Bottom              extent below baseline
+  // * Leading             distance to add between lines
+  // * AvgCharWidth        average character width
+  // * MaxCharWidth        maximum character width
+  // * XMin                minimum x
+  // * XMax                maximum x
+  // * XHeight             height of lower-case 'x'
+  // * CapHeight           height of an upper-case letter
+  // * UnderlineThickness  underline thickness
+  // * UnderlinePosition   underline position relative to baseline
+  // * StrikeoutThickness  strikeout thickness
+  // * StrikeoutPosition   strikeout position relative to baseline
+  SkFontMetrics* font_metrics_ = nullptr;
 };
 
 }  // namespace txt

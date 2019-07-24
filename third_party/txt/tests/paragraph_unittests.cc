@@ -34,6 +34,65 @@ namespace txt {
 
 using ParagraphTest = RenderTest;
 
+TEST_F(ParagraphTest, LineMetricsParagraph) {
+  const char* text = "Hello! What is going on?\nSecond line \nthirdline";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  // We must supply a font here, as the default is Arial, and we do not
+  // include Arial in our test fonts as it is proprietary. We want it to
+  // be Arial default though as it is one of the most common fonts on host
+  // platforms. On real devices/apps, Arial should be able to be resolved.
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(GetTestCanvasWidth());
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  // ASSERT_EQ(paragraph->text_.size(), std::string{text}.length());
+  // for (size_t i = 0; i < u16_text.length(); i++) {
+  //   ASSERT_EQ(paragraph->text_[i], u16_text[i]);
+  // }
+  std::vector<txt::LineMetrics> metrics = paragraph->GetLineMetrics();
+
+  ASSERT_EQ(metrics.size(), 3ull);
+  ASSERT_EQ(metrics[0].start, 0ull);
+  ASSERT_EQ(metrics[0].end, 24ull);
+  ASSERT_EQ(metrics[0].end_including_newline, 25ull);
+  ASSERT_EQ(metrics[0].end_excluding_whitespace, 24ull);
+  ASSERT_EQ(metrics[0].hard_break, true);
+  ASSERT_FLOAT_EQ(metrics[0].ascent, 12.988281);
+  ASSERT_FLOAT_EQ(metrics[0].descent, 3.4179688);
+  ASSERT_FLOAT_EQ(metrics[0].width, 149.67578);
+  ASSERT_FLOAT_EQ(metrics[0].left, 0.0);
+  ASSERT_FLOAT_EQ(metrics[0].baseline, 12.582031);
+  ASSERT_EQ(metrics[0].line_number, 0ull);
+  ASSERT_EQ(metrics[0].run_metrics_map->size(), 1ull);
+
+  ASSERT_EQ(metrics[1].start, 25ull);
+  ASSERT_EQ(metrics[1].end, 37ull);
+  ASSERT_EQ(metrics[1].end_including_newline, 38ull);
+  ASSERT_EQ(metrics[1].end_excluding_whitespace, 36ull);
+  ASSERT_EQ(metrics[1].hard_break, true);
+  ASSERT_FLOAT_EQ(metrics[1].ascent, 12.988281);
+  ASSERT_FLOAT_EQ(metrics[1].descent, 3.4179688);
+  ASSERT_FLOAT_EQ(metrics[1].width, 72.039062);
+  ASSERT_FLOAT_EQ(metrics[1].left, 0.0);
+  ASSERT_FLOAT_EQ(metrics[1].baseline, 28.582031);
+  ASSERT_EQ(metrics[1].line_number, 1ull);
+}
+
 TEST_F(ParagraphTest, SimpleParagraph) {
   const char* text = "Hello World Text Dialog";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
