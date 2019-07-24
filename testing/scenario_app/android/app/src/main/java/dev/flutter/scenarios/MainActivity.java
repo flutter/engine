@@ -2,6 +2,7 @@ package dev.flutter.scenarios;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 
@@ -12,6 +13,9 @@ import io.flutter.plugin.common.StringCodec;
 public class MainActivity extends FlutterActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            getFlutterView().addFirstFrameListener(() -> reportFullyDrawn());
+        }
         final Intent launchIntent = getIntent();
          if (launchIntent.getAction().equals("com.google.intent.action.TEST_LOOP")) {
          // Run for one minute, get the timeline data, write it, and finish.

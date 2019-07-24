@@ -64,6 +64,7 @@ Future<void> _writeTimelineData(String outputFileName) async {
   final Map<String, dynamic> cpuTimelineJson = await _getJson(cpuProfileTimelineUri);
   final Map<String, dynamic> vmServiceTimelineJson = await _getJson(vmServiceTimelineUri);
   // TODO(dnfield): Figure out how to enable the profiler for Firebase testlab.
+  // https://github.com/flutter/flutter/issues/36812
   print(cpuTimelineJson);
   print(vmServiceTimelineJson);
 }
