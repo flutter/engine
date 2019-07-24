@@ -254,11 +254,6 @@ template("jit_runner") {
         path = rebase_path(
                 "$clang_base/${clang_manifest_json.md5_beb70f40d525448b39ea87d9f5811e56}")
       },
-      {
-        name = "libunwind.so.1"
-        path = rebase_path(
-                "$clang_base/${clang_manifest_json.md5_beb70f40d525448b39ea87d9f5811e56}")
-      },
     ]
 
     meta = [
