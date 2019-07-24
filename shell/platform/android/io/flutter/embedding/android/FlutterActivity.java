@@ -25,6 +25,7 @@ import android.view.Window;
 import android.view.WindowManager;
 
 import io.flutter.Log;
+import io.flutter.app.BuildConfig;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
@@ -353,7 +354,11 @@ public class FlutterActivity extends Activity
       );
       Bundle metadata = activityInfo.metaData;
       Integer splashScreenId = metadata != null ? metadata.getInt(SPLASH_SCREEN_META_DATA_KEY) : null;
-      return splashScreenId != null ? getResources().getDrawable(splashScreenId, getTheme()) : null;
+      return splashScreenId != null
+          ? Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP
+            ? getResources().getDrawable(splashScreenId, getTheme())
+            : getResources().getDrawable(splashScreenId)
+          : null;
     } catch (PackageManager.NameNotFoundException e) {
       // This is never expected to happen.
       return null;
