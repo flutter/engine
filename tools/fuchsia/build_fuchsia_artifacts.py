@@ -75,8 +75,11 @@ def RemoveDirectoryIfExists(path):
     shutil.rmtree(path)
 
 
-def CopyToBucket(source, destination):
-  source = os.path.join(_out_dir, source, 'flutter_jit_runner_far')
+def CopyToBucket(source, destination, product=False):
+  far_dir = 'flutter_jit_runner_far'
+  if product:
+    far_dir = 'flutter_jit_product_runner_far'
+  source = os.path.join(_out_dir, source, far_dir)
   CreateMetaPackage(source)
   pm_bin = GetPMBinPath()
   key_path = os.path.join(_script_dir, 'development.key')
@@ -90,7 +93,7 @@ def BuildBucket():
 
   CopyToBucket('fuchsia_debug/', 'flutter/debug/')
   CopyToBucket('fuchsia_profile/', 'flutter/profile/')
-  CopyToBucket('fuchsia_release/', 'flutter/release/')
+  CopyToBucket('fuchsia_release/', 'flutter/release/', True)
 
 
 def CopyFiles(source, destination):
@@ -124,6 +127,21 @@ def ProcessCIPDPakcage(upload, engine_version):
   subprocess.check_call(command, cwd=_bucket_directory)
 
 
+def GetTargetsToBuild(product=False):
+  product_suffix = '_product'
+  if not product:
+    product_suffix = ''
+  targets_to_build = [
+      # The Flutter Runner.
+      'flutter/shell/platform/fuchsia/flutter:flutter_jit%s_runner' %
+      product_suffix,
+
+      # The Dart Runner.
+      # 'flutter/shell/platform/fuchsia/dart:dart',
+  ]
+  return targets_to_build
+
+
 def main():
   parser = argparse.ArgumentParser()
 
@@ -152,20 +170,9 @@ def main():
 
   RunGN('fuchsia_release', common_flags + ['--runtime-mode', 'release'])
 
-  targets_to_build = [
-      # The Flutter Runner.
-      'flutter/shell/platform/fuchsia/flutter:flutter_jit_runner',
-
-      # The Dart Runner.
-      'flutter/shell/platform/fuchsia/dart:dart',
-
-      # The Snapshots.
-      'flutter/lib/snapshot:snapshot',
-  ]
-
-  BuildNinjaTargets('fuchsia_debug', targets_to_build)
-  BuildNinjaTargets('fuchsia_profile', targets_to_build)
-  BuildNinjaTargets('fuchsia_release', targets_to_build)
+  BuildNinjaTargets('fuchsia_debug', GetTargetsToBuild())
+  BuildNinjaTargets('fuchsia_profile', GetTargetsToBuild())
+  BuildNinjaTargets('fuchsia_release', GetTargetsToBuild(True))
 
   BuildBucket()
 

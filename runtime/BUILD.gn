@@ -36,6 +36,10 @@ group("libdart") {
       "//third_party/dart/runtime:libdart_jit",
     ]
   }
+
+  if (using_fuchsia_sdk) {
+    public_deps = []
+  }
 }
 
 source_set("runtime") {
