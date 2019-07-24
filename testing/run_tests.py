@@ -53,15 +53,15 @@ def FindExecutablePath(path):
 
 
 def RunEngineExecutable(build_dir, executable_name, filter, flags=[], cwd=buildroot_dir):
-  if not filter in executable_name:
+  if filter is not None and executable_name not in filter:
     print 'Skipping %s due to filter.' % executable_name
     return
 
   executable = FindExecutablePath(os.path.join(build_dir, executable_name))
-  
+
   print 'Running %s in %s' % (executable_name, cwd)
   test_command = [ executable ] + flags
-  print ' '.join(test_command) 
+  print ' '.join(test_command)
   subprocess.check_call(test_command, cwd=cwd)
 
 
@@ -101,7 +101,7 @@ def RunEngineBenchmarks(build_dir, filter):
   print "Running Engine Benchmarks."
 
   RunEngineExecutable(build_dir, 'shell_benchmarks', filter)
-  
+
   RunEngineExecutable(build_dir, 'fml_benchmarks', filter)
 
   if IsLinux():
@@ -121,7 +121,7 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output):
   assert os.path.exists(frontend_server)
   assert os.path.exists(flutter_patched_sdk)
   assert os.path.exists(test_packages)
-  
+
   snapshot_command = [
     dart,
     frontend_server,
@@ -136,19 +136,19 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output):
     kernel_file_output,
     dart_file
   ]
-  
+
   subprocess.check_call(snapshot_command, cwd=buildroot_dir)
   assert os.path.exists(kernel_file_output)
 
 
-def RunDartTest(build_dir, dart_file, filter):
+def RunDartTest(build_dir, dart_file):
   kernel_file_name = os.path.basename(dart_file) + '.kernel.dill'
   kernel_file_output = os.path.join(out_dir, kernel_file_name)
-  
+
   SnapshotTest(build_dir, dart_file, kernel_file_output)
 
   print "Running test '%s' using 'flutter_tester'" % kernel_file_name
-  RunEngineExecutable(build_dir, 'flutter_tester', filter, [
+  RunEngineExecutable(build_dir, 'flutter_tester', None, [
     '--disable-observatory',
     '--use-test-fonts',
     kernel_file_output
@@ -187,9 +187,61 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
     '--unopt',
     '--no-lto',
   ]
-  
+
   subprocess.check_call(gn_command, cwd=buildroot_dir)
   subprocess.check_call(ninja_command, cwd=buildroot_dir)
+
+def EnsureJavaTestsAreBuilt(android_out_dir):
+  ninja_command = [
+    'ninja',
+    '-C',
+    android_out_dir,
+    'flutter/shell/platform/android:robolectric_tests'
+  ]
+
+  # Attempt running Ninja if the out directory exists.
+  # We don't want to blow away any custom GN args the caller may have already set.
+  if os.path.exists(android_out_dir):
+    subprocess.check_call(ninja_command, cwd=buildroot_dir)
+    return
+
+  # Otherwise prepare the directory first, then build the test.
+  gn_command = [
+    os.path.join(buildroot_dir, 'flutter', 'tools', 'gn'),
+    '--android',
+    '--unoptimized',
+    '--runtime-mode=debug',
+    '--no-lto',
+  ]
+  subprocess.check_call(gn_command, cwd=buildroot_dir)
+  subprocess.check_call(ninja_command, cwd=buildroot_dir)
+
+def RunJavaTests(filter):
+  # There's no real reason why other Android build types couldn't be supported
+  # here. Could default to this but use any other variant of android_ if it
+  # exists, but it seems like overkill to add that logic in right now.
+  android_out_dir = os.path.join(out_dir, 'android_debug_unopt')
+  EnsureJavaTestsAreBuilt(android_out_dir)
+
+  robolectric_dir = os.path.join(buildroot_dir, 'third_party', 'robolectric', 'lib')
+  classpath = map(str, [
+    os.path.join(buildroot_dir, 'third_party', 'android_tools', 'sdk', 'platforms', 'android-28', 'android.jar'),
+    os.path.join(robolectric_dir, '*'), # Wildcard for all jars in the directory
+    os.path.join(android_out_dir, 'flutter_java.jar'),
+    os.path.join(android_out_dir, 'robolectric_tests.jar')
+  ])
+
+  test_class = filter if filter else 'io.flutter.FlutterTestSuite'
+  command = [
+    'java',
+    '-Drobolectric.offline=true',
+    '-Drobolectric.dependency.dir=' + robolectric_dir,
+    '-classpath', ':'.join(classpath),
+    'org.junit.runner.JUnitCore',
+    test_class
+  ]
+
+  return subprocess.call(command)
 
 def RunDartTests(build_dir, filter):
   # This one is a bit messy. The pubspec.yaml at flutter/testing/dart/pubspec.yaml
@@ -198,49 +250,61 @@ def RunDartTests(build_dir, filter):
   EnsureDebugUnoptSkyPackagesAreBuilt();
 
   # Now that we have the Sky packages at the hardcoded location, run `pub get`.
-  RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'pub'), '', flags=['get'], cwd=dart_tests_dir)
+  RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'pub'), None, flags=['get'], cwd=dart_tests_dir)
 
   dart_tests = glob.glob('%s/*.dart' % dart_tests_dir)
 
   for dart_test_file in dart_tests:
-    if filter in os.path.basename(dart_test_file):
-      print "Testing dart file %s" % dart_test_file
-      RunDartTest(build_dir, dart_test_file, filter)
-    else:
+    if filter is not None and os.path.basename(dart_test_file) not in filter:
       print "Skipping %s due to filter." % dart_test_file
-
-
-def RunTests(build_dir, filter, run_engine_tests, run_dart_tests, run_benchmarks):
-  if run_engine_tests:
-    RunCCTests(build_dir, filter)
-
-  # https://github.com/flutter/flutter/issues/36301
-  if run_dart_tests and not IsWindows():
-    RunDartTests(build_dir, filter)
-
-  # https://github.com/flutter/flutter/issues/36300
-  if run_benchmarks and not IsWindows():
-    RunEngineBenchmarks(build_dir, filter)
-
+    else:
+      print "Testing dart file %s" % dart_test_file
+      RunDartTest(build_dir, dart_test_file)
 
 def main():
   parser = argparse.ArgumentParser();
 
-  parser.add_argument('--variant', dest='variant', action='store', 
+  parser.add_argument('--variant', dest='variant', action='store',
       default='host_debug_unopt', help='The engine build variant to run the tests for.');
-  parser.add_argument('--type', type=str, choices=['all', 'engine', 'dart', 'benchmarks'], default='all')
-  parser.add_argument('--filter', type=str, default='',
-      help='The file name filter to use to select specific tests to run.')
+  parser.add_argument('--type', type=str, default='all')
+  parser.add_argument('--engine-filter', type=str, default='',
+      help='A list of engine test executables to run.')
+  parser.add_argument('--dart-filter', type=str, default='',
+      help='A list of Dart test scripts to run.')
+  parser.add_argument('--java-filter', type=str, default='',
+      help='A single Java test class to run.')
 
   args = parser.parse_args()
-  
-  run_engine_tests = args.type in ['engine', 'all']
-  run_dart_tests = args.type in ['dart', 'all']
-  run_benchmarks = args.type in ['benchmarks', 'all']
+
+  if args.type == 'all':
+    types = ['engine', 'dart', 'benchmarks', 'java']
+  else:
+    types = args.type.split(',')
 
   build_dir = os.path.join(out_dir, args.variant)
-  assert os.path.exists(build_dir), 'Build variant directory %s does not exist!' % build_dir
-  RunTests(build_dir, args.filter, run_engine_tests, run_dart_tests, run_benchmarks)
+  if args.type != 'java':
+    assert os.path.exists(build_dir), 'Build variant directory %s does not exist!' % build_dir
+
+  engine_filter = args.engine_filter.split(',') if args.engine_filter else None
+  if 'engine' in types:
+    RunCCTests(build_dir, engine_filter)
+
+  if 'dart' in types:
+    assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
+    dart_filter = args.dart_filter.split(',') if args.dart_filter else None
+    RunDartTests(build_dir, dart_filter)
+
+  if 'java' in types:
+    assert not IsWindows(), "Android engine files can't be compiled on Windows."
+    java_filter = args.java_filter
+    if ',' in java_filter or '*' in java_filter:
+      print('Can only filter JUnit4 tests by single entire class name, eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter)
+      java_filter = None
+    RunJavaTests(java_filter)
+
+  # https://github.com/flutter/flutter/issues/36300
+  if 'benchmarks' in types and not IsWindows():
+    RunEngineBenchmarks(build_dir, engine_filter)
 
 
 if __name__ == '__main__':
