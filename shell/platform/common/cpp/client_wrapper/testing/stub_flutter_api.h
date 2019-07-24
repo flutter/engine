@@ -21,7 +21,10 @@ namespace testing {
 // from the actual library.
 class StubFlutterApi {
  public:
+  // Used by the callers to simulate a result from the engine when sending a
+  // message.
   bool message_engine_result = true;
+  
   // Sets |stub| as the instance to which calls to the Flutter library C APIs
   // will be forwarded.
   static void SetTestStub(StubFlutterApi* stub);
