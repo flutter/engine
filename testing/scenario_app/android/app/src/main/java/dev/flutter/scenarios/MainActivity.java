@@ -13,16 +13,16 @@ import io.flutter.plugin.common.StringCodec;
 public class MainActivity extends FlutterActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             getFlutterView().addFirstFrameListener(() -> reportFullyDrawn());
         }
         final Intent launchIntent = getIntent();
-         if (launchIntent.getAction().equals("com.google.intent.action.TEST_LOOP")) {
-         // Run for one minute, get the timeline data, write it, and finish.
-         final Uri logFileUri = launchIntent.getData();
+        if (launchIntent.getAction().equals("com.google.intent.action.TEST_LOOP")) {
+            // Run for one minute, get the timeline data, write it, and finish.
+            final Uri logFileUri = launchIntent.getData();
             new Handler().postDelayed(() -> writeTimelineData(logFileUri.getPath()), 60000);
-         }
-        super.onCreate(savedInstanceState);
+        }
     }
 
     private void writeTimelineData(String path) {
