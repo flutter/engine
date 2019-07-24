@@ -25,7 +25,6 @@ import android.view.Window;
 import android.view.WindowManager;
 
 import io.flutter.Log;
-import io.flutter.app.BuildConfig;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
