@@ -115,6 +115,8 @@ class ParagraphTxt : public Paragraph {
 
   bool DidExceedMaxLines() override;
 
+  std::vector<LineMetrics>& GetLineMetrics() override;
+
   // Sets the needs_layout_ to dirty. When Layout() is called, a new Layout will
   // be performed when this is set to true. Can also be used to prevent a new
   // Layout from being calculated by setting to false.
@@ -174,19 +176,7 @@ class ParagraphTxt : public Paragraph {
   minikin::LineBreaker breaker_;
   mutable std::unique_ptr<icu::BreakIterator> word_breaker_;
 
-  struct LineRange {
-    LineRange(size_t s, size_t e, size_t eew, size_t ein, bool h)
-        : start(s),
-          end(e),
-          end_excluding_whitespace(eew),
-          end_including_newline(ein),
-          hard_break(h) {}
-    size_t start, end;
-    size_t end_excluding_whitespace;
-    size_t end_including_newline;
-    bool hard_break;
-  };
-  std::vector<LineRange> line_ranges_;
+  std::vector<LineMetrics> line_metrics_;
   std::vector<double> line_widths_;
 
   // Stores the result of Layout().
@@ -295,6 +285,7 @@ class ParagraphTxt : public Paragraph {
     Range<double> x_pos;
     size_t line_number;
     SkFontMetrics font_metrics;
+    const TextStyle* style;
     TextDirection direction;
     const PlaceholderRun* placeholder_run;
 
@@ -303,6 +294,7 @@ class ParagraphTxt : public Paragraph {
                 Range<double> x,
                 size_t line,
                 const SkFontMetrics& metrics,
+                const TextStyle& st,
                 TextDirection dir,
                 const PlaceholderRun* placeholder);
 

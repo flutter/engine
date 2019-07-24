@@ -211,6 +211,7 @@ ParagraphTxt::CodeUnitRun::CodeUnitRun(std::vector<GlyphPosition>&& p,
                                        Range<double> x,
                                        size_t line,
                                        const SkFontMetrics& metrics,
+                                       const TextStyle& st,
                                        TextDirection dir,
                                        const PlaceholderRun* placeholder)
     : positions(std::move(p)),
@@ -218,6 +219,7 @@ ParagraphTxt::CodeUnitRun::CodeUnitRun(std::vector<GlyphPosition>&& p,
       x_pos(x),
       line_number(line),
       font_metrics(metrics),
+      style(&st),
       direction(dir),
       placeholder_run(placeholder) {}
 
@@ -250,7 +252,7 @@ void ParagraphTxt::SetInlinePlaceholders(
 }
 
 bool ParagraphTxt::ComputeLineBreaks() {
-  line_ranges_.clear();
+  line_metrics_.clear();
   line_widths_.clear();
   max_intrinsic_width_ = 0;
 
@@ -276,8 +278,8 @@ bool ParagraphTxt::ComputeLineBreaks() {
     size_t block_size = block_end - block_start;
 
     if (block_size == 0) {
-      line_ranges_.emplace_back(block_start, block_end, block_end,
-                                block_end + 1, true);
+      line_metrics_.emplace_back(block_start, block_end, block_end,
+                                 block_end + 1, true);
       line_widths_.push_back(0);
       continue;
     }
@@ -369,9 +371,9 @@ bool ParagraphTxt::ComputeLineBreaks() {
           minikin::isLineEndSpace(text_[line_end_excluding_whitespace - 1])) {
         line_end_excluding_whitespace--;
       }
-      line_ranges_.emplace_back(line_start, line_end,
-                                line_end_excluding_whitespace,
-                                line_end_including_newline, hard_break);
+      line_metrics_.emplace_back(line_start, line_end,
+                                 line_end_excluding_whitespace,
+                                 line_end_including_newline, hard_break);
       line_widths_.push_back(breaker_.getWidths()[i]);
     }
 
@@ -688,12 +690,13 @@ void ParagraphTxt::Layout(double width) {
   ComputeStrut(&strut_, font);
 
   // Paragraph bounds tracking.
-  size_t line_limit = std::min(paragraph_style_.max_lines, line_ranges_.size());
-  did_exceed_max_lines_ = (line_ranges_.size() > paragraph_style_.max_lines);
+  size_t line_limit =
+      std::min(paragraph_style_.max_lines, line_metrics_.size());
+  did_exceed_max_lines_ = (line_metrics_.size() > paragraph_style_.max_lines);
 
   size_t placeholder_run_index = 0;
   for (size_t line_number = 0; line_number < line_limit; ++line_number) {
-    const LineRange& line_range = line_ranges_[line_number];
+    LineMetrics& line_metrics = line_metrics_[line_number];
 
     // Break the line into words if justification should be applied.
     std::vector<Range<size_t>> words;
@@ -701,8 +704,8 @@ void ParagraphTxt::Layout(double width) {
     size_t word_index = 0;
     bool justify_line =
         (paragraph_style_.text_align == TextAlign::justify &&
-         line_number != line_limit - 1 && !line_range.hard_break);
-    FindWords(text_, line_range.start, line_range.end, &words);
+         line_number != line_limit - 1 && !line_metrics.hard_break);
+    FindWords(text_, line_metrics.start, line_metrics.end, &words);
     if (justify_line) {
       if (words.size() > 1) {
         word_gap_width =
@@ -716,8 +719,8 @@ void ParagraphTxt::Layout(double width) {
         (paragraph_style_.effective_align() == TextAlign::right ||
          paragraph_style_.effective_align() == TextAlign::center ||
          paragraph_style_.effective_align() == TextAlign::justify)
-            ? line_range.end_excluding_whitespace
-            : line_range.end;
+            ? line_metrics.end_excluding_whitespace
+            : line_metrics.end;
 
     // Find the runs comprising this line.
     std::vector<BidiRun> line_runs;
@@ -733,12 +736,12 @@ void ParagraphTxt::Layout(double width) {
       // impact on the layout.
       std::unique_ptr<BidiRun> ghost_run = nullptr;
       if (paragraph_style_.ellipsis.empty() &&
-          line_range.end_excluding_whitespace < line_range.end &&
-          bidi_run.start() <= line_range.end &&
+          line_metrics.end_excluding_whitespace < line_metrics.end &&
+          bidi_run.start() <= line_metrics.end &&
           bidi_run.end() > line_end_index) {
         ghost_run = std::make_unique<BidiRun>(
             std::max(bidi_run.start(), line_end_index),
-            std::min(bidi_run.end(), line_range.end), bidi_run.direction(),
+            std::min(bidi_run.end(), line_metrics.end), bidi_run.direction(),
             bidi_run.style(), true);
       }
       // Include the ghost run before normal run if RTL
@@ -747,19 +750,19 @@ void ParagraphTxt::Layout(double width) {
       }
       // Emplace a normal line run.
       if (bidi_run.start() < line_end_index &&
-          bidi_run.end() > line_range.start) {
+          bidi_run.end() > line_metrics.start) {
         // The run is a placeholder run.
         if (bidi_run.size() == 1 &&
             text_[bidi_run.start()] == objReplacementChar &&
             obj_replacement_char_indexes_.count(bidi_run.start()) != 0 &&
             placeholder_run_index < inline_placeholders_.size()) {
-          line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
+          line_runs.emplace_back(std::max(bidi_run.start(), line_metrics.start),
                                  std::min(bidi_run.end(), line_end_index),
                                  bidi_run.direction(), bidi_run.style(),
                                  inline_placeholders_[placeholder_run_index]);
           placeholder_run_index++;
         } else {
-          line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
+          line_runs.emplace_back(std::max(bidi_run.start(), line_metrics.start),
                                  std::min(bidi_run.end(), line_end_index),
                                  bidi_run.direction(), bidi_run.style());
         }
@@ -781,6 +784,9 @@ void ParagraphTxt::Layout(double width) {
     std::vector<GlyphPosition> line_glyph_positions;
     std::vector<CodeUnitRun> line_code_unit_runs;
     std::vector<CodeUnitRun> line_inline_placeholder_code_unit_runs;
+    // Tracks the metrics and styling for the line. Used to populate
+    // LineMetrics.run_metrics_map
+    std::map<size_t, RunMetrics> run_metrics_map;
     double run_x_offset = 0;
     double justify_x_offset = 0;
     std::vector<PaintRecord> paint_records;
@@ -806,7 +812,7 @@ void ParagraphTxt::Layout(double width) {
       // is the last line (or lines are unlimited).
       const std::u16string& ellipsis = paragraph_style_.ellipsis;
       std::vector<uint16_t> ellipsized_text;
-      if (ellipsis.length() && !isinf(width_) && !line_range.hard_break &&
+      if (ellipsis.length() && !isinf(width_) && !line_metrics.hard_break &&
           line_run_it == line_runs.end() - 1 &&
           (line_number == line_limit - 1 ||
            paragraph_style_.unlimited_lines())) {
@@ -1030,7 +1036,13 @@ void ParagraphTxt::Layout(double width) {
                               ? glyph_positions.back().x_pos.start +
                                     run.placeholder_run()->width
                               : glyph_positions.back().x_pos.end),
-            line_number, metrics, run.direction(), run.placeholder_run());
+            line_number, metrics, run.style(), run.direction(),
+            run.placeholder_run());
+
+        run_metrics_map.emplace(std::piecewise_construct,
+                                std::forward_as_tuple(run.start()),
+                                std::forward_as_tuple(run.style(), metrics));
+
         if (run.is_placeholder_run()) {
           line_inline_placeholder_code_unit_runs.push_back(
               line_code_unit_runs.back());
@@ -1068,11 +1080,11 @@ void ParagraphTxt::Layout(double width) {
       }
     }
 
-    size_t next_line_start = (line_number < line_ranges_.size() - 1)
-                                 ? line_ranges_[line_number + 1].start
+    size_t next_line_start = (line_number < line_metrics_.size() - 1)
+                                 ? line_metrics_[line_number + 1].start
                                  : text_.size();
     glyph_lines_.emplace_back(std::move(line_glyph_positions),
-                              next_line_start - line_range.start);
+                              next_line_start - line_metrics.start);
     code_unit_runs_.insert(code_unit_runs_.end(), line_code_unit_runs.begin(),
                            line_code_unit_runs.end());
     inline_placeholder_code_unit_runs_.insert(
@@ -1151,6 +1163,14 @@ void ParagraphTxt::Layout(double width) {
     line_max_spacings_.push_back(max_ascent);
     line_max_descent_.push_back(max_descent);
     line_max_ascent_.push_back(max_unscaled_ascent);
+
+    line_metrics.line_number = line_number;
+    line_metrics.ascent = max_ascent;
+    line_metrics.descent = max_descent;
+    line_metrics.width = line_widths_[line_number];
+    line_metrics.left = line_x_offset;
+    line_metrics.baseline = line_baselines_.back();
+    line_metrics.run_metrics_map = &run_metrics_map;
 
     for (PaintRecord& paint_record : paint_records) {
       paint_record.SetOffset(
@@ -1539,7 +1559,7 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     SkScalar min_left = FLT_MAX;
   };
 
-  std::map<size_t, LineBoxMetrics> line_metrics;
+  std::map<size_t, LineBoxMetrics> line_box_metrics;
   // Text direction of the first line so we can extend the correct side for
   // RectWidthStyle::kMax.
   TextDirection first_line_dir = TextDirection::ltr;
@@ -1600,28 +1620,28 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     // Keep track of the min and max horizontal coordinates over all lines. Not
     // needed for kTight.
     if (rect_width_style == RectWidthStyle::kMax) {
-      line_metrics[run.line_number].max_right =
-          std::max(line_metrics[run.line_number].max_right, right);
-      line_metrics[run.line_number].min_left =
-          std::min(line_metrics[run.line_number].min_left, left);
+      line_box_metrics[run.line_number].max_right =
+          std::max(line_box_metrics[run.line_number].max_right, right);
+      line_box_metrics[run.line_number].min_left =
+          std::min(line_box_metrics[run.line_number].min_left, left);
       if (min_line == run.line_number) {
         first_line_dir = run.direction;
       }
     }
-    line_metrics[run.line_number].boxes.emplace_back(
+    line_box_metrics[run.line_number].boxes.emplace_back(
         SkRect::MakeLTRB(left, top, right, bottom), run.direction);
   }
 
   // Add empty rectangles representing any newline characters within the
   // range.
-  for (size_t line_number = 0; line_number < line_ranges_.size();
+  for (size_t line_number = 0; line_number < line_metrics_.size();
        ++line_number) {
-    const LineRange& line = line_ranges_[line_number];
+    LineMetrics& line = line_metrics_[line_number];
     if (line.start >= end)
       break;
     if (line.end_including_newline <= start)
       continue;
-    if (line_metrics.find(line_number) == line_metrics.end()) {
+    if (line_box_metrics.find(line_number) == line_box_metrics.end()) {
       if (line.end != line.end_including_newline && line.end >= start &&
           line.end_including_newline <= end) {
         SkScalar x = line_widths_[line_number];
@@ -1632,7 +1652,7 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
         }
         SkScalar top = (line_number > 0) ? line_heights_[line_number - 1] : 0;
         SkScalar bottom = line_heights_[line_number];
-        line_metrics[line_number].boxes.emplace_back(
+        line_box_metrics[line_number].boxes.emplace_back(
             SkRect::MakeLTRB(x, top, x, bottom), TextDirection::ltr);
       }
     }
@@ -1640,25 +1660,25 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
 
   // "Post-process" metrics and aggregate final rects to return.
   std::vector<Paragraph::TextBox> boxes;
-  for (const auto& kv : line_metrics) {
+  for (const auto& kv : line_box_metrics) {
     // Handle rect_width_styles. We skip the last line because not everything is
     // selected.
     if (rect_width_style == RectWidthStyle::kMax && kv.first != max_line) {
-      if (line_metrics[kv.first].min_left > min_left_ &&
+      if (line_box_metrics[kv.first].min_left > min_left_ &&
           (kv.first != min_line || first_line_dir == TextDirection::rtl)) {
-        line_metrics[kv.first].boxes.emplace_back(
+        line_box_metrics[kv.first].boxes.emplace_back(
             SkRect::MakeLTRB(
                 min_left_,
                 line_baselines_[kv.first] - line_max_ascent_[kv.first],
-                line_metrics[kv.first].min_left,
+                line_box_metrics[kv.first].min_left,
                 line_baselines_[kv.first] + line_max_descent_[kv.first]),
             TextDirection::rtl);
       }
-      if (line_metrics[kv.first].max_right < max_right_ &&
+      if (line_box_metrics[kv.first].max_right < max_right_ &&
           (kv.first != min_line || first_line_dir == TextDirection::ltr)) {
-        line_metrics[kv.first].boxes.emplace_back(
+        line_box_metrics[kv.first].boxes.emplace_back(
             SkRect::MakeLTRB(
-                line_metrics[kv.first].max_right,
+                line_box_metrics[kv.first].max_right,
                 line_baselines_[kv.first] - line_max_ascent_[kv.first],
                 max_right_,
                 line_baselines_[kv.first] + line_max_descent_[kv.first]),
@@ -1685,7 +1705,7 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
                RectHeightStyle::kIncludeLineSpacingMiddle) {
       SkScalar adjusted_bottom =
           line_baselines_[kv.first] + line_max_descent_[kv.first];
-      if (kv.first < line_ranges_.size() - 1) {
+      if (kv.first < line_metrics_.size() - 1) {
         adjusted_bottom += (line_max_spacings_[kv.first + 1] -
                             line_max_ascent_[kv.first + 1]) /
                            2;
@@ -1718,7 +1738,7 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
       for (const Paragraph::TextBox& box : kv.second.boxes) {
         SkScalar adjusted_bottom =
             line_baselines_[kv.first] + line_max_descent_[kv.first];
-        if (kv.first < line_ranges_.size() - 1) {
+        if (kv.first < line_metrics_.size() - 1) {
           adjusted_bottom +=
               -line_max_ascent_[kv.first] + line_max_spacings_[kv.first];
         }
@@ -1900,6 +1920,10 @@ bool ParagraphTxt::DidExceedMaxLines() {
 
 void ParagraphTxt::SetDirty(bool dirty) {
   needs_layout_ = dirty;
+}
+
+std::vector<LineMetrics>& ParagraphTxt::GetLineMetrics() {
+  return line_metrics_;
 }
 
 }  // namespace txt

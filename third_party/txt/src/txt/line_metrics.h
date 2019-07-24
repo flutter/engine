@@ -26,18 +26,46 @@ namespace txt {
 
 class LineMetrics {
  public:
-  SkRect bounds;               // height, width, startX, endX, offset can
-                               // all be derived from this.
-  std::vector<uint16_t> text;  // The text within this line.
-  double baseline;             // The y position of the baseline for
-                               //  this line from the top of the paragraph.
-  int line_number;             // The line number where the first is 0
+  // The following variables are used in the layout process itself.
 
-  // Mapping between text position ranges and the FontMetrics
-  // associated with them.
-  std::map<Range, RunMetrics> fontMetrics;
+  // The indexes in the text buffer the line begins and ends.
+  size_t start, end;
+  size_t end_excluding_whitespace;
+  size_t end_including_newline;
+  bool hard_break;
+
+  // The following variables are tracked after or during layout to provide to
+  // the user.
+
+  // The final computed ascent and descent for the line. This can be impacted by
+  // the strut, height, scaling, as well as outlying runs that are
+  double ascent;
+  double descent;
+  // Width of the line.
+  double width;
+  // The left edge of the line. The right edge can be obtained with `left +
+  // width`
+  double left;
+  // The y position of the baseline for this line from the top of the paragraph.
+  double baseline;
+  // Zero indexed line number.
+  size_t line_number;
+
+  // Mapping between text index ranges and the FontMetrics associated with
+  // them. The first run will be keyed under start_index. The metrics here
+  // are before layout and are the base values we calculate from.
+  std::map<size_t, RunMetrics>* run_metrics_map;
 
   LineMetrics();
+
+  LineMetrics(size_t s, size_t e, size_t eew, size_t ein, bool h)
+      : start(s),
+        end(e),
+        end_excluding_whitespace(eew),
+        end_including_newline(ein),
+        hard_break(h) {}
+
+  // GetFontMetricsAtIndex(size_t index);
 };
 
 }  // namespace txt
