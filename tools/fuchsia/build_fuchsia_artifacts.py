@@ -181,7 +181,7 @@ def main():
 
   BuildBucket()
 
-  # ProcessCIPDPakcage(args.upload, args.engine_version)
+  ProcessCIPDPakcage(args.upload, args.engine_version)
 
 
 if __name__ == '__main__':
