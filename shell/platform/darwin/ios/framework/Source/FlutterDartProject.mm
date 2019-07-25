@@ -25,6 +25,18 @@ extern const intptr_t kPlatformStrongDillSize;
 
 static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
 
+static NSString* FindFrameworkApplicationLibraryPath(NSBundle* bundle) {
+  NSString* applicationFrameworkPath = [bundle pathForResource:@"Frameworks/App.framework"
+                                                        ofType:@""];
+  if (applicationFrameworkPath.length > 0) {
+    NSString* executablePath = [NSBundle bundleWithPath:applicationFrameworkPath].executablePath;
+    if (executablePath.length > 0) {
+      return executablePath;
+    }
+  }
+  return nil;
+}
+
 static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   auto command_line = flutter::CommandLineFromNSProcessInfo();
 
@@ -89,14 +101,9 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
     // In case the application bundle is still not specified, look for the App.framework in the
     // Frameworks directory.
     if (settings.application_library_path.size() == 0) {
-      NSString* applicationFrameworkPath = [mainBundle pathForResource:@"Frameworks/App.framework"
-                                                                ofType:@""];
-      if (applicationFrameworkPath.length > 0) {
-        NSString* executablePath =
-            [NSBundle bundleWithPath:applicationFrameworkPath].executablePath;
-        if (executablePath.length > 0) {
-          settings.application_library_path.push_back(executablePath.UTF8String);
-        }
+      NSString* libraryPath = FindFrameworkApplicationLibraryPath(mainBundle);
+      if (libraryPath.length > 0) {
+        settings.application_library_path.push_back(libraryPath.UTF8String);
       }
     }
   }
@@ -104,15 +111,9 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   // Check other bundles if we still haven't found anything.  This is useful for XCTest targets.
   if (settings.application_library_path.size() == 0) {
     for (NSBundle* bundle in [NSBundle allBundles]) {
-      NSString* applicationFrameworkPath = [bundle pathForResource:@"Frameworks/App.framework"
-                                                            ofType:@""];
-      if (applicationFrameworkPath.length > 0) {
-        NSString* executablePath =
-            [NSBundle bundleWithPath:applicationFrameworkPath].executablePath;
-        if (executablePath.length > 0) {
-          settings.application_library_path.push_back(executablePath.UTF8String);
-          break;
-        }
+      NSString* libraryPath = FindFrameworkApplicationLibraryPath(bundle);
+      if (libraryPath.length > 0) {
+        settings.application_library_path.push_back(libraryPath.UTF8String);
       }
     }
   }
