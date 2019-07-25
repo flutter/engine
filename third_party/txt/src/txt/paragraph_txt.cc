@@ -1039,9 +1039,9 @@ void ParagraphTxt::Layout(double width) {
             line_number, metrics, run.style(), run.direction(),
             run.placeholder_run());
 
-        run_metrics_map.emplace(std::piecewise_construct,
-                                std::forward_as_tuple(run.start()),
-                                std::forward_as_tuple(run.style(), metrics));
+        line_metrics.run_metrics_map.emplace(
+            std::piecewise_construct, std::forward_as_tuple(run.start()),
+            std::forward_as_tuple(run.style(), metrics));
 
         if (run.is_placeholder_run()) {
           line_inline_placeholder_code_unit_runs.push_back(
@@ -1170,7 +1170,7 @@ void ParagraphTxt::Layout(double width) {
     line_metrics.width = line_widths_[line_number];
     line_metrics.left = line_x_offset;
     line_metrics.baseline = line_baselines_.back();
-    line_metrics.run_metrics_map = &run_metrics_map;
+    // line_metrics.run_metrics_map = &run_metrics_map;
 
     for (PaintRecord& paint_record : paint_records) {
       paint_record.SetOffset(
