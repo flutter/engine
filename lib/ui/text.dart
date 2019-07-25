@@ -770,7 +770,6 @@ Int32List _encodeParagraphStyle(
   StrutStyle strutStyle,
   String ellipsis,
   Locale locale,
-  bool ellipsizedByCharacter,
 ) {
   final Int32List result = Int32List(6); // also update paragraph_builder.cc
   if (textAlign != null) {
@@ -815,10 +814,6 @@ Int32List _encodeParagraphStyle(
   }
   if (locale != null) {
     result[0] |= 1 << 11;
-    // Passed separately to native.
-  }
-  if (ellipsizedByCharacter != null) {
-    result[0] |= 1 << 12;
     // Passed separately to native.
   }
   return result;
@@ -890,7 +885,6 @@ class ParagraphStyle {
     FontStyle fontStyle,
     StrutStyle strutStyle,
     String ellipsis,
-    bool ellipsizedByCharacter,
     Locale locale,
   }) : _encoded = _encodeParagraphStyle(
          textAlign,
@@ -904,14 +898,12 @@ class ParagraphStyle {
          strutStyle,
          ellipsis,
          locale,
-         ellipsizedByCharacter,
        ),
        _fontFamily = fontFamily,
        _fontSize = fontSize,
        _height = height,
        _strutStyle = strutStyle,
        _ellipsis = ellipsis,
-       _ellipsizedByCharacter = ellipsizedByCharacter,
        _locale = locale;
 
   final Int32List _encoded;
@@ -920,7 +912,6 @@ class ParagraphStyle {
   final double _height;
   final StrutStyle _strutStyle;
   final String _ellipsis;
-  final bool _ellipsizedByCharacter;
   final Locale _locale;
 
   @override
@@ -935,7 +926,6 @@ class ParagraphStyle {
         _height != typedOther._height ||
         _strutStyle != typedOther._strutStyle ||
         _ellipsis != typedOther._ellipsis ||
-        _ellipsizedByCharacter != typedOther._ellipsizedByCharacter ||
         _locale != typedOther._locale)
      return false;
     for (int index = 0; index < _encoded.length; index += 1) {
@@ -946,22 +936,21 @@ class ParagraphStyle {
   }
 
   @override
-  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _height, _ellipsis, _ellipsizedByCharacter, _locale);
+  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _height, _ellipsis, _locale);
 
   @override
   String toString() {
     return 'ParagraphStyle('
-             'textAlign: ${           _encoded[0] & 0x002 == 0x002 ? TextAlign.values[_encoded[1]]     : "unspecified"}, '
-             'textDirection: ${       _encoded[0] & 0x004 == 0x004 ? TextDirection.values[_encoded[2]] : "unspecified"}, '
-             'fontWeight: ${          _encoded[0] & 0x008 == 0x008 ? FontWeight.values[_encoded[3]]    : "unspecified"}, '
-             'fontStyle: ${           _encoded[0] & 0x010 == 0x010 ? FontStyle.values[_encoded[4]]     : "unspecified"}, '
-             'maxLines: ${            _encoded[0] & 0x020 == 0x020 ? _encoded[5]                       : "unspecified"}, '
-             'fontFamily: ${          _encoded[0] & 0x040 == 0x040 ? _fontFamily                       : "unspecified"}, '
-             'fontSize: ${            _encoded[0] & 0x080 == 0x080 ? _fontSize                         : "unspecified"}, '
-             'height: ${              _encoded[0] & 0x100 == 0x100 ? "${_height}x"                     : "unspecified"}, '
-             'ellipsis: ${            _encoded[0] & 0x200 == 0x200 ? "\"$_ellipsis\""                  : "unspecified"}, '
-             'locale: ${              _encoded[0] & 0x400 == 0x400 ? _locale                           : "unspecified"}, '
-             'ellipsizedByCharacter: ${_encoded[0] & 0x800 == 0x800 ? _ellipsizedByCharacter             : "unspecified"}'
+             'textAlign: ${     _encoded[0] & 0x002 == 0x002 ? TextAlign.values[_encoded[1]]     : "unspecified"}, '
+             'textDirection: ${ _encoded[0] & 0x004 == 0x004 ? TextDirection.values[_encoded[2]] : "unspecified"}, '
+             'fontWeight: ${    _encoded[0] & 0x008 == 0x008 ? FontWeight.values[_encoded[3]]    : "unspecified"}, '
+             'fontStyle: ${     _encoded[0] & 0x010 == 0x010 ? FontStyle.values[_encoded[4]]     : "unspecified"}, '
+             'maxLines: ${      _encoded[0] & 0x020 == 0x020 ? _encoded[5]                       : "unspecified"}, '
+             'fontFamily: ${    _encoded[0] & 0x040 == 0x040 ? _fontFamily                       : "unspecified"}, '
+             'fontSize: ${      _encoded[0] & 0x080 == 0x080 ? _fontSize                         : "unspecified"}, '
+             'height: ${        _encoded[0] & 0x100 == 0x100 ? "${_height}x"                     : "unspecified"}, '
+             'ellipsis: ${      _encoded[0] & 0x200 == 0x200 ? "\"$_ellipsis\""                  : "unspecified"}, '
+             'locale: ${        _encoded[0] & 0x400 == 0x400 ? _locale                           : "unspecified"}'
            ')';
   }
 }
@@ -1734,8 +1723,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
       style._fontSize,
       style._height,
       style._ellipsis,
-      _encodeLocale(style._locale),
-      style._ellipsizedByCharacter,
+      _encodeLocale(style._locale)
     );
   }
 
@@ -1747,8 +1735,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
     double fontSize,
     double height,
     String ellipsis,
-    String locale,
-    bool ellipsizedByCharacter,
+    String locale
   ) native 'ParagraphBuilder_constructor';
 
   /// The number of placeholders currently in the paragraph.
