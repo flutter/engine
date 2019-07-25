@@ -32,7 +32,7 @@
   self.flutterViewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                      nibName:nil
                                                                       bundle:nil];
-  __block BOOL shouldKeepRunning = YES; // global
+  __block BOOL shouldKeepRunning = YES;
   [self.flutterViewController setFlutterViewDidRenderCallback:^{
     shouldKeepRunning = NO;
   }];
