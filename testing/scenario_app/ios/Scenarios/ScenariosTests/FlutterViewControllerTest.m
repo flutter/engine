@@ -6,12 +6,12 @@
 //  Copyright © 2019 flutter. All rights reserved.
 //
 
-#import <XCTest/XCTest.h>
 #import <Flutter/Flutter.h>
+#import <XCTest/XCTest.h>
 #import "AppDelegate.h"
 
 @interface FlutterViewControllerTest : XCTestCase
-@property (nonatomic, strong) FlutterViewController* flutterViewController;
+@property(nonatomic, strong) FlutterViewController* flutterViewController;
 @end
 
 @implementation FlutterViewControllerTest
@@ -39,10 +39,10 @@
   AppDelegate* appDelegate = (AppDelegate*)UIApplication.sharedApplication.delegate;
   UIViewController* rootVC = appDelegate.window.rootViewController;
   [rootVC presentViewController:self.flutterViewController animated:NO completion:nil];
-  NSRunLoop *theRL = [NSRunLoop currentRunLoop];
+  NSRunLoop* theRL = [NSRunLoop currentRunLoop];
   int countDownMs = 2000;
   while (shouldKeepRunning && countDownMs > 0) {
-   [theRL runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+    [theRL runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
     countDownMs -= 100;
   }
   XCTAssertGreaterThan(countDownMs, 0);
