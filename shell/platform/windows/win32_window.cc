@@ -76,7 +76,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
 
     auto that = static_cast<Win32Window*>(cs->lpCreateParams);
 
-    // Since we are running in Per-monitor V2 mode, turn on automatic titlebar
+    // Since the application is running in Per-monitor V2 mode, turn on automatic titlebar
     // scaling
     auto result = that->dpi_helper_->EnableNonClientDpiScaling(window);
     if (result != TRUE) {

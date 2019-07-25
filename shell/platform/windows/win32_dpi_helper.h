@@ -16,18 +16,23 @@ bool AssignProcAddress(HMODULE comBaseModule, const char* name, T*& outProc) {
   return *outProc != nullptr;
 }
 
+// A helper class for abstracting various Windows DPI related functions across Windows OS versions.
 class Win32DpiHelper {
  public:
   Win32DpiHelper();
 
   ~Win32DpiHelper();
 
+// Check if Windows Per Monitor V2 DPI scaling functionality is available on current system.
   bool IsPerMonitorV2Available();
 
+// Wrapper for OS functionality to turn on automatic window non-client scaling
   BOOL EnableNonClientDpiScaling(HWND);
 
+// Wrapper for OS functionality to return the DPI for |HWND|
   UINT GetDpiForWindow(HWND);
 
+// Sets the current process to a specified DPI awareness context.
   BOOL SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT);
 
  private:
