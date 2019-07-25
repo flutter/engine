@@ -30,7 +30,7 @@ void main() {
   window.sendPlatformMessage('scenario_status', data, null);
 }
 
-void _handlePlatformMessage(String name, ByteData data, PlatformMessageResponseCallback callback) {
+Future<void> _handlePlatformMessage(String name, ByteData data, PlatformMessageResponseCallback callback) async {
   if (name == 'set_scenario' && data != null) {
     final String scenarioName = utf8.decode(data.buffer.asUint8List());
     final Scenario candidateScenario = _scenarios[scenarioName];
@@ -44,17 +44,12 @@ void _handlePlatformMessage(String name, ByteData data, PlatformMessageResponseC
       callback(data);
     }
   } else if (name == 'write_timeline') {
-    assert(data != null);
-    final String outputFileName = utf8.decode(data.buffer.asUint8List());
-    _writeTimelineData(outputFileName).then((_) {
-      final ByteData data = ByteData(1);
-      data.setUint8(0, 1);
-      callback(data);
-    });
+    final String timelineData = await _getTimelineData();
+    callback(Uint8List.fromList(utf8.encode(timelineData)).buffer.asByteData());
   }
 }
 
-Future<void> _writeTimelineData(String outputFileName) async {
+Future<String> _getTimelineData() async {
   final String isolateId = developer.Service.getIsolateID(Isolate.current);
   final developer.ServiceProtocolInfo info = await developer.Service.getInfo();
   final Uri cpuProfileTimelineUri = info.serverUri.resolve(
@@ -66,10 +61,10 @@ Future<void> _writeTimelineData(String outputFileName) async {
   final Map<String, dynamic> cpuResult = cpuTimelineJson['result'].cast<String, dynamic>();
   final Map<String, dynamic> vmServiceResult = vmServiceTimelineJson['result'].cast<String, dynamic>();
 
-  await File(outputFileName).writeAsString(json.encode(<String, dynamic>{
+  return json.encode(<String, dynamic>{
     'stackFrames': cpuResult['stackFrames'],
     'traceEvents': <dynamic>[...cpuResult['traceEvents'], ...vmServiceResult['traceEvents']],
-  }));
+  });
 }
 
 Future<Map<String, dynamic>> _getJson(Uri uri) async {
