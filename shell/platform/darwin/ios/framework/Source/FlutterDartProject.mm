@@ -101,6 +101,22 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
     }
   }
 
+  // Check other bundles if we still haven't found anything.  This is useful for XCTest targets.
+  if (settings.application_library_path.size() == 0) {
+    for (NSBundle* bundle in [NSBundle allBundles]) {
+      NSString* applicationFrameworkPath = [bundle pathForResource:@"Frameworks/App.framework"
+                                                            ofType:@""];
+      if (applicationFrameworkPath.length > 0) {
+        NSString* executablePath =
+            [NSBundle bundleWithPath:applicationFrameworkPath].executablePath;
+        if (executablePath.length > 0) {
+          settings.application_library_path.push_back(executablePath.UTF8String);
+          break;
+        }
+      }
+    }
+  }
+
   // Checks to see if the flutter assets directory is already present.
   if (settings.assets_path.size() == 0) {
     NSString* assetsName = [FlutterDartProject flutterAssetsName:bundle];
