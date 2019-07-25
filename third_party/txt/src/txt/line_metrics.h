@@ -54,7 +54,7 @@ class LineMetrics {
   // Mapping between text index ranges and the FontMetrics associated with
   // them. The first run will be keyed under start_index. The metrics here
   // are before layout and are the base values we calculate from.
-  std::map<size_t, RunMetrics>* run_metrics_map;
+  std::map<size_t, RunMetrics> run_metrics_map;
 
   LineMetrics();
 

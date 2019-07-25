@@ -26,17 +26,17 @@ namespace txt {
 class RunMetrics {
  public:
   RunMetrics(const TextStyle& style, SkFontMetrics& metrics)
-      : text_style_(&style), font_metrics_(&metrics) {
-    assert(text_style_ != nullptr);
-    assert(font_metrics_ != nullptr);
+      : text_style_(style), font_metrics_(metrics) {
+    // assert(text_style_ != nullptr);
+    // assert(font_metrics_ != nullptr);
   }
 
-  SkFontMetrics GetFontMetrics() const { return *font_metrics_; }
+  const SkFontMetrics& GetFontMetrics() const { return font_metrics_; }
 
-  TextStyle GetTextStyle() const { return *text_style_; }
+  const TextStyle& GetTextStyle() const { return text_style_; }
 
  private:
-  const TextStyle* text_style_ = nullptr;
+  const TextStyle text_style_;
 
   // SkFontMetrics contains the following metrics:
   //
@@ -55,7 +55,7 @@ class RunMetrics {
   // * UnderlinePosition   underline position relative to baseline
   // * StrikeoutThickness  strikeout thickness
   // * StrikeoutPosition   strikeout position relative to baseline
-  SkFontMetrics* font_metrics_ = nullptr;
+  SkFontMetrics font_metrics_;
 };
 
 }  // namespace txt

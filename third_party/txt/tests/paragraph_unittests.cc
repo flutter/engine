@@ -60,10 +60,6 @@ TEST_F(ParagraphTest, LineMetricsParagraph) {
 
   paragraph->Paint(GetCanvas(), 0, 0);
 
-  // ASSERT_EQ(paragraph->text_.size(), std::string{text}.length());
-  // for (size_t i = 0; i < u16_text.length(); i++) {
-  //   ASSERT_EQ(paragraph->text_[i], u16_text[i]);
-  // }
   std::vector<txt::LineMetrics> metrics = paragraph->GetLineMetrics();
 
   ASSERT_EQ(metrics.size(), 3ull);
@@ -78,7 +74,47 @@ TEST_F(ParagraphTest, LineMetricsParagraph) {
   ASSERT_FLOAT_EQ(metrics[0].left, 0.0);
   ASSERT_FLOAT_EQ(metrics[0].baseline, 12.582031);
   ASSERT_EQ(metrics[0].line_number, 0ull);
-  ASSERT_EQ(metrics[0].run_metrics_map->size(), 1ull);
+  ASSERT_EQ(metrics[0].run_metrics_map.size(), 1ull);
+  ASSERT_EQ(metrics[0]
+                .run_metrics_map.lower_bound(metrics[0].start)
+                ->second.GetTextStyle()
+                .color,
+            SK_ColorBLACK);
+  ASSERT_EQ(metrics[0]
+                .run_metrics_map.lower_bound(metrics[0].start)
+                ->second.GetTextStyle()
+                .font_families,
+            std::vector<std::string>(1, "Roboto"));
+  ASSERT_FLOAT_EQ(metrics[0]
+                      .run_metrics_map.lower_bound(metrics[0].start)
+                      ->second.GetFontMetrics()
+                      .fAscent,
+                  -12.988281);
+  ASSERT_FLOAT_EQ(metrics[0]
+                      .run_metrics_map.lower_bound(metrics[0].start)
+                      ->second.GetFontMetrics()
+                      .fDescent,
+                  3.4179688);
+  ASSERT_FLOAT_EQ(metrics[0]
+                      .run_metrics_map.lower_bound(metrics[0].start)
+                      ->second.GetFontMetrics()
+                      .fXHeight,
+                  7.3964844);
+  ASSERT_FLOAT_EQ(metrics[0]
+                      .run_metrics_map.lower_bound(metrics[0].start)
+                      ->second.GetFontMetrics()
+                      .fLeading,
+                  0);
+  ASSERT_FLOAT_EQ(metrics[0]
+                      .run_metrics_map.lower_bound(metrics[0].start)
+                      ->second.GetFontMetrics()
+                      .fTop,
+                  -14.786133);
+  ASSERT_FLOAT_EQ(metrics[0]
+                      .run_metrics_map.lower_bound(metrics[0].start)
+                      ->second.GetFontMetrics()
+                      .fUnderlinePosition,
+                  1.0253906);
 
   ASSERT_EQ(metrics[1].start, 25ull);
   ASSERT_EQ(metrics[1].end, 37ull);
@@ -91,6 +127,47 @@ TEST_F(ParagraphTest, LineMetricsParagraph) {
   ASSERT_FLOAT_EQ(metrics[1].left, 0.0);
   ASSERT_FLOAT_EQ(metrics[1].baseline, 28.582031);
   ASSERT_EQ(metrics[1].line_number, 1ull);
+  ASSERT_EQ(metrics[1].run_metrics_map.size(), 1ull);
+  ASSERT_EQ(metrics[1]
+                .run_metrics_map.lower_bound(metrics[1].start)
+                ->second.GetTextStyle()
+                .color,
+            SK_ColorBLACK);
+  ASSERT_EQ(metrics[1]
+                .run_metrics_map.lower_bound(metrics[1].start)
+                ->second.GetTextStyle()
+                .font_families,
+            std::vector<std::string>(1, "Roboto"));
+  ASSERT_FLOAT_EQ(metrics[1]
+                      .run_metrics_map.lower_bound(metrics[1].start)
+                      ->second.GetFontMetrics()
+                      .fAscent,
+                  -12.988281);
+  ASSERT_FLOAT_EQ(metrics[1]
+                      .run_metrics_map.lower_bound(metrics[1].start)
+                      ->second.GetFontMetrics()
+                      .fDescent,
+                  3.4179688);
+  ASSERT_FLOAT_EQ(metrics[1]
+                      .run_metrics_map.lower_bound(metrics[1].start)
+                      ->second.GetFontMetrics()
+                      .fXHeight,
+                  7.3964844);
+  ASSERT_FLOAT_EQ(metrics[1]
+                      .run_metrics_map.lower_bound(metrics[1].start)
+                      ->second.GetFontMetrics()
+                      .fLeading,
+                  0);
+  ASSERT_FLOAT_EQ(metrics[1]
+                      .run_metrics_map.lower_bound(metrics[1].start)
+                      ->second.GetFontMetrics()
+                      .fTop,
+                  -14.786133);
+  ASSERT_FLOAT_EQ(metrics[1]
+                      .run_metrics_map.lower_bound(metrics[1].start)
+                      ->second.GetFontMetrics()
+                      .fUnderlinePosition,
+                  1.0253906);
 }
 
 TEST_F(ParagraphTest, SimpleParagraph) {
