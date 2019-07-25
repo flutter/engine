@@ -19,14 +19,14 @@ group("flutter") {
 
   public_deps = []
 
-  if (!using_fuchsia_sdk) {
+  if (!(is_fuchsia && using_fuchsia_sdk)) {
     public_deps += [
       "$flutter_root/lib/snapshot:generate_snapshot_bin",
       "$flutter_root/lib/snapshot:kernel_platform_files",
     ]
   }
 
-  public_deps = [
+  public_deps += [
     "$flutter_root/shell/platform/embedder:flutter_engine",
     "$flutter_root/sky",
   ]

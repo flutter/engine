@@ -15,7 +15,7 @@ import subprocess
 import sys
 import tempfile
 
-from gather_flutter_runner_artifacts import CreateMetaPackage
+from gather_flutter_runner_artifacts import CreateMetaPackage, CopyPath
 from gen_package import CreateFarPackage
 
 _script_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..'))
@@ -75,27 +75,6 @@ def RemoveDirectoryIfExists(path):
     shutil.rmtree(path)
 
 
-def CopyToBucket(source, destination, product=False):
-  far_dir = 'flutter_jit_runner_far'
-  if product:
-    far_dir = 'flutter_jit_product_runner_far'
-  source = os.path.join(_out_dir, source, far_dir)
-  CreateMetaPackage(source)
-  pm_bin = GetPMBinPath()
-  key_path = os.path.join(_script_dir, 'development.key')
-
-  destination = os.path.join(_bucket_directory, destination)
-  CreateFarPackage(pm_bin, source, key_path, destination)
-
-
-def BuildBucket():
-  RemoveDirectoryIfExists(_bucket_directory)
-
-  CopyToBucket('fuchsia_debug/', 'flutter/debug/')
-  CopyToBucket('fuchsia_profile/', 'flutter/profile/')
-  CopyToBucket('fuchsia_release/', 'flutter/release/', True)
-
-
 def CopyFiles(source, destination):
   try:
     shutil.copytree(source, destination)
@@ -104,6 +83,31 @@ def CopyFiles(source, destination):
       shutil.copy(source, destination)
     else:
       raise
+
+
+def CopyToBucket(source, destination, product=False):
+  far_dir = 'flutter_jit_runner_far'
+  if product:
+    far_dir = 'flutter_jit_product_runner_far'
+  source_root = os.path.join(_out_dir, source)
+  source = os.path.join(source_root, far_dir)
+  CreateMetaPackage(source)
+  pm_bin = GetPMBinPath()
+  key_path = os.path.join(_script_dir, 'development.key')
+
+  destination = os.path.join(_bucket_directory, destination)
+  CreateFarPackage(pm_bin, source, key_path, destination)
+  patched_sdk_dir = os.path.join(source_root, 'flutter_runner_patched_sdk')
+  dest_sdk_path = os.path.join(destination, 'flutter_runner_patched_sdk')
+  CopyPath(patched_sdk_dir, dest_sdk_path)
+
+
+def BuildBucket():
+  RemoveDirectoryIfExists(_bucket_directory)
+
+  CopyToBucket('fuchsia_debug/', 'flutter/debug/')
+  CopyToBucket('fuchsia_profile/', 'flutter/profile/')
+  CopyToBucket('fuchsia_release/', 'flutter/release/', True)
 
 
 def ProcessCIPDPakcage(upload, engine_version):

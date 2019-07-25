@@ -186,7 +186,8 @@ template("jit_runner") {
   }
 
   package_dir(target_name) {
-    snapshot_gen_dir = "$root_build_dir/gen/flutter/shell/platform/fuchsia/flutter/kernel"
+    snapshot_gen_dir =
+        "$root_build_dir/gen/flutter/shell/platform/fuchsia/flutter/kernel"
 
     deps = [
       ":jit${product_suffix}",

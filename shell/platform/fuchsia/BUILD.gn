@@ -16,7 +16,7 @@ if (using_fuchsia_sdk) {
 
   group("fuchsia") {
     deps = [
-      "dart",
+      # "dart",
       "flutter:$flutter_runner_target",
     ]
   }
