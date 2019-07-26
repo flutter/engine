@@ -18,10 +18,10 @@
 }
 
 - (void)tearDown {
-  [super tearDown];
   if (self.flutterViewController) {
     [self.flutterViewController removeFromParentViewController];
   }
+  [super tearDown];
 }
 
 - (void)testFirstFrameCallback {
