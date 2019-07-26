@@ -933,11 +933,9 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
             entry.name != '.vscode' &&
             entry.name != 'test' &&
             entry.name != 'test.disabled' &&
-            entry.name != 'bin' &&
             entry.name != 'test_support' &&
             entry.name != 'tests' &&
             entry.name != 'javatests' &&
-            entry.name != '.DS_Store' &&
             entry.name != 'testing';
   }
 
