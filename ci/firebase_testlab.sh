@@ -24,11 +24,11 @@ gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
 gcloud --quiet config set project flutter-infra
 
 # Run the test.
+# game-loop tests are meant for OpenGL apps.
+# This type of test will give the application a handle to a file, and
+# we'll write the timeline JSON to that file.
+# See https://firebase.google.com/docs/test-lab/android/game-loop
 gcloud firebase test android run \
-  # game-loop tests are meant for OpenGL apps.
-  # This type of test will give the application a handle to a file, and
-  # we'll write the timeline JSON to that file.
-  # See https://firebase.google.com/docs/test-lab/android/game-loop
   --type game-loop \
   --app $1 \
   --timeout 2m \
