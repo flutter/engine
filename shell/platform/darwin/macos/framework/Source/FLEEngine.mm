@@ -339,7 +339,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
               message:(NSData* _Nullable)message
           binaryReply:(FlutterBinaryReply _Nullable)callback {
   FlutterPlatformMessageResponseHandle* response_handle = nullptr;
-
   if (callback) {
     struct Captures {
       FlutterBinaryReply reply;
@@ -348,7 +347,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FLEEngine* 
     captures->reply = callback;
     auto message_reply = [](const uint8_t* data, size_t data_size, void* user_data) {
       auto captures = reinterpret_cast<Captures*>(user_data);
-      NSData* reply_data = [NSData dataWithBytes:static_cast<const void*>(data) length:data_size];
+      NSData* reply_data = nil;
+      if (data != nullptr && data_size > 0) {
+        reply_data = [NSData dataWithBytes:static_cast<const void*>(data) length:data_size];
+      }
       captures->reply(reply_data);
       delete captures;
     };
