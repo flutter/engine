@@ -36,6 +36,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -87,21 +88,21 @@ public class FlutterActivityAndFragmentDelegateTest {
     // By the time an Activity/Fragment is started, we don't expect any lifecycle messages
     // to have been sent to Flutter.
     delegate.onStart();
-    verify(mockFlutterEngine.getLifecycleChannel(), times(0)).appIsResumed();
-    verify(mockFlutterEngine.getLifecycleChannel(), times(0)).appIsPaused();
-    verify(mockFlutterEngine.getLifecycleChannel(), times(0)).appIsInactive();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsResumed();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsPaused();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsInactive();
 
     // When the Activity/Fragment is resumed, a resumed message should have been sent to Flutter.
     delegate.onResume();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsResumed();
-    verify(mockFlutterEngine.getLifecycleChannel(), times(0)).appIsInactive();
-    verify(mockFlutterEngine.getLifecycleChannel(), times(0)).appIsPaused();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsInactive();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsPaused();
 
     // When the Activity/Fragment is paused, an inactive message should have been sent to Flutter.
     delegate.onPause();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsResumed();
     verify(mockFlutterEngine.getLifecycleChannel(), times(1)).appIsInactive();
-    verify(mockFlutterEngine.getLifecycleChannel(), times(0)).appIsPaused();
+    verify(mockFlutterEngine.getLifecycleChannel(), never()).appIsPaused();
 
     // When the Activity/Fragment is stopped, a paused message should have been sent to Flutter.
     // Notice that Flutter uses the term "paused" in a different way, and at a different time
@@ -232,13 +233,13 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onAttach(RuntimeEnvironment.application);
 
     // Verify that the ActivityControlSurface was NOT told to attach to an Activity.
-    verify(mockFlutterEngine.getActivityControlSurface(), times(0)).attachToActivity(any(Activity.class), any(Lifecycle.class));
+    verify(mockFlutterEngine.getActivityControlSurface(), never()).attachToActivity(any(Activity.class), any(Lifecycle.class));
 
     // Flutter is detached from the surrounding Activity in onDetach.
     delegate.onDetach();
 
     // Verify that the ActivityControlSurface was NOT told to detach from the Activity.
-    verify(mockFlutterEngine.getActivityControlSurface(), times(0)).detachFromActivity();
+    verify(mockFlutterEngine.getActivityControlSurface(), never()).detachFromActivity();
   }
 
   @Test

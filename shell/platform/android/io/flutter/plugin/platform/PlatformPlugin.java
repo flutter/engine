@@ -181,6 +181,14 @@ public class PlatformPlugin {
         updateSystemUiOverlays();
     }
 
+    /**
+     * Refreshes Android's window system UI (AKA system chrome) to match Flutter's desired
+     * {@link PlatformChannel.SystemChromeStyle}.
+     * <p>
+     * Updating the system UI Overlays is accomplished by altering the decor view of the
+     * {@link Window} associated with the {@link Activity} that was provided to this
+     * {@code PlatformPlugin}.
+     */
     public void updateSystemUiOverlays(){
         activity.getWindow().getDecorView().setSystemUiVisibility(mEnabledOverlays);
         if (currentTheme != null) {
