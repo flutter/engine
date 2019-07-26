@@ -220,6 +220,10 @@ template("jit_runner") {
       "kernel:kernel_core_snapshot${product_suffix}",
     ]
 
+    if (!product) {
+      deps += [ observatory_target ]
+    }
+
     binary = "flutter_jit${product_suffix}_runner"
 
     resources = [
@@ -228,6 +232,15 @@ template("jit_runner") {
         dest = "icudtl.dat"
       },
     ]
+
+    if (!product) {
+      resources += [
+        {
+          path = rebase_path(observatory_archive_file)
+          dest = "observatory.tar"
+        },
+      ]
+    }
 
     resources += [
       {
@@ -275,6 +288,10 @@ template("aot_runner") {
       ":aot${product_suffix}",
     ]
 
+    if (!product) {
+      deps += [ observatory_target ]
+    }
+
     binary = "flutter_aot${product_suffix}_runner"
 
     resources = [
@@ -283,6 +300,15 @@ template("aot_runner") {
         dest = "icudtl.dat"
       },
     ]
+
+    if (!product) {
+      resources += [
+        {
+          path = rebase_path(observatory_archive_file)
+          dest = "observatory.tar"
+        },
+      ]
+    }
 
     libraries = common_libs
 
