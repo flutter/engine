@@ -1,0 +1,156 @@
+# Copyright 2017 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/dart/toolchain.gni")
+import("//topaz/runtime/dart_runner/dart_app.gni")
+
+# Defines a device-side test binary
+#
+# Bundles a set of `package:test` tests into a single Fuchsia application
+# with generated helper code to invoke the tests appropriately. The resulting
+# application can take Dart test arguments; pass --help to see full options.
+# Some options (e.g. Dart test platform selectors) are not supported.
+#
+# Parameters
+#
+#   sources (optional)
+#     The list of test sources. These sources must be within source_dir.
+#
+#   source_dir (optional)
+#     Directory containing the test sources.
+#     Defaults to "test".
+#
+#   deps (optional)
+#     List of labels for Dart packages this package depends on.
+#
+#   disable_analysis (optional)
+#     Prevents analysis from being run on this target.
+#
+#   package_only (optional)
+#     Prevents creation of a sh file, which in turn prevents the test from
+#     being run automatically.
+#     Defaults to False.
+#
+#   environments (optional)
+#      Device environments this test should run in. Passed through to
+#      package.tests.environments in //build/package.gni.
+#
+# Example of usage:
+#
+#   dart_fuchsia_test("some_tests") {
+#     tests = [ "test_foo.dart", "test_bar.dart" ]
+#   }
+#
+# Example of running:
+#
+#   fx run-test some_tests
+#
+# To see Dart test options:
+#
+#   fx run-test some_tests -- --help
+#
+# TODO:
+#
+#   - Implement reporting so that tests can integrate into the waterfall / CQ.
+#   - Support AOT and Flutter based tests.
+#   - Get a public API into `package:test` for what we're doing.
+#
+template("dart_fuchsia_test") {
+  if (defined(invoker.source_dir)) {
+    test_source_dir = invoker.source_dir
+  } else {
+    test_source_dir = "test"
+  }
+
+  if (defined(invoker.package_only)) {
+    test_package_only = invoker.package_only
+  } else {
+    test_package_only = false
+  }
+
+  generated_test_main_target = target_name + "__test_main"
+
+  # The generated code needs to be installed under the Dart toolchain directory
+  # so that it can be found by the dart_library target powering the JIT app.
+  dart_gen_dir = get_label_info(":bogus($dart_toolchain)", "target_gen_dir")
+  generated_test_main = "$dart_gen_dir/${target_name}__test_main.dart"
+
+  action(generated_test_main_target) {
+    script = "//topaz/runtime/dart/gen_fuchsia_test_main.py"
+    outputs = [
+      generated_test_main,
+    ]
+    args = [
+      "--out=" + rebase_path(generated_test_main),
+      "--source-dir=" + rebase_path(test_source_dir),
+    ]
+  }
+
+  if (!test_package_only) {
+    generated_run_test_sh_target = "${root_build_dir}/${target_name}"
+
+    action(generated_run_test_sh_target) {
+      script = "//topaz/runtime/dart/gen_run_sh.py"
+      outputs = [
+        generated_run_test_sh_target,
+      ]
+      args = [
+        "--out=" + rebase_path(generated_run_test_sh_target),
+        "--to_be_run=${invoker.target_name}",
+      ]
+    }
+  }
+
+  dart_jit_app(target_name) {
+    forward_variables_from(invoker,
+                           [
+                             "deprecated_shell",
+                             "disable_analysis",
+                             "sandbox",
+                             "meta",
+                           ])
+    source_dir = test_source_dir
+
+    testonly = true
+
+    if (!test_package_only) {
+      tests = [
+        {
+          name = generated_run_test_sh_target
+          dest = target_name
+          if (defined(invoker.environments)) {
+            environments = invoker.environments
+          }
+        },
+      ]
+    }
+
+    deps = [
+      "//topaz/lib/fuchsia_test_helper",
+    ]
+    if (defined(invoker.deps)) {
+      deps += invoker.deps
+    }
+
+    non_dart_deps = [ ":$generated_test_main_target($target_toolchain)" ]
+    if (!test_package_only) {
+      non_dart_deps += [ ":$generated_run_test_sh_target($target_toolchain)" ]
+    }
+
+    if (defined(invoker.non_dart_deps)) {
+      non_dart_deps += invoker.non_dart_deps
+    }
+
+    main_dart = generated_test_main
+
+    sources = []
+    if (defined(invoker.sources)) {
+      sources = invoker.sources
+    }
+    meta = []
+    if (defined(invoker.meta)) {
+      meta = invoker.meta
+    }
+  }
+}

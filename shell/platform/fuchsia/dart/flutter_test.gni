@@ -1,0 +1,385 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/dart/dart_library.gni")
+import("//build/dart/toolchain.gni")
+import("//build/testing/test_spec.gni")
+import("//topaz/runtime/dart/dart_kernel.gni")
+
+# Defines a flutter test suite
+#
+# Parameters
+#
+#   sources (required)
+#     The list of test files, which must be within source_dir.
+#
+#   source_dir (optional)
+#     Directory containing the test sources. Defaults to "test".
+#     Note: this cannot be set to ".".
+#
+#   deps (optional)
+#     List of labels for Dart libraries this suite depends on.
+#
+#   disable_analysis (optional)
+#     Prevents analysis from being run on this target.
+#
+# Example of usage:
+#
+#   flutter_test("baz_test") {
+#     deps = [
+#       "//foo/baz",
+#       "//third_party/dart-pkg/pub/test",
+#     ]
+#   }
+if (current_toolchain == dart_toolchain) {
+  template("flutter_test") {
+    assert(defined(invoker.sources),
+           "flutter_test() requires 'sources' be defined")
+    if (defined(invoker.source_dir)) {
+      assert(invoker.source_dir != ".",
+             "Cannot set source_dir to '.' because it breaks code coverage.")
+    }
+
+    _main_target_name = target_name
+    _library_target_name = "${target_name}_library"
+    _copy_target_name = "${target_name}_copy"
+    _snapshot_target_name = "${target_name}_snapshot"
+
+    _source_dir = "test"
+    if (defined(invoker.source_dir)) {
+      _source_dir = invoker.source_dir
+    }
+
+    dart_library(_library_target_name) {
+      forward_variables_from(invoker,
+                             [
+                               "deps",
+                               "disable_analysis",
+                             ])
+
+      infer_package_name = true
+      sources_required = false
+
+      source_dir = _source_dir
+      sources = invoker.sources
+    }
+
+    _dot_packages_file = "$target_gen_dir/$_library_target_name.packages"
+
+    _flutter_shell_label =
+        "//third_party/flutter/shell/testing/($host_toolchain)"
+    _flutter_shell_out_dir =
+        get_label_info(_flutter_shell_label, "root_out_dir")
+    _flutter_shell_bin = "$_flutter_shell_out_dir/flutter_tester"
+
+    _precompiled_kernel_target_names = []
+    _tests_json = []
+    _tests_filename = "$target_gen_dir/tests.json"
+
+    _test_runtime_deps = [ _tests_filename ]
+
+    foreach(_source_file, invoker.sources) {
+      _source_path = "$_source_dir/$_source_file"
+      _trimmed_source = string_replace(_source_file, "_test.dart", "")
+      if (_source_file != _trimmed_source) {
+        _trimmed_source = string_replace(_trimmed_source, ".", "_")
+        _trimmed_source = string_replace(_trimmed_source, "/", "_")
+        _test_target_name = "${_main_target_name}_${_trimmed_source}"
+        _kernel_target_name = "${_test_target_name}_dill"
+        _bootstrap_target_name = "${_test_target_name}_bootstrap"
+
+        _bootstrap_filename = "${target_gen_dir}/${_bootstrap_target_name}.dart"
+        _dill_filename = "$target_gen_dir/${_kernel_target_name}_kernel.dil"
+
+        action(_bootstrap_target_name) {
+          script = "$root_out_dir/dart-tools/build_test_bootstrap"
+          outputs = [
+            _bootstrap_filename,
+          ]
+
+          rebased_source = rebase_path(_source_path, target_gen_dir)
+          args = [
+            "--output",
+            rebase_path(_bootstrap_filename),
+            "--test-name",
+            "$rebased_source",
+          ]
+
+          deps = [
+            "//topaz/runtime/dart:build_test_bootstrap",
+          ]
+        }
+
+        dart_kernel(_kernel_target_name) {
+          platform_name = "flutter_runner"
+          disable_analysis = true
+          main_dart = _bootstrap_filename
+          args = []
+
+          product = false
+          aot = false
+
+          # TODO(tvolkert): Change to flutter platform once libraries.json works
+          #                 in Fuchsia
+          # platform_deps = [
+          #   "//third_party/flutter/lib/snapshot:strong_platform",
+          # ]
+          # platform_path = "$root_out_dir/flutter_patched_sdk"
+          platform_deps =
+              [ "//topaz/runtime/flutter_runner/kernel:kernel_platform_files" ]
+          platform_path = "$root_out_dir/flutter_runner_patched_sdk"
+
+          sources = [
+            _bootstrap_filename,
+          ]
+          sources_required = false
+          non_dart_deps = [ ":$_bootstrap_target_name" ]
+          deps = [
+            ":$_library_target_name",
+            "//third_party/dart-pkg/git/flutter/packages/flutter_test",
+            "//third_party/dart-pkg/pub/stream_channel",
+            "//third_party/dart-pkg/pub/test",
+          ]
+        }
+
+        _precompiled_kernel_target_names += [ ":${_kernel_target_name}_kernel" ]
+
+        _tests_json += [
+          {
+            source = rebase_path(_bootstrap_filename, root_build_dir)
+            dill = rebase_path(_dill_filename, root_build_dir)
+          },
+        ]
+        _test_runtime_deps += [
+          _bootstrap_filename,
+          _dill_filename,
+        ]
+      }
+
+      write_file(_tests_filename, _tests_json, "json")
+    }
+
+    # Copies resources to the build directory so that it may be archived
+    # with the test and the rest of the test's dependencies, so that the
+    # archiving happens with respect to the build directory.
+    _data_dir = "$target_gen_dir/${_main_target_name}_data"
+    _icudtl_file = "$_data_dir/icudtl.dat"
+    _dart_binary = "$_data_dir/dart"
+    copy(_copy_target_name) {
+      sources = [
+        "//third_party/icu/common/icudtl.dat",
+        "//topaz/tools/prebuilt-dart-sdk/$host_os-$host_cpu/bin/dart",
+      ]
+      outputs = [
+        "$_data_dir/{{source_file_part}}",
+      ]
+    }
+
+    # Creates a snapshot file of the fuchsia tester, which allows the test to
+    # be invoked hermetically.
+    _snapshot = "$target_gen_dir/${_main_target_name}.snapshot"
+    _flutter_tools_label = "//third_party/dart-pkg/git/flutter/packages/flutter_tools:flutter_tools"
+    _dart_flutter_tools_gen_dir =
+        get_label_info("$_flutter_tools_label($dart_toolchain)",
+                       "target_gen_dir")
+    _packages_path = "$_dart_flutter_tools_gen_dir/flutter_tools.packages"
+    _main_file = "//third_party/dart-pkg/git/flutter/packages/flutter_tools/bin/fuchsia_tester.dart"
+
+    action(_snapshot_target_name) {
+      depfile = "${_snapshot}.d"
+
+      outputs = [
+        _snapshot,
+      ]
+
+      script = _dart_binary
+
+      # The snapshot path needs to be rebased on top of the root build dir so
+      # that the resulting depfile gets properly formatted.
+      _rebased_snapshot = rebase_path(_snapshot, root_build_dir)
+      _rebased_depfile = rebase_path(depfile)
+      _rebased_packages_path = rebase_path(_packages_path)
+
+      args = [
+        "--snapshot=$_rebased_snapshot",
+        "--snapshot-depfile=$_rebased_depfile",
+        "--packages=$_rebased_packages_path",
+        rebase_path(_main_file),
+      ]
+
+      deps = dart_sdk_deps + [
+               "$_flutter_tools_label",
+               ":$_copy_target_name",
+             ]
+    }
+
+    _invocation_file = "$target_gen_dir/$target_name"
+
+    # _invocation_params encapsulates the parameters to pass to the
+    # invocation-generating action below. The utility lies in being able to
+    # construct the actions args and metadata at the same time.
+    _invocation_params = [
+      {
+        flag = "--wd"
+
+        # TODO(crbug.com/gn/56): Rebasing root_build_dir alone yields a path
+        # component that leaves root_build_dir, preventing portability.
+        path = "$root_build_dir/dummy/.."
+        base = get_path_info(_invocation_file, "dir")
+      },
+      {
+        flag = "--out"
+        path = _invocation_file
+        base = ""  # Will result in an absolute path.
+      },
+      {
+        flag = "--dart"
+        path = _dart_binary
+        base = root_build_dir
+      },
+      {
+        flag = "--snapshot"
+        path = _snapshot
+        base = root_build_dir
+      },
+      {
+        flag = "--tests"
+        path = _tests_filename
+        base = root_build_dir
+      },
+      {
+        flag = "--dot-packages"
+        path = _dot_packages_file
+        base = root_build_dir
+      },
+      {
+        flag = "--flutter-shell"
+        path = _flutter_shell_bin
+        base = root_build_dir
+      },
+      {
+        flag = "--icudtl"
+        path = _icudtl_file
+        base = root_build_dir
+      },
+      {
+        flag = "--sdk-root"
+        path = "$root_out_dir/flutter_runner_patched_sdk"
+        base = root_build_dir
+      },
+    ]
+
+    action(_main_target_name) {
+      script = "//topaz/runtime/dart/gen_flutter_test_invocation.py"
+      testonly = true
+      outputs = [
+        _invocation_file,
+      ]
+
+      inputs = [
+        _dot_packages_file,
+        _bootstrap_filename,
+        _flutter_shell_bin,
+        _tests_filename,
+      ]
+
+      args = []
+      foreach(param, _invocation_params) {
+        args += [
+          param.flag,
+          rebase_path(param.path, param.base),
+        ]
+        if (param.flag != "--wd") {
+          _test_runtime_deps += [ param.path ]
+        }
+      }
+
+      deps = [
+               ":$_library_target_name",
+               ":$_bootstrap_target_name",
+               ":${_kernel_target_name}_kernel",
+               ":$_snapshot_target_name",
+               ":$_copy_target_name",
+               _flutter_shell_label,
+             ] + _precompiled_kernel_target_names
+
+      metadata = {
+        test_runtime_deps = _test_runtime_deps
+      }
+    }
+  }
+} else {
+  # Not the Dart toolchain.
+  template("flutter_test") {
+    _main_target_name = target_name
+    _spec_target_name = "${target_name}_spec"
+    _invocation_file = "$target_gen_dir/$target_name"
+
+    if (is_linux || is_mac) {
+      # TODO(IN-819): Delete renaming when dart tests are no longer run out of
+      # $root_build_dir/host_tests/.
+      _invocation_file = "$root_out_dir/$target_name"
+
+      test_spec(_spec_target_name) {
+        testonly = true
+        name = _main_target_name
+        location = _invocation_file
+        deps = [
+          ":$_main_target_name($dart_toolchain)",
+        ]
+      }
+    } else {
+      not_needed([ "_spec_target_name" ])
+    }
+
+    action(_main_target_name) {
+      script = "//topaz/runtime/dart/gen_flutter_test_bundle_invocation.py"
+      testonly = true
+      not_needed(invoker, "*")
+
+      outputs = [
+        _invocation_file,
+      ]
+
+      _dart_target_gen_dir =
+          get_label_info(":bogus($dart_toolchain)", "target_gen_dir")
+      _delegate_file = "$_dart_target_gen_dir/$_main_target_name"
+
+      args = [
+        "--wd",
+
+        # TODO(crbug.com/gn/56): Rebasing root_build_dir alone yields a path
+        # component that leaves root_build_dir, preventing portability.
+        rebase_path("$root_build_dir/dummy/..",
+                    get_path_info(_invocation_file, "dir")),
+        "--out",
+        rebase_path(_invocation_file),
+        "--test",
+        rebase_path(_delegate_file, root_build_dir),
+      ]
+
+      deps = [
+        ":$_main_target_name($dart_toolchain)",
+      ]
+      if (is_linux || is_mac) {
+        # TODO(IN-819): Temporary measure to support the fx workflow, which is to
+        # take a dependency on tests.json, to which this metadata will be
+        # supplementary. Once flutter tests are contributing test spec metadata,
+        # all relevant information will be in the former and this is to be
+        # deleted.
+        metadata = {
+          pseudo_test_spec = [
+            {
+              test = {
+                location = rebase_path(_invocation_file, root_build_dir)
+                os = current_os
+              }
+            },
+          ]
+        }
+        deps += [ ":$_spec_target_name" ]
+      }
+    }
+  }
+}

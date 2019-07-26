@@ -1,0 +1,213 @@
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/dart/dart_library.gni")
+import("//build/dart/toolchain.gni")
+
+_compiler_label = "//topaz/runtime/dart:kernel_compiler($host_toolchain)"
+_compiler_path = get_label_info(_compiler_label, "root_out_dir") +
+                 "/dart-tools/kernel_compiler"
+
+# Generates dill files for a Dart application
+#
+# Parameters
+#
+#  platform_deps (required)
+#    Dependent targets that populate `platform_path` with the platform dill
+#    files.
+#
+#  sources_required (optional)
+#    Whether complete source files are required by the rule. If true, all
+#    files under the source_dir must be included in sources.
+#    Defaults to false.
+#
+#  platform_path (required)
+#    Path to the build output directory containing the platform dill files.
+#
+#  platform_name (required)
+#    The name of the platform, either "flutter_runner" or "dart_runner".
+#
+#  main_dart (required)
+#    Path to Dart source file containing main().
+#
+#  package_name (optional)
+#    The name of the dart package. If not provided it will be inferred from the
+#    target name.
+#
+#  sources (optional)
+#    A list of the application's Dart source files.
+#
+#  manifest (optional)
+#    Path to an output manifest file containing the list of partial dill files.
+#
+#  product (optional)
+#    Whether this is a product build. Defaults to false.
+#
+#  aot (optional)
+#    Whether this is an AOT build. Defaults to false.
+#
+#  args (optional)
+#    A list of additional arguments to the compiler.dart program in this
+#    directory that generates the kernel files.
+#
+#  gen_bytecode (optional)
+#    Whether the kernel compiler should generate bytecode. Defaults to false.
+#
+#  Forwarded to dart_library:
+#    deps, disable_analysis, non_dart_deps, source_dir.
+template("dart_kernel") {
+  assert(defined(invoker.platform_deps), "dart_kernel() requires platform_deps")
+  assert(defined(invoker.platform_path), "dart_kernel() requires platform_path")
+  assert(defined(invoker.platform_name), "dart_kernel() requires platform_name")
+  assert(defined(invoker.main_dart), "dart_kernel() requires main_dart")
+
+  args = []
+  if (defined(invoker.args)) {
+    args += invoker.args
+  }
+
+  aot = false
+  if (defined(invoker.aot) && invoker.aot) {
+    aot = invoker.aot
+  }
+  product = false
+  if (defined(invoker.product) && invoker.product) {
+    product = invoker.product
+  }
+
+  dart_library_target_name = "${target_name}_dart_library"
+  dart_library(dart_library_target_name) {
+    forward_variables_from(invoker,
+                           [
+                             "deps",
+                             "package_root",
+                             "disable_analysis",
+                             "non_dart_deps",
+                             "source_dir",
+                           ])
+
+    if (defined(invoker.package_name)) {
+      package_name = invoker.package_name
+    } else {
+      infer_package_name = true
+    }
+    if (defined(invoker.sources_required)) {
+      sources_required = invoker.sources_required
+    }
+
+    sources = []
+    if (defined(invoker.sources)) {
+      sources += invoker.sources
+    }
+    extra_sources = [ invoker.main_dart ]
+  }
+
+  # TODO(tvolkert): Name this ${target_name}
+  action("${target_name}_kernel") {
+    pool = "//build/dart:dart_pool($dart_toolchain)"
+    forward_variables_from(invoker,
+                           [
+                             "testonly",
+                             "visibility",
+                           ])
+
+    kernel_path = "$target_gen_dir/${target_name}.dil"
+
+    depfile = "${kernel_path}.d"
+    deps = invoker.platform_deps + [
+             ":$dart_library_target_name",
+             _compiler_label,
+           ]
+    outputs = [
+      kernel_path,
+    ]
+    if (defined(invoker.manifest)) {
+      outputs += [
+        # Explicit output when using --manifest.
+        invoker.manifest,
+
+        # Implicit output when using --manifest; see createManifest in compiler.dart.
+        invoker.manifest + ".dilplist",
+        invoker.manifest + ".frameworkversion",
+      ]
+    }
+
+    dart_target_gen_dir =
+        get_label_info(":bogus($dart_toolchain)", "target_gen_dir")
+    rebased_packages_path =
+        rebase_path("$dart_target_gen_dir/$dart_library_target_name.packages",
+                    "//")
+
+    multi_root_scheme = "fuchsia-source"
+
+    script = _compiler_path
+    args += [
+             # TODO(https://github.com/dart-lang/sdk/issues/36639):
+             # Remove when new constant eval supports dilp files.
+             "--enable-experiment=no-constant-update-2018",
+
+             "--target",
+             invoker.platform_name,
+             "--platform",
+             rebase_path("${invoker.platform_path}/platform_strong.dill"),
+             "--filesystem-scheme",
+             multi_root_scheme,
+             "--filesystem-root",
+             rebase_path("//"),
+             "--packages",
+             "$multi_root_scheme:///$rebased_packages_path",
+             "--depfile",
+             rebase_path(depfile, root_build_dir),
+             "--output",
+             rebase_path(kernel_path, root_build_dir),
+             "--no-link-platform",
+           ]
+    if (defined(invoker.manifest)) {
+      args += [
+        "--split-output-by-packages",
+        "--manifest",
+        rebase_path(invoker.manifest),
+      ]
+    }
+    if (is_debug) {
+      args += [ "--embed-sources" ]
+    } else {
+      args += [ "--no-embed-sources" ]
+    }
+
+    if (aot) {
+      args += [
+        "--aot",
+        "--tfa",
+      ]
+    }
+
+    if (product) {
+      # Setting this flag in a non-product release build for AOT (a "profile"
+      # build) causes the vm service isolate code to be tree-shaken from an app.
+      # See the pragma on the entrypoint here:
+      #
+      # https://github.com/dart-lang/sdk/blob/master/runtime/bin/vmservice/vmservice_io.dart#L240
+      #
+      # Also, this define excludes debugging and profiling code from Flutter.
+      args += [
+        "-Ddart.vm.product=true",
+      ]
+    } else {
+      if (!is_debug) {
+        # The following define excludes debugging code from Flutter.
+        args += [
+          "-Ddart.vm.profile=true",
+        ]
+      }
+    }
+
+    if (defined(invoker.gen_bytecode) && invoker.gen_bytecode) {
+      args += [ "--gen-bytecode", "--drop-ast" ]
+    }
+
+    rebased_main_dart = rebase_path(invoker.main_dart, "//")
+    args += [ "$multi_root_scheme:///$rebased_main_dart" ]
+  }
+}

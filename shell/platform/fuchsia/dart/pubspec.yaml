@@ -1,0 +1,21 @@
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+name: kernel_compiler
+version: 0.1.0-alpha.1
+description: Builds platform and increment kernel files for dart_runner
+homepage: https://fuchsia.googlesource.com/topaz/+/master/runtime/dart_runner/
+author: Dart Team <misc@dartlang.org>
+
+dependencies:
+  front_end: any
+  kernel: any
+  vm: any
+
+dependency_overrides:
+  front_end:
+    path: ../../../third_party/dart/pkg/front_end/
+  kernel:
+    path: ../../../third_party/dart/pkg/kernel/
+  vm:
+    path: ../../../third_party/dart/pkg/vm/

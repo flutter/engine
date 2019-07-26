@@ -1,0 +1,11 @@
+# Copyright 2018 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+assert(is_fuchsia || is_fuchsia_host)
+
+declare_args() {
+  # Forces all Dart and Flutter apps to build in a specific configuration that
+  # we use to build products.
+  dart_force_product = false
+}

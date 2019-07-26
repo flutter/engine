@@ -1,0 +1,91 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/config/clang/clang.gni")
+import("//build/dart/dart_tool.gni")
+
+dart_tool("dart_profiler_symbols") {
+  main_dart = "dart_profiler_symbols.dart"
+
+  force_prebuilt_dart = true
+  disable_analysis = true
+
+  source_dir = "."
+  sources = [
+    "dart_profiler_symbols.dart",
+  ]
+
+  deps = [
+    "//third_party/dart-pkg/pub/args",
+    "//third_party/dart-pkg/pub/path",
+  ]
+}
+
+template("generate_dart_profiler_symbols") {
+  assert(defined(invoker.library_label), "Must define 'library_label'")
+  assert(defined(invoker.library_path), "Must define 'library_path'")
+  assert(defined(invoker.output), "Must define 'output'")
+
+  action(target_name) {
+    deps = [
+      ":dart_profiler_symbols",
+      invoker.library_label,
+    ]
+    inputs = [
+      invoker.library_path,
+    ]
+    outputs = [
+      invoker.output,
+    ]
+
+    script = get_label_info(":dart_profiler_symbols", "root_out_dir") +
+             "/dart-tools/dart_profiler_symbols"
+    args = [
+      "--nm",
+      "$default_clang_prefix/llvm-nm",
+      "--binary",
+      rebase_path(invoker.library_path),
+      "--output",
+      rebase_path(invoker.output),
+    ]
+  }
+}
+
+_shared_out_dir = get_label_info(":bogus(${shlib_toolchain})", "root_out_dir")
+
+generate_dart_profiler_symbols("libdart_jit") {
+  library_label = "//third_party/dart/runtime:libdart_jit"
+  library_path = "${_shared_out_dir}/libdart_jit.so"
+  output = "${target_gen_dir}/libdart_jit.dartprofilersymbols"
+}
+
+generate_dart_profiler_symbols("libdart_precompiled_runtime") {
+  library_label = "//third_party/dart/runtime:libdart_precompiled_runtime"
+  library_path = "${_shared_out_dir}/libdart_precompiled_runtime.so"
+  output = "${target_gen_dir}/libdart_precompiled_runtime.dartprofilersymbols"
+}
+
+generate_dart_profiler_symbols("dart_jit_runner") {
+  library_label = "//topaz/runtime/dart_runner:dart_jit_runner_bin"
+  library_path = "${root_out_dir}/dart_jit_runner"
+  output = "${target_gen_dir}/dart_jit_runner.dartprofilersymbols"
+}
+
+generate_dart_profiler_symbols("dart_aot_runner") {
+  library_label = "//topaz/runtime/dart_runner:dart_aot_runner_bin"
+  library_path = "${root_out_dir}/dart_aot_runner"
+  output = "${target_gen_dir}/dart_aot_runner.dartprofilersymbols"
+}
+
+generate_dart_profiler_symbols("flutter_jit_runner") {
+  library_label = "//topaz/runtime/flutter_runner:jit"
+  library_path = "${root_out_dir}/flutter_jit_runner"
+  output = "${target_gen_dir}/flutter_jit_runner.dartprofilersymbols"
+}
+
+generate_dart_profiler_symbols("flutter_aot_runner") {
+  library_label = "//topaz/runtime/flutter_runner:aot"
+  library_path = "${root_out_dir}/flutter_aot_runner"
+  output = "${target_gen_dir}/flutter_aot_runner.dartprofilersymbols"
+}
