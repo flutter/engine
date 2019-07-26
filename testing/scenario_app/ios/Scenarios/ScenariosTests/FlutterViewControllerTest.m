@@ -1,10 +1,6 @@
-//
-//  FlutterViewControllerTest.m
-//  ScenariosUITests
-//
-//  Created by Aaron Clarke on 7/24/19.
-//  Copyright © 2019 flutter. All rights reserved.
-//
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #import <Flutter/Flutter.h>
 #import <XCTest/XCTest.h>
