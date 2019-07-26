@@ -263,7 +263,7 @@ size_t DartVM::GetVMLaunchCount() {
 //   - go/decommissioning-dbc
 //   - go/decommissioning-dbc-engine
 //   - go/decommissioning-dbc-tools
-#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+#if OS_IOS && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 #define PT_TRACE_ME 0
 #define PT_SIGEXC 12
 extern "C" int ptrace(int request, pid_t pid, caddr_t addr, int data);
@@ -332,7 +332,7 @@ static void EnsureDebuggedIOS(const Settings& vm_settings) {
     FML_LOG(ERROR) << warning;
   }
 }
-#endif  // (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+#endif  // OS_IOS && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 
 DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
                std::shared_ptr<IsolateNameServer> isolate_name_server)
