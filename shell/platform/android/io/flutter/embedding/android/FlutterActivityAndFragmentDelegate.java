@@ -150,7 +150,7 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     // TODO(mattcarroll): the PlatformPlugin needs to be reimagined because it implicitly takes
     //                    control of the entire window. This is unacceptable for non-fullscreen
     //                    use-cases.
-    platformPlugin = new PlatformPlugin(host.getActivity(), flutterEngine.getPlatformChannel());
+    platformPlugin = host.providePlatformPlugin(host.getActivity(), flutterEngine);
 
     if (host.shouldAttachEngineToActivity()) {
       // Notify any plugins that are currently attached to our FlutterEngine that they
@@ -326,10 +326,12 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     Log.v(TAG, "onPostResume()");
     ensureAlive();
     if (flutterEngine != null) {
-      // TODO(mattcarroll): find a better way to handle the update of UI overlays than calling through
-      //                    to platformPlugin. We're implicitly entangling the Window, Activity, Fragment,
-      //                    and engine all with this one call.
-      platformPlugin.onPostResume();
+      if (platformPlugin != null) {
+        // TODO(mattcarroll): find a better way to handle the update of UI overlays than calling through
+        //                    to platformPlugin. We're implicitly entangling the Window, Activity, Fragment,
+        //                    and engine all with this one call.
+        platformPlugin.updateSystemUiOverlays();
+      }
     } else {
       Log.w(TAG, "onPostResume() invoked before FlutterFragment was attached to an Activity.");
     }
@@ -405,8 +407,10 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
 
     // Null out the platformPlugin to avoid a possible retain cycle between the plugin, this Fragment,
     // and this Fragment's Activity.
-    platformPlugin.destroy();
-    platformPlugin = null;
+    if (platformPlugin != null) {
+      platformPlugin.destroy();
+      platformPlugin = null;
+    }
 
     // Destroy our FlutterEngine if we're not set to retain it.
     if (!host.retainFlutterEngineAfterHostDestruction() && !isFlutterEngineFromHost) {
@@ -627,6 +631,13 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
      */
     @Nullable
     FlutterEngine provideFlutterEngine(@NonNull Context context);
+
+    /**
+     * Hook for the host to create/provide a {@link PlatformPlugin} if the associated
+     * Flutter experience should control system chrome.
+     */
+    @Nullable
+    PlatformPlugin providePlatformPlugin(@Nullable Activity activity, @NonNull FlutterEngine flutterEngine);
 
     /**
      * Hook for the host to configure the {@link FlutterEngine} as desired.

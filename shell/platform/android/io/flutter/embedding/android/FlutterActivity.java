@@ -691,6 +691,16 @@ public class FlutterActivity extends Activity
     return delegate.getFlutterEngine();
   }
 
+  @Nullable
+  @Override
+  public PlatformPlugin providePlatformPlugin(@Nullable Activity activity, @NonNull FlutterEngine flutterEngine) {
+    if (activity != null) {
+      return new PlatformPlugin(getActivity(), flutterEngine.getPlatformChannel());
+    } else {
+      return null;
+    }
+  }
+
   /**
    * Hook for subclasses to easily configure a {@code FlutterEngine}, e.g., register
    * plugins.

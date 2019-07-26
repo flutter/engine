@@ -22,6 +22,7 @@ import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
+import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.FlutterMain;
 
 /**
@@ -622,6 +623,16 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Nullable
   public FlutterEngine getFlutterEngine() {
     return delegate.getFlutterEngine();
+  }
+
+  @Nullable
+  @Override
+  public PlatformPlugin providePlatformPlugin(@Nullable Activity activity, @NonNull FlutterEngine flutterEngine) {
+    if (activity != null) {
+      return new PlatformPlugin(getActivity(), flutterEngine.getPlatformChannel());
+    } else {
+      return null;
+    }
   }
 
   /**

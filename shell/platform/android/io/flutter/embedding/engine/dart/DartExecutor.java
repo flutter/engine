@@ -10,6 +10,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -282,6 +283,20 @@ public class DartExecutor implements BinaryMessenger {
     @NonNull
     public String toString() {
       return "DartEntrypoint( bundle path: " + pathToBundle + ", function: " + dartEntrypointFunctionName + " )";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      DartEntrypoint that = (DartEntrypoint) o;
+      return pathToBundle.equals(that.pathToBundle) &&
+          dartEntrypointFunctionName.equals(that.dartEntrypointFunctionName);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(pathToBundle, dartEntrypointFunctionName);
     }
   }
 
