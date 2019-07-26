@@ -83,7 +83,6 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
             platform_view->CreateResourceContext(), io_task_runner);
         io_latch.Signal();
       });
-  io_latch.Wait();
 
   // Create the rasterizer on the GPU thread.
   fml::AutoResetWaitableEvent gpu_latch;
@@ -101,8 +100,6 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
         gpu_latch.Signal();
       });
 
-  gpu_latch.Wait();
-
   // Create the engine on the UI thread.
   fml::AutoResetWaitableEvent ui_latch;
   std::unique_ptr<Engine> engine;
@@ -114,7 +111,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          shared_snapshot = std::move(shared_snapshot),    //
                          vsync_waiter = std::move(vsync_waiter),          //
-                         io_manager = io_manager->GetWeakPtr()            //
+                         &io_latch,
+                         &io_manager  //
   ]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
         const auto& task_runners = shell->GetTaskRunners();
@@ -124,6 +122,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
         auto animator = std::make_unique<Animator>(*shell, task_runners,
                                                    std::move(vsync_waiter));
 
+        io_latch.Wait();
+
         engine = std::make_unique<Engine>(*shell,                       //
                                           *shell->GetDartVM(),          //
                                           std::move(isolate_snapshot),  //
@@ -131,12 +131,14 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                                           task_runners,                 //
                                           shell->GetSettings(),         //
                                           std::move(animator),          //
-                                          std::move(io_manager)         //
+                                          io_manager->GetWeakPtr()      //
         );
         ui_latch.Signal();
       }));
 
   ui_latch.Wait();
+  gpu_latch.Wait();
+
   // We are already on the platform thread. So there is no platform latch to
   // wait on.
 
