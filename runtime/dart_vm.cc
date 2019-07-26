@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 
 // These headers should only be needed in debug mode.
-#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+#if OS_IOS && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 #include <sys/sysctl.h>
 #include <sys/types.h>
 #endif
