@@ -22,10 +22,12 @@ static NSBundle* FindTestBundle() {
 @implementation FlutterViewControllerTest
 
 - (void)setUp {
+  [super setUp];
   self.continueAfterFailure = NO;
 }
 
 - (void)tearDown {
+  [super tearDown];
   if (self.flutterViewController) {
     [self.flutterViewController removeFromParentViewController];
   }
