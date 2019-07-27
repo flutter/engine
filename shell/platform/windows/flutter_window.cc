@@ -24,7 +24,8 @@ FlutterWindow::~FlutterWindow() {
   DestroyRenderSurface();
 }
 
-FlutterDesktopWindowControllerRef FlutterWindow::SetState(FlutterEngine eng) {
+FlutterDesktopWindowControllerRef FlutterWindow::SetState(
+    FLUTTER_API_SYMBOL(FlutterEngine) eng) {
   engine_ = eng;
 
   auto messenger = std::make_unique<FlutterDesktopMessenger>();

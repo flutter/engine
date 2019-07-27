@@ -22,7 +22,7 @@ struct FlutterDesktopWindowControllerState {
   std::unique_ptr<flutter::FlutterWindow> window;
 
   // The handle to the Flutter engine instance.
-  FlutterEngine engine;
+  FLUTTER_API_SYMBOL(FlutterEngine) engine;
 
   // The window handle given to API clients.
   std::unique_ptr<FlutterDesktopWindow> window_wrapper;
@@ -39,7 +39,7 @@ struct FlutterDesktopWindow {
 // Struct for storing state of a Flutter engine instance.
 struct FlutterDesktopEngineState {
   // The handle to the Flutter engine instance.
-  FlutterEngine engine;
+  FLUTTER_API_SYMBOL(FlutterEngine) engine;
 };
 
 // State associated with the plugin registrar.
@@ -54,7 +54,7 @@ struct FlutterDesktopPluginRegistrar {
 // State associated with the messenger used to communicate with the engine.
 struct FlutterDesktopMessenger {
   // The Flutter engine this messenger sends outgoing messages to.
-  FlutterEngine engine;
+  FLUTTER_API_SYMBOL(FlutterEngine) engine;
 
   // The message dispatcher for handling incoming messages.
   flutter::IncomingMessageDispatcher* dispatcher;

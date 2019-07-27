@@ -73,7 +73,8 @@ class FlutterWindow : public Win32Window {
 
   // Configures the window instance with an instance of a running Flutter engine
   // returning a configured FlutterDesktopWindowControllerRef.
-  FlutterDesktopWindowControllerRef SetState(FlutterEngine state);
+  FlutterDesktopWindowControllerRef SetState(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                 state);
 
   // Returns the currently configured Plugin Registrar.
   FlutterDesktopPluginRegistrarRef GetRegistrar();
@@ -136,7 +137,7 @@ class FlutterWindow : public Win32Window {
   bool pointer_is_down_ = false;
 
   // The handle to the Flutter engine instance.
-  FlutterEngine engine_{nullptr};
+  FLUTTER_API_SYMBOL(FlutterEngine) engine_{nullptr};
 
   // Whether or not to track mouse movements to send kHover events.
   bool hover_tracking_is_enabled_ = false;

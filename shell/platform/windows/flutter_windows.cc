@@ -30,11 +30,12 @@ static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 // provided).
 //
 // Returns a caller-owned pointer to the engine.
-static FlutterEngine RunFlutterEngine(flutter::FlutterWindow* window,
-                                      const char* assets_path,
-                                      const char* icu_data_path,
-                                      const char** arguments,
-                                      size_t arguments_count) {
+static FLUTTER_API_SYMBOL(FlutterEngine)
+    RunFlutterEngine(flutter::FlutterWindow* window,
+                     const char* assets_path,
+                     const char* icu_data_path,
+                     const char** arguments,
+                     size_t arguments_count) {
   // FlutterProjectArgs is expecting a full argv, so when processing it for
   // flags the first item is treated as the executable and ignored. Add a dummy
   // value so that all provided arguments are used.
@@ -83,7 +84,7 @@ static FlutterEngine RunFlutterEngine(flutter::FlutterWindow* window,
 
   // args.custom_task_runners = custom_task_runners; TODO
 
-  FlutterEngine engine = nullptr;
+  FLUTTER_API_SYMBOL(FlutterEngine) engine = nullptr;
   auto result =
       FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config, &args, window, &engine);
   if (result != kSuccess || engine == nullptr) {

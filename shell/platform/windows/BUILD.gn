@@ -72,7 +72,7 @@ source_set("flutter_windows_source") {
     ":flutter_windows_headers",
     "$flutter_root/shell/platform/common/cpp:common_cpp",
     "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper",
-    "$flutter_root/shell/platform/embedder:embedder",
+    "$flutter_root/shell/platform/embedder:embedder_with_symbol_prefix",
     "$flutter_root/shell/platform/windows/client_wrapper:client_wrapper_windows",
     "//third_party/angle:libEGL_static",  # the order of libEGL_static and libGLESv2_static is important.. if reversed, will cause a linker error DllMain already defined in LIBCMTD.lib
     "//third_party/angle:libGLESv2_static",
