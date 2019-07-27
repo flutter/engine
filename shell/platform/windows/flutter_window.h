@@ -68,6 +68,9 @@ class FlutterWindow : public Win32Window {
   // Virtual method called by base window when mouse scrollwheel input occurs.
   void OnScroll(double delta_x, double delta_y) override;
 
+  // Virtual methed called by the base window when the user closes the Windows
+  void OnClose();
+
   // Configures the window instance with an instance of a running Flutter engine
   // returning a configured FlutterDesktopWindowControllerRef.
   FlutterDesktopWindowControllerRef SetState(FlutterEngine state);
@@ -163,6 +166,9 @@ class FlutterWindow : public Win32Window {
 
   // should we forword input messages or not
   bool process_events_ = false;
+
+  // flag indicating if the message loop should be running
+  bool messageloop_running_ = false;
 };
 
 }  // namespace flutter

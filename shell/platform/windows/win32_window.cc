@@ -9,11 +9,24 @@ namespace flutter {
 Win32Window::Win32Window() {
   dpi_helper_ = std::make_unique<Win32DpiHelper>();
 
-  // Assume Windows 10 1607 for DPI handling.
-  // TODO handle DPI robustly downlevel
-  // TODO the calling applicaiton should participate in setting the DPI
-  // awareness mode
-  auto result = dpi_helper_->SetProcessDpiAwarenessContext(
+  // Assume Windows 10 1703 or greater for DPI handling.  When running on a
+  // older release of Windows where this context doesn't exist, DPI calls will
+  // fail and Flutter rendering will be impacted until this is fixed.
+  // To handle downlevel correctly, dpi_helper must use the most recent DPI
+  // context available should be used: Windows 1703: Per-Monitor V2, 8.1:
+  // Per-Monitor V1, Windows 7: System See
+  // https://docs.microsoft.com/en-us/windows/win32/hidpi/high-dpi-desktop-application-development-on-windows
+  // for more information.
+
+  // TODO the calling applicaiton should participate in setting the DPI.
+  // Currently dpi_helper is asserting per-monitor V2.  There are two problems
+  // with this: 1) it is advised that the awareness mode is set using manifest,
+  // not programatically.  2) The calling executable should be responsible for
+  // setting an appropriate scaling mode, not a library.  This will be
+  // particularly important once there is a means of hosting Flutter content in
+  // an existing app.
+
+  BOOL result = dpi_helper_->SetProcessDpiAwarenessContext(
       DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
   if (result != TRUE) {
@@ -30,9 +43,9 @@ void Win32Window::Initialize(const char* title,
                              const unsigned int width,
                              const unsigned int height) {
   Destroy();
-  auto converted_title = NarrowToWide(title);
+  std::wstring converted_title = NarrowToWide(title);
 
-  auto window_class = ResgisterWindowClass(converted_title);
+  WNDCLASS window_class = ResgisterWindowClass(converted_title);
 
   CreateWindow(window_class.lpszClassName, converted_title.c_str(),
                WS_OVERLAPPEDWINDOW | WS_VISIBLE, x, y, width, height, nullptr,
@@ -40,7 +53,7 @@ void Win32Window::Initialize(const char* title,
 }
 
 std::wstring Win32Window::NarrowToWide(const char* source) {
-  auto length = strlen(source);
+  size_t length = strlen(source);
   size_t outlen = 0;
   std::wstring wideTitle(length, L'#');
   mbstowcs_s(&outlen, &wideTitle[0], length + 1, source, length);
@@ -76,9 +89,9 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
 
     auto that = static_cast<Win32Window*>(cs->lpCreateParams);
 
-    // Since the application is running in Per-monitor V2 mode, turn on automatic titlebar
-    // scaling
-    auto result = that->dpi_helper_->EnableNonClientDpiScaling(window);
+    // Since the application is running in Per-monitor V2 mode, turn on
+    // automatic titlebar scaling
+    BOOL result = that->dpi_helper_->EnableNonClientDpiScaling(window);
     if (result != TRUE) {
       OutputDebugString(L"Failed to enable non-client area autoscaling");
     }
@@ -108,7 +121,7 @@ Win32Window::MessageHandler(HWND hwnd,
         break;
 
       case WM_DESTROY:
-        PostQuitMessage(0);
+        window->OnClose();
         return 0;
         break;
 
@@ -190,8 +203,8 @@ Win32Window::HandleDpiChange(HWND hwnd, WPARAM wparam, LPARAM lparam) {
 
     // Resize the window
     auto lprcNewScale = reinterpret_cast<RECT*>(lparam);
-    auto newWidth = lprcNewScale->right - lprcNewScale->left;
-    auto newHeight = lprcNewScale->bottom - lprcNewScale->top;
+    LONG newWidth = lprcNewScale->right - lprcNewScale->left;
+    LONG newHeight = lprcNewScale->bottom - lprcNewScale->top;
 
     SetWindowPos(hwnd, nullptr, lprcNewScale->left, lprcNewScale->top, newWidth,
                  newHeight, SWP_NOZORDER | SWP_NOACTIVATE);

@@ -156,12 +156,18 @@ void FlutterWindow::OnScroll(double delta_x, double delta_y) {
   }
 }
 
+void FlutterWindow::OnClose() {
+  messageloop_running_ = false;
+}
+
 void FlutterWindow::FlutterMessageLoop() {
   MSG message;
 
+  messageloop_running_ = true;
+
   // TODO: need either non-blocking meesage loop or custom dispatch
   // implementation per  https://github.com/flutter/flutter/issues/36420
-  while (GetMessage(&message, nullptr, 0, 0)) {
+  while (GetMessage(&message, nullptr, 0, 0) && messageloop_running_) {
     TranslateMessage(&message);
     DispatchMessage(&message);
     __FlutterEngineFlushPendingTasksNow();

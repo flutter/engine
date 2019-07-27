@@ -34,16 +34,6 @@ struct FlutterDesktopWindowControllerState {
 struct FlutterDesktopWindow {
   // The GLFW window that (indirectly) owns this state object.
   flutter::FlutterWindow* window;
-
-  // Whether or not to track mouse movements to send kHover events.
-  bool hover_tracking_enabled = true;
-
-  // The ratio of pixels per screen coordinate for the window.
-  double pixels_per_screen_coordinate = 1.0;
-
-  // Resizing triggers a window refresh, but the resize already updates Flutter.
-  // To avoid double messages, the refresh after each resize is skipped.
-  bool skip_next_window_refresh = false;
 };
 
 // Struct for storing state of a Flutter engine instance.
