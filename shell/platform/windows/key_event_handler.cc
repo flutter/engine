@@ -30,10 +30,10 @@ KeyEventHandler::KeyEventHandler(flutter::BinaryMessenger* messenger)
 
 KeyEventHandler::~KeyEventHandler() = default;
 
-void KeyEventHandler::CharHook(FlutterWindow* window, unsigned int code_point) {
-}
+void KeyEventHandler::CharHook(Win32FlutterWindow* window,
+                               unsigned int code_point) {}
 
-void KeyEventHandler::KeyboardHook(FlutterWindow* window,
+void KeyEventHandler::KeyboardHook(Win32FlutterWindow* window,
                                    int key,
                                    int scancode,
                                    int action,

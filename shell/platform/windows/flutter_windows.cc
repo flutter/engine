@@ -14,11 +14,11 @@
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/windows/flutter_window.h"
 #include "flutter/shell/platform/windows/key_event_handler.h"
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
+#include "flutter/shell/platform/windows/win32_flutter_window.h"
 #include "flutter/shell/platform/windows/window_state.h"
 
 static_assert(FLUTTER_ENGINE_VERSION == 1, "");
@@ -31,7 +31,7 @@ static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 //
 // Returns a caller-owned pointer to the engine.
 static FLUTTER_API_SYMBOL(FlutterEngine)
-    RunFlutterEngine(flutter::FlutterWindow* window,
+    RunFlutterEngine(flutter::Win32FlutterWindow* window,
                      const char* assets_path,
                      const char* icu_data_path,
                      const char** arguments,
@@ -52,15 +52,15 @@ static FLUTTER_API_SYMBOL(FlutterEngine)
   config.type = kOpenGL;
   config.open_gl.struct_size = sizeof(config.open_gl);
   config.open_gl.make_current = [](void* user_data) -> bool {
-    auto host = static_cast<flutter::FlutterWindow*>(user_data);
+    auto host = static_cast<flutter::Win32FlutterWindow*>(user_data);
     return host->MakeCurrent();
   };
   config.open_gl.clear_current = [](void* user_data) -> bool {
-    auto host = static_cast<flutter::FlutterWindow*>(user_data);
+    auto host = static_cast<flutter::Win32FlutterWindow*>(user_data);
     return host->ClearContext();
   };
   config.open_gl.present = [](void* user_data) -> bool {
-    auto host = static_cast<flutter::FlutterWindow*>(user_data);
+    auto host = static_cast<flutter::Win32FlutterWindow*>(user_data);
     return host->SwapBuffers();
   };
   config.open_gl.fbo_callback = [](void* user_data) -> uint32_t { return 0; };
@@ -78,7 +78,7 @@ static FLUTTER_API_SYMBOL(FlutterEngine)
   args.platform_message_callback =
       [](const FlutterPlatformMessage* engine_message,
          void* user_data) -> void {
-    auto window = reinterpret_cast<flutter::FlutterWindow*>(user_data);
+    auto window = reinterpret_cast<flutter::Win32FlutterWindow*>(user_data);
     return window->HandlePlatformMessage(engine_message);
   };
 
@@ -110,10 +110,10 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
     const char* icu_data_path,
     const char** arguments,
     size_t argument_count) {
-  auto win = std::make_unique<flutter::FlutterWindow>(
+  auto win = std::make_unique<flutter::Win32FlutterWindow>(
       title, 10, 10, initial_width, initial_height);
 
-  flutter::FlutterWindow* window = win.get();
+  flutter::Win32FlutterWindow* window = win.get();
 
   auto engine = RunFlutterEngine(window, assets_path, icu_data_path, arguments,
                                  argument_count);

@@ -23,7 +23,7 @@ static constexpr char kUnknownClipboardFormatError[] =
 namespace flutter {
 
 PlatformHandler::PlatformHandler(flutter::BinaryMessenger* messenger,
-                                 FlutterWindow* window)
+                                 Win32FlutterWindow* window)
     : channel_(std::make_unique<flutter::MethodChannel<rapidjson::Document>>(
           messenger,
           kChannelName,

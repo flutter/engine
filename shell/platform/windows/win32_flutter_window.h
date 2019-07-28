@@ -27,15 +27,15 @@ namespace flutter {
 // A win32 flutter window.  In the future, there will likely be a
 // CoreWindow-based FlutterWindow as well.  At the point may make sense to
 // dependency inject the native window rather than inherit.
-class FlutterWindow : public Win32Window {
+class Win32FlutterWindow : public Win32Window {
  public:
-  FlutterWindow();
-  FlutterWindow(const char* title,
+  Win32FlutterWindow();
+  Win32FlutterWindow(const char* title,
                 const int x,
                 const int y,
                 const int width,
                 const int height) noexcept;
-  ~FlutterWindow();
+  ~Win32FlutterWindow();
 
   // Run a Windows message pump that also pumps plugin messages.
   void FlutterMessageLoop();

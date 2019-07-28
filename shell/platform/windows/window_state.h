@@ -13,13 +13,13 @@
 #include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 
-struct flutter::FlutterWindow;
+struct flutter::Win32FlutterWindow;
 
 // Struct for storing state within an instance of the windows native (HWND or
 // CoreWindow) Window.
 struct FlutterDesktopWindowControllerState {
   //// The win32 window that owns this state object.
-  std::unique_ptr<flutter::FlutterWindow> window;
+  std::unique_ptr<flutter::Win32FlutterWindow> window;
 
   // The handle to the Flutter engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine;
@@ -33,7 +33,7 @@ struct FlutterDesktopWindowControllerState {
 // to all of the controller-based functionality.
 struct FlutterDesktopWindow {
   // The GLFW window that (indirectly) owns this state object.
-  flutter::FlutterWindow* window;
+  flutter::Win32FlutterWindow* window;
 };
 
 // Struct for storing state of a Flutter engine instance.

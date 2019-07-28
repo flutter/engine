@@ -10,17 +10,17 @@ Win32DpiHelper::Win32DpiHelper() {
   }
 
   if (!AssignProcAddress(user32_module_, "EnableNonClientDpiScaling",
-                         fp_enablenonclientdpiscaling)) {
+                         enable_non_client_dpi_scaling_)) {
     return;
   }
 
   if (!AssignProcAddress(user32_module_, "GetDpiForWindow",
-                         fp_getdpiforwindow)) {
+                         get_dpi_for_window_)) {
     return;
   }
 
   if (!AssignProcAddress(user32_module_, "SetProcessDpiAwarenessContext",
-                         fp_setprocessdpiawarenesscontext)) {
+                         set_process_dpi_awareness_context_)) {
     return;
   }
 
@@ -41,14 +41,14 @@ BOOL Win32DpiHelper::EnableNonClientDpiScaling(HWND hwnd) {
   if (!permonitorv2_supported_) {
     return false;
   }
-  return fp_enablenonclientdpiscaling(hwnd);
+  return enable_non_client_dpi_scaling_(hwnd);
 }
 
 UINT Win32DpiHelper::GetDpiForWindow(HWND hwnd) {
   if (!permonitorv2_supported_) {
     return false;
   }
-  return fp_getdpiforwindow(hwnd);
+  return get_dpi_for_window_(hwnd);
 }
 
 BOOL Win32DpiHelper::SetProcessDpiAwarenessContext(
@@ -56,7 +56,7 @@ BOOL Win32DpiHelper::SetProcessDpiAwarenessContext(
   if (!permonitorv2_supported_) {
     return false;
   }
-  return fp_setprocessdpiawarenesscontext(context);
+  return set_process_dpi_awareness_context_(context);
 }
 
 }  // namespace flutter
