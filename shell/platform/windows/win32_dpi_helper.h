@@ -42,9 +42,9 @@ class Win32DpiHelper {
   using GetDpiForWindow_ = UINT __stdcall(HWND);
   using SetProcessDpiAwarenessContext_ = BOOL __stdcall(DPI_AWARENESS_CONTEXT);
 
-  EnableNonClientDpiScaling_* fp_enablenonclientdpiscaling{nullptr};
-  GetDpiForWindow_* fp_getdpiforwindow{nullptr};
-  SetProcessDpiAwarenessContext_* fp_setprocessdpiawarenesscontext{nullptr};
+  EnableNonClientDpiScaling_* enable_non_client_dpi_scaling_{nullptr};
+  GetDpiForWindow_* get_dpi_for_window_{nullptr};
+  SetProcessDpiAwarenessContext_* set_process_dpi_awareness_context_{nullptr};
 
   HMODULE user32_module_{nullptr};
   bool permonitorv2_supported_ = false;
