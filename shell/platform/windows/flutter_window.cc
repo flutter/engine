@@ -99,9 +99,9 @@ void FlutterWindow::HandlePlatformMessage(
 
   auto message = ConvertToDesktopMessage(*engine_message);
 
-  message_dispatcher_->HandleMessage(message,
-                                     [this] { this->process_events_ = false; },
-                                     [this] { this->process_events_ = true; });
+  message_dispatcher_->HandleMessage(
+      message, [this] { this->process_events_ = false; },
+      [this] { this->process_events_ = true; });
 }
 
 // When DesktopWindow notifies that a WM_Size message has come in
