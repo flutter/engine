@@ -46,6 +46,7 @@ public class MainActivity extends FlutterActivity implements OnFirstFrameRendere
     }
 
     @Override
+    @NonNull
     public FlutterShellArgs getFlutterShellArgs() {
         FlutterShellArgs args = FlutterShellArgs.fromIntent(getIntent());
         args.add(FlutterShellArgs.ARG_TRACE_STARTUP);
@@ -59,7 +60,7 @@ public class MainActivity extends FlutterActivity implements OnFirstFrameRendere
     @NonNull
     protected FlutterFragment createFlutterFragment() {
         return new FlutterFragment.Builder()
-                .dartEntrypoint(getDartEntrypoint())
+                .dartEntrypoint(getDartEntrypointFunctionName())
                 .initialRoute(getInitialRoute())
                 .appBundlePath(getAppBundlePath())
                 .flutterShellArgs(getFlutterShellArgs())
