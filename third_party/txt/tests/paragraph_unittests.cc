@@ -171,7 +171,7 @@ TEST_F(ParagraphTest, LineMetricsParagraph1) {
                       .fUnderlinePosition,
                   1.0253906);
 
-  ASSERT_EQ(&(paragraph->GetLineForIndex(2)), &(metrics[0]));
+  // ASSERT_EQ(&(paragraph->GetLineForIndex(2)), &(metrics[0]));
 }
 
 TEST_F(ParagraphTest, LineMetricsParagraph2) {
@@ -215,21 +215,22 @@ TEST_F(ParagraphTest, LineMetricsParagraph2) {
   //      it != metrics[0].run_metrics_map.end(); ++it) {
   //   FML_DLOG(ERROR) << it->first;
   // }
-  FML_DLOG(ERROR) << metrics[1].run_metrics_map.lower_bound(0)->first;
-  FML_DLOG(ERROR)
-      << metrics[0].run_metrics_map.lower_bound(metrics[0].start)->first;
+  // FML_DLOG(ERROR) << metrics[1].run_metrics_map.lower_bound(0)->first;
+  // FML_DLOG(ERROR)
+  //     << metrics[0].run_metrics_map.lower_bound(metrics[0].start)->first;
 
-  FML_DLOG(ERROR) << metrics[0].run_metrics_map.lower_bound(1)->first;
-  FML_DLOG(ERROR) << metrics[0].run_metrics_map.lower_bound(22)->first;
-  FML_DLOG(ERROR) << metrics[0].run_metrics_map.lower_bound(23)->first;
-  FML_DLOG(ERROR) << "_------";
-  FML_DLOG(ERROR) << metrics[0].run_metrics_map.lower_bound(-5)->first;
-  FML_DLOG(ERROR)
-      << metrics[0].run_metrics_map.upper_bound(metrics[0].start)->first;
+  // FML_DLOG(ERROR) << metrics[0].run_metrics_map.lower_bound(1)->first;
+  // FML_DLOG(ERROR) << metrics[0].run_metrics_map.lower_bound(22)->first;
+  // FML_DLOG(ERROR) << metrics[0].run_metrics_map.lower_bound(23)->first;
+  // FML_DLOG(ERROR) << "_------";
+  // FML_DLOG(ERROR) << metrics[0].run_metrics_map.lower_bound(-5)->first;
+  // FML_DLOG(ERROR)
+  //     << metrics[0].run_metrics_map.upper_bound(metrics[0].start)->first;
 
-  FML_DLOG(ERROR) << metrics[0].run_metrics_map.upper_bound(1)->first;
-  FML_DLOG(ERROR) << metrics[0].run_metrics_map.upper_bound(22)->first;
-  FML_DLOG(ERROR) << metrics[0].run_metrics_map.upper_bound(23)->first;
+  // FML_DLOG(ERROR) << metrics[0].run_metrics_map.upper_bound(1)->first;
+  // FML_DLOG(ERROR) << metrics[0].run_metrics_map.upper_bound(22)->first;
+  // FML_DLOG(ERROR) << metrics[0].run_metrics_map.upper_bound(23)->first;
+  // FML_DLOG(ERROR) << metrics[1].run_metrics_map.lower_bound(32)->first;
 
   ASSERT_EQ(metrics.size(), 2ull);
   ASSERT_EQ(metrics[0].start, 0ull);
@@ -264,6 +265,48 @@ TEST_F(ParagraphTest, LineMetricsParagraph2) {
                       ->second.GetFontMetrics()
                       .fDescent,
                   6.5917969);
+
+  ASSERT_EQ(metrics[0]
+                .run_metrics_map.lower_bound(21)
+                ->second.GetTextStyle()
+                .font_size,
+            27);
+  ASSERT_EQ(metrics[0]
+                .run_metrics_map.lower_bound(21)
+                ->second.GetTextStyle()
+                .font_families,
+            text_style.font_families);
+  ASSERT_FLOAT_EQ(metrics[0]
+                      .run_metrics_map.lower_bound(21)
+                      ->second.GetFontMetrics()
+                      .fAscent,
+                  -25.048828);
+  ASSERT_FLOAT_EQ(metrics[0]
+                      .run_metrics_map.lower_bound(21)
+                      ->second.GetFontMetrics()
+                      .fDescent,
+                  6.5917969);
+
+  ASSERT_EQ(metrics[0]
+                .run_metrics_map.lower_bound(22)
+                ->second.GetTextStyle()
+                .font_size,
+            24);
+  ASSERT_EQ(metrics[0]
+                .run_metrics_map.lower_bound(22)
+                ->second.GetTextStyle()
+                .font_families,
+            text_style.font_families);
+  ASSERT_FLOAT_EQ(metrics[0]
+                      .run_metrics_map.lower_bound(22)
+                      ->second.GetFontMetrics()
+                      .fAscent,
+                  -27.84);
+  ASSERT_FLOAT_EQ(metrics[0]
+                      .run_metrics_map.lower_bound(22)
+                      ->second.GetFontMetrics()
+                      .fDescent,
+                  7.6799998);
 
   ASSERT_EQ(metrics[0]
                 .run_metrics_map.lower_bound(24)
@@ -315,16 +358,6 @@ TEST_F(ParagraphTest, LineMetricsParagraph2) {
                   -27.84);
   ASSERT_FLOAT_EQ(metrics[1]
                       .run_metrics_map.lower_bound(31)
-                      ->second.GetFontMetrics()
-                      .fDescent,
-                  7.6799998);
-  ASSERT_FLOAT_EQ(metrics[1]
-                      .run_metrics_map.lower_bound(32)
-                      ->second.GetFontMetrics()
-                      .fAscent,
-                  -27.84);
-  ASSERT_FLOAT_EQ(metrics[1]
-                      .run_metrics_map.lower_bound(32)
                       ->second.GetFontMetrics()
                       .fDescent,
                   7.6799998);

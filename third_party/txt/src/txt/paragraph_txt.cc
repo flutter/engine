@@ -997,22 +997,31 @@ void ParagraphTxt::Layout(double width) {
         if (glyph_positions.empty())
           continue;
 
-        SkFontMetrics metrics;
-        font.getMetrics(&metrics);
+        // Store the font metrics and TextStyle in the LineMetrics for this line
+        // to provide metrics upon user request. We index this RunMetrics
+        // instance at `run.end() - 1` to allow map::lower_bound to access the
+        // correct RunMetrics at any text index.
+        size_t run_key = run.end() - 1;
+        line_metrics.run_metrics_map.emplace(run_key, &run.style());
+        font.getMetrics(
+            &line_metrics.run_metrics_map.at(run_key).GetFontMetrics());
+
+        SkFontMetrics* metrics;
+        metrics = &line_metrics.run_metrics_map.at(run_key).GetFontMetrics();
         Range<double> record_x_pos(
             glyph_positions.front().x_pos.start - run_x_offset,
             glyph_positions.back().x_pos.end - run_x_offset);
         if (run.is_placeholder_run()) {
           paint_records.emplace_back(
               run.style(), SkPoint::Make(run_x_offset + justify_x_offset, 0),
-              builder.make(), metrics, line_number, record_x_pos.start,
+              builder.make(), *metrics, line_number, record_x_pos.start,
               record_x_pos.start + run.placeholder_run()->width, run.is_ghost(),
               run.placeholder_run());
           run_x_offset += run.placeholder_run()->width;
         } else {
           paint_records.emplace_back(
               run.style(), SkPoint::Make(run_x_offset + justify_x_offset, 0),
-              builder.make(), metrics, line_number, record_x_pos.start,
+              builder.make(), *metrics, line_number, record_x_pos.start,
               record_x_pos.end, run.is_ghost());
         }
         justify_x_offset += justify_x_offset_delta;
@@ -1036,16 +1045,8 @@ void ParagraphTxt::Layout(double width) {
                               ? glyph_positions.back().x_pos.start +
                                     run.placeholder_run()->width
                               : glyph_positions.back().x_pos.end),
-            line_number, metrics, run.style(), run.direction(),
+            line_number, *metrics, run.style(), run.direction(),
             run.placeholder_run());
-
-        // Store the font metrics and TextStyle in the LineMetrics for this line
-        // to provide metrics upon user request. We index this RunMetrics
-        // instance at `run.end() - 1` to allow map::lower_bound to access the
-        // correct RunMetrics at any text index.
-        line_metrics.run_metrics_map.emplace(
-            std::piecewise_construct, std::forward_as_tuple(run.end() - 1),
-            std::forward_as_tuple(run.style(), metrics));
 
         if (run.is_placeholder_run()) {
           line_inline_placeholder_code_unit_runs.push_back(
@@ -1174,7 +1175,6 @@ void ParagraphTxt::Layout(double width) {
     line_metrics.width = line_widths_[line_number];
     line_metrics.left = line_x_offset;
     line_metrics.baseline = line_baselines_.back();
-    // line_metrics.run_metrics_map = &run_metrics_map;
 
     for (PaintRecord& paint_record : paint_records) {
       paint_record.SetOffset(
