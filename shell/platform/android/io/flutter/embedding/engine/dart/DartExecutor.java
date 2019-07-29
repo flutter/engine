@@ -289,14 +289,18 @@ public class DartExecutor implements BinaryMessenger {
     public boolean equals(Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
+
       DartEntrypoint that = (DartEntrypoint) o;
-      return pathToBundle.equals(that.pathToBundle) &&
-          dartEntrypointFunctionName.equals(that.dartEntrypointFunctionName);
+
+      if (!pathToBundle.equals(that.pathToBundle)) return false;
+      return dartEntrypointFunctionName.equals(that.dartEntrypointFunctionName);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(pathToBundle, dartEntrypointFunctionName);
+      int result = pathToBundle.hashCode();
+      result = 31 * result + dartEntrypointFunctionName.hashCode();
+      return result;
     }
   }
 
