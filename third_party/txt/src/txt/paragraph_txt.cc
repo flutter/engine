@@ -1039,8 +1039,12 @@ void ParagraphTxt::Layout(double width) {
             line_number, metrics, run.style(), run.direction(),
             run.placeholder_run());
 
+        // Store the font metrics and TextStyle in the LineMetrics for this line
+        // to provide metrics upon user request. We index this RunMetrics
+        // instance at `run.end() - 1` to allow map::lower_bound to access the
+        // correct RunMetrics at any text index.
         line_metrics.run_metrics_map.emplace(
-            std::piecewise_construct, std::forward_as_tuple(run.start()),
+            std::piecewise_construct, std::forward_as_tuple(run.end() - 1),
             std::forward_as_tuple(run.style(), metrics));
 
         if (run.is_placeholder_run()) {
@@ -1924,6 +1928,20 @@ void ParagraphTxt::SetDirty(bool dirty) {
 
 std::vector<LineMetrics>& ParagraphTxt::GetLineMetrics() {
   return line_metrics_;
+}
+
+LineMetrics& ParagraphTxt::GetLineForIndex(size_t offset) {
+  for (size_t index = 0; index < line_metrics_.size(); ++index) {
+    if (offset >= line_metrics_[index].start &&
+        offset < line_metrics_[index].end) {
+      return line_metrics_[index];
+    }
+  }
+  return *line_metrics_.end();
+}
+
+RunMetrics& ParagraphTxt::GetRunMetricsForIndex(size_t offset) {
+  return GetLineForIndex(offset).run_metrics_map.lower_bound(offset)->second;
 }
 
 }  // namespace txt
