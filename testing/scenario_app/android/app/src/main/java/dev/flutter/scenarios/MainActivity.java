@@ -45,7 +45,8 @@ public class MainActivity extends FlutterActivity implements OnFirstFrameRendere
         }
     }
 
-    private FlutterShellArgs getFlutterShellArgs() {
+    @Override
+    public FlutterShellArgs getFlutterShellArgs() {
         FlutterShellArgs args = FlutterShellArgs.fromIntent(getIntent());
         args.add(FlutterShellArgs.ARG_TRACE_STARTUP);
         args.add(FlutterShellArgs.ARG_ENABLE_DART_PROFILING);
