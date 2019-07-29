@@ -176,9 +176,9 @@ class Paragraph {
 
   virtual std::vector<LineMetrics>& GetLineMetrics() = 0;
 
-  // virtual LineMetrics GetLineForIndex(size_t offset) = 0;
+  virtual LineMetrics& GetLineForIndex(size_t offset) = 0;
 
-  // virtual RunMetrics GetRunMetricsForIndex(size_t offset) = 0;
+  virtual RunMetrics& GetRunMetricsForIndex(size_t offset) = 0;
 };
 
 }  // namespace txt

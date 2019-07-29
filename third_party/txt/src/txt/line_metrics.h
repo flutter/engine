@@ -38,7 +38,10 @@ class LineMetrics {
   // the user.
 
   // The final computed ascent and descent for the line. This can be impacted by
-  // the strut, height, scaling, as well as outlying runs that are
+  // the strut, height, scaling, as well as outlying runs that are very tall.
+  //
+  // The top edge is `baseline - ascent` and the bottom edge is `baseline +
+  // descent`. Ascent and descent are provided as positive numbers.
   double ascent;
   double descent;
   // Width of the line.
