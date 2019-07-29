@@ -15,8 +15,8 @@
 //   - go/decommissioning-dbc
 //   - go/decommissioning-dbc-engine
 //   - go/decommissioning-dbc-tools
-#include "flutter/fml/build_config.h"  // For OS_IOS.
 #include "flutter/common/settings.h"
+#include "flutter/fml/build_config.h"  // For OS_IOS.
 
 #if OS_IOS && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 
