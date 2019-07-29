@@ -56,20 +56,6 @@ public class MainActivity extends FlutterActivity implements OnFirstFrameRendere
         return args;
     }
 
-    @Override
-    @NonNull
-    protected FlutterFragment createFlutterFragment() {
-        return new FlutterFragment.Builder()
-                .dartEntrypoint(getDartEntrypointFunctionName())
-                .initialRoute(getInitialRoute())
-                .appBundlePath(getAppBundlePath())
-                .flutterShellArgs(getFlutterShellArgs())
-                .renderMode(FlutterView.RenderMode.surface)
-                .transparencyMode(FlutterView.TransparencyMode.opaque)
-                .shouldAttachEngineToActivity(true)
-                .build();
-    }
-
     private void writeTimelineData(Uri logFile) {
         if (logFile == null) {
             throw new IllegalArgumentException();
