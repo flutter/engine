@@ -6,12 +6,6 @@
 
 #include <sys/stat.h>
 
-// These headers should only be needed in debug mode.
-#if OS_IOS && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
-#include <sys/sysctl.h>
-#include <sys/types.h>
-#endif
-
 #include <mutex>
 #include <vector>
 
@@ -31,6 +25,7 @@
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/runtime/start_up.h"
+#include "flutter/runtime/ptrace_ios.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_class_library.h"
@@ -255,84 +250,6 @@ static std::atomic_size_t gVMLaunchCount;
 size_t DartVM::GetVMLaunchCount() {
   return gVMLaunchCount;
 }
-
-// Note: it is __imperative__ that the following two functions are
-// __not__ included in release or profile builds.
-//
-// Please see the following documents for explanation:
-//   - go/decommissioning-dbc
-//   - go/decommissioning-dbc-engine
-//   - go/decommissioning-dbc-tools
-#if OS_IOS && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
-#define PT_TRACE_ME 0
-#define PT_SIGEXC 12
-extern "C" int ptrace(int request, pid_t pid, caddr_t addr, int data);
-
-static bool DebuggedIOS(const Settings& vm_settings) {
-  // Only the Flutter CLI passes "--enable-checked-mode". Therefore, if the flag
-  // is present, we have been launched by "ios-deploy" via "debugserver".
-  //
-  // We choose this flag because it is always passed to launch debug builds.
-  if (vm_settings.enable_checked_mode) {
-    return true;
-  }
-
-  // Use "sysctl()" to check if we're currently being debugged (e.g. by Xcode).
-  // We could also check "getppid() != 1" (launchd), but this is more direct.
-  const pid_t self = getpid();
-  int mib[5] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, self, 0};
-
-  auto proc = std::make_unique<struct kinfo_proc>();
-  size_t proc_size = sizeof(struct kinfo_proc);
-  if (sysctl(mib, 4, proc.get(), &proc_size, nullptr, 0) < 0) {
-    FML_LOG(ERROR) << "Could not execute sysctl() to get current process info: "
-                   << strerror(errno);
-    return false;
-  }
-
-  return proc->kp_proc.p_flag & P_TRACED;
-}
-
-static void EnsureDebuggedIOS(const Settings& vm_settings) {
-  if (DebuggedIOS(vm_settings)) {
-    return;
-  }
-
-  if (ptrace(PT_TRACE_ME, 0, nullptr, 0) == -1) {
-    FML_LOG(ERROR) << "Could not call ptrace(PT_TRACE_ME): " << strerror(errno);
-    // No use trying PT_SIGEXC -- it's only needed if PT_TRACE_ME succeeds.
-    return;
-  }
-  if (ptrace(PT_SIGEXC, 0, nullptr, 0) == -1) {
-    FML_LOG(ERROR) << "Could not call ptrace(PT_SIGEXC): " << strerror(errno);
-  }
-
-  // The previous operation causes this process to not be reaped after it
-  // terminates (even if PT_SIGEXC fails). Issue a warning to the console every
-  // (approximiately) maxproc/10 leaks. See the links above for an explanation
-  // of this issue.
-  size_t maxproc = 0;
-  size_t maxproc_size = sizeof(size_t);
-  const int sysctl_result =
-      sysctlbyname("kern.maxproc", &maxproc, &maxproc_size, nullptr, 0);
-  if (sysctl_result < 0) {
-    FML_LOG(ERROR)
-        << "Could not execute sysctl() to determine process count limit: "
-        << strerror(errno);
-  }
-
-  const char* warning =
-      "_XXX_ TODO(sjindel): Make a wiki page about this warning. _XXX_";
-
-  if (vm_settings.verbose_logging  // used for testing and also informative
-      || sysctl_result < 0         // could not determine maximum process count
-      || maxproc / 10 == 0         // avoid division (%) by 0
-      || getpid() % (maxproc / 10) == 0)  // warning every ~maxproc/10 leaks
-  {
-    FML_LOG(ERROR) << warning;
-  }
-}
-#endif  // OS_IOS && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 
 DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
                std::shared_ptr<IsolateNameServer> isolate_name_server)
