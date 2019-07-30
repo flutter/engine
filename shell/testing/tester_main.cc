@@ -35,7 +35,9 @@ class ScriptCompletionTaskObserver {
         main_task_runner_(std::move(main_task_runner)),
         run_forever_(run_forever) {}
 
-  int GetExitCodeForLastError() const { return last_error_.value_or(0); }
+  int GetExitCodeForLastError() const {
+    return static_cast<int>(last_error_.value_or(DartErrorCode::NoError));
+  }
 
   void DidProcessTask() {
     last_error_ = shell_.GetUIIsolateLastError();
@@ -63,7 +65,7 @@ class ScriptCompletionTaskObserver {
   Shell& shell_;
   fml::RefPtr<fml::TaskRunner> main_task_runner_;
   bool run_forever_ = false;
-  std::optional<int> last_error_;
+  std::optional<DartErrorCode> last_error_;
   bool has_terminated = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ScriptCompletionTaskObserver);

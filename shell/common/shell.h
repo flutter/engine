@@ -35,6 +35,18 @@
 
 namespace flutter {
 
+/// Error exit codes for the Dart isolate.
+enum class DartErrorCode {
+  /// No error has occurred.
+  NoError = 0,
+  /// The Dart error code for an API error.
+  ApiError = 253,
+  /// The Dart error code for a compilation error.
+  CompilationError = 254,
+  /// The Dart error code for an unkonwn error.
+  UnknownError = 255
+};
+
 //------------------------------------------------------------------------------
 /// Perhaps the single most important class in the Flutter engine repository.
 /// When embedders create a Flutter application, they are referring to the
@@ -78,13 +90,6 @@ class Shell final : public PlatformView::Delegate,
                     public Rasterizer::Delegate,
                     public ServiceProtocol::Handler {
  public:
-  /// The Dart error code for an API error.
-  const int kApiErrorExitCode = 253;
-  /// The Dart error code for a compilation error.
-  const int kCompilationErrorExitCode = 254;
-  /// The Dart error code for an unkonwn error.
-  const int kErrorExitCode = 255;
-
   template <class T>
   using CreateCallback = std::function<std::unique_ptr<T>(Shell&)>;
 
@@ -285,7 +290,7 @@ class Shell final : public PlatformView::Delegate,
   ///
   /// @return     Returns the last error code from the UI Isolate.
   ///
-  std::optional<int> GetUIIsolateLastError() const;
+  std::optional<DartErrorCode> GetUIIsolateLastError() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to check if the Engine is running and has
