@@ -98,7 +98,7 @@ template("jit_runner_package") {
   package_dir(target_name) {
     deps = [
       ":dart_jit${product_suffix}_runner_bin",
-      "$flutter_runner_base/kernel:kernel_core_snapshot${product_suffix}",
+      "kernel:kernel_core_snapshot${product_suffix}",
     ]
 
     if (!invoker.product) {
