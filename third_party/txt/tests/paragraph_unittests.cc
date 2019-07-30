@@ -245,6 +245,7 @@ TEST_F(ParagraphTest, LineMetricsParagraph2) {
   ASSERT_FLOAT_EQ(metrics[0].baseline, 28.32);
   ASSERT_EQ(metrics[0].line_number, 0ull);
   ASSERT_EQ(metrics[0].run_metrics_map.size(), 2ull);
+  // First run
   ASSERT_EQ(metrics[0]
                 .run_metrics_map.lower_bound(2)
                 ->second.GetTextStyle()
@@ -287,6 +288,7 @@ TEST_F(ParagraphTest, LineMetricsParagraph2) {
                       .fDescent,
                   6.5917969);
 
+  // Second run
   ASSERT_EQ(metrics[0]
                 .run_metrics_map.lower_bound(22)
                 ->second.GetTextStyle()
@@ -341,6 +343,29 @@ TEST_F(ParagraphTest, LineMetricsParagraph2) {
   ASSERT_FLOAT_EQ(metrics[1].baseline, 64.32);
   ASSERT_EQ(metrics[1].line_number, 1ull);
   ASSERT_EQ(metrics[1].run_metrics_map.size(), 1ull);
+  // Indexing below the line will just resolve to the first run in the line.
+  ASSERT_EQ(metrics[1]
+                .run_metrics_map.lower_bound(3)
+                ->second.GetTextStyle()
+                .font_size,
+            24);
+  ASSERT_EQ(metrics[1]
+                .run_metrics_map.lower_bound(3)
+                ->second.GetTextStyle()
+                .font_families,
+            text_style.font_families);
+  ASSERT_FLOAT_EQ(metrics[1]
+                      .run_metrics_map.lower_bound(3)
+                      ->second.GetFontMetrics()
+                      .fAscent,
+                  -27.84);
+  ASSERT_FLOAT_EQ(metrics[1]
+                      .run_metrics_map.lower_bound(3)
+                      ->second.GetFontMetrics()
+                      .fDescent,
+                  7.6799998);
+
+  // Indexing within the line
   ASSERT_EQ(metrics[1]
                 .run_metrics_map.lower_bound(31)
                 ->second.GetTextStyle()

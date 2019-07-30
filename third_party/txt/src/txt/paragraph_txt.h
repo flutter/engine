@@ -186,8 +186,6 @@ class ParagraphTxt : public Paragraph {
   // Stores the result of Layout().
   std::vector<PaintRecord> records_;
 
-  std::vector<double> line_heights_;
-  std::vector<double> line_baselines_;
   bool did_exceed_max_lines_;
 
   // Strut metrics of zero will have no effect on the layout.
@@ -202,11 +200,6 @@ class ParagraphTxt : public Paragraph {
 
   StrutMetrics strut_;
 
-  // Metrics for use in GetRectsForRange(...);
-  // Per-line max metrics over all runs in a given line.
-  std::vector<SkScalar> line_max_spacings_;
-  std::vector<SkScalar> line_max_descent_;
-  std::vector<SkScalar> line_max_ascent_;
   // Overall left and right extremes over all lines.
   double max_right_;
   double min_left_;
