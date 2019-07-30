@@ -26,7 +26,7 @@ case "$(uname -s)" in
 esac
 
 # Tools
-CLANG_FORMAT="../../buildtools/$OS/clang/bin/clang-format"
+CLANG_FORMAT="../buildtools/$OS/clang/bin/clang-format"
 $CLANG_FORMAT --version
 
 # Compute the diffs.
