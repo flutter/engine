@@ -44,6 +44,9 @@ class LineMetrics {
   // descent`. Ascent and descent are provided as positive numbers.
   double ascent;
   double descent;
+  double unscaled_ascent;
+  // Height of the line.
+  double height;
   // Width of the line.
   double width;
   // The left edge of the line. The right edge can be obtained with `left +
