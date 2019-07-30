@@ -161,29 +161,22 @@ int RunTester(const flutter::Settings& settings, bool run_forever) {
 
   bool engine_did_run = false;
 
-  fml::AutoResetWaitableEvent sync_run_latch;
-  shell->RunEngine(
-      std::move(run_configuration),
-      fml::MakeCopyable([&sync_run_latch, &completion_observer,
-                         platform_view = shell->GetPlatformView(),
-                         config = std::move(run_configuration),
-                         &engine_did_run](
-                            Engine::RunStatus run_status) mutable {
-        fml::MessageLoop::GetCurrent().AddTaskObserver(
-            reinterpret_cast<intptr_t>(&completion_observer),
-            [&completion_observer]() { completion_observer.DidProcessTask(); });
-        if (run_status != flutter::Engine::RunStatus::Failure) {
-          engine_did_run = true;
+  fml::MessageLoop::GetCurrent().AddTaskObserver(
+      reinterpret_cast<intptr_t>(&completion_observer),
+      [&completion_observer]() { completion_observer.DidProcessTask(); });
 
-          flutter::ViewportMetrics metrics;
-          metrics.device_pixel_ratio = 3.0;
-          metrics.physical_width = 2400;   // 800 at 3x resolution
-          metrics.physical_height = 1800;  // 600 at 3x resolution
-          platform_view->SetViewportMetrics(metrics);
-        }
-        sync_run_latch.Signal();
-      }));
-  sync_run_latch.Wait();
+  shell->RunEngine(std::move(run_configuration),
+                   [&engine_did_run](Engine::RunStatus run_status) mutable {
+                     if (run_status != flutter::Engine::RunStatus::Failure) {
+                       engine_did_run = true;
+                     }
+                   });
+
+  flutter::ViewportMetrics metrics;
+  metrics.device_pixel_ratio = 3.0;
+  metrics.physical_width = 2400;   // 800 at 3x resolution
+  metrics.physical_height = 1800;  // 600 at 3x resolution
+  shell->GetPlatformView()->SetViewportMetrics(metrics);
 
   // Run the message loop and wait for the script to do its thing.
   fml::MessageLoop::GetCurrent().Run();
