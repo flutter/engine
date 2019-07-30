@@ -171,7 +171,30 @@ TEST_F(ParagraphTest, LineMetricsParagraph1) {
                       .fUnderlinePosition,
                   1.0253906);
 
-  // ASSERT_EQ(&(paragraph->GetLineForIndex(2)), &(metrics[0]));
+  // ASSERT_EQ(&(paragraph->GetLineForIndex(0)), &(metrics[0]));
+  ASSERT_EQ(paragraph->GetLineForIndex(2).line_number, metrics[0].line_number);
+  ASSERT_EQ(paragraph->GetLineForIndex(2).start, metrics[0].start);
+  ASSERT_EQ(paragraph->GetLineForIndex(2).end, metrics[0].end);
+  ASSERT_EQ(paragraph->GetLineForIndex(2).ascent, metrics[0].ascent);
+  ASSERT_EQ(paragraph->GetLineForIndex(2).descent, metrics[0].descent);
+  ASSERT_EQ(paragraph->GetLineForIndex(2).height, metrics[0].height);
+  ASSERT_EQ(paragraph->GetLineForIndex(2).width, metrics[0].width);
+
+  ASSERT_EQ(paragraph->GetLineForIndex(22).line_number, metrics[0].line_number);
+  ASSERT_EQ(paragraph->GetLineForIndex(22).start, metrics[0].start);
+  ASSERT_EQ(paragraph->GetLineForIndex(22).end, metrics[0].end);
+  ASSERT_EQ(paragraph->GetLineForIndex(22).ascent, metrics[0].ascent);
+  ASSERT_EQ(paragraph->GetLineForIndex(22).descent, metrics[0].descent);
+  ASSERT_EQ(paragraph->GetLineForIndex(22).height, metrics[0].height);
+  ASSERT_EQ(paragraph->GetLineForIndex(22).width, metrics[0].width);
+
+  ASSERT_EQ(paragraph->GetLineForIndex(30).line_number, metrics[1].line_number);
+  ASSERT_EQ(paragraph->GetLineForIndex(30).start, metrics[1].start);
+  ASSERT_EQ(paragraph->GetLineForIndex(30).end, metrics[1].end);
+  ASSERT_EQ(paragraph->GetLineForIndex(30).ascent, metrics[1].ascent);
+  ASSERT_EQ(paragraph->GetLineForIndex(30).descent, metrics[1].descent);
+  ASSERT_EQ(paragraph->GetLineForIndex(30).height, metrics[1].height);
+  ASSERT_EQ(paragraph->GetLineForIndex(30).width, metrics[1].width);
 }
 
 TEST_F(ParagraphTest, LineMetricsParagraph2) {
@@ -210,27 +233,6 @@ TEST_F(ParagraphTest, LineMetricsParagraph2) {
   ASSERT_TRUE(Snapshot());
 
   std::vector<txt::LineMetrics> metrics = paragraph->GetLineMetrics();
-
-  // for (auto it = metrics[0].run_metrics_map.begin();
-  //      it != metrics[0].run_metrics_map.end(); ++it) {
-  //   FML_DLOG(ERROR) << it->first;
-  // }
-  // FML_DLOG(ERROR) << metrics[1].run_metrics_map.lower_bound(0)->first;
-  // FML_DLOG(ERROR)
-  //     << metrics[0].run_metrics_map.lower_bound(metrics[0].start)->first;
-
-  // FML_DLOG(ERROR) << metrics[0].run_metrics_map.lower_bound(1)->first;
-  // FML_DLOG(ERROR) << metrics[0].run_metrics_map.lower_bound(22)->first;
-  // FML_DLOG(ERROR) << metrics[0].run_metrics_map.lower_bound(23)->first;
-  // FML_DLOG(ERROR) << "_------";
-  // FML_DLOG(ERROR) << metrics[0].run_metrics_map.lower_bound(-5)->first;
-  // FML_DLOG(ERROR)
-  //     << metrics[0].run_metrics_map.upper_bound(metrics[0].start)->first;
-
-  // FML_DLOG(ERROR) << metrics[0].run_metrics_map.upper_bound(1)->first;
-  // FML_DLOG(ERROR) << metrics[0].run_metrics_map.upper_bound(22)->first;
-  // FML_DLOG(ERROR) << metrics[0].run_metrics_map.upper_bound(23)->first;
-  // FML_DLOG(ERROR) << metrics[1].run_metrics_map.lower_bound(32)->first;
 
   ASSERT_EQ(metrics.size(), 2ull);
   ASSERT_EQ(metrics[0].start, 0ull);
