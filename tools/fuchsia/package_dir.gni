@@ -7,6 +7,7 @@
 # This currently ignores the CMX files and does minimal validation.
 template("package_dir") {
   assert(defined(invoker.binary), "package must define binary")
+  assert(defined(invoker.meta_dir), "package must define meta_dir")
 
   pkg_target_name = target_name
   pkg = {
@@ -18,6 +19,7 @@ template("package_dir") {
                              "meta",
                              "resources",
                              "libraries",
+                             "meta_dir",
                            ])
     if (!defined(package_name)) {
       package_name = pkg_target_name
@@ -39,7 +41,7 @@ template("package_dir") {
   far_base_dir = "$root_out_dir/${pkg_target_name}_far"
 
   copy_sources = [ "$root_out_dir/${invoker.binary}" ]
-  copy_outputs = [ "$far_base_dir/app/bin" ]
+  copy_outputs = [ "$far_base_dir/bin/app" ]
 
   foreach(res, pkg.resources) {
     copy_sources += [ res.path ]
@@ -51,11 +53,13 @@ template("package_dir") {
     copy_outputs += [ "$far_base_dir/lib/${lib.name}" ]
   }
 
-  flutter_meta_dir = "$flutter_root/shell/platform/fuchsia/flutter/meta"
+  meta_dir = pkg.meta_dir
 
-  copy("copy_cmx") {
+  cmx_target = "$pkg_target_name.copy_cmx"
+
+  copy("$cmx_target") {
     sources = [
-      "${flutter_meta_dir}/${pkg_target_name}.cmx",
+      "${meta_dir}/${pkg_target_name}.cmx",
     ]
     outputs = [
       "$far_base_dir/meta/{{source_file_part}}",
@@ -65,7 +69,7 @@ template("package_dir") {
   action(target_name) {
     script = "$flutter_root/tools/fuchsia/copy_path.py"
     response_file_contents = rebase_path(copy_sources + copy_outputs)
-    deps = pkg.deps + [ ":copy_cmx" ]
+    deps = pkg.deps + [ ":$cmx_target" ]
     args = [ "--file-list={{response_file_name}}" ]
     outputs = copy_outputs
   }

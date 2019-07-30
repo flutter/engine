@@ -1,7 +1,7 @@
 {
   "comment:0": "NOTE: THIS FILE IS GENERATED. DO NOT EDIT.",
-  "comment:1": "Instead modify 'kernel/libraries.yaml' and follow the instructions therein.",
-  "flutter_runner": {
+  "comment:1": "Instead modify 'topaz/runtime/dart_runner/kernel/libraries.yaml' and follow the instructions therein.",
+  "dart_runner": {
     "libraries": {
       "_builtin": {
         "uri": "../../../../../../third_party/dart/runtime/bin/builtin.dart"
@@ -149,9 +149,6 @@
       },
       "fuchsia.builtin": {
         "uri": "../../../../../../flutter/shell/platform/fuchsia/dart_runner/embedder/builtin.dart"
-      },
-      "ui": {
-        "uri": "../../../../../../flutter/lib/ui/ui.dart"
       },
       "vmservice_io": {
         "uri": "../../../../../../third_party/dart/runtime/bin/vmservice/vmservice_io.dart"

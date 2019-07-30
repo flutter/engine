@@ -11,7 +11,7 @@
 # changing libraries, sources, and patch files.  See
 # https://github.com/dart-lang/sdk/issues/28836.
 
-flutter_runner:
+dart_runner:
   libraries:
     _builtin:
       uri: "../../../../../../third_party/dart/runtime/bin/builtin.dart"
@@ -147,9 +147,6 @@ flutter_runner:
 
     fuchsia:
       uri: "../../../../../../flutter/shell/platform/fuchsia/dart-pkg/fuchsia/lib/fuchsia.dart"
-
-    ui:
-      uri: "../../../../../../flutter/lib/ui/ui.dart"
 
     _vmservice:
       uri: "../../../../../../third_party/dart/sdk/lib/vmservice/vmservice.dart"

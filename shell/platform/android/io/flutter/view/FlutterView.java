@@ -199,7 +199,12 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
         // Create and setup plugins
         PlatformPlugin platformPlugin = new PlatformPlugin(activity, platformChannel);
-        addActivityLifecycleListener(platformPlugin);
+        addActivityLifecycleListener(new ActivityLifecycleListener() {
+            @Override
+            public void onPostResume() {
+                platformPlugin.updateSystemUiOverlays();
+            }
+        });
         mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         PlatformViewsController platformViewsController = mNativeView.getPluginRegistry().getPlatformViewsController();
         mTextInputPlugin = new TextInputPlugin(this, dartExecutor, platformViewsController);
@@ -320,8 +325,12 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
      *
      * Sets it on top of its window. The background color still needs to be
      * controlled from within the Flutter UI itself.
+     *
+     * @deprecated This breaks accessibility highlighting. See https://github.com/flutter/flutter/issues/37025.
      */
+    @Deprecated
     public void enableTransparentBackground() {
+        Log.w(TAG, "Warning: FlutterView is set on top of the window. Accessibility highlights will not be visible in the Flutter UI. https://github.com/flutter/flutter/issues/37025");
         setZOrderOnTop(true);
         getHolder().setFormat(PixelFormat.TRANSPARENT);
     }
