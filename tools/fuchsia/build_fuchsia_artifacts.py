@@ -132,7 +132,6 @@ def CopyToBucket(src, dst, product=False):
 
 
 def BuildBucket(runtime_mode, arch, product):
-  RemoveDirectoryIfExists(_bucket_directory)
   out_dir = 'fuchsia_%s_%s/' % (runtime_mode, arch)
   bucket_dir = 'flutter/%s/%s/' % (arch, runtime_mode)
   CopyToBucket(out_dir, bucket_dir, product)
@@ -221,6 +220,7 @@ def main():
       help='Specifies the flutter engine SHA.')
 
   args = parser.parse_args()
+  RemoveDirectoryIfExists(_bucket_directory)
 
   archs = ['x64', 'arm64']
   runtime_modes = ['debug', 'profile', 'release']
