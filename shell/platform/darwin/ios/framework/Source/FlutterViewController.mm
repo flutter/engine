@@ -151,26 +151,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
                object:nil];
 
   [center addObserver:self
-             selector:@selector(applicationBecameActive:)
-                 name:UIApplicationDidBecomeActiveNotification
-               object:nil];
-
-  [center addObserver:self
-             selector:@selector(applicationWillResignActive:)
-                 name:UIApplicationWillResignActiveNotification
-               object:nil];
-
-  [center addObserver:self
-             selector:@selector(applicationDidEnterBackground:)
-                 name:UIApplicationDidEnterBackgroundNotification
-               object:nil];
-
-  [center addObserver:self
-             selector:@selector(applicationWillEnterForeground:)
-                 name:UIApplicationWillEnterForegroundNotification
-               object:nil];
-
-  [center addObserver:self
              selector:@selector(keyboardWillChangeFrame:)
                  name:UIKeyboardWillChangeFrameNotification
                object:nil];
@@ -485,31 +465,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   [_engine.get() notifyViewControllerDeallocated];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [super dealloc];
-}
-
-#pragma mark - Application lifecycle notifications
-
-- (void)applicationBecameActive:(NSNotification*)notification {
-  TRACE_EVENT0("flutter", "applicationBecameActive");
-  if (_viewportMetrics.physical_width)
-    [self surfaceUpdated:YES];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
-}
-
-- (void)applicationWillResignActive:(NSNotification*)notification {
-  TRACE_EVENT0("flutter", "applicationWillResignActive");
-  [self surfaceUpdated:NO];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
-}
-
-- (void)applicationDidEnterBackground:(NSNotification*)notification {
-  TRACE_EVENT0("flutter", "applicationDidEnterBackground");
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
-}
-
-- (void)applicationWillEnterForeground:(NSNotification*)notification {
-  TRACE_EVENT0("flutter", "applicationWillEnterForeground");
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 }
 
 #pragma mark - Touch event handling
