@@ -44,6 +44,8 @@ public class DartExecutor implements BinaryMessenger {
   @NonNull
   private final FlutterJNI flutterJNI;
   @NonNull
+  private final AssetManager assetManager;
+  @NonNull
   private final DartMessenger messenger;
   private boolean isApplicationRunning = false;
   @Nullable
@@ -62,8 +64,9 @@ public class DartExecutor implements BinaryMessenger {
         }
       };
 
-  public DartExecutor(@NonNull FlutterJNI flutterJNI) {
+  public DartExecutor(@NonNull FlutterJNI flutterJNI, @NonNull AssetManager assetManager) {
     this.flutterJNI = flutterJNI;
+    this.assetManager = assetManager;
     this.messenger = new DartMessenger(flutterJNI);
     messenger.setMessageHandler("flutter/isolate", isolateChannelMessageHandler);
   }
@@ -124,7 +127,7 @@ public class DartExecutor implements BinaryMessenger {
         dartEntrypoint.pathToBundle,
         dartEntrypoint.dartEntrypointFunctionName,
         null,
-        dartEntrypoint.androidAssetManager
+        assetManager
     );
 
     isApplicationRunning = true;
@@ -252,12 +255,6 @@ public class DartExecutor implements BinaryMessenger {
    */
   public static class DartEntrypoint {
     /**
-     * Standard Android AssetManager, provided from some {@code Context} or {@code Resources}.
-     */
-    @NonNull
-    public final AssetManager androidAssetManager;
-
-    /**
      * The path within the AssetManager where the app will look for assets.
      */
     @NonNull
@@ -270,11 +267,9 @@ public class DartExecutor implements BinaryMessenger {
     public final String dartEntrypointFunctionName;
 
     public DartEntrypoint(
-        @NonNull AssetManager androidAssetManager,
         @NonNull String pathToBundle,
         @NonNull String dartEntrypointFunctionName
     ) {
-      this.androidAssetManager = androidAssetManager;
       this.pathToBundle = pathToBundle;
       this.dartEntrypointFunctionName = dartEntrypointFunctionName;
     }
