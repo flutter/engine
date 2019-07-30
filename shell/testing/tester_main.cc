@@ -183,15 +183,8 @@ int RunTester(const flutter::Settings& settings, bool run_forever) {
 
   // Cleanup the completion observer synchronously as it is living on the
   // stack.
-  fml::AutoResetWaitableEvent latch;
-  fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetUITaskRunner(),
-      [&latch, &completion_observer] {
-        fml::MessageLoop::GetCurrent().RemoveTaskObserver(
-            reinterpret_cast<intptr_t>(&completion_observer));
-        latch.Signal();
-      });
-  latch.Wait();
+  fml::MessageLoop::GetCurrent().RemoveTaskObserver(
+      reinterpret_cast<intptr_t>(&completion_observer));
 
   if (!engine_did_run) {
     // If the engine itself didn't have a chance to run, there is no point in
