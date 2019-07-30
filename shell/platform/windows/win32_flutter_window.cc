@@ -12,10 +12,10 @@ Win32FlutterWindow::Win32FlutterWindow() {
 }
 
 Win32FlutterWindow::Win32FlutterWindow(const char* title,
-                             const int x,
-                             const int y,
-                             const int width,
-                             const int height) noexcept
+                                       const int x,
+                                       const int y,
+                                       const int width,
+                                       const int height) noexcept
     : Win32FlutterWindow() {
   Win32Window::Initialize(title, x, y, width, height);
 }
@@ -99,9 +99,9 @@ void Win32FlutterWindow::HandlePlatformMessage(
 
   auto message = ConvertToDesktopMessage(*engine_message);
 
-  message_dispatcher_->HandleMessage(
-      message, [this] { this->process_events_ = false; },
-      [this] { this->process_events_ = true; });
+  message_dispatcher_->HandleMessage(message,
+                                     [this] { this->process_events_ = false; },
+                                     [this] { this->process_events_ = true; });
 }
 
 // When DesktopWindow notifies that a WM_Size message has come in

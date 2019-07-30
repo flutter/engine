@@ -31,10 +31,10 @@ class Win32FlutterWindow : public Win32Window {
  public:
   Win32FlutterWindow();
   Win32FlutterWindow(const char* title,
-                const int x,
-                const int y,
-                const int width,
-                const int height) noexcept;
+                     const int x,
+                     const int y,
+                     const int width,
+                     const int height) noexcept;
   ~Win32FlutterWindow();
 
   // Run a Windows message pump that also pumps plugin messages.
