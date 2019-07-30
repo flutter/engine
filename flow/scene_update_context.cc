@@ -63,9 +63,9 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode entity_node,
                                      std::vector<Layer*> paint_layers,
                                      Layer* layer) {
   // Frames always clip their children.
-  SetEntityNodeClipPlanes(entity_node, rrect.getBounds());
-  // TODO(SCN-1274): AddPart() and SetClip() will be deleted.
-  entity_node.SetClip(0u, true /* clip to self */);
+  SetEntityNodeClipPlanes(entity_node.get(), rrect.getBounds());
+  // TODO(SCN-1274): SetClip() will be deleted.
+  entity_node->SetClip(0u, true /* clip to self */);
 
   // We don't need a shape if the frame is zero size.
   if (rrect.isEmpty())
