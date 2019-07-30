@@ -10,13 +10,13 @@ import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 
 import java.nio.ByteBuffer;
-import java.util.Objects;
 
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.StringCodec;
 import io.flutter.view.FlutterCallbackInformation;
+import io.flutter.view.FlutterMain;
 
 /**
  * Configures, bootstraps, and starts executing Dart code.
@@ -254,6 +254,14 @@ public class DartExecutor implements BinaryMessenger {
    * to find that entrypoint and other assets required for Dart execution.
    */
   public static class DartEntrypoint {
+    @NonNull
+    public static DartEntrypoint createDefault() {
+      return new DartEntrypoint(
+          FlutterMain.findAppBundlePath(),
+          "main"
+      );
+    }
+
     /**
      * The path within the AssetManager where the app will look for assets.
      */
