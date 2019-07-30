@@ -77,7 +77,7 @@ class SceneUpdateContext {
       return entity_node_ptr_;
     }
 
-    protected:
+   protected:
     scenic::ShapeNode& shape_node() { return *shape_node_ptr_; }
     std::unique_ptr<scenic::ShapeNode>& shape_node_ptr() {
       return shape_node_ptr_;
@@ -133,8 +133,7 @@ class SceneUpdateContext {
 
   class Clip : public Entity {
    public:
-    Clip(SceneUpdateContext& context,
-         const SkRect& shape_bounds);
+    Clip(SceneUpdateContext& context, const SkRect& shape_bounds);
     ~Clip() = default;
   };
 
