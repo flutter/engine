@@ -100,6 +100,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         int physicalViewInsetRight = 0;
         int physicalViewInsetBottom = 0;
         int physicalViewInsetLeft = 0;
+        int systemGestureInsetsTop = 0;
     }
 
     private final DartExecutor dartExecutor;
@@ -574,6 +575,20 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         mMetrics.physicalViewInsetBottom =
             navigationBarHidden ? calculateBottomKeyboardInset(insets) : insets.getSystemWindowInsetBottom();
         mMetrics.physicalViewInsetLeft = 0;
+
+        if (Build.VERSION.SDK_INT > 28) {
+            try {
+                mMetrics.systemGestureInsetsTop = 500;
+                Class systemGestureInsets = insets
+                    .getClass()
+                    .getDeclaredMethod("getSystemGestureInsets")
+                    .invoke(insets)
+                    .getClass();
+                mMetrics.systemGestureInsetsTop = (int)systemGestureInsets.getField("bottom").get(this);
+            } catch (Exception exception) {
+                // Any exception is a failure.
+            }
+        }
         updateViewportMetrics();
         return super.onApplyWindowInsets(insets);
     }
@@ -645,7 +660,8 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         mNativeView.getFlutterJNI().setViewportMetrics(mMetrics.devicePixelRatio, mMetrics.physicalWidth,
                 mMetrics.physicalHeight, mMetrics.physicalPaddingTop, mMetrics.physicalPaddingRight,
                 mMetrics.physicalPaddingBottom, mMetrics.physicalPaddingLeft, mMetrics.physicalViewInsetTop,
-                mMetrics.physicalViewInsetRight, mMetrics.physicalViewInsetBottom, mMetrics.physicalViewInsetLeft);
+                mMetrics.physicalViewInsetRight, mMetrics.physicalViewInsetBottom, mMetrics.physicalViewInsetLeft,
+                mMetrics.systemGestureInsetsTop);
     }
 
     // Called by native to update the semantics/accessibility tree.

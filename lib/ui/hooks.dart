@@ -28,7 +28,8 @@ void _updateWindowMetrics(double devicePixelRatio,
                           double viewInsetTop,
                           double viewInsetRight,
                           double viewInsetBottom,
-                          double viewInsetLeft) {
+                          double viewInsetLeft,
+                          double systemGestureInsetsTop) {
   window
     .._devicePixelRatio = devicePixelRatio
     .._physicalSize = Size(width, height)
@@ -46,7 +47,8 @@ void _updateWindowMetrics(double devicePixelRatio,
         top: math.max(0.0, viewPaddingTop - viewInsetTop),
         right: math.max(0.0, viewPaddingRight - viewInsetRight),
         bottom: math.max(0.0, viewPaddingBottom - viewInsetBottom),
-        left: math.max(0.0, viewPaddingLeft - viewInsetLeft));
+        left: math.max(0.0, viewPaddingLeft - viewInsetLeft))
+    .._systemGestureInsetsTop = systemGestureInsetsTop;
   _invoke(window.onMetricsChanged, window._onMetricsChangedZone);
 }
 

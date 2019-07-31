@@ -193,6 +193,7 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
           tonic::ToDart(metrics.physical_view_inset_right),
           tonic::ToDart(metrics.physical_view_inset_bottom),
           tonic::ToDart(metrics.physical_view_inset_left),
+          tonic::ToDart(metrics.system_gesture_insets_top),
       }));
 }
 

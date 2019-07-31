@@ -89,7 +89,7 @@ void main() {
       });
 
       window.onMetricsChanged();
-      _updateWindowMetrics(0.1234, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      _updateWindowMetrics(0.1234, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
       expect(devicePixelRatio, equals(0.1234));
@@ -307,6 +307,7 @@ void main() {
         0.0,   // inset right
         0.0,   // inset bottom
         0.0,   // inset left
+        0.0,
       );
 
       expect(window.viewInsets.bottom, 0.0);
@@ -325,6 +326,7 @@ void main() {
         0.0,   // inset right
         400.0, // inset bottom
         0.0,   // inset left
+        0.0,
       );
 
       expect(window.viewInsets.bottom, 400.0);
@@ -343,6 +345,7 @@ void main() {
         oldInsets.right,    // inset right
         oldInsets.bottom,   // inset bottom
         oldInsets.left,     // inset left
+        0.0,
       );
     });
   });

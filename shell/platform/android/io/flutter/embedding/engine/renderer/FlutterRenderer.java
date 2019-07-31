@@ -215,7 +215,8 @@ public class FlutterRenderer implements TextureRegistry {
         viewportMetrics.viewInsetTop,
         viewportMetrics.viewInsetRight,
         viewportMetrics.viewInsetBottom,
-        viewportMetrics.viewInsetLeft
+        viewportMetrics.viewInsetLeft,
+        viewportMetrics.systemGestureInsetsTop
     );
   }
 
@@ -346,5 +347,6 @@ public class FlutterRenderer implements TextureRegistry {
     public int viewInsetRight = 0;
     public int viewInsetBottom = 0;
     public int viewInsetLeft = 0;
+    public int systemGestureInsetsTop = 0;
   }
 }

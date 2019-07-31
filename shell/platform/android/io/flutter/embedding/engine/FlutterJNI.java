@@ -356,7 +356,8 @@ public class FlutterJNI {
       int physicalViewInsetTop,
       int physicalViewInsetRight,
       int physicalViewInsetBottom,
-      int physicalViewInsetLeft
+      int physicalViewInsetLeft,
+      int systemGestureInsetsTop
   ) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
@@ -372,7 +373,8 @@ public class FlutterJNI {
         physicalViewInsetTop,
         physicalViewInsetRight,
         physicalViewInsetBottom,
-        physicalViewInsetLeft
+        physicalViewInsetLeft,
+        systemGestureInsetsTop
     );
   }
 
@@ -388,7 +390,8 @@ public class FlutterJNI {
       int physicalViewInsetTop,
       int physicalViewInsetRight,
       int physicalViewInsetBottom,
-      int physicalViewInsetLeft
+      int physicalViewInsetLeft,
+      int systemGestureInsetsTop
   );
   //----- End Render Surface Support -----
 

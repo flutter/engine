@@ -17,7 +17,8 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
                                  double p_physical_view_inset_top,
                                  double p_physical_view_inset_right,
                                  double p_physical_view_inset_bottom,
-                                 double p_physical_view_inset_left)
+                                 double p_physical_view_inset_left,
+                                 double p_system_gesture_insets_top)
     : device_pixel_ratio(p_device_pixel_ratio),
       physical_width(p_physical_width),
       physical_height(p_physical_height),
@@ -28,7 +29,8 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
       physical_view_inset_top(p_physical_view_inset_top),
       physical_view_inset_right(p_physical_view_inset_right),
       physical_view_inset_bottom(p_physical_view_inset_bottom),
-      physical_view_inset_left(p_physical_view_inset_left) {}
+      physical_view_inset_left(p_physical_view_inset_left),
+      system_gesture_insets_top(p_system_gesture_insets_top) {}
 
 ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
                                  double p_physical_width,
