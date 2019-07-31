@@ -66,10 +66,7 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode entity_node,
   SetEntityNodeClipPlanes(entity_node.get(), rrect.getBounds());
   // TODO(SCN-1274): SetClip() will be deleted.
   entity_node->SetClip(0u, true /* clip to self */);
-<<<<<<< HEAD
 
-=======
->>>>>>> fix merge conflict
   // We don't need a shape if the frame is zero size.
   if (rrect.isEmpty())
     return;
