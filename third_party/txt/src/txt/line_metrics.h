@@ -29,10 +29,11 @@ class LineMetrics {
   // The following fields are used in the layout process itself.
 
   // The indexes in the text buffer the line begins and ends.
-  size_t start, end;
-  size_t end_excluding_whitespace;
-  size_t end_including_newline;
-  bool hard_break;
+  size_t start_index = 0;
+  size_t end_index = 0;
+  size_t end_excluding_whitespace = 0;
+  size_t end_including_newline = 0;
+  bool hard_break = false;
 
   // The following fields are tracked after or during layout to provide to
   // the user as well as for computing bounding boxes.
@@ -44,34 +45,38 @@ class LineMetrics {
   // descent`. Ascent and descent are provided as positive numbers. Raw numbers
   // for specific runs of text can be obtained in run_metrics_map. These values
   // are the cumulative metrics for the entire line.
-  double ascent;
-  double descent;
-  double unscaled_ascent;
+  double ascent = 0.0;
+  double descent = 0.0;
+  double unscaled_ascent = 0.0;
   // Height of the line.
-  double height;
+  double height = 0.0;
   // Width of the line.
-  double width;
+  double width = 0.0;
   // The left edge of the line. The right edge can be obtained with `left +
   // width`
-  double left;
+  double left = 0.0;
   // The y position of the baseline for this line from the top of the paragraph.
-  double baseline;
+  double baseline = 0.0;
   // Zero indexed line number.
-  size_t line_number;
+  size_t line_number = 0;
 
   // Mapping between text index ranges and the FontMetrics associated with
   // them. The first run will be keyed under start_index. The metrics here
   // are before layout and are the base values we calculate from.
-  std::map<size_t, RunMetrics> run_metrics_map;
+  std::map<size_t, RunMetrics> run_metrics;
 
   LineMetrics();
 
-  LineMetrics(size_t s, size_t e, size_t eew, size_t ein, bool h)
-      : start(s),
-        end(e),
-        end_excluding_whitespace(eew),
-        end_including_newline(ein),
-        hard_break(h) {}
+  LineMetrics(size_t start,
+              size_t end,
+              size_t end_excluding_whitespace,
+              size_t end_including_newline,
+              bool hard_break)
+      : start_index(start),
+        end_index(end),
+        end_excluding_whitespace(end_excluding_whitespace),
+        end_including_newline(end_including_newline),
+        hard_break(hard_break) {}
 };
 
 }  // namespace txt

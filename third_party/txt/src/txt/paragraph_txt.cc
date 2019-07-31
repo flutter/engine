@@ -700,7 +700,7 @@ void ParagraphTxt::Layout(double width) {
     bool justify_line =
         (paragraph_style_.text_align == TextAlign::justify &&
          line_number != line_limit - 1 && !line_metrics.hard_break);
-    FindWords(text_, line_metrics.start, line_metrics.end, &words);
+    FindWords(text_, line_metrics.start_index, line_metrics.end_index, &words);
     if (justify_line) {
       if (words.size() > 1) {
         word_gap_width =
@@ -715,7 +715,7 @@ void ParagraphTxt::Layout(double width) {
          paragraph_style_.effective_align() == TextAlign::center ||
          paragraph_style_.effective_align() == TextAlign::justify)
             ? line_metrics.end_excluding_whitespace
-            : line_metrics.end;
+            : line_metrics.end_index;
 
     // Find the runs comprising this line.
     std::vector<BidiRun> line_runs;
@@ -731,13 +731,13 @@ void ParagraphTxt::Layout(double width) {
       // impact on the layout.
       std::unique_ptr<BidiRun> ghost_run = nullptr;
       if (paragraph_style_.ellipsis.empty() &&
-          line_metrics.end_excluding_whitespace < line_metrics.end &&
-          bidi_run.start() <= line_metrics.end &&
+          line_metrics.end_excluding_whitespace < line_metrics.end_index &&
+          bidi_run.start() <= line_metrics.end_index &&
           bidi_run.end() > line_end_index) {
         ghost_run = std::make_unique<BidiRun>(
             std::max(bidi_run.start(), line_end_index),
-            std::min(bidi_run.end(), line_metrics.end), bidi_run.direction(),
-            bidi_run.style(), true);
+            std::min(bidi_run.end(), line_metrics.end_index),
+            bidi_run.direction(), bidi_run.style(), true);
       }
       // Include the ghost run before normal run if RTL
       if (bidi_run.direction() == TextDirection::rtl && ghost_run != nullptr) {
@@ -745,21 +745,22 @@ void ParagraphTxt::Layout(double width) {
       }
       // Emplace a normal line run.
       if (bidi_run.start() < line_end_index &&
-          bidi_run.end() > line_metrics.start) {
+          bidi_run.end() > line_metrics.start_index) {
         // The run is a placeholder run.
         if (bidi_run.size() == 1 &&
             text_[bidi_run.start()] == objReplacementChar &&
             obj_replacement_char_indexes_.count(bidi_run.start()) != 0 &&
             placeholder_run_index < inline_placeholders_.size()) {
-          line_runs.emplace_back(std::max(bidi_run.start(), line_metrics.start),
-                                 std::min(bidi_run.end(), line_end_index),
-                                 bidi_run.direction(), bidi_run.style(),
-                                 inline_placeholders_[placeholder_run_index]);
+          line_runs.emplace_back(
+              std::max(bidi_run.start(), line_metrics.start_index),
+              std::min(bidi_run.end(), line_end_index), bidi_run.direction(),
+              bidi_run.style(), inline_placeholders_[placeholder_run_index]);
           placeholder_run_index++;
         } else {
-          line_runs.emplace_back(std::max(bidi_run.start(), line_metrics.start),
-                                 std::min(bidi_run.end(), line_end_index),
-                                 bidi_run.direction(), bidi_run.style());
+          line_runs.emplace_back(
+              std::max(bidi_run.start(), line_metrics.start_index),
+              std::min(bidi_run.end(), line_end_index), bidi_run.direction(),
+              bidi_run.style());
         }
       }
       // Include the ghost run after normal run if LTR
@@ -995,12 +996,11 @@ void ParagraphTxt::Layout(double width) {
         // instance at `run.end() - 1` to allow map::lower_bound to access the
         // correct RunMetrics at any text index.
         size_t run_key = run.end() - 1;
-        line_metrics.run_metrics_map.emplace(run_key, &run.style());
-        font.getMetrics(
-            &line_metrics.run_metrics_map.at(run_key).GetFontMetrics());
+        line_metrics.run_metrics.emplace(run_key, &run.style());
+        font.getMetrics(&line_metrics.run_metrics.at(run_key).GetFontMetrics());
 
         SkFontMetrics* metrics;
-        metrics = &line_metrics.run_metrics_map.at(run_key).GetFontMetrics();
+        metrics = &line_metrics.run_metrics.at(run_key).GetFontMetrics();
         Range<double> record_x_pos(
             glyph_positions.front().x_pos.start - run_x_offset,
             glyph_positions.back().x_pos.end - run_x_offset);
@@ -1079,10 +1079,10 @@ void ParagraphTxt::Layout(double width) {
     }
 
     size_t next_line_start = (line_number < line_metrics_.size() - 1)
-                                 ? line_metrics_[line_number + 1].start
+                                 ? line_metrics_[line_number + 1].start_index
                                  : text_.size();
     glyph_lines_.emplace_back(std::move(line_glyph_positions),
-                              next_line_start - line_metrics.start);
+                              next_line_start - line_metrics.start_index);
     code_unit_runs_.insert(code_unit_runs_.end(), line_code_unit_runs.begin(),
                            line_code_unit_runs.end());
     inline_placeholder_code_unit_runs_.insert(
@@ -1630,13 +1630,13 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
   for (size_t line_number = 0; line_number < line_metrics_.size();
        ++line_number) {
     LineMetrics& line = line_metrics_[line_number];
-    if (line.start >= end)
+    if (line.start_index >= end)
       break;
     if (line.end_including_newline <= start)
       continue;
     if (line_box_metrics.find(line_number) == line_box_metrics.end()) {
-      if (line.end != line.end_including_newline && line.end >= start &&
-          line.end_including_newline <= end) {
+      if (line.end_index != line.end_including_newline &&
+          line.end_index >= start && line.end_including_newline <= end) {
         SkScalar x = line_widths_[line_number];
         // Move empty box to center if center aligned and is an empty line.
         if (x == 0 && !isinf(width_) &&
