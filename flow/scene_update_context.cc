@@ -66,7 +66,6 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode entity_node,
   SetEntityNodeClipPlanes(entity_node.get(), rrect.getBounds());
   // TODO(SCN-1274): SetClip() will be deleted.
   entity_node->SetClip(0u, true /* clip to self */);
-
   // We don't need a shape if the frame is zero size.
   if (rrect.isEmpty())
     return;
@@ -286,7 +285,6 @@ SceneUpdateContext::Transform::~Transform() {
 
 SceneUpdateContext::Shape::Shape(SceneUpdateContext& context)
     : Entity(context), shape_node_(context.session()) {
-  entity_node().AddPart(shape_node_);
 }
 
 SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
