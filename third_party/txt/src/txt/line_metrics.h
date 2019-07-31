@@ -26,7 +26,7 @@ namespace txt {
 
 class LineMetrics {
  public:
-  // The following variables are used in the layout process itself.
+  // The following fields are used in the layout process itself.
 
   // The indexes in the text buffer the line begins and ends.
   size_t start, end;
@@ -34,14 +34,16 @@ class LineMetrics {
   size_t end_including_newline;
   bool hard_break;
 
-  // The following variables are tracked after or during layout to provide to
-  // the user.
+  // The following fields are tracked after or during layout to provide to
+  // the user as well as for computing bounding boxes.
 
   // The final computed ascent and descent for the line. This can be impacted by
   // the strut, height, scaling, as well as outlying runs that are very tall.
   //
   // The top edge is `baseline - ascent` and the bottom edge is `baseline +
-  // descent`. Ascent and descent are provided as positive numbers.
+  // descent`. Ascent and descent are provided as positive numbers. Raw numbers
+  // for specific runs of text can be obtained in run_metrics_map. These values
+  // are the cumulative metrics for the entire line.
   double ascent;
   double descent;
   double unscaled_ascent;
@@ -70,8 +72,6 @@ class LineMetrics {
         end_excluding_whitespace(eew),
         end_including_newline(ein),
         hard_break(h) {}
-
-  // GetFontMetricsAtIndex(size_t index);
 };
 
 }  // namespace txt
