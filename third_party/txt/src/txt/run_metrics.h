@@ -55,6 +55,8 @@ class RunMetrics {
   // * StrikeoutThickness  strikeout thickness
   // * StrikeoutPosition   strikeout position relative to baseline
   SkFontMetrics font_metrics_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(RunMetrics);
 };
 
 }  // namespace txt
