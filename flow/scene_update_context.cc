@@ -285,8 +285,7 @@ SceneUpdateContext::Transform::~Transform() {
 }
 
 SceneUpdateContext::Shape::Shape(SceneUpdateContext& context)
-    : Entity(context), shape_node_(context.session()) {
-}
+    : Entity(context), shape_node_(context.session()) {}
 
 SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
                                  const SkRRect& rrect,
