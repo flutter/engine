@@ -219,18 +219,27 @@ def main():
       required=True,
       help='Specifies the flutter engine SHA.')
 
+  parser.add_argument(
+      '--runtime-mode',
+      type=str,
+      choices=['debug', 'profile', 'release', 'all'],
+      default='all')
+
   args = parser.parse_args()
   RemoveDirectoryIfExists(_bucket_directory)
+  build_mode = args.runtime_mode
 
   archs = ['x64', 'arm64']
   runtime_modes = ['debug', 'profile', 'release']
   product_modes = [False, False, True]
+
   for arch in archs:
     for i in range(3):
       runtime_mode = runtime_modes[i]
       product = product_modes[i]
-      BuildTarget(runtime_mode, arch, product)
-      BuildBucket(runtime_mode, arch, product)
+      if build_mode == 'all' or runtime_mode == build_mode:
+        BuildTarget(runtime_mode, arch, product)
+        BuildBucket(runtime_mode, arch, product)
 
   ProcessCIPDPakcage(args.upload, args.engine_version)
 

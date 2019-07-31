@@ -108,7 +108,8 @@ task:
     - name: build_fuchsia_artifacts
       compile_host_script: |
         cd $ENGINE_PATH/src
-        ./flutter/tools/fuchsia/build_fuchsia_artifacts.py --engine-version HEAD
+        rm -rf out
+        ./flutter/tools/fuchsia/build_fuchsia_artifacts.py --engine-version HEAD --runtime-mode debug
 
 # WINDOWS
 task:
