@@ -33,6 +33,7 @@ import io.flutter.view.FlutterMain;
 
 import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -353,6 +354,21 @@ public class FlutterActivityAndFragmentDelegateTest {
     verify(mockFlutterEngine.getSystemChannel(), times(1)).sendMemoryPressureWarning();
   }
 
+  @Test
+  public void itUsesCachedEngineWhenProvided() {
+    assertTrue(false);
+  }
+
+  @Test
+  public void itDoesNotDestroyCachedEngineByDefault() {
+    assertTrue(false);
+  }
+
+  @Test
+  public void itDestroysCachedEngineWhenRequested() {
+    assertTrue(false);
+  }
+
   /**
    * Creates a mock {@link FlutterEngine}.
    * <p>
@@ -432,6 +448,17 @@ public class FlutterActivityAndFragmentDelegateTest {
     @Override
     public FlutterShellArgs getFlutterShellArgs() {
       return new FlutterShellArgs(new String[]{});
+    }
+
+    @Nullable
+    @Override
+    public String getCachedEngineId() {
+      return null;
+    }
+
+    @Override
+    public boolean shouldDestroyCachedEngineWithActivity() {
+      return false;
     }
 
     @NonNull

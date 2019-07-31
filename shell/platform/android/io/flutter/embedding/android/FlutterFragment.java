@@ -85,10 +85,29 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    * See {@link #shouldAttachEngineToActivity()}.
    */
   protected static final String ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY = "should_attach_engine_to_activity";
+  /**
+   * TODO(mattcarroll)
+   */
+  protected static final String ARG_CACHED_ENGINE_ID = "cached_engine_id";
+  /**
+   * TODO(mattcarroll)
+   */
+  protected static final String ARG_DESTROY_ENGINE_WITH_FRAGMENT = "destroy_engine_with_fragment";
 
+  /**
+   * TODO(mattcarroll)
+   */
   @NonNull
-  public static FlutterFragment createDefaultFlutterFragment() {
-    return new FlutterFragment.Builder().build();
+  public static FlutterFragment createDefault() {
+    return new NewEngineFragmentBuilder().build();
+  }
+
+  /**
+   * TODO(mattcarroll)
+   */
+  @NonNull
+  public static NewEngineFragmentBuilder withNewEngine() {
+    return new NewEngineFragmentBuilder();
   }
 
   /**
@@ -131,7 +150,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    *     .build<MyFlutterFragment>();
    * }
    */
-  public static class Builder {
+  public static class NewEngineFragmentBuilder {
     private final Class<? extends FlutterFragment> fragmentClass;
     private String dartEntrypoint = "main";
     private String initialRoute = "/";
@@ -145,7 +164,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
      * Constructs a {@code Builder} that is configured to construct an instance of
      * {@code FlutterFragment}.
      */
-    public Builder() {
+    public NewEngineFragmentBuilder() {
       fragmentClass = FlutterFragment.class;
     }
 
@@ -153,7 +172,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
      * Constructs a {@code Builder} that is configured to construct an instance of
      * {@code subclass}, which extends {@code FlutterFragment}.
      */
-    public Builder(@NonNull Class<? extends FlutterFragment> subclass) {
+    public NewEngineFragmentBuilder(@NonNull Class<? extends FlutterFragment> subclass) {
       fragmentClass = subclass;
     }
 
@@ -161,7 +180,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
      * The name of the initial Dart method to invoke, defaults to "main".
      */
     @NonNull
-    public Builder dartEntrypoint(@NonNull String dartEntrypoint) {
+    public NewEngineFragmentBuilder dartEntrypoint(@NonNull String dartEntrypoint) {
       this.dartEntrypoint = dartEntrypoint;
       return this;
     }
@@ -171,7 +190,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
      * defaults to "/".
      */
     @NonNull
-    public Builder initialRoute(@NonNull String initialRoute) {
+    public NewEngineFragmentBuilder initialRoute(@NonNull String initialRoute) {
       this.initialRoute = initialRoute;
       return this;
     }
@@ -181,7 +200,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
      * to {@link FlutterMain#findAppBundlePath(Context)}
      */
     @NonNull
-    public Builder appBundlePath(@NonNull String appBundlePath) {
+    public NewEngineFragmentBuilder appBundlePath(@NonNull String appBundlePath) {
       this.appBundlePath = appBundlePath;
       return this;
     }
@@ -190,7 +209,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
      * Any special configuration arguments for the Flutter engine
      */
     @NonNull
-    public Builder flutterShellArgs(@NonNull FlutterShellArgs shellArgs) {
+    public NewEngineFragmentBuilder flutterShellArgs(@NonNull FlutterShellArgs shellArgs) {
       this.shellArgs = shellArgs;
       return this;
     }
@@ -204,7 +223,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
      * cannot.
      */
     @NonNull
-    public Builder renderMode(@NonNull FlutterView.RenderMode renderMode) {
+    public NewEngineFragmentBuilder renderMode(@NonNull FlutterView.RenderMode renderMode) {
       this.renderMode = renderMode;
       return this;
     }
@@ -216,7 +235,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
      * See {@link FlutterView.TransparencyMode} for implications of this selection.
      */
     @NonNull
-    public Builder transparencyMode(@NonNull FlutterView.TransparencyMode transparencyMode) {
+    public NewEngineFragmentBuilder transparencyMode(@NonNull FlutterView.TransparencyMode transparencyMode) {
       this.transparencyMode = transparencyMode;
       return this;
     }
@@ -256,7 +275,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
      * setting {@code shouldAttachEngineToActivity} to {@code false}.
      */
     @NonNull
-    public Builder shouldAttachEngineToActivity(boolean shouldAttachEngineToActivity) {
+    public NewEngineFragmentBuilder shouldAttachEngineToActivity(boolean shouldAttachEngineToActivity) {
       this.shouldAttachEngineToActivity = shouldAttachEngineToActivity;
       return this;
     }
@@ -286,6 +305,147 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     /**
      * Constructs a new {@code FlutterFragment} (or a subclass) that is configured based on
      * properties set on this {@code Builder}.
+     */
+    @NonNull
+    public <T extends FlutterFragment> T build() {
+      try {
+        @SuppressWarnings("unchecked")
+        T frag = (T) fragmentClass.getDeclaredConstructor().newInstance();
+        if (frag == null) {
+          throw new RuntimeException("The FlutterFragment subclass sent in the constructor ("
+              + fragmentClass.getCanonicalName() + ") does not match the expected return type.");
+        }
+
+        Bundle args = createArgs();
+        frag.setArguments(args);
+
+        return frag;
+      } catch (Exception e) {
+        throw new RuntimeException("Could not instantiate FlutterFragment subclass (" + fragmentClass.getName() + ")", e);
+      }
+    }
+  }
+
+  /**
+   * TODO(mattcarroll)
+   */
+  @NonNull
+  public static CachedEngineFragmentBuilder withCachedEngine(@NonNull String engineId) {
+    return new CachedEngineFragmentBuilder(engineId);
+  }
+
+  /**
+   * TODO(mattcarroll)
+   */
+  public static class CachedEngineFragmentBuilder {
+    private final Class<? extends FlutterFragment> fragmentClass;
+    private final String engineId;
+    private boolean destroyEngineWithFragment = false;
+    private FlutterView.RenderMode renderMode = FlutterView.RenderMode.surface;
+    private FlutterView.TransparencyMode transparencyMode = FlutterView.TransparencyMode.transparent;
+    private boolean shouldAttachEngineToActivity = true;
+
+    private CachedEngineFragmentBuilder(@NonNull String engineId) {
+      this(FlutterFragment.class, engineId);
+    }
+
+    protected CachedEngineFragmentBuilder(@NonNull Class<? extends FlutterFragment> subclass, @NonNull String engineId) {
+      this.fragmentClass = subclass;
+      this.engineId = engineId;
+    }
+
+    @NonNull
+    public CachedEngineFragmentBuilder destroyEngineWithFragment(boolean destroyEngineWithFragment) {
+      this.destroyEngineWithFragment = destroyEngineWithFragment;
+      return this;
+    }
+
+    /**
+     * Render Flutter either as a {@link FlutterView.RenderMode#surface} or a
+     * {@link FlutterView.RenderMode#texture}. You should use {@code surface} unless
+     * you have a specific reason to use {@code texture}. {@code texture} comes with
+     * a significant performance impact, but {@code texture} can be displayed
+     * beneath other Android {@code View}s and animated, whereas {@code surface}
+     * cannot.
+     */
+    @NonNull
+    public CachedEngineFragmentBuilder renderMode(@NonNull FlutterView.RenderMode renderMode) {
+      this.renderMode = renderMode;
+      return this;
+    }
+
+    /**
+     * Support a {@link FlutterView.TransparencyMode#transparent} background within {@link FlutterView},
+     * or force an {@link FlutterView.TransparencyMode#opaque} background.
+     * <p>
+     * See {@link FlutterView.TransparencyMode} for implications of this selection.
+     */
+    @NonNull
+    public CachedEngineFragmentBuilder transparencyMode(@NonNull FlutterView.TransparencyMode transparencyMode) {
+      this.transparencyMode = transparencyMode;
+      return this;
+    }
+
+    /**
+     * Whether or not this {@code FlutterFragment} should automatically attach its
+     * {@code Activity} as a control surface for its {@link FlutterEngine}.
+     * <p>
+     * Control surfaces are used to provide Android resources and lifecycle events to
+     * plugins that are attached to the {@link FlutterEngine}. If {@code shouldAttachEngineToActivity}
+     * is true then this {@code FlutterFragment} will connect its {@link FlutterEngine} to the
+     * surrounding {@code Activity}, along with any plugins that are registered with that
+     * {@link FlutterEngine}. This allows plugins to access the {@code Activity}, as well as
+     * receive {@code Activity}-specific calls, e.g., {@link android.app.Activity#onNewIntent(Intent)}.
+     * If {@code shouldAttachEngineToActivity} is false, then this {@code FlutterFragment} will not
+     * automatically manage the connection between its {@link FlutterEngine} and the surrounding
+     * {@code Activity}. The {@code Activity} will need to be manually connected to this
+     * {@code FlutterFragment}'s {@link FlutterEngine} by the app developer. See
+     * {@link FlutterEngine#getActivityControlSurface()}.
+     * <p>
+     * One reason that a developer might choose to manually manage the relationship between the
+     * {@code Activity} and {@link FlutterEngine} is if the developer wants to move the
+     * {@link FlutterEngine} somewhere else. For example, a developer might want the
+     * {@link FlutterEngine} to outlive the surrounding {@code Activity} so that it can be used
+     * later in a different {@code Activity}. To accomplish this, the {@link FlutterEngine} will
+     * need to be disconnected from the surrounding {@code Activity} at an unusual time, preventing
+     * this {@code FlutterFragment} from correctly managing the relationship between the
+     * {@link FlutterEngine} and the surrounding {@code Activity}.
+     * <p>
+     * Another reason that a developer might choose to manually manage the relationship between the
+     * {@code Activity} and {@link FlutterEngine} is if the developer wants to prevent, or explicitly
+     * control when the {@link FlutterEngine}'s plugins have access to the surrounding {@code Activity}.
+     * For example, imagine that this {@code FlutterFragment} only takes up part of the screen and
+     * the app developer wants to ensure that none of the Flutter plugins are able to manipulate
+     * the surrounding {@code Activity}. In this case, the developer would not want the
+     * {@link FlutterEngine} to have access to the {@code Activity}, which can be accomplished by
+     * setting {@code shouldAttachEngineToActivity} to {@code false}.
+     */
+    @NonNull
+    public CachedEngineFragmentBuilder shouldAttachEngineToActivity(boolean shouldAttachEngineToActivity) {
+      this.shouldAttachEngineToActivity = shouldAttachEngineToActivity;
+      return this;
+    }
+
+    /**
+     * Creates a {@link Bundle} of arguments that are assigned to the new {@code FlutterFragment}.
+     * <p>
+     * Subclasses should override this method to add new properties to the {@link Bundle}. Subclasses
+     * must call through to the super method to collect all existing property values.
+     */
+    @NonNull
+    protected Bundle createArgs() {
+      Bundle args = new Bundle();
+      args.putString(ARG_CACHED_ENGINE_ID, engineId);
+      args.putBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, destroyEngineWithFragment);
+      args.putString(ARG_FLUTTERVIEW_RENDER_MODE, renderMode != null ? renderMode.name() : FlutterView.RenderMode.surface.name());
+      args.putString(ARG_FLUTTERVIEW_TRANSPARENCY_MODE, transparencyMode != null ? transparencyMode.name() : FlutterView.TransparencyMode.transparent.name());
+      args.putBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY, shouldAttachEngineToActivity);
+      return args;
+    }
+
+    /**
+     * Constructs a new {@code FlutterFragment} (or a subclass) that is configured based on
+     * properties set on this {@code CachedEngineFragmentBuilder}.
      */
     @NonNull
     public <T extends FlutterFragment> T build() {
@@ -480,6 +640,13 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
       : getActivity();
   }
 
+  @NonNull
+  @Override
+  public Lifecycle getLifecycle() {
+    // TODO:
+    return null;
+  }
+
   /**
    * {@link FlutterActivityAndFragmentDelegate.Host} method that is used by
    * {@link FlutterActivityAndFragmentDelegate} to obtain Flutter shell arguments when
@@ -492,6 +659,17 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     return new FlutterShellArgs(
         flutterShellArgsArray != null ? flutterShellArgsArray : new String[] {}
     );
+  }
+
+  @Nullable
+  @Override
+  public String getCachedEngineId() {
+    return getArguments().getString(ARG_CACHED_ENGINE_ID, null);
+  }
+
+  @Override
+  public boolean shouldDestroyCachedEngineWithActivity() {
+    return getArguments().getBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY, false);
   }
 
   /**

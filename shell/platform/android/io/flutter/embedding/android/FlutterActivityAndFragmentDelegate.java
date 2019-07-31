@@ -587,6 +587,11 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     @NonNull
     FlutterShellArgs getFlutterShellArgs();
 
+    @Nullable
+    String getCachedEngineId();
+
+    boolean shouldDestroyCachedEngineWithActivity();
+
     /**
      * Returns the Dart entrypoint that should run when a new {@link FlutterEngine} is
      * created.

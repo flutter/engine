@@ -149,6 +149,8 @@ public class FlutterActivity extends Activity
   protected static final String EXTRA_DART_ENTRYPOINT = "dart_entrypoint";
   protected static final String EXTRA_INITIAL_ROUTE = "initial_route";
   protected static final String EXTRA_BACKGROUND_MODE = "background_mode";
+  protected static final String EXTRA_CACHED_ENGINE_ID = "cached_engine_id";
+  protected static final String EXTRA_DESTROY_ENGINE_WITH_ACTIVITY = "destroy_engine_with_activity";
 
   // Default configuration.
   protected static final String DEFAULT_DART_ENTRYPOINT = "main";
@@ -161,7 +163,7 @@ public class FlutterActivity extends Activity
    */
   @NonNull
   public static Intent createDefaultIntent(@NonNull Context launchContext) {
-    return createBuilder().build(launchContext);
+    return withNewEngine().build(launchContext);
   }
 
   /**
@@ -169,7 +171,7 @@ public class FlutterActivity extends Activity
    * launch a {@code FlutterActivity}.
    */
   @NonNull
-  public static IntentBuilder createBuilder() {
+  public static IntentBuilder withNewEngine() {
     return new IntentBuilder(FlutterActivity.class);
   }
 
@@ -188,7 +190,7 @@ public class FlutterActivity extends Activity
      * {@code FlutterActivity}.
      * <p>
      * Subclasses of {@code FlutterActivity} should provide their own static version of
-     * {@link #createBuilder()}, which returns an instance of {@code IntentBuilder}
+     * {@link #withNewEngine()}, which returns an instance of {@code IntentBuilder}
      * constructed with a {@code Class} reference to the {@code FlutterActivity} subclass,
      * e.g.:
      * <p>
@@ -250,6 +252,76 @@ public class FlutterActivity extends Activity
       return new Intent(context, activityClass)
           .putExtra(EXTRA_DART_ENTRYPOINT, dartEntrypoint)
           .putExtra(EXTRA_INITIAL_ROUTE, initialRoute)
+          .putExtra(EXTRA_BACKGROUND_MODE, backgroundMode);
+    }
+  }
+
+  public static CachedEngineIntentBuilder withCachedEngine(@NonNull String cachedEngineId) {
+    return new CachedEngineIntentBuilder(FlutterActivity.class, cachedEngineId);
+  }
+
+  public static class CachedEngineIntentBuilder {
+    private final Class<? extends FlutterActivity> activityClass;
+    private final String cachedEngineId;
+    private boolean destroyEngineWithActivity = false;
+    private String backgroundMode = DEFAULT_BACKGROUND_MODE;
+
+    /**
+     * Constructor that allows this {@code CachedEngineIntentBuilder} to be used by subclasses of
+     * {@code FlutterActivity}.
+     * <p>
+     * Subclasses of {@code FlutterActivity} should provide their own static version of
+     * {@link #withNewEngine()}, which returns an instance of {@code CachedEngineIntentBuilder}
+     * constructed with a {@code Class} reference to the {@code FlutterActivity} subclass,
+     * e.g.:
+     * <p>
+     * {@code
+     * return new CachedEngineIntentBuilder(MyFlutterActivity.class, engineId);
+     * }
+     */
+    protected CachedEngineIntentBuilder(
+        @NonNull Class<? extends FlutterActivity> activityClass,
+        @NonNull String engineId
+    ) {
+      this.activityClass = activityClass;
+      this.cachedEngineId = engineId;
+    }
+
+    public void destroyEngineWithActivity(boolean destroyEngineWithActivity) {
+      this.destroyEngineWithActivity = destroyEngineWithActivity;
+    }
+
+    /**
+     * The mode of {@code FlutterActivity}'s background, either {@link BackgroundMode#opaque} or
+     * {@link BackgroundMode#transparent}.
+     * <p>
+     * The default background mode is {@link BackgroundMode#opaque}.
+     * <p>
+     * Choosing a background mode of {@link BackgroundMode#transparent} will configure the inner
+     * {@link FlutterView} of this {@code FlutterActivity} to be configured with a
+     * {@link FlutterTextureView} to support transparency. This choice has a non-trivial performance
+     * impact. A transparent background should only be used if it is necessary for the app design
+     * being implemented.
+     * <p>
+     * A {@code FlutterActivity} that is configured with a background mode of
+     * {@link BackgroundMode#transparent} must have a theme applied to it that includes the
+     * following property: {@code <item name="android:windowIsTranslucent">true</item>}.
+     */
+    @NonNull
+    public CachedEngineIntentBuilder backgroundMode(@NonNull BackgroundMode backgroundMode) {
+      this.backgroundMode = backgroundMode.name();
+      return this;
+    }
+
+    /**
+     * Creates and returns an {@link Intent} that will launch a {@code FlutterActivity} with
+     * the desired configuration.
+     */
+    @NonNull
+    public Intent build(@NonNull Context context) {
+      return new Intent(context, activityClass)
+          .putExtra(EXTRA_CACHED_ENGINE_ID, cachedEngineId)
+          .putExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, destroyEngineWithActivity)
           .putExtra(EXTRA_BACKGROUND_MODE, backgroundMode);
     }
   }
@@ -521,6 +593,17 @@ public class FlutterActivity extends Activity
     return FlutterShellArgs.fromIntent(getIntent());
   }
 
+  @Override
+  @Nullable
+  public String getCachedEngineId() {
+    return getIntent().getStringExtra(EXTRA_CACHED_ENGINE_ID);
+  }
+
+  @Override
+  public boolean shouldDestroyCachedEngineWithActivity() {
+    return getIntent().getBooleanExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, false);
+  }
+
   /**
    * The Dart entrypoint that will be executed as soon as the Dart snapshot is loaded.
    * <p>
@@ -617,7 +700,7 @@ public class FlutterActivity extends Activity
 
     // Return the default app bundle path.
     // TODO(mattcarroll): move app bundle resolution into an appropriately named class.
-    return FlutterMain.findAppBundlePath(getApplicationContext());
+    return FlutterMain.findAppBundlePath();
   }
 
   /**
