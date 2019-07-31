@@ -115,11 +115,9 @@ class ParagraphTxt : public Paragraph {
 
   bool DidExceedMaxLines() override;
 
+  // Gets the full vector of LineMetrics which includes detailed data on each
+  // line in the final layout.
   std::vector<LineMetrics>& GetLineMetrics() override;
-
-  LineMetrics& GetLineForIndex(size_t offset) override;
-
-  RunMetrics& GetRunMetricsForIndex(size_t offset) override;
 
   // Sets the needs_layout_ to dirty. When Layout() is called, a new Layout will
   // be performed when this is set to true. Can also be used to prevent a new
