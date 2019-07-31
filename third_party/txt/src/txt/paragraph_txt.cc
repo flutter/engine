@@ -1928,24 +1928,4 @@ std::vector<LineMetrics>& ParagraphTxt::GetLineMetrics() {
   return line_metrics_;
 }
 
-LineMetrics& ParagraphTxt::GetLineForIndex(size_t offset) {
-  // TODO(garyq): This can be a binary search to achieve log(lines) time, but it
-  // may decrease performance slightly for short/oneline paragraphs, which is
-  // far more common than long paragraphs. In any case, the difference should
-  // not be significant.
-  for (size_t index = 0; index < line_metrics_.size(); ++index) {
-    if (offset >= line_metrics_[index].start &&
-        offset < line_metrics_[index].end) {
-      return line_metrics_[index];
-    }
-  }
-  return *line_metrics_.end();
-}
-
-RunMetrics& ParagraphTxt::GetRunMetricsForIndex(size_t offset) {
-  return GetLineForIndex(offset)
-      .run_metrics_map.lower_bound(std::min(offset, text_.size()))
-      ->second;
-}
-
 }  // namespace txt

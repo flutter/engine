@@ -170,31 +170,6 @@ TEST_F(ParagraphTest, LineMetricsParagraph1) {
                       ->second.GetFontMetrics()
                       .fUnderlinePosition,
                   1.0253906);
-
-  // ASSERT_EQ(&(paragraph->GetLineForIndex(0)), &(metrics[0]));
-  ASSERT_EQ(paragraph->GetLineForIndex(2).line_number, metrics[0].line_number);
-  ASSERT_EQ(paragraph->GetLineForIndex(2).start, metrics[0].start);
-  ASSERT_EQ(paragraph->GetLineForIndex(2).end, metrics[0].end);
-  ASSERT_EQ(paragraph->GetLineForIndex(2).ascent, metrics[0].ascent);
-  ASSERT_EQ(paragraph->GetLineForIndex(2).descent, metrics[0].descent);
-  ASSERT_EQ(paragraph->GetLineForIndex(2).height, metrics[0].height);
-  ASSERT_EQ(paragraph->GetLineForIndex(2).width, metrics[0].width);
-
-  ASSERT_EQ(paragraph->GetLineForIndex(22).line_number, metrics[0].line_number);
-  ASSERT_EQ(paragraph->GetLineForIndex(22).start, metrics[0].start);
-  ASSERT_EQ(paragraph->GetLineForIndex(22).end, metrics[0].end);
-  ASSERT_EQ(paragraph->GetLineForIndex(22).ascent, metrics[0].ascent);
-  ASSERT_EQ(paragraph->GetLineForIndex(22).descent, metrics[0].descent);
-  ASSERT_EQ(paragraph->GetLineForIndex(22).height, metrics[0].height);
-  ASSERT_EQ(paragraph->GetLineForIndex(22).width, metrics[0].width);
-
-  ASSERT_EQ(paragraph->GetLineForIndex(30).line_number, metrics[1].line_number);
-  ASSERT_EQ(paragraph->GetLineForIndex(30).start, metrics[1].start);
-  ASSERT_EQ(paragraph->GetLineForIndex(30).end, metrics[1].end);
-  ASSERT_EQ(paragraph->GetLineForIndex(30).ascent, metrics[1].ascent);
-  ASSERT_EQ(paragraph->GetLineForIndex(30).descent, metrics[1].descent);
-  ASSERT_EQ(paragraph->GetLineForIndex(30).height, metrics[1].height);
-  ASSERT_EQ(paragraph->GetLineForIndex(30).width, metrics[1].width);
 }
 
 TEST_F(ParagraphTest, LineMetricsParagraph2) {
