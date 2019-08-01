@@ -89,7 +89,23 @@ void main() {
       });
 
       window.onMetricsChanged();
-      _updateWindowMetrics(0.1234, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      _updateWindowMetrics(
+        0.1234, // DPR
+        0.0,    // width
+        0.0,    // height
+        0.0,    // padding top
+        0.0,    // padding right
+        0.0,    // padding bottom
+        0.0,    // padding left
+        0.0,    // inset top
+        0.0,    // inset right
+        0.0,    // inset bottom
+        0.0,    // inset left
+        0.0,    // system gesture inset top
+        0.0,    // system gesture inset right
+        0.0,    // system gesture inset bottom
+        0.0,    // system gesture inset left
+      );
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
       expect(devicePixelRatio, equals(0.1234));
@@ -333,7 +349,7 @@ void main() {
         0.0,   // inset left
         0.0,   // system gesture insets top
         0.0,   // system gesture insets right
-        44.0,   // system gesture insets bottom
+        44.0,  // system gesture insets bottom
         0.0,   // system gesture insets left
       );
 
