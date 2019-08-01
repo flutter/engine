@@ -618,6 +618,16 @@ class Window {
   Size get physicalSize => _physicalSize;
   Size _physicalSize = Size.zero;
 
+  /// The physical depth is the maximum elevation that the Window allows.
+  ///
+  /// Physical layers drawn at or above this elevation will have their elevation
+  /// clamped to this value.
+  ///
+  /// The default value is [double.maxFinite], which is used for platforms that
+  /// do not specify a maximum elevation.
+  double get physicalDepth => _physicalDepth;
+  double _physicalDepth = double.maxFinite;
+
   /// The number of physical pixels on each side of the display rectangle into
   /// which the application can render, but over which the operating system
   /// will likely place system UI, such as the keyboard, that fully obscures
