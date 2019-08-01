@@ -684,7 +684,7 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
 
   // This is the formula Android uses.
   // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
-  int max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
+  size_t max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
   task_runners_.GetGPUTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(), max_bytes] {
         if (rasterizer) {
