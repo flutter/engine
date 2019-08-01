@@ -39,7 +39,7 @@ Future<void> main(List<String> args) async {
       try {
         options = _argParser.parse(<String>[
           '--manifest=flutter',
-          '--data-dir=/tmp',
+          '--data-dir=${temp.absolute}',
         ]);
 
         await runCompiler(options, _usage);
