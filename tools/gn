@@ -177,7 +177,7 @@ def to_gn_args(args):
 
     # DBC is not supported anymore.
     if args.interpreter:
-      raise Exception('--interpreter is no longer needed on any supported platforms' + runtime_mode)
+      raise Exception('--interpreter is no longer needed on any supported platform.')
     gn_args['dart_target_arch'] = gn_args['target_cpu']
 
     if sys.platform.startswith(('cygwin', 'win')):
