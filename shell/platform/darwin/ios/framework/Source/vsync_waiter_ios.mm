@@ -50,6 +50,7 @@ void VsyncWaiterIOS::AwaitVSync() {
 @implementation VSyncClient {
   flutter::VsyncWaiter::Callback callback_;
   fml::scoped_nsobject<CADisplayLink> display_link_;
+  fml::scoped_nsobject<NSThread> display_link_thread_;
 }
 
 - (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
@@ -63,14 +64,18 @@ void VsyncWaiterIOS::AwaitVSync() {
     };
     display_link_.get().paused = YES;
 
-    task_runner->PostTask([client = [self retain]]() {
-      [client->display_link_.get() addToRunLoop:[NSRunLoop currentRunLoop]
-                                        forMode:NSRunLoopCommonModes];
-      [client release];
-    });
+    display_link_thread_ = fml::scoped_nsobject<NSThread> {
+      [[NSThread alloc] initWithTarget:self selector:@selector(run) object:nil]
+    };
+    [display_link_thread_.get() start];
   }
 
   return self;
+}
+
+- (void)run {
+  [self->display_link_.get() addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+  [[NSRunLoop currentRunLoop] run];
 }
 
 - (void)await {
