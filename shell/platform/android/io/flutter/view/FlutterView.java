@@ -35,6 +35,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -578,15 +579,20 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
         if (Build.VERSION.SDK_INT > 28) {
             try {
-                mMetrics.systemGestureInsetsTop = 500;
                 Class systemGestureInsets = insets
                     .getClass()
                     .getDeclaredMethod("getSystemGestureInsets")
                     .invoke(insets)
                     .getClass();
-                mMetrics.systemGestureInsetsTop = (int)systemGestureInsets.getField("bottom").get(this);
+
+                Field bottomInset = systemGestureInsets.getDeclaredField("bottom");
+                mMetrics.systemGestureInsetsTop = (int)bottomInset.get(insets
+                    .getClass()
+                    .getDeclaredMethod("getSystemGestureInsets")
+                    .invoke(insets)
+                );
             } catch (Exception exception) {
-                // Any exception is a failure.
+                Log.e(TAG, "Uncaught exception while retrieving system gesture insets", exception);
             }
         }
         updateViewportMetrics();
