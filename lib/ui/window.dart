@@ -666,6 +666,21 @@ class Window {
   WindowPadding get viewPadding => _viewPadding;
   WindowPadding _viewPadding = WindowPadding.zero;
 
+  /// The number of physical pixels on each side of the display rectangle into
+  /// which the application can render, but over which the operating system
+  /// will likely place system gestures.
+  ///
+  /// For example, an operating system might use the vertical edges of the
+  /// screen, where swiping inwards from the edges takes users backward
+  /// through the history of screens they previously visited.
+  ///
+  /// When this changes, [onMetricsChanged] is called.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
+  ///  * [MediaQuery.of], a simpler mechanism for the same.
   WindowPadding get systemGestureInsets => _systemGestureInsets;
   WindowPadding _systemGestureInsets = WindowPadding.zero;
 
@@ -700,9 +715,10 @@ class Window {
   WindowPadding _padding = WindowPadding.zero;
 
   /// A callback that is invoked whenever the [devicePixelRatio],
-  /// [physicalSize], [padding], or [viewInsets] values change, for example
-  /// when the device is rotated or when the application is resized (e.g. when
-  /// showing applications side-by-side on Android).
+  /// [physicalSize], [padding], [viewInsets], or [systemGestureInsets]
+  /// values change, for example when the device is rotated or when the
+  /// application is resized (e.g. when showing applications side-by-side
+  /// on Android).
   ///
   /// The engine invokes this callback in the same zone in which the callback
   /// was set.

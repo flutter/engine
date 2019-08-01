@@ -35,7 +35,6 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -586,30 +585,23 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
                 Method getSystemGestureInsets = insets
                     .getClass()
                     .getDeclaredMethod("getSystemGestureInsets");
-
                 Class systemGestureInsets = getSystemGestureInsets
                     .invoke(insets)
                     .getClass();
 
-                Field topInset = systemGestureInsets.getDeclaredField("top");
-                mMetrics.systemGestureInsetTop = (int)topInset.get(
-                    getSystemGestureInsets.invoke(insets)
-                );
+                mMetrics.systemGestureInsetTop = (int)systemGestureInsets
+                    .getDeclaredField("top")
+                    .get(getSystemGestureInsets.invoke(insets));
+                mMetrics.systemGestureInsetRight = (int)systemGestureInsets
+                    .getDeclaredField("right")
+                    .get(getSystemGestureInsets.invoke(insets));
+                mMetrics.systemGestureInsetBottom = (int)systemGestureInsets
+                    .getDeclaredField("bottom")
+                    .get(getSystemGestureInsets.invoke(insets));
+                mMetrics.systemGestureInsetLeft = (int)systemGestureInsets
+                    .getDeclaredField("left")
+                    .get(getSystemGestureInsets.invoke(insets));
 
-                Field rightInset = systemGestureInsets.getDeclaredField("right");
-                mMetrics.systemGestureInsetRight = (int)rightInset.get(
-                    getSystemGestureInsets.invoke(insets)
-                );
-
-                Field bottomInset = systemGestureInsets.getDeclaredField("bottom");
-                mMetrics.systemGestureInsetBottom = (int)bottomInset.get(
-                    getSystemGestureInsets.invoke(insets)
-                );
-
-                Field leftInset = systemGestureInsets.getDeclaredField("left");
-                mMetrics.systemGestureInsetLeft = (int)leftInset.get(
-                    getSystemGestureInsets.invoke(insets)
-                );
             } catch (Exception exception) {
                 Log.e(TAG, "Uncaught exception while retrieving system gesture insets", exception);
             }
