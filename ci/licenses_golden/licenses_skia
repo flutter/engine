@@ -1,4 +1,4 @@
-Signature: fffb89a2885ece405a735fcb88a077f4
+Signature: d14ba8a93032eb96939132011965df4e
 
 UNUSED LICENSES:
 
@@ -4991,6 +4991,8 @@ FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnGpu.cpp
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnGpu.h
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnGpuCommandBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnGpuCommandBuffer.h
+FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnProgramDataManager.cpp
+FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnProgramDataManager.h
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnRenderTarget.cpp
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnRenderTarget.h
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnUniformHandler.cpp
