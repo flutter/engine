@@ -627,7 +627,8 @@ class Window {
   /// depth.
   ///
   /// The default value is [double.maxFinite], which is used for platforms that
-  /// do not specify a maximum elevation.
+  /// do not specify a maximum elevation. This property is currently on expected
+  /// to be set to a non-default value on Fuchsia.
   double get physicalDepth => _physicalDepth;
   double _physicalDepth = double.maxFinite;
 
