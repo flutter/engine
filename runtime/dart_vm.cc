@@ -309,7 +309,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
 #endif  // !OS_FUCHSIA
 
 #if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
-#if !OS_IOS
+#if !OS_IOS || TARGET_OS_SIMULATOR
   // Debug mode uses the JIT, disable code page write protection to avoid
   // memory page protection changes before and after every compilation.
   PushBackAll(&args, kDartWriteProtectCodeArgs,
