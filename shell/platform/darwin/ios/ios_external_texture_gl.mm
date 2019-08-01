@@ -64,6 +64,9 @@ void IOSExternalTextureGL::Paint(SkCanvas& canvas,
       buffer_ref_.Reset(pixelBuffer);
     }
     CreateTextureFromPixelBuffer();
+    if (buffer_ref_) {
+      buffer_ref_.Reset(nullptr);
+    }
   }
   if (!texture_ref_) {
     return;
