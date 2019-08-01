@@ -621,7 +621,10 @@ class Window {
   /// The physical depth is the maximum elevation that the Window allows.
   ///
   /// Physical layers drawn at or above this elevation will have their elevation
-  /// clamped to this value.
+  /// clamped to this value. This can happen if the physical layer itself has
+  /// an elevation larger than available depth, or if some ancestor of the layer
+  /// causes it to have a cumulative elevation that is larger than the available
+  /// depth.
   ///
   /// The default value is [double.maxFinite], which is used for platforms that
   /// do not specify a maximum elevation.
