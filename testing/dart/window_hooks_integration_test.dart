@@ -289,11 +289,12 @@ void main() {
     });
 
 
-    test('Window padding/insets/viewPadding', () {
+    test('Window padding/insets/viewPadding/systemGestureInsets', () {
       final double oldDPR = window.devicePixelRatio;
       final Size oldSize = window.physicalSize;
       final WindowPadding oldPadding = window.viewPadding;
       final WindowPadding oldInsets = window.viewInsets;
+      final WindowPadding oldSystemGestureInsets = window.systemGestureInsets;
 
       _updateWindowMetrics(
         1.0,   // DPR
@@ -307,12 +308,16 @@ void main() {
         0.0,   // inset right
         0.0,   // inset bottom
         0.0,   // inset left
-        0.0,
+        0.0,   // system gesture inset top
+        0.0,   // system gesture inset right
+        0.0,   // system gesture inset bottom
+        0.0,   // system gesture inset left
       );
 
       expect(window.viewInsets.bottom, 0.0);
       expect(window.viewPadding.bottom, 40.0);
       expect(window.padding.bottom, 40.0);
+      expect(window.systemGestureInsets.bottom, 0.0);
 
       _updateWindowMetrics(
         1.0,   // DPR
@@ -326,26 +331,33 @@ void main() {
         0.0,   // inset right
         400.0, // inset bottom
         0.0,   // inset left
-        0.0,
+        0.0,   // system gesture insets top
+        0.0,   // system gesture insets right
+        44.0,   // system gesture insets bottom
+        0.0,   // system gesture insets left
       );
 
       expect(window.viewInsets.bottom, 400.0);
       expect(window.viewPadding.bottom, 40.0);
       expect(window.padding.bottom, 0.0);
+      expect(window.systemGestureInsets.bottom, 44.0);
 
        _updateWindowMetrics(
-        oldDPR,             // DPR
-        oldSize.width,      // width
-        oldSize.height,     // height
-        oldPadding.top,     // padding top
-        oldPadding.right,   // padding right
-        oldPadding.bottom,  // padding bottom
-        oldPadding.left,    // padding left
-        oldInsets.top,      // inset top
-        oldInsets.right,    // inset right
-        oldInsets.bottom,   // inset bottom
-        oldInsets.left,     // inset left
-        0.0,
+        oldDPR,                         // DPR
+        oldSize.width,                  // width
+        oldSize.height,                 // height
+        oldPadding.top,                 // padding top
+        oldPadding.right,               // padding right
+        oldPadding.bottom,              // padding bottom
+        oldPadding.left,                // padding left
+        oldInsets.top,                  // inset top
+        oldInsets.right,                // inset right
+        oldInsets.bottom,               // inset bottom
+        oldInsets.left,                 // inset left
+        oldSystemGestureInsets.top,     // system gesture insets top
+        oldSystemGestureInsets.right,   // system gesture insets top
+        oldSystemGestureInsets.bottom,  // system gesture insets top
+        oldSystemGestureInsets.left,    // system gesture insets top
       );
     });
   });

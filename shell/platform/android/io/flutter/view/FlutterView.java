@@ -36,6 +36,7 @@ import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -101,7 +102,10 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         int physicalViewInsetRight = 0;
         int physicalViewInsetBottom = 0;
         int physicalViewInsetLeft = 0;
-        int systemGestureInsetsTop = 0;
+        int systemGestureInsetTop = 0;
+        int systemGestureInsetRight = 0;
+        int systemGestureInsetBottom = 0;
+        int systemGestureInsetLeft = 0;
     }
 
     private final DartExecutor dartExecutor;
@@ -579,17 +583,32 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
         if (Build.VERSION.SDK_INT > 28) {
             try {
-                Class systemGestureInsets = insets
+                Method getSystemGestureInsets = insets
                     .getClass()
-                    .getDeclaredMethod("getSystemGestureInsets")
+                    .getDeclaredMethod("getSystemGestureInsets");
+
+                Class systemGestureInsets = getSystemGestureInsets
                     .invoke(insets)
                     .getClass();
 
+                Field topInset = systemGestureInsets.getDeclaredField("top");
+                mMetrics.systemGestureInsetTop = (int)topInset.get(
+                    getSystemGestureInsets.invoke(insets)
+                );
+
+                Field rightInset = systemGestureInsets.getDeclaredField("right");
+                mMetrics.systemGestureInsetRight = (int)rightInset.get(
+                    getSystemGestureInsets.invoke(insets)
+                );
+
                 Field bottomInset = systemGestureInsets.getDeclaredField("bottom");
-                mMetrics.systemGestureInsetsTop = (int)bottomInset.get(insets
-                    .getClass()
-                    .getDeclaredMethod("getSystemGestureInsets")
-                    .invoke(insets)
+                mMetrics.systemGestureInsetBottom = (int)bottomInset.get(
+                    getSystemGestureInsets.invoke(insets)
+                );
+
+                Field leftInset = systemGestureInsets.getDeclaredField("left");
+                mMetrics.systemGestureInsetLeft = (int)leftInset.get(
+                    getSystemGestureInsets.invoke(insets)
                 );
             } catch (Exception exception) {
                 Log.e(TAG, "Uncaught exception while retrieving system gesture insets", exception);
@@ -663,11 +682,23 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     private void updateViewportMetrics() {
         if (!isAttached())
             return;
-        mNativeView.getFlutterJNI().setViewportMetrics(mMetrics.devicePixelRatio, mMetrics.physicalWidth,
-                mMetrics.physicalHeight, mMetrics.physicalPaddingTop, mMetrics.physicalPaddingRight,
-                mMetrics.physicalPaddingBottom, mMetrics.physicalPaddingLeft, mMetrics.physicalViewInsetTop,
-                mMetrics.physicalViewInsetRight, mMetrics.physicalViewInsetBottom, mMetrics.physicalViewInsetLeft,
-                mMetrics.systemGestureInsetsTop);
+        mNativeView.getFlutterJNI().setViewportMetrics(
+            mMetrics.devicePixelRatio,
+            mMetrics.physicalWidth,
+            mMetrics.physicalHeight,
+            mMetrics.physicalPaddingTop,
+            mMetrics.physicalPaddingRight,
+            mMetrics.physicalPaddingBottom,
+            mMetrics.physicalPaddingLeft,
+            mMetrics.physicalViewInsetTop,
+            mMetrics.physicalViewInsetRight,
+            mMetrics.physicalViewInsetBottom,
+            mMetrics.physicalViewInsetLeft,
+            mMetrics.systemGestureInsetTop,
+            mMetrics.systemGestureInsetRight,
+            mMetrics.systemGestureInsetBottom,
+            mMetrics.systemGestureInsetLeft
+        );
     }
 
     // Called by native to update the semantics/accessibility tree.

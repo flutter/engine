@@ -26,7 +26,10 @@ struct ViewportMetrics {
                   double p_physical_view_inset_right,
                   double p_physical_view_inset_bottom,
                   double p_physical_view_inset_left,
-                  double p_system_gesture_insets_top);
+                  double p_system_gesture_inset_top,
+                  double p_system_gesture_inset_right,
+                  double p_system_gesture_inset_bottom,
+                  double p_system_gesture_inset_left);
 
   // Create a ViewportMetrics instance that contains z information.
   ViewportMetrics(double p_device_pixel_ratio,
@@ -60,7 +63,10 @@ struct ViewportMetrics {
   double physical_view_inset_left = 0;
   double physical_view_inset_front = kUnsetDepth;
   double physical_view_inset_back = kUnsetDepth;
-  double system_gesture_insets_top = 0;
+  double system_gesture_inset_top = 0;
+  double system_gesture_inset_right = 0;
+  double system_gesture_inset_bottom = 0;
+  double system_gesture_inset_left = 0;
 };
 
 struct LogicalSize {
