@@ -179,6 +179,7 @@ class ParagraphTxt : public Paragraph {
   mutable std::unique_ptr<icu::BreakIterator> word_breaker_;
 
   std::vector<LineMetrics> line_metrics_;
+  size_t final_line_count_;
   std::vector<double> line_widths_;
 
   // Stores the result of Layout().
