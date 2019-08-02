@@ -382,14 +382,17 @@ void Rasterizer::SetResourceCacheMaxBytes(size_t max_bytes, bool from_user) {
   }
 }
 
-size_t Rasterizer::GetResourceCacheMaxBytes() const {
+std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
+  if (!surface_) {
+    return std::nullopt;
+  }
   GrContext* context = surface_->GetContext();
   if (context) {
     size_t max_bytes;
     context->getResourceCacheLimits(nullptr, &max_bytes);
     return max_bytes;
   }
-  return 0;
+  return std::nullopt;
 }
 
 Rasterizer::Screenshot::Screenshot() {}

@@ -381,7 +381,8 @@ class Rasterizer final {
   void SetResourceCacheMaxBytes(size_t max_bytes, bool from_user);
 
   //----------------------------------------------------------------------------
-  /// @brief      The current value of Skia's resource cache size.
+  /// @brief      The current value of Skia's resource cache size, if a surface
+  ///             is present.
   ///
   /// @attention  This cache setting will be invalidated when the surface is
   ///             torn down via `Rasterizer::Teardown`. This call must be made
@@ -393,9 +394,9 @@ class Rasterizer final {
   ///
   /// @see        `RasterCache`
   ///
-  /// @return     The size of Skia's resource cache.
+  /// @return     The size of Skia's resource cache, if available.
   ///
-  size_t GetResourceCacheMaxBytes() const;
+  std::optional<size_t> GetResourceCacheMaxBytes() const;
 
  private:
   Delegate& delegate_;
