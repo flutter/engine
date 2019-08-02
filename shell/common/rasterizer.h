@@ -6,6 +6,7 @@
 #define SHELL_COMMON_RASTERIZER_H_
 
 #include <memory>
+#include <optional>
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
