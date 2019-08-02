@@ -67,7 +67,12 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
     flutter::LayerTree& layer_tree,
     bool ignore_raster_cache) {
   layer_tree.Preroll(*this, ignore_raster_cache);
-  if (MergeTaskRunnersForEmbeddedViews()) {
+  bool resubmit_frame = false;
+  if (view_embedder_ && task_runner_merger_) {
+    resubmit_frame = !view_embedder_->PostPrerollAction(task_runner_merger_);
+  }
+
+  if (resubmit_frame) {
     return RasterStatus::kResubmit;
   }
   // Clearing canvas after preroll reduces one render target switch when preroll
@@ -77,25 +82,6 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   }
   layer_tree.Paint(*this, ignore_raster_cache);
   return RasterStatus::kSuccess;
-}
-
-const int CompositorContext::ScopedFrame::kDefaultMergedLeaseDuration;
-
-bool CompositorContext::ScopedFrame::MergeTaskRunnersForEmbeddedViews() {
-  if (view_embedder_ && task_runner_merger_) {
-    const bool uiviews_mutated = view_embedder_->HasPendingViewOperations();
-    if (uiviews_mutated) {
-      bool are_merged = task_runner_merger_->AreMerged();
-      if (are_merged) {
-        task_runner_merger_->ExtendLease(kDefaultMergedLeaseDuration);
-      } else {
-        view_embedder_->CancelFrame();
-        task_runner_merger_->MergeWithLease(kDefaultMergedLeaseDuration);
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 void CompositorContext::OnGrContextCreated() {

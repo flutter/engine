@@ -65,6 +65,9 @@ class IOSSurfaceGL final : public IOSSurface,
                                     std::unique_ptr<flutter::EmbeddedViewParams> params) override;
 
   // |flutter::ExternalViewEmbedder|
+  bool PostPrerollAction(fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger) override;
+
+  // |flutter::ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   // |flutter::ExternalViewEmbedder|

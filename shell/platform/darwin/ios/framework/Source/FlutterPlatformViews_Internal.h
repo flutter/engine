@@ -93,6 +93,8 @@ class FlutterPlatformViewsController {
   // returns nil.
   NSObject<FlutterPlatformView>* GetPlatformViewByID(int view_id);
 
+  bool PostPrerollAction(fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger);
+
   std::vector<SkCanvas*> GetCurrentCanvases();
 
   SkCanvas* CompositeEmbeddedView(int view_id);
@@ -130,6 +132,10 @@ class FlutterPlatformViewsController {
   // so we can update the overlays with the new context.
   GrContext* overlays_gr_context_;
   SkISize frame_size_;
+
+  // This is the number of frames the task runners will stay
+  // merged after a frame where we see a mutation to the embedded views.
+  static const int kDefaultMergedLeaseDuration = 10;
 
   // Method channel `OnDispose` calls adds the views to be disposed to this set to be disposed on
   // the next frame.

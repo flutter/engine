@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "flutter/fml/memory/ref_counted.h"
+#include "flutter/fml/task_runner_merger.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPoint.h"
@@ -204,6 +205,15 @@ class ExternalViewEmbedder {
   virtual void PrerollCompositeEmbeddedView(
       int view_id,
       std::unique_ptr<EmbeddedViewParams> params) = 0;
+
+  // This needs to get called after |Preroll| finishes on the layer tree.
+  // Returns false if the frame needs to be processed again, this is after
+  // it does any requisite tasks needed to bring itseld to a valid state.
+  // Returns true if the view embedder is already in a valid state.
+  virtual bool PostPrerollAction(
+      fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger) {
+    return true;
+  }
 
   virtual std::vector<SkCanvas*> GetCurrentCanvases() = 0;
 

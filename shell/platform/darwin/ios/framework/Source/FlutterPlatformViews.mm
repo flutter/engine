@@ -171,6 +171,24 @@ bool FlutterPlatformViewsController::HasPendingViewOperations() {
   return active_composition_order_ != composition_order_;
 }
 
+const int FlutterPlatformViewsController::kDefaultMergedLeaseDuration;
+
+bool FlutterPlatformViewsController::PostPrerollAction(
+    fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger) {
+  const bool uiviews_mutated = HasPendingViewOperations();
+  if (uiviews_mutated) {
+    bool are_merged = task_runner_merger->AreMerged();
+    if (are_merged) {
+      task_runner_merger->ExtendLease(kDefaultMergedLeaseDuration);
+    } else {
+      CancelFrame();
+      task_runner_merger->MergeWithLease(kDefaultMergedLeaseDuration);
+      return true;
+    }
+  }
+  return false;
+}
+
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
