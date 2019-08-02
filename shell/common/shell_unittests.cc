@@ -617,7 +617,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
 
-  EXPECT_EQ(shell->GetRasterizer()->GetResourceCacheMaxBytes(),
+  EXPECT_EQ(shell->GetRasterizer()->GetResourceCacheMaxBytes().value_or(0U),
             static_cast<size_t>(24 * (1 << 20)));
 
   fml::TaskRunner::RunNowOrPostTask(
@@ -627,10 +627,11 @@ TEST_F(ShellTest, SetResourceCacheSize) {
       });
   PumpOneFrame(shell.get());
 
-  EXPECT_EQ(shell->GetRasterizer()->GetResourceCacheMaxBytes(), 3840000U);
+  EXPECT_EQ(shell->GetRasterizer()->GetResourceCacheMaxBytes().value_or(0U),
+            3840000U);
 
   std::string request_json = R"json({
-                                "mesthod": "Skia.setResourceCacheMaxBytes",
+                                "method": "Skia.setResourceCacheMaxBytes",
                                 "args": 10000
                               })json";
   std::vector<uint8_t> data(request_json.begin(), request_json.end());
@@ -638,7 +639,8 @@ TEST_F(ShellTest, SetResourceCacheSize) {
       "flutter/skia", std::move(data), nullptr);
   SendEnginePlatformMessage(shell.get(), std::move(platform_message));
   PumpOneFrame(shell.get());
-  EXPECT_EQ(shell->GetRasterizer()->GetResourceCacheMaxBytes(), 10000U);
+  EXPECT_EQ(shell->GetRasterizer()->GetResourceCacheMaxBytes().value_or(0U),
+            10000U);
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
@@ -647,7 +649,8 @@ TEST_F(ShellTest, SetResourceCacheSize) {
       });
   PumpOneFrame(shell.get());
 
-  EXPECT_EQ(shell->GetRasterizer()->GetResourceCacheMaxBytes(), 10000U);
+  EXPECT_EQ(shell->GetRasterizer()->GetResourceCacheMaxBytes().value_or(0U),
+            10000U);
 }
 
 TEST_F(ShellTest, SetResourceCacheSizeEarly) {
@@ -674,7 +677,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
 
-  EXPECT_EQ(shell->GetRasterizer()->GetResourceCacheMaxBytes(),
+  EXPECT_EQ(shell->GetRasterizer()->GetResourceCacheMaxBytes().value_or(0),
             static_cast<size_t>(3840000U));
 }
 
