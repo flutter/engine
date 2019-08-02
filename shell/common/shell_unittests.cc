@@ -423,7 +423,7 @@ TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
   int lastPhaseIndex = -1;
   FrameTiming timing;
   for (auto phase : FrameTiming::kPhases) {
-    ASSERT_TRUE(phase > lastPhaseIndex);  // Ensure that kPhases are in ƒorder.
+    ASSERT_TRUE(phase > lastPhaseIndex);  // Ensure that kPhases are in order.
     lastPhaseIndex = phase;
     auto fake_time =
         fml::TimePoint::FromEpochDelta(fml::TimeDelta::FromMicroseconds(phase));
@@ -629,8 +629,10 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   EXPECT_EQ(shell->GetRasterizer()->GetResourceCacheMaxBytes(), 3840000U);
 
-  std::string request_json =
-      "{\"method\": \"Skia.setResourceCacheMaxBytes\", \"args\": 10000}";
+  std::string request_json = R"json({
+                                "mesthod": "Skia.setResourceCacheMaxBytes",
+                                "args": 10000
+                              })json";
   std::vector<uint8_t> data(request_json.begin(), request_json.end());
   auto platform_message = fml::MakeRefCounted<PlatformMessage>(
       "flutter/skia", std::move(data), nullptr);
@@ -655,7 +657,6 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
                            task_runner);
   std::unique_ptr<Shell> shell =
       CreateShell(std::move(settings), std::move(task_runners));
-
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {

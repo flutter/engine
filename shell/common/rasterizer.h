@@ -384,10 +384,6 @@ class Rasterizer final {
   /// @brief      The current value of Skia's resource cache size, if a surface
   ///             is present.
   ///
-  /// @attention  This cache setting will be invalidated when the surface is
-  ///             torn down via `Rasterizer::Teardown`. This call must be made
-  ///             again with new limits after surface re-acquisition.
-  ///
   /// @attention  This cache does not describe the entirety of GPU resources
   ///             that may be cached. The `RasterCache` also holds very large
   ///             GPU resources.
