@@ -1175,8 +1175,6 @@ void ParagraphTxt::Layout(double width) {
     }
   }  // for each line_number
 
-  line_metrics_.erase(line_metrics_.begin() + line_limit, line_metrics_.end());
-
   if (paragraph_style_.max_lines == 1 ||
       (paragraph_style_.unlimited_lines() && paragraph_style_.ellipsized())) {
     min_intrinsic_width_ = max_intrinsic_width_;
