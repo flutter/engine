@@ -14,6 +14,7 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/fml/task_runner_merger.h"
 #include "flutter/shell/common/pipeline.h"
 #include "flutter/shell/common/surface.h"
 
@@ -385,8 +386,9 @@ class Rasterizer final {
   std::unique_ptr<flutter::LayerTree> last_layer_tree_;
   fml::closure next_frame_callback_;
   fml::WeakPtrFactory<Rasterizer> weak_factory_;
+  fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger_;
 
-  void DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree);
+  RasterStatus DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree);
 
   RasterStatus DrawToSurface(flutter::LayerTree& layer_tree);
 
