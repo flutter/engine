@@ -43,7 +43,19 @@ void main() {
     PlatformMessageCallback originalOnPlatformMessage;
     VoidCallback originalOnTextScaleFactorChanged;
 
+    double oldDPR;
+    Size oldSize;
+    double oldDepth;
+    WindowPadding oldPadding;
+    WindowPadding oldInsets;
+
     setUp(() {
+      oldDPR = window.devicePixelRatio;
+      oldSize = window.physicalSize;
+      oldDepth = window.physicalDepth;
+      oldPadding = window.viewPadding;
+      oldInsets = window.viewInsets;
+
       originalOnMetricsChanged = window.onMetricsChanged;
       originalOnLocaleChanged = window.onLocaleChanged;
       originalOnBeginFrame = window.onBeginFrame;
@@ -57,6 +69,20 @@ void main() {
     });
 
     tearDown(() {
+      _updateWindowMetrics(
+        oldDPR,             // DPR
+        oldSize.width,      // width
+        oldSize.height,     // height
+        oldDepth,           // depth
+        oldPadding.top,     // padding top
+        oldPadding.right,   // padding right
+        oldPadding.bottom,  // padding bottom
+        oldPadding.left,    // padding left
+        oldInsets.top,      // inset top
+        oldInsets.right,    // inset right
+        oldInsets.bottom,   // inset bottom
+        oldInsets.left,     // inset left
+      );
       window.onMetricsChanged = originalOnMetricsChanged;
       window.onLocaleChanged = originalOnLocaleChanged;
       window.onBeginFrame = originalOnBeginFrame;
@@ -290,14 +316,6 @@ void main() {
 
 
     test('Window padding/insets/viewPadding', () {
-      final double oldDPR = window.devicePixelRatio;
-      final Size oldSize = window.physicalSize;
-      final double oldDepth = window.physicalDepth;
-      final WindowPadding oldPadding = window.viewPadding;
-      final WindowPadding oldInsets = window.viewInsets;
-
-      expect(oldDepth, double.maxFinite);
-
       _updateWindowMetrics(
         1.0,   // DPR
         800.0, // width
@@ -337,21 +355,6 @@ void main() {
       expect(window.viewPadding.bottom, 40.0);
       expect(window.padding.bottom, 0.0);
       expect(window.physicalDepth, 100.0);
-
-       _updateWindowMetrics(
-        oldDPR,             // DPR
-        oldSize.width,      // width
-        oldSize.height,     // height
-        oldDepth,           // depth
-        oldPadding.top,     // padding top
-        oldPadding.right,   // padding right
-        oldPadding.bottom,  // padding bottom
-        oldPadding.left,    // padding left
-        oldInsets.top,      // inset top
-        oldInsets.right,    // inset right
-        oldInsets.bottom,   // inset bottom
-        oldInsets.left,     // inset left
-      );
     });
   });
 }
