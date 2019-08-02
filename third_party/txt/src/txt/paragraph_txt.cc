@@ -656,6 +656,14 @@ void ParagraphTxt::Layout(double width) {
 
   needs_layout_ = false;
 
+  records_.clear();
+  glyph_lines_.clear();
+  code_unit_runs_.clear();
+  inline_placeholder_code_unit_runs_.clear();
+  max_right_ = FLT_MIN;
+  min_left_ = FLT_MAX;
+  final_line_count_ = 0;
+
   if (!ComputeLineBreaks())
     return;
 
@@ -667,13 +675,6 @@ void ParagraphTxt::Layout(double width) {
   font.setEdging(SkFont::Edging::kAntiAlias);
   font.setSubpixel(true);
   font.setHinting(SkFontHinting::kSlight);
-
-  records_.clear();
-  glyph_lines_.clear();
-  code_unit_runs_.clear();
-  inline_placeholder_code_unit_runs_.clear();
-  max_right_ = FLT_MIN;
-  min_left_ = FLT_MAX;
 
   minikin::Layout layout;
   SkTextBlobBuilder builder;
@@ -1165,12 +1166,16 @@ void ParagraphTxt::Layout(double width) {
     line_metrics.width = line_widths_[line_number];
     line_metrics.left = line_x_offset;
 
+    final_line_count_++;
+
     for (PaintRecord& paint_record : paint_records) {
       paint_record.SetOffset(
           SkPoint::Make(paint_record.offset().x() + line_x_offset, y_offset));
       records_.emplace_back(std::move(paint_record));
     }
   }  // for each line_number
+
+  line_metrics_.erase(line_metrics_.begin() + line_limit, line_metrics_.end());
 
   if (paragraph_style_.max_lines == 1 ||
       (paragraph_style_.unlimited_lines() && paragraph_style_.ellipsized())) {
@@ -1234,7 +1239,8 @@ size_t ParagraphTxt::TextSize() const {
 }
 
 double ParagraphTxt::GetHeight() {
-  return line_metrics_.size() ? line_metrics_.back().height : 0;
+  return final_line_count_ == 0 ? 0
+                                : line_metrics_[final_line_count_ - 1].height;
 }
 
 double ParagraphTxt::GetMaxWidth() {
@@ -1913,7 +1919,7 @@ Paragraph::Range<size_t> ParagraphTxt::GetWordBoundary(size_t offset) {
 }
 
 size_t ParagraphTxt::GetLineCount() {
-  return line_metrics_.size();
+  return final_line_count_;
 }
 
 bool ParagraphTxt::DidExceedMaxLines() {
