@@ -711,13 +711,6 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
       : getActivity();
   }
 
-  @NonNull
-  @Override
-  public Lifecycle getLifecycle() {
-    // TODO:
-    return null;
-  }
-
   /**
    * {@link FlutterActivityAndFragmentDelegate.Host} method that is used by
    * {@link FlutterActivityAndFragmentDelegate} to obtain Flutter shell arguments when
