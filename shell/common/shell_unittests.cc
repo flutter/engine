@@ -65,8 +65,7 @@ TEST_F(ShellTest, InitializeWithDifferentThreads) {
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
                          ThreadHost::Type::Platform | ThreadHost::Type::GPU |
                              ThreadHost::Type::IO | ThreadHost::Type::UI);
-  TaskRunners task_runners("test",
-  thread_host.platform_thread->GetTaskRunner(),
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.gpu_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
@@ -139,8 +138,7 @@ TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(
       "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::Platform | ThreadHost::Type::IO |
-      ThreadHost::Type::UI);
+      ThreadHost::Type::Platform | ThreadHost::Type::IO | ThreadHost::Type::UI);
   TaskRunners task_runners(
       "test",
       thread_host.platform_thread->GetTaskRunner(),  // platform
@@ -168,8 +166,7 @@ TEST_F(ShellTest, FixturesAreFunctional) {
   fml::AutoResetWaitableEvent main_latch;
   AddNativeCallback(
       "SayHiFromFixturesAreFunctionalMain",
-      CREATE_NATIVE_ENTRY([&main_latch](auto args) { main_latch.Signal();
-      }));
+      CREATE_NATIVE_ENTRY([&main_latch](auto args) { main_latch.Signal(); }));
 
   RunEngine(shell.get(), std::move(configuration));
   main_latch.Wait();
@@ -204,8 +201,7 @@ TEST_F(ShellTest, SecondaryIsolateBindingsAreSetupViaShellSettings) {
 
 TEST(ShellTestNoFixture, EnableMirrorsIsWhitelisted) {
   if (DartVM::IsRunningPrecompiledCode()) {
-    // This covers profile and release modes which use AOT (where this flag
-    does
+    // This covers profile and release modes which use AOT (where this flag does
     // not make sense anyway).
     GTEST_SKIP();
     return;
@@ -214,8 +210,7 @@ TEST(ShellTestNoFixture, EnableMirrorsIsWhitelisted) {
   const std::vector<fml::CommandLine::Option> options = {
       fml::CommandLine::Option("dart-flags", "--enable_mirrors")};
   fml::CommandLine command_line("", options, std::vector<std::string>());
-  flutter::Settings settings =
-  flutter::SettingsFromCommandLine(command_line);
+  flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
   EXPECT_EQ(settings.dart_flags.size(), 1u);
 }
 
@@ -233,8 +228,7 @@ TEST_F(ShellTest, BlacklistedDartVMFlag) {
       "Encountered blacklisted Dart VM flag: --verify_after_gc";
   ASSERT_DEATH(flutter::SettingsFromCommandLine(command_line), expected);
 #else
-  flutter::Settings settings =
-  flutter::SettingsFromCommandLine(command_line);
+  flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
   EXPECT_EQ(settings.dart_flags.size(), 0u);
 #endif
 }
@@ -244,8 +238,7 @@ TEST_F(ShellTest, WhitelistedDartVMFlag) {
       fml::CommandLine::Option("dart-flags",
                                "--max_profile_depth 1,--random_seed 42")};
   fml::CommandLine command_line("", options, std::vector<std::string>());
-  flutter::Settings settings =
-  flutter::SettingsFromCommandLine(command_line);
+  flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
 
 #if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
   EXPECT_EQ(settings.dart_flags.size(), 2u);
@@ -270,18 +263,15 @@ TEST_F(ShellTest, NoNeedToReportTimingsByDefault) {
   PumpOneFrame(shell.get());
   ASSERT_FALSE(GetNeedsReportTimings(shell.get()));
 
-  // This assertion may or may not be the direct result of
-  needs_report_timings_
+  // This assertion may or may not be the direct result of needs_report_timings_
   // being false. The count could be 0 simply because we just cleared
-  unreported
-  // timings by reporting them. Hence this can't replace the
-  // ASSERT_FALSE(GetNeedsReportTimings(shell.get())) check. We added this
-  // assertion for an additional confidence that we're not pushing back to
-  // unreported timings unnecessarily.
+  // unreported timings by reporting them. Hence this can't replace the
+  // ASSERT_FALSE(GetNeedsReportTimings(shell.get())) check. We added
+  // this assertion for an additional confidence that we're not pushing
+  // back to unreported timings unnecessarily.
   //
   // Conversely, do not assert UnreportedTimingsCount(shell.get()) to be
-  // positive in any tests. Otherwise those tests will be flaky as the
-  clearing
+  // positive in any tests. Otherwise those tests will be flaky as the clearing
   // of unreported timings is unpredictive.
   ASSERT_EQ(UnreportedTimingsCount(shell.get()), 0);
 }
@@ -419,8 +409,8 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   std::vector<FrameTiming> timings = {timing};
   CheckFrameTimings(timings, start, finish);
 
-  // Check that onBeginFrame has the same timestamp as FrameTiming's build
-  start int64_t build_start =
+  // Check that onBeginFrame has the same timestamp as FrameTiming's build start
+  int64_t build_start =
       timing.Get(FrameTiming::kBuildStart).ToEpochDelta().ToMicroseconds();
   ASSERT_EQ(build_start, begin_frame);
 }
@@ -433,8 +423,9 @@ TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
   int lastPhaseIndex = -1;
   FrameTiming timing;
   for (auto phase : FrameTiming::kPhases) {
-    ASSERT_TRUE(phase > lastPhaseIndex);  // Ensure that kPhases are in
-    order. lastPhaseIndex = phase; auto fake_time =
+    ASSERT_TRUE(phase > lastPhaseIndex);  // Ensure that kPhases are in ƒorder.
+    lastPhaseIndex = phase;
+    auto fake_time =
         fml::TimePoint::FromEpochDelta(fml::TimeDelta::FromMicroseconds(phase));
     timing.Set(phase, fake_time);
     ASSERT_TRUE(timing.Get(phase) == fake_time);
@@ -522,8 +513,7 @@ TEST_F(ShellTest, ReportTimingsIsCalledImmediatelyAfterTheFirstFrame) {
   reportLatch.Wait();
   shell.reset();
 
-  // Check for the immediate callback of the first frame that doesn't wait
-  for
+  // Check for the immediate callback of the first frame that doesn't wait for
   // the other 9 frames to be rasterized.
   ASSERT_EQ(timestamps.size(), FrameTiming::kCount);
 }

@@ -56,6 +56,9 @@ fml::WeakPtr<Rasterizer> Rasterizer::GetWeakPtr() const {
 
 void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
   surface_ = std::move(surface);
+  if (max_cache_bytes_.has_value()) {
+    SetResourceCacheMaxBytes(max_cache_bytes_.value(), false);
+  }
   compositor_context_->OnGrContextCreated();
 }
 
@@ -362,6 +365,11 @@ void Rasterizer::SetResourceCacheMaxBytes(size_t max_bytes, bool from_user) {
   if (!from_user && user_override_resource_cache_bytes_) {
     // We should not update the setting here if a user has explicitly set a
     // value for this over the flutter/skia channel.
+    return;
+  }
+
+  max_cache_bytes_ = max_bytes;
+  if (!surface_) {
     return;
   }
 

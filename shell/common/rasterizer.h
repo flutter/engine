@@ -405,6 +405,7 @@ class Rasterizer final {
   std::unique_ptr<flutter::LayerTree> last_layer_tree_;
   fml::closure next_frame_callback_;
   bool user_override_resource_cache_bytes_;
+  std::optional<size_t> max_cache_bytes_;
   fml::WeakPtrFactory<Rasterizer> weak_factory_;
 
   void DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree);
