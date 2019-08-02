@@ -949,11 +949,14 @@ void Shell::HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message) {
     return;
 
   task_runners_.GetGPUTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr(),
-       max_bytes = args->value.GetInt()] {
+      [rasterizer = rasterizer_->GetWeakPtr(), max_bytes = args->value.GetInt(),
+       response = std::move(message->response())] {
         if (rasterizer) {
           rasterizer->SetResourceCacheMaxBytes(static_cast<size_t>(max_bytes),
                                                true);
+        }
+        if (response) {
+          response->CompleteEmpty();
         }
       });
 }

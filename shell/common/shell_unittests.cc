@@ -681,5 +681,43 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
             static_cast<size_t>(3840000U));
 }
 
+TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
+  Settings settings = CreateSettingsForFixture();
+  auto task_runner = GetThreadTaskRunner();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
+        shell->GetPlatformView()->SetViewportMetrics(
+            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0});
+      });
+  PumpOneFrame(shell.get());
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testSkiaResourceCacheSendsResponse");
+
+  EXPECT_EQ(shell->GetRasterizer()->GetResourceCacheMaxBytes().value_or(0),
+            static_cast<size_t>(3840000U));
+
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&latch](auto args) {
+                      latch.Signal();
+                    }));
+
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+
+  latch.Wait();
+
+  EXPECT_EQ(shell->GetRasterizer()->GetResourceCacheMaxBytes().value_or(0),
+            static_cast<size_t>(10000U));
+}
+
 }  // namespace testing
 }  // namespace flutter
