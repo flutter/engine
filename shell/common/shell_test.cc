@@ -29,10 +29,9 @@ void ShellTest::SendEnginePlatformMessage(
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(),
       [shell, &latch, message = std::move(message)]() {
-        if (!shell->weak_engine_) {
-          return;
+        if (auto engine = shell->weak_engine_) {
+          engine->HandlePlatformMessage(std::move(message));
         }
-        shell->weak_engine_->HandlePlatformMessage(std::move(message));
         latch.Signal();
       });
   latch.Wait();
