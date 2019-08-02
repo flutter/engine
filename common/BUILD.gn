@@ -5,7 +5,21 @@
 import("config.gni")
 
 config("flutter_config") {
+  extra_warnings = []
+
+  if (is_clang) {
+    extra_warnings += [
+      "-Wshadow-all",
+      "-Wno-shadow-uncaptured-local",
+      "-Wno-shadow-field-in-constructor",
+    ]
+  }
+
   defines = feature_defines_list
+
+  cflags = extra_warnings
+  cflags_cc = extra_warnings
+  cflags_objc = extra_warnings
 }
 
 source_set("common") {

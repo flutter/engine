@@ -547,7 +547,6 @@ TEST(CmapCoverageTest, TableSelection_Priority) {
 }
 
 TEST(CmapCoverageTest, TableSelection_SkipBrokenFormat4Table) {
-  SparseBitSet coverage;
   bool has_cmap_format_14_subtable = false;
   std::vector<uint8_t> validTable =
       buildCmapFormat4Table(std::vector<uint16_t>({'a', 'a'}));
@@ -602,7 +601,6 @@ TEST(CmapCoverageTest, TableSelection_SkipBrokenFormat4Table) {
 }
 
 TEST(CmapCoverageTest, TableSelection_SkipBrokenFormat12Table) {
-  SparseBitSet coverage;
   bool has_cmap_format_14_subtable = false;
   std::vector<uint8_t> validTable =
       buildCmapFormat12Table(std::vector<uint32_t>({'a', 'a'}));

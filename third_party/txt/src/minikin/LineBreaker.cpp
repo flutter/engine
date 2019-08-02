@@ -437,8 +437,7 @@ void LineBreaker::computeBreaksOptimal(bool isRectangle) {
     size_t lineNumberLast = 0;
 
     if (!isRectangle) {
-      size_t lineNumberLast = mCandidates[active].lineNumber;
-      width = mLineWidths.getLineWidth(lineNumberLast);
+      width = mLineWidths.getLineWidth(mCandidates[active].lineNumber);
     }
     ParaWidth leftEdge = mCandidates[i].postBreak - width;
     float bestHope = 0;

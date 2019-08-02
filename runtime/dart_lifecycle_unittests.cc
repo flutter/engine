@@ -128,7 +128,7 @@ TEST_F(DartLifecycleTest, DISABLED_ShuttingDownTheVMShutsDownAllIsolates) {
     fml::CountDownLatch latch(isolate_count);
     auto vm_data = vm_ref.GetVMData();
     auto thread_task_runner = GetThreadTaskRunner();
-    for (size_t i = 0; i < isolate_count; ++i) {
+    for (size_t j = 0; j < isolate_count; ++j) {
       thread_task_runner->PostTask(
           [vm_data, &settings, &latch, thread_task_runner]() {
             ASSERT_TRUE(CreateAndRunRootIsolate(settings, *vm_data.get(),
