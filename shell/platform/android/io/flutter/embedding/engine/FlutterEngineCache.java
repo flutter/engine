@@ -2,6 +2,7 @@ package io.flutter.embedding.engine;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,8 +14,8 @@ import java.util.Map;
  * {@link io.flutter.embedding.android.FlutterActivity} and
  * {@link io.flutter.embedding.android.FlutterFragment} use the {@code FlutterEngineCache} singleton
  * internally when instructed to use a cached {@link FlutterEngine} based on a given ID. See
- * {@link io.flutter.embedding.android.FlutterActivity.IntentBuilder} and
- * {@link io.flutter.embedding.android.FlutterFragment.Builder} for related APIs.
+ * {@link io.flutter.embedding.android.FlutterActivity.CachedEngineIntentBuilder} and
+ * {@link io.flutter.embedding.android.FlutterFragment#withCachedEngine(String)} for related APIs.
  */
 public class FlutterEngineCache {
   private static FlutterEngineCache instance;
@@ -34,7 +35,8 @@ public class FlutterEngineCache {
 
   private final Map<String, FlutterEngine> cachedEngines = new HashMap<>();
 
-  private FlutterEngineCache() {}
+  @VisibleForTesting
+  /* package */ FlutterEngineCache() {}
 
   /**
    * Returns {@code true} if a {@link FlutterEngine} in this cache is associated with the
@@ -60,7 +62,19 @@ public class FlutterEngineCache {
    * If a {@link FlutterEngine} already exists in this cache for the given {@code engineId}, that
    * {@link FlutterEngine} is removed from this cache.
    */
-  public void put(@NonNull String engineId, @NonNull FlutterEngine engine) {
-    cachedEngines.put(engineId, engine);
+  public void put(@NonNull String engineId, @Nullable FlutterEngine engine) {
+    if (engine != null) {
+      cachedEngines.put(engineId, engine);
+    } else {
+      cachedEngines.remove(engineId);
+    }
+  }
+
+  /**
+   * Removes any {@link FlutterEngine} that is currently in the cache that is identified by
+   * the given {@code engineId}.
+   */
+  public void remove(@NonNull String engineId) {
+    put(engineId, null);
   }
 }

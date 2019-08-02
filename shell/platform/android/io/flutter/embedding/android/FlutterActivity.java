@@ -47,11 +47,11 @@ import io.flutter.view.FlutterMain;
  * route may be specified explicitly by passing the name of the route as a {@code String} in
  * {@link #EXTRA_INITIAL_ROUTE}, e.g., "my/deep/link".
  * <p>
- * The Dart entrypoint and initial route can each be controlled using a {@link IntentBuilder}
+ * The Dart entrypoint and initial route can each be controlled using a {@link NewEngineIntentBuilder}
  * via the following methods:
  * <ul>
- *   <li>{@link IntentBuilder#dartEntrypoint}</li>
- *   <li>{@link IntentBuilder#initialRoute}</li>
+ *   <li>{@link NewEngineIntentBuilder#dartEntrypoint}</li>
+ *   <li>{@link NewEngineIntentBuilder#initialRoute}</li>
  * </ul>
  * <p>
  * The app bundle path, Dart entrypoint, and initial route can also be controlled in a subclass of
@@ -61,6 +61,14 @@ import io.flutter.view.FlutterMain;
  *   <li>{@link #getDartEntrypointFunctionName()}</li>
  *   <li>{@link #getInitialRoute()}</li>
  * </ul>
+ * <p>
+ * {@code FlutterActivity} can be used with a cached {@link FlutterEngine} instead of creating a new
+ * one. Use {@link #withCachedEngine(String)} to build a {@code FlutterActivity} {@code Intent} that
+ * is configured to use an existing, cached {@link FlutterEngine}. {@link FlutterEngineCache} is the
+ * cache that is used to obtain a given cached {@link FlutterEngine}. An
+ * {@code IllegalStateException} will be thrown if a cached engine is requested but does not exist
+ * in the cache.
+ * <p>
  * If Flutter is needed in a location that cannot use an {@code Activity}, consider using
  * a {@link FlutterFragment}. Using a {@link FlutterFragment} requires forwarding some calls from
  * an {@code Activity} to the {@link FlutterFragment}.
@@ -167,38 +175,39 @@ public class FlutterActivity extends Activity
   }
 
   /**
-   * Creates an {@link IntentBuilder}, which can be used to configure an {@link Intent} to
-   * launch a {@code FlutterActivity}.
+   * Creates an {@link NewEngineIntentBuilder}, which can be used to configure an {@link Intent} to
+   * launch a {@code FlutterActivity} that internally creates a new {@link FlutterEngine} using
+   * the desired Dart entrypoint, initial route, etc.
    */
   @NonNull
-  public static IntentBuilder withNewEngine() {
-    return new IntentBuilder(FlutterActivity.class);
+  public static NewEngineIntentBuilder withNewEngine() {
+    return new NewEngineIntentBuilder(FlutterActivity.class);
   }
 
   /**
-   * Builder to create an {@code Intent} that launches a {@code FlutterActivity} with the
-   * desired configuration.
+   * Builder to create an {@code Intent} that launches a {@code FlutterActivity} with a new
+   * {@link FlutterEngine} and the desired configuration.
    */
-  public static class IntentBuilder {
+  public static class NewEngineIntentBuilder {
     private final Class<? extends FlutterActivity> activityClass;
     private String dartEntrypoint = DEFAULT_DART_ENTRYPOINT;
     private String initialRoute = DEFAULT_INITIAL_ROUTE;
     private String backgroundMode = DEFAULT_BACKGROUND_MODE;
 
     /**
-     * Constructor that allows this {@code IntentBuilder} to be used by subclasses of
+     * Constructor that allows this {@code NewEngineIntentBuilder} to be used by subclasses of
      * {@code FlutterActivity}.
      * <p>
      * Subclasses of {@code FlutterActivity} should provide their own static version of
-     * {@link #withNewEngine()}, which returns an instance of {@code IntentBuilder}
+     * {@link #withNewEngine()}, which returns an instance of {@code NewEngineIntentBuilder}
      * constructed with a {@code Class} reference to the {@code FlutterActivity} subclass,
      * e.g.:
      * <p>
      * {@code
-     * return new IntentBuilder(MyFlutterActivity.class);
+     * return new NewEngineIntentBuilder(MyFlutterActivity.class);
      * }
      */
-    protected IntentBuilder(@NonNull Class<? extends FlutterActivity> activityClass) {
+    protected NewEngineIntentBuilder(@NonNull Class<? extends FlutterActivity> activityClass) {
       this.activityClass = activityClass;
     }
 
@@ -206,7 +215,7 @@ public class FlutterActivity extends Activity
      * The name of the initial Dart method to invoke, defaults to "main".
      */
     @NonNull
-    public IntentBuilder dartEntrypoint(@NonNull String dartEntrypoint) {
+    public NewEngineIntentBuilder dartEntrypoint(@NonNull String dartEntrypoint) {
       this.dartEntrypoint = dartEntrypoint;
       return this;
     }
@@ -216,7 +225,7 @@ public class FlutterActivity extends Activity
      * defaults to "/".
      */
     @NonNull
-    public IntentBuilder initialRoute(@NonNull String initialRoute) {
+    public NewEngineIntentBuilder initialRoute(@NonNull String initialRoute) {
       this.initialRoute = initialRoute;
       return this;
     }
@@ -238,7 +247,7 @@ public class FlutterActivity extends Activity
      * following property: {@code <item name="android:windowIsTranslucent">true</item>}.
      */
     @NonNull
-    public IntentBuilder backgroundMode(@NonNull BackgroundMode backgroundMode) {
+    public NewEngineIntentBuilder backgroundMode(@NonNull BackgroundMode backgroundMode) {
       this.backgroundMode = backgroundMode.name();
       return this;
     }
@@ -256,10 +265,19 @@ public class FlutterActivity extends Activity
     }
   }
 
+  /**
+   * Creates a {@link CachedEngineIntentBuilder}, which can be used to configure an {@link Intent}
+   * to launch a {@code FlutterActivity} that internally uses an existing {@link FlutterEngine} that
+   * is cached in {@link FlutterEngineCache}.
+   */
   public static CachedEngineIntentBuilder withCachedEngine(@NonNull String cachedEngineId) {
     return new CachedEngineIntentBuilder(FlutterActivity.class, cachedEngineId);
   }
 
+  /**
+   * Builder to create an {@code Intent} that launches a {@code FlutterActivity} with an existing
+   * {@link FlutterEngine} that is cached in {@link FlutterEngineCache}.
+   */
   public static class CachedEngineIntentBuilder {
     private final Class<? extends FlutterActivity> activityClass;
     private final String cachedEngineId;
@@ -287,8 +305,15 @@ public class FlutterActivity extends Activity
       this.cachedEngineId = engineId;
     }
 
-    public void destroyEngineWithActivity(boolean destroyEngineWithActivity) {
+    /**
+     * Returns true if the cached {@link FlutterEngine} should be destroyed and remoed from the
+     * cache when this {@code FlutterActivity} is destroyed.
+     * <p>
+     * The default value is {@code false}.
+     */
+    public CachedEngineIntentBuilder destroyEngineWithActivity(boolean destroyEngineWithActivity) {
       this.destroyEngineWithActivity = destroyEngineWithActivity;
+      return this;
     }
 
     /**
@@ -593,14 +618,24 @@ public class FlutterActivity extends Activity
     return FlutterShellArgs.fromIntent(getIntent());
   }
 
+  /**
+   * Returns the ID of a statically cached {@link FlutterEngine} to use within this
+   * {@code FlutterActivity}, or {@code null} if this {@code FlutterActivity} does not want to
+   * use a cached {@link FlutterEngine}.
+   */
   @Override
   @Nullable
   public String getCachedEngineId() {
     return getIntent().getStringExtra(EXTRA_CACHED_ENGINE_ID);
   }
 
+  /**
+   * Returns false if the {@link FlutterEngine} backing this {@code FlutterActivity} should
+   * outlive this {@code FlutterActivity}, or true to be destroyed when the {@code FlutterActivity}
+   * is destroyed.
+   */
   @Override
-  public boolean shouldDestroyCachedEngineWithActivity() {
+  public boolean shouldDestroyEngineWithHost() {
     return getIntent().getBooleanExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, false);
   }
 
@@ -833,16 +868,6 @@ public class FlutterActivity extends Activity
   @Override
   public boolean shouldAttachEngineToActivity() {
     return true;
-  }
-
-  /**
-   * Returns true if the {@link FlutterEngine} backing this {@code FlutterActivity} should
-   * outlive this {@code FlutterActivity}, or be destroyed when the {@code FlutterActivity}
-   * is destroyed.
-   */
-  @Override
-  public boolean retainFlutterEngineAfterHostDestruction() {
-    return false;
   }
 
   @Override

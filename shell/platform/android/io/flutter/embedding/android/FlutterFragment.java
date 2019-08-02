@@ -47,6 +47,11 @@ import io.flutter.view.FlutterMain;
  * If convenient, consider using a {@link FlutterActivity} instead of a {@code FlutterFragment} to
  * avoid the work of forwarding calls.
  * <p>
+ * {@code FlutterFragment} supports the use of an existing, cached {@link FlutterEngine}. To use a
+ * cached {@link FlutterEngine}, ensure that the {@link FlutterEngine} is stored in
+ * {@link FlutterEngineCache} and then use {@link #withCachedEngine(String)} to build a
+ * {@code FlutterFragment} with the cached {@link FlutterEngine}'s ID.
+ * <p>
  * If Flutter is needed in a location that can only use a {@code View}, consider using a
  * {@link FlutterView}. Using a {@link FlutterView} requires forwarding some calls from an
  * {@code Activity}, as well as forwarding lifecycle calls from an {@code Activity} or a
@@ -86,16 +91,33 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   protected static final String ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY = "should_attach_engine_to_activity";
   /**
-   * TODO(mattcarroll)
+   * The ID of a {@link FlutterEngine} cached in {@link FlutterEngineCache} that will be used within
+   * the created {@code FlutterFragment}.
    */
   protected static final String ARG_CACHED_ENGINE_ID = "cached_engine_id";
   /**
-   * TODO(mattcarroll)
+   * True if the {@link FlutterEngine} in the created {@code FlutterFragment} should be destroyed
+   * when the {@code FlutterFragment} is destroyed, false if the {@link FlutterEngine} should
+   * outlive the {@code FlutterFragment}.
    */
   protected static final String ARG_DESTROY_ENGINE_WITH_FRAGMENT = "destroy_engine_with_fragment";
 
   /**
-   * TODO(mattcarroll)
+   * Creates a {@code FlutterFragment} with a default configuration.
+   * <p>
+   * {@code FlutterFragment}'s default configuration creates a new {@link FlutterEngine} within
+   * the {@code FlutterFragment} and uses the following settings:
+   * <ul>
+   *   <li>Dart entrypoint: "main"</li>
+   *   <li>Initial route: "/"</li>
+   *   <li>Render mode: surface</li>
+   *   <li>Transparency mode: transparent</li>
+   * </ul>
+   * <p>
+   * To use a new {@link FlutterEngine} with different settings, use {@link #withNewEngine()}.
+   * <p>
+   * To use a cached {@link FlutterEngine} instead of creating a new one, use
+   * {@link #withCachedEngine(String)}.
    */
   @NonNull
   public static FlutterFragment createDefault() {
@@ -103,7 +125,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
-   * TODO(mattcarroll)
+   * Returns a {@link NewEngineFragmentBuilder} to create a {@code FlutterFragment} with a new
+   * {@link FlutterEngine} and a desired engine configuration.
    */
   @NonNull
   public static NewEngineFragmentBuilder withNewEngine() {
@@ -112,37 +135,38 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
 
   /**
    * Builder that creates a new {@code FlutterFragment} with {@code arguments} that correspond
-   * to the values set on this {@code Builder}.
+   * to the values set on this {@code NewEngineFragmentBuilder}.
    * <p>
    * To create a {@code FlutterFragment} with default {@code arguments}, invoke
-   * {@link #createDefaultFlutterFragment()}.
+   * {@link #createDefault()}.
    * <p>
    * Subclasses of {@code FlutterFragment} that do not introduce any new arguments can use this
-   * {@code Builder} to construct instances of the subclass without subclassing this {@code Builder}.
+   * {@code NewEngineFragmentBuilder} to construct instances of the subclass without subclassing
+   * this {@code NewEngineFragmentBuilder}.
    * {@code
-   *   MyFlutterFragment f = new FlutterFragment.Builder(MyFlutterFragment.class)
+   *   MyFlutterFragment f = new FlutterFragment.NewEngineFragmentBuilder(MyFlutterFragment.class)
    *     .someProperty(...)
    *     .someOtherProperty(...)
    *     .build<MyFlutterFragment>();
    * }
    * <p>
    * Subclasses of {@code FlutterFragment} that introduce new arguments should subclass this
-   * {@code Builder} to add the new properties:
+   * {@code NewEngineFragmentBuilder} to add the new properties:
    * <ol>
    *   <li>Ensure the {@code FlutterFragment} subclass has a no-arg constructor.</li>
-   *   <li>Subclass this {@code Builder}.</li>
-   *   <li>Override the new {@code Builder}'s no-arg constructor and invoke the super constructor
-   *   to set the {@code FlutterFragment} subclass: {@code
+   *   <li>Subclass this {@code NewEngineFragmentBuilder}.</li>
+   *   <li>Override the new {@code NewEngineFragmentBuilder}'s no-arg constructor and invoke the
+   *   super constructor to set the {@code FlutterFragment} subclass: {@code
    *     public MyBuilder() {
    *       super(MyFlutterFragment.class);
    *     }
    *   }</li>
    *   <li>Add appropriate property methods for the new properties.</li>
-   *   <li>Override {@link Builder#createArgs()}, call through to the super method, then add
-   *   the new properties as arguments in the {@link Bundle}.</li>
+   *   <li>Override {@link NewEngineFragmentBuilder#createArgs()}, call through to the super method,
+   *   then add the new properties as arguments in the {@link Bundle}.</li>
    * </ol>
-   * Once a {@code Builder} subclass is defined, the {@code FlutterFragment} subclass can be
-   * instantiated as follows.
+   * Once a {@code NewEngineFragmentBuilder} subclass is defined, the {@code FlutterFragment}
+   * subclass can be instantiated as follows.
    * {@code
    *   MyFlutterFragment f = new MyBuilder()
    *     .someExistingProperty(...)
@@ -161,7 +185,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     private boolean shouldAttachEngineToActivity = true;
 
     /**
-     * Constructs a {@code Builder} that is configured to construct an instance of
+     * Constructs a {@code NewEngineFragmentBuilder} that is configured to construct an instance of
      * {@code FlutterFragment}.
      */
     public NewEngineFragmentBuilder() {
@@ -169,7 +193,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     }
 
     /**
-     * Constructs a {@code Builder} that is configured to construct an instance of
+     * Constructs a {@code NewEngineFragmentBuilder} that is configured to construct an instance of
      * {@code subclass}, which extends {@code FlutterFragment}.
      */
     public NewEngineFragmentBuilder(@NonNull Class<? extends FlutterFragment> subclass) {
@@ -327,7 +351,15 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
-   * TODO(mattcarroll)
+   * Returns a {@link CachedEngineFragmentBuilder} to create a {@code FlutterFragment} with a cached
+   * {@link FlutterEngine} in {@link FlutterEngineCache}.
+   * <p>
+   * An {@code IllegalStateException} will be thrown during the lifecycle of the
+   * {@code FlutterFragment} if a cached {@link FlutterEngine} is requested but does not exist in
+   * the cache.
+   * <p>
+   * To create a {@code FlutterFragment} that uses a new {@link FlutterEngine}, use
+   * {@link #createDefault()} or {@link #withNewEngine()}.
    */
   @NonNull
   public static CachedEngineFragmentBuilder withCachedEngine(@NonNull String engineId) {
@@ -335,7 +367,41 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
-   * TODO(mattcarroll)
+   * Builder that creates a new {@code FlutterFragment} that uses a cached {@link FlutterEngine}
+   * with {@code arguments} that correspond to the values set on this {@code Builder}.
+   * <p>
+   * Subclasses of {@code FlutterFragment} that do not introduce any new arguments can use this
+   * {@code Builder} to construct instances of the subclass without subclassing this {@code Builder}.
+   * {@code
+   *   MyFlutterFragment f = new FlutterFragment.CachedEngineFragmentBuilder(MyFlutterFragment.class)
+   *     .someProperty(...)
+   *     .someOtherProperty(...)
+   *     .build<MyFlutterFragment>();
+   * }
+   * <p>
+   * Subclasses of {@code FlutterFragment} that introduce new arguments should subclass this
+   * {@code CachedEngineFragmentBuilder} to add the new properties:
+   * <ol>
+   *   <li>Ensure the {@code FlutterFragment} subclass has a no-arg constructor.</li>
+   *   <li>Subclass this {@code CachedEngineFragmentBuilder}.</li>
+   *   <li>Override the new {@code CachedEngineFragmentBuilder}'s no-arg constructor and invoke the
+   *   super constructor to set the {@code FlutterFragment} subclass: {@code
+   *     public MyBuilder() {
+   *       super(MyFlutterFragment.class);
+   *     }
+   *   }</li>
+   *   <li>Add appropriate property methods for the new properties.</li>
+   *   <li>Override {@link CachedEngineFragmentBuilder#createArgs()}, call through to the super
+   *   method, then add the new properties as arguments in the {@link Bundle}.</li>
+   * </ol>
+   * Once a {@code CachedEngineFragmentBuilder} subclass is defined, the {@code FlutterFragment}
+   * subclass can be instantiated as follows.
+   * {@code
+   *   MyFlutterFragment f = new MyBuilder()
+   *     .someExistingProperty(...)
+   *     .someNewProperty(...)
+   *     .build<MyFlutterFragment>();
+   * }
    */
   public static class CachedEngineFragmentBuilder {
     private final Class<? extends FlutterFragment> fragmentClass;
@@ -354,6 +420,11 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
       this.engineId = engineId;
     }
 
+    /**
+     * Pass {@code true} to destroy the cached {@link FlutterEngine} when this
+     * {@code FlutterFragment} is destroyed, or {@code false} for the cached {@link FlutterEngine}
+     * to outlive this {@code FlutterFragment}.
+     */
     @NonNull
     public CachedEngineFragmentBuilder destroyEngineWithFragment(boolean destroyEngineWithFragment) {
       this.destroyEngineWithFragment = destroyEngineWithFragment;
@@ -661,15 +732,27 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     );
   }
 
+  /**
+   * Returns the ID of a statically cached {@link FlutterEngine} to use within this
+   * {@code FlutterFragment}, or {@code null} if this {@code FlutterFragment} does not want to
+   * use a cached {@link FlutterEngine}.
+   */
   @Nullable
   @Override
   public String getCachedEngineId() {
     return getArguments().getString(ARG_CACHED_ENGINE_ID, null);
   }
 
+  /**
+   * Returns false if the {@link FlutterEngine} within this {@code FlutterFragment} should outlive
+   * the {@code FlutterFragment}, itself.
+   * <p>
+   * Defaults to true if no custom {@link FlutterEngine is provided}, false if a custom
+   * {@link FlutterEngine} is provided.
+   */
   @Override
-  public boolean shouldDestroyCachedEngineWithActivity() {
-    return getArguments().getBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY, false);
+  public boolean shouldDestroyEngineWithHost() {
+    return getArguments().getBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, false);
   }
 
   /**
@@ -840,30 +923,14 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
-   * See {@link Builder#shouldAttachEngineToActivity()}.
+   * See {@link NewEngineFragmentBuilder#shouldAttachEngineToActivity()} and
+   * {@link CachedEngineFragmentBuilder#shouldAttachEngineToActivity()}.
    * <p>
-   * Used by this {@code FlutterFragment}'s {@link FlutterActivityAndFragmentDelegate.Host}
+   * Used by this {@code FlutterFragment}'s {@link FlutterActivityAndFragmentDelegate}
    */
   @Override
   public boolean shouldAttachEngineToActivity() {
     return getArguments().getBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY);
-  }
-
-  /**
-   * Returns true if the {@link FlutterEngine} within this {@code FlutterFragment} should outlive
-   * the {@code FlutterFragment}, itself.
-   * <p>
-   * Defaults to false. This method can be overridden in subclasses to retain the
-   * {@link FlutterEngine}.
-   * <p>
-   * Used by this {@code FlutterFragment}'s {@link FlutterActivityAndFragmentDelegate.Host}
-   */
-  // TODO(mattcarroll): consider a dynamic determination of this preference based on whether the
-  //                    engine was created automatically, or if the engine was provided manually.
-  //                    Manually provided engines should probably not be destroyed.
-  @Override
-  public boolean retainFlutterEngineAfterHostDestruction() {
-    return false;
   }
 
   /**
