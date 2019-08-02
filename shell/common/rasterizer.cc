@@ -57,7 +57,8 @@ fml::WeakPtr<Rasterizer> Rasterizer::GetWeakPtr() const {
 void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
   surface_ = std::move(surface);
   if (max_cache_bytes_.has_value()) {
-    SetResourceCacheMaxBytes(max_cache_bytes_.value(), false);
+    SetResourceCacheMaxBytes(max_cache_bytes_.value(),
+                             user_override_resource_cache_bytes_);
   }
   compositor_context_->OnGrContextCreated();
 }
