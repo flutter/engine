@@ -107,7 +107,6 @@ task:
       compile_host_script: |
         cd %ENGINE_PATH%/src
         python flutter/tools/gn --runtime-mode debug --unoptimized
-        rm -rf out
         ninja -C out/host_debug_unopt
     - name: build_windows_opt_debug
       compile_host_script: |
