@@ -52,7 +52,6 @@ task:
       test_host_script: |
         cd $ENGINE_PATH/src
         ./flutter/testing/run_tests.sh host_profile
-      make_javadoc: |
         mkdir javadoc_tmp
         ./flutter/tools/gen_javadoc.py --out-dir javadoc_tmp
       compile_android_script: |
