@@ -22,7 +22,7 @@ class Win32Window {
   Win32Window();
   ~Win32Window();
 
-  // Initialize and show window with |title| and position and size using |x|,
+  // Initializes and shows window with |title| and position and size using |x|,
   // |y|, |width| and |height|
   void Initialize(const char* title,
                   const unsigned int x,
@@ -34,10 +34,10 @@ class Win32Window {
   virtual void Destroy();
 
  protected:
-  // Helper function to convert a c string to a wide unicode string.
+  // Converts a c string to a wide unicode string.
   std::wstring NarrowToWide(const char* source);
 
-  // Helper to register a window class with default style attributes, cursor and
+  // Registers a window class with default style attributes, cursor and
   // icon.
   WNDCLASS ResgisterWindowClass(std::wstring& title);
 
@@ -51,7 +51,7 @@ class Win32Window {
                                   WPARAM const wparam,
                                   LPARAM const lparam) noexcept;
 
-  // Function to process and route salient window messages for mouse handling,
+  // Processes and route salient window messages for mouse handling,
   // size change and DPI.  Delegates handling of these to member overloads that
   // inheriting classes can handle.
   LRESULT
@@ -60,24 +60,43 @@ class Win32Window {
                  WPARAM const wparam,
                  LPARAM const lparam) noexcept;
 
-  // DPI Change handler. on WM_DPICHANGE resize the window to the new suggested
-  // size and notify inheriting class.
+  // When WM_DPICHANGE resizes the window to the new suggested
+  // size and notifies inheriting class.
   LRESULT
   HandleDpiChange(HWND hWnd, WPARAM wParam, LPARAM lParam);
 
-  // Virtual overloads that inheriting classes and override to be notified of
-  // windowing and input events they care about.
+  // Called when the DPI changes either when a
+  // user drags the window between monitors of differing DPI or when the user
+  // manually changes the scale factor.
   virtual void OnDpiScale(UINT dpi) = 0;
+
+  // Called when a resize occurs.
   virtual void OnResize(UINT width, UINT height) = 0;
+
+  // Called when the pointer moves within the
+  // window bounds.
   virtual void OnPointerMove(double x, double y) = 0;
+
+  // Called when the left mouse button goes down
   virtual void OnPointerDown(double x, double y) = 0;
+
+  // Called when the left mouse button goes from
+  // down to up
   virtual void OnPointerUp(double x, double y) = 0;
+
+  // Called when character input occurs.
   virtual void OnChar(unsigned int code_point) = 0;
+
+  // Called when raw keyboard input occurs.
   virtual void OnKey(int key, int scancode, int action, int mods) = 0;
+
+  // Called when mouse scrollwheel input occurs.
   virtual void OnScroll(double delta_x, double delta_y) = 0;
+
+  // Called when the user closes the Windows
   virtual void OnClose() = 0;
 
-  // Static helper to retrieve a class instance pointer for |window|
+  // Retrieves a class instance pointer for |window|
   static Win32Window* GetThisFromHandle(HWND const window) noexcept;
   int current_dpi_ = 0;
   int current_width_ = 0;
@@ -91,7 +110,8 @@ class Win32Window {
 
   // Member variable referencing an instance of dpi_helper used to abstract some
   // aspects of win32 High DPI handling across different OS versions.
-  std::unique_ptr<Win32DpiHelper> dpi_helper_;
+  std::unique_ptr<Win32DpiHelper> dpi_helper_ =
+      std::make_unique<Win32DpiHelper>();
 };
 
 }  // namespace flutter

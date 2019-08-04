@@ -7,8 +7,6 @@
 namespace flutter {
 
 Win32Window::Win32Window() {
-  dpi_helper_ = std::make_unique<Win32DpiHelper>();
-
   // Assume Windows 10 1703 or greater for DPI handling.  When running on a
   // older release of Windows where this context doesn't exist, DPI calls will
   // fail and Flutter rendering will be impacted until this is fixed.

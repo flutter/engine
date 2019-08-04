@@ -21,7 +21,7 @@ namespace flutter {
 // If you use this class, you should not call any of the setup or teardown
 // methods in the C API directly, as this class will do that internally.
 //
-// Note: This is an early implementation (using GLFW internally) which
+// Note: This is an early implementation which
 // requires control of the application's event loop, and is thus useful
 // primarily for building a simple one-window shell hosting a Flutter
 // application. The final implementation and API will be very different.
@@ -86,4 +86,4 @@ class FlutterWindowController {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_GLFW_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_WINDOW_CONTROLLER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_WINDOW_CONTROLLER_H_

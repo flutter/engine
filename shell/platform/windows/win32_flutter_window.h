@@ -40,35 +40,31 @@ class Win32FlutterWindow : public Win32Window {
   // Run a Windows message pump that also pumps plugin messages.
   void FlutterMessageLoop();
 
-  // Virtual method called by base Window when a resize occurs
+  // |Win32Window|
   void OnResize(unsigned int width, unsigned int height) override;
 
-  // Virtual method called by base Window when the DPI changes either when a
-  // user drags the window between monitors of differing DPI or when the user
-  // manually changes the scale factor.
+  // |Win32Window|
   void OnDpiScale(unsigned int dpi) override;
 
-  // Virtual method called by base window when the pointer moves within the
-  // window bounds.
+  // |Win32Window|
   void OnPointerMove(double x, double y) override;
 
-  // Virtual method called by base window when the left mouse button goes down
+  // |Win32Window|
   void OnPointerDown(double x, double y) override;
 
-  // Virtual method called by base window when the left mouse button goes from
-  // down to up
+  // |Win32Window|
   void OnPointerUp(double x, double y) override;
 
-  // Virtual method called by base window when character input occurs.
+  // |Win32Window|
   void OnChar(unsigned int code_point) override;
 
-  // Virtual method called by base window when raw keyboard input occurs.
+  // |Win32Window|
   void OnKey(int key, int scancode, int action, int mods) override;
 
-  // Virtual method called by base window when mouse scrollwheel input occurs.
+  // |Win32Window|
   void OnScroll(double delta_x, double delta_y) override;
 
-  // Virtual methed called by the base window when the user closes the Windows
+  // |Win32Window|
   void OnClose();
 
   // Configures the window instance with an instance of a running Flutter engine
@@ -130,14 +126,14 @@ class Win32FlutterWindow : public Win32Window {
   // needed before passing on to engine.
   void SendPointerEventWithData(const FlutterPointerEvent& event_data);
 
-  std::unique_ptr<AngleSurfaceManager> surface_manager{nullptr};
-  EGLSurface render_surface{EGL_NO_SURFACE};
+  std::unique_ptr<AngleSurfaceManager> surface_manager = nullptr;
+  EGLSurface render_surface = EGL_NO_SURFACE;
 
   // state of the mouse button
   bool pointer_is_down_ = false;
 
   // The handle to the Flutter engine instance.
-  FLUTTER_API_SYMBOL(FlutterEngine) engine_{nullptr};
+  FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
 
   // Whether or not to track mouse movements to send kHover events.
   bool hover_tracking_is_enabled_ = false;

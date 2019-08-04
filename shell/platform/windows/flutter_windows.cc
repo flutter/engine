@@ -122,7 +122,7 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
     return nullptr;
   }
 
-  auto state = window->SetState(engine);
+  FlutterDesktopWindowControllerRef state = window->SetState(engine);
   state->window = std::move(win);
 
   // Trigger an initial size callback to send size information to Flutter.
@@ -156,8 +156,7 @@ void FlutterDesktopWindowSetIcon(FlutterDesktopWindowRef flutter_window,
 void FlutterDesktopRunWindowLoop(FlutterDesktopWindowControllerRef controller) {
   controller->window->FlutterMessageLoop();
 
-  FlutterEngineShutdown(controller->engine);
-  delete controller;
+  FlutterDesktopDestroyWindow(controller);
 }
 
 FlutterDesktopWindowRef FlutterDesktopGetWindow(

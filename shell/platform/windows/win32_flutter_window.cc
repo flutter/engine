@@ -56,12 +56,12 @@ FlutterDesktopWindowControllerRef Win32FlutterWindow::SetState(
   auto state = std::make_unique<FlutterDesktopWindowControllerState>();
   state->engine = engine_;
 
-  // null here as the caller (FlutterDesktopCreateWindow) will fill in that
-  // member before returning to the host application
+  // null here as the caller |FlutterDesktopCreateWindow| will fill in that
+  // member before returning to the host application.
   state->window = nullptr;
 
   // a window wrapper for the state block, distinct from the
-  // window_wrapper handed to plugin_registrar
+  // window_wrapper handed to plugin_registrar.
   state->window_wrapper = std::make_unique<FlutterDesktopWindow>();
   state->window_wrapper->window = this;
 
@@ -87,7 +87,7 @@ static FlutterDesktopMessage ConvertToDesktopMessage(
 }
 
 // The Flutter Engine calls out to this function when new platform messages
-// are / available
+// are available.
 void Win32FlutterWindow::HandlePlatformMessage(
     const FlutterPlatformMessage* engine_message) {
   if (engine_message->struct_size != sizeof(FlutterPlatformMessage)) {
@@ -105,7 +105,7 @@ void Win32FlutterWindow::HandlePlatformMessage(
 }
 
 // When DesktopWindow notifies that a WM_Size message has come in
-// let FlutterEngine know about the new size.
+// lets FlutterEngine know about the new size.
 void Win32FlutterWindow::OnResize(unsigned int width, unsigned int height) {
   current_width_ = width;
   current_height_ = height;
@@ -113,12 +113,12 @@ void Win32FlutterWindow::OnResize(unsigned int width, unsigned int height) {
 }
 
 // When DesktopWindow notifies that the DPI has changed
-// handle the change.
+// handles the change.
 void Win32FlutterWindow::OnDpiScale(unsigned int dpi) {
   current_dpi_ = dpi;
 
   // No need to SendWindowMetrics here as OnResize will be called right after
-  // DPI change
+  // DPI change.
 }
 
 void Win32FlutterWindow::OnPointerMove(double x, double y) {
@@ -175,7 +175,7 @@ void Win32FlutterWindow::FlutterMessageLoop() {
   }
 }
 
-// Send new size information to FlutterEngine.
+// Sends new size information to FlutterEngine.
 void Win32FlutterWindow::SendWindowMetrics() {
   if (engine_ == nullptr) {
     return;

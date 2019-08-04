@@ -22,20 +22,21 @@ namespace flutter {
 class AngleSurfaceManager {
  public:
   AngleSurfaceManager();
+  AngleSurfaceManager(const AngleSurfaceManager&) = delete;
   ~AngleSurfaceManager();
 
-  // Create and return an EGLSurface wrapper and backing DirectX 11 SwapChain
+  // Creates and returns an EGLSurface wrapper and backing DirectX 11 SwapChain
   // asociated with window, in the appropriate format for display in a
   // HWND-backed window.
   EGLSurface CreateSurface(HWND window);
 
-  // query EGL for the dimensions of surface in physical
+  // queries EGL for the dimensions of surface in physical
   // pixels returning width and height as out params.
   void GetSurfaceDimensions(const EGLSurface surface,
                             EGLint* width,
                             EGLint* height);
 
-  // Release the pass-in EGLSurface wrapping and backing resources if not null.
+  // Releases the pass-in EGLSurface wrapping and backing resources if not null.
   void DestroySurface(const EGLSurface surface);
 
   // Binds egl_context_ to the current rendering thread and to the draw and read
