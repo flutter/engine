@@ -24,8 +24,24 @@ Win32FlutterWindow::~Win32FlutterWindow() {
   DestroyRenderSurface();
 }
 
-FlutterDesktopWindowControllerRef Win32FlutterWindow::SetState(
-    FLUTTER_API_SYMBOL(FlutterEngine) eng) {
+FlutterDesktopWindowControllerRef Win32FlutterWindow::CreateWin32FlutterWindow(
+    const char* title,
+    const int x,
+    const int y,
+    const int width,
+    const int height) {
+  auto state = std::make_unique<FlutterDesktopWindowControllerState>();
+  state->window = std::make_unique<flutter::Win32FlutterWindow>(title, 10, 10,
+                                                                width, height);
+
+  // a window wrapper for the state block, distinct from the
+  // window_wrapper handed to plugin_registrar.
+  state->window_wrapper = std::make_unique<FlutterDesktopWindow>();
+  state->window_wrapper->window = state->window.get();
+  return state.release();
+}
+
+void Win32FlutterWindow::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng) {
   engine_ = eng;
 
   auto messenger = std::make_unique<FlutterDesktopMessenger>();
@@ -56,18 +72,7 @@ FlutterDesktopWindowControllerRef Win32FlutterWindow::SetState(
   auto state = std::make_unique<FlutterDesktopWindowControllerState>();
   state->engine = engine_;
 
-  // null here as the caller |FlutterDesktopCreateWindow| will fill in that
-  // member before returning to the host application.
-  state->window = nullptr;
-
-  // a window wrapper for the state block, distinct from the
-  // window_wrapper handed to plugin_registrar.
-  state->window_wrapper = std::make_unique<FlutterDesktopWindow>();
-  state->window_wrapper->window = this;
-
   process_events_ = true;
-
-  return state.release();
 }
 
 FlutterDesktopPluginRegistrarRef Win32FlutterWindow::GetRegistrar() {
@@ -99,26 +104,17 @@ void Win32FlutterWindow::HandlePlatformMessage(
 
   auto message = ConvertToDesktopMessage(*engine_message);
 
-  message_dispatcher_->HandleMessage(
-      message, [this] { this->process_events_ = false; },
-      [this] { this->process_events_ = true; });
+  message_dispatcher_->HandleMessage(message,
+                                     [this] { this->process_events_ = false; },
+                                     [this] { this->process_events_ = true; });
 }
+
+void Win32FlutterWindow::OnDpiScale(unsigned int dpi){};
 
 // When DesktopWindow notifies that a WM_Size message has come in
 // lets FlutterEngine know about the new size.
 void Win32FlutterWindow::OnResize(unsigned int width, unsigned int height) {
-  current_width_ = width;
-  current_height_ = height;
   SendWindowMetrics();
-}
-
-// When DesktopWindow notifies that the DPI has changed
-// handles the change.
-void Win32FlutterWindow::OnDpiScale(unsigned int dpi) {
-  current_dpi_ = dpi;
-
-  // No need to SendWindowMetrics here as OnResize will be called right after
-  // DPI change.
 }
 
 void Win32FlutterWindow::OnPointerMove(double x, double y) {
@@ -183,9 +179,9 @@ void Win32FlutterWindow::SendWindowMetrics() {
 
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
-  event.width = current_width_;
-  event.height = current_height_;
-  event.pixel_ratio = static_cast<double>(current_dpi_) / base_dpi;
+  event.width = GetCurrentWidth();
+  event.height = GetCurrentHeight();
+  event.pixel_ratio = static_cast<double>(GetCurrentDPI()) / base_dpi;
   auto result = FlutterEngineSendWindowMetricsEvent(engine_, &event);
 }
 
@@ -195,7 +191,7 @@ void Win32FlutterWindow::SetEventLocationFromCursorPosition(
   POINT point;
   GetCursorPos(&point);
 
-  ScreenToClient(window_handle_, &point);
+  ScreenToClient(GetWindowHandle(), &point);
 
   event_data->x = point.x;
   event_data->y = point.y;
@@ -317,7 +313,7 @@ bool Win32FlutterWindow::SwapBuffers() {
 
 void Win32FlutterWindow::CreateRenderSurface() {
   if (surface_manager && render_surface == EGL_NO_SURFACE) {
-    render_surface = surface_manager->CreateSurface(window_handle_);
+    render_surface = surface_manager->CreateSurface(GetWindowHandle());
   }
 }
 

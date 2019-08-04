@@ -4,30 +4,30 @@
 
 #include "flutter/shell/platform/windows/client_wrapper/testing/stub_flutter_windows_api.h"
 
-static flutter::testing::StubFlutterGlfwApi* s_stub_implementation;
+static flutter::testing::StubFlutterWindowsApi* s_stub_implementation;
 
 namespace flutter {
 namespace testing {
 
 // static
-void StubFlutterGlfwApi::SetTestStub(StubFlutterGlfwApi* stub) {
+void StubFlutterWindowsApi::SetTestStub(StubFlutterWindowsApi* stub) {
   s_stub_implementation = stub;
 }
 
 // static
-StubFlutterGlfwApi* StubFlutterGlfwApi::GetTestStub() {
+StubFlutterWindowsApi* StubFlutterWindowsApi::GetTestStub() {
   return s_stub_implementation;
 }
 
-ScopedStubFlutterGlfwApi::ScopedStubFlutterGlfwApi(
-    std::unique_ptr<StubFlutterGlfwApi> stub)
+ScopedStubFlutterWindowsApi::ScopedStubFlutterWindowsApi(
+    std::unique_ptr<StubFlutterWindowsApi> stub)
     : stub_(std::move(stub)) {
-  previous_stub_ = StubFlutterGlfwApi::GetTestStub();
-  StubFlutterGlfwApi::SetTestStub(stub_.get());
+  previous_stub_ = StubFlutterWindowsApi::GetTestStub();
+  StubFlutterWindowsApi::SetTestStub(stub_.get());
 }
 
-ScopedStubFlutterGlfwApi::~ScopedStubFlutterGlfwApi() {
-  StubFlutterGlfwApi::SetTestStub(previous_stub_);
+ScopedStubFlutterWindowsApi::~ScopedStubFlutterWindowsApi() {
+  StubFlutterWindowsApi::SetTestStub(previous_stub_);
 }
 
 }  // namespace testing
@@ -48,13 +48,14 @@ void FlutterDesktopTerminate() {
   }
 }
 
-FlutterDesktopWindowRef FlutterDesktopCreateWindow(int initial_width,
-                                                   int initial_height,
-                                                   const char* title,
-                                                   const char* assets_path,
-                                                   const char* icu_data_path,
-                                                   const char** arguments,
-                                                   size_t argument_count) {
+FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
+    int initial_width,
+    int initial_height,
+    const char* title,
+    const char* assets_path,
+    const char* icu_data_path,
+    const char** arguments,
+    size_t argument_count) {
   if (s_stub_implementation) {
     return s_stub_implementation->CreateWindow(
         initial_width, initial_height, title, assets_path, icu_data_path,

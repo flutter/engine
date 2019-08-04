@@ -7,6 +7,8 @@
 
 #include <memory>
 
+#include "flutter/shell/platform/windows/public/flutter_windows.h"
+
 namespace flutter {
 namespace testing {
 
@@ -34,13 +36,14 @@ class StubFlutterWindowsApi {
   virtual void Terminate() {}
 
   // Called for FlutterDesktopCreateWindow.
-  virtual FlutterDesktopWindowRef CreateWindow(int initial_width,
-                                               int initial_height,
-                                               const char* title,
-                                               const char* assets_path,
-                                               const char* icu_data_path,
-                                               const char** arguments,
-                                               size_t argument_count) {
+  virtual FlutterDesktopWindowControllerRef CreateWindow(
+      int initial_width,
+      int initial_height,
+      const char* title,
+      const char* assets_path,
+      const char* icu_data_path,
+      const char** arguments,
+      size_t argument_count) {
     return nullptr;
   }
 

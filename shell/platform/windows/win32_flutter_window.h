@@ -37,14 +37,21 @@ class Win32FlutterWindow : public Win32Window {
                      const int height) noexcept;
   ~Win32FlutterWindow();
 
+  static FlutterDesktopWindowControllerRef CreateWin32FlutterWindow(
+      const char* title,
+      const int x,
+      const int y,
+      const int width,
+      const int height);
+
   // Run a Windows message pump that also pumps plugin messages.
   void FlutterMessageLoop();
 
   // |Win32Window|
-  void OnResize(unsigned int width, unsigned int height) override;
+  void OnDpiScale(unsigned int dpi) override;
 
   // |Win32Window|
-  void OnDpiScale(unsigned int dpi) override;
+  void OnResize(unsigned int width, unsigned int height) override;
 
   // |Win32Window|
   void OnPointerMove(double x, double y) override;
@@ -69,8 +76,7 @@ class Win32FlutterWindow : public Win32Window {
 
   // Configures the window instance with an instance of a running Flutter engine
   // returning a configured FlutterDesktopWindowControllerRef.
-  FlutterDesktopWindowControllerRef SetState(FLUTTER_API_SYMBOL(FlutterEngine)
-                                                 state);
+  void SetState(FLUTTER_API_SYMBOL(FlutterEngine) state);
 
   // Returns the currently configured Plugin Registrar.
   FlutterDesktopPluginRegistrarRef GetRegistrar();

@@ -96,6 +96,18 @@ class Win32Window {
   // Called when the user closes the Windows
   virtual void OnClose() = 0;
 
+  UINT GetCurrentDPI();
+
+  UINT GetCurrentWidth();
+
+  UINT GetCurrentHeight();
+
+  HWND GetWindowHandle();
+
+ private:
+  // Stores new width and height and calls |OnResize| to notify inheritors
+  void HandleResize(UINT width, UINT height);
+
   // Retrieves a class instance pointer for |window|
   static Win32Window* GetThisFromHandle(HWND const window) noexcept;
   int current_dpi_ = 0;

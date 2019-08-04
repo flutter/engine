@@ -110,23 +110,21 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
     const char* icu_data_path,
     const char** arguments,
     size_t argument_count) {
-  auto win = std::make_unique<flutter::Win32FlutterWindow>(
-      title, 10, 10, initial_width, initial_height);
+  FlutterDesktopWindowControllerRef state =
+      flutter::Win32FlutterWindow::CreateWin32FlutterWindow(
+          title, 10, 10, initial_width, initial_height);
 
-  flutter::Win32FlutterWindow* window = win.get();
-
-  auto engine = RunFlutterEngine(window, assets_path, icu_data_path, arguments,
-                                 argument_count);
+  auto engine = RunFlutterEngine(state->window.get(), assets_path,
+                                 icu_data_path, arguments, argument_count);
 
   if (engine == nullptr) {
     return nullptr;
   }
 
-  FlutterDesktopWindowControllerRef state = window->SetState(engine);
-  state->window = std::move(win);
+  state->window->SetState(engine);
 
   // Trigger an initial size callback to send size information to Flutter.
-  window->SendWindowMetrics();
+  state->window->SendWindowMetrics();
 
   return state;
 }

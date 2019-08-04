@@ -129,7 +129,7 @@ Win32Window::MessageHandler(HWND hwnd,
 
         current_width_ = width;
         current_height_ = height;
-        window->OnResize(width, height);
+        window->HandleResize(width, height);
         break;
 
       case WM_MOUSEMOVE:
@@ -177,7 +177,23 @@ Win32Window::MessageHandler(HWND hwnd,
   }
 
   return DefWindowProc(window_handle_, message, wparam, lparam);
-}  // namespace flutter
+}
+
+UINT Win32Window::GetCurrentDPI() {
+  return current_dpi_;
+}
+
+UINT Win32Window::GetCurrentWidth() {
+  return current_width_;
+}
+
+UINT Win32Window::GetCurrentHeight() {
+  return current_height_;
+}
+
+HWND Win32Window::GetWindowHandle() {
+  return window_handle_;
+}
 
 void Win32Window::Destroy() {
   if (window_handle_) {
@@ -196,7 +212,7 @@ Win32Window::HandleDpiChange(HWND hwnd, WPARAM wparam, LPARAM lparam) {
         reinterpret_cast<Win32Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
     UINT uDpi = HIWORD(wparam);
-
+    current_dpi_ = uDpi;
     window->OnDpiScale(uDpi);
 
     // Resize the window
@@ -208,6 +224,12 @@ Win32Window::HandleDpiChange(HWND hwnd, WPARAM wparam, LPARAM lparam) {
                  newHeight, SWP_NOZORDER | SWP_NOACTIVATE);
   }
   return 0;
+}
+
+void Win32Window::HandleResize(UINT width, UINT height) {
+  current_width_ = width;
+  current_height_ = height;
+  OnResize(width, height);
 }
 
 Win32Window* Win32Window::GetThisFromHandle(HWND const window) noexcept {
