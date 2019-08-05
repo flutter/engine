@@ -289,7 +289,6 @@ SceneUpdateContext::Shape::Shape(SceneUpdateContext& context)
   entity_node().AddChild(shape_node_);
 }
 
-
 SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
                                  const SkRRect& rrect,
                                  SkColor color,
