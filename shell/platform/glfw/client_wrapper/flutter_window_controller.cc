@@ -78,4 +78,10 @@ void FlutterWindowController::RunEventLoop() {
   controller_ = nullptr;
 }
 
+void FlutterWindowController::ShutDown() {
+  if (controller_) {
+    FlutterDesktopDestroyWindow(controller_);
+  }
+}
+
 }  // namespace flutter

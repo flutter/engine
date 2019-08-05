@@ -70,6 +70,11 @@ class FlutterWindowController {
   // Loops on Flutter window events until the window closes.
   void RunEventLoop();
 
+  // Signals the controller that it should terminate execution.
+  //
+  // Used to shut down Flutter in ways other than manually closing the window.
+  void ShutDown();
+
  private:
   // The path to the ICU data file. Set at creation time since it is the same
   // for any window created.
