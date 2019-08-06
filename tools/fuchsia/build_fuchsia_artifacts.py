@@ -22,6 +22,7 @@ _script_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..'))
 _src_root_dir = os.path.join(_script_dir, '..', '..', '..')
 _out_dir = os.path.join(_src_root_dir, 'out')
 _bucket_directory = os.path.join(_out_dir, 'fuchsia_bucket')
+_fuchsia_base = 'flutter/shell/platform/fuchsia'
 
 
 def IsLinux():
@@ -91,17 +92,22 @@ def FindFile(name, path):
       return os.path.join(root, name)
 
 
+def FindFileAndCopyTo(file_name, source, dest_parent, dst_name=None):
+  found = FindFile(file_name, source)
+  if not dst_name:
+    dst_name = file_name
+  if found:
+    dst_path = os.path.join(dest_parent, dst_name)
+    CopyPath(found, dst_path)
+
+
 def CopyGenSnapshotIfExists(source, destination):
   source_root = os.path.join(_out_dir, source)
   destination_base = os.path.join(destination, 'dart_binaries')
-  gen_snapshot = FindFile('gen_snapshot', source_root)
-  gen_snapshot_product = FindFile('gen_snapshot_product', source_root)
-  if gen_snapshot:
-    dst_path = os.path.join(destination_base, 'gen_snapshot')
-    CopyPath(gen_snapshot, dst_path)
-  if gen_snapshot_product:
-    dst_path = os.path.join(destination_base, 'gen_snapshot_product')
-    CopyPath(gen_snapshot_product, dst_path)
+  FindFileAndCopyTo('gen_snapshot', source_root, destination_base)
+  FindFileAndCopyTo('gen_snapshot_product', source_root, destination_base)
+  FindFileAndCopyTo('kernel_compiler.dart.snapshot', source_root,
+                    destination_base, 'kernel_compiler.snapshot')
 
 
 def CopyToBucketWithMode(source, destination, aot, product, runner_type):
@@ -157,8 +163,9 @@ def ProcessCIPDPakcage(upload, engine_version):
 
   subprocess.check_call(command, cwd=_bucket_directory)
 
+
 def GetRunnerTarget(runner_type, product, aot):
-  base = 'flutter/shell/platform/fuchsia/%s:' % runner_type
+  base = '%s/%s:' % (_fuchsia_base, runner_type)
   if 'dart' in runner_type:
     target = 'dart_'
   else:
@@ -180,6 +187,7 @@ def GetTargetsToBuild(product=False):
       GetRunnerTarget('flutter', product, True),
       # The Dart Runner.
       GetRunnerTarget('dart_runner', product, False),
+      '%s/dart:kernel_compiler' % _fuchsia_base,
   ]
   return targets_to_build
 
