@@ -7,6 +7,7 @@ package io.flutter.embedding.android;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Insets;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.LocaleList;
@@ -312,11 +313,21 @@ public class FlutterView extends FrameLayout {
     viewportMetrics.viewInsetBottom = insets.getSystemWindowInsetBottom();
     viewportMetrics.viewInsetLeft = 0;
 
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      Insets systemGestureInsets = insets.getSystemGestureInsets();
+      viewportMetrics.systemGestureInsetTop = systemGestureInsets.top;
+      viewportMetrics.systemGestureInsetRight = systemGestureInsets.right;
+      viewportMetrics.systemGestureInsetBottom = systemGestureInsets.bottom;
+      viewportMetrics.systemGestureInsetLeft = systemGestureInsets.left;
+    }
+
     Log.v(TAG, "Updating window insets (onApplyWindowInsets()):\n"
       + "Status bar insets: Top: " + viewportMetrics.paddingTop
         + ", Left: " + viewportMetrics.paddingLeft + ", Right: " + viewportMetrics.paddingRight + "\n"
       + "Keyboard insets: Bottom: " + viewportMetrics.viewInsetBottom
-        + ", Left: " + viewportMetrics.viewInsetLeft + ", Right: " + viewportMetrics.viewInsetRight);
+        + ", Left: " + viewportMetrics.viewInsetLeft + ", Right: " + viewportMetrics.viewInsetRight
+      + "System Gesture Insets - Left: " + viewportMetrics.systemGestureInsetLeft + ", Top: " + viewportMetrics.systemGestureInsetTop
+        + ", Right: " + viewportMetrics.systemGestureInsetRight + ", Bottom: " + viewportMetrics.viewInsetBottom);
 
     sendViewportMetricsToFlutter();
 

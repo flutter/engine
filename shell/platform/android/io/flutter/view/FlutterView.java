@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Insets;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
@@ -579,11 +580,12 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
             navigationBarHidden ? calculateBottomKeyboardInset(insets) : insets.getSystemWindowInsetBottom();
         mMetrics.physicalViewInsetLeft = 0;
 
-        if (Build.VERSION.SDK_INT > 28) {
-            mMetrics.systemGestureInsetTop = insets.getSystemGestureInsets().top;
-            mMetrics.systemGestureInsetRight = insets.getSystemGestureInsets().right;
-            mMetrics.systemGestureInsetBottom = insets.getSystemGestureInsets().bottom;
-            mMetrics.systemGestureInsetLeft = insets.getSystemGestureInsets().left;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Insets systemGestureInsets = insets.getSystemGestureInsets();
+            mMetrics.systemGestureInsetTop = systemGestureInsets.top;
+            mMetrics.systemGestureInsetRight = systemGestureInsets.right;
+            mMetrics.systemGestureInsetBottom = systemGestureInsets.bottom;
+            mMetrics.systemGestureInsetLeft = systemGestureInsets.left;
         }
         updateViewportMetrics();
         return super.onApplyWindowInsets(insets);

@@ -633,8 +633,9 @@ class Window {
   double _physicalDepth = double.maxFinite;
 
   /// The number of physical pixels on each side of the display rectangle into
-  /// which the application can render, but where the operating system will
-  /// consume input gestures for the sake of system navigation.
+  /// which the application can render, but over which the operating system
+  /// will likely place system UI, such as the keyboard, that fully obscures
+  /// any content.
   ///
   /// When this property changes, [onMetricsChanged] is called.
   ///
