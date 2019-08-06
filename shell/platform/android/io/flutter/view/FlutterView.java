@@ -35,7 +35,6 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -581,30 +580,10 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         mMetrics.physicalViewInsetLeft = 0;
 
         if (Build.VERSION.SDK_INT > 28) {
-            try {
-                Method getSystemGestureInsets = insets
-                    .getClass()
-                    .getDeclaredMethod("getSystemGestureInsets");
-                Class systemGestureInsets = getSystemGestureInsets
-                    .invoke(insets)
-                    .getClass();
-
-                mMetrics.systemGestureInsetTop = (int)systemGestureInsets
-                    .getDeclaredField("top")
-                    .get(getSystemGestureInsets.invoke(insets));
-                mMetrics.systemGestureInsetRight = (int)systemGestureInsets
-                    .getDeclaredField("right")
-                    .get(getSystemGestureInsets.invoke(insets));
-                mMetrics.systemGestureInsetBottom = (int)systemGestureInsets
-                    .getDeclaredField("bottom")
-                    .get(getSystemGestureInsets.invoke(insets));
-                mMetrics.systemGestureInsetLeft = (int)systemGestureInsets
-                    .getDeclaredField("left")
-                    .get(getSystemGestureInsets.invoke(insets));
-
-            } catch (Exception exception) {
-                Log.e(TAG, "Uncaught exception while retrieving system gesture insets", exception);
-            }
+            mMetrics.systemGestureInsetTop = insets.getSystemGestureInsets().top;
+            mMetrics.systemGestureInsetRight = insets.getSystemGestureInsets().right;
+            mMetrics.systemGestureInsetBottom = insets.getSystemGestureInsets().bottom;
+            mMetrics.systemGestureInsetLeft = insets.getSystemGestureInsets().left;
         }
         updateViewportMetrics();
         return super.onApplyWindowInsets(insets);

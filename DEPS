@@ -459,7 +459,7 @@ deps = {
      'packages': [
        {
         'package': 'flutter/android/sdk/platforms',
-        'version': 'version:28r6'
+        'version': 'version:29r1'
        }
      ],
      'condition': 'download_android_deps',
