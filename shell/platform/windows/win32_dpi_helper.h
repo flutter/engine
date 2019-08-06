@@ -10,12 +10,6 @@
 
 namespace flutter {
 
-template <typename T>
-bool AssignProcAddress(HMODULE comBaseModule, const char* name, T*& outProc) {
-  outProc = reinterpret_cast<T*>(GetProcAddress(comBaseModule, name));
-  return *outProc != nullptr;
-}
-
 // A helper class for abstracting various Windows DPI related functions across
 // Windows OS versions.
 class Win32DpiHelper {

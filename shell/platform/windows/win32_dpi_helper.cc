@@ -2,6 +2,16 @@
 
 namespace flutter {
 
+namespace {
+
+template <typename T>
+bool AssignProcAddress(HMODULE comBaseModule, const char* name, T*& outProc) {
+  outProc = reinterpret_cast<T*>(GetProcAddress(comBaseModule, name));
+  return *outProc != nullptr;
+}
+
+}  // namespace
+
 Win32DpiHelper::Win32DpiHelper() {
   // TODO ensure that this helper works correctly on downlevel builds.
   user32_module_ = LoadLibraryA("User32.dll");
