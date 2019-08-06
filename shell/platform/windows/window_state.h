@@ -32,7 +32,7 @@ struct FlutterDesktopWindowControllerState {
 // controller so that it can be provided to plugins without giving them access
 // to all of the controller-based functionality.
 struct FlutterDesktopWindow {
-  // The GLFW window that (indirectly) owns this state object.
+  // The window that (indirectly) owns this state object.
   flutter::Win32FlutterWindow* window;
 };
 

@@ -40,7 +40,7 @@ source_set("client_wrapper_windows") {
   ]
 }
 
-# Copies the GLFW client wrapper code to the output directory with a _windows
+# Copies the Windows client wrapper code to the output directory with a _windows
 # suffix.
 publish_client_wrapper_extension("publish_wrapper_windows") {
   public = _wrapper_includes
