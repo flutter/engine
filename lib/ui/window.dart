@@ -663,7 +663,7 @@ class Window {
   /// response to the soft keyboard being visible or hidden, whereas
   /// [Window.padding] will.
   ///
-  /// When this changes, [onMetricsChanged] is called.
+  /// When this property changes, [onMetricsChanged] is called.
   ///
   /// The relationship between this [Window.viewInsets], [Window.viewPadding],
   /// and [Window.padding] are described in more detail in the documentation for
@@ -680,14 +680,14 @@ class Window {
   WindowPadding _viewPadding = WindowPadding.zero;
 
   /// The number of physical pixels on each side of the display rectangle into
-  /// which the application can render, but over which the operating system
-  /// will likely place system gestures.
+  /// which the application can render, but where the operating system will
+  /// consume input gestures for the sake of system navigation.
   ///
   /// For example, an operating system might use the vertical edges of the
   /// screen, where swiping inwards from the edges takes users backward
   /// through the history of screens they previously visited.
   ///
-  /// When this changes, [onMetricsChanged] is called.
+  /// When this property changes, [onMetricsChanged] is called.
   ///
   /// See also:
   ///
