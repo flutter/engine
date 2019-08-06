@@ -52,6 +52,29 @@ import io.flutter.view.FlutterMain;
  * {@link FlutterEngineCache} and then use {@link #withCachedEngine(String)} to build a
  * {@code FlutterFragment} with the cached {@link FlutterEngine}'s ID.
  * <p>
+ * It is generally recommended to use a cached {@link FlutterEngine} to avoid a momentary delay
+ * when initializing a new {@link FlutterEngine}. The two exceptions to using a cached
+ * {@link FlutterEngine} are:
+ * <p>
+ * <ul>
+ *   <li>When {@code FlutterFragment} is in the first {@code Activity} displayed by the app, because
+ *   pre-warming a {@link FlutterEngine} would have no impact in this situation.</li>
+ *   <li>When you are unsure when/if you will need to display a Flutter experience.</li>
+ * </ul>
+ * <p>
+ * The following illustrates how to pre-warm and cache a {@link FlutterEngine}:
+ * <p>
+ * {@code
+ *   // Create and pre-warm a FlutterEngine.
+ *   FlutterEngine flutterEngine = new FlutterEngine(context);
+ *   flutterEngine
+ *     .getDartExecutor()
+ *     .executeDartEntrypoint(DartEntrypoint.createDefault());
+ *
+ *   // Cache the pre-warmed FlutterEngine in the FlutterEngineCache.
+ *   FlutterEngineCache.getInstance().put("my_engine", flutterEngine);
+ * }
+ * <p>
  * If Flutter is needed in a location that can only use a {@code View}, consider using a
  * {@link FlutterView}. Using a {@link FlutterView} requires forwarding some calls from an
  * {@code Activity}, as well as forwarding lifecycle calls from an {@code Activity} or a
@@ -323,6 +346,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
       args.putString(ARG_FLUTTERVIEW_RENDER_MODE, renderMode != null ? renderMode.name() : FlutterView.RenderMode.surface.name());
       args.putString(ARG_FLUTTERVIEW_TRANSPARENCY_MODE, transparencyMode != null ? transparencyMode.name() : FlutterView.TransparencyMode.transparent.name());
       args.putBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY, shouldAttachEngineToActivity);
+      args.putBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, true);
       return args;
     }
 

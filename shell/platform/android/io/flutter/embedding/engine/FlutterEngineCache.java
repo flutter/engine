@@ -14,6 +14,8 @@ import java.util.Map;
 /**
  * Static singleton cache that holds {@link FlutterEngine} instances identified by {@code String}s.
  * <p>
+ * The ID of a given {@link FlutterEngine} can be whatever {@code String} is desired.
+ * <p>
  * {@code FlutterEngineCache} is useful for storing pre-warmed {@link FlutterEngine} instances.
  * {@link io.flutter.embedding.android.FlutterActivity} and
  * {@link io.flutter.embedding.android.FlutterFragment} use the {@code FlutterEngineCache} singleton

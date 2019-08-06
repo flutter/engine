@@ -69,6 +69,29 @@ import io.flutter.view.FlutterMain;
  * {@code IllegalStateException} will be thrown if a cached engine is requested but does not exist
  * in the cache.
  * <p>
+ * It is generally recommended to use a cached {@link FlutterEngine} to avoid a momentary delay
+ * when initializing a new {@link FlutterEngine}. The two exceptions to using a cached
+ * {@link FlutterEngine} are:
+ * <p>
+ * <ul>
+ *   <li>When {@code FlutterActivity} is the first {@code Activity} displayed by the app, because
+ *   pre-warming a {@link FlutterEngine} would have no impact in this situation.</li>
+ *   <li>When you are unsure when/if you will need to display a Flutter experience.</li>
+ * </ul>
+ * <p>
+ * The following illustrates how to pre-warm and cache a {@link FlutterEngine}:
+ * <p>
+ * {@code
+ *   // Create and pre-warm a FlutterEngine.
+ *   FlutterEngine flutterEngine = new FlutterEngine(context);
+ *   flutterEngine
+ *     .getDartExecutor()
+ *     .executeDartEntrypoint(DartEntrypoint.createDefault());
+ *
+ *   // Cache the pre-warmed FlutterEngine in the FlutterEngineCache.
+ *   FlutterEngineCache.getInstance().put("my_engine", flutterEngine);
+ * }
+ * <p>
  * If Flutter is needed in a location that cannot use an {@code Activity}, consider using
  * a {@link FlutterFragment}. Using a {@link FlutterFragment} requires forwarding some calls from
  * an {@code Activity} to the {@link FlutterFragment}.
@@ -261,7 +284,8 @@ public class FlutterActivity extends Activity
       return new Intent(context, activityClass)
           .putExtra(EXTRA_DART_ENTRYPOINT, dartEntrypoint)
           .putExtra(EXTRA_INITIAL_ROUTE, initialRoute)
-          .putExtra(EXTRA_BACKGROUND_MODE, backgroundMode);
+          .putExtra(EXTRA_BACKGROUND_MODE, backgroundMode)
+          .putExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, true);
     }
   }
 
@@ -306,7 +330,7 @@ public class FlutterActivity extends Activity
     }
 
     /**
-     * Returns true if the cached {@link FlutterEngine} should be destroyed and remoed from the
+     * Returns true if the cached {@link FlutterEngine} should be destroyed and removed from the
      * cache when this {@code FlutterActivity} is destroyed.
      * <p>
      * The default value is {@code false}.
@@ -633,6 +657,10 @@ public class FlutterActivity extends Activity
    * Returns false if the {@link FlutterEngine} backing this {@code FlutterActivity} should
    * outlive this {@code FlutterActivity}, or true to be destroyed when the {@code FlutterActivity}
    * is destroyed.
+   * <p>
+   * The default value is {@code true} in cases where {@code FlutterActivity} created its own
+   * {@link FlutterEngine}, and {@code false} in cases where a cached {@link FlutterEngine} was
+   * provided.
    */
   @Override
   public boolean shouldDestroyEngineWithHost() {

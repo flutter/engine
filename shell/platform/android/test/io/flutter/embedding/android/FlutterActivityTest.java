@@ -30,7 +30,7 @@ public class FlutterActivityTest {
     assertArrayEquals(new String[]{}, flutterActivity.getFlutterShellArgs().toArray());
     assertTrue(flutterActivity.shouldAttachEngineToActivity());
     assertNull(flutterActivity.getCachedEngineId());
-    assertFalse(flutterActivity.shouldDestroyEngineWithHost());
+    assertTrue(flutterActivity.shouldDestroyEngineWithHost());
     assertEquals(FlutterActivity.BackgroundMode.opaque, flutterActivity.getBackgroundMode());
     assertEquals(FlutterView.RenderMode.surface, flutterActivity.getRenderMode());
     assertEquals(FlutterView.TransparencyMode.opaque, flutterActivity.getTransparencyMode());
@@ -51,7 +51,7 @@ public class FlutterActivityTest {
     assertArrayEquals(new String[]{}, flutterActivity.getFlutterShellArgs().toArray());
     assertTrue(flutterActivity.shouldAttachEngineToActivity());
     assertNull(flutterActivity.getCachedEngineId());
-    assertFalse(flutterActivity.shouldDestroyEngineWithHost());
+    assertTrue(flutterActivity.shouldDestroyEngineWithHost());
     assertEquals(FlutterActivity.BackgroundMode.transparent, flutterActivity.getBackgroundMode());
     assertEquals(FlutterView.RenderMode.texture, flutterActivity.getRenderMode());
     assertEquals(FlutterView.TransparencyMode.transparent, flutterActivity.getTransparencyMode());

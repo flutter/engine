@@ -33,7 +33,6 @@ import io.flutter.view.FlutterMain;
 import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -46,7 +45,7 @@ import static org.mockito.Mockito.when;
 @RunWith(RobolectricTestRunner.class)
 public class FlutterActivityAndFragmentDelegateTest {
   private FlutterEngine mockFlutterEngine;
-  private FlutterActivityAndFragmentDelegate.Host fakeHost;
+  private FlutterActivityAndFragmentDelegate.Host mockHost;
 
   @Before
   public void setup() {
@@ -59,19 +58,19 @@ public class FlutterActivityAndFragmentDelegateTest {
     mockFlutterEngine = mockFlutterEngine();
 
     // Create a mocked Host, which is required by the delegate being tested.
-    fakeHost = mock(FlutterActivityAndFragmentDelegate.Host.class);
-    when(fakeHost.getContext()).thenReturn(RuntimeEnvironment.application);
-    when(fakeHost.getActivity()).thenReturn(Robolectric.setupActivity(Activity.class));
-    when(fakeHost.getLifecycle()).thenReturn(mock(Lifecycle.class));
-    when(fakeHost.getFlutterShellArgs()).thenReturn(new FlutterShellArgs(new String[]{}));
-    when(fakeHost.getDartEntrypointFunctionName()).thenReturn("main");
-    when(fakeHost.getAppBundlePath()).thenReturn("/fake/path");
-    when(fakeHost.getInitialRoute()).thenReturn("/");
-    when(fakeHost.getRenderMode()).thenReturn(FlutterView.RenderMode.surface);
-    when(fakeHost.getTransparencyMode()).thenReturn(FlutterView.TransparencyMode.transparent);
-    when(fakeHost.provideFlutterEngine(any(Context.class))).thenReturn(mockFlutterEngine);
-    when(fakeHost.shouldAttachEngineToActivity()).thenReturn(true);
-    when(fakeHost.shouldDestroyEngineWithHost()).thenReturn(true);
+    mockHost = mock(FlutterActivityAndFragmentDelegate.Host.class);
+    when(mockHost.getContext()).thenReturn(RuntimeEnvironment.application);
+    when(mockHost.getActivity()).thenReturn(Robolectric.setupActivity(Activity.class));
+    when(mockHost.getLifecycle()).thenReturn(mock(Lifecycle.class));
+    when(mockHost.getFlutterShellArgs()).thenReturn(new FlutterShellArgs(new String[]{}));
+    when(mockHost.getDartEntrypointFunctionName()).thenReturn("main");
+    when(mockHost.getAppBundlePath()).thenReturn("/fake/path");
+    when(mockHost.getInitialRoute()).thenReturn("/");
+    when(mockHost.getRenderMode()).thenReturn(FlutterView.RenderMode.surface);
+    when(mockHost.getTransparencyMode()).thenReturn(FlutterView.TransparencyMode.transparent);
+    when(mockHost.provideFlutterEngine(any(Context.class))).thenReturn(mockFlutterEngine);
+    when(mockHost.shouldAttachEngineToActivity()).thenReturn(true);
+    when(mockHost.shouldDestroyEngineWithHost()).thenReturn(true);
   }
 
   @After
@@ -84,7 +83,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   public void itSendsLifecycleEventsToFlutter() {
     // ---- Test setup ----
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // We're testing lifecycle behaviors, which require/expect that certain methods have already
     // been executed by the time they run. Therefore, we run those expected methods first.
@@ -124,14 +123,14 @@ public class FlutterActivityAndFragmentDelegateTest {
   public void itDefersToTheHostToProvideFlutterEngine() {
     // ---- Test setup ----
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // The FlutterEngine is created in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
 
     // Verify that the host was asked to provide a FlutterEngine.
-    verify(fakeHost, times(1)).provideFlutterEngine(any(Context.class));
+    verify(mockHost, times(1)).provideFlutterEngine(any(Context.class));
 
     // Verify that the delegate's FlutterEngine is our mock FlutterEngine.
     assertEquals("The delegate failed to use the host's FlutterEngine.", mockFlutterEngine, delegate.getFlutterEngine());
@@ -145,10 +144,10 @@ public class FlutterActivityAndFragmentDelegateTest {
     FlutterEngineCache.getInstance().put("my_flutter_engine", cachedEngine);
 
     // Adjust fake host to request cached engine.
-    when(fakeHost.getCachedEngineId()).thenReturn("my_flutter_engine");
+    when(mockHost.getCachedEngineId()).thenReturn("my_flutter_engine");
 
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // The FlutterEngine is obtained in onAttach().
@@ -172,10 +171,10 @@ public class FlutterActivityAndFragmentDelegateTest {
   public void itThrowsExceptionIfCachedEngineDoesNotExist() {
     // ---- Test setup ----
     // Adjust fake host to request cached engine that does not exist.
-    when(fakeHost.getCachedEngineId()).thenReturn("my_flutter_engine");
+    when(mockHost.getCachedEngineId()).thenReturn("my_flutter_engine");
 
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // The FlutterEngine existence is verified in onAttach()
@@ -188,24 +187,24 @@ public class FlutterActivityAndFragmentDelegateTest {
   public void itGivesHostAnOpportunityToConfigureFlutterEngine() {
     // ---- Test setup ----
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // The FlutterEngine is created in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
 
     // Verify that the host was asked to configure our FlutterEngine.
-    verify(fakeHost, times(1)).configureFlutterEngine(mockFlutterEngine);
+    verify(mockHost, times(1)).configureFlutterEngine(mockFlutterEngine);
   }
 
   @Test
   public void itSendsInitialRouteToFlutter() {
     // ---- Test setup ----
     // Set initial route on our fake Host.
-    when(fakeHost.getInitialRoute()).thenReturn("/my/route");
+    when(mockHost.getInitialRoute()).thenReturn("/my/route");
 
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // The initial route is sent in onStart().
@@ -221,8 +220,8 @@ public class FlutterActivityAndFragmentDelegateTest {
   public void itExecutesDartEntrypointProvidedByHost() {
     // ---- Test setup ----
     // Set Dart entrypoint parameters on fake host.
-    when(fakeHost.getAppBundlePath()).thenReturn("/my/bundle/path");
-    when(fakeHost.getDartEntrypointFunctionName()).thenReturn("myEntrypoint");
+    when(mockHost.getAppBundlePath()).thenReturn("/my/bundle/path");
+    when(mockHost.getDartEntrypointFunctionName()).thenReturn("myEntrypoint");
 
     // Create the DartEntrypoint that we expect to be executed.
     DartExecutor.DartEntrypoint dartEntrypoint = new DartExecutor.DartEntrypoint(
@@ -231,7 +230,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     );
 
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // Dart is executed in onStart().
@@ -250,10 +249,10 @@ public class FlutterActivityAndFragmentDelegateTest {
   public void itAttachesFlutterToTheActivityIfDesired() {
     // ---- Test setup ----
     // Declare that the host wants Flutter to attach to the surrounding Activity.
-    when(fakeHost.shouldAttachEngineToActivity()).thenReturn(true);
+    when(mockHost.shouldAttachEngineToActivity()).thenReturn(true);
 
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // Flutter is attached to the surrounding Activity in onAttach.
@@ -276,10 +275,10 @@ public class FlutterActivityAndFragmentDelegateTest {
   public void itDoesNotAttachFlutterToTheActivityIfNotDesired() {
     // ---- Test setup ----
     // Declare that the host does NOT want Flutter to attach to the surrounding Activity.
-    when(fakeHost.shouldAttachEngineToActivity()).thenReturn(false);
+    when(mockHost.shouldAttachEngineToActivity()).thenReturn(false);
 
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // Flutter is attached to the surrounding Activity in onAttach.
@@ -298,7 +297,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   @Test
   public void itSendsPopRouteMessageToFlutterWhenHardwareBackButtonIsPressed() {
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // The FlutterEngine is setup in onAttach().
@@ -314,7 +313,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   @Test
   public void itForwardsOnRequestPermissionsResultToFlutterEngine() {
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // The FlutterEngine is setup in onAttach().
@@ -330,7 +329,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   @Test
   public void itForwardsOnNewIntentToFlutterEngine() {
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // The FlutterEngine is setup in onAttach().
@@ -346,7 +345,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   @Test
   public void itForwardsOnActivityResultToFlutterEngine() {
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // The FlutterEngine is setup in onAttach().
@@ -362,7 +361,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   @Test
   public void itForwardsOnUserLeaveHintToFlutterEngine() {
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // The FlutterEngine is setup in onAttach().
@@ -378,7 +377,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   @Test
   public void itSendsMessageOverSystemChannelWhenToldToTrimMemory() {
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // The FlutterEngine is setup in onAttach().
@@ -394,7 +393,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   @Test
   public void itSendsMessageOverSystemChannelWhenInformedOfLowMemory() {
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // The FlutterEngine is setup in onAttach().
@@ -411,10 +410,10 @@ public class FlutterActivityAndFragmentDelegateTest {
   public void itDestroysItsOwnEngineIfHostRequestsIt() {
     // ---- Test setup ----
     // Adjust fake host to request engine destruction.
-    when(fakeHost.shouldDestroyEngineWithHost()).thenReturn(true);
+    when(mockHost.shouldDestroyEngineWithHost()).thenReturn(true);
 
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // Push the delegate through all lifecycle methods all the way to destruction.
@@ -435,10 +434,10 @@ public class FlutterActivityAndFragmentDelegateTest {
   public void itDoesNotDestroyItsOwnEngineWhenHostSaysNotTo() {
     // ---- Test setup ----
     // Adjust fake host to request engine destruction.
-    when(fakeHost.shouldDestroyEngineWithHost()).thenReturn(false);
+    when(mockHost.shouldDestroyEngineWithHost()).thenReturn(false);
 
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // Push the delegate through all lifecycle methods all the way to destruction.
@@ -463,13 +462,13 @@ public class FlutterActivityAndFragmentDelegateTest {
     FlutterEngineCache.getInstance().put("my_flutter_engine", cachedEngine);
 
     // Adjust fake host to request cached engine.
-    when(fakeHost.getCachedEngineId()).thenReturn("my_flutter_engine");
+    when(mockHost.getCachedEngineId()).thenReturn("my_flutter_engine");
 
     // Adjust fake host to request engine destruction.
-    when(fakeHost.shouldDestroyEngineWithHost()).thenReturn(true);
+    when(mockHost.shouldDestroyEngineWithHost()).thenReturn(true);
 
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // Push the delegate through all lifecycle methods all the way to destruction.
@@ -495,13 +494,13 @@ public class FlutterActivityAndFragmentDelegateTest {
     FlutterEngineCache.getInstance().put("my_flutter_engine", cachedEngine);
 
     // Adjust fake host to request cached engine.
-    when(fakeHost.getCachedEngineId()).thenReturn("my_flutter_engine");
+    when(mockHost.getCachedEngineId()).thenReturn("my_flutter_engine");
 
     // Adjust fake host to request engine retention.
-    when(fakeHost.shouldDestroyEngineWithHost()).thenReturn(false);
+    when(mockHost.shouldDestroyEngineWithHost()).thenReturn(false);
 
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
     // --- Execute the behavior under test ---
     // Push the delegate through all lifecycle methods all the way to destruction.

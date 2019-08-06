@@ -409,8 +409,7 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
    *   if it was previously attached.</li>
    *   <li>Destroys this delegate's {@link PlatformPlugin}.</li>
    *   <li>Destroys this delegate's {@link FlutterEngine} if
-   *   {@link Host#shouldDestroyEngineWithHost()} ()} returns true, or if this delegate
-   *   was responsible for internally creating the {@link FlutterEngine}.</li>
+   *   {@link Host#shouldDestroyEngineWithHost()} ()} returns true.</li>
    * </ol>
    */
   void onDetach() {
@@ -435,7 +434,7 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     }
 
     // Destroy our FlutterEngine if we're not set to retain it.
-    if (host.shouldDestroyEngineWithHost() || !isFlutterEngineFromHost) {
+    if (host.shouldDestroyEngineWithHost()) {
       flutterEngine.destroy();
 
       if (host.getCachedEngineId() != null) {
@@ -626,6 +625,10 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     /**
      * Returns true if the {@link FlutterEngine} used in this delegate should be destroyed
      * when the host/delegate are destroyed.
+     * <p>
+     * The default value is {@code true} in cases where {@code FlutterFragment} created its own
+     * {@link FlutterEngine}, and {@code false} in cases where a cached {@link FlutterEngine} was
+     * provided.
      */
     boolean shouldDestroyEngineWithHost();
 

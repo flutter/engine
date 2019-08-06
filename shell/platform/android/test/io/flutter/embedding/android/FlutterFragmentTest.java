@@ -23,7 +23,7 @@ public class FlutterFragmentTest {
     assertArrayEquals(new String[]{}, fragment.getFlutterShellArgs().toArray());
     assertTrue(fragment.shouldAttachEngineToActivity());
     assertNull(fragment.getCachedEngineId());
-    assertFalse(fragment.shouldDestroyEngineWithHost());
+    assertTrue(fragment.shouldDestroyEngineWithHost());
     assertEquals(FlutterView.RenderMode.surface, fragment.getRenderMode());
     assertEquals(FlutterView.TransparencyMode.transparent, fragment.getTransparencyMode());
   }
@@ -43,7 +43,7 @@ public class FlutterFragmentTest {
     assertArrayEquals(new String[]{}, fragment.getFlutterShellArgs().toArray());
     assertFalse(fragment.shouldAttachEngineToActivity());
     assertNull(fragment.getCachedEngineId());
-    assertFalse(fragment.shouldDestroyEngineWithHost());
+    assertTrue(fragment.shouldDestroyEngineWithHost());
     assertEquals(FlutterView.RenderMode.texture, fragment.getRenderMode());
     assertEquals(FlutterView.TransparencyMode.opaque, fragment.getTransparencyMode());
   }
