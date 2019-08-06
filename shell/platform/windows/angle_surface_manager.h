@@ -22,8 +22,11 @@ namespace flutter {
 class AngleSurfaceManager {
  public:
   AngleSurfaceManager();
-  AngleSurfaceManager(const AngleSurfaceManager&) = delete;
   ~AngleSurfaceManager();
+
+  // Disallow copy/move.
+  AngleSurfaceManager(const AngleSurfaceManager&) = delete;
+  AngleSurfaceManager& operator=(const AngleSurfaceManager&) = delete;
 
   // Creates and returns an EGLSurface wrapper and backing DirectX 11 SwapChain
   // asociated with window, in the appropriate format for display in a
