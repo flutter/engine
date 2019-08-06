@@ -394,25 +394,6 @@ void main() {
       expect(window.padding.bottom, 0.0);
       expect(window.physicalDepth, 100.0);
       expect(window.systemGestureInsets.bottom, 44.0);
-
-       _updateWindowMetrics(
-        oldDPR,                         // DPR
-        oldSize.width,                  // width
-        oldSize.height,                 // height
-        oldPhysicalDepth,               // depth
-        oldPadding.top,                 // padding top
-        oldPadding.right,               // padding right
-        oldPadding.bottom,              // padding bottom
-        oldPadding.left,                // padding left
-        oldInsets.top,                  // inset top
-        oldInsets.right,                // inset right
-        oldInsets.bottom,               // inset bottom
-        oldInsets.left,                 // inset left
-        oldSystemGestureInsets.top,     // system gesture insets top
-        oldSystemGestureInsets.right,   // system gesture insets top
-        oldSystemGestureInsets.bottom,  // system gesture insets top
-        oldSystemGestureInsets.left,    // system gesture insets top
-      );
     });
   });
 }
