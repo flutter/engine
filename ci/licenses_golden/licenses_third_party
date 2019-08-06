@@ -1,4 +1,4 @@
-Signature: 5d278d74b60c8b26b59f08213fbc84e7
+Signature: b8e9987a62e509cab3c211c6b58ca613
 
 UNUSED LICENSES:
 
@@ -4605,6 +4605,7 @@ ORIGIN: ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/.gitconfig
 FILE: ../../../third_party/dart/.mailmap
+FILE: ../../../third_party/dart/.style.yapf
 FILE: ../../../third_party/dart/.vpython
 FILE: ../../../third_party/dart/client/idea/.idea/.name
 FILE: ../../../third_party/dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
@@ -4694,6 +4695,10 @@ FILE: ../../../third_party/dart/runtime/lib/ffi_dynamic_library.cc
 FILE: ../../../third_party/dart/runtime/lib/ffi_dynamic_library_patch.dart
 FILE: ../../../third_party/dart/runtime/lib/ffi_native_type_patch.dart
 FILE: ../../../third_party/dart/runtime/lib/ffi_patch.dart
+FILE: ../../../third_party/dart/runtime/llvm_codegen/bit/bit.h
+FILE: ../../../third_party/dart/runtime/llvm_codegen/bit/main.cc
+FILE: ../../../third_party/dart/runtime/llvm_codegen/bit/test.cc
+FILE: ../../../third_party/dart/runtime/llvm_codegen/codegen/main.cc
 FILE: ../../../third_party/dart/runtime/tools/dartfuzz/dartfuzz_api_table.dart
 FILE: ../../../third_party/dart/runtime/tools/dartfuzz/gen_api_table.dart
 FILE: ../../../third_party/dart/runtime/tools/graphexplorer/graphexplorer.html
@@ -4715,6 +4720,9 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_serializer.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_test_helper.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_test_helper.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/inliner_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/sexpression.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/sexpression.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/sexpression_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/slot_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/type_propagator_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/typed_data_aot_test.cc

@@ -456,6 +456,8 @@ FILE: ../../../flutter/runtime/dart_vm_unittests.cc
 FILE: ../../../flutter/runtime/embedder_resources.cc
 FILE: ../../../flutter/runtime/embedder_resources.h
 FILE: ../../../flutter/runtime/fixtures/runtime_test.dart
+FILE: ../../../flutter/runtime/ptrace_ios.cc
+FILE: ../../../flutter/runtime/ptrace_ios.h
 FILE: ../../../flutter/runtime/runtime_controller.cc
 FILE: ../../../flutter/runtime/runtime_controller.h
 FILE: ../../../flutter/runtime/runtime_delegate.cc
@@ -551,12 +553,16 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/Andro
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidTouchProcessor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/DrawableSplashScreen.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterActivity.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterActivityAndFragmentDelegate.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterEngineConfigurator.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterEngineProvider.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterFragment.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterSplashView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterSurfaceView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterTextureView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/SplashScreen.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/SplashScreenProvider.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngine.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineAndroidLifecycle.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEnginePluginRegistry.java
@@ -832,6 +838,7 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/natives.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/natives.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/system.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/system.h
+FILE: ../../../flutter/shell/platform/fuchsia/dart/compiler.dart
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/builtin_libraries.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/builtin_libraries.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller.cc
@@ -1106,6 +1113,7 @@ FILE: ../../../flutter/third_party/txt/src/txt/font_skia.cc
 FILE: ../../../flutter/third_party/txt/src/txt/font_skia.h
 FILE: ../../../flutter/third_party/txt/src/txt/font_style.h
 FILE: ../../../flutter/third_party/txt/src/txt/font_weight.h
+FILE: ../../../flutter/third_party/txt/src/txt/line_metrics.h
 FILE: ../../../flutter/third_party/txt/src/txt/paint_record.cc
 FILE: ../../../flutter/third_party/txt/src/txt/paint_record.h
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph.h
@@ -1119,6 +1127,7 @@ FILE: ../../../flutter/third_party/txt/src/txt/paragraph_txt.cc
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph_txt.h
 FILE: ../../../flutter/third_party/txt/src/txt/placeholder_run.cc
 FILE: ../../../flutter/third_party/txt/src/txt/placeholder_run.h
+FILE: ../../../flutter/third_party/txt/src/txt/run_metrics.h
 FILE: ../../../flutter/third_party/txt/src/txt/styled_runs.cc
 FILE: ../../../flutter/third_party/txt/src/txt/styled_runs.h
 FILE: ../../../flutter/third_party/txt/src/txt/test_font_manager.cc
