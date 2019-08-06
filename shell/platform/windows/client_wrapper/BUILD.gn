@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("$flutter_root/shell/platform/common/cpp/client_wrapper/publish.gni")
+import("$flutter_root/testing/testing.gni")
 
 _wrapper_includes = [ "include/flutter/flutter_window_controller.h" ]
 
@@ -53,9 +54,15 @@ source_set("client_wrapper_library_stubs_windows") {
     "testing/stub_flutter_windows_api.h",
   ]
 
+  defines = [ "FLUTTER_DESKTOP_LIBRARY" ]
+
   public_deps = [
     "$flutter_root/shell/platform/windows:flutter_windows_headers",
   ]
+}
+
+test_fixtures("client_wrapper_windows_fixtures") {
+  fixtures = []
 }
 
 executable("client_wrapper_windows_unittests") {
@@ -69,6 +76,7 @@ executable("client_wrapper_windows_unittests") {
   deps = [
     ":client_wrapper_library_stubs_windows",
     ":client_wrapper_windows",
+    ":client_wrapper_windows_fixtures",
     "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_library_stubs",
     "$flutter_root/testing",
 

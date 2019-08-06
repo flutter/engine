@@ -64,6 +64,12 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   return nullptr;
 }
 
+void FlutterDesktopDestroyWindow(FlutterDesktopWindowControllerRef controller) {
+  if (s_stub_implementation) {
+    s_stub_implementation->DestroyWindow();
+  }
+}
+
 void FlutterDesktopSetHoverEnabled(FlutterDesktopWindowRef flutter_window,
                                    bool enabled) {
   if (s_stub_implementation) {
@@ -87,7 +93,7 @@ void FlutterDesktopSetWindowIcon(FlutterDesktopWindowRef flutter_window,
   }
 }
 
-void FlutterDesktopRunWindowLoop(FlutterDesktopWindowRef flutter_window) {
+void FlutterDesktopRunWindowLoop(FlutterDesktopWindowControllerRef controller) {
   if (s_stub_implementation) {
     s_stub_implementation->RunWindowLoop();
   }
@@ -111,8 +117,14 @@ bool FlutterDesktopShutDownEngine(FlutterDesktopEngineRef engine_ref) {
   return true;
 }
 
+FlutterDesktopWindowRef FlutterDesktopGetWindow(
+    FlutterDesktopWindowControllerRef controller) {
+  // The stub ignores this, so just return an arbitrary non-zero value.
+  return reinterpret_cast<FlutterDesktopWindowRef>(1);
+}
+
 FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(
-    FlutterDesktopWindowRef flutter_window,
+    FlutterDesktopWindowControllerRef controller,
     const char* plugin_name) {
   // The stub ignores this, so just return an arbitrary non-zero value.
   return reinterpret_cast<FlutterDesktopPluginRegistrarRef>(1);

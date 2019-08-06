@@ -71,12 +71,11 @@ group("flutter") {
       "$flutter_root/third_party/txt:txt_unittests",
     ]
 
-    #Todo uncommenting this is causing a weird linkage error which needs figuring out
-    #if (is_win) {
-    #  public_deps += [
-    #    "$flutter_root/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests"
-    #  ]
-    #}
+    if (is_win) {
+      public_deps += [
+        "$flutter_root/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests"
+      ]
+    }
 
     if (!is_win) {
       public_deps += [
