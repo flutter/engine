@@ -580,7 +580,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
             navigationBarHidden ? calculateBottomKeyboardInset(insets) : insets.getSystemWindowInsetBottom();
         mMetrics.physicalViewInsetLeft = 0;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT >= 29) {
             Insets systemGestureInsets = insets.getSystemGestureInsets();
             mMetrics.systemGestureInsetTop = systemGestureInsets.top;
             mMetrics.systemGestureInsetRight = systemGestureInsets.right;
