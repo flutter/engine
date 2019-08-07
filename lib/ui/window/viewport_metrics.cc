@@ -34,9 +34,12 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
       physical_view_inset_bottom(p_physical_view_inset_bottom),
       physical_view_inset_left(p_physical_view_inset_left),
       physical_system_gesture_inset_top(p_physical_system_gesture_inset_top),
-      physical_system_gesture_inset_right(p_physical_system_gesture_inset_right),
-      physical_system_gesture_inset_bottom(p_physical_system_gesture_inset_bottom),
-      physical_system_gesture_inset_left(p_physical_system_gesture_inset_left) {}
+      physical_system_gesture_inset_right(
+          p_physical_system_gesture_inset_right),
+      physical_system_gesture_inset_bottom(
+          p_physical_system_gesture_inset_bottom),
+      physical_system_gesture_inset_left(p_physical_system_gesture_inset_left) {
+}
 
 ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
                                  double p_physical_width,
