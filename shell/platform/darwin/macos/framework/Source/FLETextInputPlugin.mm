@@ -8,7 +8,7 @@
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FLETextInputModel.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FLEViewController_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 
 static NSString* const kTextInputChannel = @"flutter/textinput";
 
@@ -54,9 +54,9 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
 @property(nonatomic) FlutterMethodChannel* channel;
 
 /**
- * The FLEViewController to manage input for.
+ * The FlutterViewController to manage input for.
  */
-@property(nonatomic, weak) FLEViewController* flutterViewController;
+@property(nonatomic, weak) FlutterViewController* flutterViewController;
 
 /**
  * Handles a Flutter system message on the text input channel.
@@ -67,7 +67,7 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
 
 @implementation FLETextInputPlugin
 
-- (instancetype)initWithViewController:(FLEViewController*)viewController {
+- (instancetype)initWithViewController:(FlutterViewController*)viewController {
   self = [super init];
   if (self != nil) {
     _flutterViewController = viewController;

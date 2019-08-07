@@ -8,7 +8,7 @@
 #include <vector>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FLEDartProject_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FLEViewController_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
 /**
@@ -179,7 +179,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       .open_gl.make_resource_current = (BoolCallback)OnMakeResourceCurrent,
   };
 
-  // TODO(stuartmorgan): Move internal channel registration from FLEViewController to here.
+  // TODO(stuartmorgan): Move internal channel registration from FlutterViewController to here.
 
   FlutterProjectArgs flutterArguments = {};
   flutterArguments.struct_size = sizeof(FlutterProjectArgs);
@@ -201,7 +201,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return YES;
 }
 
-- (void)setViewController:(FLEViewController*)controller {
+- (void)setViewController:(FlutterViewController*)controller {
   _viewController = controller;
   if (!controller && !_allowHeadlessExecution) {
     [self shutDownEngine];

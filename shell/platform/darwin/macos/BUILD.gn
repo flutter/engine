@@ -31,11 +31,11 @@ _flutter_framework_dir = "$root_out_dir/$_flutter_framework_filename"
 # the Flutter engine source root.
 _flutter_framework_headers = [
   "framework/Headers/FLEDartProject.h",
-  "framework/Headers/FLEViewController.h",
   "framework/Headers/FlutterEngine.h",
   "framework/Headers/FlutterMacOS.h",
   "framework/Headers/FlutterPluginMacOS.h",
   "framework/Headers/FlutterPluginRegistrarMacOS.h",
+  "framework/Headers/FlutterViewController.h",
 ]
 
 _flutter_framework_headers_copy_dir =
@@ -53,12 +53,12 @@ shared_library("create_flutter_framework_dylib") {
     "framework/Source/FLETextInputModel.mm",
     "framework/Source/FLETextInputPlugin.h",
     "framework/Source/FLETextInputPlugin.mm",
-    "framework/Source/FLEViewController.mm",
-    "framework/Source/FLEViewController_Internal.h",
     "framework/Source/FlutterEngine.mm",
     "framework/Source/FlutterEngine_Internal.h",
     "framework/Source/FlutterView.h",
     "framework/Source/FlutterView.mm",
+    "framework/Source/FlutterViewController.mm",
+    "framework/Source/FlutterViewController_Internal.h",
   ]
 
   sources += _flutter_framework_headers

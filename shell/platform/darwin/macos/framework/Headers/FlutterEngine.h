@@ -14,7 +14,7 @@
 
 // TODO: Merge this file with the iOS FlutterEngine.h.
 
-@class FLEViewController;
+@class FlutterViewController;
 
 /**
  * Coordinates a single instance of execution of a Flutter engine.
@@ -62,9 +62,9 @@ FLUTTER_EXPORT
 - (BOOL)runWithEntrypoint:(nullable NSString*)entrypoint;
 
 /**
- * The `FLEViewController` associated with this engine, if any.
+ * The `FlutterViewController` associated with this engine, if any.
  */
-@property(nonatomic, nullable, weak) FLEViewController* viewController;
+@property(nonatomic, nullable, weak) FlutterViewController* viewController;
 
 /**
  * The `FlutterBinaryMessenger` for communicating with this engine.
