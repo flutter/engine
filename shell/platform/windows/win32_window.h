@@ -7,6 +7,7 @@
 
 #include <Windows.h>
 #include <Windowsx.h>
+
 #include <memory>
 #include <string>
 

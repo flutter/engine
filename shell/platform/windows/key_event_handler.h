@@ -6,11 +6,11 @@
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_KEY_EVENT_HANDLER_H_
 
 #include <memory>
+
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/binary_messenger.h"
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
-
 #include "rapidjson/document.h"
 
 namespace flutter {

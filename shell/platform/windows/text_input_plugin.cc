@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 
 #include <windows.h>
+
 #include <cstdint>
 #include <iostream>
 

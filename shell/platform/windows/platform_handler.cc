@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/windows/platform_handler.h"
 
 #include <windows.h>
+
 #include <iostream>
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_method_codec.h"

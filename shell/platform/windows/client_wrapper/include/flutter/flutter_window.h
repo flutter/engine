@@ -5,10 +5,10 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_WINDOW_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_WINDOW_H_
 
+#include <flutter_windows.h>
+
 #include <string>
 #include <vector>
-
-#include <flutter_windows.h>
 
 #include "plugin_registrar.h"
 
