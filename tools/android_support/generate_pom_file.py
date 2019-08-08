@@ -8,10 +8,7 @@ import os
 import sys
 import json
 
-# Path constants. (All of these should be absolute paths.)
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
-FLUTTER_DIR = os.path.abspath(os.path.join(THIS_DIR, '..', '..', '..'))
-INSTALL_DIR = os.path.join(FLUTTER_DIR, 'third_party', 'android_support')
 
 # The template for the POM file.
 POM_FILE_CONTENT = '''
@@ -43,8 +40,12 @@ def main():
     dependencies = json.load(f)
 
   parser = argparse.ArgumentParser(description='Generate the POM file for the engine artifacts')
-  parser.add_argument('--engine-artifact-id', type=str, required=True)
-  parser.add_argument('--engine-version', type=str, required=True)
+  parser.add_argument('--engine-artifact-id', type=str, required=True,
+                      help='The artifact id. e.g. android_arm_release')
+  parser.add_argument('--engine-version', type=str, required=True,
+                      help='The engine commit hash')
+  parser.add_argument('--destination', type=str, required=True,
+                      help='The destination directory absolute path')
 
   args = parser.parse_args()
   engine_artifact_id = args.engine_artifact_id
@@ -58,7 +59,7 @@ def main():
     pom_dependencies += POM_DEPENDENCY.format(group_id, artifact_id, version)
 
   # Write the POM file.
-  with open(os.path.join(INSTALL_DIR, out_file_name), 'w') as f:
+  with open(os.path.join(args.destination, out_file_name), 'w') as f:
     f.write(POM_FILE_CONTENT.format(engine_artifact_id, engine_version, pom_dependencies))
 
 if __name__ == '__main__':
