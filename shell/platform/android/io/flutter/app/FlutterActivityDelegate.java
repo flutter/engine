@@ -327,7 +327,7 @@ public final class FlutterActivityDelegate
             if (intent.hasExtra("dart-flags")) {
                 args.add("--dart-flags=" + intent.getStringExtra("dart-flags"));
             }
-        } catch (ClassNotFoundException e) {
+        } catch (Exception e) {
             Log.e(TAG, "Parcelable encountered ClassNotFoundException reading a Serializable object");
         }
         if (!args.isEmpty()) {
@@ -354,7 +354,7 @@ public final class FlutterActivityDelegate
                 runBundle(appBundlePath);
                 return true;
             }
-        } catch (ClassNotFoundException e) {
+        } catch (Exception e) {
             Log.e(TAG, "Parcelable encountered ClassNotFoundException reading a Serializable object");
         }
 
