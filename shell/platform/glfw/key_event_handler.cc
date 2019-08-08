@@ -4,8 +4,6 @@
 
 #include "flutter/shell/platform/glfw/key_event_handler.h"
 
-#include <bits/stdint-uintn.h>
-
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
@@ -21,7 +19,8 @@ static constexpr char kScanCodeKey[] = "scanCode";
 static constexpr char kModifiersKey[] = "modifiers";
 static constexpr char kTypeKey[] = "type";
 static constexpr char kToolkitKey[] = "toolkit";
-static constexpr char kCodePoint[] = "unicodeScalarValuesProduced";
+static constexpr char kUnicodeScalarValuesProduced[] =
+    "unicodeScalarValuesProduced";
 
 static constexpr char kLinuxKeyMap[] = "linux";
 static constexpr char kGLFWKey[] = "glfw";
@@ -103,7 +102,7 @@ void KeyEventHandler::KeyboardHook(GLFWwindow* window,
   const char* keyName = glfwGetKeyName(key, scancode);
   if (keyName != nullptr) {
     uint32_t unicodeInt = DecodeUTF8(keyName);
-    event.AddMember(kCodePoint, unicodeInt, allocator);
+    event.AddMember(kUnicodeScalarValuesProduced, unicodeInt, allocator);
   }
 
   switch (action) {
