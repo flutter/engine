@@ -41,8 +41,8 @@
 
   // Verify behavior.
   OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
-    return [message[@"platformBrightness"] isEqualToString:@"light"];
-  }]]);
+                               return [message[@"platformBrightness"] isEqualToString:@"light"];
+                             }]]);
 }
 
 - (void)testItReportsDarkPlatformBrightnessWhenTraitCollectionRequestsIt {
@@ -62,8 +62,8 @@
 
   // Verify behavior.
   OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
-    return [message[@"platformBrightness"] isEqualToString:@"dark"];
-  }]]);
+                               return [message[@"platformBrightness"] isEqualToString:@"light"];
+                             }]]);
 
   // Restore UIUserInterfaceStyle
   [mockTraitCollection stopMocking];
@@ -99,7 +99,7 @@
   [mockTraitCollection stopMocking];
 }
 
-- (UITraitCollection*)setupFakeUserInterfaceStyle:(UIUserInterfaceStyle) style {
+- (UITraitCollection*)setupFakeUserInterfaceStyle:(UIUserInterfaceStyle)style {
   id mockTraitCollection = OCMClassMock([UITraitCollection class]);
   OCMStub([mockTraitCollection userInterfaceStyle]).andReturn(UIUserInterfaceStyleDark);
   OCMStub([mockTraitCollection currentTraitCollection]).andReturn(mockTraitCollection);
