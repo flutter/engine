@@ -308,7 +308,7 @@ def main():
     if ',' in java_filter or '*' in java_filter:
       print('Can only filter JUnit4 tests by single entire class name, eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter)
       java_filter = None
-    RunJavaTests(java_filter, android_variant)
+    RunJavaTests(java_filter, args.android_variant)
 
   # https://github.com/flutter/flutter/issues/36300
   if 'benchmarks' in types and not IsWindows():
