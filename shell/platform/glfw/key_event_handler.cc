@@ -4,8 +4,6 @@
 
 #include "flutter/shell/platform/glfw/key_event_handler.h"
 
-#include <cstddef>
-#include <cstdint>
 #include <iostream>
 #include <map>
 
