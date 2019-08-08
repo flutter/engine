@@ -6,6 +6,7 @@ import("//build/config/android/config.gni")
 import("$flutter_root/common/config.gni")
 import("$flutter_root/shell/config.gni")
 import("$flutter_root/shell/gpu/gpu.gni")
+import("$flutter_root/shell/version/version.gni")
 
 shell_gpu_configuration("android_gpu_configuration") {
   enable_software = true
@@ -316,6 +317,28 @@ action("android") {
   deps = [
     ":flutter_shell_java",
     ":flutter_shell_native",
+    ":pom",
+  ]
+}
+
+action("pom") {
+  script = "$flutter_root/tools/android_support/generate_pom_file.py"
+
+  inputs = [
+    "$flutter_root/tools/android_support/files.json",
+  ]
+
+  outputs = [
+    "$root_build_dir/$android_app_abi$flutter_runtime_mode-1.0.0-$engine_version.pom",
+  ]
+
+  args = [
+    "--destination",
+    root_build_dir,
+    "--engine-version",
+    engine_version,
+    "--engine-artifact-id",
+    "$android_app_abi$flutter_runtime_mode",
   ]
 }
 
