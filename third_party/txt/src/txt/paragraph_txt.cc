@@ -666,10 +666,6 @@ void ParagraphTxt::Layout(double width) {
 
   if (!ComputeLineBreaks())
     return;
-  FML_LOG(ERROR) << "paragraph_style_" << paragraph_style_.break_strategy;
-  for (size_t line_number = 0; line_number < line_metrics_.size(); ++line_number) {
-    FML_LOG(ERROR) << line_number<<" start " << line_metrics_[line_number].start_index << ", end " << line_metrics_[line_number].end_index;
-  }
 
   std::vector<BidiRun> bidi_runs;
   if (!ComputeBidiRuns(&bidi_runs))
