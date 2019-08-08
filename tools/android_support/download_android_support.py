@@ -22,10 +22,7 @@ def GetInstalledVersion(out_file_name):
   with open(version_file) as f:
     return f.read().strip()
 
-def getFile(entry):
-  url = entry['url']
-  out_file_name = entry['out_file_name']
-
+def getFile(url, out_file_name):
   # Read latest version.
   if url == GetInstalledVersion(out_file_name):
     return
@@ -52,7 +49,7 @@ def main():
     files = json.load(f)
 
   for entry in files:
-    getFile(entry)
+    getFile(entry['url'], entry['out_file_name'])
 
 if __name__ == '__main__':
   sys.exit(main())
