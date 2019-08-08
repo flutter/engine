@@ -107,12 +107,6 @@ void SessionConnection::PresentSession() {
   // Flush all session ops. Paint tasks may not yet have executed but those are
   // fenced. The compositor can start processing ops while we finalize paint
   // tasks.
-
-  ToggleSignal(vsync_event_handle_, false);
-
-  // Flush all session ops. Paint tasks may not yet have executed but those are
-  // fenced. The compositor can start processing ops while we finalize paint
-  // tasks.
   session_wrapper_.Present(
       0,  // presentation_time. (placeholder).
       [this, handle = vsync_event_handle_](
