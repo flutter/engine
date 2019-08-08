@@ -29,7 +29,7 @@ POM_FILE_CONTENT = '''
 </project>
 '''
 
-POM_DEPENENCY = '''
+POM_DEPENDENCY = '''
     <dependency>
       <groupId>{0}</groupId>
       <artifactId>{1}</artifactId>
@@ -55,7 +55,7 @@ def main():
   pom_dependencies = ''
   for dependency in dependencies:
     group_id, artifact_id, version = dependency['maven_dependency'].split(':')
-    pom_dependencies += POM_DEPENENCY.format(group_id, artifact_id, version)
+    pom_dependencies += POM_DEPENDENCY.format(group_id, artifact_id, version)
 
   # Write the POM file.
   with open(os.path.join(INSTALL_DIR, out_file_name), 'w') as f:
