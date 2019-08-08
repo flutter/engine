@@ -18,7 +18,7 @@ enum TextWrap {
   /// Wrap the text at word boundary.
   softWrap,
 
-  /// Wrap the text at the exact constraint width regardless the word boundary.
+  /// Wrap the text at the exact constraint width regardless of the word boundary.
   hardWrap,
 
   /// Does not wrap overflow text.
