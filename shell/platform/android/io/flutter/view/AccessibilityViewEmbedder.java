@@ -195,6 +195,7 @@ final class AccessibilityViewEmbedder {
         flutterIdToOrigin.put(flutterId, origin);
     }
 
+    @SuppressWarnings("deprecation")
     private void setFlutterNodesTranslateBounds(
             @NonNull AccessibilityNodeInfo originNode,
             @NonNull Rect displayBounds,
