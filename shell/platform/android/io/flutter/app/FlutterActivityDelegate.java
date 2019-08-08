@@ -279,52 +279,56 @@ public final class FlutterActivityDelegate
         // Android applications can generate intents with extra data and that
         // there are many security-sensitive args in the binary.
         ArrayList<String> args = new ArrayList<>();
-        if (intent.getBooleanExtra("trace-startup", false)) {
-            args.add("--trace-startup");
-        }
-        if (intent.getBooleanExtra("start-paused", false)) {
-            args.add("--start-paused");
-        }
-        if (intent.getBooleanExtra("disable-service-auth-codes", false)) {
-            args.add("--disable-service-auth-codes");
-        }
-        if (intent.getBooleanExtra("use-test-fonts", false)) {
-            args.add("--use-test-fonts");
-        }
-        if (intent.getBooleanExtra("enable-dart-profiling", false)) {
-            args.add("--enable-dart-profiling");
-        }
-        if (intent.getBooleanExtra("enable-software-rendering", false)) {
-            args.add("--enable-software-rendering");
-        }
-        if (intent.getBooleanExtra("skia-deterministic-rendering", false)) {
-            args.add("--skia-deterministic-rendering");
-        }
-        if (intent.getBooleanExtra("trace-skia", false)) {
-            args.add("--trace-skia");
-        }
-        if (intent.getBooleanExtra("trace-systrace", false)) {
-            args.add("--trace-systrace");
-        }
-        if (intent.getBooleanExtra("dump-skp-on-shader-compilation", false)) {
-            args.add("--dump-skp-on-shader-compilation");
-        }
-        if (intent.getBooleanExtra("verbose-logging", false)) {
-            args.add("--verbose-logging");
-        }
-        final int observatoryPort = intent.getIntExtra("observatory-port", 0);
-        if (observatoryPort > 0) {
-            args.add("--observatory-port=" + Integer.toString(observatoryPort));
-        }
-        if (intent.getBooleanExtra("disable-service-auth-codes", false)) {
-            args.add("--disable-service-auth-codes");
-        }
-        // NOTE: all flags provided with this argument are subject to filtering
-        // based on a whitelist in shell/common/switches.cc. If any flag provided
-        // is not present in the whitelist, the process will immediately
-        // terminate.
-        if (intent.hasExtra("dart-flags")) {
-            args.add("--dart-flags=" + intent.getStringExtra("dart-flags"));
+        try {
+            if (intent.getBooleanExtra("trace-startup", false)) {
+                args.add("--trace-startup");
+            }
+            if (intent.getBooleanExtra("start-paused", false)) {
+                args.add("--start-paused");
+            }
+            if (intent.getBooleanExtra("disable-service-auth-codes", false)) {
+                args.add("--disable-service-auth-codes");
+            }
+            if (intent.getBooleanExtra("use-test-fonts", false)) {
+                args.add("--use-test-fonts");
+            }
+            if (intent.getBooleanExtra("enable-dart-profiling", false)) {
+                args.add("--enable-dart-profiling");
+            }
+            if (intent.getBooleanExtra("enable-software-rendering", false)) {
+                args.add("--enable-software-rendering");
+            }
+            if (intent.getBooleanExtra("skia-deterministic-rendering", false)) {
+                args.add("--skia-deterministic-rendering");
+            }
+            if (intent.getBooleanExtra("trace-skia", false)) {
+                args.add("--trace-skia");
+            }
+            if (intent.getBooleanExtra("trace-systrace", false)) {
+                args.add("--trace-systrace");
+            }
+            if (intent.getBooleanExtra("dump-skp-on-shader-compilation", false)) {
+                args.add("--dump-skp-on-shader-compilation");
+            }
+            if (intent.getBooleanExtra("verbose-logging", false)) {
+                args.add("--verbose-logging");
+            }
+            final int observatoryPort = intent.getIntExtra("observatory-port", 0);
+            if (observatoryPort > 0) {
+                args.add("--observatory-port=" + Integer.toString(observatoryPort));
+            }
+            if (intent.getBooleanExtra("disable-service-auth-codes", false)) {
+                args.add("--disable-service-auth-codes");
+            }
+            // NOTE: all flags provided with this argument are subject to filtering
+            // based on a whitelist in shell/common/switches.cc. If any flag provided
+            // is not present in the whitelist, the process will immediately
+            // terminate.
+            if (intent.hasExtra("dart-flags")) {
+                args.add("--dart-flags=" + intent.getStringExtra("dart-flags"));
+            }
+        } catch (ClassNotFoundException e) {
+            Log.e(TAG, "Parcelable encountered ClassNotFoundException reading a Serializable object");
         }
         if (!args.isEmpty()) {
             String[] argsArray = new String[args.size()];
@@ -334,20 +338,24 @@ public final class FlutterActivityDelegate
     }
 
     private boolean loadIntent(Intent intent) {
-        String action = intent.getAction();
-        if (Intent.ACTION_RUN.equals(action)) {
-            String route = intent.getStringExtra("route");
-            String appBundlePath = intent.getDataString();
-            if (appBundlePath == null) {
-                // Fall back to the installation path if no bundle path was specified.
-                appBundlePath = FlutterMain.findAppBundlePath();
-            }
-            if (route != null) {
-                flutterView.setInitialRoute(route);
-            }
+        try {
+            String action = intent.getAction();
+            if (Intent.ACTION_RUN.equals(action)) {
+                String route = intent.getStringExtra("route");
+                String appBundlePath = intent.getDataString();
+                if (appBundlePath == null) {
+                    // Fall back to the installation path if no bundle path was specified.
+                    appBundlePath = FlutterMain.findAppBundlePath();
+                }
+                if (route != null) {
+                    flutterView.setInitialRoute(route);
+                }
 
-            runBundle(appBundlePath);
-            return true;
+                runBundle(appBundlePath);
+                return true;
+            }
+        } catch (ClassNotFoundException e) {
+            Log.e(TAG, "Parcelable encountered ClassNotFoundException reading a Serializable object");
         }
 
         return false;
