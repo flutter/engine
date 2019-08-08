@@ -4,7 +4,10 @@
 
 #include "flutter/shell/platform/glfw/key_event_handler.h"
 
+#include <bits/stdint-uintn.h>
+
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <map>
 
@@ -28,6 +31,45 @@ static constexpr char kKeyDown[] = "keydown";
 
 namespace flutter {
 
+// Converts a utf8 const char* to a 32 bit int. The Flutter framework accepts
+// only one 32 bit int, therefore, only up to 4 bytes are accepted. If it's
+// larger than 4 bytes, only the first 4 will be used.
+std::uint32_t DecodeUTF8(const char* utf8) {
+  size_t length = strlen(utf8);
+  // Defend against > 4 byte code points.
+  length = length >= 4 ? length : length;
+
+  // Tracks how many bits the current byte should shift to the left.
+  int shift = length;
+
+  // All possible masks for a 4 byte utf8 code point.
+  std::map<int, int> masks;
+  masks[4] = 0x07;
+  masks[3] = 0x0F;
+  masks[2] = 0x1F;
+  masks[1] = 0xFF;
+
+  // The number of bits to shift a byte depending on it's position.
+  std::map<int, int> bits;
+  bits[1] = 0;
+  bits[2] = 6;
+  bits[3] = 12;
+  bits[4] = 18;
+
+  int complement_mask = 0x3F;
+  uint32_t result = 0;
+
+  size_t current_byte_index = 0;
+  while (current_byte_index < length) {
+    int current_byte = utf8[current_byte_index];
+    int mask = current_byte_index == 0 ? masks[length] : complement_mask;
+    current_byte_index++;
+    result += (current_byte & mask) << bits[shift--];
+  }
+
+  return result;
+}
+
 KeyEventHandler::KeyEventHandler(flutter::BinaryMessenger* messenger)
     : channel_(
           std::make_unique<flutter::BasicMessageChannel<rapidjson::Document>>(
@@ -39,48 +81,6 @@ KeyEventHandler::~KeyEventHandler() = default;
 
 void KeyEventHandler::CharHook(GLFWwindow* window, unsigned int code_point) {}
 
-
-
-std::map<int, int> GetMasksMap() {
-  std::map<int, int> masks;
-  masks[4] = 0x07;
-  masks[3] = 0x0F;
-  masks[2] = 0x1F;
-  masks[1] = 0xFF;
-  return masks;
-}
-
-std::map<int, int> GetShiftMap() {
-  std::map<int, int> bits;
-  bits[1] = 0;
-  bits[2] = 6;
-  bits[3] = 12;
-  bits[4] = 18;
-  return bits;
-}
-
-int DecodeUTF8(const char* utf8) {
-  size_t length = strlen(utf8);
-  length = length >= 4 ? length : length;
-
-  int shift = length;
-  auto masks = GetMasksMap();
-  auto bits = GetShiftMap();
-  int complement_mask = 0x3F;
-  int result = 0;
-
-  size_t current_byte_index = 0;
-  while (current_byte_index < length) {
-    int current_byte = utf8[current_byte_index];
-    int mask =
-        current_byte_index == 0 ? masks[length] : complement_mask;
-
-    current_byte_index++;
-    result += (current_byte & mask) << bits[shift--];
-  }
-
-  return result;
-}
 void KeyEventHandler::KeyboardHook(GLFWwindow* window,
                                    int key,
                                    int scancode,
@@ -102,25 +102,13 @@ void KeyEventHandler::KeyboardHook(GLFWwindow* window,
   // value. See: https://github.com/glfw/glfw/issues/1462
   const char* keyName = glfwGetKeyName(key, scancode);
   if (keyName != nullptr) {
-  int unicodeInt = DecodeUTF8(keyName);
-  event.AddMember(kCodePoint, unicodeInt, allocator);
+    uint32_t unicodeInt = DecodeUTF8(keyName);
+    event.AddMember(kCodePoint, unicodeInt, allocator);
   }
-  // std::string nameString(keyName);
-  // int first = (int)nameString.at(0);
-  // int total = first;
-  // int second = 0;
-  // if (nameString.size() > 1) {
-  //  second = (int)nameString.at(1);
-  //  total = (first << 16) | second;
-  // }
-  // if (keyName != nullptr) {
-  //   event.AddMember(kCodePoint, total, allocator);
-  // }
-
-
 
   switch (action) {
     case GLFW_PRESS:
+    case GLFW_REPEAT:
       event.AddMember(kTypeKey, kKeyDown, allocator);
       break;
     case GLFW_RELEASE:
