@@ -513,9 +513,48 @@ void LineBreaker::computeBreaksOptimal(bool isRectangle) {
   finishBreaksOptimal();
 }
 
+void LineBreaker::computeBreaksHard(bool isRectangle) {
+  mBreaks.clear();
+  mWidths.clear();
+  mFlags.clear();
+  float currentWidth = 0.0f;
+  int lineNumber = 0;
+  float width = mLineWidths.getLineWidth(lineNumber);
+  for (size_t i = 0; i < mTextBuf.size(); i++) {
+    currentWidth += mCharWidths[i];
+    if (currentWidth > width) {
+      mBreaks.push_back(i);
+      mWidths.push_back(currentWidth - mCharWidths[i]);
+      mFlags.push_back(0);
+      currentWidth = 0.0f;
+      if (!isRectangle) {
+        lineNumber++;
+        width = mLineWidths.getLineWidth(lineNumber);
+      }
+    }
+  }
+}
+
+void LineBreaker::computeBreaksNone() {
+  mBreaks.clear();
+  mWidths.clear();
+  mFlags.clear();
+  float currentWidth = 0.0f;
+  for (size_t i = 0; i < mTextBuf.size(); i++) {
+    currentWidth += mCharWidths[i];
+  }
+  mBreaks.push_back(mTextBuf.size());
+  mWidths.push_back(currentWidth);
+  mFlags.push_back(0);
+}
+
 size_t LineBreaker::computeBreaks() {
   if (mStrategy == kBreakStrategy_Greedy) {
     computeBreaksGreedy();
+  } else if (mStrategy == kBreakStrategy_Hard) {
+    computeBreaksHard(mLineWidths.isConstant());
+  } else if (mStrategy == kBreakStrategy_None) {
+    computeBreaksNone();
   } else {
     computeBreaksOptimal(mLineWidths.isConstant());
   }

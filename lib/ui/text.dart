@@ -13,6 +13,18 @@ enum FontStyle {
   italic,
 }
 
+/// The different ways of wrapping overflow text.
+enum TextWrap {
+  /// Wrap the text at word boundary.
+  softWrap,
+
+  /// Wrap the text at the exact constraint width regardless the word boundary.
+  hardWrap,
+
+  /// Does not wrap overflow text.
+  none,
+}
+
 /// The thickness of the glyphs used to draw the text
 class FontWeight {
   const FontWeight._(this.index);
@@ -770,6 +782,7 @@ Int32List _encodeParagraphStyle(
   StrutStyle strutStyle,
   String ellipsis,
   Locale locale,
+  TextWrap wrap,
 ) {
   final Int32List result = Int32List(6); // also update paragraph_builder.cc
   if (textAlign != null) {
@@ -814,6 +827,10 @@ Int32List _encodeParagraphStyle(
   }
   if (locale != null) {
     result[0] |= 1 << 11;
+    // Passed separately to native.
+  }
+  if (wrap != null) {
+    result[0] |= 1 << 12;
     // Passed separately to native.
   }
   return result;
@@ -886,6 +903,7 @@ class ParagraphStyle {
     StrutStyle strutStyle,
     String ellipsis,
     Locale locale,
+    TextWrap wrap,
   }) : _encoded = _encodeParagraphStyle(
          textAlign,
          textDirection,
@@ -898,13 +916,15 @@ class ParagraphStyle {
          strutStyle,
          ellipsis,
          locale,
+         wrap,
        ),
        _fontFamily = fontFamily,
        _fontSize = fontSize,
        _height = height,
        _strutStyle = strutStyle,
        _ellipsis = ellipsis,
-       _locale = locale;
+       _locale = locale,
+       _wrap = wrap;
 
   final Int32List _encoded;
   final String _fontFamily;
@@ -913,6 +933,7 @@ class ParagraphStyle {
   final StrutStyle _strutStyle;
   final String _ellipsis;
   final Locale _locale;
+  final TextWrap _wrap;
 
   @override
   bool operator ==(dynamic other) {
@@ -926,7 +947,8 @@ class ParagraphStyle {
         _height != typedOther._height ||
         _strutStyle != typedOther._strutStyle ||
         _ellipsis != typedOther._ellipsis ||
-        _locale != typedOther._locale)
+        _locale != typedOther._locale ||
+        _wrap != typedOther._wrap)
      return false;
     for (int index = 0; index < _encoded.length; index += 1) {
       if (_encoded[index] != typedOther._encoded[index])
@@ -936,7 +958,7 @@ class ParagraphStyle {
   }
 
   @override
-  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _height, _ellipsis, _locale);
+  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _height, _ellipsis, _wrap, _locale);
 
   @override
   String toString() {
@@ -951,6 +973,7 @@ class ParagraphStyle {
              'height: ${        _encoded[0] & 0x100 == 0x100 ? "${_height}x"                     : "unspecified"}, '
              'ellipsis: ${      _encoded[0] & 0x200 == 0x200 ? "\"$_ellipsis\""                  : "unspecified"}, '
              'locale: ${        _encoded[0] & 0x400 == 0x400 ? _locale                           : "unspecified"}'
+             'wrap: ${          _encoded[0] & 0x800 == 0x800 ? _wrap                              : "unspecified"}, '
            ')';
   }
 }
@@ -1723,7 +1746,8 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
       style._fontSize,
       style._height,
       style._ellipsis,
-      _encodeLocale(style._locale)
+      _encodeLocale(style._locale),
+      style._wrap?.index,
     );
   }
 
@@ -1735,7 +1759,8 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
     double fontSize,
     double height,
     String ellipsis,
-    String locale
+    String locale,
+    int wrap
   ) native 'ParagraphBuilder_constructor';
 
   /// The number of placeholders currently in the paragraph.

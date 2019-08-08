@@ -34,7 +34,8 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
       double fontSize,
       double height,
       const std::u16string& ellipsis,
-      const std::string& locale);
+      const std::string& locale,
+      const int wrap);
 
   ~ParagraphBuilder() override;
 
@@ -81,7 +82,8 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
                             double fontSize,
                             double height,
                             const std::u16string& ellipsis,
-                            const std::string& locale);
+                            const std::string& locale,
+                            const int wrap);
 
   std::unique_ptr<txt::ParagraphBuilder> m_paragraphBuilder;
 };

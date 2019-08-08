@@ -666,6 +666,10 @@ void ParagraphTxt::Layout(double width) {
 
   if (!ComputeLineBreaks())
     return;
+  FML_LOG(ERROR) << "paragraph_style_" << paragraph_style_.break_strategy;
+  for (size_t line_number = 0; line_number < line_metrics_.size(); ++line_number) {
+    FML_LOG(ERROR) << line_number<<" start " << line_metrics_[line_number].start_index << ", end " << line_metrics_[line_number].end_index;
+  }
 
   std::vector<BidiRun> bidi_runs;
   if (!ComputeBidiRuns(&bidi_runs))
@@ -802,25 +806,26 @@ void ParagraphTxt::Layout(double width) {
       size_t text_start = run.start();
       size_t text_count = run.end() - run.start();
       size_t text_size = text_.size();
-
-      // Apply ellipsizing if the run was not completely laid out and this
-      // is the last line (or lines are unlimited).
-      const std::u16string& ellipsis = paragraph_style_.ellipsis;
-      std::vector<uint16_t> ellipsized_text;
-      if (ellipsis.length() && !isinf(width_) && !line_metrics.hard_break &&
-          line_run_it == line_runs.end() - 1 &&
-          (line_number == line_limit - 1 ||
-           paragraph_style_.unlimited_lines())) {
-        float ellipsis_width = layout.measureText(
-            reinterpret_cast<const uint16_t*>(ellipsis.data()), 0,
-            ellipsis.length(), ellipsis.length(), run.is_rtl(), minikin_font,
-            minikin_paint, minikin_font_collection, nullptr);
-
-        std::vector<float> text_advances(text_count);
+      std::vector<float> text_advances(text_count);
         float text_width =
             layout.measureText(text_ptr, text_start, text_count, text_.size(),
                                run.is_rtl(), minikin_font, minikin_paint,
                                minikin_font_collection, text_advances.data());
+      // Apply ellipsizing in two cases:
+      // 1 the run was not completely laid out and this
+      //    is the last line (or lines are unlimited)
+      // 2 Current width is greater than width constraint.
+      const std::u16string& ellipsis = paragraph_style_.ellipsis;
+      std::vector<uint16_t> ellipsized_text;
+      if (ellipsis.length() && !isinf(width_) &&
+          (run_x_offset + text_width > width_ ||
+           (!line_metrics.hard_break &&
+            line_run_it == line_runs.end() - 1 &&
+            line_number == line_limit - 1))) {
+        float ellipsis_width = layout.measureText(
+            reinterpret_cast<const uint16_t*>(ellipsis.data()), 0,
+            ellipsis.length(), ellipsis.length(), run.is_rtl(), minikin_font,
+            minikin_paint, minikin_font_collection, nullptr);
 
         // Truncate characters from the text until the ellipsis fits.
         size_t truncate_count = 0;
@@ -842,12 +847,7 @@ void ParagraphTxt::Layout(double width) {
         text_count = ellipsized_text.size();
         text_size = text_count;
 
-        // If there is no line limit, then skip all lines after the ellipsized
-        // line.
-        if (paragraph_style_.unlimited_lines()) {
-          line_limit = line_number + 1;
-          did_exceed_max_lines_ = true;
-        }
+        did_exceed_max_lines_ = line_limit == line_number + 1;
       }
 
       layout.doLayout(text_ptr, text_start, text_count, text_size, run.is_rtl(),
@@ -1242,7 +1242,9 @@ double ParagraphTxt::GetHeight() {
 }
 
 double ParagraphTxt::GetMaxWidth() {
-  return width_;
+  // In the case of paragraph_style_.break_strategy = minikin::BreakStrategy::kBreakStrategy_None,
+  // It is possible that longest_line_ is greater than width_.
+  return std::max(width_, longest_line_);
 }
 
 double ParagraphTxt::GetLongestLine() {

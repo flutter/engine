@@ -73,7 +73,7 @@ skt::ParagraphStyle TxtToSkia(const ParagraphStyle& txt) {
   skia.setTextDirection(static_cast<skt::TextDirection>(txt.text_direction));
   skia.setMaxLines(txt.max_lines);
   skia.setEllipsis(txt.ellipsis);
-
+  skia.setWrap(txt.wrap);
   skia.turnHintingOff();
 
   return skia;

@@ -39,8 +39,10 @@ namespace minikin {
 
 enum BreakStrategy {
   kBreakStrategy_Greedy = 0,
-  kBreakStrategy_HighQuality = 1,
-  kBreakStrategy_Balanced = 2
+  kBreakStrategy_Hard = 1,
+  kBreakStrategy_None = 2,
+  kBreakStrategy_HighQuality = 3,
+  kBreakStrategy_Balanced = 4
 };
 
 enum HyphenationFrequency {
@@ -209,6 +211,10 @@ class LineBreaker {
   void computeBreaksGreedy();
 
   void computeBreaksOptimal(bool isRectangular);
+
+  void computeBreaksHard(bool isRectangle);
+
+  void computeBreaksNone();
 
   void finishBreaksOptimal();
 
