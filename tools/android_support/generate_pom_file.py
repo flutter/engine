@@ -46,21 +46,24 @@ def main():
                       help='The engine commit hash')
   parser.add_argument('--destination', type=str, required=True,
                       help='The destination directory absolute path')
+  parser.add_argument('--include-embedding-dependencies', type=bool,
+                      help='Include the dependencies for the embedding')
 
   args = parser.parse_args()
   engine_artifact_id = args.engine_artifact_id
   engine_version = args.engine_version
   artifact_version = '1.0.0-' + engine_version
-  out_file_name = '%s-%s.pom' % (engine_artifact_id, engine_version)
+  out_file_name = '%s-%s.pom' % (engine_artifact_id, artifact_version)
 
   pom_dependencies = ''
-  for dependency in dependencies:
-    group_id, artifact_id, version = dependency['maven_dependency'].split(':')
-    pom_dependencies += POM_DEPENDENCY.format(group_id, artifact_id, version)
+  if args.include_embedding_dependencies:
+    for dependency in dependencies:
+      group_id, artifact_id, version = dependency['maven_dependency'].split(':')
+      pom_dependencies += POM_DEPENDENCY.format(group_id, artifact_id, version)
 
   # Write the POM file.
   with open(os.path.join(args.destination, out_file_name), 'w') as f:
-    f.write(POM_FILE_CONTENT.format(engine_artifact_id, engine_version, pom_dependencies))
+    f.write(POM_FILE_CONTENT.format(engine_artifact_id, artifact_version, pom_dependencies))
 
 if __name__ == '__main__':
   sys.exit(main())
