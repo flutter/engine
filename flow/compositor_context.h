@@ -20,6 +20,8 @@ namespace flutter {
 
 class LayerTree;
 
+enum class RasterStatus { kSuccess, kFailed };
+
 class CompositorContext {
  public:
   class ScopedFrame {
@@ -45,7 +47,8 @@ class CompositorContext {
 
     GrContext* gr_context() const { return gr_context_; }
 
-    virtual bool Raster(LayerTree& layer_tree, bool ignore_raster_cache);
+    virtual RasterStatus Raster(LayerTree& layer_tree,
+                                bool ignore_raster_cache);
 
    private:
     CompositorContext& context_;
@@ -79,16 +82,16 @@ class CompositorContext {
 
   const Counter& frame_count() const { return frame_count_; }
 
-  const Stopwatch& frame_time() const { return frame_time_; }
+  const Stopwatch& raster_time() const { return raster_time_; }
 
-  Stopwatch& engine_time() { return engine_time_; }
+  Stopwatch& ui_time() { return ui_time_; }
 
  private:
   RasterCache raster_cache_;
   TextureRegistry texture_registry_;
   Counter frame_count_;
-  Stopwatch frame_time_;
-  Stopwatch engine_time_;
+  Stopwatch raster_time_;
+  Stopwatch ui_time_;
 
   void BeginFrame(ScopedFrame& frame, bool enable_instrumentation);
 

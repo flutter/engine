@@ -6,7 +6,7 @@ assert(is_mac)
 
 import("//build/config/mac/mac_sdk.gni")
 import("$flutter_root/common/config.gni")
-import("$flutter_root/shell/platform/darwin/framework_shared.gni")
+import("$flutter_root/shell/platform/darwin/common/framework_shared.gni")
 import("$flutter_root/shell/platform/glfw/config.gni")
 
 group("macos") {
@@ -31,11 +31,10 @@ _flutter_framework_dir = "$root_out_dir/$_flutter_framework_filename"
 # the Flutter engine source root.
 _flutter_framework_headers = [
   "framework/Headers/FlutterMacOS.h",
-  "framework/Headers/FLEOpenGLContextHandling.h",
-  "framework/Headers/FLEPlugin.h",
-  "framework/Headers/FLEPluginRegistrar.h",
-  "framework/Headers/FLEReshapeListener.h",
-  "framework/Headers/FLEView.h",
+  "framework/Headers/FlutterPluginMacOS.h",
+  "framework/Headers/FlutterPluginRegistrarMacOS.h",
+  "framework/Headers/FLEDartProject.h",
+  "framework/Headers/FLEEngine.h",
   "framework/Headers/FLEViewController.h",
 ]
 
@@ -48,20 +47,25 @@ shared_library("create_flutter_framework_dylib") {
   output_name = "$_flutter_framework_name"
 
   sources = [
+    "framework/Source/FLEDartProject.mm",
+    "framework/Source/FLEDartProject_Internal.h",
+    "framework/Source/FLEEngine.mm",
+    "framework/Source/FLEEngine_Internal.h",
     "framework/Source/FLETextInputModel.h",
     "framework/Source/FLETextInputModel.mm",
     "framework/Source/FLETextInputPlugin.h",
     "framework/Source/FLETextInputPlugin.mm",
-    "framework/Source/FLEView.mm",
     "framework/Source/FLEViewController.mm",
     "framework/Source/FLEViewController_Internal.h",
+    "framework/Source/FlutterView.h",
+    "framework/Source/FlutterView.mm",
   ]
 
   sources += _flutter_framework_headers
 
   deps = [
-    "$flutter_root/shell/platform/darwin:framework_shared",
-    "$flutter_root/shell/platform/embedder:embedder",
+    "$flutter_root/shell/platform/darwin/common:framework_shared",
+    "$flutter_root/shell/platform/embedder:embedder_with_symbol_prefix",
   ]
 
   public_configs = [ "$flutter_root:config" ]
@@ -137,7 +141,6 @@ copy("copy_framework_module_map") {
 action("copy_framework_headers") {
   script = "$flutter_root/sky/tools/install_framework_headers.py"
   visibility = [ ":*" ]
-  set_sources_assignment_filter([])
   sources = get_path_info(_flutter_framework_headers, "abspath") +
             framework_shared_headers
   outputs = []
@@ -150,16 +153,13 @@ action("copy_framework_headers") {
            rebase_path("$_flutter_framework_headers_copy_dir"),
            "--headers",
          ] + rebase_path(sources, "", "//")
-  set_sources_assignment_filter(sources_assignment_filter)
 }
 
 copy("copy_framework_icu") {
   visibility = [ ":*" ]
-  set_sources_assignment_filter([])
   sources = [
     "//third_party/icu/flutter/icudtl.dat",
   ]
-  set_sources_assignment_filter(sources_assignment_filter)
   outputs = [
     "$_flutter_framework_dir/Versions/A/Resources/{{source_file_part}}",
   ]
@@ -204,9 +204,20 @@ action("_generate_symlinks") {
   ]
 }
 
+copy("copy_framework_podspec") {
+  visibility = [ ":*" ]
+  sources = [
+    "framework/FlutterMacOS.podspec",
+  ]
+  outputs = [
+    "$root_out_dir/FlutterMacOS.podspec",
+  ]
+}
+
 group("flutter_framework") {
   deps = [
     ":_generate_symlinks",
+    ":copy_framework_podspec",
   ]
 }
 

@@ -4,8 +4,8 @@
 
 #include "gpu_surface_gl.h"
 
-#include "flutter/fml/arraysize.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/size.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/persistent_cache.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
@@ -28,7 +28,10 @@ static const int kGrCacheMaxCount = 8192;
 
 // Default maximum number of bytes of GPU memory of budgeted resources in the
 // cache.
-static const size_t kGrCacheMaxByteSize = 512 * (1 << 20);
+// The shell will dynamically increase or decrease this cache based on the
+// viewport size, unless a user has specifically requested a size on the Skia
+// system channel.
+static const size_t kGrCacheMaxByteSize = 24 * (1 << 20);
 
 GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate)
     : delegate_(delegate), weak_factory_(this) {

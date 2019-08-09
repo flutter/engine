@@ -17,7 +17,7 @@ void CompositorContext::BeginFrame(ScopedFrame& frame,
                                    bool enable_instrumentation) {
   if (enable_instrumentation) {
     frame_count_.Increment();
-    frame_time_.Start();
+    raster_time_.Start();
   }
 }
 
@@ -25,7 +25,7 @@ void CompositorContext::EndFrame(ScopedFrame& frame,
                                  bool enable_instrumentation) {
   raster_cache_.SweepAfterFrame();
   if (enable_instrumentation) {
-    frame_time_.Stop();
+    raster_time_.Stop();
   }
 }
 
@@ -60,8 +60,9 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
   context_.EndFrame(*this, instrumentation_enabled_);
 }
 
-bool CompositorContext::ScopedFrame::Raster(flutter::LayerTree& layer_tree,
-                                            bool ignore_raster_cache) {
+RasterStatus CompositorContext::ScopedFrame::Raster(
+    flutter::LayerTree& layer_tree,
+    bool ignore_raster_cache) {
   layer_tree.Preroll(*this, ignore_raster_cache);
   // Clearing canvas after preroll reduces one render target switch when preroll
   // paints some raster cache.
@@ -69,7 +70,7 @@ bool CompositorContext::ScopedFrame::Raster(flutter::LayerTree& layer_tree,
     canvas()->clear(SK_ColorTRANSPARENT);
   }
   layer_tree.Paint(*this, ignore_raster_cache);
-  return true;
+  return RasterStatus::kSuccess;
 }
 
 void CompositorContext::OnGrContextCreated() {

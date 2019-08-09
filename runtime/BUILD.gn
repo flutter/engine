@@ -28,13 +28,17 @@ source_set("test_font") {
 group("libdart") {
   public_deps = []
 
-  if (flutter_runtime_mode == "profile" || flutter_runtime_mode == "release") {
-    public_deps += [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
-  } else {
-    public_deps += [
-      "$flutter_root/lib/snapshot",
-      "//third_party/dart/runtime:libdart_jit",
-    ]
+  if (!(is_fuchsia && using_fuchsia_sdk)) {
+    if (flutter_runtime_mode == "profile" ||
+        flutter_runtime_mode == "release") {
+      public_deps +=
+          [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
+    } else {
+      public_deps += [
+        "$flutter_root/lib/snapshot",
+        "//third_party/dart/runtime:libdart_jit",
+      ]
+    }
   }
 }
 
@@ -54,6 +58,8 @@ source_set("runtime") {
     "dart_vm_lifecycle.h",
     "embedder_resources.cc",
     "embedder_resources.h",
+    "ptrace_ios.cc",
+    "ptrace_ios.h",
     "runtime_controller.cc",
     "runtime_controller.h",
     "runtime_delegate.cc",
@@ -85,8 +91,7 @@ source_set("runtime") {
 
   public_configs = [ "$flutter_root:config" ]
 
-  if (flutter_runtime_mode != "release" &&
-      flutter_runtime_mode != "dynamic_release" && !is_fuchsia) {
+  if (flutter_runtime_mode != "release" && !is_fuchsia) {
     # Only link in Observatory in non-release modes on non-Fuchsia. Fuchsia
     # instead puts Observatory into the runner's package.
     deps += [
@@ -96,7 +101,7 @@ source_set("runtime") {
 }
 
 test_fixtures("runtime_fixtures") {
-  fixtures = [ "fixtures/runtime_test.dart" ]
+  dart_main = "fixtures/runtime_test.dart"
 }
 
 source_set("runtime_unittests_common") {
@@ -126,6 +131,8 @@ source_set("runtime_unittests_common") {
 executable("runtime_unittests") {
   testonly = true
 
+  configs += [ "$flutter_root:export_dynamic_symbols" ]
+
   sources = [
     "dart_isolate_unittests.cc",
     "dart_lifecycle_unittests.cc",
@@ -136,8 +143,4 @@ executable("runtime_unittests") {
   deps = [
     ":runtime_unittests_common",
   ]
-
-  if (is_linux) {
-    ldflags = [ "-rdynamic" ]
-  }
 }

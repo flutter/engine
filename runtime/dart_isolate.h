@@ -14,7 +14,6 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/lib/ui/io_manager.h"
-#include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/window.h"
 #include "flutter/runtime/dart_snapshot.h"
@@ -47,8 +46,8 @@ class DartIsolate : public UIDartState {
       fml::RefPtr<const DartSnapshot> shared_snapshot,
       TaskRunners task_runners,
       std::unique_ptr<Window> window,
-      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
       fml::WeakPtr<IOManager> io_manager,
+      fml::WeakPtr<ImageDecoder> image_decoder,
       std::string advisory_script_uri,
       std::string advisory_script_entrypoint,
       Dart_IsolateFlags* flags,
@@ -59,8 +58,8 @@ class DartIsolate : public UIDartState {
               fml::RefPtr<const DartSnapshot> isolate_snapshot,
               fml::RefPtr<const DartSnapshot> shared_snapshot,
               TaskRunners task_runners,
-              fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
               fml::WeakPtr<IOManager> io_manager,
+              fml::WeakPtr<ImageDecoder> image_decoder,
               std::string advisory_script_uri,
               std::string advisory_script_entrypoint,
               ChildIsolatePreparer child_isolate_preparer,
@@ -72,6 +71,8 @@ class DartIsolate : public UIDartState {
   const Settings& GetSettings() const;
 
   Phase GetPhase() const;
+
+  std::string GetServiceId();
 
   FML_WARN_UNUSED_RESULT
   bool PrepareForRunningFromPrecompiledCode();
@@ -154,8 +155,8 @@ class DartIsolate : public UIDartState {
 
   void OnShutdownCallback();
 
-  // |Dart_IsolateCreateCallback|
-  static Dart_Isolate DartIsolateCreateCallback(
+  // |Dart_IsolateGroupCreateCallback|
+  static Dart_Isolate DartIsolateGroupCreateCallback(
       const char* advisory_script_uri,
       const char* advisory_script_entrypoint,
       const char* package_root,
@@ -184,11 +185,12 @@ class DartIsolate : public UIDartState {
 
   // |Dart_IsolateShutdownCallback|
   static void DartIsolateShutdownCallback(
-      std::shared_ptr<DartIsolate>* embedder_isolate);
+      std::shared_ptr<DartIsolate>* isolate_group_data,
+      std::shared_ptr<DartIsolate>* isolate_data);
 
-  // |Dart_IsolateCleanupCallback|
-  static void DartIsolateCleanupCallback(
-      std::shared_ptr<DartIsolate>* embedder_isolate);
+  // |Dart_IsolateGroupCleanupCallback|
+  static void DartIsolateGroupCleanupCallback(
+      std::shared_ptr<DartIsolate>* isolate_group_data);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DartIsolate);
 };

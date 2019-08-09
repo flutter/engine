@@ -28,37 +28,14 @@ void main() {
   test('Fails with invalid data', () async {
     final Uint8List data = Uint8List.fromList(<int>[1, 2, 3]);
     expect(
-      ui.instantiateImageCodec(data),
-      throwsA(exceptionWithMessage('operation failed'))
+      () => ui.instantiateImageCodec(data),
+      throwsA(exceptionWithMessage('Could not instantiate image codec.'))
     );
   });
 
   test('nextFrame', () async {
     final Uint8List data = await _getSkiaResource('test640x479.gif').readAsBytes();
     final ui.Codec codec = await ui.instantiateImageCodec(data);
-    final List<List<int>> decodedFrameInfos = <List<int>>[];
-    for (int i = 0; i < 5; i++) {
-      final ui.FrameInfo frameInfo = await codec.getNextFrame();
-      decodedFrameInfos.add(<int>[
-        frameInfo.duration.inMilliseconds,
-        frameInfo.image.width,
-        frameInfo.image.height,
-      ]);
-    }
-    expect(decodedFrameInfos, equals(<List<int>>[
-      <int>[200, 640, 479],
-      <int>[200, 640, 479],
-      <int>[200, 640, 479],
-      <int>[200, 640, 479],
-      <int>[200, 640, 479],
-    ]));
-  });
-
-  test('decodedCacheRatioCap', () async {
-    // No real way to test the native layer, but a smoke test here to at least
-    // verify that animation is still consistent with caching disabled.
-    final Uint8List data = await _getSkiaResource('test640x479.gif').readAsBytes();
-    final ui.Codec codec = await ui.instantiateImageCodec(data, decodedCacheRatioCap: 1.0);
     final List<List<int>> decodedFrameInfos = <List<int>>[];
     for (int i = 0; i < 5; i++) {
       final ui.FrameInfo frameInfo = await codec.getNextFrame();

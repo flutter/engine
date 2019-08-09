@@ -48,12 +48,13 @@ struct PrerollContext {
   RasterCache* raster_cache;
   GrContext* gr_context;
   ExternalViewEmbedder* view_embedder;
+  MutatorsStack& mutators_stack;
   SkColorSpace* dst_color_space;
   SkRect cull_rect;
 
   // The following allows us to paint in the end of subtree preroll
-  const Stopwatch& frame_time;
-  const Stopwatch& engine_time;
+  const Stopwatch& raster_time;
+  const Stopwatch& ui_time;
   TextureRegistry& texture_registry;
   const bool checkerboard_offscreen_layers;
   float total_elevation = 0.0f;
@@ -83,8 +84,8 @@ class Layer {
     SkCanvas* leaf_nodes_canvas;
     GrContext* gr_context;
     ExternalViewEmbedder* view_embedder;
-    const Stopwatch& frame_time;
-    const Stopwatch& engine_time;
+    const Stopwatch& raster_time;
+    const Stopwatch& ui_time;
     TextureRegistry& texture_registry;
     const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;

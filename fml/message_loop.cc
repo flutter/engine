@@ -6,7 +6,6 @@
 
 #include <utility>
 
-#include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/fml/message_loop_impl.h"
@@ -44,13 +43,6 @@ MessageLoop::MessageLoop()
   FML_CHECK(task_runner_);
 }
 
-MessageLoop::MessageLoop(Type)
-    : loop_(fml::MakeRefCounted<ConcurrentMessageLoop>()),
-      task_runner_(fml::MakeRefCounted<fml::TaskRunner>(loop_)) {
-  FML_CHECK(loop_);
-  FML_CHECK(task_runner_);
-}
-
 MessageLoop::~MessageLoop() = default;
 
 void MessageLoop::Run() {
@@ -79,6 +71,12 @@ void MessageLoop::RemoveTaskObserver(intptr_t key) {
 
 void MessageLoop::RunExpiredTasksNow() {
   loop_->RunExpiredTasksNow();
+}
+
+void MessageLoop::SwapTaskQueues(MessageLoop* other) {
+  FML_CHECK(loop_);
+  FML_CHECK(other->loop_);
+  loop_->SwapTaskQueues(other->loop_);
 }
 
 }  // namespace fml

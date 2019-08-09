@@ -4,10 +4,10 @@
 
 part of engine;
 
-MethodCall _popRouteMethodCall = MethodCall('popRoute');
+const MethodCall _popRouteMethodCall = MethodCall('popRoute');
 
-Map<String, bool> _originState = {'origin': true};
-Map<String, bool> _flutterState = {'flutter': true};
+Map<String, bool> _originState = <String, bool>{'origin': true};
+Map<String, bool> _flutterState = <String, bool>{'flutter': true};
 
 /// The origin entry is the history entry that the Flutter app landed on. It's
 /// created by the browser when the user navigates to the url of the app.
@@ -33,7 +33,7 @@ bool _isFlutterEntry(dynamic state) {
 ///
 /// There should only be one global instance of this class.
 class BrowserHistory {
-  ui.LocationStrategy _locationStrategy;
+  LocationStrategy _locationStrategy;
   ui.VoidCallback _unsubscribe;
 
   /// Changing the location strategy will unsubscribe from the old strategy's
@@ -44,7 +44,7 @@ class BrowserHistory {
   ///
   /// If the given strategy is null, it will render this [BrowserHistory]
   /// instance inactive.
-  set locationStrategy(ui.LocationStrategy strategy) {
+  set locationStrategy(LocationStrategy strategy) {
     if (strategy != _locationStrategy) {
       _tearoffStrategy(_locationStrategy);
       _locationStrategy = strategy;
@@ -76,7 +76,7 @@ class BrowserHistory {
       _tearoffStrategy(_locationStrategy);
       // After tearing off the location strategy, we should be on the "origin"
       // entry. So we need to go back one more time to exit the app.
-      Future<void> backFuture = _locationStrategy.back();
+      final Future<void> backFuture = _locationStrategy.back();
       _locationStrategy = null;
       return backFuture;
     }
@@ -106,7 +106,7 @@ class BrowserHistory {
       // brings us here.
       assert(_userProvidedRouteName != null);
 
-      String newRouteName = _userProvidedRouteName;
+      final String newRouteName = _userProvidedRouteName;
       _userProvidedRouteName = null;
 
       // Send a 'pushRoute' platform message so the app handles it accordingly.
@@ -135,7 +135,7 @@ class BrowserHistory {
   /// This method should be called when the Origin Entry is active. It just
   /// replaces the state of the entry so that we can recognize it later using
   /// [_isOriginEntry] inside [_popStateListener].
-  void _setupOriginEntry(ui.LocationStrategy strategy) {
+  void _setupOriginEntry(LocationStrategy strategy) {
     assert(strategy != null);
     strategy.replaceState(_originState, 'origin', '');
   }
@@ -143,7 +143,7 @@ class BrowserHistory {
   /// This method is used manipulate the Flutter Entry which is always the
   /// active entry while the Flutter app is running.
   void _setupFlutterEntry(
-    ui.LocationStrategy strategy, {
+    LocationStrategy strategy, {
     bool replace = false,
     String path,
   }) {
@@ -156,12 +156,12 @@ class BrowserHistory {
     }
   }
 
-  void _setupStrategy(ui.LocationStrategy strategy) {
+  void _setupStrategy(LocationStrategy strategy) {
     if (strategy == null) {
       return;
     }
 
-    String path = currentPath;
+    final String path = currentPath;
     if (_isFlutterEntry(html.window.history.state)) {
       // This could happen if the user, for example, refreshes the page. They
       // will land directly on the "flutter" entry, so there's no need to setup
@@ -174,7 +174,7 @@ class BrowserHistory {
     _unsubscribe = strategy.onPopState(_popStateListener);
   }
 
-  void _tearoffStrategy(ui.LocationStrategy strategy) {
+  void _tearoffStrategy(LocationStrategy strategy) {
     if (strategy == null) {
       return;
     }

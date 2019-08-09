@@ -16,7 +16,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server.h"
-#include "flutter/lib/ui/snapshot_delegate.h"
+#include "flutter/lib/ui/painting/image_decoder.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 #include "third_party/tonic/dart_microtask_queue.h"
@@ -49,9 +49,9 @@ class UIDartState : public tonic::DartState {
 
   fml::RefPtr<flutter::SkiaUnrefQueue> GetSkiaUnrefQueue() const;
 
-  fml::WeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
-
   fml::WeakPtr<GrContext> GetResourceContext() const;
+
+  fml::WeakPtr<ImageDecoder> GetImageDecoder() const;
 
   std::shared_ptr<IsolateNameServer> GetIsolateNameServer() const;
 
@@ -75,8 +75,8 @@ class UIDartState : public tonic::DartState {
   UIDartState(TaskRunners task_runners,
               TaskObserverAdd add_callback,
               TaskObserverRemove remove_callback,
-              fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
               fml::WeakPtr<IOManager> io_manager,
+              fml::WeakPtr<ImageDecoder> image_decoder,
               std::string advisory_script_uri,
               std::string advisory_script_entrypoint,
               std::string logger_prefix,
@@ -97,8 +97,8 @@ class UIDartState : public tonic::DartState {
   const TaskRunners task_runners_;
   const TaskObserverAdd add_callback_;
   const TaskObserverRemove remove_callback_;
-  fml::WeakPtr<SnapshotDelegate> snapshot_delegate_;
   fml::WeakPtr<IOManager> io_manager_;
+  fml::WeakPtr<ImageDecoder> image_decoder_;
   const std::string advisory_script_uri_;
   const std::string advisory_script_entrypoint_;
   const std::string logger_prefix_;

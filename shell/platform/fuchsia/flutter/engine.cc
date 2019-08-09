@@ -80,12 +80,6 @@ Engine::Engine(Delegate& delegate,
   environment->GetServices(parent_environment_service_provider.NewRequest());
   environment.Unbind();
 
-  // Grab the accessibilty context writer that can understand the semantics tree
-  // on the platform view.
-  fidl::InterfaceHandle<fuchsia::modular::ContextWriter>
-      accessibility_context_writer;
-  svc->Connect(accessibility_context_writer.NewRequest());
-
   // We need to manually schedule a frame when the session metrics change.
   OnMetricsUpdate on_session_metrics_change_callback = std::bind(
       &Engine::OnSessionMetricsDidChange, this, std::placeholders::_1);
@@ -120,8 +114,6 @@ Engine::Engine(Delegate& delegate,
                std::move(on_session_metrics_change_callback),
            on_session_size_change_hint_callback =
                std::move(on_session_size_change_hint_callback),
-           accessibility_context_writer =
-               std::move(accessibility_context_writer),
            vsync_handle = vsync_event_.get()](flutter::Shell& shell) mutable {
             return std::make_unique<flutter_runner::PlatformView>(
                 shell,                                           // delegate
@@ -132,9 +124,7 @@ Engine::Engine(Delegate& delegate,
                 std::move(on_session_listener_error_callback),
                 std::move(on_session_metrics_change_callback),
                 std::move(on_session_size_change_hint_callback),
-                std::move(accessibility_context_writer),  // accessibility
-                                                          // context writer
-                vsync_handle                              // vsync handle
+                vsync_handle  // vsync handle
             );
           });
 
@@ -144,7 +134,7 @@ Engine::Engine(Delegate& delegate,
   // This handles the fidl error callback when the Session connection is
   // broken. The SessionListener interface also has an OnError method, which is
   // invoked on the platform thread (in PlatformView).
-  fit::closure on_session_error_callback =
+  fml::closure on_session_error_callback =
       [dispatcher = async_get_default_dispatcher(),
        weak = weak_factory_.GetWeakPtr()]() {
         async::PostTask(dispatcher, [weak]() {
@@ -153,30 +143,6 @@ Engine::Engine(Delegate& delegate,
           }
         });
       };
-
-  // Create the compositor context from the scenic pointer to create the
-  // rasterizer.
-  std::unique_ptr<flutter::CompositorContext> compositor_context;
-  {
-    TRACE_EVENT0("flutter", "CreateCompositorContext");
-    compositor_context = std::make_unique<flutter_runner::CompositorContext>(
-        thread_label_,          // debug label
-        std::move(view_token),  // scenic view we attach our tree to
-        std::move(session),     // scenic session
-        std::move(on_session_error_callback),  // session did encounter error
-        vsync_event_.get()                     // vsync event handle
-    );
-  }
-
-  // Setup the callback that will instantiate the rasterizer.
-  flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
-      fml::MakeCopyable([compositor_context = std::move(compositor_context)](
-                            flutter::Shell& shell) mutable {
-        return std::make_unique<flutter::Rasterizer>(
-            shell.GetTaskRunners(),        // task runners
-            std::move(compositor_context)  // compositor context
-        );
-      });
 
   // Get the task runners from the managed threads. The current thread will be
   // used as the "platform" thread.
@@ -187,6 +153,33 @@ Engine::Engine(Delegate& delegate,
       CreateFMLTaskRunner(threads_[1]->dispatcher()),       // ui
       CreateFMLTaskRunner(threads_[2]->dispatcher())        // io
   );
+
+  // Setup the callback that will instantiate the rasterizer.
+  flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
+      fml::MakeCopyable([thread_label = thread_label_,        //
+                         view_token = std::move(view_token),  //
+                         session = std::move(session),        //
+                         on_session_error_callback,           //
+                         vsync_event = vsync_event_.get()     //
+  ](flutter::Shell& shell) mutable {
+        std::unique_ptr<flutter_runner::CompositorContext> compositor_context;
+        {
+          TRACE_DURATION("flutter", "CreateCompositorContext");
+          compositor_context =
+              std::make_unique<flutter_runner::CompositorContext>(
+                  thread_label,           // debug label
+                  std::move(view_token),  // scenic view we attach our tree to
+                  std::move(session),     // scenic session
+                  on_session_error_callback,  // session did encounter error
+                  vsync_event                 // vsync event handle
+              );
+        }
+
+        return std::make_unique<flutter::Rasterizer>(
+            shell.GetTaskRunners(),        // task runners
+            std::move(compositor_context)  // compositor context
+        );
+      });
 
   UpdateNativeThreadLabelNames(thread_label_, task_runners);
 

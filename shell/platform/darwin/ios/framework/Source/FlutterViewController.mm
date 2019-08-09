@@ -14,15 +14,22 @@
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/thread_host.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
-#include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
+#import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
+
+// This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
+// change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
+// just a warning.
+@interface FlutterViewController () <FlutterBinaryMessenger>
+@end
 
 @implementation FlutterViewController {
   std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
@@ -209,11 +216,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
                object:nil];
 
   [center addObserver:self
-             selector:@selector(onMemoryWarning:)
-                 name:UIApplicationDidReceiveMemoryWarningNotification
-               object:nil];
-
-  [center addObserver:self
              selector:@selector(onUserSettingsChanged:)
                  name:UIContentSizeCategoryDidChangeNotification
                object:nil];
@@ -261,29 +263,30 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   [self.view addSubview:splashScreenView];
 }
 
-- (void)removeSplashScreenViewIfPresent {
-  if (!_splashScreenView) {
-    return;
+- (void)callViewRenderedCallback {
+  if (_flutterViewRenderedCallback != nil) {
+    _flutterViewRenderedCallback.get()();
+    _flutterViewRenderedCallback.reset();
   }
+}
 
+- (void)removeSplashScreenView:(dispatch_block_t _Nullable)onComplete {
+  NSAssert(_splashScreenView, @"The splash screen view must not be null");
+  UIView* splashScreen = _splashScreenView.get();
+  _splashScreenView.reset();
   [UIView animateWithDuration:0.2
       animations:^{
-        _splashScreenView.get().alpha = 0;
+        splashScreen.alpha = 0;
       }
       completion:^(BOOL finished) {
-        [_splashScreenView.get() removeFromSuperview];
-        _splashScreenView.reset();
-        if (_flutterViewRenderedCallback != nil) {
-          _flutterViewRenderedCallback.get()();
-          _flutterViewRenderedCallback.reset();
+        [splashScreen removeFromSuperview];
+        if (onComplete) {
+          onComplete();
         }
       }];
 }
 
-- (void)installSplashScreenViewCallback {
-  if (!_splashScreenView) {
-    return;
-  }
+- (void)installFirstFrameCallback {
   auto weak_platform_view = [_engine.get() platformView];
   if (!weak_platform_view) {
     return;
@@ -299,7 +302,13 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
       // association. Thus, we are not convinced that the unsafe unretained weak object is in
       // fact alive.
       if (weak_platform_view) {
-        [weak_flutter_view_controller removeSplashScreenViewIfPresent];
+        if (weak_flutter_view_controller->_splashScreenView) {
+          [weak_flutter_view_controller removeSplashScreenView:^{
+            [weak_flutter_view_controller callViewRenderedCallback];
+          }];
+        } else {
+          [weak_flutter_view_controller callViewRenderedCallback];
+        }
       }
     });
   });
@@ -361,8 +370,9 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 - (void)setSplashScreenView:(UIView*)view {
   if (!view) {
     // Special case: user wants to remove the splash screen view.
-    [self removeSplashScreenViewIfPresent];
-    _splashScreenView.reset();
+    if (_splashScreenView) {
+      [self removeSplashScreenView:nil];
+    }
     return;
   }
 
@@ -380,7 +390,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 - (void)surfaceUpdated:(BOOL)appeared {
   // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and GPU thread.
   if (appeared) {
-    [self installSplashScreenViewCallback];
+    [self installFirstFrameCallback];
     [_engine.get() platformViewsController] -> SetFlutterView(_flutterView.get());
     [_engine.get() platformViewsController] -> SetFlutterViewController(self);
     [_engine.get() platformView] -> NotifyCreated();
@@ -404,8 +414,9 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 
   // Only recreate surface on subsequent appearances when viewport metrics are known.
   // First time surface creation is done on viewDidLayoutSubviews.
-  if (_viewportMetrics.physical_width)
+  if (_viewportMetrics.physical_width) {
     [self surfaceUpdated:YES];
+  }
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 
   [super viewWillAppear:animated];
@@ -694,8 +705,22 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   // This must run after updateViewportMetrics so that the surface creation tasks are queued after
   // the viewport metrics update tasks.
-  if (firstViewBoundsUpdate)
+  if (firstViewBoundsUpdate) {
     [self surfaceUpdated:YES];
+
+    flutter::Shell& shell = [_engine.get() shell];
+    fml::TimeDelta waitTime =
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+        fml::TimeDelta::FromMilliseconds(200);
+#else
+        fml::TimeDelta::FromMilliseconds(100);
+#endif
+    if (shell.WaitForFirstFrame(waitTime).code() == fml::StatusCode::kDeadlineExceeded) {
+      FML_LOG(INFO) << "Timeout waiting for the first frame to render.  This may happen in "
+                    << "unoptimized builds.  If this is a release build, you should load a less "
+                    << "complex frame to avoid the timeout.";
+    }
+  }
 }
 
 - (void)viewSafeAreaInsetsDidChange {
@@ -727,23 +752,14 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGFloat scale = [UIScreen mainScreen].scale;
 
   // The keyboard is treated as an inset since we want to effectively reduce the window size by the
-  // keyboard height. We also eliminate any bottom safe-area padding since they keyboard 'consumes'
-  // the home indicator widget.
+  // keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
+  // bottom padding.
   _viewportMetrics.physical_view_inset_bottom = bottom * scale;
-  _viewportMetrics.physical_padding_bottom = 0;
   [self updateViewportMetrics];
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
-  CGFloat scale = [UIScreen mainScreen].scale;
   _viewportMetrics.physical_view_inset_bottom = 0;
-
-  // Restore any safe area padding that the keyboard had consumed.
-  if (@available(iOS 11, *)) {
-    _viewportMetrics.physical_padding_bottom = self.view.safeAreaInsets.bottom * scale;
-  } else {
-    _viewportMetrics.physical_padding_top = [self statusBarPadding] * scale;
-  }
   [self updateViewportMetrics];
 }
 
@@ -801,12 +817,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   platformView->SetSemanticsEnabled(enabled || UIAccessibilityIsSpeakScreenEnabled());
   platformView->SetAccessibilityFeatures(flags);
 #endif
-}
-
-#pragma mark - Memory Notifications
-
-- (void)onMemoryWarning:(NSNotification*)notification {
-  [[_engine.get() systemChannel] sendMessage:@{@"type" : @"memoryPressure"}];
 }
 
 #pragma mark - Locale updates
@@ -998,23 +1008,27 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   return [_engine.get() platformViewsController];
 }
 
+- (NSObject<FlutterBinaryMessenger>*)binaryMessenger {
+  return _engine.get().binaryMessenger;
+}
+
 #pragma mark - FlutterBinaryMessenger
 
 - (void)sendOnChannel:(NSString*)channel message:(NSData*)message {
-  [_engine.get() sendOnChannel:channel message:message];
+  [_engine.get().binaryMessenger sendOnChannel:channel message:message];
 }
 
 - (void)sendOnChannel:(NSString*)channel
               message:(NSData*)message
           binaryReply:(FlutterBinaryReply)callback {
   NSAssert(channel, @"The channel must not be null");
-  [_engine.get() sendOnChannel:channel message:message binaryReply:callback];
+  [_engine.get().binaryMessenger sendOnChannel:channel message:message binaryReply:callback];
 }
 
 - (void)setMessageHandlerOnChannel:(NSString*)channel
               binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
   NSAssert(channel, @"The channel must not be null");
-  [_engine.get() setMessageHandlerOnChannel:channel binaryMessageHandler:handler];
+  [_engine.get().binaryMessenger setMessageHandlerOnChannel:channel binaryMessageHandler:handler];
 }
 
 #pragma mark - FlutterTextureRegistry

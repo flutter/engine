@@ -4,7 +4,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterBinaryMessenger.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FLEViewController.h"
 
 /**
@@ -13,7 +13,7 @@
  * Responsible for bridging the native macOS text input system with the Flutter framework text
  * editing classes, via system channels.
  *
- * This is not an FLEPlugin since it needs access to FLEViewController internals, so needs to be
+ * This is not an FlutterPlugin since it needs access to FLEViewController internals, so needs to be
  * managed differently.
  */
 @interface FLETextInputPlugin : NSResponder

@@ -11,9 +11,15 @@ namespace flutter {
 TEST(PhysicalShapeLayer, TotalElevation) {
   std::shared_ptr<PhysicalShapeLayer> layers[4];
 
+  SkColor dummy_color = 0;
+  SkPath dummy_path;
   for (int i = 0; i < 4; i += 1) {
-    layers[i] = std::make_shared<PhysicalShapeLayer>(Clip::none);
-    layers[i]->set_elevation((float)(i + 1));
+    layers[i] =
+        std::make_shared<PhysicalShapeLayer>(dummy_color, dummy_color,
+                                             1.0f,            // pixel ratio,
+                                             1.0f,            // depth
+                                             (float)(i + 1),  // elevation
+                                             dummy_path, Clip::none);
   }
 
   layers[0]->Add(layers[1]);
@@ -22,10 +28,12 @@ TEST(PhysicalShapeLayer, TotalElevation) {
 
   const Stopwatch unused_stopwatch;
   TextureRegistry unused_texture_registry;
+  MutatorsStack unused_stack;
   PrerollContext preroll_context{
       nullptr,                  // raster_cache (don't consult the cache)
       nullptr,                  // gr_context  (used for the raster cache)
       nullptr,                  // external view embedder
+      unused_stack,             // mutator stack
       nullptr,                  // SkColorSpace* dst_color_space
       kGiantRect,               // SkRect cull_rect
       unused_stopwatch,         // frame time (dont care)

@@ -86,8 +86,6 @@ PlatformView::PlatformView(
     fit::closure session_listener_error_callback,
     OnMetricsUpdate session_metrics_did_change_callback,
     OnSizeChangeHint session_size_change_hint_callback,
-    fidl::InterfaceHandle<fuchsia::modular::ContextWriter>
-        accessibility_context_writer,
     zx_handle_t vsync_event_handle)
     : flutter::PlatformView(delegate, std::move(task_runners)),
       debug_label_(std::move(debug_label)),
@@ -97,7 +95,6 @@ PlatformView::PlatformView(
       metrics_changed_callback_(std::move(session_metrics_did_change_callback)),
       size_change_hint_callback_(std::move(session_size_change_hint_callback)),
       ime_client_(this),
-      context_writer_bridge_(std::move(accessibility_context_writer)),
       surface_(std::make_unique<Surface>(debug_label_)),
       vsync_event_handle_(vsync_event_handle) {
   // Register all error handlers.
@@ -296,7 +293,7 @@ void PlatformView::OnScenicEvent(
       case fuchsia::ui::scenic::Event::Tag::kGfx:
         switch (event.gfx().Which()) {
           case fuchsia::ui::gfx::Event::Tag::kMetrics: {
-            if (event.gfx().metrics().metrics != scenic_metrics_) {
+            if (!fidl::Equals(event.gfx().metrics().metrics, scenic_metrics_)) {
               scenic_metrics_ = std::move(event.gfx().metrics().metrics);
               metrics_changed_callback_(scenic_metrics_);
               UpdateViewportMetrics(scenic_metrics_);
@@ -416,7 +413,6 @@ static flutter::PointerData::DeviceKind GetKindFromPointerType(
   }
 }
 
-#if !defined(FUCHSIA_SDK)
 // TODO(SCN-1278): Remove this.
 // Turns two floats (high bits, low bits) into a 64-bit uint.
 static trace_flow_id_t PointerTraceHACK(float fa, float fb) {
@@ -425,18 +421,15 @@ static trace_flow_id_t PointerTraceHACK(float fa, float fb) {
   memcpy(&ib, &fb, sizeof(uint32_t));
   return (((uint64_t)ia) << 32) | ib;
 }
-#endif  //  !defined(FUCHSIA_SDK)
 
 bool PlatformView::OnHandlePointerEvent(
     const fuchsia::ui::input::PointerEvent& pointer) {
   TRACE_EVENT0("flutter", "PlatformView::OnHandlePointerEvent");
 
-#if !defined(FUCHSIA_SDK)
   // TODO(SCN-1278): Use proper trace_id for tracing flow.
   trace_flow_id_t trace_id =
       PointerTraceHACK(pointer.radius_major, pointer.radius_minor);
   TRACE_FLOW_END("input", "dispatch_event_to_client", trace_id);
-#endif  //  !defined(FUCHSIA_SDK)
 
   flutter::PointerData pointer_data;
   pointer_data.Clear();
@@ -583,8 +576,8 @@ void PlatformView::HandlePlatformMessage(
   if (found == platform_message_handlers_.end()) {
     FML_LOG(ERROR)
         << "Platform view received message on channel '" << message->channel()
-        << "' with no registed handler. And empty response will be generated. "
-           "Please implement the native message handler.";
+        << "' with no registered handler. And empty response will be "
+           "generated. Please implement the native message handler.";
     flutter::PlatformView::HandlePlatformMessage(std::move(message));
     return;
   }
@@ -595,9 +588,6 @@ void PlatformView::HandlePlatformMessage(
 void PlatformView::UpdateSemantics(
     flutter::SemanticsNodeUpdates update,
     flutter::CustomAccessibilityActionUpdates actions) {
-  // TODO(MI4-1262): Figure out if the context_writer_bridge should be removed
-  // as it is unused.
-  // context_writer_bridge_.UpdateSemantics(update);
   // TODO(MIT-1539): Uncomment/Reimplement following code, to add A11y support.
   // semantics_bridge_.UpdateSemantics(update);
 }

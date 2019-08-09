@@ -6,7 +6,8 @@ part of engine;
 
 /// A canvas that renders to DOM elements and CSS properties.
 class DomCanvas extends EngineCanvas with SaveElementStackTracking {
-  final html.Element rootElement = new html.Element.tag('flt-dom-canvas');
+  @override
+  final html.Element rootElement = html.Element.tag('flt-dom-canvas');
 
   DomCanvas() {
     rootElement.style
@@ -43,7 +44,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
     // TODO(yjbanov): implement blendMode
-    html.Element box = html.Element.tag('draw-color');
+    final html.Element box = html.Element.tag('draw-color');
     box.style
       ..position = 'absolute'
       ..top = '0'
@@ -67,18 +68,18 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   @override
   void drawRect(ui.Rect rect, ui.PaintData paint) {
     assert(paint.shader == null);
-    final rectangle = html.Element.tag('draw-rect');
+    final html.Element rectangle = html.Element.tag('draw-rect');
     assert(() {
       rectangle.setAttribute('flt-rect', '$rect');
       rectangle.setAttribute('flt-paint', '$paint');
       return true;
     }());
     String effectiveTransform;
-    bool isStroke = paint.style == ui.PaintingStyle.stroke;
-    var left = math.min(rect.left, rect.right);
-    var right = math.max(rect.left, rect.right);
-    var top = math.min(rect.top, rect.bottom);
-    var bottom = math.max(rect.top, rect.bottom);
+    final bool isStroke = paint.style == ui.PaintingStyle.stroke;
+    final double left = math.min(rect.left, rect.right);
+    final double right = math.max(rect.left, rect.right);
+    final double top = math.min(rect.top, rect.bottom);
+    final double bottom = math.max(rect.top, rect.bottom);
     if (currentTransform.isIdentity()) {
       if (isStroke) {
         effectiveTransform =
@@ -88,7 +89,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
       }
     } else {
       // Clone to avoid mutating _transform.
-      Matrix4 translated = currentTransform.clone();
+      final Matrix4 translated = currentTransform.clone();
       if (isStroke) {
         translated.translate(
             left - (paint.strokeWidth / 2.0), top - (paint.strokeWidth / 2.0));
@@ -97,7 +98,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
       }
       effectiveTransform = matrix4ToCssTransform(translated);
     }
-    var style = rectangle.style;
+    final html.CssStyleDeclaration style = rectangle.style;
     style
       ..position = 'absolute'
       ..transformOrigin = '0 0 0'
@@ -113,7 +114,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
       style
         ..width = '${right - left - paint.strokeWidth}px'
         ..height = '${bottom - top - paint.strokeWidth}px'
-        ..border = '${paint.strokeWidth}px solid ${cssColor}';
+        ..border = '${paint.strokeWidth}px solid $cssColor';
     } else {
       style
         ..width = '${right - left}px'
@@ -168,43 +169,8 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
-    assert(paragraph.webOnlyIsLaidOut);
-
-    html.Element paragraphElement =
-        paragraph.webOnlyGetParagraphElement().clone(true);
-
-    String cssTransform =
-        matrix4ToCssTransform(transformWithOffset(currentTransform, offset));
-
-    final html.CssStyleDeclaration paragraphStyle = paragraphElement.style;
-    paragraphStyle
-      ..position = 'absolute'
-      ..transformOrigin = '0 0 0'
-      ..transform = cssTransform
-      ..whiteSpace = 'pre-wrap'
-      ..width = '${paragraph.width}px';
-
-    final ParagraphGeometricStyle style =
-        paragraph.webOnlyGetParagraphGeometricStyle();
-
-    // TODO(flutter_web): Implement the ellipsis overflow for multi-line text
-    //  too. As a pre-requisite, we need to be able to programmatically find
-    //  line breaks.
-    if (style.ellipsis != null &&
-        (style.maxLines == null || style.maxLines == 1)) {
-      paragraphStyle
-        ..height = '${paragraph.webOnlyMaxLinesHeight}px'
-        ..whiteSpace = 'pre'
-        ..overflow = 'hidden'
-        ..textOverflow = 'ellipsis';
-    } else if (paragraph.didExceedMaxLines) {
-      paragraphStyle
-        ..height = '${paragraph.webOnlyMaxLinesHeight}px'
-        ..overflowY = 'hidden';
-    } else {
-      paragraphStyle.height = '${paragraph.height}px';
-    }
-
+    final html.Element paragraphElement =
+        _drawParagraphElement(paragraph, offset, transform: currentTransform);
     currentElement.append(paragraphElement);
   }
 }
