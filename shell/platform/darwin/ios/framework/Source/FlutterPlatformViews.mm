@@ -174,15 +174,15 @@ bool FlutterPlatformViewsController::HasPendingViewOperations() {
 const int FlutterPlatformViewsController::kDefaultMergedLeaseDuration;
 
 bool FlutterPlatformViewsController::PostPrerollAction(
-    fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger) {
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
   const bool uiviews_mutated = HasPendingViewOperations();
   if (uiviews_mutated) {
-    bool are_merged = task_runner_merger->AreMerged();
+    bool are_merged = gpu_thread_merger->IsMerged();
     if (are_merged) {
-      task_runner_merger->ExtendLease(kDefaultMergedLeaseDuration);
+      gpu_thread_merger->ExtendLease(kDefaultMergedLeaseDuration);
     } else {
       CancelFrame();
-      task_runner_merger->MergeWithLease(kDefaultMergedLeaseDuration);
+      gpu_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
       return true;
     }
   }

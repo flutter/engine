@@ -35,10 +35,10 @@ std::unique_ptr<CompositorContext::ScopedFrame> CompositorContext::AcquireFrame(
     ExternalViewEmbedder* view_embedder,
     const SkMatrix& root_surface_transformation,
     bool instrumentation_enabled,
-    fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger) {
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
   return std::make_unique<ScopedFrame>(
       *this, gr_context, canvas, view_embedder, root_surface_transformation,
-      instrumentation_enabled, task_runner_merger);
+      instrumentation_enabled, gpu_thread_merger);
 }
 
 CompositorContext::ScopedFrame::ScopedFrame(
@@ -48,14 +48,14 @@ CompositorContext::ScopedFrame::ScopedFrame(
     ExternalViewEmbedder* view_embedder,
     const SkMatrix& root_surface_transformation,
     bool instrumentation_enabled,
-    fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger)
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger)
     : context_(context),
       gr_context_(gr_context),
       canvas_(canvas),
       view_embedder_(view_embedder),
       root_surface_transformation_(root_surface_transformation),
       instrumentation_enabled_(instrumentation_enabled),
-      task_runner_merger_(task_runner_merger) {
+      gpu_thread_merger_(gpu_thread_merger) {
   context_.BeginFrame(*this, instrumentation_enabled_);
 }
 
@@ -68,8 +68,8 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
     bool ignore_raster_cache) {
   layer_tree.Preroll(*this, ignore_raster_cache);
   bool resubmit_frame = false;
-  if (view_embedder_ && task_runner_merger_) {
-    resubmit_frame = !view_embedder_->PostPrerollAction(task_runner_merger_);
+  if (view_embedder_ && gpu_thread_merger_) {
+    resubmit_frame = !view_embedder_->PostPrerollAction(gpu_thread_merger_);
   }
 
   if (resubmit_frame) {

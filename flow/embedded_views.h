@@ -7,8 +7,8 @@
 
 #include <vector>
 
+#include "flutter/fml/gpu_thread_merger.h"
 #include "flutter/fml/memory/ref_counted.h"
-#include "flutter/fml/task_runner_merger.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPoint.h"
@@ -192,10 +192,6 @@ class ExternalViewEmbedder {
  public:
   ExternalViewEmbedder() = default;
 
-  // This will return true after pre-roll if any of the embedded views
-  // have mutated for last layer tree.
-  virtual bool HasPendingViewOperations() = 0;
-
   // Call this in-lieu of |SubmitFrame| to clear pre-roll state and
   // sets the stage for the next pre-roll.
   virtual void CancelFrame() = 0;
@@ -208,10 +204,10 @@ class ExternalViewEmbedder {
 
   // This needs to get called after |Preroll| finishes on the layer tree.
   // Returns false if the frame needs to be processed again, this is after
-  // it does any requisite tasks needed to bring itseld to a valid state.
+  // it does any requisite tasks needed to bring itself to a valid state.
   // Returns true if the view embedder is already in a valid state.
   virtual bool PostPrerollAction(
-      fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger) {
+      fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
     return true;
   }
 

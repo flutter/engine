@@ -65,8 +65,8 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
     const auto platform_id =
         task_runners_.GetPlatformTaskRunner()->GetTaskQueueId();
     const auto gpu_id = task_runners_.GetGPUTaskRunner()->GetTaskQueueId();
-    task_runner_merger_ =
-        fml::MakeRefCounted<fml::TaskRunnerMerger>(platform_id, gpu_id);
+    gpu_thread_merger_ =
+        fml::MakeRefCounted<fml::GpuThreadMerger>(platform_id, gpu_id);
   }
 }
 
@@ -106,7 +106,7 @@ void Rasterizer::DrawLastLayerTree() {
 
 void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
-  if (task_runner_merger_ && task_runner_merger_->OnWrongThread()) {
+  if (gpu_thread_merger_ && gpu_thread_merger_->IsNotOnRasterizingThread()) {
     // we yield and let this frame be serviced on the right thread.
     return;
   }
@@ -123,7 +123,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   // front of the queue and also change the consume status to more available.
   if (raster_status == RasterStatus::kResubmit) {
     auto front_continuation = pipeline->ProduceToFront();
-    front_continuation.Complete(std::move(last_layer_tree_));
+    front_continuation.Complete(std::move(resubmitted_layer_tree_));
     consume_result = PipelineConsumeResult::MoreAvailable;
   } else if (raster_status == RasterStatus::kEnqueuePipeline) {
     consume_result = PipelineConsumeResult::MoreAvailable;
@@ -167,7 +167,7 @@ RasterStatus Rasterizer::DoDraw(
   if (raster_status == RasterStatus::kSuccess) {
     last_layer_tree_ = std::move(layer_tree);
   } else if (raster_status == RasterStatus::kResubmit) {
-    last_layer_tree_ = std::move(layer_tree);
+    resubmitted_layer_tree_ = std::move(layer_tree);
     return raster_status;
   }
 
@@ -184,8 +184,27 @@ RasterStatus Rasterizer::DoDraw(
   timing.Set(FrameTiming::kRasterFinish, fml::TimePoint::Now());
   delegate_.OnFrameRasterized(timing);
 
-  if (task_runner_merger_ && task_runner_merger_->DecrementLease()) {
-    return RasterStatus::kEnqueuePipeline;
+  // Pipeline pressure is applied from a couple of places:
+  // rasterizer: When there are more items as of the time of Consume.
+  // animator (via shell): Frame gets produces every vsync.
+  // Enqueing here is to account for the following scenario:
+  // T = 1
+  //  - one item (A) in the pipeline
+  //  - rasterizer starts (and merges the threads)
+  //  - pipeline consume result says no items to process
+  // T = 2
+  //  - animator produces (B) to the pipeline
+  //  - applies pipeline pressure via platform thread.
+  // T = 3
+  //   - rasterizes finished (and un-merges the threads)
+  //   - |Draw| for B yields as its on the wrong thread.
+  // This enqueue ensures that we attempt to consume from the right
+  // thread one more time after un-merge.
+  if (gpu_thread_merger_) {
+    if (gpu_thread_merger_->DecrementLease() ==
+        fml::GpuThreadStatus::kUnmergedNow) {
+      return RasterStatus::kEnqueuePipeline;
+    }
   }
 
   return raster_status;
@@ -215,7 +234,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
 
   auto compositor_frame = compositor_context_->AcquireFrame(
       surface_->GetContext(), canvas, external_view_embedder,
-      surface_->GetRootTransformation(), true, task_runner_merger_);
+      surface_->GetRootTransformation(), true, gpu_thread_merger_);
 
   if (compositor_frame) {
     RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);

@@ -7,14 +7,14 @@
 #include <atomic>
 #include <thread>
 
+#include "flutter/fml/gpu_thread_merger.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/task_runner.h"
-#include "flutter/fml/task_runner_merger.h"
 #include "gtest/gtest.h"
 
-TEST(TaskRunnerMerger, RemainMergedTillLeaseExpires) {
+TEST(GpuThreadMerger, RemainMergedTillLeaseExpires) {
   fml::MessageLoop* loop1 = nullptr;
   fml::AutoResetWaitableEvent latch1;
   fml::AutoResetWaitableEvent term1;
@@ -40,20 +40,20 @@ TEST(TaskRunnerMerger, RemainMergedTillLeaseExpires) {
 
   fml::TaskQueueId qid1 = loop1->GetTaskRunner()->GetTaskQueueId();
   fml::TaskQueueId qid2 = loop2->GetTaskRunner()->GetTaskQueueId();
-  const auto task_runner_merger_ =
-      fml::MakeRefCounted<fml::TaskRunnerMerger>(qid1, qid2);
+  const auto gpu_thread_merger_ =
+      fml::MakeRefCounted<fml::GpuThreadMerger>(qid1, qid2);
   const int kNumFramesMerged = 5;
 
-  ASSERT_FALSE(task_runner_merger_->AreMerged());
+  ASSERT_FALSE(gpu_thread_merger_->IsMerged());
 
-  task_runner_merger_->MergeWithLease(kNumFramesMerged);
+  gpu_thread_merger_->MergeWithLease(kNumFramesMerged);
 
   for (int i = 0; i < kNumFramesMerged; i++) {
-    ASSERT_TRUE(task_runner_merger_->AreMerged());
-    task_runner_merger_->DecrementLease();
+    ASSERT_TRUE(gpu_thread_merger_->IsMerged());
+    gpu_thread_merger_->DecrementLease();
   }
 
-  ASSERT_FALSE(task_runner_merger_->AreMerged());
+  ASSERT_FALSE(gpu_thread_merger_->IsMerged());
 
   term1.Signal();
   term2.Signal();
@@ -61,7 +61,7 @@ TEST(TaskRunnerMerger, RemainMergedTillLeaseExpires) {
   thread2.join();
 }
 
-TEST(TaskRunnerMerger, OnWrongThread) {
+TEST(GpuThreadMerger, IsNotOnRasterizingThread) {
   fml::MessageLoop* loop1 = nullptr;
   fml::AutoResetWaitableEvent latch1;
   std::thread thread1([&loop1, &latch1]() {
@@ -85,29 +85,29 @@ TEST(TaskRunnerMerger, OnWrongThread) {
 
   fml::TaskQueueId qid1 = loop1->GetTaskRunner()->GetTaskQueueId();
   fml::TaskQueueId qid2 = loop2->GetTaskRunner()->GetTaskQueueId();
-  const auto task_runner_merger_ =
-      fml::MakeRefCounted<fml::TaskRunnerMerger>(qid1, qid2);
+  const auto gpu_thread_merger_ =
+      fml::MakeRefCounted<fml::GpuThreadMerger>(qid1, qid2);
 
   fml::CountDownLatch pre_merge(2), post_merge(2), post_unmerge(2);
 
   loop1->GetTaskRunner()->PostTask([&]() {
-    ASSERT_TRUE(task_runner_merger_->OnWrongThread());
+    ASSERT_TRUE(gpu_thread_merger_->IsNotOnRasterizingThread());
     ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid1);
     pre_merge.CountDown();
   });
 
   loop2->GetTaskRunner()->PostTask([&]() {
-    ASSERT_FALSE(task_runner_merger_->OnWrongThread());
+    ASSERT_FALSE(gpu_thread_merger_->IsNotOnRasterizingThread());
     ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid2);
     pre_merge.CountDown();
   });
 
   pre_merge.Wait();
 
-  task_runner_merger_->MergeWithLease(1);
+  gpu_thread_merger_->MergeWithLease(1);
 
   loop1->GetTaskRunner()->PostTask([&]() {
-    ASSERT_FALSE(task_runner_merger_->OnWrongThread());
+    ASSERT_FALSE(gpu_thread_merger_->IsNotOnRasterizingThread());
     ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid1);
     post_merge.CountDown();
   });
@@ -115,23 +115,23 @@ TEST(TaskRunnerMerger, OnWrongThread) {
   loop2->GetTaskRunner()->PostTask([&]() {
     // this will be false since this is going to be run
     // on loop1 really.
-    ASSERT_FALSE(task_runner_merger_->OnWrongThread());
+    ASSERT_FALSE(gpu_thread_merger_->IsNotOnRasterizingThread());
     ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid1);
     post_merge.CountDown();
   });
 
   post_merge.Wait();
 
-  task_runner_merger_->DecrementLease();
+  gpu_thread_merger_->DecrementLease();
 
   loop1->GetTaskRunner()->PostTask([&]() {
-    ASSERT_TRUE(task_runner_merger_->OnWrongThread());
+    ASSERT_TRUE(gpu_thread_merger_->IsNotOnRasterizingThread());
     ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid1);
     post_unmerge.CountDown();
   });
 
   loop2->GetTaskRunner()->PostTask([&]() {
-    ASSERT_FALSE(task_runner_merger_->OnWrongThread());
+    ASSERT_FALSE(gpu_thread_merger_->IsNotOnRasterizingThread());
     ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid2);
     post_unmerge.CountDown();
   });
@@ -146,7 +146,7 @@ TEST(TaskRunnerMerger, OnWrongThread) {
   thread2.join();
 }
 
-TEST(TaskRunnerMerger, LeaseExtension) {
+TEST(GpuThreadMerger, LeaseExtension) {
   fml::MessageLoop* loop1 = nullptr;
   fml::AutoResetWaitableEvent latch1;
   fml::AutoResetWaitableEvent term1;
@@ -172,30 +172,30 @@ TEST(TaskRunnerMerger, LeaseExtension) {
 
   fml::TaskQueueId qid1 = loop1->GetTaskRunner()->GetTaskQueueId();
   fml::TaskQueueId qid2 = loop2->GetTaskRunner()->GetTaskQueueId();
-  const auto task_runner_merger_ =
-      fml::MakeRefCounted<fml::TaskRunnerMerger>(qid1, qid2);
+  const auto gpu_thread_merger_ =
+      fml::MakeRefCounted<fml::GpuThreadMerger>(qid1, qid2);
   const int kNumFramesMerged = 5;
 
-  ASSERT_FALSE(task_runner_merger_->AreMerged());
+  ASSERT_FALSE(gpu_thread_merger_->IsMerged());
 
-  task_runner_merger_->MergeWithLease(kNumFramesMerged);
+  gpu_thread_merger_->MergeWithLease(kNumFramesMerged);
 
   // let there be one more turn till the leases expire.
   for (int i = 0; i < kNumFramesMerged - 1; i++) {
-    ASSERT_TRUE(task_runner_merger_->AreMerged());
-    task_runner_merger_->DecrementLease();
+    ASSERT_TRUE(gpu_thread_merger_->IsMerged());
+    gpu_thread_merger_->DecrementLease();
   }
 
   // extend the lease once.
-  task_runner_merger_->ExtendLease(kNumFramesMerged);
+  gpu_thread_merger_->ExtendLease(kNumFramesMerged);
 
   // we will NOT last for 1 extra turn, we just set it.
   for (int i = 0; i < kNumFramesMerged; i++) {
-    ASSERT_TRUE(task_runner_merger_->AreMerged());
-    task_runner_merger_->DecrementLease();
+    ASSERT_TRUE(gpu_thread_merger_->IsMerged());
+    gpu_thread_merger_->DecrementLease();
   }
 
-  ASSERT_FALSE(task_runner_merger_->AreMerged());
+  ASSERT_FALSE(gpu_thread_merger_->IsMerged());
 
   term1.Signal();
   term2.Signal();

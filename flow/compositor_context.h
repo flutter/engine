@@ -12,8 +12,8 @@
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/texture.h"
+#include "flutter/fml/gpu_thread_merger.h"
 #include "flutter/fml/macros.h"
-#include "flutter/fml/task_runner_merger.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
@@ -21,6 +21,16 @@ namespace flutter {
 
 class LayerTree;
 
+// kSuccess: frame has successfully rasterized.
+//
+// kResubmit: frame needs to be resubmitted for rasterization. This is currently
+// only called when thread configuration change occurs.
+//
+// kEnqueuePipeline: frame has been successfully rasterized, but pipeline
+// pressure needs to be re-applied. This is currently only called when thread
+// configuration change occurs.
+//
+// kFailed: failed to rasterize the frame.
 enum class RasterStatus { kSuccess, kResubmit, kEnqueuePipeline, kFailed };
 
 class CompositorContext {
@@ -33,7 +43,7 @@ class CompositorContext {
                 ExternalViewEmbedder* view_embedder,
                 const SkMatrix& root_surface_transformation,
                 bool instrumentation_enabled,
-                fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger);
+                fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger);
 
     virtual ~ScopedFrame();
 
@@ -59,7 +69,7 @@ class CompositorContext {
     ExternalViewEmbedder* view_embedder_;
     const SkMatrix& root_surface_transformation_;
     const bool instrumentation_enabled_;
-    fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger_;
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger_;
 
     FML_DISALLOW_COPY_AND_ASSIGN(ScopedFrame);
   };
@@ -74,7 +84,7 @@ class CompositorContext {
       ExternalViewEmbedder* view_embedder,
       const SkMatrix& root_surface_transformation,
       bool instrumentation_enabled,
-      fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger);
+      fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger);
 
   void OnGrContextCreated();
 

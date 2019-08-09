@@ -43,7 +43,7 @@ class CompositorContext final : public flutter::CompositorContext {
       flutter::ExternalViewEmbedder* view_embedder,
       const SkMatrix& root_surface_transformation,
       bool instrumentation_enabled,
-      fml::RefPtr<fml::TaskRunnerMerger> task_runner_merger) override;
+      fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(CompositorContext);
 };
