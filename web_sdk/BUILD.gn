@@ -128,6 +128,7 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk_outline") {
     rebase_path(sdk_dill),
     "--source",
     "dart:core",
+
     # Additional Flutter web dart libraries
     "--source",
     "dart:ui",
@@ -159,6 +160,7 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
     "-k",
     "--compile-sdk",
     "dart:core",
+
     # Additional Flutter web dart libraries
     "dart:ui",
     "dart:_engine",
@@ -176,6 +178,6 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
     "--modules",
     "amd",
     "-o",
-    rebase_path("$root_out_dir/flutter_web_sdk/kernel/amd/dart_sdk.js")
+    rebase_path("$root_out_dir/flutter_web_sdk/kernel/amd/dart_sdk.js"),
   ]
 }
