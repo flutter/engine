@@ -7,8 +7,8 @@ if [[ ! -f $1 ]]; then
   exit -1
 fi
 
-GIT_REVISION=${$2:-$(git rev-parse HEAD)}
-BUILD_ID=${$3:-$CIRRUS_BUILD_ID}
+GIT_REVISION=${2:-$(git rev-parse HEAD)}
+BUILD_ID=${3:-$CIRRUS_BUILD_ID}
 
 if [[ ! -z $GCLOUD_FIREBASE_TESTLAB_KEY ]]; then
   # New contributors will not have permissions to run this test - they won't be
