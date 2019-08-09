@@ -338,6 +338,7 @@ abstract class License implements Comparable<License> {
             assert(this is MessageLicense);
             break;
           case LicenseType.libpng:
+          case LicenseType.bison:
             assert(this is BlankLicense);
             break;
           case LicenseType.openssl:
