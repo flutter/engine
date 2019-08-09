@@ -55,7 +55,7 @@
 
   id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
   OCMStub([engine settingsChannel]).andReturn(settingsChannel);
-  
+
   FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:engine
                                                                     nibName:nil
                                                                      bundle:nil];
