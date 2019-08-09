@@ -329,7 +329,8 @@ action("pom_libflutter") {
     "$flutter_root/tools/android_support/files.json",
   ]
 
-  artifact_id = string_replace(android_app_abi, "-", "_") + "_" + flutter_runtime_mode
+  artifact_id =
+      string_replace(android_app_abi, "-", "_") + "_" + flutter_runtime_mode
 
   outputs = [
     "$root_build_dir/$artifact_id-1.0.0-$engine_version.pom",
