@@ -8,6 +8,10 @@
 
 #include "FlutterBinaryMessenger.h"
 
+#if !__has_feature(objc_arc)
+#error ARC must be enabled!
+#endif
+
 @interface FlutterViewControllerTest : XCTestCase
 @end
 
