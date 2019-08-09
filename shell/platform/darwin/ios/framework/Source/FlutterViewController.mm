@@ -703,11 +703,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [_engine.get() updateViewportMetrics:_viewportMetrics];
 }
 
-- (void)updateViewConstraints {
-  [super updateViewConstraints];
-  [self onUserSettingsChanged:nil];
-}
-
 - (CGFloat)statusBarPadding {
   UIScreen* screen = self.view.window.screen;
   CGRect statusFrame = [UIApplication sharedApplication].statusBarFrame;
@@ -715,11 +710,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                           toCoordinateSpace:screen.coordinateSpace];
   CGRect intersection = CGRectIntersection(statusFrame, viewFrame);
   return CGRectIsNull(intersection) ? 0.0 : intersection.size.height;
-}
-
-- (void)viewWillLayoutSubviews {
-  [super viewWillLayoutSubviews];
-  [self onUserSettingsChanged:nil];
 }
 
 - (void)viewDidLayoutSubviews {
@@ -734,7 +724,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   [self updateViewportPadding];
   [self updateViewportMetrics];
-  [self onUserSettingsChanged:nil];
 
   // This must run after updateViewportMetrics so that the surface creation tasks are queued after
   // the viewport metrics update tasks.
