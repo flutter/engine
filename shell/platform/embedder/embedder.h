@@ -614,28 +614,32 @@ typedef struct {
   // the Wiki at
   // https://github.com/flutter/flutter/wiki/Flutter-engine-operation-in-AOT-Mode
   const uint8_t* vm_snapshot_data;
-  // The size of the VM snapshot data buffer.
+  // The size of the VM snapshot data buffer.  If vm_snapshot_data is a symbol
+  // reference, 0 may be passed here.
   size_t vm_snapshot_data_size;
   // The VM snapshot instructions buffer used in AOT operation. This buffer must
   // be mapped in as read-execute. For more information refer to the
   // documentation on the Wiki at
   // https://github.com/flutter/flutter/wiki/Flutter-engine-operation-in-AOT-Mode
   const uint8_t* vm_snapshot_instructions;
-  // The size of the VM snapshot instructions buffer.
+  // The size of the VM snapshot instructions buffer. If
+  // vm_snapshot_instructions is a symbol reference, 0 may be passed here.
   size_t vm_snapshot_instructions_size;
   // The isolate snapshot data buffer used in AOT operation. This buffer must be
   // mapped in as read-only. For more information refer to the documentation on
   // the Wiki at
   // https://github.com/flutter/flutter/wiki/Flutter-engine-operation-in-AOT-Mode
   const uint8_t* isolate_snapshot_data;
-  // The size of the isolate snapshot data buffer.
+  // The size of the isolate snapshot data buffer.  If isolate_snapshot_data is
+  // a symbol reference, 0 may be passed here.
   size_t isolate_snapshot_data_size;
   // The isolate snapshot instructions buffer used in AOT operation. This buffer
   // must be mapped in as read-execute. For more information refer to the
   // documentation on the Wiki at
   // https://github.com/flutter/flutter/wiki/Flutter-engine-operation-in-AOT-Mode
   const uint8_t* isolate_snapshot_instructions;
-  // The size of the isolate snapshot instructions buffer.
+  // The size of the isolate snapshot instructions buffer. If
+  // isolate_snapshot_instructions is a symbol reference, 0 may be passed here.
   size_t isolate_snapshot_instructions_size;
   // The callback invoked by the engine in root isolate scope. Called
   // immediately after the root isolate has been created and marked runnable.
@@ -695,6 +699,25 @@ typedef struct {
   // optional argument allows for the specification of task runner interfaces to
   // event loops managed by the embedder on threads it creates.
   const FlutterCustomTaskRunners* custom_task_runners;
+
+  // All `FlutterEngine` instances in the process share the same Dart VM. When
+  // the first engine is launched, it starts the Dart VM as well. It used to be
+  // the case that it was not possible to shutdown the Dart VM cleanly and start
+  // it back up in the process in a safe manner. This issue has since been
+  // patched. Unfortunately, applications already began to make use of the fact
+  // that shutting down the Flutter engine instance left a running VM in the
+  // process. Since a Flutter engine could be launched on any thread,
+  // applications would "warm up" the VM on another thread by launching
+  // an engine with no isolates and then shutting it down immediately. The main
+  // Flutter application could then be started on the main thread without having
+  // to incur the Dart VM startup costs at that time. With the new behavior,
+  // this "optimization" immediately becomes massive performance pessimization
+  // as the VM would be started up in the "warm up" phase, shut down there and
+  // then started again on the main thread. Changing this behavior was deemed to
+  // be an unacceptable breaking change. Embedders that wish to shutdown the
+  // Dart VM when the last engine is terminated in the process should opt into
+  // this behavior by setting this flag to true.
+  bool shutdown_dart_vm_when_done;
 } FlutterProjectArgs;
 
 FLUTTER_EXPORT

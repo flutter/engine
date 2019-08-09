@@ -13,6 +13,7 @@
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/thread.h"
+#include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/platform/embedder/tests/embedder_config_builder.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test.h"
 #include "flutter/testing/testing.h"
@@ -463,6 +464,50 @@ TEST_F(EmbedderTest, InvalidPlatformMessages) {
   auto result =
       FlutterEngineSendPlatformMessage(engine.get(), &platform_message);
   ASSERT_EQ(result, kInvalidArguments);
+}
+
+//------------------------------------------------------------------------------
+/// Asserts behavior of FlutterProjectArgs::shutdown_dart_vm_when_done (which is
+/// set to true by default in these unit-tests).
+///
+TEST_F(EmbedderTest, VMShutsDownWhenNoEnginesInProcess) {
+  auto& context = GetEmbedderContext();
+  EmbedderConfigBuilder builder(context);
+
+  const auto launch_count = DartVM::GetVMLaunchCount();
+
+  {
+    auto engine = builder.LaunchEngine();
+    ASSERT_EQ(launch_count + 1u, DartVM::GetVMLaunchCount());
+  }
+
+  {
+    auto engine = builder.LaunchEngine();
+    ASSERT_EQ(launch_count + 2u, DartVM::GetVMLaunchCount());
+  }
+}
+
+//------------------------------------------------------------------------------
+/// These snapshots may be materialized from symbols and the size field may not
+/// be relevant. Since this information is redundant, engine launch should not
+/// be gated on a non-zero buffer size.
+///
+TEST_F(EmbedderTest, VMAndIsolateSnapshotSizesAreRedundantInAOTMode) {
+  if (!DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
+  auto& context = GetEmbedderContext();
+  EmbedderConfigBuilder builder(context);
+
+  // The fixture sets this up correctly. Intentionally mess up the args.
+  builder.GetProjectArgs().vm_snapshot_data_size = 0;
+  builder.GetProjectArgs().vm_snapshot_instructions_size = 0;
+  builder.GetProjectArgs().isolate_snapshot_data_size = 0;
+  builder.GetProjectArgs().isolate_snapshot_instructions_size = 0;
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
 }
 
 }  // namespace testing
