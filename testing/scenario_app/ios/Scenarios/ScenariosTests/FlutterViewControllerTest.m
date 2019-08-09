@@ -6,6 +6,16 @@
 #import <XCTest/XCTest.h>
 #import "AppDelegate.h"
 
+@interface FlutterViewControllerFirstFrameOverride : FlutterViewController
+@property(nonatomic) BOOL firstFrameRendered;
+@end
+
+@implementation FlutterViewControllerFirstFrameOverride
+- (void)firstFrameDidRender {
+  self.firstFrameRendered = YES;
+}
+@end
+
 @interface FlutterViewControllerTest : XCTestCase
 @property(nonatomic, strong) FlutterViewController* flutterViewController;
 @end
@@ -40,6 +50,27 @@
   NSRunLoop* runLoop = [NSRunLoop currentRunLoop];
   int countDownMs = 2000;
   while (shouldKeepRunning && countDownMs > 0) {
+    [runLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+    countDownMs -= 100;
+  }
+  XCTAssertGreaterThan(countDownMs, 0);
+}
+
+- (void)testFirstFrameDidRender {
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
+  [engine runWithEntrypoint:nil];
+  FlutterViewControllerFirstFrameOverride* flutterViewController =
+      [[FlutterViewControllerFirstFrameOverride alloc] initWithEngine:engine
+                                                              nibName:nil
+                                                               bundle:nil];
+  self.flutterViewController = flutterViewController;
+
+  AppDelegate* appDelegate = (AppDelegate*)UIApplication.sharedApplication.delegate;
+  UIViewController* rootVC = appDelegate.window.rootViewController;
+  [rootVC presentViewController:self.flutterViewController animated:NO completion:nil];
+  NSRunLoop* runLoop = [NSRunLoop currentRunLoop];
+  int countDownMs = 2000;
+  while (!flutterViewController.firstFrameRendered && countDownMs > 0) {
     [runLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
     countDownMs -= 100;
   }

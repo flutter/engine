@@ -131,6 +131,15 @@ FLUTTER_EXPORT
 - (id<FlutterPluginRegistry>)pluginRegistry;
 
 /**
+ * Called once the first frame has been rendered by the engine after this
+ * ViewController has appeared on the screen.
+ *
+ * This method is called before the callback set by any previous call to
+ * `setFlutterViewDidRenderCallback` is called, if any.
+ */
+- (void)firstFrameDidRender;
+
+/**
  * Specifies the view to use as a splash screen. Flutter's rendering is asynchronous, so the first
  * frame rendered by the Flutter application might not immediately appear when theFlutter view is
  * initially placed in the view hierarchy. The splash screen view will be used as

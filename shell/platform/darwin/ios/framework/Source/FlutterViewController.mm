@@ -264,6 +264,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 }
 
 - (void)callViewRenderedCallback {
+  [self firstFrameDidRender];
   if (_flutterViewRenderedCallback != nil) {
     _flutterViewRenderedCallback.get()();
     _flutterViewRenderedCallback.reset();
@@ -383,6 +384,10 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 
 - (void)setFlutterViewDidRenderCallback:(void (^)(void))callback {
   _flutterViewRenderedCallback.reset(callback, fml::OwnershipPolicy::Retain);
+}
+
+- (void)firstFrameDidRender {
+
 }
 
 #pragma mark - Surface creation and teardown updates
