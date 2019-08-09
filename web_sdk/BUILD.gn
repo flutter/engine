@@ -5,7 +5,6 @@
 import("//third_party/dart/build/dart/dart_action.gni")
 import("//third_party/dart/utils/compile_platform.gni")
 
-sdk_dill = "$root_out_dir/flutter_web_sdk/kernel/flutter_ddc_sdk.dill"
 sdk_libraries_json = "$root_out_dir/flutter_web_sdk/libraries.json"
 
 web_ui_sources =
@@ -95,6 +94,7 @@ copy("web_ui_library") {
   ]
 }
 
+# Compiles the DDC SDK's kernel summary and JS code.
 prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
   deps = [
     "//third_party/dart/pkg:pkg_files_stamp",
@@ -102,25 +102,35 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
     "//third_party/dart/utils/dartdevc:dartdevc_sdk_patch_stamp",
   ]
 
-  inputs = [
-    "//third_party/dart/pkg/dev_compiler/tool/kernel_sdk.dart",
-  ]
+  inputs = []
 
-  outputs = [
-    sdk_dill,
-    "$root_out_dir/flutter_web_sdk/lib/_internal/libraries.json",
-    "$root_out_dir/flutter_web_sdk/kernel/amd/dart_sdk.js",
-    "$root_out_dir/flutter_web_sdk/kernel/amd/dart_sdk.js.map",
-  ]
-
-  script = "flutter_kernel_sdk.dart"
   packages = "//third_party/dart/.packages"
 
-  output_path = rebase_path(sdk_dill)
-  libraries_path = rebase_path(sdk_libraries_json)
+  script = "//third_party/dart/pkg/dev_compiler/bin/dartdevc.dart"
+
+  outputs = [
+    "$target_gen_dir/kernel/amd/dart_sdk.js",
+    "$target_gen_dir/kernel/amd/dart_sdk.js.map",
+  ]
 
   args = [
-    "--output=$output_path",
-    "--libraries=$libraries_path",
+    "-k",
+    "--compile-sdk",
+    "dart:core",
+    "--no-summarize",
+    "--packages",
+    "org-dartlang-sdk:/third_party/dart/.packages",
+    "--multi-root-scheme",
+    "org-dartlang-sdk",
+    "--multi-root",
+    "file://" + rebase_path("../../"),
+    "--multi-root-output-path",
+    rebase_path("$target_gen_dir/../../"),
+    "--libraries-file",
+    "org-dartlang-sdk:/$sdk_libraries_json",
+    "--modules",
+    "amd",
+    "-o",
+    rebase_path("$target_gen_dir/kernel/amd/dart_sdk.js"),
   ]
 }
