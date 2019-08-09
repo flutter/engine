@@ -980,6 +980,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (NSString*)brightnessMode {
+#if defined(__IPHONE_13_0)
   if (@available(iOS 13, *)) {
     UIUserInterfaceStyle style = UITraitCollection.currentTraitCollection.userInterfaceStyle;
 
@@ -991,6 +992,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   } else {
     return @"light";
   }
+#elif
+  return @"light";
+#endif
 }
 
 #pragma mark - Status Bar touch event handling
