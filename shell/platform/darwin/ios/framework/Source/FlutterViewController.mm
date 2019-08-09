@@ -992,7 +992,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   } else {
     return @"light";
   }
-#elif
+#else
   return @"light";
 #endif
 }
