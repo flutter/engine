@@ -425,6 +425,10 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 
 #pragma mark - UIViewController lifecycle notifications
 
+- (void)viewDidLoad {
+  [self onUserSettingsChanged:nil];
+}
+
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");
 

@@ -45,6 +45,26 @@
                              }]]);
 }
 
+- (void)testItReportsPlatformBrightnessWhenViewLoaded {
+  // Setup test.
+  id engine = OCMClassMock([FlutterEngine class]);
+  
+  id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([engine settingsChannel]).andReturn(settingsChannel);
+  
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:engine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+  
+  // Exercise behavior under test.
+  [vc viewDidLoad];
+  
+  // Verify behavior.
+  OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
+                               return [message[@"platformBrightness"] isEqualToString:@"light"];
+                             }]]);
+}
+
 - (void)testItReportsDarkPlatformBrightnessWhenTraitCollectionRequestsIt {
   // Setup test.
   id engine = OCMClassMock([FlutterEngine class]);
