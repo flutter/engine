@@ -34,6 +34,349 @@ namespace txt {
 
 using ParagraphTest = RenderTest;
 
+TEST_F(ParagraphTest, LineMetricsParagraph1) {
+  const char* text = "Hello! What is going on?\nSecond line \nthirdline";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  // We must supply a font here, as the default is Arial, and we do not
+  // include Arial in our test fonts as it is proprietary. We want it to
+  // be Arial default though as it is one of the most common fonts on host
+  // platforms. On real devices/apps, Arial should be able to be resolved.
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(GetTestCanvasWidth());
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  ASSERT_TRUE(Snapshot());
+
+  ASSERT_EQ(paragraph->GetLineMetrics().size(), 3ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0].start_index, 0ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0].end_index, 24ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0].end_including_newline, 25ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0].end_excluding_whitespace, 24ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0].hard_break, true);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0].ascent, 12.988281);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0].descent, 3.4179688);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0].width, 149.67578);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0].left, 0.0);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0].baseline, 12.582031);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0].line_number, 0ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0].run_metrics.size(), 1ull);
+  ASSERT_EQ(
+      paragraph->GetLineMetrics()[0]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[0].start_index)
+          ->second.GetTextStyle()
+          .color,
+      SK_ColorBLACK);
+  ASSERT_EQ(
+      paragraph->GetLineMetrics()[0]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[0].start_index)
+          ->second.GetTextStyle()
+          .font_families,
+      std::vector<std::string>(1, "Roboto"));
+  ASSERT_FLOAT_EQ(
+      paragraph->GetLineMetrics()[0]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[0].start_index)
+          ->second.GetFontMetrics()
+          .fAscent,
+      -12.988281);
+  ASSERT_FLOAT_EQ(
+      paragraph->GetLineMetrics()[0]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[0].start_index)
+          ->second.GetFontMetrics()
+          .fDescent,
+      3.4179688);
+  ASSERT_FLOAT_EQ(
+      paragraph->GetLineMetrics()[0]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[0].start_index)
+          ->second.GetFontMetrics()
+          .fXHeight,
+      7.3964844);
+  ASSERT_FLOAT_EQ(
+      paragraph->GetLineMetrics()[0]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[0].start_index)
+          ->second.GetFontMetrics()
+          .fLeading,
+      0);
+  ASSERT_FLOAT_EQ(
+      paragraph->GetLineMetrics()[0]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[0].start_index)
+          ->second.GetFontMetrics()
+          .fTop,
+      -14.786133);
+  ASSERT_FLOAT_EQ(
+      paragraph->GetLineMetrics()[0]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[0].start_index)
+          ->second.GetFontMetrics()
+          .fUnderlinePosition,
+      1.0253906);
+
+  ASSERT_EQ(paragraph->GetLineMetrics()[1].start_index, 25ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[1].end_index, 37ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[1].end_including_newline, 38ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[1].end_excluding_whitespace, 36ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[1].hard_break, true);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[1].ascent, 12.988281);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[1].descent, 3.4179688);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[1].width, 72.039062);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[1].left, 0.0);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[1].baseline, 28.582031);
+  ASSERT_EQ(paragraph->GetLineMetrics()[1].line_number, 1ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[1].run_metrics.size(), 1ull);
+  ASSERT_EQ(
+      paragraph->GetLineMetrics()[1]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[1].start_index)
+          ->second.GetTextStyle()
+          .color,
+      SK_ColorBLACK);
+  ASSERT_EQ(
+      paragraph->GetLineMetrics()[1]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[1].start_index)
+          ->second.GetTextStyle()
+          .font_families,
+      std::vector<std::string>(1, "Roboto"));
+  ASSERT_FLOAT_EQ(
+      paragraph->GetLineMetrics()[1]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[1].start_index)
+          ->second.GetFontMetrics()
+          .fAscent,
+      -12.988281);
+  ASSERT_FLOAT_EQ(
+      paragraph->GetLineMetrics()[1]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[1].start_index)
+          ->second.GetFontMetrics()
+          .fDescent,
+      3.4179688);
+  ASSERT_FLOAT_EQ(
+      paragraph->GetLineMetrics()[1]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[1].start_index)
+          ->second.GetFontMetrics()
+          .fXHeight,
+      7.3964844);
+  ASSERT_FLOAT_EQ(
+      paragraph->GetLineMetrics()[1]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[1].start_index)
+          ->second.GetFontMetrics()
+          .fLeading,
+      0);
+  ASSERT_FLOAT_EQ(
+      paragraph->GetLineMetrics()[1]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[1].start_index)
+          ->second.GetFontMetrics()
+          .fTop,
+      -14.786133);
+  ASSERT_FLOAT_EQ(
+      paragraph->GetLineMetrics()[1]
+          .run_metrics.lower_bound(paragraph->GetLineMetrics()[1].start_index)
+          ->second.GetFontMetrics()
+          .fUnderlinePosition,
+      1.0253906);
+}
+
+TEST_F(ParagraphTest, LineMetricsParagraph2) {
+  const char* text = "test string alphabetic";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string alphabetic(icu_text.getBuffer(),
+                            icu_text.getBuffer() + icu_text.length());
+
+  const char* text2 = "测试中文日本語한국어";
+  auto icu_text2 = icu::UnicodeString::fromUTF8(text2);
+  std::u16string cjk(icu_text2.getBuffer(),
+                     icu_text2.getBuffer() + icu_text2.length());
+
+  txt::ParagraphStyle paragraph_style;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_families.push_back("Noto Sans CJK JP");
+  text_style.font_size = 27;
+  text_style.color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+  builder.AddText(alphabetic);
+
+  text_style.font_size = 24;
+  builder.PushStyle(text_style);
+  builder.AddText(cjk);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(350);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  ASSERT_TRUE(Snapshot());
+
+  ASSERT_EQ(paragraph->GetLineMetrics().size(), 2ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0].start_index, 0ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0].end_index, 26ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0].end_including_newline, 26ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0].end_excluding_whitespace, 26ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0].hard_break, false);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0].ascent, 27.84);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0].descent, 7.6799998);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0].width, 349.22266);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0].left, 0.0);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0].baseline, 28.32);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0].line_number, 0ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0].run_metrics.size(), 2ull);
+  // First run
+  ASSERT_EQ(paragraph->GetLineMetrics()[0]
+                .run_metrics.lower_bound(2)
+                ->second.GetTextStyle()
+                .font_size,
+            27);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0]
+                .run_metrics.lower_bound(2)
+                ->second.GetTextStyle()
+                .font_families,
+            text_style.font_families);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0]
+                      .run_metrics.lower_bound(2)
+                      ->second.GetFontMetrics()
+                      .fAscent,
+                  -25.048828);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0]
+                      .run_metrics.lower_bound(2)
+                      ->second.GetFontMetrics()
+                      .fDescent,
+                  6.5917969);
+
+  ASSERT_EQ(paragraph->GetLineMetrics()[0]
+                .run_metrics.lower_bound(21)
+                ->second.GetTextStyle()
+                .font_size,
+            27);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0]
+                .run_metrics.lower_bound(21)
+                ->second.GetTextStyle()
+                .font_families,
+            text_style.font_families);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0]
+                      .run_metrics.lower_bound(21)
+                      ->second.GetFontMetrics()
+                      .fAscent,
+                  -25.048828);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0]
+                      .run_metrics.lower_bound(21)
+                      ->second.GetFontMetrics()
+                      .fDescent,
+                  6.5917969);
+
+  // Second run
+  ASSERT_EQ(paragraph->GetLineMetrics()[0]
+                .run_metrics.lower_bound(22)
+                ->second.GetTextStyle()
+                .font_size,
+            24);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0]
+                .run_metrics.lower_bound(22)
+                ->second.GetTextStyle()
+                .font_families,
+            text_style.font_families);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0]
+                      .run_metrics.lower_bound(22)
+                      ->second.GetFontMetrics()
+                      .fAscent,
+                  -27.84);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0]
+                      .run_metrics.lower_bound(22)
+                      ->second.GetFontMetrics()
+                      .fDescent,
+                  7.6799998);
+
+  ASSERT_EQ(paragraph->GetLineMetrics()[0]
+                .run_metrics.lower_bound(24)
+                ->second.GetTextStyle()
+                .font_size,
+            24);
+  ASSERT_EQ(paragraph->GetLineMetrics()[0]
+                .run_metrics.lower_bound(24)
+                ->second.GetTextStyle()
+                .font_families,
+            text_style.font_families);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0]
+                      .run_metrics.lower_bound(24)
+                      ->second.GetFontMetrics()
+                      .fAscent,
+                  -27.84);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[0]
+                      .run_metrics.lower_bound(24)
+                      ->second.GetFontMetrics()
+                      .fDescent,
+                  7.6799998);
+
+  ASSERT_EQ(paragraph->GetLineMetrics()[1].start_index, 26ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[1].end_index, 32ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[1].end_including_newline, 32ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[1].end_excluding_whitespace, 32ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[1].hard_break, true);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[1].ascent, 27.84);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[1].descent, 7.6799998);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[1].width, 138.23438);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[1].left, 0.0);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[1].baseline, 64.32);
+  ASSERT_EQ(paragraph->GetLineMetrics()[1].line_number, 1ull);
+  ASSERT_EQ(paragraph->GetLineMetrics()[1].run_metrics.size(), 1ull);
+  // Indexing below the line will just resolve to the first run in the line.
+  ASSERT_EQ(paragraph->GetLineMetrics()[1]
+                .run_metrics.lower_bound(3)
+                ->second.GetTextStyle()
+                .font_size,
+            24);
+  ASSERT_EQ(paragraph->GetLineMetrics()[1]
+                .run_metrics.lower_bound(3)
+                ->second.GetTextStyle()
+                .font_families,
+            text_style.font_families);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[1]
+                      .run_metrics.lower_bound(3)
+                      ->second.GetFontMetrics()
+                      .fAscent,
+                  -27.84);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[1]
+                      .run_metrics.lower_bound(3)
+                      ->second.GetFontMetrics()
+                      .fDescent,
+                  7.6799998);
+
+  // Indexing within the line
+  ASSERT_EQ(paragraph->GetLineMetrics()[1]
+                .run_metrics.lower_bound(31)
+                ->second.GetTextStyle()
+                .font_size,
+            24);
+  ASSERT_EQ(paragraph->GetLineMetrics()[1]
+                .run_metrics.lower_bound(31)
+                ->second.GetTextStyle()
+                .font_families,
+            text_style.font_families);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[1]
+                      .run_metrics.lower_bound(31)
+                      ->second.GetFontMetrics()
+                      .fAscent,
+                  -27.84);
+  ASSERT_FLOAT_EQ(paragraph->GetLineMetrics()[1]
+                      .run_metrics.lower_bound(31)
+                      ->second.GetFontMetrics()
+                      .fDescent,
+                  7.6799998);
+}
+
 TEST_F(ParagraphTest, SimpleParagraph) {
   const char* text = "Hello World Text Dialog";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
@@ -1856,15 +2199,25 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyRTL)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   ASSERT_EQ(boxes.size(), 5ull);
+
+  paint.setColor(SK_ColorBLUE);
+  boxes = paragraph->GetRectsForRange(240, 250, rect_height_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  ASSERT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 588);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 130);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 640);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 156);
   ASSERT_TRUE(Snapshot());
 
-  // All lines except the last should be justified to the width of the
+  // All lines should be justified to the width of the
   // paragraph.
-  for (size_t i = 0; i < paragraph->glyph_lines_.size() - 1; ++i) {
+  for (size_t i = 0; i < paragraph->glyph_lines_.size(); ++i) {
     ASSERT_EQ(glyph_line_width(i), paragraph_width);
   }
-  ASSERT_NE(glyph_line_width(paragraph->glyph_lines_.size() - 1),
-            paragraph_width);
 }
 
 TEST_F(ParagraphTest, DecorationsParagraph) {
@@ -4030,6 +4383,123 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(EmojiParagraph)) {
   EXPECT_EQ(paragraph->records_[2].line(), 2ull);
   EXPECT_EQ(paragraph->records_[3].line(), 3ull);
   EXPECT_EQ(paragraph->records_[7].line(), 7ull);
+}
+
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(EmojiMultiLineRectsParagraph)) {
+  // clang-format off
+  const char* text =
+      "👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸👩‍👩‍👦👩‍👩‍👧‍👧i🇺🇸👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸"
+      "👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸"
+      "👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸"
+      "👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸👩‍👩‍👦👩‍👩‍👧‍👧🇺🇸"
+      "❄🍕🍔🍟🥝🍱🕶🎩🏈⚽🚴‍♀️🎻🎼🎹🚨🚎🚐⚓🛳🚀🚁🏪🏢🖱⏰📱💾💉📉🛏🔑🔓"
+      "📁🗓📊❤💯🚫🔻♠♣🕓❗🏳🏁🏳️‍🌈🇮🇹🇱🇷🇺🇸🇬🇧🇨🇳🇧🇴";
+  // clang-format on
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.color = SK_ColorBLACK;
+  text_style.font_families = std::vector<std::string>(1, "Noto Color Emoji");
+  text_style.font_size = 50;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(GetTestCanvasWidth() - 300);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  for (size_t i = 0; i < u16_text.length(); i++) {
+    ASSERT_EQ(paragraph->text_[i], u16_text[i]);
+  }
+
+  ASSERT_EQ(paragraph->records_.size(), 10ull);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  // Ligature style indexing.
+  boxes =
+      paragraph->GetRectsForRange(0, 119, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 2ull);
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 334.61475);
+
+  boxes = paragraph->GetRectsForRange(122, 132, rect_height_style,
+                                      rect_width_style);
+  paint.setColor(SK_ColorBLUE);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 357.95996);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 418.79901);
+
+  // GetPositionForCoordinates should not return inter-emoji positions.
+  boxes = paragraph->GetRectsForRange(
+      0, paragraph->GetGlyphPositionAtCoordinate(610, 100).position,
+      rect_height_style, rect_width_style);
+  paint.setColor(SK_ColorGREEN);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 2ull);
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 0);
+  // The following is expected to change to a higher value when
+  // rounding up is added to getGlyphPositionForCoordinate.
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 560.28516);
+
+  boxes = paragraph->GetRectsForRange(
+      0, paragraph->GetGlyphPositionAtCoordinate(580, 100).position,
+      rect_height_style, rect_width_style);
+  paint.setColor(SK_ColorGREEN);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 2ull);
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 560.28516);
+
+  boxes = paragraph->GetRectsForRange(
+      0, paragraph->GetGlyphPositionAtCoordinate(560, 100).position,
+      rect_height_style, rect_width_style);
+  paint.setColor(SK_ColorGREEN);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 2ull);
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 0);
+  // The following is expected to change to the 560.28516 value when
+  // rounding up is added to getGlyphPositionForCoordinate.
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 498.03125);
+
+  ASSERT_TRUE(Snapshot());
 }
 
 TEST_F(ParagraphTest, HyphenBreakParagraph) {
