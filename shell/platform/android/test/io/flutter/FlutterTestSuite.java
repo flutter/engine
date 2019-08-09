@@ -7,6 +7,7 @@ package io.flutter;
 import io.flutter.SmokeTest;
 import io.flutter.util.PreconditionsTest;
 import io.flutter.embedding.android.FlutterActivityAndFragmentDelegateTest;
+import io.flutter.embedding.android.FlutterViewTest;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -14,9 +15,10 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
 @SuiteClasses({
-    PreconditionsTest.class,
-    SmokeTest.class,
-    FlutterActivityAndFragmentDelegateTest.class,
+    // PreconditionsTest.class,
+    // SmokeTest.class,
+    // FlutterActivityAndFragmentDelegateTest.class,
+    FlutterViewTest.class,
 })
 /** Runs all of the unit tests listed in the {@code @SuiteClasses} annotation. */
 public class FlutterTestSuite {}
