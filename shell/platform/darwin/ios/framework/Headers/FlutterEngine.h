@@ -247,7 +247,7 @@ FLUTTER_EXPORT
  *
  * This property will be nil if the engine is not running.
  */
-@property(nonatomic, readonly) NSString* isolateId;
+@property(nonatomic, readonly, copy) NSString* isolateId;
 
 @end
 

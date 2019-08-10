@@ -32,7 +32,7 @@
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
 
-@property(nonatomic, readwrite) NSString* isolateId;
+@property(nonatomic, readwrite, copy) NSString* isolateId;
 @end
 
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
@@ -236,13 +236,9 @@
 // Channels get a reference to the engine, and therefore need manual
 // cleanup for proper collection.
 - (void)setupChannels {
-  __block FlutterEngine* engine = self;
   [_binaryMessenger setMessageHandlerOnChannel:@"flutter/isolate"
                           binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
-                            if (engine) {
-                              engine.isolateId =
-                                  [[[FlutterStringCodec sharedInstance] decode:message] copy];
-                            }
+                            self.isolateId = [[FlutterStringCodec sharedInstance] decode:message];
                           }];
 
   _localizationChannel.reset([[FlutterMethodChannel alloc]
