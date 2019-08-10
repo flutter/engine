@@ -32,11 +32,13 @@
   self.flutterViewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                      nibName:nil
                                                                       bundle:nil];
+
+  XCTAssertFalse(self.flutterViewController.isRenderingFrames);
+
   [self keyValueObservingExpectationForObject:self.flutterViewController
                                       keyPath:@"isRenderingFrames"
                                       handler:nil];
 
-  XCTAssertFalse(self.flutterViewController.isRenderingFrames);
   [self.flutterViewController setFlutterViewDidRenderCallback:^{
     [firstFrameRendered fulfill];
   }];
