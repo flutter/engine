@@ -29,6 +29,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
 @interface FlutterViewController () <FlutterBinaryMessenger>
+@property(nonatomic, readwrite) BOOL isRenderingFrames;
 @end
 
 @implementation FlutterViewController {
@@ -264,7 +265,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 }
 
 - (void)callViewRenderedCallback {
-  [self firstFrameDidRender];
+  self.isRenderingFrames = YES;
   if (_flutterViewRenderedCallback != nil) {
     _flutterViewRenderedCallback.get()();
     _flutterViewRenderedCallback.reset();
@@ -386,10 +387,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   _flutterViewRenderedCallback.reset(callback, fml::OwnershipPolicy::Retain);
 }
 
-- (void)firstFrameDidRender {
-
-}
-
 #pragma mark - Surface creation and teardown updates
 
 - (void)surfaceUpdated:(BOOL)appeared {
@@ -400,6 +397,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     [_engine.get() platformViewsController] -> SetFlutterViewController(self);
     [_engine.get() platformView] -> NotifyCreated();
   } else {
+    self.isRenderingFrames = NO;
     [_engine.get() platformView] -> NotifyDestroyed();
     [_engine.get() platformViewsController] -> SetFlutterView(nullptr);
     [_engine.get() platformViewsController] -> SetFlutterViewController(nullptr);

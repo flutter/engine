@@ -131,13 +131,11 @@ FLUTTER_EXPORT
 - (id<FlutterPluginRegistry>)pluginRegistry;
 
 /**
- * Called once the first frame has been rendered by the engine after this
- * ViewController has appeared on the screen.
+ * True if at least one frame has rendered and the ViewController has appeared.
  *
- * This method is called before the callback set by any previous call to
- * `setFlutterViewDidRenderCallback` is called, if any.
+ * This property is reset to false when the ViewController disappears.
  */
-- (void)firstFrameDidRender;
+@property(nonatomic, readonly) BOOL isRenderingFrames;
 
 /**
  * Specifies the view to use as a splash screen. Flutter's rendering is asynchronous, so the first
