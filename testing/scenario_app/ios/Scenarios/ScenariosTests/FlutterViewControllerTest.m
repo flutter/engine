@@ -26,11 +26,16 @@
 
 - (void)testFirstFrameCallback {
   XCTestExpectation* firstFrameRendered = [self expectationWithDescription:@"firstFrameRendered"];
+
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
   [engine runWithEntrypoint:nil];
   self.flutterViewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                      nibName:nil
                                                                       bundle:nil];
+  [self keyValueObservingExpectationForObject:self.flutterViewController
+                                      keyPath:@"isRenderingFrames"
+                                      handler:nil];
+
   XCTAssertFalse(self.flutterViewController.isRenderingFrames);
   [self.flutterViewController setFlutterViewDidRenderCallback:^{
     [firstFrameRendered fulfill];
