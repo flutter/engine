@@ -31,6 +31,8 @@
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
+
+@property(nonatomic, readwrite) NSString* isolateId;
 @end
 
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
@@ -171,6 +173,7 @@
 
 - (void)destroyContext {
   [self resetChannels];
+  self.isolateId = nil;
   _shell.reset();
   _threadHost.Reset();
   _platformViewsController.reset();
@@ -233,6 +236,15 @@
 // Channels get a reference to the engine, and therefore need manual
 // cleanup for proper collection.
 - (void)setupChannels {
+  __block FlutterEngine* engine = self;
+  [_binaryMessenger setMessageHandlerOnChannel:@"flutter/isolate"
+                          binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
+                            if (engine) {
+                              engine.isolateId =
+                                  [[[FlutterStringCodec sharedInstance] decode:message] copy];
+                            }
+                          }];
+
   _localizationChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/localization"
       binaryMessenger:self.binaryMessenger
