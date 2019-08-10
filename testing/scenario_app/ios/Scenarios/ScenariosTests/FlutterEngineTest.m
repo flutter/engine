@@ -10,13 +10,11 @@
 @end
 
 @implementation FlutterEngineTest
-XCTestExpectation* _isolateIdSetExpectation;
 
 - (void)testIsolateId {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
   XCTAssertNil(engine.isolateId);
-  _isolateIdSetExpectation = [self expectationWithDescription:@"Isolate ID set"];
-  [engine addObserver:self forKeyPath:@"isolateId" options:0 context:nil];
+  [self keyValueObservingExpectationForObject:engine keyPath:@"isolateId" handler:nil];
   
   XCTAssertTrue([engine runWithEntrypoint:nil]);
   
@@ -30,13 +28,4 @@ XCTestExpectation* _isolateIdSetExpectation;
   XCTAssertNil(engine.isolateId);
 }
 
-- (void)observeValueForKeyPath:(NSString*)keyPath
-                      ofObject:(id)object
-                        change:(NSDictionary*)change
-                       context:(void*)context {
-  if ([keyPath isEqualToString:@"isolateId"]) {
-    [_isolateIdSetExpectation fulfill];
-    _isolateIdSetExpectation = nil;
-  }
-}
 @end
