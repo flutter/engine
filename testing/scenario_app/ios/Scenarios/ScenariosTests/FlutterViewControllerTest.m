@@ -37,7 +37,7 @@
 
   [self keyValueObservingExpectationForObject:self.flutterViewController
                                       keyPath:@"isRenderingFrames"
-                                      handler:nil];
+                                      expectedValue:@YES];
 
   [self.flutterViewController setFlutterViewDidRenderCallback:^{
     [firstFrameRendered fulfill];
@@ -47,7 +47,6 @@
   [rootVC presentViewController:self.flutterViewController animated:NO completion:nil];
 
   [self waitForExpectationsWithTimeout:30.0 handler:nil];
-  XCTAssertTrue(self.flutterViewController.isRenderingFrames);
 }
 
 @end
