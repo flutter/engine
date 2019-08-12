@@ -1,4 +1,4 @@
-Signature: db6253ae92ac5535be76ee7646db4827
+Signature: dc36f9cdb0e142e7adf99d5f942edc8c
 
 UNUSED LICENSES:
 
@@ -1721,6 +1721,7 @@ FILE: ../../../third_party/skia/modules/skparagraph/include/DartTypes.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/FontCollection.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/Paragraph.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphBuilder.h
+FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphCache.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphStyle.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TextShadow.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TextStyle.h
@@ -1732,7 +1733,6 @@ FILE: ../../../third_party/skia/modules/skparagraph/src/Iterators.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphBuilderImpl.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphBuilderImpl.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphCache.cpp
-FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphCache.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphImpl.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphImpl.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphStyle.cpp
@@ -4681,8 +4681,8 @@ FILE: ../../../third_party/skia/docs/examples/Xor.cpp
 FILE: ../../../third_party/skia/experimental/editor/editor.cpp
 FILE: ../../../third_party/skia/experimental/editor/editor.h
 FILE: ../../../third_party/skia/experimental/editor/editor_application.cpp
-FILE: ../../../third_party/skia/experimental/editor/run_handler.cpp
-FILE: ../../../third_party/skia/experimental/editor/run_handler.h
+FILE: ../../../third_party/skia/experimental/editor/shape.cpp
+FILE: ../../../third_party/skia/experimental/editor/shape.h
 FILE: ../../../third_party/skia/experimental/editor/stringslice.cpp
 FILE: ../../../third_party/skia/experimental/editor/stringslice.h
 FILE: ../../../third_party/skia/experimental/editor/stringview.h
@@ -4907,6 +4907,7 @@ FILE: ../../../third_party/skia/gm/compositor_quads.cpp
 FILE: ../../../third_party/skia/gm/crbug_913349.cpp
 FILE: ../../../third_party/skia/gm/crbug_938592.cpp
 FILE: ../../../third_party/skia/gm/crbug_947055.cpp
+FILE: ../../../third_party/skia/gm/fiddle.cpp
 FILE: ../../../third_party/skia/gm/mac_aa_explorer.cpp
 FILE: ../../../third_party/skia/gm/mixercolorfilter.cpp
 FILE: ../../../third_party/skia/gm/overdrawcanvas.cpp
@@ -5008,6 +5009,8 @@ FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnProgramDataManager.cpp
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnProgramDataManager.h
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnRenderTarget.cpp
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnRenderTarget.h
+FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnStencilAttachment.cpp
+FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnStencilAttachment.h
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnUniformHandler.cpp
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnUniformHandler.h
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnUtil.cpp
