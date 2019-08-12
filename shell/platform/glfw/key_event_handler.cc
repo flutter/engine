@@ -26,34 +26,29 @@ static constexpr char kGLFWKey[] = "glfw";
 static constexpr char kKeyUp[] = "keyup";
 static constexpr char kKeyDown[] = "keydown";
 
+// Masks used for UTF-8 to UTF-32 conversion.
+static constexpr int kOneByteMask = 0xFF;
+static constexpr int kTwoByteMask = 0x1F;
+static constexpr int kThreeByteMask = 0x0F;
+static constexpr int kFourByteMask = 0x07;
+
 namespace flutter {
 
+int GetCodePointLength(int byte) {
+  int mask = byte & 0xF8;
+  if (mask == kTwoByteMask) {
+    return 2;
+  } else if (mask == kThreeByteMask) {
+    return 3;
+  } else if (mask == kFourByteMask) {
+    return 4;
+  }
+  return 1;
+}
+
 // Queries GLFW for the printable key name given a [key] and [scan_code] and
-// converts it to a 32 bit int.The Flutter framework accepts only one 32 bit
-// int, therefore, only up to 4 bytes are accepted. If the code point larger
-// than 4 bytes, only the first 4 will be used.
-//
-// Example:
-// 中 (11100100 10111000 10101101) converts to 20013 (1001110 00101101).
-// This function only covers a multy-byte point to up to 4 bytes.
-// TI achieve the conversion, each byte must be masked based on their poisition.
-// For one-byte points, the byte is taken as-is, therefore, the mask is 0xFF
-// (not all characters in this range are printable, but the GLFW api filters
-// non-printable characters by returning nullptr).
-// For multi-byte points, only the first byte uses a special mask. The rest of
-// the bytes use a "complement mask": 0x3F.
-// For two bytes: 0x1F
-// For three bytes: 0x0F
-// For four bytes: 0x07
-//
-// Run through:
-// 中 = 11100100 10111000 10101101
-// It's a 3 byte point, so the mask for the first byte is 0x0F.
-// 11100100 & 0x0F = 0100
-// For the remaining bytes:
-// 10111000 & 0x3F = 111000
-// 10101101 & 0x3F = 101101
-// All together: 01001110 00101101 (20013)
+// converts it to UTF-32. The Flutter framework accepts only one 32 bit
+// int, therefore,
 bool GetGLFWCodePoint(int key, int scan_code, uint32_t& code_point) {
   // Get the name of the printable key, encoded as UTF-8.
   // There's a known issue with glfwGetKeyName, where users with multiple
@@ -64,15 +59,14 @@ bool GetGLFWCodePoint(int key, int scan_code, uint32_t& code_point) {
     return false;
   }
 
-  size_t length = strlen(utf8);
-  // Defend against > 4 byte code points.
-  length = length >= 4 ? length : length;
+  size_t length = GetCodePointLength(utf8[0]);
 
   // Tracks how many bits the current byte should shift to the left.
   int shift = length - 1;
 
   // All possible masks for a 4 byte utf8 code point.
-  std::vector<int> masks = {0xFF, 0x1F, 0x0F, 0x07};
+  std::vector<int> masks = {kOneByteMask, kTwoByteMask, kThreeByteMask,
+                            kFourByteMask};
 
   // The number of bits to shift a byte depending on its position.
   std::vector<int> bits = {0, 6, 12, 18};
