@@ -5,7 +5,6 @@
 #include "flutter/shell/platform/glfw/key_event_handler.h"
 
 #include <iostream>
-#include <vector>
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_message_codec.h"
 
@@ -33,6 +32,8 @@ static constexpr int kFourByteMask = 0xF0;
 
 namespace flutter {
 
+namespace {
+
 // Information about the UTF-8 encoded code point.
 struct UTF8CodePointInfo {
   // The bit-mask that determines the length of the code point.
@@ -41,8 +42,8 @@ struct UTF8CodePointInfo {
   size_t length;
 };
 
-// Creates a [UTF8CodePointInfo] from a given byte. [first_byte] must be the first
-// byte in the code point.
+// Creates a [UTF8CodePointInfo] from a given byte. [first_byte] must be the
+// first byte in the code point.
 UTF8CodePointInfo GetUTF8CodePointInfo(int first_byte) {
   UTF8CodePointInfo byte_info;
 
@@ -65,11 +66,12 @@ UTF8CodePointInfo GetUTF8CodePointInfo(int first_byte) {
 }
 
 // Queries GLFW for the printable key name given a [key] and [scan_code] and
-// converts it to UTF-32. The Flutter framework accepts only one 32 bit
-// int, therefore, if the [code_point]'s length is > 4 (e.g. has two code
-// points), only the first will be used. This unlikely but there is no guarantee
-// that it won't happen.
-bool GetGLFWCodePoint(int key, int scan_code, uint32_t& code_point) {
+// converts it to UTF-32. The Flutter framework accepts only one code point,
+// therefore, only the first code point will be used. This unlikely but there is
+// no guarantee that it won't happen.
+bool GetUTF32CodePointFromGLFWKey(int key,
+                                  int scan_code,
+                                  uint32_t* code_point) {
   // Get the name of the printable key, encoded as UTF-8.
   // There's a known issue with glfwGetKeyName, where users with multiple
   // layouts configured on their machines, will not always return the right
@@ -79,29 +81,26 @@ bool GetGLFWCodePoint(int key, int scan_code, uint32_t& code_point) {
     return false;
   }
   // The first byte determines the length of the whole code point.
-  auto byte_info = GetUTF8CodePointInfo(utf8[0]);
-  size_t length = byte_info.length;
+  const auto byte_info = GetUTF8CodePointInfo(utf8[0]);
   // Tracks how many bits the current byte should shift to the left.
-  int shift = length - 1;
+  int shift = byte_info.length - 1;
 
-  // The number of bits to shift a byte depending on its position.
-  std::vector<int> bits = {0, 6, 12, 18};
-
-  int complement_mask = 0x3F;
+  const int complement_mask = 0x3F;
   uint32_t result = 0;
 
   size_t current_byte_index = 0;
-  while (current_byte_index < length) {
-    int current_byte = utf8[current_byte_index];
-    int mask =
+  while (current_byte_index < byte_info.length) {
+    const int current_byte = utf8[current_byte_index];
+    const int mask =
         current_byte_index == 0 ? byte_info.first_byte_mask : complement_mask;
     current_byte_index++;
-    result += (current_byte & mask) << bits[shift--];
+    const int bits_to_shift = 6 * shift--;
+    result += (current_byte & mask) << bits_to_shift;
   }
-  code_point = result;
-
+  *code_point = result;
   return true;
 }
+}  // namespace
 
 KeyEventHandler::KeyEventHandler(flutter::BinaryMessenger* messenger)
     : channel_(
@@ -130,7 +129,7 @@ void KeyEventHandler::KeyboardHook(GLFWwindow* window,
   event.AddMember(kToolkitKey, kGLFWKey, allocator);
 
   uint32_t unicodeInt;
-  bool result = GetGLFWCodePoint(key, scancode, unicodeInt);
+  bool result = GetUTF32CodePointFromGLFWKey(key, scancode, &unicodeInt);
   if (result) {
     event.AddMember(kUnicodeScalarValuesProduced, unicodeInt, allocator);
   }
