@@ -7,7 +7,7 @@ cd ..
 PATH=$(pwd)/third_party/dart/tools/sdks/dart-sdk/bin:$PATH
 
 # Build the dart UI files
-flutter/tools/gn --unoptimized
+flutter/tools/gn --unoptimized --full-dart-sdk
 ninja -C out/host_debug_unopt generate_dart_ui
 
 # Analyze the dart UI
