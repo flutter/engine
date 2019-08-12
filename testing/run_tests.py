@@ -294,13 +294,13 @@ def main():
     assert os.path.exists(build_dir), 'Build variant directory %s does not exist!' % build_dir
 
   engine_filter = args.engine_filter.split(',') if args.engine_filter else None
-  # if 'engine' in types:
-  #   RunCCTests(build_dir, engine_filter)
+  if 'engine' in types:
+    RunCCTests(build_dir, engine_filter)
 
-  # if 'dart' in types:
-  #   assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
-  #   dart_filter = args.dart_filter.split(',') if args.dart_filter else None
-  #   RunDartTests(build_dir, dart_filter)
+  if 'dart' in types:
+    assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
+    dart_filter = args.dart_filter.split(',') if args.dart_filter else None
+    RunDartTests(build_dir, dart_filter)
 
   if 'java' in types:
     assert not IsWindows(), "Android engine files can't be compiled on Windows."
@@ -311,8 +311,8 @@ def main():
     RunJavaTests(java_filter, args.android_variant)
 
   # https://github.com/flutter/flutter/issues/36300
-  # if 'benchmarks' in types and not IsWindows():
-  #   RunEngineBenchmarks(build_dir, engine_filter)
+  if 'benchmarks' in types and not IsWindows():
+    RunEngineBenchmarks(build_dir, engine_filter)
 
 
 if __name__ == '__main__':
