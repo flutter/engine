@@ -24,7 +24,7 @@
  * code as necessary from FlutterAppDelegate.mm.
  */
 FLUTTER_EXPORT
-#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 100000
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @interface FlutterAppDelegate : UIResponder <UIApplicationDelegate,
                                              FlutterPluginRegistry,
                                              FlutterAppLifeCycleProvider,
