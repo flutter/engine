@@ -513,6 +513,27 @@ TEST_F(EmbedderTest, VMAndIsolateSnapshotSizesAreRedundantInAOTMode) {
   ASSERT_TRUE(engine.is_valid());
 }
 
+//------------------------------------------------------------------------------
+/// If an incorrectly configured compositor is set on the engine, the engine
+/// must fail to launch instead of failing to render a frame at a later point in
+/// time.
+///
+TEST_F(EmbedderTest,
+       MustPreventEngineLaunchWhenRequiredCompositorArgsAreAbsent) {
+  auto& context = GetEmbedderContext();
+  EmbedderConfigBuilder builder(context);
+  builder.SetCompositor();
+  builder.GetCompositor().create_backing_store_callback = nullptr;
+  builder.GetCompositor().collect_backing_store_callback = nullptr;
+  builder.GetCompositor().present_layers_callback = nullptr;
+  auto engine = builder.LaunchEngine();
+  ASSERT_FALSE(engine.is_valid());
+}
+
+//------------------------------------------------------------------------------
+/// Must be able to render to a custom compositor whose render targets are fully
+/// complete OpenGL textures.
+///
 TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLFramebuffer) {
   auto& context = GetEmbedderContext();
 
@@ -599,18 +620,10 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLFramebuffer) {
   latch.Wait();
 }
 
-TEST_F(EmbedderTest,
-       MustPreventEngineLaunchWhenRequiredCompositorArgsAreAbsent) {
-  auto& context = GetEmbedderContext();
-  EmbedderConfigBuilder builder(context);
-  builder.SetCompositor();
-  builder.GetCompositor().create_backing_store_callback = nullptr;
-  builder.GetCompositor().collect_backing_store_callback = nullptr;
-  builder.GetCompositor().present_layers_callback = nullptr;
-  auto engine = builder.LaunchEngine();
-  ASSERT_FALSE(engine.is_valid());
-}
-
+//------------------------------------------------------------------------------
+/// Must be able to render using a custom compositor whose render targets for
+/// the individual layers are OpenGL textures.
+///
 TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLTexture) {
   auto& context = GetEmbedderContext();
 
@@ -697,6 +710,10 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLTexture) {
   latch.Wait();
 }
 
+//------------------------------------------------------------------------------
+/// Must be able to render using a custom compositor whose render target for the
+/// individual layers are software buffers.
+///
 TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToSoftwareBuffer) {
   auto& context = GetEmbedderContext();
 
@@ -853,6 +870,9 @@ bool WriteImageToDisk(const fml::UniqueFD& directory,
   return WriteAtomically(directory, name.c_str(), mapping);
 }
 
+//------------------------------------------------------------------------------
+/// Test the layer structure and pixels rendered when using a custom compositor.
+///
 TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
   auto& context = GetEmbedderContext();
 
