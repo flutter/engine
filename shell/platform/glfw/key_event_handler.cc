@@ -67,8 +67,8 @@ UTF8CodePointInfo GetUTF8CodePointInfo(int first_byte) {
 
 // Queries GLFW for the printable key name given a [key] and [scan_code] and
 // converts it to UTF-32. The Flutter framework accepts only one code point,
-// therefore, only the first code point will be used. This unlikely but there is
-// no guarantee that it won't happen.
+// therefore, only the first code point will be used. There is unlikely to be
+// more than one, but there is no guarantee that it won't happen.
 bool GetUTF32CodePointFromGLFWKey(int key,
                                   int scan_code,
                                   uint32_t* code_point) {
