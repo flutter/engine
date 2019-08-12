@@ -24,13 +24,18 @@
  * code as necessary from FlutterAppDelegate.mm.
  */
 FLUTTER_EXPORT
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 100000
 @interface FlutterAppDelegate : UIResponder <UIApplicationDelegate,
                                              FlutterPluginRegistry,
                                              FlutterAppLifeCycleProvider,
                                              UNUserNotificationCenterDelegate>
-
 @property(strong, nonatomic) UIWindow* window;
-
 @end
+#else
+@interface FlutterAppDelegate
+    : UIResponder <UIApplicationDelegate, FlutterPluginRegistry, FlutterAppLifeCycleProvider>
+@property(strong, nonatomic) UIWindow* window;
+@end
+#endif
 
 #endif  // FLUTTER_FLUTTERDARTPROJECT_H_
