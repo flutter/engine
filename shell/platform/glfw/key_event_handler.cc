@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/glfw/key_event_handler.h"
 
+#include <cstdio>
 #include <iostream>
 #include <vector>
 
@@ -27,28 +28,48 @@ static constexpr char kKeyUp[] = "keyup";
 static constexpr char kKeyDown[] = "keydown";
 
 // Masks used for UTF-8 to UTF-32 conversion.
-static constexpr int kOneByteMask = 0xFF;
-static constexpr int kTwoByteMask = 0x1F;
-static constexpr int kThreeByteMask = 0x0F;
-static constexpr int kFourByteMask = 0x07;
+static constexpr int kTwoByteMask = 0xC0;
+static constexpr int kThreeByteMask = 0xE0;
+static constexpr int kFourByteMask = 0xF0;
 
 namespace flutter {
 
-int GetCodePointLength(int byte) {
-  int mask = byte & 0xF8;
-  if (mask == kTwoByteMask) {
-    return 2;
-  } else if (mask == kThreeByteMask) {
-    return 3;
-  } else if (mask == kFourByteMask) {
-    return 4;
+// Information about the UTF-8 encoded code point.
+struct UTF8CodePointInfo {
+  // The bit-mask that determines the length of the code point.
+  int first_byte_mask;
+  // The number of bytes of the code point.
+  size_t length;
+};
+
+// Creates a [UTF8CodePointInfo] from a given byte. [first_byte] must be the first
+// byte in the code point.
+UTF8CodePointInfo GetUTF8CodePointInfo(int first_byte) {
+  UTF8CodePointInfo byte_info;
+
+  // The order matters. Otherwise, it is possible that comparing against i.e.
+  // kThreeByteMask and kFourByteMask could be both true.
+  if ((first_byte & kFourByteMask) == kFourByteMask) {
+    byte_info.first_byte_mask = 0x07;
+    byte_info.length = 4;
+  } else if ((first_byte & kThreeByteMask) == kThreeByteMask) {
+    byte_info.first_byte_mask = 0x0F;
+    byte_info.length = 3;
+  } else if ((first_byte & kTwoByteMask) == kTwoByteMask) {
+    byte_info.first_byte_mask = 0x1F;
+    byte_info.length = 2;
+  } else {
+    byte_info.first_byte_mask = 0xFF;
+    byte_info.length = 1;
   }
-  return 1;
+  return byte_info;
 }
 
 // Queries GLFW for the printable key name given a [key] and [scan_code] and
 // converts it to UTF-32. The Flutter framework accepts only one 32 bit
-// int, therefore,
+// int, therefore, if the [code_point]'s length is > 4 (e.g. has two code
+// points), only the first will be used. This unlikely but there is no guarantee
+// that it won't happen.
 bool GetGLFWCodePoint(int key, int scan_code, uint32_t& code_point) {
   // Get the name of the printable key, encoded as UTF-8.
   // There's a known issue with glfwGetKeyName, where users with multiple
@@ -58,15 +79,11 @@ bool GetGLFWCodePoint(int key, int scan_code, uint32_t& code_point) {
   if (utf8 == nullptr) {
     return false;
   }
-
-  size_t length = GetCodePointLength(utf8[0]);
-
+  // The first byte determines the length of the whole code point.
+  auto byte_info = GetUTF8CodePointInfo(utf8[0]);
+  size_t length = byte_info.length;
   // Tracks how many bits the current byte should shift to the left.
   int shift = length - 1;
-
-  // All possible masks for a 4 byte utf8 code point.
-  std::vector<int> masks = {kOneByteMask, kTwoByteMask, kThreeByteMask,
-                            kFourByteMask};
 
   // The number of bits to shift a byte depending on its position.
   std::vector<int> bits = {0, 6, 12, 18};
@@ -79,7 +96,8 @@ bool GetGLFWCodePoint(int key, int scan_code, uint32_t& code_point) {
     int current_byte = utf8[current_byte_index];
     // Get the relevant mask for the first byte. Otherwise, get the complement
     // mask.
-    int mask = current_byte_index == 0 ? masks[length - 1] : complement_mask;
+    int mask =
+        current_byte_index == 0 ? byte_info.first_byte_mask : complement_mask;
     current_byte_index++;
     result += (current_byte & mask) << bits[shift--];
   }
@@ -117,7 +135,6 @@ void KeyEventHandler::KeyboardHook(GLFWwindow* window,
   uint32_t unicodeInt;
   bool result = GetGLFWCodePoint(key, scancode, unicodeInt);
   if (result) {
-    std::cout << "Got number: " << unicodeInt << std::endl;
     event.AddMember(kUnicodeScalarValuesProduced, unicodeInt, allocator);
   }
 
