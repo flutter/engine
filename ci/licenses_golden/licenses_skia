@@ -1,4 +1,4 @@
-Signature: 8575bafe337c59c59cdcc6a05097fe70
+Signature: dc36f9cdb0e142e7adf99d5f942edc8c
 
 UNUSED LICENSES:
 
@@ -1721,6 +1721,7 @@ FILE: ../../../third_party/skia/modules/skparagraph/include/DartTypes.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/FontCollection.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/Paragraph.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphBuilder.h
+FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphCache.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphStyle.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TextShadow.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TextStyle.h
@@ -1732,7 +1733,6 @@ FILE: ../../../third_party/skia/modules/skparagraph/src/Iterators.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphBuilderImpl.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphBuilderImpl.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphCache.cpp
-FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphCache.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphImpl.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphImpl.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/ParagraphStyle.cpp
@@ -4681,8 +4681,8 @@ FILE: ../../../third_party/skia/docs/examples/Xor.cpp
 FILE: ../../../third_party/skia/experimental/editor/editor.cpp
 FILE: ../../../third_party/skia/experimental/editor/editor.h
 FILE: ../../../third_party/skia/experimental/editor/editor_application.cpp
-FILE: ../../../third_party/skia/experimental/editor/run_handler.cpp
-FILE: ../../../third_party/skia/experimental/editor/run_handler.h
+FILE: ../../../third_party/skia/experimental/editor/shape.cpp
+FILE: ../../../third_party/skia/experimental/editor/shape.h
 FILE: ../../../third_party/skia/experimental/editor/stringslice.cpp
 FILE: ../../../third_party/skia/experimental/editor/stringslice.h
 FILE: ../../../third_party/skia/experimental/editor/stringview.h
@@ -4907,6 +4907,7 @@ FILE: ../../../third_party/skia/gm/compositor_quads.cpp
 FILE: ../../../third_party/skia/gm/crbug_913349.cpp
 FILE: ../../../third_party/skia/gm/crbug_938592.cpp
 FILE: ../../../third_party/skia/gm/crbug_947055.cpp
+FILE: ../../../third_party/skia/gm/fiddle.cpp
 FILE: ../../../third_party/skia/gm/mac_aa_explorer.cpp
 FILE: ../../../third_party/skia/gm/mixercolorfilter.cpp
 FILE: ../../../third_party/skia/gm/overdrawcanvas.cpp
@@ -5008,6 +5009,8 @@ FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnProgramDataManager.cpp
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnProgramDataManager.h
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnRenderTarget.cpp
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnRenderTarget.h
+FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnStencilAttachment.cpp
+FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnStencilAttachment.h
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnUniformHandler.cpp
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnUniformHandler.h
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnUtil.cpp
@@ -5905,6 +5908,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
+ORIGIN: ../../../third_party/skia/samplecode/SampleTextureUpload.cpp + ../../../third_party/skia/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/samplecode/SampleTextureUpload.cpp
+----------------------------------------------------------------------------------------------------
+Copyright 2019 Google Inc. and Adobe Inc.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: skia
 ORIGIN: ../../../third_party/skia/src/codec/SkCodecPriv.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/src/codec/SkCodecPriv.h
@@ -6537,4 +6575,4 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ====================================================================================================
-Total license count: 52
+Total license count: 53

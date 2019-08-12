@@ -1,4 +1,4 @@
-Signature: 7c03be5267fa329cc60a5b55079ae64d
+Signature: e5ec1e2ffadd1750d30fc525dde9b728
 
 UNUSED LICENSES:
 
@@ -1933,6 +1933,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.session/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.session/modular_config.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.testing/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.testing/test_harness.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/annotation/annotation.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story/story_shell_factory.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.http/meta.json
@@ -3038,8 +3039,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.vectorial/events.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/commands.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/wlan_common.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.stats/wlan_stats.fidl
-FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/exception.cc
-FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/include/lib/async/cpp/exception.h
 FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/include/lib/async/cpp/time.h
 FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/include/lib/async/cpp/trap.h
 FILE: ../../../fuchsia/sdk/linux/pkg/async-testing/include/lib/async-testing/test_loop.h
@@ -3047,7 +3046,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/async-testing/include/lib/async-testing/tes
 FILE: ../../../fuchsia/sdk/linux/pkg/async-testing/include/lib/async-testing/test_subloop.h
 FILE: ../../../fuchsia/sdk/linux/pkg/async-testing/test_loop.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/async-testing/test_loop_dispatcher.cc
-FILE: ../../../fuchsia/sdk/linux/pkg/async/include/lib/async/exception.h
 FILE: ../../../fuchsia/sdk/linux/pkg/async/include/lib/async/time.h
 FILE: ../../../fuchsia/sdk/linux/pkg/async/include/lib/async/trap.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/spawn.h

@@ -276,29 +276,27 @@ void PopulateSnapshotMappingCallbacks(const FlutterProjectArgs* args,
   };
 
   if (flutter::DartVM::IsRunningPrecompiledCode()) {
-    if (SAFE_ACCESS(args, vm_snapshot_data_size, 0) != 0 &&
-        SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
+    if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
       settings.vm_snapshot_data = make_mapping_callback(
-          args->vm_snapshot_data, args->vm_snapshot_data_size);
+          args->vm_snapshot_data, SAFE_ACCESS(args, vm_snapshot_data_size, 0));
     }
 
-    if (SAFE_ACCESS(args, vm_snapshot_instructions_size, 0) != 0 &&
-        SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
+    if (SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
       settings.vm_snapshot_instr = make_mapping_callback(
-          args->vm_snapshot_instructions, args->vm_snapshot_instructions_size);
+          args->vm_snapshot_instructions,
+          SAFE_ACCESS(args, vm_snapshot_instructions_size, 0));
     }
 
-    if (SAFE_ACCESS(args, isolate_snapshot_data_size, 0) != 0 &&
-        SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
+    if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
       settings.isolate_snapshot_data = make_mapping_callback(
-          args->isolate_snapshot_data, args->isolate_snapshot_data_size);
+          args->isolate_snapshot_data,
+          SAFE_ACCESS(args, isolate_snapshot_data_size, 0));
     }
 
-    if (SAFE_ACCESS(args, isolate_snapshot_instructions_size, 0) != 0 &&
-        SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
-      settings.isolate_snapshot_instr =
-          make_mapping_callback(args->isolate_snapshot_instructions,
-                                args->isolate_snapshot_instructions_size);
+    if (SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
+      settings.isolate_snapshot_instr = make_mapping_callback(
+          args->isolate_snapshot_instructions,
+          SAFE_ACCESS(args, isolate_snapshot_instructions_size, 0));
     }
   }
 
@@ -375,6 +373,7 @@ FlutterEngineResult FlutterEngineRun(size_t version,
 
   settings.icu_data_path = icu_data_path;
   settings.assets_path = args->assets_path;
+  settings.leak_vm = !SAFE_ACCESS(args, shutdown_dart_vm_when_done, false);
 
   if (!flutter::DartVM::IsRunningPrecompiledCode()) {
     // Verify the assets path contains Dart 2 kernel assets.
