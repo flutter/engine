@@ -848,6 +848,16 @@ void DartIsolate::DartIsolateGroupCleanupCallback(
   delete isolate_data;
 }
 
+// |Dart_IsolateCleanupCallback|
+void DartIsolate::DartIsolateCleanupCallback(
+    std::shared_ptr<DartIsolate>* isolate_data) {
+  if (!isolate_data->get()->window()) {
+    // Main/UI-isolate's data will be cleaned up as part of IsolateGroup
+    // cleanup.
+    delete isolate_data;
+  }
+}
+
 fml::RefPtr<const DartSnapshot> DartIsolate::GetIsolateSnapshot() const {
   return isolate_snapshot_;
 }
