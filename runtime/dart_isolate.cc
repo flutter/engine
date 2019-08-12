@@ -855,9 +855,10 @@ void DartIsolate::DartIsolateCleanupCallback(
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateCleanupCallback");
 
   if (isolate_data->get()->window() == nullptr &&
-      isolate_data->get()->GetAdvisoryScriptURI().compare(DART_VM_SERVICE_ISOLATE_NAME) != 0) {
-    // Main/UI-isolate's and service isolate data will be cleaned up as part of IsolateGroup
-    // cleanup.
+      isolate_data->get()->GetAdvisoryScriptURI().compare(
+          DART_VM_SERVICE_ISOLATE_NAME) != 0) {
+    // Main/UI-isolate's and service isolate data will be cleaned up as part of
+    // IsolateGroup cleanup.
     delete isolate_data;
   }
 }
