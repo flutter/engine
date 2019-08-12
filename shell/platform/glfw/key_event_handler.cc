@@ -93,8 +93,6 @@ bool GetGLFWCodePoint(int key, int scan_code, uint32_t& code_point) {
   size_t current_byte_index = 0;
   while (current_byte_index < length) {
     int current_byte = utf8[current_byte_index];
-    // Get the relevant mask for the first byte. Otherwise, get the complement
-    // mask.
     int mask =
         current_byte_index == 0 ? byte_info.first_byte_mask : complement_mask;
     current_byte_index++;
