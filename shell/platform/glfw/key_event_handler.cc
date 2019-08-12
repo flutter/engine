@@ -4,7 +4,6 @@
 
 #include "flutter/shell/platform/glfw/key_event_handler.h"
 
-#include <cstdio>
 #include <iostream>
 #include <vector>
 
