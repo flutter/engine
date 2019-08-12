@@ -4,8 +4,9 @@
 
 #include "flutter/shell/platform/glfw/key_event_handler.h"
 
+#include <cstddef>
 #include <iostream>
-#include <map>
+#include <vector>
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_message_codec.h"
 
@@ -29,29 +30,52 @@ static constexpr char kKeyDown[] = "keydown";
 namespace flutter {
 
 // Converts a utf8 const char* to a 32 bit int. The Flutter framework accepts
-// only one 32 bit int, therefore, only up to 4 bytes are accepted. If it's
+// only one 32 bit int, therefore, only up to 4 bytes are accepted. If its
 // larger than 4 bytes, only the first 4 will be used.
-std::uint32_t DecodeUTF8(const char* utf8) {
+//
+// Example:
+// 中 (11100100 10111000 10101101) converts to 20013 (1001110 00101101).
+// This function only covers a multy-byte point to up to 4 bytes.
+// TI achieve the conversion, each byte must be masked based on their poisition.
+// For one-byte points, the byte is taken as-is, therefore, the mask is 0xFF
+// (not all characters in this range are printable, but the GLFW api filters
+// non-printable characters by returning nullptr).
+// For multi-byte points, only the first byte uses a special mask. The rest of
+// the bytes use a "complement mask": 0x3F.
+// For two bytes: 0x1F
+// For three bytes: 0x0F
+// For four bytes: 0x07
+//
+// Run through:
+// 中 = 11100100 10111000 10101101
+// It's a 3 byte point, so the mask for the first byte is 0x0F.
+// 11100100 & 0x0F = 0100
+// For the remaining bytes:
+// 10111000 & 0x3F = 111000
+// 10101101 & 0x3F = 101101
+// All together: 01001110 00101101 (20013)
+bool GetGLFWCodePoint(int key, int scan_code, uint32_t& code_point) {
+  // Get the name of the printable key, encoded as UTF-8.
+  // There's a known issue with glfwGetKeyName, where users with multiple
+  // layouts configured on their machines, will not always return the right
+  // value. See: https://github.com/glfw/glfw/issues/1462
+  const char* utf8 = glfwGetKeyName(key, scan_code);
+  if (utf8 == nullptr) {
+    return false;
+  }
+
   size_t length = strlen(utf8);
   // Defend against > 4 byte code points.
   length = length >= 4 ? length : length;
 
   // Tracks how many bits the current byte should shift to the left.
-  int shift = length;
+  int shift = length - 1;
 
   // All possible masks for a 4 byte utf8 code point.
-  std::map<int, int> masks;
-  masks[4] = 0x07;
-  masks[3] = 0x0F;
-  masks[2] = 0x1F;
-  masks[1] = 0xFF;
+  std::vector<int> masks = {0xFF, 0x1F, 0x0F, 0x07};
 
-  // The number of bits to shift a byte depending on it's position.
-  std::map<int, int> bits;
-  bits[1] = 0;
-  bits[2] = 6;
-  bits[3] = 12;
-  bits[4] = 18;
+  // The number of bits to shift a byte depending on its position.
+  std::vector<int> bits = {0, 6, 12, 18};
 
   int complement_mask = 0x3F;
   uint32_t result = 0;
@@ -59,12 +83,15 @@ std::uint32_t DecodeUTF8(const char* utf8) {
   size_t current_byte_index = 0;
   while (current_byte_index < length) {
     int current_byte = utf8[current_byte_index];
-    int mask = current_byte_index == 0 ? masks[length] : complement_mask;
+    // Get the relevant mask for the first byte. Otherwise, get the complement
+    // mask.
+    int mask = current_byte_index == 0 ? masks[length - 1] : complement_mask;
     current_byte_index++;
     result += (current_byte & mask) << bits[shift--];
   }
+  code_point = result;
 
-  return result;
+  return true;
 }
 
 KeyEventHandler::KeyEventHandler(flutter::BinaryMessenger* messenger)
@@ -93,13 +120,10 @@ void KeyEventHandler::KeyboardHook(GLFWwindow* window,
   event.AddMember(kModifiersKey, mods, allocator);
   event.AddMember(kToolkitKey, kGLFWKey, allocator);
 
-  // Get the name of the printable key, encoded as UTF-8.
-  // There's a known issue with glfwGetKeyName, where users with multiple
-  // layouts configured on their machines, will not always return the right
-  // value. See: https://github.com/glfw/glfw/issues/1462
-  const char* keyName = glfwGetKeyName(key, scancode);
-  if (keyName != nullptr) {
-    uint32_t unicodeInt = DecodeUTF8(keyName);
+  uint32_t unicodeInt;
+  bool result = GetGLFWCodePoint(key, scancode, unicodeInt);
+  if (result) {
+    std::cout << "Got number: " << unicodeInt << std::endl;
     event.AddMember(kUnicodeScalarValuesProduced, unicodeInt, allocator);
   }
 
