@@ -64,7 +64,8 @@ class DartIsolate : public UIDartState {
               std::string advisory_script_entrypoint,
               ChildIsolatePreparer child_isolate_preparer,
               fml::closure isolate_create_callback,
-              fml::closure isolate_shutdown_callback);
+              fml::closure isolate_shutdown_callback,
+              const bool is_root_isolate);
 
   ~DartIsolate() override;
 
@@ -113,6 +114,8 @@ class DartIsolate : public UIDartState {
 
   fml::RefPtr<fml::TaskRunner> GetMessageHandlingTaskRunner() const;
 
+  bool IsRootIsolate() const { return is_root_isolate_; }
+
  private:
   bool LoadKernel(std::shared_ptr<const fml::Mapping> mapping, bool last_piece);
 
@@ -139,14 +142,14 @@ class DartIsolate : public UIDartState {
   const fml::closure isolate_create_callback_;
   const fml::closure isolate_shutdown_callback_;
 
-  FML_WARN_UNUSED_RESULT bool Initialize(Dart_Isolate isolate,
-                                         bool is_root_isolate);
+  const bool is_root_isolate_;
 
-  void SetMessageHandlingTaskRunner(fml::RefPtr<fml::TaskRunner> runner,
-                                    bool is_root_isolate);
+  FML_WARN_UNUSED_RESULT bool Initialize(Dart_Isolate isolate);
+
+  void SetMessageHandlingTaskRunner(fml::RefPtr<fml::TaskRunner> runner);
 
   FML_WARN_UNUSED_RESULT
-  bool LoadLibraries(bool is_root_isolate);
+  bool LoadLibraries();
 
   bool UpdateThreadPoolNames() const;
 
@@ -189,7 +192,6 @@ class DartIsolate : public UIDartState {
 
   static bool InitializeIsolate(std::shared_ptr<DartIsolate> embedder_isolate,
                                 Dart_Isolate& isolate,
-                                bool is_root_isolate,
                                 char** error);
 
   // |Dart_IsolateShutdownCallback|
