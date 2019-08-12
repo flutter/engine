@@ -19,16 +19,16 @@ class GpuThreadMerger : public fml::RefCountedThreadSafe<GpuThreadMerger> {
  public:
   // Merges the GPU thread into platform thread for the duration of
   // the lease term. Lease is managed by the caller by either calling
-  // |ExtendLease| or |DecrementLease|.
+  // |ExtendLeaseTo| or |DecrementLease|.
   // When the caller merges with a lease term of say 2. The threads
   // are going to remain merged until 2 invocations of |DecreaseLease|,
-  // unless an |ExtendLease| gets called.
+  // unless an |ExtendLeaseTo| gets called.
   void MergeWithLease(size_t lease_term);
 
-  void ExtendLease(size_t lease_term);
+  void ExtendLeaseTo(size_t lease_term);
 
-  // Returns true if this call resulted in splitting the
-  // GPU and platform threads. Reduces the lease term by 1.
+  // Returns |GpuThreadStatus::kUnmergedNow| if this call resulted in splitting
+  // the GPU and platform threads. Reduces the lease term by 1.
   GpuThreadStatus DecrementLease();
 
   bool IsMerged() const;
@@ -36,10 +36,10 @@ class GpuThreadMerger : public fml::RefCountedThreadSafe<GpuThreadMerger> {
   GpuThreadMerger(fml::TaskQueueId platform_queue_id,
                   fml::TaskQueueId gpu_queue_id);
 
-  // Returns true if the the current thread does *not* own rasterizing.
+  // Returns true if the the current thread owns rasterizing.
   // When the threads are merged, platform thread owns rasterizing.
   // When un-merged, gpu thread owns rasterizing.
-  bool IsNotOnRasterizingThread();
+  bool IsOnRasterizingThread();
 
  private:
   static const int kLeaseNotSet;

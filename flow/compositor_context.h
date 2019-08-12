@@ -21,17 +21,19 @@ namespace flutter {
 
 class LayerTree;
 
-// kSuccess: frame has successfully rasterized.
-//
-// kResubmit: frame needs to be resubmitted for rasterization. This is currently
-// only called when thread configuration change occurs.
-//
-// kEnqueuePipeline: frame has been successfully rasterized, but pipeline
-// pressure needs to be re-applied. This is currently only called when thread
-// configuration change occurs.
-//
-// kFailed: failed to rasterize the frame.
-enum class RasterStatus { kSuccess, kResubmit, kEnqueuePipeline, kFailed };
+enum class RasterStatus {
+  // Frame has successfully rasterized.
+  kSuccess,
+  // Frame needs to be resubmitted for rasterization. This is
+  // currently only called when thread configuration change occurs.
+  kResubmit,
+  // Frame has been successfully rasterized, but "there are additional items in
+  // the pipeline waiting to be consumed. This is currently
+  // only called when thread configuration change occurs.
+  kEnqueuePipeline,
+  // Failed to rasterize the frame.
+  kFailed
+};
 
 class CompositorContext {
  public:

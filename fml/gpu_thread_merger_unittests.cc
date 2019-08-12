@@ -91,13 +91,13 @@ TEST(GpuThreadMerger, IsNotOnRasterizingThread) {
   fml::CountDownLatch pre_merge(2), post_merge(2), post_unmerge(2);
 
   loop1->GetTaskRunner()->PostTask([&]() {
-    ASSERT_TRUE(gpu_thread_merger_->IsNotOnRasterizingThread());
+    ASSERT_FALSE(gpu_thread_merger_->IsOnRasterizingThread());
     ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid1);
     pre_merge.CountDown();
   });
 
   loop2->GetTaskRunner()->PostTask([&]() {
-    ASSERT_FALSE(gpu_thread_merger_->IsNotOnRasterizingThread());
+    ASSERT_TRUE(gpu_thread_merger_->IsOnRasterizingThread());
     ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid2);
     pre_merge.CountDown();
   });
@@ -107,7 +107,7 @@ TEST(GpuThreadMerger, IsNotOnRasterizingThread) {
   gpu_thread_merger_->MergeWithLease(1);
 
   loop1->GetTaskRunner()->PostTask([&]() {
-    ASSERT_FALSE(gpu_thread_merger_->IsNotOnRasterizingThread());
+    ASSERT_TRUE(gpu_thread_merger_->IsOnRasterizingThread());
     ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid1);
     post_merge.CountDown();
   });
@@ -115,7 +115,7 @@ TEST(GpuThreadMerger, IsNotOnRasterizingThread) {
   loop2->GetTaskRunner()->PostTask([&]() {
     // this will be false since this is going to be run
     // on loop1 really.
-    ASSERT_FALSE(gpu_thread_merger_->IsNotOnRasterizingThread());
+    ASSERT_TRUE(gpu_thread_merger_->IsOnRasterizingThread());
     ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid1);
     post_merge.CountDown();
   });
@@ -125,13 +125,13 @@ TEST(GpuThreadMerger, IsNotOnRasterizingThread) {
   gpu_thread_merger_->DecrementLease();
 
   loop1->GetTaskRunner()->PostTask([&]() {
-    ASSERT_TRUE(gpu_thread_merger_->IsNotOnRasterizingThread());
+    ASSERT_FALSE(gpu_thread_merger_->IsOnRasterizingThread());
     ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid1);
     post_unmerge.CountDown();
   });
 
   loop2->GetTaskRunner()->PostTask([&]() {
-    ASSERT_FALSE(gpu_thread_merger_->IsNotOnRasterizingThread());
+    ASSERT_TRUE(gpu_thread_merger_->IsOnRasterizingThread());
     ASSERT_EQ(fml::MessageLoop::GetCurrentTaskQueueId(), qid2);
     post_unmerge.CountDown();
   });
@@ -187,7 +187,7 @@ TEST(GpuThreadMerger, LeaseExtension) {
   }
 
   // extend the lease once.
-  gpu_thread_merger_->ExtendLease(kNumFramesMerged);
+  gpu_thread_merger_->ExtendLeaseTo(kNumFramesMerged);
 
   // we will NOT last for 1 extra turn, we just set it.
   for (int i = 0; i < kNumFramesMerged; i++) {

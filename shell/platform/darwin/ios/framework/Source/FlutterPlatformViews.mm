@@ -177,9 +177,8 @@ bool FlutterPlatformViewsController::PostPrerollAction(
     fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
   const bool uiviews_mutated = HasPendingViewOperations();
   if (uiviews_mutated) {
-    bool are_merged = gpu_thread_merger->IsMerged();
-    if (are_merged) {
-      gpu_thread_merger->ExtendLease(kDefaultMergedLeaseDuration);
+    if (gpu_thread_merger->IsMerged()) {
+      gpu_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
     } else {
       CancelFrame();
       gpu_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);

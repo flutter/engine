@@ -67,12 +67,12 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
     flutter::LayerTree& layer_tree,
     bool ignore_raster_cache) {
   layer_tree.Preroll(*this, ignore_raster_cache);
-  bool resubmit_frame = false;
+  PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
   if (view_embedder_ && gpu_thread_merger_) {
-    resubmit_frame = !view_embedder_->PostPrerollAction(gpu_thread_merger_);
+    post_preroll_result = view_embedder_->PostPrerollAction(gpu_thread_merger_);
   }
 
-  if (resubmit_frame) {
+  if (post_preroll_result == PostPrerollResult::kResubmitFrame) {
     return RasterStatus::kResubmit;
   }
   // Clearing canvas after preroll reduces one render target switch when preroll

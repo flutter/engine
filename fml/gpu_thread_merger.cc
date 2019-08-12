@@ -28,16 +28,16 @@ void GpuThreadMerger::MergeWithLease(size_t lease_term) {
   }
 }
 
-bool GpuThreadMerger::IsNotOnRasterizingThread() {
+bool GpuThreadMerger::IsOnRasterizingThread() {
   const auto current_queue_id = MessageLoop::GetCurrentTaskQueueId();
   if (is_merged_) {
-    return current_queue_id != platform_queue_id_;
+    return current_queue_id == platform_queue_id_;
   } else {
-    return current_queue_id != gpu_queue_id_;
+    return current_queue_id == gpu_queue_id_;
   }
 }
 
-void GpuThreadMerger::ExtendLease(size_t lease_term) {
+void GpuThreadMerger::ExtendLeaseTo(size_t lease_term) {
   FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
   if (lease_term_ != kLeaseNotSet && (int)lease_term > lease_term_) {
     lease_term_ = lease_term;
@@ -63,6 +63,7 @@ GpuThreadStatus GpuThreadMerger::DecrementLease() {
   lease_term_--;
   if (lease_term_ == 0) {
     bool success = task_queues_->Unmerge(platform_queue_id_);
+    FML_CHECK(success) << "Unable to un-merge the GPU and platform threads.";
     is_merged_ = !success;
     return GpuThreadStatus::kUnmergedNow;
   }

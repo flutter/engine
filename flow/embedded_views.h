@@ -183,6 +183,8 @@ class EmbeddedViewParams {
   }
 };
 
+enum class PostPrerollResult { kResubmitFrame, kSuccess };
+
 // This is only used on iOS when running in a non headless mode,
 // in this case ExternalViewEmbedder is a reference to the
 // FlutterPlatformViewsController which is owned by FlutterViewController.
@@ -203,12 +205,12 @@ class ExternalViewEmbedder {
       std::unique_ptr<EmbeddedViewParams> params) = 0;
 
   // This needs to get called after |Preroll| finishes on the layer tree.
-  // Returns false if the frame needs to be processed again, this is after
-  // it does any requisite tasks needed to bring itself to a valid state.
-  // Returns true if the view embedder is already in a valid state.
-  virtual bool PostPrerollAction(
+  // Returns kResubmitFrame if the frame needs to be processed again, this is
+  // after it does any requisite tasks needed to bring itself to a valid state.
+  // Returns kSuccess if the view embedder is already in a valid state.
+  virtual PostPrerollResult PostPrerollAction(
       fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
-    return true;
+    return PostPrerollResult::kSuccess;
   }
 
   virtual std::vector<SkCanvas*> GetCurrentCanvases() = 0;
