@@ -4,7 +4,6 @@
 
 #include "flutter/shell/platform/glfw/key_event_handler.h"
 
-#include <cstddef>
 #include <iostream>
 #include <vector>
 
@@ -29,9 +28,10 @@ static constexpr char kKeyDown[] = "keydown";
 
 namespace flutter {
 
-// Converts a utf8 const char* to a 32 bit int. The Flutter framework accepts
-// only one 32 bit int, therefore, only up to 4 bytes are accepted. If its
-// larger than 4 bytes, only the first 4 will be used.
+// Queries GLFW for the printable key name given a [key] and [scan_code] and
+// converts it to a 32 bit int.The Flutter framework accepts only one 32 bit
+// int, therefore, only up to 4 bytes are accepted. If the code point larger
+// than 4 bytes, only the first 4 will be used.
 //
 // Example:
 // 中 (11100100 10111000 10101101) converts to 20013 (1001110 00101101).
