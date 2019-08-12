@@ -37,7 +37,7 @@
 
   [self keyValueObservingExpectationForObject:self.flutterViewController
                                       keyPath:@"isRenderingFrames"
-                                      expectedValue:@YES];
+                                expectedValue:@YES];
 
   [self.flutterViewController setFlutterViewDidRenderCallback:^{
     [firstFrameRendered fulfill];
