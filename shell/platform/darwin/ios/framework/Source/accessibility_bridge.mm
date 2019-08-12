@@ -171,7 +171,16 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   if ([self node].HasFlag(flutter::SemanticsFlags::kScopesRoute))
     return false;
 
-  return ([self node].flags != 0 &&
+  // If the only flag(s) set are scrolling related AND
+  // The only flags set are not kIsHidden OR
+  // The node doesn't have a label, value, or hint OR
+  // The only actions set are scrolling related actions.
+  //
+  // The kIsHidden flag set with any other flag just means this node is now
+  // hidden but still is a valid target for a11y focus in the tree, e.g. a list
+  // item that is currently off screen but the a11y navigation needs to know
+  // about.
+  return (([self node].flags & ~flutter::kScrollableSemanticsFlags) != 0 &&
           [self node].flags != static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden)) ||
          ![self node].label.empty() || ![self node].value.empty() || ![self node].hint.empty() ||
          ([self node].actions & ~flutter::kScrollableSemanticsActions) != 0;
@@ -563,7 +572,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
       previous_routes_({}) {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
-      binaryMessenger:platform_view->GetOwnerViewController().get()
+      binaryMessenger:platform_view->GetOwnerViewController().get().engine.binaryMessenger
                 codec:[FlutterStandardMessageCodec sharedInstance]]);
   [accessibility_channel_.get() setMessageHandler:^(id message, FlutterReply reply) {
     HandleEvent((NSDictionary*)message);
@@ -573,7 +582,6 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
 AccessibilityBridge::~AccessibilityBridge() {
   clearState();
   view_.accessibilityElements = nil;
-  [accessibility_channel_.get() setMessageHandler:nil];
 }
 
 UIView<UITextInput>* AccessibilityBridge::textInputView() {
@@ -704,7 +712,8 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
   if (!object) {
     // New node case: simply create a new SemanticsObject.
     flutter::SemanticsNode node = updates[uid];
-    if (node.HasFlag(flutter::SemanticsFlags::kIsTextField)) {
+    if (node.HasFlag(flutter::SemanticsFlags::kIsTextField) &&
+        !node.HasFlag(flutter::SemanticsFlags::kIsReadOnly)) {
       // Text fields are backed by objects that implement UITextInput.
       object = [[[TextInputSemanticsObject alloc] initWithBridge:GetWeakPtr() uid:uid] autorelease];
     } else {
@@ -720,13 +729,16 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
       flutter::SemanticsNode node = nodeEntry->second;
       BOOL isTextField = node.HasFlag(flutter::SemanticsFlags::kIsTextField);
       BOOL wasTextField = object.node.HasFlag(flutter::SemanticsFlags::kIsTextField);
-      if (wasTextField != isTextField) {
+      BOOL isReadOnly = node.HasFlag(flutter::SemanticsFlags::kIsReadOnly);
+      BOOL wasReadOnly = object.node.HasFlag(flutter::SemanticsFlags::kIsReadOnly);
+      if (wasTextField != isTextField || isReadOnly != wasReadOnly) {
         // The node changed its type from text field to something else, or vice versa. In this
         // case, we cannot reuse the existing SemanticsObject implementation. Instead, we replace
         // it with a new instance.
         NSUInteger positionInChildlist = [object.parent.children indexOfObject:object];
+        SemanticsObject* parent = object.parent;
         [objects_ removeObjectForKey:@(node.id)];
-        if (isTextField) {
+        if (isTextField && !isReadOnly) {
           // Text fields are backed by objects that implement UITextInput.
           object = [[[TextInputSemanticsObject alloc] initWithBridge:GetWeakPtr()
                                                                  uid:uid] autorelease];
@@ -734,6 +746,7 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
           object = [[[FlutterSemanticsObject alloc] initWithBridge:GetWeakPtr()
                                                                uid:uid] autorelease];
         }
+        object.parent = parent;
         [object.parent.children replaceObjectAtIndex:positionInChildlist withObject:object];
         objects_.get()[@(node.id)] = object;
       }

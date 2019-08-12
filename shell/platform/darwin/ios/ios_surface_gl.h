@@ -52,16 +52,23 @@ class IOSSurfaceGL final : public IOSSurface,
   flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   // |flutter::ExternalViewEmbedder|
+  void CancelFrame() override;
+
+  // |flutter::ExternalViewEmbedder|
   void BeginFrame(SkISize frame_size) override;
 
   // |flutter::ExternalViewEmbedder|
-  void PrerollCompositeEmbeddedView(int view_id) override;
+  void PrerollCompositeEmbeddedView(int view_id,
+                                    std::unique_ptr<flutter::EmbeddedViewParams> params) override;
+
+  // |flutter::ExternalViewEmbedder|
+  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
 
   // |flutter::ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   // |flutter::ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id, const flutter::EmbeddedViewParams& params) override;
+  SkCanvas* CompositeEmbeddedView(int view_id) override;
 
   // |flutter::ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;

@@ -1,0 +1,163 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+assert(is_fuchsia)
+
+import("//build/fuchsia/sdk.gni")
+import("$flutter_root/common/fuchsia_config.gni")
+import("$flutter_root/tools/fuchsia/common_libs.gni")
+import("$flutter_root/tools/fuchsia/dart.gni")
+import("$flutter_root/tools/fuchsia/package_dir.gni")
+
+template("runner") {
+  assert(defined(invoker.product), "The parameter 'product' must be defined")
+  assert(defined(invoker.output_name),
+         "The parameter 'output_name' must be defined")
+
+  invoker_output_name = invoker.output_name
+  extra_defines = invoker.extra_defines
+  extra_deps = invoker.extra_deps
+
+  executable(target_name) {
+    output_name = invoker_output_name
+
+    sources = [
+      "builtin_libraries.cc",
+      "builtin_libraries.h",
+      "dart_component_controller.cc",
+      "dart_component_controller.h",
+      "dart_runner.cc",
+      "dart_runner.h",
+      "logging.h",
+      "main.cc",
+      "mapped_resource.cc",
+      "mapped_resource.h",
+      "service_isolate.cc",
+      "service_isolate.h",
+    ]
+
+    defines = extra_defines
+
+    dart_deps = []
+    if (!invoker.product) {
+      dart_deps += [ "//third_party/dart/runtime/bin:dart_io_api" ]
+    } else {
+      dart_deps += [ "//third_party/dart/runtime/bin:dart_io_api_product" ]
+    }
+
+    deps = [
+             "$flutter_root/common",
+             "$flutter_root/fml",
+             "$flutter_root/runtime:libdart",
+             "$flutter_root/shell/platform/fuchsia/dart-pkg/fuchsia",
+             "$flutter_root/shell/platform/fuchsia/dart-pkg/zircon",
+             "$flutter_root/shell/platform/fuchsia/runtime/dart/utils",
+             "$fuchsia_sdk_root/pkg:async-cpp",
+             "$fuchsia_sdk_root/pkg:async-loop",
+             "$fuchsia_sdk_root/pkg:async-loop-cpp",
+             "$fuchsia_sdk_root/pkg:fidl_cpp",
+             "$fuchsia_sdk_root/pkg:syslog",
+             "$fuchsia_sdk_root/pkg:trace",
+             "$fuchsia_sdk_root/pkg:trace-provider-so",
+             "$fuchsia_sdk_root/pkg/lib/sys/cpp",
+             "$fuchsia_sdk_root/pkg/lib/vfs/cpp",
+             "//third_party/tonic",
+           ] + dart_deps + extra_deps
+  }
+}
+
+runner("dart_jit_runner_bin") {
+  output_name = "dart_jit_runner"
+  product = false
+  extra_defines = []
+  if (flutter_runtime_mode == "profile") {
+    extra_defines += [ "FLUTTER_PROFILE" ]
+  }
+  extra_deps = [
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/platform:libdart_platform_jit",
+  ]
+}
+
+runner("dart_jit_product_runner_bin") {
+  output_name = "dart_jit_product_runner"
+  product = true
+  extra_defines = [ "DART_PRODUCT" ]
+  extra_deps = [
+    "//third_party/dart/runtime:libdart_jit_product",
+    "//third_party/dart/runtime/platform:libdart_platform_jit_product",
+  ]
+}
+
+template("jit_runner_package") {
+  assert(defined(invoker.product), "The parameter 'product' must be defined")
+  product_suffix = ""
+  if (invoker.product) {
+    product_suffix = "_product"
+  }
+
+  package_dir(target_name) {
+    deps = [
+      ":dart_jit${product_suffix}_runner_bin",
+      "kernel:kernel_core_snapshot${product_suffix}",
+    ]
+
+    if (!invoker.product) {
+      deps += [ observatory_target ]
+    }
+
+    binary = "dart_jit${product_suffix}_runner"
+
+    meta_dir = "$flutter_root/shell/platform/fuchsia/dart_runner/meta"
+
+    libraries = common_libs
+
+    resources = [
+      {
+        path =
+            rebase_path("$target_gen_dir/kernel/vm_data${product_suffix}.bin")
+        dest = "vm_snapshot_data.bin"
+      },
+      {
+        path = rebase_path(
+                "$target_gen_dir/kernel/vm_instructions${product_suffix}.bin")
+        dest = "vm_snapshot_instructions.bin"
+      },
+      {
+        path = rebase_path(
+                "$target_gen_dir/kernel/isolate_data${product_suffix}.bin")
+        dest = "isolate_core_snapshot_data.bin"
+      },
+      {
+        path = rebase_path(
+                "$target_gen_dir/kernel/isolate_instructions${product_suffix}.bin")
+        dest = "isolate_core_snapshot_instructions.bin"
+      },
+    ]
+
+    if (!invoker.product) {
+      resources += [
+        {
+          path = rebase_path(observatory_archive_file)
+          dest = "observatory.tar"
+        },
+      ]
+    }
+
+    meta = [
+      {
+        path = rebase_path("meta/dart_jit${product_suffix}_runner.cmx")
+        dest = "dart_jit${product_suffix}_runner.cmx"
+      },
+    ]
+  }
+}
+
+jit_runner_package("dart_jit_runner") {
+  product = false
+}
+
+jit_runner_package("dart_jit_product_runner") {
+  product = true
+}

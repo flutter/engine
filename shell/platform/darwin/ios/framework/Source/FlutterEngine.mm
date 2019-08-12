@@ -17,16 +17,17 @@
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/darwin/common/command_line.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface.h"
-#include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
-@interface FlutterEngine () <FlutterTextInputDelegate>
+@interface FlutterEngine () <FlutterTextInputDelegate, FlutterBinaryMessenger>
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
@@ -62,9 +63,8 @@
 
   int64_t _nextTextureId;
 
-  uint64_t _nextPointerFlowId;
-
   BOOL _allowHeadlessExecution;
+  FlutterBinaryMessengerRelay* _binaryMessenger;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)projectOrNil {
@@ -92,12 +92,25 @@
   _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
 
   [self setupChannels];
+  _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
+
+  NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+  [center addObserver:self
+             selector:@selector(onMemoryWarning:)
+                 name:UIApplicationDidReceiveMemoryWarningNotification
+               object:nil];
 
   return self;
 }
 
 - (void)dealloc {
   [_pluginPublications release];
+  _binaryMessenger.parent = nil;
+  [_binaryMessenger release];
+
+  NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+  [center removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+
   [super dealloc];
 }
 
@@ -111,24 +124,17 @@
 }
 
 - (void)updateViewportMetrics:(flutter::ViewportMetrics)viewportMetrics {
-  self.shell.GetTaskRunners().GetUITaskRunner()->PostTask(
-      [engine = self.shell.GetEngine(), metrics = viewportMetrics]() {
-        if (engine) {
-          engine->SetViewportMetrics(std::move(metrics));
-        }
-      });
+  if (!self.platformView) {
+    return;
+  }
+  self.platformView->SetViewportMetrics(std::move(viewportMetrics));
 }
 
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet {
-  TRACE_EVENT0("flutter", "dispatchPointerDataPacket");
-  TRACE_FLOW_BEGIN("flutter", "PointerEvent", _nextPointerFlowId);
-  self.shell.GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = self.shell.GetEngine(), packet = std::move(packet), flow_id = _nextPointerFlowId] {
-        if (engine) {
-          engine->DispatchPointerDataPacket(*packet, flow_id);
-        }
-      }));
-  _nextPointerFlowId++;
+  if (!self.platformView) {
+    return;
+  }
+  self.platformView->DispatchPointerDataPacket(std::move(packet));
 }
 
 - (fml::WeakPtr<flutter::PlatformView>)platformView {
@@ -167,6 +173,7 @@
   [self resetChannels];
   _shell.reset();
   _threadHost.Reset();
+  _platformViewsController.reset();
 }
 
 - (FlutterViewController*)viewController {
@@ -228,42 +235,42 @@
 - (void)setupChannels {
   _localizationChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/localization"
-      binaryMessenger:self
+      binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMethodCodec sharedInstance]]);
 
   _navigationChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/navigation"
-      binaryMessenger:self
+      binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMethodCodec sharedInstance]]);
 
   _platformChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/platform"
-      binaryMessenger:self
+      binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMethodCodec sharedInstance]]);
 
   _platformViewsChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/platform_views"
-      binaryMessenger:self
+      binaryMessenger:self.binaryMessenger
                 codec:[FlutterStandardMethodCodec sharedInstance]]);
 
   _textInputChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/textinput"
-      binaryMessenger:self
+      binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMethodCodec sharedInstance]]);
 
   _lifecycleChannel.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/lifecycle"
-      binaryMessenger:self
+      binaryMessenger:self.binaryMessenger
                 codec:[FlutterStringCodec sharedInstance]]);
 
   _systemChannel.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/system"
-      binaryMessenger:self
+      binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
   _settingsChannel.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/settings"
-      binaryMessenger:self
+      binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
   _textInputPlugin.reset([[FlutterTextInputPlugin alloc] init]);
@@ -297,18 +304,8 @@
 
 - (void)launchEngine:(NSString*)entrypoint libraryURI:(NSString*)libraryOrNil {
   // Launch the Dart application with the inferred run configuration.
-  self.shell.GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = _shell->GetEngine(),
-       config = [_dartProject.get() runConfigurationForEntrypoint:entrypoint
-                                                     libraryOrNil:libraryOrNil]  //
-  ]() mutable {
-        if (engine) {
-          auto result = engine->Run(std::move(config));
-          if (result == flutter::Engine::RunStatus::Failure) {
-            FML_LOG(ERROR) << "Could not launch engine with configuration.";
-          }
-        }
-      }));
+  self.shell.RunEngine([_dartProject.get() runConfigurationForEntrypoint:entrypoint
+                                                            libraryOrNil:libraryOrNil]);
 }
 
 - (BOOL)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
@@ -353,7 +350,7 @@
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       [](flutter::Shell& shell) {
-        return std::make_unique<flutter::Rasterizer>(shell.GetTaskRunners());
+        return std::make_unique<flutter::Rasterizer>(shell, shell.GetTaskRunners());
       };
 
   if (flutter::IsIosEmbeddedViewsPreviewEnabled()) {
@@ -501,6 +498,10 @@
   return _shell->Screenshot(type, base64Encode);
 }
 
+- (NSObject<FlutterBinaryMessenger>*)binaryMessenger {
+  return _binaryMessenger;
+}
+
 #pragma mark - FlutterBinaryMessenger
 
 - (void)sendOnChannel:(NSString*)channel message:(NSData*)message {
@@ -566,7 +567,7 @@
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
   NSAssert(self.pluginPublications[pluginKey] == nil, @"Duplicate plugin key: %@", pluginKey);
   self.pluginPublications[pluginKey] = [NSNull null];
-  return [[FlutterEngineRegistrar alloc] initWithPlugin:pluginKey flutterEngine:self];
+  return [[[FlutterEngineRegistrar alloc] initWithPlugin:pluginKey flutterEngine:self] autorelease];
 }
 
 - (BOOL)hasPlugin:(NSString*)pluginKey {
@@ -575,6 +576,15 @@
 
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
   return _pluginPublications[pluginKey];
+}
+
+#pragma mark - Memory Notifications
+
+- (void)onMemoryWarning:(NSNotification*)notification {
+  if (_shell) {
+    _shell->NotifyLowMemoryWarning();
+  }
+  [_systemChannel sendMessage:@{@"type" : @"memoryPressure"}];
 }
 
 @end
@@ -599,7 +609,7 @@
 }
 
 - (NSObject<FlutterBinaryMessenger>*)messenger {
-  return _flutterEngine;
+  return _flutterEngine.binaryMessenger;
 }
 
 - (NSObject<FlutterTextureRegistry>*)textures {

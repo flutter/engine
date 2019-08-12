@@ -160,7 +160,7 @@ public final class FlutterActivityDelegate
             return;
         }
 
-        String appBundlePath = FlutterMain.findAppBundlePath(activity.getApplicationContext());
+        String appBundlePath = FlutterMain.findAppBundlePath();
         if (appBundlePath != null) {
             runBundle(appBundlePath);
         }
@@ -312,6 +312,20 @@ public final class FlutterActivityDelegate
         if (intent.getBooleanExtra("verbose-logging", false)) {
             args.add("--verbose-logging");
         }
+        final int observatoryPort = intent.getIntExtra("observatory-port", 0);
+        if (observatoryPort > 0) {
+            args.add("--observatory-port=" + Integer.toString(observatoryPort));
+        }
+        if (intent.getBooleanExtra("disable-service-auth-codes", false)) {
+            args.add("--disable-service-auth-codes");
+        }
+        // NOTE: all flags provided with this argument are subject to filtering
+        // based on a whitelist in shell/common/switches.cc. If any flag provided
+        // is not present in the whitelist, the process will immediately
+        // terminate.
+        if (intent.hasExtra("dart-flags")) {
+            args.add("--dart-flags=" + intent.getStringExtra("dart-flags"));
+        }
         if (!args.isEmpty()) {
             String[] argsArray = new String[args.size()];
             return args.toArray(argsArray);
@@ -326,7 +340,7 @@ public final class FlutterActivityDelegate
             String appBundlePath = intent.getDataString();
             if (appBundlePath == null) {
                 // Fall back to the installation path if no bundle path was specified.
-                appBundlePath = FlutterMain.findAppBundlePath(activity.getApplicationContext());
+                appBundlePath = FlutterMain.findAppBundlePath();
             }
             if (route != null) {
                 flutterView.setInitialRoute(route);
@@ -342,9 +356,7 @@ public final class FlutterActivityDelegate
     private void runBundle(String appBundlePath) {
         if (!flutterView.getFlutterNativeView().isApplicationRunning()) {
             FlutterRunArguments args = new FlutterRunArguments();
-            ArrayList<String> bundlePaths = new ArrayList<>();
-            bundlePaths.add(appBundlePath);
-            args.bundlePaths = bundlePaths.toArray(new String[0]);
+            args.bundlePath = appBundlePath;
             args.entrypoint = "main";
             flutterView.runFromBundle(args);
         }

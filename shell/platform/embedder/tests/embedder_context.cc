@@ -91,6 +91,18 @@ void EmbedderContext::SetSemanticsCustomActionCallback(
       update_semantics_custom_action_callback;
 }
 
+void EmbedderContext::SetPlatformMessageCallback(
+    std::function<void(const FlutterPlatformMessage*)> callback) {
+  platform_message_callback_ = callback;
+}
+
+void EmbedderContext::PlatformMessageCallback(
+    const FlutterPlatformMessage* message) {
+  if (platform_message_callback_) {
+    platform_message_callback_(message);
+  }
+}
+
 FlutterUpdateSemanticsNodeCallback
 EmbedderContext::GetUpdateSemanticsNodeCallbackHook() {
   return [](const FlutterSemanticsNode* semantics_node, void* user_data) {
@@ -109,6 +121,40 @@ EmbedderContext::GetUpdateSemanticsCustomActionCallbackHook() {
       callback(action);
     }
   };
+}
+
+void EmbedderContext::SetupOpenGLSurface() {
+  gl_surface_ = std::make_unique<TestGLSurface>();
+}
+
+bool EmbedderContext::GLMakeCurrent() {
+  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
+  return gl_surface_->MakeCurrent();
+}
+
+bool EmbedderContext::GLClearCurrent() {
+  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
+  return gl_surface_->ClearCurrent();
+}
+
+bool EmbedderContext::GLPresent() {
+  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
+  return gl_surface_->Present();
+}
+
+uint32_t EmbedderContext::GLGetFramebuffer() {
+  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
+  return gl_surface_->GetFramebuffer();
+}
+
+bool EmbedderContext::GLMakeResourceCurrent() {
+  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
+  return gl_surface_->MakeResourceCurrent();
+}
+
+void* EmbedderContext::GLGetProcAddress(const char* name) {
+  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
+  return gl_surface_->GetProcAddress(name);
 }
 
 }  // namespace testing

@@ -16,21 +16,36 @@ import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Handler;
 import android.os.LocaleList;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.annotation.UiThread;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.*;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.view.Surface;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.View;
+import android.view.WindowInsets;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicLong;
+
 import io.flutter.app.FlutterPluginRegistry;
-import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.android.AndroidTouchProcessor;
+import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
@@ -41,15 +56,11 @@ import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
-import io.flutter.plugin.common.*;
+import io.flutter.plugin.common.ActivityLifecycleListener;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * An Android view containing a Flutter app.
@@ -112,6 +123,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     private final AtomicLong nextTextureId = new AtomicLong(0L);
     private FlutterNativeView mNativeView;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
+    private boolean didRenderFirstFrame = false;
 
     private final AccessibilityBridge.OnAccessibilityChangeListener onAccessibilityChangeListener = new AccessibilityBridge.OnAccessibilityChangeListener() {
         @Override
@@ -187,17 +199,24 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
         // Create and setup plugins
         PlatformPlugin platformPlugin = new PlatformPlugin(activity, platformChannel);
-        addActivityLifecycleListener(platformPlugin);
+        addActivityLifecycleListener(new ActivityLifecycleListener() {
+            @Override
+            public void onPostResume() {
+                platformPlugin.updateSystemUiOverlays();
+            }
+        });
         mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        mTextInputPlugin = new TextInputPlugin(this, dartExecutor);
+        PlatformViewsController platformViewsController = mNativeView.getPluginRegistry().getPlatformViewsController();
+        mTextInputPlugin = new TextInputPlugin(this, dartExecutor, platformViewsController);
         androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
         androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer);
+        mNativeView.getPluginRegistry().getPlatformViewsController().attachTextInputPlugin(mTextInputPlugin);
 
         // Send initial platform information to Dart
         sendLocalesToDart(getResources().getConfiguration());
         sendUserPlatformSettingsToDart();
     }
-    
+
     private static Activity getActivity(Context context) {
         if (context == null) {
             return null;
@@ -210,6 +229,11 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
             return getActivity(((ContextWrapper) context).getBaseContext());
         }
         return null;
+    }
+
+    @NonNull
+    public DartExecutor getDartExecutor() {
+        return dartExecutor;
     }
 
     @Override
@@ -274,6 +298,14 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     }
 
     /**
+     * Returns true if the Flutter experience associated with this {@code FlutterView} has
+     * rendered its first frame, or false otherwise.
+     */
+    public boolean hasRenderedFirstFrame() {
+        return didRenderFirstFrame;
+    }
+
+    /**
      * Provide a listener that will be called once when the FlutterView renders its
      * first frame to the underlaying SurfaceView.
      */
@@ -293,8 +325,12 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
      *
      * Sets it on top of its window. The background color still needs to be
      * controlled from within the Flutter UI itself.
+     *
+     * @deprecated This breaks accessibility highlighting. See https://github.com/flutter/flutter/issues/37025.
      */
+    @Deprecated
     public void enableTransparentBackground() {
+        Log.w(TAG, "Warning: FlutterView is set on top of the window. Accessibility highlights will not be visible in the Flutter UI. https://github.com/flutter/flutter/issues/37025");
         setZOrderOnTop(true);
         getHolder().setFormat(PixelFormat.TRANSPARENT);
     }
@@ -386,6 +422,11 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     @Override
     public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
         return mTextInputPlugin.createInputConnection(this, outAttrs);
+    }
+
+    @Override
+    public boolean checkInputConnectionProxy(View view) {
+        return mNativeView.getPluginRegistry().getPlatformViewsController().checkInputConnectionProxy(view);
     }
 
     @Override
@@ -589,38 +630,6 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     }
 
     /**
-     * @deprecated
-     * Please use runFromBundle with `FlutterRunArguments`.
-     */
-    @Deprecated
-    public void runFromBundle(String bundlePath, String defaultPath) {
-        runFromBundle(bundlePath, defaultPath, "main", false);
-    }
-
-    /**
-     * @deprecated
-     * Please use runFromBundle with `FlutterRunArguments`.
-     */
-    @Deprecated
-    public void runFromBundle(String bundlePath, String defaultPath, String entrypoint) {
-        runFromBundle(bundlePath, defaultPath, entrypoint, false);
-    }
-
-    /**
-     * @deprecated
-     * Please use runFromBundle with `FlutterRunArguments`.
-     * Parameter `reuseRuntimeController` has no effect.
-     */
-    @Deprecated
-    public void runFromBundle(String bundlePath, String defaultPath, String entrypoint, boolean reuseRuntimeController) {
-        FlutterRunArguments args = new FlutterRunArguments();
-        args.bundlePath = bundlePath;
-        args.entrypoint = entrypoint;
-        args.defaultPath = defaultPath;
-        runFromBundle(args);
-    }
-
-    /**
      * Return the most recent frame as a bitmap.
      *
      * @return A bitmap.
@@ -637,11 +646,6 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
                 mMetrics.physicalHeight, mMetrics.physicalPaddingTop, mMetrics.physicalPaddingRight,
                 mMetrics.physicalPaddingBottom, mMetrics.physicalPaddingLeft, mMetrics.physicalViewInsetTop,
                 mMetrics.physicalViewInsetRight, mMetrics.physicalViewInsetBottom, mMetrics.physicalViewInsetLeft);
-
-        WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
-        float fps = wm.getDefaultDisplay().getRefreshRate();
-        VsyncWaiter.refreshPeriodNanos = (long) (1000000000.0 / fps);
-        VsyncWaiter.refreshRateFPS = fps;
     }
 
     // Called by native to update the semantics/accessibility tree.
@@ -667,8 +671,10 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         }
     }
 
-    // Called by native to notify first Flutter frame rendered.
+    // Called by FlutterNativeView to notify first Flutter frame rendered.
     public void onFirstFrame() {
+        didRenderFirstFrame = true;
+
         // Allow listeners to remove themselves when they are called.
         List<FirstFrameListener> listeners = new ArrayList<>(mFirstFrameListeners);
         for (FirstFrameListener listener : listeners) {

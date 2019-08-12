@@ -4,17 +4,9 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "FLEOpenGLContextHandling.h"
-#import "FLEReshapeListener.h"
-#import "FlutterPluginRegistrarMacOS.h"
-
-#if defined(FLUTTER_FRAMEWORK)
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterBinaryMessenger.h"
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterMacros.h"
-#else
-#import "FlutterBinaryMessenger.h"
+#import "FLEEngine.h"
 #import "FlutterMacros.h"
-#endif
+#import "FlutterPluginRegistrarMacOS.h"
 
 typedef NS_ENUM(NSInteger, FlutterMouseTrackingMode) {
   // Hover events will never be sent to Flutter.
@@ -35,16 +27,12 @@ typedef NS_ENUM(NSInteger, FlutterMouseTrackingMode) {
  * Flutter engine in non-interactive mode, or with a drawable Flutter canvas.
  */
 FLUTTER_EXPORT
-@interface FLEViewController : NSViewController <FlutterBinaryMessenger,
-                                                 FlutterPluginRegistrar,
-                                                 FlutterPluginRegistry,
-                                                 FLEReshapeListener>
+@interface FLEViewController : NSViewController <FlutterPluginRegistry>
 
 /**
- * The view this controller manages when launched in interactive mode (headless set to false). Must
- * be capable of handling text input events, and the OpenGL context handling protocols.
+ * The Flutter engine associated with this view controller.
  */
-@property(nullable) NSView<FLEOpenGLContextHandling>* view;
+@property(nonatomic, nonnull, readonly) FLEEngine* engine;
 
 /**
  * The style of mouse tracking to use for the view. Defaults to
@@ -53,26 +41,16 @@ FLUTTER_EXPORT
 @property(nonatomic) FlutterMouseTrackingMode mouseTrackingMode;
 
 /**
- * Launches the Flutter engine with the provided configuration.
+ * Initializes a controller that will run the given project.
  *
- * @param assets The path to the flutter_assets folder for the Flutter application to be run.
- * @param arguments Arguments to pass to the Flutter engine. See
- *               https://github.com/flutter/engine/blob/master/shell/common/switches.h
- *               for details. Not all arguments will apply to embedding mode.
- *               Note: This API layer will likely abstract arguments in the future, instead of
- *               providing a direct passthrough.
- * @return YES if the engine launched successfully.
+ * @param project The project to run in this view controller. If nil, a default `FLEDartProject`
+ *                will be used.
  */
-- (BOOL)launchEngineWithAssetsPath:(nonnull NSURL*)assets
-              commandLineArguments:(nullable NSArray<NSString*>*)arguments;
+- (nonnull instancetype)initWithProject:(nullable FLEDartProject*)project NS_DESIGNATED_INITIALIZER;
 
-/**
- * Launches the Flutter engine in headless mode with the provided configuration. In headless mode,
- * this controller's view should not be displayed.
- *
- * See launcheEngineWithAssetsPath:commandLineArguments: for details.
- */
-- (BOOL)launchHeadlessEngineWithAssetsPath:(nonnull NSURL*)assets
-                      commandLineArguments:(nullable NSArray<NSString*>*)arguments;
+- (nonnull instancetype)initWithNibName:(nullable NSString*)nibNameOrNil
+                                 bundle:(nullable NSBundle*)nibBundleOrNil
+    NS_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithCoder:(nonnull NSCoder*)nibNameOrNil NS_DESIGNATED_INITIALIZER;
 
 @end

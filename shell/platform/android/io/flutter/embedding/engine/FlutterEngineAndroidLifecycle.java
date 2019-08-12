@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.embedding.engine;
 
 import android.arch.lifecycle.DefaultLifecycleObserver;
@@ -40,6 +44,7 @@ final class FlutterEngineAndroidLifecycle extends LifecycleRegistry {
   private Lifecycle backingLifecycle;
   private boolean isDestroyed = false;
 
+  @NonNull
   private final LifecycleObserver forwardingObserver = new DefaultLifecycleObserver() {
     @Override
     public void onCreate(@NonNull LifecycleOwner owner) {
