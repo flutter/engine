@@ -839,6 +839,7 @@ bool DartIsolate::InitializeIsolate(
 void DartIsolate::DartIsolateShutdownCallback(
     std::shared_ptr<DartIsolate>* isolate_group_data,
     std::shared_ptr<DartIsolate>* isolate_data) {
+  TRACE_EVENT0("flutter", "DartIsolate::DartIsolateShutdownCallback");
   isolate_group_data->get()->OnShutdownCallback();
 }
 
@@ -851,8 +852,11 @@ void DartIsolate::DartIsolateGroupCleanupCallback(
 // |Dart_IsolateCleanupCallback|
 void DartIsolate::DartIsolateCleanupCallback(
     std::shared_ptr<DartIsolate>* isolate_data) {
-  if (!isolate_data->get()->window()) {
-    // Main/UI-isolate's data will be cleaned up as part of IsolateGroup
+  TRACE_EVENT0("flutter", "DartIsolate::DartIsolateCleanupCallback");
+
+  if (isolate_data->get()->window() == nullptr &&
+      isolate_data->get()->GetAdvisoryScriptURI().compare(DART_VM_SERVICE_ISOLATE_NAME) != 0) {
+    // Main/UI-isolate's and service isolate data will be cleaned up as part of IsolateGroup
     // cleanup.
     delete isolate_data;
   }
