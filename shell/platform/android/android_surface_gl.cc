@@ -56,7 +56,7 @@ bool AndroidSurfaceGL::IsValid() const {
 }
 
 std::unique_ptr<Surface> AndroidSurfaceGL::CreateGPUSurface() {
-  auto surface = std::make_unique<GPUSurfaceGL>(this);
+  auto surface = std::make_unique<GPUSurfaceGL>(this, true);
   return surface->IsValid() ? std::move(surface) : nullptr;
 }
 
