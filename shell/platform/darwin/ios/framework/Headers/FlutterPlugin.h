@@ -388,7 +388,7 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
  * calls as `UNUserNotificationCenterDelegate` when they are added to
  * `addApplicationLifeCycleDelegate`.
  */
-- (void)registerAsUserNotificationCenterDelegate;
+- (void)registerAsUserNotificationCenterDelegate API_AVAILABLE(ios(10));
 @end
 
 NS_ASSUME_NONNULL_END;
