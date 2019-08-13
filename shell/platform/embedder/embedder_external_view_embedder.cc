@@ -230,7 +230,10 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
     render_canvas->drawPicture(picture);
     render_canvas->flush();
 
-    // Indicate a layer for the platform view.
+    // Indicate a layer for the platform view. Add to `presented_platform_views`
+    // in order to keep at allocated just for the scope of the current method.
+    // The layers presented to the embedder will contain a back pointer to this
+    // struct. It is safe to deallocate when the embedder callback is done.
     presented_platform_views[view_id] = MakePlatformView(view_id);
     presented_layers.push_back(
         MakeLayer(params, presented_platform_views.at(view_id)));
