@@ -2,60 +2,36 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-assert(is_fuchsia)
+import("//third_party/dart/build/dart/dart_action.gni")
+import("//third_party/dart/utils/application_snapshot.gni")
+import("//third_party/dart/utils/compile_platform.gni")
 
-import("//build/fuchsia/sdk.gni")
+application_snapshot("kernel_compiler") {
+  main_dart = "compiler.dart"
 
-if (using_fuchsia_sdk) {
-  import("//flutter/common/config.gni")
+  deps = [
+    "../flutter/kernel:kernel_platform_files($host_toolchain)",
+  ]
 
-  group("dart_io_api") {
-    visibility = [ ":*" ]
-    public_deps = []
+  dot_packages = rebase_path("//third_party/dart/.packages")
 
-    if (flutter_runtime_mode == "debug") {
-      public_deps += [ "//third_party/dart/runtime/bin:dart_io_api" ]
-    } else {
-      public_deps += [ "//third_party/dart/runtime/bin:dart_io_api_product" ]
-    }
-  }
+  training_args = [ "--train" ]
 
-  executable("dart") {
-    output_name = "dart_runner"
+  kernel_compiler_files =
+      exec_script("//third_party/dart/tools/list_dart_files.py",
+                  [
+                    "absolute",
+                    rebase_path("."),
+                  ],
+                  "list lines")
 
-    public = []
+  kernel_compiler_files +=
+      exec_script("//third_party/dart/tools/list_dart_files.py",
+                  [
+                    "absolute",
+                    rebase_path("//third_party/dart/pkg"),
+                  ],
+                  "list lines")
 
-    sources = [
-      "builtin_libraries.cc",
-      "builtin_libraries.h",
-      "dart_component_controller.cc",
-      "dart_component_controller.h",
-      "dart_runner.cc",
-      "dart_runner.h",
-      "logging.h",
-      "main.cc",
-      "mapped_resource.cc",
-      "mapped_resource.h",
-      "service_isolate.cc",
-      "service_isolate.h",
-    ]
-
-    deps = [
-      ":dart_io_api",
-      "$flutter_root/common",
-      "$flutter_root/fml",
-      "$flutter_root/runtime:libdart",
-      "$flutter_root/shell/platform/fuchsia/dart-pkg/fuchsia",
-      "$flutter_root/shell/platform/fuchsia/dart-pkg/zircon",
-      "$flutter_root/shell/platform/fuchsia/runtime/dart/utils",
-      "$fuchsia_sdk_root/pkg:async-cpp",
-      "$fuchsia_sdk_root/pkg:async-loop",
-      "$fuchsia_sdk_root/pkg:async-loop-cpp",
-      "$fuchsia_sdk_root/pkg:fidl_cpp",
-      "$fuchsia_sdk_root/pkg:syslog",
-      "$fuchsia_sdk_root/pkg/lib/sys/cpp",
-      "$fuchsia_sdk_root/pkg/lib/vfs/cpp",
-      "//third_party/tonic",
-    ]
-  }
+  inputs = kernel_compiler_files
 }
