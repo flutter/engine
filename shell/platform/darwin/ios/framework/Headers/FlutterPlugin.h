@@ -23,6 +23,9 @@ NS_ASSUME_NONNULL_BEGIN
  * Protocol for listener of events from the UIApplication, typically a FlutterPlugin.
  */
 @protocol FlutterApplicationLifeCycleDelegate
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_4
+    <UNUserNotificationCenterDelegate>
+#endif
 @optional
 /**
  * Called if this has been registered for `UIApplicationDelegate` callbacks.
