@@ -649,6 +649,9 @@ typedef struct {
   void* user_data;
   // Specifies the type of backing store.
   FlutterBackingStoreType type;
+  // Indicates if this backing store was updated since the last time it was
+  // associated with a presented layer.
+  bool did_update;
   union {
     // The description of the OpenGL backing store.
     FlutterOpenGLBackingStore open_gl;

@@ -551,6 +551,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLFramebuffer) {
           FlutterBackingStore backing_store = *layers[0]->backing_store;
           backing_store.struct_size = sizeof(backing_store);
           backing_store.type = kFlutterBackingStoreTypeOpenGL;
+          backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
 
           FlutterLayer layer = {};
@@ -582,6 +583,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLFramebuffer) {
           FlutterBackingStore backing_store = *layers[2]->backing_store;
           backing_store.struct_size = sizeof(backing_store);
           backing_store.type = kFlutterBackingStoreTypeOpenGL;
+          backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
 
           FlutterLayer layer = {};
@@ -641,6 +643,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLTexture) {
           FlutterBackingStore backing_store = *layers[0]->backing_store;
           backing_store.struct_size = sizeof(backing_store);
           backing_store.type = kFlutterBackingStoreTypeOpenGL;
+          backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
           FlutterLayer layer = {};
@@ -672,6 +675,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLTexture) {
           FlutterBackingStore backing_store = *layers[2]->backing_store;
           backing_store.struct_size = sizeof(backing_store);
           backing_store.type = kFlutterBackingStoreTypeOpenGL;
+          backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
           FlutterLayer layer = {};
@@ -731,6 +735,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToSoftwareBuffer) {
           FlutterBackingStore backing_store = *layers[0]->backing_store;
           backing_store.struct_size = sizeof(backing_store);
           backing_store.type = kFlutterBackingStoreTypeSoftware;
+          backing_store.did_update = true;
           ASSERT_FLOAT_EQ(
               backing_store.software.row_bytes * backing_store.software.height,
               800 * 4 * 600.0);
@@ -764,7 +769,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToSoftwareBuffer) {
           FlutterBackingStore backing_store = *layers[2]->backing_store;
           backing_store.struct_size = sizeof(backing_store);
           backing_store.type = kFlutterBackingStoreTypeSoftware;
-
+          backing_store.did_update = true;
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
@@ -897,6 +902,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
         {
           FlutterBackingStore backing_store = *layers[0]->backing_store;
           backing_store.type = kFlutterBackingStoreTypeOpenGL;
+          backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
           FlutterLayer layer = {};
@@ -929,6 +935,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
         {
           FlutterBackingStore backing_store = *layers[2]->backing_store;
           backing_store.type = kFlutterBackingStoreTypeOpenGL;
+          backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
           FlutterLayer layer = {};
@@ -961,6 +968,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
         {
           FlutterBackingStore backing_store = *layers[4]->backing_store;
           backing_store.type = kFlutterBackingStoreTypeOpenGL;
+          backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
           FlutterLayer layer = {};

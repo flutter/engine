@@ -67,7 +67,7 @@ inline bool operator==(const FlutterSoftwareBackingStore& a,
 inline bool operator==(const FlutterBackingStore& a,
                        const FlutterBackingStore& b) {
   if (!(a.struct_size == b.struct_size && a.user_data == b.user_data &&
-        a.type == b.type)) {
+        a.type == b.type && a.did_update == b.did_update)) {
     return false;
   }
 

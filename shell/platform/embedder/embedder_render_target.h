@@ -66,7 +66,7 @@ class EmbedderRenderTarget {
   const FlutterBackingStore* GetBackingStore() const;
 
  private:
-  const FlutterBackingStore backing_store_;
+  FlutterBackingStore backing_store_;
   sk_sp<SkSurface> render_surface_;
   fml::closure on_release_;
 
