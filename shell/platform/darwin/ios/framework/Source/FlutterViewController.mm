@@ -279,7 +279,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 }
 
 - (void)callViewRenderedCallback {
-  [self setRenderingFrames:YES];
+  self.renderingFrames = YES;
   if (_flutterViewRenderedCallback != nil) {
     _flutterViewRenderedCallback.get()();
     _flutterViewRenderedCallback.reset();
@@ -411,7 +411,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     [_engine.get() platformViewsController] -> SetFlutterViewController(self);
     [_engine.get() platformView] -> NotifyCreated();
   } else {
-    [self setRenderingFrames:NO];
+    self.renderingFrames = NO;
     [_engine.get() platformView] -> NotifyDestroyed();
     [_engine.get() platformViewsController] -> SetFlutterView(nullptr);
     [_engine.get() platformViewsController] -> SetFlutterViewController(nullptr);
