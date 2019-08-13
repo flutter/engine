@@ -15,6 +15,7 @@
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSize.h"
+#include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
 
