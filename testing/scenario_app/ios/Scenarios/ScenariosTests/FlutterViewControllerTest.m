@@ -36,7 +36,7 @@
   XCTAssertFalse(self.flutterViewController.isRenderingFrames);
 
   [self keyValueObservingExpectationForObject:self.flutterViewController
-                                      keyPath:@"isRenderingFrames"
+                                      keyPath:@"renderingFrames"
                                 expectedValue:@YES];
 
   [self.flutterViewController setFlutterViewDidRenderCallback:^{

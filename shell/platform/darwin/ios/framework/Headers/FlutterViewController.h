@@ -133,9 +133,10 @@ FLUTTER_EXPORT
 /**
  * True if at least one frame has rendered and the ViewController has appeared.
  *
- * This property is reset to false when the ViewController disappears.
+ * This property is reset to false when the ViewController disappears. It is
+ * guaranteed to only alternate between true and false for observers.
  */
-@property(nonatomic, readonly) BOOL isRenderingFrames;
+@property(nonatomic, readonly, getter=isRenderingFrames) BOOL renderingFrames;
 
 /**
  * Specifies the view to use as a splash screen. Flutter's rendering is asynchronous, so the first
