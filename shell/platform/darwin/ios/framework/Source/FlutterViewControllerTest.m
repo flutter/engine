@@ -80,7 +80,7 @@
                                                                         nibName:nil
                                                                          bundle:nil];
   id mockTraitCollection = [self setupFakeUserInterfaceStyle:UIUserInterfaceStyleDark];
-  
+
   // We partially mock the real FlutterViewController to act as the OS and report
   // the UITraitCollection of our choice. Mocking the object under test is not
   // desirable, but given that the OS does not offer a DI approach to providing
