@@ -6,10 +6,6 @@
 
 namespace flutter {
 
-sk_sp<SkSurface> ExternalViewEmbedder::GetRootSurface() {
-  return nullptr;
-}
-
 bool ExternalViewEmbedder::SubmitFrame(GrContext* context) {
   return false;
 };
