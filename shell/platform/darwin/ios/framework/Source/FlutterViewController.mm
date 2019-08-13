@@ -271,7 +271,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 }
 
 - (void)setIsDisplayingFlutterUI:(BOOL)isDisplayingFlutterUI {
- FML_DLOG(ERROR) << "Call View rendered callback inside!";
  if (_isDisplayingFlutterUI != isDisplayingFlutterUI) {
 
    [self willChangeValueForKey:@"isDisplayingFlutterUI"];
@@ -281,7 +280,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 }
 
 - (void)callViewRenderedCallback {
-  FML_DLOG(ERROR) << "Call View rendered callback!";
   self.isDisplayingFlutterUI = YES;
   if (_flutterViewRenderedCallback != nil) {
     _flutterViewRenderedCallback.get()();
@@ -414,7 +412,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     [_engine.get() platformViewsController] -> SetFlutterViewController(self);
     [_engine.get() platformView] -> NotifyCreated();
   } else {
-    FML_DLOG(ERROR) << "Surface disappeared";
     self.isDisplayingFlutterUI = NO;
     [_engine.get() platformView] -> NotifyDestroyed();
     [_engine.get() platformViewsController] -> SetFlutterView(nullptr);
