@@ -119,7 +119,7 @@ task:
     - name: build_windows_unopt_debug
       compile_host_script: |
         cd %ENGINE_PATH%/src
-        python flutter/tools/gn --runtime-mode debug --unoptimized
+        python flutter/tools/gn --runtime-mode debug --unoptimized --full-dart-sdk
         ninja -C out/host_debug_unopt
     - name: build_windows_opt_debug
       compile_host_script: |
