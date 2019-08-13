@@ -1012,8 +1012,9 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
             latch.CountDown();
           } break;
           default:
-            // Asked to render an unknown layer.
-            FML_CHECK(false) << "Test was asked for unknown layer";
+            // Asked to render an unknown platform view.
+            FML_CHECK(false)
+                << "Test was asked to composite an unknown platform view.";
         }
 
         return surface->makeImageSnapshot();
