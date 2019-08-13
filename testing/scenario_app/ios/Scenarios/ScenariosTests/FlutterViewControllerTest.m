@@ -33,15 +33,18 @@
                                                                      nibName:nil
                                                                       bundle:nil];
 
-  XCTAssertFalse(self.flutterViewController.isRenderingFrames);
+  XCTAssertFalse(self.flutterViewController.isDisplayingFlutterUI);
 
-  [self keyValueObservingExpectationForObject:self.flutterViewController
-                                      keyPath:@"renderingFrames"
-                                expectedValue:@YES];
+  XCTestExpectation* isDisplayingFlutterUIExpectation =
+      [self keyValueObservingExpectationForObject:self.flutterViewController
+                                          keyPath:@"isDisplayingFlutterUI"
+                                    expectedValue:@YES];
+  isDisplayingFlutterUIExpectation.assertForOverFulfill = YES;
 
   [self.flutterViewController setFlutterViewDidRenderCallback:^{
     [firstFrameRendered fulfill];
   }];
+
   AppDelegate* appDelegate = (AppDelegate*)UIApplication.sharedApplication.delegate;
   UIViewController* rootVC = appDelegate.window.rootViewController;
   [rootVC presentViewController:self.flutterViewController animated:NO completion:nil];

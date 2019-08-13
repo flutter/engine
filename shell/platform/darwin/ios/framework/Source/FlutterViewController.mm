@@ -29,7 +29,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
 @interface FlutterViewController () <FlutterBinaryMessenger>
-@property(nonatomic, readwrite, getter=isRenderingFrames) BOOL renderingFrames;
+@property(nonatomic, readwrite) BOOL isDisplayingFlutterUI;
 @end
 
 @implementation FlutterViewController {
@@ -50,7 +50,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   NSMutableSet<NSNumber*>* _ongoingTouches;
 }
 
-@synthesize renderingFrames = _renderingFrames;
+@synthesize isDisplayingFlutterUI = _isDisplayingFlutterUI;
 
 #pragma mark - Manage and override all designated initializers
 
@@ -266,20 +266,23 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   [self.view addSubview:splashScreenView];
 }
 
-+ (BOOL)automaticallyNotifiesObserversForRenderingFrames {
-  return NO;
++ (BOOL)automaticallyNotifiesObserversOfIsDisplayingFlutterUI {
+ return NO;
 }
 
-- (void)setRenderingFrames:(BOOL)renderingFrames {
-  if (_renderingFrames != renderingFrames) {
-    [self willChangeValueForKey:@"renderingFrames"];
-    _renderingFrames = renderingFrames;
-    [self didChangeValueForKey:@"renderingFrames"];
-  }
+- (void)setIsDisplayingFlutterUI:(BOOL)isDisplayingFlutterUI {
+ FML_DLOG(ERROR) << "Call View rendered callback inside!";
+ if (_isDisplayingFlutterUI != isDisplayingFlutterUI) {
+
+   [self willChangeValueForKey:@"isDisplayingFlutterUI"];
+   _isDisplayingFlutterUI = isDisplayingFlutterUI;
+   [self didChangeValueForKey:@"isDisplayingFlutterUI"];
+ }
 }
 
 - (void)callViewRenderedCallback {
-  self.renderingFrames = YES;
+  FML_DLOG(ERROR) << "Call View rendered callback!";
+  self.isDisplayingFlutterUI = YES;
   if (_flutterViewRenderedCallback != nil) {
     _flutterViewRenderedCallback.get()();
     _flutterViewRenderedCallback.reset();
@@ -411,7 +414,8 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     [_engine.get() platformViewsController] -> SetFlutterViewController(self);
     [_engine.get() platformView] -> NotifyCreated();
   } else {
-    self.renderingFrames = NO;
+    FML_DLOG(ERROR) << "Surface disappeared";
+    self.isDisplayingFlutterUI = NO;
     [_engine.get() platformView] -> NotifyDestroyed();
     [_engine.get() platformViewsController] -> SetFlutterView(nullptr);
     [_engine.get() platformViewsController] -> SetFlutterViewController(nullptr);
