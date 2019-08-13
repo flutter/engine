@@ -244,6 +244,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
     return nullptr;
   }
 
+  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
+  // external view embedder may want to render to the root surface.
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
         nullptr, [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
