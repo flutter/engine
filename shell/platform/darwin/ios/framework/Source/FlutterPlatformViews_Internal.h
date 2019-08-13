@@ -63,6 +63,7 @@ struct FlutterPlatformViewLayer {
   fml::scoped_nsobject<UIView> overlay_view;
   std::unique_ptr<IOSSurface> ios_surface;
   std::unique_ptr<Surface> surface;
+  void UpdateSurface();
 };
 
 class FlutterPlatformViewsController {
@@ -100,8 +101,7 @@ class FlutterPlatformViewsController {
   // Discards all platform views instances and auxiliary resources.
   void Reset();
 
-  bool SubmitFrame(bool gl_rendering,
-                   GrContext* gr_context,
+  bool SubmitFrame(GrContext* gr_context,
                    std::shared_ptr<IOSGLContext> gl_context);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);

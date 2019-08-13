@@ -19,9 +19,14 @@ FlutterPlatformViewLayer::FlutterPlatformViewLayer(fml::scoped_nsobject<UIView> 
 
 FlutterPlatformViewLayer::~FlutterPlatformViewLayer() = default;
 
+FlutterPlatformViewLayer::UpdateSurface() {
+
+}
+
 FlutterPlatformViewsController::FlutterPlatformViewsController() = default;
 
 FlutterPlatformViewsController::~FlutterPlatformViewsController() = default;
+
 
 CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix) {
   // Skia only supports 2D transform so we don't map z.

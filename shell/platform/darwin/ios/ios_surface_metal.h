@@ -22,6 +22,8 @@ class IOSSurfaceMetal final : public IOSSurface,
   IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer,
                   FlutterPlatformViewsController* platform_views_controller);
 
+  IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer);
+
   ~IOSSurfaceMetal() override;
 
  private:
@@ -38,6 +40,8 @@ class IOSSurfaceMetal final : public IOSSurface,
 
   // |IOSSurface|
   std::unique_ptr<Surface> CreateGPUSurface() override;
+
+  std::unique_ptr<Surface> CreateSecondaryGPUSurface(GrContext* gr_context);
 
   // |GPUSurfaceGLDelegate|
   flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
@@ -56,7 +60,6 @@ class IOSSurfaceMetal final : public IOSSurface,
 
   // |flutter::ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;
-
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceMetal);
 };

@@ -361,8 +361,7 @@ void FlutterPlatformViewsController::Reset() {
   views_to_recomposite_.clear();
 }
 
-bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
-                                                 GrContext* gr_context,
+bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
                                                  std::shared_ptr<IOSGLContext> gl_context) {
   DisposeViews();
 
@@ -469,10 +468,8 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(int64_t overlay_id
       fml::scoped_nsobject<UIView>(overlay_view), std::move(ios_surface), std::move(surface));
 }
 
-void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
-    int64_t overlay_id,
-    std::shared_ptr<IOSGLContext> gl_context,
-    GrContext* gr_context) {
+void FlutterPlatformViewsController::EnsureOverlayInitialized(int64_t overlay_id,
+                                                              GrContext* gr_context) {
   if (overlays_.count(overlay_id) != 0) {
     if (gr_context != overlays_gr_context_) {
       overlays_gr_context_ = gr_context;
@@ -497,6 +494,11 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
       fml::scoped_nsobject<UIView>(overlay_view), std::move(ios_surface), std::move(surface));
   overlays_gr_context_ = gr_context;
 }
+
+void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
+    int64_t overlay_id,
+    std::shared_ptr<IOSGLContext> gl_context,
+    GrContext* gr_context) {}
 
 }  // namespace flutter
 
