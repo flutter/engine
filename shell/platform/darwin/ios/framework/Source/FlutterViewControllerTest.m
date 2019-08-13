@@ -76,27 +76,94 @@
   id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
   OCMStub([engine settingsChannel]).andReturn(settingsChannel);
 
-  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:engine
+  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
                                                                     nibName:nil
                                                                      bundle:nil];
   id mockTraitCollection = [self setupFakeUserInterfaceStyle:UIUserInterfaceStyleDark];
+  
+  // We partially mock the real FlutterViewController to act as the OS and report
+  // the UITraitCollection of our choice. Mocking the object under test is not
+  // desirable, but given that the OS does not offer a DI approach to providing
+  // our own UITraitCollection, this seems to be the least bad option.
+  id partialMockVC = OCMPartialMock(realVC);
+  OCMStub([partialMockVC traitCollection]).andReturn(mockTraitCollection);
 
   // Exercise behavior under test.
-  [vc traitCollectionDidChange:nil];
+  [partialMockVC traitCollectionDidChange:nil];
 
   // Verify behavior.
   OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
-                               return [message[@"platformBrightness"] isEqualToString:@"light"];
+                               return [message[@"platformBrightness"] isEqualToString:@"dark"];
                              }]]);
 
   // Restore UIUserInterfaceStyle
+  [partialMockVC stopMocking];
   [mockTraitCollection stopMocking];
 }
 
 - (UITraitCollection*)setupFakeUserInterfaceStyle:(UIUserInterfaceStyle)style {
   id mockTraitCollection = OCMClassMock([UITraitCollection class]);
   OCMStub([mockTraitCollection userInterfaceStyle]).andReturn(UIUserInterfaceStyleDark);
-  OCMStub([mockTraitCollection currentTraitCollection]).andReturn(mockTraitCollection);
+  return mockTraitCollection;
+}
+
+- (void)testItReportsPlatformContrastWhenViewLoaded {
+  // Setup test.
+  id engine = OCMClassMock([FlutterEngine class]);
+  
+  id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([engine settingsChannel]).andReturn(settingsChannel);
+  
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:engine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+  
+  // Exercise behavior under test.
+  [vc viewDidLoad];
+  
+  // Verify behavior.
+  OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
+                               return [message[@"platformContrast"] isEqualToString:@"normal"];
+                             }]]);
+}
+
+- (void)testItReportsHighContrastWhenTraitCollectionRequestsIt {
+  // Setup test.
+  id engine = OCMClassMock([FlutterEngine class]);
+  
+  id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([engine settingsChannel]).andReturn(settingsChannel);
+  
+  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+  id mockTraitCollection = [self setupFakeTraitCollectionWithHighContrast];
+  
+  // We partially mock the real FlutterViewController to act as the OS and report
+  // the UITraitCollection of our choice. Mocking the object under test is not
+  // desirable, but given that the OS does not offer a DI approach to providing
+  // our own UITraitCollection, this seems to be the least bad option.
+  id partialMockVC = OCMPartialMock(realVC);
+  OCMStub([partialMockVC traitCollection]).andReturn(mockTraitCollection);
+  
+  // Exercise behavior under test.
+  [partialMockVC traitCollectionDidChange:mockTraitCollection];
+  
+  // Verify behavior.
+  OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
+                               return [message[@"platformContrast"] isEqualToString:@"high"];
+                             }]]);
+  
+  // Restore UIUserInterfaceStyle
+  [partialMockVC stopMocking];
+  [mockTraitCollection stopMocking];
+}
+
+- (UITraitCollection*)setupFakeTraitCollectionWithHighContrast {
+  id mockTraitCollection = OCMClassMock([UITraitCollection class]);
+  if (@available(iOS 13, *)) {
+    OCMStub([mockTraitCollection accessibilityContrast]).andReturn(UIAccessibilityContrastHigh);
+  }
   return mockTraitCollection;
 }
 

@@ -425,10 +425,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 
 #pragma mark - UIViewController lifecycle notifications
 
-- (void)viewDidLoad {
-  [self onUserSettingsChanged:nil];
-}
-
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");
 
@@ -437,6 +433,9 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     [_engine.get() setViewController:self];
     _engineNeedsLaunch = NO;
   }
+  
+  // Send platform settings to Flutter, e.g., platform brightness.
+  [self onUserSettingsChanged:nil];
 
   // Only recreate surface on subsequent appearances when viewport metrics are known.
   // First time surface creation is done on viewDidLayoutSubviews.
@@ -898,7 +897,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [[_engine.get() settingsChannel] sendMessage:@{
     @"textScaleFactor" : @([self textScaleFactor]),
     @"alwaysUse24HourFormat" : @([self isAlwaysUse24HourFormat]),
-    @"platformBrightness" : [self brightnessMode]
+    @"platformBrightness" : [self brightnessMode],
+    @"platformContrast": [self contrastMode]
   }];
 }
 
@@ -983,6 +983,20 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
   } else {
     return @"light";
+  }
+}
+
+- (NSString*)contrastMode {
+  if (@available(iOS 13, *)) {
+    UIAccessibilityContrast contrast = self.traitCollection.accessibilityContrast;
+    
+    if (contrast == UIAccessibilityContrastHigh) {
+      return @"high";
+    } else {
+      return @"normal";
+    }
+  } else {
+    return @"normal";
   }
 }
 
