@@ -267,16 +267,15 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 }
 
 + (BOOL)automaticallyNotifiesObserversOfIsDisplayingFlutterUI {
- return NO;
+  return NO;
 }
 
 - (void)setIsDisplayingFlutterUI:(BOOL)isDisplayingFlutterUI {
- if (_isDisplayingFlutterUI != isDisplayingFlutterUI) {
-
-   [self willChangeValueForKey:@"isDisplayingFlutterUI"];
-   _isDisplayingFlutterUI = isDisplayingFlutterUI;
-   [self didChangeValueForKey:@"isDisplayingFlutterUI"];
- }
+  if (_isDisplayingFlutterUI != isDisplayingFlutterUI) {
+    [self willChangeValueForKey:@"isDisplayingFlutterUI"];
+    _isDisplayingFlutterUI = isDisplayingFlutterUI;
+    [self didChangeValueForKey:@"isDisplayingFlutterUI"];
+  }
 }
 
 - (void)callViewRenderedCallback {
