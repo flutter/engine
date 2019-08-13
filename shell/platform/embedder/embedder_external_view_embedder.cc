@@ -110,18 +110,7 @@ SkCanvas* EmbedderExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
   return found->second->getRecordingCanvas();
 }
 
-void CopyViewParams(FlutterLayer& layer, const EmbeddedViewParams& params) {
-  layer.offset.x = params.offsetPixels.x();
-  layer.offset.y = params.offsetPixels.y();
-
-  layer.size.width = params.sizePoints.width();
-  layer.size.height = params.sizePoints.height();
-
-  // If the embedder API get support for mutator stack propagation, those fields
-  // would be added here.
-}
-
-static FlutterLayer MakeLayer(const EmbeddedViewParams& params,
+static FlutterLayer MakeLayer(const SkISize& frame_size,
                               const FlutterBackingStore* store) {
   FlutterLayer layer = {};
 
@@ -129,7 +118,11 @@ static FlutterLayer MakeLayer(const EmbeddedViewParams& params,
   layer.type = kFlutterLayerContentTypeBackingStore;
   layer.backing_store = store;
 
-  CopyViewParams(layer, params);
+  layer.offset.x = 0.0;
+  layer.offset.y = 0.0;
+
+  layer.size.width = frame_size.width();
+  layer.size.height = frame_size.height();
 
   return layer;
 }
@@ -153,7 +146,11 @@ static FlutterLayer MakeLayer(const EmbeddedViewParams& params,
   layer.type = kFlutterLayerContentTypePlatformView;
   layer.platform_view = &platform_view;
 
-  CopyViewParams(layer, params);
+  layer.offset.x = params.offsetPixels.x();
+  layer.offset.y = params.offsetPixels.y();
+
+  layer.size.width = params.sizePoints.width();
+  layer.size.height = params.sizePoints.height();
 
   return layer;
 }
@@ -178,7 +175,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
     params.offsetPixels = SkPoint::Make(0, 0);
     params.sizePoints = pending_frame_size_;
     presented_layers.push_back(
-        MakeLayer(params, root_render_target_->GetBackingStore()));
+        MakeLayer(pending_frame_size_, root_render_target_->GetBackingStore()));
   }
 
   for (const auto& view_id : composition_order_) {
@@ -241,7 +238,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
     // Indicate a layer for the backing store containing contents rendered by
     // Flutter.
     presented_layers.push_back(
-        MakeLayer(params, render_target->GetBackingStore()));
+        MakeLayer(pending_frame_size_, render_target->GetBackingStore()));
   }
 
   {

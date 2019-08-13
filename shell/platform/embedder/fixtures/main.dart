@@ -225,23 +225,23 @@ void can_composite_platform_views_with_known_scene() {
     SceneBuilder builder = SceneBuilder();
     builder.pushOffset(0.0, 0.0);
 
-    // 10
+    // 10 (Index 0)
     builder.addPicture(Offset(10.0, 10.0), CreateColoredBox(red, size)); // red - flutter
 
-    // 20
     builder.pushOffset(20.0, 20.0);
+      // 20 (Index 1)
       builder.addPlatformView(1, width: size.width, height:size.height); // green - platform
     builder.pop();
 
-    // 30
+    // 30 (Index 2)
     builder.addPicture(Offset(30.0, 30.0), CreateColoredBox(blue, size)); // blue - flutter
 
-    // 40
     builder.pushOffset(40.0, 40.0);
+      // 40 (Index 3)
       builder.addPlatformView(2, width: size.width, height:size.height); // magenta - platform
     builder.pop();
 
-    // 50
+    // 50  (Index 4)
     builder.addPicture(Offset(50.0, 50.0), CreateColoredBox(gray, size)); // gray - flutter
 
     builder.pop();

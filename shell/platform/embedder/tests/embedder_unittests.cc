@@ -590,8 +590,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLFramebuffer) {
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
-          layer.size = FlutterSizeMake(123.0, 456.0);
-          layer.offset = FlutterPointMake(1.0, 2.0);
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -682,8 +682,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLTexture) {
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
-          layer.size = FlutterSizeMake(123.0, 456.0);
-          layer.offset = FlutterPointMake(1.0, 2.0);
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -774,8 +774,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToSoftwareBuffer) {
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
-          layer.size = FlutterSizeMake(123.0, 456.0);
-          layer.offset = FlutterPointMake(1.0, 2.0);
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -942,8 +942,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
-          layer.size = FlutterSizeMake(100.0, 100.0);
-          layer.offset = FlutterPointMake(20.0, 20.0);
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -975,8 +975,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
-          layer.size = FlutterSizeMake(100.0, 100.0);
-          layer.offset = FlutterPointMake(40.0, 40.0);
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
 
           ASSERT_EQ(*layers[4], layer);
         }
