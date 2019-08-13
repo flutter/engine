@@ -236,8 +236,8 @@
 // Channels get a reference to the engine, and therefore need manual
 // cleanup for proper collection.
 - (void)setupChannels {
-  // This will be invoked once the shell is done setting up and the isolate ID for the UI
-  // isolate is available.
+  // This will be invoked once the shell is done setting up and the isolate ID
+  // for the UI isolate is available.
   [_binaryMessenger setMessageHandlerOnChannel:@"flutter/isolate"
                           binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
                             self.isolateId = [[FlutterStringCodec sharedInstance] decode:message];
