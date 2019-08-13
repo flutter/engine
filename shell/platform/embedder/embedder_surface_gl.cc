@@ -81,7 +81,11 @@ EmbedderSurfaceGL::GLProcResolver EmbedderSurfaceGL::GetGLProcResolver() const {
 
 // |EmbedderSurface|
 std::unique_ptr<Surface> EmbedderSurfaceGL::CreateGPUSurface() {
-  return std::make_unique<GPUSurfaceGL>(this);
+  bool render_to_surface = !external_view_embedder_;
+  return std::make_unique<GPUSurfaceGL>(this,  // GPU surface GL delegate
+                                        render_to_surface  // render to surface
+
+  );
 }
 
 // |EmbedderSurface|

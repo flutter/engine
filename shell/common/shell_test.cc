@@ -217,7 +217,7 @@ ShellTestPlatformView::~ShellTestPlatformView() = default;
 
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformView::CreateRenderingSurface() {
-  return std::make_unique<GPUSurfaceGL>(this);
+  return std::make_unique<GPUSurfaceGL>(this, true);
 }
 
 // |GPUSurfaceGLDelegate|
