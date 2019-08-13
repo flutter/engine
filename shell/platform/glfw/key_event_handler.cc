@@ -16,8 +16,8 @@ static constexpr char kScanCodeKey[] = "scanCode";
 static constexpr char kModifiersKey[] = "modifiers";
 static constexpr char kTypeKey[] = "type";
 static constexpr char kToolkitKey[] = "toolkit";
-static constexpr char kUnicodeScalarValuesProduced[] =
-    "unicodeScalarValuesProduced";
+static constexpr char kUnicodeScalarValues[] =
+    "unicodeScalarValues";
 
 static constexpr char kLinuxKeyMap[] = "linux";
 static constexpr char kGLFWKey[] = "glfw";
@@ -131,7 +131,7 @@ void KeyEventHandler::KeyboardHook(GLFWwindow* window,
   uint32_t unicodeInt;
   bool result = GetUTF32CodePointFromGLFWKey(key, scancode, &unicodeInt);
   if (result) {
-    event.AddMember(kUnicodeScalarValuesProduced, unicodeInt, allocator);
+    event.AddMember(kUnicodeScalarValues, unicodeInt, allocator);
   }
 
   switch (action) {
