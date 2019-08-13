@@ -433,7 +433,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     [_engine.get() setViewController:self];
     _engineNeedsLaunch = NO;
   }
-  
+
   // Send platform settings to Flutter, e.g., platform brightness.
   [self onUserSettingsChanged:nil];
 
@@ -898,7 +898,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     @"textScaleFactor" : @([self textScaleFactor]),
     @"alwaysUse24HourFormat" : @([self isAlwaysUse24HourFormat]),
     @"platformBrightness" : [self brightnessMode],
-    @"platformContrast": [self contrastMode]
+    @"platformContrast" : [self contrastMode]
   }];
 }
 
@@ -989,7 +989,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (NSString*)contrastMode {
   if (@available(iOS 13, *)) {
     UIAccessibilityContrast contrast = self.traitCollection.accessibilityContrast;
-    
+
     if (contrast == UIAccessibilityContrastHigh) {
       return @"high";
     } else {

@@ -49,7 +49,7 @@
                              }]]);
 }
 
-- (void)testItReportsPlatformBrightnessWhenViewLoaded {
+- (void)testItReportsPlatformBrightnessWhenViewWillAppear {
   // Setup test.
   id engine = OCMClassMock([FlutterEngine class]);
 
@@ -61,7 +61,7 @@
                                                                      bundle:nil];
 
   // Exercise behavior under test.
-  [vc viewDidLoad];
+  [vc viewWillAppear:false];
 
   // Verify behavior.
   OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
@@ -77,8 +77,8 @@
   OCMStub([engine settingsChannel]).andReturn(settingsChannel);
 
   FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
-                                                                    nibName:nil
-                                                                     bundle:nil];
+                                                                        nibName:nil
+                                                                         bundle:nil];
   id mockTraitCollection = [self setupFakeUserInterfaceStyle:UIUserInterfaceStyleDark];
   
   // We partially mock the real FlutterViewController to act as the OS and report
@@ -107,20 +107,48 @@
   return mockTraitCollection;
 }
 
-- (void)testItReportsPlatformContrastWhenViewLoaded {
+- (void)testItReportsNormalPlatformContrastByDefault {
+  if (!@available(iOS 13, *)) {
+    return;
+  }
+
   // Setup test.
   id engine = OCMClassMock([FlutterEngine class]);
-  
+
   id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
   OCMStub([engine settingsChannel]).andReturn(settingsChannel);
-  
+
   FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:engine
                                                                     nibName:nil
                                                                      bundle:nil];
-  
+
   // Exercise behavior under test.
-  [vc viewDidLoad];
-  
+  [vc traitCollectionDidChange:nil];
+
+  // Verify behavior.
+  OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
+                               return [message[@"platformContrast"] isEqualToString:@"normal"];
+                             }]]);
+}
+
+- (void)testItReportsPlatformContrastWhenViewWillAppear {
+  if (!@available(iOS 13, *)) {
+    return;
+  }
+
+  // Setup test.
+  id engine = OCMClassMock([FlutterEngine class]);
+
+  id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([engine settingsChannel]).andReturn(settingsChannel);
+
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:engine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+
+  // Exercise behavior under test.
+  [vc viewWillAppear:false];
+
   // Verify behavior.
   OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
                                return [message[@"platformContrast"] isEqualToString:@"normal"];
@@ -128,42 +156,44 @@
 }
 
 - (void)testItReportsHighContrastWhenTraitCollectionRequestsIt {
+  if (!@available(iOS 13, *)) {
+    return;
+  }
+
   // Setup test.
   id engine = OCMClassMock([FlutterEngine class]);
-  
+
   id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
   OCMStub([engine settingsChannel]).andReturn(settingsChannel);
-  
+
   FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
-                                                                    nibName:nil
-                                                                     bundle:nil];
-  id mockTraitCollection = [self setupFakeTraitCollectionWithHighContrast];
-  
+                                                                        nibName:nil
+                                                                         bundle:nil];
+  id mockTraitCollection = [self setupFakeTraitCollectionWithContrast:UIAccessibilityContrastHigh];
+
   // We partially mock the real FlutterViewController to act as the OS and report
   // the UITraitCollection of our choice. Mocking the object under test is not
   // desirable, but given that the OS does not offer a DI approach to providing
   // our own UITraitCollection, this seems to be the least bad option.
   id partialMockVC = OCMPartialMock(realVC);
   OCMStub([partialMockVC traitCollection]).andReturn(mockTraitCollection);
-  
+
   // Exercise behavior under test.
   [partialMockVC traitCollectionDidChange:mockTraitCollection];
-  
+
   // Verify behavior.
   OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
                                return [message[@"platformContrast"] isEqualToString:@"high"];
                              }]]);
-  
+
   // Restore UIUserInterfaceStyle
   [partialMockVC stopMocking];
   [mockTraitCollection stopMocking];
 }
 
-- (UITraitCollection*)setupFakeTraitCollectionWithHighContrast {
+- (UITraitCollection*)setupFakeTraitCollectionWithContrast:(UIAccessibilityContrast)contrast {
   id mockTraitCollection = OCMClassMock([UITraitCollection class]);
-  if (@available(iOS 13, *)) {
-    OCMStub([mockTraitCollection accessibilityContrast]).andReturn(UIAccessibilityContrastHigh);
-  }
+  OCMStub([mockTraitCollection accessibilityContrast]).andReturn(UIAccessibilityContrastHigh);
   return mockTraitCollection;
 }
 
