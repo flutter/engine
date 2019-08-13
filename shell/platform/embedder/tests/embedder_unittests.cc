@@ -925,7 +925,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypePlatformView;
           layer.platform_view = &platform_view;
-          layer.size = FlutterSizeMake(100.0, 100.0);
+          layer.size = FlutterSizeMake(50.0, 150.0);
           layer.offset = FlutterPointMake(20.0, 20.0);
 
           ASSERT_EQ(*layers[1], layer);
@@ -958,7 +958,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypePlatformView;
           layer.platform_view = &platform_view;
-          layer.size = FlutterSizeMake(100.0, 100.0);
+          layer.size = FlutterSizeMake(50.0, 150.0);
           layer.offset = FlutterPointMake(40.0, 40.0);
 
           ASSERT_EQ(*layers[3], layer);

@@ -220,7 +220,7 @@ void can_composite_platform_views_with_known_scene() {
     Color blue = Color.fromARGB(127, 0, 0, 255);
     Color gray = Color.fromARGB(127, 127, 127, 127);
 
-    Size size = Size(100.0, 100.0);
+    Size size = Size(50.0, 150.0);
 
     SceneBuilder builder = SceneBuilder();
     builder.pushOffset(0.0, 0.0);
