@@ -15,7 +15,9 @@ import subprocess
 
 buildroot_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '..', '..'))
 out_dir = os.path.join(buildroot_dir, 'out')
+golden_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'resources')
 fonts_dir = os.path.join(buildroot_dir, 'flutter', 'third_party', 'txt', 'third_party', 'fonts')
+roboto_font_path = os.path.join(fonts_dir, 'Roboto-Regular.ttf')
 dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 
 fonts_dir_flag = '--font-directory=%s' % fonts_dir
@@ -76,7 +78,13 @@ def RunCCTests(build_dir, filter):
   if not IsWindows():
     RunEngineExecutable(build_dir, 'embedder_unittests', filter)
 
-  RunEngineExecutable(build_dir, 'flow_unittests', filter)
+  flow_flags = ['--gtest_filter=-PerformanceOverlayLayer.Gold']
+  if IsLinux():
+    flow_flags = [
+      '--golden-dir=%s' % golden_dir,
+      '--font-file=%s' % roboto_font_path,
+    ]
+  RunEngineExecutable(build_dir, 'flow_unittests', filter, flow_flags)
 
   RunEngineExecutable(build_dir, 'fml_unittests', filter, [ time_sensitve_test_flag ])
 
@@ -216,18 +224,15 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
   subprocess.check_call(gn_command, cwd=buildroot_dir)
   subprocess.check_call(ninja_command, cwd=buildroot_dir)
 
-def RunJavaTests(filter):
-  # There's no real reason why other Android build types couldn't be supported
-  # here. Could default to this but use any other variant of android_ if it
-  # exists, but it seems like overkill to add that logic in right now.
-  android_out_dir = os.path.join(out_dir, 'android_debug_unopt')
+def RunJavaTests(filter, android_variant='android_debug_unopt'):
+  android_out_dir = os.path.join(out_dir, android_variant)
   EnsureJavaTestsAreBuilt(android_out_dir)
 
   robolectric_dir = os.path.join(buildroot_dir, 'third_party', 'robolectric', 'lib')
   classpath = map(str, [
-    os.path.join(buildroot_dir, 'third_party', 'android_tools', 'sdk', 'platforms', 'android-28', 'android.jar'),
+    os.path.join(buildroot_dir, 'third_party', 'android_tools', 'sdk', 'platforms', 'android-29', 'android.jar'),
     os.path.join(robolectric_dir, '*'), # Wildcard for all jars in the directory
-    os.path.join(android_out_dir, 'flutter_java.jar'),
+    os.path.join(android_out_dir, 'flutter.jar'),
     os.path.join(android_out_dir, 'robolectric_tests.jar')
   ])
 
@@ -241,7 +246,7 @@ def RunJavaTests(filter):
     test_class
   ]
 
-  return subprocess.call(command)
+  return subprocess.check_call(command)
 
 def RunDartTests(build_dir, filter):
   # This one is a bit messy. The pubspec.yaml at flutter/testing/dart/pubspec.yaml
@@ -273,6 +278,9 @@ def main():
       help='A list of Dart test scripts to run.')
   parser.add_argument('--java-filter', type=str, default='',
       help='A single Java test class to run.')
+  parser.add_argument('--android-variant', dest='android_variant', action='store',
+      default='android_debug_unopt',
+      help='The engine build variant to run java tests for')
 
   args = parser.parse_args()
 
@@ -300,7 +308,7 @@ def main():
     if ',' in java_filter or '*' in java_filter:
       print('Can only filter JUnit4 tests by single entire class name, eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter)
       java_filter = None
-    RunJavaTests(java_filter)
+    RunJavaTests(java_filter, args.android_variant)
 
   # https://github.com/flutter/flutter/issues/36300
   if 'benchmarks' in types and not IsWindows():
