@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#include "FLEDartProject.h"
+#include "FlutterDartProject.h"
 #include "FlutterBinaryMessenger.h"
 #include "FlutterMacros.h"
 #include "FlutterPluginRegistrarMacOS.h"
@@ -27,20 +27,20 @@ FLUTTER_EXPORT
  *
  * @param labelPrefix Currently unused; in the future, may be used for labelling threads
  *                    as with the iOS FlutterEngine.
- * @param project The project configuration. If nil, a default FLEDartProject will be used.
+ * @param project The project configuration. If nil, a default FlutterDartProject will be used.
  */
 - (nonnull instancetype)initWithName:(nonnull NSString*)labelPrefix
-                             project:(nullable FLEDartProject*)project;
+                             project:(nullable FlutterDartProject*)project;
 
 /**
  * Initializes an engine with the given viewController.
  *
  * @param labelPrefix Currently unused; in the future, may be used for labelling threads
  *                    as with the iOS FlutterEngine.
- * @param project The project configuration. If nil, a default FLEDartProject will be used.
+ * @param project The project configuration. If nil, a default FlutterDartProject will be used.
  */
 - (nonnull instancetype)initWithName:(nonnull NSString*)labelPrefix
-                             project:(nullable FLEDartProject*)project
+                             project:(nullable FlutterDartProject*)project
               allowHeadlessExecution:(BOOL)allowHeadlessExecution NS_DESIGNATED_INITIALIZER;
 
 - (nonnull instancetype)init NS_UNAVAILABLE;

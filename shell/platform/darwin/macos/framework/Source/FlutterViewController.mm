@@ -150,7 +150,7 @@ struct MouseState {
 
 @implementation FlutterViewController {
   // The project to run in this controller's engine.
-  FLEDartProject* _project;
+  FlutterDartProject* _project;
 
   // The plugin used to handle text input. This is not an FlutterPlugin, so must be owned
   // separately.
@@ -196,7 +196,7 @@ static void CommonInit(FlutterViewController* controller) {
   return self;
 }
 
-- (instancetype)initWithProject:(nullable FLEDartProject*)project {
+- (instancetype)initWithProject:(nullable FlutterDartProject*)project {
   self = [super initWithNibName:nil bundle:nil];
   NSAssert(self, @"Super init cannot be nil");
 

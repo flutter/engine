@@ -42,10 +42,10 @@ FLUTTER_EXPORT
 /**
  * Initializes a controller that will run the given project.
  *
- * @param project The project to run in this view controller. If nil, a default `FLEDartProject`
+ * @param project The project to run in this view controller. If nil, a default `FlutterDartProject`
  *                will be used.
  */
-- (nonnull instancetype)initWithProject:(nullable FLEDartProject*)project NS_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithProject:(nullable FlutterDartProject*)project NS_DESIGNATED_INITIALIZER;
 
 - (nonnull instancetype)initWithNibName:(nullable NSString*)nibNameOrNil
                                  bundle:(nullable NSBundle*)nibBundleOrNil

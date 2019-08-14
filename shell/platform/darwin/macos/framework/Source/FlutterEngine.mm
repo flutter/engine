@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FLEDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
@@ -126,7 +126,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   FLUTTER_API_SYMBOL(FlutterEngine) _engine;
 
   // The project being run by this engine.
-  FLEDartProject* _project;
+  FlutterDartProject* _project;
 
   // The context provided to the Flutter engine for resource loading.
   NSOpenGLContext* _resourceContext;
@@ -138,17 +138,17 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   BOOL _allowHeadlessExecution;
 }
 
-- (instancetype)initWithName:(NSString*)labelPrefix project:(FLEDartProject*)project {
+- (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
   return [self initWithName:labelPrefix project:project allowHeadlessExecution:YES];
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix
-                     project:(FLEDartProject*)project
+                     project:(FlutterDartProject*)project
       allowHeadlessExecution:(BOOL)allowHeadlessExecution {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
 
-  _project = project ?: [[FLEDartProject alloc] init];
+  _project = project ?: [[FlutterDartProject alloc] init];
   _messageHandlers = [[NSMutableDictionary alloc] init];
   _allowHeadlessExecution = allowHeadlessExecution;
 
