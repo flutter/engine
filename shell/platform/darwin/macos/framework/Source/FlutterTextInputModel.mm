@@ -87,8 +87,9 @@ static long GetExtentForRange(NSRange range) {
 }
 
 - (NSDictionary*)state {
-  NSString* const textAffinity =
-      (_textAffinity == FlutterTextAffinityUpstream) ? kTextAffinityUpstream : kTextAffinityDownstream;
+  NSString* const textAffinity = (_textAffinity == FlutterTextAffinityUpstream)
+                                     ? kTextAffinityUpstream
+                                     : kTextAffinityDownstream;
   NSDictionary* state = @{
     kSelectionBaseKey : @(GetBaseForRange(_selectedRange)),
     kSelectionExtentKey : @(GetExtentForRange(_selectedRange)),

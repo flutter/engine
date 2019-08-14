@@ -9,7 +9,10 @@
  * a line break, the cursor may be drawn either at the end of the current line (upstream)
  * or at the beginning of the next (downstream).
  */
-typedef NS_ENUM(NSUInteger, FlutterTextAffinity) { FlutterTextAffinityUpstream, FlutterTextAffinityDownstream };
+typedef NS_ENUM(NSUInteger, FlutterTextAffinity) {
+  FlutterTextAffinityUpstream,
+  FlutterTextAffinityDownstream
+};
 
 /**
  * Data model representing text input state during an editing session.

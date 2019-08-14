@@ -7,8 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
-#include "FlutterDartProject.h"
 #include "FlutterBinaryMessenger.h"
+#include "FlutterDartProject.h"
 #include "FlutterMacros.h"
 #include "FlutterPluginRegistrarMacOS.h"
 

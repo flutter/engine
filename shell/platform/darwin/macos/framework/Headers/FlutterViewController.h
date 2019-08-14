@@ -45,7 +45,8 @@ FLUTTER_EXPORT
  * @param project The project to run in this view controller. If nil, a default `FlutterDartProject`
  *                will be used.
  */
-- (nonnull instancetype)initWithProject:(nullable FlutterDartProject*)project NS_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithProject:(nullable FlutterDartProject*)project
+    NS_DESIGNATED_INITIALIZER;
 
 - (nonnull instancetype)initWithNibName:(nullable NSString*)nibNameOrNil
                                  bundle:(nullable NSBundle*)nibBundleOrNil
