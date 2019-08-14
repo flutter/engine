@@ -26,7 +26,8 @@ FLUTTER_EXPORT
  * @param bundle The bundle containing the Flutter assets directory. If nil, the main bundle is
  *               used.
  */
-- (nonnull instancetype)initWithBundle:(nullable NSBundle*)bundle NS_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithPrecompiledDartBundle:(nullable NSBundle*)bundle
+    NS_DESIGNATED_INITIALIZER;
 
 /**
  * Switches to pass to the Flutter engine. See

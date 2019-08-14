@@ -14,10 +14,10 @@ static NSString* const kICUBundlePath = @"icudtl.dat";
 }
 
 - (instancetype)init {
-  return [self initWithBundle:nil];
+  return [self initWithPrecompiledDartBundle:nil];
 }
 
-- (instancetype)initWithBundle:(NSBundle*)bundle {
+- (instancetype)initWithPrecompiledDartBundle:(NSBundle*)bundle {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
 
