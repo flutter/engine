@@ -987,6 +987,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (NSString*)contrastMode {
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000
   if (@available(iOS 13, *)) {
     UIAccessibilityContrast contrast = self.traitCollection.accessibilityContrast;
 
@@ -998,6 +999,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   } else {
     return @"normal";
   }
+#else
+  return @"normal";
+#endif
 }
 
 #pragma mark - Status Bar touch event handling

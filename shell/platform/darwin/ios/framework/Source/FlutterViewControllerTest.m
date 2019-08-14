@@ -29,6 +29,8 @@
   OCMVerify([engine binaryMessenger]);
 }
 
+#pragma mark - Platform Brightness
+
 - (void)testItReportsLightPlatformBrightnessByDefault {
   // Setup test.
   id engine = OCMClassMock([FlutterEngine class]);
@@ -47,6 +49,10 @@
   OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
                                return [message[@"platformBrightness"] isEqualToString:@"light"];
                              }]]);
+
+  // Clean up mocks
+  [engine stopMocking];
+  [settingsChannel stopMocking];
 }
 
 - (void)testItReportsPlatformBrightnessWhenViewWillAppear {
@@ -67,6 +73,10 @@
   OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
                                return [message[@"platformBrightness"] isEqualToString:@"light"];
                              }]]);
+
+  // Clean up mocks
+  [engine stopMocking];
+  [settingsChannel stopMocking];
 }
 
 - (void)testItReportsDarkPlatformBrightnessWhenTraitCollectionRequestsIt {
@@ -96,8 +106,10 @@
                                return [message[@"platformBrightness"] isEqualToString:@"dark"];
                              }]]);
 
-  // Restore UIUserInterfaceStyle
+  // Clean up mocks
   [partialMockVC stopMocking];
+  [engine stopMocking];
+  [settingsChannel stopMocking];
   [mockTraitCollection stopMocking];
 }
 
@@ -107,6 +119,9 @@
   return mockTraitCollection;
 }
 
+#pragma mark - Platform Contrast
+
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000
 - (void)testItReportsNormalPlatformContrastByDefault {
   if (!@available(iOS 13, *)) {
     return;
@@ -129,6 +144,10 @@
   OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
                                return [message[@"platformContrast"] isEqualToString:@"normal"];
                              }]]);
+
+  // Clean up mocks
+  [engine stopMocking];
+  [settingsChannel stopMocking];
 }
 
 - (void)testItReportsPlatformContrastWhenViewWillAppear {
@@ -153,6 +172,10 @@
   OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
                                return [message[@"platformContrast"] isEqualToString:@"normal"];
                              }]]);
+
+  // Clean up mocks
+  [engine stopMocking];
+  [settingsChannel stopMocking];
 }
 
 - (void)testItReportsHighContrastWhenTraitCollectionRequestsIt {
@@ -186,8 +209,10 @@
                                return [message[@"platformContrast"] isEqualToString:@"high"];
                              }]]);
 
-  // Restore UIUserInterfaceStyle
+  // Clean up mocks
   [partialMockVC stopMocking];
+  [engine stopMocking];
+  [settingsChannel stopMocking];
   [mockTraitCollection stopMocking];
 }
 
@@ -196,5 +221,6 @@
   OCMStub([mockTraitCollection accessibilityContrast]).andReturn(UIAccessibilityContrastHigh);
   return mockTraitCollection;
 }
+#endif
 
 @end
