@@ -35,11 +35,11 @@
 
   XCTAssertFalse(self.flutterViewController.isDisplayingFlutterUI);
 
-  XCTestExpectation* isDisplayingFlutterUIExpectation =
+  XCTestExpectation* displayingFlutterUIExpectation =
       [self keyValueObservingExpectationForObject:self.flutterViewController
-                                          keyPath:@"isDisplayingFlutterUI"
+                                          keyPath:@"displayingFlutterUI"
                                     expectedValue:@YES];
-  isDisplayingFlutterUIExpectation.assertForOverFulfill = YES;
+  displayingFlutterUIExpectation.assertForOverFulfill = YES;
 
   [self.flutterViewController setFlutterViewDidRenderCallback:^{
     [firstFrameRendered fulfill];

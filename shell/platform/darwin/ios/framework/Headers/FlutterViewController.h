@@ -136,7 +136,7 @@ FLUTTER_EXPORT
  * This property is reset to false when the ViewController disappears. It is
  * guaranteed to only alternate between true and false for observers.
  */
-@property(nonatomic, readonly) BOOL isDisplayingFlutterUI;
+@property(nonatomic, readonly, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 
 /**
  * Specifies the view to use as a splash screen. Flutter's rendering is asynchronous, so the first

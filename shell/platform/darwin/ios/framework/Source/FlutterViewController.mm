@@ -29,7 +29,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
 @interface FlutterViewController () <FlutterBinaryMessenger>
-@property(nonatomic, readwrite) BOOL isDisplayingFlutterUI;
+@property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @end
 
 @implementation FlutterViewController {
@@ -50,7 +50,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   NSMutableSet<NSNumber*>* _ongoingTouches;
 }
 
-@synthesize isDisplayingFlutterUI = _isDisplayingFlutterUI;
+@synthesize displayingFlutterUI = _displayingFlutterUI;
 
 #pragma mark - Manage and override all designated initializers
 
@@ -266,20 +266,25 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   [self.view addSubview:splashScreenView];
 }
 
-+ (BOOL)automaticallyNotifiesObserversOfIsDisplayingFlutterUI {
++ (BOOL)automaticallyNotifiesObserversOfDisplayingFlutterUI {
   return NO;
 }
 
-- (void)setIsDisplayingFlutterUI:(BOOL)isDisplayingFlutterUI {
-  if (_isDisplayingFlutterUI != isDisplayingFlutterUI) {
-    [self willChangeValueForKey:@"isDisplayingFlutterUI"];
-    _isDisplayingFlutterUI = isDisplayingFlutterUI;
-    [self didChangeValueForKey:@"isDisplayingFlutterUI"];
+- (void)setDisplayingFlutterUI:(BOOL)displayingFlutterUI {
+  if (_displayingFlutterUI != displayingFlutterUI) {
+    if (displayingFlutterUI == YES) {
+      if (!self.isViewLoaded || !self.view.window) {
+        return;
+      }
+    }
+    [self willChangeValueForKey:@"displayingFlutterUI"];
+    _displayingFlutterUI = displayingFlutterUI;
+    [self didChangeValueForKey:@"displayingFlutterUI"];
   }
 }
 
 - (void)callViewRenderedCallback {
-  self.isDisplayingFlutterUI = YES;
+  self.displayingFlutterUI = YES;
   if (_flutterViewRenderedCallback != nil) {
     _flutterViewRenderedCallback.get()();
     _flutterViewRenderedCallback.reset();
@@ -411,7 +416,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     [_engine.get() platformViewsController] -> SetFlutterViewController(self);
     [_engine.get() platformView] -> NotifyCreated();
   } else {
-    self.isDisplayingFlutterUI = NO;
+    self.displayingFlutterUI = NO;
     [_engine.get() platformView] -> NotifyDestroyed();
     [_engine.get() platformViewsController] -> SetFlutterView(nullptr);
     [_engine.get() platformViewsController] -> SetFlutterViewController(nullptr);
