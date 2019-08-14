@@ -16,7 +16,7 @@
  * This is not an FlutterPlugin since it needs access to FlutterViewController internals, so needs
  * to be managed differently.
  */
-@interface FLETextInputPlugin : NSResponder
+@interface FlutterTextInputPlugin : NSResponder
 
 /**
  * Initializes a text input plugin that coordinates key event handling with |viewController|.

@@ -793,12 +793,12 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterView
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Info.plist
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEDartProject.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEDartProject_Internal.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputModel.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputModel.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputPlugin.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputModel.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputModel.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController.mm
