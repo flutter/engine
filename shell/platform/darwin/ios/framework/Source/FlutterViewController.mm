@@ -32,6 +32,18 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @end
 
+#if __IPHONE_OS_VERSION_MAX_ALLOWED < 130000
+typedef enum UIAccessibilityContrast : NSInteger {
+  UIAccessibilityContrastUnspecified = 0,
+  UIAccessibilityContrastNormal = 1,
+  UIAccessibilityContrastHigh = 2
+} UIAccessibilityContrast;
+
+@interface UITraitCollection(AccessibilityContrastApi)
+- (UIAccessibilityContrast)accessibilityContrast;
+@end
+#endif
+
 @implementation FlutterViewController {
   std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
   fml::scoped_nsobject<FlutterEngine> _engine;
@@ -987,7 +999,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (NSString*)contrastMode {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000
   if (@available(iOS 13, *)) {
     UIAccessibilityContrast contrast = self.traitCollection.accessibilityContrast;
 
@@ -999,9 +1010,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   } else {
     return @"normal";
   }
-#else
-  return @"normal";
-#endif
 }
 
 #pragma mark - Status Bar touch event handling

@@ -15,6 +15,18 @@
 @interface FlutterViewControllerTest : XCTestCase
 @end
 
+#if __IPHONE_OS_VERSION_MAX_ALLOWED < 130000
+typedef enum UIAccessibilityContrast : NSInteger {
+  UIAccessibilityContrastUnspecified = 0,
+  UIAccessibilityContrastNormal = 1,
+  UIAccessibilityContrastHigh = 2
+} UIAccessibilityContrast;
+
+@interface UITraitCollection(AccessibilityContrastApi)
+- (UIAccessibilityContrast)accessibilityContrast;
+@end
+#endif
+
 @implementation FlutterViewControllerTest
 
 - (void)testBinaryMessenger {
@@ -80,6 +92,10 @@
 }
 
 - (void)testItReportsDarkPlatformBrightnessWhenTraitCollectionRequestsIt {
+  if (!@available(iOS 13, *)) {
+    return;
+  }
+  
   // Setup test.
   id engine = OCMClassMock([FlutterEngine class]);
 
@@ -121,7 +137,6 @@
 
 #pragma mark - Platform Contrast
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000
 - (void)testItReportsNormalPlatformContrastByDefault {
   if (!@available(iOS 13, *)) {
     return;
@@ -221,6 +236,5 @@
   OCMStub([mockTraitCollection accessibilityContrast]).andReturn(UIAccessibilityContrastHigh);
   return mockTraitCollection;
 }
-#endif
 
 @end
