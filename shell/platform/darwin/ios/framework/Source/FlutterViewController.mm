@@ -308,31 +308,36 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 }
 
 - (void)installFirstFrameCallback {
-  auto weak_platform_view = [_engine.get() platformView];
+  fml::WeakPtr<flutter::PlatformViewIOS> weak_platform_view = [_engine.get() platformView];
   if (!weak_platform_view) {
     return;
   }
-  __unsafe_unretained auto weak_flutter_view_controller = self;
+
   // This is on the platform thread.
-  weak_platform_view->SetNextFrameCallback([weak_platform_view, weak_flutter_view_controller,
-                                            task_runner = [_engine.get() platformTaskRunner]]() {
-    // This is on the GPU thread.
-    task_runner->PostTask([weak_platform_view, weak_flutter_view_controller]() {
-      // We check if the weak platform view is alive. If it is alive, then the view controller
-      // also has to be alive since the view controller owns the platform view via the shell
-      // association. Thus, we are not convinced that the unsafe unretained weak object is in
-      // fact alive.
-      if (weak_platform_view) {
-        if (weak_flutter_view_controller->_splashScreenView) {
-          [weak_flutter_view_controller removeSplashScreenView:^{
-            [weak_flutter_view_controller callViewRenderedCallback];
-          }];
-        } else {
-          [weak_flutter_view_controller callViewRenderedCallback];
-        }
-      }
-    });
-  });
+  weak_platform_view->SetNextFrameCallback(
+      [weak_platform_view, platform_task_runner = [_engine.get() platformTaskRunner],
+       gpu_task_runner = [_engine.get() gpuTaskRunner]]() {
+        FML_DCHECK(gpu_task_runner->RunsTasksOnCurrentThread());
+        platform_task_runner->PostTask([weak_platform_view]() {
+          // The weak platform view will have a weak pointer to self, if it is
+          // still alive. We can check if that weak pointer is still valid to
+          // know if we're still alive.
+          if (weak_platform_view) {
+            fml::WeakPtr<FlutterViewController> weak_self =
+                weak_platform_view->GetOwnerViewController();
+            if (!weak_self) {
+              return;
+            }
+            if (weak_self.get()->_splashScreenView) {
+              [weak_self.get() removeSplashScreenView:^{
+                [weak_self.get() callViewRenderedCallback];
+              }];
+            } else {
+              [weak_self.get() callViewRenderedCallback];
+            }
+          }
+        });
+      });
 }
 
 #pragma mark - Properties
