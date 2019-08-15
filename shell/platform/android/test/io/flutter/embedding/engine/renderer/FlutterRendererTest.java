@@ -31,7 +31,7 @@ public class FlutterRendererTest {
   }
 
   @Test
-  public void itHoldsFlutterEngines() {
+  public void firstFrameListenerCanRemoveThemselves() {
     AtomicInteger callbackCalled = new AtomicInteger(0);
     OnFirstFrameRenderedListener callback = new OnFirstFrameRenderedListener() {
       @Override
