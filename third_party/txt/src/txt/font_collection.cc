@@ -159,6 +159,7 @@ FontCollection::GetMinikinFontCollectionForFamilies(
   }
   // Default font family also not found. We fail to get a FontCollection.
   if (minikin_families.empty()) {
+    font_collections_cache_[family_key] = nullptr;
     return nullptr;
   }
   if (enable_font_fallback_) {
@@ -230,8 +231,6 @@ std::shared_ptr<minikin::FontFamily> FontCollection::CreateMinikinFontFamily(
     minikin_fonts.emplace_back(std::move(minikin_font));
   }
 
-  TRACE_EVENT1("flutter", "minikin::FontFamily", "MinikinFontsCount",
-               std::to_string(minikin_fonts.size()).c_str());
   return std::make_shared<minikin::FontFamily>(std::move(minikin_fonts));
 }
 

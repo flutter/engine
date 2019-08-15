@@ -23,7 +23,7 @@ class CompositorContext final : public flutter::CompositorContext {
   CompositorContext(std::string debug_label,
                     fuchsia::ui::views::ViewToken view_token,
                     fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
-                    fit::closure session_error_callback,
+                    fml::closure session_error_callback,
                     zx_handle_t vsync_event_handle);
 
   ~CompositorContext() override;
@@ -42,7 +42,8 @@ class CompositorContext final : public flutter::CompositorContext {
       SkCanvas* canvas,
       flutter::ExternalViewEmbedder* view_embedder,
       const SkMatrix& root_surface_transformation,
-      bool instrumentation_enabled) override;
+      bool instrumentation_enabled,
+      fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(CompositorContext);
 };

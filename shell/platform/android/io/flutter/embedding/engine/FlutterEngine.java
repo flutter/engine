@@ -110,6 +110,9 @@ public class FlutterEngine implements LifecycleOwner {
   /**
    * Constructs a new {@code FlutterEngine}.
    *
+   * {@code FlutterMain.startInitialization} must be called before constructing a {@code FlutterEngine}
+   * to load the native libraries needed to attach to JNI.
+   *
    * A new {@code FlutterEngine} does not execute any Dart code automatically. See
    * {@link #getDartExecutor()} and {@link DartExecutor#executeDartEntrypoint(DartExecutor.DartEntrypoint)}
    * to begin executing Dart code within this {@code FlutterEngine}.
@@ -128,7 +131,7 @@ public class FlutterEngine implements LifecycleOwner {
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
     attachToJni();
 
-    this.dartExecutor = new DartExecutor(flutterJNI);
+    this.dartExecutor = new DartExecutor(flutterJNI, context.getAssets());
     this.dartExecutor.onAttachedToJNI();
 
     // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if possible.

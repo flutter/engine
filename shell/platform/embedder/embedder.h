@@ -17,6 +17,16 @@ extern "C" {
 #define FLUTTER_EXPORT
 #endif  // FLUTTER_EXPORT
 
+#ifdef FLUTTER_API_SYMBOL_PREFIX
+#define FLUTTER_EMBEDDING_CONCAT(a, b) a##b
+#define FLUTTER_EMBEDDING_ADD_PREFIX(symbol, prefix) \
+  FLUTTER_EMBEDDING_CONCAT(prefix, symbol)
+#define FLUTTER_API_SYMBOL(symbol) \
+  FLUTTER_EMBEDDING_ADD_PREFIX(symbol, FLUTTER_API_SYMBOL_PREFIX)
+#else
+#define FLUTTER_API_SYMBOL(symbol) symbol
+#endif
+
 #define FLUTTER_ENGINE_VERSION 1
 
 typedef enum {
@@ -168,44 +178,70 @@ typedef enum {
   kFlutterTextDirectionLTR = 2,
 } FlutterTextDirection;
 
-typedef struct _FlutterEngine* FlutterEngine;
+typedef struct _FlutterEngine* FLUTTER_API_SYMBOL(FlutterEngine);
 
 typedef struct {
-  //   horizontal scale factor
+  // horizontal scale factor
   double scaleX;
-  //    horizontal skew factor
+  // horizontal skew factor
   double skewX;
-  //   horizontal translation
+  // horizontal translation
   double transX;
-  //    vertical skew factor
+  // vertical skew factor
   double skewY;
-  //   vertical scale factor
+  // vertical scale factor
   double scaleY;
-  //   vertical translation
+  // vertical translation
   double transY;
-  //    input x-axis perspective factor
+  // input x-axis perspective factor
   double pers0;
-  //    input y-axis perspective factor
+  // input y-axis perspective factor
   double pers1;
-  //    perspective scale factor
+  // perspective scale factor
   double pers2;
 } FlutterTransformation;
 
 typedef void (*VoidCallback)(void* /* user data */);
 
+typedef enum {
+  // Specifies an OpenGL texture target type. Textures are specified using
+  // the FlutterOpenGLTexture struct.
+  kFlutterOpenGLTargetTypeTexture,
+  // Specifies an OpenGL frame-buffer target type. Framebuffers are specified
+  // using the FlutterOpenGLFramebuffer struct.
+  kFlutterOpenGLTargetTypeFramebuffer,
+} FlutterOpenGLTargetType;
+
 typedef struct {
-  //    Target texture of the active texture unit (example GL_TEXTURE_2D).
+  // Target texture of the active texture unit (example GL_TEXTURE_2D).
   uint32_t target;
-  //    The name of the texture.
+  // The name of the texture.
   uint32_t name;
-  //    The texture format (example GL_RGBA8).
+  // The texture format (example GL_RGBA8).
   uint32_t format;
-  //    User data to be returned on the invocation of the destruction callback.
+  // User data to be returned on the invocation of the destruction callback.
   void* user_data;
-  //    Callback invoked (on an engine managed thread) that asks the embedder to
-  //    collect the texture.
+  // Callback invoked (on an engine managed thread) that asks the embedder to
+  // collect the texture.
   VoidCallback destruction_callback;
 } FlutterOpenGLTexture;
+
+typedef struct {
+  // The target of the color attachment of the frame-buffer. For example,
+  // GL_TEXTURE_2D or GL_RENDERBUFFER. In case of ambiguity when dealing with
+  // Window bound frame-buffers, 0 may be used.
+  uint32_t target;
+
+  // The name of the framebuffer.
+  uint32_t name;
+
+  // User data to be returned on the invocation of the destruction callback.
+  void* user_data;
+
+  // Callback invoked (on an engine managed thread) that asks the embedder to
+  // collect the framebuffer.
+  VoidCallback destruction_callback;
+} FlutterOpenGLFramebuffer;
 
 typedef bool (*BoolCallback)(void* /* user data */);
 typedef FlutterTransformation (*TransformationCallback)(void* /* user data */);
@@ -349,7 +385,7 @@ typedef struct {
   double x;
   double y;
   // An optional device identifier. If this is not specified, it is assumed that
-  // the embedder has no multitouch capability.
+  // the embedder has no multi-touch capability.
   int32_t device;
   FlutterPointerSignalKind signal_kind;
   double scroll_delta_x;
@@ -553,6 +589,160 @@ typedef struct {
 } FlutterCustomTaskRunners;
 
 typedef struct {
+  // The type of the OpenGL backing store. Currently, it can either be a texture
+  // or a framebuffer.
+  FlutterOpenGLTargetType type;
+  union {
+    // A texture for Flutter to render into.
+    FlutterOpenGLTexture texture;
+    // A framebuffer for Flutter to render into. The embedder must ensure that
+    // the framebuffer is complete.
+    FlutterOpenGLFramebuffer framebuffer;
+  };
+} FlutterOpenGLBackingStore;
+
+typedef struct {
+  // A pointer to the raw bytes of the allocation described by this software
+  // backing store.
+  const void* allocation;
+  // The number of bytes in a single row of the allocation.
+  size_t row_bytes;
+  // The number of rows in the allocation.
+  size_t height;
+  // A baton that is not interpreted by the engine in any way. It will be given
+  // back to the embedder in the destruction callback below. Embedder resources
+  // may be associated with this baton.
+  void* user_data;
+  // The callback invoked by the engine when it no longer needs this backing
+  // store.
+  VoidCallback destruction_callback;
+} FlutterSoftwareBackingStore;
+
+// The identifier of the platform view. This identifier is specified by the
+// application when a platform view is added to the scene via the
+// `SceneBuilder.addPlatformView` call.
+typedef int64_t FlutterPlatformViewIdentifier;
+
+typedef struct {
+  // The size of this struct. Must be sizeof(FlutterPlatformView).
+  size_t struct_size;
+  // The identifier of this platform view. This identifier is specified by the
+  // application when a platform view is added to the scene via the
+  // `SceneBuilder.addPlatformView` call.
+  FlutterPlatformViewIdentifier identifier;
+} FlutterPlatformView;
+
+typedef enum {
+  // Specifies an OpenGL backing store. Can either be an OpenGL texture or
+  // framebuffer.
+  kFlutterBackingStoreTypeOpenGL,
+  // Specified an software allocation for Flutter to render into using the CPU.
+  kFlutterBackingStoreTypeSoftware,
+} FlutterBackingStoreType;
+
+typedef struct {
+  // The size of this struct. Must be sizeof(FlutterBackingStore).
+  size_t struct_size;
+  // A baton that is not interpreted by the engine in any way. The embedder may
+  // use this to associate resources that are tied to the lifecycle of the
+  // |FlutterBackingStore|.
+  void* user_data;
+  // Specifies the type of backing store.
+  FlutterBackingStoreType type;
+  // Indicates if this backing store was updated since the last time it was
+  // associated with a presented layer.
+  bool did_update;
+  union {
+    // The description of the OpenGL backing store.
+    FlutterOpenGLBackingStore open_gl;
+    // The description of the software backing store.
+    FlutterSoftwareBackingStore software;
+  };
+} FlutterBackingStore;
+
+typedef struct {
+  double x;
+  double y;
+} FlutterPoint;
+
+typedef struct {
+  double width;
+  double height;
+} FlutterSize;
+
+typedef struct {
+  // The size of this struct. Must be sizeof(FlutterBackingStoreConfig).
+  size_t struct_size;
+  // The size of the render target the engine expects to render into.
+  FlutterSize size;
+} FlutterBackingStoreConfig;
+
+typedef enum {
+  // Indicates that the contents of this layer are rendered by Flutter into a
+  // backing store.
+  kFlutterLayerContentTypeBackingStore,
+  // Indicates that the contents of this layer are determined by the embedder.
+  kFlutterLayerContentTypePlatformView,
+} FlutterLayerContentType;
+
+typedef struct {
+  // This size of this struct. Must be sizeof(FlutterLayer).
+  size_t struct_size;
+  // Each layer displays contents in one way or another. The type indicates
+  // whether those contents are specified by Flutter or the embedder.
+  FlutterLayerContentType type;
+  union {
+    // Indicates that the contents of this layer are rendered by Flutter into a
+    // backing store.
+    const FlutterBackingStore* backing_store;
+    // Indicates that the contents of this layer are determined by the embedder.
+    const FlutterPlatformView* platform_view;
+  };
+  // The offset of this layer (in physical pixels) relative to the top left of
+  // the root surface used by the engine.
+  FlutterPoint offset;
+  // The size of the layer (in physical pixels).
+  FlutterSize size;
+} FlutterLayer;
+
+typedef bool (*FlutterBackingStoreCreateCallback)(
+    const FlutterBackingStoreConfig* config,
+    FlutterBackingStore* backing_store_out,
+    void* user_data);
+
+typedef bool (*FlutterBackingStoreCollectCallback)(
+    const FlutterBackingStore* renderer,
+    void* user_data);
+
+typedef bool (*FlutterLayersPresentCallback)(const FlutterLayer** layers,
+                                             size_t layers_count,
+                                             void* user_data);
+
+typedef struct {
+  // This size of this struct. Must be sizeof(FlutterCompositor).
+  size_t struct_size;
+  // A baton that in not interpreted by the engine in any way. If it passed back
+  // to the embedder in  |FlutterCompositor.create_backing_store_callback|,
+  // |FlutterCompositor.collect_backing_store_callback| and
+  // |FlutterCompositor.present_layers_callback|
+  void* user_data;
+  // A callback invoked by the engine to obtain a backing store for a specific
+  // |FlutterLayer|.
+  //
+  // On ABI stability: Callers must take care to restrict access within
+  // |FlutterBackingStore::struct_size| when specifying a new backing store to
+  // the engine. This only matters if the embedder expects to be used with
+  // engines older than the version whose headers it used during compilation.
+  FlutterBackingStoreCreateCallback create_backing_store_callback;
+  // A callback invoked by the engine to release the backing store. The embedder
+  // may collect any resources associated with the backing store.
+  FlutterBackingStoreCollectCallback collect_backing_store_callback;
+  // Callback invoked by the engine to composite the contents of each layer onto
+  // the screen.
+  FlutterLayersPresentCallback present_layers_callback;
+} FlutterCompositor;
+
+typedef struct {
   // The size of this struct. Must be sizeof(FlutterProjectArgs).
   size_t struct_size;
   // The path to the Flutter assets directory containing project assets. The
@@ -604,28 +794,32 @@ typedef struct {
   // the Wiki at
   // https://github.com/flutter/flutter/wiki/Flutter-engine-operation-in-AOT-Mode
   const uint8_t* vm_snapshot_data;
-  // The size of the VM snapshot data buffer.
+  // The size of the VM snapshot data buffer.  If vm_snapshot_data is a symbol
+  // reference, 0 may be passed here.
   size_t vm_snapshot_data_size;
   // The VM snapshot instructions buffer used in AOT operation. This buffer must
   // be mapped in as read-execute. For more information refer to the
   // documentation on the Wiki at
   // https://github.com/flutter/flutter/wiki/Flutter-engine-operation-in-AOT-Mode
   const uint8_t* vm_snapshot_instructions;
-  // The size of the VM snapshot instructions buffer.
+  // The size of the VM snapshot instructions buffer. If
+  // vm_snapshot_instructions is a symbol reference, 0 may be passed here.
   size_t vm_snapshot_instructions_size;
   // The isolate snapshot data buffer used in AOT operation. This buffer must be
   // mapped in as read-only. For more information refer to the documentation on
   // the Wiki at
   // https://github.com/flutter/flutter/wiki/Flutter-engine-operation-in-AOT-Mode
   const uint8_t* isolate_snapshot_data;
-  // The size of the isolate snapshot data buffer.
+  // The size of the isolate snapshot data buffer.  If isolate_snapshot_data is
+  // a symbol reference, 0 may be passed here.
   size_t isolate_snapshot_data_size;
   // The isolate snapshot instructions buffer used in AOT operation. This buffer
   // must be mapped in as read-execute. For more information refer to the
   // documentation on the Wiki at
   // https://github.com/flutter/flutter/wiki/Flutter-engine-operation-in-AOT-Mode
   const uint8_t* isolate_snapshot_instructions;
-  // The size of the isolate snapshot instructions buffer.
+  // The size of the isolate snapshot instructions buffer. If
+  // isolate_snapshot_instructions is a symbol reference, 0 may be passed here.
   size_t isolate_snapshot_instructions_size;
   // The callback invoked by the engine in root isolate scope. Called
   // immediately after the root isolate has been created and marked runnable.
@@ -685,6 +879,41 @@ typedef struct {
   // optional argument allows for the specification of task runner interfaces to
   // event loops managed by the embedder on threads it creates.
   const FlutterCustomTaskRunners* custom_task_runners;
+
+  // All `FlutterEngine` instances in the process share the same Dart VM. When
+  // the first engine is launched, it starts the Dart VM as well. It used to be
+  // the case that it was not possible to shutdown the Dart VM cleanly and start
+  // it back up in the process in a safe manner. This issue has since been
+  // patched. Unfortunately, applications already began to make use of the fact
+  // that shutting down the Flutter engine instance left a running VM in the
+  // process. Since a Flutter engine could be launched on any thread,
+  // applications would "warm up" the VM on another thread by launching
+  // an engine with no isolates and then shutting it down immediately. The main
+  // Flutter application could then be started on the main thread without having
+  // to incur the Dart VM startup costs at that time. With the new behavior,
+  // this "optimization" immediately becomes massive performance pessimization
+  // as the VM would be started up in the "warm up" phase, shut down there and
+  // then started again on the main thread. Changing this behavior was deemed to
+  // be an unacceptable breaking change. Embedders that wish to shutdown the
+  // Dart VM when the last engine is terminated in the process should opt into
+  // this behavior by setting this flag to true.
+  bool shutdown_dart_vm_when_done;
+
+  // Typically, Flutter renders the layer hierarchy into a single root surface.
+  // However, when embedders need to interleave their own contents within the
+  // Flutter layer hierarchy, their applications can push platform views within
+  // the Flutter scene. This is done using the `SceneBuilder.addPlatformView`
+  // call. When this happens, the Flutter rasterizer divides the effective view
+  // hierarchy into multiple layers. Each layer gets its own backing store and
+  // Flutter renders into the same. Once the layers contents have been
+  // fulfilled, the embedder is asked to composite these layers on-screen. At
+  // this point, it can interleave its own contents within the effective
+  // hierarchy. The interface for the specification of these layer backing
+  // stores and the hooks to listen for the composition of layers on-screen can
+  // be controlled using this field. This field is completely optional. In its
+  // absence, platforms views in the scene are ignored and Flutter renders to
+  // the root surface as normal.
+  const FlutterCompositor* compositor;
 } FlutterProjectArgs;
 
 FLUTTER_EXPORT
@@ -692,25 +921,27 @@ FlutterEngineResult FlutterEngineRun(size_t version,
                                      const FlutterRendererConfig* config,
                                      const FlutterProjectArgs* args,
                                      void* user_data,
-                                     FlutterEngine* engine_out);
+                                     FLUTTER_API_SYMBOL(FlutterEngine) *
+                                         engine_out);
 
 FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineShutdown(FlutterEngine engine);
+FlutterEngineResult FlutterEngineShutdown(FLUTTER_API_SYMBOL(FlutterEngine)
+                                              engine);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
-    FlutterEngine engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterWindowMetricsEvent* event);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPointerEvent(
-    FlutterEngine engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPointerEvent* events,
     size_t events_count);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPlatformMessage(
-    FlutterEngine engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPlatformMessage* message);
 
 // Creates a platform message response handle that allows the embedder to set a
@@ -728,7 +959,7 @@ FlutterEngineResult FlutterEngineSendPlatformMessage(
 // call as the third argument.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterPlatformMessageCreateResponseHandle(
-    FlutterEngine engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     FlutterDataCallback data_callback,
     void* user_data,
     FlutterPlatformMessageResponseHandle** response_out);
@@ -737,12 +968,12 @@ FlutterEngineResult FlutterPlatformMessageCreateResponseHandle(
 // |FlutterPlatformMessageCreateResponseHandle|.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterPlatformMessageReleaseResponseHandle(
-    FlutterEngine engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     FlutterPlatformMessageResponseHandle* response);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPlatformMessageResponse(
-    FlutterEngine engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPlatformMessageResponseHandle* handle,
     const uint8_t* data,
     size_t data_length);
@@ -760,19 +991,19 @@ FlutterEngineResult __FlutterEngineFlushPendingTasksNow();
 // |FlutterEngineMarkExternalTextureFrameAvailable|.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineRegisterExternalTexture(
-    FlutterEngine engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     int64_t texture_identifier);
 
 // Unregister a previous texture registration.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineUnregisterExternalTexture(
-    FlutterEngine engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     int64_t texture_identifier);
 
 // Mark that a new texture frame is available for a given texture identifier.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineMarkExternalTextureFrameAvailable(
-    FlutterEngine engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     int64_t texture_identifier);
 
 // Enable or disable accessibility semantics.
@@ -781,19 +1012,20 @@ FlutterEngineResult FlutterEngineMarkExternalTextureFrameAvailable(
 // the |FlutterUpdateSemanticsNodeCallback| registered to
 // |update_semantics_node_callback| in |FlutterProjectArgs|;
 FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineUpdateSemanticsEnabled(FlutterEngine engine,
-                                                        bool enabled);
+FlutterEngineResult FlutterEngineUpdateSemanticsEnabled(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    bool enabled);
 
 // Sets additional accessibility features.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
-    FlutterEngine engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     FlutterAccessibilityFeature features);
 
 // Dispatch a semantics action to the specified semantics node.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineDispatchSemanticsAction(
-    FlutterEngine engine,
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
     uint64_t id,
     FlutterSemanticsAction action,
     const uint8_t* data,
@@ -816,7 +1048,8 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
 //
 // That frame timepoints are in nanoseconds.
 FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
+FlutterEngineResult FlutterEngineOnVsync(FLUTTER_API_SYMBOL(FlutterEngine)
+                                             engine,
                                          intptr_t baton,
                                          uint64_t frame_start_time_nanos,
                                          uint64_t frame_target_time_nanos);
@@ -851,9 +1084,10 @@ void FlutterEngineTraceEventInstant(const char* name);
 // from any thread as long as a |FlutterEngineShutdown| on the specific engine
 // has not already been initiated.
 FLUTTER_EXPORT
-FlutterEngineResult FlutterEnginePostRenderThreadTask(FlutterEngine engine,
-                                                      VoidCallback callback,
-                                                      void* callback_data);
+FlutterEngineResult FlutterEnginePostRenderThreadTask(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    VoidCallback callback,
+    void* callback_data);
 
 // Get the current time in nanoseconds from the clock used by the flutter
 // engine. This is the system monotonic clock.
@@ -865,7 +1099,8 @@ uint64_t FlutterEngineGetCurrentTime();
 // call must only be made at the target time specified in that callback. Running
 // the task before that time is undefined behavior.
 FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineRunTask(FlutterEngine engine,
+FlutterEngineResult FlutterEngineRunTask(FLUTTER_API_SYMBOL(FlutterEngine)
+                                             engine,
                                          const FlutterTask* task);
 
 #if defined(__cplusplus)

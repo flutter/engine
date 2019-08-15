@@ -18,7 +18,7 @@ import 'package:dev_compiler/src/kernel/compiler.dart';
 import 'package:front_end/src/api_unstable/ddc.dart'
     show
         CompilerOptions,
-        kernelForComponent,
+        kernelForModule,
         DiagnosticMessage,
         printDiagnosticMessage,
         Severity;
@@ -63,10 +63,12 @@ Future main(List<String> args) async {
     ..packagesFileUri = Uri.base.resolveUri(Uri.file(packagesPath))
     ..librariesSpecificationUri = Uri.base.resolveUri(Uri.file(librarySpecPath))
     ..target = target
-    ..onDiagnostic = onDiagnostic;
+    ..onDiagnostic = onDiagnostic
+    ..environmentDefines = {};
 
   var inputs = target.extraRequiredLibraries.map(Uri.parse).toList();
-  var component = await kernelForComponent(inputs, options);
+  var compilerResult = await kernelForModule(inputs, options);
+  var component = compilerResult.component;
 
   var outputDir = path.dirname(outputPath);
   await Directory(outputDir).create(recursive: true);
@@ -74,7 +76,7 @@ Future main(List<String> args) async {
 
   var jsModule = ProgramCompiler(
       component,
-      target.hierarchy,
+      compilerResult.classHierarchy,
       SharedCompilerOptions(moduleName: 'dart_sdk'),
       {}).emitModule(component, [], [], {});
   var moduleFormats = {

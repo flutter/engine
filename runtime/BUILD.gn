@@ -28,13 +28,17 @@ source_set("test_font") {
 group("libdart") {
   public_deps = []
 
-  if (flutter_runtime_mode == "profile" || flutter_runtime_mode == "release") {
-    public_deps += [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
-  } else {
-    public_deps += [
-      "$flutter_root/lib/snapshot",
-      "//third_party/dart/runtime:libdart_jit",
-    ]
+  if (!(is_fuchsia && using_fuchsia_sdk)) {
+    if (flutter_runtime_mode == "profile" ||
+        flutter_runtime_mode == "release") {
+      public_deps +=
+          [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
+    } else {
+      public_deps += [
+        "$flutter_root/lib/snapshot",
+        "//third_party/dart/runtime:libdart_jit",
+      ]
+    }
   }
 }
 
@@ -54,12 +58,16 @@ source_set("runtime") {
     "dart_vm_lifecycle.h",
     "embedder_resources.cc",
     "embedder_resources.h",
+    "ptrace_ios.cc",
+    "ptrace_ios.h",
     "runtime_controller.cc",
     "runtime_controller.h",
     "runtime_delegate.cc",
     "runtime_delegate.h",
     "service_protocol.cc",
     "service_protocol.h",
+    "skia_concurrent_executor.cc",
+    "skia_concurrent_executor.h",
     "start_up.cc",
     "start_up.h",
   ]
