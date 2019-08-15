@@ -293,10 +293,15 @@ public class FlutterView extends FrameLayout {
    *
    * This callback is not present in API < 20, which means lower API devices will see
    * the wider than expected padding when the status and navigation bars are hidden.
+   * The annotations to suppress "InlinedApi" and "NewApi" lints prevent lint warnings
+   * caused by usage of Android Q APIs. These calls are safe because they are
+   * guarded.
    */
   @Override
   @TargetApi(20)
   @RequiresApi(20)
+  @SuppressLint("InlinedApi")
+  @SuppressLint("NewApi")
   @NonNull
   public final WindowInsets onApplyWindowInsets(@NonNull WindowInsets insets) {
     WindowInsets newInsets = super.onApplyWindowInsets(insets);

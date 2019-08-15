@@ -547,9 +547,14 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
     // This callback is not present in API < 20, which means lower API devices will see
     // the wider than expected padding when the status and navigation bars are hidden.
+    // The annotations to suppress "InlinedApi" and "NewApi" lints prevent lint warnings
+    // caused by usage of Android Q APIs. These calls are safe because they are
+    // guarded.
     @Override
     @TargetApi(20)
     @RequiresApi(20)
+    @SuppressLint("InlinedApi")
+    @SuppressLint("NewApi")
     public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
         boolean statusBarHidden =
             (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;
