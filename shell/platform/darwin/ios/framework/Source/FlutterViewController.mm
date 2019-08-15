@@ -320,9 +320,9 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     FML_DCHECK(gpuTaskRunner->RunsTasksOnCurrentThread());
     // Get callback on GPU thread and jump back to platform thread.
     platformTaskRunner->PostTask([weakSelf]() {
-      if (weakSelf) {
-        fml::scoped_nsobject<FlutterViewController> flutterViewController(
-            [(FlutterViewController*)weakSelf.get() retain]);
+      fml::scoped_nsobject<FlutterViewController> flutterViewController(
+          [(FlutterViewController*)weakSelf.get() retain]);
+      if (flutterViewController) {
         if (flutterViewController.get()->_splashScreenView) {
           [flutterViewController removeSplashScreenView:^{
             [flutterViewController callViewRenderedCallback];
