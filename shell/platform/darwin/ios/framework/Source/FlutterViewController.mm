@@ -308,39 +308,31 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 }
 
 - (void)installFirstFrameCallback {
-  fml::WeakPtr<flutter::PlatformViewIOS> weak_platform_view = [_engine.get() platformView];
-  if (!weak_platform_view) {
+  fml::WeakPtr<flutter::PlatformViewIOS> weakPlatformView = [_engine.get() platformView];
+  if (!weakPlatformView) {
     return;
   }
 
-  // This is on the platform thread.
-  weak_platform_view->SetNextFrameCallback(
-      [weak_platform_view, platform_task_runner = [_engine.get() platformTaskRunner],
-       gpu_task_runner = [_engine.get() gpuTaskRunner]]() {
-        FML_DCHECK(gpu_task_runner->RunsTasksOnCurrentThread());
-        platform_task_runner->PostTask([weak_platform_view]() {
-          // The weak platform view will have a weak pointer to self, if it is
-          // still alive. We can check if that weak pointer is still valid to
-          // know if we're still alive.
-          if (weak_platform_view) {
-            fml::WeakPtr<FlutterViewController> weak_self =
-                weak_platform_view->GetOwnerViewController();
-            if (!weak_self) {
-              return;
-            }
-            FlutterViewController* flutter_view_controller =
-                [(FlutterViewController*)weak_self.get() retain];
-            if (flutter_view_controller->_splashScreenView) {
-              [flutter_view_controller removeSplashScreenView:^{
-                [flutter_view_controller callViewRenderedCallback];
-              }];
-            } else {
-              [flutter_view_controller callViewRenderedCallback];
-            }
-            [flutter_view_controller release];
-          }
-        });
-      });
+  // Start on the platform thread.
+  weakPlatformView->SetNextFrameCallback([weakSelf = [self getWeakPtr],
+                                          platformTaskRunner = [_engine.get() platformTaskRunner],
+                                          gpuTaskRunner = [_engine.get() GPUTaskRunner]]() {
+    FML_DCHECK(gpuTaskRunner->RunsTasksOnCurrentThread());
+    // Get callback on GPU thread and jump back to platform thread.
+    platformTaskRunner->PostTask([weakSelf]() {
+      if (weakSelf) {
+        fml::scoped_nsobject<FlutterViewController> flutterViewController(
+            [(FlutterViewController*)weakSelf.get() retain]);
+        if (flutterViewController.get()->_splashScreenView) {
+          [flutterViewController removeSplashScreenView:^{
+            [flutterViewController callViewRenderedCallback];
+          }];
+        } else {
+          [flutterViewController callViewRenderedCallback];
+        }
+      }
+    });
+  });
 }
 
 #pragma mark - Properties
