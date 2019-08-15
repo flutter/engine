@@ -5,6 +5,7 @@
 package io.flutter.view;
 
 import android.annotation.TargetApi;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -553,8 +554,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     @Override
     @TargetApi(20)
     @RequiresApi(20)
-    @SuppressLint("InlinedApi")
-    @SuppressLint("NewApi")
+    @SuppressLint({"InlinedApi", "NewApi"})
     public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
         boolean statusBarHidden =
             (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;

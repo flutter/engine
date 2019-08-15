@@ -5,6 +5,7 @@
 package io.flutter.embedding.android;
 
 import android.annotation.TargetApi;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Insets;
@@ -300,8 +301,7 @@ public class FlutterView extends FrameLayout {
   @Override
   @TargetApi(20)
   @RequiresApi(20)
-  @SuppressLint("InlinedApi")
-  @SuppressLint("NewApi")
+  @SuppressLint({"InlinedApi", "NewApi"})
   @NonNull
   public final WindowInsets onApplyWindowInsets(@NonNull WindowInsets insets) {
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
