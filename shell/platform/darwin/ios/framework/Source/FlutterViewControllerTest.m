@@ -108,7 +108,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                                         nibName:nil
                                                                          bundle:nil];
   id mockTraitCollection =
-       [self fakeTraitCollectionWithUserInterfaceStyle:UIUserInterfaceStyleDark];
+      [self fakeTraitCollectionWithUserInterfaceStyle:UIUserInterfaceStyleDark];
 
   // We partially mock the real FlutterViewController to act as the OS and report
   // the UITraitCollection of our choice. Mocking the object under test is not
