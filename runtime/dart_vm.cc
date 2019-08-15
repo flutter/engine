@@ -329,14 +329,14 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
               fml::size(kDartWriteProtectCodeArgs));
 #else
   EnsureDebuggedIOS(settings_);
-#ifdef TARGET_CPU_ARMV7
+#ifdef TARGET_CPU_ARM
   // Tell Dart in JIT mode to not use integer division on armv7
   // Ideally, this would be detected at runtime by Dart.
   // TODO(dnfield): Remove this code
   // https://github.com/dart-lang/sdk/issues/24743
   PushBackAll(&args, kDartDisableIntegerDivisionArgs,
               fml::size(kDartDisableIntegerDivisionArgs));
-#endif  // TARGET_CPU_ARMV7
+#endif  // TARGET_CPU_ARM
 #endif  // !OS_IOS || TARGET_OS_SIMULATOR
 #endif  // (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 
