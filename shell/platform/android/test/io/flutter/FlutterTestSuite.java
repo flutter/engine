@@ -4,10 +4,6 @@
 
 package io.flutter;
 
-import io.flutter.SmokeTest;
-import io.flutter.util.PreconditionsTest;
-import io.flutter.embedding.android.FlutterActivityAndFragmentDelegateTest;
-
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
