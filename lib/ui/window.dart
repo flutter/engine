@@ -928,15 +928,61 @@ class Window {
   /// Flutter spends less than 0.1ms every 1 second to report the timings
   /// (measured on iPhone6S). The 0.1ms is about 0.6% of 16ms (frame budget for
   /// 60fps), or 0.01% CPU usage per second.
+  @Deprecated('Use frameTimingStream instead.')
   TimingsCallback get onReportTimings => _onReportTimings;
   TimingsCallback _onReportTimings;
   Zone _onReportTimingsZone;
+  @Deprecated('Use frameTimingStream instead.')
   set onReportTimings(TimingsCallback callback) {
     if ((callback == null) != (_onReportTimings == null)) {
       _setNeedsReportTimings(callback != null);
     }
     _onReportTimings = callback;
     _onReportTimingsZone = Zone.current;
+  }
+
+  /// Mock the calling of [onReportTimings] for unit tests.
+  void debugReportTimings(List<FrameTiming> timings) {
+    onReportTimings(timings);
+  }
+
+  /// Check whether the engine has to report timings.
+  ///
+  /// This is for unit tests and debug purposes only.
+  bool get debugNeedsReportTimings => onReportTimings != null;
+
+  StreamController<FrameTiming> _frameTimingBroadcastController;
+
+  void _onFrameTimingListen() {
+    onReportTimings = (List<FrameTiming> timings) {
+      timings.forEach(_frameTimingBroadcastController.add);
+    };
+  }
+
+  // If there's no one listening, set [onReportTimings] back to null so the
+  // engine won't send [FrameTiming] from engine to the framework.
+  void _onFrameTimingCancel() {
+      onReportTimings = null;
+  }
+
+  /// A broadcast stream of the frames' time-related performance metrics.
+  ///
+  /// It's recommended to listen to this stream instead of overriding
+  /// [Window.onReportTimings] directly because the latter may accidentally
+  /// break other listeners or callbacks.
+  ///
+  /// See also:
+  ///
+  ///  * [FrameTiming], the data event of this stream
+  ///  * [onReportTimings], the low level callback that this stream and the
+  ///    Flutter engine use. It's recommended to use this stream instead of
+  ///    overriding [onReportTimings] directly.
+  Stream<FrameTiming> get frameTimingStream {
+    _frameTimingBroadcastController ??= StreamController<FrameTiming>.broadcast(
+      onListen: _onFrameTimingListen,
+      onCancel: _onFrameTimingCancel,
+    );
+    return _frameTimingBroadcastController.stream;
   }
 
   _SetNeedsReportTimingsFunc _setNeedsReportTimings;
