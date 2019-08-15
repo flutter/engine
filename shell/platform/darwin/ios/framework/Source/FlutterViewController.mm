@@ -328,13 +328,16 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
             if (!weak_self) {
               return;
             }
-            if (weak_self.get()->_splashScreenView) {
-              [weak_self.get() removeSplashScreenView:^{
-                [weak_self.get() callViewRenderedCallback];
+            FlutterViewController* flutter_view_controller =
+                [(FlutterViewController*)weak_self.get() retain];
+            if (flutter_view_controller->_splashScreenView) {
+              [flutter_view_controller removeSplashScreenView:^{
+                [flutter_view_controller callViewRenderedCallback];
               }];
             } else {
-              [weak_self.get() callViewRenderedCallback];
+              [flutter_view_controller callViewRenderedCallback];
             }
+            [flutter_view_controller release];
           }
         });
       });
