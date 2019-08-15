@@ -12,12 +12,14 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
+import android.support.annotation.VisibleForTesting;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
@@ -275,15 +277,17 @@ public class FlutterJNI {
 
   // Called by native to notify first Flutter frame rendered.
   @SuppressWarnings("unused")
+  @VisibleForTesting
   @UiThread
-  private void onFirstFrame() {
+  protected void onFirstFrame() {
     ensureRunningOnMainThread();
     if (renderSurface != null) {
       renderSurface.onFirstFrameRendered();
     }
     // TODO(mattcarroll): log dropped messages when in debug mode (https://github.com/flutter/flutter/issues/25391)
-
-    for (OnFirstFrameRenderedListener listener : firstFrameListeners) {
+    CopyOnWriteArrayList<OnFirstFrameRenderedListener> mutableListeners =
+        new CopyOnWriteArrayList<>(firstFrameListeners);
+    for (OnFirstFrameRenderedListener listener : mutableListeners) {
       listener.onFirstFrameRendered();
     }
   }
