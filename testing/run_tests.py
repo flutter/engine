@@ -117,7 +117,7 @@ def RunEngineBenchmarks(build_dir, filter):
 
 
 
-def SnapshotTest(build_dir, dart_file, kernel_file_output):
+def SnapshotTest(build_dir, dart_file, kernel_file_output, no_verbose):
   print "Generating snapshot for test %s" % dart_file
 
   dart = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart')
@@ -145,15 +145,19 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output):
     dart_file
   ]
 
-  subprocess.check_call(snapshot_command, cwd=buildroot_dir)
+  if (no_verbose):
+    with open(os.devnull,"w") as out_file:
+      subprocess.check_call(snapshot_command, cwd=buildroot_dir, stdout=out_file)
+  else:
+    subprocess.check_call(snapshot_command, cwd=buildroot_dir)
   assert os.path.exists(kernel_file_output)
 
 
-def RunDartTest(build_dir, dart_file):
+def RunDartTest(build_dir, dart_file, no_verbose):
   kernel_file_name = os.path.basename(dart_file) + '.kernel.dill'
   kernel_file_output = os.path.join(out_dir, kernel_file_name)
 
-  SnapshotTest(build_dir, dart_file, kernel_file_output)
+  SnapshotTest(build_dir, dart_file, kernel_file_output, no_verbose)
 
   print "Running test '%s' using 'flutter_tester'" % kernel_file_name
   RunEngineExecutable(build_dir, 'flutter_tester', None, [
@@ -248,7 +252,7 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
 
   return subprocess.check_call(command)
 
-def RunDartTests(build_dir, filter):
+def RunDartTests(build_dir, filter, no_verbose):
   # This one is a bit messy. The pubspec.yaml at flutter/testing/dart/pubspec.yaml
   # has dependencies that are hardcoded to point to the sky packages at host_debug_unopt/
   # Before running Dart tests, make sure to run just that target (NOT the whole engine)
@@ -264,7 +268,7 @@ def RunDartTests(build_dir, filter):
       print "Skipping %s due to filter." % dart_test_file
     else:
       print "Testing dart file %s" % dart_test_file
-      RunDartTest(build_dir, dart_test_file)
+      RunDartTest(build_dir, dart_test_file, no_verbose)
 
 def main():
   parser = argparse.ArgumentParser();
@@ -281,6 +285,8 @@ def main():
   parser.add_argument('--android-variant', dest='android_variant', action='store',
       default='android_debug_unopt',
       help='The engine build variant to run java tests for')
+  parser.add_argument('--no-verbose', dest='no_verbose', action='store_true',
+      default=False, help='If set, extra verbose logging will be redirect to null device.')
 
   args = parser.parse_args()
 
@@ -300,7 +306,7 @@ def main():
   if 'dart' in types:
     assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
-    RunDartTests(build_dir, dart_filter)
+    RunDartTests(build_dir, dart_filter, args.no_verbose)
 
   if 'java' in types:
     assert not IsWindows(), "Android engine files can't be compiled on Windows."
