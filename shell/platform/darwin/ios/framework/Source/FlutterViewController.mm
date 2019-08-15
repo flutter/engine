@@ -32,6 +32,8 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @end
 
+// The following conditional compilation defines an API 13 concept on earlier API targets so that
+// a compiler compiling against API 12 or below does not blow up due to non-existent members.
 #if __IPHONE_OS_VERSION_MAX_ALLOWED < 130000
 typedef enum UIAccessibilityContrast : NSInteger {
   UIAccessibilityContrastUnspecified = 0,
@@ -39,7 +41,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   UIAccessibilityContrastHigh = 2
 } UIAccessibilityContrast;
 
-@interface UITraitCollection (AccessibilityContrastApi)
+@interface UITraitCollection (MethodsFromNewerSDK)
 - (UIAccessibilityContrast)accessibilityContrast;
 @end
 #endif
@@ -984,6 +986,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   return [dateFormat rangeOfString:@"a"].location == NSNotFound;
 }
 
+// The brightness mode of the platform, e.g., light or dark, expressed as a string that
+// is understood by the Flutter framework. See the settings system channel for more
+// information.
 - (NSString*)brightnessMode {
   if (@available(iOS 13, *)) {
     UIUserInterfaceStyle style = self.traitCollection.userInterfaceStyle;
@@ -998,6 +1003,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 }
 
+// The contrast mode of the platform, e.g., normal or high, expressed as a string that is
+// understood by the Flutter framework. See the settings system channel for more
+// information.
 - (NSString*)contrastMode {
   if (@available(iOS 13, *)) {
     UIAccessibilityContrast contrast = self.traitCollection.accessibilityContrast;

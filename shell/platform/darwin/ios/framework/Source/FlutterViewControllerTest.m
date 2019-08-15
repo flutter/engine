@@ -15,6 +15,8 @@
 @interface FlutterViewControllerTest : XCTestCase
 @end
 
+// The following conditional compilation defines an API 13 concept on earlier API targets so that
+// a compiler compiling against API 12 or below does not blow up due to non-existent members.
 #if __IPHONE_OS_VERSION_MAX_ALLOWED < 130000
 typedef enum UIAccessibilityContrast : NSInteger {
   UIAccessibilityContrastUnspecified = 0,
@@ -22,7 +24,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   UIAccessibilityContrastHigh = 2
 } UIAccessibilityContrast;
 
-@interface UITraitCollection (AccessibilityContrastApi)
+@interface UITraitCollection (MethodsFromNewerSDK)
 - (UIAccessibilityContrast)accessibilityContrast;
 @end
 #endif
@@ -105,7 +107,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
                                                                         nibName:nil
                                                                          bundle:nil];
-  id mockTraitCollection = [self setupFakeUserInterfaceStyle:UIUserInterfaceStyleDark];
+  id mockTraitCollection = [self fakeTraitCollectionWithUserInterfaceStyle:UIUserInterfaceStyleDark];
 
   // We partially mock the real FlutterViewController to act as the OS and report
   // the UITraitCollection of our choice. Mocking the object under test is not
@@ -129,9 +131,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [mockTraitCollection stopMocking];
 }
 
-- (UITraitCollection*)setupFakeUserInterfaceStyle:(UIUserInterfaceStyle)style {
+// Creates a mocked UITraitCollection with nil values for everything except userInterfaceStyle,
+// which is set to the given "style".
+- (UITraitCollection*)fakeTraitCollectionWithUserInterfaceStyle:(UIUserInterfaceStyle)style {
   id mockTraitCollection = OCMClassMock([UITraitCollection class]);
-  OCMStub([mockTraitCollection userInterfaceStyle]).andReturn(UIUserInterfaceStyleDark);
+  OCMStub([mockTraitCollection userInterfaceStyle]).andReturn(style);
   return mockTraitCollection;
 }
 
@@ -207,7 +211,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
                                                                         nibName:nil
                                                                          bundle:nil];
-  id mockTraitCollection = [self setupFakeTraitCollectionWithContrast:UIAccessibilityContrastHigh];
+  id mockTraitCollection = [self fakeTraitCollectionWithContrast:UIAccessibilityContrastHigh];
 
   // We partially mock the real FlutterViewController to act as the OS and report
   // the UITraitCollection of our choice. Mocking the object under test is not
@@ -231,9 +235,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [mockTraitCollection stopMocking];
 }
 
-- (UITraitCollection*)setupFakeTraitCollectionWithContrast:(UIAccessibilityContrast)contrast {
+// Creates a mocked UITraitCollection with nil values for everything except accessibilityContrast,
+// which is set to the given "contrast".
+- (UITraitCollection*)fakeTraitCollectionWithContrast:(UIAccessibilityContrast)contrast {
   id mockTraitCollection = OCMClassMock([UITraitCollection class]);
-  OCMStub([mockTraitCollection accessibilityContrast]).andReturn(UIAccessibilityContrastHigh);
+  OCMStub([mockTraitCollection accessibilityContrast]).andReturn(contrast);
   return mockTraitCollection;
 }
 
