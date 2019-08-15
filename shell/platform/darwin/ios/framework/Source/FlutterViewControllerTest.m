@@ -22,7 +22,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   UIAccessibilityContrastHigh = 2
 } UIAccessibilityContrast;
 
-@interface UITraitCollection(AccessibilityContrastApi)
+@interface UITraitCollection (AccessibilityContrastApi)
 - (UIAccessibilityContrast)accessibilityContrast;
 @end
 #endif
@@ -95,7 +95,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   if (!@available(iOS 13, *)) {
     return;
   }
-  
+
   // Setup test.
   id engine = OCMClassMock([FlutterEngine class]);
 

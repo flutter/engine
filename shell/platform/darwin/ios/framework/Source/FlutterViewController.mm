@@ -39,7 +39,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   UIAccessibilityContrastHigh = 2
 } UIAccessibilityContrast;
 
-@interface UITraitCollection(AccessibilityContrastApi)
+@interface UITraitCollection (AccessibilityContrastApi)
 - (UIAccessibilityContrast)accessibilityContrast;
 @end
 #endif
