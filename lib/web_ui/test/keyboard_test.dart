@@ -1,4 +1,4 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2019 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -20,11 +20,11 @@ void main() {
 
     test('dispatches keyup to flutter/keyevent channel', () {
       String channelReceived;
-      Map dataReceived;
+      Map<String, dynamic> dataReceived;
       ui.window.onPlatformMessage = (String channel, ByteData data,
           ui.PlatformMessageResponseCallback callback) {
         channelReceived = channel;
-        dataReceived = JSONMessageCodec().decodeMessage(data);
+        dataReceived = const JSONMessageCodec().decodeMessage(data);
       };
 
       html.window.dispatchEvent(html.KeyboardEvent('keyup'));
@@ -42,11 +42,11 @@ void main() {
 
     test('dispatches keydown to flutter/keyevent channel', () {
       String channelReceived;
-      Map dataReceived;
+      Map<String, dynamic> dataReceived;
       ui.window.onPlatformMessage = (String channel, ByteData data,
           ui.PlatformMessageResponseCallback callback) {
         channelReceived = channel;
-        dataReceived = JSONMessageCodec().decodeMessage(data);
+        dataReceived = const JSONMessageCodec().decodeMessage(data);
       };
 
       html.window.dispatchEvent(html.KeyboardEvent('keydown'));
