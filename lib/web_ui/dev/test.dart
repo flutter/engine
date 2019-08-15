@@ -1,4 +1,4 @@
-// Copyright 2019 The Chromium Authors. All rights reserved.
+// Copyright 2019 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -17,7 +17,60 @@ void main() async {
     io.exit(1);
   }
 
+  await _checkLicenseHeaders();
   await _runTests();
+}
+
+void _checkLicenseHeaders() {
+  final List<io.File> allSourceFiles = _flatListSourceFiles(environment.webUiRootDir);
+  _expect(allSourceFiles.isNotEmpty, 'Dart source listing of ${environment.webUiRootDir.path} must not be empty.');
+
+  final List<String> allDartPaths = allSourceFiles.map((f) => f.path).toList();
+  print(allDartPaths.join('\n'));
+
+  for (String expectedDirectory in const <String>['lib', 'test', 'dev', 'tool']) {
+    final String expectedAbsoluteDirectory = pathlib.join(environment.webUiRootDir.path, expectedDirectory);
+    _expect(
+      allDartPaths.where((p) => p.startsWith(expectedAbsoluteDirectory)).isNotEmpty,
+      'Must include the $expectedDirectory/ directory',
+    );
+  }
+
+  allSourceFiles.forEach(_expectLicenseHeader);
+}
+
+final _copyRegex = RegExp(r'// Copyright \d\d\d\d The Flutter Authors\. All rights reserved\.');
+
+void _expectLicenseHeader(io.File file) {
+  List<String> head = file.readAsStringSync().split('\n').take(3).toList();
+
+  _expect(head.length >= 3, 'File too short: ${file.path}');
+  _expect(
+    _copyRegex.firstMatch(head[0]) != null,
+    'Invalid first line of license header in file ${file.path}',
+  );
+  _expect(
+    head[1] == '// Use of this source code is governed by a BSD-style license that can be',
+    'Invalid second line of license header in file ${file.path}',
+  );
+  _expect(
+    head[2] == '// found in the LICENSE file.',
+    'Invalid second line of license header in file ${file.path}',
+  );
+}
+
+void _expect(bool value, String requirement) {
+  if (!value) {
+    throw Exception('Test failed: ${requirement}');
+  }
+}
+
+List<io.File> _flatListSourceFiles(io.Directory directory) {
+  return directory
+      .listSync(recursive: true)
+      .whereType<io.File>()
+      .where((f) => f.path.endsWith('.dart') || f.path.endsWith('.js'))
+      .toList();
 }
 
 Future<void> _runTests() async {
