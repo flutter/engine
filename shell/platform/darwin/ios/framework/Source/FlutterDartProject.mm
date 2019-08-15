@@ -140,14 +140,6 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 
   settings.dart_library_sources_kernel =
       make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
-
-  // Tell Dart in JIT mode to not use integer division on armv7
-  // Ideally, this would be detected at runtime by Dart.
-  // TODO(dnfield): Remove this code  https://github.com/dart-lang/sdk/issues/24743
-#ifdef TARGET_CPU_ARMV7
-  settings.dart_flags.push_back("--no-use-integer-division");
-#endif // TARGET_CPU_ARMV7
-
 #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
   return settings;
