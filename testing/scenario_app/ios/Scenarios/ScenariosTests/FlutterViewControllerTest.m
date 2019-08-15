@@ -58,25 +58,24 @@
   self.flutterViewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                      nibName:nil
                                                                       bundle:nil];
-  
+
   XCTAssertFalse(self.flutterViewController.isDisplayingFlutterUI);
-  
+
   XCTestExpectation* displayingFlutterUIExpectation =
-  [self keyValueObservingExpectationForObject:self.flutterViewController
-                                      keyPath:@"displayingFlutterUI"
-                                expectedValue:@YES];
+      [self keyValueObservingExpectationForObject:self.flutterViewController
+                                          keyPath:@"displayingFlutterUI"
+                                    expectedValue:@YES];
   displayingFlutterUIExpectation.assertForOverFulfill = YES;
-  
+
   [self.flutterViewController setFlutterViewDidRenderCallback:^{
     [firstFrameRendered fulfill];
   }];
-  
+
   AppDelegate* appDelegate = (AppDelegate*)UIApplication.sharedApplication.delegate;
   UIViewController* rootVC = appDelegate.window.rootViewController;
   [rootVC presentViewController:self.flutterViewController animated:NO completion:nil];
-  
-  [self waitForExpectationsWithTimeout:30.0 handler:nil];
 
+  [self waitForExpectationsWithTimeout:30.0 handler:nil];
 }
 
 @end
