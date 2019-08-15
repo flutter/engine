@@ -107,7 +107,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
   FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
                                                                         nibName:nil
                                                                          bundle:nil];
-  id mockTraitCollection = [self fakeTraitCollectionWithUserInterfaceStyle:UIUserInterfaceStyleDark];
+  id mockTraitCollection =
+       [self fakeTraitCollectionWithUserInterfaceStyle:UIUserInterfaceStyleDark];
 
   // We partially mock the real FlutterViewController to act as the OS and report
   // the UITraitCollection of our choice. Mocking the object under test is not
