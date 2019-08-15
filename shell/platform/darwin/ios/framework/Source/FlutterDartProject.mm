@@ -6,10 +6,6 @@
 
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 
-#include <mach/machine.h>
-#include <sys/sysctl.h>
-#include <sys/types.h>
-
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -148,14 +144,10 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   // Tell Dart in JIT mode to not use integer division on armv7
   // Ideally, this would be detected at runtime by Dart.
   // TODO(dnfield): Remove this code  https://github.com/dart-lang/sdk/issues/24743
-  size_t size;
-  cpu_type_t type;
+#ifdef TARGET_CPU_ARMV7
+  settings.dart_flags.push_back("--no-use-integer-division");
+#endif // TARGET_CPU_ARMV7
 
-  size = sizeof(type);
-  sysctlbyname("hw.cputype", &type, &size, NULL, 0);
-  if (type == CPU_TYPE_ARM) {
-    settings.dart_flags.push_back("--no-use-integer-division");
-  }
 #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
   return settings;

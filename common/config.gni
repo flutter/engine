@@ -58,3 +58,7 @@ if (is_fuchsia && using_fuchsia_sdk) {
 if ((is_ios || is_mac) && defined(enable_bitcode)) {
   flutter_enable_bitcode = enable_bitcode
 }
+
+if (target_cpu == "arm") {
+  feature_defines_list += [ "TARGET_CPU_ARMV7=1" ]
+}
