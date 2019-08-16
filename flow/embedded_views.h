@@ -233,6 +233,11 @@ class ExternalViewEmbedder {
 
 };  // ExternalViewEmbedder
 
+class PlatformScreenShotProvider {
+ public:
+  virtual sk_sp<SkImage> TakeScreenShot() = 0;
+};  // PlatformScreenShotProvider
+
 }  // namespace flutter
 
 #endif  // FLUTTER_FLOW_EMBEDDED_VIEWS_H_

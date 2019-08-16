@@ -58,6 +58,8 @@ class GPUSurfaceSoftwareDelegate {
   ///             into a single on-screen surface.
   ///
   virtual ExternalViewEmbedder* GetExternalViewEmbedder() = 0;
+
+  virtual flutter::PlatformScreenShotProvider* GetScreenShotProvider() = 0;
 };
 
 }  // namespace flutter

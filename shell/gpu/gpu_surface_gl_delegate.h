@@ -46,6 +46,8 @@ class GPUSurfaceGLDelegate {
   // thread that the renderer is operating on.
   virtual ExternalViewEmbedder* GetExternalViewEmbedder() = 0;
 
+  virtual flutter::PlatformScreenShotProvider* GetScreenShotProvider() = 0;
+
   sk_sp<const GrGLInterface> GetGLInterface() const;
 
   // TODO(chinmaygarde): The presence of this method is to work around the fact

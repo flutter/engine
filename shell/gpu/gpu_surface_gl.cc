@@ -345,6 +345,11 @@ flutter::ExternalViewEmbedder* GPUSurfaceGL::GetExternalViewEmbedder() {
 }
 
 // |Surface|
+flutter::PlatformScreenShotProvider* GPUSurfaceGL::GetScreenShotProvider() {
+  return delegate_->GetScreenShotProvider();
+}
+
+// |Surface|
 bool GPUSurfaceGL::MakeRenderContextCurrent() {
   return delegate_->GLContextMakeCurrent();
 }

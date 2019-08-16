@@ -91,6 +91,8 @@ shared_library("create_flutter_framework_dylib") {
     "ios_surface_gl.mm",
     "ios_surface_software.h",
     "ios_surface_software.mm",
+    "ios_screenshot_provider.h",
+    "ios_screenshot_provider.mm",
     "platform_view_ios.h",
     "platform_view_ios.mm",
   ]

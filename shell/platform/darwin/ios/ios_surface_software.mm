@@ -135,6 +135,14 @@ ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
   }
 }
 
+flutter::PlatformScreenShotProvider* IOSSurfaceSoftware::GetScreenShotProvider() {
+  if (IsIosEmbeddedViewsPreviewEnabled()) {
+    return this;
+  } else {
+    return nullptr;
+  }
+}
+
 // |ExternalViewEmbedder|
 sk_sp<SkSurface> IOSSurfaceSoftware::GetRootSurface() {
   // On iOS, the root surface is created using a managed allocation that is submitted to the
@@ -185,6 +193,17 @@ bool IOSSurfaceSoftware::SubmitFrame(GrContext* context) {
     return true;
   }
   return platform_views_controller->SubmitFrame(false, nullptr, nullptr);
+}
+
+// |flutter::PlatformScreenShotProvider|
+sk_sp<SkImage> IOSSurfaceSoftware::TakeScreenShot() {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  if (platform_views_controller == nullptr) {
+    return nullptr;
+  }
+  UIView* flutter_view = platform_views_controller->GetFlutterView();
+  FML_CHECK(flutter_view != nil);
+  return TakeScreenShotForView(flutter_view);
 }
 
 }  // namespace flutter

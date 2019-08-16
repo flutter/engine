@@ -60,6 +60,10 @@ flutter::ExternalViewEmbedder* Surface::GetExternalViewEmbedder() {
   return nullptr;
 }
 
+flutter::PlatformScreenShotProvider* Surface::GetScreenShotProvider() {
+  return nullptr;
+}
+
 bool Surface::MakeRenderContextCurrent() {
   return true;
 }

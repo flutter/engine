@@ -58,6 +58,8 @@ class Surface {
 
   virtual flutter::ExternalViewEmbedder* GetExternalViewEmbedder();
 
+  virtual flutter::PlatformScreenShotProvider* GetScreenShotProvider();
+
   virtual bool MakeRenderContextCurrent();
 
  private:

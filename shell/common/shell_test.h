@@ -102,6 +102,9 @@ class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
   // |GPUSurfaceGLDelegate|
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
+  // |GPUSurfaceGLDelegate|
+  PlatformScreenShotProvider* GetScreenShotProvider() override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
 };
 

@@ -33,6 +33,9 @@ class GPUSurfaceSoftware : public Surface {
   // |Surface|
   flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
+  // |Surface|
+  flutter::PlatformScreenShotProvider* GetScreenShotProvider() override;
+
  private:
   GPUSurfaceSoftwareDelegate* delegate_;
   fml::WeakPtrFactory<GPUSurfaceSoftware> weak_factory_;

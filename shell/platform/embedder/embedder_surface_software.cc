@@ -111,4 +111,9 @@ ExternalViewEmbedder* EmbedderSurfaceSoftware::GetExternalViewEmbedder() {
   return external_view_embedder_.get();
 }
 
+// |GPUSurfaceSoftwareDelegate|
+PlatformScreenShotProvider* EmbedderSurfaceSoftware::GetScreenShotProvider() {
+  return nullptr;
+}
+
 }  // namespace flutter

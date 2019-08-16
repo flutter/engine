@@ -80,4 +80,9 @@ flutter::ExternalViewEmbedder* GPUSurfaceSoftware::GetExternalViewEmbedder() {
   return delegate_->GetExternalViewEmbedder();
 }
 
+flutter::PlatformScreenShotProvider*
+GPUSurfaceSoftware::GetScreenShotProvider() {
+  return delegate_->GetScreenShotProvider();
+}
+
 }  // namespace flutter

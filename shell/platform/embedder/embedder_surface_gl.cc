@@ -111,4 +111,9 @@ sk_sp<GrContext> EmbedderSurfaceGL::CreateResourceContext() const {
   return nullptr;
 }
 
+// |GPUSurfaceGLDelegate|
+PlatformScreenShotProvider* EmbedderSurfaceGL::GetScreenShotProvider() {
+  return nullptr;
+}
+
 }  // namespace flutter

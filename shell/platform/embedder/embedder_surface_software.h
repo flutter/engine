@@ -50,6 +50,9 @@ class EmbedderSurfaceSoftware final : public EmbedderSurface,
   // |GPUSurfaceSoftwareDelegate|
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
+  // |GPUSurfaceSoftwareDelegate|
+  PlatformScreenShotProvider* GetScreenShotProvider() override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceSoftware);
 };
 

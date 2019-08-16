@@ -73,6 +73,9 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   // |GPUSurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;
 
+  // |GPUSurfaceGLDelegate|
+  PlatformScreenShotProvider* GetScreenShotProvider() override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceGL);
 };
 

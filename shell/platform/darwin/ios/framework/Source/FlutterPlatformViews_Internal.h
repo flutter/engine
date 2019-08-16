@@ -71,6 +71,8 @@ class FlutterPlatformViewsController {
 
   ~FlutterPlatformViewsController();
 
+  UIView* GetFlutterView();
+
   void SetFlutterView(UIView* flutter_view);
 
   void SetFlutterViewController(UIViewController* flutter_view_controller);

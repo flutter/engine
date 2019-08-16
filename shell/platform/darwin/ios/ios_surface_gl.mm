@@ -91,6 +91,14 @@ flutter::ExternalViewEmbedder* IOSSurfaceGL::GetExternalViewEmbedder() {
 }
 
 // |ExternalViewEmbedder|
+flutter::PlatformScreenShotProvider* IOSSurfaceGL::GetScreenShotProvider() {
+  if (IsIosEmbeddedViewsPreviewEnabled()) {
+    return this;
+  } else {
+    return nullptr;
+  }
+}
+
 void IOSSurfaceGL::CancelFrame() {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
@@ -149,6 +157,16 @@ bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
   bool submitted = platform_views_controller->SubmitFrame(true, std::move(context), context_);
   [CATransaction commit];
   return submitted;
+}
+
+sk_sp<SkImage> IOSSurfaceGL::TakeScreenShot() {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  if (platform_views_controller == nullptr) {
+    return nullptr;
+  }
+  UIView* flutter_view = platform_views_controller->GetFlutterView();
+  FML_CHECK(flutter_view != nil);
+  return TakeScreenShotForView(flutter_view);
 }
 
 }  // namespace flutter

@@ -18,6 +18,10 @@
 
 namespace flutter {
 
+UIView* FlutterPlatformViewsController::GetFlutterView() {
+  return flutter_view_.get();
+}
+
 void FlutterPlatformViewsController::SetFlutterView(UIView* flutter_view) {
   flutter_view_.reset([flutter_view retain]);
 }

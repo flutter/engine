@@ -321,37 +321,43 @@ static sk_sp<SkSurface> CreateSnapshotSurface(GrContext* surface_context,
   return SkSurface::MakeRaster(image_info);
 }
 
-static sk_sp<SkData> ScreenshotLayerTreeAsImage(
+sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     flutter::LayerTree* tree,
     flutter::CompositorContext& compositor_context,
     GrContext* surface_context,
     bool compressed) {
-  // Attempt to create a snapshot surface depending on whether we have access to
-  // a valid GPU rendering context.
-  auto snapshot_surface =
-      CreateSnapshotSurface(surface_context, tree->frame_size());
-  if (snapshot_surface == nullptr) {
-    FML_LOG(ERROR) << "Screenshot: unable to create snapshot surface";
-    return nullptr;
+  // Prepare an image from the surface, this image may potentially be on the
+  // GPU.
+  sk_sp<SkImage> potentially_gpu_snapshot;
+  const auto screen_shot_provider = surface_->GetScreenShotProvider();
+  if (screen_shot_provider != nullptr) {
+    potentially_gpu_snapshot = screen_shot_provider->TakeScreenShot();
+  } else {
+    // Attempt to create a snapshot surface depending on whether we have access
+    // to a valid GPU rendering context.
+    auto snapshot_surface =
+        CreateSnapshotSurface(surface_context, tree->frame_size());
+    if (snapshot_surface == nullptr) {
+      return nullptr;
+    }
+
+    // Draw the current layer tree into the snapshot surface.
+    auto* canvas = snapshot_surface->getCanvas();
+
+    // There is no root surface transformation for the screenshot layer. Reset
+    // the matrix to identity.
+    SkMatrix root_surface_transformation;
+    root_surface_transformation.reset();
+
+    auto frame = compositor_context.AcquireFrame(
+        surface_context, canvas, nullptr, root_surface_transformation, false,
+        nullptr);
+    canvas->clear(SK_ColorTRANSPARENT);
+    frame->Raster(*tree, true);
+    canvas->flush();
+    potentially_gpu_snapshot = snapshot_surface->makeImageSnapshot();
   }
 
-  // Draw the current layer tree into the snapshot surface.
-  auto* canvas = snapshot_surface->getCanvas();
-
-  // There is no root surface transformation for the screenshot layer. Reset the
-  // matrix to identity.
-  SkMatrix root_surface_transformation;
-  root_surface_transformation.reset();
-
-  auto frame = compositor_context.AcquireFrame(surface_context, canvas, nullptr,
-                                               root_surface_transformation,
-                                               false, nullptr);
-  canvas->clear(SK_ColorTRANSPARENT);
-  frame->Raster(*tree, true);
-  canvas->flush();
-
-  // Prepare an image from the surface, this image may potentially be on th GPU.
-  auto potentially_gpu_snapshot = snapshot_surface->makeImageSnapshot();
   if (!potentially_gpu_snapshot) {
     FML_LOG(ERROR) << "Screenshot: unable to make image screenshot";
     return nullptr;
