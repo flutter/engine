@@ -408,13 +408,13 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  BackdropFilterEngineLayer pushBackdropFilter(ImageFilter filter, { BackdropFilterEngineLayer oldLayer }) {
+  BackdropFilterEngineLayer pushBackdropFilter(ImageFilter filter, { bool isDynamic = true, BackdropFilterEngineLayer oldLayer }) {
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushBackdropFilter'));
-    final BackdropFilterEngineLayer layer = BackdropFilterEngineLayer._(_pushBackdropFilter(filter));
+    final BackdropFilterEngineLayer layer = BackdropFilterEngineLayer._(_pushBackdropFilter(filter, isDynamic, oldLayer?._nativeLayer));
     assert(_debugPushLayer(layer));
     return layer;
   }
-  EngineLayer _pushBackdropFilter(ImageFilter filter) native 'SceneBuilder_pushBackdropFilter';
+  EngineLayer _pushBackdropFilter(ImageFilter filter, bool isDynamic, EngineLayer oldLayer) native 'SceneBuilder_pushBackdropFilter';
 
   /// Pushes a shader mask operation onto the operation stack.
   ///

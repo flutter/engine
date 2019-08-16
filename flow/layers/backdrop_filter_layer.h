@@ -16,10 +16,15 @@ class BackdropFilterLayer : public ContainerLayer {
   BackdropFilterLayer(sk_sp<SkImageFilter> filter);
   ~BackdropFilterLayer() override;
 
+  void initRetained(std::shared_ptr<Layer> retainedLayer);
+
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+
   void Paint(PaintContext& context) const override;
 
  private:
   sk_sp<SkImageFilter> filter_;
+  std::shared_ptr<Layer> retainedBackdrop_ = nullptr;
 
   FML_DISALLOW_COPY_AND_ASSIGN(BackdropFilterLayer);
 };

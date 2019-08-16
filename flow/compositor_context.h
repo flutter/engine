@@ -40,6 +40,7 @@ class CompositorContext {
   class ScopedFrame {
    public:
     ScopedFrame(CompositorContext& context,
+                SkSurface* surface,
                 GrContext* gr_context,
                 SkCanvas* canvas,
                 ExternalViewEmbedder* view_embedder,
@@ -48,6 +49,8 @@ class CompositorContext {
                 fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger);
 
     virtual ~ScopedFrame();
+
+    SkSurface* surface() { return surface_; }
 
     SkCanvas* canvas() { return canvas_; }
 
@@ -66,6 +69,7 @@ class CompositorContext {
 
    private:
     CompositorContext& context_;
+    SkSurface* surface_;
     GrContext* gr_context_;
     SkCanvas* canvas_;
     ExternalViewEmbedder* view_embedder_;
@@ -81,6 +85,7 @@ class CompositorContext {
   virtual ~CompositorContext();
 
   virtual std::unique_ptr<ScopedFrame> AcquireFrame(
+      SkSurface* surface,
       GrContext* gr_context,
       SkCanvas* canvas,
       ExternalViewEmbedder* view_embedder,

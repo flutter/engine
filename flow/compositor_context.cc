@@ -31,6 +31,7 @@ void CompositorContext::EndFrame(ScopedFrame& frame,
 }
 
 std::unique_ptr<CompositorContext::ScopedFrame> CompositorContext::AcquireFrame(
+    SkSurface* surface,
     GrContext* gr_context,
     SkCanvas* canvas,
     ExternalViewEmbedder* view_embedder,
@@ -38,12 +39,13 @@ std::unique_ptr<CompositorContext::ScopedFrame> CompositorContext::AcquireFrame(
     bool instrumentation_enabled,
     fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
   return std::make_unique<ScopedFrame>(
-      *this, gr_context, canvas, view_embedder, root_surface_transformation,
+      *this, surface, gr_context, canvas, view_embedder, root_surface_transformation,
       instrumentation_enabled, gpu_thread_merger);
 }
 
 CompositorContext::ScopedFrame::ScopedFrame(
     CompositorContext& context,
+    SkSurface* surface,
     GrContext* gr_context,
     SkCanvas* canvas,
     ExternalViewEmbedder* view_embedder,
@@ -51,6 +53,7 @@ CompositorContext::ScopedFrame::ScopedFrame(
     bool instrumentation_enabled,
     fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger)
     : context_(context),
+      surface_(surface),
       gr_context_(gr_context),
       canvas_(canvas),
       view_embedder_(view_embedder),

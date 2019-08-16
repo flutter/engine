@@ -245,6 +245,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
                                  : frame->SkiaCanvas();
 
   auto compositor_frame = compositor_context_->AcquireFrame(
+      frame->SkiaSurface().get(),   // skia surface
       surface_->GetContext(),       // skia GrContext
       root_surface_canvas,          // root surface canvas
       external_view_embedder,       // external view embedder
@@ -293,7 +294,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
   // TODO(amirh): figure out how to take a screenshot with embedded UIView.
   // https://github.com/flutter/flutter/issues/23435
   auto frame = compositor_context.AcquireFrame(
-      nullptr, recorder.getRecordingCanvas(), nullptr,
+      nullptr, nullptr, recorder.getRecordingCanvas(), nullptr,
       root_surface_transformation, false, nullptr);
 
   frame->Raster(*tree, true);
@@ -344,7 +345,8 @@ static sk_sp<SkData> ScreenshotLayerTreeAsImage(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
-  auto frame = compositor_context.AcquireFrame(surface_context, canvas, nullptr,
+  auto frame = compositor_context.AcquireFrame(snapshot_surface.get(),
+                                               surface_context, canvas, nullptr,
                                                root_surface_transformation,
                                                false, nullptr);
   canvas->clear(SK_ColorTRANSPARENT);

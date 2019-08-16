@@ -80,6 +80,7 @@ class Layer {
     // and applies the operations to all canvases.
     // The leaf_nodes_canvas is the "current" canvas and is used by leaf
     // layers.
+    SkSurface* surface;
     SkCanvas* internal_nodes_canvas;
     SkCanvas* leaf_nodes_canvas;
     GrContext* gr_context;
@@ -87,7 +88,7 @@ class Layer {
     const Stopwatch& raster_time;
     const Stopwatch& ui_time;
     TextureRegistry& texture_registry;
-    const RasterCache* raster_cache;
+    RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
   };
 

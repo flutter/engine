@@ -31,6 +31,8 @@ class RasterCacheResult {
 
   bool is_valid() const { return static_cast<bool>(image_); };
 
+  void drawSnapshot(SkCanvas& canvas) const;
+
   void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const;
 
   SkISize image_dimensions() const {
@@ -90,9 +92,13 @@ class RasterCache {
 
   void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
 
+  void PrepareForSnapshot(PrerollContext* context, Layer* layer);
+
   RasterCacheResult Get(const SkPicture& picture, const SkMatrix& ctm) const;
 
-  RasterCacheResult Get(Layer* layer, const SkMatrix& ctm) const;
+  RasterCacheResult Get(const Layer* layer, const SkMatrix& ctm) const;
+
+  void PutSnapshot(const Layer* layer, SkSurface* surface, SkIRect& dev_bounds);
 
   void SweepAfterFrame();
 

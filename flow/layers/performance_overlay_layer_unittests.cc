@@ -52,6 +52,7 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
 
   flutter::TextureRegistry unused_texture_registry;
   flutter::Layer::PaintContext paintContext = {
+      nullptr,
       nullptr,        surface->getCanvas(),    nullptr, nullptr, mock_stopwatch,
       mock_stopwatch, unused_texture_registry, nullptr, false};
 
