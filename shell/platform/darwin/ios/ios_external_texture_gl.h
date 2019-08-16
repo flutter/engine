@@ -7,6 +7,7 @@
 
 #include "flutter/flow/texture.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
+#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterTexture.h"
 
 namespace flutter {
@@ -31,7 +32,7 @@ class IOSExternalTextureGL : public flutter::Texture {
 
   void EnsureTextureCacheExists();
 
-  NSObject<FlutterTexture>* external_texture_;
+  fml::scoped_nsobject<NSObject<FlutterTexture>> external_texture_;
   fml::CFRef<CVOpenGLESTextureCacheRef> cache_ref_;
   fml::CFRef<CVOpenGLESTextureRef> texture_ref_;
   fml::CFRef<CVPixelBufferRef> buffer_ref_;
