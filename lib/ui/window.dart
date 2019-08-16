@@ -10,7 +10,8 @@ typedef VoidCallback = void Function();
 /// Signature for [Window.onBeginFrame].
 typedef FrameCallback = void Function(Duration duration);
 
-/// Signature for [Window._onReportTimings].
+// ignore: deprecated_member_use_from_same_package
+/// Signature for [Window.onReportTimings].
 ///
 /// The callback takes a list of [FrameTiming] because it may not be immediately
 /// triggered after each frame. The list is sorted in ascending order of time
@@ -69,7 +70,7 @@ enum FramePhase {
 
 /// Time-related performance metrics of a frame.
 ///
-/// See [Window.frameTimingStream] for how to get this.
+/// See [Window.frameTimings] for how to get this.
 ///
 /// The metrics in debug mode (`flutter run` without any flags) may be very
 /// different from those in profile and release modes due to the debug overhead.
@@ -82,7 +83,7 @@ class FrameTiming {
   /// [FramePhase.values].
   ///
   /// This constructor is usually only called by the Flutter engine, or a test.
-  /// To get the [FrameTiming] of your app, see [Window.frameTimingStream].
+  /// To get the [FrameTiming] of your app, see [Window.frameTimings].
   FrameTiming(List<int> timestamps)
       : assert(timestamps.length == FramePhase.values.length), _timestamps = timestamps;
 
@@ -914,12 +915,12 @@ class Window {
   /// A callback that is invoked to report the [FrameTiming] of recently
   /// rasterized frames.
   ///
-  /// This is deprecated, use [frameTimingStream] instead.
-  @Deprecated('Use frameTimingStream instead.')
+  /// This is deprecated, use [frameTimings] instead.
+  @Deprecated('Use frameTimings instead.')
   TimingsCallback get onReportTimings => _onReportTimings;
   TimingsCallback _onReportTimings;
   Zone _onReportTimingsZone;
-  @Deprecated('Use frameTimingStream instead.')
+  @Deprecated('Use frameTimings instead.')
   set onReportTimings(TimingsCallback callback) {
     _internalSetOnReportTimings(callback);
   }
@@ -932,7 +933,8 @@ class Window {
     _onReportTimingsZone = Zone.current;
   }
 
-  /// Mock the calling of [_onReportTimings] for unit tests.
+  // ignore: deprecated_member_use_from_same_package
+  /// Mock the calling of [onReportTimings] for unit tests.
   void debugReportTimings(List<FrameTiming> timings) {
     _onReportTimings(timings);
   }
@@ -963,20 +965,20 @@ class Window {
   /// latencies (through [FrameTiming.totalSpan]).
   ///
   /// Unlike [Timeline], the timing information here is available in the release
-  /// mode (additional to the profile and the debug mode). Hence this can be
-  /// used to monitor the application's performance in the wild.
+  /// mode (additional to profile and debug mode). Hence this can be used to
+  /// monitor the application's performance in the wild.
   ///
   /// {@macro dart.ui.timings_batching}
   ///
   /// If no one is listening to this stream, no additional work will be done.
   /// Otherwise, Flutter spends less than 0.1ms every 1 second to report the
-  /// timings (measured on iPhone6S). The 0.1ms is about 0.6% of 16ms (frame
+  /// timings (measured on iPhone 6s). The 0.1ms is about 0.6% of 16ms (frame
   /// budget for 60fps), or 0.01% CPU usage per second.
   ///
   /// See also:
   ///
   ///  * [FrameTiming], the data event of this stream
-  Stream<FrameTiming> get frameTimingStream {
+  Stream<FrameTiming> get frameTimings {
     _frameTimingBroadcastController ??= StreamController<FrameTiming>.broadcast(
       onListen: _onFrameTimingListen,
       onCancel: _onFrameTimingCancel,

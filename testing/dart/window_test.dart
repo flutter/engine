@@ -25,12 +25,12 @@ void main() {
     expect(timing.toString(), 'FrameTiming(buildDuration: 7.0ms, rasterDuration: 10.5ms, totalSpan: 18.5ms)');
   });
 
-  test('window.frameTimingStream works', () async {
+  test('window.frameTimings works', () async {
     // Test a single subscription. Check that debugNeedsReportTimings is
     // properly reset after the subscription is cancelled.
     expect(window.debugNeedsReportTimings, false);
     final FrameTiming mockTiming = FrameTiming(<int>[1000, 8000, 9000, 19500]);
-    final Future<FrameTiming> frameTiming = window.frameTimingStream.first;
+    final Future<FrameTiming> frameTiming = window.frameTimings.first;
     expect(window.debugNeedsReportTimings, true);
     window.debugReportTimings(<FrameTiming>[mockTiming]);
     expect(await frameTiming, equals(mockTiming));
@@ -40,13 +40,13 @@ void main() {
     // been reset to false by the single subscription test above.
     //
     // Subscription 1
-    final Future<FrameTiming> timingFuture = window.frameTimingStream.first;
+    final Future<FrameTiming> timingFuture = window.frameTimings.first;
     //
     // Subscription 2
     final List<FrameTiming> timings = <FrameTiming>[];
     final Completer<void> completer = Completer<void>();
     int frameCount = 0;
-    window.frameTimingStream.listen((FrameTiming t) {
+    window.frameTimings.listen((FrameTiming t) {
       timings.add(t);
       frameCount += 1;
       if (frameCount == 2) {
