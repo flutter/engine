@@ -39,8 +39,8 @@ std::unique_ptr<CompositorContext::ScopedFrame> CompositorContext::AcquireFrame(
     bool instrumentation_enabled,
     fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
   return std::make_unique<ScopedFrame>(
-      *this, surface, gr_context, canvas, view_embedder, root_surface_transformation,
-      instrumentation_enabled, gpu_thread_merger);
+      *this, surface, gr_context, canvas, view_embedder,
+      root_surface_transformation, instrumentation_enabled, gpu_thread_merger);
 }
 
 CompositorContext::ScopedFrame::ScopedFrame(

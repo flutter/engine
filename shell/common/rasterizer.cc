@@ -245,7 +245,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
                                  : frame->SkiaCanvas();
 
   auto compositor_frame = compositor_context_->AcquireFrame(
-      frame->SkiaSurface().get(),   // skia surface
+      frame->SkiaSurface().get(),   // skia SkSurface
       surface_->GetContext(),       // skia GrContext
       root_surface_canvas,          // root surface canvas
       external_view_embedder,       // external view embedder
@@ -345,10 +345,9 @@ static sk_sp<SkData> ScreenshotLayerTreeAsImage(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
-  auto frame = compositor_context.AcquireFrame(snapshot_surface.get(),
-                                               surface_context, canvas, nullptr,
-                                               root_surface_transformation,
-                                               false, nullptr);
+  auto frame = compositor_context.AcquireFrame(
+      snapshot_surface.get(), surface_context, canvas, nullptr,
+      root_surface_transformation, false, nullptr);
   canvas->clear(SK_ColorTRANSPARENT);
   frame->Raster(*tree, true);
   canvas->flush();

@@ -149,9 +149,10 @@ fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilter(
   return EngineLayer::MakeRetained(layer);
 }
 
-fml::RefPtr<EngineLayer> SceneBuilder::pushBackdropFilter(ImageFilter* filter,
-                                                          bool isDynamic,
-                                                          fml::RefPtr<EngineLayer> oldLayer) {
+fml::RefPtr<EngineLayer> SceneBuilder::pushBackdropFilter(
+    ImageFilter* filter,
+    bool isDynamic,
+    fml::RefPtr<EngineLayer> oldLayer) {
   auto layer = std::make_shared<flutter::BackdropFilterLayer>(filter->filter());
   if (!isDynamic) {
     layer.get()->initRetained(oldLayer ? oldLayer->Layer() : layer);

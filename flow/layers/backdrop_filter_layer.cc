@@ -12,7 +12,7 @@ BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter)
 BackdropFilterLayer::~BackdropFilterLayer() = default;
 
 void BackdropFilterLayer::initRetained(std::shared_ptr<Layer> retainedLayer) {
-  BackdropFilterLayer* bdfLayer = (BackdropFilterLayer*) retainedLayer.get();
+  BackdropFilterLayer* bdfLayer = (BackdropFilterLayer*)retainedLayer.get();
   if (bdfLayer->retainedBackdrop_) {
     retainedBackdrop_ = bdfLayer->retainedBackdrop_;
   } else {
@@ -20,10 +20,12 @@ void BackdropFilterLayer::initRetained(std::shared_ptr<Layer> retainedLayer) {
   }
 }
 
-void BackdropFilterLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void BackdropFilterLayer::Preroll(PrerollContext* context,
+                                  const SkMatrix& matrix) {
   ContainerLayer::Preroll(context, matrix);
 
-  if (retainedBackdrop_ && context->raster_cache && context->view_embedder == nullptr) {
+  if (retainedBackdrop_ && context->raster_cache &&
+      context->view_embedder == nullptr) {
     context->raster_cache->PrepareForSnapshot(context, retainedBackdrop_.get());
   }
 }
@@ -34,8 +36,10 @@ void BackdropFilterLayer::Paint(PaintContext& context) const {
 
   bool need_backdrop_paint = true;
   bool need_snapshot = false;
-  if (retainedBackdrop_ && context.surface && context.view_embedder == nullptr) {
-    RasterCacheResult my_cache = context.raster_cache->Get(retainedBackdrop_.get(), SkMatrix::I());
+  if (retainedBackdrop_ && context.surface &&
+      context.view_embedder == nullptr) {
+    RasterCacheResult my_cache =
+        context.raster_cache->Get(retainedBackdrop_.get(), SkMatrix::I());
     if (my_cache.is_valid()) {
       my_cache.drawSnapshot(*context.leaf_nodes_canvas);
       need_backdrop_paint = false;
@@ -53,8 +57,7 @@ void BackdropFilterLayer::Paint(PaintContext& context) const {
   if (need_snapshot) {
     SkIRect dev_clip;
     context.leaf_nodes_canvas->getDeviceClipBounds(&dev_clip);
-    context.raster_cache->PutSnapshot(retainedBackdrop_.get(),
-                                      context.surface,
+    context.raster_cache->PutSnapshot(retainedBackdrop_.get(), context.surface,
                                       dev_clip);
   }
 

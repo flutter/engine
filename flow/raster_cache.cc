@@ -194,8 +194,7 @@ void RasterCache::Prepare(PrerollContext* context,
   }
 }
 
-void RasterCache::PrepareForSnapshot(PrerollContext* context,
-                                     Layer* layer) {
+void RasterCache::PrepareForSnapshot(PrerollContext* context, Layer* layer) {
   LayerRasterCacheKey cache_key(layer->unique_id(), SkMatrix::I());
   Entry& entry = layer_cache_[cache_key];
   entry.access_count = ClampSize(entry.access_count + 1, 0, access_threshold_);
@@ -251,20 +250,21 @@ RasterCacheResult RasterCache::Get(const SkPicture& picture,
   return it == picture_cache_.end() ? RasterCacheResult() : it->second.image;
 }
 
-RasterCacheResult RasterCache::Get(const Layer* layer, const SkMatrix& ctm) const {
+RasterCacheResult RasterCache::Get(const Layer* layer,
+                                   const SkMatrix& ctm) const {
   LayerRasterCacheKey cache_key(layer->unique_id(), ctm);
   auto it = layer_cache_.find(cache_key);
   return it == layer_cache_.end() ? RasterCacheResult() : it->second.image;
 }
 
-void RasterCache::PutSnapshot(const Layer* layer, SkSurface* surface, SkIRect& dev_bounds) {
+void RasterCache::PutSnapshot(const Layer* layer,
+                              SkSurface* surface,
+                              SkIRect& dev_bounds) {
   LayerRasterCacheKey cache_key(layer->unique_id(), SkMatrix::I());
   auto it = layer_cache_.find(cache_key);
   if (it != layer_cache_.end()) {
-    it->second.image = {
-      surface->makeImageSnapshot(dev_bounds),
-      SkRect::Make(dev_bounds)
-    };
+    it->second.image = {surface->makeImageSnapshot(dev_bounds),
+                        SkRect::Make(dev_bounds)};
   }
 }
 
