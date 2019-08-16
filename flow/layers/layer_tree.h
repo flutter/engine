@@ -33,7 +33,8 @@ class LayerTree {
 #endif
 
   void Paint(CompositorContext::ScopedFrame& frame,
-             bool ignore_raster_cache = false) const;
+             bool ignore_raster_cache = false,
+             bool screen_shot = false) const;
 
   sk_sp<SkPicture> Flatten(const SkRect& bounds);
 

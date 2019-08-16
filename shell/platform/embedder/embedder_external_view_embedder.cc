@@ -264,4 +264,9 @@ sk_sp<SkSurface> EmbedderExternalViewEmbedder::GetRootSurface() {
                              : nullptr;
 }
 
+sk_sp<SkImage> EmbedderExternalViewEmbedder::ScreenShotEmbeddedView(
+    int view_id) {
+  return nullptr;
+}
+
 }  // namespace flutter

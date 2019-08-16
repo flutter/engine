@@ -89,6 +89,8 @@ class Layer {
     TextureRegistry& texture_registry;
     const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
+    // Set to true if the paint traversal is for screen shot.
+    const bool screen_shot;
   };
 
   // Calls SkCanvas::saveLayer and restores the layer upon destruction. Also
@@ -119,6 +121,8 @@ class Layer {
   };
 
   virtual void Paint(PaintContext& context) const = 0;
+
+  void ScreenShot(PaintContext& context) const;
 
 #if defined(OS_FUCHSIA)
   // Updates the system composited scene.

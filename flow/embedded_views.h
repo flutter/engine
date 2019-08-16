@@ -229,6 +229,8 @@ class ExternalViewEmbedder {
 
   virtual bool SubmitFrame(GrContext* context);
 
+  virtual sk_sp<SkImage> ScreenShotEmbeddedView(int view_id) = 0;
+
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 
 };  // ExternalViewEmbedder

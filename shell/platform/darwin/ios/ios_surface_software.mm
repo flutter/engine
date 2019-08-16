@@ -187,4 +187,16 @@ bool IOSSurfaceSoftware::SubmitFrame(GrContext* context) {
   return platform_views_controller->SubmitFrame(false, nullptr, nullptr);
 }
 
+// |ExternalViewEmbedder|
+sk_sp<SkImage> IOSSurfaceSoftware::ScreenShotEmbeddedView(int view_id) {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  NSLog(@"platform_views_controller is null %@", @(platform_views_controller == nullptr));
+  if (platform_views_controller == nullptr) {
+    return nullptr;
+  }
+  UIView* platform_view = platform_views_controller->GetPlatformViewByID(0).view;
+  FML_CHECK(platform_view != nil);
+  return IOSScreenShotProvider::TakeScreenShotForView(platform_view);
+}
+
 }  // namespace flutter

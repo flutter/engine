@@ -9,6 +9,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
+#include "flutter/shell/platform/darwin/ios/ios_screenshot_provider.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @class CALayer;
@@ -66,6 +67,9 @@ class IOSSurfaceSoftware final : public IOSSurface,
 
   // |ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;
+
+  // |ExternalViewEmbedder|
+  sk_sp<SkImage> ScreenShotEmbeddedView(int view_id) override;
 
  private:
   fml::scoped_nsobject<CALayer> layer_;

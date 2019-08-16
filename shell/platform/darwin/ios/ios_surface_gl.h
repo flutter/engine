@@ -10,6 +10,7 @@
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_gl_context.h"
 #include "flutter/shell/platform/darwin/ios/ios_gl_render_target.h"
+#include "flutter/shell/platform/darwin/ios/ios_screenshot_provider.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @class CAEAGLLayer;
@@ -75,6 +76,8 @@ class IOSSurfaceGL final : public IOSSurface,
 
   // |ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;
+
+  sk_sp<SkImage> ScreenShotEmbeddedView(int view_id) override;
 
  private:
   std::shared_ptr<IOSGLContext> context_;

@@ -253,7 +253,8 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   );
 
   if (compositor_frame) {
-    RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
+    RasterStatus raster_status =
+        compositor_frame->Raster(layer_tree, false, false);
     if (raster_status == RasterStatus::kFailed) {
       return raster_status;
     }
@@ -295,7 +296,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
       nullptr, recorder.getRecordingCanvas(), nullptr,
       root_surface_transformation, false, nullptr);
 
-  frame->Raster(*tree, true);
+  frame->Raster(*tree, true, true);
 
   SkSerialProcs procs = {0};
   procs.fTypefaceProc = SerializeTypeface;
@@ -347,7 +348,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsImage(
                                                root_surface_transformation,
                                                false, nullptr);
   canvas->clear(SK_ColorTRANSPARENT);
-  frame->Raster(*tree, true);
+  frame->Raster(*tree, true, true);
   canvas->flush();
 
   // Prepare an image from the surface, this image may potentially be on th GPU.

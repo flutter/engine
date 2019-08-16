@@ -65,4 +65,8 @@ Layer::AutoSaveLayer::~AutoSaveLayer() {
   paint_context_.internal_nodes_canvas->restore();
 }
 
+void Layer::ScreenShot(PaintContext& context) const {
+  Paint(context);
+}
+
 }  // namespace flutter

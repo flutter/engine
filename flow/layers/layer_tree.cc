@@ -73,7 +73,8 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
 #endif
 
 void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
-                      bool ignore_raster_cache) const {
+                      bool ignore_raster_cache,
+                      bool screen_shot) const {
   TRACE_EVENT0("flutter", "LayerTree::Paint");
   SkISize canvas_size = frame.canvas()->getBaseLayerSize();
   SkNWayCanvas internal_nodes_canvas(canvas_size.width(), canvas_size.height());
@@ -94,7 +95,8 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       frame.context().ui_time(),
       frame.context().texture_registry(),
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
-      checkerboard_offscreen_layers_};
+      checkerboard_offscreen_layers_,
+      screen_shot};
 
   if (root_layer_->needs_painting())
     root_layer_->Paint(context);
