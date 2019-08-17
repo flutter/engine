@@ -19,6 +19,7 @@ namespace flutter {
 class GPUSurfaceMetal : public Surface {
  public:
   GPUSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer);
+  GPUSurfaceMetal(sk_sp<GrContext> gr_context, fml::scoped_nsobject<CAMetalLayer> layer);
 
   ~GPUSurfaceMetal() override;
 

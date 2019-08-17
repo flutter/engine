@@ -41,6 +41,31 @@ GPUSurfaceMetal::GPUSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer)
   context_ = context;
 }
 
+GPUSurfaceMetal::GPUSurfaceMetal(sk_sp<GrContext> gr_context,
+                                 fml::scoped_nsobject<CAMetalLayer> layer)
+    : layer_(std::move(layer)), context_(gr_context) {
+  if (!layer_) {
+    FML_LOG(ERROR) << "Could not create metal surface because of invalid layer.";
+    return;
+  }
+  if (!context_) {
+    FML_LOG(ERROR) << "Could not create metal surface because of invalid Skia metal context.";
+    return;
+  }
+
+  layer.get().pixelFormat = MTLPixelFormatBGRA8Unorm;
+
+  auto metal_device = fml::scoped_nsprotocol<id<MTLDevice>>([layer_.get().device retain]);
+  auto metal_queue = fml::scoped_nsprotocol<id<MTLCommandQueue>>([metal_device newCommandQueue]);
+
+  if (!metal_device || !metal_queue) {
+    FML_LOG(ERROR) << "Could not create metal device or queue.";
+    return;
+  }
+
+  command_queue_ = metal_queue;
+}
+
 GPUSurfaceMetal::~GPUSurfaceMetal() = default;
 
 // |Surface|

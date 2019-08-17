@@ -19,10 +19,6 @@ FlutterPlatformViewLayer::FlutterPlatformViewLayer(fml::scoped_nsobject<UIView> 
 
 FlutterPlatformViewLayer::~FlutterPlatformViewLayer() = default;
 
-FlutterPlatformViewLayer::UpdateSurface() {
-
-}
-
 FlutterPlatformViewsController::FlutterPlatformViewsController() = default;
 
 FlutterPlatformViewsController::~FlutterPlatformViewsController() = default;

@@ -42,7 +42,7 @@ std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface() {
   return std::make_unique<GPUSurfaceGL>(this, true);
 }
 
-std::unique_ptr<Surface> IOSSurfaceGL::CreateSecondaryGPUSurface(GrContext* gr_context) {
+std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface(GrContext* gr_context) {
   return std::make_unique<GPUSurfaceGL>(sk_ref_sp(gr_context), this, true);
 }
 
@@ -146,7 +146,7 @@ bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
     return true;
   }
 
-  bool submitted = platform_views_controller->SubmitFrame(true, std::move(context), context_);
+  bool submitted = platform_views_controller->SubmitFrame(std::move(context), context_);
   [CATransaction commit];
   return submitted;
 }

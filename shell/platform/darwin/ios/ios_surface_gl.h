@@ -28,15 +28,20 @@ class IOSSurfaceGL final : public IOSSurface,
 
   ~IOSSurfaceGL() override;
 
+  // |IOSSurface|
   bool IsValid() const override;
 
+  // |IOSSurface|
   bool ResourceContextMakeCurrent() override;
 
+  // |IOSSurface|
   void UpdateStorageSizeIfNecessary() override;
 
+  // |IOSSurface|
   std::unique_ptr<Surface> CreateGPUSurface() override;
 
-  std::unique_ptr<Surface> CreateSecondaryGPUSurface(GrContext* gr_context);
+  // |IOSSurface|
+  std::unique_ptr<Surface> CreateGPUSurface(GrContext* gr_context) override;
 
   bool GLContextMakeCurrent() override;
 

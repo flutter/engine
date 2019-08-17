@@ -33,7 +33,9 @@ class IOSSurface {
 
   virtual std::unique_ptr<Surface> CreateGPUSurface() = 0;
 
-  virtual std::unique_ptr<Surface> CreateSecondaryGPUSurface() = 0;
+  // Creates a secondary surface using the supplied GrContext, if supported.
+  // Otherwise, the same as CreateGPUSurface.
+  virtual std::unique_ptr<Surface> CreateGPUSurface(GrContext* gr_context) = 0;
 
  protected:
   FlutterPlatformViewsController* GetPlatformViewsController();

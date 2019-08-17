@@ -24,10 +24,9 @@
 
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 - (instancetype)initWithContentsScale:(CGFloat)contentsScale;
-- (std::unique_ptr<flutter::IOSSurface>)createSoftwareSurface;
-- (std::unique_ptr<flutter::IOSSurfaceGL>)createGLSurfaceWithContext:
+- (std::unique_ptr<flutter::IOSSurface>)createSurface:
     (std::shared_ptr<flutter::IOSGLContext>)gl_context;
-- (std::unique_ptr<flutter::IOSSurfaceMetal>)createMetalSurface;
+
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_OVERLAY_VIEW_H_

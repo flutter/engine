@@ -52,6 +52,11 @@ std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface() {
   return surface;
 }
 
+std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface(GrContext* gr_context) {
+  return CreateGPUSurface();
+}
+
+
 sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const SkISize& size) {
   TRACE_EVENT0("flutter", "IOSSurfaceSoftware::AcquireBackingStore");
   if (!IsValid()) {
@@ -184,7 +189,7 @@ bool IOSSurfaceSoftware::SubmitFrame(GrContext* context) {
   if (platform_views_controller == nullptr) {
     return true;
   }
-  return platform_views_controller->SubmitFrame(false, nullptr, nullptr);
+  return platform_views_controller->SubmitFrame(nullptr, nullptr);
 }
 
 }  // namespace flutter

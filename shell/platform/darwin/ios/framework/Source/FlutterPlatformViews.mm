@@ -368,11 +368,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
   bool did_submit = true;
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t view_id = composition_order_[i];
-    if (gl_rendering) {
-      EnsureGLOverlayInitialized(view_id, gl_context, gr_context);
-    } else {
-      EnsureOverlayInitialized(view_id);
-    }
+    EnsureOverlayInitialized(view_id, std::move(gl_context), gr_context);
     auto frame = overlays_[view_id]->surface->AcquireFrame(frame_size_);
     SkCanvas* canvas = frame->SkiaCanvas();
     canvas->drawPicture(picture_recorders_[view_id]->finishRecordingAsPicture());
@@ -454,29 +450,32 @@ void FlutterPlatformViewsController::DisposeViews() {
   views_to_dispose_.clear();
 }
 
-void FlutterPlatformViewsController::EnsureOverlayInitialized(int64_t overlay_id) {
-  if (overlays_.count(overlay_id) != 0) {
+void FlutterPlatformViewsController::EnsureOverlayInitialized(
+    int64_t overlay_id,
+    std::shared_ptr<IOSGLContext> gl_context,
+    GrContext* gr_context) {
+  if (!gr_context) {
+    if (overlays_.count(overlay_id) != 0) {
+      return;
+    }
+    FlutterOverlayView* overlay_view = [[FlutterOverlayView alloc] init];
+    overlay_view.frame = flutter_view_.get().bounds;
+    overlay_view.autoresizingMask =
+        (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
+    std::unique_ptr<IOSSurface> ios_surface = [overlay_view createSurface:nil];
+    std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface();
+    overlays_[overlay_id] = std::make_unique<FlutterPlatformViewLayer>(
+        fml::scoped_nsobject<UIView>(overlay_view), std::move(ios_surface), std::move(surface));
     return;
   }
-  FlutterOverlayView* overlay_view = [[FlutterOverlayView alloc] init];
-  overlay_view.frame = flutter_view_.get().bounds;
-  overlay_view.autoresizingMask =
-      (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
-  std::unique_ptr<IOSSurface> ios_surface = overlay_view.createSoftwareSurface;
-  std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface();
-  overlays_[overlay_id] = std::make_unique<FlutterPlatformViewLayer>(
-      fml::scoped_nsobject<UIView>(overlay_view), std::move(ios_surface), std::move(surface));
-}
 
-void FlutterPlatformViewsController::EnsureOverlayInitialized(int64_t overlay_id,
-                                                              GrContext* gr_context) {
   if (overlays_.count(overlay_id) != 0) {
     if (gr_context != overlays_gr_context_) {
       overlays_gr_context_ = gr_context;
       // The overlay already exists, but the GrContext was changed so we need to recreate
       // the rendering surface with the new GrContext.
-      IOSSurfaceGL* ios_surface_gl = (IOSSurfaceGL*)overlays_[overlay_id]->ios_surface.get();
-      std::unique_ptr<Surface> surface = ios_surface_gl->CreateSecondaryGPUSurface(gr_context);
+      IOSSurface* ios_surface = overlays_[overlay_id]->ios_surface.get();
+      std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface(gr_context);
       overlays_[overlay_id]->surface = std::move(surface);
     }
     return;
@@ -487,18 +486,12 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(int64_t overlay_id
   overlay_view.frame = flutter_view_.get().bounds;
   overlay_view.autoresizingMask =
       (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
-  std::unique_ptr<IOSSurfaceGL> ios_surface =
-      [overlay_view createGLSurfaceWithContext:std::move(gl_context)];
-  std::unique_ptr<Surface> surface = ios_surface->CreateSecondaryGPUSurface(gr_context);
+  std::unique_ptr<IOSSurface> ios_surface = [overlay_view createSurface:std::move(gl_context)];
+  std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface(gr_context);
   overlays_[overlay_id] = std::make_unique<FlutterPlatformViewLayer>(
       fml::scoped_nsobject<UIView>(overlay_view), std::move(ios_surface), std::move(surface));
   overlays_gr_context_ = gr_context;
 }
-
-void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
-    int64_t overlay_id,
-    std::shared_ptr<IOSGLContext> gl_context,
-    GrContext* gr_context) {}
 
 }  // namespace flutter
 

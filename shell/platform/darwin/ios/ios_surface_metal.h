@@ -7,7 +7,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/gpu/gpu_surface_gl.h"
+#include "flutter/shell/gpu/gpu_surface_delegate.h"
 #include "flutter/shell/gpu/gpu_surface_metal.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 
@@ -16,8 +16,8 @@
 namespace flutter {
 
 class IOSSurfaceMetal final : public IOSSurface,
-                              public GPUSurfaceGLDelegate,
-                              public flutter::ExternalViewEmbedder {
+                              public GPUSurfaceDelegate,
+                              public ExternalViewEmbedder {
  public:
   IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer,
                   FlutterPlatformViewsController* platform_views_controller);
@@ -25,9 +25,6 @@ class IOSSurfaceMetal final : public IOSSurface,
   IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer);
 
   ~IOSSurfaceMetal() override;
-
- private:
-  fml::scoped_nsobject<CAMetalLayer> layer_;
 
   // |IOSSurface|
   bool IsValid() const override;
@@ -41,25 +38,39 @@ class IOSSurfaceMetal final : public IOSSurface,
   // |IOSSurface|
   std::unique_ptr<Surface> CreateGPUSurface() override;
 
-  std::unique_ptr<Surface> CreateSecondaryGPUSurface(GrContext* gr_context);
+  // |IOSSurface|
+  std::unique_ptr<Surface> CreateGPUSurface(GrContext* gr_context) override;
 
-  // |GPUSurfaceGLDelegate|
+  // |GPUSurfaceDelegate|
   flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
-  // |flutter::ExternalViewEmbedder|
-  void BeginFrame(SkISize frame_size) override;
+  // |ExternalViewEmbedder|
+  sk_sp<SkSurface> GetRootSurface() override;
 
-  // |flutter::ExternalViewEmbedder|
-  void PrerollCompositeEmbeddedView(int view_id) override;
+  // |ExternalViewEmbedder|
+  void CancelFrame() override;
 
-  // |flutter::ExternalViewEmbedder|
+  // |ExternalViewEmbedder|
+  void BeginFrame(SkISize frame_size, GrContext* context) override;
+
+  // |ExternalViewEmbedder|
+  void PrerollCompositeEmbeddedView(int view_id,
+                                    std::unique_ptr<flutter::EmbeddedViewParams> params) override;
+
+  // |ExternalViewEmbedder|
+  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
+
+  // |ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
-  // |flutter::ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id, const flutter::EmbeddedViewParams& params) override;
+  // |ExternalViewEmbedder|
+  SkCanvas* CompositeEmbeddedView(int view_id) override;
 
-  // |flutter::ExternalViewEmbedder|
+  // |ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;
+
+ private:
+  fml::scoped_nsobject<CAMetalLayer> layer_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceMetal);
 };
