@@ -787,9 +787,6 @@ abstract class Window {
   }
 
   void _internalSetOnReportTimings(TimingsCallback callback) {
-    if ((callback == null) != (_onReportTimings == null)) {
-      _setNeedsReportTimings(callback != null);
-    }
     _onReportTimings = callback;
     _onReportTimingsZone = Zone.current;
   }
