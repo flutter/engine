@@ -237,7 +237,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   // root surface transformation is set by the embedder instead of
   // having to apply it here.
   SkMatrix root_surface_transformation =
-      embedder_root_surface ? SkMatrix{} : surface_->GetRootTransformation();
+      embedder_root_surface ? SkMatrix::I() : surface_->GetRootTransformation();
 
   auto root_surface_canvas = embedder_root_surface
                                  ? embedder_root_surface->getCanvas()
