@@ -12,8 +12,9 @@
 
 namespace flutter {
 
-GPUSurfaceMetal::GPUSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer)
-    : layer_(std::move(layer)) {
+GPUSurfaceMetal::GPUSurfaceMetal(GPUSurfaceDelegate* delegate,
+                                 fml::scoped_nsobject<CAMetalLayer> layer)
+    : delegate_(delegate), layer_(std::move(layer)) {
   if (!layer_) {
     FML_LOG(ERROR) << "Could not create metal surface because of invalid layer.";
     return;
@@ -41,9 +42,10 @@ GPUSurfaceMetal::GPUSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer)
   context_ = context;
 }
 
-GPUSurfaceMetal::GPUSurfaceMetal(sk_sp<GrContext> gr_context,
+GPUSurfaceMetal::GPUSurfaceMetal(GPUSurfaceDelegate* delegate,
+                                 sk_sp<GrContext> gr_context,
                                  fml::scoped_nsobject<CAMetalLayer> layer)
-    : layer_(std::move(layer)), context_(gr_context) {
+    : delegate_(delegate), layer_(std::move(layer)), context_(gr_context) {
   if (!layer_) {
     FML_LOG(ERROR) << "Could not create metal surface because of invalid layer.";
     return;
@@ -160,6 +162,11 @@ SkMatrix GPUSurfaceMetal::GetRootTransformation() const {
 // |Surface|
 GrContext* GPUSurfaceMetal::GetContext() {
   return context_.get();
+}
+
+// |Surface|
+flutter::ExternalViewEmbedder* GPUSurfaceMetal::GetExternalViewEmbedder() {
+  return delegate_->GetExternalViewEmbedder();
 }
 
 // |Surface|

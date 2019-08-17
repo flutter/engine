@@ -101,23 +101,21 @@ id<FlutterViewEngineDelegate> _delegate;
     }
     return std::make_unique<flutter::IOSSurfaceGL>(context, std::move(eagl_layer),
                                                    [_delegate platformViewsController]);
-  }
 #if FLUTTER_SHELL_ENABLE_METAL
-  else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
-    auto metalLayer = reinterpret_cast<CAMetalLayer*>([self.layer retain]);
+  } else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
+    fml::scoped_nsobject<CAMetalLayer> metalLayer(
+        reinterpret_cast<CAMetalLayer*>([self.layer retain]));
     if (flutter::IsIosEmbeddedViewsPreviewEnabled()) {
       if (@available(iOS 8.0, *)) {
         // TODO(amirh): only do this if there's an embedded view.
         // https://github.com/flutter/flutter/issues/24133
-        metalLayer.presentsWithTransaction = YES;
+        metalLayer.get().presentsWithTransaction = YES;
       }
     }
-    return std::make_unique<flutter::IOSSurfaceMetal>(
-        fml::scoped_nsobject<CAMetalLayer>(metalLayer), [_delegate platformViewsController]);
-  }
+    return std::make_unique<flutter::IOSSurfaceMetal>(std::move(metalLayer),
+                                                      [_delegate platformViewsController]);
 #endif  //  FLUTTER_SHELL_ENABLE_METAL
-
-  else {
+  } else {
     fml::scoped_nsobject<CALayer> layer(reinterpret_cast<CALayer*>([self.layer retain]));
     return std::make_unique<flutter::IOSSurfaceSoftware>(std::move(layer),
                                                          [_delegate platformViewsController]);

@@ -52,6 +52,13 @@
     layer.allowsGroupOpacity = NO;
     layer.contentsScale = contentsScale;
     layer.rasterizationScale = contentsScale;
+#if FLUTTER_SHELL_ENABLE_METAL
+  } else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
+    CAMetalLayer* layer = reinterpret_cast<CAMetalLayer*>(self.layer);
+    layer.allowsGroupOpacity = NO;
+    layer.contentsScale = contentsScale;
+    layer.rasterizationScale = contentsScale;
+#endif  // FLUTTER_SHELL_ENABLE_METAL
   }
 
   return self;
@@ -78,19 +85,16 @@
       eagl_layer.get().presentsWithTransaction = YES;
     }
     return std::make_unique<flutter::IOSSurfaceGL>(std::move(eagl_layer), gl_context);
-  }
 #if FLUTTER_SHELL_ENABLE_METAL
-  else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
-    auto metalLayer = reinterpret_cast<CAMetalLayer*>([self.layer retain]);
+  } else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
+    fml::scoped_nsobject<CAMetalLayer> metalLayer(
+        reinterpret_cast<CAMetalLayer*>([self.layer retain]));
     if (@available(iOS 8.0, *)) {
-      metalLayer.presentsWithTransaction = YES;
+      metalLayer.get().presentsWithTransaction = YES;
     }
-    return std::make_unique<flutter::IOSSurfaceMetal>(
-        fml::scoped_nsobject<CAMetalLayer>(metalLayer));
-  }
+    return std::make_unique<flutter::IOSSurfaceMetal>(std::move(metalLayer));
 #endif  //  FLUTTER_SHELL_ENABLE_METAL
-
-  else {
+  } else {
     fml::scoped_nsobject<CALayer> layer(reinterpret_cast<CALayer*>([self.layer retain]));
     return std::make_unique<flutter::IOSSurfaceSoftware>(std::move(layer), nullptr);
   }
