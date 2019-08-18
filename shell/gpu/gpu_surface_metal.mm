@@ -139,11 +139,23 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& size)
     return nullptr;
   }
 
-  auto submit_callback = [drawable = next_drawable, command_buffer](
+  // External views need to present with transaction. When presenting with
+  // transaction, we have to block, otherwise we risk presenting the drawable
+  // after the CATransaction has completed.
+  // See:
+  // https://developer.apple.com/documentation/quartzcore/cametallayer/1478157-presentswithtransaction
+  bool wait = delegate_->GetExternalViewEmbedder() != nullptr;
+
+  auto submit_callback = [drawable = next_drawable, command_buffer, wait](
                              const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
     canvas->flush();
-    [command_buffer.get() presentDrawable:drawable.get()];
     [command_buffer.get() commit];
+    if (!wait) {
+      [command_buffer.get() presentDrawable:drawable.get()];
+    } else {
+      [command_buffer.get() waitUntilScheduled];
+      [drawable.get() present];
+    }
     return true;
   };
 
