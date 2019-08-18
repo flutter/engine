@@ -144,6 +144,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& size)
   // after the CATransaction has completed.
   // See:
   // https://developer.apple.com/documentation/quartzcore/cametallayer/1478157-presentswithtransaction
+  // TODO(dnfield): only do this if transactions are actually being used.
+  // https://github.com/flutter/flutter/issues/24133
   bool wait = delegate_->GetExternalViewEmbedder() != nullptr;
 
   auto submit_callback = [drawable = next_drawable, command_buffer, wait](
