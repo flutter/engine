@@ -56,7 +56,6 @@ std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface(GrContext* gr_cont
   return CreateGPUSurface();
 }
 
-
 sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const SkISize& size) {
   TRACE_EVENT0("flutter", "IOSSurfaceSoftware::AcquireBackingStore");
   if (!IsValid()) {
