@@ -39,7 +39,6 @@ public class FlutterActivityTest {
   @Test
   public void itCreatesNewEngineIntentWithRequestedSettings() {
     Intent intent = FlutterActivity.withNewEngine()
-        .dartEntrypoint("custom_entrypoint")
         .initialRoute("/custom/route")
         .backgroundMode(FlutterActivity.BackgroundMode.transparent)
         .build(RuntimeEnvironment.application);
