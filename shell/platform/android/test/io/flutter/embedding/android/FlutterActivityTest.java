@@ -45,7 +45,6 @@ public class FlutterActivityTest {
     ActivityController<FlutterActivity> activityController = Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
 
-    assertEquals("custom_entrypoint", flutterActivity.getDartEntrypointFunctionName());
     assertEquals("/custom/route", flutterActivity.getInitialRoute());
     assertArrayEquals(new String[]{}, flutterActivity.getFlutterShellArgs().toArray());
     assertTrue(flutterActivity.shouldAttachEngineToActivity());
