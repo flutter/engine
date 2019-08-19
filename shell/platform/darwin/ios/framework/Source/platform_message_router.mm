@@ -44,8 +44,7 @@ void PlatformMessageRouter::SetMessageHandler(const std::string& channel,
                                               FlutterBinaryMessageHandler handler) {
   message_handlers_.erase(channel);
   if (handler) {
-    message_handlers_[channel] =
-        fml::ScopedBlock<FlutterBinaryMessageHandler>{handler, fml::OwnershipPolicy::Retain};
+    message_handlers_[channel] = fml::ScopedBlock<FlutterBinaryMessageHandler>{handler};
   }
 }
 

@@ -222,6 +222,10 @@ executable("fml_unittests") {
     "time/time_unittest.cc",
   ]
 
+  if (is_mac) {
+    sources += [ "platform/darwin/scoped_nsobject_unittest.mm" ]
+  }
+
   deps = [
     ":fml_fixtures",
     "$flutter_root/fml",

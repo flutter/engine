@@ -99,7 +99,6 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 // Method declared as unavailable in the interface
 - (instancetype)init {
-  [self release];
   [super doesNotRecognizeSelector:_cmd];
   return nil;
 }
@@ -125,11 +124,8 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     child.parent = nil;
   }
   [_children removeAllObjects];
-  [_children release];
   _parent = nil;
   _container.get().semanticsObject = nil;
-  [_platformViewSemanticsContainer release];
-  [super dealloc];
 }
 
 #pragma mark - Semantic object methods
@@ -365,7 +361,6 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 // Method declared as unavailable in the interface
 - (instancetype)init {
-  [self release];
   [super doesNotRecognizeSelector:_cmd];
   return nil;
 }
@@ -419,7 +414,6 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 // Method declared as unavailable in the interface
 - (instancetype)init {
-  [self release];
   [super doesNotRecognizeSelector:_cmd];
   return nil;
 }
@@ -457,7 +451,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 @end
 
 @implementation SemanticsObjectContainer {
-  SemanticsObject* _semanticsObject;
+  __weak SemanticsObject* _semanticsObject;
   fml::WeakPtr<flutter::AccessibilityBridge> _bridge;
 }
 
@@ -465,7 +459,6 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 // Method declared as unavailable in the interface
 - (instancetype)init {
-  [self release];
   [super doesNotRecognizeSelector:_cmd];
   return nil;
 }
@@ -603,8 +596,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     scrollOccured = scrollOccured || [object nodeWillCauseScroll:&node];
     [object setSemanticsNode:&node];
     NSUInteger newChildCount = node.childrenInTraversalOrder.size();
-    NSMutableArray* newChildren =
-        [[[NSMutableArray alloc] initWithCapacity:newChildCount] autorelease];
+    NSMutableArray* newChildren = [[NSMutableArray alloc] initWithCapacity:newChildCount];
     for (NSUInteger i = 0; i < newChildCount; ++i) {
       SemanticsObject* child = GetOrCreateObject(node.childrenInTraversalOrder[i], nodes);
       child.parent = object;
@@ -613,7 +605,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     object.children = newChildren;
     if (node.customAccessibilityActions.size() > 0) {
       NSMutableArray<FlutterCustomAccessibilityAction*>* accessibilityCustomActions =
-          [[[NSMutableArray alloc] init] autorelease];
+          [[NSMutableArray alloc] init];
       for (int32_t action_id : node.customAccessibilityActions) {
         flutter::CustomAccessibilityAction& action = actions_[action_id];
         if (action.overrideId != -1) {
@@ -640,7 +632,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
             [[FlutterPlatformViewSemanticsContainer alloc] initWithSemanticsObject:object];
       }
     } else if (object.platformViewSemanticsContainer) {
-      [object.platformViewSemanticsContainer release];
+      object.platformViewSemanticsContainer = nil;
     }
   }
 
@@ -653,7 +645,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     if (!view_.accessibilityElements) {
       view_.accessibilityElements = @[ [root accessibilityContainer] ];
     }
-    NSMutableArray<SemanticsObject*>* newRoutes = [[[NSMutableArray alloc] init] autorelease];
+    NSMutableArray<SemanticsObject*>* newRoutes = [[NSMutableArray alloc] init];
     [root collectRoutes:newRoutes];
     for (SemanticsObject* route in newRoutes) {
       if (std::find(previous_routes_.begin(), previous_routes_.end(), [route uid]) !=
@@ -715,9 +707,9 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
     if (node.HasFlag(flutter::SemanticsFlags::kIsTextField) &&
         !node.HasFlag(flutter::SemanticsFlags::kIsReadOnly)) {
       // Text fields are backed by objects that implement UITextInput.
-      object = [[[TextInputSemanticsObject alloc] initWithBridge:GetWeakPtr() uid:uid] autorelease];
+      object = [[TextInputSemanticsObject alloc] initWithBridge:GetWeakPtr() uid:uid];
     } else {
-      object = [[[FlutterSemanticsObject alloc] initWithBridge:GetWeakPtr() uid:uid] autorelease];
+      object = [[FlutterSemanticsObject alloc] initWithBridge:GetWeakPtr() uid:uid];
     }
 
     objects_.get()[@(uid)] = object;
@@ -740,11 +732,9 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
         [objects_ removeObjectForKey:@(node.id)];
         if (isTextField && !isReadOnly) {
           // Text fields are backed by objects that implement UITextInput.
-          object = [[[TextInputSemanticsObject alloc] initWithBridge:GetWeakPtr()
-                                                                 uid:uid] autorelease];
+          object = [[TextInputSemanticsObject alloc] initWithBridge:GetWeakPtr() uid:uid];
         } else {
-          object = [[[FlutterSemanticsObject alloc] initWithBridge:GetWeakPtr()
-                                                               uid:uid] autorelease];
+          object = [[FlutterSemanticsObject alloc] initWithBridge:GetWeakPtr() uid:uid];
         }
         object.parent = parent;
         [object.parent.children replaceObjectAtIndex:positionInChildlist withObject:object];

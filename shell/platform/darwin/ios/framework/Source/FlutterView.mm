@@ -96,8 +96,7 @@ id<FlutterViewEngineDelegate> _delegate;
 - (std::unique_ptr<flutter::IOSSurface>)createSurface:
     (std::shared_ptr<flutter::IOSGLContext>)context {
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
-    fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
-        reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
+    fml::scoped_nsobject<CAEAGLLayer> eagl_layer(reinterpret_cast<CAEAGLLayer*>(self.layer));
     if (flutter::IsIosEmbeddedViewsPreviewEnabled()) {
       // TODO(amirh): We can lower this to iOS 8.0 once we have a Metal rendering backend.
       // https://github.com/flutter/flutter/issues/24132
@@ -113,13 +112,13 @@ id<FlutterViewEngineDelegate> _delegate;
 #if FLUTTER_SHELL_ENABLE_METAL
   else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
     return std::make_unique<flutter::IOSSurfaceMetal>(
-        fml::scoped_nsobject<CAMetalLayer>(reinterpret_cast<CAMetalLayer*>([self.layer retain])),
+        fml::scoped_nsobject<CAMetalLayer>(reinterpret_cast<CAMetalLayer*>(self.layer)),
         [_delegate platformViewsController]);
   }
 #endif  //  FLUTTER_SHELL_ENABLE_METAL
 
   else {
-    fml::scoped_nsobject<CALayer> layer(reinterpret_cast<CALayer*>([self.layer retain]));
+    fml::scoped_nsobject<CALayer> layer(reinterpret_cast<CALayer*>(self.layer));
     return std::make_unique<flutter::IOSSurfaceSoftware>(std::move(layer),
                                                          [_delegate platformViewsController]);
   }

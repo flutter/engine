@@ -93,7 +93,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 @implementation FlutterTextPosition
 
 + (instancetype)positionWithIndex:(NSUInteger)index {
-  return [[[FlutterTextPosition alloc] initWithIndex:index] autorelease];
+  return [[FlutterTextPosition alloc] initWithIndex:index];
 }
 
 - (instancetype)initWithIndex:(NSUInteger)index {
@@ -111,7 +111,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 @implementation FlutterTextRange
 
 + (instancetype)rangeWithNSRange:(NSRange)range {
-  return [[[FlutterTextRange alloc] initWithNSRange:range] autorelease];
+  return [[FlutterTextRange alloc] initWithNSRange:range];
 }
 
 - (instancetype)initWithNSRange:(NSRange)range {
@@ -198,15 +198,6 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   return self;
 }
 
-- (void)dealloc {
-  [_text release];
-  [_markedText release];
-  [_markedTextRange release];
-  [_selectedTextRange release];
-  [_tokenizer release];
-  [super dealloc];
-}
-
 - (void)setTextInputClient:(int)client {
   _textInputClient = client;
 }
@@ -274,7 +265,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 }
 
 - (UITextRange*)selectedTextRange {
-  return [[_selectedTextRange copy] autorelease];
+  return [_selectedTextRange copy];
 }
 
 - (void)setSelectedTextRange:(UITextRange*)selectedTextRange {
@@ -283,7 +274,6 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
 - (void)setSelectedTextRange:(UITextRange*)selectedTextRange updateEditingState:(BOOL)update {
   if (_selectedTextRange != selectedTextRange) {
-    UITextRange* oldSelectedRange = _selectedTextRange;
     if (self.hasText) {
       FlutterTextRange* flutterTextRange = (FlutterTextRange*)selectedTextRange;
       _selectedTextRange = [[FlutterTextRange
@@ -291,7 +281,6 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     } else {
       _selectedTextRange = [selectedTextRange copy];
     }
-    [oldSelectedRange release];
 
     if (update)
       [self updateEditingState];
@@ -700,11 +689,6 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
 - (void)dealloc {
   [self hideTextInput];
-  [_view release];
-  [_secureView release];
-  [_inputHider release];
-
-  [super dealloc];
 }
 
 - (UIView<UITextInput>*)textInputView {

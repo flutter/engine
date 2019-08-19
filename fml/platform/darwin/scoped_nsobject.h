@@ -36,32 +36,29 @@ namespace fml {
 // scoped_nsautorelease_pool.h instead.
 // We check for bad uses of scoped_nsobject and NSAutoreleasePool at compile
 // time with a template specialization (see below).
+//
+
+static_assert(__has_feature(objc_arc),
+              "Only ARC enabled translation units may use/include these utilities.");
 
 template <typename NST>
 class scoped_nsprotocol {
  public:
   explicit scoped_nsprotocol(NST object = nil) : object_(object) {}
 
-  scoped_nsprotocol(const scoped_nsprotocol<NST>& that) : object_([that.object_ retain]) {}
+  scoped_nsprotocol(const scoped_nsprotocol<NST>& that) : object_(that.object_) {}
 
   template <typename NSU>
-  scoped_nsprotocol(const scoped_nsprotocol<NSU>& that) : object_([that.get() retain]) {}
+  scoped_nsprotocol(const scoped_nsprotocol<NSU>& that) : object_(that.get()) {}
 
-  ~scoped_nsprotocol() { [object_ release]; }
+  ~scoped_nsprotocol() { object_ = nil; }
 
   scoped_nsprotocol& operator=(const scoped_nsprotocol<NST>& that) {
-    reset([that.get() retain]);
+    reset(that.get());
     return *this;
   }
 
-  void reset(NST object = nil) {
-    // We intentionally do not check that object != object_ as the caller must
-    // either already have an ownership claim over whatever it passes to this
-    // method, or call it with the |RETAIN| policy which will have ensured that
-    // the object is retained once more when reaching this point.
-    [object_ release];
-    object_ = object;
-  }
+  void reset(NST object = nil) { object_ = object; }
 
   bool operator==(NST that) const { return object_ == that; }
   bool operator!=(NST that) const { return object_ != that; }
@@ -89,7 +86,7 @@ class scoped_nsprotocol {
   NST autorelease() { return [release() autorelease]; }
 
  private:
-  NST object_;
+  __strong NST object_;
 };
 
 // Free functions
@@ -139,16 +136,6 @@ class scoped_nsobject<id> : public scoped_nsprotocol<id> {
     scoped_nsprotocol<id>::operator=(that);
     return *this;
   }
-};
-
-// Do not use scoped_nsobject for NSAutoreleasePools, use
-// ScopedNSAutoreleasePool instead. This is a compile time check. See details
-// at top of header.
-template <>
-class scoped_nsobject<NSAutoreleasePool> {
- private:
-  explicit scoped_nsobject(NSAutoreleasePool* object = nil);
-  FML_DISALLOW_COPY_AND_ASSIGN(scoped_nsobject);
 };
 
 }  // namespace fml

@@ -41,7 +41,7 @@
 - (NSString*)decode:(NSData*)message {
   if (message == nil)
     return nil;
-  return [[[NSString alloc] initWithData:message encoding:NSUTF8StringEncoding] autorelease];
+  return [[NSString alloc] initWithData:message encoding:NSUTF8StringEncoding];
 }
 @end
 

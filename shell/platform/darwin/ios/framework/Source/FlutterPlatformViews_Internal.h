@@ -104,7 +104,7 @@ class FlutterPlatformViewsController {
                    GrContext* gr_context,
                    std::shared_ptr<IOSGLContext> gl_context);
 
-  void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
+  void OnMethodCall(FlutterMethodCall* call, FlutterResult result);
 
  private:
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
@@ -155,10 +155,10 @@ class FlutterPlatformViewsController {
 
   std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
 
-  void OnCreate(FlutterMethodCall* call, FlutterResult& result);
-  void OnDispose(FlutterMethodCall* call, FlutterResult& result);
-  void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
-  void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
+  void OnCreate(FlutterMethodCall* call, FlutterResult result);
+  void OnDispose(FlutterMethodCall* call, FlutterResult result);
+  void OnAcceptGesture(FlutterMethodCall* call, FlutterResult result);
+  void OnRejectGesture(FlutterMethodCall* call, FlutterResult result);
 
   void DetachUnusedLayers();
   // Dispose the views in `views_to_dispose_`.

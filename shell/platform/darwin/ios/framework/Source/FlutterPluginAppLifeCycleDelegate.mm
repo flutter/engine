@@ -37,7 +37,7 @@ static const SEL selectorsHandledByPlugins[] = {
   dispatch_block_t unsubscribe = ^{
     [[NSNotificationCenter defaultCenter] removeObserver:blockSelf name:name object:nil];
   };
-  [_notificationUnsubscribers addObject:[[unsubscribe copy] autorelease]];
+  [_notificationUnsubscribers addObject:[unsubscribe copy]];
 }
 
 - (instancetype)init {
@@ -55,7 +55,7 @@ static const SEL selectorsHandledByPlugins[] = {
                 selector:@selector(handleDidBecomeActive:)];
     [self addObserverFor:UIApplicationWillTerminateNotification
                 selector:@selector(handleWillTerminate:)];
-    _delegates = [[NSPointerArray weakObjectsPointerArray] retain];
+    _delegates = [NSPointerArray weakObjectsPointerArray];
   }
   return self;
 }
@@ -64,9 +64,6 @@ static const SEL selectorsHandledByPlugins[] = {
   for (dispatch_block_t unsubscribe in _notificationUnsubscribers) {
     unsubscribe();
   }
-  [_notificationUnsubscribers release];
-  [_delegates release];
-  [super dealloc];
 }
 
 static BOOL isPowerOfTwo(NSUInteger x) {

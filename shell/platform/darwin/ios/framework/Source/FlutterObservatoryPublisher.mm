@@ -87,7 +87,6 @@
   [self stopService];
 
   flutter::DartServiceIsolate::RemoveServerStatusCallback(std::move(_callbackHandle));
-  [super dealloc];
 }
 
 - (void)publishServiceProtocolPort:(std::string)uri {
@@ -109,7 +108,7 @@
     // Remove leading "/"
     path = path.substr(1);
   }
-  NSData* pathData = [[[NSData alloc] initWithBytes:path.c_str() length:path.length()] autorelease];
+  NSData* pathData = [[NSData alloc] initWithBytes:path.c_str() length:path.length()];
   NSDictionary* txtDict = @{
     @"authCode" : pathData,
   };

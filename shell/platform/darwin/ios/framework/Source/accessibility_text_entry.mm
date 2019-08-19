@@ -179,11 +179,6 @@
   return self;
 }
 
-- (void)dealloc {
-  [_inactive_text_input release];
-  [super dealloc];
-}
-
 #pragma mark - SemanticsObject overrides
 
 - (void)setSemanticsNode:(const flutter::SemanticsNode*)node {

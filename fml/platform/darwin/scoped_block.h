@@ -11,52 +11,21 @@
 
 namespace fml {
 
-// ScopedBlock<> is patterned after ScopedCFTypeRef<>, but uses Block_copy() and
-// Block_release() instead of CFRetain() and CFRelease().
-
-enum class OwnershipPolicy {
-  // The scoped object takes ownership of an object by taking over an existing
-  // ownership claim.
-  Assume,
-
-  // The scoped object will retain the the object and any initial ownership is
-  // not changed.
-  Retain,
-};
-
 template <typename B>
 class ScopedBlock {
  public:
-  explicit ScopedBlock(B block = nullptr,
-                       OwnershipPolicy policy = OwnershipPolicy::Assume)
-      : block_(block) {
-    if (block_ && policy == OwnershipPolicy::Retain)
-      block_ = Block_copy(block);
-  }
+  explicit ScopedBlock(B block = nullptr) : block_(block) {}
 
-  ScopedBlock(const ScopedBlock<B>& that) : block_(that.block_) {
-    if (block_)
-      block_ = Block_copy(block_);
-  }
+  ScopedBlock(const ScopedBlock<B>& that) : block_(that.block_) {}
 
-  ~ScopedBlock() {
-    if (block_)
-      Block_release(block_);
-  }
+  ~ScopedBlock() = default;
 
   ScopedBlock& operator=(const ScopedBlock<B>& that) {
-    reset(that.get(), OwnershipPolicy::Retain);
+    reset(that.get());
     return *this;
   }
 
-  void reset(B block = nullptr,
-             OwnershipPolicy policy = OwnershipPolicy::Assume) {
-    if (block && policy == OwnershipPolicy::Retain)
-      block = Block_copy(block);
-    if (block_)
-      Block_release(block_);
-    block_ = block;
-  }
+  void reset(B block = nullptr) { block_ = block; }
 
   bool operator==(B that) const { return block_ == that; }
 

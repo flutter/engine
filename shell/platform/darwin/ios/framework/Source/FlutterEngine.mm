@@ -88,7 +88,7 @@
   if (projectOrNil == nil)
     _dartProject.reset([[FlutterDartProject alloc] init]);
   else
-    _dartProject.reset([projectOrNil retain]);
+    _dartProject.reset(projectOrNil);
 
   _pluginPublications = [NSMutableDictionary new];
   _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
@@ -106,14 +106,10 @@
 }
 
 - (void)dealloc {
-  [_pluginPublications release];
   _binaryMessenger.parent = nil;
-  [_binaryMessenger release];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   [center removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
-
-  [super dealloc];
 }
 
 - (flutter::Shell&)shell {
@@ -243,9 +239,14 @@
 - (void)setupChannels {
   // This will be invoked once the shell is done setting up and the isolate ID
   // for the UI isolate is available.
+
+  __weak decltype(self) weakSelf = self;
   [_binaryMessenger setMessageHandlerOnChannel:@"flutter/isolate"
                           binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
-                            self.isolateId = [[FlutterStringCodec sharedInstance] decode:message];
+                            if (decltype(self) strongSelf = weakSelf) {
+                              strongSelf.isolateId =
+                                  [[FlutterStringCodec sharedInstance] decode:message];
+                            }
                           }];
 
   _localizationChannel.reset([[FlutterMethodChannel alloc]
@@ -302,7 +303,7 @@
 
     [_platformViewsChannel.get()
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-          _platformViewsController->OnMethodCall(call, result);
+          _platformViewsController.get()->OnMethodCall(call, result);
         }];
 
     [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
@@ -579,7 +580,7 @@
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
   NSAssert(self.pluginPublications[pluginKey] == nil, @"Duplicate plugin key: %@", pluginKey);
   self.pluginPublications[pluginKey] = [NSNull null];
-  return [[[FlutterEngineRegistrar alloc] initWithPlugin:pluginKey flutterEngine:self] autorelease];
+  return [[FlutterEngineRegistrar alloc] initWithPlugin:pluginKey flutterEngine:self];
 }
 
 - (BOOL)hasPlugin:(NSString*)pluginKey {
@@ -609,15 +610,9 @@
 - (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
-  _pluginKey = [pluginKey retain];
-  _flutterEngine = [flutterEngine retain];
+  _pluginKey = pluginKey;
+  _flutterEngine = flutterEngine;
   return self;
-}
-
-- (void)dealloc {
-  [_pluginKey release];
-  [_flutterEngine release];
-  [super dealloc];
 }
 
 - (NSObject<FlutterBinaryMessenger>*)messenger {

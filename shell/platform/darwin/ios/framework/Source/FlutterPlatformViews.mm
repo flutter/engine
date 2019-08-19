@@ -19,15 +19,15 @@
 namespace flutter {
 
 void FlutterPlatformViewsController::SetFlutterView(UIView* flutter_view) {
-  flutter_view_.reset([flutter_view retain]);
+  flutter_view_.reset(flutter_view);
 }
 
 void FlutterPlatformViewsController::SetFlutterViewController(
     UIViewController* flutter_view_controller) {
-  flutter_view_controller_.reset([flutter_view_controller retain]);
+  flutter_view_controller_.reset(flutter_view_controller);
 }
 
-void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult& result) {
+void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult result) {
   if ([[call method] isEqualToString:@"create"]) {
     OnCreate(call, result);
   } else if ([[call method] isEqualToString:@"dispose"]) {
@@ -41,7 +41,7 @@ void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, Flutt
   }
 }
 
-void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult& result) {
+void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult result) {
   if (!flutter_view_.get()) {
     // Right now we assume we have a reference to FlutterView when creating a new view.
     // TODO(amirh): support this by setting the reference to FlutterView when it becomes available.
@@ -83,20 +83,20 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectZero
                                                            viewIdentifier:viewId
                                                                 arguments:params];
-  views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>>([embedded_view retain]);
+  views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>>(embedded_view);
 
-  FlutterTouchInterceptingView* touch_interceptor = [[[FlutterTouchInterceptingView alloc]
-       initWithEmbeddedView:embedded_view.view
-      flutterViewController:flutter_view_controller_.get()] autorelease];
+  FlutterTouchInterceptingView* touch_interceptor =
+      [[FlutterTouchInterceptingView alloc] initWithEmbeddedView:embedded_view.view
+                                           flutterViewController:flutter_view_controller_.get()];
 
   touch_interceptors_[viewId] =
-      fml::scoped_nsobject<FlutterTouchInterceptingView>([touch_interceptor retain]);
-  root_views_[viewId] = fml::scoped_nsobject<UIView>([touch_interceptor retain]);
+      fml::scoped_nsobject<FlutterTouchInterceptingView>(touch_interceptor);
+  root_views_[viewId] = fml::scoped_nsobject<UIView>(touch_interceptor);
 
   result(nil);
 }
 
-void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterResult& result) {
+void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterResult result) {
   NSNumber* arg = [call arguments];
   int64_t viewId = [arg longLongValue];
 
@@ -112,7 +112,7 @@ void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterR
 }
 
 void FlutterPlatformViewsController::OnAcceptGesture(FlutterMethodCall* call,
-                                                     FlutterResult& result) {
+                                                     FlutterResult result) {
   NSDictionary<NSString*, id>* args = [call arguments];
   int64_t viewId = [args[@"id"] longLongValue];
 
@@ -130,7 +130,7 @@ void FlutterPlatformViewsController::OnAcceptGesture(FlutterMethodCall* call,
 }
 
 void FlutterPlatformViewsController::OnRejectGesture(FlutterMethodCall* call,
-                                                     FlutterResult& result) {
+                                                     FlutterResult result) {
   NSDictionary<NSString*, id>* args = [call arguments];
   int64_t viewId = [args[@"id"] longLongValue];
 
@@ -152,8 +152,7 @@ void FlutterPlatformViewsController::RegisterViewFactory(
     NSString* factoryId) {
   std::string idString([factoryId UTF8String]);
   FML_CHECK(factories_.count(idString) == 0);
-  factories_[idString] =
-      fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>([factory retain]);
+  factories_[idString] = fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>(factory);
 }
 
 void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
@@ -328,7 +327,7 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
     UIView* oldPlatformViewRoot = root_views_[view_id].get();
     UIView* newPlatformViewRoot =
         ReconstructClipViewsChain(currentClippingCount, touchInterceptor, oldPlatformViewRoot);
-    root_views_[view_id] = fml::scoped_nsobject<UIView>([newPlatformViewRoot retain]);
+    root_views_[view_id] = fml::scoped_nsobject<UIView>(newPlatformViewRoot);
   }
   ApplyMutators(params.mutatorsStack, touchInterceptor);
 }
@@ -541,8 +540,8 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
     [self addSubview:embeddedView];
 
     ForwardingGestureRecognizer* forwardingRecognizer =
-        [[[ForwardingGestureRecognizer alloc] initWithTarget:self
-                                       flutterViewController:flutterViewController] autorelease];
+        [[ForwardingGestureRecognizer alloc] initWithTarget:self
+                                      flutterViewController:flutterViewController];
 
     _delayingRecognizer.reset([[DelayingGestureRecognizer alloc]
               initWithTarget:self
@@ -591,7 +590,7 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   if (self) {
     self.delaysTouchesBegan = YES;
     self.delegate = self;
-    _forwardingRecognizer.reset([forwardingRecognizer retain]);
+    _forwardingRecognizer.reset(forwardingRecognizer);
   }
   return self;
 }

@@ -76,14 +76,13 @@ float VsyncWaiterIOS::GetDisplayRefreshRate() const {
   if (self) {
     callback_ = std::move(callback);
     display_link_ = fml::scoped_nsobject<CADisplayLink> {
-      [[CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)] retain]
+      [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)]
     };
     display_link_.get().paused = YES;
 
-    task_runner->PostTask([client = [self retain]]() {
+    task_runner->PostTask([client = self]() {
       [client->display_link_.get() addToRunLoop:[NSRunLoop currentRunLoop]
                                         forMode:NSRunLoopCommonModes];
-      [client release];
     });
   }
 
@@ -129,8 +128,6 @@ float VsyncWaiterIOS::GetDisplayRefreshRate() const {
 
 - (void)dealloc {
   [self invalidate];
-
-  [super dealloc];
 }
 
 @end

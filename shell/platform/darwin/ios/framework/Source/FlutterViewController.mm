@@ -75,7 +75,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
     _viewOpaque = YES;
-    _engine.reset([engine retain]);
+    _engine.reset(engine);
     _engineNeedsLaunch = NO;
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
@@ -335,7 +335,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
     // Get callback on GPU thread and jump back to platform thread.
     platformTaskRunner->PostTask([weakSelf]() {
       fml::scoped_nsobject<FlutterViewController> flutterViewController(
-          [(FlutterViewController*)weakSelf.get() retain]);
+          (FlutterViewController*)weakSelf.get());
       if (flutterViewController) {
         if (flutterViewController.get()->_splashScreenView) {
           [flutterViewController removeSplashScreenView:^{
@@ -411,13 +411,13 @@ typedef enum UIAccessibilityContrast : NSInteger {
     return;
   }
 
-  _splashScreenView.reset([view retain]);
+  _splashScreenView.reset(view);
   _splashScreenView.get().autoresizingMask =
       UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 }
 
 - (void)setFlutterViewDidRenderCallback:(void (^)(void))callback {
-  _flutterViewRenderedCallback.reset(callback, fml::OwnershipPolicy::Retain);
+  _flutterViewRenderedCallback.reset(callback);
 }
 
 #pragma mark - Surface creation and teardown updates
@@ -523,7 +523,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)dealloc {
   [_engine.get() notifyViewControllerDeallocated];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
-  [super dealloc];
 }
 
 #pragma mark - Application lifecycle notifications
@@ -862,7 +861,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)onLocaleUpdated:(NSNotification*)notification {
   NSArray<NSString*>* preferredLocales = [NSLocale preferredLanguages];
-  NSMutableArray<NSString*>* data = [[NSMutableArray new] autorelease];
+  NSMutableArray<NSString*>* data = [NSMutableArray new];
 
   // Force prepend the [NSLocale currentLocale] to the front of the list
   // to ensure we are including the full default locale. preferredLocales
@@ -881,7 +880,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   // Add any secondary locales/languages to the list.
   for (NSString* localeID in preferredLocales) {
-    NSLocale* currentLocale = [[[NSLocale alloc] initWithLocaleIdentifier:localeID] autorelease];
+    NSLocale* currentLocale = [[NSLocale alloc] initWithLocaleIdentifier:localeID];
     NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
     NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
     NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];

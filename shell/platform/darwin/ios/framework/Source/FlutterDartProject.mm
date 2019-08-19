@@ -162,7 +162,7 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   self = [super init];
 
   if (self) {
-    _precompiledDartBundle.reset([bundle retain]);
+    _precompiledDartBundle.reset(bundle);
     _settings = DefaultSettingsForProcess(bundle);
   }
 
