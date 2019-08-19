@@ -192,8 +192,7 @@ deps = {
   # WARNING: Unused Dart dependencies in the list below till "WARNING:" marker are removed automatically - see create_updated_flutter_deps.py.
 
   'src/third_party/dart/pkg/analysis_server/language_model':
-   {'packages': [{'version': 'KB68QHR1SKtopACaf3TFcu9MusRbwWqs0L1m_urGLL4C
-', 'package': 'dart/language_model'}], 'dep_type': 'cipd'},
+   {'packages': [{'version': 'KB68QHR1SKtopACaf3TFcu9MusRbwWqs0L1m_urGLL4C', 'package': 'dart/language_model'}], 'dep_type': 'cipd'},
 
   'src/third_party/dart/third_party/observatory_pub_packages':
    Var('dart_git') + '/observatory_pub_packages.git' + '@' + Var('dart_observatory_pub_packages_rev'),
