@@ -151,10 +151,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& size)
   auto submit_callback = [drawable = next_drawable, command_buffer, wait](
                              const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
     canvas->flush();
-    [command_buffer.get() commit];
     if (!wait) {
       [command_buffer.get() presentDrawable:drawable.get()];
+      [command_buffer.get() commit];
     } else {
+      [command_buffer.get() commit];
       [command_buffer.get() waitUntilScheduled];
       [drawable.get() present];
     }
