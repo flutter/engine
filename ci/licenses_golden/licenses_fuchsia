@@ -1,4 +1,4 @@
-Signature: 9dbdb1d3d162d9adf9fb3793d1e63831
+Signature: 5e4ee55fe2f8318bc307b94539b1d3f9
 
 UNUSED LICENSES:
 
@@ -1995,6 +1995,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.web/navigation.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.service/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.stats/meta.json
+FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/executor.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/include/lib/async/cpp/executor.h
 FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/async-default/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/async-loop-cpp/meta.json
