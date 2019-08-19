@@ -61,7 +61,7 @@ import io.flutter.view.FlutterMain;
  * The Dart entrypoint and app bundle path are not supported as {@code Intent} parameters due to
  * security concerns. If such configurations were exposed via {@code Intent}, then a
  * {@code FlutterActivity} that is {@code exported} from your Android app would allow other apps to
- * invoke arbitrary Dart code in your app by specifying different Dart entrypoints for your
+ * invoke arbitrary Dart entrypoints in your app by specifying different Dart entrypoints for your
  * {@code FlutterActivity}. Therefore, these configurations are not available via {@code Intent}.
  * <p>
  * <strong>Using a cached FlutterEngine</strong>
