@@ -30,13 +30,11 @@ bool IOSSurfaceMetal::ResourceContextMakeCurrent() {
 void IOSSurfaceMetal::UpdateStorageSizeIfNecessary() {}
 
 // |IOSSurface|
-std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface() {
-  return std::make_unique<GPUSurfaceMetal>(this, layer_);
-}
-
-// |IOSSurface|
 std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrContext* gr_context) {
-  return std::make_unique<GPUSurfaceMetal>(this, sk_ref_sp(gr_context), layer_);
+  if (gr_context) {
+    return std::make_unique<GPUSurfaceMetal>(this, sk_ref_sp(gr_context), layer_);
+  }
+  return std::make_unique<GPUSurfaceMetal>(this, layer_);
 }
 
 // |ExternalViewEmbedder|
