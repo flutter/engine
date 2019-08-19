@@ -96,7 +96,7 @@ vars = {
   'dart_term_glyph_tag': '1.0.1',
   'dart_test_reflective_loader_tag': '0.1.8',
   'dart_test_tag': 'test-v1.6.4',
-  'dart_tflite_native_rev': '7f3748a2adf0e7c246813d0b206396312cbaa0db',
+  'dart_tflite_native_rev': '65889224d8ee32ceaf4f78d8d29fd59750e1b817',
   'dart_typed_data_tag': '1.1.6',
   'dart_usage_tag': '3.4.0',
   'dart_watcher_rev': '0.9.7+12-pub',
@@ -192,7 +192,8 @@ deps = {
   # WARNING: Unused Dart dependencies in the list below till "WARNING:" marker are removed automatically - see create_updated_flutter_deps.py.
 
   'src/third_party/dart/pkg/analysis_server/language_model':
-   {'packages': [{'version': 'EFtZ0Z5T822s4EUOOaWeiXUppRGKp5d9Z6jomJIeQYcC', 'package': 'dart/language_model'}], 'dep_type': 'cipd'},
+   {'packages': [{'version': 'KB68QHR1SKtopACaf3TFcu9MusRbwWqs0L1m_urGLL4C
+', 'package': 'dart/language_model'}], 'dep_type': 'cipd'},
 
   'src/third_party/dart/third_party/observatory_pub_packages':
    Var('dart_git') + '/observatory_pub_packages.git' + '@' + Var('dart_observatory_pub_packages_rev'),
@@ -505,7 +506,7 @@ deps = {
      'packages': [
        {
         'package': 'dart/language_model',
-        'version': 'gABkW8D_-f45it57vQ_ZTKFwev16RcCjvrdTCytEnQgC',
+        'version': 'KB68QHR1SKtopACaf3TFcu9MusRbwWqs0L1m_urGLL4C',
        }
      ],
      'dep_type': 'cipd',
