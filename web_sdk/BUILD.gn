@@ -5,7 +5,6 @@
 import("//third_party/dart/build/dart/dart_action.gni")
 import("//third_party/dart/utils/compile_platform.gni")
 
-sdk_libraries_json = "$root_out_dir/flutter_web_sdk/libraries.json"
 sdk_dill = "$root_out_dir/flutter_web_sdk/kernel/flutter_ddc_sdk.dill"
 
 web_ui_sources =
@@ -117,13 +116,13 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk_outline") {
     "--target",
     "ddc",
     "--packages-file",
-    "file:/" + rebase_path("//third_party/dart/.packages"),
+    rebase_path("//third_party/dart/.packages"),
     "--multi-root-scheme",
     "org-dartlang-sdk",
     "--multi-root",
-    "file:/" + rebase_path("../../"),
+    rebase_path("../../"),
     "--libraries-file",
-    "org-dartlang-sdk:/$sdk_libraries_json",
+    "org-dartlang-sdk:/$root_out_dir/flutter_web_sdk/libraries.json",
     "--output",
     rebase_path(sdk_dill),
     "--source",
@@ -166,7 +165,7 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
     "dart:_engine",
     "--no-summarize",
     "--packages",
-    "file:///" + rebase_path("//third_party/dart/.packages"),
+    rebase_path("//third_party/dart/.packages"),
     "--multi-root-scheme",
     "org-dartlang-sdk",
     "--multi-root",
@@ -174,7 +173,7 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
     "--multi-root-output-path",
     rebase_path("$root_out_dir/"),
     "--libraries-file",
-    "file:///" + rebase_path(sdk_libraries_json),
+    "org-dartlang-sdk:/$root_out_dir/flutter_web_sdk/libraries.json",
     "--modules",
     "amd",
     "-o",
