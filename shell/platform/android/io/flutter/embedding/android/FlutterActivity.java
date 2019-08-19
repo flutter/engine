@@ -73,6 +73,10 @@ import io.flutter.view.FlutterMain;
  * given cached {@link FlutterEngine}. An {@code IllegalStateException} will be thrown if a cached
  * engine is requested but does not exist in the cache.
  * <p>
+ * When using a cached {@link FlutterEngine}, that {@link FlutterEngine} should already be executing
+ * Dart code, which means that the Dart entrypoint and initial route have already been defined.
+ * Therefore, {@link CachedEngineIntentBuilder} does not offer configuration of these properties.
+ * <p>
  * It is generally recommended to use a cached {@link FlutterEngine} to avoid a momentary delay
  * when initializing a new {@link FlutterEngine}. The two exceptions to using a cached
  * {@link FlutterEngine} are:
