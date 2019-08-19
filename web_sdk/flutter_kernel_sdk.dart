@@ -74,11 +74,9 @@ Future main(List<String> args) async {
   await Directory(outputDir).create(recursive: true);
   await writeComponentToBinary(component, outputPath);
 
-  var jsModule = ProgramCompiler(
-      component,
-      compilerResult.classHierarchy,
-      SharedCompilerOptions(moduleName: 'dart_sdk'),
-      {}).emitModule(component, [], [], {});
+  var jsModule = ProgramCompiler(component, compilerResult.classHierarchy,
+          SharedCompilerOptions(moduleName: 'dart_sdk'))
+      .emitModule(component, [], [], {});
   var moduleFormats = {
     'amd': ModuleFormat.amd,
   };
