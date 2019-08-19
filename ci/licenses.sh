@@ -71,5 +71,8 @@ then
     exitStatus=1
 fi
 
-echo "Licenses are as expected."
+if [ "$exitStatus" -eq "0" ]
+then
+  echo "Licenses are as expected."
+fi
 exit $exitStatus
