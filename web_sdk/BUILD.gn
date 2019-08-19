@@ -170,7 +170,7 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
     "--multi-root-scheme",
     "org-dartlang-sdk",
     "--multi-root",
-    "file://" + rebase_path("../../"),
+    "file:/" + rebase_path("../../"),
     "--multi-root-output-path",
     rebase_path("$root_out_dir/"),
     "--libraries-file",
