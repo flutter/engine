@@ -1,4 +1,4 @@
-Signature: 9dbdb1d3d162d9adf9fb3793d1e63831
+Signature: 27f556725772222edc6edda54eb1d41d
 
 UNUSED LICENSES:
 
@@ -1995,6 +1995,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.web/navigation.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.service/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.stats/meta.json
+FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/executor.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/include/lib/async/cpp/executor.h
 FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/async-default/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/async-loop-cpp/meta.json
@@ -3040,7 +3042,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/commands.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/events.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/scenic.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/session.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/snapshooter.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/snapshot.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.vectorial/commands.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.vectorial/events.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/commands.fidl
