@@ -55,6 +55,12 @@ class FlutterWindowController {
                     const std::string& assets_path,
                     const std::vector<std::string>& arguments);
 
+  // Creates a FlutterView that can be parented into a Windows View hierarchy either using HWNDs 
+  // or in the future into a CoreWindow, or using compositor.
+  std::unique_ptr<FlutterView> CreateFlutterView(
+      const std::string& assets_path,
+                         const std::vector<std::string>& arguments);
+
   // Returns the FlutterDesktopPluginRegistrarRef to register a plugin with the
   // given name.
   //

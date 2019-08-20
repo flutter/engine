@@ -22,6 +22,23 @@ struct WindowFrame {
   int height;
 };
 
+class FlutterView {
+ public:
+  explicit FlutterView(FlutterDesktopWindowRef window) : window_(window) {}
+
+  ~FlutterView() = default;
+
+  // Prevent copying.
+  FlutterView(FlutterView const&) = delete;
+  FlutterView& operator=(FlutterView const&) = delete;
+
+  private:
+  // Handle for interacting with the C API's window.
+  //
+  // Note: window_ is conceptually owned by the controller, not this object.
+  FlutterDesktopWindowRef window_;
+};
+
 // A window displaying Flutter content.
 class FlutterWindow {
  public:
