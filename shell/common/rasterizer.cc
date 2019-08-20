@@ -261,7 +261,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
     if (external_view_embedder != nullptr) {
       // Frame submission will only flush the surface canvas. But we are
       // rendering into a canvas managed by the external view embedder. This
-      // must be flush manually.
+      // must be flushed manually.
       root_surface_canvas->flush();
       external_view_embedder->SubmitFrame(surface_->GetContext());
     }
