@@ -35,5 +35,5 @@ gcloud --project flutter-infra firebase test android run \
   --app $1 \
   --timeout 2m \
   --results-bucket=gs://flutter_firebase_testlab \
-  --results-dir=engine_scenario_test/$GIT_REVISION/$BUILD_ID
-
+  --results-dir=engine_scenario_test/$GIT_REVISION/$BUILD_ID \
+  --no-auto-google-login

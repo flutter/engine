@@ -108,7 +108,8 @@ void ShellTest::PumpOneFrame(Shell* shell) {
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
       [&latch, engine = shell->weak_engine_]() {
-        engine->SetViewportMetrics({1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0});
+        engine->SetViewportMetrics(
+            {1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
         engine->animator_->BeginFrame(fml::TimePoint::Now(),
                                       fml::TimePoint::Now());
         latch.Signal();
@@ -217,7 +218,7 @@ ShellTestPlatformView::~ShellTestPlatformView() = default;
 
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformView::CreateRenderingSurface() {
-  return std::make_unique<GPUSurfaceGL>(this);
+  return std::make_unique<GPUSurfaceGL>(this, true);
 }
 
 // |GPUSurfaceGLDelegate|
@@ -246,6 +247,11 @@ GPUSurfaceGLDelegate::GLProcResolver ShellTestPlatformView::GetGLProcResolver()
   return [surface = &gl_surface_](const char* name) -> void* {
     return surface->GetProcAddress(name);
   };
+}
+
+// |GPUSurfaceGLDelegate|
+ExternalViewEmbedder* ShellTestPlatformView::GetExternalViewEmbedder() {
+  return nullptr;
 }
 
 }  // namespace testing
