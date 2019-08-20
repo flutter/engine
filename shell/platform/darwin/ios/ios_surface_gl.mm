@@ -154,11 +154,10 @@ bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
 // |ExternalViewEmbedder|
 sk_sp<SkImage> IOSSurfaceGL::ScreenShotEmbeddedView(int view_id) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  NSLog(@"platform_views_controller is null %@", @(platform_views_controller == nullptr));
   if (platform_views_controller == nullptr) {
     return nullptr;
   }
-  UIView* platform_view = platform_views_controller->GetPlatformViewByID(0).view;
+  UIView* platform_view = platform_views_controller->GetPlatformViewByID(view_id).view;
   FML_CHECK(platform_view != nil);
   return IOSScreenShotProvider::TakeScreenShotForView(platform_view);
 }

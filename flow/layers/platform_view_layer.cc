@@ -34,6 +34,7 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
 }
 
 void PlatformViewLayer::Paint(PaintContext& context) const {
+  FML_DLOG(ERROR) << context.screen_shot;
   if (context.view_embedder == nullptr) {
     FML_LOG(ERROR) << "Trying to embed a platform view but the PaintContext "
                       "does not support embedding";

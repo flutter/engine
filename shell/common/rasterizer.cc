@@ -22,6 +22,8 @@ namespace flutter {
 // used within this interval.
 static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
+static const int kDefaultScreenShotThreadMergeLeaseDuration = 10;
+
 // TODO(dnfield): Remove this once internal embedders have caught up.
 static Rasterizer::DummyDelegate dummy_delegate_;
 Rasterizer::Rasterizer(
@@ -279,7 +281,7 @@ static sk_sp<SkData> SerializeTypeface(SkTypeface* typeface, void* ctx) {
   return typeface->serialize(SkTypeface::SerializeBehavior::kDoIncludeData);
 }
 
-static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
+sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsPicture(
     flutter::LayerTree* tree,
     flutter::CompositorContext& compositor_context) {
   FML_DCHECK(tree != nullptr);
@@ -293,9 +295,10 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
   // TODO(amirh): figure out how to take a screenshot with embedded UIView.
   // https://github.com/flutter/flutter/issues/23435
   auto frame = compositor_context.AcquireFrame(
-      nullptr, recorder.getRecordingCanvas(), nullptr,
+      nullptr, recorder.getRecordingCanvas(), surface_->GetExternalViewEmbedder(),
       root_surface_transformation, false, nullptr);
 
+  gpu_thread_merger_->MergeWithLease(kDefaultScreenShotThreadMergeLeaseDuration);
   frame->Raster(*tree, true, true);
 
   SkSerialProcs procs = {0};
@@ -322,7 +325,7 @@ static sk_sp<SkSurface> CreateSnapshotSurface(GrContext* surface_context,
   return SkSurface::MakeRaster(image_info);
 }
 
-static sk_sp<SkData> ScreenshotLayerTreeAsImage(
+sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     flutter::LayerTree* tree,
     flutter::CompositorContext& compositor_context,
     GrContext* surface_context,
@@ -344,10 +347,11 @@ static sk_sp<SkData> ScreenshotLayerTreeAsImage(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
-  auto frame = compositor_context.AcquireFrame(surface_context, canvas, nullptr,
+  auto frame = compositor_context.AcquireFrame(surface_context, canvas, surface_->GetExternalViewEmbedder(),
                                                root_surface_transformation,
                                                false, nullptr);
   canvas->clear(SK_ColorTRANSPARENT);
+  gpu_thread_merger_->MergeWithLease(kDefaultScreenShotThreadMergeLeaseDuration);
   frame->Raster(*tree, true, true);
   canvas->flush();
 
