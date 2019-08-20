@@ -59,18 +59,18 @@ bool FlutterWindowController::CreateWindow(
   return true;
 }
 
-std::unique_ptr<FlutterView> FlutterWindowController::CreateFlutterView(
+std::unique_ptr<FlutterViewWin32> FlutterWindowController::CreateFlutterView(
     const std::string& assets_path,
     const std::vector<std::string>& arguments) {
   if (!init_succeeded_) {
     std::cerr << "Could not create window; FlutterDesktopInit failed."
               << std::endl;
-    return false;
+    return nullptr;
   }
 
   if (controller_) {
     std::cerr << "Only one Flutter window can exist at a time." << std::endl;
-    return false;
+    return nullptr;
   }
 
   std::vector<const char*> engine_arguments;
@@ -79,16 +79,17 @@ std::unique_ptr<FlutterView> FlutterWindowController::CreateFlutterView(
       [](const std::string& arg) -> const char* { return arg.c_str(); });
   size_t arg_count = engine_arguments.size();
 
-  /*controller_ = FlutterDesktopCreateWindow(
-      width, height, title.c_str(), assets_path.c_str(), icu_data_path_.c_str(),
-      arg_count > 0 ? &engine_arguments[0] : nullptr, arg_count);*/
+  controller_ = FlutterDesktopCreateView(
+      assets_path.c_str(), icu_data_path_.c_str(),
+      arg_count > 0 ? &engine_arguments[0] : nullptr, arg_count);
   if (!controller_) {
     std::cerr << "Failed to create window." << std::endl;
-    return false;
+    return nullptr;
   }
-  /*window_ =
-      std::make_unique<FlutterWindow>(FlutterDesktopGetWindow(controller_));*/
-  return nullptr;
+  //TODO: fix hack
+  window_ =
+      std::make_unique<FlutterWindow>(FlutterDesktopGetWindow(controller_));
+  return std::make_unique<FlutterViewWin32>(FlutterDesktopGetWindow(controller_));
  }
 
 FlutterDesktopPluginRegistrarRef FlutterWindowController::GetRegistrarForPlugin(

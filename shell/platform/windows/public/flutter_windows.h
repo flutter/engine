@@ -57,6 +57,13 @@ FlutterDesktopCreateWindow(int initial_width,
                            const char** arguments,
                            size_t argument_count);
 
+FLUTTER_EXPORT FlutterDesktopWindowControllerRef
+FlutterDesktopCreateView(
+                           const char* assets_path,
+                           const char* icu_data_path,
+                           const char** arguments,
+                           size_t argument_count);
+
 // Shuts down the engine instance associated with |controller|, and cleans up
 // associated state.
 //
@@ -128,6 +135,10 @@ FLUTTER_EXPORT void FlutterDesktopWindowSetFrame(
     int y,
     int width,
     int height);
+
+// TODO
+FLUTTER_EXPORT long FlutterDesktopGetHWNDFromView(
+    FlutterDesktopWindowRef flutter_window);
 
 // Returns the scale factor--the number of pixels per screen coordinate--for
 // |flutter_window|.

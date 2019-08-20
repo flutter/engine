@@ -57,7 +57,7 @@ class FlutterWindowController {
 
   // Creates a FlutterView that can be parented into a Windows View hierarchy either using HWNDs 
   // or in the future into a CoreWindow, or using compositor.
-  std::unique_ptr<FlutterView> CreateFlutterView(
+  std::unique_ptr<FlutterViewWin32> CreateFlutterView(
       const std::string& assets_path,
                          const std::vector<std::string>& arguments);
 

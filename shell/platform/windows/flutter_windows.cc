@@ -130,6 +130,34 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   return state;
 }
 
+FlutterDesktopWindowControllerRef FlutterDesktopCreateView(
+    const char* assets_path,
+    const char* icu_data_path,
+    const char** arguments,
+    size_t argument_count) {
+  FlutterDesktopWindowControllerRef state =
+      flutter::Win32FlutterWindow::CreateWin32FlutterView();
+
+  auto engine = RunFlutterEngine(state->window.get(), assets_path,
+                                 icu_data_path, arguments, argument_count);
+
+  if (engine == nullptr) {
+    return nullptr;
+  }
+
+  state->window->SetState(engine);
+
+  //TODO: do this in client 
+  // Trigger an initial size callback to send size information to Flutter.
+  //state->window->SendWindowMetrics();
+
+  return state;
+}
+
+long FlutterDesktopGetHWNDFromView(FlutterDesktopWindowRef flutter_window) {
+  return (long)((FlutterDesktopWindow*)flutter_window)->window->GetWindowHandle();
+}
+
 void FlutterDesktopDestroyWindow(FlutterDesktopWindowControllerRef controller) {
   FlutterEngineShutdown(controller->engine);
   delete controller;

@@ -12,6 +12,8 @@
 
 #include "plugin_registrar.h"
 
+//#include <Windows.h>
+
 namespace flutter {
 
 // A data type for window position and size.
@@ -22,15 +24,19 @@ struct WindowFrame {
   int height;
 };
 
-class FlutterView {
+class FlutterViewWin32 {
  public:
-  explicit FlutterView(FlutterDesktopWindowRef window) : window_(window) {}
+  explicit FlutterViewWin32(FlutterDesktopWindowRef window) : window_(window) {}
 
-  ~FlutterView() = default;
+  ~FlutterViewWin32() = default;
 
   // Prevent copying.
-  FlutterView(FlutterView const&) = delete;
-  FlutterView& operator=(FlutterView const&) = delete;
+  FlutterViewWin32(FlutterViewWin32 const&) = delete;
+  FlutterViewWin32& operator=(FlutterViewWin32 const&) = delete;
+
+  long GetNativeWindow() {
+      return FlutterDesktopGetHWNDFromView(window_);
+  }
 
   private:
   // Handle for interacting with the C API's window.

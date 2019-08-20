@@ -23,8 +23,12 @@ class Win32Window {
   Win32Window();
   ~Win32Window();
 
-  // Initializes and shows window with |title| and position and size using |x|,
-  // |y|, |width| and |height|
+  // Initializes as a child window.  Does not show window, window must be
+  // parented into window hierarchy by caller
+  void Initialize(const char* title);
+
+  // Initializes as a top level window.  Shows window with |title| and position
+  // and size using |x|, |y|, |width| and |height|
   void Initialize(const char* title,
                   const unsigned int x,
                   const unsigned int y,
@@ -33,6 +37,8 @@ class Win32Window {
 
   // Release OS resources asociated with window.
   virtual void Destroy();
+
+  HWND GetWindowHandle();
 
  protected:
   // Converts a c string to a wide unicode string.
@@ -103,7 +109,6 @@ class Win32Window {
 
   UINT GetCurrentHeight();
 
-  HWND GetWindowHandle();
 
  private:
   // Stores new width and height and calls |OnResize| to notify inheritors

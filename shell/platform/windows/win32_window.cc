@@ -35,6 +35,30 @@ Win32Window::~Win32Window() {
   Destroy();
 }
 
+void Win32Window::Initialize(const char* title) {
+  Destroy();
+  std::wstring converted_title = NarrowToWide(title);
+
+  WNDCLASS window_class = ResgisterWindowClass(converted_title);
+
+  auto result = CreateWindowEx(0, window_class.lpszClassName, converted_title.c_str(),
+                     WS_CHILD | WS_VISIBLE, CW_DEFAULT, CW_DEFAULT, 100, 100,
+                     HWND_MESSAGE, nullptr,
+               window_class.hInstance, this);
+
+  if (result == nullptr) {
+    auto error = GetLastError();
+    LPWSTR message = nullptr;
+    size_t size = FormatMessageW(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&message,
+        0, NULL);
+    OutputDebugString(message);
+    LocalFree(message);
+  }
+}
+
 void Win32Window::Initialize(const char* title,
                              const unsigned int x,
                              const unsigned int y,

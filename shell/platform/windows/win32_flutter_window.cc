@@ -10,14 +10,15 @@ constexpr int base_dpi = 96;
 
 Win32FlutterWindow::Win32FlutterWindow() {
   surface_manager = std::make_unique<AngleSurfaceManager>();
+  Win32Window::Initialize("FLUTTERVIEW");
 }
 
 Win32FlutterWindow::Win32FlutterWindow(const char* title,
                                        const int x,
                                        const int y,
                                        const int width,
-                                       const int height) noexcept
-    : Win32FlutterWindow() {
+                                       const int height) noexcept {
+  surface_manager = std::make_unique<AngleSurfaceManager>();
   Win32Window::Initialize(title, x, y, width, height);
 }
 
@@ -34,6 +35,17 @@ FlutterDesktopWindowControllerRef Win32FlutterWindow::CreateWin32FlutterWindow(
   auto state = std::make_unique<FlutterDesktopWindowControllerState>();
   state->window = std::make_unique<flutter::Win32FlutterWindow>(title, 10, 10,
                                                                 width, height);
+
+  // a window wrapper for the state block, distinct from the
+  // window_wrapper handed to plugin_registrar.
+  state->window_wrapper = std::make_unique<FlutterDesktopWindow>();
+  state->window_wrapper->window = state->window.get();
+  return state.release();
+}
+
+FlutterDesktopWindowControllerRef Win32FlutterWindow::CreateWin32FlutterView() {
+  auto state = std::make_unique<FlutterDesktopWindowControllerState>();
+  state->window = std::make_unique<flutter::Win32FlutterWindow>();
 
   // a window wrapper for the state block, distinct from the
   // window_wrapper handed to plugin_registrar.
@@ -105,9 +117,9 @@ void Win32FlutterWindow::HandlePlatformMessage(
 
   auto message = ConvertToDesktopMessage(*engine_message);
 
-  message_dispatcher_->HandleMessage(
-      message, [this] { this->process_events_ = false; },
-      [this] { this->process_events_ = true; });
+  message_dispatcher_->HandleMessage(message,
+                                     [this] { this->process_events_ = false; },
+                                     [this] { this->process_events_ = true; });
 }
 
 void Win32FlutterWindow::OnDpiScale(unsigned int dpi){};
@@ -115,7 +127,9 @@ void Win32FlutterWindow::OnDpiScale(unsigned int dpi){};
 // When DesktopWindow notifies that a WM_Size message has come in
 // lets FlutterEngine know about the new size.
 void Win32FlutterWindow::OnResize(unsigned int width, unsigned int height) {
+  if (width < 2000 && height < 2000) {
   SendWindowMetrics();
+  }
 }
 
 void Win32FlutterWindow::OnPointerMove(double x, double y) {

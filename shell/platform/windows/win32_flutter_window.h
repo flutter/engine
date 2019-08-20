@@ -44,6 +44,9 @@ class Win32FlutterWindow : public Win32Window {
       const int width,
       const int height);
 
+  static FlutterDesktopWindowControllerRef
+  Win32FlutterWindow::CreateWin32FlutterView();
+
   // Run a Windows message pump that also pumps plugin messages.
   void FlutterMessageLoop();
 
