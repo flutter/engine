@@ -31,7 +31,8 @@ public class FlutterRendererTest {
   }
 
   @Test
-  public void firstFrameListenerCanRemoveThemselves() {
+  public void itAllowsFirstFrameListenersToRemoveThemselves() {
+    // --- Test Setup ---
     AtomicInteger callbackCalled = new AtomicInteger(0);
     OnFirstFrameRenderedListener callback = new OnFirstFrameRenderedListener() {
       @Override
@@ -40,14 +41,19 @@ public class FlutterRendererTest {
         rendererUnderTest.removeOnFirstFrameRenderedListener(this);
       };
     };
-
     rendererUnderTest.addOnFirstFrameRenderedListener(callback);
+
+    // --- Execute Test ---
     jniUnderTest.onFirstFrame();
 
+    // --- Verify Results ---
     assertEquals(1, callbackCalled.get());
 
+    // --- Execute Test ---
     // The callback removed itself from the listener list. A second call doesn't call the callback.
     jniUnderTest.onFirstFrame();
+
+    // --- Verify Results ---
     assertEquals(1, callbackCalled.get());
   }
 
