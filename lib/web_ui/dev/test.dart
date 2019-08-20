@@ -1,4 +1,4 @@
-// Copyright 2019 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -39,7 +39,7 @@ void _checkLicenseHeaders() {
   allSourceFiles.forEach(_expectLicenseHeader);
 }
 
-final _copyRegex = RegExp(r'// Copyright \d\d\d\d The Flutter Authors\. All rights reserved\.');
+final _copyRegex = RegExp(r'// Copyright 2013 The Flutter Authors\. All rights reserved\.');
 
 void _expectLicenseHeader(io.File file) {
   List<String> head = file.readAsStringSync().split('\n').take(3).toList();
