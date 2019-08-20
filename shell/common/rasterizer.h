@@ -420,14 +420,14 @@ class Rasterizer final {
   void FireNextFrameCallbackIfPresent();
 
   sk_sp<SkData> ScreenshotLayerTreeAsPicture(
-                                             flutter::LayerTree* tree,
-                                             flutter::CompositorContext& compositor_context);
+      flutter::LayerTree* tree,
+      flutter::CompositorContext& compositor_context);
 
   sk_sp<SkData> ScreenshotLayerTreeAsImage(
-                                           flutter::LayerTree* tree,
-                                           flutter::CompositorContext& compositor_context,
-                                           GrContext* surface_context,
-                                           bool compressed);
+      flutter::LayerTree* tree,
+      flutter::CompositorContext& compositor_context,
+      GrContext* surface_context,
+      bool compressed);
 
   FML_DISALLOW_COPY_AND_ASSIGN(Rasterizer);
 };

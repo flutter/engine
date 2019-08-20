@@ -295,10 +295,12 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsPicture(
   // TODO(amirh): figure out how to take a screenshot with embedded UIView.
   // https://github.com/flutter/flutter/issues/23435
   auto frame = compositor_context.AcquireFrame(
-      nullptr, recorder.getRecordingCanvas(), surface_->GetExternalViewEmbedder(),
-      root_surface_transformation, false, nullptr);
+      nullptr, recorder.getRecordingCanvas(),
+      surface_->GetExternalViewEmbedder(), root_surface_transformation, false,
+      nullptr);
 
-  gpu_thread_merger_->MergeWithLease(kDefaultScreenShotThreadMergeLeaseDuration);
+  gpu_thread_merger_->MergeWithLease(
+      kDefaultScreenShotThreadMergeLeaseDuration);
   frame->Raster(*tree, true, true);
 
   SkSerialProcs procs = {0};
@@ -347,11 +349,12 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
-  auto frame = compositor_context.AcquireFrame(surface_context, canvas, surface_->GetExternalViewEmbedder(),
-                                               root_surface_transformation,
-                                               false, nullptr);
+  auto frame = compositor_context.AcquireFrame(
+      surface_context, canvas, surface_->GetExternalViewEmbedder(),
+      root_surface_transformation, false, nullptr);
   canvas->clear(SK_ColorTRANSPARENT);
-  gpu_thread_merger_->MergeWithLease(kDefaultScreenShotThreadMergeLeaseDuration);
+  gpu_thread_merger_->MergeWithLease(
+      kDefaultScreenShotThreadMergeLeaseDuration);
   frame->Raster(*tree, true, true);
   canvas->flush();
 
