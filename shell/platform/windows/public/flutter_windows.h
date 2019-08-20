@@ -72,16 +72,6 @@ FlutterDesktopCreateView(int initial_width,
 FLUTTER_EXPORT void FlutterDesktopDestroyWindow(
     FlutterDesktopWindowControllerRef controller);
 
-// Loops on Flutter window events until the window is closed.
-//
-// Once this function returns, |controller| is no longer valid, and must not be
-// be used again, as it calls FlutterDesktopDestroyWindow internally.
-//
-// TODO: Replace this with a method that allows running the runloop
-// incrementally.
-FLUTTER_EXPORT void FlutterDesktopRunWindowLoop(
-    FlutterDesktopWindowControllerRef controller);
-
 // Returns the window handle for the window associated with
 // FlutterDesktopWindowControllerRef.
 //
@@ -95,56 +85,12 @@ FlutterDesktopGetWindow(FlutterDesktopWindowControllerRef controller);
 FLUTTER_EXPORT FlutterDesktopPluginRegistrarRef
 FlutterDesktopGetPluginRegistrar(FlutterDesktopWindowControllerRef controller,
                                  const char* plugin_name);
-
-// Enables or disables hover tracking.
-//
-// If hover is enabled, mouse movement will send hover events to the Flutter
-// engine, rather than only tracking the mouse while the button is pressed.
-// Defaults to on.
-FLUTTER_EXPORT void FlutterDesktopWindowSetHoverEnabled(
-    FlutterDesktopWindowRef flutter_window,
-    bool enabled);
-
-// Sets the displayed title for |flutter_window|.
-FLUTTER_EXPORT void FlutterDesktopWindowSetTitle(
-    FlutterDesktopWindowRef flutter_window,
-    const char* title);
-
-// Sets the displayed icon for |flutter_window|.
-//
-// The pixel format is 32-bit RGBA. The provided image data only needs to be
-// valid for the duration of the call to this method. Pass a nullptr to revert
-// to the default icon.
-FLUTTER_EXPORT void FlutterDesktopWindowSetIcon(
-    FlutterDesktopWindowRef flutter_window,
-    uint8_t* pixel_data,
-    int width,
-    int height);
-
-// Gets the position and size of |flutter_window| in screen coordinates.
-FLUTTER_EXPORT void FlutterDesktopWindowGetFrame(
-    FlutterDesktopWindowRef flutter_window,
-    int* x,
-    int* y,
-    int* width,
-    int* height);
-
-// Sets the position and size of |flutter_window| in screen coordinates.
-FLUTTER_EXPORT void FlutterDesktopWindowSetFrame(
-    FlutterDesktopWindowRef flutter_window,
-    int x,
-    int y,
-    int width,
-    int height);
-
 // TODO
 FLUTTER_EXPORT long FlutterDesktopGetHWNDFromView(
     FlutterDesktopWindowRef flutter_window);
 
-// Returns the scale factor--the number of pixels per screen coordinate--for
-// |flutter_window|.
-FLUTTER_EXPORT double FlutterDesktopWindowGetScaleFactor(
-    FlutterDesktopWindowRef flutter_window);
+// TODO
+FLUTTER_EXPORT void FlutterDesktopProcessMessages();
 
 // Runs an instance of a headless Flutter engine.
 //

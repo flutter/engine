@@ -149,11 +149,11 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateView(
 
   state->window->SetState(engine);
 
-  //TODO: do this in client 
-  // Trigger an initial size callback to send size information to Flutter.
-  //state->window->SendWindowMetrics();
-
   return state;
+}
+
+void FlutterDesktopProcessMessages() {
+  __FlutterEngineFlushPendingTasksNow();
 }
 
 long FlutterDesktopGetHWNDFromView(FlutterDesktopWindowRef flutter_window) {
@@ -164,29 +164,6 @@ void FlutterDesktopDestroyWindow(FlutterDesktopWindowControllerRef controller) {
   FlutterEngineShutdown(controller->engine);
   delete controller;
 }
-
-void FlutterDesktopWindowSetHoverEnabled(FlutterDesktopWindowRef flutter_window,
-                                         bool enabled) {
-  // todo either implement or remove once embedder project has moved
-}
-
-void FlutterDesktopWindowSetTitle(FlutterDesktopWindowRef flutter_window,
-                                  const char* title) {
-  // todo either implement or remove
-}
-
-void FlutterDesktopWindowSetIcon(FlutterDesktopWindowRef flutter_window,
-                                 uint8_t* pixel_data,
-                                 int width,
-                                 int height) {
-  // todo either implement or remove
-}
-
-//void FlutterDesktopRunWindowLoop(FlutterDesktopWindowControllerRef controller) {
-//  controller->window->FlutterMessageLoop();
-//
-//  FlutterDesktopDestroyWindow(controller);
-//}
 
 FlutterDesktopWindowRef FlutterDesktopGetWindow(
     FlutterDesktopWindowControllerRef controller) {

@@ -172,20 +172,6 @@ void Win32FlutterWindow::OnClose() {
   messageloop_running_ = false;
 }
 
-// void Win32FlutterWindow::FlutterMessageLoop() {
-//  MSG message;
-//
-//  messageloop_running_ = true;
-//
-//  // TODO: need either non-blocking meesage loop or custom dispatch
-//  // implementation per  https://github.com/flutter/flutter/issues/36420
-//  while (GetMessage(&message, nullptr, 0, 0) && messageloop_running_) {
-//    TranslateMessage(&message);
-//    DispatchMessage(&message);
-//    __FlutterEngineFlushPendingTasksNow();
-//  }
-//}
-
 // Sends new size information to FlutterEngine.
 void Win32FlutterWindow::SendWindowMetrics() {
   if (engine_ == nullptr) {

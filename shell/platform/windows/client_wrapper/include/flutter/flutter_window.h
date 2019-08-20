@@ -16,14 +16,7 @@
 
 namespace flutter {
 
-// A data type for window position and size.
-struct WindowFrame {
-  int left;
-  int top;
-  int width;
-  int height;
-};
-
+// TODO
 class FlutterViewWin32 {
  public:
   explicit FlutterViewWin32(FlutterDesktopWindowRef window) : window_(window) {}
@@ -34,11 +27,12 @@ class FlutterViewWin32 {
   FlutterViewWin32(FlutterViewWin32 const&) = delete;
   FlutterViewWin32& operator=(FlutterViewWin32 const&) = delete;
 
-  long GetNativeWindow() {
-      return FlutterDesktopGetHWNDFromView(window_);
-  }
+  // TODO
+  long GetNativeWindow() { return FlutterDesktopGetHWNDFromView(window_); }
 
-  private:
+  void ProcessMessages() { FlutterDesktopProcessMessages(); }
+
+ private:
   // Handle for interacting with the C API's window.
   //
   // Note: window_ is conceptually owned by the controller, not this object.
@@ -55,53 +49,6 @@ class FlutterWindow {
   // Prevent copying.
   FlutterWindow(FlutterWindow const&) = delete;
   FlutterWindow& operator=(FlutterWindow const&) = delete;
-
-  // Enables or disables hover tracking.
-  //
-  // If hover is enabled, mouse movement will send hover events to the Flutter
-  // engine, rather than only tracking the mouse while the button is pressed.
-  // Defaults to off.
-  void SetHoverEnabled(bool enabled) {
-    FlutterDesktopWindowSetHoverEnabled(window_, enabled);
-  }
-
-  // Sets the displayed title of the window.
-  void SetTitle(const std::string& title) {
-    FlutterDesktopWindowSetTitle(window_, title.c_str());
-  }
-
-  // Sets the displayed icon for the window.
-  //
-  // The pixel format is 32-bit RGBA. The provided image data only needs to be
-  // valid for the duration of the call to this method. Pass a nullptr to revert
-  // to the default icon.
-  void SetIcon(uint8_t* pixel_data, int width, int height) {
-    FlutterDesktopWindowSetIcon(window_, pixel_data, width, height);
-  }
-
-  // Returns the frame of the window, including any decoration (e.g., title
-  // bar), in screen coordinates.
-  WindowFrame GetFrame() {
-    WindowFrame frame = {};
-    FlutterDesktopWindowGetFrame(window_, &frame.left, &frame.top, &frame.width,
-                                 &frame.height);
-    return frame;
-  }
-
-  // Set the frame of the window, including any decoration (e.g., title
-  // bar), in screen coordinates.
-  void SetFrame(const WindowFrame& frame) {
-    FlutterDesktopWindowSetFrame(window_, frame.left, frame.top, frame.width,
-                                 frame.height);
-  }
-
-  // Returns the number of pixels per screen coordinate for the window.
-  //
-  // Flutter uses pixel coordinates, so this is the ratio of positions and sizes
-  // seen by Flutter as compared to the screen.
-  double GetScaleFactor() {
-    return FlutterDesktopWindowGetScaleFactor(window_);
-  }
 
  private:
   // Handle for interacting with the C API's window.
