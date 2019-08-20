@@ -385,7 +385,7 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
  */
 @protocol FlutterAppLifeCycleProvider
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
-<UNUserNotificationCenterDelegate>
+    <UNUserNotificationCenterDelegate>
 #endif
 - (void)addApplicationLifeCycleDelegate:(NSObject<FlutterApplicationLifeCycleDelegate>*)delegate;
 @end
