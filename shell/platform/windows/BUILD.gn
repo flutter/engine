@@ -132,7 +132,6 @@ group("windows_glfw") {
     ":flutter_windows_glfw",
     "$flutter_root/shell/platform/glfw:publish_headers_glfw",
     "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
-    "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_unprefixed",
   ]
 }
 

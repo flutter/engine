@@ -13,7 +13,6 @@ group("linux") {
       ":flutter_linux_glfw",
       "$flutter_root/shell/platform/glfw:publish_headers_glfw",
       "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
-      "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_unprefixed",
     ]
   }
 }
