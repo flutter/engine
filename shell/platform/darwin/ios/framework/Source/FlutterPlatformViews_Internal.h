@@ -63,7 +63,6 @@ struct FlutterPlatformViewLayer {
   fml::scoped_nsobject<UIView> overlay_view;
   std::unique_ptr<IOSSurface> ios_surface;
   std::unique_ptr<Surface> surface;
-  void UpdateSurface();
 };
 
 class FlutterPlatformViewsController {
