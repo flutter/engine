@@ -380,8 +380,8 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
  * Implement this in the `UIAppDelegate` of your app to enable Flutter plugins to register
  * themselves to the application life cycle events.
  *
- * For plugins to receive events from UNUserNotificationCenter, register this as the
- * UNUserNotificationCenterDelegate.
+ * For plugins to receive events from `UNUserNotificationCenter`, register this as the
+ * `UNUserNotificationCenterDelegate`.
  */
 @protocol FlutterAppLifeCycleProvider
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
