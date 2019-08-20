@@ -16,8 +16,7 @@ static constexpr char kScanCodeKey[] = "scanCode";
 static constexpr char kModifiersKey[] = "modifiers";
 static constexpr char kTypeKey[] = "type";
 static constexpr char kToolkitKey[] = "toolkit";
-static constexpr char kUnicodeScalarValues[] =
-    "unicodeScalarValues";
+static constexpr char kUnicodeScalarValues[] = "unicodeScalarValues";
 
 static constexpr char kLinuxKeyMap[] = "linux";
 static constexpr char kGLFWKey[] = "glfw";
