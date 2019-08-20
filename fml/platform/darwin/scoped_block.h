@@ -11,6 +11,10 @@
 
 namespace fml {
 
+static_assert(
+    __has_feature(objc_arc),
+    "Only ARC enabled translation units may use/include these utilities.");
+
 template <typename B>
 class ScopedBlock {
  public:
