@@ -1,4 +1,4 @@
-Signature: 6c211470af466caa2c028b5294651a86
+Signature: ab0f4765e8482db906336fce5d9e25c3
 
 UNUSED LICENSES:
 
@@ -987,7 +987,6 @@ FILE: ../../../third_party/skia/src/core/SkRRectPriv.h
 FILE: ../../../third_party/skia/src/core/SkRectPriv.h
 FILE: ../../../third_party/skia/src/core/SkRemoteGlyphCache.cpp
 FILE: ../../../third_party/skia/src/core/SkRemoteGlyphCache.h
-FILE: ../../../third_party/skia/src/core/SkRemoteGlyphCacheImpl.h
 FILE: ../../../third_party/skia/src/core/SkSafeRange.h
 FILE: ../../../third_party/skia/src/core/SkSpan.h
 FILE: ../../../third_party/skia/src/core/SkStrikeCache.cpp
@@ -3119,7 +3118,6 @@ FILE: ../../../third_party/skia/include/effects/SkDropShadowImageFilter.h
 FILE: ../../../third_party/skia/include/effects/SkLumaColorFilter.h
 FILE: ../../../third_party/skia/include/effects/SkPerlinNoiseShader.h
 FILE: ../../../third_party/skia/include/effects/SkTileImageFilter.h
-FILE: ../../../third_party/skia/include/gpu/GrBlend.h
 FILE: ../../../third_party/skia/include/gpu/gl/GrGLExtensions.h
 FILE: ../../../third_party/skia/include/ports/SkFontConfigInterface.h
 FILE: ../../../third_party/skia/include/private/GrTypesPriv.h
@@ -3168,6 +3166,7 @@ FILE: ../../../third_party/skia/src/effects/imagefilters/SkComposeImageFilter.cp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkDisplacementMapEffect.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkDropShadowImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkTileImageFilter.cpp
+FILE: ../../../third_party/skia/src/gpu/GrBlend.h
 FILE: ../../../third_party/skia/src/gpu/GrCaps.h
 FILE: ../../../third_party/skia/src/gpu/GrCoordTransform.h
 FILE: ../../../third_party/skia/src/gpu/GrGeometryProcessor.h
@@ -3965,7 +3964,6 @@ FILE: ../../../third_party/skia/docs/examples/ImageInfo_validRowBytes.cpp
 FILE: ../../../third_party/skia/docs/examples/ImageInfo_width.cpp
 FILE: ../../../third_party/skia/docs/examples/Image_Filter_Methods.cpp
 FILE: ../../../third_party/skia/docs/examples/Image_MakeBackendTextureFromSkImage.cpp
-FILE: ../../../third_party/skia/docs/examples/Image_MakeCrossContextFromEncoded.cpp
 FILE: ../../../third_party/skia/docs/examples/Image_MakeCrossContextFromPixmap.cpp
 FILE: ../../../third_party/skia/docs/examples/Image_MakeFromAdoptedTexture.cpp
 FILE: ../../../third_party/skia/docs/examples/Image_MakeFromBitmap.cpp
@@ -4697,6 +4695,7 @@ FILE: ../../../third_party/skia/gm/crbug_918512.cpp
 FILE: ../../../third_party/skia/gm/labyrinth.cpp
 FILE: ../../../third_party/skia/gm/preservefillrule.cpp
 FILE: ../../../third_party/skia/gm/tilemodes_alpha.cpp
+FILE: ../../../third_party/skia/src/core/SkPixelRefPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrPersistentCacheUtils.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrSampleMaskProcessor.cpp
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrSampleMaskProcessor.h
@@ -4827,6 +4826,7 @@ FILE: ../../../third_party/skia/modules/particles/src/SkParticleEffect.cpp
 FILE: ../../../third_party/skia/modules/particles/src/SkReflected.cpp
 FILE: ../../../third_party/skia/samplecode/SampleImageFilterDAG.cpp
 FILE: ../../../third_party/skia/src/core/SkColorFilterPriv.h
+FILE: ../../../third_party/skia/src/core/SkImageFilterTypes.h
 FILE: ../../../third_party/skia/src/core/SkImageFilter_Base.h
 FILE: ../../../third_party/skia/src/core/SkVM.cpp
 FILE: ../../../third_party/skia/src/core/SkVM.h
@@ -5118,7 +5118,6 @@ FILE: ../../../third_party/skia/fuzz/FuzzEncoders.cpp
 FILE: ../../../third_party/skia/fuzz/FuzzPolyUtils.cpp
 FILE: ../../../third_party/skia/modules/canvaskit/canvaskit_bindings.cpp
 FILE: ../../../third_party/skia/modules/pathkit/pathkit_wasm_bindings.cpp
-FILE: ../../../third_party/skia/src/core/SkPicture_none.cpp
 FILE: ../../../third_party/skia/src/gpu/GrSkSLFPFactoryCache.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrCoverageCountingPathRenderer_none.cpp
 ----------------------------------------------------------------------------------------------------

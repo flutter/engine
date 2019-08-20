@@ -1,4 +1,4 @@
-Signature: 0b3eefaf7f050a6c3bee5b536cf40dc6
+Signature: 9dbdb1d3d162d9adf9fb3793d1e63831
 
 UNUSED LICENSES:
 
@@ -1955,6 +1955,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/display.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/do_not_disturb.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/intl.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/privacy.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/settings.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/system.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.simplecamera/meta.json
