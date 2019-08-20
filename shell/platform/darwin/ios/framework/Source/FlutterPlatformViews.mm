@@ -173,7 +173,7 @@ bool FlutterPlatformViewsController::HasPendingViewOperations() {
 
 const int FlutterPlatformViewsController::kDefaultMergedLeaseDuration;
 
-bool FlutterPlatformViewsController::PostPrerollAction(
+PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
     fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
   const bool uiviews_mutated = HasPendingViewOperations();
   if (uiviews_mutated) {
@@ -182,10 +182,10 @@ bool FlutterPlatformViewsController::PostPrerollAction(
     } else {
       CancelFrame();
       gpu_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
-      return true;
+      return PostPrerollResult::kResubmitFrame;
     }
   }
-  return false;
+  return PostPrerollResult::kSuccess;
 }
 
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(

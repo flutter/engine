@@ -31,6 +31,8 @@
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
+
+@property(nonatomic, readwrite, copy) NSString* isolateId;
 @end
 
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
@@ -152,6 +154,11 @@
   return _shell->GetTaskRunners().GetPlatformTaskRunner();
 }
 
+- (fml::RefPtr<fml::TaskRunner>)GPUTaskRunner {
+  FML_DCHECK(_shell);
+  return _shell->GetTaskRunners().GetGPUTaskRunner();
+}
+
 - (void)ensureSemanticsEnabled {
   self.iosPlatformView->SetSemanticsEnabled(true);
 }
@@ -171,6 +178,7 @@
 
 - (void)destroyContext {
   [self resetChannels];
+  self.isolateId = nil;
   _shell.reset();
   _threadHost.Reset();
   _platformViewsController.reset();
@@ -233,6 +241,13 @@
 // Channels get a reference to the engine, and therefore need manual
 // cleanup for proper collection.
 - (void)setupChannels {
+  // This will be invoked once the shell is done setting up and the isolate ID
+  // for the UI isolate is available.
+  [_binaryMessenger setMessageHandlerOnChannel:@"flutter/isolate"
+                          binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
+                            self.isolateId = [[FlutterStringCodec sharedInstance] decode:message];
+                          }];
+
   _localizationChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/localization"
       binaryMessenger:self.binaryMessenger
