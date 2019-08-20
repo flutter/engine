@@ -185,10 +185,6 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
   [_lifeCycleDelegate addDelegate:delegate];
 }
 
-- (void)registerAsUserNotificationCenterDelegate {
-  [UNUserNotificationCenter currentNotificationCenter].delegate = self;
-}
-
 #pragma mark - UIApplicationDelegate method dynamic implementation
 
 - (BOOL)respondsToSelector:(SEL)selector {
