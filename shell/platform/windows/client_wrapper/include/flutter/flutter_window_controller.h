@@ -58,6 +58,8 @@ class FlutterWindowController {
   // Creates a FlutterView that can be parented into a Windows View hierarchy either using HWNDs 
   // or in the future into a CoreWindow, or using compositor.
   std::unique_ptr<FlutterViewWin32> CreateFlutterView(
+      int width,
+      int height,
       const std::string& assets_path,
                          const std::vector<std::string>& arguments);
 
@@ -71,9 +73,6 @@ class FlutterWindowController {
   // The FlutterWindow managed by this controller, if any. Returns nullptr
   // before CreateWindow is called, and after RunEventLoop returns;
   FlutterWindow* window() { return window_.get(); }
-
-  // Loops on Flutter window events until the window closes.
-  void RunEventLoop();
 
  private:
   // The path to the ICU data file. Set at creation time since it is the same

@@ -29,7 +29,10 @@ namespace flutter {
 // dependency inject the native window rather than inherit.
 class Win32FlutterWindow : public Win32Window {
  public:
-  Win32FlutterWindow();
+  // Create flutter Window for use as child window
+  Win32FlutterWindow(const int width, const int height);
+
+  // Create flutter Window for use as top-level window
   Win32FlutterWindow(const char* title,
                      const int x,
                      const int y,
@@ -45,10 +48,10 @@ class Win32FlutterWindow : public Win32Window {
       const int height);
 
   static FlutterDesktopWindowControllerRef
-  Win32FlutterWindow::CreateWin32FlutterView();
+  Win32FlutterWindow::CreateWin32FlutterView(const int width, const int height);
 
-  // Run a Windows message pump that also pumps plugin messages.
-  void FlutterMessageLoop();
+  //// Run a Windows message pump that also pumps plugin messages.
+  //void FlutterMessageLoop();
 
   // |Win32Window|
   void OnDpiScale(unsigned int dpi) override;

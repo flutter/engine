@@ -35,14 +35,16 @@ Win32Window::~Win32Window() {
   Destroy();
 }
 
-void Win32Window::Initialize(const char* title) {
+void Win32Window::InitializeChild(const char* title,
+                                  const unsigned int width,
+                                  const unsigned int height) {
   Destroy();
   std::wstring converted_title = NarrowToWide(title);
 
   WNDCLASS window_class = ResgisterWindowClass(converted_title);
 
   auto result = CreateWindowEx(0, window_class.lpszClassName, converted_title.c_str(),
-                     WS_CHILD | WS_VISIBLE, CW_DEFAULT, CW_DEFAULT, 100, 100,
+                     WS_CHILD | WS_VISIBLE, CW_DEFAULT, CW_DEFAULT, width, height,
                      HWND_MESSAGE, nullptr,
                window_class.hInstance, this);
 

@@ -60,6 +60,8 @@ bool FlutterWindowController::CreateWindow(
 }
 
 std::unique_ptr<FlutterViewWin32> FlutterWindowController::CreateFlutterView(
+    int width,
+    int height,
     const std::string& assets_path,
     const std::vector<std::string>& arguments) {
   if (!init_succeeded_) {
@@ -80,6 +82,8 @@ std::unique_ptr<FlutterViewWin32> FlutterWindowController::CreateFlutterView(
   size_t arg_count = engine_arguments.size();
 
   controller_ = FlutterDesktopCreateView(
+      width,
+      height,
       assets_path.c_str(), icu_data_path_.c_str(),
       arg_count > 0 ? &engine_arguments[0] : nullptr, arg_count);
   if (!controller_) {
@@ -101,14 +105,6 @@ FlutterDesktopPluginRegistrarRef FlutterWindowController::GetRegistrarForPlugin(
     return nullptr;
   }
   return FlutterDesktopGetPluginRegistrar(controller_, plugin_name.c_str());
-}
-
-void FlutterWindowController::RunEventLoop() {
-  if (controller_) {
-    FlutterDesktopRunWindowLoop(controller_);
-  }
-  window_ = nullptr;
-  controller_ = nullptr;
 }
 
 }  // namespace flutter

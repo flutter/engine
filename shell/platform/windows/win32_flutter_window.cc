@@ -8,9 +8,9 @@ namespace flutter {
 // constant for machines running at 100% scaling.
 constexpr int base_dpi = 96;
 
-Win32FlutterWindow::Win32FlutterWindow() {
+Win32FlutterWindow::Win32FlutterWindow(const int width, const int height) {
   surface_manager = std::make_unique<AngleSurfaceManager>();
-  Win32Window::Initialize("FLUTTERVIEW");
+  Win32Window::InitializeChild("FLUTTERVIEW", width, height);
 }
 
 Win32FlutterWindow::Win32FlutterWindow(const char* title,
@@ -43,9 +43,11 @@ FlutterDesktopWindowControllerRef Win32FlutterWindow::CreateWin32FlutterWindow(
   return state.release();
 }
 
-FlutterDesktopWindowControllerRef Win32FlutterWindow::CreateWin32FlutterView() {
+FlutterDesktopWindowControllerRef Win32FlutterWindow::CreateWin32FlutterView(
+    const int width,
+    const int height) {
   auto state = std::make_unique<FlutterDesktopWindowControllerState>();
-  state->window = std::make_unique<flutter::Win32FlutterWindow>();
+  state->window = std::make_unique<flutter::Win32FlutterWindow>(width, height);
 
   // a window wrapper for the state block, distinct from the
   // window_wrapper handed to plugin_registrar.
@@ -127,9 +129,7 @@ void Win32FlutterWindow::OnDpiScale(unsigned int dpi){};
 // When DesktopWindow notifies that a WM_Size message has come in
 // lets FlutterEngine know about the new size.
 void Win32FlutterWindow::OnResize(unsigned int width, unsigned int height) {
-  if (width < 2000 && height < 2000) {
   SendWindowMetrics();
-  }
 }
 
 void Win32FlutterWindow::OnPointerMove(double x, double y) {
@@ -172,19 +172,19 @@ void Win32FlutterWindow::OnClose() {
   messageloop_running_ = false;
 }
 
-void Win32FlutterWindow::FlutterMessageLoop() {
-  MSG message;
-
-  messageloop_running_ = true;
-
-  // TODO: need either non-blocking meesage loop or custom dispatch
-  // implementation per  https://github.com/flutter/flutter/issues/36420
-  while (GetMessage(&message, nullptr, 0, 0) && messageloop_running_) {
-    TranslateMessage(&message);
-    DispatchMessage(&message);
-    __FlutterEngineFlushPendingTasksNow();
-  }
-}
+// void Win32FlutterWindow::FlutterMessageLoop() {
+//  MSG message;
+//
+//  messageloop_running_ = true;
+//
+//  // TODO: need either non-blocking meesage loop or custom dispatch
+//  // implementation per  https://github.com/flutter/flutter/issues/36420
+//  while (GetMessage(&message, nullptr, 0, 0) && messageloop_running_) {
+//    TranslateMessage(&message);
+//    DispatchMessage(&message);
+//    __FlutterEngineFlushPendingTasksNow();
+//  }
+//}
 
 // Sends new size information to FlutterEngine.
 void Win32FlutterWindow::SendWindowMetrics() {

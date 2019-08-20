@@ -58,11 +58,12 @@ FlutterDesktopCreateWindow(int initial_width,
                            size_t argument_count);
 
 FLUTTER_EXPORT FlutterDesktopWindowControllerRef
-FlutterDesktopCreateView(
-                           const char* assets_path,
-                           const char* icu_data_path,
-                           const char** arguments,
-                           size_t argument_count);
+FlutterDesktopCreateView(int initial_width,
+                         int initial_height,
+                         const char* assets_path,
+                         const char* icu_data_path,
+                         const char** arguments,
+                         size_t argument_count);
 
 // Shuts down the engine instance associated with |controller|, and cleans up
 // associated state.

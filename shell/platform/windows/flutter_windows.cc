@@ -131,12 +131,14 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
 }
 
 FlutterDesktopWindowControllerRef FlutterDesktopCreateView(
+    int initial_width,
+    int initial_height,
     const char* assets_path,
     const char* icu_data_path,
     const char** arguments,
     size_t argument_count) {
   FlutterDesktopWindowControllerRef state =
-      flutter::Win32FlutterWindow::CreateWin32FlutterView();
+      flutter::Win32FlutterWindow::CreateWin32FlutterView(initial_width, initial_height);
 
   auto engine = RunFlutterEngine(state->window.get(), assets_path,
                                  icu_data_path, arguments, argument_count);
@@ -180,11 +182,11 @@ void FlutterDesktopWindowSetIcon(FlutterDesktopWindowRef flutter_window,
   // todo either implement or remove
 }
 
-void FlutterDesktopRunWindowLoop(FlutterDesktopWindowControllerRef controller) {
-  controller->window->FlutterMessageLoop();
-
-  FlutterDesktopDestroyWindow(controller);
-}
+//void FlutterDesktopRunWindowLoop(FlutterDesktopWindowControllerRef controller) {
+//  controller->window->FlutterMessageLoop();
+//
+//  FlutterDesktopDestroyWindow(controller);
+//}
 
 FlutterDesktopWindowRef FlutterDesktopGetWindow(
     FlutterDesktopWindowControllerRef controller) {

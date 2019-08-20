@@ -23,9 +23,11 @@ class Win32Window {
   Win32Window();
   ~Win32Window();
 
-  // Initializes as a child window.  Does not show window, window must be
+  // Initializes as a child window with size using |width| and |height|.  Does not show window, window must be
   // parented into window hierarchy by caller
-  void Initialize(const char* title);
+  void InitializeChild(const char* title,
+                       const unsigned int width,
+                       const unsigned int height);
 
   // Initializes as a top level window.  Shows window with |title| and position
   // and size using |x|, |y|, |width| and |height|
@@ -108,7 +110,6 @@ class Win32Window {
   UINT GetCurrentWidth();
 
   UINT GetCurrentHeight();
-
 
  private:
   // Stores new width and height and calls |OnResize| to notify inheritors
