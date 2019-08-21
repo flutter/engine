@@ -41,15 +41,15 @@ public interface RenderSurface {
    *   <li>{@link FlutterRenderer#stopRenderingToSurface()}</li>
    * </ol>
    */
-  void connectToRenderer(@NonNull FlutterRenderer renderer);
+  void attachToRenderer(@NonNull FlutterRenderer renderer);
 
   /**
    * Instructs this {@code RenderSurface} to stop forwarding {@code Surface} notifications to the
    * {@code FlutterRenderer} that was previously connected with
-   * {@link #connectToRenderer(FlutterRenderer)}.
+   * {@link #attachToRenderer(FlutterRenderer)}.
    * <p>
    * This {@code RenderSurface} should also clean up any references related to the previously
    * connected {@code FlutterRenderer}.
    */
-  void disconnectFromRenderer();
+  void detachFromRenderer();
 }

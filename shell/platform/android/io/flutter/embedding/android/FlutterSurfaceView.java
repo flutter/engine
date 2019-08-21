@@ -21,10 +21,10 @@ import io.flutter.embedding.engine.renderer.RenderSurface;
  * Paints a Flutter UI on a {@link android.view.Surface}.
  *
  * To begin rendering a Flutter UI, the owner of this {@code FlutterSurfaceView} must invoke
- * {@link #connectToRenderer(FlutterRenderer)} with the desired {@link FlutterRenderer}.
+ * {@link #attachToRenderer(FlutterRenderer)} with the desired {@link FlutterRenderer}.
  *
  * To stop rendering a Flutter UI, the owner of this {@code FlutterSurfaceView} must invoke
- * {@link #disconnectFromRenderer()}.
+ * {@link #detachFromRenderer()}.
  *
  * A {@code FlutterSurfaceView} is intended for situations where a developer needs to render
  * a Flutter UI, but does not require any keyboard input, gesture input, accessibility
@@ -156,7 +156,7 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
    * {@link android.view.Surface} to the given {@link FlutterRenderer} to begin rendering
    * Flutter's UI to this {@code FlutterSurfaceView}.
    */
-  public void connectToRenderer(@NonNull FlutterRenderer flutterRenderer) {
+  public void attachToRenderer(@NonNull FlutterRenderer flutterRenderer) {
     Log.v(TAG, "Attaching to FlutterRenderer.");
     if (this.flutterRenderer != null) {
       Log.v(TAG, "Already connected to a FlutterRenderer. Detaching from old one and attaching to new one.");
@@ -183,7 +183,7 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
    *
    * This method will cease any on-going rendering from Flutter to this {@code FlutterSurfaceView}.
    */
-  public void disconnectFromRenderer() {
+  public void detachFromRenderer() {
     if (flutterRenderer != null) {
       // If we're attached to an Android window then we were rendering a Flutter UI. Now that
       // this FlutterSurfaceView is detached from the FlutterRenderer, we need to stop rendering.
@@ -201,7 +201,7 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
       flutterRenderer = null;
       isAttachedToFlutterRenderer = false;
     } else {
-      Log.w(TAG, "disconnectFromRenderer() invoked when no FlutterRenderer was attached.");
+      Log.w(TAG, "detachFromRenderer() invoked when no FlutterRenderer was attached.");
     }
   }
 

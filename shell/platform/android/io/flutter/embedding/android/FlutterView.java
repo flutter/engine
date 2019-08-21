@@ -591,7 +591,7 @@ public class FlutterView extends FrameLayout {
     // Instruct our FlutterRenderer that we are now its designated RenderSurface.
     FlutterRenderer flutterRenderer = this.flutterEngine.getRenderer();
     isFlutterUiDisplayed = flutterRenderer.isDisplayingFlutterUi();
-    renderSurface.connectToRenderer(flutterRenderer);
+    renderSurface.attachToRenderer(flutterRenderer);
     flutterRenderer.addIsDisplayingFlutterUiListener(isDisplayingFlutterUiListener);
 
     // Initialize various components that know how to process Android View I/O
