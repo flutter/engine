@@ -74,12 +74,10 @@
   }
   NSUInteger bytesPerPixel = 4;
   NSUInteger size = widthA * heightA * bytesPerPixel;
-  unsigned char* rawA = (unsigned char*)calloc(size, sizeof(unsigned char));
-  unsigned char* rawB = (unsigned char*)calloc(size, sizeof(unsigned char));
+  NSMutableData* rawA = [NSMutableData dataWithLength:size];
+  NSMutableData* rawB = [NSMutableData dataWithLength:size];
 
   if (!rawA || !rawB) {
-    free(rawA);
-    free(rawB);
     return NO;
   }
 
@@ -88,30 +86,24 @@
   NSUInteger bytesPerRow = bytesPerPixel * widthA;
   NSUInteger bitsPerComponent = 8;
   CGContextRef contextA =
-      CGBitmapContextCreate(rawA, widthA, heightA, bitsPerComponent, bytesPerRow, colorSpace,
-                            kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+      CGBitmapContextCreate(rawA.mutableBytes, widthA, heightA, bitsPerComponent, bytesPerRow,
+                            colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
 
   CGContextDrawImage(contextA, CGRectMake(0, 0, widthA, heightA), imageRefA);
   CGContextRelease(contextA);
 
   CGContextRef contextB =
-      CGBitmapContextCreate(rawB, widthA, heightA, bitsPerComponent, bytesPerRow, colorSpace,
-                            kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+      CGBitmapContextCreate(rawB.mutableBytes, widthA, heightA, bitsPerComponent, bytesPerRow,
+                            colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
   CGColorSpaceRelease(colorSpace);
 
   CGContextDrawImage(contextB, CGRectMake(0, 0, widthA, heightA), imageRefB);
   CGContextRelease(contextB);
 
-  for (int i = 0; i < size; ++i) {
-    if (rawA[i] != rawB[i]) {
-      free(rawA);
-      free(rawB);
-      return NO;
-    }
+  if (memcmp(rawA.mutableBytes, rawB.mutableBytes, size)) {
+    return NO;
   }
 
-  free(rawA);
-  free(rawB);
   return YES;
 }
 
