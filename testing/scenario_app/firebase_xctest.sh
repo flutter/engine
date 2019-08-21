@@ -23,5 +23,5 @@ gcloud firebase test ios run --test ./scenarios.zip \
     --results-bucket=gs://flutter_firebase_testlab \
     --results-dir=engine_scenario_test/$GIT_REVISION/$BUILD_ID \
 
-
+popd
 popd
