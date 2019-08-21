@@ -85,7 +85,6 @@
 
 /* Begin PBXFileReference section */
 		0DB781FC22EA2C0300E9B371 /* FlutterViewControllerTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FlutterViewControllerTest.m; sourceTree = "<group>"; };
-		244EA6C1230DB6CB00B2D26E /* TestLab.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = TestLab.xcconfig; sourceTree = "<group>"; };
 		244EA6CF230DBE8900B2D26E /* golden_platform_view_D21AP.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = golden_platform_view_D21AP.png; sourceTree = "<group>"; };
 		246B4E4122E3B5F700073EBF /* App.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = App.framework; sourceTree = "<group>"; };
 		246B4E4522E3B61000073EBF /* Flutter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Flutter.framework; sourceTree = "<group>"; };
@@ -168,7 +167,6 @@
 				248D76D322E388380012F0C1 /* Assets.xcassets */,
 				248D76D822E388380012F0C1 /* Info.plist */,
 				248D76D922E388380012F0C1 /* main.m */,
-				244EA6C1230DB6CB00B2D26E /* TestLab.xcconfig */,
 			);
 			path = Scenarios;
 			sourceTree = "<group>";
