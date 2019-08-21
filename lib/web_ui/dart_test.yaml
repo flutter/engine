@@ -7,7 +7,7 @@ platforms:
   - chrome
   - vm
 presets:
-  travis:
+  cirrus:
     override_platforms:
       chrome:
         settings:

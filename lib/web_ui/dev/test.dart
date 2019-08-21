@@ -93,6 +93,7 @@ Future<void> _runTests() async {
     <String>[
       'run',
       'test',
+      '--preset=cirrus',
       '--platform=chrome',
       ...testFiles,
     ],
