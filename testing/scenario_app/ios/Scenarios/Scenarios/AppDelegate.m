@@ -17,6 +17,8 @@
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
   self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
 
+  // This argument is used by the XCUITest for Platform Views so that the app
+  // under test will create platform views.
   if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--platform-view"]) {
     FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"PlatformViewTest" project:nil];
     [engine runWithEntrypoint:nil];
