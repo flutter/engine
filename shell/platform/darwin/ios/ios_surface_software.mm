@@ -194,9 +194,7 @@ sk_sp<SkImage> IOSSurfaceSoftware::ScreenShotEmbeddedView(int view_id) {
     return nullptr;
   }
 
-  UIView* platform_view = platform_views_controller->GetPlatformViewByID(view_id).view;
-  FML_CHECK(platform_view != nil);
-  return IOSScreenShotProvider::TakeScreenShotForView(platform_view);
+  return platform_views_controller->TakeScreenShotForPlatformView(view_id);
 }
 
 }  // namespace flutter

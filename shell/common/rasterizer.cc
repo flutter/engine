@@ -22,8 +22,6 @@ namespace flutter {
 // used within this interval.
 static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
-static const int kDefaultScreenShotThreadMergeLeaseDuration = 10;
-
 // TODO(dnfield): Remove this once internal embedders have caught up.
 static Rasterizer::DummyDelegate dummy_delegate_;
 Rasterizer::Rasterizer(
@@ -297,10 +295,7 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsPicture(
   auto frame = compositor_context.AcquireFrame(
       nullptr, recorder.getRecordingCanvas(),
       surface_->GetExternalViewEmbedder(), root_surface_transformation, false,
-      nullptr);
-
-  gpu_thread_merger_->MergeWithLease(
-      kDefaultScreenShotThreadMergeLeaseDuration);
+      gpu_thread_merger_);
   frame->Raster(*tree, true, true);
 
   SkSerialProcs procs = {0};
@@ -351,10 +346,8 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
 
   auto frame = compositor_context.AcquireFrame(
       surface_context, canvas, surface_->GetExternalViewEmbedder(),
-      root_surface_transformation, false, nullptr);
+      root_surface_transformation, false, gpu_thread_merger_);
   canvas->clear(SK_ColorTRANSPARENT);
-  gpu_thread_merger_->MergeWithLease(
-      kDefaultScreenShotThreadMergeLeaseDuration);
   frame->Raster(*tree, true, true);
   canvas->flush();
 

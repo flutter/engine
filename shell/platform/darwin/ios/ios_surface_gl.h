@@ -10,7 +10,6 @@
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_gl_context.h"
 #include "flutter/shell/platform/darwin/ios/ios_gl_render_target.h"
-#include "flutter/shell/platform/darwin/ios/ios_screenshot_provider.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @class CAEAGLLayer;
@@ -66,7 +65,8 @@ class IOSSurfaceGL final : public IOSSurface,
                                     std::unique_ptr<flutter::EmbeddedViewParams> params) override;
 
   // |ExternalViewEmbedder|
-  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
+  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger,
+                                      bool screen_shot) override;
 
   // |ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;

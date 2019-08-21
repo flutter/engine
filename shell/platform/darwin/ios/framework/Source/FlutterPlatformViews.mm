@@ -15,6 +15,7 @@
 #include "FlutterPlatformViews_Internal.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
+#include "flutter/shell/platform/darwin/ios/ios_screenshot_provider.h"
 
 namespace flutter {
 
@@ -174,9 +175,9 @@ bool FlutterPlatformViewsController::HasPendingViewOperations() {
 const int FlutterPlatformViewsController::kDefaultMergedLeaseDuration;
 
 PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
-    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger, bool screen_shot) {
   const bool uiviews_mutated = HasPendingViewOperations();
-  if (uiviews_mutated) {
+  if (uiviews_mutated || screen_shot) {
     if (gpu_thread_merger->IsMerged()) {
       gpu_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
     } else {
@@ -496,6 +497,12 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   overlays_[overlay_id] = std::make_unique<FlutterPlatformViewLayer>(
       fml::scoped_nsobject<UIView>(overlay_view), std::move(ios_surface), std::move(surface));
   overlays_gr_context_ = gr_context;
+}
+
+sk_sp<SkImage> FlutterPlatformViewsController::TakeScreenShotForPlatformView(int view_id) {
+  UIView* platform_view = GetPlatformViewByID(view_id).view;
+  FML_CHECK(platform_view != nil);
+  return IOSScreenShotProvider::TakeScreenShotForView(platform_view);
 }
 
 }  // namespace flutter
