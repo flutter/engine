@@ -24,6 +24,7 @@ Win32FlutterWindow::Win32FlutterWindow(const char* title,
 
 Win32FlutterWindow::~Win32FlutterWindow() {
   DestroyRenderSurface();
+  Win32Window::Destroy();
 }
 
 FlutterDesktopWindowControllerRef Win32FlutterWindow::CreateWin32FlutterWindow(
