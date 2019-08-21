@@ -886,7 +886,16 @@ public class FlutterActivity extends Activity
   }
 
   @Override
-  public void onFirstFrameRendered() {}
+  public void onFlutterUiDisplayed() {
+    // Notifies Android that we're fully drawn so that performance metrics can be collected by
+    // Flutter performance tests.
+    reportFullyDrawn();
+  }
+
+  @Override
+  public void onFlutterUiNoLongerDisplayed() {
+    // no-op
+  }
 
   /**
    * The mode of the background of a {@code FlutterActivity}, either opaque or transparent.
