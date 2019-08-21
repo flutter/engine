@@ -64,7 +64,6 @@ source_set("flutter_glfw") {
     libs = [ "GL" ]
 
     configs += [
-      "$flutter_root/shell/platform/linux/config:gtk3",
       "$flutter_root/shell/platform/linux/config:x11",
     ]
   } else if (is_mac) {
