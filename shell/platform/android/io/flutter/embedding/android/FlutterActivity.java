@@ -889,7 +889,9 @@ public class FlutterActivity extends Activity
   public void onFlutterUiDisplayed() {
     // Notifies Android that we're fully drawn so that performance metrics can be collected by
     // Flutter performance tests.
-    reportFullyDrawn();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+      reportFullyDrawn();
+    }
   }
 
   @Override
