@@ -47,20 +47,18 @@ class StubFlutterWindowsApi {
     return nullptr;
   }
 
+  virtual FlutterDesktopWindowControllerRef CreateView(
+      int initial_width,
+      int initial_height,
+      const char* assets_path,
+      const char* icu_data_path,
+      const char** arguments,
+      size_t argument_count) {
+    return nullptr;
+  }
+
   // Called for FlutterDesktopDestroyWindow.
   virtual void DestroyWindow() {}
-
-  // Called for FlutterDesktopSetHoverEnabled.
-  virtual void SetHoverEnabled(bool enabled) {}
-
-  // Called for FlutterDesktopSetWindowTitle.
-  virtual void SetWindowTitle(const char* title) {}
-
-  //  Called for FlutterDesktopSetWindowIcon.
-  virtual void SetWindowIcon(uint8_t* pixel_data, int width, int height) {}
-
-  // Called for FlutterDesktopRunWindowLoop.
-  virtual void RunWindowLoop() {}
 
   // Called for FlutterDesktopRunEngine.
   virtual FlutterDesktopEngineRef RunEngine(const char* assets_path,
