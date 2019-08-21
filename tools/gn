@@ -264,8 +264,6 @@ def to_gn_args(args):
 
     gn_args['stripped_symbols'] = args.stripped
 
-    print(gn_args)
-
     return gn_args
 
 def parse_args(args):
