@@ -41,8 +41,8 @@ typedef enum {
   kSoftware,
 } FlutterRendererType;
 
-///
-/// Must match the |AccessibilityFeatures| enum in window.dart.
+/// Additional accessibility features that may be enabled by the platform.
+/// Must match the `AccessibilityFeatures` enum in window.dart.
 typedef enum {
   /// Indicate there is a running accessibility service which is changing the
   /// interaction model of the device.
@@ -60,7 +60,7 @@ typedef enum {
 
 /// The set of possible actions that can be conveyed to a semantics node.
 ///
-/// Must match the |SemanticsAction| enum in semantics.dart.
+/// Must match the `SemanticsAction` enum in semantics.dart.
 typedef enum {
   /// The equivalent of a user briefly tapping the screen with the finger
   /// without
@@ -116,7 +116,7 @@ typedef enum {
 
 /// The set of properties that may be associated with a semantics node.
 ///
-/// Must match the |SemanticsFlag| enum in semantics.dart.
+/// Must match the `SemanticsFlag` enum in semantics.dart.
 typedef enum {
   /// The semantics node has the quality of either being "checked" or
   /// "unchecked".
@@ -161,9 +161,9 @@ typedef enum {
   /// Whether the platform can scroll the semantics node when the user attempts
   /// to move the accessibility focus to an offscreen child.
   ///
-  /// For example, a |ListView| widget has implicit scrolling so that users can
+  /// For example, a `ListView` widget has implicit scrolling so that users can
   /// easily move the accessibility focus to the next set of children. A
-  /// |PageView| widget does not have implicit scrolling, so that users don't
+  /// `PageView` widget does not have implicit scrolling, so that users don't
   /// navigate to the next page when reaching the end of the current one.
   kFlutterSemanticsFlagHasImplicitScrolling = 1 << 18,
   /// Whether the semantic node is read only.
@@ -362,8 +362,8 @@ typedef enum {
   kFlutterPointerDeviceKindTouch,
 } FlutterPointerDeviceKind;
 
-/// Flags for the |buttons| field of |FlutterPointerEvent| when |device_kind|
-/// is |kFlutterPointerDeviceKindMouse|.
+/// Flags for the `buttons` field of `FlutterPointerEvent` when `device_kind`
+/// is `kFlutterPointerDeviceKindMouse`.
 typedef enum {
   kFlutterPointerButtonMousePrimary = 1 << 0,
   kFlutterPointerButtonMouseSecondary = 1 << 1,
@@ -396,8 +396,8 @@ typedef struct {
   double scroll_delta_y;
   /// The type of the device generating this event.
   /// Backwards compatibility note: If this is not set, the device will be
-  /// treated as a mouse, with the primary button set for |kDown| and |kMove|.
-  /// If set explicitly to |kFlutterPointerDeviceKindMouse|, you must set the
+  /// treated as a mouse, with the primary button set for `kDown` and `kMove`.
+  /// If set explicitly to `kFlutterPointerDeviceKindMouse`, you must set the
   /// correct buttons.
   FlutterPointerDeviceKind device_kind;
   /// The buttons currently pressed, if any.
@@ -438,7 +438,7 @@ typedef struct {
   double bottom;
 } FlutterRect;
 
-/// |FlutterSemanticsNode| ID used as a sentinel to signal the end of a batch of
+/// `FlutterSemanticsNode` ID used as a sentinel to signal the end of a batch of
 /// semantics node updates.
 FLUTTER_EXPORT
 extern const int32_t kFlutterSemanticsNodeIdBatchEnd;
@@ -448,7 +448,7 @@ extern const int32_t kFlutterSemanticsNodeIdBatchEnd;
 /// The semantics tree is maintained during the semantics phase of the pipeline
 /// (i.e., during PipelineOwner.flushSemantics), which happens after
 /// compositing. Updates are then pushed to embedders via the registered
-/// |FlutterUpdateSemanticsNodeCallback|.
+/// `FlutterUpdateSemanticsNodeCallback`.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterSemanticsNode).
   size_t struct_size;
@@ -469,9 +469,9 @@ typedef struct {
   /// The current scrolling position in logical pixels if the node is
   /// scrollable.
   double scroll_position;
-  /// The maximum in-range value for |scrollPosition| if the node is scrollable.
+  /// The maximum in-range value for `scrollPosition` if the node is scrollable.
   double scroll_extent_max;
-  /// The minimum in-range value for |scrollPosition| if the node is scrollable.
+  /// The minimum in-range value for `scrollPosition` if the node is scrollable.
   double scroll_extent_min;
   /// The elevation along the z-axis at which the rect of this semantics node is
   /// located above its parent.
@@ -484,14 +484,14 @@ typedef struct {
   const char* hint;
   /// A textual description of the current value of the node.
   const char* value;
-  /// A value that |value| will have after a kFlutterSemanticsActionIncrease|
+  /// A value that `value` will have after a kFlutterSemanticsActionIncrease`
   /// action has been performed.
   const char* increased_value;
-  /// A value that |value| will have after a kFlutterSemanticsActionDecrease|
+  /// A value that `value` will have after a kFlutterSemanticsActionDecrease`
   /// action has been performed.
   const char* decreased_value;
-  /// The reading direction for |label|, |value|, |hint|, |increasedValue|, and
-  /// |decreasedValue|.
+  /// The reading direction for `label`, `value`, `hint`, `increasedValue`, and
+  /// `decreasedValue`.
   FlutterTextDirection text_direction;
   /// The bounding box for this node in its coordinate system.
   FlutterRect rect;
@@ -500,18 +500,18 @@ typedef struct {
   FlutterTransformation transform;
   /// The number of children this node has.
   size_t child_count;
-  /// Array of child node IDs in traversal order. Has length |child_count|.
+  /// Array of child node IDs in traversal order. Has length `child_count`.
   const int32_t* children_in_traversal_order;
-  /// Array of child node IDs in hit test order. Has length |child_count|.
+  /// Array of child node IDs in hit test order. Has length `child_count`.
   const int32_t* children_in_hit_test_order;
   /// The number of custom accessibility action associated with this node.
   size_t custom_accessibility_actions_count;
-  /// Array of |FlutterSemanticsCustomAction| IDs associated with this node.
-  /// Has length |custom_accessibility_actions_count|.
+  /// Array of `FlutterSemanticsCustomAction` IDs associated with this node.
+  /// Has length `custom_accessibility_actions_count`.
   const int32_t* custom_accessibility_actions;
 } FlutterSemanticsNode;
 
-/// |FlutterSemanticsCustomAction| ID used as a sentinel to signal the end of a
+/// `FlutterSemanticsCustomAction` ID used as a sentinel to signal the end of a
 /// batch of semantics custom action updates.
 FLUTTER_EXPORT
 extern const int32_t kFlutterSemanticsCustomActionIdBatchEnd;
@@ -520,10 +520,10 @@ extern const int32_t kFlutterSemanticsCustomActionIdBatchEnd;
 ///
 /// Custom actions can be registered by applications in order to provide
 /// semantic actions other than the standard actions available through the
-/// |FlutterSemanticsAction| enum.
+/// `FlutterSemanticsAction` enum.
 ///
 /// Action overrides are custom actions that the application developer requests
-/// to be used in place of the standard actions in the |FlutterSemanticsAction|
+/// to be used in place of the standard actions in the `FlutterSemanticsAction`
 /// enum.
 typedef struct {
   /// The size of the struct. Must be sizeof(FlutterSemanticsCustomAction).
@@ -531,7 +531,7 @@ typedef struct {
   /// The unique custom action or action override ID.
   int32_t id;
   /// For overridden standard actions, corresponds to the
-  /// |FlutterSemanticsAction| to override.
+  /// `FlutterSemanticsAction` to override.
   FlutterSemanticsAction override_action;
   /// The user-readable name of this custom semantics action.
   const char* label;
@@ -574,11 +574,11 @@ typedef struct {
   BoolCallback runs_task_on_current_thread_callback;
   /// May be called from any thread. The given task should be executed by the
   /// embedder on the thread associated with that task runner by calling
-  /// |FlutterEngineRunTask| at the given target time. The system monotonic
+  /// `FlutterEngineRunTask` at the given target time. The system monotonic
   /// clock should be used for the target time. The target time is the absolute
   /// time from epoch (NOT a delta) at which the task must be returned back to
   /// the engine on the correct thread. If the embedder needs to calculate a
-  /// delta, |FlutterEngineGetCurrentTime| may be called and the difference used
+  /// delta, `FlutterEngineGetCurrentTime` may be called and the difference used
   /// as the delta.
   ///
   /// @attention     This field is required.
@@ -840,20 +840,20 @@ typedef struct {
   /// The callback invoked by the engine in order to give the embedder the
   /// chance to respond to semantics node updates from the Dart application.
   /// Semantics node updates are sent in batches terminated by a 'batch end'
-  /// callback that is passed a sentinel |FlutterSemanticsNode| whose |id| field
-  /// has the value |kFlutterSemanticsNodeIdBatchEnd|.
+  /// callback that is passed a sentinel `FlutterSemanticsNode` whose `id` field
+  /// has the value `kFlutterSemanticsNodeIdBatchEnd`.
   ///
-  /// The callback will be invoked on the thread on which the |FlutterEngineRun|
+  /// The callback will be invoked on the thread on which the `FlutterEngineRun`
   /// call is made.
   FlutterUpdateSemanticsNodeCallback update_semantics_node_callback;
   /// The callback invoked by the engine in order to give the embedder the
   /// chance to respond to updates to semantics custom actions from the Dart
   /// application.  Custom action updates are sent in batches terminated by a
   /// 'batch end' callback that is passed a sentinel
-  /// |FlutterSemanticsCustomAction| whose |id| field has the value
-  /// |kFlutterSemanticsCustomActionIdBatchEnd|.
+  /// `FlutterSemanticsCustomAction` whose `id` field has the value
+  /// `kFlutterSemanticsCustomActionIdBatchEnd`.
   ///
-  /// The callback will be invoked on the thread on which the |FlutterEngineRun|
+  /// The callback will be invoked on the thread on which the `FlutterEngineRun`
   /// call is made.
   FlutterUpdateSemanticsCustomActionCallback
       update_semantics_custom_action_callback;
@@ -965,7 +965,7 @@ FlutterEngineResult FlutterEngineSendPlatformMessage(
 ///
 ///            The handle must be collected via a call to
 ///            `FlutterPlatformMessageReleaseResponseHandle`. This may be done
-///            immediately after a call to |FlutterEngineSendPlatformMessage|
+///            immediately after a call to `FlutterEngineSendPlatformMessage`
 ///            with a platform message whose response handle contains the handle
 ///            created using this call. In case a handle is created but never
 ///            sent in a message, the release call must still be made. Not
@@ -1035,7 +1035,7 @@ FlutterEngineResult FlutterEngineSendPlatformMessageResponse(
 ///             flush tasks on a message loop not controlled by the Flutter
 ///             engine.
 ///
-/// @attention  This API will be deprecated and is not part of the stable API.
+/// @deprecated This API will be deprecated and is not part of the stable API.
 ///             Please use the custom task runners API by setting an
 ///             appropriate `FlutterProjectArgs::custom_task_runners`
 ///             interface. This will yield better performance and the
@@ -1063,7 +1063,7 @@ FlutterEngineResult __FlutterEngineFlushPendingTasksNow();
 ///                                 frames to this texture using the same
 ///                                 identifier.
 ///
-/// @return     { description_of_the_return_value }
+/// @return     The result of the call.
 ///
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineRegisterExternalTexture(
@@ -1196,7 +1196,7 @@ FlutterEngineResult FlutterEngineOnVsync(FLUTTER_API_SYMBOL(FlutterEngine)
 /// @brief      A profiling utility. Logs a trace duration begin event to the
 ///             timeline. If the timeline is unavailable or disabled, this has
 ///             no effect. Must be balanced with an duration end event (via
-///             |FlutterEngineTraceEventDurationEnd|) with the same name on the
+///             `FlutterEngineTraceEventDurationEnd`) with the same name on the
 ///             same thread. Can be called on any thread. Strings passed into
 ///             the function will NOT be copied when added to the timeline. Only
 ///             string literals may be passed in.
@@ -1210,7 +1210,7 @@ void FlutterEngineTraceEventDurationBegin(const char* name);
 /// @brief      A profiling utility. Logs a trace duration end event to the
 ///             timeline. If the timeline is unavailable or disabled, this has
 ///             no effect. This call must be preceded by a trace duration begin
-///             call (via |FlutterEngineTraceEventDurationBegin|) with the same
+///             call (via `FlutterEngineTraceEventDurationBegin`) with the same
 ///             name on the same thread. Can be called on any thread. Strings
 ///             passed into the function will NOT be copied when added to the
 ///             timeline. Only string literals may be passed in.
@@ -1234,7 +1234,7 @@ void FlutterEngineTraceEventInstant(const char* name);
 
 //------------------------------------------------------------------------------
 /// @brief      Posts a task onto the Flutter render thread. Typically, this may
-///             be called from any thread as long as a |FlutterEngineShutdown|
+///             be called from any thread as long as a `FlutterEngineShutdown`
 ///             on the specific engine has not already been initiated.
 ///
 /// @param[in]  engine         A running engine instance.
@@ -1261,7 +1261,7 @@ uint64_t FlutterEngineGetCurrentTime();
 //------------------------------------------------------------------------------
 /// @brief      Inform the engine to run the specified task. This task has been
 ///             given to the engine via the
-///             |FlutterTaskRunnerDescription.post_task_callback|. This call
+///             `FlutterTaskRunnerDescription.post_task_callback`. This call
 ///             must only be made at the target time specified in that callback.
 ///             Running the task before that time is undefined behavior.
 ///
