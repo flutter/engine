@@ -38,10 +38,10 @@ public class PlatformViewsChannel {
     channel.invokeMethod("viewFocused", viewId);
   }
 
-  private String detailedExceptionString(Exception e) {
+  private static String detailedExceptionString(Exception exception) {
     StringWriter stringWriter = new StringWriter();
     PrintWriter printWriter = new PrintWriter(stringWriter);
-    e.printStackTrace(printWriter);
+    exception.printStackTrace(printWriter);
     return stringWriter.toString();
   }
 
