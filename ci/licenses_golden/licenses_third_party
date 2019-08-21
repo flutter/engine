@@ -1,4 +1,4 @@
-Signature: 94bb4276408984fa58f0cf5fe27bc7bd
+Signature: af5957b7ff05dcaecdcc776bc045bdbe
 
 UNUSED LICENSES:
 
@@ -22520,6 +22520,37 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: wasmer
+ORIGIN: ../../../third_party/dart/third_party/wasmer/LICENSE
+TYPE: LicenseType.mit
+FILE: ../../../third_party/dart/third_party/wasmer/Cargo.toml
+FILE: ../../../third_party/dart/third_party/wasmer/wasmer.hh
+FILE: ../../../third_party/dart/third_party/wasmer/wasmer.rs
+----------------------------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2019 Wasmer, Inc. and its affiliates.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: wuffs
 ORIGIN: ../../../third_party/wuffs/LICENSE
 TYPE: LicenseType.apache
@@ -23468,4 +23499,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 386
+Total license count: 387
