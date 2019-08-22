@@ -34,6 +34,105 @@ namespace txt {
 
 using ParagraphTest = RenderTest;
 
+TEST_F(ParagraphTest, SimpleParagraph) {
+  const char* text = "Hello World Text Dialog";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  // We must supply a font here, as the default is Arial, and we do not
+  // include Arial in our test fonts as it is proprietary. We want it to
+  // be Arial default though as it is one of the most common fonts on host
+  // platforms. On real devices/apps, Arial should be able to be resolved.
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(GetTestCanvasWidth());
+
+  paragraph->Paint(GetCanvas(), 10.0, 15.0);
+
+  ASSERT_EQ(paragraph->text_.size(), std::string{text}.length());
+  for (size_t i = 0; i < u16_text.length(); i++) {
+    ASSERT_EQ(paragraph->text_[i], u16_text[i]);
+  }
+  ASSERT_EQ(paragraph->runs_.runs_.size(), 1ull);
+  ASSERT_EQ(paragraph->runs_.styles_.size(), 2ull);
+  ASSERT_TRUE(paragraph->runs_.styles_[1].equals(text_style));
+  ASSERT_EQ(paragraph->records_[0].style().color, text_style.color);
+  ASSERT_TRUE(Snapshot());
+}
+
+// It is possible for the line_metrics_ vector in paragraph to have an empty
+// line at the end as a result of the line breaking algorithm. This causes
+// the final_line_count_ to be one less than line metrics. This tests that we
+// properly handle this case and do not segfault.
+TEST_F(ParagraphTest, GetGlyphPositionAtCoordinateSegfault) {
+  const char* text = "Hello World\nText Dialog";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  // We must supply a font here, as the default is Arial, and we do not
+  // include Arial in our test fonts as it is proprietary. We want it to
+  // be Arial default though as it is one of the most common fonts on host
+  // platforms. On real devices/apps, Arial should be able to be resolved.
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(GetTestCanvasWidth());
+
+  paragraph->Paint(GetCanvas(), 10.0, 15.0);
+
+  ASSERT_EQ(paragraph->final_line_count_, paragraph->line_metrics_.size());
+  ASSERT_EQ(paragraph->final_line_count_, 2ull);
+  ASSERT_EQ(paragraph->GetLineCount(), 2ull);
+
+  ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(0.2, 0.2).position, 0ull);
+  ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(20.2, 0.2).position, 3ull);
+  ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(0.2, 20.2).position, 12ull);
+
+  // We artificially reproduce the conditions that cause segfaults in very
+  // specific circumstances in the wild. By adding this empty un-laid-out
+  // LineMetrics at the end, we force the case where final_line_count_
+  // represents the true number of lines whereas line_metrics_ has one
+  // extra empty one.
+  paragraph->line_metrics_.emplace_back(23, 24, 24, 24, true);
+
+  ASSERT_EQ(paragraph->final_line_count_, paragraph->line_metrics_.size() - 1);
+  ASSERT_EQ(paragraph->final_line_count_, 2ull);
+  ASSERT_EQ(paragraph->GetLineCount(), 2ull);
+
+  ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(0.2, 20.2).position, 12ull);
+  ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(0.2, 0.2).position, 0ull);
+  ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(20.2, 0.2).position, 3ull);
+
+  paragraph->line_metrics_.emplace_back(24, 25, 25, 25, true);
+
+  ASSERT_EQ(paragraph->final_line_count_, paragraph->line_metrics_.size() - 2);
+  ASSERT_EQ(paragraph->final_line_count_, 2ull);
+  ASSERT_EQ(paragraph->GetLineCount(), 2ull);
+
+  ASSERT_TRUE(Snapshot());
+}
+
 TEST_F(ParagraphTest, LineMetricsParagraph1) {
   const char* text = "Hello! What is going on?\nSecond line \nthirdline";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
@@ -375,43 +474,6 @@ TEST_F(ParagraphTest, LineMetricsParagraph2) {
                       ->second.GetFontMetrics()
                       .fDescent,
                   7.6799998);
-}
-
-TEST_F(ParagraphTest, SimpleParagraph) {
-  const char* text = "Hello World Text Dialog";
-  auto icu_text = icu::UnicodeString::fromUTF8(text);
-  std::u16string u16_text(icu_text.getBuffer(),
-                          icu_text.getBuffer() + icu_text.length());
-
-  txt::ParagraphStyle paragraph_style;
-  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
-
-  txt::TextStyle text_style;
-  // We must supply a font here, as the default is Arial, and we do not
-  // include Arial in our test fonts as it is proprietary. We want it to
-  // be Arial default though as it is one of the most common fonts on host
-  // platforms. On real devices/apps, Arial should be able to be resolved.
-  text_style.font_families = std::vector<std::string>(1, "Roboto");
-  text_style.color = SK_ColorBLACK;
-  builder.PushStyle(text_style);
-  builder.AddText(u16_text);
-
-  builder.Pop();
-
-  auto paragraph = BuildParagraph(builder);
-  paragraph->Layout(GetTestCanvasWidth());
-
-  paragraph->Paint(GetCanvas(), 10.0, 15.0);
-
-  ASSERT_EQ(paragraph->text_.size(), std::string{text}.length());
-  for (size_t i = 0; i < u16_text.length(); i++) {
-    ASSERT_EQ(paragraph->text_[i], u16_text[i]);
-  }
-  ASSERT_EQ(paragraph->runs_.runs_.size(), 1ull);
-  ASSERT_EQ(paragraph->runs_.styles_.size(), 2ull);
-  ASSERT_TRUE(paragraph->runs_.styles_[1].equals(text_style));
-  ASSERT_EQ(paragraph->records_[0].style().color, text_style.color);
-  ASSERT_TRUE(Snapshot());
 }
 
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderParagraph)) {

@@ -156,6 +156,7 @@ class ParagraphTxt : public Paragraph {
   FRIEND_TEST(ParagraphTest, FontFallbackParagraph);
   FRIEND_TEST(ParagraphTest, InlinePlaceholder0xFFFCParagraph);
   FRIEND_TEST(ParagraphTest, FontFeaturesParagraph);
+  FRIEND_TEST(ParagraphTest, GetGlyphPositionAtCoordinateSegfault);
 
   // Starting data to layout.
   std::vector<uint16_t> text_;
