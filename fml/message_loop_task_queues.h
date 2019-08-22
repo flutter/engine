@@ -148,7 +148,7 @@ class MessageLoopTaskQueues
       FML_GUARDED_BY(creation_mutex_);
 
   std::unique_ptr<fml::SharedMutex> queue_meta_mutex_;
-  std::map<TaskQueueId, std::shared_ptr<TaskQueueEntry>> queue_entries_;
+  std::map<TaskQueueId, std::unique_ptr<TaskQueueEntry>> queue_entries_;
   std::map<TaskQueueId, std::unique_ptr<std::mutex>> queue_locks_;
 
   size_t task_queue_id_counter_;
