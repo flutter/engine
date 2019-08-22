@@ -2067,8 +2067,7 @@ class _RepositoryLibDirectory extends _RepositoryDirectory {
     if (_kBlacklist.contains(relativePath)) {
       return false;
     }
-    return entry.name != 'toolchain'
-        && super.shouldRecurse(entry);
+    return super.shouldRecurse(entry);
   }
 
   @override
