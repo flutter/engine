@@ -33,16 +33,26 @@ class TaskQueueId {
 
 static const TaskQueueId _kUnmerged = TaskQueueId(TaskQueueId::kUnmerged);
 
+// This is keyed by the |TaskQueueId| and contains all the queue
+// components that make up a single TaskQueue.
 class TaskQueueEntry {
  public:
   using TaskObservers = std::map<intptr_t, fml::closure>;
   Wakeable* wakeable;
   TaskObservers task_observers;
   DelayedTaskQueue delayed_tasks;
+
+  // Note: Both of these can be _kUnmerged, which indicates that
+  // this queue has not been merged or subsumed. OR exactly one
+  // of these will be _kUnmerged, if owner_of is _kUnmerged, it means
+  // that the queue has been subsumed or else it owns another queue.
   TaskQueueId owner_of;
   TaskQueueId subsumed_by;
 
   TaskQueueEntry();
+
+ private:
+  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(TaskQueueEntry);
 };
 
 enum class FlushType {
@@ -86,8 +96,7 @@ class MessageLoopTaskQueues
 
   void RemoveTaskObserver(TaskQueueId queue_id, intptr_t key);
 
-  void GetObserversToNotify(TaskQueueId queue_id,
-                            std::vector<fml::closure>& callables) const;
+  std::vector<fml::closure> GetObserversToNotify(TaskQueueId queue_id) const;
 
   // Misc.
 
@@ -139,7 +148,7 @@ class MessageLoopTaskQueues
       FML_GUARDED_BY(creation_mutex_);
 
   std::unique_ptr<fml::SharedMutex> queue_meta_mutex_;
-  std::map<TaskQueueId, TaskQueueEntry> queue_entries_;
+  std::map<TaskQueueId, std::shared_ptr<TaskQueueEntry>> queue_entries_;
   std::map<TaskQueueId, std::unique_ptr<std::mutex>> queue_locks_;
 
   size_t task_queue_id_counter_;

@@ -83,8 +83,8 @@ TEST(MessageLoopTaskQueue, PreserveTaskOrdering) {
 
 void TestNotifyObservers(fml::TaskQueueId queue_id) {
   auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
-  std::vector<fml::closure> observers;
-  task_queue->GetObserversToNotify(queue_id, observers);
+  std::vector<fml::closure> observers =
+      task_queue->GetObserversToNotify(queue_id);
   for (const auto& observer : observers) {
     observer();
   }
