@@ -7,12 +7,14 @@
 
 #include <map>
 #include <mutex>
+#include <shared_mutex>
 #include <vector>
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/delayed_task.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
+#include "flutter/fml/synchronization/shared_mutex.h"
 #include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/fml/wakeable.h"
 
@@ -28,6 +30,24 @@ class TaskQueueId {
 
  private:
   size_t value_ = kUnmerged;
+};
+
+static const TaskQueueId _kUnmerged = TaskQueueId(TaskQueueId::kUnmerged);
+
+class TaskQueueEntry {
+ public:
+  using TaskObservers = std::map<intptr_t, fml::closure>;
+  Wakeable* wakeable;
+  TaskObservers task_observers;
+  DelayedTaskQueue delayed_tasks;
+  TaskQueueId owner_of;
+  TaskQueueId subsumed_by;
+
+  std::unique_ptr<std::mutex> tasks_mutex;
+  std::unique_ptr<std::mutex> observers_mutex;
+  std::unique_ptr<std::mutex> wakeable_mutex;
+
+  TaskQueueEntry();
 };
 
 enum class FlushType {
@@ -55,13 +75,13 @@ class MessageLoopTaskQueues
                     fml::closure task,
                     fml::TimePoint target_time);
 
-  bool HasPendingTasks(TaskQueueId queue_id);
+  bool HasPendingTasks(TaskQueueId queue_id) const;
 
   void GetTasksToRunNow(TaskQueueId queue_id,
                         FlushType type,
                         std::vector<fml::closure>& invocations);
 
-  size_t GetNumPendingTasks(TaskQueueId queue_id);
+  size_t GetNumPendingTasks(TaskQueueId queue_id) const;
 
   // Observers methods.
 
@@ -71,11 +91,9 @@ class MessageLoopTaskQueues
 
   void RemoveTaskObserver(TaskQueueId queue_id, intptr_t key);
 
-  void NotifyObservers(TaskQueueId queue_id);
+  void NotifyObservers(TaskQueueId queue_id) const;
 
   // Misc.
-
-  void Swap(TaskQueueId primary, TaskQueueId secondary);
 
   void SetWakeable(TaskQueueId queue_id, fml::Wakeable* wakeable);
 
@@ -98,7 +116,7 @@ class MessageLoopTaskQueues
   bool Unmerge(TaskQueueId owner);
 
   // Returns true if owner owns the subsumed task queue.
-  bool Owns(TaskQueueId owner, TaskQueueId subsumed);
+  bool Owns(TaskQueueId owner, TaskQueueId subsumed) const;
 
  private:
   class MergedQueuesRunner;
@@ -110,44 +128,28 @@ class MessageLoopTaskQueues
   };
 
   using Mutexes = std::vector<std::unique_ptr<std::mutex>>;
-  using TaskObservers = std::map<intptr_t, fml::closure>;
 
   MessageLoopTaskQueues();
 
   ~MessageLoopTaskQueues();
 
-  void WakeUp(TaskQueueId queue_id, fml::TimePoint time);
+  void WakeUp(TaskQueueId queue_id, fml::TimePoint time) const;
 
-  bool HasPendingTasksUnlocked(TaskQueueId queue_id);
+  bool HasPendingTasksUnlocked(TaskQueueId queue_id) const;
 
   const DelayedTask& PeekNextTaskUnlocked(TaskQueueId queue_id,
-                                          TaskQueueId& top_queue_id);
+                                          TaskQueueId& top_queue_id) const;
 
-  fml::TimePoint GetNextWakeTimeUnlocked(TaskQueueId queue_id);
-
-  std::mutex& GetMutex(TaskQueueId queue_id, MutexType type);
+  fml::TimePoint GetNextWakeTimeUnlocked(TaskQueueId queue_id) const;
 
   static std::mutex creation_mutex_;
   static fml::RefPtr<MessageLoopTaskQueues> instance_
       FML_GUARDED_BY(creation_mutex_);
 
-  std::mutex queue_meta_mutex_;
+  std::unique_ptr<fml::SharedMutex> queue_meta_mutex_;
+  std::map<TaskQueueId, TaskQueueEntry> queue_entries;
 
-  size_t task_queue_id_counter_ FML_GUARDED_BY(queue_meta_mutex_);
-
-  Mutexes observers_mutexes_ FML_GUARDED_BY(queue_meta_mutex_);
-  Mutexes delayed_tasks_mutexes_ FML_GUARDED_BY(queue_meta_mutex_);
-  Mutexes wakeable_mutexes_ FML_GUARDED_BY(queue_meta_mutex_);
-
-  // These are guarded by their corresponding `Mutexes`
-  std::vector<Wakeable*> wakeables_;
-  std::vector<TaskObservers> task_observers_;
-  std::vector<DelayedTaskQueue> delayed_tasks_;
-
-  static const TaskQueueId _kUnmerged;
-  // These are guarded by delayed_tasks_mutexes_
-  std::vector<TaskQueueId> owner_to_subsumed_;
-  std::vector<TaskQueueId> subsumed_to_owner_;
+  size_t task_queue_id_counter_;
 
   std::atomic_int order_;
 
