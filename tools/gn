@@ -239,6 +239,11 @@ def to_gn_args(args):
       # Configure Skia for Vulkan support.
       gn_args['skia_use_vulkan'] = True
 
+    # The buildroot currently isn't set up to support Vulkan in the
+    # Windows ANGLE build, so disable it regardless of enable_vulkan's value.
+    if sys.platform.startswith(('cygwin', 'win')):
+       gn_args['angle_enable_vulkan'] = False
+
     # We should not need a special case for x86, but this seems to introduce text relocations
     # even with -fPIC everywhere.
     # gn_args['enable_profiling'] = args.runtime_mode != 'release' and args.android_cpu != 'x86'
@@ -254,11 +259,8 @@ def to_gn_args(args):
     gn_args['full_dart_sdk'] = args.full_dart_sdk
 
     if sys.platform == 'darwin':
-      gn_args['mac_sdk_path'] = args.mac_sdk_path
       if args.build_glfw_shell:
         gn_args['build_glfw_shell'] = True
-      if gn_args['mac_sdk_path'] == '':
-        gn_args['mac_sdk_path'] = os.getenv('FLUTTER_MAC_SDK_PATH', '')
 
     return gn_args
 
@@ -320,10 +322,6 @@ def parse_args(args):
   parser.add_argument('--full-dart-sdk', default=False, action='store_true',
                       help='include trained dart2js and dartdevc snapshots. Enable only on steps that create an SDK')
   parser.add_argument('--no-full-dart-sdk', dest='full_dart_sdk', action='store_false')
-
-  parser.add_argument('--mac-sdk-path', default='', type=str,
-                      help='On the mac, the SDK is inferred from the Xcode location unless this flag is specified. ' +
-                      ' Setting the FLUTTER_MAC_SDK_PATH environment variable achieves the same effect.')
 
   parser.add_argument('--ide', default='', type=str,
                       help='The IDE files to generate using GN. Use `gn gen help` and look for the --ide flag to' +
