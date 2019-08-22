@@ -72,7 +72,7 @@ class Win32Window {
   // When WM_DPICHANGE resizes the window to the new suggested
   // size and notifies inheriting class.
   LRESULT
-  HandleDpiChange(HWND hWnd, WPARAM wParam, LPARAM lParam);
+  HandleDpiChange(HWND hWnd, WPARAM wParam, LPARAM lParam, bool toplevel);
 
   // Called when the DPI changes either when a
   // user drags the window between monitors of differing DPI or when the user
