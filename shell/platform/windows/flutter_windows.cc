@@ -105,16 +105,18 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateView(
     const char** arguments,
     size_t argument_count) {
   FlutterDesktopViewControllerRef state =
-      flutter::Win32FlutterWindow::CreateWin32FlutterWindow(initial_width, initial_height);
+      flutter::Win32FlutterWindow::CreateWin32FlutterWindow(initial_width,
+                                                            initial_height);
 
-  auto engine = RunFlutterEngine(state->view.get(), assets_path,
-                                 icu_data_path, arguments, argument_count);
+  auto engine = RunFlutterEngine(state->view.get(), assets_path, icu_data_path,
+                                 arguments, argument_count);
 
   if (engine == nullptr) {
     return nullptr;
   }
 
   state->view->SetState(engine);
+  state->engine = engine;
 
   return state;
 }
