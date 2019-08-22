@@ -43,10 +43,10 @@ void Win32Window::InitializeChild(const char* title,
 
   WNDCLASS window_class = ResgisterWindowClass(converted_title);
 
-  auto result = CreateWindowEx(0, window_class.lpszClassName, converted_title.c_str(),
-                     WS_CHILD | WS_VISIBLE, CW_DEFAULT, CW_DEFAULT, width, height,
-                     HWND_MESSAGE, nullptr,
-               window_class.hInstance, this);
+  auto result = CreateWindowEx(
+      0, window_class.lpszClassName, converted_title.c_str(),
+      WS_CHILD | WS_VISIBLE, CW_DEFAULT, CW_DEFAULT, width, height,
+      HWND_MESSAGE, nullptr, window_class.hInstance, this);
 
   if (result == nullptr) {
     auto error = GetLastError();
@@ -54,8 +54,8 @@ void Win32Window::InitializeChild(const char* title,
     size_t size = FormatMessageW(
         FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
             FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&message,
-        0, NULL);
+        NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPWSTR)&message, 0, NULL);
     OutputDebugString(message);
     LocalFree(message);
   }

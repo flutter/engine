@@ -27,33 +27,16 @@ Win32FlutterWindow::~Win32FlutterWindow() {
   Win32Window::Destroy();
 }
 
-FlutterDesktopWindowControllerRef Win32FlutterWindow::CreateWin32FlutterWindow(
-    const char* title,
-    const int x,
-    const int y,
+FlutterDesktopViewControllerRef Win32FlutterWindow::CreateWin32FlutterWindow(
     const int width,
     const int height) {
-  auto state = std::make_unique<FlutterDesktopWindowControllerState>();
-  state->window = std::make_unique<flutter::Win32FlutterWindow>(title, 10, 10,
-                                                                width, height);
+  auto state = std::make_unique<FlutterDesktopViewControllerState>();
+  state->view = std::make_unique<flutter::Win32FlutterWindow>(width, height);
 
   // a window wrapper for the state block, distinct from the
   // window_wrapper handed to plugin_registrar.
-  state->window_wrapper = std::make_unique<FlutterDesktopWindow>();
-  state->window_wrapper->window = state->window.get();
-  return state.release();
-}
-
-FlutterDesktopWindowControllerRef Win32FlutterWindow::CreateWin32FlutterView(
-    const int width,
-    const int height) {
-  auto state = std::make_unique<FlutterDesktopWindowControllerState>();
-  state->window = std::make_unique<flutter::Win32FlutterWindow>(width, height);
-
-  // a window wrapper for the state block, distinct from the
-  // window_wrapper handed to plugin_registrar.
-  state->window_wrapper = std::make_unique<FlutterDesktopWindow>();
-  state->window_wrapper->window = state->window.get();
+  state->view_wrapper = std::make_unique<FlutterDesktopView>();
+  state->view_wrapper->window = state->view.get();
   return state.release();
 }
 
@@ -66,7 +49,7 @@ void Win32FlutterWindow::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng) {
   messenger->engine = engine_;
   messenger->dispatcher = message_dispatcher_.get();
 
-  window_wrapper_ = std::make_unique<FlutterDesktopWindow>();
+  window_wrapper_ = std::make_unique<FlutterDesktopView>();
   window_wrapper_->window = this;
 
   plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
@@ -85,7 +68,7 @@ void Win32FlutterWindow::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng) {
   platform_handler_ = std::make_unique<flutter::PlatformHandler>(
       internal_plugin_messenger, this);
 
-  auto state = std::make_unique<FlutterDesktopWindowControllerState>();
+  auto state = std::make_unique<FlutterDesktopViewControllerState>();
   state->engine = engine_;
 
   process_events_ = true;

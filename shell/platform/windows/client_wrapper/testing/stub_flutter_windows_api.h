@@ -29,25 +29,8 @@ class StubFlutterWindowsApi {
 
   virtual ~StubFlutterWindowsApi() {}
 
-  // Called for FlutterDesktopInit.
-  virtual bool Init() { return true; }
-
-  // Called for FlutterDesktopTerminate.
-  virtual void Terminate() {}
-
-  // Called for FlutterDesktopCreateWindow.
-  virtual FlutterDesktopWindowControllerRef CreateWindow(
-      int initial_width,
-      int initial_height,
-      const char* title,
-      const char* assets_path,
-      const char* icu_data_path,
-      const char** arguments,
-      size_t argument_count) {
-    return nullptr;
-  }
-
-  virtual FlutterDesktopWindowControllerRef CreateView(
+  // Called for FlutterDesktopCreateView.
+  virtual FlutterDesktopViewControllerRef CreateView(
       int initial_width,
       int initial_height,
       const char* assets_path,
@@ -57,8 +40,8 @@ class StubFlutterWindowsApi {
     return nullptr;
   }
 
-  // Called for FlutterDesktopDestroyWindow.
-  virtual void DestroyWindow() {}
+  // Called for FlutterDesktopDestroyView.
+  virtual void DestroyView() {}
 
   // Called for FlutterDesktopRunEngine.
   virtual FlutterDesktopEngineRef RunEngine(const char* assets_path,

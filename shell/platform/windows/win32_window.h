@@ -23,8 +23,8 @@ class Win32Window {
   Win32Window();
   ~Win32Window();
 
-  // Initializes as a child window with size using |width| and |height|.  Does not show window, window must be
-  // parented into window hierarchy by caller
+  // Initializes as a child window with size using |width| and |height|.  Does
+  // not show window, window must be parented into window hierarchy by caller
   void InitializeChild(const char* title,
                        const unsigned int width,
                        const unsigned int height);

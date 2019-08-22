@@ -9,18 +9,18 @@
 
 namespace flutter {
 
-FlutterWindowController::FlutterWindowController(
+FlutterViewController::FlutterViewController(
     const std::string& icu_data_path)
     : icu_data_path_(icu_data_path) {
 }
 
-FlutterWindowController::~FlutterWindowController() {
+FlutterViewController::~FlutterViewController() {
   if (controller_) {
     FlutterDesktopDestroyView(controller_);
   }
 }
 
-std::shared_ptr<FlutterViewWin32> FlutterWindowController::CreateFlutterView(
+FlutterView FlutterViewController::CreateFlutterView(
     int width,
     int height,
     const std::string& assets_path,
@@ -51,7 +51,7 @@ std::shared_ptr<FlutterViewWin32> FlutterWindowController::CreateFlutterView(
   return view_;
  }
 
-FlutterDesktopPluginRegistrarRef FlutterWindowController::GetRegistrarForPlugin(
+FlutterDesktopPluginRegistrarRef FlutterViewController::GetRegistrarForPlugin(
     const std::string& plugin_name) {
   if (!controller_) {
     std::cerr << "Cannot get plugin registrar without a window; call "

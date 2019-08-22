@@ -97,57 +97,24 @@ static FLUTTER_API_SYMBOL(FlutterEngine)
   return engine;
 }
 
-bool FlutterDesktopInit() {
-  return true;
-}
-
-void FlutterDesktopTerminate() {}
-
-FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
-    int initial_width,
-    int initial_height,
-    const char* title,
-    const char* assets_path,
-    const char* icu_data_path,
-    const char** arguments,
-    size_t argument_count) {
-  FlutterDesktopWindowControllerRef state =
-      flutter::Win32FlutterWindow::CreateWin32FlutterWindow(
-          title, 10, 10, initial_width, initial_height);
-
-  auto engine = RunFlutterEngine(state->window.get(), assets_path,
-                                 icu_data_path, arguments, argument_count);
-
-  if (engine == nullptr) {
-    return nullptr;
-  }
-
-  state->window->SetState(engine);
-
-  // Trigger an initial size callback to send size information to Flutter.
-  state->window->SendWindowMetrics();
-
-  return state;
-}
-
-FlutterDesktopWindowControllerRef FlutterDesktopCreateView(
+FlutterDesktopViewControllerRef FlutterDesktopCreateView(
     int initial_width,
     int initial_height,
     const char* assets_path,
     const char* icu_data_path,
     const char** arguments,
     size_t argument_count) {
-  FlutterDesktopWindowControllerRef state =
-      flutter::Win32FlutterWindow::CreateWin32FlutterView(initial_width, initial_height);
+  FlutterDesktopViewControllerRef state =
+      flutter::Win32FlutterWindow::CreateWin32FlutterWindow(initial_width, initial_height);
 
-  auto engine = RunFlutterEngine(state->window.get(), assets_path,
+  auto engine = RunFlutterEngine(state->view.get(), assets_path,
                                  icu_data_path, arguments, argument_count);
 
   if (engine == nullptr) {
     return nullptr;
   }
 
-  state->window->SetState(engine);
+  state->view->SetState(engine);
 
   return state;
 }
@@ -156,32 +123,32 @@ void FlutterDesktopProcessMessages() {
   __FlutterEngineFlushPendingTasksNow();
 }
 
-long FlutterDesktopGetHWNDFromView(FlutterDesktopWindowRef flutter_window) {
-  return (long)((FlutterDesktopWindow*)flutter_window)->window->GetWindowHandle();
+long FlutterDesktopGetHWNDFromView(FlutterDesktopViewRef flutter_window) {
+  return (long)((FlutterDesktopView*)flutter_window)->window->GetWindowHandle();
 }
 
-void FlutterDesktopDestroyWindow(FlutterDesktopWindowControllerRef controller) {
+void FlutterDesktopDestroyView(FlutterDesktopViewControllerRef controller) {
   FlutterEngineShutdown(controller->engine);
   delete controller;
 }
 
-FlutterDesktopWindowRef FlutterDesktopGetWindow(
-    FlutterDesktopWindowControllerRef controller) {
+FlutterDesktopViewRef FlutterDesktopGetView(
+    FlutterDesktopViewControllerRef controller) {
   // Currently, one registrar acts as the registrar for all plugins, so the
   // name is ignored. It is part of the API to reduce churn in the future when
   // aligning more closely with the Flutter registrar system.
 
-  return controller->window_wrapper.get();
+  return controller->view_wrapper.get();
 }
 
 FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(
-    FlutterDesktopWindowControllerRef controller,
+    FlutterDesktopViewControllerRef controller,
     const char* plugin_name) {
   // Currently, one registrar acts as the registrar for all plugins, so the
   // name is ignored. It is part of the API to reduce churn in the future when
   // aligning more closely with the Flutter registrar system.
 
-  return controller->window->GetRegistrar();
+  return controller->view->GetRegistrar();
 }
 
 FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,
