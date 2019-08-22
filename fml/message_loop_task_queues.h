@@ -121,12 +121,6 @@ class MessageLoopTaskQueues
  private:
   class MergedQueuesRunner;
 
-  enum class MutexType {
-    kTasks,
-    kObservers,
-    kWakeables,
-  };
-
   using Mutexes = std::vector<std::unique_ptr<std::mutex>>;
 
   MessageLoopTaskQueues();
@@ -134,6 +128,10 @@ class MessageLoopTaskQueues
   ~MessageLoopTaskQueues();
 
   void WakeUp(TaskQueueId queue_id, fml::TimePoint time) const;
+
+  enum class MutexType { kObservers, kTasks, kWakeable };
+
+  std::mutex& GetMutex(TaskQueueId queue_id, MutexType type) const;
 
   bool HasPendingTasksUnlocked(TaskQueueId queue_id) const;
 

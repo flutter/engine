@@ -4,6 +4,8 @@
 
 #define FML_USED_ON_EMBEDDER
 
+#include <thread>
+
 #include "flutter/fml/message_loop_task_queues.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -135,4 +137,31 @@ TEST(MessageLoopTaskQueue, WokenUpWithNewerTime) {
       queue_id, []() {}, now);
 
   latch.Wait();
+}
+
+TEST(MessageLoopTaskQueue, NotifyObserversWhileCreatingQueues) {
+  auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
+  fml::TaskQueueId queue_id = task_queues->CreateTaskQueue();
+  fml::AutoResetWaitableEvent first_observer_executing, before_second_observer;
+
+  task_queues->AddTaskObserver(queue_id, queue_id + 1, [&]() {
+    first_observer_executing.Signal();
+    before_second_observer.Wait();
+  });
+
+  for (int i = 0; i < 100; i++) {
+    task_queues->AddTaskObserver(queue_id, queue_id + i + 2, [] {});
+  }
+
+  std::thread notify_observers(
+      [&]() { task_queues->NotifyObservers(queue_id); });
+
+  first_observer_executing.Wait();
+
+  for (int i = 0; i < 100; i++) {
+    task_queues->CreateTaskQueue();
+  }
+
+  before_second_observer.Signal();
+  notify_observers.join();
 }
