@@ -2043,7 +2043,37 @@ class _RepositoryFlutterDirectory extends _RepositoryDirectory {
       return _RepositoryExcludeSubpathDirectory(this, entry, const <String>['packages', 'sky_engine', 'LICENSE']); // that's the output of this script!
     if (entry.name == 'third_party')
       return _RepositoryFlutterThirdPartyDirectory(this, entry);
+    if (entry.name == 'lib')
+      return _RepositoryLibDirectory(entry, this, entry);
     return super.createSubdirectory(entry);
+  }
+}
+
+// The "lib/" directory containing the source code for "dart:ui" (both native and Web) and
+// all its sub-directories.
+class _RepositoryLibDirectory extends _RepositoryDirectory {
+  _RepositoryLibDirectory(this.libRoot, _RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  // List of files inside the lib directory that we're not scanning.
+  static const List<String> _kBlacklist = <String>[
+    'web_ui/lib/assets/ahem.ttf',  // this gitignored file exists only for testing purposes
+  ];
+
+  final fs.Directory libRoot;
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    final String relativePath = path.relative(entry.fullName, from: libRoot.fullName);
+    if (_kBlacklist.contains(relativePath)) {
+      return false;
+    }
+    return entry.name != 'toolchain'
+        && super.shouldRecurse(entry);
+  }
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    return _RepositoryLibDirectory(libRoot, this, entry);
   }
 }
 
