@@ -184,8 +184,7 @@ void MessageLoopTaskQueues::SetWakeable(TaskQueueId queue_id,
   queue_entries.at(queue_id).wakeable = wakeable;
 }
 
-bool MessageLoopTaskQueues::Merge(TaskQueueId owner, TaskQueueId subsumed)
-    FML_NO_THREAD_SAFETY_ANALYSIS {
+bool MessageLoopTaskQueues::Merge(TaskQueueId owner, TaskQueueId subsumed) {
   std::scoped_lock t_o(GetMutex(owner, MutexType::kTasks));
   std::scoped_lock o_o(GetMutex(owner, MutexType::kObservers));
 
@@ -197,8 +196,8 @@ bool MessageLoopTaskQueues::Merge(TaskQueueId owner, TaskQueueId subsumed)
     return true;
   }
 
-  std::scoped_lock t_s(GetMutex(subsumed, MutexType::kTasks));
-  std::scoped_lock o_s(GetMutex(subsumed, MutexType::kObservers));
+  std::scoped_lock t_s(*queue_entries[subsumed].tasks_mutex);
+  std::scoped_lock o_s(*queue_entries[subsumed].observers_mutex);
 
   std::vector<TaskQueueId> owner_subsumed_keys = {
       queue_entries[owner].owner_of, queue_entries[owner].subsumed_by,
