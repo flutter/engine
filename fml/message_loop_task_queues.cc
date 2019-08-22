@@ -185,19 +185,23 @@ void MessageLoopTaskQueues::SetWakeable(TaskQueueId queue_id,
 }
 
 bool MessageLoopTaskQueues::Merge(TaskQueueId owner, TaskQueueId subsumed) {
-  std::scoped_lock t_o(GetMutex(owner, MutexType::kTasks));
-  std::scoped_lock o_o(GetMutex(owner, MutexType::kObservers));
-
   if (owner == subsumed) {
     return true;
   }
 
+  // task_observers locks
+  std::mutex& o1 = GetMutex(owner, MutexType::kObservers);
+  std::mutex& o2 = GetMutex(subsumed, MutexType::kObservers);
+
+  // delayed_tasks locks
+  std::mutex& t1 = GetMutex(owner, MutexType::kTasks);
+  std::mutex& t2 = GetMutex(subsumed, MutexType::kTasks);
+
+  std::scoped_lock lock(o1, o2, t1, t2);
+
   if (queue_entries[owner].owner_of == subsumed) {
     return true;
   }
-
-  std::scoped_lock t_s(*queue_entries[subsumed].tasks_mutex);
-  std::scoped_lock o_s(*queue_entries[subsumed].observers_mutex);
 
   std::vector<TaskQueueId> owner_subsumed_keys = {
       queue_entries[owner].owner_of, queue_entries[owner].subsumed_by,
