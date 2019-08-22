@@ -81,6 +81,15 @@ TEST(MessageLoopTaskQueue, PreserveTaskOrdering) {
   }
 }
 
+void TestNotifyObservers(fml::TaskQueueId queue_id) {
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
+  std::vector<fml::closure> observers;
+  task_queue->GetObserversToNotify(queue_id, observers);
+  for (const auto& observer : observers) {
+    observer();
+  }
+}
+
 TEST(MessageLoopTaskQueue, AddRemoveNotifyObservers) {
   auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto queue_id = task_queue->CreateTaskQueue();
@@ -89,12 +98,12 @@ TEST(MessageLoopTaskQueue, AddRemoveNotifyObservers) {
   intptr_t key = 123;
 
   task_queue->AddTaskObserver(queue_id, key, [&test_val]() { test_val = 1; });
-  task_queue->NotifyObservers(queue_id);
+  TestNotifyObservers(queue_id);
   ASSERT_TRUE(test_val == 1);
 
   test_val = 0;
   task_queue->RemoveTaskObserver(queue_id, key);
-  task_queue->NotifyObservers(queue_id);
+  TestNotifyObservers(queue_id);
   ASSERT_TRUE(test_val == 0);
 }
 
@@ -153,8 +162,7 @@ TEST(MessageLoopTaskQueue, NotifyObserversWhileCreatingQueues) {
     task_queues->AddTaskObserver(queue_id, queue_id + i + 2, [] {});
   }
 
-  std::thread notify_observers(
-      [&]() { task_queues->NotifyObservers(queue_id); });
+  std::thread notify_observers([&]() { TestNotifyObservers(queue_id); });
 
   first_observer_executing.Wait();
 

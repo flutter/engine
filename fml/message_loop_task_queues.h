@@ -42,10 +42,6 @@ class TaskQueueEntry {
   TaskQueueId owner_of;
   TaskQueueId subsumed_by;
 
-  std::unique_ptr<std::mutex> tasks_mutex;
-  std::unique_ptr<std::mutex> observers_mutex;
-  std::unique_ptr<std::mutex> wakeable_mutex;
-
   TaskQueueEntry();
 };
 
@@ -90,7 +86,8 @@ class MessageLoopTaskQueues
 
   void RemoveTaskObserver(TaskQueueId queue_id, intptr_t key);
 
-  void NotifyObservers(TaskQueueId queue_id) const;
+  void GetObserversToNotify(TaskQueueId queue_id,
+                            std::vector<fml::closure>& callables) const;
 
   // Misc.
 
@@ -126,11 +123,9 @@ class MessageLoopTaskQueues
 
   ~MessageLoopTaskQueues();
 
-  void WakeUp(TaskQueueId queue_id, fml::TimePoint time) const;
+  void WakeUpUnlocked(TaskQueueId queue_id, fml::TimePoint time) const;
 
-  enum class MutexType { kObservers, kTasks, kWakeable };
-
-  std::mutex& GetMutex(TaskQueueId queue_id, MutexType type) const;
+  std::mutex& GetMutex(TaskQueueId queue_id) const;
 
   bool HasPendingTasksUnlocked(TaskQueueId queue_id) const;
 
@@ -144,7 +139,8 @@ class MessageLoopTaskQueues
       FML_GUARDED_BY(creation_mutex_);
 
   std::unique_ptr<fml::SharedMutex> queue_meta_mutex_;
-  std::map<TaskQueueId, TaskQueueEntry> queue_entries;
+  std::map<TaskQueueId, TaskQueueEntry> queue_entries_;
+  std::map<TaskQueueId, std::unique_ptr<std::mutex>> queue_locks_;
 
   size_t task_queue_id_counter_;
 

@@ -117,7 +117,11 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
 
   for (const auto& invocation : invocations) {
     invocation();
-    task_queue_->NotifyObservers(queue_id_);
+    std::vector<fml::closure> observers;
+    task_queue_->GetObserversToNotify(queue_id_, observers);
+    for (const auto& observer : observers) {
+      observer();
+    }
   }
 }
 
