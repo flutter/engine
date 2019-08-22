@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <cassert>
+
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/icu_util.h"
 #include "flutter/fml/logging.h"
@@ -21,8 +23,14 @@
 #include "third_party/skia/include/core/SkGraphics.h"
 #include "txt_test_utils.h"
 
-#include <cassert>
-
+// Recommended command to run this test suite (from the build output directory,
+// ususally src/out/host_debug_unopt):
+//
+// ./txt_unittests
+// --font-directory=../../flutter/third_party/txt/third_party/fonts
+//
+// This suite should be run on linux. Different backends will load fonts
+// slightly differently.
 int main(int argc, char** argv) {
   fml::CommandLine cmd = fml::CommandLineFromArgcArgv(argc, argv);
   txt::SetCommandLine(cmd);
