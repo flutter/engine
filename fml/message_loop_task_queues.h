@@ -7,7 +7,6 @@
 
 #include <map>
 #include <mutex>
-#include <shared_mutex>
 #include <vector>
 
 #include "flutter/fml/closure.h"

@@ -165,3 +165,57 @@ TEST(MessageLoopTaskQueue, NotifyObserversWhileCreatingQueues) {
   before_second_observer.Signal();
   notify_observers.join();
 }
+
+TEST(MessageLoopTaskQueue, ConcurrentQueueAndTaskCreatingCounts) {
+  auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
+  const int base_queue_id = task_queues->CreateTaskQueue();
+
+  const int num_queues = 100;
+  std::atomic_bool created[num_queues * 3];
+  std::atomic_int num_tasks[num_queues * 3];
+  std::mutex task_count_mutex[num_queues * 3];
+  std::atomic_int done = 0;
+
+  for (int i = 0; i < num_queues * 3; i++) {
+    num_tasks[i] = 0;
+    created[i] = false;
+  }
+
+  auto creation_func = [&] {
+    for (int i = 0; i < num_queues; i++) {
+      fml::TaskQueueId queue_id = task_queues->CreateTaskQueue();
+      created[queue_id - base_queue_id] = true;
+
+      for (int cur_q = 1; cur_q < i; cur_q++) {
+        if (created[cur_q - base_queue_id]) {
+          std::scoped_lock counter(task_count_mutex[cur_q - base_queue_id]);
+          int cur_num_tasks = rand() % 10;
+          for (int k = 0; k < cur_num_tasks; k++) {
+            task_queues->RegisterTask(
+                fml::TaskQueueId(cur_q), [] {}, fml::TimePoint::Now());
+          }
+          num_tasks[cur_q - base_queue_id] += cur_num_tasks;
+        }
+      }
+    }
+    done++;
+  };
+
+  std::thread creation_1(creation_func);
+  std::thread creation_2(creation_func);
+
+  while (done < 2) {
+    for (int i = 0; i < num_queues * 3; i++) {
+      if (created[i]) {
+        std::scoped_lock counter(task_count_mutex[i]);
+        int num_pending = task_queues->GetNumPendingTasks(
+            fml::TaskQueueId(base_queue_id + i));
+        int num_added = num_tasks[i];
+        ASSERT_EQ(num_pending, num_added);
+      }
+    }
+  }
+
+  creation_1.join();
+  creation_2.join();
+}
