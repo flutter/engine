@@ -1000,23 +1000,25 @@ void ParagraphTxt::Layout(double width) {
         line_metrics.run_metrics.emplace(run_key, &run.style());
         font.getMetrics(&line_metrics.run_metrics.at(run_key).GetFontMetrics());
 
-        SkFontMetrics* metrics;
-        metrics = &line_metrics.run_metrics.at(run_key).GetFontMetrics();
         Range<double> record_x_pos(
             glyph_positions.front().x_pos.start - run_x_offset,
             glyph_positions.back().x_pos.end - run_x_offset);
         if (run.is_placeholder_run()) {
           paint_records.emplace_back(
               run.style(), SkPoint::Make(run_x_offset + justify_x_offset, 0),
-              builder.make(), *metrics, line_number, record_x_pos.start,
+              builder.make(),
+              line_metrics.run_metrics.at(run_key).GetFontMetrics(),
+              line_number, record_x_pos.start,
               record_x_pos.start + run.placeholder_run()->width, run.is_ghost(),
               run.placeholder_run());
           run_x_offset += run.placeholder_run()->width;
         } else {
           paint_records.emplace_back(
               run.style(), SkPoint::Make(run_x_offset + justify_x_offset, 0),
-              builder.make(), *metrics, line_number, record_x_pos.start,
-              record_x_pos.end, run.is_ghost());
+              builder.make(),
+              line_metrics.run_metrics.at(run_key).GetFontMetrics(),
+              line_number, record_x_pos.start, record_x_pos.end,
+              run.is_ghost());
         }
         justify_x_offset += justify_x_offset_delta;
 
@@ -1039,8 +1041,8 @@ void ParagraphTxt::Layout(double width) {
                               ? glyph_positions.back().x_pos.start +
                                     run.placeholder_run()->width
                               : glyph_positions.back().x_pos.end),
-            line_number, *metrics, run.style(), run.direction(),
-            run.placeholder_run());
+            line_number, line_metrics.run_metrics.at(run_key).GetFontMetrics(),
+            run.style(), run.direction(), run.placeholder_run());
 
         if (run.is_placeholder_run()) {
           line_inline_placeholder_code_unit_runs.push_back(
@@ -1573,9 +1575,6 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
       break;
     if (run.code_units.end <= start)
       continue;
-    if (run.line_number >= line_metrics_.size()) {
-      continue;
-    }
 
     double baseline = line_metrics_[run.line_number].baseline;
     SkScalar top = baseline + run.font_metrics.fAscent;
@@ -1760,11 +1759,11 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
 Paragraph::PositionWithAffinity ParagraphTxt::GetGlyphPositionAtCoordinate(
     double dx,
     double dy) {
-  if (line_metrics_.empty())
+  if (final_line_count_ <= 0)
     return PositionWithAffinity(0, DOWNSTREAM);
 
   size_t y_index;
-  for (y_index = 0; y_index < line_metrics_.size() - 1; ++y_index) {
+  for (y_index = 0; y_index < final_line_count_ - 1; ++y_index) {
     if (dy < line_metrics_[y_index].height)
       break;
   }
