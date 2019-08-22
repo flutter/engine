@@ -14,9 +14,7 @@ namespace flutter {
 namespace {
 
 // Stub implementation to validate calls to the API.
-class TestWindowsApi : public testing::StubFlutterWindowsApi {
- 
-};
+class TestWindowsApi : public testing::StubFlutterWindowsApi {};
 
 }  // namespace
 
@@ -25,9 +23,7 @@ TEST(FlutterViewControllerTest, CreateDestroy) {
   testing::ScopedStubFlutterWindowsApi scoped_api_stub(
       std::make_unique<TestWindowsApi>());
   auto test_api = static_cast<TestWindowsApi*>(scoped_api_stub.stub());
-  {
-    FlutterViewController controller(icu_data_path); 
-  }
+  { FlutterViewController controller(icu_data_path); }
 }
 
 }  // namespace flutter
