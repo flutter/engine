@@ -92,7 +92,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
 
   touch_interceptors_[viewId] =
       fml::scoped_nsobject<FlutterTouchInterceptingView>([touch_interceptor retain]);
-  root_views_[viewId] = fml::scoped_nsobject<UIView>([touch_interceptor retain]);
+  clip_root_views_[viewId] = fml::scoped_nsobject<UIView>([touch_interceptor retain]);
 
   result(nil);
 }
@@ -326,10 +326,10 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
     clip_count_[view_id] = currentClippingCount;
     // If we have a different clipping count in this frame, we need to reconstruct the
     // ClippingChildView chain to prepare for `ApplyMutators`.
-    UIView* oldPlatformViewRoot = root_views_[view_id].get();
+    UIView* oldPlatformViewRoot = clip_root_views_[view_id].get();
     UIView* newPlatformViewRoot =
         ReconstructClipViewsChain(currentClippingCount, touchInterceptor, oldPlatformViewRoot);
-    root_views_[view_id] = fml::scoped_nsobject<UIView>([newPlatformViewRoot retain]);
+    clip_root_views_[view_id] = fml::scoped_nsobject<UIView>([newPlatformViewRoot retain]);
   }
   ApplyMutators(params.mutatorsStack, touchInterceptor);
 }
@@ -392,10 +392,14 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
 
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int view_id = composition_order_[i];
-    // We added a chain of super views to the platform view to handle clipping.
-    // The `platform_view_root` is the view at the top of the chain which is a direct subview of the
-    // `FlutterView`.
+    // The `platform_view_root` is a direct subview of the `FlutterView` which
+    // contains the platform view with the same view_id as its descendent.
     UIView* platform_view_root = root_views_[view_id].get();
+    if (!platform_view_root) {
+      platform_view_root = [[UIView alloc] initWithFrame:flutter_view_.get().bounds];
+      [platform_view_root addSubview:clip_root_views_[view_id].get()];
+      root_views_[view_id] = fml::scoped_nsobject<UIView>([platform_view_root retain]);
+    }
     UIView* overlay = overlays_[view_id]->overlay_view;
     FML_CHECK(platform_view_root.superview == overlay.superview);
     if (platform_view_root.superview == flutter_view) {
@@ -424,9 +428,8 @@ void FlutterPlatformViewsController::DetachUnusedLayers() {
       if (root_views_.find(view_id) == root_views_.end()) {
         continue;
       }
-      // We added a chain of super views to the platform view to handle clipping.
-      // The `platform_view_root` is the view at the top of the chain which is a direct subview of
-      // the `FlutterView`.
+      // The `platform_view_root` is a direct subview of the `FlutterView` which
+      // contains the platform view with the same view_id as its descendent.
       UIView* platform_view_root = root_views_[view_id].get();
       [platform_view_root removeFromSuperview];
       [overlays_[view_id]->overlay_view.get() removeFromSuperview];
@@ -445,6 +448,7 @@ void FlutterPlatformViewsController::DisposeViews() {
     views_.erase(viewId);
     touch_interceptors_.erase(viewId);
     root_views_.erase(viewId);
+    clip_root_views_.erase(viewId);
     if (overlays_.find(viewId) != overlays_.end()) {
       [overlays_[viewId]->overlay_view.get() removeFromSuperview];
     }
@@ -500,21 +504,22 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
 }
 
 void FlutterPlatformViewsController::SubmitFrameToCanvas(SkCanvas* canvas) {
-
-  NSLog(@"submit frame to canvas");
-
-  SkAutoCanvasRestore save(canvas, true);
   for (int64_t view_id : composition_order_) {
     UIView *view = root_views_[view_id].get();
-    [view drawViewHierarchyInRect:view.bounds afterScreenUpdates:NO];
-    NSLog(@"%@", view);
-    view.backgroundColor = [UIColor redColor];
     sk_sp<SkImage> platform_view_screenshot = IOSScreenShotProvider::TakeScreenShotForView(view);
-    canvas->drawImage(platform_view_screenshot, root_views_[view_id].get().frame.origin.x, root_views_[view_id].get().frame.origin.y);
+    canvas->drawImage(platform_view_screenshot, 0, 0);
 
-//    SkCanvas* overlay_canvas = picture_recorders_[view_id]->getRecordingCanvas();
-//   canvas->drawPicture(picture_recorders_[view_id]->finishRecordingAsPicture());
+    SkCanvas* overlay_canvas = picture_recorders_[view_id]->getRecordingCanvas();
+    FML_DLOG(ERROR) << (overlay_canvas == nullptr);
+    CGRect bounds = flutter_view_.get().bounds;
+    SkImageInfo info = SkImageInfo::Make(bounds.size.width*2, bounds.size.width*2, kBGRA_8888_SkColorType, kPremul_SkAlphaType);
+    sk_sp<SkData> data(SkData::MakeUninitialized(info.minRowBytes() * info.height()));
+    sk_bzero(data->writable_data(), info.minRowBytes() * info.height());
+    overlay_canvas->readPixels(info, data->writable_data(), info.minRowBytes(), 0, 0);
 
+    sk_sp<SkImage> image = SkImage::MakeRasterData(info, data, info.minRowBytes());
+    canvas->drawImage(image, 0, 0);
+    //canvas->drawPicture(picture_recorders_[view_id]->finishRecordingAsPicture());
   }
 }
 

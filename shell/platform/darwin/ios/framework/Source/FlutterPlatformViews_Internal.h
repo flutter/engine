@@ -118,9 +118,16 @@ class FlutterPlatformViewsController {
   // Mapping a platform view ID to the top most parent view (root_view) who is a direct child to
   // the `flutter_view_`.
   //
-  // The platform view with the view ID is a child of the root view; If the platform view is not
-  // clipped, and no clipping view is added, the root view will be the intercepting view.
+  // These views have the same bounds as the `flutter_view_`.
+  // They are used for screenshoting the platform view.
   std::map<int64_t, fml::scoped_nsobject<UIView>> root_views_;
+
+  // Mapping a platform view ID to the top most parent ClippingVieww
+  //
+  // The platform view with the view ID is a child of the clip root view; If the platform view is not
+  // clipped, and no clipping view is added, the the clipping root view will be the intercepting view.
+  std::map<int64_t, fml::scoped_nsobject<UIView>> clip_root_views_;
+
   // Mapping a platform view ID to its latest composition params.
   std::map<int64_t, EmbeddedViewParams> current_composition_params_;
   // Mapping a platform view ID to the count of the clipping operations that were applied to the
