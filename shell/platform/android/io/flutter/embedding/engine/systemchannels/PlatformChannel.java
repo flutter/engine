@@ -5,8 +5,10 @@
 package io.flutter.embedding.engine.systemchannels;
 
 import android.content.pm.ActivityInfo;
+import android.graphics.Rect;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,7 +17,6 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
@@ -117,6 +118,18 @@ public class PlatformChannel {
           case "SystemNavigator.pop":
             platformMessageHandler.popSystemNavigator();
             result.success(null);
+            break;
+          case "SystemGestures.setSystemGestureExclusionRects":
+            if (arguments instanceof JSONArray) {
+              Log.v(TAG, "passed check");
+              JSONArray inputRects = (JSONArray) arguments;
+              Log.v(TAG, inputRects.getJSONObject(0).get("top").toString());
+              ArrayList<Rect> decodedRects = decodeRects(inputRects);
+              result.success(null);
+            } else {
+              String inputTypeError = "Input type is incorrect. Ensure that a List<Map<String, int>> is passed as the input.";
+              result.error("inputTypeError", inputTypeError, null);
+            }
             break;
           case "Clipboard.getData": {
             String contentFormatName = (String) arguments;
@@ -337,6 +350,26 @@ public class PlatformChannel {
     );
   }
 
+  private ArrayList<Rect> decodeRects(@NonNull JSONArray inputRects) {
+    ArrayList<Rect> exclusionRects = new ArrayList<Rect>();
+    try {
+      for (int i = 0; i < inputRects.length(); i++) {
+        JSONObject rect = inputRects.getJSONObject(i);
+
+        int top = rect.getInt("top");
+        int right = rect.getInt("right");
+        int bottom = rect.getInt("bottom");
+        int left = rect.getInt("left");
+
+        Rect gestureRect = new Rect(left, top, right, bottom);
+        exclusionRects.add(gestureRect);
+      }
+    } catch (JSONException e) {
+      //some exception handler code.
+    }
+    return exclusionRects;
+  }
+
   /**
    * Handler that receives platform messages sent from Flutter to Android
    * through a given {@link PlatformChannel}.
@@ -420,6 +453,9 @@ public class PlatformChannel {
      * clipboard to the given {@code text}.
      */
     void setClipboardData(@NonNull String text);
+
+    /* TODO: Write docs */
+    void setSystemGestureExclusionRects(@NonNull ArrayList<Rect> rects);
   }
 
   /**

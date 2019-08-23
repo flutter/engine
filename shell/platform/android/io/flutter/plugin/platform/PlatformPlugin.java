@@ -9,6 +9,7 @@ import android.app.ActivityManager.TaskDescription;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.graphics.Rect;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -17,7 +18,11 @@ import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.Window;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+
+import android.util.Log;
 
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.plugin.common.ActivityLifecycleListener;
@@ -83,6 +88,12 @@ public class PlatformPlugin {
         @Override
         public void setClipboardData(@NonNull String text) {
             PlatformPlugin.this.setClipboardData(text);
+        }
+
+        @Override
+        public void setSystemGestureExclusionRects(@NonNull ArrayList rects) {
+            Log.v("TAG", "WHAT IS THIS");
+            PlatformPlugin.this.setSystemGestureExclusionRects(rects);
         }
     };
 
@@ -271,5 +282,16 @@ public class PlatformPlugin {
         ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData clip = ClipData.newPlainText("text label?", text);
         clipboard.setPrimaryClip(clip);
+    }
+
+    private void setSystemGestureExclusionRects(ArrayList<Rect> rects) {
+        if (Build.VERSION.SDK_INT >= 29) {
+            Window window = activity.getWindow();
+            View view = window.getDecorView();
+            view.setSystemGestureExclusionRects(rects);
+
+            List<Rect> resultingRects = view.getSystemGestureExclusionRects();
+            Log.v("results", resultingRects.toString());
+        }
     }
 }
