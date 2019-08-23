@@ -62,6 +62,18 @@ void MessageLoopTaskQueues::Dispose(TaskQueueId queue_id) {
   }
 }
 
+void MessageLoopTaskQueues::DisposeTasks(TaskQueueId queue_id) {
+  std::scoped_lock queue_lock(GetMutex(queue_id));
+  const auto& queue_entry = queue_entries_.at(queue_id);
+  FML_DCHECK(queue_entry->subsumed_by == _kUnmerged);
+  TaskQueueId subsumed = queue_entry->owner_of;
+  queue_entry->delayed_tasks = {};
+  if (subsumed != _kUnmerged) {
+    std::scoped_lock subsumed_lock(*queue_locks_.at(subsumed));
+    queue_entries_.at(subsumed)->delayed_tasks = {};
+  }
+}
+
 void MessageLoopTaskQueues::RegisterTask(TaskQueueId queue_id,
                                          fml::closure task,
                                          fml::TimePoint target_time) {
@@ -261,7 +273,7 @@ bool MessageLoopTaskQueues::Owns(TaskQueueId owner,
 std::mutex& MessageLoopTaskQueues::GetMutex(TaskQueueId queue_id) const {
   fml::SharedLock queue_reader(*queue_meta_mutex_);
   FML_DCHECK(queue_locks_.count(queue_id) && queue_entries_.count(queue_id))
-      << "Trying to acquire a lock on an invalid queue_id." << queue_id;
+      << "Trying to acquire a lock on an invalid queue_id: " << queue_id;
   return *queue_locks_.at(queue_id);
 }
 

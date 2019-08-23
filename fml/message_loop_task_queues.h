@@ -74,6 +74,8 @@ class MessageLoopTaskQueues
 
   void Dispose(TaskQueueId queue_id);
 
+  void DisposeTasks(TaskQueueId queue_id);
+
   // Tasks methods.
 
   void RegisterTask(TaskQueueId queue_id,

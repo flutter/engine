@@ -46,7 +46,9 @@ MessageLoopImpl::MessageLoopImpl()
   task_queue_->SetWakeable(queue_id_, this);
 }
 
-MessageLoopImpl::~MessageLoopImpl() = default;
+MessageLoopImpl::~MessageLoopImpl() {
+  task_queue_->Dispose(queue_id_);
+}
 
 void MessageLoopImpl::PostTask(fml::closure task, fml::TimePoint target_time) {
   FML_DCHECK(task != nullptr);
@@ -101,7 +103,7 @@ void MessageLoopImpl::DoRun() {
   // should be destructed on the message loop's thread. We have just returned
   // from the implementations |Run| method which we know is on the correct
   // thread. Drop all pending tasks on the floor.
-  task_queue_->Dispose(queue_id_);
+  task_queue_->DisposeTasks(queue_id_);
 }
 
 void MessageLoopImpl::DoTerminate() {
