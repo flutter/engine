@@ -76,7 +76,7 @@ class CompositorContext {
     FML_DISALLOW_COPY_AND_ASSIGN(ScopedFrame);
   };
 
-  CompositorContext();
+  CompositorContext(float display_refresh_rate);
 
   virtual ~CompositorContext();
 

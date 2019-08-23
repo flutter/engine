@@ -14,13 +14,9 @@
 
 namespace flutter {
 
-// DEPRECATED
-// The frame per second FPS could be different than 60 (e.g., 120).
-static const double kOneFrameMS = 1e3 / 60.0;
-
 class Stopwatch {
  public:
-  Stopwatch();
+  Stopwatch(float display_refresh_rate);
 
   ~Stopwatch();
 
@@ -46,6 +42,9 @@ class Stopwatch {
   fml::TimePoint start_;
   std::vector<fml::TimeDelta> laps_;
   size_t current_sample_;
+
+  double one_frame_ms_;
+
   // Mutable data cache for performance optimization of the graphs. Prevents
   // expensive redrawing of old data.
   mutable bool cache_dirty_;

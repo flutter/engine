@@ -15,11 +15,18 @@ namespace flutter {
 static const size_t kMaxSamples = 120;
 static const size_t kMaxFrameMarkers = 8;
 
-Stopwatch::Stopwatch() : start_(fml::TimePoint::Now()), current_sample_(0) {
+Stopwatch::Stopwatch(float display_refresh_rate)
+    : start_(fml::TimePoint::Now()), current_sample_(0) {
   const fml::TimeDelta delta = fml::TimeDelta::Zero();
   laps_.resize(kMaxSamples, delta);
   cache_dirty_ = true;
   prev_drawn_sample_index_ = 0;
+  if (display_refresh_rate > 0) {
+    one_frame_ms_ = 1e3 / display_refresh_rate;
+  } else {
+    // For unknown/invalid refresh rates, set frame ms to 16.6ms by default
+    one_frame_ms_ = 1e3 / 60.0;
+  }
 }
 
 Stopwatch::~Stopwatch() = default;
@@ -97,7 +104,7 @@ void Stopwatch::InitVisualizeSurface(const SkRect& rect) const {
 
   // Scale the graph to show frame times up to those that are 3 times the frame
   // time.
-  const double max_interval = kOneFrameMS * 3.0;
+  const double max_interval = one_frame_ms_ * 3.0;
   const double max_unit_interval = UnitFrameInterval(max_interval);
 
   // Draw the old data to initially populate the graph.
@@ -146,7 +153,7 @@ void Stopwatch::Visualize(SkCanvas& canvas, const SkRect& rect) const {
 
   // Scale the graph to show frame times up to those that are 3 times the frame
   // time.
-  const double max_interval = kOneFrameMS * 3.0;
+  const double max_interval = one_frame_ms_ * 3.0;
   const double max_unit_interval = UnitFrameInterval(max_interval);
 
   const double sample_unit_width = (1.0 / kMaxSamples);
@@ -179,9 +186,10 @@ void Stopwatch::Visualize(SkCanvas& canvas, const SkRect& rect) const {
   paint.setStyle(SkPaint::Style::kStroke_Style);
   paint.setColor(0xCC000000);
 
-  if (max_interval > kOneFrameMS) {
+  if (max_interval > one_frame_ms_) {
     // Paint the horizontal markers
-    size_t frame_marker_count = static_cast<size_t>(max_interval / kOneFrameMS);
+    size_t frame_marker_count =
+        static_cast<size_t>(max_interval / one_frame_ms_);
 
     // Limit the number of markers displayed. After a certain point, the graph
     // becomes crowded
@@ -191,8 +199,9 @@ void Stopwatch::Visualize(SkCanvas& canvas, const SkRect& rect) const {
     for (size_t frame_index = 0; frame_index < frame_marker_count;
          frame_index++) {
       const double frame_height =
-          height * (1.0 - (UnitFrameInterval((frame_index + 1) * kOneFrameMS) /
-                           max_unit_interval));
+          height *
+          (1.0 - (UnitFrameInterval((frame_index + 1) * one_frame_ms_) /
+                  max_unit_interval));
       cache_canvas->drawLine(x, y + frame_height, width, y + frame_height,
                              paint);
     }

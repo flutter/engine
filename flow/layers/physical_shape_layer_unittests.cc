@@ -26,7 +26,7 @@ TEST(PhysicalShapeLayer, TotalElevation) {
   layers[0]->Add(layers[2]);
   layers[2]->Add(layers[3]);
 
-  const Stopwatch unused_stopwatch;
+  const Stopwatch unused_stopwatch(0.0f);
   TextureRegistry unused_texture_registry;
   MutatorsStack unused_stack;
   PrerollContext preroll_context{
