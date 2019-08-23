@@ -11,7 +11,7 @@
 namespace flutter {
 
 struct LineMetrics {
-  bool* hard_break;
+  const bool* hard_break;
 
   // The final computed ascent and descent for the line. This can be impacted by
   // the strut, height, scaling, as well as outlying runs that are very tall.
@@ -20,34 +20,32 @@ struct LineMetrics {
   // descent`. Ascent and descent are provided as positive numbers. Raw numbers
   // for specific runs of text can be obtained in run_metrics_map. These values
   // are the cumulative metrics for the entire line.
-  double* ascent;
-  double* descent;
-  double* unscaled_ascent;
+  const double* ascent;
+  const double* descent;
+  const double* unscaled_ascent;
   // Height of the line.
-  double* height;
+  const double* height;
   // Width of the line.
-  double* width;
+  const double* width;
   // The left edge of the line. The right edge can be obtained with `left +
   // width`
-  double* left;
+  const double* left;
   // The y position of the baseline for this line from the top of the paragraph.
-  double* baseline;
+  const double* baseline;
   // Zero indexed line number.
-  size_t* line_number;
-
-  // std::map<size_t, txt::RunMetrics> run_metrics;
+  const size_t* line_number;
 
   LineMetrics();
 
-  LineMetrics(bool* hard_break,
-              double* ascent,
-              double* descent,
-              double* unscaled_ascent,
-              double* height,
-              double* width,
-              double* left,
-              double* baseline,
-              size_t* line_number)
+  LineMetrics(const bool* hard_break,
+              const double* ascent,
+              const double* descent,
+              const double* unscaled_ascent,
+              const double* height,
+              const double* width,
+              const double* left,
+              const double* baseline,
+              const size_t* line_number)
       : hard_break(hard_break),
         ascent(ascent),
         descent(descent),
