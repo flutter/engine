@@ -65,13 +65,12 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
 
 RasterStatus CompositorContext::ScopedFrame::Raster(
     flutter::LayerTree& layer_tree,
-    bool ignore_raster_cache,
-    bool screen_shot) {
+    bool ignore_raster_cache) {
   layer_tree.Preroll(*this, ignore_raster_cache);
   PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
   if (view_embedder_ && gpu_thread_merger_) {
     post_preroll_result =
-        view_embedder_->PostPrerollAction(gpu_thread_merger_, screen_shot);
+        view_embedder_->PostPrerollAction(gpu_thread_merger_);
   }
 
   if (post_preroll_result == PostPrerollResult::kResubmitFrame) {
@@ -82,7 +81,7 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   if (canvas()) {
     canvas()->clear(SK_ColorTRANSPARENT);
   }
-  layer_tree.Paint(*this, ignore_raster_cache, screen_shot);
+  layer_tree.Paint(*this, ignore_raster_cache);
   return RasterStatus::kSuccess;
 }
 

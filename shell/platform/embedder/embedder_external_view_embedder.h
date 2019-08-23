@@ -73,7 +73,8 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   SkCanvas* CompositeEmbeddedView(int view_id) override;
 
-  sk_sp<SkImage> ScreenShotEmbeddedView(int view_id) override;
+  // |ExternalViewEmbedder|
+  void SubmitFrameToCanvas(SkCanvas* canvas) override;
 
   // |ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;

@@ -175,9 +175,9 @@ bool FlutterPlatformViewsController::HasPendingViewOperations() {
 const int FlutterPlatformViewsController::kDefaultMergedLeaseDuration;
 
 PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
-    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger, bool screen_shot) {
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
   const bool uiviews_mutated = HasPendingViewOperations();
-  if (uiviews_mutated || screen_shot) {
+  if (uiviews_mutated) {
     if (gpu_thread_merger->IsMerged()) {
       gpu_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
     } else {
@@ -499,10 +499,23 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   overlays_gr_context_ = gr_context;
 }
 
-sk_sp<SkImage> FlutterPlatformViewsController::TakeScreenShotForPlatformView(int view_id) {
-  UIView* platform_view = GetPlatformViewByID(view_id).view;
-  FML_CHECK(platform_view != nil);
-  return IOSScreenShotProvider::TakeScreenShotForView(platform_view);
+void FlutterPlatformViewsController::SubmitFrameToCanvas(SkCanvas* canvas) {
+
+  NSLog(@"submit frame to canvas");
+
+  SkAutoCanvasRestore save(canvas, true);
+  for (int64_t view_id : composition_order_) {
+    UIView *view = root_views_[view_id].get();
+    [view drawViewHierarchyInRect:view.bounds afterScreenUpdates:NO];
+    NSLog(@"%@", view);
+    view.backgroundColor = [UIColor redColor];
+    sk_sp<SkImage> platform_view_screenshot = IOSScreenShotProvider::TakeScreenShotForView(view);
+    canvas->drawImage(platform_view_screenshot, root_views_[view_id].get().frame.origin.x, root_views_[view_id].get().frame.origin.y);
+
+//    SkCanvas* overlay_canvas = picture_recorders_[view_id]->getRecordingCanvas();
+//   canvas->drawPicture(picture_recorders_[view_id]->finishRecordingAsPicture());
+
+  }
 }
 
 }  // namespace flutter

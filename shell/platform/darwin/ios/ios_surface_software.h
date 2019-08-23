@@ -68,7 +68,7 @@ class IOSSurfaceSoftware final : public IOSSurface,
   bool SubmitFrame(GrContext* context) override;
 
   // |ExternalViewEmbedder|
-  sk_sp<SkImage> ScreenShotEmbeddedView(int view_id) override;
+  void SubmitFrameToCanvas(SkCanvas* canvas) override;
 
  private:
   fml::scoped_nsobject<CALayer> layer_;

@@ -214,13 +214,11 @@ class ExternalViewEmbedder {
       std::unique_ptr<EmbeddedViewParams> params) = 0;
 
   // This needs to get called after |Preroll| finishes on the layer tree.
-  // The screen_shot indicates if it is currently on a screen shot raster.
   // Returns kResubmitFrame if the frame needs to be processed again, this is
   // after it does any requisite tasks needed to bring itself to a valid state.
   // Returns kSuccess if the view embedder is already in a valid state.
   virtual PostPrerollResult PostPrerollAction(
-      fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger,
-      bool screen_shot) {
+      fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
     return PostPrerollResult::kSuccess;
   }
 
@@ -231,7 +229,8 @@ class ExternalViewEmbedder {
 
   virtual bool SubmitFrame(GrContext* context);
 
-  virtual sk_sp<SkImage> ScreenShotEmbeddedView(int view_id) = 0;
+  // Submit frames from all the overlay canvas to the `canvas`
+  virtual void SubmitFrameToCanvas(SkCanvas* canvas) = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 

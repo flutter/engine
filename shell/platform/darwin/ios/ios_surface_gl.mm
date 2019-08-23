@@ -119,11 +119,10 @@ void IOSSurfaceGL::PrerollCompositeEmbeddedView(
 
 // |ExternalViewEmbedder|
 PostPrerollResult IOSSurfaceGL::PostPrerollAction(
-    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger,
-    bool screen_shot) {
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
-  return platform_views_controller->PostPrerollAction(gpu_thread_merger, screen_shot);
+  return platform_views_controller->PostPrerollAction(gpu_thread_merger);
 }
 
 // |ExternalViewEmbedder|
@@ -153,12 +152,12 @@ bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
 }
 
 // |ExternalViewEmbedder|
-sk_sp<SkImage> IOSSurfaceGL::ScreenShotEmbeddedView(int view_id) {
+void IOSSurfaceGL::SubmitFrameToCanvas(SkCanvas* canvas) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   if (platform_views_controller == nullptr) {
-    return nullptr;
+    return;
   }
-  return platform_views_controller->TakeScreenShotForPlatformView(view_id);
+  return platform_views_controller->SubmitFrameToCanvas(canvas);
 }
 
 }  // namespace flutter

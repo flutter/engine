@@ -91,7 +91,7 @@ class FlutterPlatformViewsController {
   // returns nil.
   NSObject<FlutterPlatformView>* GetPlatformViewByID(int view_id);
 
-  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger, bool screen_shot);
+  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger);
 
   std::vector<SkCanvas*> GetCurrentCanvases();
 
@@ -106,10 +106,7 @@ class FlutterPlatformViewsController {
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
-  // Take a screenshot for the platform view with `view_id`
-  //
-  // Has to be run on the platform/main thread.
-  sk_sp<SkImage> TakeScreenShotForPlatformView(int view_id);
+  void SubmitFrameToCanvas(SkCanvas* canvas);
 
  private:
   fml::scoped_nsobject<FlutterMethodChannel> channel_;

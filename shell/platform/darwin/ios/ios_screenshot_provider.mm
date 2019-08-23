@@ -12,19 +12,52 @@
 namespace flutter {
 
 sk_sp<SkImage> IOSScreenShotProvider::TakeScreenShotForView(UIView* view) {
-  CGRect rect = view.bounds;
-  UIGraphicsBeginImageContext(rect.size);
+  CGRect rect = [UIScreen mainScreen].bounds;
 
-  CGContextRef ctx = UIGraphicsGetCurrentContext();
+//  NSLog(@"view %@", view);
+//  UIImage *image = nil;
+//  if (@available(iOS 10, *)) {
+//    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:view.frame.size];
+//    image = [renderer imageWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
+//      [view drawViewHierarchyInRect:view.frame afterScreenUpdates:NO];
+//    }];
+//  }
 
-  [[UIColor blackColor] set];
-  CGContextFillRect(ctx, rect);
+  //layer
+  UIGraphicsBeginImageContextWithOptions(rect.size, NO, [UIScreen mainScreen].scale);
+  //[view drawViewHierarchyInRect:rect afterScreenUpdates:NO];
+  CGContext *ctx = UIGraphicsGetCurrentContext();
 
-  [view.layer renderInContext:ctx];
+  CGContextTranslateCTM(ctx, view.frame.origin.x, view.frame.origin.y);
+
+  [view.layer.presentationLayer renderInContext:ctx];
 
   UIImage* screenshot = UIGraphicsGetImageFromCurrentImageContext();
-
   UIGraphicsEndImageContext();
+
+//  //mask
+//  UIGraphicsBeginImageContextWithOptions(rect.size, NO, [UIScreen mainScreen].scale);
+//  [view.layer.mask renderInContext:UIGraphicsGetCurrentContext()];
+//
+//  UIImage* maskImage = UIGraphicsGetImageFromCurrentImageContext();
+//  UIGraphicsEndImageContext();
+//
+//  CGImageRef maskRef = maskImage.CGImage;
+//  CGImageRef mask = CGImageMaskCreate(CGImageGetWidth(maskRef),
+//                                      CGImageGetHeight(maskRef),
+//                                      CGImageGetBitsPerComponent(maskRef),
+//                                      CGImageGetBitsPerPixel(maskRef),
+//                                      CGImageGetBytesPerRow(maskRef),
+//                                      CGImageGetDataProvider(maskRef), NULL, false);
+//
+//  // Apply the mask to our source image
+//  CGImageRef maskedImage = CGImageCreateWithMask(screenshot.CGImage, mask);
+//  screenshot = [UIImage imageWithCGImage:maskedImage scale:screenshot.scale orientation:screenshot.imageOrientation];
+//
+//  CGImageRelease(mask);
+//  CGImageRelease(maskRef);
+
+  // converting to skimage
   CGImageRef imageRef = CGImageRetain(screenshot.CGImage);
   CFDataRef data = CGDataProviderCopyData(CGImageGetDataProvider(imageRef));
 
@@ -34,10 +67,11 @@ sk_sp<SkImage> IOSScreenShotProvider::TakeScreenShotForView(UIView* view) {
 
   const auto image_info =
       SkImageInfo::Make(CGImageGetWidth(imageRef), CGImageGetHeight(imageRef),
-                        kBGRA_8888_SkColorType, kOpaque_SkAlphaType, SkColorSpace::MakeSRGB());
+                        kBGRA_8888_SkColorType, kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
 
   sk_sp<SkImage> skImage = SkImage::MakeRasterData(image_info, rasterData, rowBtyes);
 
+// CGImageRelease(maskedImage);
   CGImageRelease(imageRef);
   CFRelease(data);
   return skImage;

@@ -89,8 +89,6 @@ class Layer {
     TextureRegistry& texture_registry;
     const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
-    // Set to true if the paint traversal is for screen shot.
-    const bool screen_shot;
   };
 
   // Calls SkCanvas::saveLayer and restores the layer upon destruction. Also

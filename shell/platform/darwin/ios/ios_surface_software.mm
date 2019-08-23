@@ -188,13 +188,12 @@ bool IOSSurfaceSoftware::SubmitFrame(GrContext* context) {
 }
 
 // |ExternalViewEmbedder|
-sk_sp<SkImage> IOSSurfaceSoftware::ScreenShotEmbeddedView(int view_id) {
+void IOSSurfaceSoftware::SubmitFrameToCanvas(SkCanvas* canvas) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   if (platform_views_controller == nullptr) {
-    return nullptr;
+    return;
   }
-
-  return platform_views_controller->TakeScreenShotForPlatformView(view_id);
+  return platform_views_controller->SubmitFrameToCanvas(canvas);
 }
 
 }  // namespace flutter

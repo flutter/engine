@@ -65,8 +65,7 @@ class IOSSurfaceGL final : public IOSSurface,
                                     std::unique_ptr<flutter::EmbeddedViewParams> params) override;
 
   // |ExternalViewEmbedder|
-  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger,
-                                      bool screen_shot) override;
+  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
 
   // |ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;
@@ -77,7 +76,7 @@ class IOSSurfaceGL final : public IOSSurface,
   // |ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;
 
-  sk_sp<SkImage> ScreenShotEmbeddedView(int view_id) override;
+  void SubmitFrameToCanvas(SkCanvas* canvas) override;
 
  private:
   std::shared_ptr<IOSGLContext> context_;

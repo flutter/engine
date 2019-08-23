@@ -40,16 +40,6 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
     return;
   }
   SkCanvas* canvas = context.view_embedder->CompositeEmbeddedView(view_id_);
-  sk_sp<SkImage> screenshot;
-  if (context.screen_shot) {
-    screenshot = context.view_embedder->ScreenShotEmbeddedView(view_id_);
-  }
-  if (screenshot != nullptr) {
-    SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
-    context.leaf_nodes_canvas->drawImage(screenshot.get(), offset_.x(),
-                                         offset_.y());
-    return;
-  }
   context.leaf_nodes_canvas = canvas;
 }
 }  // namespace flutter

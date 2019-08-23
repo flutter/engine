@@ -254,7 +254,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
 
   if (compositor_frame) {
     RasterStatus raster_status =
-        compositor_frame->Raster(layer_tree, false, false);
+        compositor_frame->Raster(layer_tree, false);
     if (raster_status == RasterStatus::kFailed) {
       return raster_status;
     }
@@ -290,11 +290,16 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsPicture(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
+  auto view_embedder = surface_->GetExternalViewEmbedder();
+  SkCanvas* canvas = recorder.getRecordingCanvas();
   auto frame = compositor_context.AcquireFrame(
-      nullptr, recorder.getRecordingCanvas(),
-      surface_->GetExternalViewEmbedder(), root_surface_transformation, false,
+      nullptr, canvas,
+      view_embedder, root_surface_transformation, false,
       gpu_thread_merger_);
-  frame->Raster(*tree, true, true);
+  frame->Raster(*tree, true);
+  if (view_embedder != nullptr) {
+    view_embedder->SubmitFrameToCanvas(canvas);
+  }
 
   SkSerialProcs procs = {0};
   procs.fTypefaceProc = SerializeTypeface;
@@ -342,11 +347,15 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
+  auto view_embedder = surface_->GetExternalViewEmbedder();
   auto frame = compositor_context.AcquireFrame(
-      surface_context, canvas, surface_->GetExternalViewEmbedder(),
+      surface_context, canvas, view_embedder,
       root_surface_transformation, false, gpu_thread_merger_);
   canvas->clear(SK_ColorTRANSPARENT);
-  frame->Raster(*tree, true, true);
+  frame->Raster(*tree, true);
+  if (view_embedder != nullptr) {
+    view_embedder->SubmitFrameToCanvas(canvas);
+  }
   canvas->flush();
 
   // Prepare an image from the surface, this image may potentially be on th GPU.
