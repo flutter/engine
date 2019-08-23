@@ -16,7 +16,6 @@ void main() {
       // Run the unit test without emulating Flutter tester environment.
       ui.debugEmulateFlutterTesterEnvironment = false;
 
-      document.title = '';
       expect(document.title, '');
 
       ui.window.sendPlatformMessage(
