@@ -1569,6 +1569,84 @@ enum PlaceholderAlignment {
   middle,
 }
 
+/// Data class that holds the metrics for a single line in the [Paragraph].
+class LineMetrics {
+  @pragma('vm:entry-point')
+  LineMetrics._(
+    this.hardBreak,
+    this.ascent,
+    this.descent,
+    this.unscaledAscent,
+    this.height,
+    this.width,
+    this.left,
+    this.baseline,
+    this.lineNumber,
+  ) {}
+
+  /// True if this line ends with a explicit line break (e.g. '\n') or is the end
+  /// of the paragraph. False otherwise.
+  final bool hardBreak;
+
+  // The final computed ascent and descent for the line. This can be impacted by
+  // the strut, height, scaling, as well as outlying runs that are very tall.
+  //
+  // The top edge is `baseline - ascent` and the bottom edge is `baseline +
+  // descent`. Ascent and descent are provided as positive numbers. Raw numbers
+  // for specific runs of text can be obtained in run_metrics_map. These values
+  // are the cumulative metrics for the entire line.
+
+  /// The rise from the [baseline] as calculated from the font and style for this line.
+  ///
+  /// This is the final computed ascent and can be impacted by the strut, height, scaling,
+  /// as well as outlying runs that are very tall. The raw ascent for specific runs of
+  /// text can be obtained in [runMetrics].
+  ///
+  /// The [ascent] is provided as a positive value, even though it is typically defined in
+  /// fonts as negative. This is to ensure the signage of operations with these
+  /// metrics directly reflects the intended signage of the value. For example,
+  /// the y coordinate of the top edge of the line is 'baseline - ascent`.
+  final double ascent;
+
+  /// The drop from the [baseline] as calculated from the font and style for this line.
+  ///
+  /// This is the final computed ascent and can be impacted by the strut, height, scaling,
+  /// as well as outlying runs that are very tall.  The raw descent for specific runs of
+  /// text can be obtained in [runMetrics]
+  ///
+  /// The y coordinate of the bottom edge of the line is 'baseline + descent`.
+  final double descent;
+
+  /// The rise from the [baseline] as calculated from the font and style for this line
+  /// ignoring the [TextStyle.height].
+  ///
+  /// The [unscaledAscent] is provided as a positive value, even though it is typically
+  /// defined in fonts as negative. This is to ensure the signage of operations with
+  /// these metrics directly reflects the intended signage of the value.
+  final double unscaledAscent;
+
+  /// Total height of the line from the top edge to the bottom edge.
+  ///
+  /// This is equivalent to `ascent + descent`
+  final double height;
+
+  /// Width of the line.
+  final double width;
+
+  /// The x coordinate of left edge of the line.
+  ///
+  /// The right edge can be obtained with `left + width`.
+  final double left;
+
+  /// The y coordinate of the baseline for this line from the top of the paragraph.
+  final double baseline;
+
+  /// Zero indexed line number.
+  ///
+  /// For example, the first line is line 0, second line is line 1.
+  final int lineNumber;
+}
+
 /// A paragraph of text.
 ///
 /// A paragraph retains the size and position of each glyph in the text and can
@@ -1684,6 +1762,13 @@ class Paragraph extends NativeFieldWrapperClass2 {
   // in the C++ code. If we straighten out the C++ dependencies, we can remove
   // this indirection.
   void _paint(Canvas canvas, double x, double y) native 'Paragraph_paint';
+
+  /// Returns the full list of [LineMetrics] that describe in detail the various
+  /// metrics of each laid out line.
+  ///
+  /// This can potentially return a large amount of data, so it is not recommended
+  /// to repeatedly call this. Instead, cache the results.
+  List<LineMetrics> getLineMetrics() native 'Paragraph_getLineMetrics';
 }
 
 /// Builds a [Paragraph] containing text with the given styling information.
