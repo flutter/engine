@@ -261,7 +261,7 @@ bool MessageLoopTaskQueues::Owns(TaskQueueId owner,
 std::mutex& MessageLoopTaskQueues::GetMutex(TaskQueueId queue_id) const {
   fml::SharedLock queue_reader(*queue_meta_mutex_);
   FML_DCHECK(queue_locks_.count(queue_id) && queue_entries_.count(queue_id))
-      << "Trying to acquire a lock on an invalid queue_id.";
+      << "Trying to acquire a lock on an invalid queue_id." << queue_id;
   return *queue_locks_.at(queue_id);
 }
 
