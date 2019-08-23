@@ -1569,8 +1569,25 @@ enum PlaceholderAlignment {
   middle,
 }
 
-/// Data class that holds the metrics for a single line in the [Paragraph].
+/// LineMetrics holds the metrics for a single line in the [Paragraph].
+///
+/// This class is immutable after instantiation.
 class LineMetrics {
+  /// Constructs a LineMetrics with only the specified properties.
+  ///
+  /// Omitted properties will be null.
+  LineMetrics({
+    this.hardBreak = null,
+    this.ascent = null,
+    this.descent = null,
+    this.unscaledAscent = null,
+    this.height = null,
+    this.width = null,
+    this.left = null,
+    this.baseline = null,
+    this.lineNumber = null,
+  }) {}
+
   @pragma('vm:entry-point')
   LineMetrics._(
     this.hardBreak,
@@ -1588,22 +1605,13 @@ class LineMetrics {
   /// of the paragraph. False otherwise.
   final bool hardBreak;
 
-  // The final computed ascent and descent for the line. This can be impacted by
-  // the strut, height, scaling, as well as outlying runs that are very tall.
-  //
-  // The top edge is `baseline - ascent` and the bottom edge is `baseline +
-  // descent`. Ascent and descent are provided as positive numbers. Raw numbers
-  // for specific runs of text can be obtained in run_metrics_map. These values
-  // are the cumulative metrics for the entire line.
-
   /// The rise from the [baseline] as calculated from the font and style for this line.
   ///
   /// This is the final computed ascent and can be impacted by the strut, height, scaling,
-  /// as well as outlying runs that are very tall. The raw ascent for specific runs of
-  /// text can be obtained in [runMetrics].
+  /// as well as outlying runs that are very tall.
   ///
-  /// The [ascent] is provided as a positive value, even though it is typically defined in
-  /// fonts as negative. This is to ensure the signage of operations with these
+  /// The [ascent] is provided as a positive value, even though it is typically defined
+  /// in fonts as negative. This is to ensure the signage of operations with these
   /// metrics directly reflects the intended signage of the value. For example,
   /// the y coordinate of the top edge of the line is 'baseline - ascent`.
   final double ascent;
@@ -1611,8 +1619,7 @@ class LineMetrics {
   /// The drop from the [baseline] as calculated from the font and style for this line.
   ///
   /// This is the final computed ascent and can be impacted by the strut, height, scaling,
-  /// as well as outlying runs that are very tall.  The raw descent for specific runs of
-  /// text can be obtained in [runMetrics]
+  /// as well as outlying runs that are very tall.
   ///
   /// The y coordinate of the bottom edge of the line is 'baseline + descent`.
   final double descent;
@@ -1630,7 +1637,15 @@ class LineMetrics {
   /// This is equivalent to `ascent + descent`
   final double height;
 
-  /// Width of the line.
+  /// Width of the line from the left edge of the leftmost glyph to the right
+  /// edge of the rightmost glyph.
+  ///
+  /// This is not the same as the width of the pargraph.
+  ///
+  /// See also:
+  ///
+  ///  * [Paragraph.width], the max width passed in during layout.
+  ///  * [Paragraph.longestLine], the width of the longest line in the paragraph.
   final double width;
 
   /// The x coordinate of left edge of the line.
@@ -1641,7 +1656,8 @@ class LineMetrics {
   /// The y coordinate of the baseline for this line from the top of the paragraph.
   final double baseline;
 
-  /// Zero indexed line number.
+  /// The number of this line in the overall paragraph, with the first line being
+  /// index zero.
   ///
   /// For example, the first line is line 0, second line is line 1.
   final int lineNumber;
@@ -1766,9 +1782,11 @@ class Paragraph extends NativeFieldWrapperClass2 {
   /// Returns the full list of [LineMetrics] that describe in detail the various
   /// metrics of each laid out line.
   ///
+  /// Not valid until after layout.
+  ///
   /// This can potentially return a large amount of data, so it is not recommended
   /// to repeatedly call this. Instead, cache the results.
-  List<LineMetrics> getLineMetrics() native 'Paragraph_getLineMetrics';
+  List<LineMetrics> computeLineMetrics() native 'Paragraph_computeLineMetrics';
 }
 
 /// Builds a [Paragraph] containing text with the given styling information.

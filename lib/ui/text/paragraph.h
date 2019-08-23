@@ -49,7 +49,7 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
   std::vector<TextBox> getRectsForPlaceholders();
   Dart_Handle getPositionForOffset(double dx, double dy);
   Dart_Handle getWordBoundary(unsigned offset);
-  std::vector<LineMetrics> getLineMetrics();
+  std::vector<LineMetrics> computeLineMetrics();
 
   size_t GetAllocationSize() override;
 
