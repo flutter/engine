@@ -9,7 +9,7 @@
 
 namespace flutter {
 
-CompositorContext::CompositorContext(std::chrono::microseconds frame_budget)
+CompositorContext::CompositorContext(fml::Milliseconds frame_budget)
     : raster_time_(frame_budget), ui_time_(frame_budget) {}
 
 CompositorContext::~CompositorContext() = default;

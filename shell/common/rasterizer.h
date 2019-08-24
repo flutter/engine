@@ -64,15 +64,15 @@ class Rasterizer final {
     ///
     virtual void OnFrameRasterized(const FrameTiming& frame_timing) = 0;
 
-    /// The device's refresh rate. See `Engine::GetDisplayRefreshRate`.
-    virtual std::chrono::microseconds GetTargetFrameTime() = 0;
+    /// Time limit for a smooth frame. See `Engine::GetDisplayRefreshRate`.
+    virtual fml::Milliseconds GetFrameBudget() = 0;
   };
 
   // TODO(dnfield): remove once embedders have caught up.
   class DummyDelegate : public Delegate {
     void OnFrameRasterized(const FrameTiming&) override {}
-    std::chrono::microseconds GetTargetFrameTime() override {
-      return std::chrono::microseconds(0);
+    fml::Milliseconds GetFrameBudget() override {
+      return fml::kDefaultFrameBudget;
     }
   };
 

@@ -76,8 +76,7 @@ class CompositorContext {
     FML_DISALLOW_COPY_AND_ASSIGN(ScopedFrame);
   };
 
-  CompositorContext(std::chrono::microseconds frame_budget =
-                        std::chrono::microseconds(16667));
+  CompositorContext(fml::Milliseconds frame_budget = fml::kDefaultFrameBudget);
 
   virtual ~CompositorContext();
 

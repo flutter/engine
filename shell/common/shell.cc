@@ -1073,12 +1073,11 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
   }
 }
 
-std::chrono::microseconds Shell::GetTargetFrameTime() {
+fml::Milliseconds Shell::GetFrameBudget() {
   if (display_refresh_rate_ > 0) {
-    return std::chrono::microseconds(
-        static_cast<int>(1000000 / display_refresh_rate_));
+    return fml::RefreshRateToFrameBudget(display_refresh_rate_.load());
   } else {
-    return std::chrono::microseconds(static_cast<int>(1000000 / 60));
+    return fml::kDefaultFrameBudget;
   }
 }
 

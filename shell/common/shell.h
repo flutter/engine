@@ -459,7 +459,7 @@ class Shell final : public PlatformView::Delegate,
   void OnFrameRasterized(const FrameTiming&) override;
 
   // |Rasterizer::Delegate|
-  std::chrono::microseconds GetTargetFrameTime() override;
+  fml::Milliseconds GetFrameBudget() override;
 
   // |ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(
