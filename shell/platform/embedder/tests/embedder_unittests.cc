@@ -1489,8 +1489,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithRootLayerOnly) {
 /// Test the layer structure and pixels rendered when using a custom compositor
 /// and ensure that a redundant layer is not added.
 ///
-TEST_F(EmbedderTest,
-       DISABLED_CompositorMustBeAbleToRenderWithPlatformLayerOnBottom) {
+TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithPlatformLayerOnBottom) {
   auto& context = GetEmbedderContext();
 
   context.SetupCompositor();
