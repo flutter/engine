@@ -9,8 +9,10 @@
 
 namespace flutter {
 
-CompositorContext::CompositorContext(float display_refresh_rate)
-    : raster_time_(display_refresh_rate), ui_time_(display_refresh_rate) {}
+CompositorContext::CompositorContext(
+    std::chrono::microseconds target_frame_time)
+    : raster_time_(target_frame_time.count() * 0.001),
+      ui_time_(target_frame_time.count() * 0.001) {}
 
 CompositorContext::~CompositorContext() = default;
 

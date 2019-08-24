@@ -38,7 +38,7 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
   std::string golden_file_path = GetGoldenFilePath(refresh_rate, false);
   std::string new_golden_file_path = GetGoldenFilePath(refresh_rate, true);
 
-  flutter::Stopwatch mock_stopwatch(refresh_rate);
+  flutter::Stopwatch mock_stopwatch(refresh_rate > 0 ? 1e3 / refresh_rate : 0);
   for (int i = 0; i < size(kMockedTimes); ++i) {
     mock_stopwatch.SetLapTime(
         fml::TimeDelta::FromMilliseconds(kMockedTimes[i]));

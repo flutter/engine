@@ -15,16 +15,16 @@ namespace flutter {
 static const size_t kMaxSamples = 120;
 static const size_t kMaxFrameMarkers = 8;
 
-Stopwatch::Stopwatch(float display_refresh_rate)
+Stopwatch::Stopwatch(double one_frame_ms)
     : start_(fml::TimePoint::Now()), current_sample_(0) {
   const fml::TimeDelta delta = fml::TimeDelta::Zero();
   laps_.resize(kMaxSamples, delta);
   cache_dirty_ = true;
   prev_drawn_sample_index_ = 0;
-  if (display_refresh_rate > 0) {
-    one_frame_ms_ = 1e3 / display_refresh_rate;
+  if (one_frame_ms > 0) {
+    one_frame_ms_ = one_frame_ms;
   } else {
-    // For unknown/invalid refresh rates, set frame ms to 16.6ms by default
+    // For unknown/invalid refresh rates, set one frame ms to 16.6ms by default
     one_frame_ms_ = 1e3 / 60.0;
   }
 }

@@ -1073,8 +1073,14 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
   }
 }
 
-float Shell::GetDisplayRefreshRate() {
-  return display_refresh_rate_;
+std::chrono::microseconds Shell::GetTargetFrameTime() {
+  if (display_refresh_rate_ > 0) {
+    return std::chrono::microseconds(
+        static_cast<int>(1000000 / display_refresh_rate_));
+  } else {
+    return std::chrono::microseconds(
+        static_cast<int>(1000000 / 60));
+  }
 }
 
 // |ServiceProtocol::Handler|

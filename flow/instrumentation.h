@@ -16,7 +16,7 @@ namespace flutter {
 
 class Stopwatch {
  public:
-  Stopwatch(float display_refresh_rate);
+  Stopwatch(double one_frame_ms = 0);
 
   ~Stopwatch();
 

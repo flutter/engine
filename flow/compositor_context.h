@@ -76,7 +76,8 @@ class CompositorContext {
     FML_DISALLOW_COPY_AND_ASSIGN(ScopedFrame);
   };
 
-  CompositorContext(float display_refresh_rate = 60.0f);
+  CompositorContext(std::chrono::microseconds target_frame_time =
+                        std::chrono::microseconds(16667));
 
   virtual ~CompositorContext();
 
