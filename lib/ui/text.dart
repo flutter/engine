@@ -1569,13 +1569,7 @@ enum PlaceholderAlignment {
   middle,
 }
 
-/// LineMetrics holds the metrics for a single line in the [Paragraph].
-///
-/// This class is immutable after instantiation.
 class LineMetrics {
-  /// Constructs a LineMetrics with only the specified properties.
-  ///
-  /// Omitted properties will be null.
   LineMetrics({
     this.hardBreak = null,
     this.ascent = null,
