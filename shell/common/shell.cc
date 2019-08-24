@@ -1078,8 +1078,7 @@ std::chrono::microseconds Shell::GetTargetFrameTime() {
     return std::chrono::microseconds(
         static_cast<int>(1000000 / display_refresh_rate_));
   } else {
-    return std::chrono::microseconds(
-        static_cast<int>(1000000 / 60));
+    return std::chrono::microseconds(static_cast<int>(1000000 / 60));
   }
 }
 

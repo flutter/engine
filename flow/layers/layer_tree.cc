@@ -111,7 +111,7 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   }
 
   MutatorsStack unused_stack;
-  const Stopwatch unused_stopwatch(0);
+  const Stopwatch unused_stopwatch;
   TextureRegistry unused_texture_registry;
   SkMatrix root_surface_transformation;
   // No root surface transformation. So assume identity.
