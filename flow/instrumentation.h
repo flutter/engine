@@ -39,11 +39,14 @@ class Stopwatch {
   void SetLapTime(const fml::TimeDelta& delta);
 
  private:
+  inline double UnitFrameInterval(double time_ms) const;
+  inline double UnitHeight(double time_ms, double max_height) const;
+
   fml::TimePoint start_;
   std::vector<fml::TimeDelta> laps_;
   size_t current_sample_;
 
-  double one_frame_ms_;
+  fml::Milliseconds frame_budget_;
 
   // Mutable data cache for performance optimization of the graphs. Prevents
   // expensive redrawing of old data.
