@@ -49,7 +49,7 @@ static FLUTTER_API_SYMBOL(FlutterEngine)
 
   FlutterRendererConfig config = {};
 
-  // Provide the necessary callbacks for rendering within a win32 window.
+  // Provide the necessary callbacks for rendering within a win32 child window.
   config.type = kOpenGL;
   config.open_gl.struct_size = sizeof(config.open_gl);
   config.open_gl.make_current = [](void* user_data) -> bool {
@@ -125,8 +125,8 @@ void FlutterDesktopProcessMessages() {
   __FlutterEngineFlushPendingTasksNow();
 }
 
-long FlutterDesktopGetHWNDFromView(FlutterDesktopViewRef flutter_window) {
-  return (long)((FlutterDesktopView*)flutter_window)->window->GetWindowHandle();
+long FlutterDesktopGetHWNDFromView(FlutterDesktopViewRef flutter_view) {
+  return (long)((FlutterDesktopView*)flutter_view)->window->GetWindowHandle();
 }
 
 void FlutterDesktopDestroyView(FlutterDesktopViewControllerRef controller) {

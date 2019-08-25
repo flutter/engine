@@ -27,7 +27,7 @@ FlutterView FlutterViewController::CreateFlutterView(
     const std::vector<std::string>& arguments) {
 
   if (controller_) {
-    std::cerr << "Only one Flutter window can exist at a time." << std::endl;
+    std::cerr << "Only one Flutter view can exist at a time." << std::endl;
     return nullptr;
   }
 
@@ -43,7 +43,7 @@ FlutterView FlutterViewController::CreateFlutterView(
       assets_path.c_str(), icu_data_path_.c_str(),
       arg_count > 0 ? &engine_arguments[0] : nullptr, arg_count);
   if (!controller_) {
-    std::cerr << "Failed to create window." << std::endl;
+    std::cerr << "Failed to create view." << std::endl;
     return nullptr;
   }
   view_ =

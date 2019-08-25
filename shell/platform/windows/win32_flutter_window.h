@@ -33,12 +33,6 @@ class Win32FlutterWindow : public Win32Window {
   // Create flutter Window for use as child window
   Win32FlutterWindow(const int width, const int height);
 
-  // Create flutter Window for use as top-level window
-  Win32FlutterWindow(const char* title,
-                     const int x,
-                     const int y,
-                     const int width,
-                     const int height) noexcept;
   ~Win32FlutterWindow();
 
   static FlutterDesktopViewControllerRef

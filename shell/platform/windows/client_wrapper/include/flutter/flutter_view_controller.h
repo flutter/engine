@@ -59,7 +59,7 @@ class FlutterViewController {
       const std::string& plugin_name);
 
   // The FlutterView managed by this controller, if any. Returns nullptr
-  // before CreateWindow is called, and after RunEventLoop returns;
+  // before CreateView is called.
   FlutterViewWin32* View() { return view_.get(); }
 
  private:
@@ -70,7 +70,7 @@ class FlutterViewController {
   // The owned FlutterView, if any.
   std::shared_ptr<FlutterViewWin32> view_;
 
-  // Handle for interacting with the C API's window controller, if any.
+  // Handle for interacting with the C API's view controller, if any.
   FlutterDesktopViewControllerRef controller_ = nullptr;
 };
 

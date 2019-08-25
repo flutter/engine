@@ -13,15 +13,6 @@ Win32FlutterWindow::Win32FlutterWindow(const int width, const int height) {
   Win32Window::InitializeChild("FLUTTERVIEW", width, height);
 }
 
-Win32FlutterWindow::Win32FlutterWindow(const char* title,
-                                       const int x,
-                                       const int y,
-                                       const int width,
-                                       const int height) noexcept {
-  surface_manager = std::make_unique<AngleSurfaceManager>();
-  Win32Window::Initialize(title, x, y, width, height);
-}
-
 Win32FlutterWindow::~Win32FlutterWindow() {
   DestroyRenderSurface();
   Win32Window::Destroy();
