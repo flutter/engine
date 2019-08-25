@@ -97,7 +97,7 @@ static FLUTTER_API_SYMBOL(FlutterEngine)
   return engine;
 }
 
-FlutterDesktopViewControllerRef FlutterDesktopCreateView(
+FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
     int initial_width,
     int initial_height,
     const char* assets_path,
@@ -125,22 +125,14 @@ void FlutterDesktopProcessMessages() {
   __FlutterEngineFlushPendingTasksNow();
 }
 
-long FlutterDesktopGetHWNDFromView(FlutterDesktopViewRef flutter_view) {
-  return (long)((FlutterDesktopView*)flutter_view)->window->GetWindowHandle();
+long FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller) {
+  return (long)(controller)->view->GetWindowHandle();
 }
 
-void FlutterDesktopDestroyView(FlutterDesktopViewControllerRef controller) {
+void FlutterDesktopDestroyViewController(
+    FlutterDesktopViewControllerRef controller) {
   FlutterEngineShutdown(controller->engine);
   delete controller;
-}
-
-FlutterDesktopViewRef FlutterDesktopGetView(
-    FlutterDesktopViewControllerRef controller) {
-  // Currently, one registrar acts as the registrar for all plugins, so the
-  // name is ignored. It is part of the API to reduce churn in the future when
-  // aligning more closely with the Flutter registrar system.
-
-  return controller->view_wrapper.get();
 }
 
 FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(

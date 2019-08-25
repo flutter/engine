@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 
-#include "flutter_view.h"
 #include "plugin_registrar.h"
 
 namespace flutter {
@@ -25,13 +24,6 @@ class FlutterViewController {
   // There must be only one instance of this class in an application at any
   // given time, as Flutter does not support multiple engines in one process,
   // or multiple views in one engine.
-  explicit FlutterViewController(const std::string& icu_data_path);
-
-  ~FlutterViewController();
-
-  // Prevent copying.
-  FlutterViewController(FlutterViewController const&) = delete;
-  FlutterViewController& operator=(FlutterViewController const&) = delete;
 
   // Creates a FlutterView that can be parented into a Windows View hierarchy
   // either using HWNDs or in the future into a CoreWindow, or using compositor.
@@ -43,12 +35,17 @@ class FlutterViewController {
   // The |arguments| are passed to the Flutter engine. See:
   // https://github.com/flutter/engine/blob/master/shell/common/switches.h for
   // for details. Not all arguments will apply to desktop.
-  //
-  // Only one Flutter view can exist at a time; see constructor comment.
-  FlutterView CreateFlutterView(int width,
-                                int height,
-                                const std::string& assets_path,
-                                const std::vector<std::string>& arguments);
+  explicit FlutterViewController(const std::string& icu_data_path,
+                                 int width,
+                                 int height,
+                                 const std::string& assets_path,
+                                 const std::vector<std::string>& arguments);
+
+  ~FlutterViewController();
+
+  // Prevent copying.
+  FlutterViewController(FlutterViewController const&) = delete;
+  FlutterViewController& operator=(FlutterViewController const&) = delete;
 
   // Returns the FlutterDesktopPluginRegistrarRef to register a plugin with the
   // given name.
@@ -57,17 +54,17 @@ class FlutterViewController {
   FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
       const std::string& plugin_name);
 
-  // The FlutterView managed by this controller, if any. Returns nullptr
-  // before CreateView is called.
-  FlutterViewWin32* View() { return view_.get(); }
+  // Return backing HWND for manipulation in host application.
+  long GetNativeWindow();
+
+  // Must be called in run loop to enable the view to do work on each tick of
+  // loop.
+  void ProcessMessages();
 
  private:
   // The path to the ICU data file. Set at creation time since it is the same
   // for any view created.
   std::string icu_data_path_;
-
-  // The owned FlutterView, if any.
-  std::shared_ptr<FlutterViewWin32> view_;
 
   // Handle for interacting with the C API's view controller, if any.
   FlutterDesktopViewControllerRef controller_ = nullptr;

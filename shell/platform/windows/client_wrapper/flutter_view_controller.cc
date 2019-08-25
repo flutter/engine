@@ -9,23 +9,15 @@
 
 namespace flutter {
 
-FlutterViewController::FlutterViewController(const std::string& icu_data_path)
-    : icu_data_path_(icu_data_path) {}
-
-FlutterViewController::~FlutterViewController() {
-  if (controller_) {
-    FlutterDesktopDestroyView(controller_);
-  }
-}
-
-FlutterView FlutterViewController::CreateFlutterView(
+FlutterViewController::FlutterViewController(
+    const std::string& icu_data_path,
     int width,
     int height,
     const std::string& assets_path,
-    const std::vector<std::string>& arguments) {
+    const std::vector<std::string>& arguments)
+    : icu_data_path_(icu_data_path) {
   if (controller_) {
     std::cerr << "Only one Flutter view can exist at a time." << std::endl;
-    return nullptr;
   }
 
   std::vector<const char*> engine_arguments;
@@ -34,16 +26,26 @@ FlutterView FlutterViewController::CreateFlutterView(
       [](const std::string& arg) -> const char* { return arg.c_str(); });
   size_t arg_count = engine_arguments.size();
 
-  controller_ = FlutterDesktopCreateView(
+  controller_ = FlutterDesktopCreateViewController(
       width, height, assets_path.c_str(), icu_data_path_.c_str(),
       arg_count > 0 ? &engine_arguments[0] : nullptr, arg_count);
   if (!controller_) {
     std::cerr << "Failed to create view." << std::endl;
-    return nullptr;
   }
-  view_ =
-      std::make_shared<FlutterViewWin32>(FlutterDesktopGetView(controller_));
-  return view_;
+}
+
+FlutterViewController::~FlutterViewController() {
+  if (controller_) {
+    FlutterDesktopDestroyViewController(controller_);
+  }
+}
+
+long FlutterViewController::GetNativeWindow() {
+  return FlutterDesktopGetHWND(controller_);
+}
+
+void FlutterViewController::ProcessMessages() {
+  FlutterDesktopProcessMessages();
 }
 
 FlutterDesktopPluginRegistrarRef FlutterViewController::GetRegistrarForPlugin(

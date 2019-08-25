@@ -23,7 +23,11 @@ TEST(FlutterViewControllerTest, CreateDestroy) {
   testing::ScopedStubFlutterWindowsApi scoped_api_stub(
       std::make_unique<TestWindowsApi>());
   auto test_api = static_cast<TestWindowsApi*>(scoped_api_stub.stub());
-  { FlutterViewController controller(icu_data_path); }
+  {
+    FlutterViewController controller(icu_data_path, 100, 100,
+                                     std::string("fake"),
+                                     std::vector<std::string>{});
+  }
 }
 
 }  // namespace flutter

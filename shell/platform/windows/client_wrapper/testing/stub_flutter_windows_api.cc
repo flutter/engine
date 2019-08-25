@@ -35,7 +35,7 @@ ScopedStubFlutterWindowsApi::~ScopedStubFlutterWindowsApi() {
 
 // Forwarding dummy implementations of the C API.
 
-FlutterDesktopViewControllerRef FlutterDesktopCreateView(
+FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
     int initial_width,
     int initial_height,
     const char* assets_path,
@@ -43,16 +43,30 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateView(
     const char** arguments,
     size_t argument_count) {
   if (s_stub_implementation) {
-    return s_stub_implementation->CreateView(initial_width, initial_height,
-                                             assets_path, icu_data_path,
-                                             arguments, argument_count);
+    return s_stub_implementation->CreateViewController(
+        initial_width, initial_height, assets_path, icu_data_path, arguments,
+        argument_count);
   }
   return nullptr;
 }
 
-void FlutterDesktopDestroyView(FlutterDesktopViewControllerRef controller) {
+void FlutterDesktopDestroyViewController(
+    FlutterDesktopViewControllerRef controller) {
   if (s_stub_implementation) {
-    s_stub_implementation->DestroyView();
+    s_stub_implementation->DestroyViewController();
+  }
+}
+
+long FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->FlutterDesktopGetHWND();
+  }
+  return -1;
+}
+
+void FlutterDesktopProcessMessages() {
+  if (s_stub_implementation) {
+    return s_stub_implementation->FlutterDesktopProcessMessages();
   }
 }
 
@@ -72,12 +86,6 @@ bool FlutterDesktopShutDownEngine(FlutterDesktopEngineRef engine_ref) {
     return s_stub_implementation->ShutDownEngine();
   }
   return true;
-}
-
-FlutterDesktopViewRef FlutterDesktopGetView(
-    FlutterDesktopViewControllerRef controller) {
-  // The stub ignores this, so just return an arbitrary non-zero value.
-  return reinterpret_cast<FlutterDesktopViewRef>(1);
 }
 
 FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(
