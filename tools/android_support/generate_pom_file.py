@@ -11,8 +11,7 @@ import json
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # The template for the POM file.
-POM_FILE_CONTENT = '''
-<?xml version="1.0" encoding="UTF-8"?>
+POM_FILE_CONTENT = '''<?xml version="1.0" encoding="UTF-8"?>
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
@@ -53,7 +52,7 @@ def main():
   engine_artifact_id = args.engine_artifact_id
   engine_version = args.engine_version
   artifact_version = '1.0.0-' + engine_version
-  out_file_name = '%s-%s.pom' % (engine_artifact_id, artifact_version)
+  out_file_name = '%s.pom' % engine_artifact_id
 
   pom_dependencies = ''
   if args.include_embedding_dependencies:

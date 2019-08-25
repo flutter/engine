@@ -11,6 +11,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/message_loop.h"
+#include "flutter/fml/paths.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/thread.h"
@@ -208,7 +209,11 @@ TEST_F(EmbedderTest, CanSpecifyCustomTaskRunner) {
   platform_task_runner->PostTask(fml::MakeCopyable([&]() mutable {
     std::scoped_lock lock(engine_mutex);
     engine.reset();
-    kill_latch.Signal();
+
+    // There may still be pending tasks on the platform thread that were queued
+    // by the test_task_runner.  Signal the latch after these tasks have been
+    // consumed.
+    platform_task_runner->PostTask([&kill_latch] { kill_latch.Signal(); });
   }));
   kill_latch.Wait();
 
@@ -308,7 +313,7 @@ TEST_F(EmbedderTest, PlatformMessagesCanReceiveResponse) {
   };
   Captures captures;
 
-  GetThreadTaskRunner()->PostTask([&]() {
+  CreateNewThread()->PostTask([&]() {
     captures.thread_id = std::this_thread::get_id();
     auto& context = GetEmbedderContext();
     EmbedderConfigBuilder builder(context);
@@ -812,16 +817,17 @@ static sk_sp<SkSurface> CreateRenderSurface(const FlutterLayer& layer,
                                             GrContext* context) {
   const auto image_info =
       SkImageInfo::MakeN32Premul(layer.size.width, layer.size.height);
-  auto surface =
-      SkSurface::MakeRenderTarget(context,                   // context
-                                  SkBudgeted::kNo,           // budgeted
-                                  image_info,                // image info
-                                  1,                         // sample count
-                                  kTopLeft_GrSurfaceOrigin,  // surface origin
-                                  nullptr,  // surface properties
-                                  false     // mipmaps
+  auto surface = context ? SkSurface::MakeRenderTarget(
+                               context,                   // context
+                               SkBudgeted::kNo,           // budgeted
+                               image_info,                // image info
+                               1,                         // sample count
+                               kTopLeft_GrSurfaceOrigin,  // surface origin
+                               nullptr,                   // surface properties
+                               false                      // mipmaps
 
-      );
+                               )
+                         : SkSurface::MakeRaster(image_info);
   FML_CHECK(surface != nullptr);
   return surface;
 }
@@ -859,9 +865,9 @@ static bool RasterImagesAreSame(sk_sp<SkImage> a, sk_sp<SkImage> b) {
   return ::memcmp(pixmapA.addr(), pixmapB.addr(), sizeA) == 0;
 }
 
-bool WriteImageToDisk(const fml::UniqueFD& directory,
-                      const std::string& name,
-                      sk_sp<SkImage> image) {
+static bool WriteImageToDisk(const fml::UniqueFD& directory,
+                             const std::string& name,
+                             sk_sp<SkImage> image) {
   if (!image) {
     return false;
   }
@@ -875,6 +881,60 @@ bool WriteImageToDisk(const fml::UniqueFD& directory,
   fml::NonOwnedMapping mapping(static_cast<const uint8_t*>(data->data()),
                                data->size());
   return WriteAtomically(directory, name.c_str(), mapping);
+}
+
+static bool ImageMatchesFixture(const std::string& fixture_file_name,
+                                sk_sp<SkImage> scene_image) {
+  fml::FileMapping fixture_image_mapping(OpenFixture(fixture_file_name));
+
+  FML_CHECK(fixture_image_mapping.GetSize() != 0u)
+      << "Could not find fixture: " << fixture_file_name;
+
+  auto encoded_image = SkData::MakeWithoutCopy(
+      fixture_image_mapping.GetMapping(), fixture_image_mapping.GetSize());
+  auto fixture_image =
+      SkImage::MakeFromEncoded(std::move(encoded_image))->makeRasterImage();
+
+  FML_CHECK(fixture_image) << "Could not create image from fixture: "
+                           << fixture_file_name;
+
+  auto scene_image_subset = scene_image->makeSubset(
+      SkIRect::MakeWH(fixture_image->width(), fixture_image->height()));
+
+  FML_CHECK(scene_image_subset)
+      << "Could not create image subset for fixture comparison: "
+      << scene_image_subset;
+
+  const auto images_are_same =
+      RasterImagesAreSame(scene_image_subset, fixture_image);
+
+  // If the images are not the same, this predicate is going to indicate test
+  // failure. Dump both the actual image and the expectation to disk to the
+  // test author can figure out what went wrong.
+  if (!images_are_same) {
+    const auto fixtures_path = GetFixturesPath();
+
+    const auto actual_file_name = "actual_" + fixture_file_name;
+    const auto expect_file_name = "expectation_" + fixture_file_name;
+
+    auto fixtures_fd = OpenFixturesDirectory();
+
+    FML_CHECK(
+        WriteImageToDisk(fixtures_fd, actual_file_name, scene_image_subset))
+        << "Could not write file to disk: " << actual_file_name;
+
+    FML_CHECK(WriteImageToDisk(fixtures_fd, expect_file_name, fixture_image))
+        << "Could not write file to disk: " << expect_file_name;
+
+    FML_LOG(ERROR) << "Image did not match expectation." << std::endl
+                   << "Expected:"
+                   << fml::paths::JoinPaths({fixtures_path, expect_file_name})
+                   << std::endl
+                   << "Got:"
+                   << fml::paths::JoinPaths({fixtures_path, actual_file_name})
+                   << std::endl;
+  }
+  return images_are_same;
 }
 
 //------------------------------------------------------------------------------
@@ -1044,31 +1104,189 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
 
   latch.Wait();
 
-  // Render the scene and assert that it matches expectation.
-  ASSERT_TRUE(scene_image);
-  fml::FileMapping fixture_image_mapping(OpenFixture("compositor.png"));
-  ASSERT_GE(fixture_image_mapping.GetSize(), 0u);
-  auto encoded_image = SkData::MakeWithoutCopy(
-      fixture_image_mapping.GetMapping(), fixture_image_mapping.GetSize());
-  auto fixture_image =
-      SkImage::MakeFromEncoded(std::move(encoded_image))->makeRasterImage();
-  ASSERT_TRUE(fixture_image);
-  auto scene_image_subset = scene_image->makeSubset(
-      SkIRect::MakeWH(fixture_image->width(), fixture_image->height()));
-  ASSERT_TRUE(scene_image_subset);
-  const auto images_are_same =
-      RasterImagesAreSame(scene_image_subset, fixture_image);
-  if (!images_are_same) {
-    auto fixtures_fd = OpenFixturesDirectory();
-    ASSERT_TRUE(
-        WriteImageToDisk(fixtures_fd, "actual.png", scene_image_subset));
-    ASSERT_TRUE(
-        WriteImageToDisk(fixtures_fd, "expectation.png", fixture_image));
-    FML_LOG(ERROR) << "Test compositor did not generated expected images. Got: "
-                      "'actual.png' Expected: 'expectation.png' in Directory: "
-                   << GetFixturesPath();
-  }
-  ASSERT_TRUE(images_are_same);
+  ASSERT_TRUE(ImageMatchesFixture("compositor.png", scene_image));
+
+  // There should no present calls on the root surface.
+  ASSERT_EQ(context.GetSoftwareSurfacePresentCount(), 0u);
+  ASSERT_EQ(context.GetGLSurfacePresentCount(), 0u);
+}
+
+//------------------------------------------------------------------------------
+/// Test the layer structure and pixels rendered when using a custom software
+/// compositor.
+///
+TEST_F(EmbedderTest,
+       CompositorMustBeAbleToRenderKnownSceneWithSoftwareCompositor) {
+  auto& context = GetEmbedderContext();
+
+  context.SetupCompositor();
+
+  context.GetCompositor().SetRenderTargetType(
+      EmbedderTestCompositor::RenderTargetType::kSoftwareBuffer);
+
+  fml::CountDownLatch latch(6);
+
+  sk_sp<SkImage> scene_image;
+  context.SetNextSceneCallback([&](sk_sp<SkImage> scene) {
+    scene_image = std::move(scene);
+    latch.CountDown();
+  });
+
+  context.GetCompositor().SetNextPresentCallback(
+      [&](const FlutterLayer** layers, size_t layers_count) {
+        ASSERT_EQ(layers_count, 5u);
+
+        // Layer Root
+        {
+          FlutterBackingStore backing_store = *layers[0]->backing_store;
+          backing_store.type = kFlutterBackingStoreTypeSoftware;
+          backing_store.did_update = true;
+          backing_store.software.height = 600;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypeBackingStore;
+          layer.backing_store = &backing_store;
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
+
+          ASSERT_EQ(*layers[0], layer);
+        }
+
+        // Layer 1
+        {
+          FlutterPlatformView platform_view = {};
+          platform_view.struct_size = sizeof(platform_view);
+          platform_view.identifier = 1;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypePlatformView;
+          layer.platform_view = &platform_view;
+          layer.size = FlutterSizeMake(50.0, 150.0);
+          layer.offset = FlutterPointMake(20.0, 20.0);
+
+          ASSERT_EQ(*layers[1], layer);
+        }
+
+        // Layer 2
+        {
+          FlutterBackingStore backing_store = *layers[2]->backing_store;
+          backing_store.type = kFlutterBackingStoreTypeSoftware;
+          backing_store.did_update = true;
+          backing_store.software.height = 600;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypeBackingStore;
+          layer.backing_store = &backing_store;
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
+
+          ASSERT_EQ(*layers[2], layer);
+        }
+
+        // Layer 3
+        {
+          FlutterPlatformView platform_view = {};
+          platform_view.struct_size = sizeof(platform_view);
+          platform_view.identifier = 2;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypePlatformView;
+          layer.platform_view = &platform_view;
+          layer.size = FlutterSizeMake(50.0, 150.0);
+          layer.offset = FlutterPointMake(40.0, 40.0);
+
+          ASSERT_EQ(*layers[3], layer);
+        }
+
+        // Layer 4
+        {
+          FlutterBackingStore backing_store = *layers[4]->backing_store;
+          backing_store.type = kFlutterBackingStoreTypeSoftware;
+          backing_store.did_update = true;
+          backing_store.software.height = 600;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypeBackingStore;
+          layer.backing_store = &backing_store;
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
+
+          ASSERT_EQ(*layers[4], layer);
+        }
+
+        latch.CountDown();
+      });
+
+  context.GetCompositor().SetPlatformViewRendererCallback(
+      [&](const FlutterLayer& layer, GrContext *
+          /* don't use because software compositor */) -> sk_sp<SkImage> {
+        auto surface = CreateRenderSurface(
+            layer, nullptr /* null because software compositor */);
+        auto canvas = surface->getCanvas();
+        FML_CHECK(canvas != nullptr);
+
+        switch (layer.platform_view->identifier) {
+          case 1: {
+            SkPaint paint;
+            // See dart test for total order.
+            paint.setColor(SK_ColorGREEN);
+            paint.setAlpha(127);
+            const auto& rect =
+                SkRect::MakeWH(layer.size.width, layer.size.height);
+            canvas->drawRect(rect, paint);
+            latch.CountDown();
+          } break;
+          case 2: {
+            SkPaint paint;
+            // See dart test for total order.
+            paint.setColor(SK_ColorMAGENTA);
+            paint.setAlpha(127);
+            const auto& rect =
+                SkRect::MakeWH(layer.size.width, layer.size.height);
+            canvas->drawRect(rect, paint);
+            latch.CountDown();
+          } break;
+          default:
+            // Asked to render an unknown platform view.
+            FML_CHECK(false)
+                << "Test was asked to composite an unknown platform view.";
+        }
+
+        return surface->makeImageSnapshot();
+      });
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetCompositor();
+  builder.SetDartEntrypoint("can_composite_platform_views_with_known_scene");
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&latch](Dart_NativeArguments args) { latch.CountDown(); }));
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+
+  latch.Wait();
+
+  ASSERT_TRUE(ImageMatchesFixture("compositor_software.png", scene_image));
+
+  // There should no present calls on the root surface.
+  ASSERT_EQ(context.GetSoftwareSurfacePresentCount(), 0u);
+  ASSERT_EQ(context.GetGLSurfacePresentCount(), 0u);
 }
 
 //------------------------------------------------------------------------------
@@ -1194,6 +1412,191 @@ TEST_F(EmbedderTest, CustomCompositorMustWorkWithCustomTaskRunner) {
     sync_latch.Signal();
   });
   sync_latch.Wait();
+}
+
+//------------------------------------------------------------------------------
+/// Test the layer structure and pixels rendered when using a custom compositor
+/// and a single layer.
+///
+TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithRootLayerOnly) {
+  auto& context = GetEmbedderContext();
+
+  context.SetupCompositor();
+
+  context.GetCompositor().SetRenderTargetType(
+      EmbedderTestCompositor::RenderTargetType::kOpenGLTexture);
+
+  fml::CountDownLatch latch(4);
+
+  sk_sp<SkImage> scene_image;
+  context.SetNextSceneCallback([&](sk_sp<SkImage> scene) {
+    scene_image = std::move(scene);
+    latch.CountDown();
+  });
+
+  context.GetCompositor().SetNextPresentCallback(
+      [&](const FlutterLayer** layers, size_t layers_count) {
+        ASSERT_EQ(layers_count, 1u);
+
+        // Layer Root
+        {
+          FlutterBackingStore backing_store = *layers[0]->backing_store;
+          backing_store.type = kFlutterBackingStoreTypeOpenGL;
+          backing_store.did_update = true;
+          backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypeBackingStore;
+          layer.backing_store = &backing_store;
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
+
+          ASSERT_EQ(*layers[0], layer);
+        }
+
+        latch.CountDown();
+      });
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig();
+  builder.SetCompositor();
+  builder.SetDartEntrypoint(
+      "can_composite_platform_views_with_root_layer_only");
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&latch](Dart_NativeArguments args) { latch.CountDown(); }));
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+
+  latch.Wait();
+
+  ASSERT_TRUE(
+      ImageMatchesFixture("compositor_with_root_layer_only.png", scene_image));
+}
+
+//------------------------------------------------------------------------------
+/// Test the layer structure and pixels rendered when using a custom compositor
+/// and ensure that a redundant layer is not added.
+///
+TEST_F(EmbedderTest,
+       DISABLED_CompositorMustBeAbleToRenderWithPlatformLayerOnBottom) {
+  auto& context = GetEmbedderContext();
+
+  context.SetupCompositor();
+
+  context.GetCompositor().SetRenderTargetType(
+      EmbedderTestCompositor::RenderTargetType::kOpenGLTexture);
+
+  fml::CountDownLatch latch(4);
+
+  sk_sp<SkImage> scene_image;
+  context.SetNextSceneCallback([&](sk_sp<SkImage> scene) {
+    scene_image = std::move(scene);
+    latch.CountDown();
+  });
+
+  context.GetCompositor().SetNextPresentCallback(
+      [&](const FlutterLayer** layers, size_t layers_count) {
+        ASSERT_EQ(layers_count, 2u);
+
+        // Layer Root
+        {
+          FlutterBackingStore backing_store = *layers[0]->backing_store;
+          backing_store.type = kFlutterBackingStoreTypeOpenGL;
+          backing_store.did_update = true;
+          backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypeBackingStore;
+          layer.backing_store = &backing_store;
+          layer.size = FlutterSizeMake(800.0, 600.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
+
+          ASSERT_EQ(*layers[0], layer);
+        }
+
+        // Layer 1
+        {
+          FlutterPlatformView platform_view = {};
+          platform_view.struct_size = sizeof(platform_view);
+          platform_view.identifier = 1;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypePlatformView;
+          layer.platform_view = &platform_view;
+          layer.size = FlutterSizeMake(50.0, 150.0);
+          layer.offset = FlutterPointMake(20.0, 20.0);
+
+          ASSERT_EQ(*layers[1], layer);
+        }
+
+        latch.CountDown();
+      });
+
+  context.GetCompositor().SetPlatformViewRendererCallback(
+      [&](const FlutterLayer& layer, GrContext* context) -> sk_sp<SkImage> {
+        auto surface = CreateRenderSurface(layer, context);
+        auto canvas = surface->getCanvas();
+        FML_CHECK(canvas != nullptr);
+
+        switch (layer.platform_view->identifier) {
+          case 1: {
+            SkPaint paint;
+            // See dart test for total order.
+            paint.setColor(SK_ColorGREEN);
+            paint.setAlpha(127);
+            const auto& rect =
+                SkRect::MakeWH(layer.size.width, layer.size.height);
+            canvas->drawRect(rect, paint);
+            latch.CountDown();
+          } break;
+          default:
+            // Asked to render an unknown platform view.
+            FML_CHECK(false)
+                << "Test was asked to composite an unknown platform view.";
+        }
+
+        return surface->makeImageSnapshot();
+      });
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig();
+  builder.SetCompositor();
+  builder.SetDartEntrypoint(
+      "can_composite_platform_views_with_platform_layer_on_bottom");
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&latch](Dart_NativeArguments args) { latch.CountDown(); }));
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+
+  latch.Wait();
+
+  ASSERT_TRUE(ImageMatchesFixture(
+      "compositor_with_platform_layer_on_bottom.png", scene_image));
 }
 
 }  // namespace testing
