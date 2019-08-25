@@ -9,10 +9,8 @@
 
 namespace flutter {
 
-FlutterViewController::FlutterViewController(
-    const std::string& icu_data_path)
-    : icu_data_path_(icu_data_path) {
-}
+FlutterViewController::FlutterViewController(const std::string& icu_data_path)
+    : icu_data_path_(icu_data_path) {}
 
 FlutterViewController::~FlutterViewController() {
   if (controller_) {
@@ -25,7 +23,6 @@ FlutterView FlutterViewController::CreateFlutterView(
     int height,
     const std::string& assets_path,
     const std::vector<std::string>& arguments) {
-
   if (controller_) {
     std::cerr << "Only one Flutter view can exist at a time." << std::endl;
     return nullptr;
@@ -38,9 +35,7 @@ FlutterView FlutterViewController::CreateFlutterView(
   size_t arg_count = engine_arguments.size();
 
   controller_ = FlutterDesktopCreateView(
-      width,
-      height,
-      assets_path.c_str(), icu_data_path_.c_str(),
+      width, height, assets_path.c_str(), icu_data_path_.c_str(),
       arg_count > 0 ? &engine_arguments[0] : nullptr, arg_count);
   if (!controller_) {
     std::cerr << "Failed to create view." << std::endl;
@@ -49,7 +44,7 @@ FlutterView FlutterViewController::CreateFlutterView(
   view_ =
       std::make_shared<FlutterViewWin32>(FlutterDesktopGetView(controller_));
   return view_;
- }
+}
 
 FlutterDesktopPluginRegistrarRef FlutterViewController::GetRegistrarForPlugin(
     const std::string& plugin_name) {

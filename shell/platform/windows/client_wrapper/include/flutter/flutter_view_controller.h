@@ -33,10 +33,10 @@ class FlutterViewController {
   FlutterViewController(FlutterViewController const&) = delete;
   FlutterViewController& operator=(FlutterViewController const&) = delete;
 
-  // Creates a FlutterView that can be parented into a Windows View hierarchy either using HWNDs 
-  // or in the future into a CoreWindow, or using compositor.
+  // Creates a FlutterView that can be parented into a Windows View hierarchy
+  // either using HWNDs or in the future into a CoreWindow, or using compositor.
 
-   // The |assets_path| is the path to the flutter_assets folder for the Flutter
+  // The |assets_path| is the path to the flutter_assets folder for the Flutter
   // application to be run. |icu_data_path| is the path to the icudtl.dat file
   // for the version of Flutter you are using.
   //
@@ -45,11 +45,10 @@ class FlutterViewController {
   // for details. Not all arguments will apply to desktop.
   //
   // Only one Flutter view can exist at a time; see constructor comment.
-  FlutterView CreateFlutterView(
-      int width,
-      int height,
-      const std::string& assets_path,
-                         const std::vector<std::string>& arguments);
+  FlutterView CreateFlutterView(int width,
+                                int height,
+                                const std::string& assets_path,
+                                const std::vector<std::string>& arguments);
 
   // Returns the FlutterDesktopPluginRegistrarRef to register a plugin with the
   // given name.

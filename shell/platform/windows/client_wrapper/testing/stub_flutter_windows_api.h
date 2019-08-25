@@ -30,13 +30,12 @@ class StubFlutterWindowsApi {
   virtual ~StubFlutterWindowsApi() {}
 
   // Called for FlutterDesktopCreateView.
-  virtual FlutterDesktopViewControllerRef CreateView(
-      int initial_width,
-      int initial_height,
-      const char* assets_path,
-      const char* icu_data_path,
-      const char** arguments,
-      size_t argument_count) {
+  virtual FlutterDesktopViewControllerRef CreateView(int initial_width,
+                                                     int initial_height,
+                                                     const char* assets_path,
+                                                     const char* icu_data_path,
+                                                     const char** arguments,
+                                                     size_t argument_count) {
     return nullptr;
   }
 

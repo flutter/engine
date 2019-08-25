@@ -43,9 +43,9 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateView(
     const char** arguments,
     size_t argument_count) {
   if (s_stub_implementation) {
-    return s_stub_implementation->CreateView(
-        initial_width, initial_height, assets_path, icu_data_path,
-        arguments, argument_count);
+    return s_stub_implementation->CreateView(initial_width, initial_height,
+                                             assets_path, icu_data_path,
+                                             arguments, argument_count);
   }
   return nullptr;
 }
