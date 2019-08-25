@@ -8,6 +8,7 @@
 
 #include "flutter/assets/asset_manager.h"
 #include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/fml/backtrace.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
@@ -198,6 +199,8 @@ int RunTester(const flutter::Settings& settings, bool run_forever) {
 }  // namespace flutter
 
 int main(int argc, char* argv[]) {
+  fml::InstallCrashHandler();
+
   dart::bin::SetExecutableName(argv[0]);
   dart::bin::SetExecutableArguments(argc - 1, argv);
 
