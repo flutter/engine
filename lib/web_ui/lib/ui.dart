@@ -16,12 +16,10 @@ import 'dart:typed_data';
 import 'src/engine.dart' as engine;
 export 'src/engine.dart'
     show
-        PluginRegistry,
-        Registrar,
         persistedPictureFactory,
         houdiniPictureFactory,
         platformViewRegistry,
-        pluginRegistry,
+        webOnlySetPluginHandler,
         webOnlyInitializeEngine;
 
 part 'src/ui/canvas.dart';

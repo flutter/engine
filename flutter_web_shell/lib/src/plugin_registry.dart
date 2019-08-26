@@ -1,29 +1,55 @@
 import 'dart:async';
-import 'dart:ui';
+import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 typedef _MessageHandler = Future<ByteData> Function(ByteData);
 
 class PluginRegistry {
-  Registrar registrarFor(Type key) => Registrar();
+  final BinaryMessenger _binaryMessenger;
+
+  PluginRegistry(this._binaryMessenger);
+
+  Registrar registrarFor(Type key) => Registrar(_binaryMessenger);
+
+  void registerMessageHandler() {
+    ui.webOnlySetPluginHandler(_binaryMessenger.handlePlatformMessage);
+  }
 }
 
 class Registrar {
-  BinaryMessenger get messenger => _platformBinaryMessenger;
+  final BinaryMessenger messenger;
+
+  Registrar(this.messenger);
 }
 
-final shellPluginRegistry = PluginRegistry();
+final shellPluginRegistry = PluginRegistry(_platformBinaryMessenger);
 
 class _PlatformBinaryMessenger extends BinaryMessenger {
   final Map<String, _MessageHandler> _handlers = <String, _MessageHandler>{};
-  final Map<String, _MessageHandler> _mockHandlers = <String, _MessageHandler>{};
+  final Map<String, _MessageHandler> _mockHandlers =
+      <String, _MessageHandler>{};
 
   @override
-  Future<void> handlePlatformMessage(
-      String channel, ByteData data, PlatformMessageResponseCallback callback) {
-    // TODO: implement handlePlatformMessage
-    return null;
+  Future<void> handlePlatformMessage(String channel, ByteData data,
+      ui.PlatformMessageResponseCallback callback) async {
+    ByteData response;
+    try {
+      final MessageHandler handler = _handlers[channel];
+      if (handler != null) {
+        response = await handler(data);
+      }
+    } catch (exception, stack) {
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: exception,
+        stack: stack,
+        library: 'flutter web shell',
+        context: ErrorDescription('during a plugin platform message call'),
+      ));
+    } finally {
+      callback(response);
+    }
   }
 
   /// Sends a platform message from the platform side back to the framework.
