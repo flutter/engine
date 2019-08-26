@@ -1662,6 +1662,9 @@ class LineMetrics {
   final double left;
 
   /// The y coordinate of the baseline for this line from the top of the paragraph.
+  ///
+  /// The bottom edge of the paragraph up to and including this line may be obtained
+  /// through `baseline + descent`.
   final double baseline;
 
   /// The number of this line in the overall paragraph, with the first line being
