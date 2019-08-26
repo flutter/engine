@@ -127,7 +127,6 @@ FILE: ../../../flutter/fml/memory/weak_ptr.h
 FILE: ../../../flutter/fml/memory/weak_ptr_internal.cc
 FILE: ../../../flutter/fml/memory/weak_ptr_internal.h
 FILE: ../../../flutter/fml/memory/weak_ptr_unittest.cc
-FILE: ../../../flutter/fml/merged_queues_runner.cc
 FILE: ../../../flutter/fml/message.cc
 FILE: ../../../flutter/fml/message.h
 FILE: ../../../flutter/fml/message_loop.cc
@@ -345,6 +344,8 @@ FILE: ../../../flutter/lib/ui/window/viewport_metrics.cc
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.h
 FILE: ../../../flutter/lib/ui/window/window.cc
 FILE: ../../../flutter/lib/ui/window/window.h
+FILE: ../../../flutter/lib/web_ui/dev/test.dart
+FILE: ../../../flutter/lib/web_ui/lib/assets/houdini_painter.js
 FILE: ../../../flutter/lib/web_ui/lib/src/engine.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/alarm_clock.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/assets.dart
@@ -353,11 +354,12 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/browser_detection.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/browser_location.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/engine_delegate.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/fonts.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/image.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/initialization.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/layer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/layer_scene_builder.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/layer_tree.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/matrix.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/path.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/picture_recorder.dart
@@ -367,6 +369,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/rasterizer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/recording_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/runtime_delegate.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/surface.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/viewport_metrics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/conic.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/dom_canvas.dart
@@ -395,6 +398,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/buffers.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/message_codec.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/message_codecs.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/serialization.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/shader.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/shadow.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/backdrop_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/clip.dart
@@ -509,6 +513,7 @@ FILE: ../../../flutter/shell/common/vsync_waiter.cc
 FILE: ../../../flutter/shell/common/vsync_waiter.h
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.cc
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.h
+FILE: ../../../flutter/shell/gpu/gpu_surface_delegate.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.cc
@@ -827,6 +832,7 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_task_runner.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_thread_host.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_thread_host.h
 FILE: ../../../flutter/shell/platform/embedder/fixtures/compositor.png
+FILE: ../../../flutter/shell/platform/embedder/fixtures/compositor_software.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/compositor_with_root_layer_only.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/main.dart
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.cc
@@ -1142,6 +1148,7 @@ FILE: ../../../flutter/third_party/txt/src/txt/font_skia.cc
 FILE: ../../../flutter/third_party/txt/src/txt/font_skia.h
 FILE: ../../../flutter/third_party/txt/src/txt/font_style.h
 FILE: ../../../flutter/third_party/txt/src/txt/font_weight.h
+FILE: ../../../flutter/third_party/txt/src/txt/line_metrics.h
 FILE: ../../../flutter/third_party/txt/src/txt/paint_record.cc
 FILE: ../../../flutter/third_party/txt/src/txt/paint_record.h
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph.h
@@ -1155,6 +1162,7 @@ FILE: ../../../flutter/third_party/txt/src/txt/paragraph_txt.cc
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph_txt.h
 FILE: ../../../flutter/third_party/txt/src/txt/placeholder_run.cc
 FILE: ../../../flutter/third_party/txt/src/txt/placeholder_run.h
+FILE: ../../../flutter/third_party/txt/src/txt/run_metrics.h
 FILE: ../../../flutter/third_party/txt/src/txt/styled_runs.cc
 FILE: ../../../flutter/third_party/txt/src/txt/styled_runs.h
 FILE: ../../../flutter/third_party/txt/src/txt/test_font_manager.cc

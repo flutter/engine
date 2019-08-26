@@ -191,7 +191,14 @@ class TextDimensions {
       // match the style set on the `element`. Setting text as plain string is
       // faster because it doesn't change the DOM structure or CSS attributes,
       // and therefore doesn't trigger style recalculations in the browser.
-      _element.text = plainText;
+      if (plainText.endsWith('\n')) {
+        // On the web the last newline is ignored. To be consistent with
+        // native engine implementation we add extra newline to get correct
+        // height measurement.
+        _element.text = '$plainText\n';
+      } else {
+        _element.text = plainText;
+      }
     } else {
       // Rich text: deeply copy contents. This is the slow case that should be
       // avoided if fast layout performance is desired.
@@ -425,8 +432,10 @@ class ParagraphRuler {
     minIntrinsicDimensions._element.style
       ..flex = '0'
       ..display = 'inline'
-      // Preserve whitespaces.
-      ..whiteSpace = 'pre-wrap';
+      // Preserve newlines, wrap text, remove end of line spaces.
+      // Not using pre-wrap here since end of line space hang measurement
+      // changed in Chrome 77 Beta.
+      ..whiteSpace = 'pre-line';
 
     _minIntrinsicHost.append(minIntrinsicDimensions._element);
     rulerManager.addHostElement(_minIntrinsicHost);
@@ -569,6 +578,53 @@ class ParagraphRuler {
     // than the size it reports back. When that happens the text may be wrap
     // when we thought it didn't.
     constrainedDimensions.updateWidth('${constraints.width + 0.5}px');
+  }
+
+  /// Returns text position in a paragraph that contains multiple
+  /// nested spans given an offset.
+  int hitTest(ui.ParagraphConstraints constraints, ui.Offset offset) {
+    measureWithConstraints(constraints);
+    // Get paragraph element root used to measure constrainedDimensions.
+    final html.HtmlElement el = constrainedDimensions._element;
+    final List<html.Node> textNodes = <html.Node>[];
+    // Collect all text nodes (breadth first traversal).
+    // Since there is no api to get bounds of text nodes directly we work
+    // upwards and measure span elements and finally the paragraph.
+    _collectTextNodes(el.childNodes, textNodes);
+    // Hit test spans starting from leaf nodes up (backwards).
+    for (int i = textNodes.length - 1; i >= 0; i--) {
+      final html.Node node = textNodes[i];
+      // Check if offset is within client rect bounds of text node's
+      // parent element.
+      final html.Element parent = node.parentNode;
+      final html.Rectangle<num> bounds = parent.getBoundingClientRect();
+      final double dx = offset.dx;
+      final double dy = offset.dy;
+      if (dx >= bounds.left &&
+          dy < bounds.right &&
+          dy >= bounds.top &&
+          dy < bounds.bottom) {
+        // We found the element bounds that contains offset.
+        // Calculate text position for this node.
+        int textPosition = 0;
+        for (int nodeIndex = 0; nodeIndex < i; nodeIndex++) {
+          textPosition += textNodes[nodeIndex].text.length;
+        }
+        return textPosition;
+      }
+    }
+    return 0;
+  }
+
+  void _collectTextNodes(Iterable<html.Node> nodes, List<html.Node> textNodes) {
+    for (html.Node node in nodes) {
+      if (node.nodeType == html.Node.TEXT_NODE) {
+        textNodes.add(node);
+      }
+      if (node.hasChildNodes()) {
+        _collectTextNodes(node.childNodes, textNodes);
+      }
+    }
   }
 
   /// Performs clean-up after a measurement is done, preparing this ruler for

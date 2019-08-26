@@ -496,8 +496,12 @@ class Locale {
   @override
   String toString() {
     final StringBuffer out = StringBuffer(languageCode);
-    if (scriptCode != null) out.write('_$scriptCode');
-    if (_countryCode != null) out.write('_$countryCode');
+    if (scriptCode != null) {
+      out.write('_$scriptCode');
+    }
+    if (_countryCode != null) {
+      out.write('_$countryCode');
+    }
     return out.toString();
   }
 
@@ -782,7 +786,6 @@ abstract class Window {
   @Deprecated('Use frameTimings instead.')
   TimingsCallback get onReportTimings => _onReportTimings;
   TimingsCallback _onReportTimings;
-  Zone _onReportTimingsZone;
   @Deprecated('Use frameTimings instead.')
   set onReportTimings(TimingsCallback callback) {
     _internalSetOnReportTimings(callback);
@@ -790,7 +793,6 @@ abstract class Window {
 
   void _internalSetOnReportTimings(TimingsCallback callback) {
     _onReportTimings = callback;
-    _onReportTimingsZone = Zone.current;
   }
 
   // ignore: deprecated_member_use_from_same_package
@@ -1100,17 +1102,29 @@ class AccessibilityFeatures {
   @override
   String toString() {
     final List<String> features = <String>[];
-    if (accessibleNavigation) features.add('accessibleNavigation');
-    if (invertColors) features.add('invertColors');
-    if (disableAnimations) features.add('disableAnimations');
-    if (boldText) features.add('boldText');
-    if (reduceMotion) features.add('reduceMotion');
+    if (accessibleNavigation) {
+      features.add('accessibleNavigation');
+    }
+    if (invertColors) {
+      features.add('invertColors');
+    }
+    if (disableAnimations) {
+      features.add('disableAnimations');
+    }
+    if (boldText) {
+      features.add('boldText');
+    }
+    if (reduceMotion) {
+      features.add('reduceMotion');
+    }
     return 'AccessibilityFeatures$features';
   }
 
   @override
   bool operator ==(dynamic other) {
-    if (other.runtimeType != runtimeType) return false;
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     final AccessibilityFeatures typedOther = other;
     return _index == typedOther._index;
   }

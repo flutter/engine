@@ -82,12 +82,30 @@ class RulerManager {
     _rulerHost?.remove();
   }
 
+  // Evicts all rulers from the cache.
+  void _evictAllRulers() {
+    _rulers.forEach((ParagraphGeometricStyle style, ParagraphRuler ruler) {
+      ruler.dispose();
+    });
+    _rulers = <ParagraphGeometricStyle, ParagraphRuler>{};
+  }
+
+  /// If [window._isPhysicalSizeActuallyEmpty], evicts all rulers from the cache.
   /// If ruler cache size exceeds [rulerCacheCapacity], evicts those rulers that
   /// were used the least.
   ///
   /// Resets hit counts back to zero.
   @visibleForTesting
   void cleanUpRulerCache() {
+    // Measurements performed (and cached) inside a hidden iframe (with
+    // display:none) are wrong.
+    // Evict all rulers, so text gets re-measured when the iframe becomes
+    // visible.
+    // see: https://github.com/flutter/flutter/issues/36341
+    if (window.physicalSize.isEmpty) {
+      _evictAllRulers();
+      return;
+    }
     if (_rulers.length > rulerCacheCapacity) {
       final List<ParagraphRuler> sortedByUsage = _rulers.values.toList();
       sortedByUsage.sort((ParagraphRuler a, ParagraphRuler b) {
@@ -174,7 +192,13 @@ abstract class TextMeasurementService {
     // TODO(flutter_web): https://github.com/flutter/flutter/issues/33523
     // When the canvas-based implementation is complete and passes all the
     // tests, get rid of [_experimentalEnableCanvasImplementation].
-    if (enableExperimentalCanvasImplementation &&
+    // We need to check [window.physicalSize.isEmpty] because some canvas
+    // commands don't work as expected when they run inside a hidden iframe
+    // (with display:none)
+    // Skip using canvas measurements until the iframe becomes visible.
+    // see: https://github.com/flutter/flutter/issues/36341
+    if (!window.physicalSize.isEmpty &&
+        enableExperimentalCanvasImplementation &&
         _canUseCanvasMeasurement(paragraph)) {
       return canvasInstance;
     }
@@ -230,6 +254,10 @@ abstract class TextMeasurementService {
   /// Measures the width of a substring of the given [paragraph] with no
   /// constraints.
   double measureSubstringWidth(EngineParagraph paragraph, int start, int end);
+
+  /// Returns text position given a paragraph, constraints and offset.
+  ui.TextPosition getTextPositionForOffset(EngineParagraph paragraph,
+      ui.ParagraphConstraints constraints, ui.Offset offset);
 
   /// Delegates to a [ParagraphRuler] to measure a list of text boxes that
   /// enclose the given range of text.
@@ -318,6 +346,7 @@ class DomTextMeasurementService extends TextMeasurementService {
 
   @override
   double measureSubstringWidth(EngineParagraph paragraph, int start, int end) {
+    assert(paragraph._plainText != null);
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
     final ParagraphRuler ruler =
         TextMeasurementService.rulerManager.findOrCreateRuler(style);
@@ -330,6 +359,20 @@ class DomTextMeasurementService extends TextMeasurementService {
     final TextDimensions dimensions = ruler.singleLineDimensions;
     ruler.didMeasure();
     return dimensions.width;
+  }
+
+  @override
+  ui.TextPosition getTextPositionForOffset(EngineParagraph paragraph,
+      ui.ParagraphConstraints constraints, ui.Offset offset) {
+    assert(paragraph._plainText == null, 'should only be called for multispan');
+
+    final ParagraphGeometricStyle style = paragraph._geometricStyle;
+    final ParagraphRuler ruler =
+        TextMeasurementService.rulerManager.findOrCreateRuler(style);
+    ruler.willMeasure(paragraph);
+    final int position = ruler.hitTest(constraints, offset);
+    ruler.didMeasure();
+    return ui.TextPosition(offset: position);
   }
 
   /// Called when we have determined that the paragraph fits the [constraints]
@@ -528,6 +571,7 @@ class CanvasTextMeasurementService extends TextMeasurementService {
 
   @override
   double measureSubstringWidth(EngineParagraph paragraph, int start, int end) {
+    assert(paragraph._plainText != null);
     final String text = paragraph._plainText;
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
     _canvasContext.font = style.cssFontString;
@@ -538,6 +582,13 @@ class CanvasTextMeasurementService extends TextMeasurementService {
       start,
       end,
     );
+  }
+
+  @override
+  ui.TextPosition getTextPositionForOffset(EngineParagraph paragraph,
+      ui.ParagraphConstraints constraints, ui.Offset offset) {
+    // TODO(flutter_web): implement.
+    return const ui.TextPosition(offset: 0);
   }
 }
 
