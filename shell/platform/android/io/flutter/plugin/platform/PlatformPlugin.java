@@ -282,10 +282,12 @@ public class PlatformPlugin {
     }
 
     private void setSystemGestureExclusionRects(ArrayList<Rect> rects) {
-        if (Build.VERSION.SDK_INT >= 29) {
-            Window window = activity.getWindow();
-            View view = window.getDecorView();
-            view.setSystemGestureExclusionRects(rects);
+        if (Build.VERSION.SDK_INT < 29) {
+            return;
         }
+
+        Window window = activity.getWindow();
+        View view = window.getDecorView();
+        view.setSystemGestureExclusionRects(rects);
     }
 }
