@@ -123,7 +123,7 @@ public class PlatformChannel {
             if (!(arguments instanceof JSONArray)) {
               String inputTypeError = "Input type is incorrect. Ensure that a List<Map<String, int>> is passed as the input for SystemGestureExclusionRects.setSystemGestureExclusionRects.";
               result.error("inputTypeError", inputTypeError, null);
-              return;
+              break;
             }
 
             JSONArray inputRects = (JSONArray) arguments;
