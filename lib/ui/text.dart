@@ -1641,7 +1641,8 @@ class LineMetrics {
 
   /// Total height of the line from the top edge to the bottom edge.
   ///
-  /// This is equivalent to `ascent + descent`
+  /// This is equivalent to `round(ascent + descent)`. This value is provided
+  /// separately due to rounding causes sub-pixel differences.
   final double height;
 
   /// Width of the line from the left edge of the leftmost glyph to the right
