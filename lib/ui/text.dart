@@ -1569,18 +1569,31 @@ enum PlaceholderAlignment {
   middle,
 }
 
+/// `LineMetrics` stores the measurements and statistics of a single line in the
+/// paragraph.
+///
+/// The measurements here are for the line as a whole, and represent the maximum
+/// extent of the line instead of per-run or per-glyph metrics. For more detailed
+/// metrics, see [TextBox] and [Paragraph.getBoxesForRange].
+///
+/// `LineMetrics` should be obtained directly from the [Paragraph.computeLineMetrics]
+/// method.
 class LineMetrics {
+  /// Creates a [LineMetrics] object with only the specified values.
+  ///
+  /// Omitted values will remain null. [Paragraph.computeLineMetrics] produces
+  /// fully defined [LineMetrics] with no null values.
   LineMetrics({
-    this.hardBreak = null,
-    this.ascent = null,
-    this.descent = null,
-    this.unscaledAscent = null,
-    this.height = null,
-    this.width = null,
-    this.left = null,
-    this.baseline = null,
-    this.lineNumber = null,
-  }) {}
+    this.hardBreak,
+    this.ascent,
+    this.descent,
+    this.unscaledAscent,
+    this.height,
+    this.width,
+    this.left,
+    this.baseline,
+    this.lineNumber,
+  });
 
   @pragma('vm:entry-point')
   LineMetrics._(
@@ -1593,9 +1606,9 @@ class LineMetrics {
     this.left,
     this.baseline,
     this.lineNumber,
-  ) {}
+  );
 
-  /// True if this line ends with a explicit line break (e.g. '\n') or is the end
+  /// True if this line ends with an explicit line break (e.g. '\n') or is the end
   /// of the paragraph. False otherwise.
   final bool hardBreak;
 
@@ -1607,7 +1620,7 @@ class LineMetrics {
   /// The [ascent] is provided as a positive value, even though it is typically defined
   /// in fonts as negative. This is to ensure the signage of operations with these
   /// metrics directly reflects the intended signage of the value. For example,
-  /// the y coordinate of the top edge of the line is 'baseline - ascent`.
+  /// the y coordinate of the top edge of the line is `baseline - ascent`.
   final double ascent;
 
   /// The drop from the [baseline] as calculated from the font and style for this line.
@@ -1615,7 +1628,7 @@ class LineMetrics {
   /// This is the final computed ascent and can be impacted by the strut, height, scaling,
   /// as well as outlying runs that are very tall.
   ///
-  /// The y coordinate of the bottom edge of the line is 'baseline + descent`.
+  /// The y coordinate of the bottom edge of the line is `baseline + descent`.
   final double descent;
 
   /// The rise from the [baseline] as calculated from the font and style for this line
