@@ -69,8 +69,7 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   layer_tree.Preroll(*this, ignore_raster_cache);
   PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
   if (view_embedder_ && gpu_thread_merger_) {
-    post_preroll_result =
-        view_embedder_->PostPrerollAction(gpu_thread_merger_);
+    post_preroll_result = view_embedder_->PostPrerollAction(gpu_thread_merger_);
   }
 
   if (post_preroll_result == PostPrerollResult::kResubmitFrame) {

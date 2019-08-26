@@ -106,6 +106,7 @@ class FlutterPlatformViewsController {
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
+  // Submit root_views_ and picture_recorders_ to `canvas`
   void SubmitFrameToCanvas(SkCanvas* canvas);
 
  private:
@@ -124,8 +125,9 @@ class FlutterPlatformViewsController {
 
   // Mapping a platform view ID to the top most parent ClippingVieww
   //
-  // The platform view with the view ID is a child of the clip root view; If the platform view is not
-  // clipped, and no clipping view is added, the the clipping root view will be the intercepting view.
+  // The platform view with the view ID is a child of the clip root view; If the platform view is
+  // not clipped, and no clipping view is added, the the clipping root view will be the intercepting
+  // view.
   std::map<int64_t, fml::scoped_nsobject<UIView>> clip_root_views_;
 
   // Mapping a platform view ID to its latest composition params.

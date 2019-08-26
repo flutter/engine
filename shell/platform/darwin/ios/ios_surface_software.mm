@@ -193,7 +193,7 @@ void IOSSurfaceSoftware::SubmitFrameToCanvas(SkCanvas* canvas) {
   if (platform_views_controller == nullptr) {
     return;
   }
-  return platform_views_controller->SubmitFrameToCanvas(canvas);
+  platform_views_controller->SubmitFrameToCanvas(canvas);
 }
 
 }  // namespace flutter

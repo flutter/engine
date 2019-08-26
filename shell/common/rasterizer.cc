@@ -253,8 +253,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   );
 
   if (compositor_frame) {
-    RasterStatus raster_status =
-        compositor_frame->Raster(layer_tree, false);
+    RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
     if (raster_status == RasterStatus::kFailed) {
       return raster_status;
     }
@@ -292,10 +291,9 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsPicture(
 
   auto view_embedder = surface_->GetExternalViewEmbedder();
   SkCanvas* canvas = recorder.getRecordingCanvas();
-  auto frame = compositor_context.AcquireFrame(
-      nullptr, canvas,
-      view_embedder, root_surface_transformation, false,
-      gpu_thread_merger_);
+  auto frame = compositor_context.AcquireFrame(nullptr, canvas, view_embedder,
+                                               root_surface_transformation,
+                                               false, gpu_thread_merger_);
   frame->Raster(*tree, true);
   if (view_embedder != nullptr) {
     view_embedder->SubmitFrameToCanvas(canvas);
@@ -346,11 +344,11 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   // matrix to identity.
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
-
+  auto image_info = canvas->imageInfo();
   auto view_embedder = surface_->GetExternalViewEmbedder();
   auto frame = compositor_context.AcquireFrame(
-      surface_context, canvas, view_embedder,
-      root_surface_transformation, false, gpu_thread_merger_);
+      surface_context, canvas, view_embedder, root_surface_transformation,
+      false, gpu_thread_merger_);
   canvas->clear(SK_ColorTRANSPARENT);
   frame->Raster(*tree, true);
   if (view_embedder != nullptr) {

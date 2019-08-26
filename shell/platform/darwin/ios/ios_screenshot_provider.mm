@@ -13,10 +13,9 @@ namespace flutter {
 
 sk_sp<SkImage> IOSScreenShotProvider::TakeScreenShotForView(UIView* view) {
   CGRect rect = [UIScreen mainScreen].bounds;
-  //layer
+  // layer
   UIGraphicsBeginImageContextWithOptions(rect.size, NO, [UIScreen mainScreen].scale);
-  //[view drawViewHierarchyInRect:rect afterScreenUpdates:NO];
-  CGContext *ctx = UIGraphicsGetCurrentContext();
+  CGContext* ctx = UIGraphicsGetCurrentContext();
 
   CGContextTranslateCTM(ctx, view.frame.origin.x, view.frame.origin.y);
 

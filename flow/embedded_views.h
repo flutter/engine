@@ -229,7 +229,7 @@ class ExternalViewEmbedder {
 
   virtual bool SubmitFrame(GrContext* context);
 
-  // Submit frames from all the overlay canvas to the `canvas`
+  // Submit frames from all the recording canvas to the `canvas`.
   virtual void SubmitFrameToCanvas(SkCanvas* canvas) = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);

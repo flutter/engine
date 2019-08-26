@@ -505,24 +505,27 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
 
 void FlutterPlatformViewsController::SubmitFrameToCanvas(SkCanvas* canvas) {
   for (int64_t view_id : composition_order_) {
-    UIView *view = root_views_[view_id].get();
+    // draw platform view to `canvas`
+    UIView* view = root_views_[view_id].get();
     sk_sp<SkImage> platform_view_screenshot = IOSScreenShotProvider::TakeScreenShotForView(view);
     canvas->drawImage(platform_view_screenshot, 0, 0);
 
-    SkCanvas* overlay_canvas = picture_recorders_[view_id]->getRecordingCanvas();
-    FML_DLOG(ERROR) << (overlay_canvas == nullptr);
-    CGRect bounds = flutter_view_.get().bounds;
-    SkImageInfo info = SkImageInfo::Make(bounds.size.width*2, bounds.size.width*2, kBGRA_8888_SkColorType, kPremul_SkAlphaType);
+    // flush overlay_canvas so the pixels are ready to be read
+    auto frame = overlays_[view_id]->surface->AcquireFrame(frame_size_);
+    SkCanvas* overlay_canvas = frame->SkiaCanvas();
+    overlay_canvas->drawPicture(picture_recorders_[view_id]->finishRecordingAsPicture());
+    overlay_canvas->flush();
+
+    // draw the pixels from `overlay_canvas` into `canvas`
+    SkImageInfo info = SkImageInfo::Make(frame_size_.width(), frame_size_.height(),
+                                         kBGRA_8888_SkColorType, kPremul_SkAlphaType);
     sk_sp<SkData> data(SkData::MakeUninitialized(info.minRowBytes() * info.height()));
     sk_bzero(data->writable_data(), info.minRowBytes() * info.height());
     overlay_canvas->readPixels(info, data->writable_data(), info.minRowBytes(), 0, 0);
-
     sk_sp<SkImage> image = SkImage::MakeRasterData(info, data, info.minRowBytes());
     canvas->drawImage(image, 0, 0);
-    //canvas->drawPicture(picture_recorders_[view_id]->finishRecordingAsPicture());
   }
 }
-
 }  // namespace flutter
 
 // This recognizers delays touch events from being dispatched to the responder chain until it failed
