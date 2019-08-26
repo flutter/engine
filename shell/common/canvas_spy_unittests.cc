@@ -54,10 +54,11 @@ TEST(CanvasSpyTest, SpiedCanvasIsDrawing) {
   SkPixmap actual;
   SkPixmap expected;
 
-  actual_surface->peekPixels(&actual);
-  expected_surface->peekPixels(&expected);
+  ASSERT_TRUE(actual_surface->peekPixels(&actual));
+  ASSERT_TRUE(expected_surface->peekPixels(&expected));
 
   const auto size = actual.rowBytes() * actual.height();
+  ASSERT_NE(size, 0u);
 
   ASSERT_EQ(::memcmp(actual.addr(), expected.addr(), size), 0);
 }

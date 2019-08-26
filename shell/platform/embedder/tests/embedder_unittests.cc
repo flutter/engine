@@ -1596,6 +1596,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithPlatformLayerOnBottom) {
 
   ASSERT_TRUE(ImageMatchesFixture(
       "compositor_with_platform_layer_on_bottom.png", scene_image));
+
+  ASSERT_EQ(context.GetCompositor().GetBackingStoresCount(), 1u);
 }
 
 }  // namespace testing

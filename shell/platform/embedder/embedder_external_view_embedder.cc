@@ -210,7 +210,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
     presented_layers.push_back(
         MakeLayer(params, presented_platform_views.at(view_id)));
 
-    if (!pending_canvas_spies_[view_id]->DidDrawIntoCanvas()) {
+    if (!pending_canvas_spies_.at(view_id)->DidDrawIntoCanvas()) {
       // Nothing was drawn into the overlay canvas, we don't need to composite
       // it.
       continue;

@@ -20,9 +20,8 @@ SkCanvas* CanvasSpy::GetSpyingCanvas() {
   return n_way_canvas_.get();
 }
 
-DidDrawCanvas::DidDrawCanvas(int width, int height) : INHERITED(width, height) {
-  did_draw_ = false;
-}
+DidDrawCanvas::DidDrawCanvas(int width, int height)
+    : SkCanvasVirtualEnforcer<SkNoDrawCanvas>(width, height) {}
 
 DidDrawCanvas::~DidDrawCanvas() {}
 
