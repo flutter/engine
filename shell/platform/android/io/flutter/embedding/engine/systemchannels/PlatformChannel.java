@@ -121,13 +121,23 @@ public class PlatformChannel {
             break;
           case "SystemGestures.setSystemGestureExclusionRects":
             if (arguments instanceof JSONArray) {
-              Log.v(TAG, "passed check");
               JSONArray inputRects = (JSONArray) arguments;
-              Log.v(TAG, inputRects.getJSONObject(0).get("top").toString());
-              ArrayList<Rect> decodedRects = decodeRects(inputRects);
+              ArrayList<Rect> decodedRects = new ArrayList<Rect>();
+              for (int i = 0; i < inputRects.length(); i++) {
+                JSONObject rect = inputRects.getJSONObject(i);
+
+                int top = rect.getInt("top");
+                int right = rect.getInt("right");
+                int bottom = rect.getInt("bottom");
+                int left = rect.getInt("left");
+
+                Rect gestureRect = new Rect(left, top, right, bottom);
+                decodedRects.add(gestureRect);
+              }
+              platformMessageHandler.setSystemGestureExclusionRects(decodedRects);
               result.success(null);
             } else {
-              String inputTypeError = "Input type is incorrect. Ensure that a List<Map<String, int>> is passed as the input.";
+              String inputTypeError = "Input type is incorrect. Ensure that a List<Map<String, int>> is passed as the input for SystemGestureExclusionRects.setSystemGestureExclusionRects.";
               result.error("inputTypeError", inputTypeError, null);
             }
             break;
@@ -348,26 +358,6 @@ public class PlatformChannel {
       systemNavigationBarIconBrightness,
       systemNavigationBarDividerColor
     );
-  }
-
-  private ArrayList<Rect> decodeRects(@NonNull JSONArray inputRects) {
-    ArrayList<Rect> exclusionRects = new ArrayList<Rect>();
-    try {
-      for (int i = 0; i < inputRects.length(); i++) {
-        JSONObject rect = inputRects.getJSONObject(i);
-
-        int top = rect.getInt("top");
-        int right = rect.getInt("right");
-        int bottom = rect.getInt("bottom");
-        int left = rect.getInt("left");
-
-        Rect gestureRect = new Rect(left, top, right, bottom);
-        exclusionRects.add(gestureRect);
-      }
-    } catch (JSONException e) {
-      //some exception handler code.
-    }
-    return exclusionRects;
   }
 
   /**
