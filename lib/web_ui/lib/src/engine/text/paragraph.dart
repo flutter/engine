@@ -294,7 +294,7 @@ class EngineParagraph implements ui.Paragraph {
   @override
   List<LineMetrics> computeLineMetrics() {
     // TODO(flutter_web): Implement this.
-    return null
+    return null;
   }
 }
 

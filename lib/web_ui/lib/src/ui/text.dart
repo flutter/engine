@@ -1013,16 +1013,16 @@ enum BoxWidthStyle {
 
 class LineMetrics {
   LineMetrics({
-    this.hardBreak = null,
-    this.ascent = null,
-    this.descent = null,
-    this.unscaledAscent = null,
-    this.height = null,
-    this.width = null,
-    this.left = null,
-    this.baseline = null,
-    this.lineNumber = null,
-  }) {}
+    this.hardBreak,
+    this.ascent,
+    this.descent,
+    this.unscaledAscent,
+    this.height,
+    this.width,
+    this.left,
+    this.baseline,
+    this.lineNumber,
+  });
 
   @pragma('vm:entry-point')
   LineMetrics._(
@@ -1035,13 +1035,15 @@ class LineMetrics {
     this.left,
     this.baseline,
     this.lineNumber,
-  ) {}
+  );
 
   final bool hardBreak;
 
   final double ascent;
 
   final double descent;
+
+  final double unscaledAscent;
 
   final double height;
 
