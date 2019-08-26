@@ -19,7 +19,7 @@ sk_sp<SkImage> IOSScreenShotProvider::TakeScreenShotForView(UIView* view) {
 
   CGContextTranslateCTM(ctx, view.frame.origin.x, view.frame.origin.y);
 
-  [view.layer.presentationLayer renderInContext:ctx];
+  [view.layer renderInContext:ctx];
 
   UIImage* screenshot = UIGraphicsGetImageFromCurrentImageContext();
   UIGraphicsEndImageContext();

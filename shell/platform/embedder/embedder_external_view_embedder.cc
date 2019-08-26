@@ -264,6 +264,7 @@ sk_sp<SkSurface> EmbedderExternalViewEmbedder::GetRootSurface() {
                              : nullptr;
 }
 
+// |ExternalViewEmbedder|
 void EmbedderExternalViewEmbedder::SubmitFrameToCanvas(SkCanvas* canvas) {}
 
 }  // namespace flutter

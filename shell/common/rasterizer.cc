@@ -289,8 +289,8 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsPicture(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
+  auto canvas = recorder.getRecordingCanvas();
   auto view_embedder = surface_->GetExternalViewEmbedder();
-  SkCanvas* canvas = recorder.getRecordingCanvas();
   auto frame = compositor_context.AcquireFrame(nullptr, canvas, view_embedder,
                                                root_surface_transformation,
                                                false, gpu_thread_merger_);
@@ -344,7 +344,6 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   // matrix to identity.
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
-  auto image_info = canvas->imageInfo();
   auto view_embedder = surface_->GetExternalViewEmbedder();
   auto frame = compositor_context.AcquireFrame(
       surface_context, canvas, view_embedder, root_surface_transformation,

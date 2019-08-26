@@ -400,6 +400,7 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
       [platform_view_root addSubview:clip_root_views_[view_id].get()];
       root_views_[view_id] = fml::scoped_nsobject<UIView>([platform_view_root retain]);
     }
+    FML_DCHECK(CATransform3DIsIdentity(platform_view_root.layer.transform));
     UIView* overlay = overlays_[view_id]->overlay_view;
     FML_CHECK(platform_view_root.superview == overlay.superview);
     if (platform_view_root.superview == flutter_view) {

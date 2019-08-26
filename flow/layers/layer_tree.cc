@@ -95,6 +95,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       frame.context().texture_registry(),
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
       checkerboard_offscreen_layers_};
+
   if (root_layer_->needs_painting())
     root_layer_->Paint(context);
 }
