@@ -442,7 +442,10 @@ public class PlatformChannel {
      */
     void setClipboardData(@NonNull String text);
 
-    /* TODO: Write docs */
+    /**
+     * The Flutter application would like to set the system gesture exclusion
+     * rects through the given {@code rects}.
+     */
     void setSystemGestureExclusionRects(@NonNull ArrayList<Rect> rects);
   }
 
