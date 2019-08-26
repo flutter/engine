@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import android.util.Log;
-
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.plugin.common.ActivityLifecycleListener;
 
@@ -92,7 +90,6 @@ public class PlatformPlugin {
 
         @Override
         public void setSystemGestureExclusionRects(@NonNull ArrayList rects) {
-            Log.v("TAG", "WHAT IS THIS");
             PlatformPlugin.this.setSystemGestureExclusionRects(rects);
         }
     };
@@ -289,9 +286,6 @@ public class PlatformPlugin {
             Window window = activity.getWindow();
             View view = window.getDecorView();
             view.setSystemGestureExclusionRects(rects);
-
-            List<Rect> resultingRects = view.getSystemGestureExclusionRects();
-            Log.v("results", resultingRects.toString());
         }
     }
 }

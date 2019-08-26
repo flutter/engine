@@ -8,7 +8,6 @@ import android.content.pm.ActivityInfo;
 import android.graphics.Rect;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -45,7 +44,6 @@ public class PlatformChannel {
 
       String method = call.method;
       Object arguments = call.arguments;
-      Log.v(TAG, "Received '" + method + "' message.");
       try {
         switch (method) {
           case "SystemSound.play":
