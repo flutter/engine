@@ -14,6 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import io.flutter.Log;
@@ -119,27 +120,21 @@ public class PlatformChannel {
             platformMessageHandler.popSystemNavigator();
             result.success(null);
             break;
-          case "SystemGestures.setSystemGestureExclusionRects":
-            if (arguments instanceof JSONArray) {
-              JSONArray inputRects = (JSONArray) arguments;
-              ArrayList<Rect> decodedRects = new ArrayList<Rect>();
-              for (int i = 0; i < inputRects.length(); i++) {
-                JSONObject rect = inputRects.getJSONObject(i);
+          case "SystemGestures.getSystemGestureExclusionRects":
+            List<Rect> exclusionRects = platformMessageHandler.getSystemGestureExclusionRects();
+            Log.v(TAG, exclusionRects.toString());
+            ArrayList<HashMap<String, Integer>> encodedExclusionRects = new ArrayList<HashMap<String, Integer>>();
+            Log.v(TAG, encodedExclusionRects.toString());
 
-                int top = rect.getInt("top");
-                int right = rect.getInt("right");
-                int bottom = rect.getInt("bottom");
-                int left = rect.getInt("left");
-
-                Rect gestureRect = new Rect(left, top, right, bottom);
-                decodedRects.add(gestureRect);
-              }
-              platformMessageHandler.setSystemGestureExclusionRects(decodedRects);
-              result.success(null);
-            } else {
-              String inputTypeError = "Input type is incorrect. Ensure that a List<Map<String, int>> is passed as the input for SystemGestureExclusionRects.setSystemGestureExclusionRects.";
-              result.error("inputTypeError", inputTypeError, null);
+            for (Rect rect : exclusionRects) {
+              HashMap<String, Integer> rectMap = new HashMap<String, Integer>();
+              rectMap.put("top", rect.top);
+              rectMap.put("right", rect.right);
+              rectMap.put("bottom", rect.bottom);
+              rectMap.put("left", rect.left);
+              encodedExclusionRects.add(rectMap);
             }
+            result.success(encodedExclusionRects);
             break;
           case "Clipboard.getData": {
             String contentFormatName = (String) arguments;
@@ -445,10 +440,10 @@ public class PlatformChannel {
     void setClipboardData(@NonNull String text);
 
     /**
-     * The Flutter application would like to set the system gesture exclusion
-     * rects through the given {@code rects}.
+     * The Flutter application would like to get the system gesture exclusion
+     * rects.
      */
-    void setSystemGestureExclusionRects(@NonNull ArrayList<Rect> rects);
+    List<Rect> getSystemGestureExclusionRects();
   }
 
   /**

@@ -89,8 +89,8 @@ public class PlatformPlugin {
         }
 
         @Override
-        public void setSystemGestureExclusionRects(@NonNull ArrayList rects) {
-            PlatformPlugin.this.setSystemGestureExclusionRects(rects);
+        public List<Rect> getSystemGestureExclusionRects() {
+            return PlatformPlugin.this.getSystemGestureExclusionRects();
         }
     };
 
@@ -281,11 +281,13 @@ public class PlatformPlugin {
         clipboard.setPrimaryClip(clip);
     }
 
-    private void setSystemGestureExclusionRects(ArrayList<Rect> rects) {
+    private List<Rect> getSystemGestureExclusionRects() {
         if (Build.VERSION.SDK_INT >= 29) {
             Window window = activity.getWindow();
             View view = window.getDecorView();
-            view.setSystemGestureExclusionRects(rects);
+            return view.getSystemGestureExclusionRects();
         }
+
+        return null;
     }
 }
