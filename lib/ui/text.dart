@@ -1569,14 +1569,14 @@ enum PlaceholderAlignment {
   middle,
 }
 
-/// `LineMetrics` stores the measurements and statistics of a single line in the
+/// [LineMetrics] stores the measurements and statistics of a single line in the
 /// paragraph.
 ///
 /// The measurements here are for the line as a whole, and represent the maximum
 /// extent of the line instead of per-run or per-glyph metrics. For more detailed
 /// metrics, see [TextBox] and [Paragraph.getBoxesForRange].
 ///
-/// `LineMetrics` should be obtained directly from the [Paragraph.computeLineMetrics]
+/// [LineMetrics] should be obtained directly from the [Paragraph.computeLineMetrics]
 /// method.
 class LineMetrics {
   /// Creates a [LineMetrics] object with only the specified values.
