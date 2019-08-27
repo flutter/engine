@@ -504,7 +504,14 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   overlays_gr_context_ = gr_context;
 }
 
-void FlutterPlatformViewsController::SubmitFrameToCanvas(SkCanvas* canvas) {
+void FlutterPlatformViewsController::SubmitFrameToCanvas(
+    SkCanvas* canvas,
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
+  if (gpu_thread_merger->IsMerged()) {
+    gpu_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
+  } else {
+    gpu_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
+  }
   for (int64_t view_id : composition_order_) {
     // draw platform view to `canvas`
     UIView* view = root_views_[view_id].get();

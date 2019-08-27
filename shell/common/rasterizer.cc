@@ -296,7 +296,7 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsPicture(
                                                false, gpu_thread_merger_);
   frame->Raster(*tree, true);
   if (view_embedder != nullptr) {
-    view_embedder->SubmitFrameToCanvas(canvas);
+    view_embedder->SubmitFrameToCanvas(canvas, gpu_thread_merger_);
   }
 
   SkSerialProcs procs = {0};

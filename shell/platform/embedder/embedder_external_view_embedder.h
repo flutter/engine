@@ -74,7 +74,9 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   SkCanvas* CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
-  void SubmitFrameToCanvas(SkCanvas* canvas) override;
+  void SubmitFrameToCanvas(
+      SkCanvas* canvas,
+      fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
 
   // |ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;

@@ -230,7 +230,9 @@ class ExternalViewEmbedder {
   virtual bool SubmitFrame(GrContext* context);
 
   // Submit frames from all the recording canvas to the `canvas`.
-  virtual void SubmitFrameToCanvas(SkCanvas* canvas) = 0;
+  virtual void SubmitFrameToCanvas(
+      SkCanvas* canvas,
+      fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 

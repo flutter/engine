@@ -152,12 +152,13 @@ bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
 }
 
 // |ExternalViewEmbedder|
-void IOSSurfaceGL::SubmitFrameToCanvas(SkCanvas* canvas) {
+void IOSSurfaceGL::SubmitFrameToCanvas(SkCanvas* canvas,
+                                       fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   if (platform_views_controller == nullptr) {
     return;
   }
-  platform_views_controller->SubmitFrameToCanvas(canvas);
+  platform_views_controller->SubmitFrameToCanvas(canvas, gpu_thread_merger);
 }
 
 }  // namespace flutter

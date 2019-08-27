@@ -265,6 +265,8 @@ sk_sp<SkSurface> EmbedderExternalViewEmbedder::GetRootSurface() {
 }
 
 // |ExternalViewEmbedder|
-void EmbedderExternalViewEmbedder::SubmitFrameToCanvas(SkCanvas* canvas) {}
+void EmbedderExternalViewEmbedder::SubmitFrameToCanvas(
+    SkCanvas* canvas,
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {}
 
 }  // namespace flutter

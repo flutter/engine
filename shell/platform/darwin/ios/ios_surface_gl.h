@@ -76,7 +76,8 @@ class IOSSurfaceGL final : public IOSSurface,
   // |ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;
 
-  void SubmitFrameToCanvas(SkCanvas* canvas) override;
+  void SubmitFrameToCanvas(SkCanvas* canvas,
+                           fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
 
  private:
   std::shared_ptr<IOSGLContext> context_;

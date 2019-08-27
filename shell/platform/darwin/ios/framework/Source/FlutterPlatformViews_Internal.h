@@ -107,7 +107,7 @@ class FlutterPlatformViewsController {
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
   // Submit root_views_ and picture_recorders_ to `canvas`
-  void SubmitFrameToCanvas(SkCanvas* canvas);
+  void SubmitFrameToCanvas(SkCanvas* canvas, fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger);
 
  private:
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
