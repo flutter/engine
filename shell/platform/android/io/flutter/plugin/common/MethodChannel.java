@@ -81,6 +81,7 @@ public final class MethodChannel {
      */
     @UiThread
     public void invokeMethod(@NonNull String method, @Nullable Object arguments) {
+        Log.v(TAG, "called here");
         invokeMethod(method, arguments, null);
     }
 

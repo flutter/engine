@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.engine.systemchannels;
 
+import android.util.Log;
 import android.content.pm.ActivityInfo;
 import android.graphics.Rect;
 import android.support.annotation.NonNull;
@@ -16,7 +17,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.flutter.Log;
+// import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
@@ -37,6 +38,7 @@ public class PlatformChannel {
   private final MethodChannel.MethodCallHandler parsingMethodCallHandler = new MethodChannel.MethodCallHandler() {
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+      Log.v(TAG, "was called onMethodCall here");
       if (platformMessageHandler == null) {
         // If no explicit PlatformMessageHandler has been registered then we don't
         // need to forward this call to an API. Return.
