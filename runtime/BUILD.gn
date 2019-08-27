@@ -87,9 +87,9 @@ source_set("runtime") {
     "//third_party/tonic",
   ]
 
-  // naifu: On Windows and Android (in debug mode) the engine finds the Dart snapshot
-  // data through symbols that are statically linked into the executable.
-  // On other platforms this data is obtained by a dynamic symbol lookup.
+  # naifu: On Windows and Android (in debug mode) the engine finds the Dart snapshot
+  # data through symbols that are statically linked into the executable.
+  # On other platforms this data is obtained by a dynamic symbol lookup.
   if (is_win) {
     if (flutter_runtime_mode == "profile" ||
         flutter_runtime_mode == "release") {
