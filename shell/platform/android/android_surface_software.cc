@@ -61,7 +61,8 @@ std::unique_ptr<Surface> AndroidSurfaceSoftware::CreateGPUSurface() {
     return nullptr;
   }
 
-  auto surface = std::make_unique<GPUSurfaceSoftware>(this);
+  auto surface =
+      std::make_unique<GPUSurfaceSoftware>(this, true /* render to surface */);
 
   if (!surface->IsValid()) {
     return nullptr;
@@ -132,6 +133,11 @@ bool AndroidSurfaceSoftware::PresentBackingStore(
   ANativeWindow_unlockAndPost(native_window_->handle());
 
   return true;
+}
+
+// |GPUSurfaceSoftwareDelegate|
+ExternalViewEmbedder* AndroidSurfaceSoftware::GetExternalViewEmbedder() {
+  return nullptr;
 }
 
 void AndroidSurfaceSoftware::TeardownOnScreenContext() {}

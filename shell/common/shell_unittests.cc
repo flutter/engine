@@ -577,7 +577,7 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
 /// single-thread setup.
 TEST_F(ShellTest, WaitForFirstFrameInlined) {
   Settings settings = CreateSettingsForFixture();
-  auto task_runner = GetThreadTaskRunner();
+  auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
   std::unique_ptr<Shell> shell =
@@ -617,7 +617,7 @@ static size_t GetRasterizerResourceCacheBytesSync(Shell& shell) {
 
 TEST_F(ShellTest, SetResourceCacheSize) {
   Settings settings = CreateSettingsForFixture();
-  auto task_runner = GetThreadTaskRunner();
+  auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
   std::unique_ptr<Shell> shell =
@@ -638,7 +638,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0});
+            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -658,7 +658,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 800, 400, 0, 0, 0, 0, 0, 0, 0, 0});
+            {1.0, 800, 400, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -667,7 +667,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
 TEST_F(ShellTest, SetResourceCacheSizeEarly) {
   Settings settings = CreateSettingsForFixture();
-  auto task_runner = GetThreadTaskRunner();
+  auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
   std::unique_ptr<Shell> shell =
@@ -676,7 +676,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0});
+            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -695,7 +695,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
 
 TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
   Settings settings = CreateSettingsForFixture();
-  auto task_runner = GetThreadTaskRunner();
+  auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
   std::unique_ptr<Shell> shell =
@@ -704,7 +704,7 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0});
+            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -733,7 +733,7 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
 
 TEST_F(ShellTest, CanCreateImagefromDecompressedBytes) {
   Settings settings = CreateSettingsForFixture();
-  auto task_runner = GetThreadTaskRunner();
+  auto task_runner = CreateNewThread();
 
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);

@@ -27,9 +27,13 @@ template("embedder_source_set") {
       "embedder_engine.h",
       "embedder_external_texture_gl.cc",
       "embedder_external_texture_gl.h",
+      "embedder_external_view_embedder.cc",
+      "embedder_external_view_embedder.h",
       "embedder_include.c",
       "embedder_platform_message_response.cc",
       "embedder_platform_message_response.h",
+      "embedder_render_target.cc",
+      "embedder_render_target.h",
       "embedder_safe_access.h",
       "embedder_surface.cc",
       "embedder_surface.h",
@@ -79,6 +83,12 @@ config("embedder_prefix_config") {
 
 test_fixtures("fixtures") {
   dart_main = "fixtures/main.dart"
+  fixtures = [
+    "fixtures/compositor.png",
+    "fixtures/compositor_software.png",
+    "fixtures/compositor_with_platform_layer_on_bottom.png",
+    "fixtures/compositor_with_root_layer_only.png",
+  ]
 }
 
 if (current_toolchain == host_toolchain) {
@@ -93,10 +103,12 @@ if (current_toolchain == host_toolchain) {
       "tests/embedder_a11y_unittests.cc",
       "tests/embedder_config_builder.cc",
       "tests/embedder_config_builder.h",
-      "tests/embedder_context.cc",
-      "tests/embedder_context.h",
       "tests/embedder_test.cc",
       "tests/embedder_test.h",
+      "tests/embedder_test_compositor.cc",
+      "tests/embedder_test_compositor.h",
+      "tests/embedder_test_context.cc",
+      "tests/embedder_test_context.h",
       "tests/embedder_unittests.cc",
     ]
 
@@ -137,19 +149,6 @@ copy("copy_headers") {
 
 if (is_mac && !embedder_for_target) {
   _flutter_embedder_framework_dir = "$root_out_dir/FlutterEmbedder.framework"
-
-  copy("copy_dylib") {
-    visibility = [ ":*" ]
-    sources = [
-      "$root_out_dir/libflutter_engine.dylib",
-    ]
-    outputs = [
-      "$_flutter_embedder_framework_dir/Versions/A/FlutterEmbedder",
-    ]
-    deps = [
-      ":flutter_engine_library",
-    ]
-  }
 
   copy("copy_framework_headers") {
     visibility = [ ":*" ]
@@ -199,28 +198,30 @@ if (is_mac && !embedder_for_target) {
 
   action("install_dylib") {
     visibility = [ ":*" ]
-    stamp_file = "$root_build_dir/flutter_embedder_install_name_stamp"
     script = "$flutter_root/sky/tools/change_install_name.py"
+    framework_binary_subpath = "Versions/A/FlutterEmbedder"
 
     inputs = [
-      "$_flutter_embedder_framework_dir/Versions/A/FlutterEmbedder",
+      script,
     ]
-
+    sources = [
+      "$root_out_dir/libflutter_engine.dylib",
+    ]
     outputs = [
-      stamp_file,
+      "$_flutter_embedder_framework_dir/$framework_binary_subpath",
     ]
 
     args = [
       "--dylib",
-      "FlutterEmbedder.framework/Versions/A/FlutterEmbedder",
+      rebase_path(sources[0]),
       "--install_name",
-      "@rpath/FlutterEmbedder.framework/Versions/A/FlutterEmbedder",
-      "--stamp",
-      rebase_path(stamp_file),
+      "@rpath/FlutterEmbedder.framework/$framework_binary_subpath",
+      "--output",
+      rebase_path(outputs[0]),
     ]
 
     deps = [
-      ":copy_dylib",
+      ":flutter_engine_library",
     ]
   }
 

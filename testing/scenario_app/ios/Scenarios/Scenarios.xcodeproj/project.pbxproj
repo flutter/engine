@@ -16,13 +16,17 @@
 		0DB7820222EA493B00E9B371 /* FlutterViewControllerTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 0DB781FC22EA2C0300E9B371 /* FlutterViewControllerTest.m */; };
 		242F37A222E636DE001E83D4 /* Flutter.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		242F37A322E636DE001E83D4 /* App.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 246B4E4122E3B5F700073EBF /* App.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		244EA6D0230DBE8900B2D26E /* golden_platform_view_D21AP.png in Resources */ = {isa = PBXBuildFile; fileRef = 244EA6CF230DBE8900B2D26E /* golden_platform_view_D21AP.png */; };
 		246B4E4222E3B5F700073EBF /* App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 246B4E4122E3B5F700073EBF /* App.framework */; };
 		246B4E4622E3B61000073EBF /* Flutter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; };
 		248D76CC22E388370012F0C1 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 248D76CB22E388370012F0C1 /* AppDelegate.m */; };
 		248D76D422E388380012F0C1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 248D76D322E388380012F0C1 /* Assets.xcassets */; };
 		248D76DA22E388380012F0C1 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 248D76D922E388380012F0C1 /* main.m */; };
-		248D76E422E388380012F0C1 /* ScenariosTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 248D76E322E388380012F0C1 /* ScenariosTests.m */; };
-		248D76EF22E388380012F0C1 /* ScenariosUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = 248D76EE22E388380012F0C1 /* ScenariosUITests.m */; };
+		248D76EF22E388380012F0C1 /* PlatformViewUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = 248D76EE22E388380012F0C1 /* PlatformViewUITests.m */; };
+		248FDFC422FE7CD0009CC7CD /* FlutterEngineTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 248FDFC322FE7CD0009CC7CD /* FlutterEngineTest.m */; };
+		24D47D1B230C79840069DD5E /* golden_platform_view_D211AP.png in Resources */ = {isa = PBXBuildFile; fileRef = 24D47D1A230C79840069DD5E /* golden_platform_view_D211AP.png */; };
+		24D47D1D230CA2700069DD5E /* golden_platform_view_iPhone SE_simulator.png in Resources */ = {isa = PBXBuildFile; fileRef = 24D47D1C230CA2700069DD5E /* golden_platform_view_iPhone SE_simulator.png */; };
+		24F1FB89230B4579005ACE7C /* TextPlatformView.m in Sources */ = {isa = PBXBuildFile; fileRef = 24F1FB87230B4579005ACE7C /* TextPlatformView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -81,6 +85,7 @@
 
 /* Begin PBXFileReference section */
 		0DB781FC22EA2C0300E9B371 /* FlutterViewControllerTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FlutterViewControllerTest.m; sourceTree = "<group>"; };
+		244EA6CF230DBE8900B2D26E /* golden_platform_view_D21AP.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = golden_platform_view_D21AP.png; sourceTree = "<group>"; };
 		246B4E4122E3B5F700073EBF /* App.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = App.framework; sourceTree = "<group>"; };
 		246B4E4522E3B61000073EBF /* Flutter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Flutter.framework; sourceTree = "<group>"; };
 		248D76C722E388370012F0C1 /* Scenarios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Scenarios.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -90,11 +95,16 @@
 		248D76D822E388380012F0C1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		248D76D922E388380012F0C1 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		248D76DF22E388380012F0C1 /* ScenariosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScenariosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		248D76E322E388380012F0C1 /* ScenariosTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ScenariosTests.m; sourceTree = "<group>"; };
 		248D76E522E388380012F0C1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		248D76EA22E388380012F0C1 /* ScenariosUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScenariosUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		248D76EE22E388380012F0C1 /* ScenariosUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ScenariosUITests.m; sourceTree = "<group>"; };
+		248D76EE22E388380012F0C1 /* PlatformViewUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PlatformViewUITests.m; sourceTree = "<group>"; };
 		248D76F022E388380012F0C1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		248FDFC322FE7CD0009CC7CD /* FlutterEngineTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FlutterEngineTest.m; sourceTree = "<group>"; };
+		24D47D1A230C79840069DD5E /* golden_platform_view_D211AP.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = golden_platform_view_D211AP.png; sourceTree = "<group>"; };
+		24D47D1C230CA2700069DD5E /* golden_platform_view_iPhone SE_simulator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "golden_platform_view_iPhone SE_simulator.png"; sourceTree = "<group>"; };
+		24D47D1E230CA4480069DD5E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		24F1FB87230B4579005ACE7C /* TextPlatformView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TextPlatformView.m; sourceTree = "<group>"; };
+		24F1FB88230B4579005ACE7C /* TextPlatformView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TextPlatformView.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -150,6 +160,8 @@
 		248D76C922E388370012F0C1 /* Scenarios */ = {
 			isa = PBXGroup;
 			children = (
+				24F1FB88230B4579005ACE7C /* TextPlatformView.h */,
+				24F1FB87230B4579005ACE7C /* TextPlatformView.m */,
 				248D76CA22E388370012F0C1 /* AppDelegate.h */,
 				248D76CB22E388370012F0C1 /* AppDelegate.m */,
 				248D76D322E388380012F0C1 /* Assets.xcassets */,
@@ -162,8 +174,8 @@
 		248D76E222E388380012F0C1 /* ScenariosTests */ = {
 			isa = PBXGroup;
 			children = (
+				248FDFC322FE7CD0009CC7CD /* FlutterEngineTest.m */,
 				0DB781FC22EA2C0300E9B371 /* FlutterViewControllerTest.m */,
-				248D76E322E388380012F0C1 /* ScenariosTests.m */,
 				248D76E522E388380012F0C1 /* Info.plist */,
 			);
 			path = ScenariosTests;
@@ -172,8 +184,12 @@
 		248D76ED22E388380012F0C1 /* ScenariosUITests */ = {
 			isa = PBXGroup;
 			children = (
-				248D76EE22E388380012F0C1 /* ScenariosUITests.m */,
+				244EA6CF230DBE8900B2D26E /* golden_platform_view_D21AP.png */,
+				24D47D1C230CA2700069DD5E /* golden_platform_view_iPhone SE_simulator.png */,
+				24D47D1A230C79840069DD5E /* golden_platform_view_D211AP.png */,
+				248D76EE22E388380012F0C1 /* PlatformViewUITests.m */,
 				248D76F022E388380012F0C1 /* Info.plist */,
+				24D47D1E230CA4480069DD5E /* README.md */,
 			);
 			path = ScenariosUITests;
 			sourceTree = "<group>";
@@ -308,6 +324,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				24D47D1B230C79840069DD5E /* golden_platform_view_D211AP.png in Resources */,
+				24D47D1D230CA2700069DD5E /* golden_platform_view_iPhone SE_simulator.png in Resources */,
+				244EA6D0230DBE8900B2D26E /* golden_platform_view_D21AP.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -319,6 +338,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				248D76DA22E388380012F0C1 /* main.m in Sources */,
+				24F1FB89230B4579005ACE7C /* TextPlatformView.m in Sources */,
 				248D76CC22E388370012F0C1 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -327,8 +347,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				248D76E422E388380012F0C1 /* ScenariosTests.m in Sources */,
 				0DB7820222EA493B00E9B371 /* FlutterViewControllerTest.m in Sources */,
+				248FDFC422FE7CD0009CC7CD /* FlutterEngineTest.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -336,7 +356,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				248D76EF22E388380012F0C1 /* ScenariosUITests.m in Sources */,
+				248D76EF22E388380012F0C1 /* PlatformViewUITests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -408,7 +428,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -462,7 +482,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
