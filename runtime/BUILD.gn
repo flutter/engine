@@ -87,6 +87,13 @@ source_set("runtime") {
     "//third_party/tonic",
   ]
 
+  if (is_win) {
+    if (flutter_runtime_mode == "profile" ||
+        flutter_runtime_mode == "release") {
+      deps += [ "$flutter_root/lib/snapshot" ]
+    }
+  }
+
   public_deps = [
     "//third_party/rapidjson",
   ]
