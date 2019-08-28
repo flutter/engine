@@ -74,18 +74,11 @@ List<io.File> _flatListSourceFiles(io.Directory directory) {
 }
 
 Future<void> _runTests() async {
-  // TODO(yjbanov): make the following tests pass.
-  const List<String> testBlacklist = <String>[
-    'test/text/measurement_test.dart',
-    'test/paragraph_test.dart',
-    'test/text_test.dart',
-  ];
-
   final List<String> testFiles = io.Directory('test')
     .listSync(recursive: true)
     .whereType<io.File>()
     .map<String>((io.File file) => file.path)
-    .where((String path) => path.endsWith('_test.dart') && !testBlacklist.contains(path))
+    .where((String path) => path.endsWith('_test.dart'))
     .toList();
 
   final io.Process pubRunTest = await io.Process.start(
