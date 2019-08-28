@@ -232,11 +232,11 @@ void DidDrawCanvas::onDrawAnnotation(const SkRect& rect,
   did_draw_ = true;
 }
 
-void DidDrawCanvas::onDrawEdgeAAQuad(const SkRect& rect,
-                                     const SkPoint clip[4],
-                                     QuadAAFlags aa,
-                                     SkColor color,
-                                     SkBlendMode mode) {
+void DidDrawCanvas::onDrawEdgeAAQuad(const SkRect&,
+                                     const SkPoint[4],
+                                     SkCanvas::QuadAAFlags,
+                                     const SkColor4f&,
+                                     SkBlendMode) {
   did_draw_ = true;
 }
 
