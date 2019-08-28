@@ -93,7 +93,7 @@ Application::Application(
   // LaunchInfo::arguments optional.
   if (auto& arguments = launch_info.arguments) {
     settings_ = flutter::SettingsFromCommandLine(
-        fml::CommandLineFromIterators(arguments->begin(), arguments->end()));
+        fml::CommandLineFromIterators(arguments.value().begin(), arguments.value().end()));
   }
 
   // Determine /pkg/data directory from StartupInfo.
