@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <EGL/egl.h>
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
@@ -72,6 +73,11 @@ class PlatformViewAndroid final : public PlatformView {
   void RegisterExternalTexture(
       int64_t texture_id,
       const fml::jni::JavaObjectWeakGlobalRef& surface_texture);
+
+  void RegisterExternalShareTexture(int64_t texture_id,
+                                    int64_t share_texture_id);
+
+  EGLContext GetShareContext();
 
  private:
   const fml::jni::JavaObjectWeakGlobalRef java_object_;

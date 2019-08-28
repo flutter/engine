@@ -14,6 +14,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+import android.opengl.EGLContext;
 
 import java.nio.ByteBuffer;
 import java.util.HashSet;
@@ -554,6 +555,23 @@ public class FlutterJNI {
   }
 
   private native void nativeRegisterTexture(long nativePlatformViewId, long textureId, @NonNull SurfaceTexture surfaceTexture);
+
+  
+  @UiThread
+  public void registerShareTexture(long texIndex, long shareTextureId) {
+    ensureAttachedToNative();
+    nativeRegisterShareTexture(nativePlatformViewId, texIndex, shareTextureId);
+  }
+  
+  private native void nativeRegisterShareTexture(long nativePlatformViewId, long texIndex, long shareTextureId);
+  
+  @UiThread
+  public EGLContext getShareContext(long sdkInt) {
+    ensureAttachedToNative();
+    return nativeGetShareContext(nativePlatformViewId,sdkInt);
+  }
+  
+  private native EGLContext nativeGetShareContext(long nativePlatformViewId,long sdkInt);
 
   /**
    * Call this method to inform Flutter that a texture previously registered with

@@ -81,6 +81,8 @@ shared_library("create_flutter_framework_dylib") {
     "framework/Source/vsync_waiter_ios.mm",
     "ios_external_texture_gl.h",
     "ios_external_texture_gl.mm",
+    "ios_external_texture_gl_share_context.h",
+    "ios_external_texture_gl_share_context.mm",
     "ios_gl_context.h",
     "ios_gl_context.mm",
     "ios_gl_render_target.h",

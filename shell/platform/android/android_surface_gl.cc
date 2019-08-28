@@ -130,4 +130,7 @@ ExternalViewEmbedder* AndroidSurfaceGL::GetExternalViewEmbedder() {
   return nullptr;
 }
 
+EGLContext AndroidSurfaceGL::GetShareContext() {
+  return offscreen_context_->GetShareContext();
+}
 }  // namespace flutter

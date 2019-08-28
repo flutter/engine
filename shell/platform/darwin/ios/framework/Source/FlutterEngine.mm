@@ -554,12 +554,22 @@
   return textureId;
 }
 
+- (int64_t)registerShareTexture:(NSObject<FlutterShareTexture>*)texture {
+  int64_t textureId = _nextTextureId++;
+  self.iosPlatformView->RegisterExternalShareTexture(textureId, texture);
+  return textureId;
+}
+
 - (void)unregisterTexture:(int64_t)textureId {
   _shell->GetPlatformView()->UnregisterTexture(textureId);
 }
 
 - (void)textureFrameAvailable:(int64_t)textureId {
   _shell->GetPlatformView()->MarkTextureFrameAvailable(textureId);
+}
+
+- (EAGLSharegroup*)getShareGroup {
+  return self.iosPlatformView->GetGLShareGroup();
 }
 
 - (NSString*)lookupKeyForAsset:(NSString*)asset {

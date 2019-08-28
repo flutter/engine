@@ -50,6 +50,8 @@ class IOSSurfaceGL final : public IOSSurface,
 
   bool UseOffscreenSurface() const override;
 
+  EAGLSharegroup* GetGLShareGroup() override;
+
   // |GPUSurfaceGLDelegate|
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
 

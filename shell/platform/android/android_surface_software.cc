@@ -159,4 +159,8 @@ bool AndroidSurfaceSoftware::SetNativeWindow(
   return true;
 }
 
+EGLContext AndroidSurfaceSoftware::GetShareContext() {
+  return 0;
+}
+
 }  // namespace flutter

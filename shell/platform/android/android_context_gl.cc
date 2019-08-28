@@ -272,4 +272,8 @@ bool AndroidContextGL::Resize(const SkISize& size) {
   return true;
 }
 
+EGLContext AndroidContextGL::GetShareContext() {
+  return context_;
+}
+
 }  // namespace flutter

@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include <EGL/egl.h>
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
@@ -36,6 +37,8 @@ class AndroidSurface {
   virtual bool ResourceContextClearCurrent() = 0;
 
   virtual bool SetNativeWindow(fml::RefPtr<AndroidNativeWindow> window) = 0;
+
+  virtual EGLContext GetShareContext() = 0;
 };
 
 }  // namespace flutter

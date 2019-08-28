@@ -36,6 +36,7 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import android.opengl.EGLContext;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -802,6 +803,23 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         return entry;
     }
 
+    @Override
+    public void onShareFrameAvaliable(int textureIndex) {
+        mNativeView.getFlutterJNI().markTextureFrameAvailable(textureIndex);
+    }
+
+    @Override
+    public TextureRegistry.ShareTextureEntry createShareTexture(long shareTextureID) {
+        final ShareTextureRegistryEntry entry = new ShareTextureRegistryEntry(nextTextureId.getAndIncrement(),shareTextureID);
+        mNativeView.getFlutterJNI().registerShareTexture(entry.id(),shareTextureID);
+        return entry;
+    }
+
+    @Override
+    public EGLContext getShareContext(long sdkInt) {
+        return mNativeView.getFlutterJNI().getShareContext(sdkInt);
+    }
+
     final class SurfaceTextureRegistryEntry implements TextureRegistry.SurfaceTextureEntry {
         private final long id;
         private final SurfaceTexture surfaceTexture;
@@ -862,6 +880,30 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
             // (https://github.com/flutter/flutter/issues/20951). See also the check in onFrameAvailable.
             surfaceTexture.setOnFrameAvailableListener(null);
             surfaceTexture.release();
+            mNativeView.getFlutterJNI().unregisterTexture(id);
+        }
+    }
+
+    final class ShareTextureRegistryEntry implements TextureRegistry.ShareTextureEntry {
+        private final long id;
+        private final long textureID;
+        private boolean released;
+        ShareTextureRegistryEntry(long id, long shareTextureID) {
+            this.id = id;
+            this.textureID = shareTextureID;
+        }
+      
+        @Override
+        public long id() {
+            return id;
+        }
+      
+        @Override
+        public void release() {
+            if (released) {
+              return;
+            }
+            released = true;
             mNativeView.getFlutterJNI().unregisterTexture(id);
         }
     }

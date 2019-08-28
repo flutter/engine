@@ -38,6 +38,10 @@ void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
   // Android oddities.
 }
 
+EAGLSharegroup* IOSSurfaceSoftware::GetGLShareGroup() {
+  return nullptr;
+}
+
 std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface(GrContext* gr_context) {
   if (!IsValid()) {
     return nullptr;

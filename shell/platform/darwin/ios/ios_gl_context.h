@@ -32,6 +32,8 @@ class IOSGLContext {
 
   sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
 
+  EAGLSharegroup* GetGLShareGroup();
+
  private:
   fml::scoped_nsobject<EAGLContext> context_;
   fml::scoped_nsobject<EAGLContext> resource_context_;

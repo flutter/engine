@@ -8,6 +8,8 @@
 
 #include <utility>
 
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/common/settings.h"
 #include "flutter/fml/file.h"
@@ -444,6 +446,52 @@ static void RegisterTexture(JNIEnv* env,
   );
 }
 
+static void RegisterShareTexture(JNIEnv* env,
+                                 jobject jcaller,
+                                 jlong shell_holder,
+                                 jlong texture_id,
+                                 jlong share_texture_id) {
+  ANDROID_SHELL_HOLDER->GetPlatformView()->RegisterExternalShareTexture(
+      static_cast<int64_t>(texture_id),       //
+      static_cast<int64_t>(share_texture_id)  //
+  );
+}
+
+static jobject GetShareContext(JNIEnv* env,
+                               jobject jcaller,
+                               jlong shell_holder,
+                               jlong sdk_int) {
+  EGLContext cxt = ANDROID_SHELL_HOLDER->GetPlatformView()->GetShareContext();
+
+  jclass eglcontextClassLocal = env->FindClass("android/opengl/EGLContext");
+  jmethodID eglcontextConstructor;
+  jobject eglContext;
+  if (sdk_int >= 21) {
+    // 5.0and above
+    eglcontextConstructor =
+        env->GetMethodID(eglcontextClassLocal, "<init>", "(J)V");
+    if ((EGLContext)cxt == EGL_NO_CONTEXT) {
+      return env->NewObject(eglcontextClassLocal, eglcontextConstructor,
+                            reinterpret_cast<jlong>(EGL_NO_CONTEXT));
+    }
+    eglContext = env->NewObject(eglcontextClassLocal, eglcontextConstructor,
+                                reinterpret_cast<jlong>(jlong(cxt)));
+  } else {
+    eglcontextConstructor =
+        env->GetMethodID(eglcontextClassLocal, "<init>", "(I)V");
+    int contextAddress = (int)(size_t)cxt;
+    if ((EGLContext)cxt == EGL_NO_CONTEXT) {
+      contextAddress = (int)(size_t)EGL_NO_CONTEXT;
+      return env->NewObject(eglcontextClassLocal, eglcontextConstructor,
+                            reinterpret_cast<jint>(jint(contextAddress)));
+    }
+    eglContext = env->NewObject(eglcontextClassLocal, eglcontextConstructor,
+                                reinterpret_cast<jint>(jint(contextAddress)));
+  }
+
+  return eglContext;
+}
+
 static void MarkTextureFrameAvailable(JNIEnv* env,
                                       jobject jcaller,
                                       jlong shell_holder,
@@ -592,7 +640,16 @@ bool RegisterApi(JNIEnv* env) {
           .signature = "(JJ)V",
           .fnPtr = reinterpret_cast<void*>(&UnregisterTexture),
       },
-
+      {
+          .name = "nativeRegisterShareTexture",
+          .signature = "(JJJ)V",
+          .fnPtr = reinterpret_cast<void*>(&RegisterShareTexture),
+      },
+      {
+          .name = "nativeGetShareContext",
+          .signature = "(JJ)Landroid/opengl/EGLContext;",
+          .fnPtr = reinterpret_cast<void*>(&GetShareContext),
+      },
       // Methods for Dart callback functionality.
       {
           .name = "nativeLookupCallbackInformation",
