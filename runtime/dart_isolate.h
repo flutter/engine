@@ -65,7 +65,8 @@ class DartIsolate : public UIDartState {
               ChildIsolatePreparer child_isolate_preparer,
               fml::closure isolate_create_callback,
               fml::closure isolate_shutdown_callback,
-              const bool is_root_isolate);
+              const bool is_root_isolate,
+              const bool is_group_root_isolate);
 
   ~DartIsolate() override;
 
@@ -114,7 +115,12 @@ class DartIsolate : public UIDartState {
 
   fml::RefPtr<fml::TaskRunner> GetMessageHandlingTaskRunner() const;
 
+  // Root isolate of the VM application
   bool IsRootIsolate() const { return is_root_isolate_; }
+  // Isolate that owns IsolateGroup it lives in.
+  // When --no-enable-isolate-groups dart vm flag is set,
+  // all child isolates will have their own IsolateGroups.
+  bool IsGroupRootIsolate() const { return is_group_root_isolate_; }
 
  private:
   bool LoadKernel(std::shared_ptr<const fml::Mapping> mapping, bool last_piece);
@@ -143,6 +149,7 @@ class DartIsolate : public UIDartState {
   const fml::closure isolate_shutdown_callback_;
 
   const bool is_root_isolate_;
+  const bool is_group_root_isolate_;
 
   FML_WARN_UNUSED_RESULT bool Initialize(Dart_Isolate isolate);
 
@@ -191,7 +198,7 @@ class DartIsolate : public UIDartState {
       char** error);
 
   static bool InitializeIsolate(std::shared_ptr<DartIsolate> embedder_isolate,
-                                Dart_Isolate& isolate,
+                                Dart_Isolate isolate,
                                 char** error);
 
   // |Dart_IsolateShutdownCallback|
@@ -201,7 +208,8 @@ class DartIsolate : public UIDartState {
 
   // |Dart_IsolateCleanupCallback|
   static void DartIsolateCleanupCallback(
-      std::shared_ptr<DartIsolate>* isolate_group_data);
+    std::shared_ptr<DartIsolate>* isolate_group_data,
+    std::shared_ptr<DartIsolate>* isolate_data);
 
   // |Dart_IsolateGroupCleanupCallback|
   static void DartIsolateGroupCleanupCallback(
