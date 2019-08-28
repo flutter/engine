@@ -4,9 +4,9 @@
 
 #import <Flutter/flutter.h>
 #import <XCTest/XCTest.h>
-#include <sys/sysctl.h>
 
 #import "../Scenarios/TextPlatformView.h"
+#import "PlatformViewUITestUtil.h"
 
 @interface PlatformViewUITests : XCTestCase
 @property(nonatomic, strong) XCUIApplication* application;
@@ -24,29 +24,31 @@
 }
 
 - (void)testPlatformView {
-
-  XCUIElement *element = self.application.textViews.firstMatch;
-  BOOL exists = [element waitForExistenceWithTimeout:5];
+  XCUIElement* element = self.application.textViews.firstMatch;
+  BOOL exists = [element waitForExistenceWithTimeout:kTimeToWaitForPlatformView];
   if (!exists) {
-    XCTFail(@"It took longer than 3 second to find the platform view."
-            @"There might be issues with the platform view's construction,
-            @"or with how the scenario is built.");
+    XCTFail(@"It took longer than %@ second to find the platform view."
+            @"There might be issues with the platform view's construction,"
+            @"or with how the scenario is built.",
+            @(kTimeToWaitForPlatformView));
   }
 
   NSBundle* bundle = [NSBundle bundleForClass:[self class]];
   NSString* goldenName =
-      [NSString stringWithFormat:@"golden_platform_view_%@", [self platformName]];
+      [NSString stringWithFormat:@"golden_platform_view_%@", [PlatformViewUITestUtil platformName]];
   NSString* path = [bundle pathForResource:goldenName ofType:@"png"];
   UIImage* golden = [[UIImage alloc] initWithContentsOfFile:path];
-  
+
   XCUIScreenshot* screenshot = [[XCUIScreen mainScreen] screenshot];
   XCTAttachment* attachment = [XCTAttachment attachmentWithScreenshot:screenshot];
+  attachment.name = @"current screen shot";
   attachment.lifetime = XCTAttachmentLifetimeKeepAlways;
   [self addAttachment:attachment];
 
   if (golden) {
     XCTAttachment* goldenAttachment = [XCTAttachment attachmentWithImage:golden];
     goldenAttachment.lifetime = XCTAttachmentLifetimeKeepAlways;
+    goldenAttachment.name = @"golden";
     [self addAttachment:goldenAttachment];
   } else {
     XCTFail(@"This test will fail - no golden named %@ found. Follow the steps in the "
@@ -54,71 +56,7 @@
             goldenName);
   }
 
-  XCTAssertTrue([self compareImage:golden toOther:screenshot.image]);
-}
-
-- (NSString*)platformName {
-  NSString* simulatorName =
-      [[NSProcessInfo processInfo].environment objectForKey:@"SIMULATOR_DEVICE_NAME"];
-  if (simulatorName) {
-    return [NSString stringWithFormat:@"%@_simulator", simulatorName];
-  }
-
-  size_t size;
-  sysctlbyname("hw.model", NULL, &size, NULL, 0);
-  char* answer = malloc(size);
-  sysctlbyname("hw.model", answer, &size, NULL, 0);
-
-  NSString* results = [NSString stringWithCString:answer encoding:NSUTF8StringEncoding];
-  free(answer);
-  return results;
-}
-
-- (BOOL)compareImage:(UIImage*)a toOther:(UIImage*)b {
-  CGImageRef imageRefA = [a CGImage];
-  CGImageRef imageRefB = [b CGImage];
-
-  NSUInteger widthA = CGImageGetWidth(imageRefA);
-  NSUInteger heightA = CGImageGetHeight(imageRefA);
-  NSUInteger widthB = CGImageGetWidth(imageRefB);
-  NSUInteger heightB = CGImageGetHeight(imageRefB);
-
-  if (widthA != widthB || heightA != heightB) {
-    return NO;
-  }
-  NSUInteger bytesPerPixel = 4;
-  NSUInteger size = widthA * heightA * bytesPerPixel;
-  NSMutableData* rawA = [NSMutableData dataWithLength:size];
-  NSMutableData* rawB = [NSMutableData dataWithLength:size];
-
-  if (!rawA || !rawB) {
-    return NO;
-  }
-
-  CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-
-  NSUInteger bytesPerRow = bytesPerPixel * widthA;
-  NSUInteger bitsPerComponent = 8;
-  CGContextRef contextA =
-      CGBitmapContextCreate(rawA.mutableBytes, widthA, heightA, bitsPerComponent, bytesPerRow,
-                            colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
-
-  CGContextDrawImage(contextA, CGRectMake(0, 0, widthA, heightA), imageRefA);
-  CGContextRelease(contextA);
-
-  CGContextRef contextB =
-      CGBitmapContextCreate(rawB.mutableBytes, widthA, heightA, bitsPerComponent, bytesPerRow,
-                            colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
-  CGColorSpaceRelease(colorSpace);
-
-  CGContextDrawImage(contextB, CGRectMake(0, 0, widthA, heightA), imageRefB);
-  CGContextRelease(contextB);
-
-  if (memcmp(rawA.mutableBytes, rawB.mutableBytes, size)) {
-    return NO;
-  }
-
-  return YES;
+  XCTAssertTrue([PlatformViewUITestUtil compareImage:golden toOther:screenshot.image]);
 }
 
 @end

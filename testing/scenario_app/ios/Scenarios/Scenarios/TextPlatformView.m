@@ -49,6 +49,7 @@
     _textView.backgroundColor = UIColor.lightGrayColor;
     [_textView setFont:[UIFont systemFontOfSize:52]];
     _textView.text = args;
+    _textView.accessibilityIdentifier = @"i am a textview";
   }
   return self;
 }
