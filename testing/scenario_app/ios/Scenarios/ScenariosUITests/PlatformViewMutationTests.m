@@ -20,23 +20,23 @@
   self.continueAfterFailure = NO;
 
   self.application = [[XCUIApplication alloc] init];
-  self.application.launchArguments = @[@"--platform-view-cliprect"];
+  self.application.launchArguments = @[ @"--platform-view-cliprect" ];
   [self.application launch];
 }
 
 - (void)testPlatformView {
-
-  XCUIElement *element = self.application.textViews.firstMatch;
+  XCUIElement* element = self.application.textViews.firstMatch;
   BOOL exists = [element waitForExistenceWithTimeout:kTimeToWaitForPlatformView];
   if (!exists) {
     XCTFail(@"It took longer than %@ second to find the platform view."
             @"There might be issues with the platform view's construction,"
-            @"or with how the scenario is built.", @(kTimeToWaitForPlatformView));
+            @"or with how the scenario is built.",
+            @(kTimeToWaitForPlatformView));
   }
 
   NSBundle* bundle = [NSBundle bundleForClass:[self class]];
-  NSString* goldenName =
-  [NSString stringWithFormat:@"golden_platform_view_cliprect_%@", [PlatformViewUITestUtil platformName]];
+  NSString* goldenName = [NSString
+      stringWithFormat:@"golden_platform_view_cliprect_%@", [PlatformViewUITestUtil platformName]];
   NSString* path = [bundle pathForResource:goldenName ofType:@"png"];
   UIImage* golden = [[UIImage alloc] initWithContentsOfFile:path];
 
@@ -76,23 +76,23 @@
   self.continueAfterFailure = NO;
 
   self.application = [[XCUIApplication alloc] init];
-  self.application.launchArguments = @[@"--platform-view-cliprrect"];
+  self.application.launchArguments = @[ @"--platform-view-cliprrect" ];
   [self.application launch];
 }
 
 - (void)testPlatformView {
-
-  XCUIElement *element = self.application.otherElements.firstMatch;
+  XCUIElement* element = self.application.otherElements.firstMatch;
   BOOL exists = [element waitForExistenceWithTimeout:kTimeToWaitForPlatformView];
   if (!exists) {
     XCTFail(@"It took longer than %@ second to find the platform view."
             @"There might be issues with the platform view's construction,"
-            @"or with how the scenario is built.", @(kTimeToWaitForPlatformView));
+            @"or with how the scenario is built.",
+            @(kTimeToWaitForPlatformView));
   }
 
   NSBundle* bundle = [NSBundle bundleForClass:[self class]];
-  NSString* goldenName =
-  [NSString stringWithFormat:@"golden_platform_view_cliprrect_%@", [PlatformViewUITestUtil platformName]];
+  NSString* goldenName = [NSString
+      stringWithFormat:@"golden_platform_view_cliprrect_%@", [PlatformViewUITestUtil platformName]];
   NSString* path = [bundle pathForResource:goldenName ofType:@"png"];
   UIImage* golden = [[UIImage alloc] initWithContentsOfFile:path];
 
@@ -132,23 +132,23 @@
   self.continueAfterFailure = NO;
 
   self.application = [[XCUIApplication alloc] init];
-  self.application.launchArguments = @[@"--platform-view-clippath"];
+  self.application.launchArguments = @[ @"--platform-view-clippath" ];
   [self.application launch];
 }
 
 - (void)testPlatformView {
-
-  XCUIElement *element = self.application.otherElements.firstMatch;
+  XCUIElement* element = self.application.otherElements.firstMatch;
   BOOL exists = [element waitForExistenceWithTimeout:kTimeToWaitForPlatformView];
   if (!exists) {
     XCTFail(@"It took longer than %@ second to find the platform view."
             @"There might be issues with the platform view's construction,"
-            @"or with how the scenario is built.", @(kTimeToWaitForPlatformView));
+            @"or with how the scenario is built.",
+            @(kTimeToWaitForPlatformView));
   }
 
   NSBundle* bundle = [NSBundle bundleForClass:[self class]];
-  NSString* goldenName =
-  [NSString stringWithFormat:@"golden_platform_view_clippath_%@", [PlatformViewUITestUtil platformName]];
+  NSString* goldenName = [NSString
+      stringWithFormat:@"golden_platform_view_clippath_%@", [PlatformViewUITestUtil platformName]];
   NSString* path = [bundle pathForResource:goldenName ofType:@"png"];
   UIImage* golden = [[UIImage alloc] initWithContentsOfFile:path];
 
@@ -188,23 +188,23 @@
   self.continueAfterFailure = NO;
 
   self.application = [[XCUIApplication alloc] init];
-  self.application.launchArguments = @[@"--platform-view-transform"];
+  self.application.launchArguments = @[ @"--platform-view-transform" ];
   [self.application launch];
 }
 
 - (void)testPlatformView {
-
-  XCUIElement *element = self.application.otherElements.firstMatch;
+  XCUIElement* element = self.application.otherElements.firstMatch;
   BOOL exists = [element waitForExistenceWithTimeout:kTimeToWaitForPlatformView];
   if (!exists) {
     XCTFail(@"It took longer than %@ second to find the platform view."
             @"There might be issues with the platform view's construction,"
-            @"or with how the scenario is built.", @(kTimeToWaitForPlatformView));
+            @"or with how the scenario is built.",
+            @(kTimeToWaitForPlatformView));
   }
 
   NSBundle* bundle = [NSBundle bundleForClass:[self class]];
-  NSString* goldenName =
-  [NSString stringWithFormat:@"golden_platform_view_transform_%@", [PlatformViewUITestUtil platformName]];
+  NSString* goldenName = [NSString
+      stringWithFormat:@"golden_platform_view_transform_%@", [PlatformViewUITestUtil platformName]];
   NSString* path = [bundle pathForResource:goldenName ofType:@"png"];
   UIImage* golden = [[UIImage alloc] initWithContentsOfFile:path];
 
@@ -244,24 +244,23 @@
   self.continueAfterFailure = NO;
 
   self.application = [[XCUIApplication alloc] init];
-  self.application.launchArguments = @[@"--platform-view-opacity"];
+  self.application.launchArguments = @[ @"--platform-view-opacity" ];
   [self.application launch];
 }
 
 - (void)testPlatformView {
-
-  XCUIElement *element = self.application.textViews.firstMatch;
+  XCUIElement* element = self.application.textViews.firstMatch;
   BOOL exists = [element waitForExistenceWithTimeout:kTimeToWaitForPlatformView];
   if (!exists) {
     XCTFail(@"It took longer than %@ second to find the platform view."
             @"There might be issues with the platform view's construction,"
-            @"or with how the scenario is built.", @(kTimeToWaitForPlatformView));
+            @"or with how the scenario is built.",
+            @(kTimeToWaitForPlatformView));
   }
 
-
   NSBundle* bundle = [NSBundle bundleForClass:[self class]];
-  NSString* goldenName =
-  [NSString stringWithFormat:@"golden_platform_view_opacity_%@", [PlatformViewUITestUtil platformName]];
+  NSString* goldenName = [NSString
+      stringWithFormat:@"golden_platform_view_opacity_%@", [PlatformViewUITestUtil platformName]];
   NSString* path = [bundle pathForResource:goldenName ofType:@"png"];
   UIImage* golden = [[UIImage alloc] initWithContentsOfFile:path];
 

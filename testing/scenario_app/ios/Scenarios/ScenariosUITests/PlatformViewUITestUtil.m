@@ -11,7 +11,7 @@ const NSInteger kTimeToWaitForPlatformView = 5;
 
 + (NSString*)platformName {
   NSString* simulatorName =
-  [[NSProcessInfo processInfo].environment objectForKey:@"SIMULATOR_DEVICE_NAME"];
+      [[NSProcessInfo processInfo].environment objectForKey:@"SIMULATOR_DEVICE_NAME"];
   if (simulatorName) {
     return [NSString stringWithFormat:@"%@_simulator", simulatorName];
   }
@@ -52,15 +52,15 @@ const NSInteger kTimeToWaitForPlatformView = 5;
   NSUInteger bytesPerRow = bytesPerPixel * widthA;
   NSUInteger bitsPerComponent = 8;
   CGContextRef contextA =
-  CGBitmapContextCreate(rawA.mutableBytes, widthA, heightA, bitsPerComponent, bytesPerRow,
-                        colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+      CGBitmapContextCreate(rawA.mutableBytes, widthA, heightA, bitsPerComponent, bytesPerRow,
+                            colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
 
   CGContextDrawImage(contextA, CGRectMake(0, 0, widthA, heightA), imageRefA);
   CGContextRelease(contextA);
 
   CGContextRef contextB =
-  CGBitmapContextCreate(rawB.mutableBytes, widthA, heightA, bitsPerComponent, bytesPerRow,
-                        colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+      CGBitmapContextCreate(rawB.mutableBytes, widthA, heightA, bitsPerComponent, bytesPerRow,
+                            colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
   CGColorSpaceRelease(colorSpace);
 
   CGContextDrawImage(contextB, CGRectMake(0, 0, widthA, heightA), imageRefB);
