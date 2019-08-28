@@ -74,6 +74,8 @@ List<io.File> _flatListSourceFiles(io.Directory directory) {
 }
 
 Future<void> _runTests() async {
+  _copyAhemFontIntoWebUi();
+
   final List<String> testFiles = io.Directory('test')
     .listSync(recursive: true)
     .whereType<io.File>()
@@ -102,6 +104,12 @@ Future<void> _runTests() async {
     io.stderr.writeln('Test process exited with exit code $exitCode');
     io.exit(1);
   }
+}
+
+void _copyAhemFontIntoWebUi() {
+  final io.File sourceAhemTtf = io.File(pathlib.join(environment.flutterDirectory.path, 'third_party', 'txt', 'third_party', 'fonts', 'ahem.ttf'));
+  final String destinationAhemTtfPath = pathlib.join(environment.webUiRootDir.path, 'lib', 'assets', 'ahem.ttf');
+  sourceAhemTtf.copySync(destinationAhemTtfPath);
 }
 
 class Environment {
@@ -150,6 +158,7 @@ class Environment {
   final String dartExecutable;
 
   String get pubExecutable => pathlib.join(dartSdkDir.path, 'bin', 'pub');
+  io.Directory get flutterDirectory => io.Directory(pathlib.join(engineSrcDir.path, 'flutter'));
 
   @override
   String toString() {
