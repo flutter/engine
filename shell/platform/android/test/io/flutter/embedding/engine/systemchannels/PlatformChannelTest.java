@@ -38,14 +38,11 @@ public class PlatformChannelTest {
         int left = 0;
 
         ResultsMock resultsMock = mock(ResultsMock.class);
-
         JSONObject JsonRect = new JSONObject();
-
         JsonRect.put("top", top);
         JsonRect.put("right", right);
         JsonRect.put("bottom", bottom);
         JsonRect.put("left", left);
-
         JSONArray inputRects = new JSONArray();
         inputRects.put(JsonRect);
 
@@ -107,7 +104,6 @@ public class PlatformChannelTest {
             "SystemGestures.setSystemGestureExclusionRects",
             inputArray
         );
-
         platformChannel.parsingMethodCallHandler.onMethodCall(callSystemGestureExclusionRects, resultsMock);
         verify(resultsMock, times(1)).error(
             "error",

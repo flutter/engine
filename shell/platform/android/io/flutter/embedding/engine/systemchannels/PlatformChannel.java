@@ -512,7 +512,6 @@ public class PlatformChannel {
   protected class PlatformMethodCallHandler implements MethodChannel.MethodCallHandler {
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
-      Log.v(TAG, "was called onMethodCall here" + call.method);
       if (platformMessageHandler == null) {
         // If no explicit PlatformMessageHandler has been registered then we don't
         // need to forward this call to an API. Return.
@@ -602,7 +601,6 @@ public class PlatformChannel {
               break;
             }
 
-            Log.v("Got here", arguments.toString());
             JSONArray inputRects = (JSONArray) arguments;
             ArrayList<Rect> decodedRects = decodeRects(inputRects);
             platformMessageHandler.setSystemGestureExclusionRects(decodedRects);
