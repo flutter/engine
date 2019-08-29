@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verify;
 @RunWith(RobolectricTestRunner.class)
 public class PlatformChannelTest {
     @Test
-    public void itSendsSuccessMessageToFramework() throws JSONException {
+    public void setSystemExclusionRectsSendsSuccessMessageToFramework() throws JSONException {
         DartExecutor dartExecutor = mock(DartExecutor.class);
         PlatformChannel platformChannel = new PlatformChannel(dartExecutor);
         PlatformMessageHandler platformMessageHandler = mock(PlatformMessageHandler.class);
@@ -61,7 +61,7 @@ public class PlatformChannelTest {
     }
 
     @Test
-    public void itRequiresJSONArrayInput() {
+    public void setSystemExclusionRectsRequiresJSONArrayInput() {
         DartExecutor dartExecutor = mock(DartExecutor.class);
         PlatformChannel platformChannel = new PlatformChannel(dartExecutor);
         PlatformMessageHandler platformMessageHandler = mock(PlatformMessageHandler.class);
@@ -84,7 +84,7 @@ public class PlatformChannelTest {
     }
 
     @Test
-    public void itSendsJSONExceptionOnIncorrectDataShape() throws JSONException {
+    public void setSystemExclusionRectsSendsJSONExceptionOnIncorrectDataShape() throws JSONException {
         DartExecutor dartExecutor = mock(DartExecutor.class);
         PlatformChannel platformChannel = new PlatformChannel(dartExecutor);
         PlatformMessageHandler platformMessageHandler = mock(PlatformMessageHandler.class);
