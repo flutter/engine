@@ -174,6 +174,23 @@ public class PlatformChannel {
     return exclusionRects;
   }
 
+  /**
+   * Encodes a List<Rect> provided by the host platform into an ArrayList<HashMap<String, Integer>>.
+   */
+  private ArrayList<HashMap<String, Integer>> encodeExclusionRects(List<Rect> exclusionRects) {
+    ArrayList<HashMap<String, Integer>> encodedExclusionRects = new ArrayList<HashMap<String, Integer>>();
+    for (Rect rect : exclusionRects) {
+      HashMap<String, Integer> rectMap = new HashMap<String, Integer>();
+      rectMap.put("top", rect.top);
+      rectMap.put("right", rect.right);
+      rectMap.put("bottom", rect.bottom);
+      rectMap.put("left", rect.left);
+      encodedExclusionRects.add(rectMap);
+    }
+
+    return encodedExclusionRects;
+  }
+
   @NonNull
   private AppSwitcherDescription decodeAppSwitcherDescription(@NonNull JSONObject encodedDescription) throws JSONException {
     int color = encodedDescription.getInt("primaryColor");
@@ -459,20 +476,6 @@ public class PlatformChannel {
     SystemUiOverlay(@NonNull String encodedName) {
       this.encodedName = encodedName;
     }
-  }
-
-  private ArrayList<HashMap<String, Integer>> encodeExclusionRects(List<Rect> exclusionRects) {
-    ArrayList<HashMap<String, Integer>> encodedExclusionRects = new ArrayList<HashMap<String, Integer>>();
-    for (Rect rect : exclusionRects) {
-      HashMap<String, Integer> rectMap = new HashMap<String, Integer>();
-      rectMap.put("top", rect.top);
-      rectMap.put("right", rect.right);
-      rectMap.put("bottom", rect.bottom);
-      rectMap.put("left", rect.left);
-      encodedExclusionRects.add(rectMap);
-    }
-
-    return encodedExclusionRects;
   }
 
   /**
