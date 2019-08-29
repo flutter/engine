@@ -4,7 +4,6 @@
 
 package io.flutter.embedding.engine.systemchannels;
 
-import android.util.Log;
 import android.content.pm.ActivityInfo;
 import android.graphics.Rect;
 import android.support.annotation.NonNull;
@@ -18,7 +17,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-// import io.flutter.Log;
+import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
@@ -140,23 +139,31 @@ public class PlatformChannel {
     return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
   }
 
-  private ArrayList<Rect> decodeRects(@NonNull JSONArray inputRects) {
+  private ArrayList<Rect> decodeRects(@NonNull JSONArray inputRects) throws JSONException {
     ArrayList<Rect> exclusionRects = new ArrayList<Rect>();
-    try {
-      for (int i = 0; i < inputRects.length(); i++) {
-        JSONObject rect = inputRects.getJSONObject(i);
+    for (int i = 0; i < inputRects.length(); i++) {
+      JSONObject rect = inputRects.getJSONObject(i);
+      int top;
+      int right;
+      int bottom;
+      int left;
 
-        int top = rect.getInt("top");
-        int right = rect.getInt("right");
-        int bottom = rect.getInt("bottom");
-        int left = rect.getInt("left");
-
-         Rect gestureRect = new Rect(left, top, right, bottom);
-        exclusionRects.add(gestureRect);
+      try {
+        top = rect.getInt("top");
+        right = rect.getInt("right");
+        bottom = rect.getInt("bottom");
+        left = rect.getInt("left");
+      } catch (JSONException exception) {
+        throw new JSONException(
+          "Incorrect JSON data shape. To set system gesture exclusion rects, \n" +
+          "a JSONObject with top, right, bottom and left values need to be set to int values."
+        );
       }
-    } catch (JSONException e) {
-      //some exception handler code.
+
+      Rect gestureRect = new Rect(left, top, right, bottom);
+      exclusionRects.add(gestureRect);
     }
+
     return exclusionRects;
   }
 
