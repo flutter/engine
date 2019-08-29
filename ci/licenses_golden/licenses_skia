@@ -1,4 +1,4 @@
-Signature: 1f29ee4a8036ab8144d8bd1ade02c4ad
+Signature: 68c9f0e942ca2405115a6d1181f4ec75
 
 UNUSED LICENSES:
 
@@ -3385,6 +3385,8 @@ FILE: ../../../third_party/skia/src/gpu/effects/generated/GrOverrideInputFragmen
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCommandBuffer.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCommandBuffer.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlDepthStencil.h
+FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlSemaphore.h
+FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlSemaphore.mm
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.h
 FILE: ../../../third_party/skia/src/shaders/SkRTShader.cpp
@@ -4841,16 +4843,6 @@ FILE: ../../../third_party/skia/docs/examples/Text_Size.cpp
 FILE: ../../../third_party/skia/docs/examples/Text_Skew_X.cpp
 FILE: ../../../third_party/skia/docs/examples/Typeface_Methods.cpp
 FILE: ../../../third_party/skia/docs/examples/Xor.cpp
-FILE: ../../../third_party/skia/experimental/editor/editor.cpp
-FILE: ../../../third_party/skia/experimental/editor/editor.h
-FILE: ../../../third_party/skia/experimental/editor/editor_application.cpp
-FILE: ../../../third_party/skia/experimental/editor/shape.cpp
-FILE: ../../../third_party/skia/experimental/editor/shape.h
-FILE: ../../../third_party/skia/experimental/editor/stringslice.cpp
-FILE: ../../../third_party/skia/experimental/editor/stringslice.h
-FILE: ../../../third_party/skia/experimental/editor/stringview.h
-FILE: ../../../third_party/skia/experimental/editor/word_boundaries.cpp
-FILE: ../../../third_party/skia/experimental/editor/word_boundaries.h
 FILE: ../../../third_party/skia/experimental/xform/SkShape.cpp
 FILE: ../../../third_party/skia/experimental/xform/SkShape.h
 FILE: ../../../third_party/skia/experimental/xform/SkXform.cpp
@@ -4860,6 +4852,16 @@ FILE: ../../../third_party/skia/gm/crbug_918512.cpp
 FILE: ../../../third_party/skia/gm/labyrinth.cpp
 FILE: ../../../third_party/skia/gm/preservefillrule.cpp
 FILE: ../../../third_party/skia/gm/tilemodes_alpha.cpp
+FILE: ../../../third_party/skia/modules/skplaintexteditor/app/editor_application.cpp
+FILE: ../../../third_party/skia/modules/skplaintexteditor/include/editor.h
+FILE: ../../../third_party/skia/modules/skplaintexteditor/include/stringslice.h
+FILE: ../../../third_party/skia/modules/skplaintexteditor/include/stringview.h
+FILE: ../../../third_party/skia/modules/skplaintexteditor/src/editor.cpp
+FILE: ../../../third_party/skia/modules/skplaintexteditor/src/shape.cpp
+FILE: ../../../third_party/skia/modules/skplaintexteditor/src/shape.h
+FILE: ../../../third_party/skia/modules/skplaintexteditor/src/stringslice.cpp
+FILE: ../../../third_party/skia/modules/skplaintexteditor/src/word_boundaries.cpp
+FILE: ../../../third_party/skia/modules/skplaintexteditor/src/word_boundaries.h
 FILE: ../../../third_party/skia/src/core/SkPixelRefPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrPersistentCacheUtils.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrSampleMaskProcessor.cpp
