@@ -8,19 +8,20 @@
 
 static const NSInteger kSecondsToWaitForPlatformView = 30;
 
-@interface GoldenPlatformViewTests()
+@interface GoldenPlatformViewTests ()
 
 @property(nonatomic, strong) NSString* launchArguments;
-@property (copy) NSString* goldenName;
+@property(copy) NSString* goldenName;
 @property(nonatomic, strong) XCUIApplication* application;
 
-@property (strong, nonatomic)PlatformViewGoldenTestManager *manager;
+@property(strong, nonatomic) PlatformViewGoldenTestManager* manager;
 
 @end
 
 @implementation GoldenPlatformViewTests
 
-- (instancetype)initWithManager:(PlatformViewGoldenTestManager *)manager invocation:(NSInvocation *)invocation {
+- (instancetype)initWithManager:(PlatformViewGoldenTestManager*)manager
+                     invocation:(NSInvocation*)invocation {
   self = [super initWithInvocation:invocation];
   _manager = manager;
   return self;
@@ -46,7 +47,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
             @(kSecondsToWaitForPlatformView));
   }
 
-  GoldenImage *golden = self.manager.goldenImage;
+  GoldenImage* golden = self.manager.goldenImage;
 
   XCUIScreenshot* screenshot = [[XCUIScreen mainScreen] screenshot];
   XCTAttachment* attachment = [XCTAttachment attachmentWithScreenshot:screenshot];

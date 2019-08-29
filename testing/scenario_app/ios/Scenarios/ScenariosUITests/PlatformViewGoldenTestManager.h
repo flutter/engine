@@ -13,13 +13,13 @@ NS_ASSUME_NONNULL_BEGIN
 // It also generates the correct launchArgs to launch the associate platform view scenario.
 @interface PlatformViewGoldenTestManager : NSObject
 
-@property (readonly, strong, nonatomic) GoldenImage *goldenImage;
-@property (readonly, strong, nonatomic) NSArray *launchArgs;
+@property(readonly, strong, nonatomic) GoldenImage* goldenImage;
+@property(readonly, strong, nonatomic) NSArray* launchArgs;
 
 // Initilize with identifier.
 //
 // Crahes if the identifier is not mapped in `launchArgsMap` inside PlatformViewGoldenTestManager.m
-- (instancetype)initWithIdentifier:(nonnull NSString *)identifier;
+- (instancetype)initWithIdentifier:(nonnull NSString*)identifier;
 
 @end
 

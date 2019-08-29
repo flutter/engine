@@ -9,8 +9,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 // The base class of all the PlatformView golden tests.
 //
-// A new PlatformView golden tests can subclass this and override the `-initiWithInvocation:` method,
-// which then retun the `-initWithManager:invocation:`
+// A new PlatformView golden tests can subclass this and override the `-initiWithInvocation:`
+// method, which then retun the `-initWithManager:invocation:`
 //
 // Then in any test method, call `checkGolden` to perform the golden test.
 //
@@ -18,7 +18,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface GoldenPlatformViewTests : XCTestCase
 
 // Initialize with a `PlatformViewGoldenTestManager`.
-- (instancetype)initWithManager:(PlatformViewGoldenTestManager *)manager invocation:(NSInvocation *)invocation;
+- (instancetype)initWithManager:(PlatformViewGoldenTestManager*)manager
+                     invocation:(NSInvocation*)invocation;
 
 // Take a sceenshot of the test app and check it has the same pixels with goldenImage inside the
 // `PlatformViewGoldenTestManager`.

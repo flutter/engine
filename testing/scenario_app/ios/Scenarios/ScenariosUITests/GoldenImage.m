@@ -3,33 +3,32 @@
 // found in the LICENSE file.
 
 #import "GoldenImage.h"
-#include <sys/sysctl.h>
 #import <XCTest/XCTest.h>
+#include <sys/sysctl.h>
 
-@interface GoldenImage()
+@interface GoldenImage ()
 
-@property (readwrite, strong, nonatomic) NSString *goldenName;
-@property (readwrite, strong, nonatomic) UIImage *image;
-@property (strong, nonatomic) NSString *platformName;
+@property(readwrite, strong, nonatomic) NSString* goldenName;
+@property(readwrite, strong, nonatomic) UIImage* image;
+@property(strong, nonatomic) NSString* platformName;
 
 @end
 
 @implementation GoldenImage
 
-- (instancetype)initWithGoldenNamePrefix:(NSString *)prefix
-{
+- (instancetype)initWithGoldenNamePrefix:(NSString*)prefix {
   self = [super init];
   if (self) {
     _goldenName = [prefix stringByAppendingString:self.platformName];
     NSBundle* bundle = [NSBundle bundleForClass:[self class]];
     NSURL* goldenURL = [bundle URLForResource:_goldenName withExtension:@"png"];
-    NSData *data = [NSData dataWithContentsOfURL:goldenURL];
+    NSData* data = [NSData dataWithContentsOfURL:goldenURL];
     _image = [[UIImage alloc] initWithData:data];
   }
   return self;
 }
 
-- (BOOL)compareGoldenToImage:(UIImage *)image {
+- (BOOL)compareGoldenToImage:(UIImage*)image {
   if (!self.image || !image) {
     return NO;
   }
@@ -58,15 +57,15 @@
   NSUInteger bytesPerRow = bytesPerPixel * widthA;
   NSUInteger bitsPerComponent = 8;
   CGContextRef contextA =
-  CGBitmapContextCreate(rawA.mutableBytes, widthA, heightA, bitsPerComponent, bytesPerRow,
-                        colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+      CGBitmapContextCreate(rawA.mutableBytes, widthA, heightA, bitsPerComponent, bytesPerRow,
+                            colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
 
   CGContextDrawImage(contextA, CGRectMake(0, 0, widthA, heightA), imageRefA);
   CGContextRelease(contextA);
 
   CGContextRef contextB =
-  CGBitmapContextCreate(rawB.mutableBytes, widthA, heightA, bitsPerComponent, bytesPerRow,
-                        colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+      CGBitmapContextCreate(rawB.mutableBytes, widthA, heightA, bitsPerComponent, bytesPerRow,
+                            colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
   CGColorSpaceRelease(colorSpace);
 
   CGContextDrawImage(contextB, CGRectMake(0, 0, widthA, heightA), imageRefB);
@@ -79,10 +78,10 @@
   return YES;
 }
 
-- (NSString *)platformName {
+- (NSString*)platformName {
   if (!_platformName) {
     NSString* simulatorName =
-    [[NSProcessInfo processInfo].environment objectForKey:@"SIMULATOR_DEVICE_NAME"];
+        [[NSProcessInfo processInfo].environment objectForKey:@"SIMULATOR_DEVICE_NAME"];
     if (simulatorName) {
       return [NSString stringWithFormat:@"%@_simulator", simulatorName];
     }

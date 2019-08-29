@@ -8,18 +8,18 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface GoldenImage : NSObject
 
-@property (readonly, strong, nonatomic) NSString *goldenName;
-@property (readonly, strong, nonatomic) UIImage *image;
+@property(readonly, strong, nonatomic) NSString* goldenName;
+@property(readonly, strong, nonatomic) UIImage* image;
 
 // Initilize with the golden file's prefix.
 //
 // Create an image from a golden file named prefix+devicemodel.
-- (instancetype)initWithGoldenNamePrefix:(NSString *)prefix;
+- (instancetype)initWithGoldenNamePrefix:(NSString*)prefix;
 
 // Compare this GoldenImage to `image`.
 //
 // Return YES if the `image` of this GoldenImage have the same pixels of provided `image`.
-- (BOOL)compareGoldenToImage:(nonnull UIImage *)image;
+- (BOOL)compareGoldenToImage:(nonnull UIImage*)image;
 
 @end
 
