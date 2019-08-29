@@ -461,7 +461,7 @@ public class PlatformChannel {
     }
   }
 
-  private encodeExclusionRects(List<Rect> exclusionRects) {
+  private ArrayList<HashMap<String, Integer>> encodeExclusionRects(List<Rect> exclusionRects) {
     ArrayList<HashMap<String, Integer>> encodedExclusionRects = new ArrayList<HashMap<String, Integer>>();
     for (Rect rect : exclusionRects) {
       HashMap<String, Integer> rectMap = new HashMap<String, Integer>();
@@ -615,18 +615,6 @@ public class PlatformChannel {
             platformMessageHandler.popSystemNavigator();
             result.success(null);
             break;
-          case "SystemGestures.setSystemGestureExclusionRects":
-            if (!(arguments instanceof JSONArray)) {
-              String inputTypeError = "Input type is incorrect. Ensure that a List<Map<String, int>> is passed as the input for SystemGestureExclusionRects.setSystemGestureExclusionRects.";
-              result.error("inputTypeError", inputTypeError, null);
-              break;
-            }
-
-            JSONArray inputRects = (JSONArray) arguments;
-            ArrayList<Rect> decodedRects = decodeRects(inputRects);
-            platformMessageHandler.setSystemGestureExclusionRects(decodedRects);
-            result.success(null);
-            break;
           case "Clipboard.getData": {
             String contentFormatName = (String) arguments;
             ClipboardContentFormat clipboardFormat = null;
@@ -653,6 +641,30 @@ public class PlatformChannel {
             String clipboardContent = ((JSONObject) arguments).getString("text");
             platformMessageHandler.setClipboardData(clipboardContent);
             result.success(null);
+            break;
+          }
+          case "SystemGestures.setSystemGestureExclusionRects":
+            if (!(arguments instanceof JSONArray)) {
+              String inputTypeError = "Input type is incorrect. Ensure that a List<Map<String, int>> is passed as the input for SystemGestureExclusionRects.setSystemGestureExclusionRects.";
+              result.error("inputTypeError", inputTypeError, null);
+              break;
+            }
+
+            JSONArray inputRects = (JSONArray) arguments;
+            ArrayList<Rect> decodedRects = decodeRects(inputRects);
+            platformMessageHandler.setSystemGestureExclusionRects(decodedRects);
+            result.success(null);
+            break;
+          case "SystemGestures.getSystemGestureExclusionRects": {
+            List<Rect> exclusionRects = platformMessageHandler.getSystemGestureExclusionRects();
+            if (exclusionRects == null) {
+              String incorrectApiLevel = "Exclusion rects only exist for Android API 29+.";
+              result.error("error", incorrectApiLevel, null);
+              break;
+            }
+
+            ArrayList<HashMap<String, Integer>> encodedExclusionRects = encodeExclusionRects(exclusionRects);
+            result.success(encodedExclusionRects);
             break;
           }
           default:
