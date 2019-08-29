@@ -92,6 +92,11 @@ public class PlatformPlugin {
         public List<Rect> getSystemGestureExclusionRects() {
             return PlatformPlugin.this.getSystemGestureExclusionRects();
         }
+
+        @Override
+        public void setSystemGestureExclusionRects(@NonNull ArrayList rects) {
+            PlatformPlugin.this.setSystemGestureExclusionRects(rects);
+        }
     };
 
     public PlatformPlugin(Activity activity, PlatformChannel platformChannel) {
@@ -289,5 +294,15 @@ public class PlatformPlugin {
         }
 
         return null;
+    }
+
+    private void setSystemGestureExclusionRects(ArrayList<Rect> rects) {
+        if (Build.VERSION.SDK_INT < 29) {
+            return;
+        }
+
+        Window window = activity.getWindow();
+        View view = window.getDecorView();
+        view.setSystemGestureExclusionRects(rects);
     }
 }
