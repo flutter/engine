@@ -139,6 +139,12 @@ public class PlatformChannel {
     return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
   }
 
+  /**
+   * Decodes a JSONArray of rectangle data into an ArrayList<Rect>.
+   *
+   * @throws JSONException if {@code inputRects} does not contain expected keys and value types.
+   */
+  @NonNull
   private ArrayList<Rect> decodeRects(@NonNull JSONArray inputRects) throws JSONException {
     ArrayList<Rect> exclusionRects = new ArrayList<Rect>();
     for (int i = 0; i < inputRects.length(); i++) {
@@ -497,7 +503,11 @@ public class PlatformChannel {
     }
   }
 
-  // TODO(shihaohong): Add docs to describe what this is used for
+  /**
+   * A handler of incoming platform channel method calls received from Flutter.
+   * It first determines the platform's API to be called. If it exists, it then
+   * decodes incoming arguments, if needed, into a format that is necessary for the API.
+   */
   @VisibleForTesting
   protected class PlatformMethodCallHandler implements MethodChannel.MethodCallHandler {
     @Override
