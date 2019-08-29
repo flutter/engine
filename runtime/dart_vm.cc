@@ -401,9 +401,8 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     params.shutdown_isolate =
         reinterpret_cast<decltype(params.shutdown_isolate)>(
             DartIsolate::DartIsolateShutdownCallback);
-    params.cleanup_isolate =
-        reinterpret_cast<decltype(params.cleanup_isolate)>(
-            DartIsolate::DartIsolateCleanupCallback);
+    params.cleanup_isolate = reinterpret_cast<decltype(params.cleanup_isolate)>(
+        DartIsolate::DartIsolateCleanupCallback);
     params.cleanup_group = reinterpret_cast<decltype(params.cleanup_group)>(
         DartIsolate::DartIsolateGroupCleanupCallback);
     params.thread_exit = ThreadExitCallback;

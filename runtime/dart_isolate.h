@@ -208,8 +208,8 @@ class DartIsolate : public UIDartState {
 
   // |Dart_IsolateCleanupCallback|
   static void DartIsolateCleanupCallback(
-    std::shared_ptr<DartIsolate>* isolate_group_data,
-    std::shared_ptr<DartIsolate>* isolate_data);
+      std::shared_ptr<DartIsolate>* isolate_group_data,
+      std::shared_ptr<DartIsolate>* isolate_data);
 
   // |Dart_IsolateGroupCleanupCallback|
   static void DartIsolateGroupCleanupCallback(

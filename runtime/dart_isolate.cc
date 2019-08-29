@@ -685,28 +685,29 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
   auto* root_embedder_isolate = static_cast<std::shared_ptr<DartIsolate>*>(
       Dart_CurrentIsolateGroupData());
 
-  TaskRunners null_task_runners((*root_embedder_isolate)->GetAdvisoryScriptURI(),
-                                /* platform= */ nullptr, /* gpu= */ nullptr,
-                                /* ui= */ nullptr,
-                                /* io= */ nullptr);
+  TaskRunners null_task_runners(
+      (*root_embedder_isolate)->GetAdvisoryScriptURI(),
+      /* platform= */ nullptr, /* gpu= */ nullptr,
+      /* ui= */ nullptr,
+      /* io= */ nullptr);
 
-  auto embedder_isolate = std::make_unique<
-      std::shared_ptr<DartIsolate>>(std::make_shared<DartIsolate>(
-      (*root_embedder_isolate)->GetSettings(),         // settings
-      (*root_embedder_isolate)->GetIsolateSnapshot(),  // isolate_snapshot
-      (*root_embedder_isolate)->GetSharedSnapshot(),   // shared_snapshot
-      null_task_runners,                              // task_runners
-      fml::WeakPtr<IOManager>{},                      // io_manager
-      fml::WeakPtr<ImageDecoder>{},                   // io_manager
-      (*root_embedder_isolate)
-          ->GetAdvisoryScriptURI(),  // advisory_script_uri
-      (*root_embedder_isolate)
-          ->GetAdvisoryScriptEntrypoint(),  // advisory_script_entrypoint
-      (*root_embedder_isolate)->child_isolate_preparer_,     // preparer
-      (*root_embedder_isolate)->isolate_create_callback_,    // on create
-      (*root_embedder_isolate)->isolate_shutdown_callback_,  // on shutdown
-      false,    // is_root_isolate
-      false));  // is_group_root_isolate
+  auto embedder_isolate = std::make_unique<std::shared_ptr<DartIsolate>>(
+      std::make_shared<DartIsolate>(
+          (*root_embedder_isolate)->GetSettings(),         // settings
+          (*root_embedder_isolate)->GetIsolateSnapshot(),  // isolate_snapshot
+          (*root_embedder_isolate)->GetSharedSnapshot(),   // shared_snapshot
+          null_task_runners,                               // task_runners
+          fml::WeakPtr<IOManager>{},                       // io_manager
+          fml::WeakPtr<ImageDecoder>{},                    // io_manager
+          (*root_embedder_isolate)
+              ->GetAdvisoryScriptURI(),  // advisory_script_uri
+          (*root_embedder_isolate)
+              ->GetAdvisoryScriptEntrypoint(),  // advisory_script_entrypoint
+          (*root_embedder_isolate)->child_isolate_preparer_,     // preparer
+          (*root_embedder_isolate)->isolate_create_callback_,    // on create
+          (*root_embedder_isolate)->isolate_shutdown_callback_,  // on shutdown
+          false,    // is_root_isolate
+          false));  // is_group_root_isolate
 
   // root isolate should have been created via CreateRootIsolate and
   // CreateDartVMAndEmbedderObjectPair
@@ -765,7 +766,7 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
             (*raw_embedder_isolate)->isolate_create_callback_,    // on create
             (*raw_embedder_isolate)->isolate_shutdown_callback_,  // on shutdown
             is_root_isolate,
-            true)); // is_root_group_isolate
+            true));  // is_root_group_isolate
   }
 
   // Create the Dart VM isolate and give it the embedder object as the baton.
@@ -850,7 +851,8 @@ void DartIsolate::DartIsolateShutdownCallback(
 void DartIsolate::DartIsolateGroupCleanupCallback(
     std::shared_ptr<DartIsolate>* isolate_data) {
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateGroupCleanupCallback");
-  FML_DLOG(INFO) << "DartIsolateGroupCleanupCallback isolate_data " << isolate_data;
+  FML_DLOG(INFO) << "DartIsolateGroupCleanupCallback isolate_data "
+                 << isolate_data;
 
   delete isolate_data;
 }
@@ -863,8 +865,9 @@ void DartIsolate::DartIsolateCleanupCallback(
 
   if ((*isolate_data)->IsRootIsolate()) {
     // isolate_data will be cleaned up as part of IsolateGroup cleanup
-    FML_DLOG(INFO) << "DartIsolateCleanupCallback no-op for root isolate isolate_data "
-                   << isolate_data;
+    FML_DLOG(INFO)
+        << "DartIsolateCleanupCallback no-op for root isolate isolate_data "
+        << isolate_data;
     return;
   }
   if ((*isolate_data)->IsGroupRootIsolate()) {
@@ -873,12 +876,14 @@ void DartIsolate::DartIsolateCleanupCallback(
     // --no-enable-isolate-groups dart vm flag is used).
     // Then its isolate_data will be cleaned up as part of IsolateGroup
     // cleanup as well.
-    FML_DLOG(INFO) << "DartIsolateCleanupCallback no-op for group root isolate isolate_data "
+    FML_DLOG(INFO) << "DartIsolateCleanupCallback no-op for group root isolate "
+                      "isolate_data "
                    << isolate_data;
     return;
   }
 
-  FML_DLOG(INFO) << "DartIsolateCleanupCallback cleaned up isolate_data " << isolate_data;
+  FML_DLOG(INFO) << "DartIsolateCleanupCallback cleaned up isolate_data "
+                 << isolate_data;
   delete isolate_data;
 }
 
