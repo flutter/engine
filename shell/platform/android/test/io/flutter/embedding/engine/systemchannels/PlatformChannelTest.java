@@ -1,9 +1,11 @@
 package io.flutter.embedding.engine.systemchannels;
 
+import android.graphics.Rect;
 import android.util.Log;
 
 import org.hamcrest.Description;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,6 +14,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
@@ -29,44 +32,57 @@ import static org.mockito.Mockito.verify;
 @Config(manifest=Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class PlatformChannelTest {
-    // @Test
-    // public void itSendsSuccessMessageToFramework() {
-    //     DartExecutor dartExecutor = mock(DartExecutor.class);
-    //     ResultsMock resultsMock = mock(ResultsMock.class);
+    @Test
+    public void itSendsSuccessMessageToFramework() throws JSONException {
+        Log.v("TAG", "testing here");
+        DartExecutor dartExecutor = mock(DartExecutor.class);
+        PlatformChannel platformChannel = new PlatformChannel(dartExecutor);
+        PlatformMessageHandler platformMessageHandler = mock(PlatformMessageHandler.class);
+        platformChannel.setPlatformMessageHandler(platformMessageHandler);
 
-    //     PlatformChannel platformChannel = new PlatformChannel(dartExecutor);
+        int top = 0;
+        int right = 500;
+        int bottom = 250;
+        int left = 0;
 
-    //     // invoke method with correct arguments
-    //     JSONArray inputRects = new JSONArray();
-    //     platformChannel.channel.invokeMethod("SystemGestures.setSystemGestureExclusionRects", inputRects, resultsMock);
+        ResultsMock resultsMock = mock(ResultsMock.class);
+        JSONObject JsonRect = new JSONObject();
 
-    //     // verify(dartExecutor, times(1)).send(
-    //     //     eq("flutter/platform"),
-    //     //     ByteBufferMatcher.eqByteBuffer(JSONMethodCodec.INSTANCE.encodeMethodCall(
-    //     //         new MethodCall(
-    //     //             "SystemGestures.setSystemGestureExclusionRects",
-    //     //             inputRects
-    //     //         )
-    //     //     )),
+        JsonRect.put("top", top);
+        JsonRect.put("right", right);
+        JsonRect.put("bottom", bottom);
+        JsonRect.put("left", left);
 
-    //     //     // TODO (create incoming result callback handler -- see MethodChannel.java)
-    //     // );
-    // }
+        JSONArray inputRects = new JSONArray();
+        inputRects.put(JsonRect);
+
+        ArrayList<Rect> expectedDecodedRects = new ArrayList<Rect>();
+        Rect gestureRect = new Rect(left, top, right, bottom);
+        expectedDecodedRects.add(gestureRect);
+
+        MethodCall callSystemGestureExclusionRects = new MethodCall(
+            "SystemGestures.setSystemGestureExclusionRects",
+            inputRects
+        );
+
+        platformChannel.parsingMethodCallHandler.onMethodCall(callSystemGestureExclusionRects, resultsMock);
+        verify(platformMessageHandler, times(1)).setSystemGestureExclusionRects(expectedDecodedRects);
+        verify(resultsMock, times(1)).success(null);
+    }
 
     @Test
     public void itRequiresJSONArrayInput() {
-        DartExecutor dartExecutor = mock(DartExecutor.class);
-        ResultsMock resultsMock = mock(ResultsMock.class);
-        PlatformMessageHandler platformMessageHandler = mock(PlatformMessageHandler.class);
+        // DartExecutor dartExecutor = mock(DartExecutor.class);
 
-        PlatformChannel platformChannel = new PlatformChannel(dartExecutor);
-        platformChannel.setPlatformMessageHandler(platformMessageHandler);
 
-        // invoke method with incorrect shape
-        JSONObject inputRects = new JSONObject();
-        platformChannel.channel.invokeMethod("SystemGestures.setSystemGestureExclusionRects", inputRects, resultsMock);
+        // PlatformChannel platformChannel = new PlatformChannel(dartExecutor);
+        // platformChannel.setPlatformMessageHandler(platformMessageHandler);
 
-        Log.v("test", "got to this point");
+        // // invoke method with incorrect shape
+        // JSONObject inputRects = new JSONObject();
+        // platformChannel.channel.invokeMethod("SystemGestures.setSystemGestureExclusionRects", inputRects, resultsMock);
+
+        // Log.v("test", "got to this point");
 
         // verify(dartExecutor, times(1)).send(
         //     eq("flutter/platform"),
