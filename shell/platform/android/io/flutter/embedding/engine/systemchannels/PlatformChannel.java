@@ -122,22 +122,14 @@ public class PlatformChannel {
             break;
           case "SystemGestures.getSystemGestureExclusionRects":
             List<Rect> exclusionRects = platformMessageHandler.getSystemGestureExclusionRects();
-            if (exclusionRects != null) {
-              ArrayList<HashMap<String, Integer>> encodedExclusionRects = new ArrayList<HashMap<String, Integer>>();
-
-              for (Rect rect : exclusionRects) {
-                HashMap<String, Integer> rectMap = new HashMap<String, Integer>();
-                rectMap.put("top", rect.top);
-                rectMap.put("right", rect.right);
-                rectMap.put("bottom", rect.bottom);
-                rectMap.put("left", rect.left);
-                encodedExclusionRects.add(rectMap);
-              }
-              result.success(encodedExclusionRects);
-            } else {
+            if (exclusionRects == null) {
               String incorrectApiLevel = "Exclusion rects only exist for Android API 29+.";
               result.error("error", incorrectApiLevel, null);
+              return;
             }
+
+            ArrayList<HashMap<String, Integer>> encodedExclusionRects = encodeExclusionRects(exclusionRects);
+            result.success(encodedExclusionRects);
             break;
           case "Clipboard.getData": {
             String contentFormatName = (String) arguments;
@@ -557,6 +549,20 @@ public class PlatformChannel {
     SystemUiOverlay(@NonNull String encodedName) {
       this.encodedName = encodedName;
     }
+  }
+
+  private encodeExclusionRects(List<Rect> exclusionRects) {
+    ArrayList<HashMap<String, Integer>> encodedExclusionRects = new ArrayList<HashMap<String, Integer>>();
+    for (Rect rect : exclusionRects) {
+      HashMap<String, Integer> rectMap = new HashMap<String, Integer>();
+      rectMap.put("top", rect.top);
+      rectMap.put("right", rect.right);
+      rectMap.put("bottom", rect.bottom);
+      rectMap.put("left", rect.left);
+      encodedExclusionRects.add(rectMap);
+    }
+
+    return encodedExclusionRects;
   }
 
   /**
