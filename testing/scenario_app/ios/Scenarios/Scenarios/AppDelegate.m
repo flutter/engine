@@ -36,6 +36,7 @@
   } else {
     self.window.rootViewController = [[UIViewController alloc] init];
   }
+
   [self.window makeKeyAndVisible];
 
   return [super application:application didFinishLaunchingWithOptions:launchOptions];

@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
-import 'dart:math';
+import 'package:vector_math/vector_math.dart';
 
 import 'scenario.dart';
 
@@ -27,7 +27,8 @@ List<int> _to64(num value) {
 }
 
 /// A simple platform view.
-class PlatformViewScenario extends Scenario with _BasePlatformViewScenarioMixin {
+class PlatformViewScenario extends Scenario
+    with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
   /// The [window] parameter must not be null.
@@ -43,24 +44,14 @@ class PlatformViewScenario extends Scenario with _BasePlatformViewScenarioMixin 
 
     builder.pushOffset(0, 0);
 
-    addPlatformViewToSceneBuilder(builder, 0);
-
-    final PictureRecorder recorder = PictureRecorder();
-    final Canvas canvas = Canvas(recorder);
-    canvas.drawCircle(const Offset(50, 50), 50, Paint()..color = const Color(0xFFABCDEF));
-    final Picture picture = recorder.endRecording();
-    builder.addPicture(const Offset(300, 300), picture);
-
-    final Scene scene = builder.build();
-    window.render(scene);
-    scene.dispose();
+    finishBuilderByAddingPlatformViewAndPicture(builder, 0);
   }
 }
 
 /// Platform view with clip rect.
-class PlatformViewClipRectScenario extends Scenario with _BasePlatformViewScenarioMixin {
-
-    /// Constuct a platform view with clip rect scenario.
+class PlatformViewClipRectScenario extends Scenario
+    with _BasePlatformViewScenarioMixin {
+  /// Constuct a platform view with clip rect scenario.
   PlatformViewClipRectScenario(Window window, String text, {int id = 0})
       : assert(window != null),
         super(window) {
@@ -71,133 +62,99 @@ class PlatformViewClipRectScenario extends Scenario with _BasePlatformViewScenar
   void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
     builder.pushOffset(0, 0);
-    builder.pushClipRect(Rect.fromLTRB(50, 50, 300, 300));
-    addPlatformViewToSceneBuilder(builder, 1);
-
-    final Scene scene = builder.build();
-    window.render(scene);
-    scene.dispose();
+    builder.pushClipRect(const Rect.fromLTRB(100, 100, 400, 400));
+    finishBuilderByAddingPlatformViewAndPicture(builder, 1);
   }
 }
 
 /// Platform view with clip rrect.
 class PlatformViewClipRRectScenario extends PlatformViewScenario {
-
   /// Constuct a platform view with clip rrect scenario.
-  PlatformViewClipRRectScenario(Window window, String text, {int id = 0}) : super(window, text, id: id);
+  PlatformViewClipRRectScenario(Window window, String text, {int id = 0})
+      : super(window, text, id: id);
 
   @override
   void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
     builder.pushOffset(0, 0);
-    builder.pushClipRRect(RRect.fromLTRBAndCorners(50, 50, 300, 300, topLeft:Radius.circular(15), topRight:Radius.circular(50), bottomLeft:Radius.circular(50)));
-    addPlatformViewToSceneBuilder(builder, 2);
-    final Scene scene = builder.build();
-    window.render(scene);
-    scene.dispose();
+    builder.pushClipRRect(
+      RRect.fromLTRBAndCorners(
+        100,
+        100,
+        400,
+        400,
+        topLeft: const Radius.circular(15),
+        topRight: const Radius.circular(50),
+        bottomLeft: const Radius.circular(50),
+      ),
+    );
+    finishBuilderByAddingPlatformViewAndPicture(builder, 2);
   }
 }
 
 /// Platform view with clip path.
 class PlatformViewClipPathScenario extends PlatformViewScenario {
-
   /// Constuct a platform view with clip rrect scenario.
-  PlatformViewClipPathScenario(Window window, String text, {int id = 0}) : super(window, text, id: id);
+  PlatformViewClipPathScenario(Window window, String text, {int id = 0})
+      : super(window, text, id: id);
 
   @override
   void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
     builder.pushOffset(0, 0);
+
+    // Create a path of rectangle with width of 200 and height of 300, starting from (100, 100).
+    //
+    // The left side of the rectangle becomes a symmetric curve towards the left.
+    // The right side of the rectangle becomes a double curve. From top of bottom of the curve, it goes left then right.
+    //     _______
+    //    |      |
+    //   |      |
+    //  |        |
+    //   |        |
+    //    |______|
     Path path = Path();
-    path.moveTo(200, 0);
-    path.lineTo(0, 200);
-    path.quadraticBezierTo(80, 400, 100, 300);
-    path.lineTo(300, 300);
-    path.cubicTo(350, 200, 380, 100, 300, 0);
+    path.moveTo(100, 100);
+    path.quadraticBezierTo(50, 250, 100, 400);
+    path.lineTo(350, 400);
+    path.cubicTo(400, 300, 300, 200, 350, 100);
     path.close();
     builder.pushClipPath(path);
 
-    addPlatformViewToSceneBuilder(builder, 3);
-    final Scene scene = builder.build();
-    window.render(scene);
-    scene.dispose();
+    finishBuilderByAddingPlatformViewAndPicture(builder, 3);
   }
 }
 
 /// Platform view with transform.
 class PlatformViewTransformScenario extends PlatformViewScenario {
-
   /// Constuct a platform view with transform scenario.
-  PlatformViewTransformScenario(Window window, String text, {int id = 0}) : super(window, text, id: id);
+  PlatformViewTransformScenario(Window window, String text, {int id = 0})
+      : super(window, text, id: id);
 
   @override
   void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
     builder.pushOffset(0, 0);
-    final Float64List matrix4 = Float64List(16);
+    final Matrix4 matrix4 = Matrix4.identity();
+    matrix4.rotateZ(1.0);
+    matrix4.scale(0.5, 0.5, 1.0);
+    matrix4.translate(1000.0, 100.0, 0.0);
 
-    // set identify
-    matrix4[0] = 1.0;
-    matrix4[5] = 1.0;
-    matrix4[10] = 1.0;
-    matrix4[15] = 1.0;
+    final Float64List matrix4_64 =  Float64List.fromList(matrix4.storage);
+    builder.pushTransform(matrix4_64);
 
-
-    // rotate for 1 degree radians
-    const double angle = 1;
-    final double cosAngle = cos(angle);
-    final double sinAngle = sin(angle);
-    final double r1 = matrix4[0] * cosAngle + matrix4[4] * sinAngle;
-    final double r2 = matrix4[1] * cosAngle + matrix4[5] * sinAngle;
-    final double r3 = matrix4[2] * cosAngle + matrix4[6] * sinAngle;
-    final double r4 = matrix4[3] * cosAngle + matrix4[7] * sinAngle;
-    final double r5 = matrix4[0] * -sinAngle + matrix4[4] * cosAngle;
-    final double r6 = matrix4[1] * -sinAngle + matrix4[5] * cosAngle;
-    final double r7 = matrix4[2] * -sinAngle + matrix4[6] * cosAngle;
-    final double r8 = matrix4[3] * -sinAngle + matrix4[7] * cosAngle;
-    matrix4[0] = r1;
-    matrix4[1] = r2;
-    matrix4[2] = r3;
-    matrix4[3] = r4;
-    matrix4[4] = r5;
-    matrix4[5] = r6;
-    matrix4[6] = r7;
-    matrix4[7] = r8;
-
-    // scale both x and y by half.
-    const double sx = 0.5;
-    const double sy = 0.5;
-
-    matrix4[0] *= sx;
-    matrix4[1] *= sx;
-    matrix4[2] *= sx;
-    matrix4[3] *= sx;
-    matrix4[4] *= sy;
-    matrix4[5] *= sy;
-    matrix4[6] *= sy;
-    matrix4[7] *= sy;
-
-    // translate for (300, 300)
-    matrix4[12] += 300;
-    matrix4[13] += 300;
-
-    builder.pushTransform(matrix4);
-
-    addPlatformViewToSceneBuilder(builder, 4);
-    final Scene scene = builder.build();
-    window.render(scene);
-    scene.dispose();
+    finishBuilderByAddingPlatformViewAndPicture(builder, 4);
   }
 }
 
 /// Platform view with opacity.
 class PlatformViewOpacityScenario extends PlatformViewScenario {
-
   /// Constuct a platform view with transform scenario.
-  PlatformViewOpacityScenario(Window window, String text, {int id = 0}) : super(window, text, id: id);
+  PlatformViewOpacityScenario(Window window, String text, {int id = 0})
+      : super(window, text, id: id);
 
   @override
   void onBeginFrame(Duration duration) {
@@ -206,15 +163,11 @@ class PlatformViewOpacityScenario extends PlatformViewScenario {
     builder.pushOffset(0, 0);
     builder.pushOpacity(150);
 
-    addPlatformViewToSceneBuilder(builder, 5);
-    final Scene scene = builder.build();
-    window.render(scene);
-    scene.dispose();
+    finishBuilderByAddingPlatformViewAndPicture(builder, 5);
   }
 }
 
 mixin _BasePlatformViewScenarioMixin on Scenario {
-
   int _textureId;
 
   /// Construct the platform view related scenario
@@ -223,14 +176,15 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
   /// Call this method in the constructor of the platform view related scenarios
   /// to perform necessary set up.
   void constructScenario(Window window, String text, int id) {
-        const int _valueInt32 = 3;
+    const int _valueInt32 = 3;
     const int _valueFloat64 = 6;
     const int _valueString = 7;
     const int _valueUint8List = 8;
     const int _valueMap = 13;
     final Uint8List message = Uint8List.fromList(<int>[
       _valueString,
-      'create'.length, // this is safe as long as these are all single byte characters.
+      'create'
+          .length, // this is safe as long as these are all single byte characters.
       ...utf8.encode('create'),
       _valueMap,
       if (Platform.isIOS)
@@ -284,14 +238,28 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
     );
   }
 
-  // Add a platform view to the `sceneBuilder`.
-  void addPlatformViewToSceneBuilder(SceneBuilder sceneBuilder, int viewId) {
+  // Add a platform view and a picture to the scene, then finish the `sceneBuilder`.
+  void finishBuilderByAddingPlatformViewAndPicture(SceneBuilder sceneBuilder, int viewId) {
     if (Platform.isIOS) {
       sceneBuilder.addPlatformView(viewId, width: 500, height: 500);
     } else if (Platform.isAndroid && _textureId != null) {
-      sceneBuilder.addTexture(_textureId, offset: const Offset(150, 300), width: 500, height: 500);
+      sceneBuilder.addTexture(_textureId,
+          offset: const Offset(150, 300), width: 500, height: 500);
     } else {
-      throw UnsupportedError('Platform ${Platform.operatingSystem} is not supported');
+      throw UnsupportedError(
+          'Platform ${Platform.operatingSystem} is not supported');
     }
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawCircle(
+      const Offset(50, 50),
+      50,
+      Paint()..color = const Color(0xFFABCDEF),
+    );
+    final Picture picture = recorder.endRecording();
+    sceneBuilder.addPicture(const Offset(300, 300), picture);
+    final Scene scene = sceneBuilder.build();
+    window.render(scene);
+    scene.dispose();
   }
 }

@@ -2,61 +2,113 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import <Flutter/flutter.h>
-#import <XCTest/XCTest.h>
+#import "GoldenPlatformViewTests.h"
 
-#import "../Scenarios/TextPlatformView.h"
-#import "PlatformViewUITestUtil.h"
+@interface PlatformViewUITests : GoldenPlatformViewTests
 
-@interface PlatformViewUITests : XCTestCase
-@property(nonatomic, strong) XCUIApplication* application;
 @end
 
 @implementation PlatformViewUITests
 
-- (void)setUp {
-  [super setUp];
-  self.continueAfterFailure = NO;
-
-  self.application = [[XCUIApplication alloc] init];
-  self.application.launchArguments = @[ @"--platform-view" ];
-  [self.application launch];
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  PlatformViewGoldenTestManager* manager =
+      [[PlatformViewGoldenTestManager alloc] initWithIdentifier:@"platform_view"];
+  return [super initWithManager:manager invocation:invocation];
 }
 
 - (void)testPlatformView {
-  XCUIElement* element = self.application.textViews.firstMatch;
-  BOOL exists = [element waitForExistenceWithTimeout:kTimeToWaitForPlatformView];
-  if (!exists) {
-    XCTFail(@"It took longer than %@ second to find the platform view."
-            @"There might be issues with the platform view's construction,"
-            @"or with how the scenario is built.",
-            @(kTimeToWaitForPlatformView));
-  }
+  [self checkGolden];
+}
 
-  NSBundle* bundle = [NSBundle bundleForClass:[self class]];
-  NSString* goldenName =
-      [NSString stringWithFormat:@"golden_platform_view_%@", [PlatformViewUITestUtil platformName]];
-  NSString* path = [bundle pathForResource:goldenName ofType:@"png"];
-  UIImage* golden = [[UIImage alloc] initWithContentsOfFile:path];
+@end
 
-  XCUIScreenshot* screenshot = [[XCUIScreen mainScreen] screenshot];
-  XCTAttachment* attachment = [XCTAttachment attachmentWithScreenshot:screenshot];
-  attachment.name = @"current screen shot";
-  attachment.lifetime = XCTAttachmentLifetimeKeepAlways;
-  [self addAttachment:attachment];
+// Clip Rect Tests
+@interface PlatformViewMutationClipRectTests : GoldenPlatformViewTests
 
-  if (golden) {
-    XCTAttachment* goldenAttachment = [XCTAttachment attachmentWithImage:golden];
-    goldenAttachment.lifetime = XCTAttachmentLifetimeKeepAlways;
-    goldenAttachment.name = @"golden";
-    [self addAttachment:goldenAttachment];
-  } else {
-    XCTFail(@"This test will fail - no golden named %@ found. Follow the steps in the "
-            @"README to add a new golden.",
-            goldenName);
-  }
+@end
 
-  XCTAssertTrue([PlatformViewUITestUtil compareImage:golden toOther:screenshot.image]);
+@implementation PlatformViewMutationClipRectTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  PlatformViewGoldenTestManager* manager =
+      [[PlatformViewGoldenTestManager alloc] initWithIdentifier:@"platform_view_cliprect"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkGolden];
+}
+
+@end
+
+@interface PlatformViewMutationClipRRectTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationClipRRectTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  PlatformViewGoldenTestManager* manager =
+      [[PlatformViewGoldenTestManager alloc] initWithIdentifier:@"platform_view_cliprrect"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkGolden];
+}
+
+@end
+
+@interface PlatformViewMutationClipPathTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationClipPathTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  PlatformViewGoldenTestManager* manager =
+      [[PlatformViewGoldenTestManager alloc] initWithIdentifier:@"platform_view_clippath"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkGolden];
+}
+
+@end
+
+@interface PlatformViewMutationTransformTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationTransformTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  PlatformViewGoldenTestManager* manager =
+      [[PlatformViewGoldenTestManager alloc] initWithIdentifier:@"platform_view_transform"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkGolden];
+}
+
+@end
+
+@interface PlatformViewMutationOpacityTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationOpacityTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  PlatformViewGoldenTestManager* manager =
+      [[PlatformViewGoldenTestManager alloc] initWithIdentifier:@"platform_view_opacity"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkGolden];
 }
 
 @end
