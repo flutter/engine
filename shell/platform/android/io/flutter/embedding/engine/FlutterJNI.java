@@ -18,6 +18,7 @@ import android.view.SurfaceHolder;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
@@ -159,9 +160,9 @@ public class FlutterJNI {
   @Nullable
   private PlatformMessageHandler platformMessageHandler;
   @NonNull
-  private final Set<EngineLifecycleListener> engineLifecycleListeners = new HashSet<>();
+  private final Set<EngineLifecycleListener> engineLifecycleListeners = new CopyOnWriteArraySet<>();
   @NonNull
-  private final Set<IsDisplayingFlutterUiListener> isDisplayingFlutterUiListeners = new HashSet<>();
+  private final Set<IsDisplayingFlutterUiListener> isDisplayingFlutterUiListeners = new CopyOnWriteArraySet<>();
   @NonNull
   private final Looper mainLooper; // cached to avoid synchronization on repeat access.
 
