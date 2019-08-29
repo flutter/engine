@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
-import 'package:vector_math/vector_math.dart';
+import 'package:vector_math/vector_math_64.dart';
 
 import 'scenario.dart';
 
@@ -51,7 +51,7 @@ class PlatformViewScenario extends Scenario
 /// Platform view with clip rect.
 class PlatformViewClipRectScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
-  /// Constuct a platform view with clip rect scenario.
+  /// Constructs a platform view with clip rect scenario.
   PlatformViewClipRectScenario(Window window, String text, {int id = 0})
       : assert(window != null),
         super(window) {
@@ -69,7 +69,7 @@ class PlatformViewClipRectScenario extends Scenario
 
 /// Platform view with clip rrect.
 class PlatformViewClipRRectScenario extends PlatformViewScenario {
-  /// Constuct a platform view with clip rrect scenario.
+  /// Constructs a platform view with clip rrect scenario.
   PlatformViewClipRRectScenario(Window window, String text, {int id = 0})
       : super(window, text, id: id);
 
@@ -95,7 +95,7 @@ class PlatformViewClipRRectScenario extends PlatformViewScenario {
 
 /// Platform view with clip path.
 class PlatformViewClipPathScenario extends PlatformViewScenario {
-  /// Constuct a platform view with clip rrect scenario.
+  /// Constructs a platform view with clip rrect scenario.
   PlatformViewClipPathScenario(Window window, String text, {int id = 0})
       : super(window, text, id: id);
 
@@ -107,14 +107,7 @@ class PlatformViewClipPathScenario extends PlatformViewScenario {
 
     // Create a path of rectangle with width of 200 and height of 300, starting from (100, 100).
     //
-    // The left side of the rectangle becomes a symmetric curve towards the left.
-    // The right side of the rectangle becomes a double curve. From top of bottom of the curve, it goes left then right.
-    //     _______
-    //    |      |
-    //   |      |
-    //  |        |
-    //   |        |
-    //    |______|
+    // Refer to "../../ios/Scenarios/Scenarios/ScenariosUITests/golden_platform_view_clippath_iPhone SE_simulator.png" for the exact path after clipping.
     Path path = Path();
     path.moveTo(100, 100);
     path.quadraticBezierTo(50, 250, 100, 400);
@@ -129,7 +122,7 @@ class PlatformViewClipPathScenario extends PlatformViewScenario {
 
 /// Platform view with transform.
 class PlatformViewTransformScenario extends PlatformViewScenario {
-  /// Constuct a platform view with transform scenario.
+  /// Constructs a platform view with transform scenario.
   PlatformViewTransformScenario(Window window, String text, {int id = 0})
       : super(window, text, id: id);
 
@@ -138,13 +131,12 @@ class PlatformViewTransformScenario extends PlatformViewScenario {
     final SceneBuilder builder = SceneBuilder();
 
     builder.pushOffset(0, 0);
-    final Matrix4 matrix4 = Matrix4.identity();
-    matrix4.rotateZ(1.0);
-    matrix4.scale(0.5, 0.5, 1.0);
-    matrix4.translate(1000.0, 100.0, 0.0);
+    final Matrix4 matrix4 = Matrix4.identity()
+    ..rotateZ(1.0)
+    ..scale(0.5, 0.5, 1.0)
+    ..translate(1000.0, 100.0, 0.0);
 
-    final Float64List matrix4_64 =  Float64List.fromList(matrix4.storage);
-    builder.pushTransform(matrix4_64);
+    builder.pushTransform(matrix4.storage);
 
     finishBuilderByAddingPlatformViewAndPicture(builder, 4);
   }
@@ -152,7 +144,7 @@ class PlatformViewTransformScenario extends PlatformViewScenario {
 
 /// Platform view with opacity.
 class PlatformViewOpacityScenario extends PlatformViewScenario {
-  /// Constuct a platform view with transform scenario.
+  /// Constructs a platform view with transform scenario.
   PlatformViewOpacityScenario(Window window, String text, {int id = 0})
       : super(window, text, id: id);
 
@@ -183,8 +175,7 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
     const int _valueMap = 13;
     final Uint8List message = Uint8List.fromList(<int>[
       _valueString,
-      'create'
-          .length, // this is safe as long as these are all single byte characters.
+      'create'.length, // this won't work if we use multi-byte characters.
       ...utf8.encode('create'),
       _valueMap,
       if (Platform.isIOS)
