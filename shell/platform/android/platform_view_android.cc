@@ -11,6 +11,7 @@
 #include "flutter/shell/common/shell_io_manager.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/android/android_external_texture_gl.h"
+#include "flutter/shell/platform/android/android_external_texture_gl_share_context.h"
 #include "flutter/shell/platform/android/android_surface_gl.h"
 #include "flutter/shell/platform/android/platform_message_response_android.h"
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
@@ -374,6 +375,17 @@ void PlatformViewAndroid::RegisterExternalTexture(
     const fml::jni::JavaObjectWeakGlobalRef& surface_texture) {
   RegisterTexture(
       std::make_shared<AndroidExternalTextureGL>(texture_id, surface_texture));
+}
+
+void PlatformViewAndroid::RegisterExternalShareTexture(
+    int64_t texture_id,
+    int64_t share_texture_id) {
+  RegisterTexture(std::make_shared<AndroidExternalTextureShareContext>(
+      texture_id, share_texture_id));
+}
+
+EGLContext PlatformViewAndroid::GetShareContext() {
+  return android_surface_->GetShareContext();
 }
 
 // |PlatformView|

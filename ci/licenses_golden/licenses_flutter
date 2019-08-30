@@ -539,6 +539,8 @@ FILE: ../../../flutter/shell/platform/android/android_environment_gl.h
 FILE: ../../../flutter/shell/platform/android/android_exports.lst
 FILE: ../../../flutter/shell/platform/android/android_external_texture_gl.cc
 FILE: ../../../flutter/shell/platform/android/android_external_texture_gl.h
+FILE: ../../../flutter/shell/platform/android/android_external_texture_gl_share_context.cc
+FILE: ../../../flutter/shell/platform/android/android_external_texture_gl_share_context.h
 FILE: ../../../flutter/shell/platform/android/android_native_window.cc
 FILE: ../../../flutter/shell/platform/android/android_native_window.h
 FILE: ../../../flutter/shell/platform/android/android_shell_holder.cc
@@ -775,6 +777,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_i
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/module.modulemap
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl_share_context.h
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl_share_context.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_render_target.h

@@ -41,6 +41,9 @@ class AndroidSurfaceSoftware final : public AndroidSurface,
   // |AndroidSurface|
   bool SetNativeWindow(fml::RefPtr<AndroidNativeWindow> window) override;
 
+  // |AndroidSurface|
+  EGLContext GetShareContext() override;
+
   // |GPUSurfaceSoftwareDelegate|
   sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override;
 

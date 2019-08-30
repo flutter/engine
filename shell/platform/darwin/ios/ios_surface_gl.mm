@@ -73,6 +73,10 @@ bool IOSSurfaceGL::GLContextPresent() {
   return IsValid() && render_target_->PresentRenderBuffer();
 }
 
+EAGLSharegroup* IOSSurfaceGL::GetGLShareGroup() {
+  return context_.get()->GetGLShareGroup();
+}
+
 // |ExternalViewEmbedder|
 sk_sp<SkSurface> IOSSurfaceGL::GetRootSurface() {
   // On iOS, the root surface is created from the on-screen render target. Only the surfaces for the

@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.Surface;
+import android.opengl.EGLContext;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
@@ -120,6 +121,24 @@ public class FlutterRenderer implements TextureRegistry {
     return entry;
   }
 
+  @Override
+  public TextureRegistry.ShareTextureEntry createShareTexture(long shareTextureID) {
+    final ShareTextureRegistryEntry entry = new ShareTextureRegistryEntry(nextTextureId.getAndIncrement(),shareTextureID);
+    Log.v(TAG, "New ShareTexture ID: " + entry.id());
+    registerShareTexture(entry.id(),shareTextureID);
+    return entry;
+  }
+
+  @Override
+  public void onShareFrameAvaliable(int textureIndex) {
+    markTextureFrameAvailable(textureIndex);
+  }
+
+  @Override
+  public EGLContext getShareContext(long sdkInt) {
+    return flutterJNI.getShareContext(sdkInt);
+  }
+
   final class SurfaceTextureRegistryEntry implements TextureRegistry.SurfaceTextureEntry {
     private final long id;
     @NonNull
@@ -178,7 +197,33 @@ public class FlutterRenderer implements TextureRegistry {
       released = true;
     }
   }
-  //------ END TextureRegistry IMPLEMENTATION ----
+
+  final class ShareTextureRegistryEntry implements TextureRegistry.ShareTextureEntry {
+    private final long id;
+    private final long textureID;
+    private boolean released;
+    ShareTextureRegistryEntry(long id, long shareTextureID) {
+      this.id = id;
+      this.textureID = shareTextureID;
+    }
+    
+    @Override
+    public long id() {
+      return id;
+    }
+    
+    @Override
+    public void release() {
+      if (released) {
+        return;
+      }
+      released = true;
+      unregisterTexture(id);
+    }
+  }
+
+//------ END TextureRegistry IMPLEMENTATION ----
+
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   public void surfaceCreated(@NonNull Surface surface) {
@@ -239,6 +284,10 @@ public class FlutterRenderer implements TextureRegistry {
   // TODO(mattcarroll): describe the native behavior that this invokes
   private void registerTexture(long textureId, @NonNull SurfaceTexture surfaceTexture) {
     flutterJNI.registerTexture(textureId, surfaceTexture);
+  }
+
+  private void registerShareTexture(long textureId, long shareTextureID) {
+    flutterJNI.registerShareTexture(textureId, shareTextureID);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes

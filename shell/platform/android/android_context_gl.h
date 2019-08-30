@@ -35,6 +35,8 @@ class AndroidContextGL : public fml::RefCountedThreadSafe<AndroidContextGL> {
 
   bool Resize(const SkISize& size);
 
+  EGLContext GetShareContext();
+
  private:
   fml::RefPtr<AndroidEnvironmentGL> environment_;
   fml::RefPtr<AndroidNativeWindow> window_;

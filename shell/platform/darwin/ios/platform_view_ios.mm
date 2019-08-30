@@ -16,6 +16,7 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 #include "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
+#include "flutter/shell/platform/darwin/ios/ios_external_texture_gl_share_context.h"
 
 namespace flutter {
 
@@ -69,6 +70,18 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
 void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
                                               NSObject<FlutterTexture>* texture) {
   RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
+}
+
+void PlatformViewIOS::RegisterExternalShareTexture(int64_t texture_id,
+                                                   NSObject<FlutterShareTexture>* texture) {
+  RegisterTexture(std::make_shared<IOSExternalTextureShareContext>(texture_id, texture));
+}
+
+EAGLSharegroup* PlatformViewIOS::GetGLShareGroup() {
+  if (ios_surface_.get() == nullptr) {
+    return nullptr;
+  }
+  return ios_surface_->GetGLShareGroup();
 }
 
 // |PlatformView|
