@@ -13,6 +13,7 @@
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#include "flutter/shell/platform/darwin/ios/ios_gl_context.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
@@ -24,6 +25,7 @@
 @implementation FlutterView
 
 id<FlutterViewEngineDelegate> _delegate;
+std::shared_ptr<flutter::IOSGLContext> _onscreen_context;
 
 - (instancetype)init {
   @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
@@ -51,6 +53,10 @@ id<FlutterViewEngineDelegate> _delegate;
     _delegate = delegate;
     self.layer.opaque = opaque;
   }
+
+#if !TARGET_IPHONE_SIMULATOR
+  _onscreen_context = std::make_shared<flutter::IOSGLContext>();
+#endif  // !TARGET_IPHONE_SIMULATOR
 
   return self;
 }
@@ -94,7 +100,7 @@ id<FlutterViewEngineDelegate> _delegate;
 }
 
 - (std::unique_ptr<flutter::IOSSurface>)createSurface:
-    (std::shared_ptr<flutter::IOSGLContext>)context {
+    (std::shared_ptr<flutter::IOSGLContext>)resource_context {
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
         reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
@@ -105,7 +111,7 @@ id<FlutterViewEngineDelegate> _delegate;
         eagl_layer.get().presentsWithTransaction = YES;
       }
     }
-    return std::make_unique<flutter::IOSSurfaceGL>(context, std::move(eagl_layer),
+    return std::make_unique<flutter::IOSSurfaceGL>(_onscreen_context, resource_context, std::move(eagl_layer),
                                                    [_delegate platformViewsController]);
 #if FLUTTER_SHELL_ENABLE_METAL
   } else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {

@@ -12,15 +12,19 @@
 
 namespace flutter {
 
+static fml::scoped_nsobject<EAGLSharegroup> sharegroup_;
+
 IOSGLContext::IOSGLContext() {
-  resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3]);
-  if (resource_context_ != nullptr) {
-    context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3
-                                         sharegroup:resource_context_.get().sharegroup]);
-  } else {
-    resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2]);
+  context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3
+                                       sharegroup:sharegroup_.get()]);
+
+  if (!context_) {
     context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
-                                         sharegroup:resource_context_.get().sharegroup]);
+                                         sharegroup:sharegroup_.get()]);
+  }
+
+  if (sharegroup_ == nullptr) {
+    sharegroup_.reset(context_.get().sharegroup);
   }
 
   // TODO:
@@ -44,20 +48,14 @@ IOSGLContext::IOSGLContext() {
   }
 }
 
-IOSGLContext::~IOSGLContext() = default;
-
-std::unique_ptr<IOSGLRenderTarget> IOSGLContext::CreateRenderTarget(
-    fml::scoped_nsobject<CAEAGLLayer> layer) {
-  return std::make_unique<IOSGLRenderTarget>(std::move(layer), context_.get(),
-                                             resource_context_.get());
+bool IOSGLContext::BindRenderbufferStorage(NSUInteger target, fml::scoped_nsobject<CAEAGLLayer> layer) {
+  return [context_.get() renderbufferStorage:GL_RENDERBUFFER fromDrawable:layer.get()];
 }
+
+IOSGLContext::~IOSGLContext() = default;
 
 bool IOSGLContext::MakeCurrent() {
   return [EAGLContext setCurrentContext:context_.get()];
-}
-
-bool IOSGLContext::ResourceMakeCurrent() {
-  return [EAGLContext setCurrentContext:resource_context_.get()];
 }
 
 }  // namespace flutter

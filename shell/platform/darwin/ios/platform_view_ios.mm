@@ -23,7 +23,7 @@ PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
                                  flutter::TaskRunners task_runners)
     : PlatformView(delegate, std::move(task_runners)) {
 #if !TARGET_IPHONE_SIMULATOR
-  gl_context_ = std::make_shared<IOSGLContext>();
+  gl_resource_context_ = std::make_shared<IOSGLContext>();
 #endif  // !TARGET_IPHONE_SIMULATOR
 }
 
@@ -51,7 +51,7 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
   owner_controller_ = owner_controller;
   if (owner_controller_) {
     ios_surface_ =
-        [static_cast<FlutterView*>(owner_controller.get().view) createSurface:gl_context_];
+        [static_cast<FlutterView*>(owner_controller.get().view) createSurface:gl_resource_context_];
     FML_DCHECK(ios_surface_ != nullptr);
 
     if (accessibility_bridge_) {
@@ -83,7 +83,7 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
 
 // |PlatformView|
 sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
-  if (!gl_context_ || !gl_context_->ResourceMakeCurrent()) {
+  if (!gl_resource_context_ || !gl_resource_context_->MakeCurrent()) {
     FML_DLOG(INFO) << "Could not make resource context current on IO thread. "
                       "Async texture uploads will be disabled. On Simulators, "
                       "this is expected.";
