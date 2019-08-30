@@ -34,7 +34,6 @@ group("web_sdk") {
     ":web_engine_sources",
     ":web_ui_library",
     ":web_ui_sources",
-    ":web_plugins_package",
   ]
 }
 
@@ -183,15 +182,5 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
     "legacy",
     "-o",
     rebase_path("$root_out_dir/flutter_web_sdk/kernel/legacy/dart_sdk.js"),
-  ]
-}
-
-copy("web_plugins_package") {
-  sources = [
-    "$flutter_root/flutter_web_plugins",
-  ]
-
-  outputs = [
-    "$root_out_dir/flutter_web_plugins",
   ]
 }
