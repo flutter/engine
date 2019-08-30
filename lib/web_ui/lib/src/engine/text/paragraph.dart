@@ -290,12 +290,6 @@ class EngineParagraph implements ui.Paragraph {
     final int end = WordBreaker.nextBreakIndex(_plainText, offset);
     return <int>[start, end];
   }
-
-  @override
-  List<ui.LineMetrics> computeLineMetrics() {
-    // TODO(flutter_web): Implement this.
-    return null;
-  }
 }
 
 /// The web implementation of [ui.ParagraphStyle].
@@ -1059,7 +1053,7 @@ void _applyParagraphStyleToElement({
       cssStyle.lineHeight = '${style._lineHeight}';
     }
     if (style._textDirection != null) {
-      cssStyle.direction = _textDirectionToCssValue(style._textDirection);
+      cssStyle.direction = _textDirectionToCss(style._textDirection);
     }
     if (style._fontSize != null) {
       cssStyle.fontSize = '${style._fontSize.floor()}px';
@@ -1083,7 +1077,7 @@ void _applyParagraphStyleToElement({
       cssStyle.lineHeight = '${style._lineHeight}';
     }
     if (style._textDirection != previousStyle._textDirection) {
-      cssStyle.direction = _textDirectionToCssValue(style._textDirection);
+      cssStyle.direction = _textDirectionToCss(style._textDirection);
     }
     if (style._fontSize != previousStyle._fontSize) {
       cssStyle.fontSize =
@@ -1272,10 +1266,28 @@ String _decorationStyleToCssString(ui.TextDecorationStyle decorationStyle) {
 /// ```css
 /// direction: rtl;
 /// ```
-String _textDirectionToCssValue(ui.TextDirection textDirection) {
-  return textDirection == ui.TextDirection.ltr
-      ? null // it's the default
-      : 'rtl';
+String _textDirectionToCss(ui.TextDirection textDirection) {
+  if (textDirection == null) {
+    return null;
+  }
+  return textDirectionIndexToCss(textDirection.index);
+}
+
+String textDirectionIndexToCss(int textDirectionIndex) {
+  switch (textDirectionIndex) {
+    case 0:
+      return 'rtl';
+    case 1:
+      return null; // ltr is the default
+  }
+
+  assert(() {
+    throw AssertionError(
+      'Failed to convert text direction $textDirectionIndex to CSS',
+    );
+  }());
+
+  return null;
 }
 
 /// Converts [align] to its corresponding CSS value.
