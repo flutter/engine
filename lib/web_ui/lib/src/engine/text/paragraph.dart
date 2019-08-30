@@ -293,7 +293,7 @@ class EngineParagraph implements ui.Paragraph {
 
   @override
   List<ui.LineMetrics> computeLineMetrics() {
-    // TODO(flutter_web): Implement this.
+    // TODO(flutter_web): https://github.com/flutter/flutter/issues/39537
     return null;
   }
 }
