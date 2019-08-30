@@ -8,10 +8,6 @@
 
 @interface GoldenImage ()
 
-@property(readwrite, strong, nonatomic) NSString* goldenName;
-@property(readwrite, strong, nonatomic) UIImage* image;
-@property(strong, nonatomic) NSString* platformName;
-
 @end
 
 @implementation GoldenImage
@@ -19,7 +15,7 @@
 - (instancetype)initWithGoldenNamePrefix:(NSString*)prefix {
   self = [super init];
   if (self) {
-    _goldenName = [prefix stringByAppendingString:self.platformName];
+    _goldenName = [prefix stringByAppendingString:_platformName()];
     NSBundle* bundle = [NSBundle bundleForClass:[self class]];
     NSURL* goldenURL = [bundle URLForResource:_goldenName withExtension:@"png"];
     NSData* data = [NSData dataWithContentsOfURL:goldenURL];
@@ -78,24 +74,21 @@
   return YES;
 }
 
-- (NSString*)platformName {
-  if (!_platformName) {
-    NSString* simulatorName =
-        [[NSProcessInfo processInfo].environment objectForKey:@"SIMULATOR_DEVICE_NAME"];
-    if (simulatorName) {
-      return [NSString stringWithFormat:@"%@_simulator", simulatorName];
-    }
-
-    size_t size;
-    sysctlbyname("hw.model", NULL, &size, NULL, 0);
-    char* answer = malloc(size);
-    sysctlbyname("hw.model", answer, &size, NULL, 0);
-
-    NSString* results = [NSString stringWithCString:answer encoding:NSUTF8StringEncoding];
-    free(answer);
-    _platformName = results;
+NS_INLINE NSString* _platformName() {
+  NSString* simulatorName =
+      [[NSProcessInfo processInfo].environment objectForKey:@"SIMULATOR_DEVICE_NAME"];
+  if (simulatorName) {
+    return [NSString stringWithFormat:@"%@_simulator", simulatorName];
   }
-  return _platformName;
+
+  size_t size;
+  sysctlbyname("hw.model", NULL, &size, NULL, 0);
+  char* answer = malloc(size);
+  sysctlbyname("hw.model", answer, &size, NULL, 0);
+
+  NSString* results = [NSString stringWithCString:answer encoding:NSUTF8StringEncoding];
+  free(answer);
+  return results;
 }
 
 @end

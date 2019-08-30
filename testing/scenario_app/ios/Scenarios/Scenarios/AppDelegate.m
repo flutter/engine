@@ -19,21 +19,28 @@
 
   // This argument is used by the XCUITest for Platform Views so that the app
   // under test will create platform views.
-  if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--platform-view"]) {
-    [self readyContextForPlatformViewTests:@"text_platform_view"];
-  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--platform-view-cliprect"]) {
-    [self readyContextForPlatformViewTests:@"platform_view_cliprect"];
-  } else if ([[[NSProcessInfo processInfo] arguments]
-                 containsObject:@"--platform-view-cliprrect"]) {
-    [self readyContextForPlatformViewTests:@"platform_view_cliprrect"];
-  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--platform-view-clippath"]) {
-    [self readyContextForPlatformViewTests:@"platform_view_clippath"];
-  } else if ([[[NSProcessInfo processInfo] arguments]
-                 containsObject:@"--platform-view-transform"]) {
-    [self readyContextForPlatformViewTests:@"platform_view_transform"];
-  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--platform-view-opacity"]) {
-    [self readyContextForPlatformViewTests:@"platform_view_opacity"];
-  } else {
+  // The launchArgsMap should match the one in the `PlatformVieGoldenTestManager`.
+  static NSDictionary* launchArgsMap;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    launchArgsMap = @{
+      @"--platform-view" : @"platform_view",
+      @"--platform-view-cliprect" : @"platform_view_cliprect",
+      @"--platform-view-cliprrect" : @"platform_view_cliprrect",
+      @"--platform-view-clippath" : @"platform_view_clippath",
+      @"--platform-view-transform" : @"platform_view_transform",
+      @"--platform-view-opacity" : @"platform_view_opacity",
+    };
+  });
+  BOOL hasGoldenLaunchArg = NO;
+  for (NSString* key in launchArgsMap.allKeys) {
+    if ([[[NSProcessInfo processInfo] arguments] containsObject:key]) {
+      [self readyContextForPlatformViewTests:launchArgsMap[key]];
+      hasGoldenLaunchArg = YES;
+      break;
+    }
+  }
+  if (!hasGoldenLaunchArg) {
     self.window.rootViewController = [[UIViewController alloc] init];
   }
 
@@ -42,7 +49,7 @@
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
-- (void)readyContextForPlatformViewTests:(NSString*)scenarioMessage {
+- (void)readyContextForPlatformViewTests:(NSString*)scenarioIdentifier {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"PlatformViewTest" project:nil];
   [engine runWithEntrypoint:nil];
 
@@ -53,7 +60,7 @@
             binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
               [engine.binaryMessenger
                   sendOnChannel:@"set_scenario"
-                        message:[scenarioMessage dataUsingEncoding:NSUTF8StringEncoding]];
+                        message:[scenarioIdentifier dataUsingEncoding:NSUTF8StringEncoding]];
             }];
   TextPlatformViewFactory* textPlatformViewFactory =
       [[TextPlatformViewFactory alloc] initWithMessenger:flutterViewController.binaryMessenger];

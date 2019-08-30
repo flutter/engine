@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:vector_math/vector_math_64.dart';
@@ -132,9 +133,9 @@ class PlatformViewTransformScenario extends PlatformViewScenario {
 
     builder.pushOffset(0, 0);
     final Matrix4 matrix4 = Matrix4.identity()
-    ..rotateZ(1.0)
-    ..scale(0.5, 0.5, 1.0)
-    ..translate(1000.0, 100.0, 0.0);
+      ..rotateZ(1)
+      ..scale(0.5, 0.5, 1.0)
+      ..translate(1000.0, 100.0, 0.0);
 
     builder.pushTransform(matrix4.storage);
 

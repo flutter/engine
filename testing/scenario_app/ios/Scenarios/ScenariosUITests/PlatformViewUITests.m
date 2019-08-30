@@ -12,7 +12,7 @@
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithIdentifier:@"platform_view"];
+      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -31,7 +31,7 @@
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithIdentifier:@"platform_view_cliprect"];
+      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprect"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -49,7 +49,7 @@
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithIdentifier:@"platform_view_cliprrect"];
+      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprrect"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -67,7 +67,7 @@
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithIdentifier:@"platform_view_clippath"];
+      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-clippath"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -85,7 +85,7 @@
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithIdentifier:@"platform_view_transform"];
+      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-transform"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -103,7 +103,7 @@
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithIdentifier:@"platform_view_opacity"];
+      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-opacity"];
   return [super initWithManager:manager invocation:invocation];
 }
 

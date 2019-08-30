@@ -10,11 +10,10 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @interface GoldenPlatformViewTests ()
 
-@property(nonatomic, strong) NSString* launchArguments;
-@property(copy) NSString* goldenName;
+@property(nonatomic, copy) NSString* goldenName;
 @property(nonatomic, strong) XCUIApplication* application;
 
-@property(strong, nonatomic) PlatformViewGoldenTestManager* manager;
+@property(nonatomic, strong) PlatformViewGoldenTestManager* manager;
 
 @end
 
@@ -32,7 +31,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
   self.continueAfterFailure = NO;
 
   self.application = [[XCUIApplication alloc] init];
-  self.application.launchArguments = self.manager.launchArgs;
+  self.application.launchArguments = @[ self.manager.launchArg ];
   [self.application launch];
 }
 

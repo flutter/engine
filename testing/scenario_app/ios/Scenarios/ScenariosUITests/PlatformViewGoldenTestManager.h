@@ -7,19 +7,22 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+extern NSDictionary* launchArgsMap;
+
 // Manages a `GoldenPlatformViewTests`.
 //
-// It creates the correct GoldenImage based on the `identifer`.
-// It also generates the correct launchArgs to launch the associate platform view scenario.
+// It creates the correct `identifer` based on the `launchArg`.
+// It also generates the correct GoldenImage based on the `identifier`.
 @interface PlatformViewGoldenTestManager : NSObject
 
 @property(readonly, strong, nonatomic) GoldenImage* goldenImage;
-@property(readonly, strong, nonatomic) NSArray* launchArgs;
+@property(readonly, copy, nonatomic) NSString* identifier;
+@property(readonly, copy, nonatomic) NSString* launchArg;
 
-// Initilize with identifier.
+// Initilize with launchArg.
 //
-// Crahes if the identifier is not mapped in `launchArgsMap` inside PlatformViewGoldenTestManager.m
-- (instancetype)initWithIdentifier:(nonnull NSString*)identifier;
+// Crahes if the launchArg is not mapped in `Appdelegate.launchArgsMap`.
+- (instancetype)initWithLaunchArg:(NSString*)launchArg;
 
 @end
 
