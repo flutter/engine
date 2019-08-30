@@ -1117,6 +1117,12 @@ void ParagraphTxt::Layout(double width) {
         if (style.has_height_override) {
           // Scale the ascent and descent such that the sum of ascent and
           // descent is `fontsize * style.height * style.font_size`.
+          //
+          // The raw metrics do not add up to fontSize. The state of font
+          // metrics is a mess, see
+          // https://glyphsapp.com/tutorials/vertical-metrics for a good
+          // explanation of all the available metrics for fonts. Doing this
+          // allows a sane and reasonable line height to be specified.
           double metrics_height = -metrics.fAscent + metrics.fDescent;
           ascent = (-metrics.fAscent / metrics_height) * style.height *
                    style.font_size;
