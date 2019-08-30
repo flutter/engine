@@ -23,9 +23,9 @@
 - (instancetype)initWithCoder:(NSCoder*)aDecoder NS_UNAVAILABLE;
 
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
-- (std::unique_ptr<shell::IOSSurface>)createSoftwareSurface;
-- (std::unique_ptr<shell::IOSSurfaceGL>)createGLSurfaceWithContext:
-    (std::shared_ptr<shell::IOSGLContext>)gl_context;
+- (instancetype)initWithContentsScale:(CGFloat)contentsScale;
+- (std::unique_ptr<flutter::IOSSurface>)createSurface:
+    (std::shared_ptr<flutter::IOSGLContext>)gl_context;
 
 @end
 

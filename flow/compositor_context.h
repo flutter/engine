@@ -12,13 +12,28 @@
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/texture.h"
+#include "flutter/fml/gpu_thread_merger.h"
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
-namespace flow {
+namespace flutter {
 
 class LayerTree;
+
+enum class RasterStatus {
+  // Frame has successfully rasterized.
+  kSuccess,
+  // Frame needs to be resubmitted for rasterization. This is
+  // currently only called when thread configuration change occurs.
+  kResubmit,
+  // Frame has been successfully rasterized, but "there are additional items in
+  // the pipeline waiting to be consumed. This is currently
+  // only called when thread configuration change occurs.
+  kEnqueuePipeline,
+  // Failed to rasterize the frame.
+  kFailed
+};
 
 class CompositorContext {
  public:
@@ -29,7 +44,8 @@ class CompositorContext {
                 SkCanvas* canvas,
                 ExternalViewEmbedder* view_embedder,
                 const SkMatrix& root_surface_transformation,
-                bool instrumentation_enabled);
+                bool instrumentation_enabled,
+                fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger);
 
     virtual ~ScopedFrame();
 
@@ -45,7 +61,8 @@ class CompositorContext {
 
     GrContext* gr_context() const { return gr_context_; }
 
-    virtual bool Raster(LayerTree& layer_tree, bool ignore_raster_cache);
+    virtual RasterStatus Raster(LayerTree& layer_tree,
+                                bool ignore_raster_cache);
 
    private:
     CompositorContext& context_;
@@ -54,11 +71,12 @@ class CompositorContext {
     ExternalViewEmbedder* view_embedder_;
     const SkMatrix& root_surface_transformation_;
     const bool instrumentation_enabled_;
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger_;
 
     FML_DISALLOW_COPY_AND_ASSIGN(ScopedFrame);
   };
 
-  CompositorContext();
+  CompositorContext(fml::Milliseconds frame_budget = fml::kDefaultFrameBudget);
 
   virtual ~CompositorContext();
 
@@ -67,7 +85,8 @@ class CompositorContext {
       SkCanvas* canvas,
       ExternalViewEmbedder* view_embedder,
       const SkMatrix& root_surface_transformation,
-      bool instrumentation_enabled);
+      bool instrumentation_enabled,
+      fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger);
 
   void OnGrContextCreated();
 
@@ -79,16 +98,16 @@ class CompositorContext {
 
   const Counter& frame_count() const { return frame_count_; }
 
-  const Stopwatch& frame_time() const { return frame_time_; }
+  const Stopwatch& raster_time() const { return raster_time_; }
 
-  Stopwatch& engine_time() { return engine_time_; }
+  Stopwatch& ui_time() { return ui_time_; }
 
  private:
   RasterCache raster_cache_;
   TextureRegistry texture_registry_;
   Counter frame_count_;
-  Stopwatch frame_time_;
-  Stopwatch engine_time_;
+  Stopwatch raster_time_;
+  Stopwatch ui_time_;
 
   void BeginFrame(ScopedFrame& frame, bool enable_instrumentation);
 
@@ -97,6 +116,6 @@ class CompositorContext {
   FML_DISALLOW_COPY_AND_ASSIGN(CompositorContext);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_COMPOSITOR_CONTEXT_H_

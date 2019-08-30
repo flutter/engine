@@ -14,9 +14,26 @@
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/time/time_point.h"
 #include "flutter/fml/unique_fd.h"
 
-namespace blink {
+namespace flutter {
+
+class FrameTiming {
+ public:
+  enum Phase { kBuildStart, kBuildFinish, kRasterStart, kRasterFinish, kCount };
+
+  static constexpr Phase kPhases[kCount] = {kBuildStart, kBuildFinish,
+                                            kRasterStart, kRasterFinish};
+
+  fml::TimePoint Get(Phase phase) const { return data_[phase]; }
+  fml::TimePoint Set(Phase phase, fml::TimePoint value) {
+    return data_[phase] = value;
+  }
+
+ private:
+  fml::TimePoint data_[kCount];
+};
 
 using TaskObserverAdd =
     std::function<void(intptr_t /* key */, fml::closure /* callback */)>;
@@ -29,6 +46,10 @@ using UnhandledExceptionCallback =
 // callback that generates the mapping from these paths.
 // https://github.com/flutter/flutter/issues/26783
 using MappingCallback = std::function<std::unique_ptr<fml::Mapping>(void)>;
+using MappingsCallback =
+    std::function<std::vector<std::unique_ptr<const fml::Mapping>>(void)>;
+
+using FrameRasterizedCallback = std::function<void(const FrameTiming&)>;
 
 struct Settings {
   Settings();
@@ -52,18 +73,27 @@ struct Settings {
   // libraries.
   MappingCallback dart_library_sources_kernel;
 
-  std::string application_library_path;
-  std::string application_kernel_asset;
-  std::string application_kernel_list_asset;
+  // Path to a library containing the application's compiled Dart code.
+  // This is a vector so that the embedder can provide fallback paths in
+  // case the primary path to the library can not be loaded.
+  std::vector<std::string> application_library_path;
+
+  std::string application_kernel_asset;       // deprecated
+  std::string application_kernel_list_asset;  // deprecated
+  MappingsCallback application_kernels;
 
   std::string temp_directory_path;
   std::vector<std::string> dart_flags;
+  // Arguments passed as a List<String> to Dart's entrypoint function.
+  std::vector<std::string> dart_entrypoint_args;
 
   // Isolate settings
+  bool enable_checked_mode = false;
   bool start_paused = false;
   bool trace_skia = false;
   bool trace_startup = false;
   bool trace_systrace = false;
+  bool dump_skp_on_shader_compilation = false;
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
   bool disable_dart_asserts = false;
@@ -75,14 +105,38 @@ struct Settings {
   std::string advisory_script_entrypoint = "main";
 
   // Observatory settings
+
+  // Whether the Dart VM service should be enabled.
   bool enable_observatory = false;
-  // Port on target will be auto selected by the OS. A message will be printed
-  // on the target with the port after it has been selected.
+
+  // The IP address to which the Dart VM service is bound.
+  std::string observatory_host;
+
+  // The port to which the Dart VM service is bound. When set to `0`, a free
+  // port will be automatically selected by the OS. A message is logged on the
+  // target indicating the URL at which the VM service can be accessed.
   uint32_t observatory_port = 0;
-  bool ipv6 = false;
+
+  // Determines whether an authentication code is required to communicate with
+  // the VM service.
+  bool disable_service_auth_codes = true;
 
   // Font settings
   bool use_test_fonts = false;
+
+  // All shells in the process share the same VM. The last shell to shutdown
+  // should typically shut down the VM as well. However, applications depend on
+  // the behavior of "warming-up" the VM by creating a shell that does not do
+  // anything. This used to work earlier when the VM could not be shut down (and
+  // hence never was). Shutting down the VM now breaks such assumptions in
+  // existing embedders. To keep this behavior consistent and allow existing
+  // embedders the chance to migrate, this flag defaults to true. Any shell
+  // launched with this flag set to true will leak the VM in the process. There
+  // is no way to shut down the VM once such a shell has been started. All
+  // shells in the platform (via their embedding APIs) should cooperate to make
+  // sure this flag is never set if they want the VM to shutdown and free all
+  // associated resources.
+  bool leak_vm = true;
 
   // Engine settings
   TaskObserverAdd task_observer_add;
@@ -90,9 +144,11 @@ struct Settings {
   // The main isolate is current when this callback is made. This is a good spot
   // to perform native Dart bindings for libraries not built in.
   fml::closure root_isolate_create_callback;
+  fml::closure isolate_create_callback;
   // The isolate is not current and may have already been destroyed when this
   // call is made.
   fml::closure root_isolate_shutdown_callback;
+  fml::closure isolate_shutdown_callback;
   // The callback made on the UI thread in an isolate scope when the engine
   // detects that the framework is idle. The VM also uses this time to perform
   // tasks suitable when idling. Due to this, embedders are still advised to be
@@ -121,11 +177,14 @@ struct Settings {
   fml::UniqueFD::element_type assets_dir =
       fml::UniqueFD::traits_type::InvalidValue();
   std::string assets_path;
-  std::string flx_path;
+
+  // Callback to handle the timings of a rasterized frame. This is called as
+  // soon as a frame is rasterized.
+  FrameRasterizedCallback frame_rasterized_callback;
 
   std::string ToString() const;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_COMMON_SETTINGS_H_

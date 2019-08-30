@@ -15,33 +15,35 @@
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 
-namespace shell {
+namespace flutter {
 
 class GPUSurfaceGL : public Surface {
  public:
-  GPUSurfaceGL(GPUSurfaceGLDelegate* delegate);
+  GPUSurfaceGL(GPUSurfaceGLDelegate* delegate, bool render_to_surface);
 
   // Creates a new GL surface reusing an existing GrContext.
-  GPUSurfaceGL(sk_sp<GrContext> gr_context, GPUSurfaceGLDelegate* delegate);
+  GPUSurfaceGL(sk_sp<GrContext> gr_context,
+               GPUSurfaceGLDelegate* delegate,
+               bool render_to_surface);
 
   ~GPUSurfaceGL() override;
 
-  // |shell::Surface|
+  // |Surface|
   bool IsValid() override;
 
-  // |shell::Surface|
+  // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
 
-  // |shell::Surface|
+  // |Surface|
   SkMatrix GetRootTransformation() const override;
 
-  // |shell::Surface|
+  // |Surface|
   GrContext* GetContext() override;
 
-  // |shell::Surface|
-  flow::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+  // |Surface|
+  flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
-  // |shell::Surface|
+  // |Surface|
   bool MakeRenderContextCurrent() override;
 
  private:
@@ -49,9 +51,14 @@ class GPUSurfaceGL : public Surface {
   sk_sp<GrContext> context_;
   sk_sp<SkSurface> onscreen_surface_;
   sk_sp<SkSurface> offscreen_surface_;
+  bool context_owner_;
+  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
+  // external view embedder may want to render to the root surface. This is a
+  // hack to make avoid allocating resources for the root surface when an
+  // external view embedder is present.
+  const bool render_to_surface_;
   bool valid_ = false;
   fml::WeakPtrFactory<GPUSurfaceGL> weak_factory_;
-  bool context_owner_;
 
   bool CreateOrUpdateSurfaces(const SkISize& size);
 
@@ -64,6 +71,6 @@ class GPUSurfaceGL : public Surface {
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGL);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_GPU_GPU_SURFACE_GL_H_

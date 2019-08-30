@@ -10,7 +10,7 @@
 #include "third_party/skia/include/core/SkString.h"
 #include "third_party/skia/include/core/SkTypeface.h"
 
-namespace blink {
+namespace flutter {
 
 namespace {
 
@@ -21,7 +21,7 @@ void MappingReleaseProc(const void* ptr, void* context) {
 }  // anonymous namespace
 
 AssetManagerFontProvider::AssetManagerFontProvider(
-    std::shared_ptr<blink::AssetManager> asset_manager)
+    std::shared_ptr<AssetManager> asset_manager)
     : asset_manager_(asset_manager) {}
 
 AssetManagerFontProvider::~AssetManagerFontProvider() = default;
@@ -44,7 +44,8 @@ SkFontStyleSet* AssetManagerFontProvider::MatchFamily(
   if (found == registered_families_.end()) {
     return nullptr;
   }
-  return SkRef(&found->second);
+  sk_sp<SkFontStyleSet> font_style_set = found->second;
+  return font_style_set.release();
 }
 
 void AssetManagerFontProvider::RegisterAsset(std::string family_name,
@@ -54,18 +55,16 @@ void AssetManagerFontProvider::RegisterAsset(std::string family_name,
 
   if (family_it == registered_families_.end()) {
     family_names_.push_back(family_name);
-    family_it = registered_families_
-                    .emplace(std::piecewise_construct,
-                             std::forward_as_tuple(canonical_name),
-                             std::forward_as_tuple(asset_manager_))
-                    .first;
+    auto value = std::make_pair(
+        canonical_name, sk_make_sp<AssetManagerFontStyleSet>(asset_manager_));
+    family_it = registered_families_.emplace(value).first;
   }
 
-  family_it->second.registerAsset(asset);
+  family_it->second->registerAsset(asset);
 }
 
 AssetManagerFontStyleSet::AssetManagerFontStyleSet(
-    std::shared_ptr<blink::AssetManager> asset_manager)
+    std::shared_ptr<AssetManager> asset_manager)
     : asset_manager_(asset_manager) {}
 
 AssetManagerFontStyleSet::~AssetManagerFontStyleSet() = default;
@@ -131,4 +130,4 @@ AssetManagerFontStyleSet::TypefaceAsset::TypefaceAsset(
 
 AssetManagerFontStyleSet::TypefaceAsset::~TypefaceAsset() = default;
 
-}  // namespace blink
+}  // namespace flutter

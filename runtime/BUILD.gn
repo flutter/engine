@@ -24,6 +24,24 @@ source_set("test_font") {
   }
 }
 
+# Picks the libdart implementation based on the Flutter runtime mode.
+group("libdart") {
+  public_deps = []
+
+  if (!(is_fuchsia && using_fuchsia_sdk)) {
+    if (flutter_runtime_mode == "profile" ||
+        flutter_runtime_mode == "release") {
+      public_deps +=
+          [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
+    } else {
+      public_deps += [
+        "$flutter_root/lib/snapshot",
+        "//third_party/dart/runtime:libdart_jit",
+      ]
+    }
+  }
+}
+
 source_set("runtime") {
   sources = [
     "dart_isolate.cc",
@@ -32,18 +50,24 @@ source_set("runtime") {
     "dart_service_isolate.h",
     "dart_snapshot.cc",
     "dart_snapshot.h",
-    "dart_snapshot_buffer.cc",
-    "dart_snapshot_buffer.h",
     "dart_vm.cc",
     "dart_vm.h",
+    "dart_vm_data.cc",
+    "dart_vm_data.h",
+    "dart_vm_lifecycle.cc",
+    "dart_vm_lifecycle.h",
     "embedder_resources.cc",
     "embedder_resources.h",
+    "ptrace_ios.cc",
+    "ptrace_ios.h",
     "runtime_controller.cc",
     "runtime_controller.h",
     "runtime_delegate.cc",
     "runtime_delegate.h",
     "service_protocol.cc",
     "service_protocol.h",
+    "skia_concurrent_executor.cc",
+    "skia_concurrent_executor.h",
     "start_up.cc",
     "start_up.h",
   ]
@@ -69,40 +93,56 @@ source_set("runtime") {
 
   public_configs = [ "$flutter_root:config" ]
 
-  if (flutter_runtime_mode != "release" &&
-      flutter_runtime_mode != "dynamic_release" && !is_fuchsia) {
+  if (flutter_runtime_mode != "release" && !is_fuchsia) {
     # Only link in Observatory in non-release modes on non-Fuchsia. Fuchsia
     # instead puts Observatory into the runner's package.
-    deps += [ "//third_party/dart/runtime/observatory:embedded_observatory_archive" ]
+    deps += [
+      "//third_party/dart/runtime/observatory:embedded_observatory_archive",
+    ]
   }
 }
 
 test_fixtures("runtime_fixtures") {
-  fixtures = [ "fixtures/simple_main.dart" ]
+  dart_main = "fixtures/runtime_test.dart"
 }
 
-executable("runtime_unittests") {
+source_set("runtime_unittests_common") {
+  visibility = [ ":*" ]
+
   testonly = true
 
   sources = [
-    "dart_isolate_unittests.cc",
-    "dart_service_isolate_unittests.cc",
-    "dart_vm_unittests.cc",
+    "runtime_test.cc",
+    "runtime_test.h",
   ]
 
-  deps = [
+  public_deps = [
+    ":libdart",
     ":runtime",
     ":runtime_fixtures",
     "$flutter_root/common",
     "$flutter_root/fml",
     "$flutter_root/lib/snapshot",
-    "$flutter_root/testing",
-    "//third_party/dart/runtime:libdart_jit",
+    "$flutter_root/shell/common",
+    "$flutter_root/testing:dart",
     "//third_party/skia",
     "//third_party/tonic",
   ]
+}
 
-  if (is_linux) {
-    ldflags = [ "-rdynamic" ]
-  }
+executable("runtime_unittests") {
+  testonly = true
+
+  configs += [ "$flutter_root:export_dynamic_symbols" ]
+
+  sources = [
+    "dart_isolate_unittests.cc",
+    "dart_lifecycle_unittests.cc",
+    "dart_service_isolate_unittests.cc",
+    "dart_vm_unittests.cc",
+  ]
+
+  deps = [
+    ":runtime_unittests_common",
+  ]
 }

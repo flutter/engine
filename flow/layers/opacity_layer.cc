@@ -4,18 +4,49 @@
 
 #include "flutter/flow/layers/opacity_layer.h"
 
-namespace flow {
+#include "flutter/flow/layers/transform_layer.h"
 
-OpacityLayer::OpacityLayer() = default;
+namespace flutter {
+
+OpacityLayer::OpacityLayer(int alpha, const SkPoint& offset)
+    : alpha_(alpha), offset_(offset) {}
 
 OpacityLayer::~OpacityLayer() = default;
 
+void OpacityLayer::EnsureSingleChild() {
+  FML_DCHECK(layers().size() > 0);  // OpacityLayer should never be a leaf
+
+  if (layers().size() == 1) {
+    return;
+  }
+
+  // Be careful: SkMatrix's default constructor doesn't initialize the matrix to
+  // identity. Hence we have to explicitly call SkMatrix::setIdentity.
+  SkMatrix identity;
+  identity.setIdentity();
+  auto new_child = std::make_shared<flutter::TransformLayer>(identity);
+
+  for (auto& child : layers()) {
+    new_child->Add(child);
+  }
+  ClearChildren();
+  Add(new_child);
+}
+
 void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+  EnsureSingleChild();
   SkMatrix child_matrix = matrix;
   child_matrix.postTranslate(offset_.fX, offset_.fY);
+  context->mutators_stack.PushTransform(
+      SkMatrix::MakeTrans(offset_.fX, offset_.fY));
+  context->mutators_stack.PushOpacity(alpha_);
   ContainerLayer::Preroll(context, child_matrix);
+  context->mutators_stack.Pop();
+  context->mutators_stack.Pop();
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
-  if (context->raster_cache && layers().size() == 1 &&
+  // See |EnsureSingleChild|.
+  FML_DCHECK(layers().size() == 1);
+  if (context->view_embedder == nullptr && context->raster_cache &&
       SkRect::Intersects(context->cull_rect, paint_bounds())) {
     Layer* child = layers()[0].get();
     SkMatrix ctm = child_matrix;
@@ -41,12 +72,14 @@ void OpacityLayer::Paint(PaintContext& context) const {
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
+  // See |EnsureSingleChild|.
+  FML_DCHECK(layers().size() == 1);
+
   // Embedded platform views are changing the canvas in the middle of the paint
   // traversal. To make sure we paint on the right canvas, when the embedded
   // platform views preview is enabled (context.view_embedded is not null) we
   // don't use the cache.
-  if (context.view_embedder == nullptr && layers().size() == 1 &&
-      context.raster_cache) {
+  if (context.view_embedder == nullptr && context.raster_cache) {
     const SkMatrix& ctm = context.leaf_nodes_canvas->getTotalMatrix();
     RasterCacheResult child_cache =
         context.raster_cache->Get(layers()[0].get(), ctm);
@@ -75,4 +108,4 @@ void OpacityLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
 }
 
-}  // namespace flow
+}  // namespace flutter

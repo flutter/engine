@@ -4,9 +4,12 @@
 
 #include "flutter/flow/layers/platform_view_layer.h"
 
-namespace flow {
+namespace flutter {
 
-PlatformViewLayer::PlatformViewLayer() = default;
+PlatformViewLayer::PlatformViewLayer(const SkPoint& offset,
+                                     const SkSize& size,
+                                     int64_t view_id)
+    : offset_(offset), size_(size), view_id_(view_id) {}
 
 PlatformViewLayer::~PlatformViewLayer() = default;
 
@@ -20,7 +23,14 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
                       "does not support embedding";
     return;
   }
-  context->view_embedder->PrerollCompositeEmbeddedView(view_id_);
+  std::unique_ptr<EmbeddedViewParams> params =
+      std::make_unique<EmbeddedViewParams>();
+  params->offsetPixels =
+      SkPoint::Make(matrix.getTranslateX(), matrix.getTranslateY());
+  params->sizePoints = size_;
+  params->mutatorsStack = context->mutators_stack;
+  context->view_embedder->PrerollCompositeEmbeddedView(view_id_,
+                                                       std::move(params));
 }
 
 void PlatformViewLayer::Paint(PaintContext& context) const {
@@ -29,14 +39,7 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
                       "does not support embedding";
     return;
   }
-  EmbeddedViewParams params;
-  SkMatrix transform = context.leaf_nodes_canvas->getTotalMatrix();
-  params.offsetPixels =
-      SkPoint::Make(transform.getTranslateX(), transform.getTranslateY());
-  params.sizePoints = size_;
-
-  SkCanvas* canvas =
-      context.view_embedder->CompositeEmbeddedView(view_id_, params);
+  SkCanvas* canvas = context.view_embedder->CompositeEmbeddedView(view_id_);
   context.leaf_nodes_canvas = canvas;
 }
-}  // namespace flow
+}  // namespace flutter

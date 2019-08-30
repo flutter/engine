@@ -19,9 +19,19 @@
 
 namespace tonic {
 class DartLibraryNatives;
+
+// So tonice::ToDart<std::vector<int64_t>> returns List<int> instead of
+// List<dynamic>.
+template <>
+struct DartListFactory<int64_t> {
+  static Dart_Handle NewList(intptr_t length) {
+    return Dart_NewListOf(Dart_CoreType_Int, length);
+  }
+};
+
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 class FontCollection;
 class Scene;
 
@@ -46,6 +56,7 @@ class WindowClient {
   virtual FontCollection& GetFontCollection() = 0;
   virtual void UpdateIsolateDescription(const std::string isolate_name,
                                         int64_t isolate_port) = 0;
+  virtual void SetNeedsReportTimings(bool value) = 0;
 
  protected:
   virtual ~WindowClient();
@@ -65,6 +76,7 @@ class Window final {
   void UpdateWindowMetrics(const ViewportMetrics& metrics);
   void UpdateLocales(const std::vector<std::string>& locales);
   void UpdateUserSettingsData(const std::string& data);
+  void UpdateLifecycleState(const std::string& data);
   void UpdateSemanticsEnabled(bool enabled);
   void UpdateAccessibilityFeatures(int32_t flags);
   void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
@@ -73,6 +85,7 @@ class Window final {
                                SemanticsAction action,
                                std::vector<uint8_t> args);
   void BeginFrame(fml::TimePoint frameTime);
+  void ReportTimings(std::vector<int64_t> timings);
 
   void CompletePlatformMessageResponse(int response_id,
                                        std::vector<uint8_t> data);
@@ -87,10 +100,10 @@ class Window final {
 
   // We use id 0 to mean that no response is expected.
   int next_response_id_ = 1;
-  std::unordered_map<int, fml::RefPtr<blink::PlatformMessageResponse>>
+  std::unordered_map<int, fml::RefPtr<PlatformMessageResponse>>
       pending_responses_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_WINDOW_WINDOW_H_

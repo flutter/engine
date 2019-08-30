@@ -3,26 +3,30 @@
 # found in the LICENSE file.
 
 import("$flutter_root/common/config.gni")
-import("//third_party/dart/build/dart/dart_action.gni")
 
-# Temporary snapshot copy rules until we can use the full SDK.
-_flutter_sdk_snapshots = [
-  [
-    "dart2js",
-    "//third_party/dart/utils/compiler:dart2js",
-  ],
-  [
-    "kernel_worker",
-    "//third_party/dart/utils/bazel:kernel_worker",
-  ],
-]
+if (is_fuchsia) {
+  import("//build/fuchsia/sdk.gni")
+}
+
+# Whether to build the dartdevc sdk, libraries, and source files
+# required for the flutter web sdk.
+declare_args() {
+  full_dart_sdk = false
+}
 
 group("flutter") {
   testonly = true
 
-  public_deps = [
-    "$flutter_root/lib/snapshot:generate_snapshot_bin",
-    "$flutter_root/lib/snapshot:kernel_platform_files",
+  public_deps = []
+
+  if (!(is_fuchsia && using_fuchsia_sdk)) {
+    public_deps += [
+      "$flutter_root/lib/snapshot:generate_snapshot_bin",
+      "$flutter_root/lib/snapshot:kernel_platform_files",
+    ]
+  }
+
+  public_deps += [
     "$flutter_root/shell/platform/embedder:flutter_engine",
     "$flutter_root/sky",
   ]
@@ -31,17 +35,19 @@ group("flutter") {
     public_deps += [ "$flutter_root/shell/testing" ]
   }
 
+  if (is_fuchsia && using_fuchsia_sdk) {
+    public_deps += [ "$flutter_root/shell/platform/fuchsia" ]
+  }
+
   if (!is_fuchsia && !is_fuchsia_host) {
     if (current_toolchain == host_toolchain) {
       public_deps += [
         "$flutter_root/frontend_server",
         "//third_party/dart:create_sdk",
-        "$flutter_root/lib/stub_ui:stub_ui",
-        ":dart2js_platform_files",
-        ":flutter_dartdevc_kernel_sdk",
       ]
-      foreach(snapshot, _flutter_sdk_snapshots) {
-        public_deps += [ ":copy_flutter_${snapshot[0]}_snapshot" ]
+
+      if (full_dart_sdk) {
+        public_deps += [ "$flutter_root/web_sdk" ]
       }
     }
   }
@@ -56,16 +62,25 @@ group("flutter") {
     public_deps += [
       "$flutter_root/flow:flow_unittests",
       "$flutter_root/fml:fml_unittests",
+      "$flutter_root/lib/ui:ui_unittests",
       "$flutter_root/runtime:runtime_unittests",
       "$flutter_root/shell/common:shell_unittests",
+      "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_unittests",
       "$flutter_root/shell/platform/embedder:embedder_unittests",
-      "$flutter_root/shell/platform/embedder:embedder_a11y_unittests", # TODO(cbracken) build these into a different kernel blob in the embedder tests and load that in a test in embedder_unittests
-      "$flutter_root/synchronization:synchronization_unittests",
+      "$flutter_root/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
       "$flutter_root/third_party/txt:txt_unittests",
     ]
 
+    if (is_win) {
+      public_deps += [ "$flutter_root/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests" ]
+    }
+
     if (!is_win) {
-      public_deps += [ "$flutter_root/shell/common:shell_benchmarks" ]
+      public_deps += [
+        "$flutter_root/fml:fml_benchmarks",
+        "$flutter_root/shell/common:shell_benchmarks",
+        "$flutter_root/third_party/txt:txt_benchmarks",
+      ]
     }
   }
 }
@@ -74,73 +89,19 @@ config("config") {
   include_dirs = [ ".." ]
 }
 
+config("export_dynamic_symbols") {
+  if (is_linux) {
+    inputs = [
+      "$flutter_root/common/exported_symbols.sym",
+    ]
+    ldflags = [ "-Wl,--dynamic-list=" + rebase_path(inputs[0], root_build_dir) ]
+  }
+}
+
 group("dist") {
   testonly = true
 
   deps = [
     "$flutter_root/sky/dist",
-  ]
-}
-
-foreach(snapshot, _flutter_sdk_snapshots) {
-  copy("copy_flutter_${snapshot[0]}_snapshot") {
-    deps = [
-      snapshot[1],
-    ]
-    sources = [
-      "$root_gen_dir/${snapshot[0]}.dart.snapshot",
-    ]
-    outputs = [
-      "$root_out_dir/dart-sdk/bin/snapshots/flutter_{{source_file_part}}",
-    ]
-  }
-}
-
-copy("dart2js_platform_files") {
-  deps = [
-    "//third_party/dart/utils/compiler:compile_dart2js_platform"
-  ]
-
-  sources = [
-    "$root_out_dir/dart2js_outline.dill",
-    "$root_out_dir/dart2js_platform.dill",
-  ]
-
-  outputs = [
-    "$root_out_dir/flutter_patched_sdk/{{source_file_part}}",
-  ]
-}
-
-
-prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
-  deps = [
-     "//third_party/dart:create_sdk",
-  ]
-
-  packages = "//third_party/dart/.packages"
-
-  script = "//third_party/dart/pkg/dev_compiler/tool/kernel_sdk.dart"
-
-  inputs = [
-    "//third_party/dart/pkg/dev_compiler/tool/kernel_sdk.dart",
-  ]
-
-  outputs = [
-    "$target_gen_dir/kernel/amd/dart_sdk.js",
-    "$target_gen_dir/kernel/amd/dart_sdk.js.map",
-    "$target_gen_dir/kernel/common/dart_sdk.js",
-    "$target_gen_dir/kernel/common/dart_sdk.js.map",
-    "$target_gen_dir/kernel/es6/dart_sdk.js",
-    "$target_gen_dir/kernel/es6/dart_sdk.js.map",
-    "$target_gen_dir/kernel/legacy/dart_sdk.js",
-    "$target_gen_dir/kernel/legacy/dart_sdk.js.map",
-  ]
-
-  libraries_path = rebase_path("$flutter_root/lib/snapshot/libraries.json")
-  output_path = rebase_path("$target_gen_dir/kernel/flutter_ddc_sdk.dill")
-
-  args = [
-    "--output=$output_path",
-    "--libraries=$libraries_path",
   ]
 }

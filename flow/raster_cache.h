@@ -15,7 +15,7 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
 
-namespace flow {
+namespace flutter {
 
 class RasterCacheResult {
  public:
@@ -33,6 +33,10 @@ class RasterCacheResult {
 
   void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const;
 
+  SkISize image_dimensions() const {
+    return image_ ? image_->dimensions() : SkISize::Make(0, 0);
+  };
+
  private:
   sk_sp<SkImage> image_;
   SkRect logical_rect_;
@@ -49,7 +53,7 @@ class RasterCache {
   static constexpr int kDefaultPictureCacheLimitPerFrame = 3;
 
   explicit RasterCache(
-      size_t threshold = 3,
+      size_t access_threshold = 3,
       size_t picture_cache_limit_per_frame = kDefaultPictureCacheLimitPerFrame);
 
   ~RasterCache();
@@ -87,6 +91,7 @@ class RasterCache {
   void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
 
   RasterCacheResult Get(const SkPicture& picture, const SkMatrix& ctm) const;
+
   RasterCacheResult Get(Layer* layer, const SkMatrix& ctm) const;
 
   void SweepAfterFrame();
@@ -119,7 +124,7 @@ class RasterCache {
     }
   }
 
-  const size_t threshold_;
+  const size_t access_threshold_;
   const size_t picture_cache_limit_per_frame_;
   size_t picture_cached_this_frame_ = 0;
   PictureRasterCacheKey::Map<Entry> picture_cache_;
@@ -127,9 +132,11 @@ class RasterCache {
   bool checkerboard_images_;
   fml::WeakPtrFactory<RasterCache> weak_factory_;
 
+  void TraceStatsToTimeline() const;
+
   FML_DISALLOW_COPY_AND_ASSIGN(RasterCache);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_RASTER_CACHE_H_

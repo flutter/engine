@@ -8,6 +8,7 @@
 
 #include <Foundation/Foundation.h>
 #include <QuartzCore/CADisplayLink.h>
+#include <UIKit/UIKit.h>
 #include <mach/mach_time.h>
 
 #include "flutter/common/task_runners.h"
@@ -17,17 +18,28 @@
 @interface VSyncClient : NSObject
 
 - (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
-                          callback:(shell::VsyncWaiter::Callback)callback;
+                          callback:(flutter::VsyncWaiter::Callback)callback;
 
 - (void)await;
 
 - (void)invalidate;
 
+//------------------------------------------------------------------------------
+/// @brief      The display refresh rate used for reporting purposes. The engine does not care
+///             about this for frame scheduling. It is only used by tools for instrumentation. The
+///             engine uses the duration field of the link per frame for frame scheduling.
+///
+/// @attention  Do not use the this call in frame scheduling. It is only meant for reporting.
+///
+/// @return     The refresh rate in frames per second.
+///
+- (float)displayRefreshRate;
+
 @end
 
-namespace shell {
+namespace flutter {
 
-VsyncWaiterIOS::VsyncWaiterIOS(blink::TaskRunners task_runners)
+VsyncWaiterIOS::VsyncWaiterIOS(flutter::TaskRunners task_runners)
     : VsyncWaiter(std::move(task_runners)),
       client_([[VSyncClient alloc] initWithTaskRunner:task_runners_.GetUITaskRunner()
                                              callback:std::bind(&VsyncWaiterIOS::FireCallback,
@@ -45,15 +57,20 @@ void VsyncWaiterIOS::AwaitVSync() {
   [client_.get() await];
 }
 
-}  // namespace shell
+// |VsyncWaiter|
+float VsyncWaiterIOS::GetDisplayRefreshRate() const {
+  return [client_.get() displayRefreshRate];
+}
+
+}  // namespace flutter
 
 @implementation VSyncClient {
-  shell::VsyncWaiter::Callback callback_;
+  flutter::VsyncWaiter::Callback callback_;
   fml::scoped_nsobject<CADisplayLink> display_link_;
 }
 
 - (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
-                          callback:(shell::VsyncWaiter::Callback)callback {
+                          callback:(flutter::VsyncWaiter::Callback)callback {
   self = [super init];
 
   if (self) {
@@ -71,6 +88,25 @@ void VsyncWaiterIOS::AwaitVSync() {
   }
 
   return self;
+}
+
+- (float)displayRefreshRate {
+  if (@available(iOS 10.3, *)) {
+    auto preferredFPS = display_link_.get().preferredFramesPerSecond;  // iOS 10.0
+
+    // From Docs:
+    // The default value for preferredFramesPerSecond is 0. When this value is 0, the preferred
+    // frame rate is equal to the maximum refresh rate of the display, as indicated by the
+    // maximumFramesPerSecond property.
+
+    if (preferredFPS != 0) {
+      return preferredFPS;
+    }
+
+    return [UIScreen mainScreen].maximumFramesPerSecond;  // iOS 10.3
+  } else {
+    return 60.0;
+  }
 }
 
 - (void)await {

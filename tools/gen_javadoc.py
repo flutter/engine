@@ -31,12 +31,17 @@ def main():
     'third_party/android_support/android_support_compat.jar',
     'third_party/android_support/android_support_fragment.jar',
     'third_party/android_support/android_support_v13.jar',
-    'third_party/android_tools/sdk/platforms/android-28/android.jar',
+    'third_party/android_tools/sdk/platforms/android-29/android.jar',
     'base/android/java/src',
     'third_party/jsr-305/src/ri/src/main/java',
   ]
   packages = [
     'io.flutter.app',
+    'io.flutter.embedding.android',
+    'io.flutter.embedding.engine',
+    'io.flutter.embedding.engine.dart',
+    'io.flutter.embedding.engine.renderer',
+    'io.flutter.embedding.engine.systemchannels',
     'io.flutter.plugin.common',
     'io.flutter.plugin.editing',
     'io.flutter.plugin.platform',

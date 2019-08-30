@@ -5,9 +5,11 @@
 #include "flutter/lib/ui/painting/picture.h"
 
 #include "flutter/fml/make_copyable.h"
+#include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
@@ -15,7 +17,65 @@
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 
-namespace blink {
+namespace flutter {
+namespace {
+
+sk_sp<SkSurface> MakeSnapshotSurface(const SkISize& picture_size,
+                                     fml::WeakPtr<GrContext> resource_context) {
+  SkImageInfo image_info = SkImageInfo::MakeN32Premul(
+      picture_size.width(), picture_size.height(), SkColorSpace::MakeSRGB());
+  if (resource_context) {
+    return SkSurface::MakeRenderTarget(resource_context.get(),  // context
+                                       SkBudgeted::kNo,         // budgeted
+                                       image_info               // image info
+    );
+  } else {
+    return SkSurface::MakeRaster(image_info);
+  }
+}
+
+/// Makes a RAM backed (Raster) image of a picture.
+/// @param[in] picture The picture that will get converted to an image.
+/// @param[in] surface The surface tha will be used to render the picture.  This
+///                    will be CPU or GPU based.
+/// @todo Currently this creates a RAM backed image regardless of what type of
+///       surface is used.  In certain instances we may want a GPU backed image
+///       from a GPU surface to avoid the conversion.
+sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
+                                  sk_sp<SkSurface> surface) {
+  TRACE_EVENT0("flutter", __FUNCTION__);
+
+  if (surface == nullptr || surface->getCanvas() == nullptr) {
+    return nullptr;
+  }
+
+  surface->getCanvas()->drawPicture(picture.get());
+
+  surface->getCanvas()->flush();
+
+  // Here device could mean GPU or CPU (depending on the supplied surface) and
+  // host means CPU; this is different from use cases like Flutter driver tests
+  // where device means mobile devices and host means laptops/desktops.
+  sk_sp<SkImage> device_snapshot;
+  {
+    TRACE_EVENT0("flutter", "MakeDeviceSnpashot");
+    device_snapshot = surface->makeImageSnapshot();
+  }
+
+  if (device_snapshot == nullptr) {
+    return nullptr;
+  }
+
+  {
+    TRACE_EVENT0("flutter", "DeviceHostTransfer");
+    if (auto raster_image = device_snapshot->makeRasterImage()) {
+      return raster_image;
+    }
+  }
+
+  return nullptr;
+}
+}  // namespace
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Picture);
 
@@ -26,11 +86,12 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Picture);
 
 DART_BIND_ALL(Picture, FOR_EACH_BINDING)
 
-fml::RefPtr<Picture> Picture::Create(flow::SkiaGPUObject<SkPicture> picture) {
+fml::RefPtr<Picture> Picture::Create(
+    flutter::SkiaGPUObject<SkPicture> picture) {
   return fml::MakeRefCounted<Picture>(std::move(picture));
 }
 
-Picture::Picture(flow::SkiaGPUObject<SkPicture> picture)
+Picture::Picture(flutter::SkiaGPUObject<SkPicture> picture)
     : picture_(std::move(picture)) {}
 
 Picture::~Picture() = default;
@@ -70,12 +131,12 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
   }
 
   auto* dart_state = UIDartState::Current();
-  auto image_callback = std::make_unique<tonic::DartPersistentValue>(
-      dart_state, raw_image_callback);
+  tonic::DartPersistentValue* image_callback =
+      new tonic::DartPersistentValue(dart_state, raw_image_callback);
   auto unref_queue = dart_state->GetSkiaUnrefQueue();
   auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
-  auto gpu_task_runner = dart_state->GetTaskRunners().GetGPUTaskRunner();
-  auto snapshot_delegate = dart_state->GetSnapshotDelegate();
+  auto io_task_runner = dart_state->GetTaskRunners().GetIOTaskRunner();
+  fml::WeakPtr<GrContext> resource_context = dart_state->GetResourceContext();
 
   // We can't create an image on this task runner because we don't have a
   // graphics context. Even if we did, it would be slow anyway. Also, this
@@ -84,54 +145,44 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
 
   auto picture_bounds = SkISize::Make(width, height);
 
-  auto ui_task = fml::MakeCopyable(
-      [ui_task_runner, image_callback = std::move(image_callback),
-       unref_queue](sk_sp<SkImage> raster_image) mutable {
-        // Send the raster image back to the UI thread for submission to the
-        // framework.
-        fml::TaskRunner::RunNowOrPostTask(
-            ui_task_runner,
-            fml::MakeCopyable([raster_image,
-                               image_callback = std::move(image_callback),
-                               unref_queue]() mutable {
-              auto dart_state = image_callback->dart_state().lock();
-              if (!dart_state) {
-                // The root isolate could have died in the meantime.
-                return;
-              }
-              tonic::DartState::Scope scope(dart_state);
+  auto ui_task = fml::MakeCopyable([image_callback, unref_queue](
+                                       sk_sp<SkImage> raster_image) mutable {
+    auto dart_state = image_callback->dart_state().lock();
+    if (!dart_state) {
+      // The root isolate could have died in the meantime.
+      return;
+    }
+    tonic::DartState::Scope scope(dart_state);
 
-              if (!raster_image) {
-                tonic::DartInvoke(image_callback->Get(), {Dart_Null()});
-                return;
-              }
+    if (!raster_image) {
+      tonic::DartInvoke(image_callback->Get(), {Dart_Null()});
+      return;
+    }
 
-              auto dart_image = CanvasImage::Create();
-              dart_image->set_image(
-                  {std::move(raster_image), std::move(unref_queue)});
-              auto* raw_dart_image = tonic::ToDart(std::move(dart_image));
+    auto dart_image = CanvasImage::Create();
+    dart_image->set_image({std::move(raster_image), std::move(unref_queue)});
+    auto* raw_dart_image = tonic::ToDart(std::move(dart_image));
 
-              // All done!
-              tonic::DartInvoke(image_callback->Get(), {raw_dart_image});
-            }));
-      });
+    // All done!
+    tonic::DartInvoke(image_callback->Get(), {raw_dart_image});
 
-  auto gpu_task = fml::MakeCopyable([gpu_task_runner, picture, picture_bounds,
-                                     snapshot_delegate, ui_task]() {
-    fml::TaskRunner::RunNowOrPostTask(gpu_task_runner, [snapshot_delegate,
-                                                        picture, picture_bounds,
-                                                        ui_task]() {
-      // Snapshot the picture on the GPU thread. This thread has access to the
-      // GPU contexts that may contain the sole references to texture backed
-      // images in the picture.
-      ui_task(snapshot_delegate->MakeRasterSnapshot(picture, picture_bounds));
-    });
+    // image_callback is associated with the Dart isolate and must be deleted
+    // on the UI thread
+    delete image_callback;
   });
 
-  // Kick things off on the GPU.
-  gpu_task();
+  fml::TaskRunner::RunNowOrPostTask(io_task_runner, [ui_task_runner, picture,
+                                                     picture_bounds, ui_task,
+                                                     resource_context] {
+    sk_sp<SkSurface> surface =
+        MakeSnapshotSurface(picture_bounds, resource_context);
+    sk_sp<SkImage> raster_image = MakeRasterSnapshot(picture, surface);
+
+    fml::TaskRunner::RunNowOrPostTask(
+        ui_task_runner, [ui_task, raster_image]() { ui_task(raster_image); });
+  });
 
   return Dart_Null();
 }
 
-}  // namespace blink
+}  // namespace flutter

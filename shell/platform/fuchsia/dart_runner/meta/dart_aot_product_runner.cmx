@@ -1,0 +1,19 @@
+{
+    "program": {
+        "data": "data"
+    },
+    "sandbox": {
+        "features": [
+            "root-ssl-certificates",
+            "deprecated-ambient-replace-as-executable"
+        ],
+        "services": [
+            "fuchsia.crash.Analyzer",
+            "fuchsia.logger.LogSink",
+            "fuchsia.net.NameLookup",
+            "fuchsia.posix.socket.Provider",
+            "fuchsia.timezone.Timezone",
+            "fuchsia.tracing.provider.Registry"
+        ]
+    }
+}

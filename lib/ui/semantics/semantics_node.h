@@ -14,9 +14,10 @@
 #include "third_party/skia/include/core/SkMatrix44.h"
 #include "third_party/skia/include/core/SkRect.h"
 
-namespace blink {
+namespace flutter {
 
-// Must match the SemanticsAction enum in semantics.dart.
+// Must match the SemanticsAction enum in semantics.dart and in each of the
+// embedders.
 enum class SemanticsAction : int32_t {
   kTap = 1 << 0,
   kLongPress = 1 << 1,
@@ -37,6 +38,8 @@ enum class SemanticsAction : int32_t {
   kDidLoseAccessibilityFocus = 1 << 16,
   kCustomAction = 1 << 17,
   kDismiss = 1 << 18,
+  kMoveCursorForwardByWordIndex = 1 << 19,
+  kMoveCursorBackwardByWordIndex = 1 << 20,
 };
 
 const int kScrollableSemanticsActions =
@@ -65,7 +68,14 @@ enum class SemanticsFlags : int32_t {
   kIsLiveRegion = 1 << 15,
   kHasToggledState = 1 << 16,
   kIsToggled = 1 << 17,
+  kHasImplicitScrolling = 1 << 18,
+  // The Dart API defines the following flag but it isn't used in iOS.
+  // kIsMultiline = 1 << 19,
+  kIsReadOnly = 1 << 20,
 };
+
+const int kScrollableSemanticsFlags =
+    static_cast<int32_t>(SemanticsFlags::kHasImplicitScrolling);
 
 struct SemanticsNode {
   SemanticsNode();
@@ -74,14 +84,18 @@ struct SemanticsNode {
 
   ~SemanticsNode();
 
-  bool HasAction(SemanticsAction action);
-  bool HasFlag(SemanticsFlags flag);
+  bool HasAction(SemanticsAction action) const;
+  bool HasFlag(SemanticsFlags flag) const;
+
+  // Whether this node is for embedded platform views.
+  bool IsPlatformViewNode() const;
 
   int32_t id = 0;
   int32_t flags = 0;
   int32_t actions = 0;
   int32_t textSelectionBase = -1;
   int32_t textSelectionExtent = -1;
+  int32_t platformViewId = -1;
   int32_t scrollChildren = 0;
   int32_t scrollIndex = 0;
   double scrollPosition = std::nan("");
@@ -109,6 +123,6 @@ struct SemanticsNode {
 // semantic information for the node corresponding to the ID.
 using SemanticsNodeUpdates = std::unordered_map<int32_t, SemanticsNode>;
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_NODE_H_

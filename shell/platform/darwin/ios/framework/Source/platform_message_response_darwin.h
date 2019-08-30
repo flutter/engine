@@ -16,9 +16,9 @@
 
 typedef void (^PlatformMessageResponseCallback)(NSData*);
 
-namespace shell {
+namespace flutter {
 
-class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
+class PlatformMessageResponseDarwin : public flutter::PlatformMessageResponse {
  public:
   void Complete(std::unique_ptr<fml::Mapping> data) override;
 
@@ -36,6 +36,6 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   FML_FRIEND_MAKE_REF_COUNTED(PlatformMessageResponseDarwin);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_PLATFORM_MESSAGE_RESPONSE_DARWIN_H_

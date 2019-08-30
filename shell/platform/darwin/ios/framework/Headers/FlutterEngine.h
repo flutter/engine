@@ -38,8 +38,7 @@
  * One of these methods must be invoked before calling `-setViewController:`.
  */
 FLUTTER_EXPORT
-@interface FlutterEngine
-    : NSObject <FlutterBinaryMessenger, FlutterTextureRegistry, FlutterPluginRegistry>
+@interface FlutterEngine : NSObject <FlutterTextureRegistry, FlutterPluginRegistry>
 /**
  * Initialize this FlutterEngine with a `FlutterDartProject`.
  *
@@ -134,6 +133,32 @@ FLUTTER_EXPORT
 - (void)destroyContext;
 
 /**
+ * Ensures that Flutter will generate a semantics tree.
+ *
+ * This is enabled by default if certain accessibility services are turned on by
+ * the user, or when using a Simulator. This method allows a user to turn
+ * semantics on when they would not ordinarily be generated and the performance
+ * overhead is not a concern, e.g. for UI testing. Note that semantics should
+ * never be programmatically turned off, as it would potentially disable
+ * accessibility services an end user has requested.
+ *
+ * This method must only be called after launching the engine via
+ * `-runWithEntrypoint:` or `-runWithEntryPoint:libraryURI`.
+ *
+ * Although this method returns synchronously, it does not guarantee that a
+ * semantics tree is actually available when the method returns. It
+ * synchronously ensures that the next frame the Flutter framework creates will
+ * have a semantics tree.
+ *
+ * You can subscribe to semantics updates via `NSNotificationCenter` by adding
+ * an observer for the name `FlutterSemanticsUpdateNotification`.  The `object`
+ * parameter will be the `FlutterViewController` associated with the semantics
+ * update.  This will asynchronously fire after a semantics tree has actually
+ * built (which may be some time after the frame has been rendered).
+ */
+- (void)ensureSemanticsEnabled;
+
+/**
  * Sets the `FlutterViewController` for this instance.  The FlutterEngine must be
  * running (e.g. a successful call to `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI`)
  * before calling this method. Callers may pass nil to remove the viewController
@@ -201,6 +226,28 @@ FLUTTER_EXPORT
  * clock format and text scale.
  */
 @property(nonatomic, readonly) FlutterBasicMessageChannel* settingsChannel;
+
+/**
+ * The `NSURL` of the observatory for the service isolate.
+ *
+ * This is only set in debug and profile runtime modes, and only after the
+ * observatory service is ready. In release mode or before the observatory has
+ * started, it returns `nil`.
+ */
+@property(nonatomic, readonly) NSURL* observatoryUrl;
+
+/**
+ * The `FlutterBinaryMessenger` associated with this FlutterEngine (used for communicating with
+ * channels).
+ */
+@property(nonatomic, readonly) NSObject<FlutterBinaryMessenger>* binaryMessenger;
+
+/**
+ * The UI Isolate ID of of the engine.
+ *
+ * This property will be nil if the engine is not running.
+ */
+@property(nonatomic, readonly, copy) NSString* isolateId;
 
 @end
 

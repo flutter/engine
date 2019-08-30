@@ -6,7 +6,7 @@
 
 #include "flutter/fml/message_loop.h"
 
-namespace flow {
+namespace flutter {
 
 SkiaUnrefQueue::SkiaUnrefQueue(fml::RefPtr<fml::TaskRunner> task_runner,
                                fml::TimeDelta delay)
@@ -19,7 +19,7 @@ SkiaUnrefQueue::~SkiaUnrefQueue() {
 }
 
 void SkiaUnrefQueue::Unref(SkRefCnt* object) {
-  std::lock_guard<std::mutex> lock(mutex_);
+  std::scoped_lock lock(mutex_);
   objects_.push_back(object);
   if (!drain_pending_) {
     drain_pending_ = true;
@@ -31,7 +31,7 @@ void SkiaUnrefQueue::Unref(SkRefCnt* object) {
 void SkiaUnrefQueue::Drain() {
   std::deque<SkRefCnt*> skia_objects;
   {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::scoped_lock lock(mutex_);
     objects_.swap(skia_objects);
     drain_pending_ = false;
   }
@@ -41,4 +41,4 @@ void SkiaUnrefQueue::Drain() {
   }
 }
 
-}  // namespace flow
+}  // namespace flutter

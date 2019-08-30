@@ -12,10 +12,10 @@
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
-namespace shell {
+namespace flutter {
 
 /// Represents a Frame that has been fully configured for the underlying client
-/// rendering API. A frame may only be sumitted once.
+/// rendering API. A frame may only be submitted once.
 class SurfaceFrame {
  public:
   using SubmitCallback =
@@ -41,6 +41,7 @@ class SurfaceFrame {
   FML_DISALLOW_COPY_AND_ASSIGN(SurfaceFrame);
 };
 
+/// Abstract Base Class that represents where we will be rendering content.
 class Surface {
  public:
   Surface();
@@ -55,7 +56,7 @@ class Surface {
 
   virtual GrContext* GetContext() = 0;
 
-  virtual flow::ExternalViewEmbedder* GetExternalViewEmbedder();
+  virtual flutter::ExternalViewEmbedder* GetExternalViewEmbedder();
 
   virtual bool MakeRenderContextCurrent();
 
@@ -63,6 +64,6 @@ class Surface {
   FML_DISALLOW_COPY_AND_ASSIGN(Surface);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_COMMON_SURFACE_H_

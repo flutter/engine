@@ -9,6 +9,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/fml/message_loop_task_queues.h"
 #include "flutter/fml/time/time_point.h"
 
 namespace fml {
@@ -17,6 +18,8 @@ class MessageLoopImpl;
 
 class TaskRunner : public fml::RefCountedThreadSafe<TaskRunner> {
  public:
+  virtual ~TaskRunner();
+
   virtual void PostTask(fml::closure task);
 
   virtual void PostTaskForTime(fml::closure task, fml::TimePoint target_time);
@@ -25,7 +28,7 @@ class TaskRunner : public fml::RefCountedThreadSafe<TaskRunner> {
 
   virtual bool RunsTasksOnCurrentThread();
 
-  virtual ~TaskRunner();
+  virtual TaskQueueId GetTaskQueueId();
 
   static void RunNowOrPostTask(fml::RefPtr<fml::TaskRunner> runner,
                                fml::closure task);

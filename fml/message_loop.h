@@ -40,6 +40,8 @@ class MessageLoop {
 
   ~MessageLoop();
 
+  static TaskQueueId GetCurrentTaskQueueId();
+
  private:
   friend class TaskRunner;
   friend class MessageLoopImpl;

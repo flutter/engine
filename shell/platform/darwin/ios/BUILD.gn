@@ -4,9 +4,10 @@
 
 assert(is_ios)
 
-import("$flutter_root/common/config.gni")
 import("//build/config/ios/ios_sdk.gni")
+import("$flutter_root/common/config.gni")
 import("$flutter_root/shell/gpu/gpu.gni")
+import("$flutter_root/shell/platform/darwin/common/framework_shared.gni")
 
 _flutter_framework_dir = "$root_out_dir/Flutter.framework"
 
@@ -14,6 +15,7 @@ shell_gpu_configuration("ios_gpu_configuration") {
   enable_software = true
   enable_gl = true
   enable_vulkan = false
+  enable_metal = shell_enable_metal
 }
 
 # The headers that will be copied to the Flutter.framework and be accessed
@@ -21,14 +23,10 @@ shell_gpu_configuration("ios_gpu_configuration") {
 _flutter_framework_headers = [
   "framework/Headers/Flutter.h",
   "framework/Headers/FlutterAppDelegate.h",
-  "framework/Headers/FlutterBinaryMessenger.h",
   "framework/Headers/FlutterCallbackCache.h",
-  "framework/Headers/FlutterChannels.h",
-  "framework/Headers/FlutterCodecs.h",
   "framework/Headers/FlutterDartProject.h",
   "framework/Headers/FlutterEngine.h",
   "framework/Headers/FlutterHeadlessDartRunner.h",
-  "framework/Headers/FlutterMacros.h",
   "framework/Headers/FlutterPlatformViews.h",
   "framework/Headers/FlutterPlugin.h",
   "framework/Headers/FlutterPluginAppLifeCycleDelegate.h",
@@ -46,10 +44,9 @@ shared_library("create_flutter_framework_dylib") {
   sources = [
     "framework/Source/FlutterAppDelegate.mm",
     "framework/Source/FlutterAppDelegate_Internal.h",
+    "framework/Source/FlutterBinaryMessengerRelay.mm",
     "framework/Source/FlutterCallbackCache.mm",
     "framework/Source/FlutterCallbackCache_Internal.h",
-    "framework/Source/FlutterChannels.mm",
-    "framework/Source/FlutterCodecs.mm",
     "framework/Source/FlutterDartProject.mm",
     "framework/Source/FlutterDartProject_Internal.h",
     "framework/Source/FlutterEngine.mm",
@@ -61,12 +58,10 @@ shared_library("create_flutter_framework_dylib") {
     "framework/Source/FlutterOverlayView.mm",
     "framework/Source/FlutterPlatformPlugin.h",
     "framework/Source/FlutterPlatformPlugin.mm",
+    "framework/Source/FlutterPlatformViews.mm",
     "framework/Source/FlutterPlatformViews_Internal.h",
     "framework/Source/FlutterPlatformViews_Internal.mm",
-    "framework/Source/FlutterPlatformViews.mm",
     "framework/Source/FlutterPluginAppLifeCycleDelegate.mm",
-    "framework/Source/FlutterStandardCodec.mm",
-    "framework/Source/FlutterStandardCodec_Internal.h",
     "framework/Source/FlutterTextInputDelegate.h",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
@@ -100,6 +95,13 @@ shared_library("create_flutter_framework_dylib") {
     "platform_view_ios.mm",
   ]
 
+  if (shell_enable_metal) {
+    sources += [
+      "ios_surface_metal.h",
+      "ios_surface_metal.mm",
+    ]
+  }
+
   sources += _flutter_framework_headers
 
   deps = [
@@ -109,24 +111,20 @@ shared_library("create_flutter_framework_dylib") {
     "$flutter_root/fml",
     "$flutter_root/lib/ui",
     "$flutter_root/runtime",
+    "$flutter_root/runtime:libdart",
     "$flutter_root/shell/common",
     "$flutter_root/shell/platform/darwin/common",
+    "$flutter_root/shell/platform/darwin/common:framework_shared",
     "//third_party/skia",
   ]
-  if (flutter_runtime_mode == "debug" ||
-      flutter_runtime_mode == "dynamic_profile" ||
-      flutter_runtime_mode == "dynamic_release") {
-    deps += [
-      "$flutter_root/lib/snapshot",
-      "//third_party/dart/runtime:libdart_jit",
-    ]
-  } else {
-    deps += [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
-  }
 
   public_configs = [ "$flutter_root:config" ]
 
-  defines = [ "FLUTTER_FRAMEWORK" ]
+  defines = [ "FLUTTER_FRAMEWORK=1" ]
+
+  if (shell_enable_metal) {
+    defines += [ "FLUTTER_SHELL_ENABLE_METAL=1" ]
+  }
 
   libs = [
     "CoreMedia.framework",
@@ -138,9 +136,13 @@ shared_library("create_flutter_framework_dylib") {
   ]
 }
 
-copy("copy_framework_dylib") {
+action("copy_dylib_and_update_framework_install_name") {
   visibility = [ ":*" ]
+  script = "$flutter_root/sky/tools/change_install_name.py"
 
+  inputs = [
+    script,
+  ]
   sources = [
     "$root_out_dir/libFlutter.dylib",
   ]
@@ -148,44 +150,33 @@ copy("copy_framework_dylib") {
     "$_flutter_framework_dir/Flutter",
   ]
 
+  args = [
+    "--dylib",
+    rebase_path(sources[0]),
+    "--install_name",
+    "@rpath/Flutter.framework/Flutter",
+    "--output",
+    rebase_path(outputs[0]),
+  ]
+
   deps = [
     ":create_flutter_framework_dylib",
   ]
 }
 
-action("copy_dylib_and_update_framework_install_name") {
-  visibility = [ ":*" ]
-  stamp_file = "$root_out_dir/flutter_install_name_stamp"
-  script = "$flutter_root/sky/tools/change_install_name.py"
-
-  inputs = [
-    "$_flutter_framework_dir/Flutter",
-  ]
-  outputs = [
-    stamp_file,
-  ]
-
-  args = [
-    "--dylib",
-    rebase_path("$_flutter_framework_dir/Flutter"),
-    "--install_name",
-    "@rpath/Flutter.framework/Flutter",
-    "--stamp",
-    rebase_path(stamp_file),
-  ]
-
-  deps = [
-    ":copy_framework_dylib",
-  ]
-}
-
-copy("copy_framework_info_plist") {
+action("copy_framework_info_plist") {
+  script = "$flutter_root/build/copy_info_plist.py"
   visibility = [ ":*" ]
   sources = [
     "framework/Info.plist",
   ]
   outputs = [
     "$_flutter_framework_dir/Info.plist",
+  ]
+  args = [
+    rebase_path(sources[0]),
+    rebase_path(outputs[0]),
+    "--bitcode=$flutter_enable_bitcode",
   ]
 }
 
@@ -202,26 +193,25 @@ copy("copy_framework_module_map") {
 action("copy_framework_headers") {
   script = "$flutter_root/sky/tools/install_framework_headers.py"
   visibility = [ ":*" ]
-  sources = _flutter_framework_headers
+  sources = get_path_info(_flutter_framework_headers, "abspath") +
+            framework_shared_headers
   outputs = []
-  foreach(header, _flutter_framework_headers) {
-    header_basename = rebase_path(header, "framework/headers")
+  foreach(header, sources) {
+    header_basename = get_path_info(header, "file")
     outputs += [ "$_flutter_framework_headers_copy_dir/$header_basename" ]
   }
   args = [
            "--location",
            rebase_path("$_flutter_framework_headers_copy_dir"),
            "--headers",
-         ] + rebase_path(_flutter_framework_headers)
+         ] + rebase_path(sources, "", "//")
 }
 
 copy("copy_framework_icu") {
   visibility = [ ":*" ]
-  set_sources_assignment_filter([])
   sources = [
     "//third_party/icu/flutter/icudtl.dat",
   ]
-  set_sources_assignment_filter(sources_assignment_filter)
   outputs = [
     "$_flutter_framework_dir/{{source_file_part}}",
   ]
@@ -250,6 +240,7 @@ copy("copy_license") {
 shared_library("copy_and_verify_framework_headers") {
   visibility = [ ":*" ]
   include_dirs = [ "$_flutter_framework_headers_copy_dir" ]
+
   sources = [
     "framework/Source/FlutterUmbrellaImport.m",
   ]

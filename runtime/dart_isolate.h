@@ -5,6 +5,7 @@
 #ifndef FLUTTER_RUNTIME_DART_ISOLATE_H_
 #define FLUTTER_RUNTIME_DART_ISOLATE_H_
 
+#include <memory>
 #include <set>
 #include <string>
 
@@ -13,14 +14,13 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/lib/ui/io_manager.h"
-#include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/window.h"
 #include "flutter/runtime/dart_snapshot.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/tonic/dart_state.h"
 
-namespace blink {
+namespace flutter {
 class DartVM;
 
 class DartIsolate : public UIDartState {
@@ -41,30 +41,38 @@ class DartIsolate : public UIDartState {
   // bindings. From the VM's perspective, this isolate is not special in any
   // way.
   static std::weak_ptr<DartIsolate> CreateRootIsolate(
-      DartVM* vm,
-      fml::RefPtr<DartSnapshot> isolate_snapshot,
-      fml::RefPtr<DartSnapshot> shared_snapshot,
+      const Settings& settings,
+      fml::RefPtr<const DartSnapshot> isolate_snapshot,
+      fml::RefPtr<const DartSnapshot> shared_snapshot,
       TaskRunners task_runners,
       std::unique_ptr<Window> window,
-      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
       fml::WeakPtr<IOManager> io_manager,
+      fml::WeakPtr<ImageDecoder> image_decoder,
       std::string advisory_script_uri,
       std::string advisory_script_entrypoint,
-      Dart_IsolateFlags* flags = nullptr);
+      Dart_IsolateFlags* flags,
+      fml::closure isolate_create_callback,
+      fml::closure isolate_shutdown_callback);
 
-  DartIsolate(DartVM* vm,
-              fml::RefPtr<DartSnapshot> isolate_snapshot,
-              fml::RefPtr<DartSnapshot> shared_snapshot,
+  DartIsolate(const Settings& settings,
+              fml::RefPtr<const DartSnapshot> isolate_snapshot,
+              fml::RefPtr<const DartSnapshot> shared_snapshot,
               TaskRunners task_runners,
-              fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
               fml::WeakPtr<IOManager> io_manager,
+              fml::WeakPtr<ImageDecoder> image_decoder,
               std::string advisory_script_uri,
               std::string advisory_script_entrypoint,
-              ChildIsolatePreparer child_isolate_preparer);
+              ChildIsolatePreparer child_isolate_preparer,
+              fml::closure isolate_create_callback,
+              fml::closure isolate_shutdown_callback);
 
   ~DartIsolate() override;
 
+  const Settings& GetSettings() const;
+
   Phase GetPhase() const;
+
+  std::string GetServiceId();
 
   FML_WARN_UNUSED_RESULT
   bool PrepareForRunningFromPrecompiledCode();
@@ -74,24 +82,36 @@ class DartIsolate : public UIDartState {
                                    bool last_piece = true);
 
   FML_WARN_UNUSED_RESULT
-  bool Run(const std::string& entrypoint);
+  bool PrepareForRunningFromKernels(
+      std::vector<std::shared_ptr<const fml::Mapping>> kernels);
+
+  FML_WARN_UNUSED_RESULT
+  bool PrepareForRunningFromKernels(
+      std::vector<std::unique_ptr<const fml::Mapping>> kernels);
+
+  FML_WARN_UNUSED_RESULT
+  bool Run(const std::string& entrypoint,
+           const std::vector<std::string>& args,
+           fml::closure on_run = nullptr);
 
   FML_WARN_UNUSED_RESULT
   bool RunFromLibrary(const std::string& library_name,
-                      const std::string& entrypoint);
+                      const std::string& entrypoint,
+                      const std::vector<std::string>& args,
+                      fml::closure on_run = nullptr);
 
   FML_WARN_UNUSED_RESULT
   bool Shutdown();
 
   void AddIsolateShutdownCallback(fml::closure closure);
 
-  DartVM* GetDartVM() const;
+  fml::RefPtr<const DartSnapshot> GetIsolateSnapshot() const;
 
-  fml::RefPtr<DartSnapshot> GetIsolateSnapshot() const;
-
-  fml::RefPtr<DartSnapshot> GetSharedSnapshot() const;
+  fml::RefPtr<const DartSnapshot> GetSharedSnapshot() const;
 
   std::weak_ptr<DartIsolate> GetWeakIsolatePtr();
+
+  fml::RefPtr<fml::TaskRunner> GetMessageHandlingTaskRunner() const;
 
  private:
   bool LoadKernel(std::shared_ptr<const fml::Mapping> mapping, bool last_piece);
@@ -108,16 +128,22 @@ class DartIsolate : public UIDartState {
   };
   friend class DartVM;
 
-  DartVM* const vm_ = nullptr;
   Phase phase_ = Phase::Unknown;
-  const fml::RefPtr<DartSnapshot> isolate_snapshot_;
-  const fml::RefPtr<DartSnapshot> shared_snapshot_;
+  const Settings settings_;
+  const fml::RefPtr<const DartSnapshot> isolate_snapshot_;
+  const fml::RefPtr<const DartSnapshot> shared_snapshot_;
   std::vector<std::shared_ptr<const fml::Mapping>> kernel_buffers_;
   std::vector<std::unique_ptr<AutoFireClosure>> shutdown_callbacks_;
   ChildIsolatePreparer child_isolate_preparer_ = nullptr;
+  fml::RefPtr<fml::TaskRunner> message_handling_task_runner_;
+  const fml::closure isolate_create_callback_;
+  const fml::closure isolate_shutdown_callback_;
 
-  FML_WARN_UNUSED_RESULT
-  bool Initialize(Dart_Isolate isolate, bool is_root_isolate);
+  FML_WARN_UNUSED_RESULT bool Initialize(Dart_Isolate isolate,
+                                         bool is_root_isolate);
+
+  void SetMessageHandlingTaskRunner(fml::RefPtr<fml::TaskRunner> runner,
+                                    bool is_root_isolate);
 
   FML_WARN_UNUSED_RESULT
   bool LoadLibraries(bool is_root_isolate);
@@ -127,8 +153,10 @@ class DartIsolate : public UIDartState {
   FML_WARN_UNUSED_RESULT
   bool MarkIsolateRunnable();
 
-  // |Dart_IsolateCreateCallback|
-  static Dart_Isolate DartIsolateCreateCallback(
+  void OnShutdownCallback();
+
+  // |Dart_IsolateGroupCreateCallback|
+  static Dart_Isolate DartIsolateGroupCreateCallback(
       const char* advisory_script_uri,
       const char* advisory_script_entrypoint,
       const char* package_root,
@@ -138,8 +166,6 @@ class DartIsolate : public UIDartState {
       char** error);
 
   static Dart_Isolate DartCreateAndStartServiceIsolate(
-      const char* advisory_script_uri,
-      const char* advisory_script_entrypoint,
       const char* package_root,
       const char* package_config,
       Dart_IsolateFlags* flags,
@@ -159,15 +185,16 @@ class DartIsolate : public UIDartState {
 
   // |Dart_IsolateShutdownCallback|
   static void DartIsolateShutdownCallback(
-      std::shared_ptr<DartIsolate>* embedder_isolate);
+      std::shared_ptr<DartIsolate>* isolate_group_data,
+      std::shared_ptr<DartIsolate>* isolate_data);
 
-  // |Dart_IsolateCleanupCallback|
-  static void DartIsolateCleanupCallback(
-      std::shared_ptr<DartIsolate>* embedder_isolate);
+  // |Dart_IsolateGroupCleanupCallback|
+  static void DartIsolateGroupCleanupCallback(
+      std::shared_ptr<DartIsolate>* isolate_group_data);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DartIsolate);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_RUNTIME_DART_ISOLATE_H_

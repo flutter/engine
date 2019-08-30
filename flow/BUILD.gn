@@ -2,6 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+if (is_fuchsia) {
+  import("//build/fuchsia/sdk.gni")
+}
+
+import("$flutter_root/testing/testing.gni")
+
 source_set("flow") {
   sources = [
     "compositor_context.cc",
@@ -65,42 +71,59 @@ source_set("flow") {
   deps = [
     "$flutter_root/common",
     "$flutter_root/fml",
-    "$flutter_root/synchronization",
     "//third_party/skia",
   ]
 
   if (is_fuchsia) {
     sources += [
-      "export_node.cc",
-      "export_node.h",
       "layers/child_scene_layer.cc",
       "layers/child_scene_layer.h",
       "scene_update_context.cc",
       "scene_update_context.h",
+      "view_holder.cc",
+      "view_holder.h",
     ]
 
-    public_deps += [
-      "//sdk/fidl/fuchsia.ui.scenic",
-      "//garnet/public/lib/ui/scenic/cpp",
-      "//topaz/public/dart-pkg/zircon",
-    ]
-
-    public_deps += [ "//zircon/public/lib/zx" ]
+    if (using_fuchsia_sdk) {
+      public_deps += [
+        "$fuchsia_sdk_root/fidl:fuchsia.ui.gfx",
+        "$fuchsia_sdk_root/pkg:scenic_cpp",
+      ]
+    } else {
+      public_deps += [
+        "//garnet/public/lib/ui/scenic/cpp",
+        "//sdk/fidl/fuchsia.ui.scenic",
+        "//topaz/public/dart-pkg/zircon",
+        "//zircon/public/lib/zx",
+      ]
+    }
   }
+}
+
+test_fixtures("flow_fixtures") {
+  fixtures = []
 }
 
 executable("flow_unittests") {
   testonly = true
 
   sources = [
+    "flow_run_all_unittests.cc",
+    "flow_test_utils.cc",
+    "flow_test_utils.h",
+    "layers/performance_overlay_layer_unittests.cc",
+    "layers/physical_shape_layer_unittests.cc",
     "matrix_decomposition_unittests.cc",
+    "mutators_stack_unittests.cc",
     "raster_cache_unittests.cc",
   ]
 
   deps = [
     ":flow",
-    "$flutter_root/testing",
+    ":flow_fixtures",
+    "$flutter_root/fml",
     "//third_party/dart/runtime:libdart_jit",  # for tracing
+    "//third_party/googletest:gtest",
     "//third_party/skia",
   ]
 }

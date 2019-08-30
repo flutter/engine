@@ -7,10 +7,9 @@
 
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
-#include "third_party/tonic/typed_data/float64_list.h"
-#include "third_party/tonic/typed_data/int32_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
-namespace blink {
+namespace flutter {
 
 class SemanticsUpdateBuilder
     : public RefCountedDartWrappable<SemanticsUpdateBuilder> {
@@ -29,6 +28,7 @@ class SemanticsUpdateBuilder
                   int actions,
                   int textSelectionBase,
                   int textSelectionExtent,
+                  int platformViewId,
                   int scrollChildren,
                   int scrollIndex,
                   double scrollPosition,
@@ -67,6 +67,6 @@ class SemanticsUpdateBuilder
   CustomAccessibilityActionUpdates actions_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_UPDATE_BUILDER_H_

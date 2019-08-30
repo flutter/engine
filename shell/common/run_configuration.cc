@@ -8,20 +8,23 @@
 
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/fml/file.h"
+#include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm.h"
 
-namespace shell {
+namespace flutter {
 
 RunConfiguration RunConfiguration::InferFromSettings(
-    const blink::Settings& settings,
+    const Settings& settings,
     fml::RefPtr<fml::TaskRunner> io_worker) {
-  auto asset_manager = std::make_shared<blink::AssetManager>();
+  auto asset_manager = std::make_shared<AssetManager>();
 
-  asset_manager->PushBack(std::make_unique<blink::DirectoryAssetBundle>(
-      fml::Duplicate(settings.assets_dir)));
+  if (fml::UniqueFD::traits_type::IsValid(settings.assets_dir)) {
+    asset_manager->PushBack(std::make_unique<DirectoryAssetBundle>(
+        fml::Duplicate(settings.assets_dir)));
+  }
 
   asset_manager->PushBack(
-      std::make_unique<blink::DirectoryAssetBundle>(fml::OpenDirectory(
+      std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
           settings.assets_path.c_str(), false, fml::FilePermission::kRead)));
 
   return {IsolateConfiguration::InferFromSettings(settings, asset_manager,
@@ -32,11 +35,11 @@ RunConfiguration RunConfiguration::InferFromSettings(
 RunConfiguration::RunConfiguration(
     std::unique_ptr<IsolateConfiguration> configuration)
     : RunConfiguration(std::move(configuration),
-                       std::make_shared<blink::AssetManager>()) {}
+                       std::make_shared<AssetManager>()) {}
 
 RunConfiguration::RunConfiguration(
     std::unique_ptr<IsolateConfiguration> configuration,
-    std::shared_ptr<blink::AssetManager> asset_manager)
+    std::shared_ptr<AssetManager> asset_manager)
     : isolate_configuration_(std::move(configuration)),
       asset_manager_(std::move(asset_manager)) {}
 
@@ -49,7 +52,7 @@ bool RunConfiguration::IsValid() const {
 }
 
 bool RunConfiguration::AddAssetResolver(
-    std::unique_ptr<blink::AssetResolver> resolver) {
+    std::unique_ptr<AssetResolver> resolver) {
   if (!resolver || !resolver->IsValid()) {
     return false;
   }
@@ -68,7 +71,7 @@ void RunConfiguration::SetEntrypointAndLibrary(std::string entrypoint,
   entrypoint_library_ = std::move(library);
 }
 
-std::shared_ptr<blink::AssetManager> RunConfiguration::GetAssetManager() const {
+std::shared_ptr<AssetManager> RunConfiguration::GetAssetManager() const {
   return asset_manager_;
 }
 
@@ -85,4 +88,4 @@ RunConfiguration::TakeIsolateConfiguration() {
   return std::move(isolate_configuration_);
 }
 
-}  // namespace shell
+}  // namespace flutter

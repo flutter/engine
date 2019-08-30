@@ -15,7 +15,7 @@
 
 #include "third_party/dart/runtime/include/dart_api.h"
 
-namespace blink {
+namespace flutter {
 
 class DartServiceIsolate {
  public:
@@ -26,9 +26,8 @@ class DartServiceIsolate {
                       intptr_t server_port,
                       Dart_LibraryTagHandler embedder_tag_handler,
                       bool disable_origin_check,
+                      bool disable_service_auth_codes,
                       char** error);
-
-  static std::string GetObservatoryUri();
 
   using CallbackHandle = ptrdiff_t;
 
@@ -51,6 +50,6 @@ class DartServiceIsolate {
       FML_GUARDED_BY(callbacks_mutex_);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_RUNTIME_DART_SERVICE_ISOLATE_H_

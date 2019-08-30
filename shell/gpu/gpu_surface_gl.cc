@@ -4,8 +4,8 @@
 
 #include "gpu_surface_gl.h"
 
-#include "flutter/fml/arraysize.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/size.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/persistent_cache.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
@@ -21,17 +21,23 @@
 #define GPU_GL_RGBA4 0x8056
 #define GPU_GL_RGB565 0x8D62
 
-namespace shell {
+namespace flutter {
 
 // Default maximum number of budgeted resources in the cache.
 static const int kGrCacheMaxCount = 8192;
 
 // Default maximum number of bytes of GPU memory of budgeted resources in the
 // cache.
-static const size_t kGrCacheMaxByteSize = 512 * (1 << 20);
+// The shell will dynamically increase or decrease this cache based on the
+// viewport size, unless a user has specifically requested a size on the Skia
+// system channel.
+static const size_t kGrCacheMaxByteSize = 24 * (1 << 20);
 
-GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate)
-    : delegate_(delegate), weak_factory_(this) {
+GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate,
+                           bool render_to_surface)
+    : delegate_(delegate),
+      render_to_surface_(render_to_surface),
+      weak_factory_(this) {
   if (!delegate_->GLContextMakeCurrent()) {
     FML_LOG(ERROR)
         << "Could not make the context current to setup the gr context.";
@@ -65,13 +71,18 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate)
 
   delegate_->GLContextClearCurrent();
 
-  valid_ = true;
   context_owner_ = true;
+
+  valid_ = true;
 }
 
 GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrContext> gr_context,
-                           GPUSurfaceGLDelegate* delegate)
-    : delegate_(delegate), context_(gr_context), weak_factory_(this) {
+                           GPUSurfaceGLDelegate* delegate,
+                           bool render_to_surface)
+    : delegate_(delegate),
+      context_(gr_context),
+      render_to_surface_(render_to_surface),
+      weak_factory_(this) {
   if (!delegate_->GLContextMakeCurrent()) {
     FML_LOG(ERROR)
         << "Could not make the context current to setup the gr context.";
@@ -104,7 +115,7 @@ GPUSurfaceGL::~GPUSurfaceGL() {
   delegate_->GLContextClearCurrent();
 }
 
-// |shell::Surface|
+// |Surface|
 bool GPUSurfaceGL::IsValid() {
   return valid_;
 }
@@ -216,12 +227,12 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   return true;
 }
 
-// |shell::Surface|
+// |Surface|
 SkMatrix GPUSurfaceGL::GetRootTransformation() const {
   return delegate_->GLContextSurfaceTransformation();
 }
 
-// |shell::Surface|
+// |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   if (delegate_ == nullptr) {
     return nullptr;
@@ -231,6 +242,15 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
     FML_LOG(ERROR)
         << "Could not make the context current to acquire the frame.";
     return nullptr;
+  }
+
+  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
+  // external view embedder may want to render to the root surface.
+  if (!render_to_surface_) {
+    return std::make_unique<SurfaceFrame>(
+        nullptr, [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+          return true;
+        });
   }
 
   const auto root_surface_transformation = GetRootTransformation();
@@ -314,19 +334,19 @@ sk_sp<SkSurface> GPUSurfaceGL::AcquireRenderSurface(
   return offscreen_surface_ != nullptr ? offscreen_surface_ : onscreen_surface_;
 }
 
-// |shell::Surface|
+// |Surface|
 GrContext* GPUSurfaceGL::GetContext() {
   return context_.get();
 }
 
-// |shell::Surface|
-flow::ExternalViewEmbedder* GPUSurfaceGL::GetExternalViewEmbedder() {
+// |Surface|
+flutter::ExternalViewEmbedder* GPUSurfaceGL::GetExternalViewEmbedder() {
   return delegate_->GetExternalViewEmbedder();
 }
 
-// |shell::Surface|
+// |Surface|
 bool GPUSurfaceGL::MakeRenderContextCurrent() {
   return delegate_->GLContextMakeCurrent();
 }
 
-}  // namespace shell
+}  // namespace flutter

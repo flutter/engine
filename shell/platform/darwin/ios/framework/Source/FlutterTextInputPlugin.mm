@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
+#include "flutter/fml/platform/darwin/string_range_sanitization.h"
 
 #include <Foundation/Foundation.h>
 #include <UIKit/UIKit.h>
@@ -283,7 +284,13 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 - (void)setSelectedTextRange:(UITextRange*)selectedTextRange updateEditingState:(BOOL)update {
   if (_selectedTextRange != selectedTextRange) {
     UITextRange* oldSelectedRange = _selectedTextRange;
-    _selectedTextRange = [selectedTextRange copy];
+    if (self.hasText) {
+      FlutterTextRange* flutterTextRange = (FlutterTextRange*)selectedTextRange;
+      _selectedTextRange = [[FlutterTextRange
+          rangeWithNSRange:fml::RangeForCharactersInRange(self.text, flutterTextRange.range)] copy];
+    } else {
+      _selectedTextRange = [selectedTextRange copy];
+    }
     [oldSelectedRange release];
 
     if (update)
@@ -415,25 +422,23 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   return [FlutterTextRange rangeWithNSRange:NSMakeRange(fromIndex, toIndex - fromIndex)];
 }
 
-/** Returns the range of the character sequence at the specified index in the
- * text. */
-- (NSRange)rangeForCharacterAtIndex:(NSUInteger)index {
-  if (index < self.text.length)
-    return [self.text rangeOfComposedCharacterSequenceAtIndex:index];
-  return NSMakeRange(index, 0);
-}
-
 - (NSUInteger)decrementOffsetPosition:(NSUInteger)position {
-  return [self rangeForCharacterAtIndex:MAX(0, position - 1)].location;
+  return fml::RangeForCharacterAtIndex(self.text, MAX(0, position - 1)).location;
 }
 
 - (NSUInteger)incrementOffsetPosition:(NSUInteger)position {
-  NSRange charRange = [self rangeForCharacterAtIndex:position];
+  NSRange charRange = fml::RangeForCharacterAtIndex(self.text, position);
   return MIN(position + charRange.length, self.text.length);
 }
 
 - (UITextPosition*)positionFromPosition:(UITextPosition*)position offset:(NSInteger)offset {
   NSUInteger offsetPosition = ((FlutterTextPosition*)position).index;
+
+  NSInteger newLocation = (NSInteger)offsetPosition + offset;
+  if (newLocation < 0 || newLocation > (NSInteger)self.text.length) {
+    return nil;
+  }
+
   if (offset >= 0) {
     for (NSInteger i = 0; i < offset && offsetPosition < self.text.length; ++i)
       offsetPosition = [self incrementOffsetPosition:offsetPosition];
@@ -565,7 +570,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 - (UITextRange*)characterRangeAtPoint:(CGPoint)point {
   // TODO(cbracken) Implement.
   NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
-  return [FlutterTextRange rangeWithNSRange:[self rangeForCharacterAtIndex:currentIndex]];
+  return [FlutterTextRange rangeWithNSRange:fml::RangeForCharacterAtIndex(self.text, currentIndex)];
 }
 
 - (void)beginFloatingCursorAtPoint:(CGPoint)point {
@@ -592,8 +597,9 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   NSUInteger selectionBase = ((FlutterTextPosition*)_selectedTextRange.start).index;
   NSUInteger selectionExtent = ((FlutterTextPosition*)_selectedTextRange.end).index;
 
-  NSUInteger composingBase = 0;
-  NSUInteger composingExtent = 0;
+  // Empty compositing range is represented by the framework's TextRange.empty.
+  NSInteger composingBase = -1;
+  NSInteger composingExtent = -1;
   if (self.markedTextRange != nil) {
     composingBase = ((FlutterTextPosition*)self.markedTextRange.start).index;
     composingExtent = ((FlutterTextPosition*)self.markedTextRange.end).index;
@@ -621,6 +627,27 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
 - (void)deleteBackward {
   _selectionAffinity = _kTextAffinityDownstream;
+
+  // When deleting Thai vowel, _selectedTextRange has location
+  // but does not have length, so we have to manually set it.
+  // In addition, we needed to delete only a part of grapheme cluster
+  // because it is the expected behavior of Thai input.
+  // https://github.com/flutter/flutter/issues/24203
+  // https://github.com/flutter/flutter/issues/21745
+  //
+  // This is needed for correct handling of the deletion of Thai vowel input.
+  // TODO(cbracken): Get a good understanding of expected behavior of Thai
+  // input and ensure that this is the correct solution.
+  // https://github.com/flutter/flutter/issues/28962
+  if (_selectedTextRange.isEmpty && [self hasText]) {
+    NSRange oldRange = ((FlutterTextRange*)_selectedTextRange).range;
+    if (oldRange.location > 0) {
+      NSRange newRange = NSMakeRange(oldRange.location - 1, 1);
+      [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:newRange]
+              updateEditingState:false];
+    }
+  }
+
   if (!_selectedTextRange.isEmpty)
     [self replaceRange:_selectedTextRange withText:@""];
 }
@@ -648,6 +675,8 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
 @implementation FlutterTextInputPlugin {
   FlutterTextInputView* _view;
+  FlutterTextInputView* _secureView;
+  FlutterTextInputView* _activeView;
   FlutterTextInputViewAccessibilityHider* _inputHider;
 }
 
@@ -658,6 +687,11 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
   if (self) {
     _view = [[FlutterTextInputView alloc] init];
+    _view.secureTextEntry = NO;
+    _secureView = [[FlutterTextInputView alloc] init];
+    _secureView.secureTextEntry = YES;
+
+    _activeView = _view;
     _inputHider = [[FlutterTextInputViewAccessibilityHider alloc] init];
   }
 
@@ -667,13 +701,14 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 - (void)dealloc {
   [self hideTextInput];
   [_view release];
+  [_secureView release];
   [_inputHider release];
 
   [super dealloc];
 }
 
 - (UIView<UITextInput>*)textInputView {
-  return _view;
+  return _activeView;
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
@@ -703,46 +738,51 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   NSAssert([UIApplication sharedApplication].keyWindow != nullptr,
            @"The application must have a key window since the keyboard client "
            @"must be part of the responder chain to function");
-  _view.textInputDelegate = _textInputDelegate;
-  [_inputHider addSubview:_view];
+  _activeView.textInputDelegate = _textInputDelegate;
+  [_inputHider addSubview:_activeView];
   [[UIApplication sharedApplication].keyWindow addSubview:_inputHider];
-  [_view becomeFirstResponder];
+  [_activeView becomeFirstResponder];
 }
 
 - (void)hideTextInput {
-  [_view resignFirstResponder];
-  [_view removeFromSuperview];
+  [_activeView resignFirstResponder];
+  [_activeView removeFromSuperview];
   [_inputHider removeFromSuperview];
 }
 
 - (void)setTextInputClient:(int)client withConfiguration:(NSDictionary*)configuration {
   NSDictionary* inputType = configuration[@"inputType"];
   NSString* keyboardAppearance = configuration[@"keyboardAppearance"];
-  _view.keyboardType = ToUIKeyboardType(inputType);
-  _view.returnKeyType = ToUIReturnKeyType(configuration[@"inputAction"]);
-  _view.autocapitalizationType = ToUITextAutoCapitalizationType(configuration);
-  if ([keyboardAppearance isEqualToString:@"Brightness.dark"]) {
-    _view.keyboardAppearance = UIKeyboardAppearanceDark;
-  } else if ([keyboardAppearance isEqualToString:@"Brightness.light"]) {
-    _view.keyboardAppearance = UIKeyboardAppearanceLight;
+  if ([configuration[@"obscureText"] boolValue]) {
+    _activeView = _secureView;
   } else {
-    _view.keyboardAppearance = UIKeyboardAppearanceDefault;
+    _activeView = _view;
   }
-  _view.secureTextEntry = [configuration[@"obscureText"] boolValue];
+
+  _activeView.keyboardType = ToUIKeyboardType(inputType);
+  _activeView.returnKeyType = ToUIReturnKeyType(configuration[@"inputAction"]);
+  _activeView.autocapitalizationType = ToUITextAutoCapitalizationType(configuration);
+  if ([keyboardAppearance isEqualToString:@"Brightness.dark"]) {
+    _activeView.keyboardAppearance = UIKeyboardAppearanceDark;
+  } else if ([keyboardAppearance isEqualToString:@"Brightness.light"]) {
+    _activeView.keyboardAppearance = UIKeyboardAppearanceLight;
+  } else {
+    _activeView.keyboardAppearance = UIKeyboardAppearanceDefault;
+  }
   NSString* autocorrect = configuration[@"autocorrect"];
-  _view.autocorrectionType = autocorrect && ![autocorrect boolValue]
-                                 ? UITextAutocorrectionTypeNo
-                                 : UITextAutocorrectionTypeDefault;
-  [_view setTextInputClient:client];
-  [_view reloadInputViews];
+  _activeView.autocorrectionType = autocorrect && ![autocorrect boolValue]
+                                       ? UITextAutocorrectionTypeNo
+                                       : UITextAutocorrectionTypeDefault;
+  [_activeView setTextInputClient:client];
+  [_activeView reloadInputViews];
 }
 
 - (void)setTextInputEditingState:(NSDictionary*)state {
-  [_view setTextInputState:state];
+  [_activeView setTextInputState:state];
 }
 
 - (void)clearTextInputClient {
-  [_view setTextInputClient:0];
+  [_activeView setTextInputClient:0];
 }
 
 @end

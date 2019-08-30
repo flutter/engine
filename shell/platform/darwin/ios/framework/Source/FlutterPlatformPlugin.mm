@@ -13,10 +13,11 @@
 namespace {
 
 constexpr char kTextPlainFormat[] = "text/plain";
+const UInt32 kKeyPressClickSoundId = 1306;
 
 }  // namespaces
 
-namespace shell {
+namespace flutter {
 
 // TODO(abarth): Move these definitions from system_chrome_impl.cc to here.
 const char* const kOrientationUpdateNotificationName =
@@ -28,9 +29,9 @@ const char* const kOverlayStyleUpdateNotificationName =
 const char* const kOverlayStyleUpdateNotificationKey =
     "io.flutter.plugin.platform.SystemChromeOverlayNotificationKey";
 
-}  // namespace shell
+}  // namespace flutter
 
-using namespace shell;
+using namespace flutter;
 
 @implementation FlutterPlatformPlugin {
   fml::WeakPtr<FlutterEngine> _engine;
@@ -93,9 +94,8 @@ using namespace shell;
 - (void)playSystemSound:(NSString*)soundType {
   if ([soundType isEqualToString:@"SystemSoundType.click"]) {
     // All feedback types are specific to Android and are treated as equal on
-    // iOS. The surface must (and does) adopt the UIInputViewAudioFeedback
-    // protocol
-    [[UIDevice currentDevice] playInputClick];
+    // iOS.
+    AudioServicesPlaySystemSound(kKeyPressClickSoundId);
   }
 }
 

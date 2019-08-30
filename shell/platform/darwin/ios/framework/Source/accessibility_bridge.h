@@ -17,15 +17,17 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
+#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #include "third_party/skia/include/core/SkMatrix44.h"
 #include "third_party/skia/include/core/SkRect.h"
 
-namespace shell {
+namespace flutter {
 class AccessibilityBridge;
-}  // namespace shell
+}  // namespace flutter
+
+@class FlutterPlatformViewSemanticsContainer;
 
 /**
  * A node in the iOS semantics tree.
@@ -48,17 +50,17 @@ class AccessibilityBridge;
  * object may use the bridge to access contextual application information. A weak pointer is used
  * because the platform view owns the accessibility bridge.
  */
-@property(nonatomic, readonly) fml::WeakPtr<shell::AccessibilityBridge> bridge;
+@property(nonatomic, readonly) fml::WeakPtr<flutter::AccessibilityBridge> bridge;
 
 /**
  * The semantics node used to produce this semantics object.
  */
-@property(nonatomic, readonly) blink::SemanticsNode node;
+@property(nonatomic, readonly) flutter::SemanticsNode node;
 
 /**
  * Updates this semantics object using data from the `node` argument.
  */
-- (void)setSemanticsNode:(const blink::SemanticsNode*)node NS_REQUIRES_SUPER;
+- (void)setSemanticsNode:(const flutter::SemanticsNode*)node NS_REQUIRES_SUPER;
 
 /**
  * Whether this semantics object has child semantics objects.
@@ -71,12 +73,17 @@ class AccessibilityBridge;
  */
 @property(nonatomic, strong) NSMutableArray<SemanticsObject*>* children;
 
-- (BOOL)nodeWillCauseLayoutChange:(const blink::SemanticsNode*)node;
+/**
+ * Used if this SemanticsObject is for a platform view.
+ */
+@property(strong, nonatomic) FlutterPlatformViewSemanticsContainer* platformViewSemanticsContainer;
+
+- (BOOL)nodeWillCauseLayoutChange:(const flutter::SemanticsNode*)node;
 
 #pragma mark - Designated initializers
 
 - (instancetype)init __attribute__((unavailable("Use initWithBridge instead")));
-- (instancetype)initWithBridge:(fml::WeakPtr<shell::AccessibilityBridge>)bridge
+- (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridge>)bridge
                            uid:(int32_t)uid NS_DESIGNATED_INITIALIZER;
 
 @end
@@ -108,19 +115,45 @@ class AccessibilityBridge;
 @interface FlutterSemanticsObject : SemanticsObject
 @end
 
-namespace shell {
+/**
+ * Designated to act as an accessibility container of a platform view.
+ *
+ * This object does not take any accessibility actions on its own, nor has any accessibility
+ * label/value/trait/hint... on its own. The accessibility data will be handled by the platform
+ * view.
+ *
+ * See also:
+ * * `SemanticsObject` for the other type of semantics objects.
+ * * `FlutterSemanticsObject` for default implementation of `SemanticsObject`.
+ */
+@interface FlutterPlatformViewSemanticsContainer : NSObject
+
+/**
+ * The position inside an accessibility container.
+ */
+@property(nonatomic) NSInteger index;
+
+- (instancetype)init __attribute__((unavailable("Use initWithAccessibilityContainer: instead")));
+
+- (instancetype)initWithSemanticsObject:(SemanticsObject*)object;
+
+@end
+
+namespace flutter {
 class PlatformViewIOS;
 
 class AccessibilityBridge final {
  public:
-  AccessibilityBridge(UIView* view, PlatformViewIOS* platform_view);
+  AccessibilityBridge(UIView* view,
+                      PlatformViewIOS* platform_view,
+                      FlutterPlatformViewsController* platform_views_controller);
   ~AccessibilityBridge();
 
-  void UpdateSemantics(blink::SemanticsNodeUpdates nodes,
-                       blink::CustomAccessibilityActionUpdates actions);
-  void DispatchSemanticsAction(int32_t id, blink::SemanticsAction action);
+  void UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
+                       flutter::CustomAccessibilityActionUpdates actions);
+  void DispatchSemanticsAction(int32_t id, flutter::SemanticsAction action);
   void DispatchSemanticsAction(int32_t id,
-                               blink::SemanticsAction action,
+                               flutter::SemanticsAction action,
                                std::vector<uint8_t> args);
 
   UIView<UITextInput>* textInputView();
@@ -129,26 +162,31 @@ class AccessibilityBridge final {
 
   fml::WeakPtr<AccessibilityBridge> GetWeakPtr();
 
+  FlutterPlatformViewsController* GetPlatformViewsController() const {
+    return platform_views_controller_;
+  };
+
   void clearState();
 
  private:
-  SemanticsObject* GetOrCreateObject(int32_t id, blink::SemanticsNodeUpdates& updates);
+  SemanticsObject* GetOrCreateObject(int32_t id, flutter::SemanticsNodeUpdates& updates);
   void VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
                                         NSMutableArray<NSNumber*>* doomed_uids);
   void HandleEvent(NSDictionary<NSString*, id>* annotatedEvent);
 
   UIView* view_;
   PlatformViewIOS* platform_view_;
+  FlutterPlatformViewsController* platform_views_controller_;
   fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
   fml::WeakPtrFactory<AccessibilityBridge> weak_factory_;
   int32_t previous_route_id_;
-  std::unordered_map<int32_t, blink::CustomAccessibilityAction> actions_;
+  std::unordered_map<int32_t, flutter::CustomAccessibilityAction> actions_;
   std::vector<int32_t> previous_routes_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_H_

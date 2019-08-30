@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 void main() {
   test('Gradient.radial with no focal point', () {
     expect(
-      new Gradient.radial(
+      Gradient.radial(
           Offset.zero,
           null,
           <Color>[const Color(0xFFFFFFFF), const Color(0xFFFFFFFF)],
@@ -23,7 +23,7 @@ void main() {
   test('radial center and focal == Offset.zero and focalRadius == 0.0 is ok',
       () {
     expect(
-        () => new Gradient.radial(
+        () => Gradient.radial(
               Offset.zero,
               0.0,
               <Color>[const Color(0xFFFFFFFF), const Color(0xFFFFFFFF)],
@@ -38,7 +38,7 @@ void main() {
 
   test('radial center != focal and focalRadius == 0.0 is ok', () {
     expect(
-        () => new Gradient.radial(
+        () => Gradient.radial(
               Offset.zero,
               0.0,
               <Color>[const Color(0xFFFFFFFF), const Color(0xFFFFFFFF)],
@@ -53,19 +53,22 @@ void main() {
 
   // this would result in div/0 on skia side.
   test('radial center and focal == Offset.zero and focalRadius != 0.0 assert',
-      () {
-    expect(
-      () => new Gradient.radial(
-            Offset.zero,
-            0.0,
-            <Color>[const Color(0xFFFFFFFF), const Color(0xFFFFFFFF)],
-            <double>[0.0, 1.0],
-            TileMode.mirror,
-            null,
-            Offset.zero,
-            1.0,
-          ),
-      throwsA(const TypeMatcher<AssertionError>()),
-    );
+    () {
+      assert(() {
+        expect(
+          () => Gradient.radial(
+                Offset.zero,
+                0.0,
+                <Color>[const Color(0xFFFFFFFF), const Color(0xFFFFFFFF)],
+                <double>[0.0, 1.0],
+                TileMode.mirror,
+                null,
+                Offset.zero,
+                1.0,
+              ),
+          throwsA(const TypeMatcher<AssertionError>()),
+        );
+        return true;
+      }());
   });
 }

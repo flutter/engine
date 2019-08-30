@@ -14,6 +14,7 @@
 #include "flutter/third_party/txt/src/txt/font_style.h"
 #include "flutter/third_party/txt/src/txt/font_weight.h"
 #include "flutter/third_party/txt/src/txt/paragraph_style.h"
+#include "flutter/third_party/txt/src/txt/text_baseline.h"
 #include "flutter/third_party/txt/src/txt/text_decoration.h"
 #include "flutter/third_party/txt/src/txt/text_style.h"
 #include "third_party/icu/source/common/unicode/ustring.h"
@@ -24,7 +25,7 @@
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
 
-namespace blink {
+namespace flutter {
 namespace {
 
 // TextStyle
@@ -36,20 +37,23 @@ const int tsTextDecorationStyleIndex = 4;
 const int tsFontWeightIndex = 5;
 const int tsFontStyleIndex = 6;
 const int tsTextBaselineIndex = 7;
-const int tsFontFamilyIndex = 8;
-const int tsFontSizeIndex = 9;
-const int tsLetterSpacingIndex = 10;
-const int tsWordSpacingIndex = 11;
-const int tsHeightIndex = 12;
-const int tsLocaleIndex = 13;
-const int tsBackgroundIndex = 14;
-const int tsForegroundIndex = 15;
-const int tsTextShadowsIndex = 16;
+const int tsTextDecorationThicknessIndex = 8;
+const int tsFontFamilyIndex = 9;
+const int tsFontSizeIndex = 10;
+const int tsLetterSpacingIndex = 11;
+const int tsWordSpacingIndex = 12;
+const int tsHeightIndex = 13;
+const int tsLocaleIndex = 14;
+const int tsBackgroundIndex = 15;
+const int tsForegroundIndex = 16;
+const int tsTextShadowsIndex = 17;
+const int tsFontFeaturesIndex = 18;
 
 const int tsColorMask = 1 << tsColorIndex;
 const int tsTextDecorationMask = 1 << tsTextDecorationIndex;
 const int tsTextDecorationColorMask = 1 << tsTextDecorationColorIndex;
 const int tsTextDecorationStyleMask = 1 << tsTextDecorationStyleIndex;
+const int tsTextDecorationThicknessMask = 1 << tsTextDecorationThicknessIndex;
 const int tsFontWeightMask = 1 << tsFontWeightIndex;
 const int tsFontStyleMask = 1 << tsFontStyleIndex;
 const int tsTextBaselineMask = 1 << tsTextBaselineIndex;
@@ -62,6 +66,7 @@ const int tsLocaleMask = 1 << tsLocaleIndex;
 const int tsBackgroundMask = 1 << tsBackgroundIndex;
 const int tsForegroundMask = 1 << tsForegroundIndex;
 const int tsTextShadowsMask = 1 << tsTextShadowsIndex;
+const int tsFontFeaturesMask = 1 << tsFontFeaturesIndex;
 
 // ParagraphStyle
 
@@ -99,6 +104,10 @@ constexpr uint32_t kXOffset = 1;
 constexpr uint32_t kYOffset = 2;
 constexpr uint32_t kBlurOffset = 3;
 
+// FontFeature decoding
+constexpr uint32_t kBytesPerFontFeature = 8;
+constexpr uint32_t kFontFeatureTagLength = 4;
+
 // Strut decoding
 const int sFontWeightIndex = 0;
 const int sFontStyleIndex = 1;
@@ -124,10 +133,11 @@ static void ParagraphBuilder_constructor(Dart_NativeArguments args) {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, ParagraphBuilder);
 
-#define FOR_EACH_BINDING(V)      \
-  V(ParagraphBuilder, pushStyle) \
-  V(ParagraphBuilder, pop)       \
-  V(ParagraphBuilder, addText)   \
+#define FOR_EACH_BINDING(V)           \
+  V(ParagraphBuilder, pushStyle)      \
+  V(ParagraphBuilder, pop)            \
+  V(ParagraphBuilder, addText)        \
+  V(ParagraphBuilder, addPlaceholder) \
   V(ParagraphBuilder, build)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
@@ -194,6 +204,7 @@ void decodeStrut(Dart_Handle strut_data,
   }
   if (mask & sHeightMask) {
     paragraph_style.strut_height = float_data[float_count++];
+    paragraph_style.strut_has_height_override = true;
   }
   if (mask & sLeadingMask) {
     paragraph_style.strut_leading = float_data[float_count++];
@@ -224,11 +235,13 @@ ParagraphBuilder::ParagraphBuilder(
   int32_t mask = encoded[0];
   txt::ParagraphStyle style;
 
-  if (mask & psTextAlignMask)
+  if (mask & psTextAlignMask) {
     style.text_align = txt::TextAlign(encoded[psTextAlignIndex]);
+  }
 
-  if (mask & psTextDirectionMask)
+  if (mask & psTextDirectionMask) {
     style.text_direction = txt::TextDirection(encoded[psTextDirectionIndex]);
+  }
 
   if (mask & psFontWeightMask) {
     style.font_weight =
@@ -249,26 +262,37 @@ ParagraphBuilder::ParagraphBuilder(
 
   if (mask & psHeightMask) {
     style.height = height;
+    style.has_height_override = true;
   }
 
   if (mask & psStrutStyleMask) {
     decodeStrut(strutData, strutFontFamilies, style);
   }
 
-  if (mask & psMaxLinesMask)
+  if (mask & psMaxLinesMask) {
     style.max_lines = encoded[psMaxLinesIndex];
+  }
 
-  if (mask & psEllipsisMask)
+  if (mask & psEllipsisMask) {
     style.ellipsis = ellipsis;
+  }
 
-  if (mask & psLocaleMask)
+  if (mask & psLocaleMask) {
     style.locale = locale;
+  }
 
   FontCollection& font_collection =
       UIDartState::Current()->window()->client()->GetFontCollection();
-  m_paragraphBuilder = std::make_unique<txt::ParagraphBuilder>(
-      style, font_collection.GetFontCollection());
-}  // namespace blink
+
+#if FLUTTER_ENABLE_SKSHAPER
+#define FLUTTER_PARAGRAPH_BUILDER txt::ParagraphBuilder::CreateSkiaBuilder
+#else
+#define FLUTTER_PARAGRAPH_BUILDER txt::ParagraphBuilder::CreateTxtBuilder
+#endif
+
+  m_paragraphBuilder =
+      FLUTTER_PARAGRAPH_BUILDER(style, font_collection.GetFontCollection());
+}
 
 ParagraphBuilder::~ParagraphBuilder() = default;
 
@@ -296,18 +320,38 @@ void decodeTextShadows(Dart_Handle shadows_data,
   }
 }
 
+void decodeFontFeatures(Dart_Handle font_features_data,
+                        txt::FontFeatures& font_features) {
+  tonic::DartByteData byte_data(font_features_data);
+  FML_CHECK(byte_data.length_in_bytes() % kBytesPerFontFeature == 0);
+
+  size_t feature_count = byte_data.length_in_bytes() / kBytesPerFontFeature;
+  for (size_t feature_index = 0; feature_index < feature_count;
+       ++feature_index) {
+    size_t feature_offset = feature_index * kBytesPerFontFeature;
+    const char* feature_bytes =
+        static_cast<const char*>(byte_data.data()) + feature_offset;
+    std::string tag(feature_bytes, kFontFeatureTagLength);
+    int32_t value = *(reinterpret_cast<const int32_t*>(feature_bytes +
+                                                       kFontFeatureTagLength));
+    font_features.SetFeature(tag, value);
+  }
+}
+
 void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
                                  const std::vector<std::string>& fontFamilies,
                                  double fontSize,
                                  double letterSpacing,
                                  double wordSpacing,
                                  double height,
+                                 double decorationThickness,
                                  const std::string& locale,
                                  Dart_Handle background_objects,
                                  Dart_Handle background_data,
                                  Dart_Handle foreground_objects,
                                  Dart_Handle foreground_data,
-                                 Dart_Handle shadows_data) {
+                                 Dart_Handle shadows_data,
+                                 Dart_Handle font_features_data) {
   FML_DCHECK(encoded.num_elements() == 8);
 
   int32_t mask = encoded[0];
@@ -318,20 +362,27 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 
   // Only change the style property from the previous value if a new explicitly
   // set value is available
-  if (mask & tsColorMask)
+  if (mask & tsColorMask) {
     style.color = encoded[tsColorIndex];
+  }
 
   if (mask & tsTextDecorationMask) {
     style.decoration =
         static_cast<txt::TextDecoration>(encoded[tsTextDecorationIndex]);
   }
 
-  if (mask & tsTextDecorationColorMask)
+  if (mask & tsTextDecorationColorMask) {
     style.decoration_color = encoded[tsTextDecorationColorIndex];
+  }
 
-  if (mask & tsTextDecorationStyleMask)
+  if (mask & tsTextDecorationStyleMask) {
     style.decoration_style = static_cast<txt::TextDecorationStyle>(
         encoded[tsTextDecorationStyleIndex]);
+  }
+
+  if (mask & tsTextDecorationThicknessMask) {
+    style.decoration_thickness_multiplier = decorationThickness;
+  }
 
   if (mask & tsTextBaselineMask) {
     // TODO(abarth): Implement TextBaseline. The CSS version of this
@@ -359,6 +410,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 
   if (mask & tsHeightMask) {
     style.height = height;
+    style.has_height_override = true;
   }
 
   if (mask & tsLocaleMask) {
@@ -386,8 +438,14 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
   }
 
   if (mask & tsFontFamilyMask) {
-    style.font_families.insert(style.font_families.end(), fontFamilies.begin(),
-                               fontFamilies.end());
+    // The child style's font families override the parent's font families.
+    // If the child's fonts are not available, then the font collection will
+    // use the system fallback fonts (not the parent's fonts).
+    style.font_families = fontFamilies;
+  }
+
+  if (mask & tsFontFeaturesMask) {
+    decodeFontFeatures(font_features_data, style.font_features);
   }
 
   m_paragraphBuilder->PushStyle(style);
@@ -415,8 +473,22 @@ Dart_Handle ParagraphBuilder::addText(const std::u16string& text) {
   return Dart_Null();
 }
 
+Dart_Handle ParagraphBuilder::addPlaceholder(double width,
+                                             double height,
+                                             unsigned alignment,
+                                             double baseline_offset,
+                                             unsigned baseline) {
+  txt::PlaceholderRun placeholder_run(
+      width, height, static_cast<txt::PlaceholderAlignment>(alignment),
+      static_cast<txt::TextBaseline>(baseline), baseline_offset);
+
+  m_paragraphBuilder->AddPlaceholder(placeholder_run);
+
+  return Dart_Null();
+}
+
 fml::RefPtr<Paragraph> ParagraphBuilder::build() {
   return Paragraph::Create(m_paragraphBuilder->Build());
 }
 
-}  // namespace blink
+}  // namespace flutter

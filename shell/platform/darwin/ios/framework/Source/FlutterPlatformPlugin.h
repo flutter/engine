@@ -6,7 +6,7 @@
 #define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMPLUGIN_H_
 
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
+#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
 
 @interface FlutterPlatformPlugin : NSObject
@@ -17,13 +17,13 @@
 
 @end
 
-namespace shell {
+namespace flutter {
 
 extern const char* const kOrientationUpdateNotificationName;
 extern const char* const kOrientationUpdateNotificationKey;
 extern const char* const kOverlayStyleUpdateNotificationName;
 extern const char* const kOverlayStyleUpdateNotificationKey;
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMPLUGIN_H_

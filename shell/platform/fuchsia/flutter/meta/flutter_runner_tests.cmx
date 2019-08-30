@@ -1,0 +1,16 @@
+{
+    "program": {
+        "binary": "test/flutter_runner_tests"
+    },
+    "sandbox": {
+        "features": [
+            "vulkan",
+            "deprecated-ambient-replace-as-executable"
+        ],
+        "services": [
+            "fuchsia.accessibility.SettingsManager",
+            "fuchsia.accessibility.semantics.SemanticsManager",
+            "fuchsia.sys.Launcher"
+        ]
+    }
+}

@@ -12,20 +12,20 @@
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/vsync_waiter.h"
 
-namespace shell {
+namespace flutter {
 
 class VsyncWaiterAndroid final : public VsyncWaiter {
  public:
   static bool Register(JNIEnv* env);
 
-  VsyncWaiterAndroid(blink::TaskRunners task_runners);
+  VsyncWaiterAndroid(flutter::TaskRunners task_runners);
 
   ~VsyncWaiterAndroid() override;
 
   float GetDisplayRefreshRate() const override;
 
  private:
-  // |shell::VsyncWaiter|
+  // |VsyncWaiter|
   void AwaitVSync() override;
 
   static void OnNativeVsync(JNIEnv* env,
@@ -41,6 +41,6 @@ class VsyncWaiterAndroid final : public VsyncWaiter {
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiterAndroid);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_PLATFORM_ANDROID_ASYNC_WAITER_ANDROID_H_

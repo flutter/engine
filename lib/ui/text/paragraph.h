@@ -8,8 +8,7 @@
 #include "flutter/fml/message_loop.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/canvas.h"
-#include "flutter/lib/ui/text/paragraph_impl.h"
-#include "flutter/lib/ui/text/paragraph_impl_txt.h"
+#include "flutter/lib/ui/text/line_metrics.h"
 #include "flutter/lib/ui/text/text_box.h"
 #include "flutter/third_party/txt/src/txt/paragraph.h"
 
@@ -17,7 +16,7 @@ namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 
 class Paragraph : public RefCountedDartWrappable<Paragraph> {
   DEFINE_WRAPPERTYPEINFO();
@@ -33,6 +32,7 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
 
   double width();
   double height();
+  double longestLine();
   double minIntrinsicWidth();
   double maxIntrinsicWidth();
   double alphabeticBaseline();
@@ -46,19 +46,21 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
                                         unsigned end,
                                         unsigned boxHeightStyle,
                                         unsigned boxWidthStyle);
+  std::vector<TextBox> getRectsForPlaceholders();
   Dart_Handle getPositionForOffset(double dx, double dy);
   Dart_Handle getWordBoundary(unsigned offset);
+  std::vector<LineMetrics> computeLineMetrics();
 
   size_t GetAllocationSize() override;
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  std::unique_ptr<ParagraphImpl> m_paragraphImpl;
+  std::unique_ptr<txt::Paragraph> m_paragraph;
 
   explicit Paragraph(std::unique_ptr<txt::Paragraph> paragraph);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_TEXT_PARAGRAPH_H_

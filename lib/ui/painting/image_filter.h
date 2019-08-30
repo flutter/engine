@@ -9,9 +9,9 @@
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
-#include "third_party/tonic/typed_data/float64_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
-namespace blink {
+namespace flutter {
 
 class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
   DEFINE_WRAPPERTYPEINFO();
@@ -36,6 +36,6 @@ class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
   sk_sp<SkImageFilter> filter_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_IMAGE_FILTER_H_
