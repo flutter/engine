@@ -263,7 +263,7 @@ void Window::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
   if (!dart_state) {
     FML_DLOG(WARNING)
-        << "Dropping platform message for lack of DartState on channel:"
+        << "Dropping platform message for lack of DartState on channel: "
         << message->channel();
     return;
   }
@@ -272,7 +272,7 @@ void Window::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
       (message->hasData()) ? ToByteData(message->data()) : Dart_Null();
   if (Dart_IsError(data_handle)) {
     FML_DLOG(WARNING)
-        << "Dropping platform message because of a Dart error on channel:"
+        << "Dropping platform message because of a Dart error on channel: "
         << message->channel();
     return;
   }

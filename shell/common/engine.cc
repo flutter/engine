@@ -292,7 +292,7 @@ void Engine::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
     return;
   }
 
-  FML_DLOG(WARNING) << "Dropping platform message on channel:"
+  FML_DLOG(WARNING) << "Dropping platform message on channel: "
                     << message->channel();
 }
 
