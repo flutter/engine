@@ -8,7 +8,7 @@ namespace flutter {
 // constant for machines running at 100% scaling.
 constexpr int base_dpi = 96;
 
-Win32FlutterWindow::Win32FlutterWindow(const int width, const int height) {
+Win32FlutterWindow::Win32FlutterWindow(int width, int height) {
   surface_manager = std::make_unique<AngleSurfaceManager>();
   Win32Window::InitializeChild("FLUTTERVIEW", width, height);
 }

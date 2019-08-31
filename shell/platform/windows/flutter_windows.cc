@@ -126,7 +126,7 @@ void FlutterDesktopProcessMessages() {
 }
 
 long FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller) {
-  return (long)(controller)->view->GetWindowHandle();
+  return reinterpret_cast<long>((controller)->view->GetWindowHandle());
 }
 
 void FlutterDesktopDestroyViewController(

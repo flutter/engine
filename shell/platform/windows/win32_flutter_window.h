@@ -31,16 +31,13 @@ namespace flutter {
 class Win32FlutterWindow : public Win32Window {
  public:
   // Create flutter Window for use as child window
-  Win32FlutterWindow(const int width, const int height);
+  Win32FlutterWindow(int width, int height);
 
   ~Win32FlutterWindow();
 
   static FlutterDesktopViewControllerRef
-  Win32FlutterWindow::CreateWin32FlutterWindow(const int width,
-                                               const int height);
-
-  //// Run a Windows message pump that also pumps plugin messages.
-  // void FlutterMessageLoop();
+  Win32FlutterWindow::CreateWin32FlutterWindow(int width,
+                                               int height);
 
   // |Win32Window|
   void OnDpiScale(unsigned int dpi) override;

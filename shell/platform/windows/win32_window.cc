@@ -21,14 +21,14 @@ Win32Window::~Win32Window() {
 }
 
 void Win32Window::InitializeChild(const char* title,
-                                  const unsigned int width,
-                                  const unsigned int height) {
+                                  unsigned int width,
+                                  unsigned int height) {
   Destroy();
   std::wstring converted_title = NarrowToWide(title);
 
   WNDCLASS window_class = ResgisterWindowClass(converted_title);
 
-  auto result = CreateWindowEx(
+  auto* result = CreateWindowEx(
       0, window_class.lpszClassName, converted_title.c_str(),
       WS_CHILD | WS_VISIBLE, CW_DEFAULT, CW_DEFAULT, width, height,
       HWND_MESSAGE, nullptr, window_class.hInstance, this);
@@ -40,25 +40,10 @@ void Win32Window::InitializeChild(const char* title,
         FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
             FORMAT_MESSAGE_IGNORE_INSERTS,
         NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPWSTR)&message, 0, NULL);
+        reinterpret_cast<LPWSTR>(&message), 0, NULL);
     OutputDebugString(message);
     LocalFree(message);
   }
-}
-
-void Win32Window::Initialize(const char* title,
-                             const unsigned int x,
-                             const unsigned int y,
-                             const unsigned int width,
-                             const unsigned int height) {
-  Destroy();
-  std::wstring converted_title = NarrowToWide(title);
-
-  WNDCLASS window_class = ResgisterWindowClass(converted_title);
-
-  CreateWindow(window_class.lpszClassName, converted_title.c_str(),
-               WS_OVERLAPPEDWINDOW | WS_VISIBLE, x, y, width, height, nullptr,
-               nullptr, window_class.hInstance, this);
 }
 
 std::wstring Win32Window::NarrowToWide(const char* source) {
@@ -128,8 +113,7 @@ Win32Window::MessageHandler(HWND hwnd,
       case WM_DPICHANGED:
         return HandleDpiChange(window_handle_, wparam, lparam, true);
         break;
-      case 0x02E2:  // WM_DPICHANGED_BEFOREPARENT defined in more recent Windows
-                    // SDK
+      case kWmDpiChangedBeforeParent:
         return HandleDpiChange(window_handle_, wparam, lparam, false);
         break;
       case WM_DESTROY:
@@ -230,7 +214,7 @@ Win32Window::HandleDpiChange(HWND hwnd,
 
     UINT uDpi = HIWORD(wparam);
 
-    // the DPI is only passed for DPI change messages on top level windows,
+    // The DPI is only passed for DPI change messages on top level windows,
     // hence call function to get DPI if needed.
     if (uDpi == 0) {
       uDpi = dpi_helper_->GetDpiForWindow(hwnd);
