@@ -180,10 +180,10 @@ public class PlatformChannelTest {
         @Override
         public void success(Object result) {}
 
-         @Override
+        @Override
         public void error(String errorCode, String errorMessage, Object errorDetails) {}
 
-         @Override
+        @Override
         public void notImplemented() {}
     }
 }
