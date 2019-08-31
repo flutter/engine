@@ -1,4 +1,9 @@
+// Copyright 2019 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include "AppDelegate.h"
+#import "Scenarios-Swift.h"
 #import "TextPlatformView.h"
 
 @interface NoStatusBarFlutterViewController : FlutterViewController
@@ -38,6 +43,8 @@
         [flutterViewController.engine registrarForPlugin:@"scenarios/TextPlatformViewPlugin"];
     [registrar registerViewFactory:textPlatformViewFactory withId:@"scenarios/textPlatformView"];
     self.window.rootViewController = flutterViewController;
+  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
+    self.window.rootViewController = [[ScreenBeforeFlutter alloc] init];;
   } else {
     self.window.rootViewController = [[UIViewController alloc] init];
   }

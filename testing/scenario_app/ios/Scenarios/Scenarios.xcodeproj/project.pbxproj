@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0AFADA83231A404100D5B2C4 /* ScreenBeforeFlutter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFADA82231A404100D5B2C4 /* ScreenBeforeFlutter.swift */; };
+		0AFADA86231A5E5A00D5B2C4 /* AppLifecycleUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFADA85231A5E5A00D5B2C4 /* AppLifecycleUITests.swift */; };
 		0DB781EF22E931BE00E9B371 /* Flutter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0DB781F122E933E800E9B371 /* Flutter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0DB781FE22EA2C6D00E9B371 /* Flutter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; };
@@ -84,6 +86,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0AFADA81231A404100D5B2C4 /* Scenarios-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Scenarios-Bridging-Header.h"; sourceTree = "<group>"; };
+		0AFADA82231A404100D5B2C4 /* ScreenBeforeFlutter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenBeforeFlutter.swift; sourceTree = "<group>"; };
+		0AFADA84231A5E5A00D5B2C4 /* ScenariosUITests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ScenariosUITests-Bridging-Header.h"; sourceTree = "<group>"; };
+		0AFADA85231A5E5A00D5B2C4 /* AppLifecycleUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycleUITests.swift; sourceTree = "<group>"; };
 		0DB781FC22EA2C0300E9B371 /* FlutterViewControllerTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FlutterViewControllerTest.m; sourceTree = "<group>"; };
 		244EA6CF230DBE8900B2D26E /* golden_platform_view_D21AP.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = golden_platform_view_D21AP.png; sourceTree = "<group>"; };
 		246B4E4122E3B5F700073EBF /* App.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = App.framework; sourceTree = "<group>"; };
@@ -167,6 +173,8 @@
 				248D76D322E388380012F0C1 /* Assets.xcassets */,
 				248D76D822E388380012F0C1 /* Info.plist */,
 				248D76D922E388380012F0C1 /* main.m */,
+				0AFADA82231A404100D5B2C4 /* ScreenBeforeFlutter.swift */,
+				0AFADA81231A404100D5B2C4 /* Scenarios-Bridging-Header.h */,
 			);
 			path = Scenarios;
 			sourceTree = "<group>";
@@ -190,6 +198,8 @@
 				248D76EE22E388380012F0C1 /* PlatformViewUITests.m */,
 				248D76F022E388380012F0C1 /* Info.plist */,
 				24D47D1E230CA4480069DD5E /* README.md */,
+				0AFADA85231A5E5A00D5B2C4 /* AppLifecycleUITests.swift */,
+				0AFADA84231A5E5A00D5B2C4 /* ScenariosUITests-Bridging-Header.h */,
 			);
 			path = ScenariosUITests;
 			sourceTree = "<group>";
@@ -273,6 +283,7 @@
 				TargetAttributes = {
 					248D76C622E388370012F0C1 = {
 						CreatedOnToolsVersion = 10.2.1;
+						LastSwiftMigration = 1030;
 					};
 					248D76DE22E388380012F0C1 = {
 						CreatedOnToolsVersion = 10.2.1;
@@ -280,6 +291,7 @@
 					};
 					248D76E922E388380012F0C1 = {
 						CreatedOnToolsVersion = 10.2.1;
+						LastSwiftMigration = 1030;
 						TestTargetID = 248D76C622E388370012F0C1;
 					};
 				};
@@ -338,6 +350,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				248D76DA22E388380012F0C1 /* main.m in Sources */,
+				0AFADA83231A404100D5B2C4 /* ScreenBeforeFlutter.swift in Sources */,
 				24F1FB89230B4579005ACE7C /* TextPlatformView.m in Sources */,
 				248D76CC22E388370012F0C1 /* AppDelegate.m in Sources */,
 			);
@@ -356,6 +369,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0AFADA86231A5E5A00D5B2C4 /* AppLifecycleUITests.swift in Sources */,
 				248D76EF22E388380012F0C1 /* PlatformViewUITests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -492,6 +506,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
@@ -507,6 +522,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = dev.flutter.Scenarios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Scenarios/Scenarios-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -515,6 +533,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
@@ -530,6 +549,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = dev.flutter.Scenarios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Scenarios/Scenarios-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -537,6 +558,7 @@
 		248D76F722E388380012F0C1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
@@ -564,6 +586,7 @@
 		248D76F822E388380012F0C1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
@@ -591,6 +614,8 @@
 		248D76FA22E388380012F0C1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -609,6 +634,9 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = dev.flutter.ScenariosUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "ScenariosUITests/ScenariosUITests-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Scenarios;
 			};
@@ -617,6 +645,8 @@
 		248D76FB22E388380012F0C1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -635,6 +665,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = dev.flutter.ScenariosUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "ScenariosUITests/ScenariosUITests-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Scenarios;
 			};
