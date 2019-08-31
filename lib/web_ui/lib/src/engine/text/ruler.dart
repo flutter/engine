@@ -86,7 +86,7 @@ class ParagraphGeometricStyle {
       result.write(DomRenderer.defaultFontSize);
     }
     result.write(' ');
-    result.write(effectiveFontFamily);
+    result.write("'$effectiveFontFamily'");
 
     return result.toString();
   }
@@ -191,7 +191,14 @@ class TextDimensions {
       // match the style set on the `element`. Setting text as plain string is
       // faster because it doesn't change the DOM structure or CSS attributes,
       // and therefore doesn't trigger style recalculations in the browser.
-      _element.text = plainText;
+      if (plainText.endsWith('\n')) {
+        // On the web the last newline is ignored. To be consistent with
+        // native engine implementation we add extra newline to get correct
+        // height measurement.
+        _element.text = '$plainText\n';
+      } else {
+        _element.text = plainText;
+      }
     } else {
       // Rich text: deeply copy contents. This is the slow case that should be
       // avoided if fast layout performance is desired.
@@ -220,7 +227,7 @@ class TextDimensions {
   void applyStyle(ParagraphGeometricStyle style) {
     _element.style
       ..fontSize = style.fontSize != null ? '${style.fontSize.floor()}px' : null
-      ..fontFamily = style.effectiveFontFamily
+      ..fontFamily = "'${style.effectiveFontFamily}'"
       ..fontWeight =
           style.fontWeight != null ? fontWeightToCss(style.fontWeight) : null
       ..fontStyle = style.fontStyle != null
@@ -425,8 +432,10 @@ class ParagraphRuler {
     minIntrinsicDimensions._element.style
       ..flex = '0'
       ..display = 'inline'
-      // Preserve whitespaces.
-      ..whiteSpace = 'pre-wrap';
+      // Preserve newlines, wrap text, remove end of line spaces.
+      // Not using pre-wrap here since end of line space hang measurement
+      // changed in Chrome 77 Beta.
+      ..whiteSpace = 'pre-line';
 
     _minIntrinsicHost.append(minIntrinsicDimensions._element);
     rulerManager.addHostElement(_minIntrinsicHost);

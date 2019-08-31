@@ -20,6 +20,7 @@ class TextField extends RoleManager {
             ? html.TextAreaElement()
             : html.InputElement();
     persistentTextEditingElement = PersistentTextEditingElement(
+      textEditing,
       editableDomElement,
       onDomElementSwap: _setupDomElement,
     );
@@ -61,6 +62,7 @@ class TextField extends RoleManager {
 
     switch (browserEngine) {
       case BrowserEngine.blink:
+      case BrowserEngine.firefox:
       case BrowserEngine.unknown:
         _initializeForBlink();
         break;
