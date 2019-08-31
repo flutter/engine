@@ -132,6 +132,16 @@ void ShellTest::PumpOneFrame(Shell* shell) {
   latch.Wait();
 }
 
+void ShellTest::DispatchFakePointerData(Shell* shell) {
+  fml::AutoResetWaitableEvent latch;
+  shell->GetTaskRunners().GetPlatformTaskRunner()->PostTask([&latch, shell]() {
+    auto packet = std::make_unique<PointerDataPacket>(1);
+    shell->OnPlatformViewDispatchPointerDataPacket(std::move(packet));
+    latch.Signal();
+  });
+  latch.Wait();
+}
+
 int ShellTest::UnreportedTimingsCount(Shell* shell) {
   return shell->unreported_timings_.size();
 }
@@ -185,6 +195,84 @@ std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
       [](Shell& shell) {
         return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
       });
+}
+
+void ShellTest::TestSimulatedInputEvents(
+    int num_events,
+    int base_latency,
+    std::function<int(int)> delivery_time,
+    int frame_time,
+    std::vector<int>& events_consumed_at_frame) {
+  ///// Begin constructing shell ///////////////////////////////////////////////
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("onPointerDataPacketMain");
+
+  // The following 4 variables are only accessed in the UI thread by
+  // nativeOnPointerDataPacket and nativeOnBeginFrame between their
+  // initializations and `shell.reset()`.
+  events_consumed_at_frame.clear();
+  bool will_draw_new_frame = true;
+  int events_consumed = 0;
+  int frame_drawn = 0;
+  auto nativeOnPointerDataPacket = [&events_consumed_at_frame,
+                                    &will_draw_new_frame, &events_consumed,
+                                    &frame_drawn](Dart_NativeArguments args) {
+    events_consumed += 1;
+    if (will_draw_new_frame) {
+      frame_drawn += 1;
+      will_draw_new_frame = false;
+      events_consumed_at_frame.push_back(events_consumed);
+    } else {
+      events_consumed_at_frame.back() = events_consumed;
+    }
+  };
+  AddNativeCallback("NativeOnPointerDataPacket",
+                    CREATE_NATIVE_ENTRY(nativeOnPointerDataPacket));
+
+  auto nativeOnBeginFrame = [&will_draw_new_frame](Dart_NativeArguments args) {
+    will_draw_new_frame = true;
+  };
+  AddNativeCallback("NativeOnBeginFrame",
+                    CREATE_NATIVE_ENTRY(nativeOnBeginFrame));
+
+  ASSERT_TRUE(configuration.IsValid());
+  RunEngine(shell.get(), std::move(configuration));
+  ///// End constructing shell /////////////////////////////////////////////////
+
+  ASSERT_GE(base_latency, 0);
+
+  // Check that delivery_time satisfies our assumptions.
+  int continuous_frame_count = 0;
+  for (int i = 0; i < num_events; i += 1) {
+    // j is the frame index of event i if there were no latency.
+    int j = static_cast<int>((delivery_time(i) - base_latency) / frame_time);
+    if (j == continuous_frame_count) {
+      continuous_frame_count += 1;
+    }
+    double random_latency = delivery_time(i) - j * frame_time - base_latency;
+    ASSERT_GE(random_latency, 0);
+    ASSERT_LT(random_latency, frame_time);
+
+    // If there were no latency, there should be at least one event per frame.
+    // Hence j should never skip any integer less than continuous_frame_count.
+    ASSERT_LT(j, continuous_frame_count);
+  }
+
+  // i is the input event's index.
+  // j is the frame's index.
+  for (int i = 0, j = 0; i < num_events; j += 1) {
+    double t = j * frame_time;
+    while (i < num_events && delivery_time(i) <= t) {
+      ShellTest::DispatchFakePointerData(shell.get());
+      i += 1;
+    }
+    ShellTest::PumpOneFrame(shell.get());
+  }
+
+  shell.reset();
 }
 
 // |testing::ThreadTest|

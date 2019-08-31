@@ -724,11 +724,11 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = engine_->GetWeakPtr(), packet = std::move(packet),
-       flow_id = next_pointer_flow_id_] {
+  task_runners_.GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([engine = weak_engine_, packet = std::move(packet),
+                         flow_id = next_pointer_flow_id_]() mutable {
         if (engine) {
-          engine->DispatchPointerDataPacket(*packet, flow_id);
+          engine->DispatchPointerDataPacket(std::move(packet), flow_id);
         }
       }));
   next_pointer_flow_id_++;

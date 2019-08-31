@@ -375,12 +375,59 @@ void Engine::HandleSettingsPlatformMessage(PlatformMessage* message) {
   }
 }
 
-void Engine::DispatchPointerDataPacket(const PointerDataPacket& packet,
-                                       uint64_t trace_flow_id) {
+void Engine::DispatchPointerDataPacket(
+    std::unique_ptr<PointerDataPacket> packet,
+    uint64_t trace_flow_id) {
   TRACE_EVENT0("flutter", "Engine::DispatchPointerDataPacket");
   TRACE_FLOW_STEP("flutter", "PointerEvent", trace_flow_id);
+#ifdef ENABLE_IRREGULAR_INPUT_DELIVERY_FIX
+  // Fix for https://github.com/flutter/flutter/issues/31086
+  //
+  // If a pointer data dispatch is still in progress (its frame isn't finished
+  // yet), entering this function means that an input event is delivered to us
+  // too fast. That potentially means a later event will be too late which could
+  // cause the missing of a frame. Hence we'll cache it in `pending_packet_` for
+  // the next frame to smooth it out.
+  //
+  // If the input event is sent to us regularly at the same rate of VSYNC (say
+  // at 60Hz, once per 16ms), this would be identical to the non-ios cases where
+  // `runtime_controller_->DispatchPointerDataPacket` is always called right
+  // away. That's because `is_pointer_data_in_progress_` will always be false at
+  // this point since it will be cleared by the end of a frame through
+  // `Engine::Render`. This is the case for all Android/iOS devices before
+  // iPhone X/XS.
+  //
+  // If the input event is irregular, but with a random latency of no more than
+  // one frame, this would guarantee that we'll miss at most 1 frame. Without
+  // this, we could miss half of the frames.
+  //
+  // If the input event is delivered at a higher rate than that of VSYNC, this
+  // would at most add a latency of one event delivery. For example, if the
+  // input event is delivered at 120Hz (this is only true for iPad pro, not even
+  // iPhone X), this may delay the handling of an input event by 8ms.
+  //
+  // The assumption of this solution is that the sampling itself is still
+  // regular. Only the event delivery is allowed to be irregular. So far this
+  // assumption seems to hold on all devices. If it's changed in the future,
+  // we'll need a different solution.
+  //
+  // See also input_events_unittests.cc where we test all our claims above.
+  if (is_pointer_data_in_progress_) {
+    if (pending_packet_ != nullptr) {
+      ApplyPendingPacket();
+    }
+    pending_packet_ = std::move(packet);
+    pending_trace_flow_id_ = trace_flow_id;
+  } else {
+    FML_DCHECK(pending_packet_ == nullptr);
+    animator_->EnqueueTraceFlowId(trace_flow_id);
+    runtime_controller_->DispatchPointerDataPacket(*packet);
+  }
+  is_pointer_data_in_progress_ = true;
+#else
   animator_->EnqueueTraceFlowId(trace_flow_id);
-  runtime_controller_->DispatchPointerDataPacket(packet);
+  runtime_controller_->DispatchPointerDataPacket(*packet);
+#endif
 }
 
 void Engine::DispatchSemanticsAction(int id,
@@ -428,6 +475,16 @@ void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
 
   layer_tree->set_frame_size(frame_size);
   animator_->Render(std::move(layer_tree));
+
+#ifdef ENABLE_IRREGULAR_INPUT_DELIVERY_FIX
+  if (is_pointer_data_in_progress_) {
+    if (pending_packet_ != nullptr) {
+      ApplyPendingPacket();
+    } else {
+      is_pointer_data_in_progress_ = false;
+    }
+  }
+#endif
 }
 
 void Engine::UpdateSemantics(SemanticsNodeUpdates update,
@@ -476,5 +533,16 @@ void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {
 
   response->CompleteEmpty();
 }
+
+#ifdef ENABLE_IRREGULAR_INPUT_DELIVERY_FIX
+void Engine::ApplyPendingPacket() {
+  FML_DCHECK(pending_packet_ != nullptr);
+  FML_DCHECK(is_pointer_data_in_progress_);
+  animator_->EnqueueTraceFlowId(pending_trace_flow_id_);
+  runtime_controller_->DispatchPointerDataPacket(*pending_packet_);
+  pending_packet_ = nullptr;
+  pending_trace_flow_id_ = -1;
+}
+#endif
 
 }  // namespace flutter

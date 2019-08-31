@@ -649,7 +649,7 @@ class Engine final : public RuntimeDelegate {
   ///                            timeline and allow grouping frames and input
   ///                            events into logical chunks.
   ///
-  void DispatchPointerDataPacket(const PointerDataPacket& packet,
+  void DispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet,
                                  uint64_t trace_flow_id);
 
   //----------------------------------------------------------------------------
@@ -713,6 +713,21 @@ class Engine final : public RuntimeDelegate {
   FontCollection font_collection_;
   ImageDecoder image_decoder_;
   fml::WeakPtrFactory<Engine> weak_factory_;
+
+// iOS-only fix for https://github.com/flutter/flutter/issues/31086.
+// We enable such fix on OS_MACOSX and OS_LINUX for host-side unit tests.
+#if defined(OS_IOS) || defined(OS_MACOSX) || defined(OS_LINUX)
+#define ENABLE_IRREGULAR_INPUT_DELIVERY_FIX
+  // If non-null, this will be a pending pointer data packet for the next frame
+  // to consume. This is used to smooth out the irregular drag events delivery.
+  // See also `DispatchPointerDataPacket` and input_events_unittests.cc.
+  std::unique_ptr<PointerDataPacket> pending_packet_;
+  int pending_trace_flow_id_ = -1;
+
+  bool is_pointer_data_in_progress_ = false;
+
+  void ApplyPendingPacket();
+#endif
 
   // |RuntimeDelegate|
   std::string DefaultRouteName() override;

@@ -31,6 +31,38 @@ class ShellTest : public ThreadTest {
   std::unique_ptr<Shell> CreateShell(Settings settings);
   std::unique_ptr<Shell> CreateShell(Settings settings,
                                      TaskRunners task_runners);
+
+  // Simulate n input events where the i-th one is delivered at
+  // delivery_time(i).
+  //
+  // Simulation results will be written into events_consumed_at_frame whose
+  // length will be equal to the number of frames drawn. Each element in the
+  // vector is the number of input events consumed in that frame. (We can't
+  // return such vector because ASSERT_TRUE requires return type of void.)
+  //
+  // We assume (and check) that the delivery latency is some base latency plus a
+  // random latency where the random latency must be within one frame:
+  //
+  // 1. latency = delivery_time(i) - j * frame_time = base_latency +
+  //    random_latency
+  // 2. 0 <= base_latency, 0 <= random_latency < frame_time
+  //
+  // We also assume that there will be at least one input event per frame if
+  // there were no latency. Let j = floor( (delivery_time(i) - base_latency) /
+  // frame_time ) be the frame index if there were no latency. Then the set of j
+  // should be all integers from 0 to continuous_frame_count - 1 for some
+  // integer continuous_frame_count.
+  //
+  // (Note that there coulds be multiple input events within one frame.)
+  //
+  // The test here is insensitive to the choice of time unit as long as
+  // delivery_time and frame_time are in the same unit.
+  void TestSimulatedInputEvents(int num_events,
+                                int base_latency,
+                                std::function<int(int)> delivery_time,
+                                int frame_time,
+                                std::vector<int>& events_consumed_at_frame);
+
   TaskRunners GetTaskRunnersForFixture();
 
   void SendEnginePlatformMessage(Shell* shell,
@@ -43,6 +75,7 @@ class ShellTest : public ThreadTest {
   static void RunEngine(Shell* shell, RunConfiguration configuration);
 
   static void PumpOneFrame(Shell* shell);
+  static void DispatchFakePointerData(Shell* shell);
 
   // Declare |UnreportedTimingsCount|, |GetNeedsReportTimings| and
   // |SetNeedsReportTimings| inside |ShellTest| mainly for easier friend class
