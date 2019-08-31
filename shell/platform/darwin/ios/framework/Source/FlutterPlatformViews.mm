@@ -361,14 +361,16 @@ void FlutterPlatformViewsController::Reset() {
   views_to_recomposite_.clear();
 }
 
-bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
-                                                 std::shared_ptr<IOSGLContext> onscreen_gl_context,
-                                                 std::shared_ptr<IOSGLContext> resource_gl_context) {
+bool FlutterPlatformViewsController::SubmitFrame(
+    GrContext* gr_context,
+    std::shared_ptr<IOSGLContext> onscreen_gl_context,
+    std::shared_ptr<IOSGLContext> resource_gl_context) {
   DisposeViews();
 
   bool did_submit = true;
   for (int64_t view_id : composition_order_) {
-    EnsureOverlayInitialized(view_id, std::move(onscreen_gl_context), std::move(resource_gl_context), gr_context);
+    EnsureOverlayInitialized(view_id, std::move(onscreen_gl_context),
+                             std::move(resource_gl_context), gr_context);
     auto frame = overlays_[view_id]->surface->AcquireFrame(frame_size_);
     SkCanvas* canvas = frame->SkiaCanvas();
     canvas->drawPicture(picture_recorders_[view_id]->finishRecordingAsPicture());
@@ -469,7 +471,8 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
     overlay_view.get().frame = flutter_view_.get().bounds;
     overlay_view.get().autoresizingMask =
         (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
-    std::unique_ptr<IOSSurface> ios_surface = [overlay_view.get() createSurface:nil resourceContext:nil];
+    std::unique_ptr<IOSSurface> ios_surface = [overlay_view.get() createSurface:nil
+                                                                resourceContext:nil];
     std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface();
     overlays_[overlay_id] = std::make_unique<FlutterPlatformViewLayer>(
         std::move(overlay_view), std::move(ios_surface), std::move(surface));
@@ -494,7 +497,8 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
   overlay_view.get().autoresizingMask =
       (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
   std::unique_ptr<IOSSurface> ios_surface =
-      [overlay_view.get() createSurface:std::move(onscreen_gl_context) resourceContext:std::move(resource_gl_context)];
+      [overlay_view.get() createSurface:std::move(onscreen_gl_context)
+                        resourceContext:std::move(resource_gl_context)];
   std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface(gr_context);
   overlays_[overlay_id] = std::make_unique<FlutterPlatformViewLayer>(
       std::move(overlay_view), std::move(ios_surface), std::move(surface));

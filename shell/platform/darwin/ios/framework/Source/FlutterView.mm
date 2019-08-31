@@ -111,7 +111,8 @@ std::shared_ptr<flutter::IOSGLContext> _onscreen_context;
         eagl_layer.get().presentsWithTransaction = YES;
       }
     }
-    return std::make_unique<flutter::IOSSurfaceGL>(_onscreen_context, resource_context, std::move(eagl_layer),
+    return std::make_unique<flutter::IOSSurfaceGL>(_onscreen_context, resource_context,
+                                                   std::move(eagl_layer),
                                                    [_delegate platformViewsController]);
 #if FLUTTER_SHELL_ENABLE_METAL
   } else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {

@@ -24,8 +24,8 @@
 
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 - (instancetype)initWithContentsScale:(CGFloat)contentsScale;
-- (std::unique_ptr<flutter::IOSSurface>)createSurface:
-    (std::shared_ptr<flutter::IOSGLContext>)onscreen_gl_context
+- (std::unique_ptr<flutter::IOSSurface>)
+      createSurface:(std::shared_ptr<flutter::IOSGLContext>)onscreen_gl_context
     resourceContext:(std::shared_ptr<flutter::IOSGLContext>)resource_gl_context;
 
 @end

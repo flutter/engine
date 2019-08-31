@@ -13,15 +13,21 @@ IOSSurfaceGL::IOSSurfaceGL(std::shared_ptr<IOSGLContext> onscreen_context,
                            std::shared_ptr<IOSGLContext> resource_context,
                            fml::scoped_nsobject<CAEAGLLayer> layer,
                            FlutterPlatformViewsController* platform_views_controller)
-    : IOSSurface(platform_views_controller), onscreen_context_(onscreen_context), resource_context_(resource_context) {
-  render_target_ = std::make_unique<IOSGLRenderTarget>(std::move(layer), onscreen_context_, resource_context_);
+    : IOSSurface(platform_views_controller),
+      onscreen_context_(onscreen_context),
+      resource_context_(resource_context) {
+  render_target_ =
+      std::make_unique<IOSGLRenderTarget>(std::move(layer), onscreen_context_, resource_context_);
 }
 
 IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
                            std::shared_ptr<IOSGLContext> onscreen_context,
                            std::shared_ptr<IOSGLContext> resource_context)
-    : IOSSurface(nullptr), onscreen_context_(onscreen_context), resource_context_(resource_context) {
-  render_target_ = std::make_unique<IOSGLRenderTarget>(std::move(layer), onscreen_context_, resource_context_);
+    : IOSSurface(nullptr),
+      onscreen_context_(onscreen_context),
+      resource_context_(resource_context) {
+  render_target_ =
+      std::make_unique<IOSGLRenderTarget>(std::move(layer), onscreen_context_, resource_context_);
 }
 
 IOSSurfaceGL::~IOSSurfaceGL() = default;
@@ -147,7 +153,8 @@ bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
     return true;
   }
 
-  bool submitted = platform_views_controller->SubmitFrame(std::move(context), onscreen_context_, resource_context_);
+  bool submitted = platform_views_controller->SubmitFrame(std::move(context), onscreen_context_,
+                                                          resource_context_);
   [CATransaction commit];
   return submitted;
 }

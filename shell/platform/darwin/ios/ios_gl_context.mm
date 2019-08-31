@@ -48,7 +48,8 @@ IOSGLContext::IOSGLContext() {
   }
 }
 
-bool IOSGLContext::BindRenderbufferStorage(NSUInteger target, fml::scoped_nsobject<CAEAGLLayer> layer) {
+bool IOSGLContext::BindRenderbufferStorage(NSUInteger target,
+                                           fml::scoped_nsobject<CAEAGLLayer> layer) {
   return [context_.get() renderbufferStorage:GL_RENDERBUFFER fromDrawable:layer.get()];
 }
 
