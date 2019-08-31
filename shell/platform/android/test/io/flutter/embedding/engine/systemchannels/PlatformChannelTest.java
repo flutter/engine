@@ -175,4 +175,15 @@ public class PlatformChannelTest {
             null
         );
     }
+
+    private class ResultsMock implements Result {
+        @Override
+        public void success(Object result) {}
+
+         @Override
+        public void error(String errorCode, String errorMessage, Object errorDetails) {}
+
+         @Override
+        public void notImplemented() {}
+    }
 }
