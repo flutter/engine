@@ -646,8 +646,8 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     if (oldRange.location > 0) {
       NSRange newRange = NSMakeRange(oldRange.location - 1, 1);
       _selectedTextRange = [[FlutterTextRange rangeWithNSRange:newRange] copy];
+      [oldSelectedRange release];
     }
-    [oldSelectedRange release];
   }
 
   if (!_selectedTextRange.isEmpty)
