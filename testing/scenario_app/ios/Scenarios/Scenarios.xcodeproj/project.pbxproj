@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0AFADA83231A404100D5B2C4 /* ScreenBeforeFlutter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFADA82231A404100D5B2C4 /* ScreenBeforeFlutter.swift */; };
 		0AFADA86231A5E5A00D5B2C4 /* AppLifecycleUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFADA85231A5E5A00D5B2C4 /* AppLifecycleUITests.swift */; };
+		0AFADA89231A803E00D5B2C4 /* AppLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFADA88231A803E00D5B2C4 /* AppLifecycleTests.swift */; };
 		0DB781EF22E931BE00E9B371 /* Flutter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0DB781F122E933E800E9B371 /* Flutter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0DB781FE22EA2C6D00E9B371 /* Flutter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; };
@@ -90,6 +91,8 @@
 		0AFADA82231A404100D5B2C4 /* ScreenBeforeFlutter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenBeforeFlutter.swift; sourceTree = "<group>"; };
 		0AFADA84231A5E5A00D5B2C4 /* ScenariosUITests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ScenariosUITests-Bridging-Header.h"; sourceTree = "<group>"; };
 		0AFADA85231A5E5A00D5B2C4 /* AppLifecycleUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycleUITests.swift; sourceTree = "<group>"; };
+		0AFADA87231A803E00D5B2C4 /* ScenariosTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ScenariosTests-Bridging-Header.h"; sourceTree = "<group>"; };
+		0AFADA88231A803E00D5B2C4 /* AppLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycleTests.swift; sourceTree = "<group>"; };
 		0DB781FC22EA2C0300E9B371 /* FlutterViewControllerTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FlutterViewControllerTest.m; sourceTree = "<group>"; };
 		244EA6CF230DBE8900B2D26E /* golden_platform_view_D21AP.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = golden_platform_view_D21AP.png; sourceTree = "<group>"; };
 		246B4E4122E3B5F700073EBF /* App.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = App.framework; sourceTree = "<group>"; };
@@ -185,6 +188,8 @@
 				248FDFC322FE7CD0009CC7CD /* FlutterEngineTest.m */,
 				0DB781FC22EA2C0300E9B371 /* FlutterViewControllerTest.m */,
 				248D76E522E388380012F0C1 /* Info.plist */,
+				0AFADA88231A803E00D5B2C4 /* AppLifecycleTests.swift */,
+				0AFADA87231A803E00D5B2C4 /* ScenariosTests-Bridging-Header.h */,
 			);
 			path = ScenariosTests;
 			sourceTree = "<group>";
@@ -287,6 +292,7 @@
 					};
 					248D76DE22E388380012F0C1 = {
 						CreatedOnToolsVersion = 10.2.1;
+						LastSwiftMigration = 1030;
 						TestTargetID = 248D76C622E388370012F0C1;
 					};
 					248D76E922E388380012F0C1 = {
@@ -360,6 +366,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0AFADA89231A803E00D5B2C4 /* AppLifecycleTests.swift in Sources */,
 				0DB7820222EA493B00E9B371 /* FlutterViewControllerTest.m in Sources */,
 				248FDFC422FE7CD0009CC7CD /* FlutterEngineTest.m in Sources */,
 			);
@@ -560,6 +567,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -578,6 +586,9 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = dev.flutter.ScenariosTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "ScenariosTests/ScenariosTests-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Scenarios.app/Scenarios";
 			};
@@ -588,6 +599,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -606,6 +618,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = dev.flutter.ScenariosTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "ScenariosTests/ScenariosTests-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Scenarios.app/Scenarios";
 			};

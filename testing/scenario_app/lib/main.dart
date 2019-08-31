@@ -34,8 +34,8 @@ void main() {
 
 Future<void> _handlePlatformMessage(
     String name, ByteData data, PlatformMessageResponseCallback callback) async {
-      print(name);
-      print(utf8.decode(data.buffer.asUint8List()));
+  print(name);
+  print(utf8.decode(data.buffer.asUint8List()));
   if (name == 'set_scenario' && data != null) {
     final String scenarioName = utf8.decode(data.buffer.asUint8List());
     final Scenario candidateScenario = _scenarios[scenarioName];
