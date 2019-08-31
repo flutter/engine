@@ -106,6 +106,14 @@
   CGContextRelease(contextB);
 
   if (memcmp(rawA.mutableBytes, rawB.mutableBytes, size)) {
+    XCTAttachment* attachmentA = [XCTAttachment attachmentWithImage:a];
+    attachmentA.name = @"image-a";
+    attachmentA.lifetime = XCTAttachmentLifetimeKeepAlways;
+    [self addAttachment:attachmentA];
+    XCTAttachment* attachmentB = [XCTAttachment attachmentWithImage:b];
+    attachmentB.name = @"image-b";
+    attachmentB.lifetime = XCTAttachmentLifetimeKeepAlways;
+    [self addAttachment:attachmentB];
     return NO;
   }
 
