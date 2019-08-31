@@ -206,7 +206,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
 
 def EnsureJavaTestsAreBuilt(android_out_dir):
   ninja_command = [
-    'ninja',
+    'autoninja',
     '-C',
     android_out_dir,
     'flutter/shell/platform/android:robolectric_tests'
