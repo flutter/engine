@@ -129,7 +129,7 @@ public class PlatformChannel {
             }
 
             JSONArray inputRects = (JSONArray) arguments;
-            ArrayList<Rect> decodedRects = decodeRects(inputRects);
+            ArrayList<Rect> decodedRects = decodeExclusionRects(inputRects);
             platformMessageHandler.setSystemGestureExclusionRects(decodedRects);
             result.success(null);
             break;
@@ -275,10 +275,17 @@ public class PlatformChannel {
   /**
    * Decodes a JSONArray of rectangle data into an ArrayList<Rect>.
    *
+   * Since View.setSystemGestureExclusionRects receives a JSONArray containing
+   * JSONObjects, these values need to be transformed into the expected input
+   * of View.setSystemGestureExclusionRects, which is ArrayList<Rect>.
+   *
+   * This method is used by the SystemGestures.setSystemGestureExclusionRects
+   * platform channel.
+   *
    * @throws JSONException if {@code inputRects} does not contain expected keys and value types.
    */
   @NonNull
-  private ArrayList<Rect> decodeRects(@NonNull JSONArray inputRects) throws JSONException {
+  private ArrayList<Rect> decodeExclusionRects(@NonNull JSONArray inputRects) throws JSONException {
     ArrayList<Rect> exclusionRects = new ArrayList<Rect>();
     for (int i = 0; i < inputRects.length(); i++) {
       JSONObject rect = inputRects.getJSONObject(i);
