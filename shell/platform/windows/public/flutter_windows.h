@@ -62,8 +62,8 @@ FlutterDesktopGetPluginRegistrar(FlutterDesktopViewControllerRef controller,
                                  const char* plugin_name);
 
 // Return backing HWND for manipulation in host application.
-FLUTTER_EXPORT HWND FlutterDesktopGetHWND(
-    FlutterDesktopViewControllerRef controller);
+FLUTTER_EXPORT HWND
+FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller);
 
 // Must be called in run loop to enable the view to do work on each tick of
 // loop.
