@@ -175,7 +175,15 @@ public class PlatformChannel {
   }
 
   /**
-   * Encodes a List<Rect> provided by the host platform into an ArrayList<HashMap<String, Integer>>.
+   * Encodes a List<Rect> provided by the Android host into an
+   * ArrayList<HashMap<String, Integer>>.
+   *
+   * Since View.getSystemGestureExclusionRects returns a list of Rects, these
+   * Rects need to be transformed into UTF-8 encoded JSON messages to be
+   * properly decoded by the Flutter framework.
+   *
+   * This method is used by the SystemGestures.getSystemGestureExclusionRects
+   * platform channel.
    */
   private ArrayList<HashMap<String, Integer>> encodeExclusionRects(List<Rect> exclusionRects) {
     ArrayList<HashMap<String, Integer>> encodedExclusionRects = new ArrayList<HashMap<String, Integer>>();
