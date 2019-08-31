@@ -26,18 +26,19 @@ import static org.mockito.Mockito.verify;
 @RunWith(RobolectricTestRunner.class)
 public class PlatformChannelTest {
     @Test
-    public void setSystemExclusionRectsSendsSuccessMessageToFramework() throws JSONException {
+    public void itSendsSuccessMessageToFrameworkWhenSettingSystemGestureExclusionRects() throws JSONException {
+        // --- Test Setup ---
         DartExecutor dartExecutor = mock(DartExecutor.class);
         PlatformChannel platformChannel = new PlatformChannel(dartExecutor);
         PlatformMessageHandler platformMessageHandler = mock(PlatformMessageHandler.class);
         platformChannel.setPlatformMessageHandler(platformMessageHandler);
+        Result result = mock(Result.class);
 
         int top = 0;
         int right = 500;
         int bottom = 250;
         int left = 0;
 
-        ResultsMock resultsMock = mock(ResultsMock.class);
         JSONObject JsonRect = new JSONObject();
         JsonRect.put("top", top);
         JsonRect.put("right", right);
@@ -49,34 +50,40 @@ public class PlatformChannelTest {
         ArrayList<Rect> expectedDecodedRects = new ArrayList<Rect>();
         Rect gestureRect = new Rect(left, top, right, bottom);
         expectedDecodedRects.add(gestureRect);
-
         MethodCall callSystemGestureExclusionRects = new MethodCall(
             "SystemGestures.setSystemGestureExclusionRects",
             inputRects
         );
 
-        platformChannel.parsingMethodCallHandler.onMethodCall(callSystemGestureExclusionRects, resultsMock);
+        // --- Execute Test ---
+        platformChannel.parsingMethodCallHandler.onMethodCall(callSystemGestureExclusionRects, result);
+
+        // --- Verify Results ---
         verify(platformMessageHandler, times(1)).setSystemGestureExclusionRects(expectedDecodedRects);
-        verify(resultsMock, times(1)).success(null);
+        verify(result, times(1)).success(null);
     }
 
     @Test
-    public void setSystemExclusionRectsRequiresJSONArrayInput() {
+    public void itSendsJSONInputErrorWhenNonJSONInputIsUsedWhenSettingSystemGestureExclusionRects() {
+        // --- Test Setup ---
         DartExecutor dartExecutor = mock(DartExecutor.class);
         PlatformChannel platformChannel = new PlatformChannel(dartExecutor);
         PlatformMessageHandler platformMessageHandler = mock(PlatformMessageHandler.class);
         platformChannel.setPlatformMessageHandler(platformMessageHandler);
+        Result result = mock(Result.class);
 
-        ResultsMock resultsMock = mock(ResultsMock.class);
         String nonJsonInput = "Non-JSON";
         MethodCall callSystemGestureExclusionRects = new MethodCall(
             "SystemGestures.setSystemGestureExclusionRects",
             nonJsonInput
         );
-        platformChannel.parsingMethodCallHandler.onMethodCall(callSystemGestureExclusionRects, resultsMock);
 
+        // --- Execute Test ---
+        platformChannel.parsingMethodCallHandler.onMethodCall(callSystemGestureExclusionRects, result);
+
+        // --- Verify Results ---
         String inputTypeError = "Input type is incorrect. Ensure that a List<Map<String, int>> is passed as the input for SystemGestureExclusionRects.setSystemGestureExclusionRects.";
-        verify(resultsMock, times(1)).error(
+        verify(result, times(1)).error(
             "inputTypeError",
             inputTypeError,
             null
@@ -84,16 +91,18 @@ public class PlatformChannelTest {
     }
 
     @Test
-    public void setSystemExclusionRectsSendsJSONExceptionOnIncorrectDataShape() throws JSONException {
+    public void itSendsJSONErrorWhenIncorrectJSONShapeIsUsedWhenSettingSystemGestureExclusionRects() throws JSONException {
+        // --- Test Setup ---
         DartExecutor dartExecutor = mock(DartExecutor.class);
         PlatformChannel platformChannel = new PlatformChannel(dartExecutor);
         PlatformMessageHandler platformMessageHandler = mock(PlatformMessageHandler.class);
         platformChannel.setPlatformMessageHandler(platformMessageHandler);
+        Result result = mock(Result.class);
 
         int top = 0;
         int right = 500;
 
-        ResultsMock resultsMock = mock(ResultsMock.class);
+        // Add key/value pairs that aren't needed by exclusion rects to simulate incorrect JSON shape
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("arg1", top);
         jsonObject.put("arg2", right);
@@ -104,23 +113,16 @@ public class PlatformChannelTest {
             "SystemGestures.setSystemGestureExclusionRects",
             inputArray
         );
-        platformChannel.parsingMethodCallHandler.onMethodCall(callSystemGestureExclusionRects, resultsMock);
-        verify(resultsMock, times(1)).error(
+
+        // --- Execute Test ---
+        platformChannel.parsingMethodCallHandler.onMethodCall(callSystemGestureExclusionRects, result);
+
+        // --- Verify Results ---
+        verify(result, times(1)).error(
             "error",
             "JSON error: Incorrect JSON data shape. To set system gesture exclusion rects, \n" +
             "a JSONObject with top, right, bottom and left values need to be set to int values.",
             null
         );
-    }
-
-    private class ResultsMock implements Result {
-        @Override
-        public void success(Object result) {}
-
-        @Override
-        public void error(String errorCode, String errorMessage, Object errorDetails) {}
-
-        @Override
-        public void notImplemented() {}
     }
 }
