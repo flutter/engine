@@ -87,11 +87,11 @@ source_set("runtime") {
     "//third_party/tonic",
   ]
 
-  # naifu: On Windows the engine finds the Dart snapshot data through symbols
+  # On Windows the engine finds the Dart snapshot data through symbols
   # that are statically linked into the executable. On other platforms this
   # data is obtained by a dynamic symbol lookup.
-  # The current Windows platform uses static linking instead of dynamic lookups
-  # because:
+  # The current Windows platform uses static-link instead of dynamic lookups.
+  # Because:
   #  1. The size of the executable on Windows is not as concerned as on mobile
   #     platforms.
   #  2. If it is a dynamic lookup method, you need to modify the properties of
