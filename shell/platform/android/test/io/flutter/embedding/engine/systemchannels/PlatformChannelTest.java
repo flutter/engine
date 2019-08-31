@@ -116,68 +116,63 @@ public class PlatformChannelTest {
     }
 
     @Test
-    public void getSystemExclusionRectsSendsExclusionRectsToFrameworkOnSuccess() throws JSONException {
+    public void itSendsSuccessMessageToFrameworkWhenGettingSystemGestureExclusionRects() throws JSONException {
+        // --- Test Setup ---
         DartExecutor dartExecutor = mock(DartExecutor.class);
         PlatformChannel platformChannel = new PlatformChannel(dartExecutor);
         PlatformMessageHandler platformMessageHandler = mock(PlatformMessageHandler.class);
         platformChannel.setPlatformMessageHandler(platformMessageHandler);
+        Result result = mock(Result.class);
 
-        int top = 0;
-        int right = 500;
-        int bottom = 250;
-        int left = 0;
+        // Fake API output setup
+        ArrayList<Rect> fakeExclusionRects = new ArrayList<Rect>();
+        Rect gestureRect = new Rect(0, 0, 500, 250);
+        fakeExclusionRects.add(gestureRect);
+        when(platformMessageHandler.getSystemGestureExclusionRects()).thenReturn(fakeExclusionRects);
 
-        ArrayList<Rect> expectedExclusionRects = new ArrayList<Rect>();
-        Rect gestureRect = new Rect(left, top, right, bottom);
-        expectedExclusionRects.add(gestureRect);
-        when(platformMessageHandler.getSystemGestureExclusionRects()).thenReturn(expectedExclusionRects);
-
+        // Parsed API output that should be passed to result.success()
+        ArrayList<HashMap<String, Integer>> expectedEncodedOutputRects = new ArrayList<HashMap<String, Integer>>();
+        HashMap<String, Integer> rectMap = new HashMap<String, Integer>();
+        rectMap.put("top", 0);
+        rectMap.put("right", 500);
+        rectMap.put("bottom", 250);
+        rectMap.put("left", 0);
+        expectedEncodedOutputRects.add(rectMap);
         MethodCall callGetSystemGestureExclusionRects = new MethodCall(
             "SystemGestures.getSystemGestureExclusionRects",
             null
         );
-        ResultsMock resultsMock = mock(ResultsMock.class);
-        platformChannel.parsingMethodCallHandler.onMethodCall(callGetSystemGestureExclusionRects, resultsMock);
 
-        ArrayList<HashMap<String, Integer>> expectedEncodedOutputRects = new ArrayList<HashMap<String, Integer>>();
-        HashMap<String, Integer> rectMap = new HashMap<String, Integer>();
-        rectMap.put("top", top);
-        rectMap.put("right", right);
-        rectMap.put("bottom", bottom);
-        rectMap.put("left", left);
-        expectedEncodedOutputRects.add(rectMap);
-        verify(resultsMock, times(1)).success(expectedEncodedOutputRects);
+        // --- Execute Test ---
+        platformChannel.parsingMethodCallHandler.onMethodCall(callGetSystemGestureExclusionRects, result);
+
+        // --- Verify Results ---
+        verify(result, times(1)).success(expectedEncodedOutputRects);
     }
 
     @Test
-    public void getSystemExclusionRectsSendsIncorrectAPILevelException() {
+    public void itSendsAPILevelErrorWhenAndroidVersionIsTooLowWhenGettingSystemGestureExclusionRects() {
+        // --- Test Setup ---
         DartExecutor dartExecutor = mock(DartExecutor.class);
         PlatformChannel platformChannel = new PlatformChannel(dartExecutor);
         PlatformMessageHandler platformMessageHandler = mock(PlatformMessageHandler.class);
         platformChannel.setPlatformMessageHandler(platformMessageHandler);
         when(platformMessageHandler.getSystemGestureExclusionRects()).thenReturn(null);
+        Result result = mock(Result.class);
 
         MethodCall callGetSystemGestureExclusionRects = new MethodCall(
             "SystemGestures.getSystemGestureExclusionRects",
             null
         );
-        ResultsMock resultsMock = mock(ResultsMock.class);
-        platformChannel.parsingMethodCallHandler.onMethodCall(callGetSystemGestureExclusionRects, resultsMock);
-        verify(resultsMock, times(1)).error(
+
+        // --- Execute Test ---
+        platformChannel.parsingMethodCallHandler.onMethodCall(callGetSystemGestureExclusionRects, result);
+
+        // --- Verify Results ---
+        verify(result, times(1)).error(
             "error",
             "Exclusion rects only exist for Android API 29+.",
             null
         );
-    }
-
-    private class ResultsMock implements Result {
-        @Override
-        public void success(Object result) {}
-
-        @Override
-        public void error(String errorCode, String errorMessage, Object errorDetails) {}
-
-        @Override
-        public void notImplemented() {}
     }
 }
