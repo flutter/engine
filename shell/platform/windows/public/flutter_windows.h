@@ -12,6 +12,8 @@
 #include "flutter_messenger.h"
 #include "flutter_plugin_registrar.h"
 
+#include "Windows.h"
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -60,7 +62,7 @@ FlutterDesktopGetPluginRegistrar(FlutterDesktopViewControllerRef controller,
                                  const char* plugin_name);
 
 // Return backing HWND for manipulation in host application.
-FLUTTER_EXPORT long FlutterDesktopGetHWND(
+FLUTTER_EXPORT HWND FlutterDesktopGetHWND(
     FlutterDesktopViewControllerRef controller);
 
 // Must be called in run loop to enable the view to do work on each tick of

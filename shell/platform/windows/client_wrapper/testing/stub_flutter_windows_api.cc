@@ -57,11 +57,11 @@ void FlutterDesktopDestroyViewController(
   }
 }
 
-long FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller) {
+HWND FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller) {
   if (s_stub_implementation) {
     return s_stub_implementation->FlutterDesktopGetHWND();
   }
-  return -1;
+  return reinterpret_cast<HWND>(-1);
 }
 
 void FlutterDesktopProcessMessages() {

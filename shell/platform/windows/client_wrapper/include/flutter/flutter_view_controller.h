@@ -55,7 +55,7 @@ class FlutterViewController {
       const std::string& plugin_name);
 
   // Return backing HWND for manipulation in host application.
-  long GetNativeWindow();
+  HWND GetNativeWindow();
 
   // Must be called in run loop to enable the view to do work on each tick of
   // loop.

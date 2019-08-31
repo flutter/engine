@@ -47,7 +47,7 @@ class StubFlutterWindowsApi {
   virtual void FlutterDesktopProcessMessages() {}
 
   // Called for FlutterDesktopProcessMessages
-  virtual long FlutterDesktopGetHWND() { return 1; }
+  virtual HWND FlutterDesktopGetHWND() { return reinterpret_cast<HWND>(1); }
 
   // Called for FlutterDesktopRunEngine.
   virtual FlutterDesktopEngineRef RunEngine(const char* assets_path,

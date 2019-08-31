@@ -40,7 +40,7 @@ FlutterViewController::~FlutterViewController() {
   }
 }
 
-long FlutterViewController::GetNativeWindow() {
+HWND FlutterViewController::GetNativeWindow() {
   return FlutterDesktopGetHWND(controller_);
 }
 

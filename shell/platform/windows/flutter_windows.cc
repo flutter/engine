@@ -125,8 +125,8 @@ void FlutterDesktopProcessMessages() {
   __FlutterEngineFlushPendingTasksNow();
 }
 
-long FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller) {
-  return reinterpret_cast<long>((controller)->view->GetWindowHandle());
+HWND FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller) {
+  return (controller)->view->GetWindowHandle();
 }
 
 void FlutterDesktopDestroyViewController(
