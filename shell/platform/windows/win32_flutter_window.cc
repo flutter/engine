@@ -10,6 +10,12 @@ constexpr int base_dpi = 96;
 
 Win32FlutterWindow::Win32FlutterWindow(int width, int height) {
   surface_manager = std::make_unique<AngleSurfaceManager>();
+  task_runner_ = std::make_unique<Win32TaskRunner>(
+      std::this_thread::get_id(), [this](const auto* task) {
+        if (FlutterEngineRunTask(this->engine_, task) != kSuccess) {
+          std::cerr << "Could not post an engine task." << std::endl;
+        }
+      });
   Win32Window::InitializeChild("FLUTTERVIEW", width, height);
 }
 
@@ -94,9 +100,9 @@ void Win32FlutterWindow::HandlePlatformMessage(
 
   auto message = ConvertToDesktopMessage(*engine_message);
 
-  message_dispatcher_->HandleMessage(
-      message, [this] { this->process_events_ = false; },
-      [this] { this->process_events_ = true; });
+  message_dispatcher_->HandleMessage(message,
+                                     [this] { this->process_events_ = false; },
+                                     [this] { this->process_events_ = true; });
 }
 
 void Win32FlutterWindow::OnDpiScale(unsigned int dpi){};
@@ -298,6 +304,15 @@ void Win32FlutterWindow::DestroyRenderSurface() {
     surface_manager->DestroySurface(render_surface);
   }
   render_surface = EGL_NO_SURFACE;
+}
+
+void Win32FlutterWindow::PostTask(FlutterTask flutter_task,
+                                  uint64_t flutter_target_time_nanos) {
+  return task_runner_->PostTask(this->GetWindowHandle(), flutter_task, flutter_target_time_nanos);
+}
+
+bool Win32FlutterWindow::RunsTasksOnCurrentThread() const {
+  return task_runner_->RunsTasksOnCurrentThread();
 }
 
 }  // namespace flutter
