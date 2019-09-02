@@ -15,7 +15,6 @@ import io.flutter.embedding.engine.FlutterEngineCacheTest;
 import io.flutter.embedding.engine.systemchannels.PlatformChannelTest;
 import io.flutter.embedding.engine.RenderingComponentTest;
 import io.flutter.embedding.engine.renderer.FlutterRendererTest;
-import io.flutter.embedding.engine.systemchannels.TextInputChannelTest;
 import io.flutter.util.PreconditionsTest;
 import io.flutter.embedding.engine.FlutterJNITest;
 
@@ -30,8 +29,7 @@ import io.flutter.embedding.engine.FlutterJNITest;
     FlutterJNITest.class,
     RenderingComponentTest.class,
     FlutterRendererTest.class,
-    PlatformChannelTest.class,
-    TextInputChannelTest.class
+    PlatformChannelTest.class
 })
 /** Runs all of the unit tests listed in the {@code @SuiteClasses} annotation. */
 public class FlutterTestSuite {}
