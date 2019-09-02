@@ -12,8 +12,8 @@
 namespace flutter {
 // This is a new way of external texture.
 // Unlike the original external texture which copy pixel buffer from an object that impelement
-// FlutterTexture procotol, and create a texture reference using the pixel buffer. This solution will
-// copy the OpenGL texture directly from the object impelementing FlutterShareTexture protocol.
+// FlutterTexture procotol, and create a texture reference using the pixel buffer. This solution
+// will copy the OpenGL texture directly from the object impelementing FlutterShareTexture protocol.
 class IOSExternalTextureShareContext : public flutter::Texture {
  public:
   IOSExternalTextureShareContext(int64_t textureId, NSObject<FlutterShareTexture>* externalTexture);
