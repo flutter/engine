@@ -13,9 +13,11 @@ import io.flutter.embedding.android.FlutterActivityTest;
 import io.flutter.embedding.android.FlutterFragmentTest;
 import io.flutter.embedding.engine.FlutterEngineCacheTest;
 import io.flutter.embedding.engine.systemchannels.PlatformChannelTest;
+import io.flutter.embedding.engine.RenderingComponentTest;
 import io.flutter.embedding.engine.renderer.FlutterRendererTest;
 import io.flutter.embedding.engine.systemchannels.TextInputChannelTest;
 import io.flutter.util.PreconditionsTest;
+import io.flutter.embedding.engine.FlutterJNITest;
 
 @RunWith(Suite.class)
 @SuiteClasses({
@@ -25,6 +27,8 @@ import io.flutter.util.PreconditionsTest;
     FlutterFragmentTest.class,
     // FlutterActivityAndFragmentDelegateTest.class, TODO(mklim): Fix and re-enable this
     FlutterEngineCacheTest.class,
+    FlutterJNITest.class,
+    RenderingComponentTest.class,
     FlutterRendererTest.class,
     PlatformChannelTest.class,
     TextInputChannelTest.class

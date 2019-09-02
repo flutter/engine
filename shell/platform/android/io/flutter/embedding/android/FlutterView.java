@@ -37,7 +37,7 @@ import java.util.Set;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
-import io.flutter.embedding.engine.renderer.IsDisplayingFlutterUiListener;
+import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
@@ -76,7 +76,7 @@ public class FlutterView extends FrameLayout {
   // Internal view hierarchy references.
   @Nullable
   private RenderSurface renderSurface;
-  private final Set<IsDisplayingFlutterUiListener> isDisplayingFlutterUiListeners = new HashSet<>();
+  private final Set<FlutterUiDisplayListener> flutterUiDisplayListeners = new HashSet<>();
   private boolean isFlutterUiDisplayed;
 
   // Connections to a Flutter execution context.
@@ -109,12 +109,12 @@ public class FlutterView extends FrameLayout {
     }
   };
 
-  private final IsDisplayingFlutterUiListener isDisplayingFlutterUiListener = new IsDisplayingFlutterUiListener() {
+  private final FlutterUiDisplayListener flutterUiDisplayListener = new FlutterUiDisplayListener() {
     @Override
     public void onFlutterUiDisplayed() {
       isFlutterUiDisplayed = true;
 
-      for (IsDisplayingFlutterUiListener listener : isDisplayingFlutterUiListeners) {
+      for (FlutterUiDisplayListener listener : flutterUiDisplayListeners) {
         listener.onFlutterUiDisplayed();
       }
     }
@@ -123,7 +123,7 @@ public class FlutterView extends FrameLayout {
     public void onFlutterUiNoLongerDisplayed() {
       isFlutterUiDisplayed = false;
 
-      for (IsDisplayingFlutterUiListener listener : isDisplayingFlutterUiListeners) {
+      for (FlutterUiDisplayListener listener : flutterUiDisplayListeners) {
         listener.onFlutterUiNoLongerDisplayed();
       }
     }
@@ -245,16 +245,16 @@ public class FlutterView extends FrameLayout {
    * Adds the given {@code listener} to this {@code FlutterView}, to be notified upon Flutter's
    * first rendered frame.
    */
-  public void addOnFirstFrameRenderedListener(@NonNull IsDisplayingFlutterUiListener listener) {
-    isDisplayingFlutterUiListeners.add(listener);
+  public void addOnFirstFrameRenderedListener(@NonNull FlutterUiDisplayListener listener) {
+    flutterUiDisplayListeners.add(listener);
   }
 
   /**
    * Removes the given {@code listener}, which was previously added with
-   * {@link #addOnFirstFrameRenderedListener(IsDisplayingFlutterUiListener)}.
+   * {@link #addOnFirstFrameRenderedListener(FlutterUiDisplayListener)}.
    */
-  public void removeOnFirstFrameRenderedListener(@NonNull IsDisplayingFlutterUiListener listener) {
-    isDisplayingFlutterUiListeners.remove(listener);
+  public void removeOnFirstFrameRenderedListener(@NonNull FlutterUiDisplayListener listener) {
+    flutterUiDisplayListeners.remove(listener);
   }
 
   //------- Start: Process View configuration that Flutter cares about. ------
@@ -592,7 +592,7 @@ public class FlutterView extends FrameLayout {
     FlutterRenderer flutterRenderer = this.flutterEngine.getRenderer();
     isFlutterUiDisplayed = flutterRenderer.isDisplayingFlutterUi();
     renderSurface.attachToRenderer(flutterRenderer);
-    flutterRenderer.addIsDisplayingFlutterUiListener(isDisplayingFlutterUiListener);
+    flutterRenderer.addIsDisplayingFlutterUiListener(flutterUiDisplayListener);
 
     // Initialize various components that know how to process Android View I/O
     // in a way that Flutter understands.
@@ -642,7 +642,7 @@ public class FlutterView extends FrameLayout {
     // Do this after all other initialization so that listeners don't inadvertently interact
     // with a FlutterView that is only partially attached to a FlutterEngine.
     if (isFlutterUiDisplayed) {
-      isDisplayingFlutterUiListener.onFlutterUiDisplayed();
+      flutterUiDisplayListener.onFlutterUiDisplayed();
     }
   }
 
@@ -685,7 +685,7 @@ public class FlutterView extends FrameLayout {
     // Instruct our FlutterRenderer that we are no longer interested in being its RenderSurface.
     FlutterRenderer flutterRenderer = flutterEngine.getRenderer();
     isFlutterUiDisplayed = false;
-    flutterRenderer.removeIsDisplayingFlutterUiListener(isDisplayingFlutterUiListener);
+    flutterRenderer.removeIsDisplayingFlutterUiListener(flutterUiDisplayListener);
     flutterRenderer.stopRenderingToSurface();
     flutterEngine = null;
   }

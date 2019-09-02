@@ -8,7 +8,7 @@ package io.flutter.embedding.engine.renderer;
  * Listener invoked when Flutter starts and stops rendering pixels to an Android {@code View}
  * hierarchy.
  */
-public interface IsDisplayingFlutterUiListener {
+public interface FlutterUiDisplayListener {
   /**
    * Flutter started painting pixels to an Android {@code View} hierarchy.
    * <p>

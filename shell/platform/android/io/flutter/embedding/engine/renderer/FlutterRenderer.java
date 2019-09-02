@@ -47,7 +47,7 @@ public class FlutterRenderer implements TextureRegistry {
   private boolean isDisplayingFlutterUi = false;
 
   @NonNull
-  private final IsDisplayingFlutterUiListener isDisplayingFlutterUiListener = new IsDisplayingFlutterUiListener() {
+  private final FlutterUiDisplayListener flutterUiDisplayListener = new FlutterUiDisplayListener() {
     @Override
     public void onFlutterUiDisplayed() {
       isDisplayingFlutterUi = true;
@@ -61,7 +61,7 @@ public class FlutterRenderer implements TextureRegistry {
 
   public FlutterRenderer(@NonNull FlutterJNI flutterJNI) {
     this.flutterJNI = flutterJNI;
-    this.flutterJNI.addIsDisplayingFlutterUiListener(isDisplayingFlutterUiListener);
+    this.flutterJNI.addIsDisplayingFlutterUiListener(flutterUiDisplayListener);
   }
 
   /**
@@ -76,7 +76,7 @@ public class FlutterRenderer implements TextureRegistry {
    * Adds a listener that is invoked whenever this {@code FlutterRenderer} starts and stops painting
    * pixels to an Android {@code View} hierarchy.
    */
-  public void addIsDisplayingFlutterUiListener(@NonNull IsDisplayingFlutterUiListener listener) {
+  public void addIsDisplayingFlutterUiListener(@NonNull FlutterUiDisplayListener listener) {
     flutterJNI.addIsDisplayingFlutterUiListener(listener);
 
     if (isDisplayingFlutterUi) {
@@ -86,9 +86,9 @@ public class FlutterRenderer implements TextureRegistry {
 
   /**
    * Removes a listener added via
-   * {@link #addIsDisplayingFlutterUiListener(IsDisplayingFlutterUiListener)}.
+   * {@link #addIsDisplayingFlutterUiListener(FlutterUiDisplayListener)}.
    */
-  public void removeIsDisplayingFlutterUiListener(@NonNull IsDisplayingFlutterUiListener listener) {
+  public void removeIsDisplayingFlutterUiListener(@NonNull FlutterUiDisplayListener listener) {
     flutterJNI.removeIsDisplayingFlutterUiListener(listener);
   }
 
@@ -217,7 +217,7 @@ public class FlutterRenderer implements TextureRegistry {
     // so until the engine and FlutterJNI are configured to call us back when rendering stops,
     // we will manually monitor that change here.
     if (isDisplayingFlutterUi) {
-      isDisplayingFlutterUiListener.onFlutterUiNoLongerDisplayed();
+      flutterUiDisplayListener.onFlutterUiNoLongerDisplayed();
     }
 
     isDisplayingFlutterUi = false;

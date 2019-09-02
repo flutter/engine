@@ -14,7 +14,7 @@ import android.view.SurfaceView;
 
 import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
-import io.flutter.embedding.engine.renderer.IsDisplayingFlutterUiListener;
+import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 
 /**
@@ -74,7 +74,7 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
     }
   };
 
-  private final IsDisplayingFlutterUiListener isDisplayingFlutterUiListener = new IsDisplayingFlutterUiListener() {
+  private final FlutterUiDisplayListener flutterUiDisplayListener = new FlutterUiDisplayListener() {
     @Override
     public void onFlutterUiDisplayed() {
       Log.v(TAG, "onFlutterUiDisplayed()");
@@ -161,13 +161,13 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
     if (this.flutterRenderer != null) {
       Log.v(TAG, "Already connected to a FlutterRenderer. Detaching from old one and attaching to new one.");
       this.flutterRenderer.stopRenderingToSurface();
-      this.flutterRenderer.removeIsDisplayingFlutterUiListener(isDisplayingFlutterUiListener);
+      this.flutterRenderer.removeIsDisplayingFlutterUiListener(flutterUiDisplayListener);
     }
 
     this.flutterRenderer = flutterRenderer;
     isAttachedToFlutterRenderer = true;
 
-    this.flutterRenderer.addIsDisplayingFlutterUiListener(isDisplayingFlutterUiListener);
+    this.flutterRenderer.addIsDisplayingFlutterUiListener(flutterUiDisplayListener);
 
     // If we're already attached to an Android window then we're now attached to both a renderer
     // and the Android window. We can begin rendering now.
@@ -196,7 +196,7 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
       // Make the SurfaceView invisible to avoid showing a black rectangle.
       setAlpha(0.0f);
 
-      this.flutterRenderer.removeIsDisplayingFlutterUiListener(isDisplayingFlutterUiListener);
+      this.flutterRenderer.removeIsDisplayingFlutterUiListener(flutterUiDisplayListener);
 
       flutterRenderer = null;
       isAttachedToFlutterRenderer = false;

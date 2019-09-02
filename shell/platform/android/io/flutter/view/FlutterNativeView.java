@@ -13,7 +13,7 @@ import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.DartExecutor;
-import io.flutter.embedding.engine.renderer.IsDisplayingFlutterUiListener;
+import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.common.*;
 import java.nio.ByteBuffer;
 
@@ -27,7 +27,7 @@ public class FlutterNativeView implements BinaryMessenger {
     private final Context mContext;
     private boolean applicationIsRunning;
 
-    private final IsDisplayingFlutterUiListener isDisplayingFlutterUiListener = new IsDisplayingFlutterUiListener() {
+    private final FlutterUiDisplayListener flutterUiDisplayListener = new FlutterUiDisplayListener() {
         @Override
         public void onFlutterUiDisplayed() {
             if (mFlutterView == null) {
@@ -50,7 +50,7 @@ public class FlutterNativeView implements BinaryMessenger {
         mContext = context;
         mPluginRegistry = new FlutterPluginRegistry(this, context);
         mFlutterJNI = new FlutterJNI();
-        mFlutterJNI.addIsDisplayingFlutterUiListener(isDisplayingFlutterUiListener);
+        mFlutterJNI.addIsDisplayingFlutterUiListener(flutterUiDisplayListener);
         this.dartExecutor = new DartExecutor(mFlutterJNI, context.getAssets());
         mFlutterJNI.addEngineLifecycleListener(new EngineLifecycleListenerImpl());
         attach(this, isBackgroundView);
@@ -66,7 +66,7 @@ public class FlutterNativeView implements BinaryMessenger {
         mPluginRegistry.destroy();
         dartExecutor.onDetachedFromJNI();
         mFlutterView = null;
-        mFlutterJNI.removeIsDisplayingFlutterUiListener(isDisplayingFlutterUiListener);
+        mFlutterJNI.removeIsDisplayingFlutterUiListener(flutterUiDisplayListener);
         mFlutterJNI.detachFromNativeAndReleaseResources();
         applicationIsRunning = false;
     }

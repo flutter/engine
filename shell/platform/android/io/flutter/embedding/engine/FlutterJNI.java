@@ -12,18 +12,18 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
+import android.support.annotation.VisibleForTesting;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
 import java.nio.ByteBuffer;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
-import io.flutter.embedding.engine.renderer.IsDisplayingFlutterUiListener;
+import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.view.AccessibilityBridge;
@@ -79,7 +79,7 @@ import io.flutter.view.FlutterCallbackInformation;
  *
  * <ol>
  *   <li>{@link #addEngineLifecycleListener(EngineLifecycleListener)}</li>
- *   <li>{@link #addIsDisplayingFlutterUiListener(IsDisplayingFlutterUiListener)}</li>
+ *   <li>{@link #addIsDisplayingFlutterUiListener(FlutterUiDisplayListener)}</li>
  * </ol>
  *
  * To facilitate platform messages between Java and Dart running in Flutter, register a handler:
@@ -162,7 +162,7 @@ public class FlutterJNI {
   @NonNull
   private final Set<EngineLifecycleListener> engineLifecycleListeners = new CopyOnWriteArraySet<>();
   @NonNull
-  private final Set<IsDisplayingFlutterUiListener> isDisplayingFlutterUiListeners = new CopyOnWriteArraySet<>();
+  private final Set<FlutterUiDisplayListener> flutterUiDisplayListeners = new CopyOnWriteArraySet<>();
   @NonNull
   private final Looper mainLooper; // cached to avoid synchronization on repeat access.
 
@@ -232,38 +232,48 @@ public class FlutterJNI {
 
   //----- Start Render Surface Support -----
   /**
-   * Adds a {@link IsDisplayingFlutterUiListener}, which receives a callback when Flutter's
+   * Adds a {@link FlutterUiDisplayListener}, which receives a callback when Flutter's
    * engine notifies {@code FlutterJNI} that Flutter is painting pixels to the {@link Surface} that
    * was provided to Flutter.
    */
   @UiThread
-  public void addIsDisplayingFlutterUiListener(@NonNull IsDisplayingFlutterUiListener listener) {
+  public void addIsDisplayingFlutterUiListener(@NonNull FlutterUiDisplayListener listener) {
     ensureRunningOnMainThread();
-    isDisplayingFlutterUiListeners.add(listener);
+    flutterUiDisplayListeners.add(listener);
   }
 
   /**
-   * Removes a {@link IsDisplayingFlutterUiListener} that was added with
-   * {@link #addIsDisplayingFlutterUiListener(IsDisplayingFlutterUiListener)}.
+   * Removes a {@link FlutterUiDisplayListener} that was added with
+   * {@link #addIsDisplayingFlutterUiListener(FlutterUiDisplayListener)}.
    */
   @UiThread
-  public void removeIsDisplayingFlutterUiListener(@NonNull IsDisplayingFlutterUiListener listener) {
+  public void removeIsDisplayingFlutterUiListener(@NonNull FlutterUiDisplayListener listener) {
     ensureRunningOnMainThread();
-    isDisplayingFlutterUiListeners.remove(listener);
+    flutterUiDisplayListeners.remove(listener);
   }
 
   // Called by native to notify first Flutter frame rendered.
   @SuppressWarnings("unused")
+  @VisibleForTesting
   @UiThread
-  private void onFirstFrame() {
+  void onFirstFrame() {
     ensureRunningOnMainThread();
 
-    for (IsDisplayingFlutterUiListener listener : isDisplayingFlutterUiListeners) {
+    for (FlutterUiDisplayListener listener : flutterUiDisplayListeners) {
       listener.onFlutterUiDisplayed();
     }
   }
 
-  // TODO(mattcarroll): add a native call that notifies when rendering stops.
+  // TODO(mattcarroll): get native to call this when rendering stops.
+  @VisibleForTesting
+  @UiThread
+  void onRenderingStopped() {
+    ensureRunningOnMainThread();
+
+    for (FlutterUiDisplayListener listener : flutterUiDisplayListeners) {
+      listener.onFlutterUiNoLongerDisplayed();
+    }
+  }
 
   /**
    * Call this method when a {@link Surface} has been created onto which you would like Flutter
@@ -308,6 +318,7 @@ public class FlutterJNI {
   public void onSurfaceDestroyed() {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
+    onRenderingStopped();
     nativeSurfaceDestroyed(nativePlatformViewId);
   }
 
@@ -748,7 +759,7 @@ public class FlutterJNI {
 
   /**
    * Removes the given {@code engineLifecycleListener}, which was previously added using
-   * {@link #addIsDisplayingFlutterUiListener(IsDisplayingFlutterUiListener)}.
+   * {@link #addIsDisplayingFlutterUiListener(FlutterUiDisplayListener)}.
    */
   @UiThread
   public void removeEngineLifecycleListener(@NonNull EngineLifecycleListener engineLifecycleListener) {

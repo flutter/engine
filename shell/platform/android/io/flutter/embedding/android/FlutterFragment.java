@@ -21,7 +21,7 @@ import android.view.ViewGroup;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
-import io.flutter.embedding.engine.renderer.IsDisplayingFlutterUiListener;
+import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.FlutterMain;
 
@@ -940,7 +940,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    * pixels to the screen.
    * <p>
    * This method forwards {@code onFlutterUiDisplayed()} to its attached {@code Activity}, if
-   * the attached {@code Activity} implements {@link IsDisplayingFlutterUiListener}.
+   * the attached {@code Activity} implements {@link FlutterUiDisplayListener}.
    * <p>
    * Subclasses that override this method must call through to the {@code super} method.
    * <p>
@@ -949,8 +949,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void onFlutterUiDisplayed() {
     FragmentActivity attachedActivity = getActivity();
-    if (attachedActivity instanceof IsDisplayingFlutterUiListener) {
-      ((IsDisplayingFlutterUiListener) attachedActivity).onFlutterUiDisplayed();
+    if (attachedActivity instanceof FlutterUiDisplayListener) {
+      ((FlutterUiDisplayListener) attachedActivity).onFlutterUiDisplayed();
     }
   }
 
@@ -959,7 +959,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    * pixels to the screen.
    * <p>
    * This method forwards {@code onFlutterUiNoLongerDisplayed()} to its attached {@code Activity},
-   * if the attached {@code Activity} implements {@link IsDisplayingFlutterUiListener}.
+   * if the attached {@code Activity} implements {@link FlutterUiDisplayListener}.
    * <p>
    * Subclasses that override this method must call through to the {@code super} method.
    * <p>
@@ -968,8 +968,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void onFlutterUiNoLongerDisplayed() {
     FragmentActivity attachedActivity = getActivity();
-    if (attachedActivity instanceof IsDisplayingFlutterUiListener) {
-      ((IsDisplayingFlutterUiListener) attachedActivity).onFlutterUiNoLongerDisplayed();
+    if (attachedActivity instanceof FlutterUiDisplayListener) {
+      ((FlutterUiDisplayListener) attachedActivity).onFlutterUiNoLongerDisplayed();
     }
   }
 
