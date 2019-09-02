@@ -36,7 +36,8 @@ static FLUTTER_API_SYMBOL(FlutterEngine)
                      const char* assets_path,
                      const char* icu_data_path,
                      const char** arguments,
-                     size_t arguments_count) {
+                     size_t arguments_count,
+                     const FlutterCustomTaskRunners* custom_task_runners) {
   // FlutterProjectArgs is expecting a full argv, so when processing it for
   // flags the first item is treated as the executable and ignored. Add a dummy
   // value so that all provided arguments are used.
@@ -82,8 +83,7 @@ static FLUTTER_API_SYMBOL(FlutterEngine)
     auto window = reinterpret_cast<flutter::Win32FlutterWindow*>(user_data);
     return window->HandlePlatformMessage(engine_message);
   };
-
-  // args.custom_task_runners = custom_task_runners; TODO
+  args.custom_task_runners = custom_task_runners;
 
   FLUTTER_API_SYMBOL(FlutterEngine) engine = nullptr;
   auto result =
@@ -108,8 +108,29 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
       flutter::Win32FlutterWindow::CreateWin32FlutterWindow(initial_width,
                                                             initial_height);
 
+
+    // Configure task runner interop.
+  FlutterTaskRunnerDescription platform_task_runner = {};
+  platform_task_runner.struct_size = sizeof(FlutterTaskRunnerDescription);
+  platform_task_runner.user_data = state;
+  platform_task_runner.runs_task_on_current_thread_callback =
+      [](void* state) -> bool {
+    /*return reinterpret_cast<FlutterDesktopWindowControllerState*>(state)
+        ->event_loop->RunsTasksOnCurrentThread();*/
+    return nullptr;
+  };
+  platform_task_runner.post_task_callback =
+      [](FlutterTask task, uint64_t target_time_nanos, void* state) -> void {
+    /*reinterpret_cast<FlutterDesktopWindowControllerState*>(state)
+        ->event_loop->PostTask(task, target_time_nanos);*/
+  };
+
+  FlutterCustomTaskRunners custom_task_runners = {};
+  custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
+  custom_task_runners.platform_task_runner = &platform_task_runner;
+
   auto engine = RunFlutterEngine(state->view.get(), assets_path, icu_data_path,
-                                 arguments, argument_count);
+                                 arguments, argument_count, &custom_task_runners);
 
   if (engine == nullptr) {
     return nullptr;
@@ -150,7 +171,7 @@ FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,
                                                 const char** arguments,
                                                 size_t argument_count) {
   auto engine = RunFlutterEngine(nullptr, assets_path, icu_data_path, arguments,
-                                 argument_count);
+                                 argument_count, nullptr /* custom task runners */);
   if (engine == nullptr) {
     return nullptr;
   }
