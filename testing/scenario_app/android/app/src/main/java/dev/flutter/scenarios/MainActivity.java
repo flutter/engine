@@ -40,12 +40,6 @@ public class MainActivity extends FlutterActivity implements OnFirstFrameRendere
     }
   }
 
-  public void onFirstFrameRendered() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      reportFullyDrawn();
-    }
-  }
-
   @Override
   @NonNull
   public FlutterShellArgs getFlutterShellArgs() {
