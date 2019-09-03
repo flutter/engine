@@ -23,7 +23,7 @@ import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.BinaryCodec;
 
-public class MainActivity extends FlutterActivity implements OnFirstFrameRenderedListener {
+public class MainActivity extends FlutterActivity {
   final static String TAG = "Scenarios";
 
   @Override
