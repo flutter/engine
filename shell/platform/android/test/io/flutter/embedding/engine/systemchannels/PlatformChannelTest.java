@@ -47,6 +47,40 @@ public class PlatformChannelTest {
         JSONArray inputRects = new JSONArray();
         inputRects.put(JsonRect);
 
+        MethodCall callSystemGestureExclusionRects = new MethodCall(
+            "SystemGestures.setSystemGestureExclusionRects",
+            inputRects
+        );
+
+        // --- Execute Test ---
+        platformChannel.parsingMethodCallHandler.onMethodCall(callSystemGestureExclusionRects, result);
+
+        // --- Verify Results ---
+        verify(result, times(1)).success(null);
+    }
+
+    @Test
+    public void itProperlyDecodesGestureRectsWhenSettingSystemGestureExclusionRects() throws JSONException {
+        // --- Test Setup ---
+        DartExecutor dartExecutor = mock(DartExecutor.class);
+        PlatformChannel platformChannel = new PlatformChannel(dartExecutor);
+        PlatformMessageHandler platformMessageHandler = mock(PlatformMessageHandler.class);
+        platformChannel.setPlatformMessageHandler(platformMessageHandler);
+        Result result = mock(Result.class);
+
+        int top = 0;
+        int right = 500;
+        int bottom = 250;
+        int left = 0;
+
+        JSONObject JsonRect = new JSONObject();
+        JsonRect.put("top", top);
+        JsonRect.put("right", right);
+        JsonRect.put("bottom", bottom);
+        JsonRect.put("left", left);
+        JSONArray inputRects = new JSONArray();
+        inputRects.put(JsonRect);
+
         ArrayList<Rect> expectedDecodedRects = new ArrayList<Rect>();
         Rect gestureRect = new Rect(left, top, right, bottom);
         expectedDecodedRects.add(gestureRect);
@@ -60,7 +94,6 @@ public class PlatformChannelTest {
 
         // --- Verify Results ---
         verify(platformMessageHandler, times(1)).setSystemGestureExclusionRects(expectedDecodedRects);
-        verify(result, times(1)).success(null);
     }
 
     @Test
