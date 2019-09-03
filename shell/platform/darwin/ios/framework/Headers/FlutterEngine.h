@@ -177,10 +177,14 @@ FLUTTER_EXPORT
 /**
  * The `FlutterMethodChannel` used for localization related platform messages, such as
  * setting the locale.
+ *
+ * Can be nil after `destroyContext` is called.
  */
-@property(nonatomic, readonly, nonnull) FlutterMethodChannel* localizationChannel;
+@property(nonatomic, readonly, nullable) FlutterMethodChannel* localizationChannel;
 /**
  * The `FlutterMethodChannel` used for navigation related platform messages.
+ *
+ * Can be nil after `destroyContext` is called.
  *
  * @see [Navigation
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/navigation-constant.html)
@@ -191,12 +195,16 @@ FLUTTER_EXPORT
 /**
  * The `FlutterMethodChannel` used for core platform messages, such as
  * information about the screen orientation.
+ *
+ * Can be nil after `destroyContext` is called.
  */
 @property(nonatomic, readonly, nonnull) FlutterMethodChannel* platformChannel;
 
 /**
  * The `FlutterMethodChannel` used to communicate text input events to the
  * Dart Isolate.
+ *
+ * Can be nil after `destroyContext` is called.
  *
  * @see [Text Input
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/textInput-constant.html)
@@ -207,6 +215,8 @@ FLUTTER_EXPORT
  * The `FlutterBasicMessageChannel` used to communicate app lifecycle events
  * to the Dart Isolate.
  *
+ * Can be nil after `destroyContext` is called.
+ *
  * @see [Lifecycle
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/lifecycle-constant.html)
  */
@@ -216,6 +226,8 @@ FLUTTER_EXPORT
  * The `FlutterBasicMessageChannel` used for communicating system events, such as
  * memory pressure events.
  *
+ * Can be nil after `destroyContext` is called.
+ *
  * @see [System
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/system-constant.html)
  */
@@ -224,6 +236,8 @@ FLUTTER_EXPORT
 /**
  * The `FlutterBasicMessageChannel` used for communicating user settings such as
  * clock format and text scale.
+ *
+ * Can be nil after `destroyContext` is called.
  */
 @property(nonatomic, readonly, nonnull) FlutterBasicMessageChannel* settingsChannel;
 
