@@ -14,6 +14,8 @@
 #include "FlutterPlugin.h"
 #include "FlutterTexture.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FlutterViewController;
 
 /**
@@ -58,7 +60,7 @@ FLUTTER_EXPORT
  *   the threads used by this FlutterEngine.
  * @param projectOrNil The `FlutterDartProject` to run.
  */
-- (nonnull instancetype)initWithName:(nonnull NSString*)labelPrefix project:(nullable FlutterDartProject*)projectOrNil;
+- (instancetype)initWithName:(NSString*)labelPrefix project:(nullable FlutterDartProject*)projectOrNil;
 
 /**
  * Initialize this FlutterEngine with a `FlutterDartProject`.
@@ -77,7 +79,7 @@ FLUTTER_EXPORT
  * @param allowHeadlessExecution Whether or not to allow this instance to continue
  *   running after passing a nil `FlutterViewController` to `-setViewController:`.
  */
-- (nonnull instancetype)initWithName:(nonnull NSString*)labelPrefix
+- (instancetype)initWithName:(NSString*)labelPrefix
                      project:(nullable FlutterDartProject*)projectOrNil
       allowHeadlessExecution:(BOOL)allowHeadlessExecution NS_DESIGNATED_INITIALIZER;
 
@@ -190,7 +192,7 @@ FLUTTER_EXPORT
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/navigation-constant.html)
  * @see [Navigator Widget](https://docs.flutter.io/flutter/widgets/Navigator-class.html)
  */
-@property(nonatomic, readonly, nonnull) FlutterMethodChannel* navigationChannel;
+@property(nonatomic, readonly) FlutterMethodChannel* navigationChannel;
 
 /**
  * The `FlutterMethodChannel` used for core platform messages, such as
@@ -198,7 +200,7 @@ FLUTTER_EXPORT
  *
  * Can be nil after `destroyContext` is called.
  */
-@property(nonatomic, readonly, nonnull) FlutterMethodChannel* platformChannel;
+@property(nonatomic, readonly) FlutterMethodChannel* platformChannel;
 
 /**
  * The `FlutterMethodChannel` used to communicate text input events to the
@@ -209,7 +211,7 @@ FLUTTER_EXPORT
  * @see [Text Input
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/textInput-constant.html)
  */
-@property(nonatomic, readonly, nonnull) FlutterMethodChannel* textInputChannel;
+@property(nonatomic, readonly) FlutterMethodChannel* textInputChannel;
 
 /**
  * The `FlutterBasicMessageChannel` used to communicate app lifecycle events
@@ -220,7 +222,7 @@ FLUTTER_EXPORT
  * @see [Lifecycle
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/lifecycle-constant.html)
  */
-@property(nonatomic, readonly, nonnull) FlutterBasicMessageChannel* lifecycleChannel;
+@property(nonatomic, readonly) FlutterBasicMessageChannel* lifecycleChannel;
 
 /**
  * The `FlutterBasicMessageChannel` used for communicating system events, such as
@@ -231,7 +233,7 @@ FLUTTER_EXPORT
  * @see [System
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/system-constant.html)
  */
-@property(nonatomic, readonly, nonnull) FlutterBasicMessageChannel* systemChannel;
+@property(nonatomic, readonly) FlutterBasicMessageChannel* systemChannel;
 
 /**
  * The `FlutterBasicMessageChannel` used for communicating user settings such as
@@ -239,7 +241,7 @@ FLUTTER_EXPORT
  *
  * Can be nil after `destroyContext` is called.
  */
-@property(nonatomic, readonly, nonnull) FlutterBasicMessageChannel* settingsChannel;
+@property(nonatomic, readonly) FlutterBasicMessageChannel* settingsChannel;
 
 /**
  * The `NSURL` of the observatory for the service isolate.
@@ -254,7 +256,7 @@ FLUTTER_EXPORT
  * The `FlutterBinaryMessenger` associated with this FlutterEngine (used for communicating with
  * channels).
  */
-@property(nonatomic, readonly, nonnull) NSObject<FlutterBinaryMessenger>* binaryMessenger;
+@property(nonatomic, readonly) NSObject<FlutterBinaryMessenger>* binaryMessenger;
 
 /**
  * The UI Isolate ID of of the engine.
@@ -264,5 +266,7 @@ FLUTTER_EXPORT
 @property(nonatomic, readonly, copy, nullable) NSString* isolateId;
 
 @end
+
+NS_ASSUME_NONNULL_END
 
 #endif  // FLUTTER_FLUTTERENGINE_H_
