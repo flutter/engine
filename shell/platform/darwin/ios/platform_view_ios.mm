@@ -23,7 +23,7 @@ PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
                                  flutter::TaskRunners task_runners)
     : PlatformView(delegate, std::move(task_runners)) {
 #if !TARGET_IPHONE_SIMULATOR
-  gl_resource_context_ = std::make_shared<IOSGLContext>();
+  gl_resource_context_ = std::make_shared<IOSGLContext>(nullptr);
 #endif  // !TARGET_IPHONE_SIMULATOR
 }
 

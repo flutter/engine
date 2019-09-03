@@ -25,7 +25,7 @@
 @implementation FlutterView
 
 id<FlutterViewEngineDelegate> _delegate;
-std::shared_ptr<flutter::IOSGLContext> _onscreen_context;
+std::shared_ptr<flutter::IOSGLContext> _onscreenContext;
 
 - (instancetype)init {
   @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
@@ -45,6 +45,11 @@ std::shared_ptr<flutter::IOSGLContext> _onscreen_context;
                                userInfo:nil]);
 }
 
+- (void)dealloc {
+  _onscreenContext = nullptr;
+  [super dealloc];
+}
+
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate opaque:(BOOL)opaque {
   FML_DCHECK(delegate) << "Delegate must not be nil.";
   self = [super initWithFrame:CGRectNull];
@@ -53,10 +58,6 @@ std::shared_ptr<flutter::IOSGLContext> _onscreen_context;
     _delegate = delegate;
     self.layer.opaque = opaque;
   }
-
-#if !TARGET_IPHONE_SIMULATOR
-  _onscreen_context = std::make_shared<flutter::IOSGLContext>();
-#endif  // !TARGET_IPHONE_SIMULATOR
 
   return self;
 }
@@ -101,6 +102,10 @@ std::shared_ptr<flutter::IOSGLContext> _onscreen_context;
 
 - (std::unique_ptr<flutter::IOSSurface>)createSurface:
     (std::shared_ptr<flutter::IOSGLContext>)resource_context {
+#if !TARGET_IPHONE_SIMULATOR
+  _onscreenContext = std::make_shared<flutter::IOSGLContext>(resource_context->Sharegroup());
+#endif  // !TARGET_IPHONE_SIMULATOR
+
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
         reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
@@ -111,7 +116,7 @@ std::shared_ptr<flutter::IOSGLContext> _onscreen_context;
         eagl_layer.get().presentsWithTransaction = YES;
       }
     }
-    return std::make_unique<flutter::IOSSurfaceGL>(_onscreen_context, resource_context,
+    return std::make_unique<flutter::IOSSurfaceGL>(_onscreenContext, resource_context,
                                                    std::move(eagl_layer),
                                                    [_delegate platformViewsController]);
 #if FLUTTER_SHELL_ENABLE_METAL

@@ -12,19 +12,13 @@
 
 namespace flutter {
 
-static fml::scoped_nsobject<EAGLSharegroup> sharegroup_;
-
-IOSGLContext::IOSGLContext() {
+IOSGLContext::IOSGLContext(fml::scoped_nsobject<EAGLSharegroup> sharegroup) {
   context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3
-                                       sharegroup:sharegroup_.get()]);
+                                       sharegroup:sharegroup.get()]);
 
   if (!context_) {
     context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
-                                         sharegroup:sharegroup_.get()]);
-  }
-
-  if (sharegroup_ == nullptr) {
-    sharegroup_.reset(context_.get().sharegroup);
+                                         sharegroup:sharegroup.get()]);
   }
 
   // TODO:
@@ -46,6 +40,10 @@ IOSGLContext::IOSGLContext() {
         break;
     }
   }
+}
+
+fml::scoped_nsobject<EAGLSharegroup> IOSGLContext::Sharegroup() {
+  return fml::scoped_nsobject<EAGLSharegroup>(context_.get().sharegroup);
 }
 
 bool IOSGLContext::BindRenderbufferStorage(NSUInteger target,

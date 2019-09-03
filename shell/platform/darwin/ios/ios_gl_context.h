@@ -18,13 +18,16 @@ namespace flutter {
 
 class IOSGLContext {
  public:
-  IOSGLContext();
+  IOSGLContext(fml::scoped_nsobject<EAGLSharegroup> sharegroup);
 
   ~IOSGLContext();
 
   bool MakeCurrent();
 
   bool BindRenderbufferStorage(NSUInteger target, fml::scoped_nsobject<CAEAGLLayer> layer);
+
+  fml::scoped_nsobject<EAGLSharegroup> Sharegroup();
+
   sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
 
  private:
