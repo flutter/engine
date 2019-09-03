@@ -26,6 +26,7 @@ void main() {
     ..onBeginFrame = _onBeginFrame
     ..onDrawFrame = _onDrawFrame
     ..onMetricsChanged = _onMetricsChanged
+    ..onPointerDataPacket = _onPointerDataPacket
     ..scheduleFrame();
   final ByteData data = ByteData(1);
   data.setUint8(0, 1);
@@ -51,6 +52,8 @@ Future<void> _handlePlatformMessage(
   } else if (name == 'write_timeline') {
     final String timelineData = await _getTimelineData();
     callback(Uint8List.fromList(utf8.encode(timelineData)).buffer.asByteData());
+  } else {
+    _currentScenario?.onPlatformMessage(name, data, callback);
   }
 }
 
@@ -94,4 +97,8 @@ void _onDrawFrame() {
 
 void _onMetricsChanged() {
   _currentScenario.onMetricsChanged();
+}
+
+void _onPointerDataPacket(PointerDataPacket packet) {
+  _currentScenario.onPointerDataPacket(packet);
 }

@@ -27,4 +27,13 @@ abstract class Scenario {
   ///
   /// See [Window.onMetricsChanged].
   void onMetricsChanged() {}
+
+  /// Called by the program when a pointer event is received.
+  ///
+  /// See [Window.onPointerDataPacket].
+  void onPointerDataPacket(PointerDataPacket packet) {}
+
+  void onPlatformMessage(
+    String name, ByteData data, PlatformMessageResponseCallback callback
+  ) {}
 }
