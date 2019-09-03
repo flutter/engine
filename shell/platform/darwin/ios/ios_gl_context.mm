@@ -12,13 +12,15 @@
 
 namespace flutter {
 
-IOSGLContext::IOSGLContext(fml::scoped_nsobject<EAGLSharegroup> sharegroup) {
+IOSGLContext::IOSGLContext() : IOSGLContext(nullptr) {}
+
+IOSGLContext::IOSGLContext(EAGLSharegroup* sharegroup) {
   context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3
-                                       sharegroup:sharegroup.get()]);
+                                       sharegroup:sharegroup]);
 
   if (!context_) {
     context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
-                                         sharegroup:sharegroup.get()]);
+                                         sharegroup:sharegroup]);
   }
 
   // TODO:
@@ -42,10 +44,6 @@ IOSGLContext::IOSGLContext(fml::scoped_nsobject<EAGLSharegroup> sharegroup) {
   }
 }
 
-fml::scoped_nsobject<EAGLSharegroup> IOSGLContext::Sharegroup() {
-  return fml::scoped_nsobject<EAGLSharegroup>(context_.get().sharegroup);
-}
-
 bool IOSGLContext::BindRenderbufferStorage(NSUInteger target,
                                            fml::scoped_nsobject<CAEAGLLayer> layer) {
   return [context_.get() renderbufferStorage:GL_RENDERBUFFER fromDrawable:layer.get()];
@@ -55,6 +53,10 @@ IOSGLContext::~IOSGLContext() = default;
 
 bool IOSGLContext::MakeCurrent() {
   return [EAGLContext setCurrentContext:context_.get()];
+}
+
+std::shared_ptr<IOSGLContext> IOSGLContext::MakeSharedContext() {
+  return std::shared_ptr<IOSGLContext>(new IOSGLContext(context_.get().sharegroup));
 }
 
 }  // namespace flutter
