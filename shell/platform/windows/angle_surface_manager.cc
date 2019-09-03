@@ -149,7 +149,7 @@ void AngleSurfaceManager::CleanUp() {
     }
   }
 
-  if (egl_display_ != EGL_NO_DISPLAY && egl_context_ != EGL_NO_CONTEXT) {
+  if (egl_display_ != EGL_NO_DISPLAY && egl_resource_context_ != EGL_NO_CONTEXT) {
     result = eglDestroyContext(egl_display_, egl_resource_context_);
     egl_resource_context_ = EGL_NO_CONTEXT;
 
