@@ -15,6 +15,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import io.flutter.Log;
@@ -120,6 +121,17 @@ public class PlatformChannel {
           case "SystemNavigator.pop":
             platformMessageHandler.popSystemNavigator();
             result.success(null);
+            break;
+          case "SystemGestures.getSystemGestureExclusionRects":
+            List<Rect> exclusionRects = platformMessageHandler.getSystemGestureExclusionRects();
+            if (exclusionRects == null) {
+              String incorrectApiLevel = "Exclusion rects only exist for Android API 29+.";
+              result.error("error", incorrectApiLevel, null);
+              break;
+            }
+
+            ArrayList<HashMap<String, Integer>> encodedExclusionRects = encodeExclusionRects(exclusionRects);
+            result.success(encodedExclusionRects);
             break;
           case "SystemGestures.setSystemGestureExclusionRects":
             if (!(arguments instanceof JSONArray)) {
@@ -313,6 +325,31 @@ public class PlatformChannel {
     return exclusionRects;
   }
 
+  /**
+   * Encodes a List<Rect> provided by the Android host into an
+   * ArrayList<HashMap<String, Integer>>.
+   *
+   * Since View.getSystemGestureExclusionRects returns a list of Rects, these
+   * Rects need to be transformed into UTF-8 encoded JSON messages to be
+   * properly decoded by the Flutter framework.
+   *
+   * This method is used by the SystemGestures.getSystemGestureExclusionRects
+   * platform channel.
+   */
+  private ArrayList<HashMap<String, Integer>> encodeExclusionRects(List<Rect> exclusionRects) {
+    ArrayList<HashMap<String, Integer>> encodedExclusionRects = new ArrayList<HashMap<String, Integer>>();
+    for (Rect rect : exclusionRects) {
+      HashMap<String, Integer> rectMap = new HashMap<String, Integer>();
+      rectMap.put("top", rect.top);
+      rectMap.put("right", rect.right);
+      rectMap.put("bottom", rect.bottom);
+      rectMap.put("left", rect.left);
+      encodedExclusionRects.add(rectMap);
+    }
+
+    return encodedExclusionRects;
+  }
+
   @NonNull
   private AppSwitcherDescription decodeAppSwitcherDescription(@NonNull JSONObject encodedDescription) throws JSONException {
     int color = encodedDescription.getInt("primaryColor");
@@ -476,6 +513,12 @@ public class PlatformChannel {
      * clipboard to the given {@code text}.
      */
     void setClipboardData(@NonNull String text);
+
+    /**
+     * The Flutter application would like to get the system gesture exclusion
+     * rects.
+     */
+    List<Rect> getSystemGestureExclusionRects();
 
     /**
      * The Flutter application would like to set the system gesture exclusion

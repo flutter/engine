@@ -603,7 +603,8 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugin
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/shim/ShimPluginRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/shim/ShimRegistrar.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/FlutterRenderer.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/OnFirstFrameRenderedListener.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/FlutterUiDisplayListener.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/RenderSurface.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/AccessibilityChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/KeyEventChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LifecycleChannel.java
@@ -941,6 +942,7 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner_context.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner_context.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/sample_unittests.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/service_provider_dir.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/service_provider_dir.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/session_connection.cc
@@ -994,10 +996,9 @@ FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.h
 FILE: ../../../flutter/shell/platform/windows/angle_surface_manager.cc
 FILE: ../../../flutter/shell/platform/windows/angle_surface_manager.h
-FILE: ../../../flutter/shell/platform/windows/client_wrapper/flutter_window_controller.cc
-FILE: ../../../flutter/shell/platform/windows/client_wrapper/flutter_window_controller_unittests.cc
-FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flutter_window.h
-FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flutter_window_controller.h
+FILE: ../../../flutter/shell/platform/windows/client_wrapper/flutter_view_controller.cc
+FILE: ../../../flutter/shell/platform/windows/client_wrapper/flutter_view_controller_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flutter_view_controller.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/plugin_registrar_windows.h
 FILE: ../../../flutter/shell/platform/windows/flutter_windows.cc
 FILE: ../../../flutter/shell/platform/windows/key_event_handler.cc
