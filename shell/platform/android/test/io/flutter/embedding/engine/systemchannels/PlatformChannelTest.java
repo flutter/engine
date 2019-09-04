@@ -34,22 +34,17 @@ public class PlatformChannelTest {
         platformChannel.setPlatformMessageHandler(platformMessageHandler);
         Result result = mock(Result.class);
 
-        int top = 0;
-        int right = 500;
-        int bottom = 250;
-        int left = 0;
-
-        JSONObject JsonRect = new JSONObject();
-        JsonRect.put("top", top);
-        JsonRect.put("right", right);
-        JsonRect.put("bottom", bottom);
-        JsonRect.put("left", left);
-        JSONArray inputRects = new JSONArray();
-        inputRects.put(JsonRect);
+        JSONObject jsonRect = new JSONObject();
+        jsonRect.put("top", 0);
+        jsonRect.put("right", 500);
+        jsonRect.put("bottom", 250);
+        jsonRect.put("left", 0);
+        JSONArray jsonExclusionRectsFromPlatform = new JSONArray();
+        jsonExclusionRectsFromPlatform.put(jsonRect);
 
         MethodCall callSystemGestureExclusionRects = new MethodCall(
             "SystemGestures.setSystemGestureExclusionRects",
-            inputRects
+            jsonExclusionRectsFromPlatform
         );
 
         // --- Execute Test ---
@@ -73,20 +68,20 @@ public class PlatformChannelTest {
         int bottom = 250;
         int left = 0;
 
-        JSONObject JsonRect = new JSONObject();
-        JsonRect.put("top", top);
-        JsonRect.put("right", right);
-        JsonRect.put("bottom", bottom);
-        JsonRect.put("left", left);
-        JSONArray inputRects = new JSONArray();
-        inputRects.put(JsonRect);
+        JSONObject jsonRect = new JSONObject();
+        jsonRect.put("top", 0);
+        jsonRect.put("right", 500);
+        jsonRect.put("bottom", 250);
+        jsonRect.put("left", 0);
+        JSONArray jsonExclusionRectsFromPlatform = new JSONArray();
+        jsonExclusionRectsFromPlatform.put(jsonRect);
 
         ArrayList<Rect> expectedDecodedRects = new ArrayList<Rect>();
         Rect gestureRect = new Rect(left, top, right, bottom);
         expectedDecodedRects.add(gestureRect);
         MethodCall callSystemGestureExclusionRects = new MethodCall(
             "SystemGestures.setSystemGestureExclusionRects",
-            inputRects
+            jsonExclusionRectsFromPlatform
         );
 
         // --- Execute Test ---
