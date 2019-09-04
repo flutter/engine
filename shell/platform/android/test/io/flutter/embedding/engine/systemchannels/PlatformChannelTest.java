@@ -148,7 +148,10 @@ public class PlatformChannelTest {
             jsonExclusionRectsFromPlatform
         );
 
+        // --- Execute Test ---
         platformChannel.parsingMethodCallHandler.onMethodCall(callSetSystemGestureExclusionRects, result);
+
+        // --- Verify Results ---
         verify(platformMessageHandler, times(1)).setSystemGestureExclusionRects(expectedDecodedRects);
     }
 
