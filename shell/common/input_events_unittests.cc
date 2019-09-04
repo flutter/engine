@@ -10,6 +10,110 @@ namespace testing {
 
 using Generator = std::function<int(int)>;
 
+// Simulate n input events where the i-th one is delivered at
+// delivery_time(i).
+//
+// Simulation results will be written into events_consumed_at_frame whose
+// length will be equal to the number of frames drawn. Each element in the
+// vector is the number of input events consumed in that frame. (We can't
+// return such vector because ASSERT_TRUE requires return type of void.)
+//
+// We assume (and check) that the delivery latency is some base latency plus a
+// random latency where the random latency must be within one frame:
+//
+// 1. latency = delivery_time(i) - j * frame_time = base_latency +
+//    random_latency
+// 2. 0 <= base_latency, 0 <= random_latency < frame_time
+//
+// We also assume that there will be at least one input event per frame if
+// there were no latency. Let j = floor( (delivery_time(i) - base_latency) /
+// frame_time ) be the frame index if there were no latency. Then the set of j
+// should be all integers from 0 to continuous_frame_count - 1 for some
+// integer continuous_frame_count.
+//
+// (Note that there coulds be multiple input events within one frame.)
+//
+// The test here is insensitive to the choice of time unit as long as
+// delivery_time and frame_time are in the same unit.
+static void TestSimulatedInputEvents(
+    ShellTest* fixture,
+    int num_events,
+    int base_latency,
+    std::function<int(int)> delivery_time,
+    int frame_time,
+    std::vector<int>& events_consumed_at_frame) {
+  ///// Begin constructing shell ///////////////////////////////////////////////
+  auto settings = fixture->CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell = fixture->CreateShell(settings);
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("onPointerDataPacketMain");
+
+  // The following 4 variables are only accessed in the UI thread by
+  // nativeOnPointerDataPacket and nativeOnBeginFrame between their
+  // initializations and `shell.reset()`.
+  events_consumed_at_frame.clear();
+  bool will_draw_new_frame = true;
+  int events_consumed = 0;
+  int frame_drawn = 0;
+  auto nativeOnPointerDataPacket = [&events_consumed_at_frame,
+                                    &will_draw_new_frame, &events_consumed,
+                                    &frame_drawn](Dart_NativeArguments args) {
+    events_consumed += 1;
+    if (will_draw_new_frame) {
+      frame_drawn += 1;
+      will_draw_new_frame = false;
+      events_consumed_at_frame.push_back(events_consumed);
+    } else {
+      events_consumed_at_frame.back() = events_consumed;
+    }
+  };
+  fixture->AddNativeCallback("NativeOnPointerDataPacket",
+                             CREATE_NATIVE_ENTRY(nativeOnPointerDataPacket));
+
+  auto nativeOnBeginFrame = [&will_draw_new_frame](Dart_NativeArguments args) {
+    will_draw_new_frame = true;
+  };
+  fixture->AddNativeCallback("NativeOnBeginFrame",
+                             CREATE_NATIVE_ENTRY(nativeOnBeginFrame));
+
+  ASSERT_TRUE(configuration.IsValid());
+  fixture->RunEngine(shell.get(), std::move(configuration));
+  ///// End constructing shell /////////////////////////////////////////////////
+
+  ASSERT_GE(base_latency, 0);
+
+  // Check that delivery_time satisfies our assumptions.
+  int continuous_frame_count = 0;
+  for (int i = 0; i < num_events; i += 1) {
+    // j is the frame index of event i if there were no latency.
+    int j = static_cast<int>((delivery_time(i) - base_latency) / frame_time);
+    if (j == continuous_frame_count) {
+      continuous_frame_count += 1;
+    }
+    double random_latency = delivery_time(i) - j * frame_time - base_latency;
+    ASSERT_GE(random_latency, 0);
+    ASSERT_LT(random_latency, frame_time);
+
+    // If there were no latency, there should be at least one event per frame.
+    // Hence j should never skip any integer less than continuous_frame_count.
+    ASSERT_LT(j, continuous_frame_count);
+  }
+
+  // i is the input event's index.
+  // j is the frame's index.
+  for (int i = 0, j = 0; i < num_events; j += 1) {
+    double t = j * frame_time;
+    while (i < num_events && delivery_time(i) <= t) {
+      ShellTest::DispatchFakePointerData(shell.get());
+      i += 1;
+    }
+    ShellTest::PumpOneFrame(shell.get());
+  }
+
+  shell.reset();
+}
+
 TEST_F(ShellTest, MissAtMostOneFrameForIrregularInputEvents) {
   constexpr int frame_time = 10;
   constexpr int base_latency = 0.5 * frame_time;
@@ -19,7 +123,7 @@ TEST_F(ShellTest, MissAtMostOneFrameForIrregularInputEvents) {
   };
   constexpr int n = 40;
   std::vector<int> events_consumed_at_frame;
-  TestSimulatedInputEvents(n, base_latency, extreme, frame_time,
+  TestSimulatedInputEvents(this, n, base_latency, extreme, frame_time,
                            events_consumed_at_frame);
   int frame_drawn = events_consumed_at_frame.size();
   ASSERT_GE(frame_drawn, n - 1);
@@ -33,7 +137,7 @@ TEST_F(ShellTest, DelayAtMostOneEventForFasterThanVSyncInputEvents) {
   };
   constexpr int n = 40;
   std::vector<int> events_consumed_at_frame;
-  TestSimulatedInputEvents(n, base_latency, double_sampling, frame_time,
+  TestSimulatedInputEvents(this, n, base_latency, double_sampling, frame_time,
                            events_consumed_at_frame);
 
   // Draw one extra frame due to delaying a pending packet for the next frame.
@@ -105,8 +209,8 @@ TEST_F(ShellTest, HandlesActualIphoneXsInputEvents) {
       return base_latency + static_cast<int>(iphone_xs_times[i] * frame_time);
     };
     std::vector<int> events_consumed_at_frame;
-    TestSimulatedInputEvents(n, base_latency, iphone_xs_generator, frame_time,
-                             events_consumed_at_frame);
+    TestSimulatedInputEvents(this, n, base_latency, iphone_xs_generator,
+                             frame_time, events_consumed_at_frame);
     int frame_drawn = events_consumed_at_frame.size();
     ASSERT_GE(frame_drawn, n - 1);
   }
