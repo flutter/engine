@@ -113,8 +113,8 @@ DartIsolate::DartIsolate(const Settings& settings,
                          ChildIsolatePreparer child_isolate_preparer,
                          fml::closure isolate_create_callback,
                          fml::closure isolate_shutdown_callback,
-                         const bool is_root_isolate,
-                         const bool is_group_root_isolate)
+                         bool is_root_isolate,
+                         bool is_group_root_isolate)
     : UIDartState(std::move(task_runners),
                   settings.task_observer_add,
                   settings.task_observer_remove,
@@ -792,11 +792,7 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
 
   auto* isolate_data = static_cast<std::shared_ptr<DartIsolate>*>(
       Dart_IsolateGroupData(isolate));
-  if (isolate_data->get() != embedder_isolate->get()) {
-    *error = strdup("Unexpected isolate data during initialization.");
-    FML_DLOG(ERROR) << *error;
-    return {nullptr, {}};
-  }
+  FML_DCHECK(isolate_data->get() == embedder_isolate->get());
 
   auto weak_embedder_isolate = (*embedder_isolate)->GetWeakIsolatePtr();
 

@@ -65,8 +65,8 @@ class DartIsolate : public UIDartState {
               ChildIsolatePreparer child_isolate_preparer,
               fml::closure isolate_create_callback,
               fml::closure isolate_shutdown_callback,
-              const bool is_root_isolate,
-              const bool is_group_root_isolate);
+              bool is_root_isolate,
+              bool is_group_root_isolate);
 
   ~DartIsolate() override;
 
