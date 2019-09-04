@@ -25,18 +25,11 @@
   // This argument is used by the XCUITest for Platform Views so that the app
   // under test will create platform views.
   if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--platform-view"]) {
-    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"PlatformViewTest" project:nil];
+    FlutterEngine* engine = [Util runEngineWithScenario:@"text_platform_view"];
     [engine runWithEntrypoint:nil];
-
+    
     FlutterViewController* flutterViewController =
         [[NoStatusBarFlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    [engine.binaryMessenger
-        setMessageHandlerOnChannel:@"scenario_status"
-              binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
-                [engine.binaryMessenger
-                    sendOnChannel:@"set_scenario"
-                          message:[@"text_platform_view" dataUsingEncoding:NSUTF8StringEncoding]];
-              }];
     TextPlatformViewFactory* textPlatformViewFactory =
         [[TextPlatformViewFactory alloc] initWithMessenger:flutterViewController.binaryMessenger];
     NSObject<FlutterPluginRegistrar>* registrar =

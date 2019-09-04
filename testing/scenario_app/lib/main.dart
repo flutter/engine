@@ -11,11 +11,13 @@ import 'dart:ui';
 
 import 'src/animated_color_square.dart';
 import 'src/platform_view.dart';
+import 'src/poppable_screen.dart';
 import 'src/scenario.dart';
 
 Map<String, Scenario> _scenarios = <String, Scenario>{
   'animated_color_square': AnimatedColorSquareScenario(window),
   'text_platform_view': PlatformViewScenario(window, 'Hello from Scenarios (Platform View)'),
+  'poppable_screen': PoppableScreenScenario(window),
 };
 
 Scenario _currentScenario = _scenarios['animated_color_square'];

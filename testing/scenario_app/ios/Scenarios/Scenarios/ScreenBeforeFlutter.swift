@@ -6,8 +6,8 @@ import Flutter
 import UIKit
 
 class ScreenBeforeFlutter: UIViewController {
-  private lazy var showFlutterButton:UIButton = {
-    let button = UIButton(type:.system)
+  private lazy var showFlutterButton: UIButton = {
+    let button = UIButton(type: .system)
     button.translatesAutoresizingMaskIntoConstraints = false
     button.backgroundColor = .blue
     button.setTitle("Show Flutter", for: .normal)
@@ -17,7 +17,7 @@ class ScreenBeforeFlutter: UIViewController {
     return button
   }()
 
-  let engine:FlutterEngine = FlutterEngine(name: "test engine", project: nil)
+  let engine = Util.runEngine(scenario: "poppable_screen")
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -35,6 +35,9 @@ class ScreenBeforeFlutter: UIViewController {
   }
 
   @objc func showFlutter() {
-    present(FlutterViewController(engine: engine, nibName: nil, bundle: nil), animated: true, completion: nil)
+    present(
+      FlutterViewController(engine: engine, nibName: nil, bundle: nil),
+      animated: false,
+      completion: nil)
   }
 }

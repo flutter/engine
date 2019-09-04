@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:ui';
 
 import 'platform_echo_mixin.dart';
@@ -19,9 +20,6 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
   // Rect for the pop button. Only defined once onMetricsChanged is called.
   Rect _buttonRect;
 
-  /// Used to animate the red value in the color of the square.
-  final _NumberSwinger<int> _r = _NumberSwinger<int>(0, 255);
-
   @override
   void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
@@ -29,14 +27,14 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
     final Canvas canvas = Canvas(recorder);
 
     canvas.drawRect(
-      Rect.fromLTWH(0, 0, window.physicalSize.width, window.physicalSize.height),
-      Paint()..color = Color.fromARGB(255, 0, 0, 0),
+      Rect.fromLTWH(0, 0, window.physicalSize.width - 1, window.physicalSize.height - 1),
+      Paint()..color = const Color.fromARGB(255, 0, 0, 0),
     );
 
-    if (_buttonRect) {
+    if (_buttonRect != null) {
       canvas.drawRect(
         _buttonRect,
-        Paint()..color = Color.fromARGB(255, 255, 0, 0),
+        Paint()..color = const Color.fromARGB(255, 255, 0, 0),
       );
     }
     final Picture picture = recorder.endRecording();
@@ -64,8 +62,32 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
 
   @override
   void onPointerDataPacket(PointerDataPacket packet) {
-    for (PointerData in packet.data) {
-
+    for (PointerData data in packet.data) {
+      if (data.change == PointerChange.up &&
+          _buttonRect.contains(Offset(data.physicalX, data.physicalY))
+      ) {
+        _pop();
+      }
     }
+  }
+
+  void _pop() {
+    window.sendPlatformMessage(
+      // 'flutter/platform' is the hardcoded name of the 'platform'
+      // `SystemChannel` from the `SystemNavigator` API.
+      // https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/services/system_navigator.dart.
+      'flutter/platform',
+      // This recreates a combination of OptionalMethodChannel, JSONMethodCodec,
+      // and _DefaultBinaryMessenger in the framework.
+      utf8.encoder.convert(
+        const JsonCodec().encode(<String, dynamic>{
+          'method': 'SystemNavigator.pop',
+          'args': null,
+        })
+      ).buffer.asByteData(),
+      // Don't care about the response. If it doesn't go through, the test
+      // will fail.
+      null,
+    );
   }
 }

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0A1650EC231FA0ED001B895D /* Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1650EB231FA0ED001B895D /* Util.swift */; };
 		0AFADA83231A404100D5B2C4 /* ScreenBeforeFlutter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFADA82231A404100D5B2C4 /* ScreenBeforeFlutter.swift */; };
 		0AFADA86231A5E5A00D5B2C4 /* AppLifecycleUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFADA85231A5E5A00D5B2C4 /* AppLifecycleUITests.swift */; };
 		0AFADA89231A803E00D5B2C4 /* AppLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFADA88231A803E00D5B2C4 /* AppLifecycleTests.swift */; };
@@ -87,6 +88,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0A1650EB231FA0ED001B895D /* Util.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Util.swift; sourceTree = "<group>"; };
 		0AFADA81231A404100D5B2C4 /* Scenarios-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Scenarios-Bridging-Header.h"; sourceTree = "<group>"; };
 		0AFADA82231A404100D5B2C4 /* ScreenBeforeFlutter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenBeforeFlutter.swift; sourceTree = "<group>"; };
 		0AFADA84231A5E5A00D5B2C4 /* ScenariosUITests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ScenariosUITests-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -178,6 +180,7 @@
 				248D76D922E388380012F0C1 /* main.m */,
 				0AFADA82231A404100D5B2C4 /* ScreenBeforeFlutter.swift */,
 				0AFADA81231A404100D5B2C4 /* Scenarios-Bridging-Header.h */,
+				0A1650EB231FA0ED001B895D /* Util.swift */,
 			);
 			path = Scenarios;
 			sourceTree = "<group>";
@@ -357,6 +360,7 @@
 			files = (
 				248D76DA22E388380012F0C1 /* main.m in Sources */,
 				0AFADA83231A404100D5B2C4 /* ScreenBeforeFlutter.swift in Sources */,
+				0A1650EC231FA0ED001B895D /* Util.swift in Sources */,
 				24F1FB89230B4579005ACE7C /* TextPlatformView.m in Sources */,
 				248D76CC22E388370012F0C1 /* AppDelegate.m in Sources */,
 			);
