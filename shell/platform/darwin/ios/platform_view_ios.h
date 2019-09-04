@@ -26,20 +26,27 @@ namespace flutter {
 
 class PlatformViewIOS final : public PlatformView {
  public:
-  explicit PlatformViewIOS(PlatformView::Delegate& delegate, flutter::TaskRunners task_runners);
+  explicit PlatformViewIOS(PlatformView::Delegate& delegate,
+                           flutter::TaskRunners task_runners);
 
   ~PlatformViewIOS() override;
 
   PlatformMessageRouter& GetPlatformMessageRouter();
 
   fml::WeakPtr<FlutterViewController> GetOwnerViewController() const;
-  void SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller);
+  void SetOwnerViewController(
+      fml::WeakPtr<FlutterViewController> owner_controller);
 
   void RegisterExternalTexture(int64_t id, NSObject<FlutterTexture>* texture);
 
+  std::unique_ptr<PointerDataDispatcher> MakePointerDataDispatcher(
+      Animator& animator,
+      RuntimeController& controller) override;
+
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> GetTextInputPlugin() const;
 
-  void SetTextInputPlugin(fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin);
+  void SetTextInputPlugin(
+      fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin);
 
   // |PlatformView|
   void SetSemanticsEnabled(bool enabled) override;
@@ -54,7 +61,8 @@ class PlatformViewIOS final : public PlatformView {
   fml::closure firstFrameCallback_;
 
   // |PlatformView|
-  void HandlePlatformMessage(fml::RefPtr<flutter::PlatformMessage> message) override;
+  void HandlePlatformMessage(
+      fml::RefPtr<flutter::PlatformMessage> message) override;
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
@@ -66,8 +74,9 @@ class PlatformViewIOS final : public PlatformView {
   void SetAccessibilityFeatures(int32_t flags) override;
 
   // |PlatformView|
-  void UpdateSemantics(flutter::SemanticsNodeUpdates update,
-                       flutter::CustomAccessibilityActionUpdates actions) override;
+  void UpdateSemantics(
+      flutter::SemanticsNodeUpdates update,
+      flutter::CustomAccessibilityActionUpdates actions) override;
 
   // |PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;

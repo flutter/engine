@@ -88,6 +88,12 @@ sk_sp<GrContext> PlatformView::CreateResourceContext() const {
 
 void PlatformView::ReleaseResourceContext() const {}
 
+std::unique_ptr<PointerDataDispatcher> PlatformView::MakePointerDataDispatcher(
+    Animator& animator,
+    RuntimeController& controller) {
+  return std::make_unique<DefaultPointerDataDispatcher>(animator, controller);
+}
+
 fml::WeakPtr<PlatformView> PlatformView::GetWeakPtr() const {
   return weak_factory_.GetWeakPtr();
 }

@@ -110,6 +110,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
       fml::MakeCopyable([&ui_latch,                                       //
                          &engine,                                         //
                          shell = shell.get(),                             //
+                         &platform_view,                                  //
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          shared_snapshot = std::move(shared_snapshot),    //
                          vsync_waiter = std::move(vsync_waiter),          //
@@ -123,7 +124,10 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
         auto animator = std::make_unique<Animator>(*shell, task_runners,
                                                    std::move(vsync_waiter));
 
+        // Send in platform_view here because shell won't have platform_view set
+        // until Shell::Setup is called later.
         engine = std::make_unique<Engine>(*shell,                       //
+                                          *platform_view,               //
                                           *shell->GetDartVM(),          //
                                           std::move(isolate_snapshot),  //
                                           std::move(shared_snapshot),   //

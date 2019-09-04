@@ -309,6 +309,14 @@ std::unique_ptr<Surface> ShellTestPlatformView::CreateRenderingSurface() {
   return std::make_unique<GPUSurfaceGL>(this, true);
 }
 
+// |PlatformView|
+std::unique_ptr<PointerDataDispatcher>
+ShellTestPlatformView::MakePointerDataDispatcher(
+    Animator& animator,
+    RuntimeController& controller) {
+  return std::make_unique<IosPointerDataDispatcher>(animator, controller);
+}
+
 // |GPUSurfaceGLDelegate|
 bool ShellTestPlatformView::GLContextMakeCurrent() {
   return gl_surface_.MakeCurrent();

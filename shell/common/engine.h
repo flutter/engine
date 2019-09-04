@@ -22,6 +22,8 @@
 #include "flutter/runtime/runtime_controller.h"
 #include "flutter/runtime/runtime_delegate.h"
 #include "flutter/shell/common/animator.h"
+#include "flutter/shell/common/platform_view.h"
+#include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell_io_manager.h"
@@ -234,6 +236,9 @@ class Engine final : public RuntimeDelegate {
   ///                                tasks that require access to components
   ///                                that cannot be safely accessed by the
   ///                                engine. This is the shell.
+  /// @param      platform_view      The object used by engine to create the
+  ///                                pointer data dispatcher through
+  ///                                `PlatformView::MakePointerDataDispatcher`.
   /// @param      vm                 An instance of the running Dart VM.
   /// @param[in]  isolate_snapshot   The snapshot used to create the root
   ///                                isolate. Even though the isolate is not
@@ -265,6 +270,7 @@ class Engine final : public RuntimeDelegate {
   ///                                GPU.
   ///
   Engine(Delegate& delegate,
+         PlatformView& platform_view,
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
          fml::RefPtr<const DartSnapshot> shared_snapshot,
@@ -705,6 +711,7 @@ class Engine final : public RuntimeDelegate {
   const Settings settings_;
   std::unique_ptr<Animator> animator_;
   std::unique_ptr<RuntimeController> runtime_controller_;
+  std::unique_ptr<PointerDataDispatcher> pointer_data_dispatcher_;
   std::string initial_route_;
   ViewportMetrics viewport_metrics_;
   std::shared_ptr<AssetManager> asset_manager_;
@@ -713,21 +720,6 @@ class Engine final : public RuntimeDelegate {
   FontCollection font_collection_;
   ImageDecoder image_decoder_;
   fml::WeakPtrFactory<Engine> weak_factory_;
-
-// iOS-only fix for https://github.com/flutter/flutter/issues/31086.
-// We enable such fix on OS_MACOSX and OS_LINUX for host-side unit tests.
-#if defined(OS_IOS) || defined(OS_MACOSX) || defined(OS_LINUX)
-#define ENABLE_IRREGULAR_INPUT_DELIVERY_FIX
-  // If non-null, this will be a pending pointer data packet for the next frame
-  // to consume. This is used to smooth out the irregular drag events delivery.
-  // See also `DispatchPointerDataPacket` and input_events_unittests.cc.
-  std::unique_ptr<PointerDataPacket> pending_packet_;
-  int pending_trace_flow_id_ = -1;
-
-  bool is_pointer_data_in_progress_ = false;
-
-  void ApplyPendingPacket();
-#endif
 
   // |RuntimeDelegate|
   std::string DefaultRouteName() override;

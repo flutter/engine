@@ -8,9 +8,6 @@
 namespace flutter {
 namespace testing {
 
-// The following tests would only pass with ENABLE_IRREGULAR_INPUT_DELIVERY_FIX.
-#ifdef ENABLE_IRREGULAR_INPUT_DELIVERY_FIX
-
 using Generator = std::function<int(int)>;
 
 TEST_F(ShellTest, MissAtMostOneFrameForIrregularInputEvents) {
@@ -114,8 +111,6 @@ TEST_F(ShellTest, HandlesActualIphoneXsInputEvents) {
     ASSERT_GE(frame_drawn, n - 1);
   }
 }
-
-#endif  // OS_MACOXS || OS_LINUX
 
 }  // namespace testing
 }  // namespace flutter

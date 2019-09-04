@@ -16,6 +16,7 @@
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
+#include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/surface.h"
 #include "flutter/shell/common/vsync_waiter.h"
 #include "third_party/skia/include/core/SkSize.h"
@@ -417,6 +418,20 @@ class PlatformView {
   ///             called on IO task runner.
   ///
   virtual void ReleaseResourceContext() const;
+
+  //--------------------------------------------------------------------------
+  /// @brief      Used by the shell to make a `PointerDataDispatcher` for the
+  ///             engine. By default, the packet is directly passed to the
+  ///             animator and the runtime controller. For iOS (and related unit
+  ///             tests), a special `IosDataPointerDispatcher` is made to reduce
+  ///             jank caused by the irregular input events delivery.
+  ///
+  /// @param[in]  animator    the animator of this engine
+  /// @param[in]  controller  the runtime controller of this engine
+  ///
+  virtual std::unique_ptr<PointerDataDispatcher> MakePointerDataDispatcher(
+      Animator& animator,
+      RuntimeController& controller);
 
   //----------------------------------------------------------------------------
   /// @brief      Returns a weak pointer to the platform view. Since the
