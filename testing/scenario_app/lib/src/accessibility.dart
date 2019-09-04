@@ -18,6 +18,25 @@ class AccessibilityScenario extends Scenario {
 
   @override
   void onBeginFrame(Duration duration) {
+    final SceneBuilder sceneBuilder = SceneBuilder();
+    sceneBuilder.pushOffset(0, 0);
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawCircle(const Offset(50, 50), 50, Paint()..color = const Color(0xFFABCDEF));
+    final Picture picture = recorder.endRecording();
+    sceneBuilder.addPicture(const Offset(300, 300), picture);
+
+    final Scene scene = sceneBuilder.build();
+    window.render(scene);
+    scene.dispose();
+
+    final Float64List identityMatrix = Float64List(16);
+    identityMatrix[0] = 1;
+    identityMatrix[5] = 1;
+    identityMatrix[10] = 1;
+    identityMatrix[15] = 1;
+
+
     final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder();
     print(window.physicalSize.width);
     print(window.physicalSize.height);
@@ -31,6 +50,8 @@ class AccessibilityScenario extends Scenario {
       ),
       childrenInTraversalOrder: Int32List.fromList(<int>[1, 2]),
       childrenInHitTestOrder: Int32List.fromList(<int>[1, 2]),
+      transform: identityMatrix,
+      platformViewId: -1,
     );
 
      builder.updateNode(
@@ -43,6 +64,8 @@ class AccessibilityScenario extends Scenario {
       ),
       childrenInTraversalOrder: Int32List.fromList(<int>[3, 4]),
       childrenInHitTestOrder: Int32List.fromList(<int>[3, 4]),
+      transform: identityMatrix,
+      platformViewId: -1,
     );
 
     builder.updateNode(
@@ -55,6 +78,8 @@ class AccessibilityScenario extends Scenario {
       ),
       label: 'item2 label',
       value: 'item2 value',
+      transform: identityMatrix,
+      platformViewId: -1,
     );
 
     builder.updateNode(
@@ -67,6 +92,8 @@ class AccessibilityScenario extends Scenario {
       ),
       label: 'item3 label',
       value: 'item3 value',
+      transform: identityMatrix,
+      platformViewId: -1,
     );
 
     builder.updateNode(
@@ -79,8 +106,9 @@ class AccessibilityScenario extends Scenario {
       ),
       label: 'item4 label',
       value: 'item4 value',
+      transform: identityMatrix,
+      platformViewId: -1,
     );
-
     final SemanticsUpdate update = builder.build();
     window.updateSemantics(update);
     update.dispose();

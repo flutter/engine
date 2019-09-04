@@ -590,6 +590,7 @@ UIView<UITextInput>* AccessibilityBridge::textInputView() {
 
 void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
                                           flutter::CustomAccessibilityActionUpdates actions) {
+  NSLog(@"update semantics");
   BOOL layoutChanged = NO;
   BOOL scrollOccured = NO;
   for (const auto& entry : actions) {

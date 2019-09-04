@@ -19,26 +19,26 @@
 
   // This argument is used by the XCUITest for Platform Views so that the app
   // under test will create platform views.
-  if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--platform-view"]) {
-    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"PlatformViewTest" project:nil];
-    [engine runWithEntrypoint:nil];
-
-    FlutterViewController* flutterViewController =
-        [[NoStatusBarFlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    [engine.binaryMessenger
-        setMessageHandlerOnChannel:@"scenario_status"
-              binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
-                [engine.binaryMessenger
-                    sendOnChannel:@"set_scenario"
-                          message:[@"text_platform_view" dataUsingEncoding:NSUTF8StringEncoding]];
-              }];
-    TextPlatformViewFactory* textPlatformViewFactory =
-        [[TextPlatformViewFactory alloc] initWithMessenger:flutterViewController.binaryMessenger];
-    NSObject<FlutterPluginRegistrar>* registrar =
-        [flutterViewController.engine registrarForPlugin:@"scenarios/TextPlatformViewPlugin"];
-    [registrar registerViewFactory:textPlatformViewFactory withId:@"scenarios/textPlatformView"];
-    self.window.rootViewController = flutterViewController;
-  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--accessibility"]) {
+//  if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--platform-view"]) {
+//    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"PlatformViewTest" project:nil];
+//    [engine runWithEntrypoint:nil];
+//
+//    FlutterViewController* flutterViewController =
+//        [[NoStatusBarFlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+//    [engine.binaryMessenger
+//        setMessageHandlerOnChannel:@"scenario_status"
+//              binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
+//                [engine.binaryMessenger
+//                    sendOnChannel:@"set_scenario"
+//                          message:[@"text_platform_view" dataUsingEncoding:NSUTF8StringEncoding]];
+//              }];
+//    TextPlatformViewFactory* textPlatformViewFactory =
+//        [[TextPlatformViewFactory alloc] initWithMessenger:flutterViewController.binaryMessenger];
+//    NSObject<FlutterPluginRegistrar>* registrar =
+//        [flutterViewController.engine registrarForPlugin:@"scenarios/TextPlatformViewPlugin"];
+//    [registrar registerViewFactory:textPlatformViewFactory withId:@"scenarios/textPlatformView"];
+//    self.window.rootViewController = flutterViewController;
+//  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--accessibility"]) {
     FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"AccessibilityTest" project:nil];
     [engine runWithEntrypoint:nil];
 
@@ -51,10 +51,17 @@
         sendOnChannel:@"set_scenario"
         message:[@"accessibility" dataUsingEncoding:NSUTF8StringEncoding]];
      }];
+    [engine ensureSemanticsEnabled];
+//    UIAccessibilityElement *element = [[UIAccessibilityElement alloc] initWithAccessibilityContainer: flutterViewController.view];
+//    element.accessibilityValue = @"a11y item";
+//    element.accessibilityFrame = CGRectMake(0, 0, 100, 100);
+//    flutterViewController.view.accessibilityElements = @[element];
+
     self.window.rootViewController = flutterViewController;
-  } else {
-    self.window.rootViewController = [[UIViewController alloc] init];
-  }
+
+//  } else {
+//    self.window.rootViewController = [[UIViewController alloc] init];
+//  }
   [self.window makeKeyAndVisible];
 
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
