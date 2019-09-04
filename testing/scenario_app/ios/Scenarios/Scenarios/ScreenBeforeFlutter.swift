@@ -34,10 +34,13 @@ class ScreenBeforeFlutter: UIViewController {
     engine.run(withEntrypoint: nil)
   }
 
-  @objc func showFlutter() {
+  @objc func showFlutter() -> FlutterViewController {
+    let flutterVC: FlutterViewController =
+        FlutterViewController(engine: engine, nibName: nil, bundle: nil)
     present(
-      FlutterViewController(engine: engine, nibName: nil, bundle: nil),
+      flutterVC,
       animated: false,
       completion: nil)
+    return flutterVC
   }
 }

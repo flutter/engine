@@ -28,7 +28,7 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
 
     canvas.drawRect(
       Rect.fromLTWH(0, 0, window.physicalSize.width - 1, window.physicalSize.height - 1),
-      Paint()..color = const Color.fromARGB(255, 0, 0, 0),
+      Paint()..color = const Color.fromARGB(255, 255, 255, 255),
     );
 
     if (_buttonRect != null) {
@@ -39,6 +39,7 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
     }
     final Picture picture = recorder.endRecording();
 
+    builder.pushOffset(0, 0);
     builder.addPicture(Offset.zero, picture);
     final Scene scene = builder.build();
     window.render(scene);
@@ -53,9 +54,9 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
   @override
   void onMetricsChanged() {
     _buttonRect = Rect.fromLTRB(
-      window.physicalSize.width / 3,
+      window.physicalSize.width / 4,
       window.physicalSize.height * 2 / 5,
-      window.physicalSize.width * 2 / 3,
+      window.physicalSize.width * 3 / 4,
       window.physicalSize.height * 3 / 5,
     );
   }
@@ -64,7 +65,7 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
   void onPointerDataPacket(PointerDataPacket packet) {
     for (PointerData data in packet.data) {
       if (data.change == PointerChange.up &&
-          _buttonRect.contains(Offset(data.physicalX, data.physicalY))
+          _buttonRect?.contains(Offset(data.physicalX, data.physicalY)) == true
       ) {
         _pop();
       }

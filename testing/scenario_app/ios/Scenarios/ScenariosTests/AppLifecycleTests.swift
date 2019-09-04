@@ -33,9 +33,9 @@ class AppLifecycleTests: XCTestCase {
     expectations.append(XCTestExpectation(
       description: "A loading FlutterViewController goes through AppLifecycleState.resumed"))
     
-    rootVC.showFlutter()
+    let flutterVC = rootVC.showFlutter()
     
-    wait(for: expectations, timeout: 30, enforceOrder: true)
+    wait(for: expectations, timeout: 5, enforceOrder: true)
     XCTAssertEqual(lifecycleEvents, ["AppLifecycleState.inactive", "AppLifecycleState.resumed"])
   }
 }
