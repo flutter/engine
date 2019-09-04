@@ -32,7 +32,6 @@ class IOSGLContext {
   std::shared_ptr<IOSGLContext> MakeSharedContext();
 
  private:
-
   fml::scoped_nsobject<EAGLContext> context_;
   sk_sp<SkColorSpace> color_space_;
 
