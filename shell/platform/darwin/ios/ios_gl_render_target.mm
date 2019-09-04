@@ -15,16 +15,16 @@ IOSGLRenderTarget::IOSGLRenderTarget(fml::scoped_nsobject<CAEAGLLayer> layer,
                                      std::shared_ptr<IOSGLContext> onscreen_context,
                                      std::shared_ptr<IOSGLContext> resource_context)
     : layer_(std::move(layer)),
-      onscreen_context_(onscreen_context.get()),
-      resource_context_(resource_context.get()),
+      onscreen_context_(std::move(onscreen_context)),
+      resource_context_(std::move(resource_context)),
       framebuffer_(GL_NONE),
       colorbuffer_(GL_NONE),
       storage_size_width_(0),
       storage_size_height_(0),
       valid_(false) {
   FML_DCHECK(layer_ != nullptr);
-  FML_DCHECK(onscreen_context_ != nullptr);
-  FML_DCHECK(resource_context_ != nullptr);
+  FML_DCHECK(onscreen_context_);
+  FML_DCHECK(resource_context_);
 
   bool context_current = onscreen_context_->MakeCurrent();
 

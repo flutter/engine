@@ -75,6 +75,8 @@ class PlatformViewIOS final : public PlatformView {
   // |PlatformView|
   void OnPreEngineRestart() const override;
 
+  void NotifyDestroyed() override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewIOS);
 };
 

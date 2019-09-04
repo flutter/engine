@@ -56,7 +56,7 @@ bool IOSGLContext::MakeCurrent() {
 }
 
 std::shared_ptr<IOSGLContext> IOSGLContext::MakeSharedContext() {
-  return std::shared_ptr<IOSGLContext>(new IOSGLContext(context_.get().sharegroup));
+  return std::make_shared<IOSGLContext>(context_.get().sharegroup);
 }
 
 }  // namespace flutter

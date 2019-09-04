@@ -46,7 +46,7 @@ std::shared_ptr<flutter::IOSGLContext> _onscreenContext;
 }
 
 - (void)dealloc {
-  _onscreenContext = nullptr;
+  _onscreenContext.reset();
   [super dealloc];
 }
 
@@ -103,7 +103,9 @@ std::shared_ptr<flutter::IOSGLContext> _onscreenContext;
 - (std::unique_ptr<flutter::IOSSurface>)createSurface:
     (std::shared_ptr<flutter::IOSGLContext>)resourceContext {
 #if !TARGET_IPHONE_SIMULATOR
-  _onscreenContext = resourceContext->MakeSharedContext();
+  if (!_onscreenContext) {
+    _onscreenContext = resourceContext->MakeSharedContext();
+  }
 #endif  // !TARGET_IPHONE_SIMULATOR
 
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
@@ -116,7 +118,7 @@ std::shared_ptr<flutter::IOSGLContext> _onscreenContext;
         eagl_layer.get().presentsWithTransaction = YES;
       }
     }
-    return std::make_unique<flutter::IOSSurfaceGL>(_onscreenContext, resourceContext,
+    return std::make_unique<flutter::IOSSurfaceGL>(_onscreenContext, std::move(resourceContext),
                                                    std::move(eagl_layer),
                                                    [_delegate platformViewsController]);
 #if FLUTTER_SHELL_ENABLE_METAL

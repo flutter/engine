@@ -42,10 +42,13 @@ fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() co
   return owner_controller_;
 }
 
+void PlatformViewIOS::NotifyDestroyed() {
+  PlatformView::NotifyDestroyed();
+  ios_surface_.reset();
+}
 void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller) {
   if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
-    ios_surface_.reset();
     accessibility_bridge_.reset();
   }
   owner_controller_ = owner_controller;

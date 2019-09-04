@@ -19,6 +19,7 @@ namespace flutter {
 class IOSGLContext {
  public:
   IOSGLContext();
+  IOSGLContext(EAGLSharegroup* sharegroup);
 
   ~IOSGLContext();
 
@@ -31,7 +32,6 @@ class IOSGLContext {
   std::shared_ptr<IOSGLContext> MakeSharedContext();
 
  private:
-  IOSGLContext(EAGLSharegroup* sharegroup);
 
   fml::scoped_nsobject<EAGLContext> context_;
   sk_sp<SkColorSpace> color_space_;
