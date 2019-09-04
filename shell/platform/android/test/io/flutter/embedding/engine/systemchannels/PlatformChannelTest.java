@@ -126,11 +126,6 @@ public class PlatformChannelTest {
         platformChannel.setPlatformMessageHandler(platformMessageHandler);
         Result result = mock(Result.class);
 
-        int top = 0;
-        int right = 500;
-        int bottom = 250;
-        int left = 0;
-
         JSONObject jsonRect = new JSONObject();
         jsonRect.put("top", 0);
         jsonRect.put("right", 500);
@@ -140,7 +135,7 @@ public class PlatformChannelTest {
         jsonExclusionRectsFromPlatform.put(jsonRect);
 
         ArrayList<Rect> expectedDecodedRects = new ArrayList<Rect>();
-        Rect gestureRect = new Rect(left, top, right, bottom);
+        Rect gestureRect = new Rect(0, 0, 500, 250);
         expectedDecodedRects.add(gestureRect);
 
         MethodCall callSetSystemGestureExclusionRects = new MethodCall(
@@ -191,13 +186,10 @@ public class PlatformChannelTest {
         platformChannel.setPlatformMessageHandler(platformMessageHandler);
         Result result = mock(Result.class);
 
-        int top = 0;
-        int right = 500;
-
         // Add key/value pairs that aren't needed by exclusion rects to simulate incorrect JSON shape
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("arg1", top);
-        jsonObject.put("arg2", right);
+        jsonObject.put("arg1", 0);
+        jsonObject.put("arg2", 500);
         JSONArray inputArray = new JSONArray();
         inputArray.put(jsonObject);
 
