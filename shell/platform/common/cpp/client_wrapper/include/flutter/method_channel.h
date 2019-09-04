@@ -48,7 +48,7 @@ class MethodChannel {
     MethodCall<T> method_call(method, std::move(arguments));
     std::unique_ptr<std::vector<uint8_t>> message =
         codec_->EncodeMethodCall(method_call);
-    messenger_->Send(name_, message->data(), message->size());
+    messenger_->Send(name_, message->data(), message->size(), nullptr);
   }
 
   // Sends a message to the Flutter engine on this channel expecting a reply.
