@@ -27,6 +27,7 @@
 		24D47D1B230C79840069DD5E /* golden_platform_view_D211AP.png in Resources */ = {isa = PBXBuildFile; fileRef = 24D47D1A230C79840069DD5E /* golden_platform_view_D211AP.png */; };
 		24D47D1D230CA2700069DD5E /* golden_platform_view_iPhone SE_simulator.png in Resources */ = {isa = PBXBuildFile; fileRef = 24D47D1C230CA2700069DD5E /* golden_platform_view_iPhone SE_simulator.png */; };
 		24F1FB89230B4579005ACE7C /* TextPlatformView.m in Sources */ = {isa = PBXBuildFile; fileRef = 24F1FB87230B4579005ACE7C /* TextPlatformView.m */; };
+		68A1B94A231F746100A3C10F /* AccessibilityUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = 68A1B949231F746100A3C10F /* AccessibilityUITests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -105,6 +106,7 @@
 		24D47D1E230CA4480069DD5E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		24F1FB87230B4579005ACE7C /* TextPlatformView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TextPlatformView.m; sourceTree = "<group>"; };
 		24F1FB88230B4579005ACE7C /* TextPlatformView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TextPlatformView.h; sourceTree = "<group>"; };
+		68A1B949231F746100A3C10F /* AccessibilityUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AccessibilityUITests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -190,6 +192,7 @@
 				248D76EE22E388380012F0C1 /* PlatformViewUITests.m */,
 				248D76F022E388380012F0C1 /* Info.plist */,
 				24D47D1E230CA4480069DD5E /* README.md */,
+				68A1B949231F746100A3C10F /* AccessibilityUITests.m */,
 			);
 			path = ScenariosUITests;
 			sourceTree = "<group>";
@@ -356,6 +359,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				68A1B94A231F746100A3C10F /* AccessibilityUITests.m in Sources */,
 				248D76EF22E388380012F0C1 /* PlatformViewUITests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

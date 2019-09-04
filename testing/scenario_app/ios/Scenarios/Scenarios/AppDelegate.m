@@ -38,6 +38,20 @@
         [flutterViewController.engine registrarForPlugin:@"scenarios/TextPlatformViewPlugin"];
     [registrar registerViewFactory:textPlatformViewFactory withId:@"scenarios/textPlatformView"];
     self.window.rootViewController = flutterViewController;
+  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--accessibility"]) {
+    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"AccessibilityTest" project:nil];
+    [engine runWithEntrypoint:nil];
+
+    FlutterViewController* flutterViewController =
+    [[NoStatusBarFlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+    [engine.binaryMessenger
+     setMessageHandlerOnChannel:@"scenario_status"
+     binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
+       [engine.binaryMessenger
+        sendOnChannel:@"set_scenario"
+        message:[@"accessibility" dataUsingEncoding:NSUTF8StringEncoding]];
+     }];
+    self.window.rootViewController = flutterViewController;
   } else {
     self.window.rootViewController = [[UIViewController alloc] init];
   }

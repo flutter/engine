@@ -9,6 +9,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'src/accessibility.dart';
 import 'src/animated_color_square.dart';
 import 'src/platform_view.dart';
 import 'src/scenario.dart';
@@ -16,9 +17,10 @@ import 'src/scenario.dart';
 Map<String, Scenario> _scenarios = <String, Scenario>{
   'animated_color_square': AnimatedColorSquareScenario(window),
   'text_platform_view': PlatformViewScenario(window, 'Hello from Scenarios (Platform View)'),
+  'accessibility': AccessibilityScenario(window),
 };
 
-Scenario _currentScenario = _scenarios['animated_color_square'];
+Scenario _currentScenario = _scenarios['accessibility'];
 
 void main() {
   window
