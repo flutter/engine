@@ -14,9 +14,9 @@
 #include "FlutterPlugin.h"
 #include "FlutterTexture.h"
 
-NS_ASSUME_NONNULL_BEGIN
-
 @class FlutterViewController;
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  * The FlutterEngine class coordinates a single instance of execution for a
@@ -58,10 +58,10 @@ FLUTTER_EXPORT
  * @param labelPrefix The label prefix used to identify threads for this instance. Should
  *   be unique across FlutterEngine instances, and is used in instrumentation to label
  *   the threads used by this FlutterEngine.
- * @param projectOrNil The `FlutterDartProject` to run.
+ * @param project The `FlutterDartProject` to run.
  */
 - (instancetype)initWithName:(NSString*)labelPrefix
-                     project:(nullable FlutterDartProject*)projectOrNil;
+                     project:(nullable FlutterDartProject*)project;
 
 /**
  * Initialize this FlutterEngine with a `FlutterDartProject`.
@@ -76,21 +76,21 @@ FLUTTER_EXPORT
  * @param labelPrefix The label prefix used to identify threads for this instance. Should
  *   be unique across FlutterEngine instances, and is used in instrumentation to label
  *   the threads used by this FlutterEngine.
- * @param projectOrNil The `FlutterDartProject` to run.
+ * @param project The `FlutterDartProject` to run.
  * @param allowHeadlessExecution Whether or not to allow this instance to continue
  *   running after passing a nil `FlutterViewController` to `-setViewController:`.
  */
 - (instancetype)initWithName:(NSString*)labelPrefix
-                     project:(nullable FlutterDartProject*)projectOrNil
+                     project:(nullable FlutterDartProject*)project
       allowHeadlessExecution:(BOOL)allowHeadlessExecution NS_DESIGNATED_INITIALIZER;
 
 /**
  * The default initializer is not available for this object.
  * Callers must use `-[FlutterEngine initWithName:project:]`.
  */
-- (nullable instancetype)init NS_UNAVAILABLE;
+- (instancetype)init NS_UNAVAILABLE;
 
-+ (nullable instancetype)new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 /**
  * Runs a Dart program on an Isolate from the main Dart library (i.e. the library that
@@ -175,7 +175,7 @@ FLUTTER_EXPORT
  * it will signal the engine to stop animations and drawing.  However, neither will impact the state
  * of the Dart program's execution.
  */
-@property(nonatomic, weak, nullable) FlutterViewController* viewController;
+@property(nonatomic, weak) FlutterViewController* viewController;
 
 /**
  * The `FlutterMethodChannel` used for localization related platform messages, such as
