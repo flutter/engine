@@ -8,6 +8,8 @@ import 'dart:ui';
 import 'scenario.dart';
 
 /// Regular Accessibility Scenario.
+///
+/// Builds an accessibility tree with element traversal order as 1, 3, 4, 2.
 class AccessibilityScenario extends Scenario {
   /// Creates the Accessibility scenario.
   ///
@@ -48,6 +50,8 @@ class AccessibilityScenario extends Scenario {
         300,
         400,
       ),
+      label: 'item0 label',
+      value: 'item0 value',
       childrenInTraversalOrder: Int32List.fromList(<int>[1, 2]),
       childrenInHitTestOrder: Int32List.fromList(<int>[1, 2]),
       transform: identityMatrix,
