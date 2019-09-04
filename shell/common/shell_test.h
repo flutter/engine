@@ -31,7 +31,6 @@ class ShellTest : public ThreadTest {
   std::unique_ptr<Shell> CreateShell(Settings settings);
   std::unique_ptr<Shell> CreateShell(Settings settings,
                                      TaskRunners task_runners);
-
   TaskRunners GetTaskRunnersForFixture();
 
   void SendEnginePlatformMessage(Shell* shell,

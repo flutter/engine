@@ -34,18 +34,15 @@ PlatformMessageRouter& PlatformViewIOS::GetPlatformMessageRouter() {
 }
 
 // |PlatformView|
-void PlatformViewIOS::HandlePlatformMessage(
-    fml::RefPtr<flutter::PlatformMessage> message) {
+void PlatformViewIOS::HandlePlatformMessage(fml::RefPtr<flutter::PlatformMessage> message) {
   platform_message_router_.HandlePlatformMessage(std::move(message));
 }
 
-fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController()
-    const {
+fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() const {
   return owner_controller_;
 }
 
-void PlatformViewIOS::SetOwnerViewController(
-    fml::WeakPtr<FlutterViewController> owner_controller) {
+void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller) {
   if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
     ios_surface_.reset();
@@ -53,14 +50,14 @@ void PlatformViewIOS::SetOwnerViewController(
   }
   owner_controller_ = owner_controller;
   if (owner_controller_) {
-    ios_surface_ = [static_cast<FlutterView*>(owner_controller.get().view)
-        createSurface:gl_context_];
+    ios_surface_ =
+        [static_cast<FlutterView*>(owner_controller.get().view) createSurface:gl_context_];
     FML_DCHECK(ios_surface_ != nullptr);
 
     if (accessibility_bridge_) {
-      accessibility_bridge_.reset(new AccessibilityBridge(
-          static_cast<FlutterView*>(owner_controller_.get().view), this,
-          [owner_controller.get() platformViewsController]));
+      accessibility_bridge_.reset(
+          new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
+                                  [owner_controller.get() platformViewsController]));
     }
     // Do not call `NotifyCreated()` here - let FlutterViewController take care
     // of that when its Viewport is sized.  If `NotifyCreated()` is called here,
@@ -69,15 +66,14 @@ void PlatformViewIOS::SetOwnerViewController(
   }
 }
 
-std::unique_ptr<PointerDataDispatcher>
-PlatformViewIOS::MakePointerDataDispatcher(Animator& animator,
-                                           RuntimeController& controller) {
+std::unique_ptr<PointerDataDispatcher> PlatformViewIOS::MakePointerDataDispatcher(
+    Animator& animator,
+    RuntimeController& controller) {
   return std::make_unique<IosPointerDataDispatcher>(animator, controller);
 }
 
-void PlatformViewIOS::RegisterExternalTexture(
-    int64_t texture_id,
-    NSObject<FlutterTexture>* texture) {
+void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
+                                              NSObject<FlutterTexture>* texture) {
   RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
 }
 
@@ -101,8 +97,7 @@ sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
   }
 
   return ShellIOManager::CreateCompatibleResourceLoadingContext(
-      GrBackend::kOpenGL_GrBackend,
-      GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface());
+      GrBackend::kOpenGL_GrBackend, GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface());
 }
 
 // |PlatformView|
@@ -128,16 +123,13 @@ void PlatformViewIOS::SetAccessibilityFeatures(int32_t flags) {
 }
 
 // |PlatformView|
-void PlatformViewIOS::UpdateSemantics(
-    flutter::SemanticsNodeUpdates update,
-    flutter::CustomAccessibilityActionUpdates actions) {
+void PlatformViewIOS::UpdateSemantics(flutter::SemanticsNodeUpdates update,
+                                      flutter::CustomAccessibilityActionUpdates actions) {
   FML_DCHECK(owner_controller_);
   if (accessibility_bridge_) {
-    accessibility_bridge_->UpdateSemantics(std::move(update),
-                                           std::move(actions));
-    [[NSNotificationCenter defaultCenter]
-        postNotificationName:FlutterSemanticsUpdateNotification
-                      object:owner_controller_.get()];
+    accessibility_bridge_->UpdateSemantics(std::move(update), std::move(actions));
+    [[NSNotificationCenter defaultCenter] postNotificationName:FlutterSemanticsUpdateNotification
+                                                        object:owner_controller_.get()];
   }
 }
 
@@ -156,13 +148,11 @@ void PlatformViewIOS::OnPreEngineRestart() const {
   [owner_controller_.get() platformViewsController] -> Reset();
 }
 
-fml::scoped_nsprotocol<FlutterTextInputPlugin*>
-PlatformViewIOS::GetTextInputPlugin() const {
+fml::scoped_nsprotocol<FlutterTextInputPlugin*> PlatformViewIOS::GetTextInputPlugin() const {
   return text_input_plugin_;
 }
 
-void PlatformViewIOS::SetTextInputPlugin(
-    fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin) {
+void PlatformViewIOS::SetTextInputPlugin(fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin) {
   text_input_plugin_ = plugin;
 }
 

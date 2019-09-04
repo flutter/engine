@@ -483,15 +483,4 @@ void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {
   response->CompleteEmpty();
 }
 
-#ifdef ENABLE_IRREGULAR_INPUT_DELIVERY_FIX
-void Engine::ApplyPendingPacket() {
-  FML_DCHECK(pending_packet_ != nullptr);
-  FML_DCHECK(is_pointer_data_in_progress_);
-  animator_->EnqueueTraceFlowId(pending_trace_flow_id_);
-  runtime_controller_->DispatchPointerDataPacket(*pending_packet_);
-  pending_packet_ = nullptr;
-  pending_trace_flow_id_ = -1;
-}
-#endif
-
 }  // namespace flutter

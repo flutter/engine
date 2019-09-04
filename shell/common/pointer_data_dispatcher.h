@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef POINTER_DATA_FILTER_H_
-#define POINTER_DATA_FILTER_H_
+#ifndef POINTER_DATA_DISPATCHER_H_
+#define POINTER_DATA_DISPATCHER_H_
 
 #include "flutter/runtime/runtime_controller.h"
 #include "flutter/shell/common/animator.h"
@@ -61,4 +61,4 @@ class IosPointerDataDispatcher : public DefaultPointerDataDispatcher {
 
 }  // namespace flutter
 
-#endif  // POINTER_DATA_FILTER_H_
+#endif  // POINTER_DATA_DISPATCHER_H_

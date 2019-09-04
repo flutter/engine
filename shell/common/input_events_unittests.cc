@@ -15,7 +15,7 @@ using Generator = std::function<int(int)>;
 //
 // Simulation results will be written into events_consumed_at_frame whose
 // length will be equal to the number of frames drawn. Each element in the
-// vector is the number of input events consumed in that frame. (We can't
+// vector is the number of input events consumed up to that frame. (We can't
 // return such vector because ASSERT_TRUE requires return type of void.)
 //
 // We assume (and check) that the delivery latency is some base latency plus a
@@ -115,11 +115,13 @@ static void TestSimulatedInputEvents(
 }
 
 TEST_F(ShellTest, MissAtMostOneFrameForIrregularInputEvents) {
-  constexpr int frame_time = 10;
-  constexpr int base_latency = 0.5 * frame_time;
-  Generator extreme = [](int i) {
-    return i * frame_time + base_latency +
-           (i % 2 == 0 ? 0.1 * frame_time : 0.9 * frame_time);
+  // We don't use `constexpr int frame_time` here because MSVC doesn't handle
+  // it well with lambda capture.
+  int frame_time = 10;
+  int base_latency = 0.5 * frame_time;
+  Generator extreme = [frame_time, base_latency](int i) {
+    return static_cast<int>(i * frame_time + base_latency +
+                            (i % 2 == 0 ? 0.1 * frame_time : 0.9 * frame_time));
   };
   constexpr int n = 40;
   std::vector<int> events_consumed_at_frame;
@@ -130,10 +132,12 @@ TEST_F(ShellTest, MissAtMostOneFrameForIrregularInputEvents) {
 }
 
 TEST_F(ShellTest, DelayAtMostOneEventForFasterThanVSyncInputEvents) {
-  constexpr int frame_time = 10;
-  constexpr int base_latency = 0.2 * frame_time;
-  Generator double_sampling = [](int i) {
-    return i * 0.5 * frame_time + base_latency;
+  // We don't use `constexpr int frame_time` here because MSVC doesn't handle
+  // it well with lambda capture.
+  int frame_time = 10;
+  int base_latency = 0.2 * frame_time;
+  Generator double_sampling = [frame_time, base_latency](int i) {
+    return static_cast<int>(i * 0.5 * frame_time + base_latency);
   };
   constexpr int n = 40;
   std::vector<int> events_consumed_at_frame;
@@ -200,12 +204,15 @@ TEST_F(ShellTest, HandlesActualIphoneXsInputEvents) {
                                          44.070131835937495,
                                          45.08862304687499,
                                          46.091469726562494};
-  // Everything is converted to int to avoid floating point error in
-  // TestSimulatedInputEvents.
-  constexpr int frame_time = 10000;
+  // We don't use `constexpr int frame_time` here because MSVC doesn't handle
+  // it well with lambda capture.
+  int frame_time = 10000;
   for (double base_latency_f = 0; base_latency_f < 1; base_latency_f += 0.1) {
+    // Everything is converted to int to avoid floating point error in
+    // TestSimulatedInputEvents.
     int base_latency = static_cast<int>(base_latency_f * frame_time);
-    Generator iphone_xs_generator = [iphone_xs_times, base_latency](int i) {
+    Generator iphone_xs_generator = [frame_time, iphone_xs_times,
+                                     base_latency](int i) {
       return base_latency + static_cast<int>(iphone_xs_times[i] * frame_time);
     };
     std::vector<int> events_consumed_at_frame;
