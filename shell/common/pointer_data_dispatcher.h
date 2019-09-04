@@ -38,8 +38,11 @@ class DefaultPointerDataDispatcher : public PointerDataDispatcher {
 class IosPointerDataDispatcher : public DefaultPointerDataDispatcher {
  public:
   IosPointerDataDispatcher(Animator& animator,
-                           RuntimeController& runtime_controller)
-      : DefaultPointerDataDispatcher(animator, runtime_controller) {}
+                           RuntimeController& runtime_controller,
+                           TaskRunners task_runners)
+      : DefaultPointerDataDispatcher(animator, runtime_controller),
+        task_runners_(task_runners),
+        weak_factory_(this) {}
 
   void DispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                       uint64_t trace_flow_id) override;
@@ -48,6 +51,8 @@ class IosPointerDataDispatcher : public DefaultPointerDataDispatcher {
   virtual ~IosPointerDataDispatcher() {}
 
  private:
+  TaskRunners task_runners_;
+
   // If non-null, this will be a pending pointer data packet for the next frame
   // to consume. This is used to smooth out the irregular drag events delivery.
   // See also `DispatchPointerDataPacket` and input_events_unittests.cc.
@@ -55,6 +60,8 @@ class IosPointerDataDispatcher : public DefaultPointerDataDispatcher {
   int pending_trace_flow_id_ = -1;
 
   bool is_pointer_data_in_progress_ = false;
+
+  fml::WeakPtrFactory<IosPointerDataDispatcher> weak_factory_;
 
   void DispatchPendingPacket();
 };

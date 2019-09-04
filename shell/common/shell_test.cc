@@ -236,7 +236,8 @@ std::unique_ptr<PointerDataDispatcher>
 ShellTestPlatformView::MakePointerDataDispatcher(
     Animator& animator,
     RuntimeController& controller) {
-  return std::make_unique<IosPointerDataDispatcher>(animator, controller);
+  return std::make_unique<IosPointerDataDispatcher>(animator, controller,
+                                                    task_runners_);
 }
 
 // |GPUSurfaceGLDelegate|

@@ -69,7 +69,7 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
 std::unique_ptr<PointerDataDispatcher> PlatformViewIOS::MakePointerDataDispatcher(
     Animator& animator,
     RuntimeController& controller) {
-  return std::make_unique<IosPointerDataDispatcher>(animator, controller);
+  return std::make_unique<IosPointerDataDispatcher>(animator, controller, task_runners_);
 }
 
 void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,

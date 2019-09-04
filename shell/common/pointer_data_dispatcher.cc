@@ -64,7 +64,23 @@ void IosPointerDataDispatcher::DispatchPacket(
 void IosPointerDataDispatcher::OnRender() {
   if (is_pointer_data_in_progress_) {
     if (pending_packet_ != nullptr) {
-      DispatchPendingPacket();
+      // This is already in the UI thread. However, method `OnRender` is called
+      // by `Engine::Render` (a part of the `VSYNC` UI thread task) which is in
+      // Flutter framework's `SchedulerPhase.persistentCallbacks` phase. In that
+      // phase, no pointer data packet is allowed to be fired because the
+      // framework requires such phase to be executed synchronously without
+      // being interrupted. Hence we'll post a new UI thread task to fire the
+      // packet after `VSYNC` task is done. When a non-VSYNC UI thread task
+      // (like the following one) is run, the Flutter framework is always in
+      // `SchedulerPhase.idle` phase).
+      task_runners_.GetUITaskRunner()->PostTask(
+          // Use and validate a `fml::WeakPtr` because this dispatcher might
+          // have been destructed with engine when the task is run.
+          [dispatcher = weak_factory_.GetWeakPtr()]() {
+            if (dispatcher) {
+              dispatcher->DispatchPendingPacket();
+            }
+          });
     } else {
       is_pointer_data_in_progress_ = false;
     }
