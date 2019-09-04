@@ -60,8 +60,7 @@ FLUTTER_EXPORT
  *   the threads used by this FlutterEngine.
  * @param project The `FlutterDartProject` to run.
  */
-- (instancetype)initWithName:(NSString*)labelPrefix
-                     project:(nullable FlutterDartProject*)project;
+- (instancetype)initWithName:(NSString*)labelPrefix project:(nullable FlutterDartProject*)project;
 
 /**
  * Initialize this FlutterEngine with a `FlutterDartProject`.
