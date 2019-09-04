@@ -7,7 +7,7 @@ import 'dart:ui';
 
 import 'scenario.dart';
 
-/// Regular Accessibility Scenario
+/// Regular Accessibility Scenario.
 class AccessibilityScenario extends Scenario {
   /// Creates the Accessibility scenario.
   ///
@@ -62,6 +62,8 @@ class AccessibilityScenario extends Scenario {
         300,
         100,
       ),
+      label: 'item1 label',
+      value: 'item1 value',
       childrenInTraversalOrder: Int32List.fromList(<int>[3, 4]),
       childrenInHitTestOrder: Int32List.fromList(<int>[3, 4]),
       transform: identityMatrix,
