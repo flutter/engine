@@ -354,3 +354,22 @@ executable("flutter_runner_unittests") {
     "//flutter/testing",
   ]
 }
+
+package_dir("flutter_runner_tests") {
+  testonly = true
+
+  deps = [
+    ":flutter_runner_unittests",
+  ]
+
+  binary = "$target_name"
+
+  meta_dir = "$flutter_root/shell/platform/fuchsia/flutter/meta"
+
+  meta = [
+    {
+      path = "meta/$target_name.cmx"
+      dest = "$target_name.cmx"
+    },
+  ]
+}
