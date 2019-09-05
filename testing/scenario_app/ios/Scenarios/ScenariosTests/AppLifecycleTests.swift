@@ -7,11 +7,18 @@ import XCTest
 
 @testable import Scenarios
 
+// This test makes sure that the iOS embedding generates the expected sets of
+// AppLifecycleState events through the engine's lifecycle channel.
+//
+// This is an iOS only test because the Android embedding only connects to the
+// lifecycle of one UI component attached to the engine rather than potentially
+// the AppDelegate and the ViewController. Only iOS might conflate the 2
+// lifecycle sources.
 class AppLifecycleTests: XCTestCase {
   override func setUp() {
     continueAfterFailure = false
   }
-  
+
   func testLifecycleChannel() {
     let engineStartedExpectation = self.expectation(description: "Engine started");
 
@@ -24,22 +31,22 @@ class AppLifecycleTests: XCTestCase {
 
     UIApplication.shared.keyWindow!.rootViewController = rootVC
     let engine = rootVC.engine
-    
+
     var lifecycleExpectations:[XCTestExpectation] = []
     var lifecycleEvents:[String] = []
-    
+
     lifecycleExpectations.append(XCTestExpectation(
       description: "A loading FlutterViewController goes through AppLifecycleState.inactive"))
     lifecycleExpectations.append(XCTestExpectation(
       description: "A loading FlutterViewController goes through AppLifecycleState.resumed"))
-    
+
     var flutterVC = rootVC.showFlutter()
     engine.lifecycleChannel.setMessageHandler({
       (message, reply) -> Void in
       lifecycleEvents.append(message as! String)
       lifecycleExpectations.removeFirst().fulfill()
     })
-    
+
     wait(for: lifecycleExpectations, timeout: 5, enforceOrder: true)
     // Expected sequence from showing the FlutterViewController is inactive and resumed.
     XCTAssertEqual(lifecycleEvents, ["AppLifecycleState.inactive", "AppLifecycleState.resumed"])
@@ -78,7 +85,7 @@ class AppLifecycleTests: XCTestCase {
     XCTAssertEqual(lifecycleEvents, ["AppLifecycleState.inactive", "AppLifecycleState.resumed",
                                      "AppLifecycleState.inactive", "AppLifecycleState.paused",
                                      // We only added 2 from re-launching the FlutterViewController
-                                     // and none from the background-foreground cycle. 
+                                     // and none from the background-foreground cycle.
                                      "AppLifecycleState.inactive", "AppLifecycleState.resumed"])
   }
 }
