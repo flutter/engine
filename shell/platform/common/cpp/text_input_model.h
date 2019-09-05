@@ -7,6 +7,8 @@
 
 #include <memory>
 #include <string>
+#include <codecvt>
+#include <locale>
 
 #include "rapidjson/document.h"
 
@@ -32,7 +34,7 @@ class TextInputModel {
   // Either appends after the cursor (when selection base and extent are the
   // same), or deletes the selected characters, replacing the text with the
   // character specified.
-  void AddCharacter(char c);
+  void AddCharacter(unsigned int c);
 
   // Deletes either the selection, or one character ahead of the cursor.
   //
@@ -89,12 +91,12 @@ class TextInputModel {
  private:
   void DeleteSelected();
 
-  std::string text_;
+  std::u16string text_;
   int client_id_;
   std::string input_type_;
   std::string input_action_;
-  std::string::iterator selection_base_;
-  std::string::iterator selection_extent_;
+  std::u16string::iterator selection_base_;
+  std::u16string::iterator selection_extent_;
 };
 
 }  // namespace flutter

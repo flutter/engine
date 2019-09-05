@@ -44,7 +44,7 @@ void TextInputPlugin::CharHook(Win32FlutterWindow* window,
     return;
   }
   // TODO bug 30661
-  active_model_->AddCharacter(static_cast<char>(code_point));
+  active_model_->AddCharacter(code_point);
   SendStateUpdate(*active_model_);
 }
 

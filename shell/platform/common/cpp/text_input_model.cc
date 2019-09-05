@@ -26,10 +26,16 @@ static constexpr char kTextInputAction[] = "inputAction";
 static constexpr char kTextInputType[] = "inputType";
 static constexpr char kTextInputTypeName[] = "name";
 
+#if defined(_MSC_VER)
+// TODO(naifu): This temporary code is to solve link error.(VS2015/2017)
+// https://social.msdn.microsoft.com/Forums/vstudio/en-US/8f40dcd8-c67f-4eba-9134-a19b9178e481/vs-2015-rc-linker-stdcodecvt-error
+std::locale::id std::codecvt<char16_t, char, _Mbstatet>::id;
+#endif  // defined(_MSC_VER)
+
 namespace flutter {
 
 TextInputModel::TextInputModel(int client_id, const rapidjson::Value& config)
-    : text_(""),
+    : text_(std::u16string()),
       client_id_(client_id),
       selection_base_(text_.begin()),
       selection_extent_(text_.begin()) {
@@ -64,7 +70,8 @@ bool TextInputModel::SetEditingState(size_t selection_base,
   if (selection_extent > text.size()) {
     return false;
   }
-  text_ = std::string(text);
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> utf16conv;
+  text_ = utf16conv.from_bytes(text);
   selection_base_ = text_.begin() + selection_base;
   selection_extent_ = text_.begin() + selection_extent;
   return true;
@@ -76,7 +83,7 @@ void TextInputModel::DeleteSelected() {
   selection_extent_ = selection_base_;
 }
 
-void TextInputModel::AddCharacter(char c) {
+void TextInputModel::AddCharacter(unsigned int c) {
   if (selection_base_ != selection_extent_) {
     DeleteSelected();
   }
@@ -172,7 +179,8 @@ std::unique_ptr<rapidjson::Document> TextInputModel::GetState() const {
                           static_cast<int>(selection_extent_ - text_.begin()),
                           allocator);
   editing_state.AddMember(kSelectionIsDirectionalKey, false, allocator);
-  editing_state.AddMember(kTextKey, rapidjson::Value(text_, allocator).Move(),
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> utf8conv;
+  editing_state.AddMember(kTextKey, rapidjson::Value(utf8conv.to_bytes(text_), allocator).Move(),
                           allocator);
   args->PushBack(editing_state, allocator);
   return args;
