@@ -180,8 +180,9 @@ std::unique_ptr<rapidjson::Document> TextInputModel::GetState() const {
                           allocator);
   editing_state.AddMember(kSelectionIsDirectionalKey, false, allocator);
   std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> utf8conv;
-  editing_state.AddMember(kTextKey, rapidjson::Value(utf8conv.to_bytes(text_), allocator).Move(),
-                          allocator);
+  editing_state.AddMember(
+      kTextKey, rapidjson::Value(utf8conv.to_bytes(text_), allocator).Move(),
+      allocator);
   args->PushBack(editing_state, allocator);
   return args;
 }
