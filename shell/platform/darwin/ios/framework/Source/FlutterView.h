@@ -34,7 +34,7 @@
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate
                           opaque:(BOOL)opaque NS_DESIGNATED_INITIALIZER;
 - (std::unique_ptr<flutter::IOSSurface>)createSurface:
-    (fml::WeakPtr<flutter::IOSGLContext>)resourceContext;
+    (fml::WeakPtr<flutter::IOSGLContext>)resourceGLContext;
 
 @end
 

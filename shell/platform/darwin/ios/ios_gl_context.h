@@ -25,7 +25,7 @@ class IOSGLContext {
 
   bool MakeCurrent();
 
-  bool BindRenderbufferStorage(NSUInteger target, fml::scoped_nsobject<CAEAGLLayer> layer);
+  bool BindRenderbufferStorage(fml::scoped_nsobject<CAEAGLLayer> layer);
 
   sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
 

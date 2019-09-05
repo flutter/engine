@@ -79,16 +79,16 @@
 }
 
 - (std::unique_ptr<flutter::IOSSurface>)
-    createSurfaceWithOnscreenContext:(fml::WeakPtr<flutter::IOSGLContext>)onscreen_gl_context
-                     resourceContext:(fml::WeakPtr<flutter::IOSGLContext>)resource_gl_context {
+    createSurfaceWithOnscreenGLContext:(fml::WeakPtr<flutter::IOSGLContext>)onscreenGLContext
+                     resourceGLContext:(fml::WeakPtr<flutter::IOSGLContext>)resourceGLContext {
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
         reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
     if (@available(iOS 9.0, *)) {
       eagl_layer.get().presentsWithTransaction = YES;
     }
-    return std::make_unique<flutter::IOSSurfaceGL>(std::move(eagl_layer), onscreen_gl_context,
-                                                   resource_gl_context);
+    return std::make_unique<flutter::IOSSurfaceGL>(std::move(eagl_layer), onscreenGLContext,
+                                                   resourceGLContext);
 #if FLUTTER_SHELL_ENABLE_METAL
   } else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
     fml::scoped_nsobject<CAMetalLayer> metalLayer(

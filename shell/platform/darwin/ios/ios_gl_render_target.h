@@ -41,8 +41,8 @@ class IOSGLRenderTarget {
 
  private:
   fml::scoped_nsobject<CAEAGLLayer> layer_;
-  fml::WeakPtr<IOSGLContext> onscreen_context_;
-  fml::WeakPtr<IOSGLContext> resource_context_;
+  fml::WeakPtr<IOSGLContext> onscreen_gl_context_;
+  fml::WeakPtr<IOSGLContext> resource_gl_context_;
   GLuint framebuffer_;
   GLuint colorbuffer_;
   GLint storage_size_width_;

@@ -24,7 +24,7 @@
 
 @implementation FlutterView {
   id<FlutterViewEngineDelegate> _delegate;
-  std::unique_ptr<flutter::IOSGLContext> _onscreenContext;
+  std::unique_ptr<flutter::IOSGLContext> _onscreenGLContext;
 }
 
 - (instancetype)init {
@@ -96,10 +96,10 @@
 }
 
 - (std::unique_ptr<flutter::IOSSurface>)createSurface:
-    (fml::WeakPtr<flutter::IOSGLContext>)resourceContext {
+    (fml::WeakPtr<flutter::IOSGLContext>)resourceGLContext {
 #if !TARGET_IPHONE_SIMULATOR
-  if (!_onscreenContext) {
-    _onscreenContext = resourceContext->MakeSharedContext();
+  if (!_onscreenGLContext) {
+    _onscreenGLContext = resourceGLContext->MakeSharedContext();
   }
 #endif  // !TARGET_IPHONE_SIMULATOR
 
@@ -114,7 +114,7 @@
       }
     }
     return std::make_unique<flutter::IOSSurfaceGL>(
-        _onscreenContext->GetWeakPtr(), std::move(resourceContext), std::move(eagl_layer),
+        _onscreenGLContext->GetWeakPtr(), std::move(resourceGLContext), std::move(eagl_layer),
         [_delegate platformViewsController]);
 #if FLUTTER_SHELL_ENABLE_METAL
   } else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
