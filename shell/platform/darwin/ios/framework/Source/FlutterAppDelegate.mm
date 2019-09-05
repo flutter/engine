@@ -84,7 +84,7 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
        willPresentNotification:(UNNotification*)notification
          withCompletionHandler:
              (void (^)(UNNotificationPresentationOptions options))completionHandler {
-  if (_lifeCycleDelegate respondsToSelector:_cmd)) {
+  if ([_lifeCycleDelegate respondsToSelector:_cmd]) {
     [_lifeCycleDelegate userNotificationCenter:center
                        willPresentNotification:notification
                          withCompletionHandler:completionHandler];
@@ -97,7 +97,7 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 - (void)userNotificationCenter:(UNUserNotificationCenter*)center
     didReceiveNotificationResponse:(UNNotificationResponse*)response
              withCompletionHandler:(void (^)(void))completionHandler {
-  if (_lifeCycleDelegate respondsToSelector:_cmd)) {
+  if ([_lifeCycleDelegate respondsToSelector:_cmd]) {
     [_lifeCycleDelegate userNotificationCenter:center
                 didReceiveNotificationResponse:response
                          withCompletionHandler:completionHandler];
