@@ -84,9 +84,11 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
        willPresentNotification:(UNNotification*)notification
          withCompletionHandler:
              (void (^)(UNNotificationPresentationOptions options))completionHandler {
-  [_lifeCycleDelegate userNotificationCenter:center
-                     willPresentNotification:notification
-                       withCompletionHandler:completionHandler];
+  if (_lifeCycleDelegate respondsToSelector:_cmd)) {
+    [_lifeCycleDelegate userNotificationCenter:center
+                       willPresentNotification:notification
+                         withCompletionHandler:completionHandler];
+  }
 }
 
 /**
@@ -95,9 +97,11 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 - (void)userNotificationCenter:(UNUserNotificationCenter*)center
     didReceiveNotificationResponse:(UNNotificationResponse*)response
              withCompletionHandler:(void (^)(void))completionHandler {
-  [_lifeCycleDelegate userNotificationCenter:center
-              didReceiveNotificationResponse:response
-                       withCompletionHandler:completionHandler];
+  if (_lifeCycleDelegate respondsToSelector:_cmd)) {
+    [_lifeCycleDelegate userNotificationCenter:center
+                didReceiveNotificationResponse:response
+                         withCompletionHandler:completionHandler];
+  }
 }
 
 - (BOOL)application:(UIApplication*)application
