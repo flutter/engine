@@ -27,7 +27,7 @@
   if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--platform-view"]) {
     FlutterEngine* engine = [Util runEngineWithScenario:@"text_platform_view" completion:nil];
     [engine runWithEntrypoint:nil];
-    
+
     FlutterViewController* flutterViewController =
         [[NoStatusBarFlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
     TextPlatformViewFactory* textPlatformViewFactory =
