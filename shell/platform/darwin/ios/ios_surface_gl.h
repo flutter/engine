@@ -20,14 +20,14 @@ class IOSSurfaceGL final : public IOSSurface,
                            public GPUSurfaceGLDelegate,
                            public ExternalViewEmbedder {
  public:
-  IOSSurfaceGL(fml::WeakPtr<IOSGLContext> onscreen_context,
-               fml::WeakPtr<IOSGLContext> resource_context,
+  IOSSurfaceGL(fml::WeakPtr<IOSGLContext> onscreen_gl_context,
+               fml::WeakPtr<IOSGLContext> resource_gl_context,
                fml::scoped_nsobject<CAEAGLLayer> layer,
                FlutterPlatformViewsController* platform_views_controller);
 
   IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
-               fml::WeakPtr<IOSGLContext> onscreen_context,
-               fml::WeakPtr<IOSGLContext> resource_context);
+               fml::WeakPtr<IOSGLContext> onscreen_gl_context,
+               fml::WeakPtr<IOSGLContext> resource_gl_context);
 
   ~IOSSurfaceGL() override;
 
@@ -82,9 +82,9 @@ class IOSSurfaceGL final : public IOSSurface,
   bool SubmitFrame(GrContext* context) override;
 
  private:
-  fml::WeakPtr<IOSGLContext> onscreen_context_;
+  fml::WeakPtr<IOSGLContext> onscreen_gl_context_;
 
-  fml::WeakPtr<IOSGLContext> resource_context_;
+  fml::WeakPtr<IOSGLContext> resource_gl_context_;
 
   std::unique_ptr<IOSGLRenderTarget> render_target_;
 
