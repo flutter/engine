@@ -196,7 +196,6 @@ def BuildTarget(runtime_mode, arch, product):
   out_dir = 'fuchsia_%s_%s' % (runtime_mode, arch)
   flags = [
       '--fuchsia',
-      '--lto',
       '--fuchsia-cpu',
       arch,
       '--runtime-mode',
