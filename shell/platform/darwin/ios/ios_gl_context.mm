@@ -14,7 +14,8 @@ namespace flutter {
 
 IOSGLContext::IOSGLContext() : IOSGLContext(nullptr) {}
 
-IOSGLContext::IOSGLContext(EAGLSharegroup* sharegroup) {
+IOSGLContext::IOSGLContext(EAGLSharegroup* sharegroup)
+    : weak_factory_(std::make_unique<fml::WeakPtrFactory<IOSGLContext>>(this)) {
   context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3
                                        sharegroup:sharegroup]);
 
@@ -44,6 +45,10 @@ IOSGLContext::IOSGLContext(EAGLSharegroup* sharegroup) {
   }
 }
 
+fml::WeakPtr<IOSGLContext> IOSGLContext::WeakPtr() {
+  return weak_factory_->GetWeakPtr();
+}
+
 bool IOSGLContext::BindRenderbufferStorage(NSUInteger target,
                                            fml::scoped_nsobject<CAEAGLLayer> layer) {
   return [context_.get() renderbufferStorage:GL_RENDERBUFFER fromDrawable:layer.get()];
@@ -55,8 +60,8 @@ bool IOSGLContext::MakeCurrent() {
   return [EAGLContext setCurrentContext:context_.get()];
 }
 
-std::shared_ptr<IOSGLContext> IOSGLContext::MakeSharedContext() {
-  return std::make_shared<IOSGLContext>(context_.get().sharegroup);
+std::unique_ptr<IOSGLContext> IOSGLContext::MakeSharedContext() {
+  return std::make_unique<IOSGLContext>(context_.get().sharegroup);
 }
 
 }  // namespace flutter

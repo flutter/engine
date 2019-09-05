@@ -22,10 +22,10 @@
 #include "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
 #endif  //  FLUTTER_SHELL_ENABLE_METAL
 
-@implementation FlutterView
-
-id<FlutterViewEngineDelegate> _delegate;
-std::shared_ptr<flutter::IOSGLContext> _onscreenContext;
+@implementation FlutterView {
+  id<FlutterViewEngineDelegate> _delegate;
+  std::unique_ptr<flutter::IOSGLContext> _onscreenContext;
+}
 
 - (instancetype)init {
   @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
@@ -43,11 +43,6 @@ std::shared_ptr<flutter::IOSGLContext> _onscreenContext;
   @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
                                  reason:nil
                                userInfo:nil]);
-}
-
-- (void)dealloc {
-  _onscreenContext.reset();
-  [super dealloc];
 }
 
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate opaque:(BOOL)opaque {
@@ -101,7 +96,7 @@ std::shared_ptr<flutter::IOSGLContext> _onscreenContext;
 }
 
 - (std::unique_ptr<flutter::IOSSurface>)createSurface:
-    (std::shared_ptr<flutter::IOSGLContext>)resourceContext {
+    (fml::WeakPtr<flutter::IOSGLContext>)resourceContext {
 #if !TARGET_IPHONE_SIMULATOR
   if (!_onscreenContext) {
     _onscreenContext = resourceContext->MakeSharedContext();
@@ -118,9 +113,9 @@ std::shared_ptr<flutter::IOSGLContext> _onscreenContext;
         eagl_layer.get().presentsWithTransaction = YES;
       }
     }
-    return std::make_unique<flutter::IOSSurfaceGL>(_onscreenContext, std::move(resourceContext),
-                                                   std::move(eagl_layer),
-                                                   [_delegate platformViewsController]);
+    return std::make_unique<flutter::IOSSurfaceGL>(
+        _onscreenContext->WeakPtr(), std::move(resourceContext), std::move(eagl_layer),
+        [_delegate platformViewsController]);
 #if FLUTTER_SHELL_ENABLE_METAL
   } else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
     fml::scoped_nsobject<CAMetalLayer> metalLayer(

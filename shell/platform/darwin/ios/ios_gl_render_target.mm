@@ -12,8 +12,8 @@
 
 namespace flutter {
 IOSGLRenderTarget::IOSGLRenderTarget(fml::scoped_nsobject<CAEAGLLayer> layer,
-                                     std::shared_ptr<IOSGLContext> onscreen_context,
-                                     std::shared_ptr<IOSGLContext> resource_context)
+                                     fml::WeakPtr<IOSGLContext> onscreen_context,
+                                     fml::WeakPtr<IOSGLContext> resource_context)
     : layer_(std::move(layer)),
       onscreen_context_(std::move(onscreen_context)),
       resource_context_(std::move(resource_context)),

@@ -9,8 +9,8 @@
 
 namespace flutter {
 
-IOSSurfaceGL::IOSSurfaceGL(std::shared_ptr<IOSGLContext> onscreen_context,
-                           std::shared_ptr<IOSGLContext> resource_context,
+IOSSurfaceGL::IOSSurfaceGL(fml::WeakPtr<IOSGLContext> onscreen_context,
+                           fml::WeakPtr<IOSGLContext> resource_context,
                            fml::scoped_nsobject<CAEAGLLayer> layer,
                            FlutterPlatformViewsController* platform_views_controller)
     : IOSSurface(platform_views_controller),
@@ -21,8 +21,8 @@ IOSSurfaceGL::IOSSurfaceGL(std::shared_ptr<IOSGLContext> onscreen_context,
 }
 
 IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
-                           std::shared_ptr<IOSGLContext> onscreen_context,
-                           std::shared_ptr<IOSGLContext> resource_context)
+                           fml::WeakPtr<IOSGLContext> onscreen_context,
+                           fml::WeakPtr<IOSGLContext> resource_context)
     : IOSSurface(nullptr),
       onscreen_context_(std::move(onscreen_context)),
       resource_context_(std::move(resource_context)) {

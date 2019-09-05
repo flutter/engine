@@ -20,8 +20,8 @@ namespace flutter {
 class IOSGLRenderTarget {
  public:
   IOSGLRenderTarget(fml::scoped_nsobject<CAEAGLLayer> layer,
-                    std::shared_ptr<IOSGLContext> onscreen_context,
-                    std::shared_ptr<IOSGLContext> resource_context);
+                    fml::WeakPtr<IOSGLContext> onscreen_context,
+                    fml::WeakPtr<IOSGLContext> resource_context);
 
   ~IOSGLRenderTarget();
 
@@ -41,8 +41,8 @@ class IOSGLRenderTarget {
 
  private:
   fml::scoped_nsobject<CAEAGLLayer> layer_;
-  std::shared_ptr<IOSGLContext> onscreen_context_;
-  std::shared_ptr<IOSGLContext> resource_context_;
+  fml::WeakPtr<IOSGLContext> onscreen_context_;
+  fml::WeakPtr<IOSGLContext> resource_context_;
   GLuint framebuffer_;
   GLuint colorbuffer_;
   GLint storage_size_width_;

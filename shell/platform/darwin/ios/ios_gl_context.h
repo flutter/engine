@@ -29,11 +29,15 @@ class IOSGLContext {
 
   sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
 
-  std::shared_ptr<IOSGLContext> MakeSharedContext();
+  std::unique_ptr<IOSGLContext> MakeSharedContext();
+
+  fml::WeakPtr<IOSGLContext> WeakPtr();
 
  private:
   fml::scoped_nsobject<EAGLContext> context_;
   sk_sp<SkColorSpace> color_space_;
+
+  std::unique_ptr<fml::WeakPtrFactory<IOSGLContext>> weak_factory_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSGLContext);
 };

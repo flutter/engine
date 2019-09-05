@@ -23,7 +23,7 @@ PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
                                  flutter::TaskRunners task_runners)
     : PlatformView(delegate, std::move(task_runners)) {
 #if !TARGET_IPHONE_SIMULATOR
-  gl_resource_context_ = std::make_shared<IOSGLContext>();
+  gl_resource_context_ = std::make_unique<IOSGLContext>();
 #endif  // !TARGET_IPHONE_SIMULATOR
 }
 
@@ -53,8 +53,8 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
   }
   owner_controller_ = owner_controller;
   if (owner_controller_) {
-    ios_surface_ =
-        [static_cast<FlutterView*>(owner_controller.get().view) createSurface:gl_resource_context_];
+    ios_surface_ = [static_cast<FlutterView*>(owner_controller.get().view)
+        createSurface:gl_resource_context_->WeakPtr()];
     FML_DCHECK(ios_surface_ != nullptr);
 
     if (accessibility_bridge_) {

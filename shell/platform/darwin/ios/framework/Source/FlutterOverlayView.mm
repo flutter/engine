@@ -79,8 +79,8 @@
 }
 
 - (std::unique_ptr<flutter::IOSSurface>)
-      createSurface:(std::shared_ptr<flutter::IOSGLContext>)onscreen_gl_context
-    resourceContext:(std::shared_ptr<flutter::IOSGLContext>)resource_gl_context {
+    createSurfaceWithOnscreenContext:(fml::WeakPtr<flutter::IOSGLContext>)onscreen_gl_context
+                     resourceContext:(fml::WeakPtr<flutter::IOSGLContext>)resource_gl_context {
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
         reinterpret_cast<CAEAGLLayer*>([self.layer retain]));

@@ -101,8 +101,8 @@ class FlutterPlatformViewsController {
   void Reset();
 
   bool SubmitFrame(GrContext* gr_context,
-                   std::shared_ptr<IOSGLContext> onscreen_gl_context,
-                   std::shared_ptr<IOSGLContext> resource_gl_context);
+                   fml::WeakPtr<IOSGLContext> onscreen_gl_context,
+                   fml::WeakPtr<IOSGLContext> resource_gl_context);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
@@ -164,8 +164,8 @@ class FlutterPlatformViewsController {
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();
   void EnsureOverlayInitialized(int64_t overlay_id,
-                                std::shared_ptr<IOSGLContext> onscreen_gl_context,
-                                std::shared_ptr<IOSGLContext> resource_gl_context,
+                                fml::WeakPtr<IOSGLContext> onscreen_gl_context,
+                                fml::WeakPtr<IOSGLContext> resource_gl_context,
                                 GrContext* gr_context);
 
   // This will return true after pre-roll if any of the embedded views
