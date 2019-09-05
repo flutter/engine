@@ -1,4 +1,4 @@
-Signature: f1c8a28d1261ef503008e33b7b71a06c
+Signature: 3cfc3670e3ecbfb7be58d87e171b00e8
 
 UNUSED LICENSES:
 
@@ -4842,6 +4842,7 @@ FILE: ../../../third_party/skia/docs/examples/Text_Size.cpp
 FILE: ../../../third_party/skia/docs/examples/Text_Skew_X.cpp
 FILE: ../../../third_party/skia/docs/examples/Typeface_Methods.cpp
 FILE: ../../../third_party/skia/docs/examples/Xor.cpp
+FILE: ../../../third_party/skia/experimental/minimal_ios_mtl_skia_app/main.mm
 FILE: ../../../third_party/skia/experimental/xform/SkShape.cpp
 FILE: ../../../third_party/skia/experimental/xform/SkShape.h
 FILE: ../../../third_party/skia/experimental/xform/SkXform.cpp

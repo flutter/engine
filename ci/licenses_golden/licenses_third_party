@@ -1,4 +1,4 @@
-Signature: bec8ba2aeefcefc94622d38f5ba1643e
+Signature: 9f33c0d3cda1948828ac6e8bcecd5d9a
 
 UNUSED LICENSES:
 
@@ -7344,6 +7344,7 @@ FILE: ../../../third_party/dart/PATENT_GRANT
 FILE: ../../../third_party/dart/client/idea/.idea/.name
 FILE: ../../../third_party/dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../third_party/dart/client/idea/.idea/vcs.xml
+FILE: ../../../third_party/dart/runtime/.clang-tidy
 FILE: ../../../third_party/dart/runtime/CPPLINT.cfg
 FILE: ../../../third_party/dart/runtime/bin/ffi_test/clobber_arm.S
 FILE: ../../../third_party/dart/runtime/bin/ffi_test/clobber_arm64.S
@@ -7415,7 +7416,7 @@ FILE: ../../../third_party/dart/benchmarks/FfiCall/dart/dlopen_helper.dart
 FILE: ../../../third_party/dart/benchmarks/FfiCall/dart/native/native_functions.c
 FILE: ../../../third_party/dart/benchmarks/FfiMemory/dart/FfiMemory.dart
 FILE: ../../../third_party/dart/benchmarks/FfiStruct/dart/FfiStruct.dart
-FILE: ../../../third_party/dart/benchmarks/Isolates/dart/Isolates.dart
+FILE: ../../../third_party/dart/benchmarks/Isolate/dart/Isolate.dart
 FILE: ../../../third_party/dart/runtime/bin/abi_version.h
 FILE: ../../../third_party/dart/runtime/bin/abi_version_in.cc
 FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension.cc
@@ -7444,6 +7445,7 @@ FILE: ../../../third_party/dart/runtime/tools/dartfuzz/dartfuzz_ffiapi.dart
 FILE: ../../../third_party/dart/runtime/tools/dartfuzz/gen_api_table.dart
 FILE: ../../../third_party/dart/runtime/tools/graphexplorer/graphexplorer.html
 FILE: ../../../third_party/dart/runtime/tools/graphexplorer/graphexplorer.js
+FILE: ../../../third_party/dart/runtime/tools/run_clang_tidy.dart
 FILE: ../../../third_party/dart/runtime/vm/catch_entry_moves_test.cc
 FILE: ../../../third_party/dart/runtime/vm/class_id.h
 FILE: ../../../third_party/dart/runtime/vm/code_comments.cc
