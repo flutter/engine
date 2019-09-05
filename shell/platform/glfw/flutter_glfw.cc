@@ -92,6 +92,10 @@ struct FlutterDesktopWindow {
   // The ratio of pixels per screen coordinate for the window.
   double pixels_per_screen_coordinate = 1.0;
 
+  // If non-zero, a forced pixel ratio to use instead of one computed based on
+  // screen information.
+  double pixel_ratio_override = 0.0;
+
   // Resizing triggers a window refresh, but the resize already updates Flutter.
   // To avoid double messages, the refresh after each resize is skipped.
   bool skip_next_window_refresh = false;
@@ -177,9 +181,14 @@ static void SendWindowMetrics(FlutterDesktopWindowControllerState* state,
   event.struct_size = sizeof(event);
   event.width = width;
   event.height = height;
-  // The Flutter pixel_ratio is defined as DPI/dp. Limit the ratio to a minimum
-  // of 1 to avoid rendering a smaller UI on standard resolution monitors.
-  event.pixel_ratio = std::max(dpi / kDpPerInch, 1.0);
+  if (state->window_wrapper->pixel_ratio_override == 0.0) {
+    // The Flutter pixel_ratio is defined as DPI/dp. Limit the ratio to a
+    // minimum of 1 to avoid rendering a smaller UI on standard resolution
+    // monitors.
+    event.pixel_ratio = std::max(dpi / kDpPerInch, 1.0);
+  } else {
+    event.pixel_ratio = state->window_wrapper->pixel_ratio_override;
+  }
   FlutterEngineSendWindowMetricsEvent(state->engine, &event);
 }
 
@@ -482,17 +491,15 @@ static void GLFWErrorCallback(int error_code, const char* description) {
 // Returns a caller-owned pointer to the engine.
 static FLUTTER_API_SYMBOL(FlutterEngine)
     RunFlutterEngine(GLFWwindow* window,
-                     const char* assets_path,
-                     const char* icu_data_path,
-                     const char** arguments,
-                     size_t arguments_count,
+                     const FlutterDesktopEngineProperties& engine_properties,
                      const FlutterCustomTaskRunners* custom_task_runners) {
   // FlutterProjectArgs is expecting a full argv, so when processing it for
   // flags the first item is treated as the executable and ignored. Add a dummy
   // value so that all provided arguments are used.
   std::vector<const char*> argv = {"placeholder"};
-  if (arguments_count > 0) {
-    argv.insert(argv.end(), &arguments[0], &arguments[arguments_count]);
+  if (engine_properties.switches_count > 0) {
+    argv.insert(argv.end(), &engine_properties.switches[0],
+                &engine_properties.switches[engine_properties.switches_count]);
   }
 
   FlutterRendererConfig config = {};
@@ -516,8 +523,8 @@ static FLUTTER_API_SYMBOL(FlutterEngine)
   }
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
-  args.assets_path = assets_path;
-  args.icu_data_path = icu_data_path;
+  args.assets_path = engine_properties.assets_path;
+  args.icu_data_path = engine_properties.icu_data_path;
   args.command_line_argc = static_cast<int>(argv.size());
   args.command_line_argv = &argv[0];
   args.platform_message_callback = GLFWOnFlutterPlatformMessage;
@@ -544,19 +551,19 @@ void FlutterDesktopTerminate() {
 }
 
 FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
-    int initial_width,
-    int initial_height,
-    const char* title,
-    const char* assets_path,
-    const char* icu_data_path,
-    const char** arguments,
-    size_t argument_count) {
+    const FlutterDesktopWindowProperties& window_properties,
+    const FlutterDesktopEngineProperties& engine_properties) {
   auto state = std::make_unique<FlutterDesktopWindowControllerState>();
 
   // Create the window, and set the state as its user data.
+  if (window_properties.prevent_resize) {
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+  }
   state->window = UniqueGLFWwindowPtr(
-      glfwCreateWindow(initial_width, initial_height, title, NULL, NULL),
+      glfwCreateWindow(window_properties.width, window_properties.height,
+                       window_properties.title, NULL, NULL),
       glfwDestroyWindow);
+  glfwDefaultWindowHints();
   GLFWwindow* window = state->window.get();
   if (window == nullptr) {
     return nullptr;
@@ -598,8 +605,7 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
 
   // Start the engine.
   state->engine =
-      RunFlutterEngine(window, assets_path, icu_data_path, arguments,
-                       argument_count, &custom_task_runners);
+      RunFlutterEngine(window, engine_properties, &custom_task_runners);
   if (state->engine == nullptr) {
     return nullptr;
   }
@@ -717,6 +723,19 @@ double FlutterDesktopWindowGetScaleFactor(
   return flutter_window->pixels_per_screen_coordinate;
 }
 
+void FlutterDesktopWindowSetPixelRatioOverride(
+    FlutterDesktopWindowRef flutter_window,
+    double pixel_ratio) {
+  flutter_window->pixel_ratio_override = pixel_ratio;
+  // Send a metrics update using the new pixel ratio.
+  int width_px, height_px;
+  glfwGetFramebufferSize(flutter_window->window, &width_px, &height_px);
+  if (width_px > 0 && height_px > 0) {
+    auto* state = GetSavedWindowState(flutter_window->window);
+    SendWindowMetrics(state, width_px, height_px);
+  }
+}
+
 bool FlutterDesktopRunWindowEventLoopWithTimeout(
     FlutterDesktopWindowControllerRef controller,
     uint32_t timeout_milliseconds) {
@@ -745,13 +764,10 @@ FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(
   return controller->plugin_registrar.get();
 }
 
-FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,
-                                                const char* icu_data_path,
-                                                const char** arguments,
-                                                size_t argument_count) {
+FlutterDesktopEngineRef FlutterDesktopRunEngine(
+    const FlutterDesktopEngineProperties& properties) {
   auto engine =
-      RunFlutterEngine(nullptr, assets_path, icu_data_path, arguments,
-                       argument_count, nullptr /* custom task runners */);
+      RunFlutterEngine(nullptr, properties, nullptr /* custom task runners */);
   if (engine == nullptr) {
     return nullptr;
   }

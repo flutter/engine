@@ -170,7 +170,8 @@ action("flutter_shell_java") {
     "io/flutter/embedding/engine/plugins/shim/ShimPluginRegistry.java",
     "io/flutter/embedding/engine/plugins/shim/ShimRegistrar.java",
     "io/flutter/embedding/engine/renderer/FlutterRenderer.java",
-    "io/flutter/embedding/engine/renderer/OnFirstFrameRenderedListener.java",
+    "io/flutter/embedding/engine/renderer/FlutterUiDisplayListener.java",
+    "io/flutter/embedding/engine/renderer/RenderSurface.java",
     "io/flutter/embedding/engine/systemchannels/AccessibilityChannel.java",
     "io/flutter/embedding/engine/systemchannels/KeyEventChannel.java",
     "io/flutter/embedding/engine/systemchannels/LifecycleChannel.java",
@@ -306,9 +307,15 @@ action("icudtl_object") {
 action("android") {
   script = "//build/android/gyp/create_flutter_jar.py"
 
+  if (stripped_symbols) {
+    engine_library = "lib.stripped/libflutter.so"
+  } else {
+    engine_library = "libflutter.so"
+  }
+
   inputs = [
     "$root_build_dir/$embedding_jar_filename",
-    "$root_build_dir/lib.stripped/libflutter.so",
+    "$root_build_dir/$engine_library",
   ]
 
   engine_artifact_id =
@@ -329,7 +336,7 @@ action("android") {
     "--dist_jar",
     rebase_path(embedding_jar_filename, root_build_dir, root_build_dir),
     "--native_lib",
-    rebase_path("lib.stripped/libflutter.so", root_build_dir, root_build_dir),
+    rebase_path("$engine_library", root_build_dir, root_build_dir),
     "--android_abi",
     "$android_app_abi",
   ]
@@ -406,7 +413,10 @@ action("robolectric_tests") {
     "test/io/flutter/embedding/android/FlutterActivityTest.java",
     "test/io/flutter/embedding/android/FlutterFragmentTest.java",
     "test/io/flutter/embedding/engine/FlutterEngineCacheTest.java",
-    "test/io/flutter/embedding/engine/systemchannels/TextInputChannelTest.java",
+    "test/io/flutter/embedding/engine/FlutterJNITest.java",
+    "test/io/flutter/embedding/engine/RenderingComponentTest.java",
+    "test/io/flutter/embedding/engine/renderer/FlutterRendererTest.java",
+    "test/io/flutter/embedding/engine/systemchannels/PlatformChannelTest.java",
     "test/io/flutter/util/PreconditionsTest.java",
   ]
 

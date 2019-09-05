@@ -85,6 +85,8 @@ test_fixtures("fixtures") {
   dart_main = "fixtures/main.dart"
   fixtures = [
     "fixtures/compositor.png",
+    "fixtures/compositor_software.png",
+    "fixtures/compositor_with_platform_layer_on_bottom.png",
     "fixtures/compositor_with_root_layer_only.png",
   ]
 }

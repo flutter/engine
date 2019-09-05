@@ -77,7 +77,7 @@ class EngineWindow extends ui.Window {
   /// Setting this member will automatically update [_browserHistory].
   ///
   /// By setting this to null, the browser history will be disabled.
-  set webOnlyLocationStrategy(LocationStrategy strategy) {
+  set locationStrategy(LocationStrategy strategy) {
     _browserHistory.locationStrategy = strategy;
   }
 
@@ -146,7 +146,26 @@ class EngineWindow extends ui.Window {
       case 'flutter/accessibility':
         // In widget tests we want to bypass processing of platform messages.
         accessibilityAnnouncements.handleMessage(data);
-        break;
+        return;
+
+      case 'flutter/navigation':
+        const MethodCodec codec = JSONMethodCodec();
+        final MethodCall decoded = codec.decodeMethodCall(data);
+        final Map<String, dynamic> message = decoded.arguments;
+        switch (decoded.method) {
+          case 'routePushed':
+            _browserHistory.setRouteName(message['routeName']);
+            break;
+          case 'routePopped':
+            _browserHistory.setRouteName(message['previousRouteName']);
+            break;
+        }
+        return;
+    }
+
+    if (pluginMessageCallHandler != null) {
+      pluginMessageCallHandler(name, data, callback);
+      return;
     }
 
     // TODO(flutter_web): Some Flutter widgets send platform messages that we
