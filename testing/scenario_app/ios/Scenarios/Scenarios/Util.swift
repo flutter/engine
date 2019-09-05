@@ -6,12 +6,13 @@ import Foundation
 import Flutter
 
 class Util: NSObject {
-  @objc static func runEngine(scenario: String) -> FlutterEngine {
+  @objc static func runEngine(scenario: String, completion: (() -> Void)? = nil) -> FlutterEngine {
     let engine: FlutterEngine = FlutterEngine(name: "Test engine for \(scenario)", project: nil)
     engine.run(withEntrypoint: nil)
     engine.binaryMessenger.setMessageHandlerOnChannel(
       "scenario_status",
       binaryMessageHandler: {(message, reply) -> Void in
+        completion?()
         engine.binaryMessenger.send(
           onChannel: "set_scenario",
           message: scenario.data(using: String.Encoding.utf8))})

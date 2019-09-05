@@ -25,7 +25,7 @@
   // This argument is used by the XCUITest for Platform Views so that the app
   // under test will create platform views.
   if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--platform-view"]) {
-    FlutterEngine* engine = [Util runEngineWithScenario:@"text_platform_view"];
+    FlutterEngine* engine = [Util runEngineWithScenario:@"text_platform_view" completion:nil];
     [engine runWithEntrypoint:nil];
     
     FlutterViewController* flutterViewController =
@@ -37,7 +37,7 @@
     [registrar registerViewFactory:textPlatformViewFactory withId:@"scenarios/textPlatformView"];
     self.window.rootViewController = flutterViewController;
   } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
-    self.window.rootViewController = [[ScreenBeforeFlutter alloc] init];;
+    self.window.rootViewController = [[ScreenBeforeFlutter alloc] initWithCompletion:nil];
   } else {
     self.window.rootViewController = [[UIViewController alloc] init];
   }

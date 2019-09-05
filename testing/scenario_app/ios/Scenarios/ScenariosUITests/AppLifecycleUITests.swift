@@ -19,7 +19,7 @@ class AppLifecycleUITests: XCTestCase {
   func testLifecycleChannel() {
 //    let rootVC = UIApplication.shared.keyWindow!.rootViewController as! ScreenBeforeFlutter
 //    let engine = rootVC.engine
-//    
+//
 //    var expectations:[XCTestExpectation] = []
 //    var lifecycleEvents:[String] = []
 //    engine.lifecycleChannel.setMessageHandler({
@@ -27,10 +27,10 @@ class AppLifecycleUITests: XCTestCase {
 //      lifecycleEvents.append(message as! String)
 //      expectations.removeFirst().fulfill()
 //    })
-//    
+//
 //    // Connecting the message handler after the engine started doesn't do anything.
 //    XCTAssertEqual(lifecycleEvents.count, 0)
-//    
+//
 //    expectations.append(XCTestExpectation(
 //      description: "A loading FlutterViewController goes through AppLifecycleState.inactive"))
 //    expectations.append(XCTestExpectation(

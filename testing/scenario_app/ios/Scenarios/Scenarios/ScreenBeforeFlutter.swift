@@ -6,6 +6,16 @@ import Flutter
 import UIKit
 
 class ScreenBeforeFlutter: UIViewController {
+  @objc init(completion: (() -> Void)? = nil) {
+    self.engine = Util.runEngine(scenario: "poppable_screen", completion: completion)
+    super.init(nibName: nil, bundle: nil)
+  }
+
+  required init?(coder aDecoder: NSCoder) {
+    self.engine = Util.runEngine(scenario: "poppable_screen")
+    super.init(coder: aDecoder)
+  }
+
   private lazy var showFlutterButton: UIButton = {
     let button = UIButton(type: .system)
     button.translatesAutoresizingMaskIntoConstraints = false
@@ -17,7 +27,7 @@ class ScreenBeforeFlutter: UIViewController {
     return button
   }()
 
-  let engine = Util.runEngine(scenario: "poppable_screen")
+  var engine: FlutterEngine
 
   override func viewDidLoad() {
     super.viewDidLoad()
