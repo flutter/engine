@@ -54,7 +54,7 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
   owner_controller_ = owner_controller;
   if (owner_controller_) {
     ios_surface_ = [static_cast<FlutterView*>(owner_controller.get().view)
-        createSurface:resource_gl_context_->GetWeakPtr()];
+        createSurfaceWithResourceGLContext:resource_gl_context_->GetWeakPtr()];
     FML_DCHECK(ios_surface_ != nullptr);
 
     if (accessibility_bridge_) {

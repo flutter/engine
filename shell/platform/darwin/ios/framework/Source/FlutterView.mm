@@ -95,7 +95,7 @@
 #endif  // TARGET_IPHONE_SIMULATOR
 }
 
-- (std::unique_ptr<flutter::IOSSurface>)createSurface:
+- (std::unique_ptr<flutter::IOSSurface>)createSurfaceWithResourceGLContext:
     (fml::WeakPtr<flutter::IOSGLContext>)resourceGLContext {
 #if !TARGET_IPHONE_SIMULATOR
   if (!_onscreenGLContext) {
