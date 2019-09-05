@@ -114,7 +114,7 @@
       }
     }
     return std::make_unique<flutter::IOSSurfaceGL>(
-        _onscreenContext->WeakPtr(), std::move(resourceContext), std::move(eagl_layer),
+        _onscreenContext->GetWeakPtr(), std::move(resourceContext), std::move(eagl_layer),
         [_delegate platformViewsController]);
 #if FLUTTER_SHELL_ENABLE_METAL
   } else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {

@@ -45,7 +45,7 @@ IOSGLContext::IOSGLContext(EAGLSharegroup* sharegroup)
   }
 }
 
-fml::WeakPtr<IOSGLContext> IOSGLContext::WeakPtr() {
+fml::WeakPtr<IOSGLContext> IOSGLContext::GetWeakPtr() {
   return weak_factory_->GetWeakPtr();
 }
 

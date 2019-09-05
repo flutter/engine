@@ -31,7 +31,7 @@ class IOSGLContext {
 
   std::unique_ptr<IOSGLContext> MakeSharedContext();
 
-  fml::WeakPtr<IOSGLContext> WeakPtr();
+  fml::WeakPtr<IOSGLContext> GetWeakPtr();
 
  private:
   fml::scoped_nsobject<EAGLContext> context_;
