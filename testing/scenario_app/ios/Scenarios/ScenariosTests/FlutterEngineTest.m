@@ -11,22 +11,22 @@
 
 @implementation FlutterEngineTest
 
- - (void)testIsolateId {
-   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
-   XCTAssertNil(engine.isolateId);
-   [self keyValueObservingExpectationForObject:engine keyPath:@"isolateId" handler:nil];
+- (void)testIsolateId {
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
+  XCTAssertNil(engine.isolateId);
+  [self keyValueObservingExpectationForObject:engine keyPath:@"isolateId" handler:nil];
 
-   XCTAssertTrue([engine runWithEntrypoint:nil]);
+  XCTAssertTrue([engine runWithEntrypoint:nil]);
 
-   [self waitForExpectationsWithTimeout:30.0 handler:nil];
+  [self waitForExpectationsWithTimeout:30.0 handler:nil];
 
-   XCTAssertNotNil(engine.isolateId);
-   XCTAssertTrue([engine.isolateId hasPrefix:@"isolates/"]);
+  XCTAssertNotNil(engine.isolateId);
+  XCTAssertTrue([engine.isolateId hasPrefix:@"isolates/"]);
 
-   [engine destroyContext];
+  [engine destroyContext];
 
-   XCTAssertNil(engine.isolateId);
- }
+  XCTAssertNil(engine.isolateId);
+}
 
 - (void)testChannelSetup {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
