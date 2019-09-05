@@ -6,8 +6,8 @@ import Flutter
 import UIKit
 
 class ScreenBeforeFlutter: UIViewController {
-  @objc init(completion: (() -> Void)? = nil) {
-    self.engine = Util.runEngine(scenario: "poppable_screen", completion: completion)
+  @objc init(engineRunCompletion: (() -> Void)? = nil) {
+    self.engine = Util.runEngine(scenario: "poppable_screen", completion: engineRunCompletion)
     super.init(nibName: nil, bundle: nil)
   }
 

@@ -7,6 +7,7 @@ import Flutter
 
 class Util: NSObject {
   @objc static func runEngine(scenario: String, completion: (() -> Void)? = nil) -> FlutterEngine {
+    precondition(!scenario.isEmpty, "You need to provide a scenario")
     let engine: FlutterEngine = FlutterEngine(name: "Test engine for \(scenario)", project: nil)
     engine.run(withEntrypoint: nil)
     engine.binaryMessenger.setMessageHandlerOnChannel(

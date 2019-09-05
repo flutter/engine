@@ -37,7 +37,7 @@
     [registrar registerViewFactory:textPlatformViewFactory withId:@"scenarios/textPlatformView"];
     self.window.rootViewController = flutterViewController;
   } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
-    self.window.rootViewController = [[ScreenBeforeFlutter alloc] initWithCompletion:nil];
+    self.window.rootViewController = [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:nil];
   } else {
     self.window.rootViewController = [[UIViewController alloc] init];
   }
