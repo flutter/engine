@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		0A1650EC231FA0ED001B895D /* Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1650EB231FA0ED001B895D /* Util.swift */; };
 		0AFADA83231A404100D5B2C4 /* ScreenBeforeFlutter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFADA82231A404100D5B2C4 /* ScreenBeforeFlutter.swift */; };
-		0AFADA86231A5E5A00D5B2C4 /* AppLifecycleUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFADA85231A5E5A00D5B2C4 /* AppLifecycleUITests.swift */; };
 		0AFADA89231A803E00D5B2C4 /* AppLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFADA88231A803E00D5B2C4 /* AppLifecycleTests.swift */; };
 		0DB781EF22E931BE00E9B371 /* Flutter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0DB781F122E933E800E9B371 /* Flutter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -91,8 +90,6 @@
 		0A1650EB231FA0ED001B895D /* Util.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Util.swift; sourceTree = "<group>"; };
 		0AFADA81231A404100D5B2C4 /* Scenarios-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Scenarios-Bridging-Header.h"; sourceTree = "<group>"; };
 		0AFADA82231A404100D5B2C4 /* ScreenBeforeFlutter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenBeforeFlutter.swift; sourceTree = "<group>"; };
-		0AFADA84231A5E5A00D5B2C4 /* ScenariosUITests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ScenariosUITests-Bridging-Header.h"; sourceTree = "<group>"; };
-		0AFADA85231A5E5A00D5B2C4 /* AppLifecycleUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycleUITests.swift; sourceTree = "<group>"; };
 		0AFADA87231A803E00D5B2C4 /* ScenariosTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ScenariosTests-Bridging-Header.h"; sourceTree = "<group>"; };
 		0AFADA88231A803E00D5B2C4 /* AppLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycleTests.swift; sourceTree = "<group>"; };
 		0DB781FC22EA2C0300E9B371 /* FlutterViewControllerTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FlutterViewControllerTest.m; sourceTree = "<group>"; };
@@ -206,8 +203,6 @@
 				248D76EE22E388380012F0C1 /* PlatformViewUITests.m */,
 				248D76F022E388380012F0C1 /* Info.plist */,
 				24D47D1E230CA4480069DD5E /* README.md */,
-				0AFADA85231A5E5A00D5B2C4 /* AppLifecycleUITests.swift */,
-				0AFADA84231A5E5A00D5B2C4 /* ScenariosUITests-Bridging-Header.h */,
 			);
 			path = ScenariosUITests;
 			sourceTree = "<group>";
@@ -380,7 +375,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0AFADA86231A5E5A00D5B2C4 /* AppLifecycleUITests.swift in Sources */,
 				248D76EF22E388380012F0C1 /* PlatformViewUITests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
