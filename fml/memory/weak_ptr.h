@@ -45,8 +45,6 @@ class WeakPtr {
   // Copy constructor.
   WeakPtr(const WeakPtr<T>& r) = default;
 
-  WeakPtr(std::nullptr_t r) : ptr_(r) {}
-
   template <typename U>
   WeakPtr(const WeakPtr<U>& r)
       : ptr_(static_cast<T*>(r.ptr_)), flag_(r.flag_), checker_(r.checker_) {}
