@@ -220,6 +220,31 @@ String _pathToSvgClipPath(ui.Path path,
   return sb.toString();
 }
 
+
+/// A list of font-family names that should never be wrapped in quotes.
+/// https://developer.mozilla.org/en-US/docs/Web/CSS/font-family#Syntax
+const Set<String> nonQuotableFontFamilies = {
+  'serif',
+  'sans-serif',
+  'monospace',
+  'cursive',
+  'fantasy',
+  'system-ui',
+  'emoji',
+  'math',
+  'fangsong',
+  'inherit',
+  'initial',
+  'unset',
+};
+
+/// Converts a list of strings (containing font-families) into a valid CSS list.
+/// 
+/// Wraps each item of the list in quotes (except if it's contained in the
+/// nonQuotableFontFamilies set), then joins them with commas.
+String _listToCssFontFamily(List<String> fontFamilies, {bool skipDomRendererFallback = false}) => 
+  fontFamilies.map((family) => nonQuotableFontFamilies.contains(family) ? family : "'${family}'").join(",");
+
 /// Determines if the (dynamic) exception passed in is a NS_ERROR_FAILURE
 /// (from Firefox).
 ///

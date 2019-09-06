@@ -306,6 +306,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
     ui.TextDirection textDirection,
     int maxLines,
     String fontFamily,
+    List<String> fontFamilyFallback,
     double fontSize,
     double height,
     ui.FontWeight fontWeight,
@@ -319,6 +320,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
         _fontStyle = fontStyle,
         _maxLines = maxLines,
         _fontFamily = fontFamily,
+        _fontFamilyFallback = fontFamilyFallback,
         _fontSize = fontSize,
         _height = height,
         // TODO(b/128317744): add support for strut style.
@@ -332,24 +334,26 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
   final ui.FontStyle _fontStyle;
   final int _maxLines;
   final String _fontFamily;
+  final List<String> _fontFamilyFallback;
   final double _fontSize;
   final double _height;
   final EngineStrutStyle _strutStyle;
   final String _ellipsis;
   final ui.Locale _locale;
 
-  String get _effectiveFontFamily {
-    if (assertionsEnabled) {
-      // In the flutter tester environment, we use a predictable-size font
-      // "Ahem". This makes widget tests predictable and less flaky.
-      if (ui.debugEmulateFlutterTesterEnvironment) {
-        return 'Ahem';
-      }
+  List<String> get _effectiveFontFamilies {
+    final List<String> families = [];
+    if (assertionsEnabled && ui.debugEmulateFlutterTesterEnvironment) {
+      return ['Ahem', DomRenderer.defaultFontFamily];
     }
-    if (_fontFamily == null || _fontFamily.isEmpty) {
-      return DomRenderer.defaultFontFamily;
+    if (_fontFamily != null && !_fontFamily.isEmpty) {
+      families.add(_fontFamily);
     }
-    return _fontFamily;
+    if (_fontFamilyFallback != null && !_fontFamilyFallback.isEmpty) {
+      families.addAll(_fontFamilyFallback);
+    }
+    families.add(DomRenderer.defaultFontFamily); // We always want to fall-back to the default...
+    return families;
   }
 
   double get _lineHeight {
@@ -447,7 +451,7 @@ class EngineTextStyle implements ui.TextStyle {
         _textBaseline = textBaseline,
         // TODO(b/128311960): when font fallback is supported, we should check
         //                    for it here.
-        _isFontFamilyProvided = fontFamily != null,
+        _isFontFamilyProvided = fontFamily != null || (fontFamilyFallback != null && !fontFamilyFallback.isEmpty),
         _fontFamily = fontFamily ?? '',
         // TODO(b/128311960): add support for font family fallback.
         _fontFamilyFallback = fontFamilyFallback,
@@ -479,18 +483,19 @@ class EngineTextStyle implements ui.TextStyle {
   final ui.Paint _foreground;
   final List<ui.Shadow> _shadows;
 
-  String get _effectiveFontFamily {
-    if (assertionsEnabled) {
-      // In the flutter tester environment, we use a predictable-size font
-      // "Ahem". This makes widget tests predictable and less flaky.
-      if (ui.debugEmulateFlutterTesterEnvironment) {
-        return 'Ahem';
-      }
+  List<String> get _effectiveFontFamilies {
+    final List<String> families = [];
+    if (assertionsEnabled && ui.debugEmulateFlutterTesterEnvironment) {
+      return ['Ahem', DomRenderer.defaultFontFamily];
     }
-    if (_fontFamily == null || _fontFamily.isEmpty) {
-      return DomRenderer.defaultFontFamily;
+    if (_fontFamily != null && !_fontFamily.isEmpty) {
+      families.add(_fontFamily);
     }
-    return _fontFamily;
+    if (_fontFamilyFallback != null && !_fontFamilyFallback.isEmpty) {
+      families.addAll(_fontFamilyFallback);
+    }
+    families.add(DomRenderer.defaultFontFamily); // We always want to fall-back to the default...
+    return families;
   }
 
   @override
@@ -1071,9 +1076,7 @@ void _applyParagraphStyleToElement({
       cssStyle.fontStyle =
           style._fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
     }
-    if (style._effectiveFontFamily != null) {
-      cssStyle.fontFamily = "'${style._effectiveFontFamily}'";
-    }
+    cssStyle.fontFamily = _listToCssFontFamily(style._effectiveFontFamilies);
   } else {
     if (style._textAlign != previousStyle._textAlign) {
       cssStyle.textAlign = textAlignToCssValue(
@@ -1108,7 +1111,7 @@ void _applyParagraphStyleToElement({
 ///
 /// If [previousStyle] is not null, updates only the mismatching attributes.
 /// If [isSpan] is true, the text element is a span within richtext and
-/// should not assign effectiveFontFamily if fontFamily was not specified.
+/// should not assign cssStyle.fontFamily if fontFamily was not specified.
 void _applyTextStyleToElement({
   @required html.HtmlElement element,
   @required EngineTextStyle style,
@@ -1134,16 +1137,11 @@ void _applyTextStyleToElement({
       cssStyle.fontStyle =
           style._fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
     }
-    // For test environment use effectiveFontFamily since we need to
-    // consistently use Ahem font.
-    if (isSpan && !ui.debugEmulateFlutterTesterEnvironment) {
-      if (style._fontFamily != null) {
-        cssStyle.fontFamily = "'${style._fontFamily}'";
-      }
-    } else {
-      if (style._effectiveFontFamily != null) {
-        cssStyle.fontFamily = "'${style._effectiveFontFamily}'";
-      }
+    // Only set effectiveFontFamilies if not a span within richtext, unless something is set
+    // Note that effectiveFontFamilies always contains the sans-serif fallback, so we're 
+    // looking for 2+ elements here.
+    if (!isSpan || style._effectiveFontFamilies.length > 1) {
+      cssStyle.fontFamily = _listToCssFontFamily(style._effectiveFontFamilies);
     }
     if (style._letterSpacing != null) {
       cssStyle.letterSpacing = '${style._letterSpacing}px';

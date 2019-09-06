@@ -10,6 +10,7 @@ class ParagraphGeometricStyle {
     this.fontWeight,
     this.fontStyle,
     this.fontFamily,
+    this.fontFamilyFallback,
     this.fontSize,
     this.lineHeight,
     this.maxLines,
@@ -22,6 +23,7 @@ class ParagraphGeometricStyle {
   final ui.FontWeight fontWeight;
   final ui.FontStyle fontStyle;
   final String fontFamily;
+  final List<String> fontFamilyFallback;
   final double fontSize;
   final double lineHeight;
   final int maxLines;
@@ -34,23 +36,25 @@ class ParagraphGeometricStyle {
   // use this style as key.
   int _cachedHashCode;
 
-  /// Returns the font-family that should be used to style the paragraph. It may
-  /// or may not be different from [fontFamily]:
+  /// Returns the List of font-families that should be used to style the paragraph. 
+  /// It combines [fontFamily] and [fontFamilyFallback]:
   ///
   /// - Always returns "Ahem" in tests.
   /// - Provides correct defaults when [fontFamily] doesn't have a value.
-  String get effectiveFontFamily {
-    if (assertionsEnabled) {
-      // In widget tests we use a predictable-size font "Ahem". This makes
-      // widget tests predictable and less flaky.
-      if (ui.debugEmulateFlutterTesterEnvironment) {
-        return 'Ahem';
-      }
+  /// - Ensures fallback to DomRenderer.defaultFontFamily
+  List<String> get effectiveFontFamilies {
+    final List<String> families = [];
+    if (assertionsEnabled && ui.debugEmulateFlutterTesterEnvironment) {
+      return ['Ahem', DomRenderer.defaultFontFamily];
     }
-    if (fontFamily == null || fontFamily.isEmpty) {
-      return DomRenderer.defaultFontFamily;
+    if (fontFamily != null && !fontFamily.isEmpty) {
+      families.add(fontFamily);
     }
-    return fontFamily;
+    if (fontFamilyFallback != null && !fontFamilyFallback.isEmpty) {
+      families.addAll(fontFamilyFallback);
+    }
+    families.add(DomRenderer.defaultFontFamily); // We always want to fall-back to the default...
+    return families;
   }
 
   String _cssFontString;
@@ -86,7 +90,7 @@ class ParagraphGeometricStyle {
       result.write(DomRenderer.defaultFontSize);
     }
     result.write(' ');
-    result.write("'$effectiveFontFamily'");
+    result.write("${_listToCssFontFamily(effectiveFontFamilies)}");
 
     return result.toString();
   }
@@ -227,7 +231,7 @@ class TextDimensions {
   void applyStyle(ParagraphGeometricStyle style) {
     _element.style
       ..fontSize = style.fontSize != null ? '${style.fontSize.floor()}px' : null
-      ..fontFamily = "'${style.effectiveFontFamily}'"
+      ..fontFamily = "${_listToCssFontFamily(style.effectiveFontFamilies)}"
       ..fontWeight =
           style.fontWeight != null ? fontWeightToCss(style.fontWeight) : null
       ..fontStyle = style.fontStyle != null

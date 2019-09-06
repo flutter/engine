@@ -163,7 +163,7 @@ class SkRecordingCanvas implements RecordingCanvas {
     final EngineParagraph engineParagraph = paragraph;
     final ParagraphGeometricStyle style = engineParagraph.geometricStyle;
     final js.JsObject skFont =
-        skiaFontCollection.getFont(style.effectiveFontFamily, style.fontSize);
+        skiaFontCollection.getFont(style.effectiveFontFamilies[0], style.fontSize);
     final js.JsObject skShapedTextOpts = js.JsObject.jsify(<String, dynamic>{
       'font': skFont,
       'leftToRight': true,
