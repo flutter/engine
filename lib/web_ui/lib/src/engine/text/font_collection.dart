@@ -54,13 +54,6 @@ class FontCollection {
       _assetFontManager = _PolyfillFontManager();
     }
 
-    // If not on Chrome, add Roboto to the bundled fonts since it is provided
-    // by default by Flutter.
-    if (browserEngine != BrowserEngine.blink) {
-      _assetFontManager
-          .registerAsset('Roboto', 'url($_robotoFontUrl)', <String, String>{});
-    }
-
     for (Map<String, dynamic> fontFamily in fontManifest) {
       final String family = fontFamily['family'];
       final List<dynamic> fontAssets = fontFamily['fonts'];
