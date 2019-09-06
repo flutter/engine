@@ -5,8 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_CPP_TEXT_INPUT_MODEL_H_
 #define FLUTTER_SHELL_PLATFORM_CPP_TEXT_INPUT_MODEL_H_
 
-#include <codecvt>
-#include <locale>
 #include <memory>
 #include <string>
 
@@ -34,7 +32,7 @@ class TextInputModel {
   // Either appends after the cursor (when selection base and extent are the
   // same), or deletes the selected characters, replacing the text with the
   // character specified.
-  void AddCharacter(unsigned int c);
+  void AddCharacter(uint32_t c);
 
   // Deletes either the selection, or one character ahead of the cursor.
   //
@@ -91,12 +89,12 @@ class TextInputModel {
  private:
   void DeleteSelected();
 
-  std::u16string text_;
+  std::u32string text_;
   int client_id_;
   std::string input_type_;
   std::string input_action_;
-  std::u16string::iterator selection_base_;
-  std::u16string::iterator selection_extent_;
+  std::u32string::iterator selection_base_;
+  std::u32string::iterator selection_extent_;
 };
 
 }  // namespace flutter
