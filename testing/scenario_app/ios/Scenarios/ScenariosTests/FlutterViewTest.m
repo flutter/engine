@@ -8,6 +8,7 @@
 
 @interface FlutterViewGLContextTest : XCTestCase
 @property(nonatomic, strong) FlutterViewController* flutterViewController;
+@property(nonatomic, strong) FlutterEngine* flutterEngine;
 @end
 
 @implementation FlutterViewGLContextTest
@@ -20,14 +21,18 @@
 - (void)tearDown {
   if (self.flutterViewController) {
     [self.flutterViewController removeFromParentViewController];
+    [self.flutterViewController release];
+  }
+  if (self.flutterEngine) {
+    [self.flutterEngine release];
   }
   [super tearDown];
 }
 
 - (void)testFlutterViewDestroyed {
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"testGL" project:nil];
-  [engine runWithEntrypoint:nil];
-  self.flutterViewController = [[FlutterViewController alloc] initWithEngine:engine
+  self.flutterEngine = [[FlutterEngine alloc] initWithName:@"testGL" project:nil];
+  [self.flutterEngine runWithEntrypoint:nil];
+  self.flutterViewController = [[FlutterViewController alloc] initWithEngine:self.flutterEngine
                                                                      nibName:nil
                                                                       bundle:nil];
 
