@@ -1153,7 +1153,7 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 }
 
 - (BOOL)hasOnscreenSurface {
-    return [_engine.get() iosPlatformView] -> HasOnscreenSurface();
+  return [_engine.get() iosPlatformView] -> HasOnscreenSurface();
 }
 
 @end

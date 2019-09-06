@@ -39,18 +39,23 @@
   [rootVC presentViewController:self.flutterViewController animated:NO completion:nil];
 
   // TODO: refactor this to not rely on private test-only APIs
-  __weak id flutterView = [self.flutterViewController performSelector:NSSelectorFromString(@"flutterView")];
+  __weak id flutterView =
+      [self.flutterViewController performSelector:NSSelectorFromString(@"flutterView")];
   XCTAssertNotNil(flutterView);
-  XCTAssertTrue([self.flutterViewController performSelector:NSSelectorFromString(@"hasOnscreenSurface")]);
+  XCTAssertTrue(
+      [self.flutterViewController performSelector:NSSelectorFromString(@"hasOnscreenSurface")]);
 
-  [self.flutterViewController dismissViewControllerAnimated:NO completion:^{
-      __weak id flutterView = [self.flutterViewController performSelector:NSSelectorFromString(@"flutterView")];
-      XCTAssertNil(flutterView);
-      XCTAssertFalse([self.flutterViewController performSelector:NSSelectorFromString(@"hasOnscreenSurface")]);
-  }];
+  [self.flutterViewController
+      dismissViewControllerAnimated:NO
+                         completion:^{
+                           __weak id flutterView = [self.flutterViewController
+                               performSelector:NSSelectorFromString(@"flutterView")];
+                           XCTAssertNil(flutterView);
+                           XCTAssertFalse([self.flutterViewController
+                               performSelector:NSSelectorFromString(@"hasOnscreenSurface")]);
+                         }];
 }
 
 @end
 
 #pragma clang diagnostic pop
-
