@@ -46,6 +46,11 @@ void PlatformViewIOS::NotifyDestroyed() {
   PlatformView::NotifyDestroyed();
   ios_surface_.reset();
 }
+
+bool PlatformViewIOS::HasOnscreenSurface() const {
+  return !!ios_surface_;
+}
+
 void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller) {
   if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
