@@ -6,9 +6,6 @@
 #import <XCTest/XCTest.h>
 #import "AppDelegate.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wundeclared-selector"
-
 @interface FlutterViewGLContextTest : XCTestCase
 @property(nonatomic, strong) FlutterViewController* flutterViewController;
 @end
@@ -39,23 +36,17 @@
   [rootVC presentViewController:self.flutterViewController animated:NO completion:nil];
 
   // TODO: refactor this to not rely on private test-only APIs
-  __weak id flutterView =
-      [self.flutterViewController performSelector:NSSelectorFromString(@"flutterView")];
+  __weak id flutterView = [self.flutterViewController flutterView];
   XCTAssertNotNil(flutterView);
-  XCTAssertTrue(
-      [self.flutterViewController performSelector:NSSelectorFromString(@"hasOnscreenSurface")]);
+  XCTAssertTrue([self.flutterViewController hasOnscreenSurface]);
 
   [self.flutterViewController
       dismissViewControllerAnimated:NO
                          completion:^{
-                           __weak id flutterView = [self.flutterViewController
-                               performSelector:NSSelectorFromString(@"flutterView")];
+                           __weak id flutterView = [self.flutterViewController flutterView];
                            XCTAssertNil(flutterView);
-                           XCTAssertFalse([self.flutterViewController
-                               performSelector:NSSelectorFromString(@"hasOnscreenSurface")]);
+                           XCTAssertFalse([self.flutterViewController hasOnscreenSurface]);
                          }];
 }
 
 @end
-
-#pragma clang diagnostic pop
