@@ -39,7 +39,7 @@ static constexpr uint32_t kInputModelLimit = 256;
 namespace flutter {
 
 void TextInputPlugin::CharHook(Win32FlutterWindow* window,
-                               unsigned int code_point) {
+                               char32_t code_point) {
   if (active_model_ == nullptr) {
     return;
   }

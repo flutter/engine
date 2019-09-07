@@ -164,21 +164,22 @@ Win32Window::MessageHandler(HWND hwnd,
       case WM_SYSCHAR: {
         if (wparam == VK_BACK)
           break;
-        char32_t ch = static_cast<char32_t>(wparam);
-        // What we expect to pass in is a Unicode, if it's UTF-32, it doesn't
-        // need any processing, and if it's UTF-16, it's converted to Unicode.
-        static char32_t lead_ch = 0;
-        // If ch is Lead Surrogate.
-        if ((ch & 0xFFFFFC00) == 0xD800) {
-          lead_ch = ch;
+        char32_t code_point = static_cast<char32_t>(wparam);
+        static char32_t lead_surrogate = 0;
+        // If code_point is LeadSurrogate, save and return.
+        if ((code_point & 0xFFFFFC00) == 0xD800) {
+          lead_surrogate = code_point;
           return TRUE;
         }
-        // If ch is Trail Surrogate and pre-ch is Lead Surrogate.
-        if (lead_ch != 0 && (ch & 0xFFFFFC00) == 0xDC00) {
-          ch = 0x10000 + ((lead_ch & 0x000003FF) << 10) + (ch & 0x3FF);
+        // Merge TrailSurrogate and LeadSurrogate.
+        if (lead_surrogate != 0 && (code_point & 0xFFFFFC00) == 0xDC00) {
+          code_point =
+            0x10000
+            + ((lead_surrogate & 0x000003FF) << 10)
+            + (code_point & 0x3FF);
         }
-        lead_ch = 0;
-        window->OnChar(ch);
+        lead_surrogate = 0;
+        window->OnChar(code_point);
         break;
       }
       case WM_KEYDOWN:
