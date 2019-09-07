@@ -173,10 +173,8 @@ Win32Window::MessageHandler(HWND hwnd,
         }
         // Merge TrailSurrogate and LeadSurrogate.
         if (lead_surrogate != 0 && (code_point & 0xFFFFFC00) == 0xDC00) {
-          code_point =
-            0x10000
-            + ((lead_surrogate & 0x000003FF) << 10)
-            + (code_point & 0x3FF);
+          code_point = 0x10000 + ((lead_surrogate & 0x000003FF) << 10) +
+                       (code_point & 0x3FF);
         }
         lead_surrogate = 0;
         window->OnChar(code_point);
