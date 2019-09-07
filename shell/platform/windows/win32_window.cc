@@ -153,17 +153,15 @@ Win32Window::MessageHandler(HWND hwnd,
         window->OnScroll(
             0.0, -(static_cast<short>(HIWORD(wparam)) / (double)WHEEL_DELTA));
         break;
-      case WM_UNICHAR:
-      {
-        // Tell thiary-pary app, we can support Unicode.
+      case WM_UNICHAR: {
+        // Tell third-pary app, we can support Unicode.
         if (wparam == UNICODE_NOCHAR)
           return TRUE;
         // DefWindowProc will send WM_CHAR for this WM_UNICHAR.
         break;
       }
       case WM_CHAR:
-      case WM_SYSCHAR:
-      {
+      case WM_SYSCHAR: {
         if (wparam == VK_BACK)
           break;
         char32_t ch = static_cast<char32_t>(wparam);

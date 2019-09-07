@@ -36,7 +36,7 @@ static constexpr uint32_t kInputModelLimit = 256;
 
 namespace flutter {
 
-void TextInputPlugin::CharHook(GLFWwindow* window, uint32_t code_point) {
+void TextInputPlugin::CharHook(GLFWwindow* window, unsigned int code_point) {
   if (active_model_ == nullptr) {
     return;
   }
