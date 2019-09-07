@@ -7,6 +7,7 @@
 @interface ScreenBeforeFlutter : UIViewController
 
 - (id)initWithEngineRunCompletion:(void (^)(void))engineRunCompletion;
+- (FlutterViewController*)showFlutter;
 
 @property(nonatomic, readonly) FlutterEngine* engine;
 

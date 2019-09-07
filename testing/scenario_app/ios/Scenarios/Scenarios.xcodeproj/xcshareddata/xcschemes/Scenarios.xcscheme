@@ -86,7 +86,7 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "--screen-before-flutter"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--platform-view"

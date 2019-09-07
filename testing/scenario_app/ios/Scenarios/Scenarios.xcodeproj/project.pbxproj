@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		0A57B3BD2323C4BD00DD9521 /* ScreenBeforeFlutter.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A57B3BC2323C4BD00DD9521 /* ScreenBeforeFlutter.m */; };
 		0A57B3BF2323C74200DD9521 /* Util.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A57B3BE2323C74200DD9521 /* Util.m */; };
-		0AFADA89231A803E00D5B2C4 /* AppLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFADA88231A803E00D5B2C4 /* AppLifecycleTests.swift */; };
+		0A57B3C22323D2D700DD9521 /* AppLifecycleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A57B3C12323D2D700DD9521 /* AppLifecycleTests.m */; };
 		0DB781EF22E931BE00E9B371 /* Flutter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0DB781F122E933E800E9B371 /* Flutter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0DB781FE22EA2C6D00E9B371 /* Flutter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; };
@@ -91,8 +91,7 @@
 		0A57B3BC2323C4BD00DD9521 /* ScreenBeforeFlutter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ScreenBeforeFlutter.m; sourceTree = "<group>"; };
 		0A57B3BE2323C74200DD9521 /* Util.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Util.m; sourceTree = "<group>"; };
 		0A57B3C02323C74D00DD9521 /* Util.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Util.h; sourceTree = "<group>"; };
-		0AFADA87231A803E00D5B2C4 /* ScenariosTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ScenariosTests-Bridging-Header.h"; sourceTree = "<group>"; };
-		0AFADA88231A803E00D5B2C4 /* AppLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycleTests.swift; sourceTree = "<group>"; };
+		0A57B3C12323D2D700DD9521 /* AppLifecycleTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppLifecycleTests.m; sourceTree = "<group>"; };
 		0DB781FC22EA2C0300E9B371 /* FlutterViewControllerTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FlutterViewControllerTest.m; sourceTree = "<group>"; };
 		244EA6CF230DBE8900B2D26E /* golden_platform_view_D21AP.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = golden_platform_view_D21AP.png; sourceTree = "<group>"; };
 		246B4E4122E3B5F700073EBF /* App.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = App.framework; sourceTree = "<group>"; };
@@ -190,8 +189,7 @@
 				248FDFC322FE7CD0009CC7CD /* FlutterEngineTest.m */,
 				0DB781FC22EA2C0300E9B371 /* FlutterViewControllerTest.m */,
 				248D76E522E388380012F0C1 /* Info.plist */,
-				0AFADA88231A803E00D5B2C4 /* AppLifecycleTests.swift */,
-				0AFADA87231A803E00D5B2C4 /* ScenariosTests-Bridging-Header.h */,
+				0A57B3C12323D2D700DD9521 /* AppLifecycleTests.m */,
 			);
 			path = ScenariosTests;
 			sourceTree = "<group>";
@@ -367,8 +365,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0AFADA89231A803E00D5B2C4 /* AppLifecycleTests.swift in Sources */,
 				0DB7820222EA493B00E9B371 /* FlutterViewControllerTest.m in Sources */,
+				0A57B3C22323D2D700DD9521 /* AppLifecycleTests.m in Sources */,
 				248FDFC422FE7CD0009CC7CD /* FlutterEngineTest.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -585,7 +583,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = dev.flutter.ScenariosTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "ScenariosTests/ScenariosTests-Bridging-Header.h";
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -616,7 +615,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = dev.flutter.ScenariosTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "ScenariosTests/ScenariosTests-Bridging-Header.h";
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Scenarios.app/Scenarios";
