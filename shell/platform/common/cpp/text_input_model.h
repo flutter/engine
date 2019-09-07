@@ -32,7 +32,7 @@ class TextInputModel {
   // Either appends after the cursor (when selection base and extent are the
   // same), or deletes the selected characters, replacing the text with the
   // character specified.
-  void AddCharacter(uint32_t c);
+  void AddCharacter(char32_t c);
 
   // Deletes either the selection, or one character ahead of the cursor.
   //

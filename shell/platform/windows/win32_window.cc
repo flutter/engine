@@ -153,13 +153,36 @@ Win32Window::MessageHandler(HWND hwnd,
         window->OnScroll(
             0.0, -(static_cast<short>(HIWORD(wparam)) / (double)WHEEL_DELTA));
         break;
+      case WM_UNICHAR:
+      {
+        // Tell thiary-pary app, we can support Unicode.
+        if (wparam == UNICODE_NOCHAR)
+          return TRUE;
+        // DefWindowProc will send WM_CHAR for this WM_UNICHAR.
+        break;
+      }
       case WM_CHAR:
       case WM_SYSCHAR:
-      case WM_UNICHAR:
-        if (wparam != VK_BACK) {
-          window->OnChar(static_cast<unsigned int>(wparam));
+      {
+        if (wparam == VK_BACK)
+          break;
+        char32_t ch = static_cast<char32_t>(wparam);
+        // What we expect to pass in is a Unicode, if it's UTF-32, it doesn't
+        // need any processing, and if it's UTF-16, it's converted to Unicode.
+        static char32_t lead_ch = 0;
+        // If ch is Lead Surrogate.
+        if ((ch & 0xFFFFFC00) == 0xD800) {
+          lead_ch = ch;
+          return TRUE;
         }
+        // If ch is Trail Surrogate and pre-ch is Lead Surrogate.
+        if (lead_ch != 0 && (ch & 0xFFFFFC00) == 0xDC00) {
+          ch = 0x10000 + ((lead_ch & 0x000003FF) << 10) + (ch & 0x3FF);
+        }
+        lead_ch = 0;
+        window->OnChar(ch);
         break;
+      }
       case WM_KEYDOWN:
       case WM_SYSKEYDOWN:
       case WM_KEYUP:
