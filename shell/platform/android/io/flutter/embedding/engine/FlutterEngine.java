@@ -38,24 +38,33 @@ import io.flutter.plugin.platform.PlatformViewsController;
  * WARNING: THIS CLASS IS EXPERIMENTAL. DO NOT SHIP A DEPENDENCY ON THIS CODE.
  * IF YOU USE IT, WE WILL BREAK YOU.
  *
- * A {@code FlutterEngine} can execute in the background, or it can be rendered to the screen by
- * using the accompanying {@link FlutterRenderer}.  Rendering can be started and stopped, thus
- * allowing a {@code FlutterEngine} to move from UI interaction to data-only processing and then
+ * The {@code FlutterEngine} is the container through which Dart code can be run in an Android
+ * application.
+ *
+ * Dart code in a {@code FlutterEngine} can execute in the background, or it can be render to the
+ * screen by using the accompanying {@link FlutterRenderer} and Dart code using the Flutter
+ * framework on the Dart side. Rendering can be started and stopped, thus allowing a
+ * {@code FlutterEngine} to move from UI interaction to data-only processing and then
  * back to UI interaction.
  *
  * Multiple {@code FlutterEngine}s may exist, execute Dart code, and render UIs within a single
  * Android app.
  *
- * To start running Flutter within this {@code FlutterEngine}, get a reference to this engine's
- * {@link DartExecutor} and then use {@link DartExecutor#executeDartEntrypoint(DartExecutor.DartEntrypoint)}.
+ * To start running Dart and/or Flutter within this {@code FlutterEngine}, get a reference to this
+ * engine's {@link DartExecutor} and then use {@link DartExecutor#executeDartEntrypoint(DartExecutor.DartEntrypoint)}.
  * The {@link DartExecutor#executeDartEntrypoint(DartExecutor.DartEntrypoint)} method must not be
  * invoked twice on the same {@code FlutterEngine}.
  *
  * To start rendering Flutter content to the screen, use {@link #getRenderer()} to obtain a
  * {@link FlutterRenderer} and then attach a {@link RenderSurface}.  Consider using
  * a {@link io.flutter.embedding.android.FlutterView} as a {@link RenderSurface}.
+ *
+ * Instatiating the first {@code FlutterEngine} per process will also load the Flutter engine's
+ * native library and start the Dart VM once. Subsequent {@code FlutterEngine}s will run on the same
+ * VM instance but will have their own Dart <a href="https://api.dartlang.org/stable/dart-isolate/Isolate-class.html">Isolate</a>.
+ * Each Isolate is a self-contained Dart environment and cannot communicate with each other except
+ * via Isolate ports.
  */
-// TODO(mattcarroll): re-evaluate system channel APIs - some are not well named or differentiated
 public class FlutterEngine implements LifecycleOwner {
   private static final String TAG = "FlutterEngine";
 
