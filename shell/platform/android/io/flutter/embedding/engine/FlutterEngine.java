@@ -31,39 +31,41 @@ import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
+import io.flutter.view.FlutterMain;
 
 /**
  * A single Flutter execution environment.
- *
- * WARNING: THIS CLASS IS EXPERIMENTAL. DO NOT SHIP A DEPENDENCY ON THIS CODE.
- * IF YOU USE IT, WE WILL BREAK YOU.
- *
+ * <p>
+ * WARNING: THIS CLASS IS CURRENTLY EXPERIMENTAL. USE AT YOUR OWN RISK.
+ * <p>
  * The {@code FlutterEngine} is the container through which Dart code can be run in an Android
  * application.
- *
+ * <p>
  * Dart code in a {@code FlutterEngine} can execute in the background, or it can be render to the
  * screen by using the accompanying {@link FlutterRenderer} and Dart code using the Flutter
  * framework on the Dart side. Rendering can be started and stopped, thus allowing a
- * {@code FlutterEngine} to move from UI interaction to data-only processing and then
- * back to UI interaction.
- *
+ * {@code FlutterEngine} to move from UI interaction to data-only processing and then back to UI
+ * interaction.
+ * <p>
  * Multiple {@code FlutterEngine}s may exist, execute Dart code, and render UIs within a single
  * Android app.
- *
+ * <p>
  * To start running Dart and/or Flutter within this {@code FlutterEngine}, get a reference to this
- * engine's {@link DartExecutor} and then use {@link DartExecutor#executeDartEntrypoint(DartExecutor.DartEntrypoint)}.
- * The {@link DartExecutor#executeDartEntrypoint(DartExecutor.DartEntrypoint)} method must not be
+ * engine's {@link DartExecutor} and then use
+ * {@link DartExecutor#executeDartEntrypoint(DartExecutor.DartEntrypoint)}. The
+ * {@link DartExecutor#executeDartEntrypoint(DartExecutor.DartEntrypoint)} method must not be
  * invoked twice on the same {@code FlutterEngine}.
- *
+ * <p>
  * To start rendering Flutter content to the screen, use {@link #getRenderer()} to obtain a
- * {@link FlutterRenderer} and then attach a {@link RenderSurface}.  Consider using
- * a {@link io.flutter.embedding.android.FlutterView} as a {@link RenderSurface}.
- *
+ * {@link FlutterRenderer} and then attach a {@link RenderSurface}.  Consider using a
+ * {@link io.flutter.embedding.android.FlutterView} as a {@link RenderSurface}.
+ * <p>
  * Instatiating the first {@code FlutterEngine} per process will also load the Flutter engine's
- * native library and start the Dart VM once. Subsequent {@code FlutterEngine}s will run on the same
- * VM instance but will have their own Dart <a href="https://api.dartlang.org/stable/dart-isolate/Isolate-class.html">Isolate</a>.
- * Each Isolate is a self-contained Dart environment and cannot communicate with each other except
- * via Isolate ports.
+ * native library and start the Dart VM. Subsequent {@code FlutterEngine}s will run on the same VM
+ * instance but will have their own Dart <a
+ * href="https://api.dartlang.org/stable/dart-isolate/Isolate-class.html">Isolate</a> when the
+ * {@link DartExecutor} is run. Each Isolate is a self-contained Dart environment and cannot
+ * communicate with each other except via Isolate ports.
  */
 public class FlutterEngine implements LifecycleOwner {
   private static final String TAG = "FlutterEngine";
@@ -119,24 +121,30 @@ public class FlutterEngine implements LifecycleOwner {
 
   /**
    * Constructs a new {@code FlutterEngine}.
-   *
-   * {@code FlutterMain.startInitialization} must be called before constructing a {@code FlutterEngine}
-   * to load the native libraries needed to attach to JNI.
-   *
+   * <p>
    * A new {@code FlutterEngine} does not execute any Dart code automatically. See
    * {@link #getDartExecutor()} and {@link DartExecutor#executeDartEntrypoint(DartExecutor.DartEntrypoint)}
    * to begin executing Dart code within this {@code FlutterEngine}.
-   *
+   * <p>
    * A new {@code FlutterEngine} will not display any UI until a
    * {@link RenderSurface} is registered. See
    * {@link #getRenderer()} and {@link FlutterRenderer#startRenderingToSurface(RenderSurface)}.
-   *
+   * <p>
    * A new {@code FlutterEngine} does not come with any Flutter plugins attached. To attach plugins,
    * see {@link #getPlugins()}.
-   *
+   * <p>
    * A new {@code FlutterEngine} does come with all default system channels attached.
+   * <p>
+   * The first {@code FlutterEngine} instance constructed per process will also load the Flutter
+   * native library and start a Dart VM.
+   *
+   * In order to pass Dart VM initialization arguments (see {@link io.flutter.embedding.engine.FlutterShellArgs})
+   * when creating the VM, manually set the initialization arguments by calling {@link FlutterMain#startInitialization(io.flutter.view.Context)}
+   * and {@link FlutterMain#ensureInitializationComplete(io.flutter.view.Context, String[])}.
    */
   public FlutterEngine(@NonNull Context context) {
+    FlutterMain.startInitialization(context);
+    FlutterMain.ensureInitializationComplete(context, null);
     this.flutterJNI = new FlutterJNI();
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
     attachToJni();
@@ -183,9 +191,9 @@ public class FlutterEngine implements LifecycleOwner {
   }
 
   /**
-   * Cleans up all components within this {@code FlutterEngine} and then detaches from Flutter's
-   * native implementation.
-   *
+   * Cleans up all components within this {@code FlutterEngine} and destroys the associated Dart
+   * Isolate. All state held by the Dart Isolate, such as the Flutter Elements tree, is lost.
+   * <p>
    * This {@code FlutterEngine} instance should be discarded after invoking this method.
    */
   public void destroy() {
@@ -215,10 +223,10 @@ public class FlutterEngine implements LifecycleOwner {
 
   /**
    * The Dart execution context associated with this {@code FlutterEngine}.
-   *
+   * <p>
    * The {@link DartExecutor} can be used to start executing Dart code from a given entrypoint.
    * See {@link DartExecutor#executeDartEntrypoint(DartExecutor.DartEntrypoint)}.
-   *
+   * <p>
    * Use the {@link DartExecutor} to connect any desired message channels and method channels
    * to facilitate communication between Android and Dart/Flutter.
    */
@@ -229,7 +237,7 @@ public class FlutterEngine implements LifecycleOwner {
 
   /**
    * The rendering system associated with this {@code FlutterEngine}.
-   *
+   * <p>
    * To render a Flutter UI that is produced by this {@code FlutterEngine}'s Dart code, attach
    * a {@link RenderSurface} to this
    * {@link FlutterRenderer}.
