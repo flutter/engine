@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0A1650EC231FA0ED001B895D /* Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1650EB231FA0ED001B895D /* Util.swift */; };
-		0AFADA83231A404100D5B2C4 /* ScreenBeforeFlutter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFADA82231A404100D5B2C4 /* ScreenBeforeFlutter.swift */; };
+		0A57B3BD2323C4BD00DD9521 /* ScreenBeforeFlutter.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A57B3BC2323C4BD00DD9521 /* ScreenBeforeFlutter.m */; };
+		0A57B3BF2323C74200DD9521 /* Util.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A57B3BE2323C74200DD9521 /* Util.m */; };
 		0AFADA89231A803E00D5B2C4 /* AppLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFADA88231A803E00D5B2C4 /* AppLifecycleTests.swift */; };
 		0DB781EF22E931BE00E9B371 /* Flutter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0DB781F122E933E800E9B371 /* Flutter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 246B4E4522E3B61000073EBF /* Flutter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -87,9 +87,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0A1650EB231FA0ED001B895D /* Util.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Util.swift; sourceTree = "<group>"; };
-		0AFADA81231A404100D5B2C4 /* Scenarios-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Scenarios-Bridging-Header.h"; sourceTree = "<group>"; };
-		0AFADA82231A404100D5B2C4 /* ScreenBeforeFlutter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenBeforeFlutter.swift; sourceTree = "<group>"; };
+		0A57B3BB2323C4BD00DD9521 /* ScreenBeforeFlutter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ScreenBeforeFlutter.h; sourceTree = "<group>"; };
+		0A57B3BC2323C4BD00DD9521 /* ScreenBeforeFlutter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ScreenBeforeFlutter.m; sourceTree = "<group>"; };
+		0A57B3BE2323C74200DD9521 /* Util.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Util.m; sourceTree = "<group>"; };
+		0A57B3C02323C74D00DD9521 /* Util.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Util.h; sourceTree = "<group>"; };
 		0AFADA87231A803E00D5B2C4 /* ScenariosTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ScenariosTests-Bridging-Header.h"; sourceTree = "<group>"; };
 		0AFADA88231A803E00D5B2C4 /* AppLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycleTests.swift; sourceTree = "<group>"; };
 		0DB781FC22EA2C0300E9B371 /* FlutterViewControllerTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FlutterViewControllerTest.m; sourceTree = "<group>"; };
@@ -175,9 +176,10 @@
 				248D76D322E388380012F0C1 /* Assets.xcassets */,
 				248D76D822E388380012F0C1 /* Info.plist */,
 				248D76D922E388380012F0C1 /* main.m */,
-				0AFADA82231A404100D5B2C4 /* ScreenBeforeFlutter.swift */,
-				0AFADA81231A404100D5B2C4 /* Scenarios-Bridging-Header.h */,
-				0A1650EB231FA0ED001B895D /* Util.swift */,
+				0A57B3BB2323C4BD00DD9521 /* ScreenBeforeFlutter.h */,
+				0A57B3BC2323C4BD00DD9521 /* ScreenBeforeFlutter.m */,
+				0A57B3BE2323C74200DD9521 /* Util.m */,
+				0A57B3C02323C74D00DD9521 /* Util.h */,
 			);
 			path = Scenarios;
 			sourceTree = "<group>";
@@ -354,10 +356,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				248D76DA22E388380012F0C1 /* main.m in Sources */,
-				0AFADA83231A404100D5B2C4 /* ScreenBeforeFlutter.swift in Sources */,
-				0A1650EC231FA0ED001B895D /* Util.swift in Sources */,
 				24F1FB89230B4579005ACE7C /* TextPlatformView.m in Sources */,
 				248D76CC22E388370012F0C1 /* AppDelegate.m in Sources */,
+				0A57B3BF2323C74200DD9521 /* Util.m in Sources */,
+				0A57B3BD2323C4BD00DD9521 /* ScreenBeforeFlutter.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -563,7 +565,6 @@
 		248D76F722E388380012F0C1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -595,7 +596,6 @@
 		248D76F822E388380012F0C1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -626,7 +626,6 @@
 		248D76FA22E388380012F0C1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
@@ -657,7 +656,6 @@
 		248D76FB22E388380012F0C1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
