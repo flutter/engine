@@ -88,7 +88,30 @@ void TextInputModel::AddCharacter(uint32_t c) {
   if (selection_base_ != selection_extent_) {
     DeleteSelected();
   }
-  selection_extent_ = text_.insert(selection_extent_, c);
+  char32_t ch = c;
+  {
+    // I put this code (compatible processing logic for UTF-16) here for
+    // several reasons:
+    // 1. If I put it in win32/glfw 's message processing logic, there would
+    // be two sets of duplicate code.
+    // 2. Putting it here can still be guaranteed to be platform-independent
+    // and can handle more scenarios.
+    // Specific logic:
+    // What we expect to pass in is a Unicode, if it's UTF-32, it doesn't need
+    // any processing, and if it's UTF-16, it's converted to Unicode.
+    static char32_t lead_ch = 0;
+    // If ch is Lead Surrogate.
+    if ((ch & 0xFFFFFC00) == 0xD800) {
+      lead_ch = ch;
+      return;
+    }
+    // If ch is Trail Surrogate and pre-ch is Lead Surrogate.
+    if (lead_ch != 0 && (ch & 0xFFFFFC00) == 0xDC00) {
+      ch = 0x10000 + ((lead_ch & 0x000003FF) << 10) + (ch & 0x3FF);
+    }
+    lead_ch = 0;
+  }
+  selection_extent_ = text_.insert(selection_extent_, ch);
   selection_extent_++;
   selection_base_ = selection_extent_;
 }
