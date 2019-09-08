@@ -232,12 +232,12 @@ std::unique_ptr<Surface> ShellTestPlatformView::CreateRenderingSurface() {
 }
 
 // |PlatformView|
-std::unique_ptr<PointerDataDispatcher>
-ShellTestPlatformView::MakePointerDataDispatcher(
-    Animator& animator,
-    RuntimeController& controller) {
-  return std::make_unique<IosPointerDataDispatcher>(animator, controller,
-                                                    task_runners_);
+PointerDataDispatcherMaker ShellTestPlatformView::GetDispatcherMaker() {
+  return [](Animator& animator, RuntimeController& controller,
+            TaskRunners task_runners) {
+    return std::make_unique<SmoothPointerDataDispatcher>(animator, controller,
+                                                         task_runners);
+  };
 }
 
 // |GPUSurfaceGLDelegate|

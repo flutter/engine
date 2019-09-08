@@ -86,9 +86,7 @@ class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
   std::unique_ptr<Surface> CreateRenderingSurface() override;
 
   // |PlatformView|
-  std::unique_ptr<PointerDataDispatcher> MakePointerDataDispatcher(
-      Animator& animator,
-      RuntimeController& controller) override;
+  PointerDataDispatcherMaker GetDispatcherMaker() override;
 
   // |GPUSurfaceGLDelegate|
   bool GLContextMakeCurrent() override;

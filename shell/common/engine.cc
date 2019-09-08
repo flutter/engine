@@ -36,7 +36,7 @@ static constexpr char kSettingsChannel[] = "flutter/settings";
 static constexpr char kIsolateChannel[] = "flutter/isolate";
 
 Engine::Engine(Delegate& delegate,
-               PlatformView& platform_view,
+               PointerDataDispatcherMaker& dispatcher_maker,
                DartVM& vm,
                fml::RefPtr<const DartSnapshot> isolate_snapshot,
                fml::RefPtr<const DartSnapshot> shared_snapshot,
@@ -61,7 +61,7 @@ Engine::Engine(Delegate& delegate,
       &vm,                                   // VM
       std::move(isolate_snapshot),           // isolate snapshot
       std::move(shared_snapshot),            // shared snapshot
-      std::move(task_runners),               // task runners
+      task_runners,                          // task runners
       std::move(io_manager),                 // io manager
       image_decoder_.GetWeakPtr(),           // image decoder
       settings_.advisory_script_uri,         // advisory script uri
@@ -71,8 +71,8 @@ Engine::Engine(Delegate& delegate,
       settings_.isolate_shutdown_callback    // isolate shutdown callback
   );
 
-  pointer_data_dispatcher_ =
-      platform_view.MakePointerDataDispatcher(*animator_, *runtime_controller_);
+  pointer_data_dispatcher_ = dispatcher_maker(*animator_, *runtime_controller_,
+                                              std::move(task_runners));
 }
 
 Engine::~Engine() = default;
@@ -433,7 +433,7 @@ void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
   layer_tree->set_frame_size(frame_size);
   animator_->Render(std::move(layer_tree));
 
-  pointer_data_dispatcher_->OnRender();
+  pointer_data_dispatcher_->OnFrameLayerTreeReceived();
 }
 
 void Engine::UpdateSemantics(SemanticsNodeUpdates update,

@@ -270,7 +270,7 @@ class Engine final : public RuntimeDelegate {
   ///                                GPU.
   ///
   Engine(Delegate& delegate,
-         PlatformView& platform_view,
+         PointerDataDispatcherMaker& dispatcher_maker,
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
          fml::RefPtr<const DartSnapshot> shared_snapshot,

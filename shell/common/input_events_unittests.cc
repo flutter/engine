@@ -8,38 +8,41 @@
 namespace flutter {
 namespace testing {
 
+// Signature of a generator function that takes the frame index as input and
+// returns the time of that frame. The return is insensitive to the choice of
+// time unit as long as all time in a unit test has the same units.
 using Generator = std::function<int(int)>;
 
-// Simulate n input events where the i-th one is delivered at
-// delivery_time(i).
-//
-// Simulation results will be written into events_consumed_at_frame whose
-// length will be equal to the number of frames drawn. Each element in the
-// vector is the number of input events consumed up to that frame. (We can't
-// return such vector because ASSERT_TRUE requires return type of void.)
-//
-// We assume (and check) that the delivery latency is some base latency plus a
-// random latency where the random latency must be within one frame:
-//
-// 1. latency = delivery_time(i) - j * frame_time = base_latency +
-//    random_latency
-// 2. 0 <= base_latency, 0 <= random_latency < frame_time
-//
-// We also assume that there will be at least one input event per frame if
-// there were no latency. Let j = floor( (delivery_time(i) - base_latency) /
-// frame_time ) be the frame index if there were no latency. Then the set of j
-// should be all integers from 0 to continuous_frame_count - 1 for some
-// integer continuous_frame_count.
-//
-// (Note that there coulds be multiple input events within one frame.)
-//
-// The test here is insensitive to the choice of time unit as long as
-// delivery_time and frame_time are in the same unit.
+//----------------------------------------------------------------------------
+/// Simulate n input events where the i-th one is delivered at delivery_time(i).
+///
+/// Simulation results will be written into events_consumed_at_frame whose
+/// length will be equal to the number of frames drawn. Each element in the
+/// vector is the number of input events consumed up to that frame. (We can't
+/// return such vector because ASSERT_TRUE requires return type of void.)
+///
+/// We assume (and check) that the delivery latency is some base latency plus a
+/// random latency where the random latency must be within one frame:
+///
+///   1.  latency = delivery_time(i) - j * frame_time = base_latency +
+///       random_latency
+///   2.  0 <= base_latency, 0 <= random_latency < frame_time
+///
+/// We also assume that there will be at least one input event per frame if
+/// there were no latency. Let j = floor( (delivery_time(i) - base_latency) /
+/// frame_time ) be the frame index if there were no latency. Then the set of j
+/// should be all integers from 0 to continuous_frame_count - 1 for some
+/// integer continuous_frame_count.
+///
+/// (Note that there coulds be multiple input events within one frame.)
+///
+/// The test here is insensitive to the choice of time unit as long as
+/// delivery_time and frame_time are in the same unit.
 static void TestSimulatedInputEvents(
     ShellTest* fixture,
     int num_events,
     int base_latency,
-    std::function<int(int)> delivery_time,
+    Generator delivery_time,
     int frame_time,
     std::vector<int>& events_consumed_at_frame) {
   ///// Begin constructing shell ///////////////////////////////////////////////
@@ -156,54 +159,54 @@ TEST_F(ShellTest, DelayAtMostOneEventForFasterThanVSyncInputEvents) {
 TEST_F(ShellTest, HandlesActualIphoneXsInputEvents) {
   // Actual delivery times measured on iPhone Xs, in the unit of frame_time
   // (16.67ms for 60Hz).
-  constexpr int n = 47;
-  constexpr double iphone_xs_times[n] = {0.15,
-                                         1.0773046874999999,
-                                         2.1738720703124996,
-                                         3.0579052734374996,
-                                         4.0890087890624995,
-                                         5.0952685546875,
-                                         6.1251708984375,
-                                         7.1253076171875,
-                                         8.125927734374999,
-                                         9.37248046875,
-                                         10.133950195312499,
-                                         11.161201171875,
-                                         12.226992187499999,
-                                         13.1443798828125,
-                                         14.440327148437499,
-                                         15.091684570312498,
-                                         16.138681640625,
-                                         17.126469726562497,
-                                         18.1592431640625,
-                                         19.371372070312496,
-                                         20.033774414062496,
-                                         21.021782226562497,
-                                         22.070053710937497,
-                                         23.325541992187496,
-                                         24.119648437499997,
-                                         25.084262695312496,
-                                         26.077866210937497,
-                                         27.036547851562496,
-                                         28.035073242187497,
-                                         29.081411132812498,
-                                         30.066064453124998,
-                                         31.089360351562497,
-                                         32.086142578125,
-                                         33.4618798828125,
-                                         34.14697265624999,
-                                         35.0513525390625,
-                                         36.136025390624994,
-                                         37.1618408203125,
-                                         38.144472656249995,
-                                         39.201123046875,
-                                         40.4339501953125,
-                                         41.1552099609375,
-                                         42.102128906249995,
-                                         43.0426318359375,
-                                         44.070131835937495,
-                                         45.08862304687499,
-                                         46.091469726562494};
+  constexpr double iphone_xs_times[] = {0.15,
+                                        1.0773046874999999,
+                                        2.1738720703124996,
+                                        3.0579052734374996,
+                                        4.0890087890624995,
+                                        5.0952685546875,
+                                        6.1251708984375,
+                                        7.1253076171875,
+                                        8.125927734374999,
+                                        9.37248046875,
+                                        10.133950195312499,
+                                        11.161201171875,
+                                        12.226992187499999,
+                                        13.1443798828125,
+                                        14.440327148437499,
+                                        15.091684570312498,
+                                        16.138681640625,
+                                        17.126469726562497,
+                                        18.1592431640625,
+                                        19.371372070312496,
+                                        20.033774414062496,
+                                        21.021782226562497,
+                                        22.070053710937497,
+                                        23.325541992187496,
+                                        24.119648437499997,
+                                        25.084262695312496,
+                                        26.077866210937497,
+                                        27.036547851562496,
+                                        28.035073242187497,
+                                        29.081411132812498,
+                                        30.066064453124998,
+                                        31.089360351562497,
+                                        32.086142578125,
+                                        33.4618798828125,
+                                        34.14697265624999,
+                                        35.0513525390625,
+                                        36.136025390624994,
+                                        37.1618408203125,
+                                        38.144472656249995,
+                                        39.201123046875,
+                                        40.4339501953125,
+                                        41.1552099609375,
+                                        42.102128906249995,
+                                        43.0426318359375,
+                                        44.070131835937495,
+                                        45.08862304687499,
+                                        46.091469726562494};
+  constexpr int n = sizeof(iphone_xs_times) / sizeof(iphone_xs_times[0]);
   // We don't use `constexpr int frame_time` here because MSVC doesn't handle
   // it well with lambda capture.
   int frame_time = 10000;
