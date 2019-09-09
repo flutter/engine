@@ -846,11 +846,13 @@ class Chrome extends Browser {
   factory Chrome(Uri url, {bool debug = false}) {
     var remoteDebuggerCompleter = Completer<Uri>.sync();
     return Chrome._(() async {
+      final bool isChromeNoSandbox = String.fromEnvironment('CHROME_NO_SANDBOX') == 'true';
       var dir = createTempDir();
       var args = [
         '--user-data-dir=$dir',
         url.toString(),
         if (!debug) '--headless',
+        if (isChromeNoSandbox) '--no-sandbox',
         '--disable-extensions',
         '--disable-popup-blocking',
         '--bwsi',
