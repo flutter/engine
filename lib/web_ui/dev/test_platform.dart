@@ -846,7 +846,7 @@ class Chrome extends Browser {
   factory Chrome(Uri url, {bool debug = false}) {
     var remoteDebuggerCompleter = Completer<Uri>.sync();
     return Chrome._(() async {
-      final bool isChromeNoSandbox = String.fromEnvironment('CHROME_NO_SANDBOX') == 'true';
+      final bool isChromeNoSandbox = Platform.environment['CHROME_NO_SANDBOX'] == 'true';
       var dir = createTempDir();
       var args = [
         '--user-data-dir=$dir',

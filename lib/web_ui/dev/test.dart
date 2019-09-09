@@ -63,6 +63,7 @@ void _checkLicenseHeaders() {
   }
 
   allSourceFiles.forEach(_expectLicenseHeader);
+  print('License headers OK!');
 }
 
 final _copyRegex = RegExp(r'// Copyright 2013 The Flutter Authors\. All rights reserved\.');
