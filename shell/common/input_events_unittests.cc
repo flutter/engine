@@ -8,10 +8,13 @@
 namespace flutter {
 namespace testing {
 
+// Throughout these tests, the choice of time unit is irrelevant as long as all
+// times have the same units.
+using UnitlessTime = int;
+
 // Signature of a generator function that takes the frame index as input and
-// returns the time of that frame. The return is insensitive to the choice of
-// time unit as long as all time in a unit test has the same units.
-using Generator = std::function<int(int)>;
+// returns the time of that frame.
+using Generator = std::function<UnitlessTime(int)>;
 
 //----------------------------------------------------------------------------
 /// Simulate n input events where the i-th one is delivered at delivery_time(i).
@@ -41,10 +44,10 @@ using Generator = std::function<int(int)>;
 static void TestSimulatedInputEvents(
     ShellTest* fixture,
     int num_events,
-    int base_latency,
+    UnitlessTime base_latency,
     Generator delivery_time,
-    int frame_time,
-    std::vector<int>& events_consumed_at_frame) {
+    UnitlessTime frame_time,
+    std::vector<UnitlessTime>& events_consumed_at_frame) {
   ///// Begin constructing shell ///////////////////////////////////////////////
   auto settings = fixture->CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = fixture->CreateShell(settings);
@@ -120,11 +123,12 @@ static void TestSimulatedInputEvents(
 TEST_F(ShellTest, MissAtMostOneFrameForIrregularInputEvents) {
   // We don't use `constexpr int frame_time` here because MSVC doesn't handle
   // it well with lambda capture.
-  int frame_time = 10;
-  int base_latency = 0.5 * frame_time;
+  UnitlessTime frame_time = 10;
+  UnitlessTime base_latency = 0.5 * frame_time;
   Generator extreme = [frame_time, base_latency](int i) {
-    return static_cast<int>(i * frame_time + base_latency +
-                            (i % 2 == 0 ? 0.1 * frame_time : 0.9 * frame_time));
+    return static_cast<UnitlessTime>(
+        i * frame_time + base_latency +
+        (i % 2 == 0 ? 0.1 * frame_time : 0.9 * frame_time));
   };
   constexpr int n = 40;
   std::vector<int> events_consumed_at_frame;
@@ -137,10 +141,10 @@ TEST_F(ShellTest, MissAtMostOneFrameForIrregularInputEvents) {
 TEST_F(ShellTest, DelayAtMostOneEventForFasterThanVSyncInputEvents) {
   // We don't use `constexpr int frame_time` here because MSVC doesn't handle
   // it well with lambda capture.
-  int frame_time = 10;
-  int base_latency = 0.2 * frame_time;
+  UnitlessTime frame_time = 10;
+  UnitlessTime base_latency = 0.2 * frame_time;
   Generator double_sampling = [frame_time, base_latency](int i) {
-    return static_cast<int>(i * 0.5 * frame_time + base_latency);
+    return static_cast<UnitlessTime>(i * 0.5 * frame_time + base_latency);
   };
   constexpr int n = 40;
   std::vector<int> events_consumed_at_frame;
@@ -209,14 +213,16 @@ TEST_F(ShellTest, HandlesActualIphoneXsInputEvents) {
   constexpr int n = sizeof(iphone_xs_times) / sizeof(iphone_xs_times[0]);
   // We don't use `constexpr int frame_time` here because MSVC doesn't handle
   // it well with lambda capture.
-  int frame_time = 10000;
+  UnitlessTime frame_time = 10000;
   for (double base_latency_f = 0; base_latency_f < 1; base_latency_f += 0.1) {
     // Everything is converted to int to avoid floating point error in
     // TestSimulatedInputEvents.
-    int base_latency = static_cast<int>(base_latency_f * frame_time);
+    UnitlessTime base_latency =
+        static_cast<UnitlessTime>(base_latency_f * frame_time);
     Generator iphone_xs_generator = [frame_time, iphone_xs_times,
                                      base_latency](int i) {
-      return base_latency + static_cast<int>(iphone_xs_times[i] * frame_time);
+      return base_latency +
+             static_cast<UnitlessTime>(iphone_xs_times[i] * frame_time);
     };
     std::vector<int> events_consumed_at_frame;
     TestSimulatedInputEvents(this, n, base_latency, iphone_xs_generator,

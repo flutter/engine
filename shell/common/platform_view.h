@@ -442,8 +442,7 @@ class PlatformView {
   fml::WeakPtr<PlatformView> GetWeakPtr() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Gives embedders a chance to react to a "cold restart" of
-  /// the
+  /// @brief      Gives embedders a chance to react to a "cold restart" of the
   ///             running isolate. The default implementation of this method
   ///             does nothing.
   ///
@@ -453,8 +452,7 @@ class PlatformView {
   virtual void OnPreEngineRestart() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Sets a callback that gets executed when the rasterizer
-  /// renders
+  /// @brief      Sets a callback that gets executed when the rasterizer renders
   ///             the next frame. Due to the asynchronous nature of
   ///             rendering in Flutter, embedders usually add a placeholder
   ///             over the contents in which Flutter is going to render when
@@ -464,13 +462,10 @@ class PlatformView {
   ///             task runner. It is the embedder's responsibility to
   ///             re-thread as necessary.
   ///
-  /// @attention  The callback is executed on the render task runner and not
-  /// the
-  ///             platform task runner. Embedders must re-thread as
-  ///             necessary.
+  /// @attention  The callback is executed on the render task runner and not the
+  ///             platform task runner. Embedders must re-thread as necessary.
   ///
-  /// @param[in]  closure  The callback to execute on the render thread when
-  /// the
+  /// @param[in]  closure  The callback to execute on the render thread when the
   ///                      next frame gets rendered.
   ///
   void SetNextFrameCallback(fml::closure closure);
@@ -481,14 +476,12 @@ class PlatformView {
   ///             pointer input events. Each call to this method wakes up
   ///             the UI thread.
   ///
-  /// @param[in]  packet  The pointer data packet to dispatch to the
-  /// framework.
+  /// @param[in]  packet  The pointer data packet to dispatch to the framework.
   ///
   void DispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet);
 
   //--------------------------------------------------------------------------
-  /// @brief      Used by the embedder to specify a texture that it wants
-  /// the
+  /// @brief      Used by the embedder to specify a texture that it wants the
   ///             rasterizer to composite within the Flutter layer tree. All
   ///             textures must have a unique identifier. When the
   ///             rasterizer encounters an external texture within its
@@ -520,16 +513,14 @@ class PlatformView {
   ///
   /// @see        RegisterTexture, MarkTextureFrameAvailable
   ///
-  /// @param[in]  texture_id  The identifier of the texture to unregister.
-  /// If
-  ///                         the texture has not been previously
-  ///                         registered, this call does nothing.
+  /// @param[in]  texture_id  The identifier of the texture to unregister. If
+  ///                         the texture has not been previously registered,
+  ///                         this call does nothing.
   ///
   void UnregisterTexture(int64_t texture_id);
 
   //--------------------------------------------------------------------------
-  /// @brief      Used by the embedder to notify the rasterizer that the
-  /// context
+  /// @brief      Used by the embedder to notify the rasterizer that the context
   ///             of the previously registered texture have been updated.
   ///             Typically, Flutter will only render a frame if there is an
   ///             updated layer tree. However, in cases where the layer tree

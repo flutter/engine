@@ -236,9 +236,12 @@ class Engine final : public RuntimeDelegate {
   ///                                tasks that require access to components
   ///                                that cannot be safely accessed by the
   ///                                engine. This is the shell.
-  /// @param      platform_view      The object used by engine to create the
-  ///                                pointer data dispatcher through
-  ///                                `PlatformView::MakePointerDataDispatcher`.
+  /// @param      dispatcher_maker   The `std::function` provided by
+  ///                                `PlatformView` for engine to create the
+  ///                                pointer data dispatcher. Similar to other
+  ///                                engine resources, this dispatcher_maker and
+  ///                                its returned dispatcher is only safe to be
+  ///                                called from the UI thread.
   /// @param      vm                 An instance of the running Dart VM.
   /// @param[in]  isolate_snapshot   The snapshot used to create the root
   ///                                isolate. Even though the isolate is not
