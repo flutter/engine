@@ -11,9 +11,6 @@
 @property(nonatomic, strong) FlutterEngine* flutterEngine;
 @end
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wobjc-method-access"
-
 @implementation FlutterViewGLContextTest
 
 - (void)setUp {
@@ -43,6 +40,8 @@
   UIViewController* rootVC = appDelegate.window.rootViewController;
   [rootVC presentViewController:self.flutterViewController animated:NO completion:nil];
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-method-access"
   // TODO: refactor this to not rely on private test-only APIs
   __weak id flutterView = [self.flutterViewController flutterView];
   XCTAssertNotNil(flutterView);
@@ -55,8 +54,7 @@
                            XCTAssertNil(flutterView);
                            XCTAssertFalse([self.flutterViewController hasOnscreenSurface]);
                          }];
+#pragma clang diagnostic pop
 }
 
 @end
-
-#pragma clang diagnostic pop
