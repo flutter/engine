@@ -36,4 +36,30 @@ void main() {
     expect(buffers.pop("channel"), equals(null));
   });
 
+  test('ringbuffer push pop', () async {
+    ui.RingBuffer<int> ringBuffer = ui.RingBuffer<int>(10);
+    ringBuffer.push(1);
+    expect(ringBuffer.pop(), equals(1));
+  });
+
+  test('ringbuffer overflow', () async {
+    ui.RingBuffer<int> ringBuffer = ui.RingBuffer<int>(3);
+    expect(ringBuffer.push(1), equals(false));
+    expect(ringBuffer.push(2), equals(false));
+    expect(ringBuffer.push(3), equals(false));
+    expect(ringBuffer.push(4), equals(true));
+    expect(ringBuffer.pop(), equals(2));
+  });
+
+  test('ringbuffer length', () async {
+    ui.RingBuffer<int> ringBuffer = ui.RingBuffer<int>(3);
+    expect(ringBuffer.length, equals(0));
+    ringBuffer.push(123);
+    expect(ringBuffer.length, equals(1));
+  });
+
+  test('ringbuffer underflow', () async {
+    ui.RingBuffer<int> ringBuffer = ui.RingBuffer<int>(3);
+    expect(() => ringBuffer.pop(), throwsA(TypeMatcher<StateError>()));
+  });
 }

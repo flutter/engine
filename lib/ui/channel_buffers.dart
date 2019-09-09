@@ -15,6 +15,34 @@ class StoredMessage {
   PlatformMessageResponseCallback get callback => _callback;
 }
 
+/// A fixed-size circular queue.
+class RingBuffer<T> {
+  final collection.ListQueue<T> _queue;
+  final int _capacity;
+
+  RingBuffer(this._capacity) 
+    : _queue = collection.ListQueue<T>(_capacity);
+
+  int get length => _queue.length;
+
+  int get capacity => _capacity;
+
+  /// Returns true on overflow.
+  bool push(T val) {
+    bool overflow = false;
+    while (_queue.length >= _capacity) {
+      _queue.removeFirst();
+      overflow = true;
+    }
+    _queue.addLast(val);
+    return overflow;
+  }
+
+  T pop() {
+    return _queue.removeFirst();
+  }
+}
+
 /// Storage of channel messages until the channels are completely routed.
 class ChannelBuffers {
   static const int DEFAULT_BUFFER_SIZE = 100;
