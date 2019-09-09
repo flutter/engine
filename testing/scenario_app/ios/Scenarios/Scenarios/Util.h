@@ -6,6 +6,7 @@
 
 @interface Util : NSObject
 
-+ (FlutterEngine* _Nullable ) runEngineWithScenario:(nonnull NSString*)scenario withCompletion:(void (^_Nullable)(void))engineRunCompletion;
++ (FlutterEngine* _Nullable)runEngineWithScenario:(nonnull NSString*)scenario
+                                   withCompletion:(void (^_Nullable)(void))engineRunCompletion;
 
 @end

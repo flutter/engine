@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 #include "AppDelegate.h"
-#import "Util.h"
 #import "ScreenBeforeFlutter.h"
 #import "TextPlatformView.h"
+#import "Util.h"
 
 @interface NoStatusBarFlutterViewController : FlutterViewController
 

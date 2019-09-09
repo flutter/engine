@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "Util.h"
 #import "ScreenBeforeFlutter.h"
+#import "Util.h"
 
 @implementation ScreenBeforeFlutter
 
@@ -25,7 +25,9 @@ FlutterEngine* _engine;
   [showFlutterButton setTitle:@"Show Flutter" forState:UIControlStateNormal];
   showFlutterButton.tintColor = UIColor.whiteColor;
   showFlutterButton.clipsToBounds = YES;
-  [showFlutterButton addTarget:self action:@selector(showFlutter) forControlEvents:UIControlEventTouchUpInside];
+  [showFlutterButton addTarget:self
+                        action:@selector(showFlutter)
+              forControlEvents:UIControlEventTouchUpInside];
 
   [self.view addSubview:showFlutterButton];
   [[showFlutterButton.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor] setActive:YES];
@@ -37,7 +39,9 @@ FlutterEngine* _engine;
 }
 
 - (FlutterViewController*)showFlutter {
-  FlutterViewController* flutterVC = [[FlutterViewController alloc] initWithEngine:_engine nibName:nil bundle:nil];
+  FlutterViewController* flutterVC = [[FlutterViewController alloc] initWithEngine:_engine
+                                                                           nibName:nil
+                                                                            bundle:nil];
   [self presentViewController:flutterVC animated:NO completion:nil];
   return flutterVC;
 }
