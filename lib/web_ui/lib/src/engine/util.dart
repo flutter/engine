@@ -246,7 +246,7 @@ bool _isNsErrorFailureException(dynamic e) {
 /// available. Generic family names are keywords and must not be quoted. A
 /// generic font family should be the last item in the list of font family
 /// names.
-const List<String> _genericFontFamilies = <String>[
+const Set<String> _genericFontFamilies = <String>{
   'serif',
   'sans-serif',
   'monospace',
@@ -256,7 +256,7 @@ const List<String> _genericFontFamilies = <String>[
   'math',
   'emoji',
   'fangsong',
-];
+};
 
 /// Wraps a font family in quotes unless it is a generic font family.
 String quoteFontFamily(String fontFamily) {
