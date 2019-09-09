@@ -11,6 +11,9 @@
 @property(nonatomic, strong) FlutterEngine* flutterEngine;
 @end
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-method-access"
+
 @implementation FlutterViewGLContextTest
 
 - (void)setUp {
@@ -55,3 +58,5 @@
 }
 
 @end
+
+#pragma clang diagnostic pop
