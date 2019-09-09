@@ -68,6 +68,14 @@ bool FlutterWindowController::CreateWindow(
   return true;
 }
 
+void FlutterWindowController::DestroyWindow() {
+  if (controller_) {
+    FlutterDesktopDestroyWindow(controller_);
+  }
+  controller_ = nullptr;
+  window_ = nullptr;
+}
+
 FlutterDesktopPluginRegistrarRef FlutterWindowController::GetRegistrarForPlugin(
     const std::string& plugin_name) {
   if (!controller_) {

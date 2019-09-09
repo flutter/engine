@@ -68,6 +68,12 @@ class FlutterWindowController {
                     const std::string& assets_path,
                     const std::vector<std::string>& arguments);
 
+  // Destroys the current window, if any.
+  //
+  // Because only one window can exist at a time, this method must be called
+  // between calls to CreateWindow, or the second one will fail.
+  void DestroyWindow();
+
   // Returns the FlutterDesktopPluginRegistrarRef to register a plugin with the
   // given name.
   //
@@ -76,7 +82,8 @@ class FlutterWindowController {
       const std::string& plugin_name);
 
   // The FlutterWindow managed by this controller, if any. Returns nullptr
-  // before CreateWindow is called, and after RunEventLoop returns;
+  // before CreateWindow is called, after DestroyWindow is called, and after
+  // RunEventLoop returns;
   FlutterWindow* window() { return window_.get(); }
 
   // Processes the next event on this window, or returns early if |timeout| is
