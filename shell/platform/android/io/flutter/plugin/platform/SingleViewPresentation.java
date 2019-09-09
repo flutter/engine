@@ -13,13 +13,24 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Keep;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
-import android.view.*;
+import android.view.Display;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 
-import java.lang.reflect.*;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
+import static android.content.Context.INPUT_METHOD_SERVICE;
 import static android.content.Context.WINDOW_SERVICE;
 import static android.view.View.OnFocusChangeListener;
 
@@ -99,7 +110,7 @@ class SingleViewPresentation extends Presentation {
             Object createParams,
             OnFocusChangeListener focusChangeListener
     ) {
-        super(outerContext, display);
+        super(wrapContext(outerContext, /*windowManagerHandler=*/null), display);
         this.viewFactory = viewFactory;
         this.accessibilityEventsDelegate = accessibilityEventsDelegate;
         this.viewId = viewId;
@@ -128,7 +139,7 @@ class SingleViewPresentation extends Presentation {
             OnFocusChangeListener focusChangeListener,
             boolean startFocused
     ) {
-        super(outerContext, display);
+        super(wrapContext(outerContext, /*windowManagerHandler=*/null), display);
         this.accessibilityEventsDelegate = accessibilityEventsDelegate;
         viewFactory = null;
         this.state = state;
@@ -138,6 +149,11 @@ class SingleViewPresentation extends Presentation {
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
         );
         this.startFocused = startFocused;
+    }
+
+    private static Context wrapContext(Context context, @Nullable WindowManagerHandler windowManagerHandler) {
+        InputMethodManager inputMethodManager = (InputMethodManager) context.getSystemService(INPUT_METHOD_SERVICE);
+        return new PresentationContext(context, inputMethodManager, windowManagerHandler);
     }
 
     @Override
@@ -154,7 +170,7 @@ class SingleViewPresentation extends Presentation {
         }
 
         container = new FrameLayout(getContext());
-        PresentationContext context = new PresentationContext(getContext(), state.windowManagerHandler);
+        Context context = wrapContext(getContext(), state.windowManagerHandler);
 
         if (state.platformView == null) {
             state.platformView = viewFactory.create(context, viewId, createParams);
@@ -236,23 +252,41 @@ class SingleViewPresentation extends Presentation {
     }
 
     /**
-     * Proxies a Context replacing the WindowManager with our custom instance.
+     * Proxies a Context replacing the WindowManager and InputMethodManager with our custom instance.
      */
     static class PresentationContext extends ContextWrapper {
-        private WindowManager windowManager;
-        private final WindowManagerHandler windowManagerHandler;
+        private @Nullable
+        final WindowManagerHandler windowManagerHandler;
+        private @NonNull
+        final InputMethodManager inputMethodManager;
+        private @Nullable
+        WindowManager windowManager;
 
-        PresentationContext(Context base, WindowManagerHandler windowManagerHandler) {
+        /**
+         * Return the given {@code inputMethodManager} and {@code windowManagerHandler} as system
+         * services from this context. Does not override {@code windowManagerHandler} if it's null.
+         */
+        PresentationContext(Context base, @NonNull InputMethodManager inputMethodManager, @Nullable WindowManagerHandler windowManagerHandler) {
             super(base);
             this.windowManagerHandler = windowManagerHandler;
+            this.inputMethodManager = inputMethodManager;
         }
 
         @Override
         public Object getSystemService(String name) {
-            if (WINDOW_SERVICE.equals(name)) {
+            if (WINDOW_SERVICE.equals(name) && windowManagerHandler != null) {
                 return getWindowManager();
             }
+            if (INPUT_METHOD_SERVICE.equals(name)) {
+                return inputMethodManager;
+            }
             return super.getSystemService(name);
+        }
+
+        @Override
+        public Context createDisplayContext(Display display) {
+            Context displayContext = super.createDisplayContext(display);
+            return new PresentationContext(displayContext, inputMethodManager, windowManagerHandler);
         }
 
         private WindowManager getWindowManager() {
