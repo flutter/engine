@@ -61,12 +61,14 @@ Future<void> _runAllTests() async {
   }
 
   // This test returns a non-zero exit code on purpose. Run it separately.
-  await _runTestBatch(
-    <String>[failureSmokeTestPath],
-    concurrency: 1,
-    expectFailure: true,
-  );
-  _checkExitCode();
+  if (io.Platform.environment['CIRRUS_CI'] != 'true') {
+    await _runTestBatch(
+      <String>[failureSmokeTestPath],
+      concurrency: 1,
+      expectFailure: true,
+    );
+    _checkExitCode();
+  }
 
   // Run all unit-tests as a single batch.
   await _runTestBatch(unitTestFiles, concurrency: 10, expectFailure: false);
@@ -140,7 +142,6 @@ Future<int> _runTestBatch(
   List<String> testFiles, {
     @required int concurrency,
     @required bool expectFailure,
-    @required isScreenshotTest,
   }
 ) async {
   final List<String> testArgs = <String>[
