@@ -1,5 +1,6 @@
 package io.flutter.plugin.platform;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.view.inputmethod.InputMethodManager;
@@ -20,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 @Config(manifest = Config.NONE, shadows = {ShadowInputMethodManager.class, ShadowDisplayManager.class, ShadowDisplay.class}, sdk = 27)
 @RunWith(RobolectricTestRunner.class)
+@TargetApi(27)
 public class SingleViewPresentationTest {
     @Test
     public void returnsOuterContextInputMethodManager() {
