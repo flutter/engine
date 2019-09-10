@@ -26,9 +26,12 @@ class ContainerLayer : public Layer {
   void UpdateScene(SceneUpdateContext& context) override;
 
   bool should_render_as_frame() const { return !frame_rrect_.isEmpty(); }
-  void set_frame_properties(SkRRect frame_rrect, SkColor frame_color) {
+  void set_frame_properties(SkRRect frame_rrect,
+                            SkColor frame_color,
+                            float frame_opacity) {
     frame_rrect_ = frame_rrect;
     frame_color_ = frame_color;
+    frame_opacity_ = frame_opacity;
   }
 
   float elevation() const { return clamped_elevation_; }
@@ -51,6 +54,7 @@ class ContainerLayer : public Layer {
   float parent_elevation_ = 0.0f;
   float elevation_ = 0.0f;
   float clamped_elevation_ = 0.0f;
+  float frame_opacity_ = 1.0f;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContainerLayer);
 };

@@ -106,7 +106,7 @@ void ContainerLayer::UpdateScene(SceneUpdateContext& context) {
     }
 
     SceneUpdateContext::Frame frame(context, frame_rrect_, frame_color_,
-                                    elevation(), this);
+                                    frame_opacity_, elevation(), this);
     // Paint the child layers into the Frame as well as allowing them to create
     // their own scene entities.
     for (auto& layer : layers()) {

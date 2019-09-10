@@ -59,6 +59,7 @@ struct PrerollContext {
   // The following allow us to track properties like elevation and opacity
   // which stack with each other during Preroll.
   float total_elevation = 0.0f;
+  bool is_opaque = true;
 };
 
 // Represents a single composited layer. Created on the UI thread but then

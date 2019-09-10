@@ -54,7 +54,7 @@ PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
       frame_rrect = SkRRect::MakeRect(path.getBounds());
     }
 
-    set_frame_properties(frame_rrect, color_);
+    set_frame_properties(frame_rrect, color_, /* opacity */ 1.0f);
   }
   set_elevation(elevation);
 }
@@ -75,6 +75,12 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     // Let the system compositor draw all shadows for us, by popping us out as
     // a new frame.
     set_needs_system_composite(true);
+
+    // If the frame behind us is opaque, don't punch a hole in it for group
+    // opacity.
+    if (context->is_opaque) {
+      set_paint_bounds(SkRect());
+    }
   } else {
     // Add some margin to the paint bounds to leave space for the shadow.
     // We fill this whole region and clip children to it so we don't need to
@@ -136,6 +142,14 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   // Frame) and once into the Frame's texture (which is then drawn on top of the
   // current canvas).
   if (kRenderPhysicalShapeUsingSystemCompositor) {
+    // If we are being rendered into our own frame using the system compositor,
+    // then it is neccesary to "punch a hole" in the canvas/frame behind us so
+    // that group opacity looks correct.
+    SkPaint paint;
+    paint.setColor(SK_ColorTRANSPARENT);
+    paint.setBlendMode(SkBlendMode::kSrc);
+    context.leaf_nodes_canvas->drawRect(paint_bounds(), paint);
+
     return;
   }
 
