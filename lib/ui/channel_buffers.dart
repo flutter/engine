@@ -4,14 +4,13 @@
 
 part of dart.ui;
 
+/// A saved platform message for a channel with its callback.
 class StoredMessage {
   final ByteData _data;
   final PlatformMessageResponseCallback _callback;
 
   StoredMessage(this._data, this._callback);
-
   ByteData get data => _data;
-
   PlatformMessageResponseCallback get callback => _callback;
 }
 
@@ -40,6 +39,7 @@ class RingBuffer<T> {
     return overflow;
   }
 
+  /// Returns null when empty.
   T pop() {
     return _queue.isEmpty ? null : _queue.removeFirst();
   }
