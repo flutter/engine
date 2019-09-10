@@ -55,10 +55,9 @@
   [self waitForExpectations:lifecycleExpectations timeout:5];
 
   // Expected sequence from showing the FlutterViewController is inactive and resumed.
-  BOOL lifecyclesAsExpected = [lifecycleEvents
-      isEqualToArray:@[ @"AppLifecycleState.inactive", @"AppLifecycleState.resumed" ]];
-  XCTAssert(lifecyclesAsExpected,
-            @"AppLifecycleState transitions while presenting not as expected");
+  NSArray* expectedStates = @[ @"AppLifecycleState.inactive", @"AppLifecycleState.resumed" ];
+  XCTAssertEqualObjects(lifecycleEvents, expectedStates,
+                        @"AppLifecycleState transitions while presenting not as expected");
 
   // Now dismiss the FlutterViewController again and expect another inactive and paused.
   [lifecycleExpectations
@@ -71,12 +70,12 @@
                                         @"AppLifecycleState.paused"]];
   [flutterVC dismissViewControllerAnimated:NO completion:nil];
   [self waitForExpectations:lifecycleExpectations timeout:5];
-  lifecyclesAsExpected = [lifecycleEvents isEqualToArray:@[
+  expectedStates = @[
     @"AppLifecycleState.inactive", @"AppLifecycleState.resumed", @"AppLifecycleState.inactive",
     @"AppLifecycleState.paused"
-  ]];
-  XCTAssert(lifecyclesAsExpected,
-            @"AppLifecycleState transitions while dismissing not as expected");
+  ];
+  XCTAssertEqualObjects(lifecycleEvents, expectedStates,
+                        @"AppLifecycleState transitions while dismissing not as expected");
 
   // Now put the app in the background (while the engine is still running) and bring it back to
   // the foreground. Granted, we're not winning any awards for hyper-realism but at least we're
@@ -125,7 +124,7 @@
                         @"A second FlutterViewController goes through AppLifecycleState.resumed"]];
   flutterVC = [rootVC showFlutter];
   [self waitForExpectations:lifecycleExpectations timeout:5];
-  lifecyclesAsExpected = [lifecycleEvents isEqualToArray:@[
+  expectedStates = @[
     @"AppLifecycleState.inactive", @"AppLifecycleState.resumed", @"AppLifecycleState.inactive",
     @"AppLifecycleState.paused",
 
@@ -137,8 +136,9 @@
     // We only added 2 from re-launching the FlutterViewController
     // and none from the background-foreground cycle.
     @"AppLifecycleState.inactive", @"AppLifecycleState.resumed"
-  ]];
-  XCTAssert(lifecyclesAsExpected,
-            @"AppLifecycleState transitions while presenting a second time not as expected");
+  ];
+  XCTAssertEqualObjects(
+      lifecycleEvents, expectedStates,
+      @"AppLifecycleState transitions while presenting a second time not as expected");
 }
 @end
