@@ -76,7 +76,11 @@ class ChannelBuffers {
     }
     final bool result = queue.push(StoredMessage(data, callback));
     if (result) {
-      _Logger._printString('Overflow on channel:' + channel);
+      _Logger._printString('Overflow on channel: $channel.  '
+                           'Messages on this channel are being sent faster '
+                           'than they are being processed which is resulting '
+                           'in the dropping of messages.  The engine may not be '
+                           'running or you need to adjust the buffer size.');
     }
     return result;
   }
@@ -85,9 +89,6 @@ class ChannelBuffers {
   StoredMessage pop(String channel) {
     final _RingBuffer<StoredMessage> queue = _messages[channel];
     final StoredMessage result = queue?.pop();
-    if (result == null) {
-      _Logger._printString('Underflow on channel:' + channel);
-    }
     return result;
   }
 
