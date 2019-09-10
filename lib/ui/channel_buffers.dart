@@ -27,6 +27,8 @@ class RingBuffer<T> {
 
   int get capacity => _capacity;
 
+  bool get isEmpty => _queue.isEmpty;
+
   /// Returns true on overflow.
   bool push(T val) {
     bool overflow = false;
@@ -39,7 +41,7 @@ class RingBuffer<T> {
   }
 
   T pop() {
-    return _queue.removeFirst();
+    return _queue.isEmpty ? null : _queue.removeFirst();
   }
 }
 
@@ -47,25 +49,30 @@ class RingBuffer<T> {
 class ChannelBuffers {
   static const int DEFAULT_BUFFER_SIZE = 100;
 
-  // TODO(engine): Convert queue to a ring buffer.
-  final Map<String, collection.Queue<StoredMessage>> _messages = {};
+  final Map<String, RingBuffer<StoredMessage>> _messages = {};
 
   void push(String channel, ByteData data, PlatformMessageResponseCallback callback) {
-    collection.Queue<StoredMessage> queue = _messages[channel];
+    RingBuffer<StoredMessage> queue = _messages[channel];
     if (queue == null) {
-      queue = collection.Queue<StoredMessage>();
+      queue = RingBuffer<StoredMessage>(DEFAULT_BUFFER_SIZE);
       _messages[channel] = queue;
     }
-    queue.addLast(StoredMessage(data, callback));
+    if (queue.push(StoredMessage(data, callback))) {
+      _Logger._printString('Overflow on channel:' + channel);
+    }
   }
 
   StoredMessage pop(String channel) {
-    final collection.Queue<StoredMessage> queue = _messages[channel];
-    return queue?.removeFirst();
+    final RingBuffer<StoredMessage> queue = _messages[channel];
+    final StoredMessage result = queue?.pop();
+    if (result == null) {
+      _Logger._printString('Underflow on channel:' + channel);
+    }
+    return result;
   }
 
   bool isEmpty(String channel) {
-    final collection.Queue<StoredMessage> queue = _messages[channel];
+    final RingBuffer<StoredMessage> queue = _messages[channel];
     return queue?.isEmpty ?? true;
   }
 

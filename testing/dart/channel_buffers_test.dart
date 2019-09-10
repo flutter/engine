@@ -60,6 +60,6 @@ void main() {
 
   test('ringbuffer underflow', () async {
     ui.RingBuffer<int> ringBuffer = ui.RingBuffer<int>(3);
-    expect(() => ringBuffer.pop(), throwsA(TypeMatcher<StateError>()));
+    expect(ringBuffer.pop(), equals(null));
   });
 }
