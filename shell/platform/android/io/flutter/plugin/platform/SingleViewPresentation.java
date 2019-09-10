@@ -110,7 +110,7 @@ class SingleViewPresentation extends Presentation {
             Object createParams,
             OnFocusChangeListener focusChangeListener
     ) {
-        super(new PresentationContext(outerContext, /*windowManagerHandler=*/null), display);
+        super(new ImmContext(outerContext), display);
         this.viewFactory = viewFactory;
         this.accessibilityEventsDelegate = accessibilityEventsDelegate;
         this.viewId = viewId;
@@ -139,7 +139,7 @@ class SingleViewPresentation extends Presentation {
             OnFocusChangeListener focusChangeListener,
             boolean startFocused
     ) {
-        super(new PresentationContext(outerContext, /*windowManagerHandler=*/null), display);
+        super(new ImmContext(outerContext), display);
         this.accessibilityEventsDelegate = accessibilityEventsDelegate;
         viewFactory = null;
         this.state = state;
@@ -249,39 +249,22 @@ class SingleViewPresentation extends Presentation {
         }
     }
 
-    /**
-     * Proxies a Context replacing the WindowManager and InputMethodManager with our custom instance.
-     */
-    static class PresentationContext extends ContextWrapper {
-        private @Nullable
-        final WindowManagerHandler windowManagerHandler;
+    /** Answers calls for {@link InputMethodManager} with an instance cached at creation time. */
+    private static class ImmContext extends ContextWrapper {
         private @NonNull
         final InputMethodManager inputMethodManager;
-        private @Nullable
-        WindowManager windowManager;
 
-        /**
-         * Return the given {@code windowManagerHandler} as a system service from this context.
-         * Caches the current {@link InputMethodManager} for {@code base} at instantiation time and
-         * consistently returns it, too.
-         * <p>
-         * Does not override {@code windowManagerHandler} if it's null.
-         */
-        PresentationContext(Context base, @Nullable WindowManagerHandler windowManagerHandler) {
-            this(base, /*inputMethodManager=*/null, windowManagerHandler);
+        ImmContext(Context base) {
+            this(base, /*inputMethodManager=*/null);
         }
 
-        private PresentationContext(Context base, @Nullable InputMethodManager inputMethodManager, @Nullable WindowManagerHandler windowManagerHandler) {
+        private ImmContext(Context base, @Nullable InputMethodManager inputMethodManager) {
             super(base);
-            this.windowManagerHandler = windowManagerHandler;
-            this.inputMethodManager = (inputMethodManager != null) ? inputMethodManager : (InputMethodManager) base.getSystemService(INPUT_METHOD_SERVICE);
+            this.inputMethodManager = inputMethodManager != null ? inputMethodManager : (InputMethodManager) base.getSystemService(INPUT_METHOD_SERVICE);
         }
 
         @Override
         public Object getSystemService(String name) {
-            if (WINDOW_SERVICE.equals(name) && windowManagerHandler != null) {
-                return getWindowManager();
-            }
             if (INPUT_METHOD_SERVICE.equals(name)) {
                 return inputMethodManager;
             }
@@ -291,7 +274,30 @@ class SingleViewPresentation extends Presentation {
         @Override
         public Context createDisplayContext(Display display) {
             Context displayContext = super.createDisplayContext(display);
-            return new PresentationContext(displayContext, inputMethodManager, windowManagerHandler);
+            return new ImmContext(displayContext, inputMethodManager);
+        }
+    }
+
+    /**
+     * Proxies a Context replacing the WindowManager and InputMethodManager with our custom instance.
+     */
+    private static class PresentationContext extends ImmContext {
+        private @NonNull
+        final WindowManagerHandler windowManagerHandler;
+        private @Nullable
+        WindowManager windowManager;
+
+        PresentationContext(Context base, @NonNull WindowManagerHandler windowManagerHandler) {
+            super(base);
+            this.windowManagerHandler = windowManagerHandler;
+        }
+
+        @Override
+        public Object getSystemService(String name) {
+            if (WINDOW_SERVICE.equals(name)) {
+                return getWindowManager();
+            }
+            return super.getSystemService(name);
         }
 
         private WindowManager getWindowManager() {
