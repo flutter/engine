@@ -110,7 +110,7 @@ class SingleViewPresentation extends Presentation {
             Object createParams,
             OnFocusChangeListener focusChangeListener
     ) {
-        super(wrapContext(outerContext, /*windowManagerHandler=*/null), display);
+        super(new PresentationContext(outerContext, /*windowManagerHandler=*/null), display);
         this.viewFactory = viewFactory;
         this.accessibilityEventsDelegate = accessibilityEventsDelegate;
         this.viewId = viewId;
@@ -139,7 +139,7 @@ class SingleViewPresentation extends Presentation {
             OnFocusChangeListener focusChangeListener,
             boolean startFocused
     ) {
-        super(wrapContext(outerContext, /*windowManagerHandler=*/null), display);
+        super(new PresentationContext(outerContext, /*windowManagerHandler=*/null), display);
         this.accessibilityEventsDelegate = accessibilityEventsDelegate;
         viewFactory = null;
         this.state = state;
@@ -149,11 +149,6 @@ class SingleViewPresentation extends Presentation {
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
         );
         this.startFocused = startFocused;
-    }
-
-    private static Context wrapContext(Context context, @Nullable WindowManagerHandler windowManagerHandler) {
-        InputMethodManager inputMethodManager = (InputMethodManager) context.getSystemService(INPUT_METHOD_SERVICE);
-        return new PresentationContext(context, inputMethodManager, windowManagerHandler);
     }
 
     @Override
@@ -170,7 +165,10 @@ class SingleViewPresentation extends Presentation {
         }
 
         container = new FrameLayout(getContext());
-        Context context = wrapContext(getContext(), state.windowManagerHandler);
+
+        // Our base mContext has already been wrapped with an IMM cache at instantiation time, but
+        // we want to wrap it again here to also return state.windowManagerHandler.
+        Context context = new PresentationContext(getContext(), state.windowManagerHandler);
 
         if (state.platformView == null) {
             state.platformView = viewFactory.create(context, viewId, createParams);
@@ -263,13 +261,20 @@ class SingleViewPresentation extends Presentation {
         WindowManager windowManager;
 
         /**
-         * Return the given {@code inputMethodManager} and {@code windowManagerHandler} as system
-         * services from this context. Does not override {@code windowManagerHandler} if it's null.
+         * Return the given {@code windowManagerHandler} as a system service from this context.
+         * Caches the current {@link InputMethodManager} for {@code base} at instantiation time and
+         * consistently returns it, too.
+         * <p>
+         * Does not override {@code windowManagerHandler} if it's null.
          */
-        PresentationContext(Context base, @NonNull InputMethodManager inputMethodManager, @Nullable WindowManagerHandler windowManagerHandler) {
+        PresentationContext(Context base, @Nullable WindowManagerHandler windowManagerHandler) {
+            this(base, /*inputMethodManager=*/null, windowManagerHandler);
+        }
+
+        private PresentationContext(Context base, @Nullable InputMethodManager inputMethodManager, @Nullable WindowManagerHandler windowManagerHandler) {
             super(base);
             this.windowManagerHandler = windowManagerHandler;
-            this.inputMethodManager = inputMethodManager;
+            this.inputMethodManager = (inputMethodManager != null) ? inputMethodManager : (InputMethodManager) base.getSystemService(INPUT_METHOD_SERVICE);
         }
 
         @Override

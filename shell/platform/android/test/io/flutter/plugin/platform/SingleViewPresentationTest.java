@@ -3,6 +3,7 @@ package io.flutter.plugin.platform;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
+import android.view.Display;
 import android.view.inputmethod.InputMethodManager;
 
 import org.junit.Test;
@@ -36,7 +37,7 @@ public class SingleViewPresentationTest {
         // that initially returns a mock. Without the bugfix this test falls back to Robolectric's
         // system service instead of the spy's and fails.
 
-        // Create an SVP under text with a Context that returns a local IMM mock.
+        // Create an SVP under test with a Context that returns a local IMM mock.
         Context context = spy(RuntimeEnvironment.application);
         InputMethodManager expected = mock(InputMethodManager.class);
         when(context.getSystemService(Context.INPUT_METHOD_SERVICE)).thenReturn(expected);
@@ -45,6 +46,25 @@ public class SingleViewPresentationTest {
 
         // Get the IMM from the SVP's context.
         InputMethodManager actual = (InputMethodManager) svp.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+
+        // This should be the mocked instance from construction, not the IMM from the greater
+        // Android OS (or Robolectric's shadow, in this case).
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void returnsOuterContextInputMethodManager_createDisplayContext() {
+        // The IMM should also persist across display contexts created from the base context.
+
+        // Create an SVP under test with a Context that returns a local IMM mock.
+        Context context = spy(RuntimeEnvironment.application);
+        InputMethodManager expected = mock(InputMethodManager.class);
+        when(context.getSystemService(Context.INPUT_METHOD_SERVICE)).thenReturn(expected);
+        Display display = ((DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE)).getDisplay(0);
+        SingleViewPresentation svp = new SingleViewPresentation(context, display, null, null, null, false);
+
+        // Get the IMM from the SVP's context.
+        InputMethodManager actual = (InputMethodManager) svp.getContext().createDisplayContext(display).getSystemService(Context.INPUT_METHOD_SERVICE);
 
         // This should be the mocked instance from construction, not the IMM from the greater
         // Android OS (or Robolectric's shadow, in this case).
