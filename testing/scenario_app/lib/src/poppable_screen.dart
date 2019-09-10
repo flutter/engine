@@ -26,10 +26,7 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
 
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, window.physicalSize.width - 1, window.physicalSize.height - 1),
-      Paint()..color = const Color.fromARGB(255, 255, 255, 255),
-    );
+    canvas.drawPaint(Paint()..color = const Color.fromARGB(255, 255, 255, 255));
 
     if (_buttonRect != null) {
       canvas.drawRect(
@@ -48,7 +45,7 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
 
   @override
   void onDrawFrame() {
-    window.scheduleFrame();
+    // Just draw once since the content never changes.
   }
 
   @override
@@ -59,6 +56,7 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
       window.physicalSize.width * 3 / 4,
       window.physicalSize.height * 3 / 5,
     );
+    window.scheduleFrame();
   }
 
   @override
