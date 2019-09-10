@@ -42,6 +42,9 @@
                     initWithDescription:
                         @"A loading FlutterViewController goes through AppLifecycleState.resumed"]];
 
+  // Holding onto this FlutterViewController is consequential here. Since a released
+  // FlutterViewController wouldn't keep listening to the application lifecycle events and produce
+  // false positives.
   FlutterViewController* flutterVC = [rootVC showFlutter];
   [engine.lifecycleChannel setMessageHandler:^(id message, FlutterReply callback) {
     if (lifecycleExpectations.count == 0) {
@@ -82,33 +85,15 @@
   // checking that we aren't observing the UIApplication notifications and double registering
   // for AppLifecycleState events.
 
-  // However the production is temporarily wrong. https://github.com/flutter/flutter/issues/37226.
-  // It will be fixed in a next PR that removes the wrong asserts.
-  [lifecycleExpectations
-      addObject:
-          [[XCTestExpectation alloc]
-              initWithDescription:@"Current implementation sends another AppLifecycleState event"]];
   [[NSNotificationCenter defaultCenter]
       postNotificationName:UIApplicationWillResignActiveNotification
                     object:nil];
-  [lifecycleExpectations
-      addObject:
-          [[XCTestExpectation alloc]
-              initWithDescription:@"Current implementation sends another AppLifecycleState event"]];
   [[NSNotificationCenter defaultCenter]
       postNotificationName:UIApplicationDidEnterBackgroundNotification
                     object:nil];
-  [lifecycleExpectations
-      addObject:
-          [[XCTestExpectation alloc]
-              initWithDescription:@"Current implementation sends another AppLifecycleState event"]];
   [[NSNotificationCenter defaultCenter]
       postNotificationName:UIApplicationWillEnterForegroundNotification
                     object:nil];
-  [lifecycleExpectations
-      addObject:
-          [[XCTestExpectation alloc]
-              initWithDescription:@"Current implementation sends another AppLifecycleState event"]];
   [[NSNotificationCenter defaultCenter]
       postNotificationName:UIApplicationDidBecomeActiveNotification
                     object:nil];
