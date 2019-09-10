@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #import "ScreenBeforeFlutter.h"
-#import "Util.h"
+#import "FlutterEngine+ScenariosTest.h"
 
 @implementation ScreenBeforeFlutter
 
@@ -11,7 +11,8 @@ FlutterEngine* _engine;
 
 - (id)initWithEngineRunCompletion:(void (^)(void))engineRunCompletion {
   self = [super init];
-  _engine = [Util runEngineWithScenario:@"poppable_screen" withCompletion:engineRunCompletion];
+  _engine = [[FlutterEngine alloc] initWithScenario:@"poppable_screen"
+                                     withCompletion:engineRunCompletion];
   return self;
 }
 

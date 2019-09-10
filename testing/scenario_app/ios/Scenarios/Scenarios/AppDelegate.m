@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 #include "AppDelegate.h"
+#import "FlutterEngine+ScenariosTest.h"
 #import "ScreenBeforeFlutter.h"
 #import "TextPlatformView.h"
-#import "Util.h"
 
 @interface NoStatusBarFlutterViewController : FlutterViewController
 
@@ -26,7 +26,8 @@
   // This argument is used by the XCUITest for Platform Views so that the app
   // under test will create platform views.
   if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--platform-view"]) {
-    FlutterEngine* engine = [Util runEngineWithScenario:@"text_platform_view" withCompletion:nil];
+    FlutterEngine* engine = [[FlutterEngine alloc] initWithScenario:@"text_platform_view"
+                                                     withCompletion:nil];
     [engine runWithEntrypoint:nil];
 
     FlutterViewController* flutterViewController =

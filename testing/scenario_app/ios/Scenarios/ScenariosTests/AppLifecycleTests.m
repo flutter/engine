@@ -4,7 +4,7 @@
 
 #import <Flutter/Flutter.h>
 #import <XCTest/XCTest.h>
-#import "../Scenarios/ScreenBeforeFlutter.h"
+#import "ScreenBeforeFlutter.h"
 
 @interface AppLifecycleTests : XCTestCase
 @end
@@ -25,7 +25,7 @@
     [engineStartedExpectation fulfill];
   }];
 
-  [self waitForExpectations:[NSArray arrayWithObject:engineStartedExpectation] timeout:5];
+  [self waitForExpectationsWithTimeout:5 handler:nil];
 
   UIApplication* application = UIApplication.sharedApplication;
   application.delegate.window.rootViewController = rootVC;
