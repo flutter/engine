@@ -16,7 +16,7 @@
   self.continueAfterFailure = NO;
 }
 
-- (void)testLifecycleChannel {
+- (void)testDismissedFlutterViewControllerNotRespondingToApplicationLifecycle {
   XCTestExpectation* engineStartedExpectation = [self expectationWithDescription:@"Engine started"];
 
   // Let the engine finish booting (at the end of which the channels are properly set-up) before
@@ -113,11 +113,6 @@
     @"AppLifecycleState.inactive", @"AppLifecycleState.resumed", @"AppLifecycleState.inactive",
     @"AppLifecycleState.paused",
 
-    // The production code currently misbehaves. https://github.com/flutter/flutter/issues/37226.
-    // It will be fixed in a next PR that removes the wrong asserts.
-    @"AppLifecycleState.inactive", @"AppLifecycleState.paused", @"AppLifecycleState.inactive",
-    @"AppLifecycleState.resumed",
-
     // We only added 2 from re-launching the FlutterViewController
     // and none from the background-foreground cycle.
     @"AppLifecycleState.inactive", @"AppLifecycleState.resumed"
@@ -134,4 +129,103 @@
   [rootVC dismissViewControllerAnimated:NO completion:nil];
   rootVC = nil;
 }
+
+- (void)testVisibleFlutterViewControllerRespondsToApplicationLifecycle {
+  XCTestExpectation* engineStartedExpectation = [self expectationWithDescription:@"Engine started"];
+
+  // Let the engine finish booting (at the end of which the channels are properly set-up) before
+  // moving onto the next step of showing the next view controller.
+  ScreenBeforeFlutter* rootVC = [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:^void() {
+    [engineStartedExpectation fulfill];
+  }];
+
+  [self waitForExpectationsWithTimeout:5 handler:nil];
+
+  UIApplication* application = UIApplication.sharedApplication;
+  application.delegate.window.rootViewController = rootVC;
+  FlutterEngine* engine = rootVC.engine;
+
+  NSMutableArray* lifecycleExpectations = [NSMutableArray arrayWithCapacity:10];
+  NSMutableArray* lifecycleEvents = [NSMutableArray arrayWithCapacity:10];
+
+  [lifecycleExpectations addObject:[[XCTestExpectation alloc]
+                                       initWithDescription:@"A loading FlutterViewController goes "
+                                                           @"through AppLifecycleState.inactive"]];
+  [lifecycleExpectations
+      addObject:[[XCTestExpectation alloc]
+                    initWithDescription:
+                        @"A loading FlutterViewController goes through AppLifecycleState.resumed"]];
+
+  FlutterViewController* flutterVC = [rootVC showFlutter];
+  [engine.lifecycleChannel setMessageHandler:^(id message, FlutterReply callback) {
+    if (lifecycleExpectations.count == 0) {
+      XCTFail(@"Unexpected lifecycle transition: %@", message);
+    }
+    [lifecycleEvents addObject:message];
+    [[lifecycleExpectations objectAtIndex:0] fulfill];
+    [lifecycleExpectations removeObjectAtIndex:0];
+  }];
+
+  [self waitForExpectations:lifecycleExpectations timeout:5];
+
+  // Expected sequence from showing the FlutterViewController is inactive and resumed.
+  NSArray* expectedStates = @[ @"AppLifecycleState.inactive", @"AppLifecycleState.resumed" ];
+  XCTAssertEqualObjects(lifecycleEvents, expectedStates,
+                        @"AppLifecycleState transitions while presenting not as expected");
+
+  // Now put the FlutterViewController into background.
+  [lifecycleExpectations
+      addObject:[[XCTestExpectation alloc]
+                    initWithDescription:@"A backgrounding FlutterViewController goes through "
+                                        @"AppLifecycleState.inactive"]];
+  [lifecycleExpectations
+      addObject:[[XCTestExpectation alloc]
+                    initWithDescription:@"A backgrounding FlutterViewController goes through "
+                                        @"AppLifecycleState.paused"]];
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:UIApplicationWillResignActiveNotification
+                    object:nil];
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:UIApplicationDidEnterBackgroundNotification
+                    object:nil];
+  [self waitForExpectations:lifecycleExpectations timeout:5];
+  expectedStates = @[
+    @"AppLifecycleState.inactive", @"AppLifecycleState.resumed", @"AppLifecycleState.inactive",
+    @"AppLifecycleState.paused"
+  ];
+  XCTAssertEqualObjects(lifecycleEvents, expectedStates,
+                        @"AppLifecycleState transitions while backgrounding not as expected");
+
+  // Now restore to foreground
+  [lifecycleExpectations
+      addObject:[[XCTestExpectation alloc]
+                    initWithDescription:@"A foregrounding FlutterViewController goes through "
+                                        @"AppLifecycleState.inactive"]];
+  [lifecycleExpectations
+      addObject:[[XCTestExpectation alloc]
+                    initWithDescription:@"A foregrounding FlutterViewController goes through "
+                                        @"AppLifecycleState.paused"]];
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:UIApplicationWillEnterForegroundNotification
+                    object:nil];
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:UIApplicationDidBecomeActiveNotification
+                    object:nil];
+  [self waitForExpectations:lifecycleExpectations timeout:5];
+  expectedStates = @[
+    @"AppLifecycleState.inactive", @"AppLifecycleState.resumed", @"AppLifecycleState.inactive",
+    @"AppLifecycleState.paused", @"AppLifecycleState.inactive", @"AppLifecycleState.resumed"
+  ];
+  XCTAssertEqualObjects(lifecycleEvents, expectedStates,
+                        @"AppLifecycleState transitions while foregrounding not as expected");
+
+  // Dismantle.
+  [engine.lifecycleChannel setMessageHandler:nil];
+  [flutterVC dismissViewControllerAnimated:NO completion:nil];
+  flutterVC = nil;
+  [engine setViewController:nil];
+  [rootVC dismissViewControllerAnimated:NO completion:nil];
+  rootVC = nil;
+}
+
 @end
