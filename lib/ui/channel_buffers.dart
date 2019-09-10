@@ -60,6 +60,11 @@ class _RingBuffer<T> {
 }
 
 /// Storage of channel messages until the channels are completely routed.
+///
+/// Each channel has a finite buffer capacity and in a FIFO manner messages will
+/// be deleted if the capacity is exceeded.  The intention is that these buffers
+/// will be drained once a callback is setup on the BinaryMessenger in the
+/// Flutter framework.
 class ChannelBuffers {
   /// A somewhat arbitrary size that tries to balance handling typical
   /// cases and not wasting memory.
