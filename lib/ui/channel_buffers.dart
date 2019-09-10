@@ -75,7 +75,8 @@ class ChannelBuffers {
   /// cases and not wasting memory.
   static const int kDefaultBufferSize = 100;
 
-  final Map<String, _RingBuffer<StoredMessage>> _messages = {};
+  final Map<String, _RingBuffer<StoredMessage>> _messages =
+    <String, _RingBuffer<StoredMessage>>{};
 
   /// Returns true on overflow.
   bool push(String channel, ByteData data, PlatformMessageResponseCallback callback) {
