@@ -104,7 +104,7 @@ class ChannelBuffers {
 
   bool isEmpty(String channel) {
     final _RingBuffer<StoredMessage> queue = _messages[channel];
-    return queue?.isEmpty ?? true;
+    return (queue == null) ? true : queue.isEmpty;
   }
 
   void resize(String channel, int newSize) {
@@ -115,7 +115,7 @@ class ChannelBuffers {
     } else {
       final int numberOfDroppedMessages = queue.resize(newSize);
       if (numberOfDroppedMessages > 0) {
-        _Logger._printString('Dropping messages on channel: $channel as a result of shrinking the buffer size.');
+        _Logger._printString('Dropping messages on channel "$channel" as a result of shrinking the buffer size.');
       }
     }
   }
