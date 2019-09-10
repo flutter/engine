@@ -20,8 +20,9 @@ namespace flutter {
 
 class LayerTree {
  public:
-  LayerTree();
-
+  LayerTree(const SkISize& frame_size,
+            float frame_depth,
+            float frame_pixel_ratio);
   ~LayerTree();
 
   void Preroll(CompositorContext::ScopedFrame& frame,
@@ -44,8 +45,6 @@ class LayerTree {
   }
 
   const SkISize& frame_size() const { return frame_size_; }
-
-  void set_frame_size(const SkISize& frame_size) { frame_size_ = frame_size; }
 
   void RecordBuildTime(fml::TimePoint begin_start);
   fml::TimePoint build_start() const { return build_start_; }
@@ -72,10 +71,12 @@ class LayerTree {
   }
 
  private:
-  SkISize frame_size_;  // Physical pixels.
   std::shared_ptr<Layer> root_layer_;
   fml::TimePoint build_start_;
   fml::TimePoint build_finish_;
+  SkISize frame_size_;  // Physical pixels.
+  float frame_depth_;
+  float frame_pixel_ratio_;  // Ratio between logical and physical pixels.
   uint32_t rasterizer_tracing_threshold_;
   bool checkerboard_raster_cache_images_;
   bool checkerboard_offscreen_layers_;

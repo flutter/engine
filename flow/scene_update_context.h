@@ -152,6 +152,17 @@ class SceneUpdateContext {
   }
   const fuchsia::ui::gfx::MetricsPtr& metrics() const { return metrics_; }
 
+  void set_frame_dimensions(const SkISize& frame_size,
+                            float frame_depth,
+                            float frame_pixel_ratio) {
+    frame_size_ = frame_size;
+    frame_depth_ = frame_depth;
+    frame_pixel_ratio_ = frame_pixel_ratio;
+  }
+  const SkISize& frame_size() const { return frame_size_; }
+  float frame_depth() const { return frame_depth_; }
+  float frame_pixel_ratio() const { return frame_pixel_ratio_; }
+
   // TODO(chinmaygarde): This method must submit the surfaces as soon as paint
   // tasks are done. However, given that there is no support currently for
   // Vulkan semaphores, we need to submit all the surfaces after an explicit
@@ -225,6 +236,10 @@ class SceneUpdateContext {
   SurfaceProducer* const surface_producer_;
 
   fuchsia::ui::gfx::MetricsPtr metrics_;
+  SkISize frame_size_;  // Physical pixels.
+  float frame_depth_ = 0.0f;
+  float frame_pixel_ratio_ =
+      1.0f;  // Ratio between logical and physical pixels.
 
   std::vector<PaintTask> paint_tasks_;
 

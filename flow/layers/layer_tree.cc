@@ -9,10 +9,18 @@
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
 
+#if defined(OS_FUCHSIA)
+#include <lib/ui/scenic/cpp/resources.h>
+#endif
+
 namespace flutter {
 
-LayerTree::LayerTree()
-    : frame_size_{},
+LayerTree::LayerTree(const SkISize& frame_size,
+                     float frame_depth,
+                     float frame_pixel_ratio)
+    : frame_size_(frame_size),
+      frame_depth_(frame_depth),
+      frame_pixel_ratio_(frame_pixel_ratio),
       rasterizer_tracing_threshold_(0),
       checkerboard_raster_cache_images_(false),
       checkerboard_offscreen_layers_(false) {}
@@ -42,7 +50,9 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       frame.context().raster_time(),
       frame.context().ui_time(),
       frame.context().texture_registry(),
-      checkerboard_offscreen_layers_};
+      checkerboard_offscreen_layers_,
+      frame_depth_,
+      frame_pixel_ratio_};
 
   root_layer_->Preroll(&context, frame.root_surface_transformation());
 }
@@ -94,7 +104,9 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       frame.context().ui_time(),
       frame.context().texture_registry(),
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
-      checkerboard_offscreen_layers_};
+      checkerboard_offscreen_layers_,
+      frame_depth_,
+      frame_pixel_ratio_};
 
   if (root_layer_->needs_painting())
     root_layer_->Paint(context);
@@ -128,6 +140,8 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
       unused_stopwatch,         // engine time (dont care)
       unused_texture_registry,  // texture registry (not supported)
       false,                    // checkerboard_offscreen_layers
+      frame_depth_,             // maximum depth allowed for rendering
+      frame_pixel_ratio_        // ratio between logical and physical
   };
 
   SkISize canvas_size = canvas->getBaseLayerSize();
@@ -143,7 +157,9 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
       unused_stopwatch,         // engine time (dont care)
       unused_texture_registry,  // texture registry (not supported)
       nullptr,                  // raster cache
-      false                     // checkerboard offscreen layers
+      false,                    // checkerboard offscreen layers
+      frame_depth_,             // maximum depth allowed for rendering
+      frame_pixel_ratio_        // ratio between logical and physical
   };
 
   // Even if we don't have a root layer, we still need to create an empty

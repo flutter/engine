@@ -7,6 +7,8 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/picture.h"
+#include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/window/window.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -36,8 +38,13 @@ fml::RefPtr<Scene> Scene::create(std::shared_ptr<flutter::Layer> rootLayer,
 Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
-             bool checkerboardOffscreenLayers)
-    : m_layerTree(new flutter::LayerTree()) {
+             bool checkerboardOffscreenLayers) {
+  auto viewport_metrics = UIDartState::Current()->window()->viewport_metrics();
+
+  m_layerTree = std::make_unique<LayerTree>(
+      SkISize::Make(viewport_metrics.physical_width,
+                    viewport_metrics.physical_height),
+      viewport_metrics.physical_depth, viewport_metrics.device_pixel_ratio);
   m_layerTree->set_root_layer(std::move(rootLayer));
   m_layerTree->set_rasterizer_tracing_threshold(rasterizerTracingThreshold);
   m_layerTree->set_checkerboard_raster_cache_images(
