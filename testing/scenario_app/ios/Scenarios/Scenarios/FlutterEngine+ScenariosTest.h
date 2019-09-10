@@ -7,6 +7,6 @@
 NS_ASSUME_NONNULL_BEGIN
 @interface FlutterEngine (ScenariosTest)
 - (instancetype)initWithScenario:(NSString*)scenario
-                  withCompletion:(void (^_Nullable)(void))engineRunCompletion;
+                  withCompletion:(nullable void (^)(void))engineRunCompletion;
 @end
 NS_ASSUME_NONNULL_END

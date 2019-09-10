@@ -7,21 +7,21 @@
 @implementation FlutterEngine (ScenariosTest)
 
 - (instancetype)initWithScenario:(NSString*)scenario
-         withCompletion:(void (^_Nullable)(void))engineRunCompletion {
+                  withCompletion:(nullable void (^)(void))engineRunCompletion {
   NSAssert([scenario length] != 0, @"You need to provide a scenario");
   self = [self initWithName:[NSString stringWithFormat:@"Test engine for %@", scenario]
                     project:nil];
   [self runWithEntrypoint:nil];
   [self.binaryMessenger
-   setMessageHandlerOnChannel:@"scenario_status"
-   binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
-     [self.binaryMessenger
-      sendOnChannel:@"set_scenario"
-      message:[scenario dataUsingEncoding:NSUTF8StringEncoding]];
-     if (engineRunCompletion != nil) {
-       engineRunCompletion();
-     }
-   }];
+      setMessageHandlerOnChannel:@"scenario_status"
+            binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
+              [self.binaryMessenger
+                  sendOnChannel:@"set_scenario"
+                        message:[scenario dataUsingEncoding:NSUTF8StringEncoding]];
+              if (engineRunCompletion != nil) {
+                engineRunCompletion();
+              }
+            }];
   return self;
 }
 
