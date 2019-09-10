@@ -59,4 +59,16 @@ void main() {
     expect(buffers.push(channel, four, callback), equals(true));
     expect(_getString(buffers.pop(channel).data), equals('two'));
   });
+
+  test('resize drop', () async {
+    String channel = "foo";
+    ByteData one = _makeByteData('one');
+    ByteData two = _makeByteData('two');
+    ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
+    expect(buffers.push(channel, one, callback), equals(false));
+    expect(buffers.push(channel, two, callback), equals(false));
+    buffers.resize(channel, 1);
+    expect(_getString(buffers.pop(channel).data), equals('two'));
+  });
 }

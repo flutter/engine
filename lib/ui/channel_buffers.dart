@@ -113,7 +113,10 @@ class ChannelBuffers {
       queue = _RingBuffer<StoredMessage>(newSize);
       _messages[channel] = queue;
     } else {
-      queue.resize(newSize);
+      final int numberOfDroppedMessages = queue.resize(newSize);
+      if (numberOfDroppedMessages > 0) {
+        _Logger._printString('Dropping messages on channel: $channel as a result of shrinking the buffer size.');
+      }
     }
   }
 }
