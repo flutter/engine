@@ -15,11 +15,11 @@ class StoredMessage {
 }
 
 /// A fixed-size circular queue.
-class RingBuffer<T> {
+class _RingBuffer<T> {
   final collection.ListQueue<T> _queue;
-  final int _capacity;
+  int _capacity;
 
-  RingBuffer(this._capacity) 
+  _RingBuffer(this._capacity)
     : _queue = collection.ListQueue<T>(_capacity);
 
   int get length => _queue.length;
@@ -43,27 +43,45 @@ class RingBuffer<T> {
   T pop() {
     return _queue.isEmpty ? null : _queue.removeFirst();
   }
+
+  /// Returns the number of discarded items resulting from resize.
+  int resize(int newSize) {
+    int result = 0;
+
+    while (length > newSize) {
+      result += 1;
+      _queue.removeFirst();
+    }
+
+    _capacity = newSize;
+
+    return result;
+  }
 }
 
 /// Storage of channel messages until the channels are completely routed.
 class ChannelBuffers {
   static const int DEFAULT_BUFFER_SIZE = 100;
 
-  final Map<String, RingBuffer<StoredMessage>> _messages = {};
+  final Map<String, _RingBuffer<StoredMessage>> _messages = {};
 
-  void push(String channel, ByteData data, PlatformMessageResponseCallback callback) {
-    RingBuffer<StoredMessage> queue = _messages[channel];
+  /// Returns true on overflow.
+  bool push(String channel, ByteData data, PlatformMessageResponseCallback callback) {
+    _RingBuffer<StoredMessage> queue = _messages[channel];
     if (queue == null) {
-      queue = RingBuffer<StoredMessage>(DEFAULT_BUFFER_SIZE);
+      queue = _RingBuffer<StoredMessage>(DEFAULT_BUFFER_SIZE);
       _messages[channel] = queue;
     }
-    if (queue.push(StoredMessage(data, callback))) {
+    final bool result = queue.push(StoredMessage(data, callback));
+    if (result) {
       _Logger._printString('Overflow on channel:' + channel);
     }
+    return result;
   }
 
+  /// Returns null on underflow.
   StoredMessage pop(String channel) {
-    final RingBuffer<StoredMessage> queue = _messages[channel];
+    final _RingBuffer<StoredMessage> queue = _messages[channel];
     final StoredMessage result = queue?.pop();
     if (result == null) {
       _Logger._printString('Underflow on channel:' + channel);
@@ -72,11 +90,18 @@ class ChannelBuffers {
   }
 
   bool isEmpty(String channel) {
-    final RingBuffer<StoredMessage> queue = _messages[channel];
+    final _RingBuffer<StoredMessage> queue = _messages[channel];
     return queue?.isEmpty ?? true;
   }
 
   void resize(String channel, int newSize) {
+    _RingBuffer<StoredMessage> queue = _messages[channel];
+    if (queue == null) {
+      queue = _RingBuffer<StoredMessage>(newSize);
+      _messages[channel] = queue;
+    } else {
+      queue.resize(newSize);
+    }
   }
 }
 

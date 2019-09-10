@@ -6,11 +6,21 @@ import 'package:test/test.dart';
 
 void main() {
 
+  ByteData _makeByteData(String str) {
+    var list = utf8.encode(str);
+    var buffer = list is Uint8List ? list.buffer : new Uint8List.fromList(list).buffer;
+    return ByteData.view(buffer);
+  }
+
+  String _getString(ByteData data) {
+    final buffer = data.buffer;
+    var list = buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    return utf8.decode(list);
+  }
+
   test('push pop', () async {
     String channel = "foo";
-    var list = utf8.encode('bar');
-    var buffer = list is Uint8List ? list.buffer : new Uint8List.fromList(list).buffer;
-    ByteData data = ByteData.view(buffer);
+    ByteData data = _makeByteData('bar');
     ui.ChannelBuffers buffers = ui.ChannelBuffers();
     ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
     buffers.push(channel, data, callback);
@@ -21,9 +31,7 @@ void main() {
 
   test('empty', () async {
     String channel = "foo";
-    var list = utf8.encode('bar');
-    var buffer = list is Uint8List ? list.buffer : new Uint8List.fromList(list).buffer;
-    ByteData data = ByteData.view(buffer);
+    ByteData data = _makeByteData('bar');
     ui.ChannelBuffers buffers = ui.ChannelBuffers();
     ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
     expect(buffers.isEmpty(channel), equals(true));
@@ -36,30 +44,19 @@ void main() {
     expect(buffers.pop("channel"), equals(null));
   });
 
-  test('ringbuffer push pop', () async {
-    ui.RingBuffer<int> ringBuffer = ui.RingBuffer<int>(10);
-    ringBuffer.push(1);
-    expect(ringBuffer.pop(), equals(1));
-  });
-
-  test('ringbuffer overflow', () async {
-    ui.RingBuffer<int> ringBuffer = ui.RingBuffer<int>(3);
-    expect(ringBuffer.push(1), equals(false));
-    expect(ringBuffer.push(2), equals(false));
-    expect(ringBuffer.push(3), equals(false));
-    expect(ringBuffer.push(4), equals(true));
-    expect(ringBuffer.pop(), equals(2));
-  });
-
-  test('ringbuffer length', () async {
-    ui.RingBuffer<int> ringBuffer = ui.RingBuffer<int>(3);
-    expect(ringBuffer.length, equals(0));
-    ringBuffer.push(123);
-    expect(ringBuffer.length, equals(1));
-  });
-
-  test('ringbuffer underflow', () async {
-    ui.RingBuffer<int> ringBuffer = ui.RingBuffer<int>(3);
-    expect(ringBuffer.pop(), equals(null));
+  test('overflow', () async {
+    String channel = "foo";
+    ByteData one = _makeByteData('one');
+    ByteData two = _makeByteData('two');
+    ByteData three = _makeByteData('three');
+    ByteData four = _makeByteData('four');
+    ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
+    buffers.resize(channel, 3);
+    expect(buffers.push(channel, one, callback), equals(false));
+    expect(buffers.push(channel, two, callback), equals(false));
+    expect(buffers.push(channel, three, callback), equals(false));
+    expect(buffers.push(channel, four, callback), equals(true));
+    expect(_getString(buffers.pop(channel).data), equals('two'));
   });
 }
