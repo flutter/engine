@@ -21,11 +21,11 @@ class StoredMessage {
 
 /// A fixed-size circular queue.
 class _RingBuffer<T> {
-  final collection.Queue<T> _queue;
+  final ListQueue<T> _queue;
   int _capacity;
 
   _RingBuffer(this._capacity)
-    : _queue = collection.Queue<T>();
+    : _queue = ListQueue<T>(_capacity);
 
   int get length => _queue.length;
 
