@@ -40,11 +40,9 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
     context->cull_rect = kGiantRect;
   }
 
-  SkRect child_paint_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, child_matrix, &child_paint_bounds);
+  ContainerLayer::Preroll(context, child_matrix);
 
-  transform_.mapRect(&child_paint_bounds);
-  set_paint_bounds(child_paint_bounds);
+  transform_.mapRect(paint_bounds());
 
   context->cull_rect = previous_cull_rect;
   context->mutators_stack.Pop();
@@ -57,7 +55,7 @@ void TransformLayer::Paint(PaintContext& context) const {
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->concat(transform_);
 
-  PaintChildren(context);
+  ContainerLayer::Paint(context);
 }
 
 void TransformLayer::UpdateScene(SceneUpdateContext& context) {

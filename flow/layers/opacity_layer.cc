@@ -4,37 +4,12 @@
 
 #include "flutter/flow/layers/opacity_layer.h"
 
-#include "flutter/flow/layers/transform_layer.h"
-
 namespace flutter {
 
 OpacityLayer::OpacityLayer(int alpha, const SkPoint& offset)
-    : alpha_(alpha), offset_(offset) {}
-
-OpacityLayer::~OpacityLayer() = default;
-
-void OpacityLayer::EnsureSingleChild() {
-  FML_DCHECK(layers().size() > 0);  // OpacityLayer should never be a leaf
-
-  if (layers().size() == 1) {
-    return;
-  }
-
-  // Be careful: SkMatrix's default constructor doesn't initialize the matrix to
-  // identity. Hence we have to explicitly call SkMatrix::setIdentity.
-  SkMatrix identity;
-  identity.setIdentity();
-  auto new_child = std::make_shared<flutter::TransformLayer>(identity);
-
-  for (auto& child : layers()) {
-    new_child->Add(child);
-  }
-  ClearChildren();
-  Add(new_child);
-}
+    : ContainerLayer(true), alpha_(alpha), offset_(offset) {}
 
 void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  EnsureSingleChild();
   SkMatrix child_matrix = matrix;
   child_matrix.postTranslate(offset_.fX, offset_.fY);
   context->mutators_stack.PushTransform(
@@ -44,8 +19,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->mutators_stack.Pop();
   context->mutators_stack.Pop();
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
-  // See |EnsureSingleChild|.
-  FML_DCHECK(layers().size() == 1);
+
   if (context->view_embedder == nullptr && context->raster_cache &&
       SkRect::Intersects(context->cull_rect, paint_bounds())) {
     Layer* child = layers()[0].get();
@@ -71,9 +45,6 @@ void OpacityLayer::Paint(PaintContext& context) const {
   context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
-
-  // See |EnsureSingleChild|.
-  FML_DCHECK(layers().size() == 1);
 
   // Embedded platform views are changing the canvas in the middle of the paint
   // traversal. To make sure we paint on the right canvas, when the embedded
@@ -105,7 +76,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
 
   Layer::AutoSaveLayer save_layer =
       Layer::AutoSaveLayer::Create(context, saveLayerBounds, &paint);
-  PaintChildren(context);
+  ContainerLayer::Paint(context);
 }
 
 }  // namespace flutter
