@@ -5,6 +5,7 @@
 #ifndef FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_
 #define FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_
 
+#if defined(OS_FUCHSIA) || defined(__Fuchsia__)
 #include <memory>
 #include <set>
 #include <vector>
@@ -14,9 +15,10 @@
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
-#include "lib/ui/scenic/cpp/resources.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSurface.h"
+
+#include <lib/ui/scenic/cpp/resources.h>
 
 namespace flutter {
 
@@ -247,5 +249,10 @@ class SceneUpdateContext {
 };
 
 }  // namespace flutter
+#else
+namespace flutter {
+class SceneUpdateContext;
+}
+#endif  // defined(OS_FUCHSIA)
 
 #endif  // FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_

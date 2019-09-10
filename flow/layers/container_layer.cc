@@ -48,8 +48,6 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
   }
 }
 
-#if defined(OS_FUCHSIA)
-
 void ContainerLayer::UpdateScene(SceneUpdateContext& context) {
   UpdateSceneChildren(context);
 }
@@ -65,7 +63,5 @@ void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
     }
   }
 }
-
-#endif  // defined(OS_FUCHSIA)
 
 }  // namespace flutter

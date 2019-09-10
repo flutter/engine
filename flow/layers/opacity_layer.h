@@ -29,7 +29,6 @@ class OpacityLayer : public ContainerLayer {
   ~OpacityLayer() override;
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
   void Paint(PaintContext& context) const override;
 
   // TODO(chinmaygarde): Once SCN-139 is addressed, introduce a new node in the

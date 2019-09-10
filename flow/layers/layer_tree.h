@@ -16,7 +16,13 @@
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSize.h"
 
+namespace scenic {
+class ContainerNode;
+}  // namespace scenic
+
 namespace flutter {
+
+class SceneUpdateContext;
 
 class LayerTree {
  public:
@@ -27,19 +33,13 @@ class LayerTree {
 
   void Preroll(CompositorContext::ScopedFrame& frame,
                bool ignore_raster_cache = false);
-
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context,
-                   scenic::ContainerNode& container);
-#endif
-
   void Paint(CompositorContext::ScopedFrame& frame,
              bool ignore_raster_cache = false) const;
-
   sk_sp<SkPicture> Flatten(const SkRect& bounds);
+  void UpdateScene(SceneUpdateContext& context,
+                   scenic::ContainerNode& container);
 
   Layer* root_layer() const { return root_layer_.get(); }
-
   void set_root_layer(std::shared_ptr<Layer> root_layer) {
     root_layer_ = std::move(root_layer);
   }

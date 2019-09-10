@@ -29,18 +29,6 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->cull_rect = previous_cull_rect;
 }
 
-#if defined(OS_FUCHSIA)
-
-void ClipRRectLayer::UpdateScene(SceneUpdateContext& context) {
-  FML_DCHECK(needs_system_composite());
-
-  // TODO(liyuqian): respect clip_behavior_
-  SceneUpdateContext::Clip clip(context, clip_rrect_.getBounds());
-  UpdateSceneChildren(context);
-}
-
-#endif  // defined(OS_FUCHSIA)
-
 void ClipRRectLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipRRectLayer::Paint");
   FML_DCHECK(needs_painting());
@@ -56,6 +44,17 @@ void ClipRRectLayer::Paint(PaintContext& context) const {
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->restore();
   }
+}
+
+void ClipRRectLayer::UpdateScene(SceneUpdateContext& context) {
+#if defined(OS_FUCHSIA)
+  FML_DCHECK(needs_system_composite());
+
+  // TODO(liyuqian): respect clip_behavior_
+  SceneUpdateContext::Clip clip(context, clip_rrect_.getBounds());
+
+  ContainerLayer::UpdateScene(context);
+#endif  // defined(OS_FUCHSIA)
 }
 
 }  // namespace flutter

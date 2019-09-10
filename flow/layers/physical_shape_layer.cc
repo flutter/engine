@@ -109,9 +109,8 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
   }
 }
 
-#if defined(OS_FUCHSIA)
-
 void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
+#if defined(OS_FUCHSIA)
   FML_DCHECK(needs_system_composite());
 
   // Retained rendering: speedup by reusing a retained entity node if possible.
@@ -136,9 +135,8 @@ void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
   }
 
   UpdateSceneChildren(context);
-}
-
 #endif  // defined(OS_FUCHSIA)
+}
 
 void PhysicalShapeLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");

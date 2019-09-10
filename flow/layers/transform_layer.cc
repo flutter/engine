@@ -50,17 +50,6 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->mutators_stack.Pop();
 }
 
-#if defined(OS_FUCHSIA)
-
-void TransformLayer::UpdateScene(SceneUpdateContext& context) {
-  FML_DCHECK(needs_system_composite());
-
-  SceneUpdateContext::Transform transform(context, transform_);
-  UpdateSceneChildren(context);
-}
-
-#endif  // defined(OS_FUCHSIA)
-
 void TransformLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "TransformLayer::Paint");
   FML_DCHECK(needs_painting());
@@ -69,6 +58,16 @@ void TransformLayer::Paint(PaintContext& context) const {
   context.internal_nodes_canvas->concat(transform_);
 
   PaintChildren(context);
+}
+
+void TransformLayer::UpdateScene(SceneUpdateContext& context) {
+#if defined(OS_FUCHSIA)
+  FML_DCHECK(needs_system_composite());
+
+  SceneUpdateContext::Transform transform(context, transform_);
+
+  ContainerLayer::UpdateScene(context);
+#endif  // defined(OS_FUCHSIA)
 }
 
 }  // namespace flutter
