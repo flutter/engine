@@ -21,11 +21,11 @@ class StoredMessage {
 
 /// A fixed-size circular queue.
 class _RingBuffer<T> {
-  final collection.ListQueue<T> _queue;
+  final collection.Queue<T> _queue;
   int _capacity;
 
   _RingBuffer(this._capacity)
-    : _queue = collection.ListQueue<T>(_capacity);
+    : _queue = collection.Queue<T>();
 
   int get length => _queue.length;
 
@@ -85,15 +85,7 @@ class ChannelBuffers {
       queue = _RingBuffer<StoredMessage>(kDefaultBufferSize);
       _messages[channel] = queue;
     }
-    final bool result = queue.push(StoredMessage(data, callback));
-    if (result) {
-      _Logger._printString('Overflow on channel: $channel.  '
-                           'Messages on this channel are being sent faster '
-                           'than they are being processed which is resulting '
-                           'in the dropping of messages.  The engine may not be '
-                           'running or you need to adjust the buffer size.');
-    }
-    return result;
+    return queue.push(StoredMessage(data, callback));
   }
 
   /// Returns null on underflow.
@@ -114,10 +106,7 @@ class ChannelBuffers {
       queue = _RingBuffer<StoredMessage>(newSize);
       _messages[channel] = queue;
     } else {
-      final int numberOfDroppedMessages = queue.resize(newSize);
-      if (numberOfDroppedMessages > 0) {
-        _Logger._printString('Dropping messages on channel "$channel" as a result of shrinking the buffer size.');
-      }
+      queue.resize(newSize);
     }
   }
 }
