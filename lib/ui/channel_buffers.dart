@@ -61,7 +61,9 @@ class _RingBuffer<T> {
 
 /// Storage of channel messages until the channels are completely routed.
 class ChannelBuffers {
-  static const int DEFAULT_BUFFER_SIZE = 100;
+  /// A somewhat arbitrary size that tries to balance handling typical
+  /// cases and not wasting memory.
+  static const int kDefaultBufferSize = 100;
 
   final Map<String, _RingBuffer<StoredMessage>> _messages = {};
 
@@ -69,7 +71,7 @@ class ChannelBuffers {
   bool push(String channel, ByteData data, PlatformMessageResponseCallback callback) {
     _RingBuffer<StoredMessage> queue = _messages[channel];
     if (queue == null) {
-      queue = _RingBuffer<StoredMessage>(DEFAULT_BUFFER_SIZE);
+      queue = _RingBuffer<StoredMessage>(kDefaultBufferSize);
       _messages[channel] = queue;
     }
     final bool result = queue.push(StoredMessage(data, callback));
