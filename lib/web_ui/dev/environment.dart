@@ -8,13 +8,7 @@ import 'package:path/path.dart' as pathlib;
 
 /// Contains various environment variables, such as common file paths and command-line options.
 Environment get environment {
-  if (Environment.commandLineArguments == null) {
-    io.stderr.writeln('Command-line options not passed to Environment.');
-    io.exit(1);
-  }
-  if (_environment == null) {
-    _environment = Environment();
-  }
+  _environment ??= Environment();
   return _environment;
 }
 Environment _environment;
@@ -56,17 +50,17 @@ class Environment {
     final List<String> targets = options['target'];
 
     final io.File self = io.File.fromUri(io.Platform.script);
-    final io.Directory webUiRootDir = self.parent.parent;
-    final io.Directory engineSrcDir = webUiRootDir.parent.parent.parent;
+    final io.Directory engineSrcDir = self.parent.parent.parent.parent.parent;
     final io.Directory outDir = io.Directory(pathlib.join(engineSrcDir.path, 'out'));
     final io.Directory hostDebugUnoptDir = io.Directory(pathlib.join(outDir.path, 'host_debug_unopt'));
-    final String dartExecutable = pathlib.canonicalize(io.File(_which(io.Platform.executable)).absolute.path);
-    final io.Directory dartSdkDir = io.File(dartExecutable).parent.parent;
+    final io.Directory dartSdkDir = io.Directory(pathlib.join(hostDebugUnoptDir.path, 'dart-sdk'));
+    final io.Directory webUiRootDir = io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'lib', 'web_ui'));
 
-    // Googlers frequently have their Dart SDK misconfigured for open-source projects. Let's help them out.
-    if (dartExecutable.startsWith('/usr/lib/google-dartlang')) {
-      io.stderr.writeln('ERROR: Using unsupported version of the Dart SDK: $dartExecutable');
-      io.exit(1);
+    for (io.Directory expectedDirectory in <io.Directory>[engineSrcDir, outDir, hostDebugUnoptDir, dartSdkDir, webUiRootDir]) {
+      if (!expectedDirectory.existsSync()) {
+        io.stderr.writeln('$expectedDirectory does not exist.');
+        io.exit(1);
+      }
     }
 
     return Environment._(
@@ -75,7 +69,6 @@ class Environment {
       engineSrcDir: engineSrcDir,
       outDir: outDir,
       hostDebugUnoptDir: hostDebugUnoptDir,
-      dartExecutable: dartExecutable,
       dartSdkDir: dartSdkDir,
       requestedShards: shards,
       isDebug: isDebug,
@@ -90,7 +83,6 @@ class Environment {
     this.outDir,
     this.hostDebugUnoptDir,
     this.dartSdkDir,
-    this.dartExecutable,
     this.requestedShards,
     this.isDebug,
     this.targets,
@@ -116,9 +108,6 @@ class Environment {
   /// The root of the Dart SDK.
   final io.Directory dartSdkDir;
 
-  /// The "dart" executable file.
-  final String dartExecutable;
-
   /// Shards specified on the command-line.
   final List<String> requestedShards;
 
@@ -130,6 +119,9 @@ class Environment {
 
   /// Paths to targets to run, e.g. a single test.
   final List<String> targets;
+
+  /// The "dart" executable file.
+  String get dartExecutable => pathlib.join(dartSdkDir.path, 'bin', 'dart');
 
   /// The "pub" executable file.
   String get pubExecutable => pathlib.join(dartSdkDir.path, 'bin', 'pub');

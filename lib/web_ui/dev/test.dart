@@ -97,7 +97,7 @@ List<io.File> _flatListSourceFiles(io.Directory directory) {
       .listSync(recursive: true)
       .whereType<io.File>()
       .where((f) {
-        if (!f.path.endsWith('.dart') || f.path.endsWith('.js')) {
+        if (!f.path.endsWith('.dart') && !f.path.endsWith('.js')) {
           // Not a source file we're checking.
           return false;
         }
