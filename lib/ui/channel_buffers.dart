@@ -6,10 +6,15 @@ part of dart.ui;
 
 /// A saved platform message for a channel with its callback.
 class StoredMessage {
+  /// Default constructor, takes in a [ByteData] that represents the
+  /// payload of the message and a [PlatformMessageResponseCallback]
+  /// that represents the callback that will be called when the message
+  /// is handled.
+  StoredMessage(this._data, this._callback);
+
   final ByteData _data;
   final PlatformMessageResponseCallback _callback;
 
-  StoredMessage(this._data, this._callback);
   ByteData get data => _data;
   PlatformMessageResponseCallback get callback => _callback;
 }
