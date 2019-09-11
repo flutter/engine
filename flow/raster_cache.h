@@ -92,13 +92,15 @@ class RasterCache {
 
   void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
 
-  void PrepareForSnapshot(PrerollContext* context, Layer* layer);
-
   RasterCacheResult Get(const SkPicture& picture, const SkMatrix& ctm) const;
 
-  RasterCacheResult Get(const Layer* layer, const SkMatrix& ctm) const;
+  RasterCacheResult Get(Layer* layer, const SkMatrix& ctm) const;
 
-  RasterCacheResult PutSnapshot(const Layer* layer, sk_sp<SkImage> snapshot);
+  RasterCacheResult GetSnapshot(const Layer* layer,
+                                GrContext* context,
+                                const SkMatrix& ctm,
+                                SkSurface* surface,
+                                SkImageFilter* filter);
 
   void SweepAfterFrame();
 

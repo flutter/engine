@@ -12,6 +12,7 @@
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkImageFilter.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
@@ -96,6 +97,27 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
   // TODO(abarth): We should find a better heuristic here that lets us avoid
   // wasting memory on trivial layers that are easy to re-rasterize every frame.
   return picture->approximateOpCount() > 5;
+}
+
+static RasterCacheResult Rasterize(GrContext* gr_context,
+                                   const SkMatrix& ctm,
+                                   SkSurface* surface,
+                                   SkImageFilter* filter) {
+  TRACE_EVENT0("flutter", "RasterCacheFilterBackground");
+
+  const SkImageInfo image_info = surface->imageInfo();
+  sk_sp<SkImageFilter> transformed_filter = filter->makeWithLocalMatrix(ctm);
+
+  sk_sp<SkSurface> filter_surface =
+      SkSurface::MakeRenderTarget(gr_context, SkBudgeted::kYes, image_info);
+
+  SkCanvas* filter_canvas = filter_surface->getCanvas();
+  SkPaint filter_paint;
+  filter_paint.setImageFilter(transformed_filter);
+  surface->draw(filter_canvas, 0, 0, &filter_paint);
+
+  sk_sp<SkImage> filter_image = filter_surface->makeImageSnapshot();
+  return {filter_image, SkRect::Make(filter_image->imageInfo().bounds())};
 }
 
 static RasterCacheResult Rasterize(
@@ -188,12 +210,6 @@ void RasterCache::Prepare(PrerollContext* context,
   }
 }
 
-void RasterCache::PrepareForSnapshot(PrerollContext* context, Layer* layer) {
-  LayerRasterCacheKey cache_key(layer->unique_id(), SkMatrix::I());
-  Entry& entry = layer_cache_[cache_key];
-  entry.used_this_frame = true;
-}
-
 bool RasterCache::Prepare(GrContext* context,
                           SkPicture* picture,
                           const SkMatrix& transformation_matrix,
@@ -243,25 +259,25 @@ RasterCacheResult RasterCache::Get(const SkPicture& picture,
   return it == picture_cache_.end() ? RasterCacheResult() : it->second.image;
 }
 
-RasterCacheResult RasterCache::Get(const Layer* layer,
-                                   const SkMatrix& ctm) const {
+RasterCacheResult RasterCache::Get(Layer* layer, const SkMatrix& ctm) const {
   LayerRasterCacheKey cache_key(layer->unique_id(), ctm);
   auto it = layer_cache_.find(cache_key);
   return it == layer_cache_.end() ? RasterCacheResult() : it->second.image;
 }
 
-RasterCacheResult RasterCache::PutSnapshot(const Layer* layer,
-                                           sk_sp<SkImage> snapshot) {
+RasterCacheResult RasterCache::GetSnapshot(const Layer* layer,
+                                           GrContext* context,
+                                           const SkMatrix& ctm,
+                                           SkSurface* surface,
+                                           SkImageFilter* filter) {
   LayerRasterCacheKey cache_key(layer->unique_id(), SkMatrix::I());
-  auto it = layer_cache_.find(cache_key);
-  RasterCacheResult newResult = {snapshot,
-                                 SkRect::Make(snapshot->imageInfo().bounds())};
-  if (it != layer_cache_.end()) {
-    it->second.image = newResult;
-  } else {
-    FML_LOG(ERROR) << "RasterCacheResult for snapshot was missing!!!";
+  Entry& entry = layer_cache_[cache_key];
+  if (!entry.image.is_valid()) {
+    // FML_LOG(ERROR) << "Grabbing snapshot for layer: " << layer->unique_id();
+    entry.image = Rasterize(context, ctm, surface, filter);
   }
-  return newResult;
+  entry.used_this_frame = true;
+  return entry.image;
 }
 
 void RasterCache::SweepAfterFrame() {

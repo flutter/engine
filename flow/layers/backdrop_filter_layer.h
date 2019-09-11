@@ -18,8 +18,6 @@ class BackdropFilterLayer : public ContainerLayer {
 
   void initRetained(std::shared_ptr<Layer> retainedLayer);
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
   void Paint(PaintContext& context) const override;
 
  private:
