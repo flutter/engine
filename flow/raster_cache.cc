@@ -27,16 +27,10 @@ RasterCacheResult::RasterCacheResult(sk_sp<SkImage> image,
                                      const SkRect& logical_rect)
     : image_(std::move(image)), logical_rect_(logical_rect) {}
 
-void RasterCacheResult::drawSnapshot(SkCanvas& canvas) const {
-  SkAutoCanvasRestore auto_restore(&canvas, true);
-  canvas.resetMatrix();
-  SkIRect dev_clip = canvas.getDeviceClipBounds();
-  if (dev_clip.width() == logical_rect_.width() &&
-      dev_clip.height() == logical_rect_.height()) {
-    canvas.drawImage(image_, dev_clip.left(), dev_clip.top(), nullptr);
-  } else {
-    canvas.drawImageRect(image_, SkRect::Make(dev_clip), nullptr);
-  }
+void RasterCacheResult::drawSnapshot(SkCanvas* canvas) const {
+  SkAutoCanvasRestore auto_restore(canvas, true);
+  canvas->resetMatrix();
+  canvas->drawImage(image_, 0, 0, nullptr);
 }
 
 void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
@@ -197,7 +191,6 @@ void RasterCache::Prepare(PrerollContext* context,
 void RasterCache::PrepareForSnapshot(PrerollContext* context, Layer* layer) {
   LayerRasterCacheKey cache_key(layer->unique_id(), SkMatrix::I());
   Entry& entry = layer_cache_[cache_key];
-  entry.access_count = ClampSize(entry.access_count + 1, 0, access_threshold_);
   entry.used_this_frame = true;
 }
 
@@ -257,15 +250,18 @@ RasterCacheResult RasterCache::Get(const Layer* layer,
   return it == layer_cache_.end() ? RasterCacheResult() : it->second.image;
 }
 
-void RasterCache::PutSnapshot(const Layer* layer,
-                              SkSurface* surface,
-                              SkIRect& dev_bounds) {
+RasterCacheResult RasterCache::PutSnapshot(const Layer* layer,
+                                           sk_sp<SkImage> snapshot) {
   LayerRasterCacheKey cache_key(layer->unique_id(), SkMatrix::I());
   auto it = layer_cache_.find(cache_key);
+  RasterCacheResult newResult = {snapshot,
+                                 SkRect::Make(snapshot->imageInfo().bounds())};
   if (it != layer_cache_.end()) {
-    it->second.image = {surface->makeImageSnapshot(dev_bounds),
-                        SkRect::Make(dev_bounds)};
+    it->second.image = newResult;
+  } else {
+    FML_LOG(ERROR) << "RasterCacheResult for snapshot was missing!!!";
   }
+  return newResult;
 }
 
 void RasterCache::SweepAfterFrame() {

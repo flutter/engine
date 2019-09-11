@@ -284,7 +284,7 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   BackdropFilterEngineLayer pushBackdropFilter(ImageFilter filter,
-      {BackdropFilterEngineLayer oldLayer}) {
+      {bool isDynamic = true, BackdropFilterEngineLayer oldLayer}) {
     return _pushSurface(engine.PersistedBackdropFilter(oldLayer, filter));
   }
 

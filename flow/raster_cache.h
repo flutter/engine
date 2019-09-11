@@ -31,7 +31,7 @@ class RasterCacheResult {
 
   bool is_valid() const { return static_cast<bool>(image_); };
 
-  void drawSnapshot(SkCanvas& canvas) const;
+  void drawSnapshot(SkCanvas* canvas) const;
 
   void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const;
 
@@ -98,7 +98,7 @@ class RasterCache {
 
   RasterCacheResult Get(const Layer* layer, const SkMatrix& ctm) const;
 
-  void PutSnapshot(const Layer* layer, SkSurface* surface, SkIRect& dev_bounds);
+  RasterCacheResult PutSnapshot(const Layer* layer, sk_sp<SkImage> snapshot);
 
   void SweepAfterFrame();
 
