@@ -282,9 +282,7 @@ class SingleViewPresentation extends Presentation {
         }
     }
 
-    /**
-     * Proxies a Context replacing the WindowManager and InputMethodManager with our custom instance.
-     */
+    /** Proxies a Context replacing the WindowManager with our custom instance. */
     // TODO(mklim): This caches the IMM at construction time and won't pick up any changes. In rare
     // cases where the FlutterView changes windows this will return an outdated instance. This
     // should be fixed to instead defer returning the IMM to something that know's FlutterView's
@@ -294,22 +292,16 @@ class SingleViewPresentation extends Presentation {
         final WindowManagerHandler windowManagerHandler;
         private @Nullable
         WindowManager windowManager;
-        private @NonNull
-        final InputMethodManager inputMethodManager;
 
         PresentationContext(Context base, @NonNull WindowManagerHandler windowManagerHandler) {
             super(base);
             this.windowManagerHandler = windowManagerHandler;
-            this.inputMethodManager = (InputMethodManager) base.getSystemService(INPUT_METHOD_SERVICE);
         }
 
         @Override
         public Object getSystemService(String name) {
             if (WINDOW_SERVICE.equals(name)) {
                 return getWindowManager();
-            }
-            if (INPUT_METHOD_SERVICE.equals(name)) {
-                return inputMethodManager;
             }
             return super.getSystemService(name);
         }
