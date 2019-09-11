@@ -35,7 +35,10 @@ args.ArgParser get _argParser {
       'chrome-version',
       help: 'The Chrome version to use while running tests. If the requested '
         'version has not been installed, it will be downloaded and installed '
-        'automatically.',
+        'automatically. A specific Chrome build version number, such as 695653 '
+        'this use that version of Chrome. Value "latest" will use the latest '
+        'available build of Chrome, installing it if necessary. Value "system" '
+        'will use the manually installed version of Chrome on this computer.',
     );
 }
 
