@@ -120,7 +120,7 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   @Override
-  public void onShareFrameAvaliable(int textureIndex) {
+  public void onShareFrameAvaliable(long textureIndex) {
     markTextureFrameAvailable(textureIndex);
   }
 

@@ -781,7 +781,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     }
 
     @Override
-    public void onShareFrameAvaliable(int textureIndex) {
+    public void onShareFrameAvaliable(long textureIndex) {
         mNativeView.getFlutterJNI().markTextureFrameAvailable(textureIndex);
     }
 

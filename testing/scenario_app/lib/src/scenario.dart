@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:typed_data';
 import 'dart:ui';
 
 /// A scenario to run for testing.
@@ -27,4 +28,9 @@ abstract class Scenario {
   ///
   /// See [Window.onMetricsChanged].
   void onMetricsChanged() {}
+
+  /// Called by the program when Scenario's data updated
+  ///
+  ///
+  void onUpdateData(ByteData data){}
 }

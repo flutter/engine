@@ -45,7 +45,7 @@ public interface TextureRegistry {
    /**
    * Informs the the Flutter Engine that the external texture has been updated, and to start a new rendering pipeline.
    */
-    void onShareFrameAvaliable(int textureIndex);
+    void onShareFrameAvaliable(long textureIndex);
   
    /**
    * The OpenGL context created in the Flutter Engine, which is safe to user for sharing

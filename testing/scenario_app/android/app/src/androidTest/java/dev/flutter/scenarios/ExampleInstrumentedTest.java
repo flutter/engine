@@ -1,6 +1,7 @@
 package dev.flutter.scenarios;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
@@ -22,5 +23,15 @@ public class ExampleInstrumentedTest {
         Context appContext = InstrumentationRegistry.getTargetContext();
 
         assertEquals("dev.flutter.scenarios", appContext.getPackageName());
+    }
+
+    @Test
+    public void testExternalTexture(){
+
+        Context appContext = InstrumentationRegistry.getTargetContext();
+        Intent intent = new Intent(appContext,MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.setAction("com.google.intent.action.TEST_EXTERNAL_TEXTURE");
+        appContext.startActivity(intent);
     }
 }

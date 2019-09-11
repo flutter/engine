@@ -1,0 +1,7 @@
+// This is a generated file; do not edit or check into version control.
+FLUTTER_ROOT=/Users/ljc/Documents/third_party/engine/flutter
+FLUTTER_APPLICATION_PATH=/Users/ljc/Documents/third_party/engine/src/flutter/testing/scenario_app
+FLUTTER_TARGET=lib/main.dart
+FLUTTER_BUILD_DIR=build
+SYMROOT=${SOURCE_ROOT}/../build/ios
+FLUTTER_FRAMEWORK_DIR=/Users/ljc/Documents/third_party/engine/flutter/bin/cache/artifacts/engine/ios
