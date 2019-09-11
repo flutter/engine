@@ -1,6 +1,6 @@
 #include "AppDelegate.h"
-#import "TextPlatformView.h"
 #import "TestExternalTexture.h"
+#import "TextPlatformView.h"
 
 @interface NoStatusBarFlutterViewController : FlutterViewController
 @end
@@ -11,8 +11,8 @@
 }
 @end
 
-@interface AppDelegate()
-@property(nonatomic,strong) TestExternalTexture * externalTexture;
+@interface AppDelegate ()
+@property(nonatomic, strong) TestExternalTexture* externalTexture;
 @end
 
 @implementation AppDelegate
@@ -41,36 +41,36 @@
         [flutterViewController.engine registrarForPlugin:@"scenarios/TextPlatformViewPlugin"];
     [registrar registerViewFactory:textPlatformViewFactory withId:@"scenarios/textPlatformView"];
     self.window.rootViewController = flutterViewController;
-  }
-  else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--external-texture"]){
+  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--external-texture"]) {
     FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"ExternalTextureTest" project:nil];
     [engine runWithEntrypoint:nil];
-    
-    FlutterViewController* flutterViewController = [[NoStatusBarFlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    
-    [engine.binaryMessenger
-     setMessageHandlerOnChannel:@"scenario_status"
-     binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
-       [engine.binaryMessenger
-        sendOnChannel:@"set_scenario"
-        message:[@"external_texture" dataUsingEncoding:NSUTF8StringEncoding]];
-     }];
+
+    FlutterViewController* flutterViewController =
+        [[NoStatusBarFlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
 
     [engine.binaryMessenger
-     setMessageHandlerOnChannel:@"create_external_texture"
-     binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
-       NSObject<FlutterPluginRegistrar>* registrar =
-       [flutterViewController.engine registrarForPlugin:@"scenarios/ExternalTexturePlugin"];
-       self.externalTexture = [[TestExternalTexture alloc] initWithWithRegistrar:registrar];
-       int64_t textureID = [registrar.textures registerShareTexture:self.externalTexture];
-       [self.externalTexture startWithID:textureID];
-       NSData * data = [NSData dataWithBytes:&textureID length:sizeof(textureID)];
-       reply(data);
-     }];
+        setMessageHandlerOnChannel:@"scenario_status"
+              binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
+                [engine.binaryMessenger
+                    sendOnChannel:@"set_scenario"
+                          message:[@"external_texture" dataUsingEncoding:NSUTF8StringEncoding]];
+              }];
+
+    [engine.binaryMessenger
+        setMessageHandlerOnChannel:@"create_external_texture"
+              binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
+                NSObject<FlutterPluginRegistrar>* registrar = [flutterViewController.engine
+                    registrarForPlugin:@"scenarios/ExternalTexturePlugin"];
+                self.externalTexture =
+                    [[TestExternalTexture alloc] initWithWithRegistrar:registrar];
+                int64_t textureID = [registrar.textures registerShareTexture:self.externalTexture];
+                [self.externalTexture startWithID:textureID];
+                NSData* data = [NSData dataWithBytes:&textureID length:sizeof(textureID)];
+                reply(data);
+              }];
 
     self.window.rootViewController = flutterViewController;
-  }
-  else {
+  } else {
     self.window.rootViewController = [[UIViewController alloc] init];
   }
   [self.window makeKeyAndVisible];

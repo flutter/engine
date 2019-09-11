@@ -6,12 +6,12 @@
 //  Copyright © 2019 flutter. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
 #import <Flutter/Flutter.h>
+#import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface TestExternalTexture : NSObject<FlutterShareTexture>
+@interface TestExternalTexture : NSObject <FlutterShareTexture>
 - (instancetype)initWithWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar;
 - (void)startWithID:(int64_t)textureID;
 @end
