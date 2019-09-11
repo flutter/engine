@@ -570,6 +570,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
       weak_factory_(this),
       previous_route_id_(0),
       previous_routes_({}) {
+  [view_ retain];
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
       binaryMessenger:platform_view->GetOwnerViewController().get().engine.binaryMessenger
@@ -582,6 +583,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
 AccessibilityBridge::~AccessibilityBridge() {
   clearState();
   view_.accessibilityElements = nil;
+  [view_ release];
 }
 
 UIView<UITextInput>* AccessibilityBridge::textInputView() {
