@@ -27,8 +27,8 @@ class SceneUpdateContext;
 class LayerTree {
  public:
   LayerTree(const SkISize& frame_size,
-            float frame_depth,
-            float frame_pixel_ratio);
+            float frame_physical_depth,
+            float frame_device_pixel_ratio);
   ~LayerTree();
 
   void Preroll(CompositorContext::ScopedFrame& frame,
@@ -45,6 +45,8 @@ class LayerTree {
   }
 
   const SkISize& frame_size() const { return frame_size_; }
+  float frame_physical_depth() const { return frame_physical_depth_; }
+  float frame_device_pixel_ratio() const { return frame_device_pixel_ratio_; }
 
   void RecordBuildTime(fml::TimePoint begin_start);
   fml::TimePoint build_start() const { return build_start_; }
@@ -75,8 +77,9 @@ class LayerTree {
   fml::TimePoint build_start_;
   fml::TimePoint build_finish_;
   SkISize frame_size_;  // Physical pixels.
-  float frame_depth_;
-  float frame_pixel_ratio_;  // Ratio between logical and physical pixels.
+  float frame_physical_depth_;
+  float
+      frame_device_pixel_ratio_;  // Ratio between logical and physical pixels.
   uint32_t rasterizer_tracing_threshold_;
   bool checkerboard_raster_cache_images_;
   bool checkerboard_offscreen_layers_;

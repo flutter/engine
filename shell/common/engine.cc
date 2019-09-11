@@ -424,7 +424,13 @@ void Engine::ScheduleFrame(bool regenerate_layer_tree) {
 }
 
 void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
-  if (!layer_tree || layer_tree->frame_size().isEmpty())
+  if (!layer_tree)
+    return;
+
+  // Ensure frame dimensions are sane.
+  if (layer_tree->frame_size().isEmpty() ||
+      layer_tree->frame_physical_depth() <= 0.0f ||
+      layer_tree->frame_device_pixel_ratio() <= 0.0f)
     return;
 
   animator_->Render(std::move(layer_tree));

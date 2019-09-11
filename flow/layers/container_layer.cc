@@ -30,12 +30,7 @@ static float ClampElevation(float elevation,
 ContainerLayer::ContainerLayer(bool force_single_child) {
   // Place all "child" layers under a single child if requested.
   if (force_single_child) {
-    // Be careful: SkMatrix's default constructor doesn't initialize the matrix
-    // to identity. Hence we have to explicitly call SkMatrix::setIdentity.
-    SkMatrix identity;
-    identity.setIdentity();
-
-    single_child_ = std::make_shared<TransformLayer>(identity);
+    single_child_ = std::make_shared<TransformLayer>(SkMatrix::I());
     single_child_->set_parent(this);
     layers_.push_back(single_child_);
   }
@@ -57,8 +52,8 @@ void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   // Track total elevation as we walk the tree, in order to deal with bounds
   // overflow in z.
   parent_elevation_ = context->total_elevation;
-  clamped_elevation_ =
-      ClampElevation(elevation_, parent_elevation_, context->frame_depth);
+  clamped_elevation_ = ClampElevation(elevation_, parent_elevation_,
+                                      context->frame_physical_depth);
   context->total_elevation += clamped_elevation_;
 
   SkRect child_paint_bounds = SkRect::MakeEmpty();

@@ -53,8 +53,8 @@ struct PrerollContext {
   const bool checkerboard_offscreen_layers;
 
   // The folllowing allow us to make use of the scene metrics during Preroll.
-  float frame_depth;
-  float frame_pixel_ratio;
+  float frame_physical_depth;
+  float frame_device_pixel_ratio;
 
   // The following allow us to track properties like elevation and opacity
   // which stack with each other during Preroll.
@@ -91,8 +91,8 @@ class Layer {
     const bool checkerboard_offscreen_layers;
 
     // The folllowing allow us to make use of the scene metrics during Paint.
-    float frame_depth;
-    float frame_pixel_ratio;
+    float frame_physical_depth;
+    float frame_device_pixel_ratio;
   };
 
   // Calls SkCanvas::saveLayer and restores the layer upon destruction. Also

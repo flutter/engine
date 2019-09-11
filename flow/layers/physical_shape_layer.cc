@@ -117,13 +117,13 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     //        t = tangent of AOB, i.e., multiplier for elevation to extent
     SkRect bounds(path_.getBounds());
     // tangent for x
-    double tx =
-        (kLightRadius * context->frame_pixel_ratio + bounds.width() * 0.5) /
-        kLightHeight;
+    double tx = (kLightRadius * context->frame_device_pixel_ratio +
+                 bounds.width() * 0.5) /
+                kLightHeight;
     // tangent for y
-    double ty =
-        (kLightRadius * context->frame_pixel_ratio + bounds.height() * 0.5) /
-        kLightHeight;
+    double ty = (kLightRadius * context->frame_device_pixel_ratio +
+                 bounds.height() * 0.5) /
+                kLightHeight;
     bounds.outset(elevation() * tx, elevation() * ty);
     set_paint_bounds(bounds);
   }
@@ -155,7 +155,7 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
 
   if (elevation() != 0) {
     DrawShadow(context.leaf_nodes_canvas, path_, shadow_color_, elevation(),
-               SkColorGetA(color_) != 0xff, context.frame_pixel_ratio);
+               SkColorGetA(color_) != 0xff, context.frame_device_pixel_ratio);
   }
 
   // Call drawPath without clip if possible for better performance.
