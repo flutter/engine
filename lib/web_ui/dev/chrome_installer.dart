@@ -5,7 +5,6 @@
 import 'dart:io' as io;
 
 import 'package:http/http.dart';
-import 'package:http/io_client.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 
@@ -131,7 +130,7 @@ class ChromeInstaller {
   final String version;
 
   /// HTTP client used to download Chrome.
-  final Client client = IOClient();
+  final Client client = Client();
 
   /// Root directory that contains Chrome versions.
   final io.Directory chromeInstallationDir;
@@ -201,7 +200,7 @@ class ChromeInstallerException implements Exception {
 
 /// Fetches the latest available Chrome build version.
 Future<String> fetchLatestChromeVersion() async {
-  final Client client = IOClient();
+  final Client client = Client();
   try {
     final Response response = await client.get('https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2FLAST_CHANGE?alt=media');
     if (response.statusCode != 200) {
