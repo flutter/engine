@@ -1552,6 +1552,24 @@ class RRect {
     return true;
   }
 
+  /// Checks if other RRect is fully contained within this.
+  bool fullyContains(RRect other) {
+    if (other == null) {
+      return false;
+    }
+
+    final RRect scaled = other.scaleRadii();
+
+    return contains(Offset(scaled.left, scaled.top + scaled.tlRadiusY))
+        && contains(Offset(scaled.left + scaled.tlRadiusX, scaled.top)) // Left-Top
+        && contains(Offset(scaled.right - scaled.trRadiusX, scaled.top))
+        && contains(Offset(scaled.right, scaled.top + scaled.trRadiusY)) // Right-Top
+        && contains(Offset(scaled.right, scaled.bottom - scaled.brRadiusY))
+        && contains(Offset(scaled.right - scaled.brRadiusX, scaled.bottom)) // Right-Bottom
+        && contains(Offset(scaled.left + scaled.blRadiusX, scaled.bottom))
+        && contains(Offset(scaled.left, scaled.bottom - scaled.blRadiusY)); // Left-Bottom
+  }
+
   /// Linearly interpolate between two rounded rectangles.
   ///
   /// If either is null, this function substitutes [RRect.zero] instead.
