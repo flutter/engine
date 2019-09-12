@@ -87,9 +87,18 @@ typedef DrainChannelCallback = Future<void> Function(ByteData, PlatformMessageRe
 /// will be drained once a callback is setup on the BinaryMessenger in the
 /// Flutter framework.
 class ChannelBuffers {
-  /// A somewhat arbitrary size that tries to balance handling typical
-  /// cases and not wasting memory.
-  static const int kDefaultBufferSize = 100;
+  /// By default we store one message per channel.  There are tradeoffs associated
+  /// with any size.  The correct size should be chosen for the semantics of your
+  /// channel.
+  ///
+  /// Size 0 implies you want to ignore any message that gets sent before the engine
+  /// is ready (keeping in mind there is no way to know when the engine is ready).
+  ///
+  /// Size 1 implies that you only care about the most recent value.
+  ///
+  /// Size >1 means you want to process every single message and want to chose a
+  /// buffer size that will avoid any overflows.
+  static const int kDefaultBufferSize = 1;
 
   final Map<String, _RingBuffer<_StoredMessage>> _messages =
     <String, _RingBuffer<_StoredMessage>>{};
