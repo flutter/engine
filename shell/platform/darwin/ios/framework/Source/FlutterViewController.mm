@@ -27,7 +27,6 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 
 NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
 
-
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.

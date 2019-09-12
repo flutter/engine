@@ -171,13 +171,12 @@
   [self maybeSetupPlatformViewChannels];
 
   self.flutterViewControllerWillDeallocObserver =
-      [[NSNotificationCenter defaultCenter]
-          addObserverForName:FlutterViewControllerWillDealloc
-          object:viewController
-          queue:[NSOperationQueue mainQueue]
-          usingBlock:^(NSNotification *note) {
-            [self notifyViewControllerDeallocated];
-          }];
+      [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
+                                                        object:viewController
+                                                         queue:[NSOperationQueue mainQueue]
+                                                    usingBlock:^(NSNotification* note) {
+                                                      [self notifyViewControllerDeallocated];
+                                                    }];
 }
 
 - (void)notifyViewControllerDeallocated {
