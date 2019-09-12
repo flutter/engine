@@ -58,8 +58,9 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
         object:owner_controller_.get()
         queue:[NSOperationQueue mainQueue]
         usingBlock:^(NSNotification *note) {
+          // Implicit copy of 'this' is fine.
           accessibility_bridge_.reset();
-          this->owner_controller_.reset();
+          owner_controller_.reset();
         }]);
 
   if (owner_controller_) {
