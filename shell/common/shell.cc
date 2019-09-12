@@ -277,10 +277,21 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
     : task_runners_(std::move(task_runners)),
       settings_(std::move(settings)),
       vm_(std::move(vm)),
-      weak_factory_(this) {
+      weak_factory_(this),
+      weak_factory_gpu_(nullptr) {
   FML_CHECK(vm_) << "Must have access to VM to create a shell.";
   FML_DCHECK(task_runners_.IsValid());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  // Generate a WeakPtrFactory for use with the GPU thread. This does not need to wait
+  // on a latch because it can only ever be used from the GPU thread from this class,
+  // so we have ordering guarantees.
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetGPUTaskRunner(),
+      fml::MakeCopyable(
+          [this]() mutable {
+            this->weak_factory_gpu_ = std::make_unique<fml::WeakPtrFactory<Shell>>(this);
+          }));
 
   // Install service protocol handlers.
 
@@ -332,8 +343,9 @@ Shell::~Shell() {
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetGPUTaskRunner(),
       fml::MakeCopyable(
-          [rasterizer = std::move(rasterizer_), &gpu_latch]() mutable {
+          [rasterizer = std::move(rasterizer_), weak_factory_gpu = std::move(weak_factory_gpu_), &gpu_latch]() mutable {
             rasterizer.reset();
+            weak_factory_gpu.reset();
             gpu_latch.Signal();
           }));
   gpu_latch.Wait();
@@ -1071,9 +1083,10 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     // Also make sure that frame times get reported with a max latency of 1
     // second. Otherwise, the timings of last few frames of an animation may
     // never be reported until the next animation starts.
+
     frame_timings_report_scheduled_ = true;
     task_runners_.GetGPUTaskRunner()->PostDelayedTask(
-        [self = weak_factory_.GetWeakPtr()]() {
+        [self = weak_factory_gpu_->GetWeakPtr()]() {
           if (!self.get()) {
             return;
           }

@@ -34,6 +34,9 @@ class ShellTest : public ThreadTest {
   std::unique_ptr<Shell> CreateShell(Settings settings,
                                      TaskRunners task_runners,
                                      bool simulate_vsync = false);
+  void DestroyShell(std::unique_ptr<Shell> shell);
+  void DestroyShell(std::unique_ptr<Shell> shell,
+                    TaskRunners task_runners);
   TaskRunners GetTaskRunnersForFixture();
 
   void SendEnginePlatformMessage(Shell* shell,
