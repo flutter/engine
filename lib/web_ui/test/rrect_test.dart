@@ -42,13 +42,4 @@ void main() {
     expect(rrect.contains(const Offset(1.7, 1.97)), isTrue);
     expect(rrect.contains(const Offset(1.0, 1.99)), isTrue);
   });
-
-  test('RRect.fullyContains()', () {
-    final RRect rrect = RRect.fromLTRBR(1.0, 1.0, 5.0, 5.0, Radius.circular(0.5));
-    expect(rrect.fullyContains(rrect), isFalse);
-    expect(rrect.fullyContains(null), isFalse);
-    expect(rrect.fullyContains(rrect.deflate(.25)), isTrue); // Smaller (centered)
-    expect(rrect.fullyContains(rrect.inflate(.25)), isFalse); // Larger
-    expect(rrect.fullyContains(rrect.shift(const Offset(0.0, 1.0))), isFalse); // Off-center
-  });
 }

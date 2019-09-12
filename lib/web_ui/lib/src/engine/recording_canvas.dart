@@ -228,11 +228,20 @@ class RecordingCanvas {
   }
 
   void drawDRRect(ui.RRect outer, ui.RRect inner, ui.Paint paint) {
-    // If inner rect is not contained inside outer, flutter engine skips
-    // painting rectangle.
-    if (!outer.fullyContains(inner)) {
+    // Ensure inner is fully contained within outer, by comparing its
+    // defining points (including its border radius)
+    final ui.RRect scaled = inner.scaleRadii(); // Measure the same rrect that is going to be painted
+    if (!(outer.contains(ui.Offset(scaled.left, scaled.top + scaled.tlRadiusY))
+        && outer.contains(ui.Offset(scaled.left + scaled.tlRadiusX, scaled.top)) // Left-Top
+        && outer.contains(ui.Offset(scaled.right - scaled.trRadiusX, scaled.top))
+        && outer.contains(ui.Offset(scaled.right, scaled.top + scaled.trRadiusY)) // Right-Top
+        && outer.contains(ui.Offset(scaled.right, scaled.bottom - scaled.brRadiusY))
+        && outer.contains(ui.Offset(scaled.right - scaled.brRadiusX, scaled.bottom)) // Right-Bottom
+        && outer.contains(ui.Offset(scaled.left + scaled.blRadiusX, scaled.bottom))
+        && outer.contains(ui.Offset(scaled.left, scaled.bottom - scaled.blRadiusY)))) { // Left-Bottom
       return;
     }
+
     _hasArbitraryPaint = true;
     _didDraw = true;
     final double strokeWidth =
