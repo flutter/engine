@@ -18,15 +18,16 @@ void main() {
     return utf8.decode(list);
   }
 
-  test('push pop', () async {
+  test('push drain', () async {
     String channel = "foo";
     ByteData data = _makeByteData('bar');
     ui.ChannelBuffers buffers = ui.ChannelBuffers();
     ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
     buffers.push(channel, data, callback);
-    ui.StoredMessage storedMessage = buffers.pop(channel);
-    expect(storedMessage.data, equals(data));
-    expect(storedMessage.callback, equals(callback));
+    await buffers.drain(channel, (ByteData drainedData, ui.PlatformMessageResponseCallback drainedCallback) {
+      expect(drainedData, equals(data));
+      expect(drainedCallback, equals(callback));
+    });
   });
 
   test('empty', () async {
@@ -34,14 +35,11 @@ void main() {
     ByteData data = _makeByteData('bar');
     ui.ChannelBuffers buffers = ui.ChannelBuffers();
     ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
-    expect(buffers.isEmpty(channel), equals(true));
-    buffers.push(channel, data, callback);
-    expect(buffers.isEmpty(channel), equals(false));
-  });
-
-  test('pop', () async {
-    ui.ChannelBuffers buffers = ui.ChannelBuffers();
-    expect(buffers.pop("channel"), equals(null));
+    bool didCall = false;
+    await buffers.drain(channel, (ByteData drainedData, ui.PlatformMessageResponseCallback drainedCallback) {
+      didCall = true;
+    });
+    expect(didCall, equals(false));
   });
 
   test('overflow', () async {
@@ -57,7 +55,14 @@ void main() {
     expect(buffers.push(channel, two, callback), equals(false));
     expect(buffers.push(channel, three, callback), equals(false));
     expect(buffers.push(channel, four, callback), equals(true));
-    expect(_getString(buffers.pop(channel).data), equals('two'));
+    int counter = 0;
+    await buffers.drain(channel, (ByteData drainedData, ui.PlatformMessageResponseCallback drainedCallback) {
+      if (counter++ == 0) {
+        expect(drainedData, equals(two));
+        expect(drainedCallback, equals(callback));
+      }
+    });
+    expect(counter, equals(3));
   });
 
   test('resize drop', () async {
@@ -69,6 +74,13 @@ void main() {
     expect(buffers.push(channel, one, callback), equals(false));
     expect(buffers.push(channel, two, callback), equals(false));
     buffers.resize(channel, 1);
-    expect(_getString(buffers.pop(channel).data), equals('two'));
+    int counter = 0;
+    await buffers.drain(channel, (ByteData drainedData, ui.PlatformMessageResponseCallback drainedCallback) {
+      if (counter++ == 0) {
+        expect(drainedData, equals(two));
+        expect(drainedCallback, equals(callback));
+      }
+    });
+    expect(counter, equals(1));
   });
 }

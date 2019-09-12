@@ -161,7 +161,7 @@ void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
       },
     );
   } else {
-    _channelBuffers.push(name, data, (ByteData responseData) {
+    channelBuffers.push(name, data, (ByteData responseData) {
       window._respondToPlatformMessage(responseId, responseData);
     });
   }

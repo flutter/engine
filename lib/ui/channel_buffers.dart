@@ -66,6 +66,8 @@ class _RingBuffer<T> {
   }
 }
 
+typedef DrainChannelCallback = Future<void> Function(ByteData, PlatformMessageResponseCallback);
+
 /// Storage of channel messages until the channels are completely routed
 /// (ie when a message handler is attached to the channel on the framework side).
 ///
@@ -73,7 +75,7 @@ class _RingBuffer<T> {
 /// be deleted if the capacity is exceeded.  The intention is that these buffers
 /// will be drained once a callback is setup on the BinaryMessenger in the
 /// Flutter framework.
-class _ChannelBuffers {
+class ChannelBuffers {
   /// A somewhat arbitrary size that tries to balance handling typical
   /// cases and not wasting memory.
   static const int kDefaultBufferSize = 100;
@@ -100,13 +102,13 @@ class _ChannelBuffers {
   }
 
   /// Returns null on underflow.
-  _StoredMessage pop(String channel) {
+  _StoredMessage _pop(String channel) {
     final _RingBuffer<_StoredMessage> queue = _messages[channel];
     final _StoredMessage result = queue?.pop();
     return result;
   }
 
-  bool isEmpty(String channel) {
+  bool _isEmpty(String channel) {
     final _RingBuffer<_StoredMessage> queue = _messages[channel];
     return (queue == null) ? true : queue.isEmpty;
   }
@@ -123,19 +125,17 @@ class _ChannelBuffers {
       }
     }
   }
-}
 
-typedef DrainChannelCallback = Future<void> Function(ByteData, PlatformMessageResponseCallback);
-
-/// Remove and process all stored messages for a given channel.
-///
-/// This should be called once a channel is prepared to handle messages
-/// (ie when a message handler is setup in the framework).
-void drainChannelBuffer(String channel, DrainChannelCallback callback) async {
-  while (!_channelBuffers.isEmpty(channel)) {
-    final _StoredMessage message = _channelBuffers.pop(channel);
-    await callback(message.data, message.callback);
+  /// Remove and process all stored messages for a given channel.
+  ///
+  /// This should be called once a channel is prepared to handle messages
+  /// (ie when a message handler is setup in the framework).
+  Future<void> drain(String channel, DrainChannelCallback callback) async {
+    while (!_isEmpty(channel)) {
+      final _StoredMessage message = _pop(channel);
+      await callback(message.data, message.callback);
+    }
   }
 }
 
-final _ChannelBuffers _channelBuffers = _ChannelBuffers();
+final ChannelBuffers channelBuffers = ChannelBuffers();
