@@ -40,6 +40,7 @@ class CompositorContext final : public flutter::CompositorContext {
 
   // |flutter::CompositorContext|
   std::unique_ptr<ScopedFrame> AcquireFrame(
+      SkSurface* surface,
       GrContext* gr_context,
       SkCanvas* canvas,
       flutter::ExternalViewEmbedder* view_embedder,

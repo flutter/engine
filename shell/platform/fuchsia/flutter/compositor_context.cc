@@ -18,6 +18,7 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
                                                 nullptr,
                                                 nullptr,
                                                 nullptr,
+                                                nullptr,
                                                 root_surface_transformation,
                                                 instrumentation_enabled,
                                                 nullptr),
@@ -91,6 +92,7 @@ CompositorContext::~CompositorContext() = default;
 
 std::unique_ptr<flutter::CompositorContext::ScopedFrame>
 CompositorContext::AcquireFrame(
+    SkSurface* surface,
     GrContext* gr_context,
     SkCanvas* canvas,
     flutter::ExternalViewEmbedder* view_embedder,
