@@ -136,7 +136,8 @@ void TextInputPlugin::HandleMethodCall(
                       "Could not set client, missing arguments.");
       }
       int client_id = client_id_json.GetInt();
-      active_model_ = std::make_unique<TextInputModel>(client_id, client_config);
+      active_model_ =
+          std::make_unique<TextInputModel>(client_id, client_config);
     } else if (method.compare(kSetEditingStateMethod) == 0) {
       if (active_model_ == nullptr) {
         result->Error(
