@@ -174,8 +174,9 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
     latch.Signal();
   };
   auto decode_image = [&]() {
-    std::unique_ptr<ImageDecoder> image_decoder = std::make_unique<ImageDecoder>(
-        runners, loop->GetTaskRunner(), io_manager->GetWeakIOManager());
+    std::unique_ptr<ImageDecoder> image_decoder =
+        std::make_unique<ImageDecoder>(runners, loop->GetTaskRunner(),
+                                       io_manager->GetWeakIOManager());
 
     ImageDecoder::ImageDescriptor image_descriptor;
     image_descriptor.data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
@@ -221,8 +222,9 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
 
   SkISize decoded_size = SkISize::MakeEmpty();
   auto decode_image = [&]() {
-    std::unique_ptr<ImageDecoder> image_decoder = std::make_unique<ImageDecoder>(
-        runners, loop->GetTaskRunner(), io_manager->GetWeakIOManager());
+    std::unique_ptr<ImageDecoder> image_decoder =
+        std::make_unique<ImageDecoder>(runners, loop->GetTaskRunner(),
+                                       io_manager->GetWeakIOManager());
 
     ImageDecoder::ImageDescriptor image_descriptor;
     image_descriptor.data = OpenFixtureAsSkData("Horizontal.jpg");
@@ -271,8 +273,9 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
   };
 
   auto decode_image = [&]() {
-    std::unique_ptr<ImageDecoder> image_decoder = std::make_unique<ImageDecoder>(
-        runners, loop->GetTaskRunner(), io_manager->GetWeakIOManager());
+    std::unique_ptr<ImageDecoder> image_decoder =
+        std::make_unique<ImageDecoder>(runners, loop->GetTaskRunner(),
+                                       io_manager->GetWeakIOManager());
 
     ImageDecoder::ImageDescriptor image_descriptor;
     image_descriptor.data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
@@ -467,7 +470,7 @@ TEST_F(ImageDecoderFixtureTest, CanResizeWithoutDecode) {
   ASSERT_EQ(decoded_size({}, 100), SkISize::Make(75, 100));
   ASSERT_EQ(decoded_size(100, 100), SkISize::Make(100, 100));
 
-    // Destroy the IO manager
+  // Destroy the IO manager
   runners.GetIOTaskRunner()->PostTask([&]() {
     io_manager.reset();
     latch.Signal();

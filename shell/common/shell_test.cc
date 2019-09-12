@@ -252,10 +252,11 @@ void ShellTest::DestroyShell(std::unique_ptr<Shell> shell) {
 void ShellTest::DestroyShell(std::unique_ptr<Shell> shell,
                              TaskRunners task_runners) {
   fml::AutoResetWaitableEvent latch;
-  fml::TaskRunner::RunNowOrPostTask(task_runners.GetPlatformTaskRunner(), [&shell, &latch]() mutable {
-    shell.reset();
-    latch.Signal();
-  });
+  fml::TaskRunner::RunNowOrPostTask(task_runners.GetPlatformTaskRunner(),
+                                    [&shell, &latch]() mutable {
+                                      shell.reset();
+                                      latch.Signal();
+                                    });
   latch.Wait();
 }
 

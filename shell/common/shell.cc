@@ -283,15 +283,14 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
   FML_DCHECK(task_runners_.IsValid());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  // Generate a WeakPtrFactory for use with the GPU thread. This does not need to wait
-  // on a latch because it can only ever be used from the GPU thread from this class,
-  // so we have ordering guarantees.
+  // Generate a WeakPtrFactory for use with the GPU thread. This does not need
+  // to wait on a latch because it can only ever be used from the GPU thread
+  // from this class, so we have ordering guarantees.
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetGPUTaskRunner(),
-      fml::MakeCopyable(
-          [this]() mutable {
-            this->weak_factory_gpu_ = std::make_unique<fml::WeakPtrFactory<Shell>>(this);
-          }));
+      task_runners_.GetGPUTaskRunner(), fml::MakeCopyable([this]() mutable {
+        this->weak_factory_gpu_ =
+            std::make_unique<fml::WeakPtrFactory<Shell>>(this);
+      }));
 
   // Install service protocol handlers.
 
@@ -342,12 +341,13 @@ Shell::~Shell() {
 
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetGPUTaskRunner(),
-      fml::MakeCopyable(
-          [rasterizer = std::move(rasterizer_), weak_factory_gpu = std::move(weak_factory_gpu_), &gpu_latch]() mutable {
-            rasterizer.reset();
-            weak_factory_gpu.reset();
-            gpu_latch.Signal();
-          }));
+      fml::MakeCopyable([rasterizer = std::move(rasterizer_),
+                         weak_factory_gpu = std::move(weak_factory_gpu_),
+                         &gpu_latch]() mutable {
+        rasterizer.reset();
+        weak_factory_gpu.reset();
+        gpu_latch.Signal();
+      }));
   gpu_latch.Wait();
 
   fml::TaskRunner::RunNowOrPostTask(
@@ -499,10 +499,12 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
 
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetUITaskRunner(),
-      fml::MakeCopyable([engine = weak_engine_, &ui_latch, &display_refresh_rate = this->display_refresh_rate_]() mutable {
-        display_refresh_rate = engine->GetDisplayRefreshRate();
-        ui_latch.Signal();
-      }));
+      fml::MakeCopyable(
+          [engine = weak_engine_, &ui_latch,
+           &display_refresh_rate = this->display_refresh_rate_]() mutable {
+            display_refresh_rate = engine->GetDisplayRefreshRate();
+            ui_latch.Signal();
+          }));
   ui_latch.Wait();
 
   return true;
