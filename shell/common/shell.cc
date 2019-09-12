@@ -199,6 +199,8 @@ static void PerformInitializationTasks(const Settings& settings) {
         FML_DLOG(WARNING) << "Skipping ICU initialization in the shell.";
       }
     }
+
+    PersistentCache::SetCacheSkSL(settings.cache_sksl);
   });
 }
 

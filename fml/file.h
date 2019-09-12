@@ -73,6 +73,8 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
                      const char* file_name,
                      const Mapping& mapping);
 
+std::vector<std::string> ListFiles(const fml::UniqueFD& directory);
+
 class ScopedTemporaryDirectory {
  public:
   ScopedTemporaryDirectory();

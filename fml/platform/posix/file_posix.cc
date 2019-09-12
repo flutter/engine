@@ -4,6 +4,7 @@
 
 #include "flutter/fml/file.h"
 
+#include <dirent.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -208,6 +209,22 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
 
   return ::renameat(base_directory.get(), temp_file_name.c_str(),
                     base_directory.get(), file_name) == 0;
+}
+
+std::vector<std::string> ListFiles(const fml::UniqueFD& directory) {
+  std::vector<std::string> files;
+  DIR* dir = ::fdopendir(directory.get());
+  if (dir == nullptr) {
+    FML_LOG(ERROR) << "Can't open the directory.";
+    return files;
+  }
+  while (dirent* ent = readdir(dir)) {
+    std::string name = ent->d_name;
+    if (name != "." && name != "..") {
+      files.push_back(std::move(name));
+    }
+  }
+  return files;
 }
 
 }  // namespace fml
