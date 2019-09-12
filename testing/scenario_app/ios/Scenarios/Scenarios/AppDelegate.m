@@ -66,8 +66,9 @@
                 int64_t textureID = [registrar.textures registerShareTexture:self.externalTexture];
                 [self.externalTexture startWithID:textureID];
                 [engine.binaryMessenger
-                 sendOnChannel:@"update_data"
-                 message:[[NSString stringWithFormat:@"%lld",textureID] dataUsingEncoding:NSUTF8StringEncoding]];
+                    sendOnChannel:@"update_data"
+                          message:[[NSString stringWithFormat:@"%lld", textureID]
+                                      dataUsingEncoding:NSUTF8StringEncoding]];
               }];
 
     self.window.rootViewController = flutterViewController;
