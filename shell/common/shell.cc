@@ -393,9 +393,6 @@ void Shell::RunEngine(RunConfiguration run_configuration,
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  if (!weak_engine_) {
-    result(Engine::RunStatus::Failure);
-  }
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetUITaskRunner(),
       fml::MakeCopyable(
@@ -486,8 +483,15 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   PersistentCache::GetCacheForProcess()->SetIsDumpingSkp(
       settings_.dump_skp_on_shader_compilation);
 
-  // Shell::Setup is running on the UI thread so we can do the following.
-  display_refresh_rate_ = weak_engine_->GetDisplayRefreshRate();
+  fml::AutoResetWaitableEvent ui_latch;
+
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      fml::MakeCopyable([engine = weak_engine_, &ui_latch, &display_refresh_rate = this->display_refresh_rate_]() mutable {
+        display_refresh_rate = engine->GetDisplayRefreshRate();
+        ui_latch.Signal();
+      }));
+  ui_latch.Wait();
 
   return true;
 }

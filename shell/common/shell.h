@@ -74,7 +74,8 @@ enum class DartErrorCode {
 /// platform task runner. In case the embedder wants to directly access a shell
 /// subcomponent, it is the embedder's responsibility to acquire a weak pointer
 /// to that component and post a task to the task runner used by the component
-/// to access its methods.
+/// to access its methods. The shell must also be destroyed on the platform
+/// task runner.
 ///
 /// There is no explicit API to bootstrap and shutdown the Dart VM. The first
 /// instance of the shell in the process bootstraps the Dart VM and the

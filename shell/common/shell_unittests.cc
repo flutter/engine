@@ -75,7 +75,16 @@ TEST_F(ShellTest, InitializeWithDifferentThreads) {
   auto shell = CreateShell(std::move(settings), std::move(task_runners));
   ASSERT_TRUE(ValidateShell(shell.get()));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  shell.reset();
+
+  fml::AutoResetWaitableEvent latch;
+
+  task_runners.GetPlatformTaskRunner()->PostTask([&shell, &latch]() mutable {
+    shell.reset();
+    latch.Signal();
+  });
+
+  latch.Wait();
+
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -90,7 +99,14 @@ TEST_F(ShellTest, InitializeWithSingleThread) {
   auto shell = CreateShell(std::move(settings), std::move(task_runners));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
-  shell.reset();
+  fml::AutoResetWaitableEvent latch;
+
+  task_runners.GetPlatformTaskRunner()->PostTask([&shell, &latch]() mutable {
+    shell.reset();
+    latch.Signal();
+  });
+
+  latch.Wait();
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -104,7 +120,14 @@ TEST_F(ShellTest, InitializeWithSingleThreadWhichIsTheCallingThread) {
   auto shell = CreateShell(std::move(settings), std::move(task_runners));
   ASSERT_TRUE(ValidateShell(shell.get()));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  shell.reset();
+  fml::AutoResetWaitableEvent latch;
+
+  task_runners.GetPlatformTaskRunner()->PostTask([&shell, &latch]() mutable {
+    shell.reset();
+    latch.Signal();
+  });
+
+  latch.Wait();
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -132,7 +155,14 @@ TEST_F(ShellTest,
       });
   ASSERT_TRUE(ValidateShell(shell.get()));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  shell.reset();
+  fml::AutoResetWaitableEvent latch;
+
+  task_runners.GetPlatformTaskRunner()->PostTask([&shell, &latch]() mutable {
+    shell.reset();
+    latch.Signal();
+  });
+
+  latch.Wait();
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -152,7 +182,14 @@ TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
   auto shell = CreateShell(std::move(settings), std::move(task_runners));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
-  shell.reset();
+  fml::AutoResetWaitableEvent latch;
+
+  task_runners.GetPlatformTaskRunner()->PostTask([&shell, &latch]() mutable {
+    shell.reset();
+    latch.Signal();
+  });
+
+  latch.Wait();
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -174,7 +211,14 @@ TEST_F(ShellTest, FixturesAreFunctional) {
   RunEngine(shell.get(), std::move(configuration));
   main_latch.Wait();
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  shell.reset();
+  fml::AutoResetWaitableEvent latch;
+
+  task_runners.GetPlatformTaskRunner()->PostTask([&shell, &latch]() mutable {
+    shell.reset();
+    latch.Signal();
+  });
+
+  latch.Wait();
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -198,7 +242,12 @@ TEST_F(ShellTest, SecondaryIsolateBindingsAreSetupViaShellSettings) {
   latch.Wait();
 
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  shell.reset();
+  task_runners.GetPlatformTaskRunner()->PostTask([&shell, &latch]() mutable {
+    shell.reset();
+    latch.Signal();
+  });
+
+  latch.Wait();
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
