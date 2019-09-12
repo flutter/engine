@@ -65,8 +65,9 @@
                     [[TestExternalTexture alloc] initWithWithRegistrar:registrar];
                 int64_t textureID = [registrar.textures registerShareTexture:self.externalTexture];
                 [self.externalTexture startWithID:textureID];
-                NSData* data = [NSData dataWithBytes:&textureID length:sizeof(textureID)];
-                reply(data);
+                [engine.binaryMessenger
+                 sendOnChannel:@"update_data"
+                 message:[[NSString stringWithFormat:@"%lld",textureID] dataUsingEncoding:NSUTF8StringEncoding]];
               }];
 
     self.window.rootViewController = flutterViewController;
