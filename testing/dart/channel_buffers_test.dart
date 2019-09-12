@@ -83,4 +83,36 @@ void main() {
     });
     expect(counter, equals(1));
   });
+
+  test('resize dropping calls callback', () async {
+    String channel = "foo";
+    ByteData one = _makeByteData('one');
+    ByteData two = _makeByteData('two');
+    ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    bool didCallCallback = false;
+    ui.PlatformMessageResponseCallback oneCallback = (ByteData responseData) {
+      didCallCallback = true;
+    };
+    ui.PlatformMessageResponseCallback twoCallback = (ByteData responseData) {};
+    expect(buffers.push(channel, one, oneCallback), equals(false));
+    expect(buffers.push(channel, two, twoCallback), equals(false));
+    buffers.resize(channel, 1);
+    expect(didCallCallback, equals(true));
+  });
+
+  test('overflow calls callback', () async {
+    String channel = "foo";
+    ByteData one = _makeByteData('one');
+    ByteData two = _makeByteData('two');
+    ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    bool didCallCallback = false;
+    ui.PlatformMessageResponseCallback oneCallback = (ByteData responseData) {
+      didCallCallback = true;
+    };
+    ui.PlatformMessageResponseCallback twoCallback = (ByteData responseData) {};
+    buffers.resize(channel, 1);
+    expect(buffers.push(channel, one, oneCallback), equals(false));
+    expect(buffers.push(channel, two, twoCallback), equals(true));
+    expect(didCallCallback, equals(true));
+  });
 }

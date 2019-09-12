@@ -25,6 +25,7 @@ class _StoredMessage {
 class _RingBuffer<T> {
   final collection.ListQueue<T> _queue;
   int _capacity;
+  Function(T) _dropItemCallback;
 
   _RingBuffer(this._capacity)
     : _queue = collection.ListQueue<T>(_capacity);
@@ -35,11 +36,18 @@ class _RingBuffer<T> {
 
   bool get isEmpty => _queue.isEmpty;
 
+  bool set dropItemCallback(Function(T) callback) {
+    _dropItemCallback = callback;
+  }
+
   /// Returns true on overflow.
   bool push(T val) {
     bool overflow = false;
     while (_queue.length >= _capacity) {
-      _queue.removeFirst();
+      T item = _queue.removeFirst();
+      if (_dropItemCallback != null) {
+        _dropItemCallback(item);
+      }
       overflow = true;
     }
     _queue.addLast(val);
@@ -57,7 +65,10 @@ class _RingBuffer<T> {
 
     while (length > newSize) {
       result += 1;
-      _queue.removeFirst();
+      T item = _queue.removeFirst();
+      if (_dropItemCallback != null) {
+        _dropItemCallback(item);
+      }
     }
 
     _capacity = newSize;
@@ -83,11 +94,21 @@ class ChannelBuffers {
   final Map<String, _RingBuffer<_StoredMessage>> _messages =
     <String, _RingBuffer<_StoredMessage>>{};
 
+  _RingBuffer<_StoredMessage> _makeRingBuffer(int size) {
+    var result = _RingBuffer<_StoredMessage>(size);
+    result.dropItemCallback = _onDropItem;
+    return result;
+  }
+
+  void _onDropItem(_StoredMessage message) {
+    message.callback(null);
+  }
+
   /// Returns true on overflow.
   bool push(String channel, ByteData data, PlatformMessageResponseCallback callback) {
     _RingBuffer<_StoredMessage> queue = _messages[channel];
     if (queue == null) {
-      queue = _RingBuffer<_StoredMessage>(kDefaultBufferSize);
+      queue = _makeRingBuffer(kDefaultBufferSize);
       _messages[channel] = queue;
     }
     final bool result = queue.push(_StoredMessage(data, callback));
@@ -116,7 +137,7 @@ class ChannelBuffers {
   void resize(String channel, int newSize) {
     _RingBuffer<_StoredMessage> queue = _messages[channel];
     if (queue == null) {
-      queue = _RingBuffer<_StoredMessage>(newSize);
+      queue = _makeRingBuffer(newSize);
       _messages[channel] = queue;
     } else {
       final int numberOfDroppedMessages = queue.resize(newSize);
