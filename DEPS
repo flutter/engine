@@ -26,7 +26,7 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '080d210e7acc406cc60842f07cc2303151baf452',
+  'skia_revision': '7c47d41067d485f90171999dc3845f5b5dc069de',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -136,7 +136,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'a636978c4b3bc48d20898f8b9ba6c194c6c12fd2',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '3a215c622c53eeff4e1dd28b2a7e3b835f84d89e',
 
    # Fuchsia compatibility
    #
@@ -377,7 +377,7 @@ deps = {
    Var('dart_git') + '/package_resolver.git' + '@' + Var('dart_package_resolver_tag'),
 
   'src/third_party/dart/tools/sdks':
-   {'packages': [{'version': 'version:2.5.0-dev.1.0', 'package': 'dart/dart-sdk/${{platform}}'}], 'dep_type': 'cipd'},
+   {'packages': [{'version': 'version:2.5.0', 'package': 'dart/dart-sdk/${{platform}}'}], 'dep_type': 'cipd'},
 
   # WARNING: end of dart dependencies list that is cleaned up automatically - see create_updated_flutter_deps.py.
 
@@ -538,7 +538,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'spUG2S5Fef-6PSXpzb4g-VDJe22TDltcAUEzDTmM9pgC'
+        'version': '_nS67ju8MlFcPq8RqmexnL3tNujiVEJ4vrPQ7Ttt5f4C'
        }
      ],
      'condition': 'host_os == "mac"',
@@ -548,7 +548,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/clang/mac-amd64',
-        'version': 'XAazIY5FgukviOaGlyMv4dkvaGdilUC1-4EBty-uajgC'
+        'version': 'HfPKRpkVDx0zIsOtGJM9qO3v7FzMUw-jGkO4JC5kuwEC'
        }
      ],
      'condition': 'host_os == "mac"',
@@ -558,7 +558,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'R1yqubmKdywwsfSgHqLLBP-K-sQCQ2vvYbXzNDhdPQ4C'
+        'version': 'u7Q3178FF2zzh11nc7s_OIzBvoZ3pUJvm3NoMmKR220C'
        }
      ],
      'condition': 'host_os == "linux"',
@@ -568,7 +568,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/clang/linux-amd64',
-        'version': '-mnHlaPaPgvt5sKjF7jhV88hKIn7NDHU6Bh4YZX7u_8C'
+        'version': '2Zhb_d8mlEZ32DvudCzH3qfmpsPvqXiGxDKoEbepTdcC'
        }
      ],
      'condition': 'host_os == "linux"',
