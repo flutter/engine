@@ -79,8 +79,8 @@ class _RingBuffer<T> {
 
 typedef DrainChannelCallback = Future<void> Function(ByteData, PlatformMessageResponseCallback);
 
-/// Storage of channel messages until the channels are completely routed
-/// (ie when a message handler is attached to the channel on the framework side).
+/// Storage of channel messages until the channels are completely routed,
+/// i.e. when a message handler is attached to the channel on the framework side.
 ///
 /// Each channel has a finite buffer capacity and in a FIFO manner messages will
 /// be deleted if the capacity is exceeded.  The intention is that these buffers
