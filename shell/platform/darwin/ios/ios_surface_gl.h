@@ -18,7 +18,7 @@ namespace flutter {
 
 class IOSSurfaceGL final : public IOSSurface,
                            public GPUSurfaceGLDelegate,
-                           public flutter::ExternalViewEmbedder {
+                           public ExternalViewEmbedder {
  public:
   IOSSurfaceGL(std::shared_ptr<IOSGLContext> context,
                fml::scoped_nsobject<CAEAGLLayer> layer,
@@ -28,15 +28,17 @@ class IOSSurfaceGL final : public IOSSurface,
 
   ~IOSSurfaceGL() override;
 
+  // |IOSSurface|
   bool IsValid() const override;
 
+  // |IOSSurface|
   bool ResourceContextMakeCurrent() override;
 
+  // |IOSSurface|
   void UpdateStorageSizeIfNecessary() override;
 
-  std::unique_ptr<Surface> CreateGPUSurface() override;
-
-  std::unique_ptr<Surface> CreateSecondaryGPUSurface(GrContext* gr_context);
+  // |IOSSurface|
+  std::unique_ptr<Surface> CreateGPUSurface(GrContext* gr_context = nullptr) override;
 
   bool GLContextMakeCurrent() override;
 
@@ -49,28 +51,31 @@ class IOSSurfaceGL final : public IOSSurface,
   bool UseOffscreenSurface() const override;
 
   // |GPUSurfaceGLDelegate|
-  flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
-  // |flutter::ExternalViewEmbedder|
+  // |ExternalViewEmbedder|
+  sk_sp<SkSurface> GetRootSurface() override;
+
+  // |ExternalViewEmbedder|
   void CancelFrame() override;
 
-  // |flutter::ExternalViewEmbedder|
-  bool HasPendingViewOperations() override;
+  // |ExternalViewEmbedder|
+  void BeginFrame(SkISize frame_size, GrContext* context) override;
 
-  // |flutter::ExternalViewEmbedder|
-  void BeginFrame(SkISize frame_size) override;
-
-  // |flutter::ExternalViewEmbedder|
+  // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(int view_id,
                                     std::unique_ptr<flutter::EmbeddedViewParams> params) override;
 
-  // |flutter::ExternalViewEmbedder|
+  // |ExternalViewEmbedder|
+  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
+
+  // |ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
-  // |flutter::ExternalViewEmbedder|
+  // |ExternalViewEmbedder|
   SkCanvas* CompositeEmbeddedView(int view_id) override;
 
-  // |flutter::ExternalViewEmbedder|
+  // |ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;
 
  private:

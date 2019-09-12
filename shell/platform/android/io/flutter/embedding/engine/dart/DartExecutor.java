@@ -16,6 +16,7 @@ import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.StringCodec;
 import io.flutter.view.FlutterCallbackInformation;
+import io.flutter.view.FlutterMain;
 
 /**
  * Configures, bootstraps, and starts executing Dart code.
@@ -43,6 +44,8 @@ public class DartExecutor implements BinaryMessenger {
   @NonNull
   private final FlutterJNI flutterJNI;
   @NonNull
+  private final AssetManager assetManager;
+  @NonNull
   private final DartMessenger messenger;
   private boolean isApplicationRunning = false;
   @Nullable
@@ -61,8 +64,9 @@ public class DartExecutor implements BinaryMessenger {
         }
       };
 
-  public DartExecutor(@NonNull FlutterJNI flutterJNI) {
+  public DartExecutor(@NonNull FlutterJNI flutterJNI, @NonNull AssetManager assetManager) {
     this.flutterJNI = flutterJNI;
+    this.assetManager = assetManager;
     this.messenger = new DartMessenger(flutterJNI);
     messenger.setMessageHandler("flutter/isolate", isolateChannelMessageHandler);
   }
@@ -123,7 +127,7 @@ public class DartExecutor implements BinaryMessenger {
         dartEntrypoint.pathToBundle,
         dartEntrypoint.dartEntrypointFunctionName,
         null,
-        dartEntrypoint.androidAssetManager
+        assetManager
     );
 
     isApplicationRunning = true;
@@ -250,11 +254,13 @@ public class DartExecutor implements BinaryMessenger {
    * to find that entrypoint and other assets required for Dart execution.
    */
   public static class DartEntrypoint {
-    /**
-     * Standard Android AssetManager, provided from some {@code Context} or {@code Resources}.
-     */
     @NonNull
-    public final AssetManager androidAssetManager;
+    public static DartEntrypoint createDefault() {
+      return new DartEntrypoint(
+          FlutterMain.findAppBundlePath(),
+          "main"
+      );
+    }
 
     /**
      * The path within the AssetManager where the app will look for assets.
@@ -269,11 +275,9 @@ public class DartExecutor implements BinaryMessenger {
     public final String dartEntrypointFunctionName;
 
     public DartEntrypoint(
-        @NonNull AssetManager androidAssetManager,
         @NonNull String pathToBundle,
         @NonNull String dartEntrypointFunctionName
     ) {
-      this.androidAssetManager = androidAssetManager;
       this.pathToBundle = pathToBundle;
       this.dartEntrypointFunctionName = dartEntrypointFunctionName;
     }
@@ -282,6 +286,24 @@ public class DartExecutor implements BinaryMessenger {
     @NonNull
     public String toString() {
       return "DartEntrypoint( bundle path: " + pathToBundle + ", function: " + dartEntrypointFunctionName + " )";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      DartEntrypoint that = (DartEntrypoint) o;
+
+      if (!pathToBundle.equals(that.pathToBundle)) return false;
+      return dartEntrypointFunctionName.equals(that.dartEntrypointFunctionName);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = pathToBundle.hashCode();
+      result = 31 * result + dartEntrypointFunctionName.hashCode();
+      return result;
     }
   }
 

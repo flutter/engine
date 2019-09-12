@@ -46,7 +46,7 @@ Engine::Engine(Delegate& delegate,
     : delegate_(delegate),
       settings_(std::move(settings)),
       animator_(std::move(animator)),
-      activity_running_(false),
+      activity_running_(true),
       have_surface_(false),
       image_decoder_(task_runners,
                      vm.GetConcurrentWorkerTaskRunner(),
@@ -218,8 +218,9 @@ void Engine::ReportTimings(std::vector<int64_t> timings) {
 }
 
 void Engine::NotifyIdle(int64_t deadline) {
+  auto trace_event = std::to_string(deadline - Dart_TimelineGetMicros());
   TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
-               std::to_string(deadline - Dart_TimelineGetMicros()).c_str());
+               trace_event.c_str());
   runtime_controller_->NotifyIdle(deadline);
 }
 
@@ -287,8 +288,13 @@ void Engine::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
   }
 
   // If there's no runtime_, we may still need to set the initial route.
-  if (message->channel() == kNavigationChannel)
+  if (message->channel() == kNavigationChannel) {
     HandleNavigationPlatformMessage(std::move(message));
+    return;
+  }
+
+  FML_DLOG(WARNING) << "Dropping platform message on channel: "
+                    << message->channel();
 }
 
 bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {

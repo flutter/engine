@@ -31,7 +31,7 @@ std::unique_ptr<FileMapping> FileMapping::CreateReadOnly(
   auto mapping = std::make_unique<FileMapping>(
       base_fd, std::initializer_list<Protection>{Protection::kRead});
 
-  if (mapping->GetSize() == 0 || mapping->GetMapping() == nullptr) {
+  if (!mapping->IsValid()) {
     return nullptr;
   }
 
@@ -56,7 +56,7 @@ std::unique_ptr<FileMapping> FileMapping::CreateReadExecute(
       base_fd, std::initializer_list<Protection>{Protection::kRead,
                                                  Protection::kExecute});
 
-  if (mapping->GetSize() == 0 || mapping->GetMapping() == nullptr) {
+  if (!mapping->IsValid()) {
     return nullptr;
   }
 
@@ -78,6 +78,17 @@ const uint8_t* DataMapping::GetMapping() const {
 }
 
 // NonOwnedMapping
+
+NonOwnedMapping::NonOwnedMapping(const uint8_t* data,
+                                 size_t size,
+                                 ReleaseProc release_proc)
+    : data_(data), size_(size), release_proc_(release_proc) {}
+
+NonOwnedMapping::~NonOwnedMapping() {
+  if (release_proc_) {
+    release_proc_(data_, size_);
+  }
+}
 
 size_t NonOwnedMapping::GetSize() const {
   return size_;

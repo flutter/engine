@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0D17A5C022D78FCD0057279F /* FlutterViewControllerTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D17A5BF22D78FCD0057279F /* FlutterViewControllerTest.m */; };
+		0D17A5C022D78FCD0057279F /* FlutterViewControllerTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D17A5BF22D78FCD0057279F /* FlutterViewControllerTest.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 		0D4C3FB022DF9F5300A67C70 /* FlutterPluginAppLifeCycleDelegateTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D4C3FAF22DF9F5300A67C70 /* FlutterPluginAppLifeCycleDelegateTest.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 		0D52D3BD22C566D50011DEBD /* FlutterBinaryMessengerRelayTest.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0D52D3B622C566D50011DEBD /* FlutterBinaryMessengerRelayTest.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 		0D6AB6B622BB05E100EEE540 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D6AB6B522BB05E100EEE540 /* AppDelegate.m */; };
@@ -572,6 +572,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CODE_SIGN_STYLE = Automatic;
+				FRAMEWORK_SEARCH_PATHS = ../../../../out/$FLUTTER_ENGINE;
 				HEADER_SEARCH_PATHS = (
 					../../../..,
 					../../../../flutter/shell/platform/darwin/common/framework/Headers,
@@ -593,9 +594,8 @@
 					"$(PROJECT_DIR)/Tests",
 				);
 				OTHER_LDFLAGS = (
-					"-L",
-					../../../../out/$FLUTTER_ENGINE,
-					"-lFlutter",
+					"-framework",
+					Flutter,
 					"-lOCMock",
 					"-ObjC",
 				);
@@ -616,6 +616,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CODE_SIGN_STYLE = Automatic;
+				FRAMEWORK_SEARCH_PATHS = ../../../../out/$FLUTTER_ENGINE;
 				HEADER_SEARCH_PATHS = (
 					../../../..,
 					../../../../flutter/shell/platform/darwin/common/framework/Headers,
@@ -637,9 +638,8 @@
 					"$(PROJECT_DIR)/Tests",
 				);
 				OTHER_LDFLAGS = (
-					"-L",
-					../../../../out/$FLUTTER_ENGINE,
-					"-lFlutter",
+					"-framework",
+					Flutter,
 					"-lOCMock",
 					"-ObjC",
 				);

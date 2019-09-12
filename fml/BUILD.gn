@@ -21,6 +21,8 @@ source_set("fml") {
     "eintr_wrapper.h",
     "file.cc",
     "file.h",
+    "gpu_thread_merger.cc",
+    "gpu_thread_merger.h",
     "icu_util.cc",
     "icu_util.h",
     "log_level.h",
@@ -40,7 +42,6 @@ source_set("fml") {
     "memory/weak_ptr.h",
     "memory/weak_ptr_internal.cc",
     "memory/weak_ptr_internal.h",
-    "merged_queues_runner.cc",
     "message.cc",
     "message.h",
     "message_loop.cc",
@@ -160,7 +161,9 @@ source_set("fml") {
   if (is_fuchsia) {
     sources += [ "platform/fuchsia/paths_fuchsia.cc" ]
 
-    if (!using_fuchsia_sdk) {
+    if (using_fuchsia_sdk) {
+      public_deps += [ "$fuchsia_sdk_root/pkg:trace" ]
+    } else {
       public_deps += [ "//zircon/public/lib/trace" ]
     }
   }
@@ -198,6 +201,7 @@ executable("fml_unittests") {
     "base32_unittest.cc",
     "command_line_unittest.cc",
     "file_unittest.cc",
+    "gpu_thread_merger_unittests.cc",
     "memory/ref_counted_unittest.cc",
     "memory/weak_ptr_unittest.cc",
     "message_loop_task_queues_merge_unmerge_unittests.cc",

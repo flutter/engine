@@ -5,8 +5,10 @@
 package io.flutter.embedding.android;
 
 import android.annotation.TargetApi;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Insets;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.LocaleList;
@@ -35,7 +37,8 @@ import java.util.Set;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
-import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
+import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
+import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
@@ -72,9 +75,9 @@ public class FlutterView extends FrameLayout {
 
   // Internal view hierarchy references.
   @Nullable
-  private FlutterRenderer.RenderSurface renderSurface;
-  private final Set<OnFirstFrameRenderedListener> onFirstFrameRenderedListeners = new HashSet<>();
-  private boolean didRenderFirstFrame;
+  private RenderSurface renderSurface;
+  private final Set<FlutterUiDisplayListener> flutterUiDisplayListeners = new HashSet<>();
+  private boolean isFlutterUiDisplayed;
 
   // Connections to a Flutter execution context.
   @Nullable
@@ -106,13 +109,22 @@ public class FlutterView extends FrameLayout {
     }
   };
 
-  private final OnFirstFrameRenderedListener onFirstFrameRenderedListener = new OnFirstFrameRenderedListener() {
+  private final FlutterUiDisplayListener flutterUiDisplayListener = new FlutterUiDisplayListener() {
     @Override
-    public void onFirstFrameRendered() {
-      didRenderFirstFrame = true;
+    public void onFlutterUiDisplayed() {
+      isFlutterUiDisplayed = true;
 
-      for (OnFirstFrameRenderedListener listener : onFirstFrameRenderedListeners) {
-        listener.onFirstFrameRendered();
+      for (FlutterUiDisplayListener listener : flutterUiDisplayListeners) {
+        listener.onFlutterUiDisplayed();
+      }
+    }
+
+    @Override
+    public void onFlutterUiNoLongerDisplayed() {
+      isFlutterUiDisplayed = false;
+
+      for (FlutterUiDisplayListener listener : flutterUiDisplayListeners) {
+        listener.onFlutterUiNoLongerDisplayed();
       }
     }
   };
@@ -226,23 +238,23 @@ public class FlutterView extends FrameLayout {
    * </ol>
    */
   public boolean hasRenderedFirstFrame() {
-    return didRenderFirstFrame;
+    return isFlutterUiDisplayed;
   }
 
   /**
    * Adds the given {@code listener} to this {@code FlutterView}, to be notified upon Flutter's
    * first rendered frame.
    */
-  public void addOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
-    onFirstFrameRenderedListeners.add(listener);
+  public void addOnFirstFrameRenderedListener(@NonNull FlutterUiDisplayListener listener) {
+    flutterUiDisplayListeners.add(listener);
   }
 
   /**
    * Removes the given {@code listener}, which was previously added with
-   * {@link #addOnFirstFrameRenderedListener(OnFirstFrameRenderedListener)}.
+   * {@link #addOnFirstFrameRenderedListener(FlutterUiDisplayListener)}.
    */
-  public void removeOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
-    onFirstFrameRenderedListeners.remove(listener);
+  public void removeOnFirstFrameRenderedListener(@NonNull FlutterUiDisplayListener listener) {
+    flutterUiDisplayListeners.remove(listener);
   }
 
   //------- Start: Process View configuration that Flutter cares about. ------
@@ -296,6 +308,10 @@ public class FlutterView extends FrameLayout {
   @Override
   @TargetApi(20)
   @RequiresApi(20)
+  // The annotations to suppress "InlinedApi" and "NewApi" lints prevent lint warnings
+  // caused by usage of Android Q APIs. These calls are safe because they are
+  // guarded.
+  @SuppressLint({"InlinedApi", "NewApi"})
   @NonNull
   public final WindowInsets onApplyWindowInsets(@NonNull WindowInsets insets) {
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
@@ -312,11 +328,21 @@ public class FlutterView extends FrameLayout {
     viewportMetrics.viewInsetBottom = insets.getSystemWindowInsetBottom();
     viewportMetrics.viewInsetLeft = 0;
 
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      Insets systemGestureInsets = insets.getSystemGestureInsets();
+      viewportMetrics.systemGestureInsetTop = systemGestureInsets.top;
+      viewportMetrics.systemGestureInsetRight = systemGestureInsets.right;
+      viewportMetrics.systemGestureInsetBottom = systemGestureInsets.bottom;
+      viewportMetrics.systemGestureInsetLeft = systemGestureInsets.left;
+    }
+
     Log.v(TAG, "Updating window insets (onApplyWindowInsets()):\n"
       + "Status bar insets: Top: " + viewportMetrics.paddingTop
         + ", Left: " + viewportMetrics.paddingLeft + ", Right: " + viewportMetrics.paddingRight + "\n"
       + "Keyboard insets: Bottom: " + viewportMetrics.viewInsetBottom
-        + ", Left: " + viewportMetrics.viewInsetLeft + ", Right: " + viewportMetrics.viewInsetRight);
+        + ", Left: " + viewportMetrics.viewInsetLeft + ", Right: " + viewportMetrics.viewInsetRight
+      + "System Gesture Insets - Left: " + viewportMetrics.systemGestureInsetLeft + ", Top: " + viewportMetrics.systemGestureInsetTop
+        + ", Right: " + viewportMetrics.systemGestureInsetRight + ", Bottom: " + viewportMetrics.viewInsetBottom);
 
     sendViewportMetricsToFlutter();
 
@@ -564,9 +590,9 @@ public class FlutterView extends FrameLayout {
 
     // Instruct our FlutterRenderer that we are now its designated RenderSurface.
     FlutterRenderer flutterRenderer = this.flutterEngine.getRenderer();
-    didRenderFirstFrame = flutterRenderer.hasRenderedFirstFrame();
-    flutterRenderer.attachToRenderSurface(renderSurface);
-    flutterRenderer.addOnFirstFrameRenderedListener(onFirstFrameRenderedListener);
+    isFlutterUiDisplayed = flutterRenderer.isDisplayingFlutterUi();
+    renderSurface.attachToRenderer(flutterRenderer);
+    flutterRenderer.addIsDisplayingFlutterUiListener(flutterUiDisplayListener);
 
     // Initialize various components that know how to process Android View I/O
     // in a way that Flutter understands.
@@ -615,8 +641,8 @@ public class FlutterView extends FrameLayout {
     // If the first frame has already been rendered, notify all first frame listeners.
     // Do this after all other initialization so that listeners don't inadvertently interact
     // with a FlutterView that is only partially attached to a FlutterEngine.
-    if (didRenderFirstFrame) {
-      onFirstFrameRenderedListener.onFirstFrameRendered();
+    if (isFlutterUiDisplayed) {
+      flutterUiDisplayListener.onFlutterUiDisplayed();
     }
   }
 
@@ -658,9 +684,9 @@ public class FlutterView extends FrameLayout {
 
     // Instruct our FlutterRenderer that we are no longer interested in being its RenderSurface.
     FlutterRenderer flutterRenderer = flutterEngine.getRenderer();
-    didRenderFirstFrame = false;
-    flutterRenderer.removeOnFirstFrameRenderedListener(onFirstFrameRenderedListener);
-    flutterRenderer.detachFromRenderSurface();
+    isFlutterUiDisplayed = false;
+    flutterRenderer.removeIsDisplayingFlutterUiListener(flutterUiDisplayListener);
+    flutterRenderer.stopRenderingToSurface();
     flutterEngine = null;
   }
 
@@ -669,7 +695,8 @@ public class FlutterView extends FrameLayout {
    */
   @VisibleForTesting
   public boolean isAttachedToFlutterEngine() {
-    return flutterEngine != null && flutterEngine.getRenderer().isAttachedTo(renderSurface);
+    return flutterEngine != null
+        && flutterEngine.getRenderer() == renderSurface.getAttachedRenderer();
   }
 
   /**

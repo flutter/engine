@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #define RAPIDJSON_HAS_STDSTRING 1
-
 #include "flutter/shell/common/shell.h"
 
 #include <memory>
@@ -372,6 +371,79 @@ void Shell::NotifyLowMemoryWarning() const {
   // to purge them.
 }
 
+void Shell::RunEngine(RunConfiguration run_configuration) {
+  RunEngine(std::move(run_configuration), nullptr);
+}
+
+void Shell::RunEngine(RunConfiguration run_configuration,
+                      std::function<void(Engine::RunStatus)> result_callback) {
+  auto result = [platform_runner = task_runners_.GetPlatformTaskRunner(),
+                 result_callback](Engine::RunStatus run_result) {
+    if (!result_callback) {
+      return;
+    }
+    platform_runner->PostTask(
+        [result_callback, run_result]() { result_callback(run_result); });
+  };
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  if (!weak_engine_) {
+    result(Engine::RunStatus::Failure);
+  }
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      fml::MakeCopyable(
+          [run_configuration = std::move(run_configuration),
+           weak_engine = weak_engine_, result]() mutable {
+            if (!weak_engine) {
+              FML_LOG(ERROR)
+                  << "Could not launch engine with configuration - no engine.";
+              result(Engine::RunStatus::Failure);
+              return;
+            }
+            auto run_result = weak_engine->Run(std::move(run_configuration));
+            if (run_result == flutter::Engine::RunStatus::Failure) {
+              FML_LOG(ERROR) << "Could not launch engine with configuration.";
+            }
+            result(run_result);
+          }));
+}
+
+std::optional<DartErrorCode> Shell::GetUIIsolateLastError() const {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  // We're using the unique_ptr here because we're sure we're on the Platform
+  // Thread and callers expect this to be synchronous.
+  if (!engine_) {
+    return std::nullopt;
+  }
+  switch (engine_->GetUIIsolateLastError()) {
+    case tonic::kCompilationErrorType:
+      return DartErrorCode::CompilationError;
+    case tonic::kApiErrorType:
+      return DartErrorCode::ApiError;
+    case tonic::kUnknownErrorType:
+      return DartErrorCode::UnknownError;
+    case tonic::kNoError:
+      return DartErrorCode::NoError;
+  }
+  return DartErrorCode::UnknownError;
+}
+
+bool Shell::EngineHasLivePorts() const {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  // We're using the unique_ptr here because we're sure we're on the Platform
+  // Thread and callers expect this to be synchronous.
+  if (!engine_) {
+    return false;
+  }
+  return engine_->UIIsolateHasLivePorts();
+}
+
 bool Shell::IsSetup() const {
   return is_setup_;
 }
@@ -409,6 +481,9 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   PersistentCache::GetCacheForProcess()->SetIsDumpingSkp(
       settings_.dump_skp_on_shader_compilation);
 
+  // Shell::Setup is running on the UI thread so we can do the following.
+  display_refresh_rate_ = weak_engine_->GetDisplayRefreshRate();
+
   return true;
 }
 
@@ -425,10 +500,14 @@ fml::WeakPtr<Rasterizer> Shell::GetRasterizer() {
   return weak_rasterizer_;
 }
 
+// TODO(dnfield): Remove this when either Topaz is up to date or flutter_runner
+// is built out of this repo.
+#ifdef OS_FUCHSIA
 fml::WeakPtr<Engine> Shell::GetEngine() {
   FML_DCHECK(is_setup_);
   return weak_engine_;
 }
+#endif  // OS_FUCHSIA
 
 fml::WeakPtr<PlatformView> Shell::GetPlatformView() {
   FML_DCHECK(is_setup_);
@@ -605,6 +684,16 @@ void Shell::OnPlatformViewDestroyed() {
 void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  // This is the formula Android uses.
+  // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
+  size_t max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [rasterizer = rasterizer_->GetWeakPtr(), max_bytes] {
+        if (rasterizer) {
+          rasterizer->SetResourceCacheMaxBytes(max_bytes, false);
+        }
+      });
 
   task_runners_.GetUITaskRunner()->PostTask(
       [engine = engine_->GetWeakPtr(), metrics]() {
@@ -863,10 +952,18 @@ void Shell::HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message) {
     return;
 
   task_runners_.GetGPUTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr(),
-       max_bytes = args->value.GetInt()] {
+      [rasterizer = rasterizer_->GetWeakPtr(), max_bytes = args->value.GetInt(),
+       response = std::move(message->response())] {
         if (rasterizer) {
-          rasterizer->SetResourceCacheMaxBytes(max_bytes);
+          rasterizer->SetResourceCacheMaxBytes(static_cast<size_t>(max_bytes),
+                                               true);
+        }
+        if (response) {
+          // The framework side expects this to be valid json encoded as a list.
+          // Return `[true]` to signal success.
+          std::vector<uint8_t> data = {'[', 't', 'r', 'u', 'e', ']'};
+          response->Complete(
+              std::make_unique<fml::DataMapping>(std::move(data)));
         }
       });
 }
@@ -907,7 +1004,7 @@ void Shell::ReportTimings() {
 
   auto timings = std::move(unreported_timings_);
   unreported_timings_ = {};
-  task_runners_.GetUITaskRunner()->PostTask([timings, engine = GetEngine()] {
+  task_runners_.GetUITaskRunner()->PostTask([timings, engine = weak_engine_] {
     if (engine) {
       engine->ReportTimings(std::move(timings));
     }
@@ -977,6 +1074,14 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
           }
         },
         fml::TimeDelta::FromMilliseconds(kBatchTimeInMilliseconds));
+  }
+}
+
+fml::Milliseconds Shell::GetFrameBudget() {
+  if (display_refresh_rate_ > 0) {
+    return fml::RefreshRateToFrameBudget(display_refresh_rate_.load());
+  } else {
+    return fml::kDefaultFrameBudget;
   }
 }
 
