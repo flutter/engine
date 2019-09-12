@@ -651,7 +651,9 @@ class HybridTextEditing {
   /// Use the font size received from Flutter if set.
   String font() {
     assert(_editingStyle != null);
-    return '${_editingStyle.fontWeight} ${_editingStyle.fontSize}px ${_editingStyle.fontFamily}';
+    return (_editingStyle.fontWeight != null)
+        ? '${_editingStyle.fontWeight} ${_editingStyle.fontSize}px ${_editingStyle.fontFamily}'
+        : '${_editingStyle.fontSize}px ${_editingStyle.fontFamily}';
   }
 
   void _setFontStyle(Map<String, dynamic> style) {
@@ -667,13 +669,13 @@ class HybridTextEditing {
     /// to its CSS equivalent value.
     /// Converts index of TextAlign to enum value.
     _editingStyle = _EditingStyle(
-      textDirection: ui.TextDirection.values[textDirectionIndex],
-      fontSize: style['fontSize'],
-      textAlign: ui.TextAlign.values[textAlignIndex],
-      fontFamily: style['fontFamily'],
-      fontWeight:
-          fontWeightIndexToCss(fontWeightIndex: style['fontWeightIndex']),
-    );
+        textDirection: ui.TextDirection.values[textDirectionIndex],
+        fontSize: style['fontSize'],
+        textAlign: ui.TextAlign.values[textAlignIndex],
+        fontFamily: style['fontFamily'],
+        fontWeight: (style['fontWeightIndex'] != null)
+            ? fontWeightIndexToCss(fontWeightIndex: style['fontWeightIndex'])
+            : null);
   }
 
   /// Size and transform of the editable text on the page.
