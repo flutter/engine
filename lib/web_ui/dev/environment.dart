@@ -185,12 +185,3 @@ class Environment {
     '.dart_tool',
   ));
 }
-
-String _which(String executable) {
-  final io.ProcessResult result = io.Process.runSync('which', <String>[executable]);
-  if (result.exitCode != 0) {
-    io.stderr.writeln(result.stderr);
-    io.exit(result.exitCode);
-  }
-  return result.stdout;
-}
