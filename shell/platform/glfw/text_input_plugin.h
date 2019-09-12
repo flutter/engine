@@ -51,7 +51,7 @@ class TextInputPlugin : public KeyboardHookHandler {
   std::unique_ptr<flutter::MethodChannel<rapidjson::Document>> channel_;
 
   // The active model. nullptr if not set.
-  std::unique_ptr<TextInputModel> active_model_;
+  TextInputModel* active_model_;
 };
 
 }  // namespace flutter
