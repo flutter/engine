@@ -73,7 +73,7 @@ class _RingBuffer<T> {
 /// be deleted if the capacity is exceeded.  The intention is that these buffers
 /// will be drained once a callback is setup on the BinaryMessenger in the
 /// Flutter framework.
-class ChannelBuffers {
+class _ChannelBuffers {
   /// A somewhat arbitrary size that tries to balance handling typical
   /// cases and not wasting memory.
   static const int kDefaultBufferSize = 100;
@@ -138,4 +138,4 @@ void drainChannelBuffer(String channel, DrainChannelCallback callback) async {
   }
 }
 
-final ChannelBuffers _channelBuffers = ChannelBuffers();
+final _ChannelBuffers _channelBuffers = _ChannelBuffers();
