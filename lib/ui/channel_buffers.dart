@@ -15,7 +15,9 @@ class StoredMessage {
   final ByteData _data;
   final PlatformMessageResponseCallback _callback;
 
+  /// Getter for _data field, represents the message's payload.
   ByteData get data => _data;
+  /// Getter for the _callback field, to be called when the message is received.
   PlatformMessageResponseCallback get callback => _callback;
 }
 
