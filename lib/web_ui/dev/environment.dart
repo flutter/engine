@@ -72,7 +72,7 @@ class Environment {
       }
     }
 
-    final String pinnedChromeVersion = io.File(pathlib.join(webUiRootDir.path, 'chrome.lock')).readAsStringSync().trim();
+    final String pinnedChromeVersion = io.File(pathlib.join(webUiRootDir.path, 'dev', 'chrome.lock')).readAsStringSync().trim();
     final String chromeVersion = options['chrome-version'] ?? pinnedChromeVersion;
 
     return Environment._(
