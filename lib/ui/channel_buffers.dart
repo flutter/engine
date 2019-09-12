@@ -5,12 +5,12 @@
 part of dart.ui;
 
 /// A saved platform message for a channel with its callback.
-class StoredMessage {
+class _StoredMessage {
   /// Default constructor, takes in a [ByteData] that represents the
   /// payload of the message and a [PlatformMessageResponseCallback]
   /// that represents the callback that will be called when the message
   /// is handled.
-  StoredMessage(this._data, this._callback);
+  _StoredMessage(this._data, this._callback);
 
   final ByteData _data;
   final PlatformMessageResponseCallback _callback;
@@ -78,17 +78,17 @@ class ChannelBuffers {
   /// cases and not wasting memory.
   static const int kDefaultBufferSize = 100;
 
-  final Map<String, _RingBuffer<StoredMessage>> _messages =
-    <String, _RingBuffer<StoredMessage>>{};
+  final Map<String, _RingBuffer<_StoredMessage>> _messages =
+    <String, _RingBuffer<_StoredMessage>>{};
 
   /// Returns true on overflow.
   bool push(String channel, ByteData data, PlatformMessageResponseCallback callback) {
-    _RingBuffer<StoredMessage> queue = _messages[channel];
+    _RingBuffer<_StoredMessage> queue = _messages[channel];
     if (queue == null) {
-      queue = _RingBuffer<StoredMessage>(kDefaultBufferSize);
+      queue = _RingBuffer<_StoredMessage>(kDefaultBufferSize);
       _messages[channel] = queue;
     }
-    final bool result = queue.push(StoredMessage(data, callback));
+    final bool result = queue.push(_StoredMessage(data, callback));
     if (result) {
       _Logger._printString('Overflow on channel: $channel.  '
                            'Messages on this channel are being sent faster '
@@ -100,21 +100,21 @@ class ChannelBuffers {
   }
 
   /// Returns null on underflow.
-  StoredMessage pop(String channel) {
-    final _RingBuffer<StoredMessage> queue = _messages[channel];
-    final StoredMessage result = queue?.pop();
+  _StoredMessage pop(String channel) {
+    final _RingBuffer<_StoredMessage> queue = _messages[channel];
+    final _StoredMessage result = queue?.pop();
     return result;
   }
 
   bool isEmpty(String channel) {
-    final _RingBuffer<StoredMessage> queue = _messages[channel];
+    final _RingBuffer<_StoredMessage> queue = _messages[channel];
     return (queue == null) ? true : queue.isEmpty;
   }
 
   void resize(String channel, int newSize) {
-    _RingBuffer<StoredMessage> queue = _messages[channel];
+    _RingBuffer<_StoredMessage> queue = _messages[channel];
     if (queue == null) {
-      queue = _RingBuffer<StoredMessage>(newSize);
+      queue = _RingBuffer<_StoredMessage>(newSize);
       _messages[channel] = queue;
     } else {
       final int numberOfDroppedMessages = queue.resize(newSize);
@@ -125,4 +125,17 @@ class ChannelBuffers {
   }
 }
 
-final ChannelBuffers channelBuffers = ChannelBuffers();
+typedef DrainChannelCallback = Future<void> Function(ByteData, PlatformMessageResponseCallback);
+
+/// Remove and process all stored messages for a given channel.
+///
+/// This should be called once a channel is prepared to handle messages
+/// (ie when a message handler is setup in the framework).
+void drainChannelBuffer(String channel, DrainChannelCallback callback) async {
+  while (!_channelBuffers.isEmpty(channel)) {
+    final _StoredMessage message = _channelBuffers.pop(channel);
+    await callback(message.data, message.callback);
+  }
+}
+
+final ChannelBuffers _channelBuffers = ChannelBuffers();
