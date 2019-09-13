@@ -47,7 +47,8 @@ static void TestSimulatedInputEvents(
     UnitlessTime base_latency,
     Generator delivery_time,
     UnitlessTime frame_time,
-    std::vector<UnitlessTime>& events_consumed_at_frame) {
+    std::vector<UnitlessTime>& events_consumed_at_frame,
+    bool restart_engine = false) {
   ///// Begin constructing shell ///////////////////////////////////////////////
   auto settings = fixture->CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = fixture->CreateShell(settings);
@@ -85,6 +86,13 @@ static void TestSimulatedInputEvents(
 
   ASSERT_TRUE(configuration.IsValid());
   fixture->RunEngine(shell.get(), std::move(configuration));
+
+  if (restart_engine) {
+    auto new_configuration = RunConfiguration::InferFromSettings(settings);
+    new_configuration.SetEntrypoint("onPointerDataPacketMain");
+    ASSERT_TRUE(new_configuration.IsValid());
+    fixture->RestartEngine(shell.get(), std::move(new_configuration));
+  }
   ///// End constructing shell /////////////////////////////////////////////////
 
   ASSERT_GE(base_latency, 0);
@@ -136,6 +144,12 @@ TEST_F(ShellTest, MissAtMostOneFrameForIrregularInputEvents) {
                            events_consumed_at_frame);
   int frame_drawn = events_consumed_at_frame.size();
   ASSERT_GE(frame_drawn, n - 1);
+
+  // Make sure that it also works after an engine restart.
+  TestSimulatedInputEvents(this, n, base_latency, extreme, frame_time,
+                           events_consumed_at_frame, true /* restart_engine */);
+  int frame_drawn_after_restart = events_consumed_at_frame.size();
+  ASSERT_GE(frame_drawn_after_restart, n - 1);
 }
 
 TEST_F(ShellTest, DelayAtMostOneEventForFasterThanVSyncInputEvents) {

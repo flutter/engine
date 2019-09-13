@@ -715,6 +715,7 @@ class Engine final : public RuntimeDelegate {
   std::unique_ptr<Animator> animator_;
   std::unique_ptr<RuntimeController> runtime_controller_;
   std::unique_ptr<PointerDataDispatcher> pointer_data_dispatcher_;
+  PointerDataDispatcherMaker dispatcher_maker_;  // stored for restart
   std::string initial_route_;
   ViewportMetrics viewport_metrics_;
   std::shared_ptr<AssetManager> asset_manager_;
@@ -722,6 +723,7 @@ class Engine final : public RuntimeDelegate {
   bool have_surface_;
   FontCollection font_collection_;
   ImageDecoder image_decoder_;
+  TaskRunners task_runners_;
   fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|
