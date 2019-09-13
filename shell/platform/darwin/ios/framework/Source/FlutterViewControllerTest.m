@@ -12,6 +12,19 @@
 #error ARC must be enabled!
 #endif
 
+extern NSNotificationName const FlutterViewControllerWillDealloc;
+
+/// OCMock can't be used for FlutterEngine sometimes because it retains arguments to invocations
+/// so it is impossible to test deleting of FluterViewControllers.
+@interface MockEngine : NSObject
+@end
+
+@implementation MockEngine
+- (void)setViewController:(FlutterViewController*)viewController {
+  // noop
+}
+@end
+
 @interface FlutterViewControllerTest : XCTestCase
 @end
 
@@ -242,6 +255,22 @@ typedef enum UIAccessibilityContrast : NSInteger {
   id mockTraitCollection = OCMClassMock([UITraitCollection class]);
   OCMStub([mockTraitCollection accessibilityContrast]).andReturn(contrast);
   return mockTraitCollection;
+}
+
+- (void)testWillDeallocNotification {
+  XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"notification called"];
+  id engine = [[MockEngine alloc] init];
+  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
+                                                                        nibName:nil
+                                                                         bundle:nil];
+  id observer = [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
+                                                                  object:nil
+                                                                   queue:[NSOperationQueue mainQueue]
+                                                              usingBlock:^(NSNotification * _Nonnull note) {
+    [expectation fulfill];
+  }];
+  realVC = nil;
+  [self waitForExpectations:@[expectation] timeout:1.0];
 }
 
 @end
