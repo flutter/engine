@@ -17,12 +17,15 @@ CommandRunner runner = CommandRunner<bool>(
   ..addCommand(TestsCommand());
 
 void main(List<String> args) async {
+  if (args.isEmpty) {
+    // The felt tool was invoked with no arguments. Print usage.
+    runner.printUsage();
+    io.exit(64); // Exit code 64 indicates a usage error.
+  }
+
   try {
     final bool result = await runner.run(args);
-    if (result == null) {
-      runner.printUsage();
-      io.exit(64); // Exit code 64 indicates a usage error.
-    } else if (!result) {
+    if (result == false) {
       print('Command returned false: `felt ${args.join(' ')}`');
       io.exit(1);
     }
