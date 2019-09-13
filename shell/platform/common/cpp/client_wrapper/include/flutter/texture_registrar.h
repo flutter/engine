@@ -17,7 +17,7 @@ class Texture {
  public:
   virtual ~Texture() {}
   // This is in response to the texture copy request interface, providing the
-  // |height | and |width| parameters of bounds.
+  // |height| and |width| parameters of bounds.
   // In some cases, we need to scale the texture to the bounds size to reduce
   // memory usage.
   virtual const PixelBuffer* CopyPixelBuffer(size_t width, size_t height) = 0;

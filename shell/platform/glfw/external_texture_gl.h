@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_GLFW_EXTERNAL_TEXTURE_GL_H_
 
 #include <stdint.h>
+#include <memory>
 
 #include "flutter/shell/platform/common/cpp/public/flutter_texture_registrar.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -21,16 +22,16 @@ class ExternalTextureGL {
 
   virtual ~ExternalTextureGL();
 
-  int64_t texutre_id();
+  int64_t texture_id() { return reinterpret_cast<int64_t>(this); }
 
   bool PopulateTextureWithIdentifier(size_t width,
                                      size_t height,
                                      FlutterOpenGLTexture* texture);
 
  private:
+  std::unique_ptr<ExternalTextureGLState> state_;
   FlutterTexutreCallback texture_callback_ = nullptr;
   void* user_data_ = nullptr;
-  ExternalTextureGLState* state_ = nullptr;
 };
 
 }  // namespace flutter

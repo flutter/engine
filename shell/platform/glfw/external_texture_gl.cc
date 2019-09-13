@@ -4,8 +4,6 @@
 
 #include "flutter/shell/platform/glfw/external_texture_gl.h"
 
-#include <memory.h>
-
 #include <glad/glad.h>
 
 // glad.h must be included before glfw3.h.
@@ -23,21 +21,13 @@ static void OnGLBufferRelease(void* user_data) {}
 
 ExternalTextureGL::ExternalTextureGL(FlutterTexutreCallback texture_callback,
                                      void* user_data)
-    : texture_callback_(texture_callback),
-      user_data_(user_data),
-      state_(new ExternalTextureGLState()) {
-  memset(state_, 0, sizeof(ExternalTextureGLState));
-}
+    : state_(new ExternalTextureGLState()),
+      texture_callback_(texture_callback),
+      user_data_(user_data) {}
 
 ExternalTextureGL::~ExternalTextureGL() {
   if (state_->gl_texture != 0)
     glDeleteTextures(1, &state_->gl_texture);
-
-  delete state_;
-}
-
-int64_t ExternalTextureGL::texutre_id() {
-  return reinterpret_cast<int64_t>(this);
 }
 
 bool ExternalTextureGL::PopulateTextureWithIdentifier(

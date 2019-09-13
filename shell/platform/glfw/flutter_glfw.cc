@@ -880,7 +880,7 @@ int64_t FlutterDesktopRegisterExternalTexture(
     void* user_data) {
   std::unique_ptr<flutter::ExternalTextureGL> texture_gl(
       new flutter::ExternalTextureGL(texture_callback, user_data));
-  int64_t texture_id = texture_gl->texutre_id();
+  int64_t texture_id = texture_gl->texture_id();
   texture_registrar->textures[texture_id] = std::move(texture_gl);
   if (FlutterEngineRegisterExternalTexture(texture_registrar->engine,
                                            texture_id) == kSuccess) {
