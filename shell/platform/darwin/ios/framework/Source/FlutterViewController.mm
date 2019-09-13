@@ -815,28 +815,29 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     if (update == nil) {
       return;
     }
+    [self performOrientationUpdate:update.unsignedIntegerValue];
+  });
+}
 
-    NSUInteger new_preferences = update.unsignedIntegerValue;
-
-    if (new_preferences != _orientationPreferences) {
-      _orientationPreferences = new_preferences;
-      [UIViewController attemptRotationToDeviceOrientation];
-      
-      UIInterfaceOrientationMask currentInterfaceOrientation = 1 << [[UIApplication sharedApplication] statusBarOrientation];
-      if (!(_orientationPreferences & currentInterfaceOrientation)) {
-        // Force orientation switch if the current orientation is not allowed
-        if (_orientationPreferences & UIInterfaceOrientationMaskPortrait) {
-          [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortrait) forKey:@"orientation"];
-        } else if (_orientationPreferences & UIInterfaceOrientationMaskPortraitUpsideDown) {
-          [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortraitUpsideDown) forKey:@"orientation"];
-        } else if (_orientationPreferences & UIInterfaceOrientationMaskLandscapeLeft) {
-          [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationLandscapeLeft) forKey:@"orientation"];
-        } else if (_orientationPreferences & UIInterfaceOrientationMaskLandscapeRight) {
-          [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationLandscapeRight) forKey:@"orientation"];
-        }
+- (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences {
+  if (new_preferences != _orientationPreferences) {
+    _orientationPreferences = new_preferences;
+    [UIViewController attemptRotationToDeviceOrientation];
+    
+    UIInterfaceOrientationMask currentInterfaceOrientation = 1 << [[UIApplication sharedApplication] statusBarOrientation];
+    if (!(_orientationPreferences & currentInterfaceOrientation)) {
+      // Force orientation switch if the current orientation is not allowed
+      if (_orientationPreferences & UIInterfaceOrientationMaskPortrait) {
+        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortrait) forKey:@"orientation"];
+      } else if (_orientationPreferences & UIInterfaceOrientationMaskPortraitUpsideDown) {
+        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortraitUpsideDown) forKey:@"orientation"];
+      } else if (_orientationPreferences & UIInterfaceOrientationMaskLandscapeLeft) {
+        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationLandscapeLeft) forKey:@"orientation"];
+      } else if (_orientationPreferences & UIInterfaceOrientationMaskLandscapeRight) {
+        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationLandscapeRight) forKey:@"orientation"];
       }
     }
-  });
+  }
 }
 
 - (BOOL)shouldAutorotate {

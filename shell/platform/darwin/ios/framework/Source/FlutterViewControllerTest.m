@@ -29,6 +29,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
 @end
 #endif
 
+@interface FlutterViewController (Tests)
+- (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences;
+@end
+
 @implementation FlutterViewControllerTest
 
 - (void)testBinaryMessenger {
@@ -234,6 +238,90 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [engine stopMocking];
   [settingsChannel stopMocking];
   [mockTraitCollection stopMocking];
+}
+
+- (void)testOnOrientationPreferencesUpdatedForceOrientationChange {
+  [self orientationTestWithMask:UIInterfaceOrientationMaskPortrait current:UIInterfaceOrientationLandscapeLeft force:YES to:UIInterfaceOrientationPortrait];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskPortrait current:UIInterfaceOrientationLandscapeRight force:YES to:UIInterfaceOrientationPortrait];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskPortrait current:UIInterfaceOrientationPortraitUpsideDown force:YES to:UIInterfaceOrientationPortrait];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskPortraitUpsideDown current:UIInterfaceOrientationLandscapeLeft force:YES to:UIInterfaceOrientationPortraitUpsideDown];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskPortraitUpsideDown current:UIInterfaceOrientationLandscapeRight force:YES to:UIInterfaceOrientationPortraitUpsideDown];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskPortraitUpsideDown current:UIInterfaceOrientationPortrait force:YES to:UIInterfaceOrientationPortraitUpsideDown];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscape current:UIInterfaceOrientationPortrait force:YES to:UIInterfaceOrientationLandscapeLeft];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscape current:UIInterfaceOrientationPortraitUpsideDown force:YES to:UIInterfaceOrientationLandscapeLeft];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeLeft current:UIInterfaceOrientationPortrait force:YES to:UIInterfaceOrientationLandscapeLeft];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeLeft current:UIInterfaceOrientationLandscapeRight force:YES to:UIInterfaceOrientationLandscapeLeft];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeLeft current:UIInterfaceOrientationPortraitUpsideDown force:YES to:UIInterfaceOrientationLandscapeLeft];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeRight current:UIInterfaceOrientationPortrait force:YES to:UIInterfaceOrientationLandscapeRight];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeRight current:UIInterfaceOrientationLandscapeLeft force:YES to:UIInterfaceOrientationLandscapeRight];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeRight current:UIInterfaceOrientationPortraitUpsideDown force:YES to:UIInterfaceOrientationLandscapeRight];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskAllButUpsideDown current:UIInterfaceOrientationPortraitUpsideDown force:YES to:UIInterfaceOrientationPortrait];
+}
+
+- (void)testOnOrientationPreferencesUpdatedDoesNotForceOrientationChange {
+  [self orientationTestWithMask:UIInterfaceOrientationMaskAll current:UIInterfaceOrientationPortrait force:NO to:0];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskAll current:UIInterfaceOrientationPortraitUpsideDown force:NO to:0];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskAll current:UIInterfaceOrientationLandscapeLeft force:NO to:0];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskAll current:UIInterfaceOrientationLandscapeRight force:NO to:0];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskAllButUpsideDown current:UIInterfaceOrientationPortrait force:NO to:0];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskAllButUpsideDown current:UIInterfaceOrientationLandscapeLeft force:NO to:0];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskAllButUpsideDown current:UIInterfaceOrientationLandscapeRight force:NO to:0];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskPortrait current:UIInterfaceOrientationPortrait force:NO to:0];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskPortraitUpsideDown current:UIInterfaceOrientationPortraitUpsideDown force:NO to:0];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscape current:UIInterfaceOrientationLandscapeLeft force:NO to:0];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscape current:UIInterfaceOrientationLandscapeRight force:NO to:0];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeLeft current:UIInterfaceOrientationLandscapeLeft force:NO to:0];
+  
+  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeRight current:UIInterfaceOrientationLandscapeRight force:NO to:0];
+}
+
+- (void)orientationTestWithMask:(UIInterfaceOrientationMask)mask current:(UIInterfaceOrientation) currentOrientation force:(BOOL)forceChange to:(UIInterfaceOrientation)forcedOrientation {
+  id engine = OCMClassMock([FlutterEngine class]);
+  
+  id deviceMock = OCMPartialMock([UIDevice currentDevice]);
+  if (!forceChange) {
+    OCMReject([deviceMock setValue:[OCMArg any] forKey:@"orientation"]);
+  } else {
+    OCMExpect([deviceMock setValue:@(forcedOrientation) forKey:@"orientation"]);
+  }
+  
+  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
+                                                                        nibName:nil
+                                                                         bundle:nil];
+  id mockApplication = OCMClassMock([UIApplication class]);
+  OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
+  OCMStub([mockApplication statusBarOrientation]).andReturn(currentOrientation);
+  
+  [realVC performOrientationUpdate:mask];
+  OCMVerifyAll(deviceMock);
+  [engine stopMocking];
+  [deviceMock stopMocking];
+  [mockApplication stopMocking];
 }
 
 // Creates a mocked UITraitCollection with nil values for everything except accessibilityContrast,
