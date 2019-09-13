@@ -14,8 +14,12 @@
 
 extern NSNotificationName const FlutterViewControllerWillDealloc;
 
-/// OCMock can't be used for FlutterEngine sometimes because it retains arguments to invocations
-/// so it is impossible to test deleting of FluterViewControllers.
+/// A simple mock class for FlutterEngine.
+///
+/// OCMockClass can't be used for FlutterEngine sometimes because OCMock retains arguments to
+/// invocations and since the init for FlutterViewController calls a method on the
+/// FlutterEngine it creates a retain cycle that stops us from testing behaviors related to
+/// deleting FlutterViewControllers.
 @interface MockEngine : NSObject
 @end
 
