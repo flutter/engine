@@ -564,7 +564,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD;
             }
             result.setMovementGranularities(granularities);
-            if (semanticsNode.maxValueLength != -1) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && semanticsNode.maxValueLength != -1) {
                 result.setMaxTextLength(semanticsNode.maxValueLength);
             }
 
