@@ -26,7 +26,7 @@ void main(List<String> args) async {
   try {
     final bool result = await runner.run(args);
     if (result == false) {
-      print('Command returned false: `felt ${args.join(' ')}`');
+      print('Sub-command returned false: `${args.join(' ')}`');
       io.exit(1);
     }
   } on UsageException catch (e) {
