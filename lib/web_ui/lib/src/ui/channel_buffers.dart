@@ -20,8 +20,7 @@ class ChannelBuffers {
     return true;
   }
 
-  void resize(String channel, int newSize) {
-  }
+  void resize(String channel, int newSize) {}
 
   /// Remove and process all stored messages for a given channel.
   ///
