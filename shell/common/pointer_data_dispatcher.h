@@ -12,19 +12,6 @@ namespace flutter {
 
 class PointerDataDispatcher;
 
-//--------------------------------------------------------------------------
-/// @brief      Signature for constructing PointerDataDispatcher.
-///
-/// @param[in]  animator      the animator of `Flutter::Engine`
-/// @param[in]  controller    the runtime controller of `Flutter::Engine`
-/// @param[in]  task_runners  the task runners of `Flutter::Engine`
-///
-using PointerDataDispatcherMaker =
-    std::function<std::unique_ptr<PointerDataDispatcher>(
-        Animator& animator,
-        RuntimeController& runtime_controller,
-        TaskRunners task_runners)>;
-
 //------------------------------------------------------------------------------
 /// The `Engine` pointer data dispatcher that forwards the packet received from
 /// `PlatformView::DispatchPointerDataPacket` on the platform thread, to
@@ -52,6 +39,18 @@ using PointerDataDispatcherMaker =
 ///       construction of the `PointerDataDispatcher`.
 class PointerDataDispatcher {
  public:
+  /// The interface for Engine to implement.
+  class Delegate {
+   public:
+    /// Actually dispatch the packet using Engine's `animator_` and
+    /// `runtime_controller_`.
+    virtual void DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
+                                  uint64_t trace_flow_id) = 0;
+
+    /// Get the task runners to schedule tasks on specific threads.
+    virtual TaskRunners& task_runners() = 0;
+  };
+
   //----------------------------------------------------------------------------
   /// @brief      Signal that `PlatformView` has a packet to be dispatched.
   ///
@@ -77,9 +76,7 @@ class PointerDataDispatcher {
 ///
 class DefaultPointerDataDispatcher : public PointerDataDispatcher {
  public:
-  DefaultPointerDataDispatcher(Animator& animator,
-                               RuntimeController& runtime_controller)
-      : runtime_controller_(runtime_controller), animator_(animator) {}
+  DefaultPointerDataDispatcher(Delegate& delegate) : delegate_(delegate) {}
 
   // |PointerDataDispatcer|
   void DispatchPacket(std::unique_ptr<PointerDataPacket> packet,
@@ -91,8 +88,7 @@ class DefaultPointerDataDispatcher : public PointerDataDispatcher {
   virtual ~DefaultPointerDataDispatcher();
 
  protected:
-  RuntimeController& runtime_controller_;
-  Animator& animator_;
+  Delegate& delegate_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(DefaultPointerDataDispatcher);
 };
@@ -136,12 +132,8 @@ class DefaultPointerDataDispatcher : public PointerDataDispatcher {
 /// See also input_events_unittests.cc where we test all our claims above.
 class SmoothPointerDataDispatcher : public DefaultPointerDataDispatcher {
  public:
-  SmoothPointerDataDispatcher(Animator& animator,
-                              RuntimeController& runtime_controller,
-                              TaskRunners task_runners)
-      : DefaultPointerDataDispatcher(animator, runtime_controller),
-        task_runners_(task_runners),
-        weak_factory_(this) {}
+  SmoothPointerDataDispatcher(Delegate& delegate)
+      : DefaultPointerDataDispatcher(delegate), weak_factory_(this) {}
 
   // |PointerDataDispatcer|
   void DispatchPacket(std::unique_ptr<PointerDataPacket> packet,
@@ -153,8 +145,6 @@ class SmoothPointerDataDispatcher : public DefaultPointerDataDispatcher {
   virtual ~SmoothPointerDataDispatcher();
 
  private:
-  TaskRunners task_runners_;
-
   // If non-null, this will be a pending pointer data packet for the next frame
   // to consume. This is used to smooth out the irregular drag events delivery.
   // See also `DispatchPointerDataPacket` and input_events_unittests.cc.
@@ -169,6 +159,15 @@ class SmoothPointerDataDispatcher : public DefaultPointerDataDispatcher {
 
   FML_DISALLOW_COPY_AND_ASSIGN(SmoothPointerDataDispatcher);
 };
+
+//--------------------------------------------------------------------------
+/// @brief      Signature for constructing PointerDataDispatcher.
+///
+/// @param[in]  delegate      the `Flutter::Engine`
+///
+using PointerDataDispatcherMaker =
+    std::function<std::unique_ptr<PointerDataDispatcher>(
+        PointerDataDispatcher::Delegate&)>;
 
 }  // namespace flutter
 

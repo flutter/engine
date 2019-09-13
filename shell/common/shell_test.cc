@@ -245,10 +245,8 @@ std::unique_ptr<Surface> ShellTestPlatformView::CreateRenderingSurface() {
 
 // |PlatformView|
 PointerDataDispatcherMaker ShellTestPlatformView::GetDispatcherMaker() {
-  return [](Animator& animator, RuntimeController& controller,
-            TaskRunners task_runners) {
-    return std::make_unique<SmoothPointerDataDispatcher>(animator, controller,
-                                                         task_runners);
+  return [](DefaultPointerDataDispatcher::Delegate& delegate) {
+    return std::make_unique<SmoothPointerDataDispatcher>(delegate);
   };
 }
 

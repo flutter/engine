@@ -47,7 +47,6 @@ Engine::Engine(Delegate& delegate,
     : delegate_(delegate),
       settings_(std::move(settings)),
       animator_(std::move(animator)),
-      dispatcher_maker_(std::move(dispatcher_maker)),
       activity_running_(true),
       have_surface_(false),
       image_decoder_(task_runners,
@@ -73,8 +72,7 @@ Engine::Engine(Delegate& delegate,
       settings_.isolate_shutdown_callback    // isolate shutdown callback
   );
 
-  pointer_data_dispatcher_ =
-      dispatcher_maker_(*animator_, *runtime_controller_, task_runners_);
+  pointer_data_dispatcher_ = dispatcher_maker(*this);
 }
 
 Engine::~Engine() = default;
@@ -117,8 +115,6 @@ bool Engine::Restart(RunConfiguration configuration) {
   }
   delegate_.OnPreEngineRestart();
   runtime_controller_ = runtime_controller_->Clone();
-  pointer_data_dispatcher_ =
-      dispatcher_maker_(*animator_, *runtime_controller_, task_runners_);
   UpdateAssetManager(nullptr);
   return Run(std::move(configuration)) == Engine::RunStatus::Success;
 }
@@ -470,6 +466,14 @@ void Engine::SetNeedsReportTimings(bool needs_reporting) {
 
 FontCollection& Engine::GetFontCollection() {
   return font_collection_;
+}
+
+void Engine::DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
+                              uint64_t trace_flow_id) {
+  animator_->EnqueueTraceFlowId(trace_flow_id);
+  if (runtime_controller_) {
+    runtime_controller_->DispatchPointerDataPacket(*packet);
+  }
 }
 
 void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {

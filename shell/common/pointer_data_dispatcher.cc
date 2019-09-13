@@ -13,8 +13,7 @@ SmoothPointerDataDispatcher::~SmoothPointerDataDispatcher() = default;
 void DefaultPointerDataDispatcher::DispatchPacket(
     std::unique_ptr<PointerDataPacket> packet,
     uint64_t trace_flow_id) {
-  animator_.EnqueueTraceFlowId(trace_flow_id);
-  runtime_controller_.DispatchPointerDataPacket(*packet);
+  delegate_.DoDispatchPacket(std::move(packet), trace_flow_id);
 }
 
 // Intentional no-op.
@@ -49,7 +48,7 @@ void SmoothPointerDataDispatcher::OnFrameLayerTreeReceived() {
       // we'll post a new UI thread task to fire the packet after `VSYNC` task
       // is done. When a non-VSYNC UI thread task (like the following one) is
       // run, the Flutter framework is always in `SchedulerPhase.idle` phase).
-      task_runners_.GetUITaskRunner()->PostTask(
+      delegate_.task_runners().GetUITaskRunner()->PostTask(
           // Use and validate a `fml::WeakPtr` because this dispatcher might
           // have been destructed with engine when the task is run.
           [dispatcher = weak_factory_.GetWeakPtr()]() {
