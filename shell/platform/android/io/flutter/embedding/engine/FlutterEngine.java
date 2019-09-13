@@ -137,7 +137,7 @@ public class FlutterEngine implements LifecycleOwner {
    * <p>
    * The first {@code FlutterEngine} instance constructed per process will also load the Flutter
    * native library and start a Dart VM.
-   *
+   * <p>
    * In order to pass Dart VM initialization arguments (see {@link io.flutter.embedding.engine.FlutterShellArgs})
    * when creating the VM, manually set the initialization arguments by calling {@link FlutterMain#startInitialization(io.flutter.view.Context)}
    * and {@link FlutterMain#ensureInitializationComplete(io.flutter.view.Context, String[])}.

@@ -20,9 +20,9 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import static org.junit.Assert.fail;
 
 @RunWith(AndroidJUnit4.class)
-public class LaunchTest  {
+public class EngineLaunchE2ETest  {
     @Test
-    public void testEngineLaunch() throws Throwable {
+    public void smokeTestEngineLaunch() throws Throwable {
         Context applicationContext = InstrumentationRegistry.getTargetContext();
         // Specifically, create the engine without running FlutterMain first.
         final AtomicReference<FlutterEngine> engine = new AtomicReference<>();
@@ -35,11 +35,15 @@ public class LaunchTest  {
         );
         CompletableFuture<Boolean> statusReceived = new CompletableFuture<>();
 
+        // The default Dart main entrypoint sends back a platform message on the "scenario_status"
+        // channel. That will be our launch success assertion condition.
         engine.get().getDartExecutor().setMessageHandler(
             "scenario_status",
             (byteBuffer, binaryReply) -> statusReceived.complete(Boolean.TRUE)
         );
 
+        // Launching the entrypoint will run the Dart code that sends the "scenario_status" platform
+        // message.
         UiThreadStatement.runOnUiThread(
             () -> engine.get().getDartExecutor().executeDartEntrypoint(DartExecutor.DartEntrypoint.createDefault())
         );

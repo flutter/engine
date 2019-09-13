@@ -112,10 +112,10 @@ public class FlutterMain {
 
     /**
      * Starts initialization of the native system.
-     *
+     * <p>
      * This loads the Flutter engine's native library to enable subsequent JNI calls. This also
      * starts locating and unpacking Dart resources packaged in the app's APK.
-     *
+     * <p>
      * Calling this method multiple times has no effect.
      *
      * @param applicationContext The Android application context.
@@ -158,7 +158,7 @@ public class FlutterMain {
 
     /**
      * Blocks until initialization of the native system has completed.
-     *
+     * <p>
      * Calling this method multiple times has no effect.
      *
      * @param applicationContext The Android application context.

@@ -36,7 +36,7 @@ import io.flutter.view.FlutterMain;
  * <p>
  * Once started, a {@link DartExecutor} cannot be stopped. The associated Dart code will execute
  * until it completes, or until the {@link io.flutter.embedding.engine.FlutterEngine} that owns
- * this {@link DartExecutor} is destroyed via {@link io.flutter.embedding.engine.FlutterEngine#destroy()}.
+ * this {@link DartExecutor} is destroyed.
  */
 public class DartExecutor implements BinaryMessenger {
   private static final String TAG = "DartExecutor";
