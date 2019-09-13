@@ -36,7 +36,7 @@ class _RingBuffer<T> {
 
   bool get isEmpty => _queue.isEmpty;
 
-  void set dropItemCallback(Function(T) callback) {
+  set dropItemCallback(Function(T) callback) {
     _dropItemCallback = callback;
   }
 
