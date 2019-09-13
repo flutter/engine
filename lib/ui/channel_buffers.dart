@@ -122,6 +122,8 @@ class ChannelBuffers {
     }
     final bool result = queue.push(_StoredMessage(data, callback));
     if (result) {
+      // TODO(aaclarke): Update this message to include instructions on how to resize
+      // the buffer once that is available to users.
       _Logger._printString('Overflow on channel: $channel.  '
                            'Messages on this channel are being sent faster '
                            'than they are being processed which is resulting '
