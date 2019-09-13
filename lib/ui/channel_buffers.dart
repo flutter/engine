@@ -36,7 +36,7 @@ class _RingBuffer<T> {
 
   bool get isEmpty => _queue.isEmpty;
 
-  bool set dropItemCallback(Function(T) callback) {
+  void set dropItemCallback(Function(T) callback) {
     _dropItemCallback = callback;
   }
 
@@ -44,7 +44,7 @@ class _RingBuffer<T> {
   bool push(T val) {
     bool overflow = false;
     while (_queue.length >= _capacity) {
-      T item = _queue.removeFirst();
+      final T item = _queue.removeFirst();
       if (_dropItemCallback != null) {
         _dropItemCallback(item);
       }
@@ -65,7 +65,7 @@ class _RingBuffer<T> {
 
     while (length > newSize) {
       result += 1;
-      T item = _queue.removeFirst();
+      final T item = _queue.removeFirst();
       if (_dropItemCallback != null) {
         _dropItemCallback(item);
       }
@@ -104,7 +104,7 @@ class ChannelBuffers {
     <String, _RingBuffer<_StoredMessage>>{};
 
   _RingBuffer<_StoredMessage> _makeRingBuffer(int size) {
-    var result = _RingBuffer<_StoredMessage>(size);
+    final _RingBuffer<_StoredMessage> result = _RingBuffer<_StoredMessage>(size);
     result.dropItemCallback = _onDropItem;
     return result;
   }
