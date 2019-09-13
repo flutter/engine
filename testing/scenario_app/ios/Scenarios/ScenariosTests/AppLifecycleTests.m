@@ -136,10 +136,7 @@
   // Dismantle.
   [engine.lifecycleChannel setMessageHandler:nil];
   [flutterVC dismissViewControllerAnimated:NO completion:nil];
-  flutterVC = nil;
   [engine setViewController:nil];
-  [rootVC dismissViewControllerAnimated:NO completion:nil];
-  rootVC = nil;
 }
 
 - (void)testVisibleFlutterViewControllerRespondsToApplicationLifecycle {
@@ -223,10 +220,7 @@
   // Dismantle.
   [engine.lifecycleChannel setMessageHandler:nil];
   [flutterVC dismissViewControllerAnimated:NO completion:nil];
-  flutterVC = nil;
   [engine setViewController:nil];
-  [rootVC dismissViewControllerAnimated:NO completion:nil];
-  rootVC = nil;
 }
 
 @end
