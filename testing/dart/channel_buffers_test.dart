@@ -70,6 +70,7 @@ void main() {
     ByteData one = _makeByteData('one');
     ByteData two = _makeByteData('two');
     ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    buffers.resize(channel, 100);
     ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
     expect(buffers.push(channel, one, callback), equals(false));
     expect(buffers.push(channel, two, callback), equals(false));
@@ -94,6 +95,7 @@ void main() {
       didCallCallback = true;
     };
     ui.PlatformMessageResponseCallback twoCallback = (ByteData responseData) {};
+    buffers.resize(channel, 100);
     expect(buffers.push(channel, one, oneCallback), equals(false));
     expect(buffers.push(channel, two, twoCallback), equals(false));
     buffers.resize(channel, 1);
