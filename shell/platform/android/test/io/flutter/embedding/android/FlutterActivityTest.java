@@ -31,7 +31,7 @@ public class FlutterActivityTest {
     assertTrue(flutterActivity.shouldAttachEngineToActivity());
     assertNull(flutterActivity.getCachedEngineId());
     assertTrue(flutterActivity.shouldDestroyEngineWithHost());
-    assertEquals(FlutterActivity.BackgroundMode.opaque, flutterActivity.getBackgroundMode());
+    assertEquals(BackgroundMode.opaque, flutterActivity.getBackgroundMode());
     assertEquals(FlutterView.RenderMode.surface, flutterActivity.getRenderMode());
     assertEquals(FlutterView.TransparencyMode.opaque, flutterActivity.getTransparencyMode());
   }
@@ -40,7 +40,7 @@ public class FlutterActivityTest {
   public void itCreatesNewEngineIntentWithRequestedSettings() {
     Intent intent = FlutterActivity.withNewEngine()
         .initialRoute("/custom/route")
-        .backgroundMode(FlutterActivity.BackgroundMode.transparent)
+        .backgroundMode(BackgroundMode.transparent)
         .build(RuntimeEnvironment.application);
     ActivityController<FlutterActivity> activityController = Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
@@ -50,7 +50,7 @@ public class FlutterActivityTest {
     assertTrue(flutterActivity.shouldAttachEngineToActivity());
     assertNull(flutterActivity.getCachedEngineId());
     assertTrue(flutterActivity.shouldDestroyEngineWithHost());
-    assertEquals(FlutterActivity.BackgroundMode.transparent, flutterActivity.getBackgroundMode());
+    assertEquals(BackgroundMode.transparent, flutterActivity.getBackgroundMode());
     assertEquals(FlutterView.RenderMode.texture, flutterActivity.getRenderMode());
     assertEquals(FlutterView.TransparencyMode.transparent, flutterActivity.getTransparencyMode());
   }
