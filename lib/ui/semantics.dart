@@ -623,7 +623,10 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The field `maxValueLength` is used to indicate that an editable text field
   /// has a limit on the number of characters entered. If it is -1 there is
-  /// no limit on the number of characters entered.
+  /// no limit on the number of characters entered. The field
+  /// `currentValueLength` indicates how much of that limit has already been
+  /// used up. When `maxValueLength` is set, `currentValueLength` must also be
+  /// set.
   ///
   /// The field `platformViewId` references the platform view, whose semantics
   /// nodes will be added as children to this node. If a platform view is
@@ -657,6 +660,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int flags,
     int actions,
     int maxValueLength,
+    int currentValueLength,
     int textSelectionBase,
     int textSelectionExtent,
     int platformViewId,
@@ -689,6 +693,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
       flags,
       actions,
       maxValueLength,
+      currentValueLength,
       textSelectionBase,
       textSelectionExtent,
       platformViewId,
@@ -720,6 +725,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int flags,
     int actions,
     int maxValueLength,
+    int currentValueLength,
     int textSelectionBase,
     int textSelectionExtent,
     int platformViewId,

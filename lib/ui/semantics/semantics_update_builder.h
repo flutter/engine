@@ -27,6 +27,7 @@ class SemanticsUpdateBuilder
                   int flags,
                   int actions,
                   int maxValueLength,
+                  int currentValueLength,
                   int textSelectionBase,
                   int textSelectionExtent,
                   int platformViewId,
