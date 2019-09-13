@@ -16,6 +16,7 @@ typedef DrainChannelCallback = Future<void> Function(ByteData, PlatformMessageRe
 class ChannelBuffers {
   /// Returns true on overflow.
   bool push(String channel, ByteData data, PlatformMessageResponseCallback callback) {
+    callback(null);
     return true;
   }
 
