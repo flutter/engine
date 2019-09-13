@@ -69,12 +69,7 @@ class ImageDiff {
   }
 }
 
-// Returns text with info about the files we just compared
-String getPrintableDiffFilesInfo(diffRate, maxRate, filename, outputPath, diffPath) => '''
-(${((diffRate) * 100).toStringAsFixed(4)}% different pixels. Max: ${((maxRate) * 100).toStringAsFixed(4)}%).
-
-* Output image: ${outputPath}
-*  Diff pixels: ${diffPath}
-
-To update the golden file call matchGoldenFile('$filename', write: true).
-''';
+// Returns text explaining pixel difference rate.
+String getPrintableDiffFilesInfo(double diffRate, double maxRate) =>
+  '(${((diffRate) * 100).toStringAsFixed(4)}% of pixels were different. '
+  'Maximum allowed rate is: ${(maxRate * 100).toStringAsFixed(4)}%).';
