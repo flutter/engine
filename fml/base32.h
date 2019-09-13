@@ -15,19 +15,14 @@ namespace fml {
 template <int from_length, int to_length, int buffer_length>
 class BitConverter {
  public:
-  // Although member functions in headers are by default inline, we put extra
-  // "inline" keywords to strongly suggest the compiler to make these frequently
-  // called functions inline.
-  //
-  // TODO(liyuqian): Ask Chinmay "Can we use SK_WALWAYS_INLINE in fml?".
-  inline void Append(int bits) {
+  void Append(int bits) {
     FML_DCHECK(bits < (1 << from_length));
     FML_DCHECK(CanAppend());
     lower_free_bits_ -= from_length;
     buffer_ |= (bits << lower_free_bits_);
   }
 
-  inline int Extract() {
+  int Extract() {
     FML_DCHECK(CanExtract());
     int result = Peek();
     buffer_ = (buffer_ << to_length) & mask_;
@@ -35,10 +30,10 @@ class BitConverter {
     return result;
   }
 
-  inline int Peek() const { return (buffer_ >> (buffer_length - to_length)); }
-  inline int BitsAvailable() const { return buffer_length - lower_free_bits_; }
-  inline bool CanAppend() const { return lower_free_bits_ >= from_length; }
-  inline bool CanExtract() const { return BitsAvailable() >= to_length; }
+  int Peek() const { return (buffer_ >> (buffer_length - to_length)); }
+  int BitsAvailable() const { return buffer_length - lower_free_bits_; }
+  bool CanAppend() const { return lower_free_bits_ >= from_length; }
+  bool CanExtract() const { return BitsAvailable() >= to_length; }
 
  private:
   static_assert(buffer_length >= 2 * from_length);
