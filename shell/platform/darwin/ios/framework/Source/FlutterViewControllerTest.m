@@ -240,7 +240,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [mockTraitCollection stopMocking];
 }
 
-- (void)testOnOrientationPreferencesUpdatedForceOrientationChange {
+- (void)testPerformOrientationUpdateForcesOrientationChange {
   [self orientationTestWithMask:UIInterfaceOrientationMaskPortrait current:UIInterfaceOrientationLandscapeLeft force:YES to:UIInterfaceOrientationPortrait];
   
   [self orientationTestWithMask:UIInterfaceOrientationMaskPortrait current:UIInterfaceOrientationLandscapeRight force:YES to:UIInterfaceOrientationPortrait];
@@ -272,7 +272,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [self orientationTestWithMask:UIInterfaceOrientationMaskAllButUpsideDown current:UIInterfaceOrientationPortraitUpsideDown force:YES to:UIInterfaceOrientationPortrait];
 }
 
-- (void)testOnOrientationPreferencesUpdatedDoesNotForceOrientationChange {
+- (void)testPerformOrientationUpdateDoesNotForceOrientationChange {
   [self orientationTestWithMask:UIInterfaceOrientationMaskAll current:UIInterfaceOrientationPortrait force:NO to:0];
   
   [self orientationTestWithMask:UIInterfaceOrientationMaskAll current:UIInterfaceOrientationPortraitUpsideDown force:NO to:0];
