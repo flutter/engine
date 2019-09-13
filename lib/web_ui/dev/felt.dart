@@ -21,7 +21,7 @@ void main(List<String> args) async {
     final bool result = await runner.run(args);
     if (result == null) {
       runner.printUsage();
-      io.exit(64);
+      io.exit(64); // Exit code 64 indicates a usage error.
     } else if (!result) {
       print('Command returned false: `felt ${args.join(' ')}`');
       io.exit(1);

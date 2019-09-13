@@ -38,7 +38,7 @@ class TestsCommand extends Command<bool> {
   }
 
   @override
-  final String name = 'tests';
+  final String name = 'test';
 
   @override
   final String description = 'Run tests.';

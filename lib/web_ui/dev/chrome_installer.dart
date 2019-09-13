@@ -5,44 +5,11 @@
 import 'dart:io' as io;
 
 import 'package:args/args.dart';
-import 'package:args/command_runner.dart';
 import 'package:http/http.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 
 import 'environment.dart';
-
-class ChromeInstallerCommand extends Command {
-  ChromeInstallerCommand() {
-    addChromeVersionOption(argParser);
-  }
-
-  @override
-  String get name => 'chrome-installer';
-
-  @override
-  String get description => 'Installs the desired version of Chrome.';
-
-  /// The Chrome version used for testing.
-  ///
-  /// The value must be one of:
-  ///
-  /// - "system", which indicates the Chrome installed on the local machine.
-  /// - "latest", which indicates the latest available Chrome build specified by:
-  ///   https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2FLAST_CHANGE?alt=media
-  /// - A build number pointing at a pre-built version of Chrome available at:
-  ///   https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html?prefix=Linux_x64/
-  ///
-  /// The "system" Chrome is assumed to be already properly installed and will be invoked directly.
-  ///
-  /// The "latest" or a specific build number will be downloaded and cached in [webUiDartToolDir].
-  String get chromeVersion => argResults['chrome-version'];
-
-  @override
-  Future<void> run() {
-    return getOrInstallChrome(chromeVersion);
-  }
-}
 
 void addChromeVersionOption(ArgParser argParser) {
   final String pinnedChromeVersion =

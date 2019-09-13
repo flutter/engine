@@ -86,12 +86,15 @@ void commitScene(PersistedScene scene) {
     _debugPrintSurfaceStats(scene, _debugFrameNumber);
     _debugRepaintSurfaceStatsOverlay(scene);
   }
+
   assert(() {
-    final List<String> validationErrors = <String>[];
-    scene.debugValidate(validationErrors);
-    if (validationErrors.isNotEmpty) {
-      print('ENGINE LAYER TREE INCONSISTENT:\n'
-          '${validationErrors.map((String e) => '  - $e\n').join()}');
+    if (!ui.debugEmulateFlutterTesterEnvironment) {
+      final List<String> validationErrors = <String>[];
+      scene.debugValidate(validationErrors);
+      if (validationErrors.isNotEmpty) {
+        print('ENGINE LAYER TREE INCONSISTENT:\n'
+            '${validationErrors.map((String e) => '  - $e\n').join()}');
+      }
     }
     return true;
   }());

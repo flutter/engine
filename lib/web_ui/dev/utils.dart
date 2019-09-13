@@ -10,31 +10,25 @@ import 'package:path/path.dart' as path;
 import 'environment.dart';
 
 class FilePath {
-  FilePath.fromCwd(String filePath) : _path = path.absolute(filePath);
-  FilePath.fromWebUi(String filePath)
-      : _path = path.join(environment.webUiRootDir.path, filePath);
+  FilePath.fromCwd(String relativePath)
+      : _absolutePath = path.absolute(relativePath);
+  FilePath.fromWebUi(String relativePath)
+      : _absolutePath = path.join(environment.webUiRootDir.path, relativePath);
 
-  final String _path;
+  final String _absolutePath;
 
-  String get relativeToCwd => path.relative(_path);
+  String get absolute => _absolutePath;
+  String get relativeToCwd => path.relative(_absolutePath);
   String get relativeToWebUi =>
-      path.relative(_path, from: environment.webUiRootDir.path);
-
-  String get absolute => _path;
+      path.relative(_absolutePath, from: environment.webUiRootDir.path);
 
   @override
   bool operator ==(dynamic other) {
-    if (other is String) {
-      return _path == other;
-    }
-    if (other is FilePath) {
-      return _path == other._path;
-    }
-    return false;
+    return other is FilePath && _absolutePath == other._absolutePath;
   }
 
   @override
-  String toString() => _path;
+  String toString() => _absolutePath;
 }
 
 Future<int> runProcess(

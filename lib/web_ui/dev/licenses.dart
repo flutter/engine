@@ -11,7 +11,7 @@ import 'environment.dart';
 
 class LicensesCommand extends Command<bool> {
   @override
-  final String name = 'licenses';
+  final String name = 'check-licenses';
 
   @override
   final String description = 'Check license headers.';
@@ -19,7 +19,7 @@ class LicensesCommand extends Command<bool> {
   @override
   bool run() {
     _checkLicenseHeaders();
-    return false;
+    return true;
   }
 
   void _checkLicenseHeaders() {
