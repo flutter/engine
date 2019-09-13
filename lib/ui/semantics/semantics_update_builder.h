@@ -26,6 +26,7 @@ class SemanticsUpdateBuilder
   void updateNode(int id,
                   int flags,
                   int actions,
+                  int maxValueLength,
                   int textSelectionBase,
                   int textSelectionExtent,
                   int platformViewId,

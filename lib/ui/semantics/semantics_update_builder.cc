@@ -40,6 +40,7 @@ void SemanticsUpdateBuilder::updateNode(
     int id,
     int flags,
     int actions,
+    int maxValueLength,
     int textSelectionBase,
     int textSelectionExtent,
     int platformViewId,
@@ -74,6 +75,7 @@ void SemanticsUpdateBuilder::updateNode(
   node.id = id;
   node.flags = flags;
   node.actions = actions;
+  node.maxValueLength = maxValueLength;
   node.textSelectionBase = textSelectionBase;
   node.textSelectionExtent = textSelectionExtent;
   node.platformViewId = platformViewId;

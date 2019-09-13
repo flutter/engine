@@ -618,8 +618,12 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// string describes what result an action performed on this node has. The
   /// reading direction of all these strings is given by `textDirection`.
   ///
-  /// The fields 'textSelectionBase' and 'textSelectionExtent' describe the
+  /// The fields `textSelectionBase` and `textSelectionExtent` describe the
   /// currently selected text within `value`.
+  ///
+  /// The field `maxValueLength` is used to indicate that an editable text field
+  /// has a limit on the number of characters entered. If it is -1 there is
+  /// no limit on the number of characters entered.
   ///
   /// The field `platformViewId` references the platform view, whose semantics
   /// nodes will be added as children to this node. If a platform view is
@@ -652,6 +656,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int id,
     int flags,
     int actions,
+    int maxValueLength,
     int textSelectionBase,
     int textSelectionExtent,
     int platformViewId,
@@ -683,6 +688,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
       id,
       flags,
       actions,
+      maxValueLength,
       textSelectionBase,
       textSelectionExtent,
       platformViewId,
@@ -713,6 +719,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int id,
     int flags,
     int actions,
+    int maxValueLength,
     int textSelectionBase,
     int textSelectionExtent,
     int platformViewId,

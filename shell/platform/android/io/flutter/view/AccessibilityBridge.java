@@ -564,6 +564,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD;
             }
             result.setMovementGranularities(granularities);
+            if (semanticsNode.maxValueLength != -1) {
+                result.setMaxTextLength(semanticsNode.maxValueLength);
+            }
+
         }
 
         // These are non-ops on older devices. Attempting to interact with the text will cause Talkback to read the
@@ -1719,6 +1723,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
         private int flags;
         private int actions;
+        private int maxValueLength;
         private int textSelectionBase;
         private int textSelectionExtent;
         private int platformViewId;
@@ -1858,6 +1863,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
             flags = buffer.getInt();
             actions = buffer.getInt();
+            maxValueLength = buffer.getInt();
             textSelectionBase = buffer.getInt();
             textSelectionExtent = buffer.getInt();
             platformViewId = buffer.getInt();
