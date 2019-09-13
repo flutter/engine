@@ -19,7 +19,7 @@ import 'test_platform.dart';
 import 'environment.dart';
 import 'utils.dart';
 
-class TestsCommand extends Command {
+class TestsCommand extends Command<bool> {
   TestsCommand() {
     argParser
       ..addMultiOption(
@@ -44,7 +44,7 @@ class TestsCommand extends Command {
   final String description = 'Run tests.';
 
   @override
-  Future<void> run() async {
+  Future<bool> run() async {
     Chrome.version = chromeVersion;
 
     _copyAhemFontIntoWebUi();
@@ -54,10 +54,11 @@ class TestsCommand extends Command {
     final List<FilePath> targets =
         this.targets.map((t) => FilePath.fromCwd(t)).toList();
     if (targets.isEmpty) {
-      return _runAllTests();
+      await _runAllTests();
     } else {
-      return _runTargetTests(targets);
+      await _runTargetTests(targets);
     }
+    return true;
   }
 
   /// Whether to start the browser in debug mode.

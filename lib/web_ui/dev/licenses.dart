@@ -9,7 +9,7 @@ import 'package:path/path.dart' as path;
 
 import 'environment.dart';
 
-class LicensesCommand extends Command {
+class LicensesCommand extends Command<bool> {
   @override
   final String name = 'licenses';
 
@@ -17,8 +17,9 @@ class LicensesCommand extends Command {
   final String description = 'Check license headers.';
 
   @override
-  void run() {
+  bool run() {
     _checkLicenseHeaders();
+    return false;
   }
 
   void _checkLicenseHeaders() {

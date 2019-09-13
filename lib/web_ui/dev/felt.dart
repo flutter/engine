@@ -9,7 +9,7 @@ import 'package:args/command_runner.dart';
 import 'licenses.dart';
 import 'test_runner.dart';
 
-CommandRunner runner = CommandRunner(
+CommandRunner runner = CommandRunner<bool>(
   'felt',
   'Command-line utility for building and testing Flutter web engine.',
 )
@@ -18,7 +18,14 @@ CommandRunner runner = CommandRunner(
 
 void main(List<String> args) async {
   try {
-    await runner.run(args);
+    final bool result = await runner.run(args);
+    if (result == null) {
+      runner.printUsage();
+      io.exit(64);
+    } else if (!result) {
+      print('Command returned false: `felt ${args.join(' ')}`');
+      io.exit(1);
+    }
   } on UsageException catch (e) {
     print(e);
     io.exit(64); // Exit code 64 indicates a usage error.
