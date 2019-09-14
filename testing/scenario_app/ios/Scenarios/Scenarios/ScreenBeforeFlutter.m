@@ -9,7 +9,6 @@
 
 @synthesize engine = _engine;
 
-
 - (id)initWithEngineRunCompletion:(void (^)(void))engineRunCompletion {
   self = [super init];
   _engine = [[FlutterEngine alloc] initWithScenario:@"poppable_screen"

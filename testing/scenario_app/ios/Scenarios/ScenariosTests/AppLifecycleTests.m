@@ -21,7 +21,7 @@
   // synchronous with the executions in the test, so it's hard to find the cause in the test
   // otherwise.
   self = [super initWithDescription:[NSString stringWithFormat:@"Expected state %@ during step %@",
-                                                              expectedLifecycle, step]];
+                                                               expectedLifecycle, step]];
   _expectedLifecycle = [expectedLifecycle copy];
   return self;
 }
