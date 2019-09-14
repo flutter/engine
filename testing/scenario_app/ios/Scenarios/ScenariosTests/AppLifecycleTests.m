@@ -9,7 +9,7 @@
 @interface XCAppLifecycleTestExpectation : XCTestExpectation
 
 - (instancetype)initForLifecycle:(NSString*)expectedLifecycle forStep:(NSString*)step;
-@property(nonatomic, readonly) NSString* expectedLifecycle;
+@property(nonatomic, readonly, copy) NSString* expectedLifecycle;
 
 @end
 
@@ -20,9 +20,9 @@
   // The step is here because the callbacks into the handler which checks these expectations isn't
   // synchronous with the executions in the test, so it's hard to find the cause in the test
   // otherwise.
-  self = [self initWithDescription:[NSString stringWithFormat:@"Expected state %@ during step %@",
+  self = [super initWithDescription:[NSString stringWithFormat:@"Expected state %@ during step %@",
                                                               expectedLifecycle, step]];
-  _expectedLifecycle = expectedLifecycle;
+  _expectedLifecycle = [expectedLifecycle copy];
   return self;
 }
 
