@@ -41,14 +41,14 @@ struct WindowProperties {
 // requires control of the application's event loop, and is thus useful
 // primarily for building a simple one-window shell hosting a Flutter
 // application. The final implementation and API will be very different.
-class FlutterWindowController {
+class FlutterWindowController : public PluginRegistry {
  public:
   // There must be only one instance of this class in an application at any
   // given time, as Flutter does not support multiple engines in one process,
   // or multiple views in one engine.
   explicit FlutterWindowController(const std::string& icu_data_path);
 
-  ~FlutterWindowController();
+  virtual ~FlutterWindowController();
 
   // Prevent copying.
   FlutterWindowController(FlutterWindowController const&) = delete;

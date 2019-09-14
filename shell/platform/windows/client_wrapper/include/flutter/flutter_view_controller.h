@@ -20,7 +20,7 @@ namespace flutter {
 // This is the primary wrapper class for the desktop C API.
 // If you use this class, you should not call any of the setup or teardown
 // methods in the C API directly, as this class will do that internally.
-class FlutterViewController {
+class FlutterViewController : public PluginRegistry {
  public:
   // There must be only one instance of this class in an application at any
   // given time, as Flutter does not support multiple engines in one process,
@@ -42,7 +42,7 @@ class FlutterViewController {
                                  const std::string& assets_path,
                                  const std::vector<std::string>& arguments);
 
-  ~FlutterViewController();
+  virtual ~FlutterViewController();
 
   // Prevent copying.
   FlutterViewController(FlutterViewController const&) = delete;
