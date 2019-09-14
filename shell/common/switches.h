@@ -49,7 +49,11 @@ DEF_SWITCH(IsolateSnapshotInstructions,
            "isolate-snapshot-instr",
            "The isolate instructions snapshot that will be memory mapped as "
            "read and executable. SnapshotAssetPath must be present.")
-DEF_SWITCH(CacheDirPath, "cache-dir-path", "Path to the cache directory.")
+DEF_SWITCH(CacheDirPath,
+           "cache-dir-path",
+           "Path to the cache directory. "
+           "This is different from the persistent_cache_path in embedder.h, "
+           "which is used for Skia shader cache.")
 DEF_SWITCH(ICUDataFilePath, "icu-data-file-path", "Path to the ICU data file.")
 DEF_SWITCH(ICUSymbolPrefix,
            "icu-symbol-prefix",
@@ -111,6 +115,7 @@ DEF_SWITCH(DisableServiceAuthCodes,
 DEF_SWITCH(StartPaused,
            "start-paused",
            "Start the application paused in the Dart debugger.")
+DEF_SWITCH(EnableCheckedMode, "enable-checked-mode", "Enable checked mode.")
 DEF_SWITCH(TraceStartup,
            "trace-startup",
            "Trace early application lifecycle. Automatically switches to an "

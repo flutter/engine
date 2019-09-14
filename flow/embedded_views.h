@@ -7,6 +7,7 @@
 
 #include <vector>
 
+#include "flutter/fml/gpu_thread_merger.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPath.h"
@@ -14,6 +15,7 @@
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSize.h"
+#include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
 
@@ -182,6 +184,8 @@ class EmbeddedViewParams {
   }
 };
 
+enum class PostPrerollResult { kResubmitFrame, kSuccess };
+
 // This is only used on iOS when running in a non headless mode,
 // in this case ExternalViewEmbedder is a reference to the
 // FlutterPlatformViewsController which is owned by FlutterViewController.
@@ -191,19 +195,32 @@ class ExternalViewEmbedder {
  public:
   ExternalViewEmbedder() = default;
 
-  // This will return true after pre-roll if any of the embedded views
-  // have mutated for last layer tree.
-  virtual bool HasPendingViewOperations() = 0;
+  virtual ~ExternalViewEmbedder() = default;
+
+  // Usually, the root surface is not owned by the view embedder. However, if
+  // the view embedder wants to provide a surface to the rasterizer, it may
+  // return one here. This surface takes priority over the surface materialized
+  // from the on-screen render target.
+  virtual sk_sp<SkSurface> GetRootSurface() = 0;
 
   // Call this in-lieu of |SubmitFrame| to clear pre-roll state and
   // sets the stage for the next pre-roll.
   virtual void CancelFrame() = 0;
 
-  virtual void BeginFrame(SkISize frame_size) = 0;
+  virtual void BeginFrame(SkISize frame_size, GrContext* context) = 0;
 
   virtual void PrerollCompositeEmbeddedView(
       int view_id,
       std::unique_ptr<EmbeddedViewParams> params) = 0;
+
+  // This needs to get called after |Preroll| finishes on the layer tree.
+  // Returns kResubmitFrame if the frame needs to be processed again, this is
+  // after it does any requisite tasks needed to bring itself to a valid state.
+  // Returns kSuccess if the view embedder is already in a valid state.
+  virtual PostPrerollResult PostPrerollAction(
+      fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
+    return PostPrerollResult::kSuccess;
+  }
 
   virtual std::vector<SkCanvas*> GetCurrentCanvases() = 0;
 
@@ -211,8 +228,6 @@ class ExternalViewEmbedder {
   virtual SkCanvas* CompositeEmbeddedView(int view_id) = 0;
 
   virtual bool SubmitFrame(GrContext* context);
-
-  virtual ~ExternalViewEmbedder() = default;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 

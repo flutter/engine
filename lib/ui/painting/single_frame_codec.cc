@@ -11,7 +11,7 @@
 namespace flutter {
 
 SingleFrameCodec::SingleFrameCodec(ImageDecoder::ImageDescriptor descriptor)
-    : descriptor_(std::move(descriptor)) {}
+    : status_(Status::kNew), descriptor_(std::move(descriptor)) {}
 
 SingleFrameCodec::~SingleFrameCodec() = default;
 
@@ -28,8 +28,21 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
     return tonic::ToDart("Callback must be a function");
   }
 
+  if (status_ == Status::kComplete) {
+    tonic::DartInvoke(callback_handle, {tonic::ToDart(cached_frame_)});
+    return Dart_Null();
+  }
+
   // This has to be valid because this method is called from Dart.
   auto dart_state = UIDartState::Current();
+
+  pending_callbacks_.emplace_back(dart_state, callback_handle);
+
+  if (status_ == Status::kInProgress) {
+    // Another call to getNextFrame is in progress and will invoke the
+    // pending callbacks when decoding completes.
+    return Dart_Null();
+  }
 
   auto decoder = dart_state->GetImageDecoder();
 
@@ -37,17 +50,18 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
     return tonic::ToDart("Image decoder not available.");
   }
 
-  auto raw_callback = new DartPersistentValue(dart_state, callback_handle);
+  // The SingleFrameCodec must be deleted on the UI thread.  Allocate a RefPtr
+  // on the heap to ensure that the SingleFrameCodec remains alive until the
+  // decoder callback is invoked on the UI thread.  The callback can then
+  // drop the reference.
+  fml::RefPtr<SingleFrameCodec>* raw_codec_ref =
+      new fml::RefPtr<SingleFrameCodec>(this);
 
-  // We dont want to to put the raw callback in a lambda capture because we have
-  // to mutate (i.e destroy) it in the callback. Using MakeCopyable will create
-  // a shared pointer for the captures which can be destroyed on any thread. But
-  // we have to ensure that the DartPersistentValue is only destroyed on the UI
-  // thread.
-  decoder->Decode(descriptor_, [raw_callback](auto image) {
-    std::unique_ptr<DartPersistentValue> callback(raw_callback);
+  decoder->Decode(descriptor_, [raw_codec_ref](auto image) {
+    std::unique_ptr<fml::RefPtr<SingleFrameCodec>> codec_ref(raw_codec_ref);
+    fml::RefPtr<SingleFrameCodec> codec(std::move(*codec_ref));
 
-    auto state = callback->dart_state().lock();
+    auto state = codec->pending_callbacks_.front().dart_state().lock();
 
     if (!state) {
       // This is probably because the isolate has been terminated before the
@@ -58,22 +72,42 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
 
     tonic::DartState::Scope scope(state.get());
 
-    auto canvas_image = fml::MakeRefCounted<CanvasImage>();
-    canvas_image->set_image(std::move(image));
+    if (image.get()) {
+      auto canvas_image = fml::MakeRefCounted<CanvasImage>();
+      canvas_image->set_image(std::move(image));
 
-    auto frame_info = fml::MakeRefCounted<FrameInfo>(std::move(canvas_image),
-                                                     0 /* duration */);
+      codec->cached_frame_ = fml::MakeRefCounted<FrameInfo>(
+          std::move(canvas_image), 0 /* duration */);
+    }
 
-    tonic::DartInvoke(callback->value(), {tonic::ToDart(frame_info)});
+    // The cached frame is now available and should be returned to any future
+    // callers.
+    codec->status_ = Status::kComplete;
+
+    // Invoke any callbacks that were provided before the frame was decoded.
+    Dart_Handle frame = tonic::ToDart(codec->cached_frame_);
+    for (const DartPersistentValue& callback : codec->pending_callbacks_) {
+      tonic::DartInvoke(callback.value(), {frame});
+    }
+    codec->pending_callbacks_.clear();
   });
+
+  // The encoded data is no longer needed now that it has been handed off
+  // to the decoder.
+  descriptor_.data.reset();
+
+  status_ = Status::kInProgress;
 
   return Dart_Null();
 }
 
 size_t SingleFrameCodec::GetAllocationSize() {
   const auto& data = descriptor_.data;
-  auto data_byte_size = data ? data->size() : 0;
-  return data_byte_size + sizeof(this);
+  const auto data_byte_size = data ? data->size() : 0;
+  const auto frame_byte_size = (cached_frame_ && cached_frame_->image())
+                                   ? cached_frame_->image()->GetAllocationSize()
+                                   : 0;
+  return data_byte_size + frame_byte_size + sizeof(this);
 }
 
 }  // namespace flutter

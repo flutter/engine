@@ -43,7 +43,21 @@ void main() {
     PlatformMessageCallback originalOnPlatformMessage;
     VoidCallback originalOnTextScaleFactorChanged;
 
+    double oldDPR;
+    Size oldSize;
+    double oldDepth;
+    WindowPadding oldPadding;
+    WindowPadding oldInsets;
+    WindowPadding oldSystemGestureInsets;
+
     setUp(() {
+      oldDPR = window.devicePixelRatio;
+      oldSize = window.physicalSize;
+      oldDepth = window.physicalDepth;
+      oldPadding = window.viewPadding;
+      oldInsets = window.viewInsets;
+      oldSystemGestureInsets = window.systemGestureInsets;
+
       originalOnMetricsChanged = window.onMetricsChanged;
       originalOnLocaleChanged = window.onLocaleChanged;
       originalOnBeginFrame = window.onBeginFrame;
@@ -57,6 +71,24 @@ void main() {
     });
 
     tearDown(() {
+      _updateWindowMetrics(
+        oldDPR,                         // DPR
+        oldSize.width,                  // width
+        oldSize.height,                 // height
+        oldDepth,                       // depth
+        oldPadding.top,                 // padding top
+        oldPadding.right,               // padding right
+        oldPadding.bottom,              // padding bottom
+        oldPadding.left,                // padding left
+        oldInsets.top,                  // inset top
+        oldInsets.right,                // inset right
+        oldInsets.bottom,               // inset bottom
+        oldInsets.left,                 // inset left
+        oldSystemGestureInsets.top,     // system gesture inset top
+        oldSystemGestureInsets.right,   // system gesture inset right
+        oldSystemGestureInsets.bottom,  // system gesture inset bottom
+        oldSystemGestureInsets.left,    // system gesture inset left
+      );
       window.onMetricsChanged = originalOnMetricsChanged;
       window.onLocaleChanged = originalOnLocaleChanged;
       window.onBeginFrame = originalOnBeginFrame;
@@ -89,7 +121,24 @@ void main() {
       });
 
       window.onMetricsChanged();
-      _updateWindowMetrics(0.1234, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      _updateWindowMetrics(
+        0.1234, // DPR
+        0.0,    // width
+        0.0,    // height
+        0.0,    // depth
+        0.0,    // padding top
+        0.0,    // padding right
+        0.0,    // padding bottom
+        0.0,    // padding left
+        0.0,    // inset top
+        0.0,    // inset right
+        0.0,    // inset bottom
+        0.0,    // inset left
+        0.0,    // system gesture inset top
+        0.0,    // system gesture inset right
+        0.0,    // system gesture inset bottom
+        0.0,    // system gesture inset left
+      );
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
       expect(devicePixelRatio, equals(0.1234));
@@ -152,6 +201,8 @@ void main() {
     test('onReportTimings preserves callback zone', () {
       Zone innerZone;
       Zone runZone;
+
+      window._setNeedsReportTimings = (bool _) {};
 
       runZoned(() {
         innerZone = Zone.current;
@@ -286,17 +337,19 @@ void main() {
       expect(platformBrightness, equals(Brightness.dark));
     });
 
-
-    test('Window padding/insets/viewPadding', () {
+    test('Window padding/insets/viewPadding/systemGestureInsets', () {
       final double oldDPR = window.devicePixelRatio;
       final Size oldSize = window.physicalSize;
+      final double oldPhysicalDepth = window.physicalDepth;
       final WindowPadding oldPadding = window.viewPadding;
       final WindowPadding oldInsets = window.viewInsets;
+      final WindowPadding oldSystemGestureInsets = window.systemGestureInsets;
 
       _updateWindowMetrics(
         1.0,   // DPR
         800.0, // width
         600.0, // height
+        100.0, // depth
         50.0,  // padding top
         0.0,   // padding right
         40.0,  // padding bottom
@@ -305,16 +358,23 @@ void main() {
         0.0,   // inset right
         0.0,   // inset bottom
         0.0,   // inset left
+        0.0,   // system gesture inset top
+        0.0,   // system gesture inset right
+        0.0,   // system gesture inset bottom
+        0.0,   // system gesture inset left
       );
 
       expect(window.viewInsets.bottom, 0.0);
       expect(window.viewPadding.bottom, 40.0);
       expect(window.padding.bottom, 40.0);
+      expect(window.physicalDepth, 100.0);
+      expect(window.systemGestureInsets.bottom, 0.0);
 
       _updateWindowMetrics(
         1.0,   // DPR
         800.0, // width
         600.0, // height
+        100.0, // depth
         50.0,  // padding top
         0.0,   // padding right
         40.0,  // padding bottom
@@ -323,25 +383,17 @@ void main() {
         0.0,   // inset right
         400.0, // inset bottom
         0.0,   // inset left
+        0.0,   // system gesture insets top
+        0.0,   // system gesture insets right
+        44.0,  // system gesture insets bottom
+        0.0,   // system gesture insets left
       );
 
       expect(window.viewInsets.bottom, 400.0);
       expect(window.viewPadding.bottom, 40.0);
       expect(window.padding.bottom, 0.0);
-
-       _updateWindowMetrics(
-        oldDPR,             // DPR
-        oldSize.width,      // width
-        oldSize.height,     // height
-        oldPadding.top,     // padding top
-        oldPadding.right,   // padding right
-        oldPadding.bottom,  // padding bottom
-        oldPadding.left,    // padding left
-        oldInsets.top,      // inset top
-        oldInsets.right,    // inset right
-        oldInsets.bottom,   // inset bottom
-        oldInsets.left,     // inset left
-      );
+      expect(window.physicalDepth, 100.0);
+      expect(window.systemGestureInsets.bottom, 44.0);
     });
   });
 }
