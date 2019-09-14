@@ -20,26 +20,22 @@
   // This argument is used by the XCUITest for Platform Views so that the app
   // under test will create platform views.
   // The launchArgsMap should match the one in the `PlatformVieGoldenTestManager`.
-  static NSDictionary* launchArgsMap;
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    launchArgsMap = @{
-      @"--platform-view" : @"platform_view",
-      @"--platform-view-cliprect" : @"platform_view_cliprect",
-      @"--platform-view-cliprrect" : @"platform_view_cliprrect",
-      @"--platform-view-clippath" : @"platform_view_clippath",
-      @"--platform-view-transform" : @"platform_view_transform",
-      @"--platform-view-opacity" : @"platform_view_opacity",
-    };
-  });
-  BOOL hasGoldenLaunchArg = NO;
-  for (NSString* key in launchArgsMap.allKeys) {
-    if ([[[NSProcessInfo processInfo] arguments] containsObject:key]) {
-      [self readyContextForPlatformViewTests:launchArgsMap[key]];
+  NSDictionary<NSString*, NSString*>* launchArgsMap = @{
+    @"--platform-view" : @"platform_view",
+    @"--platform-view-cliprect" : @"platform_view_cliprect",
+    @"--platform-view-cliprrect" : @"platform_view_cliprrect",
+    @"--platform-view-clippath" : @"platform_view_clippath",
+    @"--platform-view-transform" : @"platform_view_transform",
+    @"--platform-view-opacity" : @"platform_view_opacity",
+  };
+  __block BOOL hasGoldenLaunchArg = NO;
+  [launchArgsMap enumerateKeysAndObjectsUsingBlock:^(NSString* argument, NSString* testName, BOOL *stop) {
+    if ([[[NSProcessInfo processInfo] arguments] containsObject:argument]) {
+      [self readyContextForPlatformViewTests:testName];
       hasGoldenLaunchArg = YES;
-      break;
+      *stop = YES;
     }
-  }
+  }];
   if (!hasGoldenLaunchArg) {
     self.window.rootViewController = [[UIViewController alloc] init];
   }
