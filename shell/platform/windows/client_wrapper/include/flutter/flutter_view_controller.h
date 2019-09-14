@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "plugin_registrar.h"
+#include "plugin_registry.h"
 
 namespace flutter {
 
@@ -47,19 +48,16 @@ class FlutterViewController {
   FlutterViewController(FlutterViewController const&) = delete;
   FlutterViewController& operator=(FlutterViewController const&) = delete;
 
-  // Returns the FlutterDesktopPluginRegistrarRef to register a plugin with the
-  // given name.
-  //
-  // The name must be unique across the application.
-  FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
-      const std::string& plugin_name);
-
   // Return backing HWND for manipulation in host application.
   HWND GetNativeWindow();
 
   // Must be called in run loop to enable the view to do work on each tick of
   // loop.
   void ProcessMessages();
+
+  // flutter::PluginRegistry:
+  FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
+      const std::string& plugin_name) override;
 
  private:
   // The path to the ICU data file. Set at creation time since it is the same
