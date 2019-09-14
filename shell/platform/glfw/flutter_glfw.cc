@@ -122,7 +122,7 @@ struct FlutterDesktopPluginRegistrar {
 
 // State associated with the texture registrar.
 struct FlutterDesktopTextureRegistrar {
-  FlutterEngine engine;
+  FLUTTER_API_SYMBOL(FlutterEngine) engine;
   // The texture registrar managing external texture adapters.
   std::map<int64_t, std::unique_ptr<flutter::ExternalTextureGL>> textures;
 };
