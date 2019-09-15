@@ -20,16 +20,16 @@ class PluginRegistry {
   PluginRegistry() = default;
   virtual ~PluginRegistry() = default;
 
+  // Prevent copying.
+  PluginRegistry(PluginRegistry const&) = delete;
+  PluginRegistry& operator=(PluginRegistry const&) = delete;
+
   // Returns the FlutterDesktopPluginRegistrarRef to register a plugin with the
   // given name.
   //
   // The name must be unique across the application.
   virtual FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
-      const std::string& plugin_name);
-
-  // Prevent copying.
-  PluginRegistry(PluginRegistry const&) = delete;
-  PluginRegistry& operator=(PluginRegistry const&) = delete;
+      const std::string& plugin_name) = 0;
 };
 
 }  // namespace flutter
