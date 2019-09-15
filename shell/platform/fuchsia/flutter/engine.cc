@@ -42,10 +42,13 @@ static void UpdateNativeThreadLabelNames(const std::string& label,
 Engine::Engine(Delegate& delegate,
                std::string thread_label,
                std::shared_ptr<sys::ServiceDirectory> svc,
+               std::shared_ptr<sys::ServiceDirectory> runner_services,
                flutter::Settings settings,
                fml::RefPtr<const flutter::DartSnapshot> isolate_snapshot,
                fml::RefPtr<const flutter::DartSnapshot> shared_snapshot,
                fuchsia::ui::views::ViewToken view_token,
+               fuchsia::ui::views::ViewRefControl view_ref_control,
+               fuchsia::ui::views::ViewRef view_ref,
                UniqueFDIONS fdio_ns,
                fidl::InterfaceRequest<fuchsia::io::Directory> directory_request)
     : delegate_(delegate),
@@ -87,6 +90,9 @@ Engine::Engine(Delegate& delegate,
       std::bind(&Engine::OnSessionSizeChangeHint, this, std::placeholders::_1,
                 std::placeholders::_2);
 
+  OnEnableWireframe on_enable_wireframe_callback = std::bind(
+      &Engine::OnDebugWireframeSettingsChanged, this, std::placeholders::_1);
+
   // SessionListener has a OnScenicError method; invoke this callback on the
   // platform thread when that happens. The Session itself should also be
   // disconnected when this happens, and it will also attempt to terminate.
@@ -104,6 +110,9 @@ Engine::Engine(Delegate& delegate,
   flutter::Shell::CreateCallback<flutter::PlatformView>
       on_create_platform_view = fml::MakeCopyable(
           [debug_label = thread_label_,
+           view_ref_control = std::move(view_ref_control),
+           view_ref = std::move(view_ref),
+           runner_services = std::move(runner_services),
            parent_environment_service_provider =
                std::move(parent_environment_service_provider),
            session_listener_request = std::move(session_listener_request),
@@ -113,16 +122,22 @@ Engine::Engine(Delegate& delegate,
                std::move(on_session_metrics_change_callback),
            on_session_size_change_hint_callback =
                std::move(on_session_size_change_hint_callback),
+           on_enable_wireframe_callback =
+               std::move(on_enable_wireframe_callback),
            vsync_handle = vsync_event_.get()](flutter::Shell& shell) mutable {
             return std::make_unique<flutter_runner::PlatformView>(
-                shell,                                           // delegate
-                debug_label,                                     // debug label
-                shell.GetTaskRunners(),                          // task runners
+                shell,                        // delegate
+                debug_label,                  // debug label
+                std::move(view_ref_control),  // view control ref
+                std::move(view_ref),          // view ref
+                shell.GetTaskRunners(),       // task runners
+                std::move(runner_services),
                 std::move(parent_environment_service_provider),  // services
                 std::move(session_listener_request),  // session listener
                 std::move(on_session_listener_error_callback),
                 std::move(on_session_metrics_change_callback),
                 std::move(on_session_size_change_hint_callback),
+                std::move(on_enable_wireframe_callback),
                 vsync_handle  // vsync handle
             );
           });
@@ -408,6 +423,23 @@ void Engine::OnSessionMetricsDidChange(
                   rasterizer->compositor_context());
 
           compositor_context->OnSessionMetricsDidChange(metrics);
+        }
+      });
+}
+
+void Engine::OnDebugWireframeSettingsChanged(bool enabled) {
+  if (!shell_) {
+    return;
+  }
+
+  shell_->GetTaskRunners().GetGPUTaskRunner()->PostTask(
+      [rasterizer = shell_->GetRasterizer(), enabled]() {
+        if (rasterizer) {
+          auto compositor_context =
+              reinterpret_cast<flutter_runner::CompositorContext*>(
+                  rasterizer->compositor_context());
+
+          compositor_context->OnWireframeEnabled(enabled);
         }
       });
 }

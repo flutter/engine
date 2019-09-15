@@ -1,4 +1,10 @@
+// Copyright 2019 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include "AppDelegate.h"
+#import "FlutterEngine+ScenariosTest.h"
+#import "ScreenBeforeFlutter.h"
 #import "TextPlatformView.h"
 
 @interface NoStatusBarFlutterViewController : FlutterViewController
@@ -28,20 +34,24 @@
     @"--platform-view-transform" : @"platform_view_transform",
     @"--platform-view-opacity" : @"platform_view_opacity",
   };
-  __block BOOL hasGoldenLaunchArg = NO;
-  [launchArgsMap enumerateKeysAndObjectsUsingBlock:^(NSString* argument, NSString* testName, BOOL *stop) {
-    if ([[[NSProcessInfo processInfo] arguments] containsObject:argument]) {
-      [self readyContextForPlatformViewTests:testName];
-      hasGoldenLaunchArg = YES;
-      *stop = YES;
-    }
-  }];
-  if (!hasGoldenLaunchArg) {
+  __block NSString* goldenTestName = nil;
+  [launchArgsMap
+      enumerateKeysAndObjectsUsingBlock:^(NSString* argument, NSString* testName, BOOL* stop) {
+        if ([[[NSProcessInfo processInfo] arguments] containsObject:argument]) {
+          goldenTestName = testName;
+          *stop = YES;
+        }
+      }];
+
+  if (goldenTestName) {
+    [self readyContextForPlatformViewTests:goldenTestName];
+  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
+    self.window.rootViewController = [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:nil];
+  } else {
     self.window.rootViewController = [[UIViewController alloc] init];
   }
 
   [self.window makeKeyAndVisible];
-
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 

@@ -18,7 +18,7 @@ integration tests in other repos.
 3. Add your class to the `@SuiteClasses` annotation in `FlutterTestSuite.java`.
    This makes sure the test is actually executed at run time.
 4. Write your test.
-5. Build and run with `testing/run_tests.py [--type=java] [filter=<test_class_name>]`.
+5. Build and run with `testing/run_tests.py [--type=java] [--java-filter=<test_class_name>]`.
 
 ## Q&A
 
@@ -64,13 +64,13 @@ Once you've uploaded the new version, also make sure to tag it with the updated
 timestamp and robolectric version (most likely still 3.8, unless you've migrated
 all the packages to 4+).
 
-    $ cipd set-tag flutter/android/robolectric --version=<new_version_hash> -tag=last_updated:<timestamp>
+    $ cipd set-tag flutter/android/robolectric_bundle --version=<new_version_hash> -tag=last_updated:<timestamp>
 
 Example of a last-updated timestamp: 2019-07-29T15:27:42-0700
 
 You can generate the same date format with `date +%Y-%m-%dT%T%z`.
 
-    $ cipd set-tag flutter/android/robolectric --version=<new_version_hash> -tag=robolectric_version:<robolectric_version>
+    $ cipd set-tag flutter/android/robolectric_bundle --version=<new_version_hash> -tag=robolectric_version:<robolectric_version>
 
 You can run `cipd describe flutter/android/robolectric_bundle
 --version=<new_version_hash>` to verify. You should see:
@@ -84,7 +84,7 @@ Tags:
  robolectric_version:<robolectric_version>
 ```
 
-Then update the `DEPS` file (located at /src/flutter/DEPS) to use the new version by pointing to 
+Then update the `DEPS` file (located at /src/flutter/DEPS) to use the new version by pointing to
 your new `last_updated_at` tag.
 
 ```

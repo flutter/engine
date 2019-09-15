@@ -24,28 +24,19 @@
 
 namespace flutter {
 
-// A win32 flutter window.  In the future, there will likely be a
-// CoreWindow-based FlutterWindow as well.  At the point may make sense to
-// dependency inject the native window rather than inherit.
+// A win32 flutter child window used as implementatin for flutter view.  In the
+// future, there will likely be a CoreWindow-based FlutterWindow as well.  At
+// the point may make sense to dependency inject the native window rather than
+// inherit.
 class Win32FlutterWindow : public Win32Window {
  public:
-  Win32FlutterWindow();
-  Win32FlutterWindow(const char* title,
-                     const int x,
-                     const int y,
-                     const int width,
-                     const int height) noexcept;
+  // Create flutter Window for use as child window
+  Win32FlutterWindow(int width, int height);
+
   ~Win32FlutterWindow();
 
-  static FlutterDesktopWindowControllerRef CreateWin32FlutterWindow(
-      const char* title,
-      const int x,
-      const int y,
-      const int width,
-      const int height);
-
-  // Run a Windows message pump that also pumps plugin messages.
-  void FlutterMessageLoop();
+  static FlutterDesktopViewControllerRef
+  Win32FlutterWindow::CreateWin32FlutterWindow(int width, int height);
 
   // |Win32Window|
   void OnDpiScale(unsigned int dpi) override;
@@ -63,7 +54,7 @@ class Win32FlutterWindow : public Win32Window {
   void OnPointerUp(double x, double y) override;
 
   // |Win32Window|
-  void OnChar(unsigned int code_point) override;
+  void OnChar(char32_t code_point) override;
 
   // |Win32Window|
   void OnKey(int key, int scancode, int action, int mods) override;
@@ -94,6 +85,7 @@ class Win32FlutterWindow : public Win32Window {
   // Callbacks for clearing context, settings context and swapping buffers.
   bool ClearContext();
   bool MakeCurrent();
+  bool MakeResourceCurrent();
   bool SwapBuffers();
 
   // Sends a window metrics update to the Flutter engine using current window
@@ -111,7 +103,7 @@ class Win32FlutterWindow : public Win32Window {
   void SendPointerUp(double x, double y);
 
   // Reports a keyboard character to Flutter engine.
-  void SendChar(unsigned int code_point);
+  void SendChar(char32_t code_point);
 
   // Reports a raw keyboard message to Flutter engine.
   void SendKey(int key, int scancode, int action, int mods);
@@ -149,7 +141,7 @@ class Win32FlutterWindow : public Win32Window {
   bool pointer_currently_added_ = false;
 
   // The window handle given to API clients.
-  std::unique_ptr<FlutterDesktopWindow> window_wrapper_;
+  std::unique_ptr<FlutterDesktopView> window_wrapper_;
 
   // The plugin registrar handle given to API clients.
   std::unique_ptr<FlutterDesktopPluginRegistrar> plugin_registrar_;

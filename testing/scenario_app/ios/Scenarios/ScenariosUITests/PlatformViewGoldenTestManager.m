@@ -18,7 +18,7 @@ NSDictionary* launchArgsMap;
   self = [super init];
   if (self) {
     // The launchArgsMap should match the one in the `PlatformVieGoldenTestManager`.
-    static NSDictionary<NSString *, NSString*>* launchArgsMap;
+    static NSDictionary<NSString*, NSString*>* launchArgsMap;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
       launchArgsMap = @{

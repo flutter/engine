@@ -52,6 +52,8 @@ def RunExecutable(command):
 
 
 def RunGN(variant_dir, flags):
+  print('Running gn for variant "%s" with flags: %s' % (variant_dir,
+      ','.join(flags)))
   RunExecutable([
       os.path.join('flutter', 'tools', 'gn'),
   ] + flags)
@@ -123,11 +125,12 @@ def CopyToBucketWithMode(source, destination, aot, product, runner_type):
 
   destination = os.path.join(_bucket_directory, destination, mode)
   CreateFarPackage(pm_bin, far_base, key_path, destination)
-  patched_sdk_dirname = '%s_runner_patched_sdk' % runner_type
-  patched_sdk_dir = os.path.join(source_root, patched_sdk_dirname)
-  dest_sdk_path = os.path.join(destination, patched_sdk_dirname)
+  src_patched_sdk_dirname = 'engine_%s_runner_patched_sdk' % runner_type
+  src_patched_sdk_dir = os.path.join(source_root, src_patched_sdk_dirname)
+  dest_patched_sdk_dirname = '%s_runner_patched_sdk' % runner_type
+  dest_sdk_path = os.path.join(destination, dest_patched_sdk_dirname)
   if not os.path.exists(dest_sdk_path):
-    CopyPath(patched_sdk_dir, dest_sdk_path)
+    CopyPath(src_patched_sdk_dir, dest_sdk_path)
   CopyGenSnapshotIfExists(source_root, destination)
 
 
@@ -192,17 +195,18 @@ def GetTargetsToBuild(product=False):
   return targets_to_build
 
 
-def BuildTarget(runtime_mode, arch, product):
+def BuildTarget(runtime_mode, arch, product, enable_lto):
   out_dir = 'fuchsia_%s_%s' % (runtime_mode, arch)
   flags = [
       '--fuchsia',
-      # The source does not require LTO and LTO is not wired up for targets.
-      '--no-lto',
       '--fuchsia-cpu',
       arch,
       '--runtime-mode',
-      runtime_mode
+      runtime_mode,
   ]
+
+  if not enable_lto:
+    flags.append('--no-lto')
 
   RunGN(out_dir, flags)
   BuildNinjaTargets(out_dir, GetTargetsToBuild(product))
@@ -230,20 +234,41 @@ def main():
       choices=['debug', 'profile', 'release', 'all'],
       default='all')
 
+  parser.add_argument(
+      '--archs',
+      type=str,
+      choices=['x64', 'arm64', 'all'],
+      default='all')
+
+  parser.add_argument(
+      '--no-lto',
+      action='store_true',
+      default=False,
+      help='If set, disables LTO for the build.')
+
+  parser.add_argument(
+    '--skip-build',
+    action='store_true',
+    default=False,
+    help='If set, skips building and just creates packages.')
+
   args = parser.parse_args()
   RemoveDirectoryIfExists(_bucket_directory)
   build_mode = args.runtime_mode
 
-  archs = ['x64', 'arm64']
+  archs = ['x64', 'arm64'] if args.archs == 'all' else [args.archs]
   runtime_modes = ['debug', 'profile', 'release']
   product_modes = [False, False, True]
+
+  enable_lto = not args.no_lto
 
   for arch in archs:
     for i in range(3):
       runtime_mode = runtime_modes[i]
       product = product_modes[i]
       if build_mode == 'all' or runtime_mode == build_mode:
-        BuildTarget(runtime_mode, arch, product)
+        if not args.skip_build:
+          BuildTarget(runtime_mode, arch, product, enable_lto)
         BuildBucket(runtime_mode, arch, product)
 
   ProcessCIPDPakcage(args.upload, args.engine_version)

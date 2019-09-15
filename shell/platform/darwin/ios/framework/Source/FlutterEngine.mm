@@ -33,6 +33,7 @@
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
 
 @property(nonatomic, readwrite, copy) NSString* isolateId;
+@property(nonatomic, retain) id<NSObject> flutterViewControllerWillDeallocObserver;
 @end
 
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
@@ -69,12 +70,12 @@
   FlutterBinaryMessengerRelay* _binaryMessenger;
 }
 
-- (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)projectOrNil {
-  return [self initWithName:labelPrefix project:projectOrNil allowHeadlessExecution:YES];
+- (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
+  return [self initWithName:labelPrefix project:project allowHeadlessExecution:YES];
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix
-                     project:(FlutterDartProject*)projectOrNil
+                     project:(FlutterDartProject*)project
       allowHeadlessExecution:(BOOL)allowHeadlessExecution {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
@@ -85,15 +86,14 @@
 
   _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(self);
 
-  if (projectOrNil == nil)
+  if (project == nil)
     _dartProject.reset([[FlutterDartProject alloc] init]);
   else
-    _dartProject.reset([projectOrNil retain]);
+    _dartProject.reset([project retain]);
 
   _pluginPublications = [NSMutableDictionary new];
   _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
 
-  [self setupChannels];
   _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
@@ -112,6 +112,7 @@
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   [center removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+  [_flutterViewControllerWillDeallocObserver release];
 
   [super dealloc];
 }
@@ -168,12 +169,21 @@
   _viewController = [viewController getWeakPtr];
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
+
+  self.flutterViewControllerWillDeallocObserver =
+      [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
+                                                        object:viewController
+                                                         queue:[NSOperationQueue mainQueue]
+                                                    usingBlock:^(NSNotification* note) {
+                                                      [self notifyViewControllerDeallocated];
+                                                    }];
 }
 
 - (void)notifyViewControllerDeallocated {
   if (!_allowHeadlessExecution) {
     [self destroyContext];
   }
+  _viewController.reset();
 }
 
 - (void)destroyContext {

@@ -11,6 +11,7 @@ import 'dart:ui';
 
 import 'src/animated_color_square.dart';
 import 'src/platform_view.dart';
+import 'src/poppable_screen.dart';
 import 'src/scenario.dart';
 
 Map<String, Scenario> _scenarios = <String, Scenario>{
@@ -21,6 +22,7 @@ Map<String, Scenario> _scenarios = <String, Scenario>{
   'platform_view_clippath': PlatformViewClipPathScenario(window, 'PlatformViewClipPath', id: 3),
   'platform_view_transform': PlatformViewTransformScenario(window, 'PlatformViewTransform', id: 4),
   'platform_view_opacity': PlatformViewOpacityScenario(window, 'PlatformViewOpacity', id: 5),
+  'poppable_screen': PoppableScreenScenario(window),
 };
 
 Scenario _currentScenario = _scenarios['animated_color_square'];
@@ -31,6 +33,7 @@ void main() {
     ..onBeginFrame = _onBeginFrame
     ..onDrawFrame = _onDrawFrame
     ..onMetricsChanged = _onMetricsChanged
+    ..onPointerDataPacket = _onPointerDataPacket
     ..scheduleFrame();
   final ByteData data = ByteData(1);
   data.setUint8(0, 1);
@@ -39,8 +42,8 @@ void main() {
 
 Future<void> _handlePlatformMessage(
     String name, ByteData data, PlatformMessageResponseCallback callback) async {
-      print(name);
-      print(utf8.decode(data.buffer.asUint8List()));
+  print(name);
+  print(utf8.decode(data.buffer.asUint8List()));
   if (name == 'set_scenario' && data != null) {
     final String scenarioName = utf8.decode(data.buffer.asUint8List());
     final Scenario candidateScenario = _scenarios[scenarioName];
@@ -56,6 +59,8 @@ Future<void> _handlePlatformMessage(
   } else if (name == 'write_timeline') {
     final String timelineData = await _getTimelineData();
     callback(Uint8List.fromList(utf8.encode(timelineData)).buffer.asByteData());
+  } else {
+    _currentScenario?.onPlatformMessage(name, data, callback);
   }
 }
 
@@ -99,4 +104,8 @@ void _onDrawFrame() {
 
 void _onMetricsChanged() {
   _currentScenario.onMetricsChanged();
+}
+
+void _onPointerDataPacket(PointerDataPacket packet) {
+  _currentScenario.onPointerDataPacket(packet);
 }
