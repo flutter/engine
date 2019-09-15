@@ -17,6 +17,7 @@ namespace flutter {
 // plugin's main class.
 class PluginRegistry {
  public:
+  PluginRegistry() = default;
   virtual ~PluginRegistry() = default;
 
   // Returns the FlutterDesktopPluginRegistrarRef to register a plugin with the
