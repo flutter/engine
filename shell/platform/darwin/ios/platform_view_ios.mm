@@ -44,9 +44,9 @@ fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() co
 
 std::unique_ptr<IOSSurface> PlatformViewIOS::CreateIOSSurface() const {
   if (!owner_controller_) {
-      FML_DLOG(INFO) << "Could not CreateIOSSurface, this PlatformViewIOS "
-                        "has no ViewController.";
-      return nullptr;
+    FML_DLOG(INFO) << "Could not CreateIOSSurface, this PlatformViewIOS "
+                      "has no ViewController.";
+    return nullptr;
   }
 
   fml::WeakPtr<IOSGLContext> weak_gl_context;
