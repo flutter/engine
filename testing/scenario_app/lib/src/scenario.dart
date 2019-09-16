@@ -33,4 +33,19 @@ abstract class Scenario {
   ///
   ///
   void onUpdateData(ByteData data){}
+
+  /// Called by the program when a pointer event is received.
+  ///
+  /// See [Window.onPointerDataPacket].
+  void onPointerDataPacket(PointerDataPacket packet) {}
+
+  /// Called by the program when an engine side platform channel message is
+  /// received.
+  ///
+  /// See [Window.onPlatformMessage].
+  void onPlatformMessage(
+      String name,
+      ByteData data,
+      PlatformMessageResponseCallback callback,
+      ) {}
 }

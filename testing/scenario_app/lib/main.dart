@@ -12,12 +12,14 @@ import 'dart:ui';
 import 'src/animated_color_square.dart';
 import 'src/external_texture_view.dart';
 import 'src/platform_view.dart';
+import 'src/poppable_screen.dart';
 import 'src/scenario.dart';
 
 Map<String, Scenario> _scenarios = <String, Scenario>{
   'animated_color_square': AnimatedColorSquareScenario(window),
   'external_texture': ExternalTextureScenario(window),
   'text_platform_view': PlatformViewScenario(window, 'Hello from Scenarios (Platform View)'),
+  'poppable_screen': PoppableScreenScenario(window),
 };
 
 Scenario _currentScenario = _scenarios['animated_color_square'];
@@ -28,6 +30,7 @@ void main() {
     ..onBeginFrame = _onBeginFrame
     ..onDrawFrame = _onDrawFrame
     ..onMetricsChanged = _onMetricsChanged
+    ..onPointerDataPacket = _onPointerDataPacket
     ..scheduleFrame();
   final ByteData data = ByteData(2);
   data.setUint8(0, 128);
@@ -37,13 +40,12 @@ void main() {
 
 Future<void> _handlePlatformMessage(
     String name, ByteData data, PlatformMessageResponseCallback callback) async {
-      print('_handlePlatformMessage $name data ${utf8.decode(data.buffer.asUint8List())}');
+  print(name);
+  print(utf8.decode(data.buffer.asUint8List()));
   if (name == 'set_scenario' && data != null) {
     final String scenarioName = utf8.decode(data.buffer.asUint8List());
-    print('_handlePlatformMessage2 $name data $scenarioName');
     final Scenario candidateScenario = _scenarios[scenarioName];
     if (candidateScenario != null) {
-      print('_handlePlatformMessage3 $name data $scenarioName');
       _currentScenario = candidateScenario;
       window.scheduleFrame();
     }
@@ -55,6 +57,8 @@ Future<void> _handlePlatformMessage(
   } else if (name == 'write_timeline') {
     final String timelineData = await _getTimelineData();
     callback(Uint8List.fromList(utf8.encode(timelineData)).buffer.asByteData());
+  } else {
+    _currentScenario?.onPlatformMessage(name, data, callback);
   }
   else if(name == 'update_data'){
     _currentScenario.onUpdateData(data);
@@ -101,4 +105,8 @@ void _onDrawFrame() {
 
 void _onMetricsChanged() {
   _currentScenario.onMetricsChanged();
+}
+
+void _onPointerDataPacket(PointerDataPacket packet) {
+  _currentScenario.onPointerDataPacket(packet);
 }

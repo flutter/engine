@@ -39,9 +39,6 @@ class PlatformViewIOS final : public PlatformView {
 
   void RegisterExternalShareTexture(int64_t id, NSObject<FlutterShareTexture>* texture);
 
-  // |PlatformView|
-  PointerDataDispatcherMaker GetDispatcherMaker() override;
-
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> GetTextInputPlugin() const;
 
   void SetTextInputPlugin(fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin);
@@ -59,6 +56,7 @@ class PlatformViewIOS final : public PlatformView {
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> text_input_plugin_;
   fml::closure firstFrameCallback_;
+  fml::scoped_nsprotocol<NSObject*> dealloc_view_controller_observer_;
 
   // |PlatformView|
   void HandlePlatformMessage(fml::RefPtr<flutter::PlatformMessage> message) override;
