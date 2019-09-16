@@ -95,11 +95,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                                         shell = shell.get()    //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
-        if (auto new_rasterizer = on_create_rasterizer(*shell)) {
-          rasterizer_promise.set_value(std::move(new_rasterizer));
-        } else {
-          rasterizer_promise.set_value(std::unique_ptr<Rasterizer>());
-        }
+        rasterizer_promise.set_value(on_create_rasterizer(*shell));
       });
 
   // Send dispatcher_maker to the engine constructor because shell won't have
