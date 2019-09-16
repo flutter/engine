@@ -24,10 +24,10 @@ AccessibilityBridge::AccessibilityBridge(
                    << zx_status_get_string(status) << ".";
   });
   fidl::InterfaceHandle<
-      fuchsia::accessibility::semantics::SemanticActionListener>
+      fuchsia::accessibility::semantics::SemanticListener>
       listener_handle;
   binding_.Bind(listener_handle.NewRequest());
-  fuchsia_semantics_manager_->RegisterView(
+  fuchsia_semantics_manager_->RegisterViewForSemantics(
       std::move(view_ref), std::move(listener_handle), tree_ptr_.NewRequest());
 }
 
@@ -223,20 +223,22 @@ void AccessibilityBridge::AddSemanticsNodeUpdate(
   PruneUnreachableNodes();
 
   tree_ptr_->UpdateSemanticNodes(std::move(nodes));
-  tree_ptr_->Commit();
+  // TODO(dnfield): Implement the callback here
+  // https://bugs.fuchsia.dev/p/fuchsia/issues/detail?id=35718.
+  tree_ptr_->CommitUpdates([]() {});
 }
 
-// |fuchsia::accessibility::semantics::SemanticActionListener|
+// |fuchsia::accessibility::semantics::SemanticListener|
 void AccessibilityBridge::OnAccessibilityActionRequested(
     uint32_t node_id,
     fuchsia::accessibility::semantics::Action action,
-    fuchsia::accessibility::semantics::SemanticActionListener::
+    fuchsia::accessibility::semantics::SemanticListener::
         OnAccessibilityActionRequestedCallback callback) {}
 
-// |fuchsia::accessibility::semantics::SemanticActionListener|
+// |fuchsia::accessibility::semantics::SemanticListener|
 void AccessibilityBridge::HitTest(
     fuchsia::math::PointF local_point,
-    fuchsia::accessibility::semantics::SemanticActionListener::HitTestCallback
+    fuchsia::accessibility::semantics::SemanticListener::HitTestCallback
         callback) {}
 
 }  // namespace flutter_runner
