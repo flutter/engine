@@ -68,9 +68,9 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // first be booted and the necessary references obtained to initialize the
   // other subsystems.
   std::promise<std::unique_ptr<ShellIOManager>> io_manager_promise;
-  auto io_manager = io_manager_promise.get_future();
+  auto io_manager_future = io_manager_promise.get_future();
   std::promise<fml::WeakPtr<ShellIOManager>> weak_io_manager_promise;
-  auto weak_io_manager = weak_io_manager_promise.get_future();
+  auto weak_io_manager_future = weak_io_manager_promise.get_future();
   auto io_task_runner = shell->GetTaskRunners().GetIOTaskRunner();
   fml::TaskRunner::RunNowOrPostTask(
       io_task_runner,
@@ -88,7 +88,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
 
   // Create the rasterizer on the GPU thread.
   std::promise<std::unique_ptr<Rasterizer>> rasterizer_promise;
-  auto rasterizer = rasterizer_promise.get_future();
+  auto rasterizer_future = rasterizer_promise.get_future();
   fml::TaskRunner::RunNowOrPostTask(
       task_runners.GetGPUTaskRunner(), [&rasterizer_promise,   //
                                         on_create_rasterizer,  //
@@ -108,7 +108,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
 
   // Create the engine on the UI thread.
   std::promise<std::unique_ptr<Engine>> engine_promise;
-  auto engine = engine_promise.get_future();
+  auto engine_future = engine_promise.get_future();
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetUITaskRunner(),
       fml::MakeCopyable([&engine_promise,                                 //
@@ -117,7 +117,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          shared_snapshot = std::move(shared_snapshot),    //
                          vsync_waiter = std::move(vsync_waiter),          //
-                         &weak_io_manager                                 //
+                         &weak_io_manager_future                          //
   ]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
         const auto& task_runners = shell->GetTaskRunners();
@@ -136,14 +136,14 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
             task_runners,                 //
             shell->GetSettings(),         //
             std::move(animator),          //
-            weak_io_manager.get()         //
+            weak_io_manager_future.get()  //
             ));
       }));
 
   if (!shell->Setup(std::move(platform_view),  //
-                    engine.get(),              //
-                    rasterizer.get(),          //
-                    io_manager.get())          //
+                    engine_future.get(),       //
+                    rasterizer_future.get(),   //
+                    io_manager_future.get())   //
   ) {
     return nullptr;
   }
