@@ -16,6 +16,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
+
 @Config(manifest=Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class FlutterActivityTest {
