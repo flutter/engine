@@ -69,16 +69,21 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // other subsystems.
   std::promise<std::unique_ptr<ShellIOManager>> io_manager_promise;
   auto io_manager = io_manager_promise.get_future();
+  std::promise<fml::WeakPtr<ShellIOManager>> weak_io_manager_promise;
+  auto weak_io_manager = weak_io_manager_promise.get_future();
   auto io_task_runner = shell->GetTaskRunners().GetIOTaskRunner();
   fml::TaskRunner::RunNowOrPostTask(
       io_task_runner,
-      [&io_manager_promise,     //
-       &platform_view,  //
-       io_task_runner   //
+      [&io_manager_promise,       //
+       &weak_io_manager_promise,  //
+       &platform_view,            //
+       io_task_runner             //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupIOSubsystem");
-        io_manager_promise.set_value(std::make_unique<ShellIOManager>(
-            platform_view->CreateResourceContext(), io_task_runner));
+        auto io_manager = std::make_unique<ShellIOManager>(
+            platform_view->CreateResourceContext(), io_task_runner);
+        weak_io_manager_promise.set_value(io_manager->GetWeakPtr());
+        io_manager_promise.set_value(std::move(io_manager));
       });
 
   // Create the rasterizer on the GPU thread.
@@ -107,7 +112,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          shared_snapshot = std::move(shared_snapshot),    //
                          vsync_waiter = std::move(vsync_waiter),          //
-                         &io_manager  //
+                         &weak_io_manager                                 //
   ]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
         const auto& task_runners = shell->GetTaskRunners();
@@ -118,14 +123,14 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                                                    std::move(vsync_waiter));
 
         engine_promise.set_value(std::make_unique<Engine>(
-            *shell,                         //
-            *shell->GetDartVM(),            //
-            std::move(isolate_snapshot),    //
-            std::move(shared_snapshot),     //
-            task_runners,                   //
-            shell->GetSettings(),           //
-            std::move(animator),            //
-            io_manager.get()->GetWeakPtr()  //
+            *shell,                              //
+            *shell->GetDartVM(),                 //
+            std::move(isolate_snapshot),         //
+            std::move(shared_snapshot),          //
+            task_runners,                        //
+            shell->GetSettings(),                //
+            std::move(animator),                 //
+            weak_io_manager.get()  //
             ));
       }));
 
