@@ -42,6 +42,13 @@ void _setStaticStyleAttributes(html.HtmlElement domElement) {
   }
 }
 
+enum _InputAction {
+  /// Procced to next Input Element
+  next,
+  /// Newline entered in Input Element
+  newline,
+}
+
 /// The current text and selection state of a text field.
 class EditingState {
   EditingState({this.text, this.baseOffset = 0, this.extentOffset = 0});
@@ -162,6 +169,7 @@ class InputConfiguration {
 }
 
 typedef _OnChangeCallback = void Function(EditingState editingState);
+typedef _OnActionCallback = void Function(_InputAction inputAction);
 
 enum ElementType {
   /// The backing element is an `<input>`.
@@ -225,6 +233,7 @@ class TextEditingElement {
   html.HtmlElement domElement;
   EditingState _lastEditingState;
   _OnChangeCallback _onChange;
+  _OnActionCallback _onAction;
 
   final List<StreamSubscription<html.Event>> _subscriptions =
       <StreamSubscription<html.Event>>[];
@@ -268,12 +277,14 @@ class TextEditingElement {
   void enable(
     InputConfiguration inputConfig, {
     @required _OnChangeCallback onChange,
+    @required _OnActionCallback onAction,
   }) {
     assert(!_enabled);
 
     _initDomElement(inputConfig);
     _enabled = true;
     _onChange = onChange;
+    _onAction = onAction;
 
     // Chrome on Android will hide the onscreen keyboard when you tap outside
     // the text box. Instead, we want the framework to tell us to hide the
@@ -304,7 +315,8 @@ class TextEditingElement {
     // Subscribe to text and selection changes.
     _subscriptions
       ..add(html.document.onSelectionChange.listen(_handleChange))
-      ..add(domElement.onInput.listen(_handleChange));
+      ..add(domElement.onInput.listen(_handleChange))
+      ..add(domElement.onKeyDown.listen(_handleKeyDown));
   }
 
   /// Disables the element so it's no longer used for text editing.
@@ -438,6 +450,20 @@ class TextEditingElement {
   void _handleChange(html.Event event) {
     _lastEditingState = calculateEditingState();
     _onChange(_lastEditingState);
+  }
+
+  // Map KeyboardEvent to InputAction
+  void _handleKeyDown(html.KeyboardEvent event) {
+    // Trigger newline action if enter key was pressed
+    if (event.which == 13) {
+      _onAction(_InputAction.newline);
+    }
+    // Trigger next action if tab key was pressed
+    if (event.which == 9) {
+      _onAction(_InputAction.next);
+      // prevent default action to avoid input element losing focus
+      event.preventDefault();
+    }
   }
 
   @visibleForTesting
@@ -700,6 +726,7 @@ class HybridTextEditing {
     editingElement.enable(
       InputConfiguration.fromFlutter(_configuration),
       onChange: _syncEditingStateToFlutter,
+      onAction: _sendInputActionToFlutter,
     );
   }
 
@@ -790,6 +817,30 @@ class HybridTextEditing {
   bool get doesKeyboardShiftInput =>
     browserEngine == BrowserEngine.webkit &&
     operatingSystem == OperatingSystem.iOs;
+  _InputActionToFlutter(_InputAction inputAction) {
+    switch(inputAction) {
+      case _InputAction.next:
+        return 'TextInputAction.next';
+        break;
+      case _InputAction.newline:
+        return 'TextInputAction.newline';
+        break;
+    }
+    return 'TextInputAction.unspecified';
+  }
+
+  void _sendInputActionToFlutter(_InputAction inputAction) {
+    ui.window.onPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall('TextInputClient.performAction', <dynamic>[
+          _clientId,
+          _InputActionToFlutter(inputAction),
+        ]),
+      ),
+      _emptyCallback,
+    );
+  }
 
   /// These style attributes are dynamic throughout the life time of an input
   /// element.
