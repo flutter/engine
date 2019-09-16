@@ -50,6 +50,18 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   auto shell =
       std::unique_ptr<Shell>(new Shell(std::move(vm), task_runners, settings));
 
+  // Create the rasterizer on the GPU thread.
+  std::promise<std::unique_ptr<Rasterizer>> rasterizer_promise;
+  auto rasterizer_future = rasterizer_promise.get_future();
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners.GetGPUTaskRunner(), [&rasterizer_promise,   //
+                                        on_create_rasterizer,  //
+                                        shell = shell.get()    //
+  ]() {
+        TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
+        rasterizer_promise.set_value(on_create_rasterizer(*shell));
+      });
+
   // Create the platform view on the platform thread (this thread).
   auto platform_view = on_create_platform_view(*shell.get());
   if (!platform_view || !platform_view->GetWeakPtr()) {
@@ -84,18 +96,6 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
             platform_view->CreateResourceContext(), io_task_runner);
         weak_io_manager_promise.set_value(io_manager->GetWeakPtr());
         io_manager_promise.set_value(std::move(io_manager));
-      });
-
-  // Create the rasterizer on the GPU thread.
-  std::promise<std::unique_ptr<Rasterizer>> rasterizer_promise;
-  auto rasterizer_future = rasterizer_promise.get_future();
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners.GetGPUTaskRunner(), [&rasterizer_promise,   //
-                                        on_create_rasterizer,  //
-                                        shell = shell.get()    //
-  ]() {
-        TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
-        rasterizer_promise.set_value(on_create_rasterizer(*shell));
       });
 
   // Send dispatcher_maker to the engine constructor because shell won't have
