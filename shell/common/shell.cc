@@ -123,14 +123,14 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                                                    std::move(vsync_waiter));
 
         engine_promise.set_value(std::make_unique<Engine>(
-            *shell,                              //
-            *shell->GetDartVM(),                 //
-            std::move(isolate_snapshot),         //
-            std::move(shared_snapshot),          //
-            task_runners,                        //
-            shell->GetSettings(),                //
-            std::move(animator),                 //
-            weak_io_manager.get()  //
+            *shell,                       //
+            *shell->GetDartVM(),          //
+            std::move(isolate_snapshot),  //
+            std::move(shared_snapshot),   //
+            task_runners,                 //
+            shell->GetSettings(),         //
+            std::move(animator),          //
+            weak_io_manager.get()         //
             ));
       }));
 
