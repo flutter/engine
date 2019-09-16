@@ -65,9 +65,12 @@ class UnicodePropertyLookup<P> {
 
   final List<UnicodeRange<P>> ranges;
 
-  P find(int value) {
-    final int index = _binarySearch(value);
-    return index == -1 ? null : ranges[index].property;
+  P find(String text, int index) {
+    if (index < 0 || index >= text.length) {
+      return null;
+    }
+    final int rangeIndex = _binarySearch(text.codeUnitAt(index));
+    return rangeIndex == -1 ? null : ranges[rangeIndex].property;
   }
 
   int _binarySearch(int value) {
