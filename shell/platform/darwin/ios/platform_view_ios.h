@@ -75,7 +75,10 @@ class PlatformViewIOS final : public PlatformView {
   // |PlatformView|
   void OnPreEngineRestart() const override;
 
+  // |PlatformView|
   void NotifyDestroyed() override;
+
+  std::unique_ptr<IOSSurface> CreateIOSSurface() const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewIOS);
 };

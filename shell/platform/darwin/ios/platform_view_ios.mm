@@ -42,6 +42,24 @@ fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() co
   return owner_controller_;
 }
 
+std::unique_ptr<IOSSurface> PlatformViewIOS::CreateIOSSurface() const {
+  if (!owner_controller_) {
+      FML_DLOG(INFO) << "Could not CreateIOSSurface, this PlatformViewIOS "
+                        "has no ViewController.";
+      return nullptr;
+  }
+
+  fml::WeakPtr<IOSGLContext> weak_gl_context;
+  if (resource_gl_context_) {
+    weak_gl_context = resource_gl_context_->GetWeakPtr();
+  }
+
+  std::unique_ptr<IOSSurface> ios_surface = [static_cast<FlutterView*>(owner_controller_.get().view)
+      createSurfaceWithResourceGLContext:weak_gl_context];
+  FML_DCHECK(ios_surface != nullptr);
+  return ios_surface;
+}
+
 void PlatformViewIOS::NotifyDestroyed() {
   PlatformView::NotifyDestroyed();
   ios_surface_.reset();
@@ -54,14 +72,7 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
   }
   owner_controller_ = owner_controller;
   if (owner_controller_) {
-    fml::WeakPtr<IOSGLContext> weak_gl_context;
-    if (resource_gl_context_) {
-      weak_gl_context = resource_gl_context_->GetWeakPtr();
-    }
-    ios_surface_ = [static_cast<FlutterView*>(owner_controller.get().view)
-        createSurfaceWithResourceGLContext:weak_gl_context];
-    FML_DCHECK(ios_surface_ != nullptr);
-
+    ios_surface_ = CreateIOSSurface();
     if (accessibility_bridge_) {
       accessibility_bridge_.reset(
           new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
@@ -82,9 +93,11 @@ void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
 // |PlatformView|
 std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
   if (!ios_surface_) {
-    FML_DLOG(INFO) << "Could not CreateRenderingSurface, this PlatformViewIOS "
-                      "has no ViewController.";
-    return nullptr;
+    ios_surface_ = CreateIOSSurface();
+
+    if (!ios_surface_) {
+      return nullptr;
+    }
   }
   return ios_surface_->CreateGPUSurface();
 }
