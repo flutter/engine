@@ -40,6 +40,9 @@ def get_out_dir(args):
     if args.linux_cpu is not None:
       target_dir.append(args.linux_cpu)
 
+    if args.target_os == 'fuchsia' and args.fuchsia_cpu is not None:
+      target_dir.append(args.fuchsia_cpu)
+
     if args.enable_vulkan:
         target_dir.append('vulkan')
 
@@ -86,6 +89,8 @@ def to_gn_args(args):
     if args.bitcode:
       if args.target_os != 'ios':
         raise Exception('Bitcode is only supported for iOS')
+      if runtime_mode != 'release':
+        gn_args['bitcode_marker'] = True
 
     gn_args['enable_bitcode'] = args.bitcode
 
@@ -166,24 +171,16 @@ def to_gn_args(args):
             gn_args['target_cpu'] = args.ios_cpu
     elif args.target_os == 'linux':
       gn_args['target_cpu'] = args.linux_cpu
+    elif args.target_os == 'fuchsia':
+      gn_args['target_cpu'] = args.fuchsia_cpu
     else:
         # Building host artifacts
         gn_args['target_cpu'] = 'x64'
 
-    # On iOS Devices, use the Dart bytecode interpreter so we don't incur
-    # snapshotting and linking costs of the precompiler during development.
-    # We can still use the JIT on the simulator though.
-    can_use_dbc = runtime_mode in ['debug', 'dynamic_profile', 'dynamic_release']
-    use_dbc = args.target_os == 'ios' and not args.simulator and can_use_dbc
-    # Use dbc if it is requested on the command line and supported by the
-    # requested runtime mode.
-    if args.interpreter and not can_use_dbc:
-      raise Exception('--interpreter not supported with --runtime-mode=' + runtime_mode)
-    use_dbc = use_dbc or (args.interpreter and can_use_dbc)
-    if use_dbc:
-      gn_args['dart_target_arch'] = 'dbc'
-    else:
-      gn_args['dart_target_arch'] = gn_args['target_cpu']
+    # DBC is not supported anymore.
+    if args.interpreter:
+      raise Exception('--interpreter is no longer needed on any supported platform.')
+    gn_args['dart_target_arch'] = gn_args['target_cpu']
 
     if sys.platform.startswith(('cygwin', 'win')):
       if 'target_cpu' in gn_args:
@@ -196,10 +193,9 @@ def to_gn_args(args):
 
     gn_args['dart_custom_version_for_pub'] = 'flutter'
 
-    # Make sure host_cpu matches the bit width of target_cpu.
-    target_is_32_bit = gn_args['target_cpu'] == 'arm' or gn_args['target_cpu'] == 'x86'
-    if target_is_32_bit:
-      gn_args["host_cpu"] = "x86"
+    # Make sure host_cpu matches the bit width of target_cpu on x86.
+    if gn_args['target_cpu'] == 'x86':
+      gn_args['host_cpu'] = 'x86'
 
     gn_args['flutter_runtime_mode'] = runtime_mode
 
@@ -245,6 +241,11 @@ def to_gn_args(args):
       # Configure Skia for Vulkan support.
       gn_args['skia_use_vulkan'] = True
 
+    # The buildroot currently isn't set up to support Vulkan in the
+    # Windows ANGLE build, so disable it regardless of enable_vulkan's value.
+    if sys.platform.startswith(('cygwin', 'win')):
+       gn_args['angle_enable_vulkan'] = False
+
     # We should not need a special case for x86, but this seems to introduce text relocations
     # even with -fPIC everywhere.
     # gn_args['enable_profiling'] = args.runtime_mode != 'release' and args.android_cpu != 'x86'
@@ -260,11 +261,10 @@ def to_gn_args(args):
     gn_args['full_dart_sdk'] = args.full_dart_sdk
 
     if sys.platform == 'darwin':
-      gn_args['mac_sdk_path'] = args.mac_sdk_path
       if args.build_glfw_shell:
         gn_args['build_glfw_shell'] = True
-      if gn_args['mac_sdk_path'] == '':
-        gn_args['mac_sdk_path'] = os.getenv('FLUTTER_MAC_SDK_PATH', '')
+
+    gn_args['stripped_symbols'] = args.stripped
 
     return gn_args
 
@@ -290,6 +290,7 @@ def parse_args(args):
   parser.add_argument('--simulator', action='store_true', default=False)
   parser.add_argument('--fuchsia', dest='target_os', action='store_const', const='fuchsia')
   parser.add_argument('--linux-cpu', type=str, choices=['x64', 'x86', 'arm64', 'arm'])
+  parser.add_argument('--fuchsia-cpu', type=str, choices=['x64', 'arm64'], default = 'x64')
   parser.add_argument('--arm-float-abi', type=str, choices=['hard', 'soft', 'softfp'])
 
   parser.add_argument('--goma', default=True, action='store_true')
@@ -326,10 +327,6 @@ def parse_args(args):
                       help='include trained dart2js and dartdevc snapshots. Enable only on steps that create an SDK')
   parser.add_argument('--no-full-dart-sdk', dest='full_dart_sdk', action='store_false')
 
-  parser.add_argument('--mac-sdk-path', default='', type=str,
-                      help='On the mac, the SDK is inferred from the Xcode location unless this flag is specified. ' +
-                      ' Setting the FLUTTER_MAC_SDK_PATH environment variable achieves the same effect.')
-
   parser.add_argument('--ide', default='', type=str,
                       help='The IDE files to generate using GN. Use `gn gen help` and look for the --ide flag to' +
                       ' see supported IDEs. If this flag is not specified, a platform specific default is selected.')
@@ -338,7 +335,11 @@ def parse_args(args):
                       help='Force building the GLFW shell on desktop platforms where it is not built by default.')
 
   parser.add_argument('--bitcode', default=False, action='store_true',
-                      help='Enable bitcode for iOS targets.')
+                      help='Enable bitcode for iOS targets. On debug runtime modes, this will be a marker only.')
+
+  parser.add_argument('--stripped', default=True, action='store_true',
+                      help='Strip debug symbols from the output. This defaults to true and has no effect on iOS.')
+  parser.add_argument('--no-stripped', dest='stripped', action='store_false')
 
   return parser.parse_args(args)
 

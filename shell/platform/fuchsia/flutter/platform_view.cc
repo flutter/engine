@@ -59,6 +59,7 @@ static constexpr char kFlutterPlatformChannel[] = "flutter/platform";
 static constexpr char kTextInputChannel[] = "flutter/textinput";
 static constexpr char kKeyEventChannel[] = "flutter/keyevent";
 static constexpr char kAccessibilityChannel[] = "flutter/accessibility";
+static constexpr char kFlutterPlatformViewsChannel[] = "flutter/platform_views";
 
 // FL(77): Terminate engine if Fuchsia system FIDL connections have error.
 template <class T>
@@ -86,6 +87,7 @@ PlatformView::PlatformView(
     fit::closure session_listener_error_callback,
     OnMetricsUpdate session_metrics_did_change_callback,
     OnSizeChangeHint session_size_change_hint_callback,
+    OnEnableWireframe wireframe_enabled_callback,
     zx_handle_t vsync_event_handle)
     : flutter::PlatformView(delegate, std::move(task_runners)),
       debug_label_(std::move(debug_label)),
@@ -94,6 +96,7 @@ PlatformView::PlatformView(
           std::move(session_listener_error_callback)),
       metrics_changed_callback_(std::move(session_metrics_did_change_callback)),
       size_change_hint_callback_(std::move(session_size_change_hint_callback)),
+      wireframe_enabled_callback_(std::move(wireframe_enabled_callback)),
       ime_client_(this),
       surface_(std::make_unique<Surface>(debug_label_)),
       vsync_event_handle_(vsync_event_handle) {
@@ -136,6 +139,9 @@ void PlatformView::RegisterPlatformMessageHandlers() {
   platform_message_handlers_[kAccessibilityChannel] =
       std::bind(&PlatformView::HandleAccessibilityChannelPlatformMessage, this,
                 std::placeholders::_1);
+  platform_message_handlers_[kFlutterPlatformViewsChannel] =
+      std::bind(&PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage,
+                this, std::placeholders::_1);
 }
 
 void PlatformView::OnPropertiesChanged(
@@ -413,7 +419,6 @@ static flutter::PointerData::DeviceKind GetKindFromPointerType(
   }
 }
 
-#if !defined(FUCHSIA_SDK)
 // TODO(SCN-1278): Remove this.
 // Turns two floats (high bits, low bits) into a 64-bit uint.
 static trace_flow_id_t PointerTraceHACK(float fa, float fb) {
@@ -422,18 +427,15 @@ static trace_flow_id_t PointerTraceHACK(float fa, float fb) {
   memcpy(&ib, &fb, sizeof(uint32_t));
   return (((uint64_t)ia) << 32) | ib;
 }
-#endif  //  !defined(FUCHSIA_SDK)
 
 bool PlatformView::OnHandlePointerEvent(
     const fuchsia::ui::input::PointerEvent& pointer) {
   TRACE_EVENT0("flutter", "PlatformView::OnHandlePointerEvent");
 
-#if !defined(FUCHSIA_SDK)
   // TODO(SCN-1278): Use proper trace_id for tracing flow.
   trace_flow_id_t trace_id =
       PointerTraceHACK(pointer.radius_major, pointer.radius_minor);
   TRACE_FLOW_END("input", "dispatch_event_to_client", trace_id);
-#endif  //  !defined(FUCHSIA_SDK)
 
   flutter::PointerData pointer_data;
   pointer_data.Clear();
@@ -631,7 +633,7 @@ void PlatformView::HandleFlutterPlatformChannelPlatformMessage(
       writer.StartArray();
       writer.StartObject();
       writer.Key("text");
-      writer.String(text.get());
+      writer.String(text.value_or(""));
       writer.EndObject();
       writer.EndArray();
       std::string result = json_buffer.GetString();
@@ -728,6 +730,43 @@ void PlatformView::HandleFlutterTextInputChannelPlatformMessage(
     current_text_input_client_ = 0;
     last_text_state_ = nullptr;
     DeactivateIme();
+  } else {
+    FML_DLOG(ERROR) << "Unknown " << message->channel() << " method "
+                    << method->value.GetString();
+  }
+}
+
+void PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
+    fml::RefPtr<flutter::PlatformMessage> message) {
+  FML_DCHECK(message->channel() == kFlutterPlatformViewsChannel);
+  const auto& data = message->data();
+  rapidjson::Document document;
+  document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
+  if (document.HasParseError() || !document.IsObject()) {
+    FML_LOG(ERROR) << "Could not parse document";
+    return;
+  }
+  auto root = document.GetObject();
+  auto method = root.FindMember("method");
+  if (method == root.MemberEnd() || !method->value.IsString()) {
+    return;
+  }
+
+  if (method->value == "View.enableWireframe") {
+    auto args_it = root.FindMember("args");
+    if (args_it == root.MemberEnd() || !args_it->value.IsObject()) {
+      FML_LOG(ERROR) << "No arguments found.";
+      return;
+    }
+    const auto& args = args_it->value;
+
+    auto enable = args.FindMember("enable");
+    if (!enable->value.IsBool()) {
+      FML_LOG(ERROR) << "Argument 'enable' is not a bool";
+      return;
+    }
+
+    wireframe_enabled_callback_(enable->value.GetBool());
   } else {
     FML_DLOG(ERROR) << "Unknown " << message->channel() << " method "
                     << method->value.GetString();

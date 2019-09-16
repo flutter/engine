@@ -9,6 +9,7 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/macros.h"
+#include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
@@ -31,6 +32,9 @@ class ShellTest : public ThreadTest {
   std::unique_ptr<Shell> CreateShell(Settings settings,
                                      TaskRunners task_runners);
   TaskRunners GetTaskRunnersForFixture();
+
+  void SendEnginePlatformMessage(Shell* shell,
+                                 fml::RefPtr<PlatformMessage> message);
 
   void AddNativeCallback(std::string name, Dart_NativeFunction callback);
 
@@ -94,6 +98,9 @@ class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
 
   // |GPUSurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;
+
+  // |GPUSurfaceGLDelegate|
+  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
 };

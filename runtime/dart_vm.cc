@@ -24,8 +24,10 @@
 #include "flutter/lib/ui/dart_ui.h"
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_service_isolate.h"
+#include "flutter/runtime/ptrace_ios.h"
 #include "flutter/runtime/start_up.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
+#include "third_party/skia/include/core/SkExecutor.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_class_library.h"
 #include "third_party/tonic/dart_class_provider.h"
@@ -70,6 +72,11 @@ static const char* kDartPrecompilationArgs[] = {
 FML_ALLOW_UNUSED_TYPE
 static const char* kDartWriteProtectCodeArgs[] = {
     "--no_write_protect_code",
+};
+
+FML_ALLOW_UNUSED_TYPE
+static const char* kDartDisableIntegerDivisionArgs[] = {
+    "--no_use_integer_division",
 };
 
 static const char* kDartAssertArgs[] = {
@@ -254,12 +261,19 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
                std::shared_ptr<IsolateNameServer> isolate_name_server)
     : settings_(vm_data->GetSettings()),
       concurrent_message_loop_(fml::ConcurrentMessageLoop::Create()),
+      skia_concurrent_executor_(
+          [runner = concurrent_message_loop_->GetTaskRunner()](
+              fml::closure work) { runner->PostTask(work); }),
       vm_data_(vm_data),
       isolate_name_server_(std::move(isolate_name_server)),
       service_protocol_(std::make_shared<ServiceProtocol>()) {
   TRACE_EVENT0("flutter", "DartVMInitializer");
 
   gVMLaunchCount++;
+
+  // Setting the executor is not thread safe but Dart VM initialization is. So
+  // this call is thread-safe.
+  SkExecutor::SetDefault(&skia_concurrent_executor_);
 
   FML_DCHECK(vm_data_);
   FML_DCHECK(isolate_name_server_);
@@ -307,12 +321,24 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   }
 #endif  // !OS_FUCHSIA
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+#if !OS_IOS || TARGET_OS_SIMULATOR
   // Debug mode uses the JIT, disable code page write protection to avoid
   // memory page protection changes before and after every compilation.
   PushBackAll(&args, kDartWriteProtectCodeArgs,
               fml::size(kDartWriteProtectCodeArgs));
-#endif
+#else
+  EnsureDebuggedIOS(settings_);
+#if TARGET_CPU_ARM
+  // Tell Dart in JIT mode to not use integer division on armv7
+  // Ideally, this would be detected at runtime by Dart.
+  // TODO(dnfield): Remove this code
+  // https://github.com/dart-lang/sdk/issues/24743
+  PushBackAll(&args, kDartDisableIntegerDivisionArgs,
+              fml::size(kDartDisableIntegerDivisionArgs));
+#endif  // TARGET_CPU_ARM
+#endif  // !OS_IOS || TARGET_OS_SIMULATOR
+#endif  // (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 
   if (enable_asserts) {
     PushBackAll(&args, kDartAssertArgs, fml::size(kDartAssertArgs));
@@ -369,9 +395,14 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
         vm_data_->GetVMSnapshot().GetInstructionsMapping();
     params.create_group = reinterpret_cast<decltype(params.create_group)>(
         DartIsolate::DartIsolateGroupCreateCallback);
+    params.initialize_isolate =
+        reinterpret_cast<decltype(params.initialize_isolate)>(
+            DartIsolate::DartIsolateInitializeCallback);
     params.shutdown_isolate =
         reinterpret_cast<decltype(params.shutdown_isolate)>(
             DartIsolate::DartIsolateShutdownCallback);
+    params.cleanup_isolate = reinterpret_cast<decltype(params.cleanup_isolate)>(
+        DartIsolate::DartIsolateCleanupCallback);
     params.cleanup_group = reinterpret_cast<decltype(params.cleanup_group)>(
         DartIsolate::DartIsolateGroupCleanupCallback);
     params.thread_exit = ThreadExitCallback;
@@ -420,6 +451,10 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
 }
 
 DartVM::~DartVM() {
+  // Setting the executor is not thread safe but Dart VM shutdown is. So
+  // this call is thread-safe.
+  SkExecutor::SetDefault(nullptr);
+
   if (Dart_CurrentIsolate() != nullptr) {
     Dart_ExitIsolate();
   }

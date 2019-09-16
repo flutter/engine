@@ -14,11 +14,10 @@
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
-#include "runtime/dart/utils/files.h"
-
-#include "fuchsia_font_manager.h"
 #include "platform_view.h"
+#include "runtime/dart/utils/files.h"
 #include "task_runner_adapter.h"
+#include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
 #include "thread.h"
 
 namespace flutter_runner {
@@ -88,6 +87,9 @@ Engine::Engine(Delegate& delegate,
       std::bind(&Engine::OnSessionSizeChangeHint, this, std::placeholders::_1,
                 std::placeholders::_2);
 
+  OnEnableWireframe on_enable_wireframe_callback = std::bind(
+      &Engine::OnDebugWireframeSettingsChanged, this, std::placeholders::_1);
+
   // SessionListener has a OnScenicError method; invoke this callback on the
   // platform thread when that happens. The Session itself should also be
   // disconnected when this happens, and it will also attempt to terminate.
@@ -114,6 +116,8 @@ Engine::Engine(Delegate& delegate,
                std::move(on_session_metrics_change_callback),
            on_session_size_change_hint_callback =
                std::move(on_session_size_change_hint_callback),
+           on_enable_wireframe_callback =
+               std::move(on_enable_wireframe_callback),
            vsync_handle = vsync_event_.get()](flutter::Shell& shell) mutable {
             return std::make_unique<flutter_runner::PlatformView>(
                 shell,                                           // delegate
@@ -124,6 +128,7 @@ Engine::Engine(Delegate& delegate,
                 std::move(on_session_listener_error_callback),
                 std::move(on_session_metrics_change_callback),
                 std::move(on_session_size_change_hint_callback),
+                std::move(on_enable_wireframe_callback),
                 vsync_handle  // vsync handle
             );
           });
@@ -134,7 +139,7 @@ Engine::Engine(Delegate& delegate,
   // This handles the fidl error callback when the Session connection is
   // broken. The SessionListener interface also has an OnError method, which is
   // invoked on the platform thread (in PlatformView).
-  fit::closure on_session_error_callback =
+  fml::closure on_session_error_callback =
       [dispatcher = async_get_default_dispatcher(),
        weak = weak_factory_.GetWeakPtr()]() {
         async::PostTask(dispatcher, [weak]() {
@@ -143,30 +148,6 @@ Engine::Engine(Delegate& delegate,
           }
         });
       };
-
-  // Create the compositor context from the scenic pointer to create the
-  // rasterizer.
-  std::unique_ptr<flutter::CompositorContext> compositor_context;
-  {
-    TRACE_EVENT0("flutter", "CreateCompositorContext");
-    compositor_context = std::make_unique<flutter_runner::CompositorContext>(
-        thread_label_,          // debug label
-        std::move(view_token),  // scenic view we attach our tree to
-        std::move(session),     // scenic session
-        std::move(on_session_error_callback),  // session did encounter error
-        vsync_event_.get()                     // vsync event handle
-    );
-  }
-
-  // Setup the callback that will instantiate the rasterizer.
-  flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
-      fml::MakeCopyable([compositor_context = std::move(compositor_context)](
-                            flutter::Shell& shell) mutable {
-        return std::make_unique<flutter::Rasterizer>(
-            shell.GetTaskRunners(),        // task runners
-            std::move(compositor_context)  // compositor context
-        );
-      });
 
   // Get the task runners from the managed threads. The current thread will be
   // used as the "platform" thread.
@@ -177,6 +158,33 @@ Engine::Engine(Delegate& delegate,
       CreateFMLTaskRunner(threads_[1]->dispatcher()),       // ui
       CreateFMLTaskRunner(threads_[2]->dispatcher())        // io
   );
+
+  // Setup the callback that will instantiate the rasterizer.
+  flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
+      fml::MakeCopyable([thread_label = thread_label_,        //
+                         view_token = std::move(view_token),  //
+                         session = std::move(session),        //
+                         on_session_error_callback,           //
+                         vsync_event = vsync_event_.get()     //
+  ](flutter::Shell& shell) mutable {
+        std::unique_ptr<flutter_runner::CompositorContext> compositor_context;
+        {
+          TRACE_DURATION("flutter", "CreateCompositorContext");
+          compositor_context =
+              std::make_unique<flutter_runner::CompositorContext>(
+                  thread_label,           // debug label
+                  std::move(view_token),  // scenic view we attach our tree to
+                  std::move(session),     // scenic session
+                  on_session_error_callback,  // session did encounter error
+                  vsync_event                 // vsync event handle
+              );
+        }
+
+        return std::make_unique<flutter::Rasterizer>(
+            shell.GetTaskRunners(),        // task runners
+            std::move(compositor_context)  // compositor context
+        );
+      });
 
   UpdateNativeThreadLabelNames(thread_label_, task_runners);
 
@@ -272,7 +280,7 @@ Engine::Engine(Delegate& delegate,
 
         // Set default font manager.
         engine->GetFontCollection().GetFontCollection()->SetDefaultFontManager(
-            sk_make_sp<txt::FuchsiaFontManager>(std::move(sync_font_provider)));
+            SkFontMgr_New_Fuchsia(std::move(sync_font_provider)));
 
         if (engine->Run(std::move(run_configuration)) ==
             flutter::Engine::RunStatus::Failure) {
@@ -406,6 +414,23 @@ void Engine::OnSessionMetricsDidChange(
                   rasterizer->compositor_context());
 
           compositor_context->OnSessionMetricsDidChange(metrics);
+        }
+      });
+}
+
+void Engine::OnDebugWireframeSettingsChanged(bool enabled) {
+  if (!shell_) {
+    return;
+  }
+
+  shell_->GetTaskRunners().GetGPUTaskRunner()->PostTask(
+      [rasterizer = shell_->GetRasterizer(), enabled]() {
+        if (rasterizer) {
+          auto compositor_context =
+              reinterpret_cast<flutter_runner::CompositorContext*>(
+                  rasterizer->compositor_context());
+
+          compositor_context->OnWireframeEnabled(enabled);
         }
       });
 }

@@ -15,8 +15,8 @@
 #include <lib/fidl/cpp/string.h>
 #include <lib/sys/cpp/service_directory.h>
 #include <lib/syslog/global.h>
+#include <lib/zx/clock.h>
 #include <lib/zx/thread.h>
-#include <lib/zx/time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -363,8 +363,8 @@ bool DartComponentController::Main() {
 
   tonic::DartMicrotaskQueue::StartForCurrentThread();
 
-  std::vector<std::string> arguments =
-      std::move(startup_info_.launch_info.arguments);
+  std::vector<std::string> arguments = std::move(
+      startup_info_.launch_info.arguments.value_or(std::vector<std::string>()));
 
   stdoutfd_ = SetupFileDescriptor(std::move(startup_info_.launch_info.out));
   stderrfd_ = SetupFileDescriptor(std::move(startup_info_.launch_info.err));

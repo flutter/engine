@@ -7,15 +7,18 @@
 A top level harness to run all unit-tests in a specific engine build.
 """
 
-import sys
-import os
 import argparse
 import glob
+import os
+import re
 import subprocess
+import sys
 
 buildroot_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '..', '..'))
 out_dir = os.path.join(buildroot_dir, 'out')
+golden_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'resources')
 fonts_dir = os.path.join(buildroot_dir, 'flutter', 'third_party', 'txt', 'third_party', 'fonts')
+roboto_font_path = os.path.join(fonts_dir, 'Roboto-Regular.ttf')
 dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 
 fonts_dir_flag = '--font-directory=%s' % fonts_dir
@@ -76,7 +79,13 @@ def RunCCTests(build_dir, filter):
   if not IsWindows():
     RunEngineExecutable(build_dir, 'embedder_unittests', filter)
 
-  RunEngineExecutable(build_dir, 'flow_unittests', filter)
+  flow_flags = ['--gtest_filter=-PerformanceOverlayLayer.Gold']
+  if IsLinux():
+    flow_flags = [
+      '--golden-dir=%s' % golden_dir,
+      '--font-file=%s' % roboto_font_path,
+    ]
+  RunEngineExecutable(build_dir, 'flow_unittests', filter, flow_flags)
 
   RunEngineExecutable(build_dir, 'fml_unittests', filter, [ time_sensitve_test_flag ])
 
@@ -109,7 +118,7 @@ def RunEngineBenchmarks(build_dir, filter):
 
 
 
-def SnapshotTest(build_dir, dart_file, kernel_file_output):
+def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot):
   print "Generating snapshot for test %s" % dart_file
 
   dart = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart')
@@ -137,15 +146,19 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output):
     dart_file
   ]
 
-  subprocess.check_call(snapshot_command, cwd=buildroot_dir)
+  if verbose_dart_snapshot:
+    subprocess.check_call(snapshot_command, cwd=buildroot_dir)
+  else:
+    with open(os.devnull,"w") as out_file:
+      subprocess.check_call(snapshot_command, cwd=buildroot_dir, stdout=out_file)
   assert os.path.exists(kernel_file_output)
 
 
-def RunDartTest(build_dir, dart_file):
+def RunDartTest(build_dir, dart_file, verbose_dart_snapshot):
   kernel_file_name = os.path.basename(dart_file) + '.kernel.dill'
   kernel_file_output = os.path.join(out_dir, kernel_file_name)
 
-  SnapshotTest(build_dir, dart_file, kernel_file_output)
+  SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot)
 
   print "Running test '%s' using 'flutter_tester'" % kernel_file_name
   RunEngineExecutable(build_dir, 'flutter_tester', None, [
@@ -168,7 +181,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
   variant_out_dir = os.path.join(out_dir, 'host_debug_unopt')
 
   ninja_command = [
-    'ninja',
+    'autoninja',
     '-C',
     variant_out_dir,
     'flutter/sky/packages'
@@ -193,7 +206,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
 
 def EnsureJavaTestsAreBuilt(android_out_dir):
   ninja_command = [
-    'ninja',
+    'autoninja',
     '-C',
     android_out_dir,
     'flutter/shell/platform/android:robolectric_tests'
@@ -216,18 +229,24 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
   subprocess.check_call(gn_command, cwd=buildroot_dir)
   subprocess.check_call(ninja_command, cwd=buildroot_dir)
 
-def RunJavaTests(filter):
-  # There's no real reason why other Android build types couldn't be supported
-  # here. Could default to this but use any other variant of android_ if it
-  # exists, but it seems like overkill to add that logic in right now.
-  android_out_dir = os.path.join(out_dir, 'android_debug_unopt')
+def AssertExpectedJavaVersion():
+  EXPECTED_VERSION = '1.8'
+  # `java -version` is output to stderr. https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4380614
+  version_output = subprocess.check_output(['java', '-version'], stderr=subprocess.STDOUT)
+  match = bool(re.compile('version "%s' % EXPECTED_VERSION).search(version_output))
+  message = "JUnit tests need to be run with Java %s. Check the `java -version` on your PATH." % EXPECTED_VERSION
+  assert match, message
+
+def RunJavaTests(filter, android_variant='android_debug_unopt'):
+  AssertExpectedJavaVersion()
+  android_out_dir = os.path.join(out_dir, android_variant)
   EnsureJavaTestsAreBuilt(android_out_dir)
 
   robolectric_dir = os.path.join(buildroot_dir, 'third_party', 'robolectric', 'lib')
   classpath = map(str, [
-    os.path.join(buildroot_dir, 'third_party', 'android_tools', 'sdk', 'platforms', 'android-28', 'android.jar'),
+    os.path.join(buildroot_dir, 'third_party', 'android_tools', 'sdk', 'platforms', 'android-29', 'android.jar'),
     os.path.join(robolectric_dir, '*'), # Wildcard for all jars in the directory
-    os.path.join(android_out_dir, 'flutter_java.jar'),
+    os.path.join(android_out_dir, 'flutter.jar'),
     os.path.join(android_out_dir, 'robolectric_tests.jar')
   ])
 
@@ -237,13 +256,14 @@ def RunJavaTests(filter):
     '-Drobolectric.offline=true',
     '-Drobolectric.dependency.dir=' + robolectric_dir,
     '-classpath', ':'.join(classpath),
+    '-Drobolectric.logging=stdout',
     'org.junit.runner.JUnitCore',
     test_class
   ]
 
-  return subprocess.call(command)
+  return subprocess.check_call(command)
 
-def RunDartTests(build_dir, filter):
+def RunDartTests(build_dir, filter, verbose_dart_snapshot):
   # This one is a bit messy. The pubspec.yaml at flutter/testing/dart/pubspec.yaml
   # has dependencies that are hardcoded to point to the sky packages at host_debug_unopt/
   # Before running Dart tests, make sure to run just that target (NOT the whole engine)
@@ -259,7 +279,7 @@ def RunDartTests(build_dir, filter):
       print "Skipping %s due to filter." % dart_test_file
     else:
       print "Testing dart file %s" % dart_test_file
-      RunDartTest(build_dir, dart_test_file)
+      RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot)
 
 def main():
   parser = argparse.ArgumentParser();
@@ -273,6 +293,11 @@ def main():
       help='A list of Dart test scripts to run.')
   parser.add_argument('--java-filter', type=str, default='',
       help='A single Java test class to run.')
+  parser.add_argument('--android-variant', dest='android_variant', action='store',
+      default='android_debug_unopt',
+      help='The engine build variant to run java tests for')
+  parser.add_argument('--verbose-dart-snapshot', dest='verbose_dart_snapshot', action='store_true',
+      default=False, help='Show extra dart snapshot logging.')
 
   args = parser.parse_args()
 
@@ -292,7 +317,7 @@ def main():
   if 'dart' in types:
     assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
-    RunDartTests(build_dir, dart_filter)
+    RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot)
 
   if 'java' in types:
     assert not IsWindows(), "Android engine files can't be compiled on Windows."
@@ -300,7 +325,7 @@ def main():
     if ',' in java_filter or '*' in java_filter:
       print('Can only filter JUnit4 tests by single entire class name, eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter)
       java_filter = None
-    RunJavaTests(java_filter)
+    RunJavaTests(java_filter, args.android_variant)
 
   # https://github.com/flutter/flutter/issues/36300
   if 'benchmarks' in types and not IsWindows():

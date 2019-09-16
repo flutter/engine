@@ -79,8 +79,6 @@ class FlutterPlatformViewsController {
 
   void SetFrameSize(SkISize frame_size);
 
-  bool HasPendingViewOperations();
-
   void CancelFrame();
 
   void PrerollCompositeEmbeddedView(int view_id,
@@ -93,6 +91,8 @@ class FlutterPlatformViewsController {
   // returns nil.
   NSObject<FlutterPlatformView>* GetPlatformViewByID(int view_id);
 
+  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger);
+
   std::vector<SkCanvas*> GetCurrentCanvases();
 
   SkCanvas* CompositeEmbeddedView(int view_id);
@@ -100,9 +100,7 @@ class FlutterPlatformViewsController {
   // Discards all platform views instances and auxiliary resources.
   void Reset();
 
-  bool SubmitFrame(bool gl_rendering,
-                   GrContext* gr_context,
-                   std::shared_ptr<IOSGLContext> gl_context);
+  bool SubmitFrame(GrContext* gr_context, std::shared_ptr<IOSGLContext> gl_context);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
@@ -131,6 +129,14 @@ class FlutterPlatformViewsController {
   GrContext* overlays_gr_context_;
   SkISize frame_size_;
 
+  // This is the number of frames the task runners will stay
+  // merged after a frame where we see a mutation to the embedded views.
+  // Note: This number was arbitrarily picked. The rationale being
+  // merge-unmerge are not zero cost operations. To account for cases
+  // like animating platform views, we picked it to be > 2, as we would
+  // want to avoid merge-unmerge during each frame with a mutation.
+  static const int kDefaultMergedLeaseDuration = 10;
+
   // Method channel `OnDispose` calls adds the views to be disposed to this set to be disposed on
   // the next frame.
   std::unordered_set<int64_t> views_to_dispose_;
@@ -155,10 +161,13 @@ class FlutterPlatformViewsController {
   void DetachUnusedLayers();
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();
-  void EnsureOverlayInitialized(int64_t overlay_id);
-  void EnsureGLOverlayInitialized(int64_t overlay_id,
-                                  std::shared_ptr<IOSGLContext> gl_context,
-                                  GrContext* gr_context);
+  void EnsureOverlayInitialized(int64_t overlay_id,
+                                std::shared_ptr<IOSGLContext> gl_context,
+                                GrContext* gr_context);
+
+  // This will return true after pre-roll if any of the embedded views
+  // have mutated for last layer tree.
+  bool HasPendingViewOperations();
 
   // Traverse the `mutators_stack` and return the number of clip operations.
   int CountClips(const MutatorsStack& mutators_stack);
