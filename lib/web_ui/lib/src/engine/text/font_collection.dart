@@ -123,7 +123,7 @@ class _FontManager {
     String asset,
     Map<String, String> descriptors,
   ) {
-    // Safari and Firefox crashes if you create a [html.FontFace] with a font
+    // Safari and Firefox crash if you create a [html.FontFace] with a font
     // family that is not correct CSS syntax. To ensure the font family is
     // accepted on these browsers, wrap it in quotes.
     // See: https://drafts.csswg.org/css-fonts-3/#font-family-prop
