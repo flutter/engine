@@ -45,7 +45,7 @@ public class MainActivity extends FlutterActivity {
       final Uri logFileUri = launchIntent.getData();
       new Handler().postDelayed(() -> writeTimelineData(logFileUri), 20000);
     }
-    else if("com.google.intent.action.TEST_EXTERNAL_TEXTURE".equals(launchIntent.getAction())){
+    else if(true){
       startExternalTexture();
     }
     else if("com.google.intent.action.TEST_PLATFORM_VIEW".equals(launchIntent.getAction())){

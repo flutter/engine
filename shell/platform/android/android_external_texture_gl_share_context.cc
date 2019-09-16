@@ -9,8 +9,12 @@
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 
-namespace flutter {
+#include "flutter/fml/trace_event.h"
 
+namespace flutter {
+// This is another solution for Flutter's ExternalTexture.
+// The original ExternalTexture uses SurfaceTexture to update the frame data that native video object produces to an OpenGL texture.
+// In this scheme, we directly pass an OpenGL texture ID to the ExternalTexture object, and avoid the performance consumption of data writing to SurfaceTexture
 AndroidExternalTextureShareContext::AndroidExternalTextureShareContext(
     int64_t id,
     int64_t shareTextureID)
@@ -32,23 +36,15 @@ void AndroidExternalTextureShareContext::Paint(SkCanvas& canvas,
   textureInfo.fTarget = GL_TEXTURE_2D;
   transform.setIdentity();
 
-  GrBackendTexture backendTexture(1, 1, GrMipMapped::kNo, textureInfo);
+  GrBackendTexture backendTexture(bounds.width(), bounds.height(), GrMipMapped::kNo, textureInfo);
   sk_sp<SkImage> image = SkImage::MakeFromTexture(
       canvas.getGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin,
       kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
   if (image) {
-    SkAutoCanvasRestore autoRestore(&canvas, true);
-    canvas.translate(bounds.x(), bounds.y());
-    canvas.scale(bounds.width(), bounds.height());
-    if (!transform.isIdentity()) {
-      SkMatrix transformAroundCenter(transform);
-
-      transformAroundCenter.preTranslate(-0.5, -0.5);
-      transformAroundCenter.postScale(1, -1);
-      transformAroundCenter.postTranslate(0.5, 0.5);
-      canvas.concat(transformAroundCenter);
-    }
-    canvas.drawImage(image, 0, 0);
+    canvas.drawImage(image, bounds.x(), bounds.y());
+  }
+  else{
+    FML_LOG(ERROR) << "Create SKIImage Fail !!";
   }
 }
 

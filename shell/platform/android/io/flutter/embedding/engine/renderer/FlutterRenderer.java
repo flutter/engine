@@ -113,15 +113,18 @@ public class FlutterRenderer implements TextureRegistry {
 
   @Override
   public TextureRegistry.ShareTextureEntry createShareTexture(long shareTextureID) {
-    final ShareTextureRegistryEntry entry = new ShareTextureRegistryEntry(nextTextureId.getAndIncrement(),shareTextureID);
+    final ShareTextureRegistryEntry entry = new ShareTextureRegistryEntry(
+        nextTextureId.getAndIncrement(),
+        shareTextureID
+    );
     Log.v(TAG, "New ShareTexture ID: " + entry.id());
-    registerShareTexture(entry.id(),shareTextureID);
+    registerShareTexture(entry.id(), shareTextureID);
     return entry;
   }
 
   @Override
-  public void onShareFrameAvaliable(long textureIndex) {
-    markTextureFrameAvailable(textureIndex);
+  public void onShareFrameAvaliable(long textureId) {
+    markTextureFrameAvailable(textureId);
   }
 
   @Override

@@ -42,19 +42,12 @@
     [registrar registerViewFactory:textPlatformViewFactory withId:@"scenarios/textPlatformView"];
     self.window.rootViewController = flutterViewController;
   } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--external-texture"]) {
-    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"ExternalTextureTest" project:nil];
+    FlutterEngine* engine = [[FlutterEngine alloc] initWithScenario:@"external_texture"
+                                                     withCompletion:nil];
     [engine runWithEntrypoint:nil];
 
     FlutterViewController* flutterViewController =
         [[NoStatusBarFlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-
-    [engine.binaryMessenger
-        setMessageHandlerOnChannel:@"scenario_status"
-              binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
-                [engine.binaryMessenger
-                    sendOnChannel:@"set_scenario"
-                          message:[@"external_texture" dataUsingEncoding:NSUTF8StringEncoding]];
-              }];
 
     [engine.binaryMessenger
         setMessageHandlerOnChannel:@"create_external_texture"

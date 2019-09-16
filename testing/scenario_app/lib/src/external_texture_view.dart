@@ -26,13 +26,15 @@ class ExternalTextureScenario extends Scenario {
   @override
   void onBeginFrame(Duration duration) {
 
-    print('begin frame');
+    print('begin frame 0000');
 
     final SceneBuilder builder = SceneBuilder();
 
     builder.pushOffset(0, 0);
 
     if (_textureId != null) {
+      print('begin frame 1111');
+
       builder.addTexture(_textureId, offset: const Offset(0, 0), width: 480, height: 480);
     }
 
@@ -48,6 +50,22 @@ class ExternalTextureScenario extends Scenario {
     if (data != null) {
       String string = utf8.decode(data.buffer.asUint8List());
       _textureId = int.parse(string);
+      print('update textureid $_textureId');
+
+      final SceneBuilder builder = SceneBuilder();
+
+      builder.pushOffset(0, 0);
+
+      if (_textureId != null) {
+        print('begin frame 1111');
+
+        builder.addTexture(_textureId, offset: const Offset(0, 0), width: 480, height: 480);
+      }
+
+
+      final Scene scene = builder.build();
+      window.render(scene);
+      scene.dispose();
     }
   }
 }

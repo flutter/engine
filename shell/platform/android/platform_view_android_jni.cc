@@ -464,6 +464,9 @@ static jobject GetShareContext(JNIEnv* env,
   EGLContext cxt = ANDROID_SHELL_HOLDER->GetPlatformView()->GetShareContext();
 
   jclass eglcontextClassLocal = env->FindClass("android/opengl/EGLContext");
+  if (eglcontextClassLocal == nullptr) {
+    return nullptr;
+  }
   jmethodID eglcontextConstructor;
   jobject eglContext;
   if (sdk_int >= 21) {
