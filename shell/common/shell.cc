@@ -102,6 +102,10 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
         }
       });
 
+  // Send dispatcher_maker to the engine constructor because shell won't have
+  // platform_view set until Shell::Setup is called later.
+  auto dispatcher_maker = platform_view->GetDispatcherMaker();
+
   // Create the engine on the UI thread.
   std::promise<std::unique_ptr<Engine>> engine_promise;
   auto engine = engine_promise.get_future();
@@ -109,6 +113,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
       shell->GetTaskRunners().GetUITaskRunner(),
       fml::MakeCopyable([&engine_promise,                                 //
                          shell = shell.get(),                             //
+                         &dispatcher_maker,                               //
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          shared_snapshot = std::move(shared_snapshot),    //
                          vsync_waiter = std::move(vsync_waiter),          //
@@ -124,6 +129,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
 
         engine_promise.set_value(std::make_unique<Engine>(
             *shell,                       //
+            dispatcher_maker,             //
             *shell->GetDartVM(),          //
             std::move(isolate_snapshot),  //
             std::move(shared_snapshot),   //
@@ -719,11 +725,11 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = engine_->GetWeakPtr(), packet = std::move(packet),
-       flow_id = next_pointer_flow_id_] {
+  task_runners_.GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([engine = weak_engine_, packet = std::move(packet),
+                         flow_id = next_pointer_flow_id_]() mutable {
         if (engine) {
-          engine->DispatchPointerDataPacket(*packet, flow_id);
+          engine->DispatchPointerDataPacket(std::move(packet), flow_id);
         }
       }));
   next_pointer_flow_id_++;

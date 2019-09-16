@@ -346,7 +346,6 @@ FILE: ../../../flutter/lib/ui/window/viewport_metrics.cc
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.h
 FILE: ../../../flutter/lib/ui/window/window.cc
 FILE: ../../../flutter/lib/ui/window/window.h
-FILE: ../../../flutter/lib/web_ui/dev/test.dart
 FILE: ../../../flutter/lib/web_ui/lib/assets/houdini_painter.js
 FILE: ../../../flutter/lib/web_ui/lib/src/engine.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/alarm_clock.dart
@@ -486,6 +485,7 @@ FILE: ../../../flutter/shell/common/canvas_spy_unittests.cc
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
 FILE: ../../../flutter/shell/common/fixtures/shell_test.dart
+FILE: ../../../flutter/shell/common/input_events_unittests.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.h
 FILE: ../../../flutter/shell/common/persistent_cache.cc
@@ -495,6 +495,8 @@ FILE: ../../../flutter/shell/common/pipeline.h
 FILE: ../../../flutter/shell/common/pipeline_unittests.cc
 FILE: ../../../flutter/shell/common/platform_view.cc
 FILE: ../../../flutter/shell/common/platform_view.h
+FILE: ../../../flutter/shell/common/pointer_data_dispatcher.cc
+FILE: ../../../flutter/shell/common/pointer_data_dispatcher.h
 FILE: ../../../flutter/shell/common/rasterizer.cc
 FILE: ../../../flutter/shell/common/rasterizer.h
 FILE: ../../../flutter/shell/common/run_configuration.cc
@@ -792,6 +794,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_software.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/FlutterMacOS.podspec
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterMacOS.h
@@ -799,6 +802,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPlug
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginRegistrarMacOS.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Info.plist
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine.mm
@@ -911,6 +915,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/service_isolate.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/service_isolate.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/vmservice/empty.dart
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/vmservice/meta/vmservice.cmx
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/collect_traces.dart
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.h
@@ -966,6 +972,7 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface_pool.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface_pool.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface_producer.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface_producer.h
+FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols/dart_profiler_symbols.dart
 FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/files.cc
 FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/files.h
 FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/handle_exception.cc
