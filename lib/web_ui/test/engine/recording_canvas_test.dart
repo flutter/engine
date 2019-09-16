@@ -21,6 +21,7 @@ void main() {
   group('drawDRRect', () {
     final RRect rrect = RRect.fromLTRBR(10, 10, 50, 50, Radius.circular(3));
     final Paint somePaint = Paint()..color = const Color(0xFFFF0000);
+
     test('Happy case', () {
       underTest.drawDRRect(rrect, rrect.deflate(1), somePaint);
       underTest.apply(mockCanvas);
