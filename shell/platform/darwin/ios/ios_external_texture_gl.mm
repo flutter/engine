@@ -66,7 +66,7 @@ void IOSExternalTextureGL::Paint(SkCanvas& canvas,
                                  GrContext* context) {
   EnsureTextureCacheExists();
   if (NeedUpdateTexture(freeze)) {
-    auto pixelBuffer = [external_texture_ copyPixelBuffer];
+    auto pixelBuffer = [external_texture_.get() copyPixelBuffer];
     if (pixelBuffer) {
       buffer_ref_.Reset(pixelBuffer);
     }
