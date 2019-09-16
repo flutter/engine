@@ -188,8 +188,8 @@ enum class PostPrerollResult { kResubmitFrame, kSuccess };
 
 // Facilitates embedding of platform views within the flow layer tree.
 //
-// Used on iOS and on embedded platforms that provides a system compositor
-// as part of the project arguments
+// Used on iOS and on embedded platforms that provide a system compositor
+// as part of the project arguments.
 class ExternalViewEmbedder {
   // TODO(cyanglaz): Make embedder own the `EmbeddedViewParams`.
 
