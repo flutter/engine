@@ -6,6 +6,7 @@ source_set("testing_lib") {
   testonly = true
 
   sources = [
+    "$flutter_root/testing/assertions.h",
     "$flutter_root/testing/testing.cc",
     "$flutter_root/testing/testing.h",
   ]
@@ -44,4 +45,23 @@ source_set("dart") {
     "$flutter_root/runtime:libdart",
     "//third_party/tonic",
   ]
+}
+
+if (current_toolchain == host_toolchain) {
+  source_set("opengl") {
+    testonly = true
+
+    configs += [ "//third_party/swiftshader_flutter:swiftshader_config" ]
+
+    sources = [
+      "$flutter_root/testing/test_gl_surface.cc",
+      "$flutter_root/testing/test_gl_surface.h",
+    ]
+
+    deps = [
+      "$flutter_root/fml",
+      "//third_party/skia",
+      "//third_party/swiftshader_flutter:swiftshader",
+    ]
+  }
 }

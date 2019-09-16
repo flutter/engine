@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <string_view>
+
 #include "flutter/common/settings.h"
 #include "flutter/fml/command_line.h"
-#include "flutter/fml/string_view.h"
 
 #ifndef SHELL_COMMON_SWITCHES_H_
 #define SHELL_COMMON_SWITCHES_H_
@@ -48,7 +49,11 @@ DEF_SWITCH(IsolateSnapshotInstructions,
            "isolate-snapshot-instr",
            "The isolate instructions snapshot that will be memory mapped as "
            "read and executable. SnapshotAssetPath must be present.")
-DEF_SWITCH(CacheDirPath, "cache-dir-path", "Path to the cache directory.")
+DEF_SWITCH(CacheDirPath,
+           "cache-dir-path",
+           "Path to the cache directory. "
+           "This is different from the persistent_cache_path in embedder.h, "
+           "which is used for Skia shader cache.")
 DEF_SWITCH(ICUDataFilePath, "icu-data-file-path", "Path to the ICU data file.")
 DEF_SWITCH(ICUSymbolPrefix,
            "icu-symbol-prefix",
@@ -110,6 +115,7 @@ DEF_SWITCH(DisableServiceAuthCodes,
 DEF_SWITCH(StartPaused,
            "start-paused",
            "Start the application paused in the Dart debugger.")
+DEF_SWITCH(EnableCheckedMode, "enable-checked-mode", "Enable checked mode.")
 DEF_SWITCH(TraceStartup,
            "trace-startup",
            "Trace early application lifecycle. Automatically switches to an "
@@ -157,7 +163,7 @@ DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);
 
-const fml::StringView FlagForSwitch(Switch swtch);
+const std::string_view FlagForSwitch(Switch swtch);
 
 Settings SettingsFromCommandLine(const fml::CommandLine& command_line);
 

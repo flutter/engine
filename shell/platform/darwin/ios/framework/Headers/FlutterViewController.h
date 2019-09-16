@@ -29,16 +29,18 @@ extern NSNotificationName const FlutterSemanticsUpdateNotification;
 /**
  * A `UIViewController` implementation for Flutter views.
  *
- * Dart execution, channel communication, texture registration, and plugin registration
- * are all handled by `FlutterEngine`.  Calls on this class to those members all proxy
- * through to the `FlutterEngine` attached FlutterViewController.
+ * Dart execution, channel communication, texture registration, and plugin registration are all
+ * handled by `FlutterEngine`. Calls on this class to those members all proxy through to the
+ * `FlutterEngine` attached FlutterViewController.
  *
- * A FlutterViewController can be initialized either with an already-running `FlutterEngine`,
- * or it can be initialized with a `FlutterDartProject` that will be used to spin up
- * a new `FlutterEngine`.  Developers looking to present and hide FlutterViewControllers
- * in native iOS applications will usually want to maintain the `FlutterEngine` instance
- * so as not to lose Dart-related state and asynchronous tasks when navigating back and
- * forth between a FlutterViewController and other `UIViewController`s.
+ * A FlutterViewController can be initialized either with an already-running `FlutterEngine` via
+ * the `initWithEngine:` initializer, or it can be initialized with a `FlutterDartProject` that
+ * will be used to implicitly spin up a new `FlutterEngine`. Creating a `FlutterEngine before
+ * showing a `FlutterViewController` can be used to pre-initialize the Dart VM and to prepare the
+ * isolate in order to reduce the latency to the first rendered frame. Holding a `FlutterEngine`
+ * independently of FlutterViewControllers can also be used to not to lose Dart-related state and
+ * asynchronous tasks when navigating back and forth between a FlutterViewController and other
+ * `UIViewController`s.
  */
 FLUTTER_EXPORT
 @interface FlutterViewController : UIViewController <FlutterTextureRegistry, FlutterPluginRegistry>
@@ -131,6 +133,14 @@ FLUTTER_EXPORT
 - (id<FlutterPluginRegistry>)pluginRegistry;
 
 /**
+ * True if at least one frame has rendered and the ViewController has appeared.
+ *
+ * This property is reset to false when the ViewController disappears. It is
+ * guaranteed to only alternate between true and false for observers.
+ */
+@property(nonatomic, readonly, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
+
+/**
  * Specifies the view to use as a splash screen. Flutter's rendering is asynchronous, so the first
  * frame rendered by the Flutter application might not immediately appear when theFlutter view is
  * initially placed in the view hierarchy. The splash screen view will be used as
@@ -168,11 +178,9 @@ FLUTTER_EXPORT
  * The `FlutterBinaryMessenger` associated with this FlutterViewController (used for communicating
  * with channels).
  *
- * @deprecated Since |FlutterViewController| just forwards binary messenger calls to the
- * |FlutterEngine|, just use the FlutterEngine.binaryMessenger.
+ * This is just a convenient way to get the |FlutterEngine|'s binary messenger.
  */
-@property(nonatomic, readonly) NSObject<FlutterBinaryMessenger>* binaryMessenger
-    __attribute__((deprecated));
+@property(nonatomic, readonly) NSObject<FlutterBinaryMessenger>* binaryMessenger;
 
 @end
 

@@ -12,7 +12,6 @@
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/size.h"
-#include "flutter/fml/string_view.h"
 #include "flutter/shell/version/version.h"
 
 // Include once for the default enum definition.
@@ -22,7 +21,7 @@
 
 struct SwitchDesc {
   flutter::Switch sw;
-  const fml::StringView flag;
+  const std::string_view flag;
   const char* help;
 };
 
@@ -53,6 +52,20 @@ static const std::string gDartFlagsWhitelist[] = {
 
 // Include again for struct definition.
 #include "flutter/shell/common/switches.h"
+
+// Define symbols for the ICU data that is linked into the Flutter library on
+// Android.  This is a workaround for crashes seen when doing dynamic lookups
+// of the engine's own symbols on some older versions of Android.
+#if OS_ANDROID
+extern uint8_t _binary_icudtl_dat_start[];
+extern uint8_t _binary_icudtl_dat_end[];
+
+static std::unique_ptr<fml::Mapping> GetICUStaticMapping() {
+  return std::make_unique<fml::NonOwnedMapping>(
+      _binary_icudtl_dat_start,
+      _binary_icudtl_dat_end - _binary_icudtl_dat_start);
+}
+#endif
 
 namespace flutter {
 
@@ -86,7 +99,9 @@ void PrintUsage(const std::string& executable_name) {
     auto desc = gSwitchDescs[i];
 
     std::cerr << std::setw(max_width)
-              << std::string("--") + desc.flag.ToString() << " : ";
+              << std::string("--") +
+                     std::string{desc.flag.data(), desc.flag.size()}
+              << " : ";
 
     std::istringstream stream(desc.help);
     int32_t remaining = help_width;
@@ -108,13 +123,13 @@ void PrintUsage(const std::string& executable_name) {
   std::cerr << std::string(column_width, '-') << std::endl;
 }
 
-const fml::StringView FlagForSwitch(Switch swtch) {
+const std::string_view FlagForSwitch(Switch swtch) {
   for (uint32_t i = 0; i < static_cast<uint32_t>(Switch::Sentinel); i++) {
     if (gSwitchDescs[i].sw == swtch) {
       return gSwitchDescs[i].flag;
     }
   }
-  return fml::StringView();
+  return std::string_view();
 }
 
 #if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
@@ -222,6 +237,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.start_paused =
       command_line.HasOption(FlagForSwitch(Switch::StartPaused));
 
+  settings.enable_checked_mode =
+      command_line.HasOption(FlagForSwitch(Switch::EnableCheckedMode));
+
   settings.enable_dart_profiling =
       command_line.HasOption(FlagForSwitch(Switch::EnableDartProfiling));
 
@@ -243,9 +261,8 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   command_line.GetOptionValue(FlagForSwitch(Switch::FlutterAssetsDir),
                               &settings.assets_path);
 
-  std::string aot_shared_library_name;
-  command_line.GetOptionValue(FlagForSwitch(Switch::AotSharedLibraryName),
-                              &aot_shared_library_name);
+  std::vector<std::string_view> aot_shared_library_name =
+      command_line.GetOptionValues(FlagForSwitch(Switch::AotSharedLibraryName));
 
   std::string snapshot_asset_path;
   command_line.GetOptionValue(FlagForSwitch(Switch::SnapshotAssetPath),
@@ -269,7 +286,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       &isolate_snapshot_instr_filename);
 
   if (aot_shared_library_name.size() > 0) {
-    settings.application_library_path = aot_shared_library_name;
+    for (std::string_view name : aot_shared_library_name) {
+      settings.application_library_path.emplace_back(name);
+    }
   } else if (snapshot_asset_path.size() > 0) {
     settings.vm_snapshot_data_path =
         fml::paths::JoinPaths({snapshot_asset_path, vm_snapshot_data_filename});
@@ -293,9 +312,14 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
                                   &icu_symbol_prefix);
       command_line.GetOptionValue(FlagForSwitch(Switch::ICUNativeLibPath),
                                   &native_lib_path);
+
+#if OS_ANDROID
+      settings.icu_mapper = GetICUStaticMapping;
+#else
       settings.icu_mapper = [icu_symbol_prefix, native_lib_path] {
         return GetSymbolMapping(icu_symbol_prefix, native_lib_path);
       };
+#endif
     }
   }
 

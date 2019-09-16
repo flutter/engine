@@ -3,6 +3,8 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
+import("$flutter_root/common/config.gni")
+import("$flutter_root/testing/testing.gni")
 
 source_set("ui") {
   sources = [
@@ -24,6 +26,8 @@ source_set("ui") {
     "painting/canvas.h",
     "painting/codec.cc",
     "painting/codec.h",
+    "painting/color_filter.cc",
+    "painting/color_filter.h",
     "painting/engine_layer.cc",
     "painting/engine_layer.h",
     "painting/frame_info.cc",
@@ -32,6 +36,8 @@ source_set("ui") {
     "painting/gradient.h",
     "painting/image.cc",
     "painting/image.h",
+    "painting/image_decoder.cc",
+    "painting/image_decoder.h",
     "painting/image_encoding.cc",
     "painting/image_encoding.h",
     "painting/image_filter.cc",
@@ -40,6 +46,8 @@ source_set("ui") {
     "painting/image_shader.h",
     "painting/matrix.cc",
     "painting/matrix.h",
+    "painting/multi_frame_codec.cc",
+    "painting/multi_frame_codec.h",
     "painting/paint.cc",
     "painting/paint.h",
     "painting/path.cc",
@@ -54,6 +62,8 @@ source_set("ui") {
     "painting/rrect.h",
     "painting/shader.cc",
     "painting/shader.h",
+    "painting/single_frame_codec.cc",
+    "painting/single_frame_codec.h",
     "painting/vertices.cc",
     "painting/vertices.h",
     "plugins/callback_cache.cc",
@@ -66,19 +76,16 @@ source_set("ui") {
     "semantics/semantics_update.h",
     "semantics/semantics_update_builder.cc",
     "semantics/semantics_update_builder.h",
-    "snapshot_delegate.h",
     "text/asset_manager_font_provider.cc",
     "text/asset_manager_font_provider.h",
     "text/font_collection.cc",
     "text/font_collection.h",
+    "text/line_metrics.cc",
+    "text/line_metrics.h",
     "text/paragraph.cc",
     "text/paragraph.h",
     "text/paragraph_builder.cc",
     "text/paragraph_builder.h",
-    "text/paragraph_impl.cc",
-    "text/paragraph_impl.h",
-    "text/paragraph_impl_txt.cc",
-    "text/paragraph_impl_txt.h",
     "text/text_box.cc",
     "text/text_box.h",
     "ui_dart_state.cc",
@@ -117,6 +124,10 @@ source_set("ui") {
     "$flutter_root/third_party/txt",
   ]
 
+  if (flutter_enable_skshaper) {
+    defines = [ "FLUTTER_ENABLE_SKSHAPER" ]
+  }
+
   if (is_fuchsia) {
     sources += [
       "compositing/scene_host.cc",
@@ -132,5 +143,31 @@ source_set("ui") {
     } else {
       deps += [ "//topaz/public/dart-pkg/zircon" ]
     }
+  }
+}
+
+if (current_toolchain == host_toolchain) {
+  test_fixtures("ui_unittests_fixtures") {
+    dart_main = "fixtures/ui_test.dart"
+    fixtures = [
+      "fixtures/DashInNooglerHat.jpg",
+      "fixtures/Horizontal.jpg",
+    ]
+  }
+
+  executable("ui_unittests") {
+    testonly = true
+
+    sources = [
+      "painting/image_decoder_unittests.cc",
+    ]
+
+    deps = [
+      ":ui",
+      ":ui_unittests_fixtures",
+      "$flutter_root/common",
+      "$flutter_root/testing:dart",
+      "$flutter_root/testing:opengl",
+    ]
   }
 }

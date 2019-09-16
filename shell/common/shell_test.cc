@@ -11,6 +11,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/gpu/gpu_surface_gl.h"
 #include "flutter/testing/testing.h"
 
 namespace flutter {
@@ -20,6 +21,21 @@ ShellTest::ShellTest()
     : native_resolver_(std::make_shared<TestDartNativeResolver>()) {}
 
 ShellTest::~ShellTest() = default;
+
+void ShellTest::SendEnginePlatformMessage(
+    Shell* shell,
+    fml::RefPtr<PlatformMessage> message) {
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [shell, &latch, message = std::move(message)]() {
+        if (auto engine = shell->weak_engine_) {
+          engine->HandlePlatformMessage(std::move(message));
+        }
+        latch.Signal();
+      });
+  latch.Wait();
+}
 
 void ShellTest::SetSnapshotsAndAssets(Settings& settings) {
   if (!assets_dir_.is_valid()) {
@@ -74,13 +90,14 @@ void ShellTest::PlatformViewNotifyCreated(Shell* shell) {
 void ShellTest::RunEngine(Shell* shell, RunConfiguration configuration) {
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetUITaskRunner(),
-      fml::MakeCopyable([&latch, config = std::move(configuration),
-                         engine = shell->GetEngine()]() mutable {
-        ASSERT_TRUE(engine);
-        ASSERT_EQ(engine->Run(std::move(config)), Engine::RunStatus::Success);
-        latch.Signal();
-      }));
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [shell, &latch, &configuration]() {
+        shell->RunEngine(std::move(configuration),
+                         [&latch](Engine::RunStatus run_status) {
+                           ASSERT_EQ(run_status, Engine::RunStatus::Success);
+                           latch.Signal();
+                         });
+      });
   latch.Wait();
 }
 
@@ -90,8 +107,9 @@ void ShellTest::PumpOneFrame(Shell* shell) {
   // won't be rasterized.
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, engine = shell->GetEngine()]() {
-        engine->SetViewportMetrics({1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0});
+      [&latch, engine = shell->weak_engine_]() {
+        engine->SetViewportMetrics(
+            {1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
         engine->animator_->BeginFrame(fml::TimePoint::Now(),
                                       fml::TimePoint::Now());
         latch.Signal();
@@ -100,7 +118,7 @@ void ShellTest::PumpOneFrame(Shell* shell) {
 
   latch.Reset();
   // Call |Render| to rasterize a layer tree and trigger |OnFrameRasterized|
-  fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->GetEngine();
+  fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
       [&latch, runtime_delegate]() {
         auto layer_tree = std::make_unique<LayerTree>();
@@ -200,21 +218,40 @@ ShellTestPlatformView::~ShellTestPlatformView() = default;
 
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformView::CreateRenderingSurface() {
-  return std::make_unique<GPUSurfaceSoftware>(this);
+  return std::make_unique<GPUSurfaceGL>(this, true);
 }
 
-// |GPUSurfaceSoftwareDelegate|
-sk_sp<SkSurface> ShellTestPlatformView::AcquireBackingStore(
-    const SkISize& size) {
-  SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      size.width(), size.height(), SkColorSpace::MakeSRGB());
-  return SkSurface::MakeRaster(image_info);
+// |GPUSurfaceGLDelegate|
+bool ShellTestPlatformView::GLContextMakeCurrent() {
+  return gl_surface_.MakeCurrent();
 }
 
-// |GPUSurfaceSoftwareDelegate|
-bool ShellTestPlatformView::PresentBackingStore(
-    sk_sp<SkSurface> backing_store) {
-  return true;
+// |GPUSurfaceGLDelegate|
+bool ShellTestPlatformView::GLContextClearCurrent() {
+  return gl_surface_.ClearCurrent();
+}
+
+// |GPUSurfaceGLDelegate|
+bool ShellTestPlatformView::GLContextPresent() {
+  return gl_surface_.Present();
+}
+
+// |GPUSurfaceGLDelegate|
+intptr_t ShellTestPlatformView::GLContextFBO() const {
+  return gl_surface_.GetFramebuffer();
+}
+
+// |GPUSurfaceGLDelegate|
+GPUSurfaceGLDelegate::GLProcResolver ShellTestPlatformView::GetGLProcResolver()
+    const {
+  return [surface = &gl_surface_](const char* name) -> void* {
+    return surface->GetProcAddress(name);
+  };
+}
+
+// |GPUSurfaceGLDelegate|
+ExternalViewEmbedder* ShellTestPlatformView::GetExternalViewEmbedder() {
+  return nullptr;
 }
 
 }  // namespace testing

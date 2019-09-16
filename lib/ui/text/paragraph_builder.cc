@@ -204,6 +204,7 @@ void decodeStrut(Dart_Handle strut_data,
   }
   if (mask & sHeightMask) {
     paragraph_style.strut_height = float_data[float_count++];
+    paragraph_style.strut_has_height_override = true;
   }
   if (mask & sLeadingMask) {
     paragraph_style.strut_leading = float_data[float_count++];
@@ -261,6 +262,7 @@ ParagraphBuilder::ParagraphBuilder(
 
   if (mask & psHeightMask) {
     style.height = height;
+    style.has_height_override = true;
   }
 
   if (mask & psStrutStyleMask) {
@@ -281,9 +283,16 @@ ParagraphBuilder::ParagraphBuilder(
 
   FontCollection& font_collection =
       UIDartState::Current()->window()->client()->GetFontCollection();
-  m_paragraphBuilder = std::make_unique<txt::ParagraphBuilder>(
-      style, font_collection.GetFontCollection());
-}  // namespace flutter
+
+#if FLUTTER_ENABLE_SKSHAPER
+#define FLUTTER_PARAGRAPH_BUILDER txt::ParagraphBuilder::CreateSkiaBuilder
+#else
+#define FLUTTER_PARAGRAPH_BUILDER txt::ParagraphBuilder::CreateTxtBuilder
+#endif
+
+  m_paragraphBuilder =
+      FLUTTER_PARAGRAPH_BUILDER(style, font_collection.GetFontCollection());
+}
 
 ParagraphBuilder::~ParagraphBuilder() = default;
 
@@ -401,6 +410,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 
   if (mask & tsHeightMask) {
     style.height = height;
+    style.has_height_override = true;
   }
 
   if (mask & tsLocaleMask) {
@@ -428,8 +438,10 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
   }
 
   if (mask & tsFontFamilyMask) {
-    style.font_families.insert(style.font_families.end(), fontFamilies.begin(),
-                               fontFamilies.end());
+    // The child style's font families override the parent's font families.
+    // If the child's fonts are not available, then the font collection will
+    // use the system fallback fonts (not the parent's fonts).
+    style.font_families = fontFamilies;
   }
 
   if (mask & tsFontFeaturesMask) {

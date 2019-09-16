@@ -9,8 +9,7 @@ import("$flutter_root/shell/platform/glfw/config.gni")
 group("linux") {
   if (build_glfw_shell) {
     deps = [
-      ":flutter_linux",
-      "$flutter_root/shell/platform/common/cpp/client_wrapper:publish_wrapper",
+      ":flutter_linux_glfw",
       "$flutter_root/shell/platform/glfw:publish_headers_glfw",
       "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
     ]
@@ -28,7 +27,7 @@ config("disable_fatal_link_warnings") {
 }
 
 if (build_glfw_shell) {
-  shared_library("flutter_linux") {
+  shared_library("flutter_linux_glfw") {
     deps = [
       "$flutter_root/shell/platform/glfw:flutter_glfw",
     ]
