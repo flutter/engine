@@ -484,8 +484,12 @@ class Locale {
   @override
   String toString() {
     final StringBuffer out = StringBuffer(languageCode);
-    if (scriptCode != null) out.write('_$scriptCode');
-    if (_countryCode != null) out.write('_$countryCode');
+    if (scriptCode != null) {
+      out.write('_$scriptCode');
+    }
+    if (_countryCode != null) {
+      out.write('_$countryCode');
+    }
     return out.toString();
   }
 
@@ -784,7 +788,6 @@ abstract class Window {
   Zone _onReportTimingsZone;
   set onReportTimings(TimingsCallback callback) {
     _onReportTimings = callback;
-    _onReportTimingsZone = Zone.current;
   }
 
   /// A callback that is invoked for each frame after [onBeginFrame] has
@@ -1041,17 +1044,29 @@ class AccessibilityFeatures {
   @override
   String toString() {
     final List<String> features = <String>[];
-    if (accessibleNavigation) features.add('accessibleNavigation');
-    if (invertColors) features.add('invertColors');
-    if (disableAnimations) features.add('disableAnimations');
-    if (boldText) features.add('boldText');
-    if (reduceMotion) features.add('reduceMotion');
+    if (accessibleNavigation) {
+      features.add('accessibleNavigation');
+    }
+    if (invertColors) {
+      features.add('invertColors');
+    }
+    if (disableAnimations) {
+      features.add('disableAnimations');
+    }
+    if (boldText) {
+      features.add('boldText');
+    }
+    if (reduceMotion) {
+      features.add('reduceMotion');
+    }
     return 'AccessibilityFeatures$features';
   }
 
   @override
   bool operator ==(dynamic other) {
-    if (other.runtimeType != runtimeType) return false;
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     final AccessibilityFeatures typedOther = other;
     return _index == typedOther._index;
   }
@@ -1103,7 +1118,7 @@ class PluginUtilities {
 }
 
 // TODO(flutter_web): see https://github.com/flutter/flutter/issues/33616.
-class ImageShader {
+class ImageShader implements Shader {
   ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4);
 }
 

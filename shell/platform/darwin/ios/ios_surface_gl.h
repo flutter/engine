@@ -20,23 +20,28 @@ class IOSSurfaceGL final : public IOSSurface,
                            public GPUSurfaceGLDelegate,
                            public ExternalViewEmbedder {
  public:
-  IOSSurfaceGL(std::shared_ptr<IOSGLContext> context,
+  IOSSurfaceGL(fml::WeakPtr<IOSGLContext> onscreen_gl_context,
+               fml::WeakPtr<IOSGLContext> resource_gl_context,
                fml::scoped_nsobject<CAEAGLLayer> layer,
                FlutterPlatformViewsController* platform_views_controller);
 
-  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer, std::shared_ptr<IOSGLContext> context);
+  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
+               fml::WeakPtr<IOSGLContext> onscreen_gl_context,
+               fml::WeakPtr<IOSGLContext> resource_gl_context);
 
   ~IOSSurfaceGL() override;
 
+  // |IOSSurface|
   bool IsValid() const override;
 
+  // |IOSSurface|
   bool ResourceContextMakeCurrent() override;
 
+  // |IOSSurface|
   void UpdateStorageSizeIfNecessary() override;
 
-  std::unique_ptr<Surface> CreateGPUSurface() override;
-
-  std::unique_ptr<Surface> CreateSecondaryGPUSurface(GrContext* gr_context);
+  // |IOSSurface|
+  std::unique_ptr<Surface> CreateGPUSurface(GrContext* gr_context = nullptr) override;
 
   bool GLContextMakeCurrent() override;
 
@@ -77,7 +82,10 @@ class IOSSurfaceGL final : public IOSSurface,
   bool SubmitFrame(GrContext* context) override;
 
  private:
-  std::shared_ptr<IOSGLContext> context_;
+  fml::WeakPtr<IOSGLContext> onscreen_gl_context_;
+
+  fml::WeakPtr<IOSGLContext> resource_gl_context_;
+
   std::unique_ptr<IOSGLRenderTarget> render_target_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceGL);

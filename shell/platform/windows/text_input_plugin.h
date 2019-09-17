@@ -35,7 +35,7 @@ class TextInputPlugin : public KeyboardHookHandler {
                     int mods) override;
 
   // |KeyboardHookHandler|
-  void CharHook(Win32FlutterWindow* window, unsigned int code_point) override;
+  void CharHook(Win32FlutterWindow* window, char32_t code_point) override;
 
  private:
   // Sends the current state of the given model to the Flutter engine.
@@ -52,11 +52,8 @@ class TextInputPlugin : public KeyboardHookHandler {
   // The MethodChannel used for communication with the Flutter engine.
   std::unique_ptr<flutter::MethodChannel<rapidjson::Document>> channel_;
 
-  // Mapping of client IDs to text input models.
-  std::map<int, std::unique_ptr<TextInputModel>> input_models_;
-
   // The active model. nullptr if not set.
-  TextInputModel* active_model_;
+  std::unique_ptr<TextInputModel> active_model_;
 };
 
 }  // namespace flutter

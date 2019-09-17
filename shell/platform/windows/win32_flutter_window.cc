@@ -8,37 +8,26 @@ namespace flutter {
 // constant for machines running at 100% scaling.
 constexpr int base_dpi = 96;
 
-Win32FlutterWindow::Win32FlutterWindow() {
+Win32FlutterWindow::Win32FlutterWindow(int width, int height) {
   surface_manager = std::make_unique<AngleSurfaceManager>();
-}
-
-Win32FlutterWindow::Win32FlutterWindow(const char* title,
-                                       const int x,
-                                       const int y,
-                                       const int width,
-                                       const int height) noexcept
-    : Win32FlutterWindow() {
-  Win32Window::Initialize(title, x, y, width, height);
+  Win32Window::InitializeChild("FLUTTERVIEW", width, height);
 }
 
 Win32FlutterWindow::~Win32FlutterWindow() {
   DestroyRenderSurface();
+  Win32Window::Destroy();
 }
 
-FlutterDesktopWindowControllerRef Win32FlutterWindow::CreateWin32FlutterWindow(
-    const char* title,
-    const int x,
-    const int y,
+FlutterDesktopViewControllerRef Win32FlutterWindow::CreateWin32FlutterWindow(
     const int width,
     const int height) {
-  auto state = std::make_unique<FlutterDesktopWindowControllerState>();
-  state->window = std::make_unique<flutter::Win32FlutterWindow>(title, 10, 10,
-                                                                width, height);
+  auto state = std::make_unique<FlutterDesktopViewControllerState>();
+  state->view = std::make_unique<flutter::Win32FlutterWindow>(width, height);
 
   // a window wrapper for the state block, distinct from the
   // window_wrapper handed to plugin_registrar.
-  state->window_wrapper = std::make_unique<FlutterDesktopWindow>();
-  state->window_wrapper->window = state->window.get();
+  state->view_wrapper = std::make_unique<FlutterDesktopView>();
+  state->view_wrapper->window = state->view.get();
   return state.release();
 }
 
@@ -51,7 +40,7 @@ void Win32FlutterWindow::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng) {
   messenger->engine = engine_;
   messenger->dispatcher = message_dispatcher_.get();
 
-  window_wrapper_ = std::make_unique<FlutterDesktopWindow>();
+  window_wrapper_ = std::make_unique<FlutterDesktopView>();
   window_wrapper_->window = this;
 
   plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
@@ -70,7 +59,7 @@ void Win32FlutterWindow::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng) {
   platform_handler_ = std::make_unique<flutter::PlatformHandler>(
       internal_plugin_messenger, this);
 
-  auto state = std::make_unique<FlutterDesktopWindowControllerState>();
+  auto state = std::make_unique<FlutterDesktopViewControllerState>();
   state->engine = engine_;
 
   process_events_ = true;
@@ -136,7 +125,7 @@ void Win32FlutterWindow::OnPointerUp(double x, double y) {
   }
 }
 
-void Win32FlutterWindow::OnChar(unsigned int code_point) {
+void Win32FlutterWindow::OnChar(char32_t code_point) {
   if (process_events_) {
     SendChar(code_point);
   }
@@ -156,20 +145,6 @@ void Win32FlutterWindow::OnScroll(double delta_x, double delta_y) {
 
 void Win32FlutterWindow::OnClose() {
   messageloop_running_ = false;
-}
-
-void Win32FlutterWindow::FlutterMessageLoop() {
-  MSG message;
-
-  messageloop_running_ = true;
-
-  // TODO: need either non-blocking meesage loop or custom dispatch
-  // implementation per  https://github.com/flutter/flutter/issues/36420
-  while (GetMessage(&message, nullptr, 0, 0) && messageloop_running_) {
-    TranslateMessage(&message);
-    DispatchMessage(&message);
-    __FlutterEngineFlushPendingTasksNow();
-  }
 }
 
 // Sends new size information to FlutterEngine.
@@ -232,7 +207,7 @@ void Win32FlutterWindow::SendPointerUp(double x, double y) {
   SendPointerEventWithData(event);
 }
 
-void Win32FlutterWindow::SendChar(unsigned int code_point) {
+void Win32FlutterWindow::SendChar(char32_t code_point) {
   for (const auto& handler : keyboard_hook_handlers_) {
     handler->CharHook(this, code_point);
   }
@@ -302,6 +277,10 @@ void Win32FlutterWindow::SendPointerEventWithData(
 
 bool Win32FlutterWindow::MakeCurrent() {
   return surface_manager->MakeCurrent(render_surface);
+}
+
+bool Win32FlutterWindow::MakeResourceCurrent() {
+  return surface_manager->MakeResourceCurrent();
 }
 
 bool Win32FlutterWindow::ClearContext() {

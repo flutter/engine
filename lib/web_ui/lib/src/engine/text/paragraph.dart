@@ -236,9 +236,8 @@ class EngineParagraph implements ui.Paragraph {
   @override
   ui.TextPosition getPositionForOffset(ui.Offset offset) {
     if (_plainText == null) {
-      return const ui.TextPosition(offset: 0);
+      return getPositionForMultiSpanOffset(offset);
     }
-
     final double dx = offset.dx - _alignOffset;
     final TextMeasurementService instance = _measurementService;
 
@@ -273,6 +272,14 @@ class EngineParagraph implements ui.Paragraph {
     }
   }
 
+  ui.TextPosition getPositionForMultiSpanOffset(ui.Offset offset) {
+    assert(_lastUsedConstraints != null,
+        'missing call to paragraph layout before reading text position');
+    final TextMeasurementService instance = _measurementService;
+    return instance.getTextPositionForOffset(
+        this, _lastUsedConstraints, offset);
+  }
+
   @override
   List<int> getWordBoundary(int offset) {
     if (_plainText == null) {
@@ -282,6 +289,12 @@ class EngineParagraph implements ui.Paragraph {
     final int start = WordBreaker.prevBreakIndex(_plainText, offset);
     final int end = WordBreaker.nextBreakIndex(_plainText, offset);
     return <int>[start, end];
+  }
+
+  @override
+  List<ui.LineMetrics> computeLineMetrics() {
+    // TODO(flutter_web): https://github.com/flutter/flutter/issues/39537
+    return null;
   }
 }
 
@@ -707,7 +720,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
     double baselineOffset,
     ui.TextBaseline baseline,
   }) {
-    // TODO(garyq): Implement web_ui version of this.
+    // TODO(garyq): Implement stub_ui version of this.
     throw UnimplementedError();
   }
 
@@ -950,7 +963,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       final dynamic op = _ops[i];
       if (op is EngineTextStyle) {
         final html.SpanElement span = domRenderer.createElement('span');
-        _applyTextStyleToElement(element: span, style: op);
+        _applyTextStyleToElement(element: span, style: op, isSpan: true);
         if (op._background != null) {
           _applyTextBackgroundToElement(element: span, style: op);
         }
@@ -990,8 +1003,11 @@ String fontWeightToCss(ui.FontWeight fontWeight) {
   if (fontWeight == null) {
     return null;
   }
+  return fontWeightIndexToCss(fontWeightIndex: fontWeight.index);
+}
 
-  switch (fontWeight.index) {
+String fontWeightIndexToCss({int fontWeightIndex = 3}) {
+  switch (fontWeightIndex) {
     case 0:
       return '100';
     case 1:
@@ -1014,7 +1030,7 @@ String fontWeightToCss(ui.FontWeight fontWeight) {
 
   assert(() {
     throw AssertionError(
-      'Failed to convert font weight $fontWeight to CSS.',
+      'Failed to convert font weight $fontWeightIndex to CSS.',
     );
   }());
 
@@ -1036,14 +1052,14 @@ void _applyParagraphStyleToElement({
   final html.CssStyleDeclaration cssStyle = element.style;
   if (previousStyle == null) {
     if (style._textAlign != null) {
-      cssStyle.textAlign = _textAlignToCssValue(
+      cssStyle.textAlign = textAlignToCssValue(
           style._textAlign, style._textDirection ?? ui.TextDirection.ltr);
     }
     if (style._lineHeight != null) {
       cssStyle.lineHeight = '${style._lineHeight}';
     }
     if (style._textDirection != null) {
-      cssStyle.direction = _textDirectionToCssValue(style._textDirection);
+      cssStyle.direction = _textDirectionToCss(style._textDirection);
     }
     if (style._fontSize != null) {
       cssStyle.fontSize = '${style._fontSize.floor()}px';
@@ -1056,18 +1072,18 @@ void _applyParagraphStyleToElement({
           style._fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
     }
     if (style._effectiveFontFamily != null) {
-      cssStyle.fontFamily = style._effectiveFontFamily;
+      cssStyle.fontFamily = quoteFontFamily(style._effectiveFontFamily);
     }
   } else {
     if (style._textAlign != previousStyle._textAlign) {
-      cssStyle.textAlign = _textAlignToCssValue(
+      cssStyle.textAlign = textAlignToCssValue(
           style._textAlign, style._textDirection ?? ui.TextDirection.ltr);
     }
     if (style._lineHeight != style._lineHeight) {
       cssStyle.lineHeight = '${style._lineHeight}';
     }
     if (style._textDirection != previousStyle._textDirection) {
-      cssStyle.direction = _textDirectionToCssValue(style._textDirection);
+      cssStyle.direction = _textDirectionToCss(style._textDirection);
     }
     if (style._fontSize != previousStyle._fontSize) {
       cssStyle.fontSize =
@@ -1082,7 +1098,7 @@ void _applyParagraphStyleToElement({
           : null;
     }
     if (style._fontFamily != previousStyle._fontFamily) {
-      cssStyle.fontFamily = style._fontFamily;
+      cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
     }
   }
 }
@@ -1091,10 +1107,13 @@ void _applyParagraphStyleToElement({
 /// corresponding CSS equivalents.
 ///
 /// If [previousStyle] is not null, updates only the mismatching attributes.
+/// If [isSpan] is true, the text element is a span within richtext and
+/// should not assign effectiveFontFamily if fontFamily was not specified.
 void _applyTextStyleToElement({
   @required html.HtmlElement element,
   @required EngineTextStyle style,
   EngineTextStyle previousStyle,
+  bool isSpan = false,
 }) {
   assert(element != null);
   assert(style != null);
@@ -1115,8 +1134,16 @@ void _applyTextStyleToElement({
       cssStyle.fontStyle =
           style._fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
     }
-    if (style._effectiveFontFamily != null) {
-      cssStyle.fontFamily = style._effectiveFontFamily;
+    // For test environment use effectiveFontFamily since we need to
+    // consistently use Ahem font.
+    if (isSpan && !ui.debugEmulateFlutterTesterEnvironment) {
+      if (style._fontFamily != null) {
+        cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
+      }
+    } else {
+      if (style._effectiveFontFamily != null) {
+        cssStyle.fontFamily = quoteFontFamily(style._effectiveFontFamily);
+      }
     }
     if (style._letterSpacing != null) {
       cssStyle.letterSpacing = '${style._letterSpacing}px';
@@ -1149,7 +1176,7 @@ void _applyTextStyleToElement({
           : null;
     }
     if (style._fontFamily != previousStyle._fontFamily) {
-      cssStyle.fontFamily = style._fontFamily;
+      cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
     }
     if (style._letterSpacing != previousStyle._letterSpacing) {
       cssStyle.letterSpacing = '${style._letterSpacing}px';
@@ -1245,10 +1272,28 @@ String _decorationStyleToCssString(ui.TextDecorationStyle decorationStyle) {
 /// ```css
 /// direction: rtl;
 /// ```
-String _textDirectionToCssValue(ui.TextDirection textDirection) {
-  return textDirection == ui.TextDirection.ltr
-      ? null // it's the default
-      : 'rtl';
+String _textDirectionToCss(ui.TextDirection textDirection) {
+  if (textDirection == null) {
+    return null;
+  }
+  return textDirectionIndexToCss(textDirection.index);
+}
+
+String textDirectionIndexToCss(int textDirectionIndex) {
+  switch (textDirectionIndex) {
+    case 0:
+      return 'rtl';
+    case 1:
+      return null; // ltr is the default
+  }
+
+  assert(() {
+    throw AssertionError(
+      'Failed to convert text direction $textDirectionIndex to CSS',
+    );
+  }());
+
+  return null;
 }
 
 /// Converts [align] to its corresponding CSS value.
@@ -1258,8 +1303,7 @@ String _textDirectionToCssValue(ui.TextDirection textDirection) {
 /// ```css
 /// text-align: right;
 /// ```
-String _textAlignToCssValue(
-    ui.TextAlign align, ui.TextDirection textDirection) {
+String textAlignToCssValue(ui.TextAlign align, ui.TextDirection textDirection) {
   switch (align) {
     case ui.TextAlign.left:
       return 'left';

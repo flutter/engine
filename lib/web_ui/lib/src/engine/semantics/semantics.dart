@@ -35,6 +35,8 @@ class SemanticsNodeUpdate {
     this.id,
     this.flags,
     this.actions,
+    this.maxValueLength,
+    this.currentValueLength,
     this.textSelectionBase,
     this.textSelectionExtent,
     this.platformViewId,
@@ -66,6 +68,12 @@ class SemanticsNodeUpdate {
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final int actions;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  final int maxValueLength;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  final int currentValueLength;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final int textSelectionBase;
@@ -584,11 +592,6 @@ class SemanticsObject {
 
   /// Whether this object represents an editable text field.
   bool get isTextField => hasFlag(ui.SemanticsFlag.isTextField);
-
-  /// Whether this object is read only.
-  ///
-  /// Only applicable when [isTextField] is true.
-  bool get isReadOnly => hasFlag(ui.SemanticsFlag.isReadOnly);
 
   /// Whether this object needs screen readers attention right away.
   bool get isLiveRegion =>

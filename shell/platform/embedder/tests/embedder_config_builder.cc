@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/embedder/tests/embedder_config_builder.h"
 
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "third_party/skia/include/core/SkBitmap.h"
 
 namespace flutter {
 namespace testing {
@@ -48,7 +49,25 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
 
   software_renderer_config_.struct_size = sizeof(FlutterSoftwareRendererConfig);
   software_renderer_config_.surface_present_callback =
-      [](void*, const void*, size_t, size_t) { return true; };
+      [](void* context, const void* allocation, size_t row_bytes,
+         size_t height) {
+        auto image_info =
+            SkImageInfo::MakeN32Premul(SkISize::Make(row_bytes / 4, height));
+        SkBitmap bitmap;
+        if (!bitmap.installPixels(image_info, const_cast<void*>(allocation),
+                                  row_bytes)) {
+          FML_LOG(ERROR) << "Could not copy pixels for the software "
+                            "composition from the engine.";
+          return false;
+        }
+        bitmap.setImmutable();
+        return reinterpret_cast<EmbedderTestContext*>(context)->SofwarePresent(
+            SkImage::MakeFromBitmap(bitmap));
+      };
+
+  // The first argument is treated as the executable name. Don't make tests have
+  // to do this manually.
+  AddCommandLineArgument("embedder_unittest");
 
   if (preference == InitializationPreference::kInitialize) {
     SetSoftwareRendererConfig();
@@ -56,6 +75,7 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     SetSnapshots();
     SetIsolateCreateCallbackHook();
     SetSemanticsCallbackHooks();
+    AddCommandLineArgument("--disable-observatory");
   }
 }
 
@@ -182,8 +202,9 @@ FlutterCompositor& EmbedderConfigBuilder::GetCompositor() {
   return compositor_;
 }
 
-UniqueEngine EmbedderConfigBuilder::LaunchEngine() {
+UniqueEngine EmbedderConfigBuilder::LaunchEngine() const {
   FlutterEngine engine = nullptr;
+  FlutterProjectArgs project_args = project_args_;
 
   std::vector<const char*> args;
   args.reserve(command_line_arguments_.size());
@@ -193,17 +214,17 @@ UniqueEngine EmbedderConfigBuilder::LaunchEngine() {
   }
 
   if (args.size() > 0) {
-    project_args_.command_line_argv = args.data();
-    project_args_.command_line_argc = args.size();
+    project_args.command_line_argv = args.data();
+    project_args.command_line_argc = args.size();
   } else {
     // Clear it out in case this is not the first engine launch from the
     // embedder config builder.
-    project_args_.command_line_argv = nullptr;
-    project_args_.command_line_argc = 0;
+    project_args.command_line_argv = nullptr;
+    project_args.command_line_argc = 0;
   }
 
   auto result = FlutterEngineRun(FLUTTER_ENGINE_VERSION, &renderer_config_,
-                                 &project_args_, &context_, &engine);
+                                 &project_args, &context_, &engine);
 
   if (result != kSuccess) {
     return {};

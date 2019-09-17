@@ -9,49 +9,37 @@ const bool _debugVisibleTextEditing = false;
 
 void _emptyCallback(dynamic _) {}
 
-void _styleEditingElement(html.HtmlElement domElement) {
-  domElement.style
-    ..position = 'fixed'
-    ..whiteSpace = 'pre';
+/// These style attributes are constant throughout the life time of an input
+/// element.
+///
+/// They are assigned once during the creation of the dom element.
+void _setStaticStyleAttributes(html.HtmlElement domElement) {
+  final html.CssStyleDeclaration elementStyle = domElement.style;
+  elementStyle
+    ..whiteSpace = 'pre'
+    ..alignContent = 'center'
+    ..position = 'absolute'
+    ..top = '0'
+    ..left = '0'
+    ..padding = '0'
+    ..opacity = '1'
+    ..color = 'transparent'
+    ..backgroundColor = 'transparent'
+    ..background = 'transparent'
+    ..outline = 'none'
+    ..border = 'none'
+    ..resize = 'none'
+    ..textShadow = 'transparent'
+    ..transformOrigin = '0 0 0';
+
+  /// This property makes the input's blinking cursor transparent.
+  elementStyle.setProperty('caret-color', 'transparent');
+
   if (_debugVisibleTextEditing) {
-    domElement.style
-      ..bottom = '0'
-      ..right = '0'
-      ..font = '24px sans-serif'
+    elementStyle
       ..color = 'purple'
-      ..backgroundColor = 'pink';
-  } else {
-    domElement.style
-      ..overflow = 'hidden'
-      ..transform = 'translate(-99999px, -99999px)'
-      // width and height can't be zero because then the element would stop
-      // receiving edits when its content is empty.
-      ..width = '1px'
-      ..height = '1px';
+      ..outline = '1px solid purple';
   }
-  if (browserEngine == BrowserEngine.webkit) {
-    // TODO(flutter_web): Remove once webkit issue of paragraphs incorrectly
-    // rendering (shifting up) is resolved. Temporarily force relayout
-    // a frame after input is created.
-    html.window.animationFrame.then((num _) {
-      domElement.style
-        ..position = 'absolute'
-        ..bottom = '0'
-        ..right = '0';
-    });
-  }
-}
-
-html.InputElement _createInputElement() {
-  final html.InputElement input = html.InputElement();
-  _styleEditingElement(input);
-  return input;
-}
-
-html.TextAreaElement _createTextAreaElement() {
-  final html.TextAreaElement textarea = html.TextAreaElement();
-  _styleEditingElement(textarea);
-  return textarea;
 }
 
 /// The current text and selection state of a text field.
@@ -213,8 +201,9 @@ class TextEditingElement {
   /// Creates a non-persistent [TextEditingElement].
   ///
   /// See [TextEditingElement.persistent] to understand what persistent mode is.
-  TextEditingElement();
+  TextEditingElement(this.owner);
 
+  final HybridTextEditing owner;
   bool _enabled = false;
 
   html.HtmlElement domElement;
@@ -228,6 +217,26 @@ class TextEditingElement {
     final ElementType type = _getTypeFromElement(domElement);
     assert(type != null);
     return type;
+  }
+
+  /// On iOS, sets the location of the input element after focusing on it.
+  ///
+  /// On iOS, keyboard causes scrolling in the UI. This scrolling does not
+  /// trigger an event. In order to position the input element correctly, it is
+  /// important we set it's final location after focusing on it (after keyboard
+  /// is up).
+  ///
+  /// This method is called in the end of the 'touchend' event, therefore it is
+  /// called after the editing state is set.
+  void configureInputElementForIOS() {
+    if (browserEngine != BrowserEngine.webkit ||
+        operatingSystem != OperatingSystem.iOs) {
+      // Only relevant on Safari.
+      return;
+    }
+    if (domElement != null) {
+      owner.setStyle(domElement);
+    }
   }
 
   /// Enables the element so it can be used to edit text.
@@ -296,11 +305,11 @@ class TextEditingElement {
   void _initDomElement(InputConfiguration inputConfig) {
     switch (inputConfig.inputType) {
       case InputType.text:
-        domElement = _createInputElement();
+        domElement = owner.createInputElement();
         break;
 
       case InputType.multiline:
-        domElement = _createTextAreaElement();
+        domElement = owner.createTextAreaElement();
         break;
 
       default:
@@ -465,11 +474,14 @@ class PersistentTextEditingElement extends TextEditingElement {
   /// [domElement] so the caller can insert it before calling
   /// [PersistentTextEditingElement.enable].
   PersistentTextEditingElement(
+    HybridTextEditing owner,
     html.HtmlElement domElement, {
     @required html.VoidCallback onDomElementSwap,
   })  : _onDomElementSwap = onDomElementSwap,
-        // Make sure the dom element is of a type that we support for text editing.
-        assert(_getTypeFromElement(domElement) != null) {
+        super(owner) {
+    // Make sure the dom element is of a type that we support for text editing.
+    // TODO(yjbanov): move into initializer list when https://github.com/dart-lang/sdk/issues/37881 is fixed.
+    assert(_getTypeFromElement(domElement) != null);
     this.domElement = domElement;
   }
 
@@ -527,7 +539,12 @@ final HybridTextEditing textEditing = HybridTextEditing();
 class HybridTextEditing {
   /// The default HTML element used to manage editing state when a custom
   /// element is not provided via [useCustomEditableElement].
-  TextEditingElement _defaultEditingElement = TextEditingElement();
+  TextEditingElement _defaultEditingElement;
+
+  /// Private constructor so this class can be a singleton.
+  HybridTextEditing() {
+    _defaultEditingElement = TextEditingElement(this);
+  }
 
   /// The HTML element used to manage editing state.
   ///
@@ -548,7 +565,7 @@ class HybridTextEditing {
   /// Use [stopUsingCustomEditableElement] to switch back to default element.
   void useCustomEditableElement(TextEditingElement customEditingElement) {
     if (_isEditing && customEditingElement != _customEditingElement) {
-      _stopEditing();
+      stopEditing();
     }
     _customEditingElement = customEditingElement;
   }
@@ -560,7 +577,15 @@ class HybridTextEditing {
   }
 
   int _clientId;
+
+  /// Flag which shows if there is an ongoing editing.
+  ///
+  /// Also used to define if a keyboard is needed.
   bool _isEditing = false;
+
+  /// Flag indicating if the flutter framework requested a keyboard.
+  bool get needsKeyboard => _isEditing;
+
   Map<String, dynamic> _configuration;
 
   /// All "flutter/textinput" platform messages should be sent to this method.
@@ -568,6 +593,11 @@ class HybridTextEditing {
     final MethodCall call = const JSONMethodCodec().decodeMethodCall(data);
     switch (call.method) {
       case 'TextInput.setClient':
+        final bool clientIdChanged =
+            _clientId != null && _clientId != call.arguments[0];
+        if (clientIdChanged && _isEditing) {
+          stopEditing();
+        }
         _clientId = call.arguments[0];
         _configuration = call.arguments[1];
         break;
@@ -583,10 +613,18 @@ class HybridTextEditing {
         }
         break;
 
+      case 'TextInput.setEditableSizeAndTransform':
+        _setLocation(call.arguments);
+        break;
+
+      case 'TextInput.setStyle':
+        _setFontStyle(call.arguments);
+        break;
+
       case 'TextInput.clearClient':
       case 'TextInput.hide':
         if (_isEditing) {
-          _stopEditing();
+          stopEditing();
         }
         break;
     }
@@ -601,10 +639,62 @@ class HybridTextEditing {
     );
   }
 
-  void _stopEditing() {
+  void stopEditing() {
     assert(_isEditing);
     _isEditing = false;
     editingElement.disable();
+  }
+
+  _EditingStyle _editingStyle;
+  _EditingStyle get editingStyle => _editingStyle;
+
+  /// Use the font size received from Flutter if set.
+  String font() {
+    assert(_editingStyle != null);
+    return '${_editingStyle.fontWeight} ${_editingStyle.fontSize}px ${_editingStyle.fontFamily}';
+  }
+
+  void _setFontStyle(Map<String, dynamic> style) {
+    assert(style.containsKey('fontSize'));
+    assert(style.containsKey('fontFamily'));
+    assert(style.containsKey('textAlignIndex'));
+    assert(style.containsKey('textDirectionIndex'));
+
+    final int textAlignIndex = style['textAlignIndex'];
+    final int textDirectionIndex = style['textDirectionIndex'];
+
+    /// Converts integer value coming as fontWeightIndex from TextInput.setStyle
+    /// to its CSS equivalent value.
+    /// Converts index of TextAlign to enum value.
+    _editingStyle = _EditingStyle(
+        textDirection: ui.TextDirection.values[textDirectionIndex],
+        fontSize: style['fontSize'],
+        textAlign: ui.TextAlign.values[textAlignIndex],
+        fontFamily: style['fontFamily'],
+        fontWeightIndex: style['fontWeightIndex']);
+  }
+
+  /// Size and transform of the editable text on the page.
+  _EditableSizeAndTransform _editingLocationAndSize;
+  _EditableSizeAndTransform get editingLocationAndSize =>
+      _editingLocationAndSize;
+
+  void _setLocation(Map<String, dynamic> editingLocationAndSize) {
+    assert(editingLocationAndSize.containsKey('width'));
+    assert(editingLocationAndSize.containsKey('height'));
+    assert(editingLocationAndSize.containsKey('transform'));
+
+    final List<double> transformList =
+        List<double>.from(editingLocationAndSize['transform']);
+    _editingLocationAndSize = _EditableSizeAndTransform(
+      width: editingLocationAndSize['width'],
+      height: editingLocationAndSize['height'],
+      transform: Float64List.fromList(transformList),
+    );
+
+    if (editingElement.domElement != null) {
+      _setDynamicStyleAttributes(editingElement.domElement);
+    }
   }
 
   void _syncEditingStateToFlutter(EditingState editingState) {
@@ -619,4 +709,92 @@ class HybridTextEditing {
       _emptyCallback,
     );
   }
+
+  /// These style attributes are dynamic throughout the life time of an input
+  /// element.
+  ///
+  /// They are changed depending on the messages coming from method calls:
+  /// "TextInput.setStyle", "TextInput.setEditableSizeAndTransform".
+  void _setDynamicStyleAttributes(html.HtmlElement domElement) {
+    if (_editingLocationAndSize != null &&
+        !(browserEngine == BrowserEngine.webkit &&
+            operatingSystem == OperatingSystem.iOs)) {
+      setStyle(domElement);
+    }
+  }
+
+  /// Set style to the native dom element used for text editing.
+  ///
+  /// It will be located exactly in the same place with the editable widgets,
+  /// however it's contents and cursor will be invisible.
+  ///
+  /// Users can interact with the element and use the functionalities of the
+  /// right-click menu. Such as copy,paste, cut, select, translate...
+  void setStyle(html.HtmlElement domElement) {
+    final String transformCss =
+        float64ListToCssTransform(_editingLocationAndSize.transform);
+    domElement.style
+      ..width = '${_editingLocationAndSize.width}px'
+      ..height = '${_editingLocationAndSize.height}px'
+      ..textAlign = _editingStyle.align
+      ..font = font()
+      ..transform = transformCss;
+  }
+
+  html.InputElement createInputElement() {
+    final html.InputElement input = html.InputElement();
+    _setStaticStyleAttributes(input);
+    _setDynamicStyleAttributes(input);
+    return input;
+  }
+
+  html.TextAreaElement createTextAreaElement() {
+    final html.TextAreaElement textarea = html.TextAreaElement();
+    _setStaticStyleAttributes(textarea);
+    _setDynamicStyleAttributes(textarea);
+    return textarea;
+  }
+}
+
+/// Information on the font and alignment of a text editing element.
+///
+/// This information is received via TextInput.setStyle message.
+class _EditingStyle {
+  _EditingStyle({
+    @required this.textDirection,
+    @required this.fontSize,
+    @required this.textAlign,
+    @required this.fontFamily,
+    @required fontWeightIndex,
+  }) : this.fontWeight = (fontWeightIndex != null)
+            ? fontWeightIndexToCss(fontWeightIndex: fontWeightIndex)
+            : 'normal';
+
+  /// This information will be used for changing the style of the hidden input
+  /// element, which will match it's size to the size of the editable widget.
+  final double fontSize;
+  final String fontWeight;
+  final String fontFamily;
+  final ui.TextAlign textAlign;
+  final ui.TextDirection textDirection;
+
+  String get align => textAlignToCssValue(textAlign, textDirection);
+}
+
+/// Information on the location and size of the editing element.
+///
+/// This information is received via "TextInput.setEditableSizeAndTransform"
+/// message. Framework currently sends this information on paint.
+// TODO(flutter_web): send the location during the scroll for more frequent
+// updates from the framework.
+class _EditableSizeAndTransform {
+  _EditableSizeAndTransform({
+    @required this.width,
+    @required this.height,
+    @required this.transform,
+  });
+
+  final double width;
+  final double height;
+  final Float64List transform;
 }
