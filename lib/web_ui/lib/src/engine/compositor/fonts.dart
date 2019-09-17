@@ -78,7 +78,7 @@ class SkiaFontCollection {
       }
       return js.JsObject(canvasKit['SkFont'], <dynamic>[null, size]);
     }
-    //final js.JsObject skTypeface = _registeredTypefaces[family].values.first;
+
     // We don't attempt to find a Typeface matching the text style. Instead, we
     // try to find the "default" typeface. The default typeface either has no
     // descriptors, or only has a descriptor of font-weight 400 (the default).
