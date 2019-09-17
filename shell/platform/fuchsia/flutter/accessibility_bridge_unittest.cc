@@ -5,10 +5,10 @@
 #include "flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h"
 
 #include <gtest/gtest.h>
+#include <lib/async-loop/default.h>
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/fidl/cpp/binding_set.h>
 #include <lib/fidl/cpp/interface_request.h>
-#include <lib/gtest/real_loop_fixture.h>
 #include <lib/sys/cpp/testing/service_directory_provider.h>
 #include <zircon/types.h>
 
@@ -18,11 +18,19 @@
 #include "flutter/shell/platform/fuchsia/flutter/flutter_runner_fakes.h"
 
 namespace flutter_runner_test {
-class AccessibilityBridgeTest : public gtest::RealLoopFixture {
+class AccessibilityBridgeTest : public test::Test {
  public:
-  AccessibilityBridgeTest() : services_provider_(dispatcher()) {
-    services_provider_.AddService(semantics_manager_.GetHandler(dispatcher()),
-                                  SemanticsManager::Name_);
+  AccessibilityBridgeTest()
+      : loop_(&kAsyncLoopConfigAttachToCurrentThread),
+        services_provider_(loop_.dispatcher()) {
+    services_provider_.AddService(
+        semantics_manager_.GetHandler(loop_.dispatcher()),
+        SemanticsManager::Name_);
+  }
+
+  void RunLoopUntilIdle() {
+    loop_.RunUntilIdle();
+    loop_.ResetQuit();
   }
 
  protected:
@@ -40,6 +48,8 @@ class AccessibilityBridgeTest : public gtest::RealLoopFixture {
 
   void TearDown() override { semantics_manager_.ResetTree(); }
 
+ private:
+  async::Loop loop_;
   sys::testing::ServiceDirectoryProvider services_provider_;
   MockSemanticsManager semantics_manager_;
   std::unique_ptr<flutter_runner::AccessibilityBridge> accessibility_bridge_;

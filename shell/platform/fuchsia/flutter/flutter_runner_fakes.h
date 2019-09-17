@@ -5,7 +5,6 @@
 #ifndef TOPAZ_RUNTIME_FLUTTER_RUNNER_PLATFORM_VIEW_FAKES_H_
 #define TOPAZ_RUNTIME_FLUTTER_RUNNER_PLATFORM_VIEW_FAKES_H_
 
-#include <fuchsia/accessibility/cpp/fidl.h>
 #include <fuchsia/accessibility/semantics/cpp/fidl.h>
 
 namespace flutter_runner_test {
@@ -21,11 +20,10 @@ class MockSemanticsManager
   MockSemanticsManager() : tree_binding_(this) {}
 
   // |fuchsia::accessibility::semantics::SemanticsManager|:
-  void RegisterView(
+  void RegisterViewForSemantics(
       fuchsia::ui::views::ViewRef view_ref,
       fidl::InterfaceHandle<
-          fuchsia::accessibility::semantics::SemanticActionListener>
-          handle,
+          fuchsia::accessibility::semantics::SemanticListener> handle,
       fidl::InterfaceRequest<fuchsia::accessibility::semantics::SemanticTree>
           semantic_tree) override {
     tree_binding_.Bind(std::move(semantic_tree));
@@ -91,7 +89,7 @@ class MockSemanticsManager
     return last_updated_nodes_;
   }
 
-  void Commit() override { commit_count_++; }
+  void CommitUpdates(CommitUpdatesCallback callback) override { commit_count_++; }
 
  private:
   bool has_view_ref_ = false;

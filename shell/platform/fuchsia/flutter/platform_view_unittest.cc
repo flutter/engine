@@ -5,10 +5,10 @@
 #include "flutter/shell/platform/fuchsia/flutter/platform_view.h"
 
 #include <gtest/gtest.h>
+#include <lib/async-loop/default.h>
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/fidl/cpp/binding_set.h>
 #include <lib/fidl/cpp/interface_request.h>
-#include <lib/gtest/real_loop_fixture.h>
 #include <lib/sys/cpp/testing/service_directory_provider.h>
 
 #include <memory>
@@ -21,7 +21,23 @@
 #include "googletest/googletest/include/gtest/gtest.h"
 
 namespace flutter_runner_test::flutter_runner_a11y_test {
-using PlatformViewTests = gtest::RealLoopFixture;
+
+class PlatformViewTests : public testing::Test {
+ protected:
+  PlatformViewTests() : loop_(&kAsyncLoopConfigAttachToCurrentThread) {}
+
+  async_dispatcher_t* dispatcher() { return loop_.dispatcher(); }
+
+  void RunLoopUntilIdle() {
+    loop_.RunUntilIdle();
+    loop_.ResetQuit();
+  }
+
+ private:
+  async::Loop loop_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewTests);
+};
 
 class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
  public:
@@ -67,6 +83,7 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   bool semantics_enabled_ = false;
   int32_t semantics_features_ = 0;
 };
+
 TEST_F(PlatformViewTests, SurvivesWhenSettingsManagerNotAvailable) {
   sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
   MockPlatformViewDelegate delegate;
@@ -107,15 +124,8 @@ TEST_F(PlatformViewTests, SurvivesWhenSettingsManagerNotAvailable) {
 }
 
 TEST_F(PlatformViewTests, RegistersWatcherAndEnablesSemantics) {
-  fuchsia::accessibility::Settings settings;
-  settings.set_screen_reader_enabled(true);
-  settings.set_color_inversion_enabled(true);
-  MockAccessibilitySettingsManager settings_manager =
-      MockAccessibilitySettingsManager(std::move(settings));
   MockSemanticsManager semantics_manager = MockSemanticsManager();
   sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
-  services_provider.AddService(settings_manager.GetHandler(dispatcher()),
-                               AccessibilitySettingsManager::Name_);
   services_provider.AddService(semantics_manager.GetHandler(dispatcher()),
                                SemanticsManager::Name_);
 
@@ -152,25 +162,16 @@ TEST_F(PlatformViewTests, RegistersWatcherAndEnablesSemantics) {
 
   RunLoopUntilIdle();
 
-  EXPECT_TRUE(settings_manager.WatchCalled());
   EXPECT_TRUE(delegate.SemanticsEnabled());
   EXPECT_EQ(
       delegate.SemanticsFeatures(),
-      static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kInvertColors) |
           static_cast<int32_t>(
               flutter::AccessibilityFeatureFlag::kAccessibleNavigation));
 }
 
 TEST_F(PlatformViewTests, ChangesSettings) {
-  fuchsia::accessibility::Settings settings;
-  settings.set_screen_reader_enabled(true);
-  settings.set_color_inversion_enabled(true);
-  MockAccessibilitySettingsManager settings_manager =
-      MockAccessibilitySettingsManager(std::move(settings));
   MockSemanticsManager semantics_manager = MockSemanticsManager();
   sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
-  services_provider.AddService(settings_manager.GetHandler(dispatcher()),
-                               AccessibilitySettingsManager::Name_);
   services_provider.AddService(semantics_manager.GetHandler(dispatcher()),
                                SemanticsManager::Name_);
 
@@ -207,11 +208,9 @@ TEST_F(PlatformViewTests, ChangesSettings) {
 
   RunLoopUntilIdle();
 
-  EXPECT_TRUE(settings_manager.WatchCalled());
   EXPECT_TRUE(delegate.SemanticsEnabled());
   EXPECT_EQ(
       delegate.SemanticsFeatures(),
-      static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kInvertColors) |
           static_cast<int32_t>(
               flutter::AccessibilityFeatureFlag::kAccessibleNavigation));
 
@@ -225,9 +224,6 @@ TEST_F(PlatformViewTests, ChangesSettings) {
             static_cast<int32_t>(
                 flutter::AccessibilityFeatureFlag::kAccessibleNavigation));
 
-  fuchsia::accessibility::Settings disabled_settings;
-  disabled_settings.set_screen_reader_enabled(false);
-  disabled_settings.set_color_inversion_enabled(false);
 
   platform_view.OnSettingsChange(std::move(disabled_settings));
   EXPECT_FALSE(delegate.SemanticsEnabled());
