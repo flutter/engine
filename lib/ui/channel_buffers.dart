@@ -83,7 +83,7 @@ class _RingBuffer<T> {
   }
 }
 
-/// A callback for [ChannelBuffers.drain].
+/// A callback for [ChannelBuffers.drain], called as it pops stored messages.
 typedef DrainChannelCallback = Future<void> Function(ByteData, PlatformMessageResponseCallback);
 
 /// Storage of channel messages until the channels are completely routed,
