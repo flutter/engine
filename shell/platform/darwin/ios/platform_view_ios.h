@@ -38,6 +38,9 @@ class PlatformViewIOS final : public PlatformView {
   void RegisterExternalTexture(int64_t id, NSObject<FlutterTexture>* texture);
 
   void RegisterExternalShareTexture(int64_t id, NSObject<FlutterShareTexture>* texture);
+  
+  // |PlatformView|
+  PointerDataDispatcherMaker GetDispatcherMaker() override;
 
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> GetTextInputPlugin() const;
 
@@ -51,7 +54,7 @@ class PlatformViewIOS final : public PlatformView {
  private:
   fml::WeakPtr<FlutterViewController> owner_controller_;
   std::unique_ptr<IOSSurface> ios_surface_;
-  std::shared_ptr<IOSGLContext> gl_context_;
+  std::unique_ptr<IOSGLContext> resource_gl_context_;
   PlatformMessageRouter platform_message_router_;
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> text_input_plugin_;
@@ -79,6 +82,11 @@ class PlatformViewIOS final : public PlatformView {
 
   // |PlatformView|
   void OnPreEngineRestart() const override;
+
+  // |PlatformView|
+  void NotifyDestroyed() override;
+
+  std::unique_ptr<IOSSurface> CreateIOSSurface() const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewIOS);
 };

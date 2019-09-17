@@ -188,7 +188,8 @@ bool IOSSurfaceSoftware::SubmitFrame(GrContext* context) {
   if (platform_views_controller == nullptr) {
     return true;
   }
-  return platform_views_controller->SubmitFrame(nullptr, nullptr);
+  return platform_views_controller->SubmitFrame(nullptr, fml::WeakPtr<IOSGLContext>(),
+                                                fml::WeakPtr<IOSGLContext>());
 }
 
 }  // namespace flutter
