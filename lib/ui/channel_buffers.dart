@@ -93,6 +93,10 @@ typedef DrainChannelCallback = Future<void> Function(ByteData, PlatformMessageRe
 /// be deleted if the capacity is exceeded.  The intention is that these buffers
 /// will be drained once a callback is setup on the BinaryMessenger in the
 /// Flutter framework.
+///
+/// Clients of Flutter shouldn't need to allocate their own ChannelBuffers
+/// and should only access this package's [channelBuffers] if they are writing
+/// their own custom [BinaryMessenger].
 class ChannelBuffers {
   /// By default we store one message per channel.  There are tradeoffs associated
   /// with any size.  The correct size should be chosen for the semantics of your
@@ -132,10 +136,9 @@ class ChannelBuffers {
       // TODO(aaclarke): Update this message to include instructions on how to resize
       // the buffer once that is available to users.
       _Logger._printString('Overflow on channel: $channel.  '
-                           'Messages on this channel are being sent faster '
-                           'than they are being processed which is resulting '
-                           'in the dropping of messages.  The engine may not be '
-                           'running or you need to adjust the buffer size.');
+                           'Messages on this channel are being discarded.  '
+                           'The engine may not be running or you need to adjust '
+                           'the buffer size if of the channel.');
     }
     return result;
   }
