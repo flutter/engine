@@ -89,9 +89,8 @@ sk_sp<GrContext> PlatformView::CreateResourceContext() const {
 void PlatformView::ReleaseResourceContext() const {}
 
 PointerDataDispatcherMaker PlatformView::GetDispatcherMaker() {
-  return [](Animator& animator, RuntimeController& controller,
-            TaskRunners task_runners) {
-    return std::make_unique<DefaultPointerDataDispatcher>(animator, controller);
+  return [](DefaultPointerDataDispatcher::Delegate& delegate) {
+    return std::make_unique<DefaultPointerDataDispatcher>(delegate);
   };
 }
 

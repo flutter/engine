@@ -52,6 +52,7 @@ Engine::Engine(Delegate& delegate,
       image_decoder_(task_runners,
                      vm.GetConcurrentWorkerTaskRunner(),
                      io_manager),
+      task_runners_(std::move(task_runners)),
       weak_factory_(this) {
   // Runtime controller is initialized here because it takes a reference to this
   // object as its delegate. The delegate may be called in the constructor and
@@ -61,7 +62,7 @@ Engine::Engine(Delegate& delegate,
       &vm,                                   // VM
       std::move(isolate_snapshot),           // isolate snapshot
       std::move(shared_snapshot),            // shared snapshot
-      task_runners,                          // task runners
+      task_runners_,                         // task runners
       std::move(io_manager),                 // io manager
       image_decoder_.GetWeakPtr(),           // image decoder
       settings_.advisory_script_uri,         // advisory script uri
@@ -71,8 +72,7 @@ Engine::Engine(Delegate& delegate,
       settings_.isolate_shutdown_callback    // isolate shutdown callback
   );
 
-  pointer_data_dispatcher_ = dispatcher_maker(*animator_, *runtime_controller_,
-                                              std::move(task_runners));
+  pointer_data_dispatcher_ = dispatcher_maker(*this);
 }
 
 Engine::~Engine() = default;
@@ -466,6 +466,14 @@ void Engine::SetNeedsReportTimings(bool needs_reporting) {
 
 FontCollection& Engine::GetFontCollection() {
   return font_collection_;
+}
+
+void Engine::DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
+                              uint64_t trace_flow_id) {
+  animator_->EnqueueTraceFlowId(trace_flow_id);
+  if (runtime_controller_) {
+    runtime_controller_->DispatchPointerDataPacket(*packet);
+  }
 }
 
 void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {

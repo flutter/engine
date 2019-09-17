@@ -67,7 +67,7 @@ namespace flutter {
 ///           name and it does happen to be one of the older classes in the
 ///           repository.
 ///
-class Engine final : public RuntimeDelegate {
+class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
  public:
   //----------------------------------------------------------------------------
   /// @brief      Indicates the result of the call to `Engine::Run`.
@@ -709,12 +709,23 @@ class Engine final : public RuntimeDelegate {
   // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
 
+  // |PointerDataDispatcher::Delegate|
+  void DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
+                        uint64_t trace_flow_id) override;
+
+  TaskRunners& task_runners() override { return task_runners_; }
+
  private:
   Engine::Delegate& delegate_;
   const Settings settings_;
   std::unique_ptr<Animator> animator_;
   std::unique_ptr<RuntimeController> runtime_controller_;
+
+  // The pointer_data_dispatcher_ depends on animator_ and runtime_controller_.
+  // So it should be defined after them to ensure that pointer_data_dispatcher_
+  // is destructed first.
   std::unique_ptr<PointerDataDispatcher> pointer_data_dispatcher_;
+
   std::string initial_route_;
   ViewportMetrics viewport_metrics_;
   std::shared_ptr<AssetManager> asset_manager_;
@@ -722,6 +733,7 @@ class Engine final : public RuntimeDelegate {
   bool have_surface_;
   FontCollection font_collection_;
   ImageDecoder image_decoder_;
+  TaskRunners task_runners_;
   fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|
