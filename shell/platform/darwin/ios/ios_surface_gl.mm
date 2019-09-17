@@ -82,7 +82,7 @@ bool IOSSurfaceGL::GLContextPresent() {
 }
 
 EAGLSharegroup* IOSSurfaceGL::GetGLShareGroup() {
-  return context_.get()->GetGLShareGroup();
+  return onscreen_gl_context_.get()->GetGLShareGroup();
 }
 
 // |ExternalViewEmbedder|
