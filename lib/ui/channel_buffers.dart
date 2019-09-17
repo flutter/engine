@@ -24,10 +24,6 @@ class _StoredMessage {
 /// A fixed-size circular queue.
 class _RingBuffer<T> {
   final collection.ListQueue<T> _queue;
-  int _capacity;
-  /// A callback that get's called when items are ejected from the [_RingBuffer]
-  /// by way of an overflow or a resizing.
-  Function(T) _dropItemCallback;
 
   _RingBuffer(this._capacity)
     : _queue = collection.ListQueue<T>(_capacity);
@@ -35,13 +31,16 @@ class _RingBuffer<T> {
   /// Returns the number of items in the [_RingBuffer].
   int get length => _queue.length;
 
-  /// Returns the man number of items that can be stored in the [_RingBuffer].
+  /// The number of items that can be stored in the [_RingBuffer].
+  int _capacity;
   int get capacity => _capacity;
 
   /// Returns true if there are no items in the [_RingBuffer].
   bool get isEmpty => _queue.isEmpty;
 
-  /// Setter for the _dropItemCallback field.
+  /// A callback that get's called when items are ejected from the [_RingBuffer]
+  /// by way of an overflow or a resizing.
+  Function(T) _dropItemCallback;
   set dropItemCallback(Function(T) callback) {
     _dropItemCallback = callback;
   }
