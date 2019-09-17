@@ -30,6 +30,20 @@ void main() {
     });
   });
 
+  test('push drain zero', () async {
+    String channel = "foo";
+    ByteData data = _makeByteData('bar');
+    ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    ui.PlatformMessageResponseCallback callback = (ByteData responseData) {};
+    buffers.resize(channel, 0);
+    buffers.push(channel, data, callback);
+    bool didCall = false;
+    await buffers.drain(channel, (ByteData drainedData, ui.PlatformMessageResponseCallback drainedCallback) {
+      didCall = true;
+    });
+    expect(didCall, equals(false));
+  });
+
   test('empty', () async {
     String channel = "foo";
     ByteData data = _makeByteData('bar');
