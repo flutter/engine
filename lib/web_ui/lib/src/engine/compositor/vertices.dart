@@ -100,11 +100,6 @@ class SkVertices implements ui.Vertices {
         break;
     }
 
-    js.JsArray<js.JsArray<double>> encodedPositions =
-        js.JsArray<js.JsArray<double>>();
-    encodedPositions.length = positions.length ~/ 2;
-    for (int i = 0; i < positions.length; i += 2) {}
-
     final js.JsObject vertices =
         canvasKit.callMethod('MakeSkVertices', <dynamic>[
       skVertexMode,
