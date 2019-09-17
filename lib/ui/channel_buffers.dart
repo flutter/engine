@@ -84,7 +84,7 @@ class _RingBuffer<T> {
   }
 }
 
-/// A callback for [ChannelBuffers.drain], called as it pops stored messages.
+/// Signature for [ChannelBuffers.drain].
 typedef DrainChannelCallback = Future<void> Function(ByteData, PlatformMessageResponseCallback);
 
 /// Storage of channel messages until the channels are completely routed,
@@ -159,7 +159,7 @@ class ChannelBuffers {
 
   /// Changes the capacity of the queue associated with the given channel.
   ///
-  /// This could result in the dropping of messages if the newSize is less
+  /// This could result in the dropping of messages if newSize is less
   /// than the current length of the queue.
   void resize(String channel, int newSize) {
     _RingBuffer<_StoredMessage> queue = _messages[channel];
@@ -177,7 +177,7 @@ class ChannelBuffers {
   /// Remove and process all stored messages for a given channel.
   ///
   /// This should be called once a channel is prepared to handle messages
-  /// (ie when a message handler is setup in the framework).
+  /// (i.e. when a message handler is setup in the framework).
   Future<void> drain(String channel, DrainChannelCallback callback) async {
     while (!_isEmpty(channel)) {
       final _StoredMessage message = _pop(channel);
