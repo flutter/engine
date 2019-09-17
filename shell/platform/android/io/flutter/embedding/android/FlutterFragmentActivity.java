@@ -75,7 +75,7 @@ public class FlutterFragmentActivity extends FragmentActivity
 
   /**
    * Creates an {@link FlutterFragmentActivity.NewEngineIntentBuilder}, which can be used to
-   * configure an {@link Intent} to launch a {@code FlutterActivity} that internally creates a new
+   * configure an {@link Intent} to launch a {@code FlutterFragmentActivity} that internally creates a new
    * {@link FlutterEngine} using the desired Dart entrypoint, initial route, etc.
    */
   @NonNull
@@ -98,7 +98,7 @@ public class FlutterFragmentActivity extends FragmentActivity
      * <p>
      * Subclasses of {@code FlutterFragmentActivity} should provide their own static version of
      * {@link #withNewEngine()}, which returns an instance of {@code NewEngineIntentBuilder}
-     * constructed with a {@code Class} reference to the {@code FlutterActivity} subclass,
+     * constructed with a {@code Class} reference to the {@code FlutterFragmentActivity} subclass,
      * e.g.:
      * <p>
      * {@code
@@ -161,7 +161,7 @@ public class FlutterFragmentActivity extends FragmentActivity
    */
   @NonNull
   public static CachedEngineIntentBuilder withCachedEngine(@NonNull String cachedEngineId) {
-    return new CachedEngineIntentBuilder(FlutterActivity.class, cachedEngineId);
+    return new CachedEngineIntentBuilder(FlutterFragmentActivity.class, cachedEngineId);
   }
 
   /**
@@ -170,7 +170,7 @@ public class FlutterFragmentActivity extends FragmentActivity
    * {@link io.flutter.embedding.engine.FlutterEngineCache}.
    */
   public static class CachedEngineIntentBuilder {
-    private final Class<? extends FlutterActivity> activityClass;
+    private final Class<? extends FlutterFragmentActivity> activityClass;
     private final String cachedEngineId;
     private boolean destroyEngineWithActivity = false;
     private String backgroundMode = DEFAULT_BACKGROUND_MODE;
@@ -189,7 +189,7 @@ public class FlutterFragmentActivity extends FragmentActivity
      * }
      */
     protected CachedEngineIntentBuilder(
-        @NonNull Class<? extends FlutterActivity> activityClass,
+        @NonNull Class<? extends FlutterFragmentActivity> activityClass,
         @NonNull String engineId
     ) {
       this.activityClass = activityClass;
@@ -297,7 +297,7 @@ public class FlutterFragmentActivity extends FragmentActivity
         Log.d(TAG, "Using the launch theme as normal theme.");
       }
     } catch (PackageManager.NameNotFoundException exception) {
-      Log.e(TAG, "Could not read meta-data for FlutterActivity. Using the launch theme as normal theme.");
+      Log.e(TAG, "Could not read meta-data for FlutterFragmentActivity. Using the launch theme as normal theme.");
     }
   }
 
@@ -580,7 +580,7 @@ public class FlutterFragmentActivity extends FragmentActivity
    * <p>
    * This preference can be controlled by setting a {@code <meta-data>} called
    * {@link FlutterActivityLaunchConfigs#DART_ENTRYPOINT_META_DATA_KEY} within the Android manifest
-   * definition for this {@code FlutterActivity}.
+   * definition for this {@code FlutterFragmentActivity}.
    * <p>
    * Subclasses may override this method to directly control the Dart entrypoint.
    */
@@ -639,7 +639,7 @@ public class FlutterFragmentActivity extends FragmentActivity
 
   /**
    * Returns the ID of a statically cached {@link FlutterEngine} to use within this
-   * {@code FlutterActivity}, or {@code null} if this {@code FlutterFragmentActivity} does not want
+   * {@code FlutterFragmentActivity}, or {@code null} if this {@code FlutterFragmentActivity} does not want
    * to use a cached {@link FlutterEngine}.
    */
   @Nullable
