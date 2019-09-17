@@ -25,33 +25,36 @@ class _StoredMessage {
 class _RingBuffer<T> {
   final collection.ListQueue<T> _queue;
   int _capacity;
+  /// A callback that get's called when items are ejected from the [_RingBuffer]
+  /// by way of an overflow or a resizing.
   Function(T) _dropItemCallback;
 
   _RingBuffer(this._capacity)
     : _queue = collection.ListQueue<T>(_capacity);
 
+  /// Returns the number of items in the [_RingBuffer].
   int get length => _queue.length;
 
+  /// Returns the man number of items that can be stored in the [_RingBuffer].
   int get capacity => _capacity;
 
+  /// Returns true if there are no items in the [_RingBuffer].
   bool get isEmpty => _queue.isEmpty;
 
+  /// Setter for the _dropItemCallback field.
   set dropItemCallback(Function(T) callback) {
     _dropItemCallback = callback;
   }
 
   /// Returns true on overflow.
   bool push(T val) {
-    bool overflow = false;
-    while (_queue.length >= _capacity) {
-      final T item = _queue.removeFirst();
-      if (_dropItemCallback != null) {
-        _dropItemCallback(item);
-      }
-      overflow = true;
+    if (_capacity <= 0) {
+      return true;
+    } else {
+      final int overflowCount = _dropOverflowItems(_capacity - 1);
+      _queue.addLast(val);
+      return overflowCount > 0;
     }
-    _queue.addLast(val);
-    return overflow;
   }
 
   /// Returns null when empty.
@@ -59,21 +62,24 @@ class _RingBuffer<T> {
     return _queue.isEmpty ? null : _queue.removeFirst();
   }
 
-  /// Returns the number of discarded items resulting from resize.
-  int resize(int newSize) {
+  /// Removes items until then length reaches [lengthLimit] and returns
+  /// the number of items removed.
+  int _dropOverflowItems(int lengthLimit) {
     int result = 0;
-
-    while (length > newSize) {
-      result += 1;
+    while (_queue.length > lengthLimit) {
       final T item = _queue.removeFirst();
       if (_dropItemCallback != null) {
         _dropItemCallback(item);
       }
+      result += 1;
     }
-
-    _capacity = newSize;
-
     return result;
+  }
+
+  /// Returns the number of discarded items resulting from resize.
+  int resize(int newSize) {
+    _capacity = newSize;
+    return _dropOverflowItems(newSize);
   }
 }
 
