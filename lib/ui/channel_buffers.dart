@@ -155,6 +155,10 @@ class ChannelBuffers {
     return (queue == null) ? true : queue.isEmpty;
   }
 
+  /// Changes the capacity of the queue associated with the given channel.
+  ///
+  /// This could result in the dropping of messages if the newSize is less
+  /// than the current length of the queue.
   void resize(String channel, int newSize) {
     _RingBuffer<_StoredMessage> queue = _messages[channel];
     if (queue == null) {
