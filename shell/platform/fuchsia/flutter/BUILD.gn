@@ -247,14 +247,44 @@ executable("flutter_runner_unittests") {
   output_name = "flutter_runner_tests"
 
   sources = [
-    "sample_unittests.cc",
+    "accessibility_bridge.cc",
+    "accessibility_bridge.h",
+    "accessibility_bridge_unittest.cc",
+    "flutter_runner_fakes.h",
+    "logging.h",
+    "platform_view.cc",
+    "platform_view.h",
+    "platform_view_unittest.cc",
+    "surface.cc",
+    "surface.h",
+    "vsync_recorder.cc",
+    "vsync_recorder.h",
+    "vsync_waiter.cc",
+    "vsync_waiter.h",
   ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
   libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
   deps = [
+    ":jit",
     "//flutter/testing",
+    "//flutter/lib/ui",
+    "//flutter/shell/common",
+    "//build/fuchsia/fidl:fuchsia.accessibility.semantics",
+    "//build/fuchsia/fidl:fuchsia.modular",
+    "//build/fuchsia/fidl:fuchsia.sys",
+    "//build/fuchsia/fidl:fuchsia.ui.scenic",
+    "//build/fuchsia/pkg:async-loop-cpp",
+    "//build/fuchsia/pkg:sys_cpp",
+    "//build/fuchsia/pkg:sys_cpp_testing",
+    "//build/fuchsia/pkg:scenic_cpp",
+    "//build/fuchsia/pkg:zx",
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/platform:libdart_platform_jit",
+    "//third_party/googletest:gtest_main",
+    "//third_party/icu",
+    "//third_party/skia",
   ]
 }
 
