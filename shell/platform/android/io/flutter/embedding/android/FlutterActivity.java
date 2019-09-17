@@ -188,10 +188,14 @@ import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.SPLASH_S
  *     />
  * }
  * <p>
- * A number of methods in this class have the same implementation as
- * {@link FlutterFragmentActivity}. These methods are duplicated for readability purposes. Be sure
- * to replicate any change in this class in {@link FlutterFragmentActivity}, too.
+ * <strong>Alternative Activity</strong>
+ * {@link FlutterFragmentActivity} is also available, which is similar to {@code FlutterActivity}
+ * but it extends {@code FragmentActivity}. You should use {@code FlutterActivity}, if possible,
+ * but if you need a {@code FragmentActivity} then you should use {@link FlutterFragmentActivity}.
  */
+// A number of methods in this class have the same implementation as FlutterFragmentActivity. These
+// methods are duplicated for readability purposes. Be sure to replicate any change in this class in
+// FlutterFragmentActivity, too.
 public class FlutterActivity extends Activity
     implements FlutterActivityAndFragmentDelegate.Host,
     LifecycleOwner {
