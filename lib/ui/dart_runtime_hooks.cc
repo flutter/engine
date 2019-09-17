@@ -47,12 +47,12 @@ namespace flutter {
 #define DECLARE_FUNCTION(name, count) \
   extern void name(Dart_NativeArguments args);
 
-#define BUILTIN_NATIVE_LIST(V) \
-  V(Logger_PrintString, 1)     \
-  V(Logger_PrintDebugString, 1)     \
-  V(SaveCompilationTrace, 0)   \
-  V(ScheduleMicrotask, 1)      \
-  V(GetCallbackHandle, 1)      \
+#define BUILTIN_NATIVE_LIST(V)  \
+  V(Logger_PrintString, 1)      \
+  V(Logger_PrintDebugString, 1) \
+  V(SaveCompilationTrace, 0)    \
+  V(ScheduleMicrotask, 1)       \
+  V(GetCallbackHandle, 1)       \
   V(GetCallbackFromHandle, 1)
 
 BUILTIN_NATIVE_LIST(DECLARE_FUNCTION);
