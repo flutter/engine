@@ -133,16 +133,16 @@ class ChannelBuffers {
       queue = _makeRingBuffer(kDefaultBufferSize);
       _messages[channel] = queue;
     }
-    final bool result = queue.push(_StoredMessage(data, callback));
-    if (result) {
+    final bool didOverflow = queue.push(_StoredMessage(data, callback));
+    if (didOverflow) {
       // TODO(aaclarke): Update this message to include instructions on how to resize
       // the buffer once that is available to users.
       _Logger._printString('Overflow on channel: $channel.  '
-                           'Messages on this channel are being discarded.  '
+                           'Messages on this channel are being discarded in FIFO fashion.  '
                            'The engine may not be running or you need to adjust '
                            'the buffer size if of the channel.');
     }
-    return result;
+    return didOverflow;
   }
 
   /// Returns null on underflow.
