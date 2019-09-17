@@ -79,6 +79,7 @@ const TaskRunners& UIDartState::GetTaskRunners() const {
 }
 
 fml::RefPtr<flutter::SkiaUnrefQueue> UIDartState::GetSkiaUnrefQueue() const {
+  FML_DCHECK(task_runners_.GetIOTaskRunner()->RunsTasksOnCurrentThread());
   if (!io_manager_) {
     return nullptr;
   }
@@ -114,6 +115,7 @@ void UIDartState::AddOrRemoveTaskObserver(bool add) {
 }
 
 fml::WeakPtr<GrContext> UIDartState::GetResourceContext() const {
+  FML_DCHECK(task_runners_.GetIOTaskRunner()->RunsTasksOnCurrentThread());
   if (!io_manager_) {
     return {};
   }

@@ -518,7 +518,7 @@ class Shell final : public PlatformView::Delegate,
   fml::WeakPtrFactory<Shell> weak_factory_;
 
   // For accessing the Shell via the GPU thread, necessary for various
-  // rasterizer callbacks
+  // rasterizer callbacks.
   std::unique_ptr<fml::WeakPtrFactory<Shell>> weak_factory_gpu_;
 
   friend class testing::ShellTest;

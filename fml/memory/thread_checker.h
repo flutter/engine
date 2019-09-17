@@ -55,8 +55,6 @@ class ThreadChecker final {
 #endif
 };
 
-// TODO(chinmaygarde): Re-enable this after auditing all new users of
-// fml::WeakPtr.
 #if !defined(NDEBUG)
 #define FML_DECLARE_THREAD_CHECKER(c) fml::ThreadChecker c
 #define FML_DCHECK_CREATION_THREAD_IS_CURRENT(c) \

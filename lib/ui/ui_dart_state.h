@@ -14,6 +14,7 @@
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
@@ -66,8 +67,20 @@ class UIDartState : public tonic::DartState {
       return {};
     }
     auto* state = UIDartState::Current();
+    auto io_task_runner = state->GetTaskRunners().GetIOTaskRunner();
+
     FML_DCHECK(state);
-    auto queue = state->GetSkiaUnrefQueue();
+
+    fml::RefPtr<flutter::SkiaUnrefQueue> queue;
+    fml::AutoResetWaitableEvent latch;
+
+    auto io_task = [&state, &queue, &latch]() {
+      queue = state->GetSkiaUnrefQueue();
+      latch.Signal();
+    };
+    fml::TaskRunner::RunNowOrPostTask(io_task_runner, io_task);
+    latch.Wait();
+
     return {std::move(object), std::move(queue)};
   };
 
