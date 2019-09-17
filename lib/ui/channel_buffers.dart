@@ -12,17 +12,19 @@ class _StoredMessage {
   /// is handled.
   _StoredMessage(this._data, this._callback);
 
+  /// Representation of the message's payload.
   final ByteData _data;
-  final PlatformMessageResponseCallback _callback;
-
-  /// Getter for _data field, represents the message's payload.
   ByteData get data => _data;
-  /// Getter for the _callback field, to be called when the message is received.
+
+  /// Callback to be called when the message is received.
+  final PlatformMessageResponseCallback _callback;
   PlatformMessageResponseCallback get callback => _callback;
 }
 
 /// A fixed-size circular queue.
 class _RingBuffer<T> {
+  /// The underlying data for the RingBuffer.  ListQueue's dynamically resize,
+  /// [_RingBuffer]s do not.
   final collection.ListQueue<T> _queue;
 
   _RingBuffer(this._capacity)
@@ -110,6 +112,7 @@ class ChannelBuffers {
   /// buffer size that will avoid any overflows.
   static const int kDefaultBufferSize = 1;
 
+  /// A mapping between a channel name and its associated [_RingBuffer].
   final Map<String, _RingBuffer<_StoredMessage>> _messages =
     <String, _RingBuffer<_StoredMessage>>{};
 
@@ -183,4 +186,10 @@ class ChannelBuffers {
   }
 }
 
+/// [ChannelBuffer]s that allow the storage of messages between the
+/// Engine and the Framework.  Typically messages that can't be delivered
+/// are stored here until the Framework is able to process them.
+///
+/// See also:
+/// * [BinaryMessenger] - The place where ChannelBuffers are typically read.
 final ChannelBuffers channelBuffers = ChannelBuffers();
