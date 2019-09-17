@@ -33,8 +33,6 @@ class AndroidExternalTextureShareContext : public flutter::Texture {
 
   GLuint texture_id_ = 0;
 
-  SkMatrix transform;
-
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidExternalTextureShareContext);
 };
 

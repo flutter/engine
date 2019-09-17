@@ -36,7 +36,6 @@ void AndroidExternalTextureShareContext::Paint(SkCanvas& canvas,
                                  GL_RGBA8_OES};
 
   textureInfo.fTarget = GL_TEXTURE_2D;
-  transform.setIdentity();
 
   GrBackendTexture backendTexture(bounds.width(), bounds.height(),
                                   GrMipMapped::kNo, textureInfo);
