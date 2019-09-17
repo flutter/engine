@@ -187,6 +187,10 @@ import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.SPLASH_S
  *     android:value="true"
  *     />
  * }
+ * <p>
+ * A number of methods in this class have the same implementation as
+ * {@link FlutterFragmentActivity}. These methods are duplicated for readability purposes. Be sure
+ * to replicate any change in this class in {@link FlutterFragmentActivity}, too.
  */
 public class FlutterActivity extends Activity
     implements FlutterActivityAndFragmentDelegate.Host,

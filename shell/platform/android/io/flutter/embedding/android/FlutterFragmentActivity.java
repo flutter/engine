@@ -52,6 +52,10 @@ import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.SPLASH_S
  * regular {@link FlutterActivity} instead, because {@link FlutterActivity}
  * is considered to be the standard, canonical implementation of a Flutter
  * {@code Activity}.
+ * <p>
+ * A number of methods in this class have the same implementation as {@link FlutterActivity}. These
+ * methods are duplicated for readability purposes. Be sure to replicate any change in this class
+ * in {@link FlutterActivity}, too.
  */
 public class FlutterFragmentActivity extends FragmentActivity
     implements SplashScreenProvider,
