@@ -23,8 +23,7 @@ AccessibilityBridge::AccessibilityBridge(
     FML_LOG(ERROR) << "Flutter cannot connect to SemanticsManager with status: "
                    << zx_status_get_string(status) << ".";
   });
-  fidl::InterfaceHandle<
-      fuchsia::accessibility::semantics::SemanticListener>
+  fidl::InterfaceHandle<fuchsia::accessibility::semantics::SemanticListener>
       listener_handle;
   binding_.Bind(listener_handle.NewRequest());
   fuchsia_semantics_manager_->RegisterViewForSemantics(

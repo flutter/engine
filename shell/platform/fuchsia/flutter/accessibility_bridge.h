@@ -76,8 +76,7 @@ class AccessibilityBridge
 
  private:
   static constexpr int32_t kRootNodeId = 0;
-  fidl::Binding<fuchsia::accessibility::semantics::SemanticListener>
-      binding_;
+  fidl::Binding<fuchsia::accessibility::semantics::SemanticListener> binding_;
   fuchsia::accessibility::semantics::SemanticsManagerPtr
       fuchsia_semantics_manager_;
   fuchsia::accessibility::semantics::SemanticTreePtr tree_ptr_;
@@ -130,7 +129,8 @@ class AccessibilityBridge
 
   // |fuchsia::accessibility::semantics::SemanticListener|
   void OnSemanticsModeChanged(
-      bool enabled, OnSemanticsModeChangedCallback callback) override {}
+      bool enabled,
+      OnSemanticsModeChangedCallback callback) override {}
 
   FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);
 };
