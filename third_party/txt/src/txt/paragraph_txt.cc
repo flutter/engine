@@ -415,6 +415,9 @@ bool ParagraphTxt::ComputeBidiRuns(std::vector<BidiRun>* result) {
   //
   // This only applies to the final whitespace at the end as other whitespace is
   // no longer ambiguous when surrounded by additional text.
+
+  // TODO(garyq): Handle this in the text editor caret code instead at layout
+  // level.
   bool has_trailing_whitespace = false;
   int32_t bidi_run_start, bidi_run_length;
   if (bidi_run_count > 1) {
