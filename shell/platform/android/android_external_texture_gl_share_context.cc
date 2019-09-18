@@ -12,11 +12,6 @@
 #include "flutter/fml/trace_event.h"
 
 namespace flutter {
-// This is another solution for Flutter's ExternalTexture.
-// The original ExternalTexture uses SurfaceTexture to update the frame data
-// that native video object produces to an OpenGL texture. In this scheme, we
-// directly pass an OpenGL texture ID to the ExternalTexture object, and avoid
-// the performance consumption of data writing to SurfaceTexture
 AndroidExternalTextureShareContext::AndroidExternalTextureShareContext(
     int64_t id,
     int64_t shareTextureID)
