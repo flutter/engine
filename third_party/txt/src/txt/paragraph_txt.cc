@@ -433,7 +433,13 @@ bool ParagraphTxt::ComputeBidiRuns(std::vector<BidiRun>* result) {
       if (u_hasBinaryProperty(last_char, UCHAR_WHITE_SPACE)) {
         has_trailing_whitespace = true;
         bidi_run_count--;
-        if (bidi_run_start == 0) {
+        // Check if the trailing whitespace occurs before the previous run or
+        // not. If so, this trailing whitespace was a leading whitespace.
+        int32_t second_last_bidi_run_start, second_last_bidi_run_length;
+        ubidi_getVisualRun(bidi.get(), bidi_run_count - 2,
+                           &second_last_bidi_run_start,
+                           &second_last_bidi_run_length);
+        if (bidi_run_start < second_last_bidi_run_start) {
           is_leading = true;
         }
       }
