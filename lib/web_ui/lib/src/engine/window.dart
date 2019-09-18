@@ -204,38 +204,42 @@ class EngineWindow extends ui.Window {
     });
   }
 
-
   /// The setting indicating the current brightness mode of the host platform.
   /// If the platform has no preference, [platformBrightness] defaults to [Brightness.light].
   ui.Brightness get platformBrightness => _platformBrightness;
   ui.Brightness _platformBrightness = ui.Brightness.light;
 
-  /// Reference to css media query that indicates the user theme preference on the web
+  /// Updates [_platformBrightness] and invokes [onPlatformBrightnessChanged]
+  /// callback if [_platformBrightness] changed.
+  void _updatePlatformBrightness(ui.Brightness newPlatformBrightness) {
+    ui.Brightness previousPlatformBrightness = _platformBrightness;
+    _platformBrightness = newPlatformBrightness;
+
+    if (previousPlatformBrightness != _platformBrightness &&
+        onPlatformBrightnessChanged != null)
+      onPlatformBrightnessChanged();
+  }
+
+  /// Reference to css media query that indicates the user theme preference on the web.
   final html.MediaQueryList _brightnessMediaQuery = html.window.matchMedia('(prefers-color-scheme: dark)');
 
   /// A callback that is invoked whenever [_brightnessMediaQuery] changes value.
-  /// Updates the platformBrightness with the new user preferenceq
   ///
-  ///  The param brightnessMediaQuery can be a MediaQueryListEvent or a MediaQueryList;
-  ///
-  Function(dynamic) _brightnessMediaQueryListener;
+  /// Updates the [_platformBrightness] with the new user preference.
+  html.EventListener _brightnessMediaQueryListener;
 
-  /// Set the callback function for listening changes in [_brightnessMediaQuery] value
+  /// Set the callback function for listening changes in [_brightnessMediaQuery] value.
   void _addBrightnessMediaQueryListener() {
-    _brightnessMediaQueryListener = (brightnessMediaQuery) {
-       ui.Brightness previousPlatformBrightness = _platformBrightness;
-      _platformBrightness = brightnessMediaQuery.matches ? ui.Brightness.dark : ui.Brightness.light;
+    _updatePlatformBrightness(_brightnessMediaQuery.matches ? ui.Brightness.dark : ui.Brightness.light);
 
-      if (previousPlatformBrightness != _platformBrightness &&
-        onPlatformBrightnessChanged != null)
-          onPlatformBrightnessChanged();
+    _brightnessMediaQueryListener = (html.Event event) {
+      final html.MediaQueryListEvent mqEvent = event;
+      _updatePlatformBrightness(mqEvent.matches ? ui.Brightness.dark : ui.Brightness.light);
     };
-    _brightnessMediaQueryListener(_brightnessMediaQuery); // Brightness is checked when initializing
     _brightnessMediaQuery.addListener(_brightnessMediaQueryListener);
   }
 
-  /// Remove the callback function for listening changes in [_brightnessMediaQuery] value
-  ///
+  /// Remove the callback function for listening changes in [_brightnessMediaQuery] value.
   void _removeBrightnessMediaQueryListener() {
     _brightnessMediaQuery.removeListener(_brightnessMediaQueryListener);
     _brightnessMediaQueryListener = null;
