@@ -502,6 +502,11 @@ class Locale {
 /// There is a single Window instance in the system, which you can
 /// obtain from the [window] property.
 abstract class Window {
+
+  Window() {
+    _addBrightnessMediaQueryListener();
+  }
+
   /// The number of device pixels for each logical pixel. This number might not
   /// be a power of two. Indeed, it might not even be an integer. For example,
   /// the Nexus 6 has a device pixel ratio of 3.5.
@@ -637,6 +642,36 @@ abstract class Window {
   /// If the platform has no preference, [platformBrightness] defaults to [Brightness.light].
   Brightness get platformBrightness => _platformBrightness;
   Brightness _platformBrightness = Brightness.light;
+
+  /// Reference to css media query that indicates the user theme preference on the web
+  final html.MediaQueryList _brightnessMediaQuery = html.window.matchMedia('(prefers-color-scheme: dark)');
+
+  /// A callback that is invoked whenever [_brightnessMediaQuery] changes value.
+  /// Updates the platformBrightness with the new user preferenceq
+  ///
+  ///  The param brightnessMediaQuery can be a MediaQueryListEvent or a MediaQueryList;
+  ///
+  void _brightnessMediaQueryChanged(brightnessMediaQuery) {
+      Brightness previousPlatformBrightness = _platformBrightness;
+      _platformBrightness = brightnessMediaQuery.matches ? Brightness.dark : Brightness.light;
+      if (previousPlatformBrightness != _platformBrightness &&
+          _onPlatformBrightnessChanged is VoidCallback)
+        _onPlatformBrightnessChanged();
+  }
+
+  /// Set the callback function for listening changes in [_brightnessMediaQuery] value
+  ///
+  void _addBrightnessMediaQueryListener() {
+    _brightnessMediaQueryChanged(_brightnessMediaQuery); // Brightness is checked when initializing
+    _brightnessMediaQuery.addListener(_brightnessMediaQueryChanged);
+  }
+
+  /// Remove the callback function for listening changes in [_brightnessMediaQuery] value
+  ///
+  void _removeBrightnessMediaQueryListener() {
+    _brightnessMediaQuery.removeListener(_brightnessMediaQueryChanged);
+  }
+
 
   /// A callback that is invoked whenever [platformBrightness] changes value.
   ///
@@ -997,6 +1032,11 @@ abstract class Window {
   String _initialLifecycleState;
 
   void setIsolateDebugName(String name) {}
+
+  @override
+  void dispose() {
+    _removeBrightnessMediaQueryListener();
+  }
 }
 
 VoidCallback webOnlyScheduleFrameCallback;
