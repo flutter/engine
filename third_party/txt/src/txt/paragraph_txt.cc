@@ -419,7 +419,6 @@ bool ParagraphTxt::ComputeBidiRuns(std::vector<BidiRun>* result) {
   // TODO(garyq): Handle this in the text editor caret code instead at layout
   // level.
   bool has_trailing_whitespace = false;
-  bool is_leading = false;  // True if the whitespace is a leading whitespace.
   int32_t bidi_run_start, bidi_run_length;
   if (bidi_run_count > 1) {
     ubidi_getVisualRun(bidi.get(), bidi_run_count - 1, &bidi_run_start,
@@ -437,11 +436,10 @@ bool ParagraphTxt::ComputeBidiRuns(std::vector<BidiRun>* result) {
         ubidi_getVisualRun(bidi.get(), bidi_run_count - 2,
                            &second_last_bidi_run_start,
                            &second_last_bidi_run_length);
-        if (bidi_run_start < second_last_bidi_run_start) {
-          is_leading = true;
+        if (bidi_run_start >= second_last_bidi_run_start) {
+          has_trailing_whitespace = true;
+          bidi_run_count--;
         }
-        has_trailing_whitespace = true;
-        bidi_run_count--;
       }
     }
   }
@@ -484,9 +482,6 @@ bool ParagraphTxt::ComputeBidiRuns(std::vector<BidiRun>* result) {
     // Attach the final trailing whitespace as part of this run.
     if (has_trailing_whitespace && bidi_run_index == bidi_run_count - 1) {
       bidi_run_length++;
-      if (is_leading) {
-        bidi_run_start--;
-      }
     }
 
     size_t bidi_run_end = bidi_run_start + bidi_run_length;
