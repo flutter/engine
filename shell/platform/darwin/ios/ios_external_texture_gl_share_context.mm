@@ -29,6 +29,7 @@ void IOSExternalTextureShareContext::Paint(SkCanvas& canvas,
                                            GrContext* context) {
   GLuint texture_id = [external_texture_ copyShareTexture];
   if (texture_id == 0) {
+    FML_LOG(WARNING) << "Paint nothing when texture_id is 0";
     return;
   }
   GrGLTextureInfo textureInfo;
