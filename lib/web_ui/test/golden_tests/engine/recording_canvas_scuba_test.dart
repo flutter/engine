@@ -6,29 +6,23 @@ import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:flutter_web_ui/ui.dart' hide TextStyle;
-import 'package:flutter_web_ui/src/engine.dart';
+import 'package:ui/ui.dart' hide TextStyle;
+import 'package:ui/src/engine.dart';
 import 'package:test/test.dart';
 
-import '../matchers.dart';
-import 'scuba.dart';
+import '../../matchers.dart';
+import 'package:web_engine_tester/golden_tester.dart';
 
 void main() async {
-  debugEmulateFlutterTesterEnvironment = true;
-  await webOnlyInitializePlatform();
-  webOnlyFontCollection.debugRegisterTestFonts();
-  await webOnlyFontCollection.ensureFontsLoaded();
-
   const double screenWidth = 600.0;
   const double screenHeight = 800.0;
   const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
   final Paint testPaint = Paint()..color = const Color(0xFFFF0000);
 
-  final EngineScubaTester scuba = await EngineScubaTester.initialize(
-    viewportSize: const Size(500, 500),
-  );
+  // Commit a recording canvas to a bitmap, and compare with the expected
+  Future<void> _checkScreenshot(RecordingCanvas rc, String fileName,
+      { Rect region = const Rect.fromLTWH(0, 0, 500, 500) }) async {
 
-  Future<void> _checkScreenshot(RecordingCanvas rc, String fileName) async {
     final EngineCanvas engineCanvas = BitmapCanvas(screenRect);
 
     // Draws the estimated bounds so we can spot the bug in Scuba.
@@ -50,13 +44,20 @@ void main() async {
     try {
       sceneElement.append(engineCanvas.rootElement);
       html.document.body.append(sceneElement);
-      await scuba.diffScreenshot('paint_bounds_for_$fileName');
+      await matchGoldenFile('engine/paint_bounds_for_$fileName.png', region: region);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
       sceneElement.remove();
     }
   }
+
+  setUp(() async {
+    debugEmulateFlutterTesterEnvironment = true;
+    await webOnlyInitializePlatform();
+    webOnlyFontCollection.debugRegisterTestFonts();
+    await webOnlyFontCollection.ensureFontsLoaded();
+  });
 
   test('Empty canvas reports correct paint bounds', () async {
     final RecordingCanvas rc =
