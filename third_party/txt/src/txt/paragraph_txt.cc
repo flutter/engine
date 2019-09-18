@@ -469,7 +469,8 @@ bool ParagraphTxt::ComputeBidiRuns(std::vector<BidiRun>* result) {
       continue;
 
     // Attach the final trailing whitespace as part of this run.
-    if (has_trailing_whitespace && bidi_run_index == bidi_run_count - 1) {
+    if (has_trailing_whitespace && bidi_run_index == bidi_run_count - 1 &&
+        bidi_run_length + bidi_run_start + 1ull < text_.size()) {
       bidi_run_length++;
     }
 
