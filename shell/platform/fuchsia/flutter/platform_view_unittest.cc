@@ -214,72 +214,15 @@ TEST_F(PlatformViewTests, ChangesSettings) {
           static_cast<int32_t>(
               flutter::AccessibilityFeatureFlag::kAccessibleNavigation));
 
-  fuchsia::accessibility::Settings screen_no_color_inversion;
-  screen_no_color_inversion.set_screen_reader_enabled(true);
-  screen_no_color_inversion.set_color_inversion_enabled(false);
 
-  platform_view.OnSettingsChange(std::move(screen_no_color_inversion));
   EXPECT_TRUE(delegate.SemanticsEnabled());
   EXPECT_EQ(delegate.SemanticsFeatures(),
             static_cast<int32_t>(
                 flutter::AccessibilityFeatureFlag::kAccessibleNavigation));
 
 
-  platform_view.OnSettingsChange(std::move(disabled_settings));
   EXPECT_FALSE(delegate.SemanticsEnabled());
   EXPECT_EQ(delegate.SemanticsFeatures(), 0);
-}
-
-TEST_F(PlatformViewTests, RegistersWatcherAndSetsFeaturesWhenNoScreenReader) {
-  fuchsia::accessibility::Settings settings;
-  settings.set_color_inversion_enabled(true);
-  MockAccessibilitySettingsManager settings_manager =
-      MockAccessibilitySettingsManager(std::move(settings));
-  MockSemanticsManager semantics_manager = MockSemanticsManager();
-  sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
-  services_provider.AddService(settings_manager.GetHandler(dispatcher()),
-                               AccessibilitySettingsManager::Name_);
-  services_provider.AddService(semantics_manager.GetHandler(dispatcher()),
-                               SemanticsManager::Name_);
-
-  MockPlatformViewDelegate delegate;
-  zx::eventpair a, b;
-  zx::eventpair::create(/* flags */ 0u, &a, &b);
-  auto view_ref = fuchsia::ui::views::ViewRef({
-      .reference = std::move(a),
-  });
-  auto view_ref_control = fuchsia::ui::views::ViewRefControl({
-      .reference = std::move(b),
-  });
-  flutter::TaskRunners task_runners =
-      flutter::TaskRunners("test_runners", nullptr, nullptr, nullptr, nullptr);
-
-  EXPECT_FALSE(delegate.SemanticsEnabled());
-  EXPECT_EQ(delegate.SemanticsFeatures(), 0);
-
-  auto platform_view = flutter_runner::PlatformView(
-      delegate,                               // delegate
-      "test_platform_view",                   // label
-      std::move(view_ref_control),            // view_ref_control
-      std::move(view_ref),                    // view_ref
-      std::move(task_runners),                // task_runners
-      services_provider.service_directory(),  // runner_services
-      nullptr,  // parent_environment_service_provider_handle
-      nullptr,  // session_listener_request
-      nullptr,  // on_session_listener_error_callback
-      nullptr,  // session_metrics_did_change_callback
-      nullptr,  // session_size_change_hint_callback
-      nullptr,  // wireframe_enabled_callback
-      0u        // vsync_event_handle
-  );
-
-  RunLoopUntilIdle();
-
-  EXPECT_TRUE(settings_manager.WatchCalled());
-  EXPECT_FALSE(delegate.SemanticsEnabled());
-  EXPECT_EQ(
-      delegate.SemanticsFeatures(),
-      static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kInvertColors));
 }
 
 // Test to make sure that PlatformView correctly registers messages sent on

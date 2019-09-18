@@ -9,9 +9,6 @@
 
 namespace flutter_runner_test {
 using fuchsia::accessibility::semantics::SemanticsManager;
-using AccessibilitySettingsManager = fuchsia::accessibility::SettingsManager;
-using AccessibilitySettingsWatcher = fuchsia::accessibility::SettingsWatcher;
-using AccessibilitySettingsProvider = fuchsia::accessibility::SettingsProvider;
 
 class MockSemanticsManager
     : public SemanticsManager,
@@ -103,40 +100,6 @@ class MockSemanticsManager
   bool delete_overflowed_;
   std::vector<uint32_t> last_deleted_node_ids_;
   int commit_count_;
-};
-
-class MockAccessibilitySettingsManager : public AccessibilitySettingsManager {
- public:
-  MockAccessibilitySettingsManager(fuchsia::accessibility::Settings settings)
-      : settings_(std::move(settings)) {}
-  ~MockAccessibilitySettingsManager() = default;
-
-  // |fuchsia::accessibility::SettingsManager|
-  void RegisterSettingProvider(
-      fidl::InterfaceRequest<AccessibilitySettingsProvider>
-          settings_provider_request) override {}
-
-  // |fuchsia::accessibility::SettingsManager|
-  void Watch(
-      fidl::InterfaceHandle<AccessibilitySettingsWatcher> watcher) override {
-    watch_called_ = true;
-    auto proxy = watcher.Bind();
-    EXPECT_TRUE(proxy);
-    fuchsia::accessibility::Settings settings = fidl::Clone(settings_);
-    proxy->OnSettingsChange(std::move(settings));
-  }
-
-  fidl::InterfaceRequestHandler<AccessibilitySettingsManager> GetHandler(
-      async_dispatcher_t* dispatcher) {
-    return bindings_.GetHandler(this, dispatcher);
-  }
-
-  bool WatchCalled() { return watch_called_; }
-
- private:
-  bool watch_called_ = false;
-  fuchsia::accessibility::Settings settings_;
-  fidl::BindingSet<AccessibilitySettingsManager> bindings_;
 };
 
 }  // namespace flutter_runner_test

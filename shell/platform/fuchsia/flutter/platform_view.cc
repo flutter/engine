@@ -77,7 +77,7 @@ void SetInterfaceErrorHandler(fidl::Binding<T>& binding, std::string name) {
 }
 
 PlatformView::PlatformView(
-    PlatformView::Delegate& delegate,
+    flutter::PlatformView::Delegate& delegate,
     std::string debug_label,
     fuchsia::ui::views::ViewRefControl view_ref_control,
     fuchsia::ui::views::ViewRef view_ref,
@@ -129,12 +129,7 @@ PlatformView::PlatformView(
   fuchsia::ui::views::ViewRef accessibility_view_ref;
   view_ref_.Clone(&accessibility_view_ref);
   accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
-      runner_services, std::move(accessibility_view_ref));
-
-  // TODO(SCN-975): Re-enable.  Likely that Engine should clone the ViewToken
-  // and pass the clone in here.
-  //   view_->GetToken(std::bind(&PlatformView::ConnectSemanticsProvider, this,
-  //                             std::placeholders::_1));
+      *this, runner_services, std::move(accessibility_view_ref));
 }
 
 PlatformView::~PlatformView() = default;
@@ -601,9 +596,15 @@ void PlatformView::HandlePlatformMessage(
 }
 
 // |flutter::PlatformView|
+// |flutter_runner::AccessibilityBridge::Delegate|
 void PlatformView::SetSemanticsEnabled(bool enabled) {
-  accessibility_bridge_->SetSemanticsEnabled(enabled);
   flutter::PlatformView::SetSemanticsEnabled(enabled);
+  if (enabled) {
+    SetAccessibilityFeatures(static_cast<int32_t>(
+        flutter::AccessibilityFeatureFlag::kAccessibleNavigation));
+  } else {
+    SetAccessibilityFeatures(0);
+  }
 }
 
 // |flutter::PlatformView|

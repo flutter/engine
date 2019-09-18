@@ -5,8 +5,8 @@
 #include "flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h"
 
 #include <gtest/gtest.h>
-#include <lib/async-loop/default.h>
 #include <lib/async-loop/cpp/loop.h>
+#include <lib/async-loop/default.h>
 #include <lib/fidl/cpp/binding_set.h>
 #include <lib/fidl/cpp/interface_request.h>
 #include <lib/sys/cpp/testing/service_directory_provider.h>
@@ -18,7 +18,15 @@
 #include "flutter/shell/platform/fuchsia/flutter/flutter_runner_fakes.h"
 
 namespace flutter_runner_test {
-class AccessibilityBridgeTest : public test::Test {
+
+class AccessibilityBridgeTestDelegate
+    : public flutter_runner::AccessibilityBridge::Delegate {
+ public:
+  void SetSemanticsEnabled(bool enabled) override { enabled_ = enabled; }
+  bool enabled_;
+};
+
+class AccessibilityBridgeTest : public testing::Test {
  public:
   AccessibilityBridgeTest()
       : loop_(&kAsyncLoopConfigAttachToCurrentThread),
@@ -40,19 +48,23 @@ class AccessibilityBridgeTest : public test::Test {
     auto view_ref = fuchsia::ui::views::ViewRef({
         .reference = std::move(a),
     });
+    AccessibilityBridgeTestDelegate accessibility_delegate;
+
     accessibility_bridge_ =
         std::make_unique<flutter_runner::AccessibilityBridge>(
-            services_provider_.service_directory(), std::move(view_ref));
+            accessibility_delegate, services_provider_.service_directory(),
+            std::move(view_ref));
     RunLoopUntilIdle();
   }
 
   void TearDown() override { semantics_manager_.ResetTree(); }
 
+  MockSemanticsManager semantics_manager_;
+  std::unique_ptr<flutter_runner::AccessibilityBridge> accessibility_bridge_;
+
  private:
   async::Loop loop_;
   sys::testing::ServiceDirectoryProvider services_provider_;
-  MockSemanticsManager semantics_manager_;
-  std::unique_ptr<flutter_runner::AccessibilityBridge> accessibility_bridge_;
 };
 
 TEST_F(AccessibilityBridgeTest, RegistersViewRef) {
