@@ -175,10 +175,12 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
           'y': region['y'],
           'width': region['width'],
           'height': region['height'],
-          'scale': 1, // ?
+          'scale': 1, // This is NOT the DPI of the page, instead it's the "zoom level".
         },
       };
     }
+    // To tweak DPI we need to send an additional Emulation.setDeviceMetricsOverride. See:
+    // https://chromedevtools.github.io/devtools-protocol/tot/Emulation
     final wip.WipResponse response =
         await wipConnection.sendCommand('Page.captureScreenshot', captureScreenshotParameters);
 

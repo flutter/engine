@@ -1,4 +1,4 @@
-// Copyright 2019 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -24,13 +24,13 @@ class ImageDiff {
 
   /// The ratio of wrong pixels to all pixels in golden (between 0 and 1)
   /// This gets set to 1 (100% difference) when golden and other aren't the same size.
-  double get rate => _wrongPixels / _numPixels;
+  double get rate => _wrongPixels / _pixelCount;
 
   ImageDiff({ Image this.golden, Image this.other }) {
     _computeDiff();
   }
 
-  int _numPixels = 0;
+  int _pixelCount = 0;
   int _wrongPixels = 0;
 
   final int _colorOk = Color.fromRgb(255, 255, 255);
@@ -41,7 +41,7 @@ class ImageDiff {
     int goldenWidth = golden.width;
     int goldenHeight = golden.height;
 
-    _numPixels = goldenWidth * goldenHeight;
+    _pixelCount = goldenWidth * goldenHeight;
     diff = Image(goldenWidth, goldenHeight);
 
     if (goldenWidth == other.width && goldenHeight == other.height) {
@@ -64,7 +64,7 @@ class ImageDiff {
       }
     } else {
       // Images are completely different resolutions. Bail out big time.
-      _wrongPixels = _numPixels;
+      _wrongPixels = _pixelCount;
     }
   }
 }
