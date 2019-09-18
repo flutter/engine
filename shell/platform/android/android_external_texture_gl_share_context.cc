@@ -42,10 +42,9 @@ void AndroidExternalTextureShareContext::Paint(SkCanvas& canvas,
   sk_sp<SkImage> image = SkImage::MakeFromTexture(
       canvas.getGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin,
       kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
+  FML_DCHECK(image) << "Failed to create SkImage from Texture.";
   if (image) {
     canvas.drawImage(image, bounds.x(), bounds.y());
-  } else {
-    FML_LOG(ERROR) << "Create SKIImage Fail !!";
   }
 }
 
