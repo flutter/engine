@@ -381,8 +381,8 @@ TEST_F(DartIsolateTest, CanLaunchSecondaryIsolates) {
                                       "testCanLaunchSecondaryIsolate", {});
   ASSERT_TRUE(isolate);
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
-  child_shutdown_latch.Wait(); // wait for child isolate to shutdown first
-  latch.Wait(); // wait for last NotifyNative called by main isolate
+  child_shutdown_latch.Wait();  // wait for child isolate to shutdown first
+  latch.Wait();  // wait for last NotifyNative called by main isolate
   // root isolate will be auto-shutdown
 }
 
