@@ -4,17 +4,14 @@
 
 import 'dart:html' as html;
 
-import 'package:flutter_web_ui/src/engine.dart';
-import 'package:flutter_web_ui/ui.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart';
 import 'package:test/test.dart';
 
-import 'scuba.dart';
+import 'package:web_engine_tester/golden_tester.dart';
 
 void main() async {
-  // Scuba doesn't give us viewport smaller than 472px wide.
-  final EngineScubaTester scuba = await EngineScubaTester.initialize(
-    viewportSize: const Size(500, 100),
-  );
+  final Rect region = Rect.fromLTWH(8, 8, 500, 100); // Compensate for old scuba tester padding
 
   BitmapCanvas canvas;
 
@@ -71,7 +68,7 @@ void main() async {
 
     html.document.body.append(canvas.rootElement);
 
-    await scuba.diffScreenshot('misaligned_pixels_in_canvas_test');
+    await matchGoldenFile('engine/misaligned_pixels_in_canvas_test.png', region: region);
   }, timeout: const Timeout(Duration(seconds: 10)));
 
   test('compensates for misalignment of the canvas', () async {
@@ -86,7 +83,7 @@ void main() async {
 
     html.document.body.append(canvas.rootElement);
 
-    await scuba.diffScreenshot('misaligned_canvas_test');
+    await matchGoldenFile('engine/misaligned_canvas_test.png', region: region);
   }, timeout: const Timeout(Duration(seconds: 10)));
 
   test('fill the whole canvas with color even when transformed', () async {
@@ -97,7 +94,7 @@ void main() async {
 
     html.document.body.append(canvas.rootElement);
 
-    await scuba.diffScreenshot('bitmap_canvas_fills_color_when_transformed');
+    await matchGoldenFile('engine/bitmap_canvas_fills_color_when_transformed.png', region: region);
   }, timeout: const Timeout(Duration(seconds: 10)));
 
   test('fill the whole canvas with paint even when transformed', () async {
@@ -110,6 +107,6 @@ void main() async {
 
     html.document.body.append(canvas.rootElement);
 
-    await scuba.diffScreenshot('bitmap_canvas_fills_paint_when_transformed');
+    await matchGoldenFile('engine/bitmap_canvas_fills_paint_when_transformed.png', region: region);
   }, timeout: const Timeout(Duration(seconds: 10)));
 }
