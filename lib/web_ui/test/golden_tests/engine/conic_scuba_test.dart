@@ -4,16 +4,14 @@
 
 import 'dart:html' as html;
 
-import 'package:flutter_web_ui/src/engine.dart';
-import 'package:flutter_web_ui/ui.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart';
 import 'package:test/test.dart';
 
-import 'scuba.dart';
+import 'package:web_engine_tester/golden_tester.dart';
 
 void main() async {
-  final EngineScubaTester scuba = await EngineScubaTester.initialize(
-    viewportSize: const Size(600, 800),
-  );
+  final Rect region = Rect.fromLTWH(8, 8, 600, 800); // Compensate for old scuba tester padding
 
   Future<void> testPath(Path path, String scubaFileName) async {
     const Rect canvasBounds = Rect.fromLTWH(0, 0, 600, 800);
@@ -35,7 +33,7 @@ void main() async {
 
     html.document.body.append(bitmapCanvas.rootElement);
     canvas.apply(bitmapCanvas);
-    await scuba.diffScreenshot(scubaFileName);
+    await matchGoldenFile('engine/$scubaFileName.png', region: region);
     bitmapCanvas.rootElement.remove();
   }
 
