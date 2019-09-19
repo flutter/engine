@@ -267,8 +267,9 @@ executable("flutter_runner_unittests") {
   libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
   deps = [
-    ":jit",
+    ":aot",
     "//build/fuchsia/fidl:fuchsia.accessibility.semantics",
+    "//build/fuchsia/fidl:fuchsia.modular",
     "//build/fuchsia/pkg:async-loop-cpp",
     "//build/fuchsia/pkg:async-loop-default",
     "//build/fuchsia/pkg:scenic_cpp",
@@ -277,6 +278,8 @@ executable("flutter_runner_unittests") {
     "//flutter/shell/common",
     "//flutter/shell/platform/fuchsia/runtime/dart/utils",
     "//flutter/testing",
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/platform:libdart_platform_jit",
   ]
 }
 
