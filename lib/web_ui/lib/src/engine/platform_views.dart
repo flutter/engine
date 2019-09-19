@@ -85,7 +85,7 @@ void _disposePlatformView(
   final int id = methodCall.arguments;
   const MethodCodec codec = StandardMethodCodec();
 
-  // remove the root element of the view from the DOM
+  // Remove the root element of the view from the DOM.
   platformViewRegistry._createdViews[id]?.remove();
   platformViewRegistry._createdViews.remove(id);
 
