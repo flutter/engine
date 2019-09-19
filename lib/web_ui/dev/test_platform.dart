@@ -954,6 +954,15 @@ class Chrome extends Browser {
     return Chrome._(() async {
       final ChromeInstallation installation = await getOrInstallChrome(version, infoLog: _DevNull());
 
+      // A good source of various Chrome CLI options:
+      // https://peter.sh/experiments/chromium-command-line-switches/
+      //
+      // Things to try:
+      // --disallow-non-exact-resource-reuse
+      // --font-render-hinting
+      // --disable-font-subpixel-positioning
+      // --enable-font-antialiasing
+      // --gpu-rasterization-msaa-sample-count
       final bool isChromeNoSandbox = Platform.environment['CHROME_NO_SANDBOX'] == 'true';
       var dir = createTempDir();
       var args = [
@@ -970,6 +979,8 @@ class Chrome extends Browser {
         '--disable-default-apps',
         '--disable-translate',
         '--disable-gpu',
+        '--disallow-non-exact-resource-reuse',
+        '--disable-font-subpixel-positioning',
         '--remote-debugging-port=$_kChromeDevtoolsPort',
       ];
 
