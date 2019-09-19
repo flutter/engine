@@ -114,7 +114,7 @@ void testEachCanvas(String description, CanvasTest body) {
 
 final ui.TextStyle _defaultTextStyle = ui.TextStyle(
   color: const ui.Color(0xFF000000),
-  fontFamily: 'Roboto',
+  fontFamily: 'Arial',
   fontSize: 14,
 );
 

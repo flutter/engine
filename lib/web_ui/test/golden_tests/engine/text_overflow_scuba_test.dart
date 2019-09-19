@@ -4,8 +4,8 @@
 
 import 'dart:async';
 
-import 'package:flutter_web_ui/ui.dart';
-import 'package:flutter_web_ui/src/engine.dart';
+import 'package:ui/ui.dart';
+import 'package:ui/src/engine.dart';
 
 import 'scuba.dart';
 
@@ -27,7 +27,7 @@ void main() async {
 
   final TextStyle warningStyle = TextStyle(
     color: const Color(0xFFFF0000),
-    fontFamily: 'Roboto',
+    fontFamily: 'Arial',
     fontSize: 10,
   );
 
