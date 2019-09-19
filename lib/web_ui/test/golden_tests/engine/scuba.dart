@@ -11,11 +11,9 @@ import 'package:test/test.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
-/// Scuba test harness for testing the engine without the framework.
+/// Class that controls some details of how screenshotting is made.
 ///
-/// This tester does not include anything related to the framework. To write
-/// a Scuba test that includes the Flutter framework use the harness available
-/// at `//third_party/dart/flutter_web_test/lib/scuba_test.dart`.
+/// (For Googlers: Not really related with internal Scuba anymore)
 class EngineScubaTester {
   /// The size of the browser window used in this scuba test.
   final ui.Size viewportSize;
