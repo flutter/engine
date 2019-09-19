@@ -107,6 +107,7 @@ Win32Window::MessageHandler(HWND hwnd,
   UINT width = 0, height = 0;
   auto window =
       reinterpret_cast<Win32Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+  static bool tracking_mouse_events = false;
 
   if (window != nullptr) {
     switch (message) {
@@ -131,11 +132,27 @@ Win32Window::MessageHandler(HWND hwnd,
         break;
 
       case WM_MOUSEMOVE:
+        if (!tracking_mouse_events) {
+          TRACKMOUSEEVENT tme;
+          tme.cbSize = sizeof(tme);
+          tme.hwndTrack = hwnd;
+          // Not tracking Hover since the engine handles that logic.
+          tme.dwFlags = TME_LEAVE;
+          TrackMouseEvent(&tme);
+          tracking_mouse_events = true;
+        }
         xPos = GET_X_LPARAM(lparam);
         yPos = GET_Y_LPARAM(lparam);
 
         window->OnPointerMove(static_cast<double>(xPos),
                               static_cast<double>(yPos));
+        break;
+      case WM_MOUSELEAVE:;
+        window->OnPointerLeave();
+        // Once the tracked event is received, the TrackMouseEvent function
+        // resets. Set to false to make sure it's called once mouse movement is
+        // detected again.
+        tracking_mouse_events = false;
         break;
       case WM_LBUTTONDOWN:
         xPos = GET_X_LPARAM(lparam);

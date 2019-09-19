@@ -88,6 +88,9 @@ class Win32Window {
   // down to up
   virtual void OnPointerUp(double x, double y) = 0;
 
+  // Called when the mouse leaves the window.
+  virtual void OnPointerLeave() = 0;
+
   // Called when character input occurs.
   virtual void OnChar(char32_t code_point) = 0;
 
