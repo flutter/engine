@@ -79,10 +79,10 @@ class PersistedPlatformView extends PersistedLeafSurface {
   void update(PersistedPlatformView oldSurface) {
     super.update(oldSurface);
     if (viewId != oldSurface.viewId) {
-      // the content of the surface has to be rebuild if the viewId is changed
+      // The content of the surface has to be rebuild if the viewId is changed.
       build();
     } else if (dx != oldSurface.dx || dy != oldSurface.dy || width != oldSurface.width || height != oldSurface.height) {
-      // a change in any of the dimensions is performed by calling apply
+      // A change in any of the dimensions is performed by calling apply.
       apply();
     }
   }
