@@ -43,8 +43,7 @@ class PersistedPlatformView extends PersistedLeafSurface {
         all: initial;
       }''';
     _shadowRoot.append(_styleReset);
-    _platformView =
-        platformViewRegistry.getCreatedView(viewId);
+    _platformView = platformViewRegistry.getCreatedView(viewId);
     if (_platformView != null) {
       _shadowRoot.append(_platformView);
     } else {
@@ -84,7 +83,10 @@ class PersistedPlatformView extends PersistedLeafSurface {
     if (viewId != oldSurface.viewId) {
       // The content of the surface has to be rebuild if the viewId is changed.
       build();
-    } else if (dx != oldSurface.dx || dy != oldSurface.dy || width != oldSurface.width || height != oldSurface.height) {
+    } else if (dx != oldSurface.dx ||
+        dy != oldSurface.dy ||
+        width != oldSurface.width ||
+        height != oldSurface.height) {
       // A change in any of the dimensions is performed by calling apply.
       apply();
     }
