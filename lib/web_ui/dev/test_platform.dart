@@ -958,9 +958,7 @@ class Chrome extends Browser {
       // https://peter.sh/experiments/chromium-command-line-switches/
       //
       // Things to try:
-      // --disallow-non-exact-resource-reuse
       // --font-render-hinting
-      // --disable-font-subpixel-positioning
       // --enable-font-antialiasing
       // --gpu-rasterization-msaa-sample-count
       final bool isChromeNoSandbox = Platform.environment['CHROME_NO_SANDBOX'] == 'true';
@@ -984,6 +982,8 @@ class Chrome extends Browser {
         '--remote-debugging-port=$_kChromeDevtoolsPort',
       ];
 
+      final ProcessResult result = await Process.run(installation.executable, ['--version']);
+      print('Chrome version used: ${result.stdout}');
       final Process process = await Process.start(installation.executable, args);
 
       remoteDebuggerCompleter.complete(getRemoteDebuggerUrl(
