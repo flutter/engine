@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
-import 'dart:typed_data';
 
 import 'package:async/async.dart';
 import 'package:http_multi_server/http_multi_server.dart';
@@ -970,6 +969,7 @@ class Chrome extends Browser {
         '--no-default-browser-check',
         '--disable-default-apps',
         '--disable-translate',
+        '--disable-gpu',
         '--remote-debugging-port=$_kChromeDevtoolsPort',
       ];
 
