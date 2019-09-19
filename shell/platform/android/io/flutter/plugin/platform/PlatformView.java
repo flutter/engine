@@ -5,6 +5,7 @@
 package io.flutter.plugin.platform;
 
 import android.annotation.SuppressLint;
+import android.support.annotation.NonNull;
 import android.view.View;
 
 /**
@@ -17,12 +18,38 @@ public interface PlatformView {
     View getView();
 
     /**
+     * An Android {@link View} responsible for rendering a Flutter UI is now
+     * associated with this Flutter engine and its platform views.
+     *
+     * <p>Some platform views may have unusual dependencies on the {@link View} that
+     * renders Flutter UIs, such as unique keyboard interactions. That {@link View}
+     * is provided here for those purposes. Use of this {@link View} should be avoided
+     * if it is not absolutely necessary, because depending on this {@link View} will
+     * tend to make platform view code more brittle to future changes.
+     */
+    default void onFlutterViewAttached(@NonNull View flutterView) {}
+
+    /**
+     * The Android {@link View} that renders a Flutter UI, which was attached in
+     * {@link #onFlutterViewAttached(View)}, has been detached and disassociated from
+     * this Flutter engine and its platform views.
+     *
+     * <p>This platform view must release any references related to the Android {@link View}
+     * that was provided in {@link #onFlutterViewAttached(View)}.
+     */
+    default void onFlutterViewDetached() {}
+
+    /**
      * Dispose this platform view.
      *
      * <p>The {@link PlatformView} object is unusable after this method is called.
      *
      * <p>Plugins implementing {@link PlatformView} must clear all references to the View object and the PlatformView
      * after this method is called. Failing to do so will result in a memory leak.
+     *
+     * <p>References related to the Android {@link View} attached in
+     * {@link #onFlutterViewAttached(View)} must be released in {@code dispose()} to avoid memory
+     * leaks.
      */
     void dispose();
 
