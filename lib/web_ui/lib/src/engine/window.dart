@@ -204,8 +204,7 @@ class EngineWindow extends ui.Window {
     });
   }
 
-  /// The setting indicating the current brightness mode of the host platform.
-  /// If the platform has no preference, [platformBrightness] defaults to [Brightness.light].
+  @override
   ui.Brightness get platformBrightness => _platformBrightness;
   ui.Brightness _platformBrightness = ui.Brightness.light;
 
@@ -237,6 +236,9 @@ class EngineWindow extends ui.Window {
       _updatePlatformBrightness(mqEvent.matches ? ui.Brightness.dark : ui.Brightness.light);
     };
     _brightnessMediaQuery.addListener(_brightnessMediaQueryListener);
+    registerHotRestartListener(() {
+      _removeBrightnessMediaQueryListener();
+    });
   }
 
   /// Remove the callback function for listening changes in [_brightnessMediaQuery] value.
