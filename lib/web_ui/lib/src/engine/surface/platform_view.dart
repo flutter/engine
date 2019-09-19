@@ -35,6 +35,9 @@ class PersistedPlatformView extends PersistedLeafSurface {
     // it impossible to enable accessibility.
     element.style.pointerEvents = 'auto';
 
+    // Enforce the effective size of the PlatformView.
+    element.style.overflow = 'hidden';
+
     _shadowRoot = element.attachShadow(<String, String>{'mode': 'open'});
     final html.StyleElement _styleReset = html.StyleElement();
     _styleReset.innerHtml = '''
@@ -57,10 +60,7 @@ class PersistedPlatformView extends PersistedLeafSurface {
 
   @override
   void apply() {
-    // The overflow property 'auto' enforces the effective size of the PlatformView
-    // and mimics the behaviour of WebView on mobile platforms.
     rootElement.style
-      ..overflow = 'auto'
       ..transform = 'translate(${dx}px, ${dy}px)'
       ..width = '${width}px'
       ..height = '${height}px';
