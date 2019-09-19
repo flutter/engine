@@ -13,7 +13,6 @@ class PersistedPlatformView extends PersistedLeafSurface {
   final double height;
 
   html.ShadowRoot _shadowRoot;
-  html.Element _platformView;
 
   PersistedPlatformView(this.viewId, this.dx, this.dy, this.width, this.height);
 
@@ -43,9 +42,10 @@ class PersistedPlatformView extends PersistedLeafSurface {
         all: initial;
       }''';
     _shadowRoot.append(_styleReset);
-    _platformView = platformViewRegistry.getCreatedView(viewId);
-    if (_platformView != null) {
-      _shadowRoot.append(_platformView);
+    final html.Element platformView =
+        platformViewRegistry.getCreatedView(viewId);
+    if (platformView != null) {
+      _shadowRoot.append(platformView);
     } else {
       html.window.console.warn('No platform view created for id $viewId');
     }
@@ -65,8 +65,10 @@ class PersistedPlatformView extends PersistedLeafSurface {
       ..width = '${width}px'
       ..height = '${height}px';
     // Set size of the root element created by the PlatformView.
-    if (_platformView != null) {
-      _platformView.style
+    final html.Element platformView =
+        platformViewRegistry.getCreatedView(viewId);
+    if (platformView != null) {
+      platformView.style
         ..width = '${width}px'
         ..height = '${height}px';
     }
