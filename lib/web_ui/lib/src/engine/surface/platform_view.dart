@@ -58,7 +58,10 @@ class PersistedPlatformView extends PersistedLeafSurface {
 
   @override
   void apply() {
+    // The overflow property 'auto' enforces the effective size of the PlatformView
+    // and mimics the behaviour of WebView on mobile platforms.
     rootElement.style
+      ..overflow = 'auto'
       ..transform = 'translate(${dx}px, ${dy}px)'
       ..width = '${width}px'
       ..height = '${height}px';
@@ -67,7 +70,7 @@ class PersistedPlatformView extends PersistedLeafSurface {
       _platformView.style
         ..width = '${width}px'
         ..height = '${height}px';
-  }
+    }
   }
 
   @override
