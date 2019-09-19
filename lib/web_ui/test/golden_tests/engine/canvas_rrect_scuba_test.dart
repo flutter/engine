@@ -4,17 +4,14 @@
 
 import 'dart:html' as html;
 
-import 'package:flutter_web_ui/src/engine.dart';
-import 'package:flutter_web_ui/ui.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart';
 import 'package:test/test.dart';
 
-import 'scuba.dart';
+import 'package:web_engine_tester/golden_tester.dart';
 
 void main() async {
-  // Scuba doesn't give us viewport smaller than 472px wide.
-  final EngineScubaTester scuba = await EngineScubaTester.initialize(
-    viewportSize: const Size(500, 100),
-  );
+  final Rect region = Rect.fromLTWH(8, 8, 500, 100); // Compensate for old scuba tester padding
 
   BitmapCanvas canvas;
 
@@ -45,7 +42,7 @@ void main() async {
     }
 
     html.document.body.append(canvas.rootElement);
-    await scuba.diffScreenshot('canvas_rrect_round_square');
+    await matchGoldenFile('engine/canvas_rrect_round_square.png', region: region);
   }, timeout: const Timeout(Duration(seconds: 10)));
 
   test('round rect with big radius scale down smaller radius', () async {
@@ -61,7 +58,7 @@ void main() async {
     }
 
     html.document.body.append(canvas.rootElement);
-    await scuba.diffScreenshot('canvas_rrect_overlapping_radius');
+    await matchGoldenFile('engine/canvas_rrect_overlapping_radius.png', region: region);
   }, timeout: const Timeout(Duration(seconds: 10)));
 
   test('diff round rect with big radius scale down smaller radius', () async {
@@ -84,6 +81,6 @@ void main() async {
     }
 
     html.document.body.append(canvas.rootElement);
-    await scuba.diffScreenshot('canvas_drrect_overlapping_radius');
+    await matchGoldenFile('engine/canvas_drrect_overlapping_radius.png', region: region);
   }, timeout: const Timeout(Duration(seconds: 10)));
 }
