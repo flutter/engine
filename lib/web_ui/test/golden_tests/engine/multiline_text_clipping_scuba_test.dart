@@ -4,8 +4,8 @@
 
 import 'dart:math' as math;
 
-import 'package:flutter_web_ui/src/engine.dart';
-import 'package:flutter_web_ui/ui.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart';
 
 import 'scuba.dart';
 
@@ -116,6 +116,7 @@ void drawQuickBrownFox(RecordingCanvas canvas) {
         textStyle: TextStyle(
           color: const Color(0xFF000000),
           decoration: TextDecoration.none,
+          fontFamily: 'Arial',
           fontSize: 30,
           background: Paint()..color = const Color.fromRGBO(50, 255, 50, 1.0),
         ),
