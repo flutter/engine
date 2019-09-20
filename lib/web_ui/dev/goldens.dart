@@ -1,8 +1,17 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
+import 'dart:io' as io;
 import 'package:image/image.dart';
+
+void main(List<String> args) {
+  final io.File fileA = io.File(args[0]);
+  final io.File fileB = io.File(args[1]);
+  final Image imageA = decodeNamedImage(fileA.readAsBytesSync(), 'a.png');
+  final Image imageB = decodeNamedImage(fileB.readAsBytesSync(), 'b.png');
+  final ImageDiff diff = ImageDiff(golden: imageA, other: imageB);
+  print('Diff: ${(diff.rate * 100).toStringAsFixed(4)}');
+}
 
 /// This class encapsulates visually diffing an Image with any other.
 /// Both images need to be the exact same size.
@@ -33,9 +42,64 @@ class ImageDiff {
   int _pixelCount = 0;
   int _wrongPixels = 0;
 
+  static final double _maxTheoreticalColorDistance = Color.distance(
+    <int>[255, 255, 255],
+    <int>[0, 0, 0],
+    false,
+  );
+
+  // If the normalized color difference of a pixel is greater than this number,
+  // we consider it a wrong pixel.
+  static const double _kColorDistanceThreshold = 0.1;
+
+  // If the normalized alpha difference of a pixel is greater than this number,
+  // we consider it a wrong pixel.
+  static const double _kAlphaDistanceThreshold = 0.01;
+
   final int _colorOk = Color.fromRgb(255, 255, 255);
   final int _colorBadPixel = Color.fromRgb(255, 0, 0);
   final int _colorExpectedPixel = Color.fromRgb(0, 255, 0);
+
+  static int _reflectedPixel(Image image, int x, int y) {
+    x = x.abs();
+    if (x == image.width) {
+      x = image.width - 2;
+    }
+
+    y = y.abs();
+    if (y == image.height) {
+      y = image.height - 2;
+    }
+
+    return image.getPixel(x, y);
+  }
+
+  static int _average(Iterable<int> values) {
+    return values.reduce((a, b) => a + b) ~/ values.length;
+  }
+
+  /// Reads the RGBA values of the average of the 3x3 box of pixels centered at [x] and [y].
+  static List<int> _getFuzzyRgba(Image image, int x, int y) {
+    final List<int> pixels = <int>[
+      _reflectedPixel(image, x - 1, y - 1),
+      _reflectedPixel(image, x - 1, y),
+      _reflectedPixel(image, x - 1, y + 1),
+
+      _reflectedPixel(image, x, y - 1),
+      _reflectedPixel(image, x, y),
+      _reflectedPixel(image, x, y + 1),
+
+      _reflectedPixel(image, x + 1, y - 1),
+      _reflectedPixel(image, x + 1, y),
+      _reflectedPixel(image, x + 1, y + 1),
+    ];
+    return <int>[
+      _average(pixels.map((p) => getRed(p))),
+      _average(pixels.map((p) => getGreen(p))),
+      _average(pixels.map((p) => getBlue(p))),
+      _average(pixels.map((p) => getAlpha(p))),
+    ];
+  }
 
   void _computeDiff() {
     int goldenWidth = golden.width;
@@ -47,13 +111,20 @@ class ImageDiff {
     if (goldenWidth == other.width && goldenHeight == other.height) {
       for(int y = 0; y < goldenHeight; y++) {
         for (int x = 0; x < goldenWidth; x++) {
-          int goldenPixel = golden.getPixel(x, y);
-          int otherPixel = other.getPixel(x, y);
-
-          if (goldenPixel == otherPixel) {
+          final List<int> goldenPixel = _getFuzzyRgba(golden, x, y);
+          final List<int> otherPixel = _getFuzzyRgba(other, x, y);
+          final double colorDistance = Color.distance(
+            goldenPixel,
+            otherPixel,
+            false,
+          ) / _maxTheoreticalColorDistance;
+          final double alphaDistance = (goldenPixel[3] - otherPixel[3]).abs() / 255;
+          if (colorDistance < _kColorDistanceThreshold && alphaDistance < _kAlphaDistanceThreshold) {
             diff.setPixel(x, y, _colorOk);
           } else {
-            if (getLuminance(goldenPixel) < getLuminance(otherPixel)) {
+            final int goldenLuminance = getLuminanceRgb(goldenPixel[0], goldenPixel[1], goldenPixel[2]);
+            final int otherLuminance = getLuminanceRgb(otherPixel[0], otherPixel[1], otherPixel[2]);
+            if (goldenLuminance < otherLuminance) {
               diff.setPixel(x, y, _colorExpectedPixel);
             } else {
               diff.setPixel(x, y, _colorBadPixel);
