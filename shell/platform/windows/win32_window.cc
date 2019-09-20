@@ -98,7 +98,6 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
   return DefWindowProc(window, message, wparam, lparam);
 }
 
-// Activates tracking for a "mouse leave" event.
 void Win32Window::TrackMouseLeaveEvent(HWND hwnd) {
   if (!tracking_mouse_leave_) {
     TRACKMOUSEEVENT tme;

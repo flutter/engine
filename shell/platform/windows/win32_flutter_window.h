@@ -22,7 +22,6 @@
 #include "flutter/shell/platform/windows/win32_window.h"
 #include "flutter/shell/platform/windows/window_state.h"
 
-
 namespace flutter {
 
 // A win32 flutter child window used as implementatin for flutter view.  In the
