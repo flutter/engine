@@ -19,6 +19,12 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ * The dart entrypoint that is associated with `main()`.  This is to be used as an argument to the
+ * `runWithEntrypoint*` methods.
+ */
+extern NSString* const FlutterDefaultDartEntryPoint;
+
+/**
  * The FlutterEngine class coordinates a single instance of execution for a
  * `FlutterDartProject`.  It may have zero or one `FlutterViewController` at a
  * time, which can be specified via `-setViewController:`.
@@ -99,10 +105,10 @@ FLUTTER_EXPORT
  * immediately.
  *
  * @param entrypoint The name of a top-level function from the same Dart
- *   library that contains the app's main() function.  If this is nil, it will
- *   default to `main()`.  If it is not the app's main() function, that function
- *   must be decorated with `@pragma(vm:entry-point)` to ensure the method is not
- *   tree-shaken by the Dart compiler.
+ *   library that contains the app's main() function.  If this is FlutterDefaultDartEntryPoint (or
+ *   nil) it will default to `main()`.  If it is not the app's main() function, that function must
+ *   be decorated with `@pragma(vm:entry-point)` to ensure the method is not tree-shaken by the Dart
+ *   compiler.
  * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
  */
 - (BOOL)runWithEntrypoint:(nullable NSString*)entrypoint;
@@ -114,10 +120,10 @@ FLUTTER_EXPORT
  * The first call to this method will create a new Isolate. Subsequent calls will return
  * immediately.
  *
- * @param entrypoint The name of a top-level function from a Dart library.  If nil, this will
- *   default to `main()`.  If it is not the app's main() function, that function
- *   must be decorated with `@pragma(vm:entry-point)` to ensure the method is not
- *   tree-shaken by the Dart compiler.
+ * @param entrypoint The name of a top-level function from a Dart library.  If this is
+ *   FlutterDefaultDartEntryPoint (or nil); this will default to `main()`.  If it is not the app's
+ *   main() function, that function must be decorated with `@pragma(vm:entry-point)` to ensure the
+ *   method is not tree-shaken by the Dart compiler.
  * @param uri The URI of the Dart library which contains the entrypoint method.  IF nil,
  *   this will default to the same library as the `main()` function in the Dart program.
  * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
