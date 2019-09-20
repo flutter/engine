@@ -106,10 +106,11 @@ class ImageDiff {
     if (goldenWidth == other.width && goldenHeight == other.height) {
       for(int y = 0; y < goldenHeight; y++) {
         for (int x = 0; x < goldenWidth; x++) {
+          final bool isExactlySame = golden.getPixel(x, y) == other.getPixel(x, y);
           final List<int> goldenPixel = _getFuzzyRgb(golden, x, y);
           final List<int> otherPixel = _getFuzzyRgb(other, x, y);
           final double colorDistance = Color.distance(goldenPixel, otherPixel, false) / _maxTheoreticalColorDistance;
-          if (colorDistance < _kColorDistanceThreshold) {
+          if (isExactlySame || colorDistance < _kColorDistanceThreshold) {
             diff.setPixel(x, y, _colorOk);
           } else {
             final int goldenLuminance = getLuminanceRgb(goldenPixel[0], goldenPixel[1], goldenPixel[2]);
