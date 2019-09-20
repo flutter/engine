@@ -70,7 +70,7 @@
   XCTAssertNotNil(channel);
   NSData* encodedMethodCall = [@"hey" dataUsingEncoding:NSUTF8StringEncoding];
   OCMStub([codec encodeMethodCall:[OCMArg any]]).andReturn(encodedMethodCall);
-  __block BOOL didCallReply = NO;
+  XCTestExpectation* didCallReply = [self expectationWithDescription:@"didCallReply"];
   OCMExpect([binaryMessenger sendOnChannel:channelName
                                    message:encodedMethodCall
                                binaryReply:[OCMArg checkWithBlock:^BOOL(id obj) {
@@ -81,11 +81,11 @@
   [channel invokeMethod:@"foo"
               arguments:@[ @(1) ]
                  result:^(id _Nullable result) {
-                   didCallReply = YES;
+                   [didCallReply fulfill];
                    XCTAssertEqual(FlutterMethodNotImplemented, result);
                  }];
-  OCMVerify(binaryMessenger);
-  XCTAssertTrue(didCallReply);
+  OCMVerifyAll(binaryMessenger);
+  [self waitForExpectations:@[ didCallReply ] timeout:1.0];
 }
 
 - (void)testMethodMessageHandler {
@@ -123,21 +123,20 @@
   FlutterMethodCall* methodCall = [[FlutterMethodCall alloc] init];
   OCMStub([codec decodeMethodCall:encodedMethodCall]).andReturn(methodCall);
   OCMStub([codec encodeSuccessEnvelope:replyData]).andReturn(replyEnvelopeData);
-  __block BOOL didCallHandler = NO;
-  __block BOOL didCallReply = NO;
+  XCTestExpectation* didCallHandler = [self expectationWithDescription:@"didCallHandler"];
+  XCTestExpectation* didCallReply = [self expectationWithDescription:@"didCallReply"];
   FlutterMethodCallHandler handler =
       ^(FlutterMethodCall* _Nonnull call, FlutterResult _Nonnull result) {
         XCTAssertEqual(methodCall, call);
-        didCallHandler = YES;
+        [didCallHandler fulfill];
         result(replyData);
       };
   [channel setMethodCallHandler:handler];
   binaryMessenger.handlers[channelName](encodedMethodCall, ^(NSData* reply) {
-    didCallReply = YES;
+    [didCallReply fulfill];
     XCTAssertEqual(replyEnvelopeData, reply);
   });
-  XCTAssertTrue(didCallHandler);
-  XCTAssertTrue(didCallReply);
+  [self waitForExpectations:@[ didCallReply, didCallHandler ] timeout:1.0];
 }
 
 @end
