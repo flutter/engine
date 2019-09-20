@@ -94,9 +94,9 @@ void Win32FlutterWindow::HandlePlatformMessage(
 
   auto message = ConvertToDesktopMessage(*engine_message);
 
-  message_dispatcher_->HandleMessage(
-      message, [this] { this->process_events_ = false; },
-      [this] { this->process_events_ = true; });
+  message_dispatcher_->HandleMessage(message,
+                                     [this] { this->process_events_ = false; },
+                                     [this] { this->process_events_ = true; });
 }
 
 void Win32FlutterWindow::OnDpiScale(unsigned int dpi){};
@@ -128,10 +128,6 @@ void Win32FlutterWindow::OnPointerUp(double x, double y) {
 void Win32FlutterWindow::OnPointerLeave() {
   if (process_events_) {
     SendPointerLeave();
-    // Once the tracked event is received, the TrackMouseEvent function
-    // resets. Set to false to make sure it's called once mouse movement is
-    // detected again.
-    tracking_mouse_leave_ = false;
   }
 }
 

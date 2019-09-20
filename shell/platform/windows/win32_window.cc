@@ -149,6 +149,10 @@ Win32Window::MessageHandler(HWND hwnd,
         break;
       case WM_MOUSELEAVE:;
         window->OnPointerLeave();
+        // Once the tracked event is received, the TrackMouseEvent function
+        // resets. Set to false to make sure it's called once mouse movement is
+        // detected again.
+        tracking_mouse_leave_ = false;
         break;
       case WM_LBUTTONDOWN:
         xPos = GET_X_LPARAM(lparam);
