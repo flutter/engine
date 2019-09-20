@@ -11,6 +11,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/lib/ui/compositing/scene_host.h"
 #include "flutter/lib/ui/window/pointer_data.h"
+#include "flutter/lib/ui/window/window.h"
 #include "logging.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"

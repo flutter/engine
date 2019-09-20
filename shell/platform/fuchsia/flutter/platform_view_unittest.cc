@@ -84,91 +84,6 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   int32_t semantics_features_ = 0;
 };
 
-TEST_F(PlatformViewTests, SurvivesWhenSettingsManagerNotAvailable) {
-  sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
-  MockPlatformViewDelegate delegate;
-  zx::eventpair a, b;
-  zx::eventpair::create(/* flags */ 0u, &a, &b);
-  auto view_ref = fuchsia::ui::views::ViewRef({
-      .reference = std::move(a),
-  });
-  auto view_ref_control = fuchsia::ui::views::ViewRefControl({
-      .reference = std::move(b),
-  });
-  flutter::TaskRunners task_runners =
-      flutter::TaskRunners("test_runners", nullptr, nullptr, nullptr, nullptr);
-
-  EXPECT_FALSE(delegate.SemanticsEnabled());
-  EXPECT_EQ(delegate.SemanticsFeatures(), 0);
-
-  auto platform_view = flutter_runner::PlatformView(
-      delegate,                               // delegate
-      "test_platform_view",                   // label
-      std::move(view_ref_control),            // view_ref_control
-      std::move(view_ref),                    // view_ref
-      std::move(task_runners),                // task_runners
-      services_provider.service_directory(),  // runner_services
-      nullptr,  // parent_environment_service_provider_handle
-      nullptr,  // session_listener_request
-      nullptr,  // on_session_listener_error_callback
-      nullptr,  // session_metrics_did_change_callback
-      nullptr,  // session_size_change_hint_callback
-      nullptr,  // on_enable_wireframe_callback,
-      0u        // vsync_event_handle
-  );
-
-  RunLoopUntilIdle();
-
-  EXPECT_FALSE(delegate.SemanticsEnabled());
-  EXPECT_EQ(delegate.SemanticsFeatures(), 0);
-}
-
-TEST_F(PlatformViewTests, RegistersWatcherAndEnablesSemantics) {
-  MockSemanticsManager semantics_manager = MockSemanticsManager();
-  sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
-  services_provider.AddService(semantics_manager.GetHandler(dispatcher()),
-                               SemanticsManager::Name_);
-
-  MockPlatformViewDelegate delegate;
-  zx::eventpair a, b;
-  zx::eventpair::create(/* flags */ 0u, &a, &b);
-  auto view_ref = fuchsia::ui::views::ViewRef({
-      .reference = std::move(a),
-  });
-  auto view_ref_control = fuchsia::ui::views::ViewRefControl({
-      .reference = std::move(b),
-  });
-  flutter::TaskRunners task_runners =
-      flutter::TaskRunners("test_runners", nullptr, nullptr, nullptr, nullptr);
-
-  EXPECT_FALSE(delegate.SemanticsEnabled());
-  EXPECT_EQ(delegate.SemanticsFeatures(), 0);
-
-  auto platform_view = flutter_runner::PlatformView(
-      delegate,                               // delegate
-      "test_platform_view",                   // label
-      std::move(view_ref_control),            // view_ref_control
-      std::move(view_ref),                    // view_ref
-      std::move(task_runners),                // task_runners
-      services_provider.service_directory(),  // runner_services
-      nullptr,  // parent_environment_service_provider_handle
-      nullptr,  // session_listener_request
-      nullptr,  // on_session_listener_error_callback
-      nullptr,  // session_metrics_did_change_callback
-      nullptr,  // session_size_change_hint_callback
-      nullptr,  // wireframe_enabled_callback
-      0u        // vsync_event_handle
-  );
-
-  RunLoopUntilIdle();
-
-  EXPECT_TRUE(delegate.SemanticsEnabled());
-  EXPECT_EQ(
-      delegate.SemanticsFeatures(),
-          static_cast<int32_t>(
-              flutter::AccessibilityFeatureFlag::kAccessibleNavigation));
-}
-
 TEST_F(PlatformViewTests, ChangesSettings) {
   MockSemanticsManager semantics_manager = MockSemanticsManager();
   sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
@@ -208,18 +123,16 @@ TEST_F(PlatformViewTests, ChangesSettings) {
 
   RunLoopUntilIdle();
 
+  std::unique_ptr<flutter::PlatformView> flutter_platform_view(&platform_view);
+  flutter_platform_view->SetSemanticsEnabled(true);
+
   EXPECT_TRUE(delegate.SemanticsEnabled());
   EXPECT_EQ(
       delegate.SemanticsFeatures(),
           static_cast<int32_t>(
               flutter::AccessibilityFeatureFlag::kAccessibleNavigation));
 
-
-  EXPECT_TRUE(delegate.SemanticsEnabled());
-  EXPECT_EQ(delegate.SemanticsFeatures(),
-            static_cast<int32_t>(
-                flutter::AccessibilityFeatureFlag::kAccessibleNavigation));
-
+  flutter_platform_view->SetSemanticsEnabled(false);
 
   EXPECT_FALSE(delegate.SemanticsEnabled());
   EXPECT_EQ(delegate.SemanticsFeatures(), 0);

@@ -23,6 +23,9 @@ class AccessibilityBridgeTestDelegate
     : public flutter_runner::AccessibilityBridge::Delegate {
  public:
   void SetSemanticsEnabled(bool enabled) override { enabled_ = enabled; }
+  bool enabled() { return enabled_; }
+
+ private:
   bool enabled_;
 };
 
@@ -48,11 +51,10 @@ class AccessibilityBridgeTest : public testing::Test {
     auto view_ref = fuchsia::ui::views::ViewRef({
         .reference = std::move(a),
     });
-    AccessibilityBridgeTestDelegate accessibility_delegate;
 
     accessibility_bridge_ =
         std::make_unique<flutter_runner::AccessibilityBridge>(
-            accessibility_delegate, services_provider_.service_directory(),
+            accessibility_delegate_, services_provider_.service_directory(),
             std::move(view_ref));
     RunLoopUntilIdle();
   }
@@ -60,6 +62,7 @@ class AccessibilityBridgeTest : public testing::Test {
   void TearDown() override { semantics_manager_.ResetTree(); }
 
   MockSemanticsManager semantics_manager_;
+  AccessibilityBridgeTestDelegate accessibility_delegate_;
   std::unique_ptr<flutter_runner::AccessibilityBridge> accessibility_bridge_;
 
  private:
@@ -69,6 +72,14 @@ class AccessibilityBridgeTest : public testing::Test {
 
 TEST_F(AccessibilityBridgeTest, RegistersViewRef) {
   EXPECT_TRUE(semantics_manager_.RegisterViewCalled());
+}
+
+TEST_F(AccessibilityBridgeTest, EnableDisable) {
+  EXPECT_FALSE(accessibility_delegate_.enabled());
+  std::unique_ptr<fuchsia::accessibility::semantics::SemanticListener> listener(
+      accessibility_bridge_.release());
+  listener->OnSemanticsModeChanged(true, nullptr);
+  EXPECT_TRUE(accessibility_delegate_.enabled());
 }
 
 TEST_F(AccessibilityBridgeTest, DeletesChildrenTransitively) {
