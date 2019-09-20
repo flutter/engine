@@ -19,8 +19,8 @@ class MockSemanticsManager
   // |fuchsia::accessibility::semantics::SemanticsManager|:
   void RegisterViewForSemantics(
       fuchsia::ui::views::ViewRef view_ref,
-      fidl::InterfaceHandle<
-          fuchsia::accessibility::semantics::SemanticListener> handle,
+      fidl::InterfaceHandle<fuchsia::accessibility::semantics::SemanticListener>
+          handle,
       fidl::InterfaceRequest<fuchsia::accessibility::semantics::SemanticTree>
           semantic_tree) override {
     tree_binding_.Bind(std::move(semantic_tree));
@@ -86,7 +86,9 @@ class MockSemanticsManager
     return last_updated_nodes_;
   }
 
-  void CommitUpdates(CommitUpdatesCallback callback) override { commit_count_++; }
+  void CommitUpdates(CommitUpdatesCallback callback) override {
+    commit_count_++;
+  }
 
  private:
   bool has_view_ref_ = false;

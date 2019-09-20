@@ -5,8 +5,8 @@
 #include "flutter/shell/platform/fuchsia/flutter/platform_view.h"
 
 #include <gtest/gtest.h>
-#include <lib/async-loop/default.h>
 #include <lib/async-loop/cpp/loop.h>
+#include <lib/async-loop/default.h>
 #include <lib/fidl/cpp/binding_set.h>
 #include <lib/fidl/cpp/interface_request.h>
 #include <lib/sys/cpp/testing/service_directory_provider.h>
@@ -127,10 +127,9 @@ TEST_F(PlatformViewTests, ChangesSettings) {
   flutter_platform_view->SetSemanticsEnabled(true);
 
   EXPECT_TRUE(delegate.SemanticsEnabled());
-  EXPECT_EQ(
-      delegate.SemanticsFeatures(),
-          static_cast<int32_t>(
-              flutter::AccessibilityFeatureFlag::kAccessibleNavigation));
+  EXPECT_EQ(delegate.SemanticsFeatures(),
+            static_cast<int32_t>(
+                flutter::AccessibilityFeatureFlag::kAccessibleNavigation));
 
   flutter_platform_view->SetSemanticsEnabled(false);
 
