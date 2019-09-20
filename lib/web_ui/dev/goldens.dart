@@ -42,9 +42,10 @@ class ImageDiff {
   int _pixelCount = 0;
   int _wrongPixels = 0;
 
+  /// That would be the distance between black and white.
   static final double _maxTheoreticalColorDistance = Color.distance(
-    <int>[255, 255, 255],
-    <int>[0, 0, 0],
+    <int>[255, 255, 255],  // white
+    <int>[0, 0, 0],  // black
     false,
   );
 
@@ -56,6 +57,10 @@ class ImageDiff {
   final int _colorBadPixel = Color.fromRgb(255, 0, 0);
   final int _colorExpectedPixel = Color.fromRgb(0, 255, 0);
 
+  /// Reads a pixel value out of [image] at [x] and [y].
+  ///
+  /// If the pixel is out of bounds, reflects the [x] and [y] coordinates off
+  /// the border back into the image treating the border like a mirror.
   static int _reflectedPixel(Image image, int x, int y) {
     x = x.abs();
     if (x == image.width) {
