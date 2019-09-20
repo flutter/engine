@@ -9,6 +9,7 @@
 #include <thread>
 
 #include <lib/async-loop/cpp/loop.h>
+#include <lib/async-loop/default.h>
 #include <lib/async/cpp/task.h>
 #include <lib/fdio/namespace.h>
 #include <lib/memfs/memfs.h>
@@ -28,9 +29,9 @@ constexpr char kTmpPath[] = "/tmp";
 
 namespace dart_utils {
 
-
 RunnerTemp::RunnerTemp()
-    : loop_(std::make_unique<async::Loop>(&kAsyncLoopConfigNoAttachToThread)) {
+    : loop_(std::make_unique<async::Loop>(
+          &kAsyncLoopConfigNoAttachToCurrentThread)) {
   loop_->StartThread("RunnerTemp");
   Start();
 }
