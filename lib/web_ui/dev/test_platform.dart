@@ -963,6 +963,9 @@ class Chrome extends Browser {
       // --font-render-hinting
       // --enable-font-antialiasing
       // --gpu-rasterization-msaa-sample-count
+      // --disable-gpu
+      // --disallow-non-exact-resource-reuse
+      // --disable-font-subpixel-positioning
       final bool isChromeNoSandbox = Platform.environment['CHROME_NO_SANDBOX'] == 'true';
       var dir = createTempDir();
       var args = [
@@ -978,9 +981,6 @@ class Chrome extends Browser {
         '--no-default-browser-check',
         '--disable-default-apps',
         '--disable-translate',
-        '--disable-gpu',
-        '--disallow-non-exact-resource-reuse',
-        '--disable-font-subpixel-positioning',
         '--remote-debugging-port=$_kChromeDevtoolsPort',
       ];
 
