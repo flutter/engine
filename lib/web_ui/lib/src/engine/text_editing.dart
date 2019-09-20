@@ -857,8 +857,6 @@ class _EditingStyle {
 ///
 /// This information is received via "TextInput.setEditableSizeAndTransform"
 /// message. Framework currently sends this information on paint.
-// TODO(flutter_web): send the location during the scroll for more frequent
-// updates from the framework.
 class _EditableSizeAndTransform {
   _EditableSizeAndTransform({
     @required this.width,
