@@ -33,7 +33,8 @@ static void RegisterProfilerSymbols(const char* symbols_path,
 #endif  // !defined(DART_PRODUCT)
 
 int main(int argc, const char** argv) {
-  async::Loop loop(&kAsyncLoopConfigAttachToThread);
+  async::Loop loop(&kAsyncLoopConfigAttachToCurrentThread);
+
 
 #if !defined(FUCHSIA_SDK)
   syslog::InitLogger();
@@ -61,8 +62,7 @@ int main(int argc, const char** argv) {
 #endif  // defined(AOT_RUNTIME)
 #endif  // !defined(DART_PRODUCT)
 
-  dart_utils::SetupRunnerTemp();
-
+  dart_utils::RunnerTemp runner_temp;
   dart_runner::DartRunner runner;
   loop.Run();
   return 0;
