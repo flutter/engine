@@ -45,6 +45,7 @@ void _setStaticStyleAttributes(html.HtmlElement domElement) {
 enum _InputAction {
   /// Procced to next enput element.
   next,
+
   /// Newline has been entered in current input element.
   newline,
 }
@@ -464,9 +465,9 @@ class TextEditingElement {
       if (event.which == 9) {
         _onAction(_InputAction.next);
         // The default action of the browser is to focus the next element.
-        // As the browser is not able to focus flutter widgets, it will 
+        // As the browser is not able to focus flutter widgets, it will
         // focus some part of its UI (e.g. the location bar).
-        // We prevent this action and leave it to the corresponding widget 
+        // We prevent this action and leave it to the corresponding widget
         // to change the focus.
         event.preventDefault();
       }
@@ -825,7 +826,7 @@ class HybridTextEditing {
     browserEngine == BrowserEngine.webkit &&
     operatingSystem == OperatingSystem.iOs;
   _InputActionToFlutter(_InputAction inputAction) {
-    switch(inputAction) {
+    switch (inputAction) {
       case _InputAction.next:
         return 'TextInputAction.next';
         break;
