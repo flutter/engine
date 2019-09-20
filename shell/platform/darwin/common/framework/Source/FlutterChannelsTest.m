@@ -79,13 +79,13 @@
                                  return YES;
                                }]]);
   [channel invokeMethod:@"foo"
-              arguments:@[ @(1) ]
+              arguments:@[ @1 ]
                  result:^(id _Nullable result) {
                    [didCallReply fulfill];
                    XCTAssertEqual(FlutterMethodNotImplemented, result);
                  }];
   OCMVerifyAll(binaryMessenger);
-  [self waitForExpectations:@[ didCallReply ] timeout:1.0];
+  [self waitForExpectationsWithTimeout:1.0 handler:nil];
 }
 
 - (void)testMethodMessageHandler {
@@ -136,7 +136,7 @@
     [didCallReply fulfill];
     XCTAssertEqual(replyEnvelopeData, reply);
   });
-  [self waitForExpectations:@[ didCallReply, didCallHandler ] timeout:1.0];
+  [self waitForExpectationsWithTimeout:1.0 handler:nil];
 }
 
 @end
