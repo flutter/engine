@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
  * The dart entrypoint that is associated with `main()`.  This is to be used as an argument to the
  * `runWithEntrypoint*` methods.
  */
-extern NSString* const FlutterDefaultDartEntryPoint;
+extern NSString* const FlutterDefaultDartEntrypoint;
 
 /**
  * The FlutterEngine class coordinates a single instance of execution for a
