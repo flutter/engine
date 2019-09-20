@@ -36,7 +36,6 @@ static void RegisterProfilerSymbols(const char* symbols_path,
 int main(int argc, const char** argv) {
   async::Loop loop(&kAsyncLoopConfigAttachToCurrentThread);
 
-
 #if !defined(FUCHSIA_SDK)
   syslog::InitLogger();
 
