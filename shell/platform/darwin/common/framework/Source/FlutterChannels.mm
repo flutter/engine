@@ -6,6 +6,8 @@
 
 #pragma mark - Basic message channel
 
+static NSString* const FlutterChannelBuffersChannel = @"com.google.flutter/channel-buffers";
+
 @implementation FlutterBasicMessageChannel {
   NSObject<FlutterBinaryMessenger>* _messenger;
   NSString* _name;
@@ -70,6 +72,13 @@
   };
   [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
 }
+
+- (void)resizeChannelBuffer:(NSInteger)newSize {
+  NSString* channelName =
+      [NSString stringWithFormat:@"%@\r%@\r%@", FlutterChannelBuffersChannel, _name, @(newSize)];
+  [_messenger sendOnChannel:channelName message:nil];
+}
+
 @end
 
 #pragma mark - Method channel

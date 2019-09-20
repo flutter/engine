@@ -112,6 +112,8 @@ class ChannelBuffers {
   /// buffer size that will avoid any overflows.
   static const int kDefaultBufferSize = 1;
 
+  static const String kControlChannelName = "com.google.flutter/channel-buffers";
+
   /// A mapping between a channel name and its associated [_RingBuffer].
   final Map<String, _RingBuffer<_StoredMessage>> _messages =
     <String, _RingBuffer<_StoredMessage>>{};
@@ -162,7 +164,7 @@ class ChannelBuffers {
   ///
   /// This could result in the dropping of messages if newSize is less
   /// than the current length of the queue.
-  void resize(String channel, int newSize) {
+  void _resize(String channel, int newSize) {
     _RingBuffer<_StoredMessage> queue = _messages[channel];
     if (queue == null) {
       queue = _makeRingBuffer(newSize);
@@ -183,6 +185,29 @@ class ChannelBuffers {
     while (!_isEmpty(channel)) {
       final _StoredMessage message = _pop(channel);
       await callback(message.data, message.callback);
+    }
+  }
+
+  String _getString(ByteData data) {
+    final ByteBuffer buffer = data.buffer;
+    var list = buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    return utf8.decode(list);
+  }
+
+  /// Send a control message.
+  ///
+  /// This is intended to be called by the platform messages dispatcher.
+  ///
+  /// Available messages:
+  /// * resize - Allows you to set the size of a channel's buffer, command is in the format of
+  ///  `resize/<channel name>/<new size>`
+  void handleMessage(String name, ByteData data) {
+    assert(name == kControlChannelName);
+    final List<String> command = _getString(data).split("\r");
+    if (command.length == 3 && command[0] == "resize") {
+      _resize(command[1], int.parse(command[2]));
+    } else {
+      throw Exception('Unrecognized command $command sent to $kControlChannelName.');
     }
   }
 }
