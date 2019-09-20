@@ -43,9 +43,9 @@ void _setStaticStyleAttributes(html.HtmlElement domElement) {
 }
 
 enum _InputAction {
-  /// Procced to next Input Element
+  /// Procced to next enput element.
   next,
-  /// Newline entered in Input Element
+  /// Newline has been entered in current input element.
   newline,
 }
 
@@ -452,17 +452,24 @@ class TextEditingElement {
     _onChange(_lastEditingState);
   }
 
-  // Map KeyboardEvent to InputAction
+  // Map KeyboardEvent to InputAction.
   void _handleKeyDown(html.KeyboardEvent event) {
-    // Trigger newline action if enter key was pressed
-    if (event.which == 13) {
-      _onAction(_InputAction.newline);
-    }
-    // Trigger next action if tab key was pressed
-    if (event.which == 9) {
-      _onAction(_InputAction.next);
-      // prevent default action to avoid input element losing focus
-      event.preventDefault();
+    // Tab and enter key can only be mapped to actions for single line inputs.
+    if (_elementType == ElementType.input) {
+      // Trigger newline action if enter key was pressed.
+      if (event.which == 13) {
+        _onAction(_InputAction.newline);
+      }
+      // Trigger next action if tab key was pressed.
+      if (event.which == 9) {
+        _onAction(_InputAction.next);
+        // The default action of the browser is to focus the next element.
+        // As the browser is not able to focus flutter widgets, it will 
+        // focus some part of its UI (e.g. the location bar).
+        // We prevent this action and leave it to the corresponding widget 
+        // to change the focus.
+        event.preventDefault();
+      }
     }
   }
 
