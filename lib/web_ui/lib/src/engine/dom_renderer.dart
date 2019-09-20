@@ -316,7 +316,11 @@ flt-glass-pane * {
     // apps fully specifies their text styles.
     setElementStyle(bodyElement, 'font', defaultCssFont);
     setElementStyle(bodyElement, 'color', 'red');
-    
+
+    // TODO(flutter_web): Disable spellcheck until changes in the framework and
+    // engine are complete.
+    bodyElement.spellcheck = false;
+
     for (html.Element viewportMeta
         in html.document.head.querySelectorAll('meta[name="viewport"]')) {
       if (assertionsEnabled) {

@@ -203,6 +203,22 @@ class TextEditingElement {
   /// See [TextEditingElement.persistent] to understand what persistent mode is.
   TextEditingElement(this.owner);
 
+  /// Timer that times when to set the location of the input text.
+  ///
+  /// This is only used for IOS. In IOS, virtual keyboard shifts the screen.
+  /// There is no callback to know if the keyboard is up and how much the screen
+  /// has shifted. Therefore instead of listening to the shift and passing this
+  /// information to Flutter Framework, we are trying to stop the shift.
+  ///
+  /// In IOS, the virtual keyboard shifts the screen up if the focused input
+  /// element is under the keyboard or very close to the keyboard. Before the
+  /// focus is called we are positining it offscreen. The location of the input
+  /// in IOS is set to correct place, 100ms after focus. We use this timer for
+  /// timing this delay.
+  Timer _positionInputElementTimer;
+  static const Duration _delayBeforePositining =
+      const Duration(milliseconds: 100);
+
   final HybridTextEditing owner;
   bool _enabled = false;
 
@@ -222,20 +238,22 @@ class TextEditingElement {
   /// On iOS, sets the location of the input element after focusing on it.
   ///
   /// On iOS, keyboard causes scrolling in the UI. This scrolling does not
-  /// trigger an event. In order to position the input element correctly, it is
+  /// trigger an event. In order not to trigger a shift on the page, it is
   /// important we set it's final location after focusing on it (after keyboard
   /// is up).
   ///
-  /// This method is called in the end of the 'touchend' event, therefore it is
-  /// called after the editing state is set.
+  /// This method is called after a delay.
+  /// See [_positionInputElementTimer].
   void configureInputElementForIOS() {
     if (browserEngine != BrowserEngine.webkit ||
         operatingSystem != OperatingSystem.iOs) {
-      // Only relevant on Safari.
+      // Only relevant on Safari Mobile and Chrome on IOS.
       return;
     }
+
     if (domElement != null) {
       owner.setStyle(domElement);
+      owner.inputPositioned = true;
     }
   }
 
@@ -274,6 +292,32 @@ class TextEditingElement {
       }));
     }
 
+    if (browserEngine == BrowserEngine.webkit &&
+        operatingSystem == OperatingSystem.iOs) {
+      /// Position the element outside of the page before focusing on it.
+      ///
+      /// See [_positionInputElementTimer].
+      owner.setStyleOutsideOfScreen(domElement);
+
+      _subscriptions.add(domElement.onFocus.listen((_) {
+        // Cancel previous timer if exists.
+        _positionInputElementTimer?.cancel();
+        _positionInputElementTimer = Timer(_delayBeforePositining, () {
+          if (textEditing.inputElementNeedsToBePositioned) {
+            configureInputElementForIOS();
+          }
+        });
+
+        /// When the virtual keyboard is closed on IOS, onBlur is triggered.
+        _subscriptions.add(domElement.onBlur.listen((_) {
+          /// Cancel the timer since there is no need to set the location of the
+          /// input element anymore. It needs to be focused again to be editable
+          /// by the user.
+          _positionInputElementTimer?.cancel();
+        }));
+      }));
+    }
+
     domElement.focus();
 
     if (_lastEditingState != null) {
@@ -299,6 +343,8 @@ class TextEditingElement {
       _subscriptions[i].cancel();
     }
     _subscriptions.clear();
+    _positionInputElementTimer?.cancel();
+    owner.inputPositioned = false;
     _removeDomElement();
   }
 
@@ -361,10 +407,6 @@ class TextEditingElement {
           ..addRange(_createRange(editingState));
         break;
     }
-
-    // Safari on iOS requires that we focus explicitly. Otherwise, the on-screen
-    // keyboard won't show up.
-    domElement.focus();
   }
 
   /// Swap out the current DOM element and replace it with a new one of type
@@ -583,8 +625,19 @@ class HybridTextEditing {
   /// Also used to define if a keyboard is needed.
   bool _isEditing = false;
 
-  /// Flag indicating if the flutter framework requested a keyboard.
-  bool get needsKeyboard => _isEditing;
+  /// Flag indication the input element needs to be positioned.
+  ///
+  /// See [TextEditingElement._delayBeforePositining].
+  bool get inputElementNeedsToBePositioned =>
+      !inputPositioned &&
+      _isEditing &&
+      browserEngine == BrowserEngine.webkit &&
+      operatingSystem == OperatingSystem.iOs;
+
+  /// Flag indication wheterher the input element's position is set.
+  ///
+  /// See [inputElementNeedsToBePositioned].
+  bool inputPositioned = false;
 
   Map<String, dynamic> _configuration;
 
@@ -715,10 +768,16 @@ class HybridTextEditing {
   ///
   /// They are changed depending on the messages coming from method calls:
   /// "TextInput.setStyle", "TextInput.setEditableSizeAndTransform".
+  ///
+  /// In IOS, initial positionig of input element is not done in this method.
+  /// This method changes the location of the input element if it is already
+  /// positioned.
+  /// See [TextEditingElement._delayBeforePositining].
   void _setDynamicStyleAttributes(html.HtmlElement domElement) {
     if (_editingLocationAndSize != null &&
-        !(browserEngine == BrowserEngine.webkit &&
-            operatingSystem == OperatingSystem.iOs)) {
+        (inputPositioned ||
+            !(browserEngine == BrowserEngine.webkit &&
+                operatingSystem == OperatingSystem.iOs))) {
       setStyle(domElement);
     }
   }
@@ -739,6 +798,19 @@ class HybridTextEditing {
       ..textAlign = _editingStyle.align
       ..font = font()
       ..transform = transformCss;
+  }
+
+  // TODO(flutter_web): When the browser closes and re-opens the virtual
+  // shifts the page in IOS. Call this method from visibility change listener
+  // attached to body.
+  /// Set the dom elements location somewhere outside of the screen.
+  ///
+  /// This is useful for not triggering a scroll when IOS virtual keyboard is
+  /// coming up.
+  ///
+  /// See [TextEditingElement._delayBeforePositining].
+  void setStyleOutsideOfScreen(html.HtmlElement domElement) {
+    domElement.style.transform = 'translate(-9999px, -9999px)';
   }
 
   html.InputElement createInputElement() {
