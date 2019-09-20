@@ -195,7 +195,6 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
     ImageDiff diff = ImageDiff(golden: decodeNamedImage(file.readAsBytesSync(), filename), other: screenshot);
 
     if (diff.rate > 0) { // Images are different, so produce some debug info
-      final bool isCirrus = Platform.environment['CIRRUS_CI'] == 'true';
       final String testResultsPath = isCirrus
         ? p.join(
             Platform.environment['CIRRUS_WORKING_DIR'],
@@ -952,7 +951,10 @@ class Chrome extends Browser {
     assert(version != null);
     var remoteDebuggerCompleter = Completer<Uri>.sync();
     return Chrome._(() async {
-      final ChromeInstallation installation = await getOrInstallChrome(version, infoLog: _DevNull());
+      final ChromeInstallation installation = await getOrInstallChrome(
+        version,
+        infoLog: isCirrus ? stdout : _DevNull(),
+      );
 
       // A good source of various Chrome CLI options:
       // https://peter.sh/experiments/chromium-command-line-switches/
@@ -982,8 +984,6 @@ class Chrome extends Browser {
         '--remote-debugging-port=$_kChromeDevtoolsPort',
       ];
 
-      final ProcessResult result = await Process.run(installation.executable, ['--version']);
-      print('Chrome version used: ${result.stdout}');
       final Process process = await Process.start(installation.executable, args);
 
       remoteDebuggerCompleter.complete(getRemoteDebuggerUrl(
@@ -1018,3 +1018,5 @@ class _DevNull implements StringSink {
   void writeln([Object obj = ""]) {
   }
 }
+
+bool get isCirrus => Platform.environment['CIRRUS_CI'] == 'true';

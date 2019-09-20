@@ -52,10 +52,6 @@ class ImageDiff {
   // we consider it a wrong pixel.
   static const double _kColorDistanceThreshold = 0.1;
 
-  // If the normalized alpha difference of a pixel is greater than this number,
-  // we consider it a wrong pixel.
-  static const double _kAlphaDistanceThreshold = 0.01;
-
   final int _colorOk = Color.fromRgb(255, 255, 255);
   final int _colorBadPixel = Color.fromRgb(255, 0, 0);
   final int _colorExpectedPixel = Color.fromRgb(0, 255, 0);
@@ -79,7 +75,7 @@ class ImageDiff {
   }
 
   /// Reads the RGBA values of the average of the 3x3 box of pixels centered at [x] and [y].
-  static List<int> _getFuzzyRgba(Image image, int x, int y) {
+  static List<int> _getFuzzyRgb(Image image, int x, int y) {
     final List<int> pixels = <int>[
       _reflectedPixel(image, x - 1, y - 1),
       _reflectedPixel(image, x - 1, y),
@@ -97,7 +93,6 @@ class ImageDiff {
       _average(pixels.map((p) => getRed(p))),
       _average(pixels.map((p) => getGreen(p))),
       _average(pixels.map((p) => getBlue(p))),
-      _average(pixels.map((p) => getAlpha(p))),
     ];
   }
 
@@ -111,15 +106,10 @@ class ImageDiff {
     if (goldenWidth == other.width && goldenHeight == other.height) {
       for(int y = 0; y < goldenHeight; y++) {
         for (int x = 0; x < goldenWidth; x++) {
-          final List<int> goldenPixel = _getFuzzyRgba(golden, x, y);
-          final List<int> otherPixel = _getFuzzyRgba(other, x, y);
-          final double colorDistance = Color.distance(
-            goldenPixel,
-            otherPixel,
-            false,
-          ) / _maxTheoreticalColorDistance;
-          final double alphaDistance = (goldenPixel[3] - otherPixel[3]).abs() / 255;
-          if (colorDistance < _kColorDistanceThreshold && alphaDistance < _kAlphaDistanceThreshold) {
+          final List<int> goldenPixel = _getFuzzyRgb(golden, x, y);
+          final List<int> otherPixel = _getFuzzyRgb(other, x, y);
+          final double colorDistance = Color.distance(goldenPixel, otherPixel, false) / _maxTheoreticalColorDistance;
+          if (colorDistance < _kColorDistanceThreshold) {
             diff.setPixel(x, y, _colorOk);
           } else {
             final int goldenLuminance = getLuminanceRgb(goldenPixel[0], goldenPixel[1], goldenPixel[2]);
