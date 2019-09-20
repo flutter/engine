@@ -532,17 +532,21 @@ TEST_F(ShellTest, ReloadSystemFonts) {
   std::vector<std::string> families(1, "Robotofake");
   auto font =
       fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
-  ASSERT_EQ(font->getId(), static_cast<double>(0));
+  if (font == nullptr) {
+    // System does not have any font to begin with. Aborts the test.
+    return;
+  }
+  unsigned int id = font->getId();
   // Result should be cached.
   font = fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
-  ASSERT_EQ(font->getId(), static_cast<double>(0));
+  ASSERT_EQ(font->getId(), id);
   bool result = shell->ReloadSystemFonts();
 
-  // Cache is cleared, and FontCollection will be assigned a new id in
-  // incremental order.
+  // Cache is cleared, and FontCollection will be assigned a new id.
   font = fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
-  ASSERT_EQ(font->getId(), static_cast<double>(1));
+  ASSERT_NE(font->getId(), id);
   ASSERT_TRUE(result);
+  shell.reset();
 }
 
 TEST_F(ShellTest, WaitForFirstFrame) {

@@ -1379,10 +1379,9 @@ bool Shell::ReloadSystemFonts() {
   document.Accept(writer);
   std::string message = buffer.GetString();
   fml::RefPtr<PlatformMessage> fontsChangeMessage =
-    fml::MakeRefCounted<flutter::PlatformMessage>(
-      kSystemChannel,
-      std::vector<uint8_t>(message.begin(), message.end()),
-      nullptr);
+      fml::MakeRefCounted<flutter::PlatformMessage>(
+          kSystemChannel, std::vector<uint8_t>(message.begin(), message.end()),
+          nullptr);
 
   OnPlatformViewDispatchPlatformMessage(fontsChangeMessage);
   return true;

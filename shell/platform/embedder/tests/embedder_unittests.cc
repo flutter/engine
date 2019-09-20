@@ -238,6 +238,7 @@ TEST(EmbedderTestNoFixture, CanGetCurrentTimeInNanoseconds) {
 TEST_F(EmbedderTest, CanReloadSystemFonts) {
   auto& context = GetEmbedderContext();
   EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 

@@ -285,9 +285,10 @@ class Shell final : public PlatformView::Delegate,
   fml::Status WaitForFirstFrame(fml::TimeDelta timeout);
 
   //----------------------------------------------------------------------------
-  /// @brief      Used by embedders to reload the system fonts in FontCollection.
-  ///             It also clears the cached font families and send system channel
-  ///             message to framework to rebuild affected widgets.
+  /// @brief      Used by embedders to reload the system fonts in
+  /// FontCollection.
+  ///             It also clears the cached font families and send system
+  ///             channel message to framework to rebuild affected widgets.
   ///
   /// @return     Returns if shell reloads system fonts successfully.
   ///
