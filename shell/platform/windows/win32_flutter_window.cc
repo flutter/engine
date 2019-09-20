@@ -128,6 +128,10 @@ void Win32FlutterWindow::OnPointerUp(double x, double y) {
 void Win32FlutterWindow::OnPointerLeave() {
   if (process_events_) {
     SendPointerLeave();
+    // Once the tracked event is received, the TrackMouseEvent function
+    // resets. Set to false to make sure it's called once mouse movement is
+    // detected again.
+    tracking_mouse_leave_ = false;
   }
 }
 

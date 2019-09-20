@@ -13,6 +13,7 @@
 
 #include "flutter/shell/platform/windows/win32_dpi_helper.h"
 
+
 namespace flutter {
 
 // A class abstraction for a high DPI aware Win32 Window.  Intended to be
@@ -109,7 +110,12 @@ class Win32Window {
 
   UINT GetCurrentHeight();
 
+  // Set to true to be notified when the mouse leaves the window.
+  bool tracking_mouse_leave_ = false;
+
  private:
+  void TrackMouseLeaveEvent(HWND hwnd);
+
   // Stores new width and height and calls |OnResize| to notify inheritors
   void HandleResize(UINT width, UINT height);
 

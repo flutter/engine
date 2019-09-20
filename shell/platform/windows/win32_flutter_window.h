@@ -22,6 +22,7 @@
 #include "flutter/shell/platform/windows/win32_window.h"
 #include "flutter/shell/platform/windows/window_state.h"
 
+
 namespace flutter {
 
 // A win32 flutter child window used as implementatin for flutter view.  In the
@@ -106,6 +107,10 @@ class Win32FlutterWindow : public Win32Window {
   void SendPointerUp(double x, double y);
 
   // Reports mouse left the window client area.
+  //
+  // Win32 api doesn't have "mouse enter" event. Therefore, there is no
+  // SendPointerEnter method. A mouse enter event is tracked then the "move"
+  // event is called.
   void SendPointerLeave();
 
   // Reports a keyboard character to Flutter engine.

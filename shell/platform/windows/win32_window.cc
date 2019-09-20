@@ -98,6 +98,18 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
   return DefWindowProc(window, message, wparam, lparam);
 }
 
+// Activates tracking for a "mouse leave" event.
+void Win32Window::TrackMouseLeaveEvent(HWND hwnd) {
+  if (!tracking_mouse_leave_) {
+    TRACKMOUSEEVENT tme;
+    tme.cbSize = sizeof(tme);
+    tme.hwndTrack = hwnd;
+    tme.dwFlags = TME_LEAVE;
+    TrackMouseEvent(&tme);
+    tracking_mouse_leave_ = true;
+  }
+}
+
 LRESULT
 Win32Window::MessageHandler(HWND hwnd,
                             UINT const message,
@@ -107,7 +119,6 @@ Win32Window::MessageHandler(HWND hwnd,
   UINT width = 0, height = 0;
   auto window =
       reinterpret_cast<Win32Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-  static bool tracking_mouse_events = false;
 
   if (window != nullptr) {
     switch (message) {
@@ -121,7 +132,6 @@ Win32Window::MessageHandler(HWND hwnd,
         window->OnClose();
         return 0;
         break;
-
       case WM_SIZE:
         width = LOWORD(lparam);
         height = HIWORD(lparam);
@@ -130,29 +140,16 @@ Win32Window::MessageHandler(HWND hwnd,
         current_height_ = height;
         window->HandleResize(width, height);
         break;
-
       case WM_MOUSEMOVE:
-        if (!tracking_mouse_events) {
-          TRACKMOUSEEVENT tme;
-          tme.cbSize = sizeof(tme);
-          tme.hwndTrack = hwnd;
-          // Not tracking Hover since the engine handles that logic.
-          tme.dwFlags = TME_LEAVE;
-          TrackMouseEvent(&tme);
-          tracking_mouse_events = true;
-        }
+        window->TrackMouseLeaveEvent(hwnd);
+
         xPos = GET_X_LPARAM(lparam);
         yPos = GET_Y_LPARAM(lparam);
-
         window->OnPointerMove(static_cast<double>(xPos),
                               static_cast<double>(yPos));
         break;
       case WM_MOUSELEAVE:;
         window->OnPointerLeave();
-        // Once the tracked event is received, the TrackMouseEvent function
-        // resets. Set to false to make sure it's called once mouse movement is
-        // detected again.
-        tracking_mouse_events = false;
         break;
       case WM_LBUTTONDOWN:
         xPos = GET_X_LPARAM(lparam);
