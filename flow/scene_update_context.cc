@@ -222,7 +222,6 @@ SceneUpdateContext::Entity::Entity(SceneUpdateContext& context)
       entity_node_(context.session()) {
   if (previous_entity_)
     previous_entity_->embedder_node().AddChild(entity_node_);
-
   context.top_entity_ = this;
 }
 

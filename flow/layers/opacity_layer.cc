@@ -16,7 +16,9 @@ constexpr float kOpacityElevationWhenUsingSystemCompositor = 0.01f;
 OpacityLayer::OpacityLayer(int alpha, const SkPoint& offset)
     : ContainerLayer(true), alpha_(alpha), offset_(offset) {
 #if !defined(OS_FUCHSIA)
-  FML_DCHECK(!kRenderOpacityUsingSystemCompositor);
+  static_assert(!kRenderOpacityUsingSystemCompositor,
+                "Delegation of OpacityLayer to the system compositor is only "
+                "allowed on Fuchsia");
 #endif
 
   if (kRenderOpacityUsingSystemCompositor) {
@@ -76,13 +78,15 @@ void OpacityLayer::Paint(PaintContext& context) const {
   // Frame) and once into the Frame's texture (which is then drawn on top of the
   // current canvas).
   if (kRenderOpacityUsingSystemCompositor) {
-    // If we are being rendered into our own frame using the system compositor,
-    // then it is neccesary to "punch a hole" in the canvas/frame behind us so
-    // that group opacity looks correct.
+#if defined(OS_FUCHSIA)
+    // On Fuchsia, If we are being rendered into our own frame using the system
+    // compositor, then it is neccesary to "punch a hole" in the canvas/frame
+    // behind us so that single-pass group opacity looks correct.
     SkPaint paint;
     paint.setColor(SK_ColorTRANSPARENT);
     paint.setBlendMode(SkBlendMode::kSrc);
     context.leaf_nodes_canvas->drawRect(paint_bounds(), paint);
+#endif
     return;
   }
 

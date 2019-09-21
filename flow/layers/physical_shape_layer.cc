@@ -12,11 +12,7 @@ namespace flutter {
 
 constexpr SkScalar kLightHeight = 600;
 constexpr SkScalar kLightRadius = 800;
-#if defined(OS_FUCHSIA)
 constexpr bool kRenderPhysicalShapeUsingSystemCompositor = false;
-#else
-constexpr bool kRenderPhysicalShapeUsingSystemCompositor = false;
-#endif
 
 PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
                                        SkColor shadow_color,
@@ -28,7 +24,9 @@ PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
       path_(path),
       clip_behavior_(clip_behavior) {
 #if !defined(OS_FUCHSIA)
-  FML_DCHECK(!kRenderPhysicalShapeUsingSystemCompositor);
+  static_assert(!kRenderPhysicalShapeUsingSystemCompositor,
+                "Delegation of PhysicalShapeLayer to the system compositor is "
+                "only allowed on Fuchsia");
 #endif  // !defined(OS_FUCHSIA)
 
   // If rendering as a separate frame using the system compositor, then make
@@ -142,14 +140,15 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   // Frame) and once into the Frame's texture (which is then drawn on top of the
   // current canvas).
   if (kRenderPhysicalShapeUsingSystemCompositor) {
-    // If we are being rendered into our own frame using the system compositor,
-    // then it is neccesary to "punch a hole" in the canvas/frame behind us so
-    // that group opacity looks correct.
+#if defined(OS_FUCHSIA)
+    // On Fuchsia, If we are being rendered into our own frame using the system
+    // compositor, then it is neccesary to "punch a hole" in the canvas/frame
+    // behind us so that single-pass group opacity looks correct.
     SkPaint paint;
     paint.setColor(SK_ColorTRANSPARENT);
     paint.setBlendMode(SkBlendMode::kSrc);
     context.leaf_nodes_canvas->drawRect(paint_bounds(), paint);
-
+#endif
     return;
   }
 

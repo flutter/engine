@@ -23,7 +23,7 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
     if (clip_path_bounds.intersect(paint_bounds())) {
       set_paint_bounds(clip_path_bounds);
     } else {
-      set_paint_bounds(SkRect());
+      set_paint_bounds(SkRect::MakeEmpty());
     }
     context->mutators_stack.Pop();
   }
