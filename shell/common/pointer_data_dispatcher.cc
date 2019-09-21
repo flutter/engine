@@ -16,9 +16,6 @@ void DefaultPointerDataDispatcher::DispatchPacket(
   delegate_.DoDispatchPacket(std::move(packet), trace_flow_id);
 }
 
-// Intentional no-op.
-void DefaultPointerDataDispatcher::OnFrameLayerTreeReceived() {}
-
 void SmoothPointerDataDispatcher::DispatchPacket(
     std::unique_ptr<PointerDataPacket> packet,
     uint64_t trace_flow_id) {
@@ -34,32 +31,20 @@ void SmoothPointerDataDispatcher::DispatchPacket(
                                                  trace_flow_id);
   }
   is_pointer_data_in_progress_ = true;
+  ScheduleSecondaryVsyncCallback();
 }
 
-void SmoothPointerDataDispatcher::OnFrameLayerTreeReceived() {
-  if (is_pointer_data_in_progress_) {
-    if (pending_packet_ != nullptr) {
-      // This is already in the UI thread. However, method
-      // `OnFrameLayerTreeReceived` is called by `Engine::Render` (a part of the
-      // `VSYNC` UI thread task) which is in Flutter framework's
-      // `SchedulerPhase.persistentCallbacks` phase. In that phase, no pointer
-      // data packet is allowed to be fired because the framework requires such
-      // phase to be executed synchronously without being interrupted. Hence
-      // we'll post a new UI thread task to fire the packet after `VSYNC` task
-      // is done. When a non-VSYNC UI thread task (like the following one) is
-      // run, the Flutter framework is always in `SchedulerPhase.idle` phase).
-      delegate_.task_runners().GetUITaskRunner()->PostTask(
-          // Use and validate a `fml::WeakPtr` because this dispatcher might
-          // have been destructed with engine when the task is run.
-          [dispatcher = weak_factory_.GetWeakPtr()]() {
-            if (dispatcher) {
-              dispatcher->DispatchPendingPacket();
-            }
-          });
-    } else {
-      is_pointer_data_in_progress_ = false;
-    }
-  }
+void SmoothPointerDataDispatcher::ScheduleSecondaryVsyncCallback() {
+  delegate_.ScheduleSecondaryVsyncCallback(
+      [dispatcher = weak_factory_.GetWeakPtr()]() {
+        if (dispatcher && dispatcher->is_pointer_data_in_progress_) {
+          if (dispatcher->pending_packet_ != nullptr) {
+            dispatcher->DispatchPendingPacket();
+          } else {
+            dispatcher->is_pointer_data_in_progress_ = false;
+          }
+        }
+      });
 }
 
 void SmoothPointerDataDispatcher::DispatchPendingPacket() {
@@ -69,6 +54,7 @@ void SmoothPointerDataDispatcher::DispatchPendingPacket() {
                                                pending_trace_flow_id_);
   pending_packet_ = nullptr;
   pending_trace_flow_id_ = -1;
+  ScheduleSecondaryVsyncCallback();
 }
 
 }  // namespace flutter

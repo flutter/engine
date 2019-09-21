@@ -438,8 +438,6 @@ void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
 
   layer_tree->set_frame_size(frame_size);
   animator_->Render(std::move(layer_tree));
-
-  pointer_data_dispatcher_->OnFrameLayerTreeReceived();
 }
 
 void Engine::UpdateSemantics(SemanticsNodeUpdates update,
@@ -474,6 +472,10 @@ void Engine::DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
   if (runtime_controller_) {
     runtime_controller_->DispatchPointerDataPacket(*packet);
   }
+}
+
+void Engine::ScheduleSecondaryVsyncCallback(std::function<void()> callback) {
+  animator_->ScheduleSecondaryVsyncCallback(std::move(callback));
 }
 
 void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {

@@ -52,6 +52,8 @@ class Animator final {
 
   void Render(std::unique_ptr<flutter::LayerTree> layer_tree);
 
+  void ScheduleSecondaryVsyncCallback(std::function<void()> callback);
+
   void Start();
 
   void Stop();

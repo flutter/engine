@@ -47,8 +47,17 @@ class PointerDataDispatcher {
     virtual void DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                                   uint64_t trace_flow_id) = 0;
 
-    /// Get the task runners to schedule tasks on specific threads.
-    virtual TaskRunners& task_runners() = 0;
+    //----------------------------------------------------------------------------
+    /// @brief    Schedule a secondary callback to be executed right after the
+    ///           main `Animator::RequestFrame` callback.
+    ///
+    ///           If there is no RequestFrame callback, this secondary callback
+    ///           will still be executed at vsync.
+    ///
+    ///           This callback is used to provide the vsync signal needed by
+    ///           `SmoothPointerDataDispatcher`.
+    virtual void ScheduleSecondaryVsyncCallback(
+        std::function<void()> callback) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -58,13 +67,6 @@ class PointerDataDispatcher {
   /// @param[in]  trace_flow_id      The id for `Animator::EnqueueTraceFlowId`.
   virtual void DispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                               uint64_t trace_flow_id) = 0;
-  //----------------------------------------------------------------------------
-  /// @brief      Signal that the engine has received a frame layer tree for
-  ///             rendering. This signal is supposed to be regularly delivered
-  ///             at the same frequency of VSYNC. Such frame layer tree is
-  ///             usually a result of a previous packet sent to the Flutter
-  ///             framework.
-  virtual void OnFrameLayerTreeReceived() = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Default destructor.
@@ -81,9 +83,6 @@ class DefaultPointerDataDispatcher : public PointerDataDispatcher {
   // |PointerDataDispatcer|
   void DispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                       uint64_t trace_flow_id) override;
-
-  // |PointerDataDispatcer|
-  void OnFrameLayerTreeReceived() override;
 
   virtual ~DefaultPointerDataDispatcher();
 
@@ -112,7 +111,7 @@ class DefaultPointerDataDispatcher : public PointerDataDispatcher {
 /// `runtime_controller_->DispatchPointerDataPacket` is always called right
 /// away. That's because `is_pointer_data_in_progress_` will always be false
 /// when `DispatchPacket` is called since it will be cleared by the end of a
-/// frame through `OnFrameLayerTreeReceived`. This is the case for all
+/// frame through `ScheduleSecondaryVsyncCallback`. This is the case for all
 /// Android/iOS devices before iPhone X/XS.
 ///
 /// If the input event is irregular, but with a random latency of no more than
@@ -139,9 +138,6 @@ class SmoothPointerDataDispatcher : public DefaultPointerDataDispatcher {
   void DispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                       uint64_t trace_flow_id) override;
 
-  // |PointerDataDispatcer|
-  void OnFrameLayerTreeReceived() override;
-
   virtual ~SmoothPointerDataDispatcher();
 
  private:
@@ -156,6 +152,8 @@ class SmoothPointerDataDispatcher : public DefaultPointerDataDispatcher {
   fml::WeakPtrFactory<SmoothPointerDataDispatcher> weak_factory_;
 
   void DispatchPendingPacket();
+
+  void ScheduleSecondaryVsyncCallback();
 
   FML_DISALLOW_COPY_AND_ASSIGN(SmoothPointerDataDispatcher);
 };

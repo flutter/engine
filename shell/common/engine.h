@@ -713,7 +713,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                         uint64_t trace_flow_id) override;
 
-  TaskRunners& task_runners() override { return task_runners_; }
+  void ScheduleSecondaryVsyncCallback(std::function<void()> callback) override;
 
  private:
   Engine::Delegate& delegate_;
