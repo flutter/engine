@@ -162,7 +162,7 @@ PFNGLSTENCILOPPROC glad_glStencilOp;
 PFNGLGETQUERYOBJECTUIVPROC glad_glGetQueryObjectuiv;
 PFNGLFRAMEBUFFERTEXTURE2DPROC glad_glFramebufferTexture2D;
 PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC
-    glad_glGetFramebufferAttachmentParameteriv;
+glad_glGetFramebufferAttachmentParameteriv;
 PFNGLTRANSLATEFPROC glad_glTranslatef;
 PFNGLVERTEXATTRIB4NUBPROC glad_glVertexAttrib4Nub;
 PFNGLTRANSLATEDPROC glad_glTranslated;
