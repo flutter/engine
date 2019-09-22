@@ -16,27 +16,32 @@
 
 namespace flutter {
 
-class IOSSurfaceGL : public IOSSurface,
-                     public GPUSurfaceGLDelegate,
-                     public flutter::ExternalViewEmbedder {
+class IOSSurfaceGL final : public IOSSurface,
+                           public GPUSurfaceGLDelegate,
+                           public ExternalViewEmbedder {
  public:
-  IOSSurfaceGL(std::shared_ptr<IOSGLContext> context,
+  IOSSurfaceGL(fml::WeakPtr<IOSGLContext> onscreen_gl_context,
+               fml::WeakPtr<IOSGLContext> resource_gl_context,
                fml::scoped_nsobject<CAEAGLLayer> layer,
                FlutterPlatformViewsController* platform_views_controller);
 
-  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer, std::shared_ptr<IOSGLContext> context);
+  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
+               fml::WeakPtr<IOSGLContext> onscreen_gl_context,
+               fml::WeakPtr<IOSGLContext> resource_gl_context);
 
   ~IOSSurfaceGL() override;
 
+  // |IOSSurface|
   bool IsValid() const override;
 
+  // |IOSSurface|
   bool ResourceContextMakeCurrent() override;
 
+  // |IOSSurface|
   void UpdateStorageSizeIfNecessary() override;
 
-  std::unique_ptr<Surface> CreateGPUSurface() override;
-
-  std::unique_ptr<Surface> CreateSecondaryGPUSurface(GrContext* gr_context);
+  // |IOSSurface|
+  std::unique_ptr<Surface> CreateGPUSurface(GrContext* gr_context = nullptr) override;
 
   bool GLContextMakeCurrent() override;
 
@@ -49,25 +54,38 @@ class IOSSurfaceGL : public IOSSurface,
   bool UseOffscreenSurface() const override;
 
   // |GPUSurfaceGLDelegate|
-  flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
-  // |flutter::ExternalViewEmbedder|
-  void BeginFrame(SkISize frame_size) override;
+  // |ExternalViewEmbedder|
+  sk_sp<SkSurface> GetRootSurface() override;
 
-  // |flutter::ExternalViewEmbedder|
-  void PrerollCompositeEmbeddedView(int view_id) override;
+  // |ExternalViewEmbedder|
+  void CancelFrame() override;
 
-  // |flutter::ExternalViewEmbedder|
+  // |ExternalViewEmbedder|
+  void BeginFrame(SkISize frame_size, GrContext* context) override;
+
+  // |ExternalViewEmbedder|
+  void PrerollCompositeEmbeddedView(int view_id,
+                                    std::unique_ptr<flutter::EmbeddedViewParams> params) override;
+
+  // |ExternalViewEmbedder|
+  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
+
+  // |ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
-  // |flutter::ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id, const flutter::EmbeddedViewParams& params) override;
+  // |ExternalViewEmbedder|
+  SkCanvas* CompositeEmbeddedView(int view_id) override;
 
-  // |flutter::ExternalViewEmbedder|
+  // |ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;
 
  private:
-  std::shared_ptr<IOSGLContext> context_;
+  fml::WeakPtr<IOSGLContext> onscreen_gl_context_;
+
+  fml::WeakPtr<IOSGLContext> resource_gl_context_;
+
   std::unique_ptr<IOSGLRenderTarget> render_target_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceGL);

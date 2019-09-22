@@ -9,7 +9,10 @@ executable("testing") {
 
   output_name = "flutter_tester"
 
-  public_configs = [ "$flutter_root:config" ]
+  public_configs = [
+    "$flutter_root:config",
+    "$flutter_root:export_dynamic_symbols",
+  ]
 
   sources = [
     "tester_main.cc",
@@ -28,14 +31,6 @@ executable("testing") {
   ]
 
   if (is_fuchsia && !is_fuchsia_sdk) {
-    deps += [
-      "//garnet/public/lib/ui/scenic:client",
-      "//zircon/public/lib/trace",
-      "//zircon/public/lib/trace-provider",
-    ]
-  }
-
-  if (is_linux) {
-    ldflags = [ "-rdynamic" ]
+    deps += [ "//garnet/public/lib/ui/scenic:client" ]
   }
 }

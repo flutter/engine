@@ -356,7 +356,7 @@ class Size extends OffsetBase {
   ///
   /// See also:
   ///
-  ///  * [new Size.fromRadius], which is more convenient when the available size
+  ///  * [Size.fromRadius], which is more convenient when the available size
   ///    is the radius of a circle.
   const Size.square(double dimension) : super(dimension, dimension);
 
@@ -373,7 +373,7 @@ class Size extends OffsetBase {
   ///
   /// See also:
   ///
-  ///  * [new Size.square], which creates a square with the given dimension.
+  ///  * [Size.square], which creates a square with the given dimension.
   const Size.fromRadius(double radius) : super(radius * 2.0, radius * 2.0);
 
   /// The horizontal extent of this size.
@@ -1416,12 +1416,16 @@ class RRect {
     return min;
   }
 
-  // Scales all radii so that on each side their sum will not pass the size of
-  // the width/height.
-  //
-  // Inspired from:
-  //   https://github.com/google/skia/blob/master/src/core/SkRRect.cpp#L164
-  RRect _scaleRadii() {
+  /// Scales all radii so that on each side their sum will not exceed the size
+  /// of the width/height.
+  ///
+  /// Skia already handles RRects with radii that are too large in this way.
+  /// Therefore, this method is only needed for RRect use cases that require
+  /// the appropriately scaled radii values.
+  ///
+  /// See the [Skia scaling implementation](https://github.com/google/skia/blob/master/src/core/SkRRect.cpp)
+  /// for more details.
+  RRect scaleRadii() {
     double scale = 1.0;
     scale = _getMin(scale, blRadiusY, tlRadiusY, height);
     scale = _getMin(scale, tlRadiusX, trRadiusX, width);
@@ -1472,7 +1476,7 @@ class RRect {
     if (point.dx < left || point.dx >= right || point.dy < top || point.dy >= bottom)
       return false; // outside bounding box
 
-    final RRect scaled = _scaleRadii();
+    final RRect scaled = scaleRadii();
 
     double x;
     double y;
@@ -1658,7 +1662,7 @@ class RSTransform {
   /// argument multiplied by the x-coordinate of the rotation point, minus the
   /// `scos` argument multiplied by the y-coordinate of the rotation point.
   ///
-  /// The [new RSTransform.fromComponents] method may be a simpler way to
+  /// The [RSTransform.fromComponents] method may be a simpler way to
   /// construct these values. However, if there is a way to factor out the
   /// computations of the sine and cosine of the rotation so that they can be
   /// reused over multiple calls to this constructor, it may be more efficient

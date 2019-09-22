@@ -60,6 +60,12 @@ void SetIsolateDebugName(Dart_NativeArguments args) {
   UIDartState::Current()->SetDebugName(name);
 }
 
+void SetNeedsReportTimings(Dart_NativeArguments args) {
+  Dart_Handle exception = nullptr;
+  bool value = tonic::DartConverter<bool>::FromArguments(args, 1, exception);
+  UIDartState::Current()->window()->client()->SetNeedsReportTimings(value);
+}
+
 void ReportUnhandledException(Dart_NativeArguments args) {
   Dart_Handle exception = nullptr;
 
@@ -179,6 +185,7 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
           tonic::ToDart(metrics.device_pixel_ratio),
           tonic::ToDart(metrics.physical_width),
           tonic::ToDart(metrics.physical_height),
+          tonic::ToDart(metrics.physical_depth),
           tonic::ToDart(metrics.physical_padding_top),
           tonic::ToDart(metrics.physical_padding_right),
           tonic::ToDart(metrics.physical_padding_bottom),
@@ -187,6 +194,10 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
           tonic::ToDart(metrics.physical_view_inset_right),
           tonic::ToDart(metrics.physical_view_inset_bottom),
           tonic::ToDart(metrics.physical_view_inset_left),
+          tonic::ToDart(metrics.physical_system_gesture_inset_top),
+          tonic::ToDart(metrics.physical_system_gesture_inset_right),
+          tonic::ToDart(metrics.physical_system_gesture_inset_bottom),
+          tonic::ToDart(metrics.physical_system_gesture_inset_left),
       }));
 }
 
@@ -250,13 +261,21 @@ void Window::UpdateAccessibilityFeatures(int32_t values) {
 
 void Window::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
+  if (!dart_state) {
+    FML_DLOG(WARNING)
+        << "Dropping platform message for lack of DartState on channel: "
+        << message->channel();
     return;
+  }
   tonic::DartState::Scope scope(dart_state);
   Dart_Handle data_handle =
       (message->hasData()) ? ToByteData(message->data()) : Dart_Null();
-  if (Dart_IsError(data_handle))
+  if (Dart_IsError(data_handle)) {
+    FML_DLOG(WARNING)
+        << "Dropping platform message because of a Dart error on channel: "
+        << message->channel();
     return;
+  }
 
   int response_id = 0;
   if (auto response = message->response()) {
@@ -320,6 +339,31 @@ void Window::BeginFrame(fml::TimePoint frameTime) {
   tonic::LogIfError(tonic::DartInvokeField(library_.value(), "_drawFrame", {}));
 }
 
+void Window::ReportTimings(std::vector<int64_t> timings) {
+  std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
+  if (!dart_state)
+    return;
+  tonic::DartState::Scope scope(dart_state);
+
+  Dart_Handle data_handle =
+      Dart_NewTypedData(Dart_TypedData_kInt64, timings.size());
+
+  Dart_TypedData_Type type;
+  void* data = nullptr;
+  intptr_t num_acquired = 0;
+  FML_CHECK(!Dart_IsError(
+      Dart_TypedDataAcquireData(data_handle, &type, &data, &num_acquired)));
+  FML_DCHECK(num_acquired == static_cast<int>(timings.size()));
+
+  memcpy(data, timings.data(), sizeof(int64_t) * timings.size());
+  FML_CHECK(Dart_TypedDataReleaseData(data_handle));
+
+  tonic::LogIfError(tonic::DartInvokeField(library_.value(), "_reportTimings",
+                                           {
+                                               data_handle,
+                                           }));
+}
+
 void Window::CompletePlatformMessageEmptyResponse(int response_id) {
   if (!response_id)
     return;
@@ -353,6 +397,7 @@ void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
       {"Window_updateSemantics", UpdateSemantics, 2, true},
       {"Window_setIsolateDebugName", SetIsolateDebugName, 2, true},
       {"Window_reportUnhandledException", ReportUnhandledException, 2, true},
+      {"Window_setNeedsReportTimings", SetNeedsReportTimings, 2, true},
   });
 }
 

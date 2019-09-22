@@ -17,7 +17,7 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
+#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #include "third_party/skia/include/core/SkMatrix44.h"
@@ -126,9 +126,16 @@ class AccessibilityBridge;
  * * `SemanticsObject` for the other type of semantics objects.
  * * `FlutterSemanticsObject` for default implementation of `SemanticsObject`.
  */
-@interface FlutterPlatformViewSemanticsContainer : UIAccessibilityElement
+@interface FlutterPlatformViewSemanticsContainer : NSObject
+
+/**
+ * The position inside an accessibility container.
+ */
+@property(nonatomic) NSInteger index;
 
 - (instancetype)init __attribute__((unavailable("Use initWithAccessibilityContainer: instead")));
+
+- (instancetype)initWithSemanticsObject:(SemanticsObject*)object;
 
 @end
 

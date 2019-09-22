@@ -18,10 +18,6 @@ class MessageLoop {
   FML_EMBEDDER_ONLY
   static MessageLoop& GetCurrent();
 
-  enum class Type { kConcurrent };
-
-  MessageLoop(Type type);
-
   bool IsValid() const;
 
   void Run();
@@ -43,6 +39,8 @@ class MessageLoop {
   static bool IsInitializedForCurrentThread();
 
   ~MessageLoop();
+
+  static TaskQueueId GetCurrentTaskQueueId();
 
  private:
   friend class TaskRunner;

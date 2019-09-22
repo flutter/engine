@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("$flutter_root/shell/platform/common/cpp/client_wrapper/publish.gni")
+import("$flutter_root/testing/testing.gni")
 
 _wrapper_includes = [
   "include/flutter/flutter_window.h",
@@ -43,11 +44,12 @@ source_set("client_wrapper_glfw") {
   ]
 }
 
-# Copies the GLFW client wrapper code to the output directory, merging it into
-# the core wrapper.
-publish_client_wrapper("publish_wrapper_glfw") {
+# Copies the GLFW client wrapper code to the output directory with a _glfw
+# suffix.
+publish_client_wrapper_extension("publish_wrapper_glfw") {
   public = _wrapper_includes
   sources = _wrapper_sources
+  directory_suffix = "glfw"
 }
 
 source_set("client_wrapper_library_stubs_glfw") {
@@ -63,6 +65,10 @@ source_set("client_wrapper_library_stubs_glfw") {
   ]
 }
 
+test_fixtures("client_wrapper_glfw_fixtures") {
+  fixtures = []
+}
+
 executable("client_wrapper_glfw_unittests") {
   testonly = true
 
@@ -73,6 +79,7 @@ executable("client_wrapper_glfw_unittests") {
 
   deps = [
     ":client_wrapper_glfw",
+    ":client_wrapper_glfw_fixtures",
     ":client_wrapper_library_stubs_glfw",
     "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_library_stubs",
     "$flutter_root/testing",

@@ -12,13 +12,14 @@
 
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/dart_wrapper.h"
+#include "flutter/lib/ui/painting/color_filter.h"
 #include "flutter/lib/ui/painting/engine_layer.h"
 #include "flutter/lib/ui/painting/image_filter.h"
 #include "flutter/lib/ui/painting/path.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "flutter/lib/ui/painting/rrect.h"
 #include "flutter/lib/ui/painting/shader.h"
-#include "third_party/tonic/typed_data/float64_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 #if defined(OS_FUCHSIA)
 #include "flutter/lib/ui/compositing/scene_host.h"
@@ -48,7 +49,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   fml::RefPtr<EngineLayer> pushClipPath(const CanvasPath* path,
                                         int clipBehavior);
   fml::RefPtr<EngineLayer> pushOpacity(int alpha, double dx = 0, double dy = 0);
-  fml::RefPtr<EngineLayer> pushColorFilter(int color, int blendMode);
+  fml::RefPtr<EngineLayer> pushColorFilter(const ColorFilter* color_filter);
   fml::RefPtr<EngineLayer> pushBackdropFilter(ImageFilter* filter);
   fml::RefPtr<EngineLayer> pushShaderMask(Shader* shader,
                                           double maskRectLeft,
