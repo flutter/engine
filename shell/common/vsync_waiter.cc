@@ -56,6 +56,8 @@ void VsyncWaiter::AsyncWaitForVsync(Callback callback) {
 }
 
 void VsyncWaiter::ScheduleSecondaryCallback(std::function<void()> callback) {
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+
   if (!callback) {
     return;
   }

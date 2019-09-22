@@ -9,6 +9,7 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell.h"
@@ -43,6 +44,10 @@ class ShellTest : public ThreadTest {
   static void RunEngine(Shell* shell, RunConfiguration configuration);
   static void RestartEngine(Shell* shell, RunConfiguration configuration);
 
+  /// Issue as many VSYNC as needed to flush the UI tasks so far, and reset
+  /// the `will_draw_new_frame` to true.
+  static void VSyncFlush(Shell* shell, bool& will_draw_new_frame);
+
   static void PumpOneFrame(Shell* shell);
   static void DispatchFakePointerData(Shell* shell);
 
@@ -73,6 +78,32 @@ class ShellTest : public ThreadTest {
   void SetSnapshotsAndAssets(Settings& settings);
 };
 
+class ShellTestVsyncClock {
+ public:
+  /// Simulate that a vsync signal is triggered.
+  void SimulateVSync();
+
+  /// A future that will return the index the next vsync signal.
+  std::future<int> NextVSync();
+
+ private:
+  std::mutex mutex_;
+  std::vector<std::promise<int>> vsync_promised_ FML_GUARDED_BY(mutex_);
+  size_t vsync_issued_ FML_GUARDED_BY(mutex_) = 0;
+};
+
+class ShellTestVsyncWaiter : public VsyncWaiter {
+ public:
+  ShellTestVsyncWaiter(TaskRunners task_runners, ShellTestVsyncClock& clock)
+      : VsyncWaiter(std::move(task_runners)), clock_(clock) {}
+
+ protected:
+  void AwaitVSync() override;
+
+ private:
+  ShellTestVsyncClock& clock_;
+};
+
 class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
  public:
   ShellTestPlatformView(PlatformView::Delegate& delegate,
@@ -80,11 +111,16 @@ class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
 
   ~ShellTestPlatformView() override;
 
+  void SimulateVSync();
+
  private:
   TestGLSurface gl_surface_;
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
+
+  // |PlatformView|
+  std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
 
   // |PlatformView|
   PointerDataDispatcherMaker GetDispatcherMaker() override;
@@ -106,6 +142,8 @@ class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
 
   // |GPUSurfaceGLDelegate|
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
+
+  ShellTestVsyncClock vsync_clock_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
 };

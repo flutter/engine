@@ -78,12 +78,6 @@ static void TestSimulatedInputEvents(
   fixture->AddNativeCallback("NativeOnPointerDataPacket",
                              CREATE_NATIVE_ENTRY(nativeOnPointerDataPacket));
 
-  auto nativeOnBeginFrame = [&will_draw_new_frame](Dart_NativeArguments args) {
-    will_draw_new_frame = true;
-  };
-  fixture->AddNativeCallback("NativeOnBeginFrame",
-                             CREATE_NATIVE_ENTRY(nativeOnBeginFrame));
-
   ASSERT_TRUE(configuration.IsValid());
   fixture->RunEngine(shell.get(), std::move(configuration));
 
@@ -114,18 +108,30 @@ static void TestSimulatedInputEvents(
     ASSERT_LT(j, continuous_frame_count);
   }
 
-  // i is the input event's index.
-  // j is the frame's index.
-  for (int i = 0, j = 0; i < num_events; j += 1) {
-    double t = j * frame_time;
-    while (i < num_events && delivery_time(i) <= t) {
-      ShellTest::DispatchFakePointerData(shell.get());
-      i += 1;
+  // This has to be running on a different thread than Platform thread to avoid
+  // dead locks.
+  auto simulation = std::async(std::launch::async, [&]() {
+    // i is the input event's index.
+    // j is the frame's index.
+    for (int i = 0, j = 0; i < num_events; j += 1) {
+      double t = j * frame_time;
+      while (i < num_events && delivery_time(i) <= t) {
+        ShellTest::DispatchFakePointerData(shell.get());
+        i += 1;
+      }
+      ShellTest::VSyncFlush(shell.get(), will_draw_new_frame);
     }
-    ShellTest::PumpOneFrame(shell.get());
-  }
+    // Finally, issue a vsync for the pending event that may be generated duing
+    // the last vsync.
+    ShellTest::VSyncFlush(shell.get(), will_draw_new_frame);
+  });
 
+  simulation.wait();
   shell.reset();
+
+  // Make sure that all events have been consumed so
+  // https://github.com/flutter/flutter/issues/40863 won't happen again.
+  ASSERT_EQ(events_consumed_at_frame.back(), num_events);
 }
 
 TEST_F(ShellTest, MissAtMostOneFrameForIrregularInputEvents) {
