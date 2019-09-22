@@ -182,8 +182,8 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
     // Setting hardware-independent screen parameters:
     // https://chromedevtools.github.io/devtools-protocol/tot/Emulation
     await wipConnection.sendCommand('Emulation.setDeviceMetricsOverride', {
-      'width': 1024,
-      'height': 1024,
+      'width': _kMaxScreenshotWidth,
+      'height': _kMaxScreenshotHeight,
       'deviceScaleFactor': 1,
       'mobile': false,
     });

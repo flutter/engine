@@ -13,7 +13,7 @@ import 'package:yaml/yaml.dart';
 import 'environment.dart';
 
 void addChromeVersionOption(ArgParser argParser) {
-  final io.File lockFile = io.File(path.join(environment.webUiRootDir.path, 'dev', 'chrome.lock'));
+  final io.File lockFile = io.File(path.join(environment.webUiRootDir.path, 'dev', 'chrome_lock.yaml'));
   final YamlMap lock = loadYaml(lockFile.readAsStringSync());
   final int pinnedChromeVersion = _PlatformBinding.instance.getChromeBuild(lock);
 
@@ -34,7 +34,7 @@ void addChromeVersionOption(ArgParser argParser) {
 ///
 /// If [requestedVersion] is null, uses the version specified on the
 /// command-line. If not specified on the command-line, uses the version
-/// specified in the "chrome.lock" file.
+/// specified in the "chrome_lock.yaml" file.
 ///
 /// If [requestedVersion] is not null, installs that version. The value
 /// may be "latest" (the latest available build of Chrome), "system"
