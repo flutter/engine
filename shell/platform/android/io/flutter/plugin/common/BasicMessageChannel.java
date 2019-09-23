@@ -10,6 +10,7 @@ import android.support.annotation.UiThread;
 import android.util.Log;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Locale;
 
 import io.flutter.BuildConfig;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
@@ -112,7 +113,7 @@ public final class BasicMessageChannel<T> {
      */
     public void resizeChannelBuffer(int newSize) {
         Charset charset = Charset.forName("UTF-8");
-        String messageString = String.format("resize\r%s\r%d", name, newSize);
+        String messageString = String.format(Locale.US, "resize\r%s\r%d", name, newSize);
         ByteBuffer message = ByteBuffer.wrap(messageString.getBytes(charset));
         messenger.send(CHANNEL_BUFFERS_CHANNEL, message);
     }
