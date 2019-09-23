@@ -74,9 +74,10 @@ static NSString* const FlutterChannelBuffersChannel = @"com.google.flutter/chann
 }
 
 - (void)resizeChannelBuffer:(NSInteger)newSize {
-  NSString* channelName =
-      [NSString stringWithFormat:@"%@\r%@\r%@", FlutterChannelBuffersChannel, _name, @(newSize)];
-  [_messenger sendOnChannel:channelName message:nil];
+  NSString* messageString =
+      [NSString stringWithFormat:@"resize\r%@\r%@", _name, @(newSize)];
+  NSData* message = [messageString dataUsingEncoding:NSUTF8StringEncoding];
+  [_messenger sendOnChannel:FlutterChannelBuffersChannel message:message];
 }
 
 @end
