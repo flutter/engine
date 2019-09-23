@@ -19,7 +19,7 @@ void main() {
   }
 
   void _resize(ui.ChannelBuffers buffers, String name, int newSize) {
-    buffers.handleMessage(ui.ChannelBuffers.kControlChannelName, _makeByteData("resize\r$name\r$newSize"));
+    buffers.handleMessage(_makeByteData("resize\r$name\r$newSize"));
   }
 
   test('push drain', () async {
@@ -138,13 +138,13 @@ void main() {
 
   test('handle garbage', () async {
     ui.ChannelBuffers buffers = ui.ChannelBuffers();
-    expect(() => buffers.handleMessage(ui.ChannelBuffers.kControlChannelName, _makeByteData("asdfasdf")),
+    expect(() => buffers.handleMessage(_makeByteData("asdfasdf")),
            throwsException);
   });
 
   test('handle resize garbage', () async {
     ui.ChannelBuffers buffers = ui.ChannelBuffers();
-    expect(() => buffers.handleMessage(ui.ChannelBuffers.kControlChannelName, _makeByteData("resize\rfoo\rbar")),
+    expect(() => buffers.handleMessage(_makeByteData("resize\rfoo\rbar")),
            throwsException);
   });
 }
