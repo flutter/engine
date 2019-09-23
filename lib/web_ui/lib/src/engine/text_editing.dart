@@ -212,7 +212,7 @@ class TextEditingElement {
   ///
   /// In IOS, the virtual keyboard shifts the screen up if the focused input
   /// element is under the keyboard or very close to the keyboard. Before the
-  /// focus is called we are positining it offscreen. The location of the input
+  /// focus is called we are positioning it offscreen. The location of the input
   /// in IOS is set to correct place, 100ms after focus. We use this timer for
   /// timing this delay.
   Timer _positionInputElementTimer;
@@ -292,8 +292,7 @@ class TextEditingElement {
       }));
     }
 
-    if (browserEngine == BrowserEngine.webkit &&
-        operatingSystem == OperatingSystem.iOs) {
+    if (owner.doesKeyboardShiftInput) {
       /// Position the element outside of the page before focusing on it.
       ///
       /// See [_positionInputElementTimer].
@@ -625,16 +624,15 @@ class HybridTextEditing {
   /// Also used to define if a keyboard is needed.
   bool _isEditing = false;
 
-  /// Flag indication the input element needs to be positioned.
+  /// Flag indicating the input element needs to be positioned.
   ///
   /// See [TextEditingElement._delayBeforePositining].
   bool get inputElementNeedsToBePositioned =>
       !inputPositioned &&
       _isEditing &&
-      browserEngine == BrowserEngine.webkit &&
-      operatingSystem == OperatingSystem.iOs;
+      doesKeyboardShiftInput;
 
-  /// Flag indication wheterher the input element's position is set.
+  /// Flag indicating whether the input element's position is set.
   ///
   /// See [inputElementNeedsToBePositioned].
   bool inputPositioned = false;
@@ -763,21 +761,30 @@ class HybridTextEditing {
     );
   }
 
+  /// Positioning of input element is only done if we are not expecting input
+  /// to be shifted by a virtual keyboard or if the input is already positioned.
+  ///
+  /// Otherwise positioning will be done after focusing on the input.
+  /// See [TextEditingElement._delayBeforePositining].
+  bool get _canPositionInput => inputPositioned || !doesKeyboardShiftInput;
+
+  /// Flag indicating if virtual keyboard shifts the location of input element.
+  ///
+  /// Value decided using the operating system and the browser engine.
+  ///
+  /// In IOS, the virtual keyboard might shifts the screen up to make input
+  /// visible depending on the location of the focused input element.
+  bool get doesKeyboardShiftInput =>
+    browserEngine == BrowserEngine.webkit &&
+    operatingSystem == OperatingSystem.iOs;
+
   /// These style attributes are dynamic throughout the life time of an input
   /// element.
   ///
   /// They are changed depending on the messages coming from method calls:
   /// "TextInput.setStyle", "TextInput.setEditableSizeAndTransform".
-  ///
-  /// In IOS, initial positionig of input element is not done in this method.
-  /// This method changes the location of the input element if it is already
-  /// positioned.
-  /// See [TextEditingElement._delayBeforePositining].
   void _setDynamicStyleAttributes(html.HtmlElement domElement) {
-    if (_editingLocationAndSize != null &&
-        (inputPositioned ||
-            !(browserEngine == BrowserEngine.webkit &&
-                operatingSystem == OperatingSystem.iOs))) {
+    if (_editingLocationAndSize != null && _canPositionInput) {
       setStyle(domElement);
     }
   }
