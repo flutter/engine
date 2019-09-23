@@ -436,7 +436,8 @@ bool ParagraphTxt::ComputeBidiRuns(std::vector<BidiRun>* result) {
         ubidi_getVisualRun(bidi.get(), bidi_run_count - 2,
                            &second_last_bidi_run_start,
                            &second_last_bidi_run_length);
-        if (bidi_run_start >= second_last_bidi_run_start) {
+        if (bidi_run_start ==
+            second_last_bidi_run_start + second_last_bidi_run_length) {
           has_trailing_whitespace = true;
           bidi_run_count--;
         }
