@@ -112,7 +112,7 @@ class ChannelBuffers {
   /// buffer size that will avoid any overflows.
   static const int kDefaultBufferSize = 1;
 
-  static const String kControlChannelName = "dev.flutter/channel-buffers";
+  static const String kControlChannelName = 'dev.flutter/channel-buffers';
 
   /// A mapping between a channel name and its associated [_RingBuffer].
   final Map<String, _RingBuffer<_StoredMessage>> _messages =
@@ -190,7 +190,7 @@ class ChannelBuffers {
 
   String _getString(ByteData data) {
     final ByteBuffer buffer = data.buffer;
-    var list = buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    final Uint8List list = buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
     return utf8.decode(list);
   }
 
@@ -202,8 +202,8 @@ class ChannelBuffers {
   /// * resize - Allows you to set the size of a channel's buffer, command is in the format of
   ///  `resize/<channel name>/<new size>`
   void handleMessage(ByteData data) {
-    final List<String> command = _getString(data).split("\r");
-    if (command.length == 3 && command[0] == "resize") {
+    final List<String> command = _getString(data).split('\r');
+    if (command.length == 3 && command[0] == 'resize') {
       _resize(command[1], int.parse(command[2]));
     } else {
       throw Exception('Unrecognized command $command sent to $kControlChannelName.');
