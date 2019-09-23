@@ -201,8 +201,7 @@ class ChannelBuffers {
   /// Available messages:
   /// * resize - Allows you to set the size of a channel's buffer, command is in the format of
   ///  `resize/<channel name>/<new size>`
-  void handleMessage(String name, ByteData data) {
-    assert(name == kControlChannelName);
+  void handleMessage(ByteData data) {
     final List<String> command = _getString(data).split("\r");
     if (command.length == 3 && command[0] == "resize") {
       _resize(command[1], int.parse(command[2]));

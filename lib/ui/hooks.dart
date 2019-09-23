@@ -152,7 +152,7 @@ void _updateAccessibilityFeatures(int values) {
 void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
   if (name == ChannelBuffers.kControlChannelName) {
     try {
-      channelBuffers.handleMessage(name, data);
+      channelBuffers.handleMessage(data);
     } catch (ex) {
       _printDebug('Message "$name" caused exception $ex');
     } finally {
