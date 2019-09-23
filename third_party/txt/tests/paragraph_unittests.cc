@@ -2373,7 +2373,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeadingSpaceRTL)) {
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
-  ASSERT_EQ(boxes.size(), 1ull);
+  ASSERT_EQ(boxes.size(), 2ull);
 
   // This test should crash if behavior regresses.
 }
