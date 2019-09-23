@@ -533,16 +533,16 @@ TEST_F(ShellTest, ReloadSystemFonts) {
   auto font =
       fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
   if (font == nullptr) {
-    // System does not have any font to begin with. Aborts the test.
+    // The system does not have default font. Aborts this test.
     return;
   }
   unsigned int id = font->getId();
-  // Result should be cached.
+  // The result should be cached.
   font = fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
   ASSERT_EQ(font->getId(), id);
   bool result = shell->ReloadSystemFonts();
 
-  // Cache is cleared, and FontCollection will be assigned a new id.
+  // The cache is cleared, and FontCollection will be assigned a new id.
   font = fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
   ASSERT_NE(font->getId(), id);
   ASSERT_TRUE(result);
