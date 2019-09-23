@@ -1,4 +1,4 @@
-Signature: f9408fc447605fa361acfd80fcff1feb
+Signature: bb75bc3812bd490831a12ffccde8b758
 
 UNUSED LICENSES:
 
@@ -3397,6 +3397,7 @@ FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlSemaphore.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlSemaphore.mm
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.h
+FILE: ../../../third_party/skia/src/image/SkSurface_GpuMtl.mm
 FILE: ../../../third_party/skia/src/shaders/SkRTShader.cpp
 FILE: ../../../third_party/skia/src/shaders/SkRTShader.h
 FILE: ../../../third_party/skia/src/sksl/SkSLDefines.h
@@ -3784,6 +3785,7 @@ FILE: ../../../third_party/skia/gm/crbug_908646.cpp
 FILE: ../../../third_party/skia/gm/crbug_946965.cpp
 FILE: ../../../third_party/skia/gm/patharcto.cpp
 FILE: ../../../third_party/skia/gm/runtimecolorfilter.cpp
+FILE: ../../../third_party/skia/gm/runtimefunctions.cpp
 FILE: ../../../third_party/skia/gm/runtimeshader.cpp
 FILE: ../../../third_party/skia/gm/skbug_9319.cpp
 FILE: ../../../third_party/skia/include/effects/SkImageFilters.h
