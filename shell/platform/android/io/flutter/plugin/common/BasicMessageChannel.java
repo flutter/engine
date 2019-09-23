@@ -31,7 +31,7 @@ import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 public final class BasicMessageChannel<T> {
     private static final String TAG = "BasicMessageChannel#";
     public static final String CHANNEL_BUFFERS_CHANNEL =
-        "com.google.flutter/channel-buffers";
+        "dev.flutter/channel-buffers";
 
     @NonNull
     private final BinaryMessenger messenger;

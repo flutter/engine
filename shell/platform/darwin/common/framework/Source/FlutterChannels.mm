@@ -6,7 +6,7 @@
 
 #pragma mark - Basic message channel
 
-static NSString* const FlutterChannelBuffersChannel = @"com.google.flutter/channel-buffers";
+static NSString* const FlutterChannelBuffersChannel = @"dev.flutter/channel-buffers";
 
 @implementation FlutterBasicMessageChannel {
   NSObject<FlutterBinaryMessenger>* _messenger;

@@ -152,7 +152,7 @@
   NSString* expectedMessageString =
       [NSString stringWithFormat:@"resize\r%@\r%@", channelName, @100];
   NSData* expectedMessage = [expectedMessageString dataUsingEncoding:NSUTF8StringEncoding];
-  OCMExpect([binaryMessenger sendOnChannel:@"com.google.flutter/channel-buffers"
+  OCMExpect([binaryMessenger sendOnChannel:@"dev.flutter/channel-buffers"
                                    message:expectedMessage]);
   [channel resizeChannelBuffer:100];
   OCMVerifyAll(binaryMessenger);

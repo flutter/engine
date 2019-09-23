@@ -112,7 +112,7 @@ class ChannelBuffers {
   /// buffer size that will avoid any overflows.
   static const int kDefaultBufferSize = 1;
 
-  static const String kControlChannelName = "com.google.flutter/channel-buffers";
+  static const String kControlChannelName = "dev.flutter/channel-buffers";
 
   /// A mapping between a channel name and its associated [_RingBuffer].
   final Map<String, _RingBuffer<_StoredMessage>> _messages =
