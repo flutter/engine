@@ -1280,7 +1280,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
         if (lastAdded != null && lastAdded.id != previousRouteId) {
             previousRouteId = lastAdded.id;
-            createAndSendWindowChangeEvent(lastAdded);
+            sendWindowChangeEvent(lastAdded);
         }
         flutterNavigationStack.clear();
         for (SemanticsNode semanticsNode : newRoutes) {
@@ -1299,7 +1299,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
         // TODO(goderbauer): Send this event only once (!) for changed subtrees,
         //     see https://github.com/flutter/flutter/issues/14534
-        createAndSendWindowContentChangeEvent(0);
+        sendWindowContentChangeEvent(0);
 
         for (SemanticsNode object : updated) {
             if (object.didScroll()) {
@@ -1371,13 +1371,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 String label = object.label == null ? "" : object.label;
                 String previousLabel = object.previousLabel == null ? "" : object.label;
                 if (!label.equals(previousLabel) || !object.hadFlag(Flag.IS_LIVE_REGION)) {
-                    createAndSendWindowContentChangeEvent(object.id);
+                    sendWindowContentChangeEvent(object.id);
                 }
             } else if (object.hasFlag(Flag.IS_TEXT_FIELD) && object.didChangeLabel()
                     && inputFocusedSemanticsNode != null && inputFocusedSemanticsNode.id == object.id) {
                 // Text fields should announce when their label changes while focused. We use a live
                 // region tag to do so, and this event triggers that update.
-                createAndSendWindowContentChangeEvent(object.id);
+                sendWindowContentChangeEvent(object.id);
             }
             if (accessibilityFocusedSemanticsNode != null && accessibilityFocusedSemanticsNode.id == object.id
                     && !object.hadFlag(Flag.IS_SELECTED) && object.hasFlag(Flag.IS_SELECTED)) {
@@ -1481,13 +1481,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     /**
-     * Factory method that creates a {@link AccessibilityEvent#TYPE_WINDOW_STATE_CHANGED} and sends
-     * the event to Android's accessibility system.
+     * Creates a {@link AccessibilityEvent#TYPE_WINDOW_STATE_CHANGED} and sends the event to
+     * Android's accessibility system.
      *
      * The given {@code route} should be a {@link SemanticsNode} that represents a navigation route
      * in the Flutter app.
      */
-    private void createAndSendWindowChangeEvent(@NonNull SemanticsNode route) {
+    private void sendWindowChangeEvent(@NonNull SemanticsNode route) {
         AccessibilityEvent event = obtainAccessibilityEvent(
             route.id,
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
@@ -1498,15 +1498,15 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     /**
-     * Factory method that creates a {@link AccessibilityEvent#TYPE_WINDOW_CONTENT_CHANGED} and sends
-     * the event to Android's accessibility system.
+     * Creates a {@link AccessibilityEvent#TYPE_WINDOW_CONTENT_CHANGED} and sends the event to
+     * Android's accessibility system.
      *
      * It sets the content change types to {@link AccessibilityEvent#CONTENT_CHANGE_TYPE_SUBTREE}
      *
-     * The given {@code virtualViewId} should be a {@link SemanticsNode} below
-     * which the content changed.
+     * The given {@code virtualViewId} should be a {@link SemanticsNode} below which the content has
+     * changed.
      */
-    private void createAndSendWindowContentChangeEvent(int virtualViewId) {
+    private void sendWindowContentChangeEvent(int virtualViewId) {
         AccessibilityEvent event = obtainAccessibilityEvent(
             virtualViewId,
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
@@ -1586,7 +1586,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
         accessibilityFocusedSemanticsNode = null;
         hoveredObject = null;
-        createAndSendWindowContentChangeEvent(0);
+        sendWindowContentChangeEvent(0);
     }
 
     /**
