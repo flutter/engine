@@ -205,18 +205,18 @@ class TextEditingElement {
 
   /// Timer that times when to set the location of the input text.
   ///
-  /// This is only used for IOS. In IOS, virtual keyboard shifts the screen.
+  /// This is only used for iOS. In iOS, virtual keyboard shifts the screen.
   /// There is no callback to know if the keyboard is up and how much the screen
   /// has shifted. Therefore instead of listening to the shift and passing this
   /// information to Flutter Framework, we are trying to stop the shift.
   ///
-  /// In IOS, the virtual keyboard shifts the screen up if the focused input
+  /// In iOS, the virtual keyboard shifts the screen up if the focused input
   /// element is under the keyboard or very close to the keyboard. Before the
   /// focus is called we are positioning it offscreen. The location of the input
-  /// in IOS is set to correct place, 100ms after focus. We use this timer for
+  /// in iOS is set to correct place, 100ms after focus. We use this timer for
   /// timing this delay.
   Timer _positionInputElementTimer;
-  static const Duration _delayBeforePositining =
+  static const Duration _delayBeforePositioning =
       const Duration(milliseconds: 100);
 
   final HybridTextEditing owner;
@@ -247,7 +247,7 @@ class TextEditingElement {
   void configureInputElementForIOS() {
     if (browserEngine != BrowserEngine.webkit ||
         operatingSystem != OperatingSystem.iOs) {
-      // Only relevant on Safari Mobile and Chrome on IOS.
+      // Only relevant on Safari-based on iOS.
       return;
     }
 
@@ -293,30 +293,8 @@ class TextEditingElement {
     }
 
     if (owner.doesKeyboardShiftInput) {
-      /// Position the element outside of the page before focusing on it.
-      ///
-      /// See [_positionInputElementTimer].
-      owner.setStyleOutsideOfScreen(domElement);
-
-      _subscriptions.add(domElement.onFocus.listen((_) {
-        // Cancel previous timer if exists.
-        _positionInputElementTimer?.cancel();
-        _positionInputElementTimer = Timer(_delayBeforePositining, () {
-          if (textEditing.inputElementNeedsToBePositioned) {
-            configureInputElementForIOS();
-          }
-        });
-
-        /// When the virtual keyboard is closed on IOS, onBlur is triggered.
-        _subscriptions.add(domElement.onBlur.listen((_) {
-          /// Cancel the timer since there is no need to set the location of the
-          /// input element anymore. It needs to be focused again to be editable
-          /// by the user.
-          _positionInputElementTimer?.cancel();
-        }));
-      }));
+      _preventShiftDuringFocus();
     }
-
     domElement.focus();
 
     if (_lastEditingState != null) {
@@ -343,6 +321,7 @@ class TextEditingElement {
     }
     _subscriptions.clear();
     _positionInputElementTimer?.cancel();
+    _positionInputElementTimer = null;
     owner.inputPositioned = false;
     _removeDomElement();
   }
@@ -371,6 +350,32 @@ class TextEditingElement {
 
   void _refocus() {
     domElement.focus();
+  }
+
+  void _preventShiftDuringFocus() {
+    // Position the element outside of the page before focusing on it.
+    //
+    // See [_positionInputElementTimer].
+    owner.setStyleOutsideOfScreen(domElement);
+
+    _subscriptions.add(domElement.onFocus.listen((_) {
+      // Cancel previous timer if exists.
+      _positionInputElementTimer?.cancel();
+      _positionInputElementTimer = Timer(_delayBeforePositioning, () {
+        if (textEditing.inputElementNeedsToBePositioned) {
+          configureInputElementForIOS();
+        }
+      });
+
+      // When the virtual keyboard is closed on iOS, onBlur is triggered.
+      _subscriptions.add(domElement.onBlur.listen((_) {
+        // Cancel the timer since there is no need to set the location of the
+        // input element anymore. It needs to be focused again to be editable
+        // by the user.
+        _positionInputElementTimer?.cancel();
+        _positionInputElementTimer = null;
+      }));
+    }));
   }
 
   void setEditingState(EditingState editingState) {
@@ -406,6 +411,14 @@ class TextEditingElement {
           ..addRange(_createRange(editingState));
         break;
     }
+
+
+    if(owner.inputElementNeedsToBePositioned) {
+      _preventShiftDuringFocus();
+    }
+
+    // Re-focuses when setting editing state.
+    domElement.focus();
   }
 
   /// Swap out the current DOM element and replace it with a new one of type
@@ -624,9 +637,9 @@ class HybridTextEditing {
   /// Also used to define if a keyboard is needed.
   bool _isEditing = false;
 
-  /// Flag indicating the input element needs to be positioned.
+  /// Indicates whether the input element needs to be positioned.
   ///
-  /// See [TextEditingElement._delayBeforePositining].
+  /// See [TextEditingElement._delayBeforePositioning].
   bool get inputElementNeedsToBePositioned =>
       !inputPositioned &&
       _isEditing &&
@@ -765,14 +778,14 @@ class HybridTextEditing {
   /// to be shifted by a virtual keyboard or if the input is already positioned.
   ///
   /// Otherwise positioning will be done after focusing on the input.
-  /// See [TextEditingElement._delayBeforePositining].
+  /// See [TextEditingElement._delayBeforePositioning].
   bool get _canPositionInput => inputPositioned || !doesKeyboardShiftInput;
 
-  /// Flag indicating if virtual keyboard shifts the location of input element.
+  /// Indicates whether virtual keyboard shifts the location of input element.
   ///
   /// Value decided using the operating system and the browser engine.
   ///
-  /// In IOS, the virtual keyboard might shifts the screen up to make input
+  /// In iOS, the virtual keyboard might shifts the screen up to make input
   /// visible depending on the location of the focused input element.
   bool get doesKeyboardShiftInput =>
     browserEngine == BrowserEngine.webkit &&
@@ -807,15 +820,15 @@ class HybridTextEditing {
       ..transform = transformCss;
   }
 
-  // TODO(flutter_web): When the browser closes and re-opens the virtual
-  // shifts the page in IOS. Call this method from visibility change listener
+  // TODO(flutter_web): After the browser closes and re-opens the virtual
+  // shifts the page in iOS. Call this method from visibility change listener
   // attached to body.
-  /// Set the dom elements location somewhere outside of the screen.
+  /// Set the dom element's location somewhere outside of the screen.
   ///
-  /// This is useful for not triggering a scroll when IOS virtual keyboard is
+  /// This is useful for not triggering a scroll when iOS virtual keyboard is
   /// coming up.
   ///
-  /// See [TextEditingElement._delayBeforePositining].
+  /// See [TextEditingElement._delayBeforePositioning].
   void setStyleOutsideOfScreen(html.HtmlElement domElement) {
     domElement.style.transform = 'translate(-9999px, -9999px)';
   }
