@@ -273,16 +273,9 @@ const std::shared_ptr<minikin::FontFamily>& FontCollection::DoMatchFallbackFont(
     typeface->getFamilyName(&sk_family_name);
     std::string family_name(sk_family_name.c_str());
 
-    // Check if the fallback font already exists. Only insert if it does not
-    // exist.
-    bool contains_font = false;
-    for (std::string font : fallback_fonts_for_locale_[locale]) {
-      if (font == family_name) {
-        contains_font = true;
-        break;
-      }
-    }
-    if (!contains_font)
+    if (std::find(fallback_fonts_for_locale_[locale].begin(),
+                  fallback_fonts_for_locale_[locale].end(),
+                  family_name) == fallback_fonts_for_locale_[locale].end())
       fallback_fonts_for_locale_[locale].push_back(family_name);
 
     return GetFallbackFontFamily(manager, family_name);
