@@ -12,8 +12,10 @@ import android.support.annotation.NonNull;
 import java.util.HashSet;
 import java.util.Set;
 
+import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.PluginRegistry;
 import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
 import io.flutter.embedding.engine.plugins.broadcastreceiver.BroadcastReceiverControlSurface;
@@ -31,7 +33,6 @@ import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
-import io.flutter.view.FlutterMain;
 
 /**
  * A single Flutter execution environment.
@@ -143,8 +144,9 @@ public class FlutterEngine implements LifecycleOwner {
    * and {@link FlutterMain#ensureInitializationComplete(io.flutter.view.Context, String[])}.
    */
   public FlutterEngine(@NonNull Context context) {
-    FlutterMain.startInitialization(context);
-    FlutterMain.ensureInitializationComplete(context, null);
+    FlutterLoader flutterLoader = FlutterInjector.instance().flutterLoader();
+    flutterLoader.startInitialization(context);
+    FlutterLoader.ensureInitializationComplete(context, null);
     this.flutterJNI = new FlutterJNI();
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
     attachToJni();
