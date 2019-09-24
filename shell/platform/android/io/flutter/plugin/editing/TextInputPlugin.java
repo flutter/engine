@@ -8,6 +8,7 @@ import android.content.Context;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Selection;
@@ -264,7 +265,7 @@ public class TextInputPlugin {
         mImm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
     }
 
-    private void setTextInputClient(int client, TextInputChannel.Configuration configuration) {
+    @VisibleForTesting void setTextInputClient(int client, TextInputChannel.Configuration configuration) {
         inputTarget = new InputTarget(InputTarget.Type.FRAMEWORK_CLIENT, client);
         this.configuration = configuration;
         mEditable = Editable.Factory.getInstance().newEditable("");
@@ -296,7 +297,7 @@ public class TextInputPlugin {
         }
     }
 
-    private void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
+    @VisibleForTesting void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
         if (!restartAlwaysRequired && !mRestartInputPending && state.text.equals(mEditable.toString())) {
             applyStateToSelection(state);
             mImm.updateSelection(mView, Math.max(Selection.getSelectionStart(mEditable), 0),
