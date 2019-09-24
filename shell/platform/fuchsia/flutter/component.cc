@@ -338,14 +338,14 @@ Application::Application(
               dart_utils::HandleException(runner_incoming_services,
                                           component_url, error, stack_trace);
             } else {
-              FML_LOG(ERROR)
-                  << "Unhandled exception after application shutdown: "
+              FML_LOG(WARNING)
+                  << "Exception was thrown which was not caught in Flutter app: "
                   << error;
             }
           });
         } else {
-          FML_LOG(ERROR) << "Unhandled exception after application shutdown: "
-                         << error;
+          FML_LOG(WARNING) << "Exception was thrown which was not caught in Flutter app: "
+                           << error;
         }
         // Ideally we would return whether HandleException returned ZX_OK, but
         // short of knowing if the exception was correctly handled, we return
