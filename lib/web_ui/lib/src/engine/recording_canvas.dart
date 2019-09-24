@@ -1120,6 +1120,9 @@ abstract class PathCommand {
   PathCommand shifted(ui.Offset offset);
 
   List<dynamic> serializeToCssPaint();
+
+  /// Transform the command and add to targetPath.
+  void transform(Float64List matrix4, ui.Path targetPath);
 }
 
 class MoveTo extends PathCommand {
@@ -1136,6 +1139,15 @@ class MoveTo extends PathCommand {
   @override
   List<dynamic> serializeToCssPaint() {
     return <dynamic>[1, x, y];
+  }
+
+  @override
+  void transform(Float64List matrix4, ui.Path targetPath) {
+    final double transformedX = (matrix4[0] * x) + (matrix4[4] * y)
+        + matrix4[12];
+    final double transformedY = (matrix4[1] * x) + (matrix4[5] * y)
+        + matrix4[13];
+    targetPath.moveTo(transformedX, transformedY);
   }
 
   @override
@@ -1162,6 +1174,15 @@ class LineTo extends PathCommand {
   @override
   List<dynamic> serializeToCssPaint() {
     return <dynamic>[2, x, y];
+  }
+
+  @override
+  void transform(Float64List matrix4, ui.Path targetPath) {
+    final double transformedX = (matrix4[0] * x) + (matrix4[4] * y)
+        + matrix4[12];
+    final double transformedY = (matrix4[1] * x) + (matrix4[5] * y)
+        + matrix4[13];
+    targetPath.lineTo(transformedX, transformedY);
   }
 
   @override
@@ -1240,6 +1261,20 @@ class QuadraticCurveTo extends PathCommand {
   }
 
   @override
+  void transform(Float64List matrix4, ui.Path targetPath) {
+    final double transformedX1 = (matrix4[0] * x1) + (matrix4[4] * y1)
+        + matrix4[12];
+    final double transformedY1 = (matrix4[1] * x1) + (matrix4[5] * y1)
+        + matrix4[13];
+    final double transformedX2 = (matrix4[0] * x2) + (matrix4[4] * y2)
+        + matrix4[12];
+    final double transformedY2 = (matrix4[1] * x2) + (matrix4[5] * y2)
+        + matrix4[13];
+    targetPath.quadraticBezierTo(transformedX1, transformedY1,
+        transformedX2, transformedY2);
+  }
+
+  @override
   String toString() {
     if (assertionsEnabled) {
       return 'QuadraticCurveTo($x1, $y1, $x2, $y2)';
@@ -1272,6 +1307,24 @@ class BezierCurveTo extends PathCommand {
   }
 
   @override
+  void transform(Float64List matrix4, ui.Path targetPath) {
+    final double s0 = matrix4[0];
+    final double s1 = matrix4[1];
+    final double s4 = matrix4[4];
+    final double s5 = matrix4[5];
+    final double s12 = matrix4[12];
+    final double s13 = matrix4[13];
+    final double transformedX1 = (s0 * x1) + (s4 * y1) + s12;
+    final double transformedY1 = (s1 * x1) + (s5 * y1) + s13;
+    final double transformedX2 = (s0 * x2) + (s4 * y2) + s12;
+    final double transformedY2 = (s1 * x2) + (s5 * y2) + s13;
+    final double transformedX3 = (s0 * x3) + (s4 * y3) + s12;
+    final double transformedY3 = (s1 * x3) + (s5 * y3) + s13;
+    targetPath.cubicTo(transformedX1, transformedY1,
+        transformedX2, transformedY2, transformedX3, transformedY3);
+  }
+
+  @override
   String toString() {
     if (assertionsEnabled) {
       return 'BezierCurveTo($x1, $y1, $x2, $y2, $x3, $y3)';
@@ -1293,6 +1346,38 @@ class RectCommand extends PathCommand {
   @override
   RectCommand shifted(ui.Offset offset) {
     return RectCommand(x + offset.dx, y + offset.dy, width, height);
+  }
+
+  @override
+  void transform(Float64List matrix4, ui.Path targetPath) {
+    final double s0 = matrix4[0];
+    final double s1 = matrix4[1];
+    final double s4 = matrix4[4];
+    final double s5 = matrix4[5];
+    final double s12 = matrix4[12];
+    final double s13 = matrix4[13];
+    final double transformedX1 = (s0 * x) + (s4 * y) + s12;
+    final double transformedY1 = (s1 * x) + (s5 * y) + s13;
+    final double x2 = x + width;
+    final double y2 = y + height;
+    final double transformedX2 = (s0 * x2) + (s4 * y) + s12;
+    final double transformedY2 = (s1 * x2) + (s5 * y) + s13;
+    final double transformedX3 = (s0 * x2) + (s4 * y2) + s12;
+    final double transformedY3 = (s1 * x2) + (s5 * y2) + s13;
+    final double transformedX4 = (s0 * x) + (s4 * y2) + s12;
+    final double transformedY4 = (s1 * x) + (s5 * y2) + s13;
+    if (transformedY1 == transformedY2 && transformedY3 == transformedY4 &&
+        transformedX1 == transformedX4 && transformedX2 == transformedX3) {
+      // It is still a rectangle.
+      targetPath.addRect(ui.Rect.fromLTRB(transformedX1, transformedY1,
+        transformedX3, transformedY3));
+    } else {
+      targetPath.moveTo(transformedX1, transformedY1);
+      targetPath.lineTo(transformedX2, transformedY2);
+      targetPath.lineTo(transformedX3, transformedY3);
+      targetPath.lineTo(transformedX4, transformedY4);
+      targetPath.close();
+    }
   }
 
   @override
@@ -1326,6 +1411,12 @@ class RRectCommand extends PathCommand {
   }
 
   @override
+  void transform(Float64List matrix4, ui.Path targetPath) {
+    final Path roundRectPath = Path();
+    _RRectToPathRenderer(roundRectPath).render(rrect);
+  }
+
+    @override
   String toString() {
     if (assertionsEnabled) {
       return '$rrect';
@@ -1346,6 +1437,11 @@ class CloseCommand extends PathCommand {
   @override
   List<dynamic> serializeToCssPaint() {
     return <dynamic>[8];
+  }
+
+  @override
+  void transform(Float64List matrix4, ui.Path targetPath) {
+    targetPath.close();
   }
 
   @override

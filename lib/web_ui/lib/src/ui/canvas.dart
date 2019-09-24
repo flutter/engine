@@ -1753,7 +1753,13 @@ class Path {
   /// subpath transformed by the given matrix.
   Path transform(Float64List matrix4) {
     assert(engine.matrix4IsValid(matrix4));
-    throw UnimplementedError();
+    final Path transformedPath = Path();
+    for (final engine.Subpath subpath in subpaths) {
+      for (final engine.PathCommand cmd in subpath.commands) {
+        cmd.transform(matrix4, transformedPath);
+      }
+    }
+    return transformedPath;
   }
 
   /// Computes the bounding rectangle for this path.
