@@ -330,7 +330,7 @@ class TextEditingElement {
     switch (inputConfig.inputType) {
       case InputType.text:
         domElement = owner.createInputElement();
-        // Setting the type to password seems to be only option to prevent the obscured text 
+        // Setting the type to password seems to be only option to prevent the obscured text
         // from being displayed as an suggestion / autocomplete option in mobile devices.
         if (inputConfig.obscureText) {
           domElement.setAttribute('type', 'password');
