@@ -8,6 +8,7 @@ import android.support.annotation.NonNull;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -15,6 +16,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
+import io.flutter.FlutterInjector;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterShellArgs;
@@ -47,12 +49,16 @@ public class FlutterActivityAndFragmentDelegateTest {
   private FlutterEngine mockFlutterEngine;
   private FlutterActivityAndFragmentDelegate.Host mockHost;
 
+  @BeforeClass
+  public static void setupInjector() {
+    // FlutterLoader is utilized statically, therefore we need to inform it to behave differently
+    // for testing purposes.
+    FlutterInjector.setInstance(
+        new FlutterInjector.Builder().setIsRunningInRobolectricTest(true).build());
+  }
+
   @Before
   public void setup() {
-    // FlutterMain is utilized statically, therefore we need to inform it to behave differently
-    // for testing purposes.
-    FlutterMain.setIsRunningInRobolectricTest(true);
-
     // Create a mocked FlutterEngine for the various interactions required by the delegate
     // being tested.
     mockFlutterEngine = mockFlutterEngine();
@@ -71,12 +77,6 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(mockHost.provideFlutterEngine(any(Context.class))).thenReturn(mockFlutterEngine);
     when(mockHost.shouldAttachEngineToActivity()).thenReturn(true);
     when(mockHost.shouldDestroyEngineWithHost()).thenReturn(true);
-  }
-
-  @After
-  public void teardown() {
-    // Return FlutterMain to normal.
-    FlutterMain.setIsRunningInRobolectricTest(false);
   }
 
   @Test

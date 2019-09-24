@@ -410,6 +410,7 @@ action("robolectric_tests") {
   jar_path = "$root_out_dir/robolectric_tests.jar"
 
   sources = [
+    "test/io/flutter/FlutterInjectorTest.java",
     "test/io/flutter/FlutterTestSuite.java",
     "test/io/flutter/SmokeTest.java",
     "test/io/flutter/embedding/android/FlutterActivityAndFragmentDelegateTest.java",

@@ -90,13 +90,15 @@ public final class FlutterInjector {
   public static final class Builder {
 
     private boolean isRunningInRobolectricTest = false;
-    public void setIsRunningInRobolectricTest(boolean isRunningInRobolectricTest) {
+    public Builder setIsRunningInRobolectricTest(boolean isRunningInRobolectricTest) {
       this.isRunningInRobolectricTest = isRunningInRobolectricTest;
+      return this;
     }
 
     private FlutterLoader flutterLoader;
-    public void setFlutterLoader(@NonNull FlutterLoader flutterLoader) {
+    public Builder setFlutterLoader(@NonNull FlutterLoader flutterLoader) {
       this.flutterLoader = flutterLoader;
+      return this;
     }
 
     public FlutterInjector build() {
