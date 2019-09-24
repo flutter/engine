@@ -23,15 +23,16 @@ class ExternalTextureGL {
   virtual ~ExternalTextureGL();
 
   /**
-  * Returns the unique id for the ExternalTextureGL instance.
-  */
+   * Returns the unique id for the ExternalTextureGL instance.
+   */
   int64_t texture_id() { return reinterpret_cast<int64_t>(this); }
 
   /**
    * Accepts texture buffer copy request from the flutter engine.
-   * When the user side marks the texture_id as available, the flutter engine will
-   * callback to this method and ask for populate the |opengl_texture| object,
-   * such as the texture type and the format of the pixel buffer and the texture object.
+   * When the user side marks the texture_id as available, the flutter engine
+   * will callback to this method and ask for populate the |opengl_texture|
+   * object, such as the texture type and the format of the pixel buffer and the
+   * texture object.
    */
   bool PopulateTextureWithIdentifier(size_t width,
                                      size_t height,

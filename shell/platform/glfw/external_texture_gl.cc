@@ -70,7 +70,7 @@ bool ExternalTextureGL::PopulateTextureWithIdentifier(
   opengl_texture->target = GL_TEXTURE_2D;
   opengl_texture->name = state_->gl_texture;
   opengl_texture->format = GL_RGBA8;
-  opengl_texture->destruction_callback = (VoidCallback)nullptr;
+  opengl_texture->destruction_callback = (VoidCallback) nullptr;
   opengl_texture->user_data = (void*)this;
   return true;
 }
