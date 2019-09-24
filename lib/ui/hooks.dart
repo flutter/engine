@@ -154,7 +154,7 @@ void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
     try {
       channelBuffers.handleMessage(data);
     } catch (ex) {
-      _printDebug('Message "$name" caused exception $ex');
+      _printDebug('Message to "$name" caused exception $ex');
     } finally {
       window._respondToPlatformMessage(responseId, null);
     }

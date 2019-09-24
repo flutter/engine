@@ -194,16 +194,18 @@ class ChannelBuffers {
     return utf8.decode(list);
   }
 
-  /// Send a control message.
+  /// Handle a control message.
   ///
   /// This is intended to be called by the platform messages dispatcher.
   ///
   /// Available messages:
-  /// * resize - Allows you to set the size of a channel's buffer, command is in the format of
-  ///  `resize/<channel name>/<new size>`
+  /// - Name: resize
+  ///   Arity: 2
+  ///   Format: `resize\r<channel name>\r<new size>`
+  ///   Description: Allows you to set the size of a channel's buffer.
   void handleMessage(ByteData data) {
     final List<String> command = _getString(data).split('\r');
-    if (command.length == 3 && command[0] == 'resize') {
+    if (command.length == /*arity=*/2 + 1 && command[0] == 'resize') {
       _resize(command[1], int.parse(command[2]));
     } else {
       throw Exception('Unrecognized command $command sent to $kControlChannelName.');
