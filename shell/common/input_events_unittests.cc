@@ -51,7 +51,7 @@ static void TestSimulatedInputEvents(
     bool restart_engine = false) {
   ///// Begin constructing shell ///////////////////////////////////////////////
   auto settings = fixture->CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = fixture->CreateShell(settings);
+  std::unique_ptr<Shell> shell = fixture->CreateShell(settings, true);
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("onPointerDataPacketMain");

@@ -215,17 +215,20 @@ TaskRunners ShellTest::GetTaskRunnersForFixture() {
   };
 }
 
-std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings) {
-  return CreateShell(std::move(settings), GetTaskRunnersForFixture());
+std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
+                                              bool simulate_vsync) {
+  return CreateShell(std::move(settings), GetTaskRunnersForFixture(),
+                     simulate_vsync);
 }
 
 std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
-                                              TaskRunners task_runners) {
+                                              TaskRunners task_runners,
+                                              bool simulate_vsync) {
   return Shell::Create(
       task_runners, settings,
-      [](Shell& shell) {
-        return std::make_unique<ShellTestPlatformView>(shell,
-                                                       shell.GetTaskRunners());
+      [simulate_vsync](Shell& shell) {
+        return std::make_unique<ShellTestPlatformView>(
+            shell, shell.GetTaskRunners(), simulate_vsync);
       },
       [](Shell& shell) {
         return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
@@ -292,14 +295,18 @@ void ShellTestVsyncWaiter::AwaitVSync() {
 }
 
 ShellTestPlatformView::ShellTestPlatformView(PlatformView::Delegate& delegate,
-                                             TaskRunners task_runners)
+                                             TaskRunners task_runners,
+                                             bool simulate_vsync)
     : PlatformView(delegate, std::move(task_runners)),
-      gl_surface_(SkISize::Make(800, 600)) {}
+      gl_surface_(SkISize::Make(800, 600)),
+      simulate_vsync_(simulate_vsync) {}
 
 ShellTestPlatformView::~ShellTestPlatformView() = default;
 
 std::unique_ptr<VsyncWaiter> ShellTestPlatformView::CreateVSyncWaiter() {
-  return std::make_unique<ShellTestVsyncWaiter>(task_runners_, vsync_clock_);
+  return simulate_vsync_ ? std::make_unique<ShellTestVsyncWaiter>(task_runners_,
+                                                                  vsync_clock_)
+                         : PlatformView::CreateVSyncWaiter();
 }
 
 void ShellTestPlatformView::SimulateVSync() {

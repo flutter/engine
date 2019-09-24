@@ -29,9 +29,11 @@ class ShellTest : public ThreadTest {
   ~ShellTest();
 
   Settings CreateSettingsForFixture();
-  std::unique_ptr<Shell> CreateShell(Settings settings);
   std::unique_ptr<Shell> CreateShell(Settings settings,
-                                     TaskRunners task_runners);
+                                     bool simulate_vsync = false);
+  std::unique_ptr<Shell> CreateShell(Settings settings,
+                                     TaskRunners task_runners,
+                                     bool simulate_vsync = false);
   TaskRunners GetTaskRunnersForFixture();
 
   void SendEnginePlatformMessage(Shell* shell,
@@ -107,7 +109,8 @@ class ShellTestVsyncWaiter : public VsyncWaiter {
 class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
  public:
   ShellTestPlatformView(PlatformView::Delegate& delegate,
-                        TaskRunners task_runners);
+                        TaskRunners task_runners,
+                        bool simulate_vsync = false);
 
   ~ShellTestPlatformView() override;
 
@@ -115,6 +118,9 @@ class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
 
  private:
   TestGLSurface gl_surface_;
+
+  bool simulate_vsync_ = false;
+  ShellTestVsyncClock vsync_clock_;
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
@@ -142,8 +148,6 @@ class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
 
   // |GPUSurfaceGLDelegate|
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
-
-  ShellTestVsyncClock vsync_clock_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
 };
