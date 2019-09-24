@@ -17,8 +17,6 @@ struct ExternalTextureGLState {
   GLuint gl_texture;
 };
 
-static void OnGLBufferRelease(void* user_data) {}
-
 ExternalTextureGL::ExternalTextureGL(FlutterTexutreCallback texture_callback,
                                      void* user_data)
     : state_(new ExternalTextureGLState()),
@@ -33,7 +31,7 @@ ExternalTextureGL::~ExternalTextureGL() {
 bool ExternalTextureGL::PopulateTextureWithIdentifier(
     size_t width,
     size_t height,
-    FlutterOpenGLTexture* texture) {
+    FlutterOpenGLTexture* opengl_texture) {
   // Confirm that the current window context is available.
   if (!state_->window) {
     state_->window = glfwGetCurrentContext();
@@ -69,11 +67,11 @@ bool ExternalTextureGL::PopulateTextureWithIdentifier(
                pixel_buffer->height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                pixel_buffer->buffer);
 
-  texture->target = GL_TEXTURE_2D;
-  texture->name = state_->gl_texture;
-  texture->format = GL_RGBA8;
-  texture->destruction_callback = (VoidCallback)&OnGLBufferRelease;
-  texture->user_data = (void*)this;
+  opengl_texture->target = GL_TEXTURE_2D;
+  opengl_texture->name = state_->gl_texture;
+  opengl_texture->format = GL_RGBA8;
+  opengl_texture->destruction_callback = (VoidCallback)nullptr;
+  opengl_texture->user_data = (void*)this;
   return true;
 }
 
