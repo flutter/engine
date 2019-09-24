@@ -173,44 +173,31 @@ class _GoldensRepoFetcher {
     print('Local revision $localRevision is different from $_revision in goldens_lock.yaml.');
     print('Will fetch the requested revision.');
 
-    if (environment.webUiGoldensRepositoryDirectory.existsSync()) {
-      await environment.webUiGoldensRepositoryDirectory.delete(recursive: true);
+    if (!environment.webUiGoldensRepositoryDirectory.existsSync()) {
+      environment.webUiGoldensRepositoryDirectory.createSync(recursive: true);
+      await runProcess(
+        'git',
+        <String>['init'],
+        workingDirectory: environment.webUiGoldensRepositoryDirectory.path,
+        mustSucceed: true,
+      );
+      await runProcess(
+        'git',
+        <String>['remote', 'add', 'origin', _repository],
+        workingDirectory: environment.webUiGoldensRepositoryDirectory.path,
+        mustSucceed: true,
+      );
     }
 
-    environment.webUiGoldensRepositoryDirectory.createSync(recursive: true);
-
     await runProcess(
       'git',
-      <String>['init'],
+      <String>['fetch', 'origin', 'master'],
       workingDirectory: environment.webUiGoldensRepositoryDirectory.path,
       mustSucceed: true,
     );
     await runProcess(
       'git',
-      <String>['remote', 'add', 'origin', _repository],
-      workingDirectory: environment.webUiGoldensRepositoryDirectory.path,
-      mustSucceed: true,
-    );
-    // TODO: DO NOT SUBMIT
-    print(await evalProcess(
-      'git',
-      <String>['remote', '-v'],
-      workingDirectory: environment.webUiGoldensRepositoryDirectory.path,
-    ));
-    print(await evalProcess(
-      'git',
-      <String>['--version'],
-      workingDirectory: environment.webUiGoldensRepositoryDirectory.path,
-    ));
-    await runProcess(
-      'git',
-      <String>['fetch', 'origin', _revision],
-      workingDirectory: environment.webUiGoldensRepositoryDirectory.path,
-      mustSucceed: true,
-    );
-    await runProcess(
-      'git',
-      <String>['reset', '--hard', 'FETCH_HEAD'],
+      <String>['checkout', _revision],
       workingDirectory: environment.webUiGoldensRepositoryDirectory.path,
       mustSucceed: true,
     );
