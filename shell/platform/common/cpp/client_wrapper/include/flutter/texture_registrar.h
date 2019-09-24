@@ -28,7 +28,7 @@ class TextureRegistrar {
   virtual ~TextureRegistrar() {}
 
   /**
-   * Register a |texture| object and return textureId.
+   * Registers a |texture| object and return textureId.
    */
   virtual int64_t RegisterTexture(Texture* texture) = 0;
 
@@ -38,7 +38,7 @@ class TextureRegistrar {
   virtual void MarkTextureFrameAvailable(int64_t texture_id) = 0;
 
   /**
-   * Unregister an existing Texture object.
+   * Unregisters an existing Texture object.
    */
   virtual void UnregisterTexture(int64_t texture_id) = 0;
 };
