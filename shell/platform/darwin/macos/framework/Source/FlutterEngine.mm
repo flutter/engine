@@ -439,7 +439,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 }
 
 - (int64_t)registerTexture:(id<FlutterTexture>)texture {
-  FlutterExternalTextureGL* FlutterTexture = [[FlutterExternalTextureGL alloc] initWithFlutterTexture:texture];
+  FlutterExternalTextureGL* FlutterTexture =
+      [[FlutterExternalTextureGL alloc] initWithFlutterTexture:texture];
   int64_t textureID = [FlutterTexture textureID];
   FlutterEngineRegisterExternalTexture(_engine, textureID);
   _textures[@(textureID)] = FlutterTexture;
