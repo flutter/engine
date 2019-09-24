@@ -7,10 +7,10 @@ part of engine;
 /// Enable this to print every command applied by a canvas.
 const bool _debugDumpPaintCommands = false;
 
-// Returns the squared length of the x,y (of a border radius)
+// Returns the squared length of the x, y (of a border radius)
 // It normalizes x, y values before working with them, by
 // assuming anything < 0 to be 0, because flutter may pass
-// negative radii (which skia ssumes to be 0), see:
+// negative radii (which Skia assumes to be 0), see:
 // https://skia.org/user/api/SkRRect_Reference#SkRRect_inset
 double _measureBorderRadius(double x, double y) {
   double clampedX = x < 0 ? 0 : x;
