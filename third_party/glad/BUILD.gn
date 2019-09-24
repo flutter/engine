@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 config("glad_public") {
-  include_dirs = [ "." ]
+  include_dirs = [ "include" ]
 }
 
 source_set("glad") {
@@ -12,6 +12,6 @@ source_set("glad") {
   defines = []
 
   sources = [
-    "glad.c",
+    "src/gl.c",
   ]
 }
