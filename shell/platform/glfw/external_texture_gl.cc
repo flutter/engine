@@ -4,7 +4,7 @@
 
 #include "flutter/shell/platform/glfw/external_texture_gl.h"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 // glad.h must be included before glfw3.h.
 #include <GLFW/glfw3.h>
@@ -39,8 +39,8 @@ bool ExternalTextureGL::PopulateTextureWithIdentifier(
     state_->window = glfwGetCurrentContext();
     if (state_->window) {
       glfwMakeContextCurrent(state_->window);
-      // Load glad functions.
-      gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+      // Load GL functions.
+      gladLoadGL((GLADloadfunc)glfwGetProcAddress);
     }
   }
 
