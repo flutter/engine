@@ -314,9 +314,7 @@ public class TextInputPlugin {
     }
 
     // Samsung's Korean keyboard has a bug where it always attempts to combine characters based on
-    // its internal state, ignoring if and when the cursor is moved programmatically. EG typing
-    // "ㄴㅇ" and then moving the cursor back to the front of the text and typing "ㄴ" again would
-    // result in "ㄴㅇㄴ", not "ㄴㄴㅇ". https://github.com/flutter/flutter/issues/29341
+    // its internal state, ignoring if and when the cursor is moved programmatically.
     //
     // Fully restarting the IMM works around this because it flushes the keyboard's internal state
     // and stops it from trying to incorrectly combine characters. However this also has some
