@@ -829,6 +829,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     if (!(_orientationPreferences & currentInterfaceOrientation)) {
       // Force orientation switch if the current orientation is not allowed
       if (_orientationPreferences & UIInterfaceOrientationMaskPortrait) {
+        // This is no official API but more like a workaround / hack (using
+        // key-value coding on a read-only property). This might break in
+        // the future, but currently it´s the only way to force an orientation change
         [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortrait) forKey:@"orientation"];
       } else if (_orientationPreferences & UIInterfaceOrientationMaskPortraitUpsideDown) {
         [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortraitUpsideDown)

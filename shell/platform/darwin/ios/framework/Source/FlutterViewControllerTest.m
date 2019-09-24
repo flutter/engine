@@ -241,160 +241,162 @@ typedef enum UIAccessibilityContrast : NSInteger {
 }
 
 - (void)testPerformOrientationUpdateForcesOrientationChange {
-  [self orientationTestWithMask:UIInterfaceOrientationMaskPortrait
-                        current:UIInterfaceOrientationLandscapeLeft
-                          force:YES
-                             to:UIInterfaceOrientationPortrait];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskPortrait
+                        currentOrientation:UIInterfaceOrientationLandscapeLeft
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationPortrait];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskPortrait
-                        current:UIInterfaceOrientationLandscapeRight
-                          force:YES
-                             to:UIInterfaceOrientationPortrait];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskPortrait
+                        currentOrientation:UIInterfaceOrientationLandscapeRight
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationPortrait];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskPortrait
-                        current:UIInterfaceOrientationPortraitUpsideDown
-                          force:YES
-                             to:UIInterfaceOrientationPortrait];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskPortrait
+                        currentOrientation:UIInterfaceOrientationPortraitUpsideDown
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationPortrait];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskPortraitUpsideDown
-                        current:UIInterfaceOrientationLandscapeLeft
-                          force:YES
-                             to:UIInterfaceOrientationPortraitUpsideDown];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskPortraitUpsideDown
+                        currentOrientation:UIInterfaceOrientationLandscapeLeft
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationPortraitUpsideDown];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskPortraitUpsideDown
-                        current:UIInterfaceOrientationLandscapeRight
-                          force:YES
-                             to:UIInterfaceOrientationPortraitUpsideDown];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskPortraitUpsideDown
+                        currentOrientation:UIInterfaceOrientationLandscapeRight
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationPortraitUpsideDown];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskPortraitUpsideDown
-                        current:UIInterfaceOrientationPortrait
-                          force:YES
-                             to:UIInterfaceOrientationPortraitUpsideDown];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskPortraitUpsideDown
+                        currentOrientation:UIInterfaceOrientationPortrait
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationPortraitUpsideDown];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscape
-                        current:UIInterfaceOrientationPortrait
-                          force:YES
-                             to:UIInterfaceOrientationLandscapeLeft];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskLandscape
+                        currentOrientation:UIInterfaceOrientationPortrait
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationLandscapeLeft];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscape
-                        current:UIInterfaceOrientationPortraitUpsideDown
-                          force:YES
-                             to:UIInterfaceOrientationLandscapeLeft];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskLandscape
+                        currentOrientation:UIInterfaceOrientationPortraitUpsideDown
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationLandscapeLeft];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeLeft
-                        current:UIInterfaceOrientationPortrait
-                          force:YES
-                             to:UIInterfaceOrientationLandscapeLeft];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskLandscapeLeft
+                        currentOrientation:UIInterfaceOrientationPortrait
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationLandscapeLeft];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeLeft
-                        current:UIInterfaceOrientationLandscapeRight
-                          force:YES
-                             to:UIInterfaceOrientationLandscapeLeft];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskLandscapeLeft
+                        currentOrientation:UIInterfaceOrientationLandscapeRight
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationLandscapeLeft];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeLeft
-                        current:UIInterfaceOrientationPortraitUpsideDown
-                          force:YES
-                             to:UIInterfaceOrientationLandscapeLeft];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskLandscapeLeft
+                        currentOrientation:UIInterfaceOrientationPortraitUpsideDown
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationLandscapeLeft];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeRight
-                        current:UIInterfaceOrientationPortrait
-                          force:YES
-                             to:UIInterfaceOrientationLandscapeRight];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskLandscapeRight
+                        currentOrientation:UIInterfaceOrientationPortrait
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationLandscapeRight];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeRight
-                        current:UIInterfaceOrientationLandscapeLeft
-                          force:YES
-                             to:UIInterfaceOrientationLandscapeRight];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskLandscapeRight
+                        currentOrientation:UIInterfaceOrientationLandscapeLeft
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationLandscapeRight];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeRight
-                        current:UIInterfaceOrientationPortraitUpsideDown
-                          force:YES
-                             to:UIInterfaceOrientationLandscapeRight];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskLandscapeRight
+                        currentOrientation:UIInterfaceOrientationPortraitUpsideDown
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationLandscapeRight];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskAllButUpsideDown
-                        current:UIInterfaceOrientationPortraitUpsideDown
-                          force:YES
-                             to:UIInterfaceOrientationPortrait];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskAllButUpsideDown
+                        currentOrientation:UIInterfaceOrientationPortraitUpsideDown
+                          didChangeOrientation:YES
+                             resultingOrientation:UIInterfaceOrientationPortrait];
 }
 
 - (void)testPerformOrientationUpdateDoesNotForceOrientationChange {
-  [self orientationTestWithMask:UIInterfaceOrientationMaskAll
-                        current:UIInterfaceOrientationPortrait
-                          force:NO
-                             to:0];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskAll
+                        currentOrientation:UIInterfaceOrientationPortrait
+                          didChangeOrientation:NO
+                             resultingOrientation:0];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskAll
-                        current:UIInterfaceOrientationPortraitUpsideDown
-                          force:NO
-                             to:0];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskAll
+                        currentOrientation:UIInterfaceOrientationPortraitUpsideDown
+                          didChangeOrientation:NO
+                             resultingOrientation:0];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskAll
-                        current:UIInterfaceOrientationLandscapeLeft
-                          force:NO
-                             to:0];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskAll
+                        currentOrientation:UIInterfaceOrientationLandscapeLeft
+                          didChangeOrientation:NO
+                             resultingOrientation:0];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskAll
-                        current:UIInterfaceOrientationLandscapeRight
-                          force:NO
-                             to:0];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskAll
+                        currentOrientation:UIInterfaceOrientationLandscapeRight
+                          didChangeOrientation:NO
+                             resultingOrientation:0];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskAllButUpsideDown
-                        current:UIInterfaceOrientationPortrait
-                          force:NO
-                             to:0];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskAllButUpsideDown
+                        currentOrientation:UIInterfaceOrientationPortrait
+                          didChangeOrientation:NO
+                             resultingOrientation:0];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskAllButUpsideDown
-                        current:UIInterfaceOrientationLandscapeLeft
-                          force:NO
-                             to:0];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskAllButUpsideDown
+                        currentOrientation:UIInterfaceOrientationLandscapeLeft
+                          didChangeOrientation:NO
+                             resultingOrientation:0];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskAllButUpsideDown
-                        current:UIInterfaceOrientationLandscapeRight
-                          force:NO
-                             to:0];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskAllButUpsideDown
+                        currentOrientation:UIInterfaceOrientationLandscapeRight
+                          didChangeOrientation:NO
+                             resultingOrientation:0];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskPortrait
-                        current:UIInterfaceOrientationPortrait
-                          force:NO
-                             to:0];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskPortrait
+                        currentOrientation:UIInterfaceOrientationPortrait
+                          didChangeOrientation:NO
+                             resultingOrientation:0];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskPortraitUpsideDown
-                        current:UIInterfaceOrientationPortraitUpsideDown
-                          force:NO
-                             to:0];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskPortraitUpsideDown
+                        currentOrientation:UIInterfaceOrientationPortraitUpsideDown
+                          didChangeOrientation:NO
+                             resultingOrientation:0];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscape
-                        current:UIInterfaceOrientationLandscapeLeft
-                          force:NO
-                             to:0];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskLandscape
+                        currentOrientation:UIInterfaceOrientationLandscapeLeft
+                          didChangeOrientation:NO
+                             resultingOrientation:0];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscape
-                        current:UIInterfaceOrientationLandscapeRight
-                          force:NO
-                             to:0];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskLandscape
+                        currentOrientation:UIInterfaceOrientationLandscapeRight
+                          didChangeOrientation:NO
+                             resultingOrientation:0];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeLeft
-                        current:UIInterfaceOrientationLandscapeLeft
-                          force:NO
-                             to:0];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskLandscapeLeft
+                        currentOrientation:UIInterfaceOrientationLandscapeLeft
+                          didChangeOrientation:NO
+                             resultingOrientation:0];
 
-  [self orientationTestWithMask:UIInterfaceOrientationMaskLandscapeRight
-                        current:UIInterfaceOrientationLandscapeRight
-                          force:NO
-                             to:0];
+  [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskLandscapeRight
+                        currentOrientation:UIInterfaceOrientationLandscapeRight
+                          didChangeOrientation:NO
+                             resultingOrientation:0];
 }
 
-- (void)orientationTestWithMask:(UIInterfaceOrientationMask)mask
-                        current:(UIInterfaceOrientation)currentOrientation
-                          force:(BOOL)forceChange
-                             to:(UIInterfaceOrientation)forcedOrientation {
+// Perform an orientation update test that fails when the expected outcome
+// for an orientation update is not met
+- (void)orientationTestWithOrientationUpdate:(UIInterfaceOrientationMask)mask
+                        currentOrientation:(UIInterfaceOrientation)currentOrientation
+                          didChangeOrientation:(BOOL)didChange
+                             resultingOrientation:(UIInterfaceOrientation)resultingOrientation {
   id engine = OCMClassMock([FlutterEngine class]);
 
   id deviceMock = OCMPartialMock([UIDevice currentDevice]);
-  if (!forceChange) {
+  if (!didChange) {
     OCMReject([deviceMock setValue:[OCMArg any] forKey:@"orientation"]);
   } else {
-    OCMExpect([deviceMock setValue:@(forcedOrientation) forKey:@"orientation"]);
+    OCMExpect([deviceMock setValue:@(resultingOrientation) forKey:@"orientation"]);
   }
 
   FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
