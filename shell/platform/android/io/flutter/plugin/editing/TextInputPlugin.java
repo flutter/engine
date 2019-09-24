@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.editing;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -320,6 +321,7 @@ public class TextInputPlugin {
     // Fully restarting the IMM works around this because it flushes the keyboard's internal state
     // and stops it from trying to incorrectly combine characters. However this also has some
     // negative performance implications, so we don't want to apply this workaround in every case.
+    @SuppressLint("NewApi") // New API guard is inline, the linter can't see it.
     private boolean isRestartAlwaysRequired() {
         String language = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
                 ? mImm.getCurrentInputMethodSubtype().getLanguageTag()

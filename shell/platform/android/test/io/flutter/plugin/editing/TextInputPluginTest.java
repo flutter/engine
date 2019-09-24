@@ -1,6 +1,7 @@
 package io.flutter.plugin.editing;
 
 import android.content.Context;
+import android.util.SparseIntArray;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
@@ -15,9 +16,6 @@ import org.robolectric.annotation.Implements;
 import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowBuild;
 import org.robolectric.shadows.ShadowInputMethodManager;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
@@ -74,7 +72,7 @@ public class TextInputPluginTest {
     @Implements(InputMethodManager.class)
     public static class TestImm extends ShadowInputMethodManager {
         private InputMethodSubtype currentInputMethodSubtype;
-        private Map<Integer, Integer> restartCounter = new HashMap<>();
+        private SparseIntArray restartCounter = new SparseIntArray();
 
         public TestImm() {
         }
@@ -86,7 +84,7 @@ public class TextInputPluginTest {
 
         @Implementation
         public void restartInput(View view) {
-            int count = restartCounter.getOrDefault(view.hashCode(), /*defaultValue=*/0) + 1;
+            int count = restartCounter.get(view.hashCode(), /*defaultValue=*/0) + 1;
             restartCounter.put(view.hashCode(), count);
         }
 
@@ -95,7 +93,7 @@ public class TextInputPluginTest {
         }
 
         public int getRestartCount(View view) {
-            return restartCounter.getOrDefault(view.hashCode(), /*defaultValue=*/0);
+            return restartCounter.get(view.hashCode(), /*defaultValue=*/0);
         }
     }
 }
