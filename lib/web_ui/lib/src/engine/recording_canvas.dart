@@ -7,8 +7,16 @@ part of engine;
 /// Enable this to print every command applied by a canvas.
 const bool _debugDumpPaintCommands = false;
 
-// Similar to [Offset.distance]
-double _getDistance(double x, double y) => math.sqrt(x * x + y * y);
+// Returns the squared length of the x, y (of a border radius)
+// It normalizes x, y values before working with them, by
+// assuming anything < 0 to be 0, because flutter may pass
+// negative radii (which Skia assumes to be 0), see:
+// https://skia.org/user/api/SkRRect_Reference#SkRRect_inset
+double _measureBorderRadius(double x, double y) {
+  double clampedX = x < 0 ? 0 : x;
+  double clampedY = y < 0 ? 0 : y;
+  return clampedX * clampedX + clampedY * clampedY;
+}
 
 /// Records canvas commands to be applied to a [EngineCanvas].
 ///
@@ -231,8 +239,8 @@ class RecordingCanvas {
   }
 
   void drawDRRect(ui.RRect outer, ui.RRect inner, ui.Paint paint) {
-    // Ensure inner is fully contained within outer, by comparing its
-    // defining points (including its border radius)
+    // Check the inner bounds are contained within the outer bounds
+    // see: https://cs.chromium.org/chromium/src/third_party/skia/src/core/SkCanvas.cpp?l=1787-1789
     ui.Rect innerRect = inner.outerRect;
     ui.Rect outerRect = outer.outerRect;
     if (outerRect == innerRect || outerRect.intersect(innerRect) != innerRect) {
@@ -243,15 +251,15 @@ class RecordingCanvas {
     final ui.RRect scaledOuter = outer.scaleRadii();
     final ui.RRect scaledInner = inner.scaleRadii();
 
-    final double outerTl = _getDistance(scaledOuter.tlRadiusX, scaledOuter.tlRadiusY);
-    final double outerTr = _getDistance(scaledOuter.trRadiusX, scaledOuter.trRadiusY);
-    final double outerBl = _getDistance(scaledOuter.blRadiusX, scaledOuter.blRadiusY);
-    final double outerBr = _getDistance(scaledOuter.brRadiusX, scaledOuter.brRadiusY);
+    final double outerTl = _measureBorderRadius(scaledOuter.tlRadiusX, scaledOuter.tlRadiusY);
+    final double outerTr = _measureBorderRadius(scaledOuter.trRadiusX, scaledOuter.trRadiusY);
+    final double outerBl = _measureBorderRadius(scaledOuter.blRadiusX, scaledOuter.blRadiusY);
+    final double outerBr = _measureBorderRadius(scaledOuter.brRadiusX, scaledOuter.brRadiusY);
 
-    final double innerTl = _getDistance(scaledInner.tlRadiusX, scaledInner.tlRadiusY);
-    final double innerTr = _getDistance(scaledInner.trRadiusX, scaledInner.trRadiusY);
-    final double innerBl = _getDistance(scaledInner.blRadiusX, scaledInner.blRadiusY);
-    final double innerBr = _getDistance(scaledInner.brRadiusX, scaledInner.brRadiusY);
+    final double innerTl = _measureBorderRadius(scaledInner.tlRadiusX, scaledInner.tlRadiusY);
+    final double innerTr = _measureBorderRadius(scaledInner.trRadiusX, scaledInner.trRadiusY);
+    final double innerBl = _measureBorderRadius(scaledInner.blRadiusX, scaledInner.blRadiusY);
+    final double innerBr = _measureBorderRadius(scaledInner.brRadiusX, scaledInner.brRadiusY);
 
     if (innerTl > outerTl || innerTr > outerTr || innerBl > outerBl || innerBr > outerBr) {
       return; // Some inner radius is overlapping some outer radius
@@ -1231,6 +1239,67 @@ class Ellipse extends PathCommand {
   }
 
   @override
+  void transform(Float64List matrix4, ui.Path targetPath) {
+    // TODO(flutter_web): Implement rotation.
+    _drawArcWithBezier(x, y, radiusX, radiusY,
+      startAngle,
+        anticlockwise ? startAngle - endAngle : endAngle - startAngle,
+        targetPath);
+  }
+
+  void _drawArcWithBezier(double centerX, double centerY, double radiusX, double radiusY,
+      double startAngle, double sweep, ui.Path targetPath) {
+    double ratio = sweep.abs() / (math.pi / 2.0);
+    if ((1.0 - ratio).abs() < 0.0000001) {
+      ratio = 1.0;
+    }
+    final int segments = math.max(ratio.ceil(), 1);
+    final double anglePerSegment = sweep / segments;
+    double angle = startAngle;
+    for (int segment = 0; segment < segments; segment++) {
+      _drawArcSegment(targetPath, centerX, centerY, radiusX, radiusY, angle, anglePerSegment, segment == 0);
+      angle += anglePerSegment;
+    }
+  }
+
+  void _drawArcSegment(ui.Path path, double cx, double cy, double rx, double ry, double startAngle, double sweep,
+      bool startPath) {
+    final double s = (sweep == 1.5707963267948966)
+        ? 0.551915024494
+        : sweep == -1.5707963267948966 ? -0.551915024494 : 4 / 3 * math.tan(sweep / 4);
+
+    final double x1 = math.cos(startAngle);
+    final double y1 = math.sin(startAngle);
+    final double endAngle = startAngle + sweep;
+    double x2 = math.cos(endAngle);
+    double y2 = math.sin(endAngle);
+
+    double x = x1 - y1 * s;
+    double y = y1 + x1 * s;
+    x *= rx;
+    y *= ry;
+    final double cpx1 = x + cx;
+    final double cpy1 = y + cy;
+
+    x = x2 + y2 * s;
+    y = y2 - x2 * s;
+    x *= rx;
+    y *= ry;
+
+    final double cpx2 = x + cx;
+    final double cpy2 = y + cy;
+
+    x2 *= rx;
+    y2 *= ry;
+    x2 += cx;
+    y2 += cy;
+    if (startPath) {
+      path.moveTo(cx + x1 * rx, cy + y1 * ry);
+    }
+    path.cubicTo(cpx1, cpy1, cpx2, cpy2, x2, y2);
+  }
+
+  @override
   String toString() {
     if (assertionsEnabled) {
       return 'Ellipse($x, $y, $radiusX, $radiusY)';
@@ -1412,7 +1481,7 @@ class RRectCommand extends PathCommand {
 
   @override
   void transform(Float64List matrix4, ui.Path targetPath) {
-    final Path roundRectPath = Path();
+    final ui.Path roundRectPath = ui.Path();
     _RRectToPathRenderer(roundRectPath).render(rrect);
   }
 

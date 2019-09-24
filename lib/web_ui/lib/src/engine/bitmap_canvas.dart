@@ -700,7 +700,8 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
             break;
           case PathCommandTypes.rRect:
             final RRectCommand rrectCommand = command;
-            _drawRRectPath(rrectCommand.rrect, startNewPath: false);
+            _RRectToCanvasRenderer(ctx).render(rrectCommand.rrect,
+                startNewPath: false);
             break;
           case PathCommandTypes.rect:
             final RectCommand rectCommand = command;
