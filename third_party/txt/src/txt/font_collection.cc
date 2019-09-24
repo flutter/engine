@@ -165,14 +165,11 @@ FontCollection::GetMinikinFontCollectionForFamilies(
   if (enable_font_fallback_) {
     // Reverse iterate to prevent new fallback fonts changing how previously
     // resolved glyphs are rendered.
-    auto fallback_riter = fallback_fonts_for_locale_[locale].rbegin();
-    while (fallback_riter != fallback_fonts_for_locale_[locale].rend()) {
-      std::string fallback_family = *fallback_riter;
+    for (std::string fallback_family : fallback_fonts_for_locale_[locale]) {
       auto it = fallback_fonts_.find(fallback_family);
       if (it != fallback_fonts_.end()) {
         minikin_families.push_back(it->second);
       }
-      fallback_riter++;
     }
   }
   // Create the minikin font collection.
@@ -278,7 +275,17 @@ const std::shared_ptr<minikin::FontFamily>& FontCollection::DoMatchFallbackFont(
     typeface->getFamilyName(&sk_family_name);
     std::string family_name(sk_family_name.c_str());
 
-    fallback_fonts_for_locale_[locale].insert(family_name);
+    // Check if the fallback font already exists. Only insert if it does not
+    // exist.
+    bool contains_font = false;
+    for (std::string font : fallback_fonts_for_locale_[locale]) {
+      if (font == family_name) {
+        contains_font = true;
+        break;
+      }
+    }
+    if (!contains_font)
+      fallback_fonts_for_locale_[locale].push_back(family_name);
 
     return GetFallbackFontFamily(manager, family_name);
   }
