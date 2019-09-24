@@ -18,8 +18,12 @@ public interface PlatformView {
     View getView();
 
     /**
-     * An Android {@link View} responsible for rendering a Flutter UI is now
-     * associated with this Flutter engine and its platform views.
+     * Called by the {@link FlutterEngine} that owns this {@code PlatformView} when
+     * the Android {@link View} responsible for rendering a Flutter UI is associated
+     * with the {@link FlutterEngine}.
+     *
+     * <p>This means that our associated {@link FlutterEngine} can now render a UI and
+     * interact with the user.
      *
      * <p>Some platform views may have unusual dependencies on the {@link View} that
      * renders Flutter UIs, such as unique keyboard interactions. That {@link View}
@@ -30,9 +34,12 @@ public interface PlatformView {
     default void onFlutterViewAttached(@NonNull View flutterView) {}
 
     /**
-     * The Android {@link View} that renders a Flutter UI, which was attached in
-     * {@link #onFlutterViewAttached(View)}, has been detached and disassociated from
-     * this Flutter engine and its platform views.
+     * Called by the {@link FlutterEngine} that owns this {@code PlatformView} when
+     * the Android {@link View} responsible for rendering a Flutter UI is detached
+     * and disassociated from the {@link FlutterEngine}.
+     *
+     * <p>This means that our associated {@link FlutterEngine} no longer has a rendering
+     * surface, or a user interaction surface of any kind.
      *
      * <p>This platform view must release any references related to the Android {@link View}
      * that was provided in {@link #onFlutterViewAttached(View)}.
