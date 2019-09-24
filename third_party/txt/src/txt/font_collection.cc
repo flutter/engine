@@ -163,11 +163,16 @@ FontCollection::GetMinikinFontCollectionForFamilies(
     return nullptr;
   }
   if (enable_font_fallback_) {
-    for (std::string fallback_family : fallback_fonts_for_locale_[locale]) {
+    // Reverse iterate to prevent new fallback fonts changing how previously
+    // resolved glyphs are rendered.
+    auto fallback_riter = fallback_fonts_for_locale_[locale].rbegin();
+    while (fallback_riter != fallback_fonts_for_locale_[locale].rend()) {
+      std::string fallback_family = *fallback_riter;
       auto it = fallback_fonts_.find(fallback_family);
       if (it != fallback_fonts_.end()) {
         minikin_families.push_back(it->second);
       }
+      fallback_riter++;
     }
   }
   // Create the minikin font collection.
