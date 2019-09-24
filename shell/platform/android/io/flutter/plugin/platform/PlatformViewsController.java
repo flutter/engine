@@ -11,6 +11,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
 import android.support.annotation.UiThread;
+import android.support.annotation.VisibleForTesting;
 import android.util.DisplayMetrics;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -58,7 +59,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // The accessibility bridge to which accessibility events form the platform views will be dispatched.
     private final AccessibilityEventsDelegate accessibilityEventsDelegate;
 
-    private final HashMap<Integer, VirtualDisplayController> vdControllers;
+    // TODO(mattcarroll): Refactor overall platform views to facilitate testing and then make
+    // this private. This is visible as a hack to facilitate testing. This was deemed the least
+    // bad option at the time of writing.
+    @VisibleForTesting
+    /* package */ final HashMap<Integer, VirtualDisplayController> vdControllers;
 
     // Maps a virtual display's context to the platform view hosted in this virtual display.
     // Since each virtual display has it's unique context this allows associating any view with the platform view that
