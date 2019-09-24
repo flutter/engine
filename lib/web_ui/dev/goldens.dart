@@ -191,6 +191,17 @@ class _GoldensRepoFetcher {
       workingDirectory: environment.webUiGoldensRepositoryDirectory.path,
       mustSucceed: true,
     );
+    // TODO: DO NOT SUBMIT
+    print(await evalProcess(
+      'git',
+      <String>['remote', '-v'],
+      workingDirectory: environment.webUiGoldensRepositoryDirectory.path,
+    ));
+    print(await evalProcess(
+      'git',
+      <String>['--version'],
+      workingDirectory: environment.webUiGoldensRepositoryDirectory.path,
+    ));
     await runProcess(
       'git',
       <String>['fetch', 'origin', _revision],
