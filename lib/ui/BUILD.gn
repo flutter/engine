@@ -76,19 +76,16 @@ source_set("ui") {
     "semantics/semantics_update.h",
     "semantics/semantics_update_builder.cc",
     "semantics/semantics_update_builder.h",
-    "snapshot_delegate.h",
     "text/asset_manager_font_provider.cc",
     "text/asset_manager_font_provider.h",
     "text/font_collection.cc",
     "text/font_collection.h",
+    "text/line_metrics.cc",
+    "text/line_metrics.h",
     "text/paragraph.cc",
     "text/paragraph.h",
     "text/paragraph_builder.cc",
     "text/paragraph_builder.h",
-    "text/paragraph_impl.cc",
-    "text/paragraph_impl.h",
-    "text/paragraph_impl_txt.cc",
-    "text/paragraph_impl_txt.h",
     "text/text_box.cc",
     "text/text_box.h",
     "ui_dart_state.cc",
@@ -152,7 +149,10 @@ source_set("ui") {
 if (current_toolchain == host_toolchain) {
   test_fixtures("ui_unittests_fixtures") {
     dart_main = "fixtures/ui_test.dart"
-    fixtures = [ "fixtures/DashInNooglerHat.jpg" ]
+    fixtures = [
+      "fixtures/DashInNooglerHat.jpg",
+      "fixtures/Horizontal.jpg",
+    ]
   }
 
   executable("ui_unittests") {

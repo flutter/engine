@@ -5,26 +5,17 @@
 #ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_SOFTWARE_H_
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_SOFTWARE_H_
 
-#include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/common/surface.h"
-#include "third_party/skia/include/core/SkSurface.h"
+#include "flutter/shell/gpu/gpu_surface_software_delegate.h"
 
 namespace flutter {
 
-class GPUSurfaceSoftwareDelegate {
- public:
-  virtual sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) = 0;
-
-  virtual bool PresentBackingStore(sk_sp<SkSurface> backing_store) = 0;
-
-  virtual flutter::ExternalViewEmbedder* GetExternalViewEmbedder();
-};
-
 class GPUSurfaceSoftware : public Surface {
  public:
-  GPUSurfaceSoftware(GPUSurfaceSoftwareDelegate* delegate);
+  GPUSurfaceSoftware(GPUSurfaceSoftwareDelegate* delegate,
+                     bool render_to_surface);
 
   ~GPUSurfaceSoftware() override;
 
@@ -45,6 +36,11 @@ class GPUSurfaceSoftware : public Surface {
 
  private:
   GPUSurfaceSoftwareDelegate* delegate_;
+  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
+  // external view embedder may want to render to the root surface. This is a
+  // hack to make avoid allocating resources for the root surface when an
+  // external view embedder is present.
+  const bool render_to_surface_;
   fml::WeakPtrFactory<GPUSurfaceSoftware> weak_factory_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceSoftware);

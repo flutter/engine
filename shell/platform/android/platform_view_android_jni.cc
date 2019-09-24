@@ -261,7 +261,11 @@ static void SetViewportMetrics(JNIEnv* env,
                                jint physicalViewInsetTop,
                                jint physicalViewInsetRight,
                                jint physicalViewInsetBottom,
-                               jint physicalViewInsetLeft) {
+                               jint physicalViewInsetLeft,
+                               jint systemGestureInsetTop,
+                               jint systemGestureInsetRight,
+                               jint systemGestureInsetBottom,
+                               jint systemGestureInsetLeft) {
   const flutter::ViewportMetrics metrics{
       static_cast<double>(devicePixelRatio),
       static_cast<double>(physicalWidth),
@@ -274,9 +278,13 @@ static void SetViewportMetrics(JNIEnv* env,
       static_cast<double>(physicalViewInsetRight),
       static_cast<double>(physicalViewInsetBottom),
       static_cast<double>(physicalViewInsetLeft),
+      static_cast<double>(systemGestureInsetTop),
+      static_cast<double>(systemGestureInsetRight),
+      static_cast<double>(systemGestureInsetBottom),
+      static_cast<double>(systemGestureInsetLeft),
   };
 
-  ANDROID_SHELL_HOLDER->SetViewportMetrics(metrics);
+  ANDROID_SHELL_HOLDER->GetPlatformView()->SetViewportMetrics(metrics);
 }
 
 static jobject GetBitmap(JNIEnv* env, jobject jcaller, jlong shell_holder) {
@@ -387,7 +395,8 @@ static void DispatchPointerDataPacket(JNIEnv* env,
                                       jint position) {
   uint8_t* data = static_cast<uint8_t*>(env->GetDirectBufferAddress(buffer));
   auto packet = std::make_unique<flutter::PointerDataPacket>(data, position);
-  ANDROID_SHELL_HOLDER->DispatchPointerDataPacket(std::move(packet));
+  ANDROID_SHELL_HOLDER->GetPlatformView()->DispatchPointerDataPacket(
+      std::move(packet));
 }
 
 static void DispatchSemanticsAction(JNIEnv* env,
@@ -477,7 +486,7 @@ static void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
 
 bool RegisterApi(JNIEnv* env) {
   static const JNINativeMethod flutter_jni_methods[] = {
-      // Start of methods from FlutterNativeView
+      // Start of methods from FlutterJNI
       {
           .name = "nativeAttach",
           .signature = "(Lio/flutter/embedding/engine/FlutterJNI;Z)J",
@@ -540,7 +549,7 @@ bool RegisterApi(JNIEnv* env) {
       },
       {
           .name = "nativeSetViewportMetrics",
-          .signature = "(JFIIIIIIIIII)V",
+          .signature = "(JFIIIIIIIIIIIIII)V",
           .fnPtr = reinterpret_cast<void*>(&SetViewportMetrics),
       },
       {

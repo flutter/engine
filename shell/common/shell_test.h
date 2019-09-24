@@ -9,6 +9,7 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/macros.h"
+#include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
@@ -32,6 +33,9 @@ class ShellTest : public ThreadTest {
                                      TaskRunners task_runners);
   TaskRunners GetTaskRunnersForFixture();
 
+  void SendEnginePlatformMessage(Shell* shell,
+                                 fml::RefPtr<PlatformMessage> message);
+
   void AddNativeCallback(std::string name, Dart_NativeFunction callback);
 
   static void PlatformViewNotifyCreated(
@@ -46,6 +50,8 @@ class ShellTest : public ThreadTest {
 
   static bool GetNeedsReportTimings(Shell* shell);
   static void SetNeedsReportTimings(Shell* shell, bool value);
+
+  std::shared_ptr<txt::FontCollection> GetFontCollection(Shell* shell);
 
   // Do not assert |UnreportedTimingsCount| to be positive in any tests.
   // Otherwise those tests will be flaky as the clearing of unreported timings
@@ -94,6 +100,9 @@ class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
 
   // |GPUSurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;
+
+  // |GPUSurfaceGLDelegate|
+  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
 };

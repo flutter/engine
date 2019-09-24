@@ -9,17 +9,25 @@
 
 namespace flutter {
 
-IOSSurfaceGL::IOSSurfaceGL(std::shared_ptr<IOSGLContext> context,
+IOSSurfaceGL::IOSSurfaceGL(fml::WeakPtr<IOSGLContext> onscreen_gl_context,
+                           fml::WeakPtr<IOSGLContext> resource_gl_context,
                            fml::scoped_nsobject<CAEAGLLayer> layer,
                            FlutterPlatformViewsController* platform_views_controller)
-    : IOSSurface(platform_views_controller), context_(context) {
-  render_target_ = context_->CreateRenderTarget(std::move(layer));
+    : IOSSurface(platform_views_controller),
+      onscreen_gl_context_(std::move(onscreen_gl_context)),
+      resource_gl_context_(std::move(resource_gl_context)) {
+  render_target_ = std::make_unique<IOSGLRenderTarget>(std::move(layer), onscreen_gl_context_,
+                                                       resource_gl_context_);
 }
 
 IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
-                           std::shared_ptr<IOSGLContext> context)
-    : IOSSurface(nullptr), context_(context) {
-  render_target_ = context_->CreateRenderTarget(std::move(layer));
+                           fml::WeakPtr<IOSGLContext> onscreen_gl_context,
+                           fml::WeakPtr<IOSGLContext> resource_gl_context)
+    : IOSSurface(nullptr),
+      onscreen_gl_context_(std::move(onscreen_gl_context)),
+      resource_gl_context_(std::move(resource_gl_context)) {
+  render_target_ = std::make_unique<IOSGLRenderTarget>(std::move(layer), onscreen_gl_context_,
+                                                       resource_gl_context_);
 }
 
 IOSSurfaceGL::~IOSSurfaceGL() = default;
@@ -29,7 +37,7 @@ bool IOSSurfaceGL::IsValid() const {
 }
 
 bool IOSSurfaceGL::ResourceContextMakeCurrent() {
-  return context_->ResourceMakeCurrent();
+  return resource_gl_context_->MakeCurrent();
 }
 
 void IOSSurfaceGL::UpdateStorageSizeIfNecessary() {
@@ -38,12 +46,11 @@ void IOSSurfaceGL::UpdateStorageSizeIfNecessary() {
   }
 }
 
-std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface() {
-  return std::make_unique<GPUSurfaceGL>(this);
-}
-
-std::unique_ptr<Surface> IOSSurfaceGL::CreateSecondaryGPUSurface(GrContext* gr_context) {
-  return std::make_unique<GPUSurfaceGL>(sk_ref_sp(gr_context), this);
+std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface(GrContext* gr_context) {
+  if (gr_context) {
+    return std::make_unique<GPUSurfaceGL>(sk_ref_sp(gr_context), this, true);
+  }
+  return std::make_unique<GPUSurfaceGL>(this, true);
 }
 
 intptr_t IOSSurfaceGL::GLContextFBO() const {
@@ -61,7 +68,7 @@ bool IOSSurfaceGL::GLContextMakeCurrent() {
   if (!IsValid()) {
     return false;
   }
-  return render_target_->UpdateStorageSizeIfNecessary() && context_->MakeCurrent();
+  return render_target_->UpdateStorageSizeIfNecessary() && onscreen_gl_context_->MakeCurrent();
 }
 
 bool IOSSurfaceGL::GLContextClearCurrent() {
@@ -74,6 +81,14 @@ bool IOSSurfaceGL::GLContextPresent() {
   return IsValid() && render_target_->PresentRenderBuffer();
 }
 
+// |ExternalViewEmbedder|
+sk_sp<SkSurface> IOSSurfaceGL::GetRootSurface() {
+  // On iOS, the root surface is created from the on-screen render target. Only the surfaces for the
+  // various overlays are controlled by this class.
+  return nullptr;
+}
+
+// |ExternalViewEmbedder|
 flutter::ExternalViewEmbedder* IOSSurfaceGL::GetExternalViewEmbedder() {
   if (IsIosEmbeddedViewsPreviewEnabled()) {
     return this;
@@ -82,6 +97,7 @@ flutter::ExternalViewEmbedder* IOSSurfaceGL::GetExternalViewEmbedder() {
   }
 }
 
+// |ExternalViewEmbedder|
 void IOSSurfaceGL::CancelFrame() {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
@@ -91,19 +107,15 @@ void IOSSurfaceGL::CancelFrame() {
   [CATransaction commit];
 }
 
-bool IOSSurfaceGL::HasPendingViewOperations() {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  FML_CHECK(platform_views_controller != nullptr);
-  return platform_views_controller->HasPendingViewOperations();
-}
-
-void IOSSurfaceGL::BeginFrame(SkISize frame_size) {
+// |ExternalViewEmbedder|
+void IOSSurfaceGL::BeginFrame(SkISize frame_size, GrContext* context) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   platform_views_controller->SetFrameSize(frame_size);
   [CATransaction begin];
 }
 
+// |ExternalViewEmbedder|
 void IOSSurfaceGL::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<flutter::EmbeddedViewParams> params) {
@@ -112,25 +124,37 @@ void IOSSurfaceGL::PrerollCompositeEmbeddedView(
   platform_views_controller->PrerollCompositeEmbeddedView(view_id, std::move(params));
 }
 
+// |ExternalViewEmbedder|
+PostPrerollResult IOSSurfaceGL::PostPrerollAction(
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  return platform_views_controller->PostPrerollAction(gpu_thread_merger);
+}
+
+// |ExternalViewEmbedder|
 std::vector<SkCanvas*> IOSSurfaceGL::GetCurrentCanvases() {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   return platform_views_controller->GetCurrentCanvases();
 }
 
+// |ExternalViewEmbedder|
 SkCanvas* IOSSurfaceGL::CompositeEmbeddedView(int view_id) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   return platform_views_controller->CompositeEmbeddedView(view_id);
 }
 
+// |ExternalViewEmbedder|
 bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   if (platform_views_controller == nullptr) {
     return true;
   }
 
-  bool submitted = platform_views_controller->SubmitFrame(true, std::move(context), context_);
+  bool submitted = platform_views_controller->SubmitFrame(std::move(context), onscreen_gl_context_,
+                                                          resource_gl_context_);
   [CATransaction commit];
   return submitted;
 }
