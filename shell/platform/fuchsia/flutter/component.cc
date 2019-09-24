@@ -11,6 +11,7 @@
 #include <lib/fdio/directory.h>
 #include <lib/fdio/namespace.h>
 #include <lib/ui/scenic/cpp/view_token_pair.h>
+#include <lib/vfs/cpp/composed_service_dir.h>
 #include <lib/vfs/cpp/remote_dir.h>
 #include <lib/vfs/cpp/service.h>
 #include <sys/stat.h>
@@ -27,7 +28,6 @@
 #include "runtime/dart/utils/tempfs.h"
 #include "runtime/dart/utils/vmo.h"
 
-#include "service_provider_dir.h"
 #include "task_observers.h"
 #include "task_runner_adapter.h"
 #include "thread.h"
@@ -110,7 +110,7 @@ Application::Application(
   }
 
   // Setup /tmp to be mapped to the process-local memfs.
-  dart_utils::SetupComponentTemp(fdio_ns_.get());
+  dart_utils::RunnerTemp::SetupComponent(fdio_ns_.get());
 
   // LaunchInfo::flat_namespace optional.
   for (size_t i = 0; i < startup_info.flat_namespace.paths.size(); ++i) {
@@ -163,8 +163,8 @@ Application::Application(
   fdio_service_connect_at(directory_ptr_.channel().get(), "svc",
                           request.release());
 
-  auto service_provider_dir = std::make_unique<ServiceProviderDir>();
-  service_provider_dir->set_fallback(std::move(flutter_public_dir));
+  auto composed_service_dir = std::make_unique<vfs::ComposedServiceDir>();
+  composed_service_dir->set_fallback(std::move(flutter_public_dir));
 
   // Clone and check if client is servicing the directory.
   directory_ptr_->Clone(fuchsia::io::OPEN_FLAG_DESCRIBE |
@@ -201,7 +201,7 @@ Application::Application(
   // All launch arguments have been read. Perform service binding and
   // final settings configuration. The next call will be to create a view
   // for this application.
-  service_provider_dir->AddService(
+  composed_service_dir->AddService(
       fuchsia::ui::app::ViewProvider::Name_,
       std::make_unique<vfs::Service>(
           [this](zx::channel channel, async_dispatcher_t* dispatcher) {
@@ -210,7 +210,7 @@ Application::Application(
                           std::move(channel)));
           }));
 
-  outgoing_dir_->AddEntry("svc", std::move(service_provider_dir));
+  outgoing_dir_->AddEntry("svc", std::move(composed_service_dir));
 
   // Setup the application controller binding.
   if (application_controller_request) {
@@ -260,6 +260,10 @@ Application::Application(
   // TODO(cbracken): pass this in as a param to allow 0.0.0.0, ::1, etc.
   settings_.observatory_host = "127.0.0.1";
 #endif
+
+  // Set this to true to enable category "skia" trace events.
+  // TODO(PT-145): Explore enabling this by default.
+  settings_.trace_skia = false;
 
   settings_.icu_data_path = "";
 
@@ -455,18 +459,9 @@ void Application::AttemptVMLaunchWithCurrentSettings(
           application_assets_directory_.get() /* /pkg/data */,
           "isolate_snapshot_instructions.bin", true));
 
-  shared_snapshot_ = fml::MakeRefCounted<flutter::DartSnapshot>(
-      CreateWithContentsOfFile(
-          application_assets_directory_.get() /* /pkg/data */,
-          "shared_snapshot_data.bin", false),
-      CreateWithContentsOfFile(
-          application_assets_directory_.get() /* /pkg/data */,
-          "shared_snapshot_instructions.bin", true));
-
   auto vm = flutter::DartVMRef::Create(settings_,               //
                                        std::move(vm_snapshot),  //
-                                       isolate_snapshot_,       //
-                                       shared_snapshot_         //
+                                       isolate_snapshot_        //
   );
   FML_CHECK(vm) << "Mut be able to initialize the VM.";
 }
@@ -544,7 +539,6 @@ void Application::CreateView(
       runner_incoming_services_,     // Runner incoming services
       settings_,                     // settings
       std::move(isolate_snapshot_),  // isolate snapshot
-      std::move(shared_snapshot_),   // shared snapshot
       scenic::ToViewToken(std::move(view_token)),  // view token
       std::move(view_ref_control),                 // view ref control
       std::move(view_ref),                         // view ref

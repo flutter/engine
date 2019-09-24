@@ -6,10 +6,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
-import 'dart:typed_data';
 
 import 'package:async/async.dart';
 import 'package:http_multi_server/http_multi_server.dart';
+import 'package:image/image.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
 import 'package:pedantic/pedantic.dart';
@@ -42,9 +42,13 @@ import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
 
 import 'chrome_installer.dart';
 import 'environment.dart' as env;
+import 'goldens.dart';
 
 /// The port number Chrome exposes for debugging.
 const int _kChromeDevtoolsPort = 12345;
+const int _kMaxScreenshotWidth = 1024;
+const int _kMaxScreenshotHeight = 1024;
+const double _kMaxDiffRateFailure = 0.28/100; // 0.28%
 
 class BrowserPlatform extends PlatformPlugin {
   /// Starts the server.
@@ -137,58 +141,154 @@ class BrowserPlatform extends PlatformPlugin {
     final Map<String, dynamic> requestData = json.decode(payload);
     final String filename = requestData['filename'];
     final bool write = requestData['write'];
-    final String result = await _diffScreenshot(filename, write);
+    final Map<String, dynamic> region = requestData['region'];
+    final String result = await _diffScreenshot(filename, write, region);
     return shelf.Response.ok(json.encode(result));
   }
 
-  Future<String> _diffScreenshot(String filename, bool write) async {
+  Future<String> _diffScreenshot(String filename, bool write, [ Map<String, dynamic> region ]) async {
     const String _kGoldensDirectory = 'test/golden_files';
+
+    // Bail out fast if golden doesn't exist, and user doesn't want to create it.
+    final File file = File(p.join(_kGoldensDirectory, filename));
+    if (!file.existsSync() && !write) {
+      return '''
+Golden file $filename does not exist.
+
+To automatically create this file call matchGoldenFile('$filename', write: true).
+''';
+    }
+
     final wip.ChromeConnection chromeConnection =
         wip.ChromeConnection('localhost', _kChromeDevtoolsPort);
     final wip.ChromeTab chromeTab = await chromeConnection.getTab(
         (wip.ChromeTab chromeTab) => chromeTab.url.contains('localhost'));
     final wip.WipConnection wipConnection = await chromeTab.connect();
+
+    Map<String, dynamic> captureScreenshotParameters = null;
+    if (region != null) {
+      captureScreenshotParameters = {
+        'format': 'png',
+        'clip': {
+          'x': region['x'],
+          'y': region['y'],
+          'width': region['width'],
+          'height': region['height'],
+          'scale': 1, // This is NOT the DPI of the page, instead it's the "zoom level".
+        },
+      };
+    }
+
+    // Setting hardware-independent screen parameters:
+    // https://chromedevtools.github.io/devtools-protocol/tot/Emulation
+    await wipConnection.sendCommand('Emulation.setDeviceMetricsOverride', {
+      'width': _kMaxScreenshotWidth,
+      'height': _kMaxScreenshotHeight,
+      'deviceScaleFactor': 1,
+      'mobile': false,
+    });
     final wip.WipResponse response =
-        await wipConnection.sendCommand('Page.captureScreenshot');
-    final Uint8List bytes = base64.decode(response.result['data']);
-    final File file = File(p.join(_kGoldensDirectory, filename));
+        await wipConnection.sendCommand('Page.captureScreenshot', captureScreenshotParameters);
+
+    // Compare screenshots
+    final Image screenshot = decodePng(base64.decode(response.result['data']));
+
     if (write) {
-      file.writeAsBytesSync(bytes, flush: true);
+      // Don't even bother with the comparison, just write and return
+      file.writeAsBytesSync(encodePng(screenshot), flush: true);
       return 'Golden file $filename was updated. You can remove "write: true" in the call to matchGoldenFile.';
     }
-    if (!file.existsSync()) {
-      return '''
-  Golden file $filename does not exist.
 
-  To automatically create this file call matchGoldenFile('$filename', write: true).
-  ''';
-    }
-    final List<int> goldenBytes = file.readAsBytesSync();
-    final int lengths = bytes.length;
-    for (int i = 0; i < lengths; i++) {
-      if (goldenBytes[i] != bytes[i]) {
-        if (write) {
-          file.writeAsBytesSync(bytes, flush: true);
-          return 'Golden file $filename was updated. You can remove "write: true" in the call to matchGoldenFile.';
-        } else {
-          final File failedFile = File(p.join(file.parent.path, '.${p.basename(file.path)}'));
-          failedFile.writeAsBytesSync(bytes, flush: true);
+    ImageDiff diff = ImageDiff(golden: decodeNamedImage(file.readAsBytesSync(), filename), other: screenshot);
 
-          // TODO(yjbanov): do not fail Cirrus builds. They currently fail because Chrome produces
-          //                different pictures. We need to pin Chrome versions and use a fuzzy image
-          //                comparator.
-          if (Platform.environment['CIRRUS_CI'] == 'true') {
-            return 'OK';
-          }
+    if (diff.rate > 0) { // Images are different, so produce some debug info
+      final String testResultsPath = isCirrus
+        ? p.join(
+            Platform.environment['CIRRUS_WORKING_DIR'],
+            'test_results',
+          )
+        : p.join(
+            env.environment.webUiDartToolDir.path,
+            'test_results',
+          );
+      Directory(testResultsPath).createSync(recursive: true);
+      final String basename = p.basenameWithoutExtension(file.path);
 
-          return '''
-  Golden file ${file.path} did not match the image generated by the test.
+      final File actualFile = File(p.join(testResultsPath, '$basename.actual.png'));
+      actualFile.writeAsBytesSync(encodePng(screenshot), flush: true);
 
-  The generated image was written to ${failedFile.path}.
+      final File diffFile = File(p.join(testResultsPath, '$basename.diff.png'));
+      diffFile.writeAsBytesSync(encodePng(diff.diff), flush:true);
 
-  To update the golden file call matchGoldenFile('$filename', write: true).
-  ''';
-        }
+      final File expectedFile = File(p.join(testResultsPath, '$basename.expected.png'));
+      file.copySync(expectedFile.path);
+
+      final File reportFile = File(p.join(testResultsPath, '$basename.report.html'));
+      reportFile.writeAsStringSync('''
+Golden file $filename did not match the image generated by the test.
+
+<table>
+  <tr>
+    <th>Expected</th>
+    <th>Diff</th>
+    <th>Actual</th>
+  </tr>
+  <tr>
+    <td>
+      <img src="$basename.expected.png">
+    </td>
+    <td>
+      <img src="$basename.diff.png">
+    </td>
+    <td>
+      <img src="$basename.actual.png">
+    </td>
+  </tr>
+</table>
+''');
+
+      final StringBuffer message = StringBuffer();
+      message.writeln('Golden file $filename did not match the image generated by the test.');
+      message.writeln(getPrintableDiffFilesInfo(diff.rate, _kMaxDiffRateFailure));
+      message.writeln('You can view the test report in your browser by opening:');
+
+      // Cirrus cannot serve HTML pages generated by build jobs, so we
+      // archive all the files so that they can be downloaded and inspected
+      // locally.
+      if (isCirrus) {
+        final String taskId = Platform.environment['CIRRUS_TASK_ID'];
+        final String baseArtifactsUrl = 'https://api.cirrus-ci.com/v1/artifact/task/$taskId/web_engine_test/test_results';
+        final String cirrusReportUrl = '$baseArtifactsUrl/$basename.report.zip';
+        message.writeln(cirrusReportUrl);
+
+        await Process.run(
+          'zip',
+          <String>[
+            '$basename.report.zip',
+            '$basename.report.html',
+            '$basename.expected.png',
+            '$basename.diff.png',
+            '$basename.actual.png',
+          ],
+          workingDirectory: testResultsPath,
+        );
+      } else {
+        final String localReportPath = '$testResultsPath/$basename.report.html';
+        message.writeln(localReportPath);
+      }
+
+      message.writeln('To update the golden file call matchGoldenFile(\'$filename\', write: true).');
+      message.writeln('Golden file: ${expectedFile.path}');
+      message.writeln('Actual file: ${actualFile.path}');
+
+      if (diff.rate < _kMaxDiffRateFailure) {
+        // Issue a warning but do not fail the test.
+        print('WARNING:');
+        print(message);
+        return 'OK';
+      } else {
+        // Fail test
+        return '$message';
       }
     }
     return 'OK';
@@ -850,13 +950,29 @@ class Chrome extends Browser {
   @override
   final Future<Uri> remoteDebuggerUrl;
 
+  static String version;
+
   /// Starts a new instance of Chrome open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Chrome(Uri url, {bool debug = false}) {
+    assert(version != null);
     var remoteDebuggerCompleter = Completer<Uri>.sync();
     return Chrome._(() async {
-      final ChromeInstallation installation = await getOrInstallChrome(infoLog: _DevNull());
+      final ChromeInstallation installation = await getOrInstallChrome(
+        version,
+        infoLog: isCirrus ? stdout : _DevNull(),
+      );
 
+      // A good source of various Chrome CLI options:
+      // https://peter.sh/experiments/chromium-command-line-switches/
+      //
+      // Things to try:
+      // --font-render-hinting
+      // --enable-font-antialiasing
+      // --gpu-rasterization-msaa-sample-count
+      // --disable-gpu
+      // --disallow-non-exact-resource-reuse
+      // --disable-font-subpixel-positioning
       final bool isChromeNoSandbox = Platform.environment['CHROME_NO_SANDBOX'] == 'true';
       var dir = createTempDir();
       var args = [
@@ -864,6 +980,7 @@ class Chrome extends Browser {
         url.toString(),
         if (!debug) '--headless',
         if (isChromeNoSandbox) '--no-sandbox',
+        '--window-size=$_kMaxScreenshotWidth,$_kMaxScreenshotHeight', // When headless, this is the actual size of the viewport
         '--disable-extensions',
         '--disable-popup-blocking',
         '--bwsi',
@@ -908,3 +1025,5 @@ class _DevNull implements StringSink {
   void writeln([Object obj = ""]) {
   }
 }
+
+bool get isCirrus => Platform.environment['CIRRUS_CI'] == 'true';
