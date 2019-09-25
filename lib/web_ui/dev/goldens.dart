@@ -208,20 +208,14 @@ class _GoldensRepoFetcher {
       return null;
     }
 
-    final io.Directory refsHeadsDir = io.Directory(path.join(
-      environment.webUiGoldensRepositoryDirectory.path, '.git', 'refs', 'heads'
+    final io.File head = io.File(path.join(
+      environment.webUiGoldensRepositoryDirectory.path, '.git', 'HEAD'
     ));
 
-    if (refsHeadsDir.listSync().isEmpty) {
+    if (!head.existsSync()) {
       return null;
     }
 
-    final String currentRevision = (await evalProcess(
-      'git',
-      <String>['rev-parse', 'HEAD'],
-      workingDirectory: environment.webUiGoldensRepositoryDirectory.path,
-    )).trim();
-
-    return currentRevision;
+    return head.readAsStringSync().trim();
   }
 }
