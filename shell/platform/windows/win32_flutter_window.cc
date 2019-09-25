@@ -244,7 +244,6 @@ void Win32FlutterWindow::SendPointerDown(double x, double y) {
   SetEventPhaseFromCursorButtonState(&event);
   event.x = x;
   event.y = y;
-  event.buttons = GetMouseState().buttons;
   SendPointerEventWithData(event);
   SetMousePointerDown(true);
 }
@@ -254,7 +253,6 @@ void Win32FlutterWindow::SendPointerUp(double x, double y) {
   SetEventPhaseFromCursorButtonState(&event);
   event.x = x;
   event.y = y;
-  event.buttons = GetMouseState().buttons;
   SendPointerEventWithData(event);
   if (event.phase == FlutterPointerPhase::kUp) {
     SetMousePointerDown(false);
@@ -294,9 +292,10 @@ void Win32FlutterWindow::SendScroll(double delta_x, double delta_y) {
 
 void Win32FlutterWindow::SendPointerEventWithData(
     const FlutterPointerEvent& event_data) {
+  MouseState mouse_state = GetMouseState();
   // If sending anything other than an add, and the pointer isn't already added,
   // synthesize an add to satisfy Flutter's expectations about events.
-  if (!GetMouseState().pointer_currently_added &&
+  if (!mouse_state.pointer_currently_added &&
       event_data.phase != FlutterPointerPhase::kAdd) {
     FlutterPointerEvent event = {};
     event.phase = FlutterPointerPhase::kAdd;
@@ -307,13 +306,15 @@ void Win32FlutterWindow::SendPointerEventWithData(
   }
   // Don't double-add (e.g., if events are delivered out of order, so an add has
   // already been synthesized).
-  if (GetMouseState().pointer_currently_added &&
+  if (mouse_state.pointer_currently_added &&
       event_data.phase == FlutterPointerPhase::kAdd) {
     return;
   }
 
   FlutterPointerEvent event = event_data;
   event.device_kind = kFlutterPointerDeviceKindMouse;
+  event.buttons = mouse_state.buttons;
+
   // Set metadata that's always the same regardless of the event.
   event.struct_size = sizeof(event);
   event.timestamp =
