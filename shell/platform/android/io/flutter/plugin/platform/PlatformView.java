@@ -31,6 +31,8 @@ public interface PlatformView {
      * if it is not absolutely necessary, because depending on this {@link View} will
      * tend to make platform view code more brittle to future changes.
      */
+    // Default interface methods are supported on all min SDK versions of Android.
+    @SuppressLint("NewApi")
     default void onFlutterViewAttached(@NonNull View flutterView) {}
 
     /**
@@ -44,6 +46,8 @@ public interface PlatformView {
      * <p>This platform view must release any references related to the Android {@link View}
      * that was provided in {@link #onFlutterViewAttached(View)}.
      */
+    // Default interface methods are supported on all min SDK versions of Android.
+    @SuppressLint("NewApi")
     default void onFlutterViewDetached() {}
 
     /**
