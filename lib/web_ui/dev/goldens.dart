@@ -170,8 +170,7 @@ class _GoldensRepoFetcher {
       return;
     }
 
-    print('Local revision $localRevision is different from $_revision in goldens_lock.yaml.');
-    print('Will fetch the requested revision.');
+    print('Fetching $_repository@$_revision');
 
     if (!environment.webUiGoldensRepositoryDirectory.existsSync()) {
       environment.webUiGoldensRepositoryDirectory.createSync(recursive: true);
