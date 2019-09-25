@@ -1409,7 +1409,6 @@ TEST_F(EmbedderTest, CustomCompositorMustWorkWithCustomTaskRunner) {
     event.width = 800;
     event.height = 600;
     event.pixel_ratio = 1.0;
-
     ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
               kSuccess);
     ASSERT_TRUE(engine.is_valid());
@@ -1784,6 +1783,7 @@ TEST_F(EmbedderTest,
   // Flutter still thinks it is 800 x 600. Only the root surface is rotated.
   event.width = 800;
   event.height = 600;
+  event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -1818,6 +1818,7 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositor) {
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
+  event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -1860,6 +1861,7 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorWithTransformation) {
   // Flutter still thinks it is 800 x 600.
   event.width = 800;
   event.height = 600;
+  event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -1894,6 +1896,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithoutCompositor) {
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
+  event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -1936,6 +1939,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithoutCompositorWithXform) {
   // Flutter still thinks it is 800 x 600.
   event.width = 800;
   event.height = 600;
+  event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -1970,6 +1974,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositor) {
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
+  event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -2013,6 +2018,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorWithXform) {
   // Flutter still thinks it is 800 x 600.
   event.width = 800;
   event.height = 600;
+  event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -2123,6 +2129,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayer) {
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
+  event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -2242,6 +2249,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {
   // Flutter still thinks it is 800 x 600.
   event.width = 800;
   event.height = 600;
+  event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
