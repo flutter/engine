@@ -72,6 +72,10 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   FlutterBinaryMessengerRelay* _binaryMessenger;
 }
 
+- (instancetype)initWithName:(NSString*)labelPrefix {
+  return [self initWithName:labelPrefix project:nil allowHeadlessExecution:YES];
+}
+
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
   return [self initWithName:labelPrefix project:project allowHeadlessExecution:YES];
 }
@@ -429,6 +433,10 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   }
 
   return _shell != nullptr;
+}
+
+- (BOOL)run {
+  return [self runWithEntrypoint:FlutterDefaultDartEntrypoint libraryURI:nil];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {

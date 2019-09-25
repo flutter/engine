@@ -47,6 +47,26 @@ extern NSString* const FlutterDefaultDartEntrypoint;
  */
 FLUTTER_EXPORT
 @interface FlutterEngine : NSObject <FlutterTextureRegistry, FlutterPluginRegistry>
+
+/**
+ * Initialize this FlutterEngine.
+ *
+ * The engine will execute the project located in the bundle with the identifier
+ * "io.flutter.flutter.app" (the default for Flutter projects).
+ *
+ * A newly initialized engine will not run until either `-runWithEntrypoint:` or
+ * `-runWithEntrypoint:libraryURI:` is called.
+ *
+ * FlutterEngine created with this method will have allowHeadlessExecution set to `YES`.
+ * This means that the engine will continue to run regardless of whether a `FlutterViewController`
+ * is attached to it or not, until `-destroyContext:` is called or the process finishes.
+ *
+ * @param labelPrefix The label prefix used to identify threads for this instance. Should
+ *   be unique across FlutterEngine instances, and is used in instrumentation to label
+ *   the threads used by this FlutterEngine.
+ */
+- (instancetype)initWithName:(NSString*)labelPrefix;
+
 /**
  * Initialize this FlutterEngine with a `FlutterDartProject`.
  *
@@ -96,6 +116,17 @@ FLUTTER_EXPORT
 - (instancetype)init NS_UNAVAILABLE;
 
 + (instancetype)new NS_UNAVAILABLE;
+
+/**
+ * Runs a Dart program on an Isolate from the main Dart library (i.e. the library that
+ * contains `main()`), using `main()` as the entrypoint (the default for Flutter projects).
+ *
+ * The first call to this method will create a new Isolate. Subsequent calls will return
+ * immediately.
+ *
+ * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
+ */
+- (BOOL)run;
 
 /**
  * Runs a Dart program on an Isolate from the main Dart library (i.e. the library that
