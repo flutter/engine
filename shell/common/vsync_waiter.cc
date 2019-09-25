@@ -68,6 +68,8 @@ void VsyncWaiter::ScheduleSecondaryCallback(std::function<void()> callback) {
     std::scoped_lock lock(callback_mutex_);
     if (secondary_callback_) {
       // Multiple schedules must result in a single callback per frame interval.
+      TRACE_EVENT_INSTANT0("flutter",
+                           "MultipleCallsToSecondaryVsyncInFrameInterval");
       return;
     }
     secondary_callback_ = std::move(callback);

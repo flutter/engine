@@ -36,7 +36,7 @@ static constexpr char kSettingsChannel[] = "flutter/settings";
 static constexpr char kIsolateChannel[] = "flutter/isolate";
 
 Engine::Engine(Delegate& delegate,
-               PointerDataDispatcherMaker& dispatcher_maker,
+               const PointerDataDispatcherMaker& dispatcher_maker,
                DartVM& vm,
                fml::RefPtr<const DartSnapshot> isolate_snapshot,
                fml::RefPtr<const DartSnapshot> shared_snapshot,

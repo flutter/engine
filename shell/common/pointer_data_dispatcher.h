@@ -35,7 +35,7 @@ class PointerDataDispatcher;
 ///   (2) The `PlatformView` can only be accessed from the PlatformThread while
 ///       this class (as owned by engine) can only be accessed in the UI thread.
 ///       Hence `PlatformView` creates a `PointerDataDispatchMaker` on the
-///       platform thread, and send it to the UI thread for the final
+///       platform thread, and sends it to the UI thread for the final
 ///       construction of the `PointerDataDispatcher`.
 class PointerDataDispatcher {
  public:
@@ -49,10 +49,14 @@ class PointerDataDispatcher {
 
     //----------------------------------------------------------------------------
     /// @brief    Schedule a secondary callback to be executed right after the
-    ///           main `Animator::RequestFrame` callback.
+    ///           main `VsyncWaiter::AsyncWaitForVsync` callback (which is added
+    ///           by `Animator::RequestFrame`).
     ///
-    ///           If there is no RequestFrame callback, this secondary callback
-    ///           will still be executed at vsync.
+    ///           Like the callback in `AsyncWaitForVsync`, this callback is
+    ///           only scheduled to be called once, and it's supposed to be
+    ///           called in the UI thread. If there is no AsyncWaitForVsync
+    ///           callback (`Animator::RequestFrame` is not called), this
+    ///           secondary callback will still be executed at vsync.
     ///
     ///           This callback is used to provide the vsync signal needed by
     ///           `SmoothPointerDataDispatcher`.

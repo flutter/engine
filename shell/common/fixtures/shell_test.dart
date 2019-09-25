@@ -38,9 +38,6 @@ void onPointerDataPacketMain() {
   window.onPointerDataPacket = (PointerDataPacket packet) {
     nativeOnPointerDataPacket();
   };
-  window.onBeginFrame = (Duration beginTime) {
-    nativeOnBeginFrame(beginTime.inMicroseconds);
-  };
 }
 
 @pragma('vm:entry-point')

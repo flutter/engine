@@ -52,6 +52,9 @@ class Animator final {
 
   void Render(std::unique_ptr<flutter::LayerTree> layer_tree);
 
+  /// Add a secondary callback for the next vsync.
+  ///
+  /// See also |PointerDataDispatcher::ScheduleSecondaryVsyncCallback|.
   void ScheduleSecondaryVsyncCallback(std::function<void()> callback);
 
   void Start();

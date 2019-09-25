@@ -102,15 +102,15 @@ void ShellTest::RunEngine(Shell* shell, RunConfiguration configuration) {
 }
 
 void ShellTest::RestartEngine(Shell* shell, RunConfiguration configuration) {
-  fml::AutoResetWaitableEvent latch;
+  std::promise<bool> finished;
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetUITaskRunner(),
-      [shell, &latch, &configuration]() {
+      [shell, &finished, &configuration]() {
         bool restarted = shell->engine_->Restart(std::move(configuration));
         ASSERT_TRUE(restarted);
-        latch.Signal();
+        finished.set_value(true);
       });
-  latch.Wait();
+  finished.get_future().wait();
 }
 
 void ShellTest::VSyncFlush(Shell* shell, bool& will_draw_new_frame) {

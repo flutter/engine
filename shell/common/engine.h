@@ -273,7 +273,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                                GPU.
   ///
   Engine(Delegate& delegate,
-         PointerDataDispatcherMaker& dispatcher_maker,
+         const PointerDataDispatcherMaker& dispatcher_maker,
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
          fml::RefPtr<const DartSnapshot> shared_snapshot,
@@ -713,6 +713,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                         uint64_t trace_flow_id) override;
 
+  // |PointerDataDispatcher::Delegate|
   void ScheduleSecondaryVsyncCallback(std::function<void()> callback) override;
 
  private:

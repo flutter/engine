@@ -421,7 +421,7 @@ class PlatformView {
 
   //--------------------------------------------------------------------------
   /// @brief      Returns a platform-specific PointerDataDispatcherMaker so the
-  ///             `Engien` can construct the PointerDataPacketDispatcher based
+  ///             `Engine` can construct the PointerDataPacketDispatcher based
   ///             on platforms.
   virtual PointerDataDispatcherMaker GetDispatcherMaker();
 
