@@ -220,7 +220,8 @@ typedef struct {
   size_t width;
   /// Height of the texture.
   size_t height;
-  /// Target texture of the active texture unit (example GL_TEXTURE_2D or GL_TEXTURE_RECTANGLE).
+  /// Target texture of the active texture unit (example GL_TEXTURE_2D or
+  /// GL_TEXTURE_RECTANGLE).
   uint32_t target;
   /// The name of the texture.
   uint32_t name;
