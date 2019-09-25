@@ -33,7 +33,7 @@ namespace flutter {
 
 namespace {
 
-// This needs to be kept in sync with _kDoNotResizeDimension in painting.dart
+// This needs to be kept in sync with kDoNotResizeDimension in painting.dart
 const int kDoNotResizeDimension = -1;
 
 // This must be kept in sync with the enum in painting.dart
