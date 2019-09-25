@@ -1714,7 +1714,6 @@ class Codec {
 /// The returned future can complete with an error if the image decoding has
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list, {
-  double decodedCacheRatioCap = double.infinity
   int targetWidth,
   int targetHeight,
 }) {
