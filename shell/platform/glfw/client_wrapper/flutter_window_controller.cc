@@ -71,9 +71,9 @@ bool FlutterWindowController::CreateWindow(
 void FlutterWindowController::DestroyWindow() {
   if (controller_) {
     FlutterDesktopDestroyWindow(controller_);
+    controller_ = nullptr;
+    window_ = nullptr;
   }
-  controller_ = nullptr;
-  window_ = nullptr;
 }
 
 FlutterDesktopPluginRegistrarRef FlutterWindowController::GetRegistrarForPlugin(
@@ -107,9 +107,7 @@ bool FlutterWindowController::RunEventLoopWithTimeout(
   bool still_running = FlutterDesktopRunWindowEventLoopWithTimeout(
       controller_, timeout_milliseconds);
   if (!still_running) {
-    FlutterDesktopDestroyWindow(controller_);
-    window_ = nullptr;
-    controller_ = nullptr;
+    DestroyWindow();
   }
   return still_running;
 }
