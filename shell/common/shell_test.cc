@@ -144,6 +144,11 @@ bool ShellTest::GetNeedsReportTimings(Shell* shell) {
   return shell->needs_report_timings_;
 }
 
+std::shared_ptr<txt::FontCollection> ShellTest::GetFontCollection(
+    Shell* shell) {
+  return shell->weak_engine_->GetFontCollection().GetFontCollection();
+}
+
 Settings ShellTest::CreateSettingsForFixture() {
   Settings settings;
   settings.leak_vm = false;
@@ -212,7 +217,8 @@ void ShellTest::AddNativeCallback(std::string name,
 
 ShellTestPlatformView::ShellTestPlatformView(PlatformView::Delegate& delegate,
                                              TaskRunners task_runners)
-    : PlatformView(delegate, std::move(task_runners)) {}
+    : PlatformView(delegate, std::move(task_runners)),
+      gl_surface_(SkISize::Make(800, 600)) {}
 
 ShellTestPlatformView::~ShellTestPlatformView() = default;
 

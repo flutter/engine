@@ -634,9 +634,7 @@ abstract class Window {
   }
 
   /// The setting indicating the current brightness mode of the host platform.
-  /// If the platform has no preference, [platformBrightness] defaults to [Brightness.light].
-  Brightness get platformBrightness => _platformBrightness;
-  Brightness _platformBrightness = Brightness.light;
+  Brightness get platformBrightness;
 
   /// A callback that is invoked whenever [platformBrightness] changes value.
   ///
@@ -1118,7 +1116,7 @@ class PluginUtilities {
 }
 
 // TODO(flutter_web): see https://github.com/flutter/flutter/issues/33616.
-class ImageShader {
+class ImageShader implements Shader {
   ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4);
 }
 
