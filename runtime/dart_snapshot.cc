@@ -23,8 +23,10 @@ const char* DartSnapshot::kIsolateInstructionsSymbol =
 // On Windows and Android (in debug mode) the engine finds the Dart snapshot
 // data through symbols that are statically linked into the executable.
 // On other platforms this data is obtained by a dynamic symbol lookup.
-#define DART_SNAPSHOT_STATIC_LINK \
-  (OS_WIN || (OS_ANDROID && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG || FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_JIT_RELEASE)))
+#define DART_SNAPSHOT_STATIC_LINK                                        \
+  (OS_WIN ||                                                             \
+   (OS_ANDROID && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG || \
+                   FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_JIT_RELEASE)))
 
 #if !DART_SNAPSHOT_STATIC_LINK
 
