@@ -676,6 +676,54 @@ void main() {
       expect(spy.messages, isEmpty);
     });
   });
+
+  group('SelectionChangeDetection', () {
+    SelectionChangeDetection _selectionChangeDetection;
+
+    setUp(() {
+      _selectionChangeDetection = SelectionChangeDetection();
+    });
+
+    test('Change detected on an input field', () {
+      final InputElement input = document.getElementsByTagName('input')[0];
+
+      input.value = 'foo\nbar';
+      input.setSelectionRange(1, 3);
+
+      expect(_selectionChangeDetection.hasChangeDetected(input), true);
+
+      input.setSelectionRange(1, 5);
+
+      expect(_selectionChangeDetection.hasChangeDetected(input), true);
+    });
+
+    test('Change detected on an text area', () {
+      final TextAreaElement textarea =
+          document.getElementsByTagName('textarea')[0];
+
+      textarea.value = 'foo\nbar';
+      textarea.setSelectionRange(4, 6);
+
+      expect(_selectionChangeDetection.hasChangeDetected(textarea), true);
+
+      textarea.setSelectionRange(4, 5);
+
+      expect(_selectionChangeDetection.hasChangeDetected(textarea), true);
+    });
+
+    test('No change if selection stayed the same', () {
+      final InputElement input = document.getElementsByTagName('input')[0];
+
+      input.value = 'foo\nbar';
+      input.setSelectionRange(1, 3);
+
+      expect(_selectionChangeDetection.hasChangeDetected(input), true);
+
+      input.setSelectionRange(1, 3);
+
+      expect(_selectionChangeDetection.hasChangeDetected(input), false);
+    });
+  });
 }
 
 MethodCall configureSetStyleMethodCall(int fontSize, String fontFamily,

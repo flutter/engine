@@ -226,6 +226,9 @@ class TextEditingElement {
   EditingState _lastEditingState;
   _OnChangeCallback _onChange;
 
+  final SelectionChangeDetection _selectionDetection =
+      SelectionChangeDetection();
+
   final List<StreamSubscription<html.Event>> _subscriptions =
       <StreamSubscription<html.Event>>[];
 
@@ -305,6 +308,18 @@ class TextEditingElement {
     _subscriptions
       ..add(html.document.onSelectionChange.listen(_handleChange))
       ..add(domElement.onInput.listen(_handleChange));
+
+    // In Firefox, when cursor moves, nor selectionChange neither onInput
+    // events are triggered. We are listening to keyup event to decide
+    // if the user shifted the cursor.
+    // See [_SelectionChangeDetection].
+    if (browserEngine == BrowserEngine.firefox) {
+      _subscriptions.add(domElement.onKeyUp.listen((event) {
+        if (_selectionDetection.hasChangeDetected(domElement)) {
+          _handleChange(event);
+        }
+      }));
+    }
   }
 
   /// Disables the element so it's no longer used for text editing.
@@ -412,8 +427,7 @@ class TextEditingElement {
         break;
     }
 
-
-    if(owner.inputElementNeedsToBePositioned) {
+    if (owner.inputElementNeedsToBePositioned) {
       _preventShiftDuringFocus();
     }
 
@@ -641,9 +655,7 @@ class HybridTextEditing {
   ///
   /// See [TextEditingElement._delayBeforePositioning].
   bool get inputElementNeedsToBePositioned =>
-      !inputPositioned &&
-      _isEditing &&
-      doesKeyboardShiftInput;
+      !inputPositioned && _isEditing && doesKeyboardShiftInput;
 
   /// Flag indicating whether the input element's position is set.
   ///
@@ -788,8 +800,8 @@ class HybridTextEditing {
   /// In iOS, the virtual keyboard might shifts the screen up to make input
   /// visible depending on the location of the focused input element.
   bool get doesKeyboardShiftInput =>
-    browserEngine == BrowserEngine.webkit &&
-    operatingSystem == OperatingSystem.iOs;
+      browserEngine == BrowserEngine.webkit &&
+      operatingSystem == OperatingSystem.iOs;
 
   /// These style attributes are dynamic throughout the life time of an input
   /// element.
@@ -887,4 +899,46 @@ class _EditableSizeAndTransform {
   final double width;
   final double height;
   final Float64List transform;
+}
+
+/// Used for detecting the changes in the selection.
+///
+/// Currently only used in Firefox.
+///
+/// In Firefox, when cursor moves, nor selectionChange neither onInput
+/// events are triggered. We are listening to keyup event. Selection start,
+/// end values are used to decide if the cursor moved.
+///
+/// Specific keycodes are not checked since users/applicatins can bind their own
+/// keys to move the cursor.
+class SelectionChangeDetection {
+  int _start = 0;
+  int _end = 0;
+
+  /// Method which decides if the selection has changed (cursor moved) compared
+  /// to the previous values.
+  ///
+  /// After each keyup, the start/end values of the selection is compared to the
+  /// previously saved start/end values.
+  bool hasChangeDetected(html.HtmlElement domElement) {
+    if (domElement is html.InputElement) {
+      html.InputElement element = domElement;
+      return _compareSelection(element.selectionStart, element.selectionEnd);
+    }
+    if (domElement is html.TextAreaElement) {
+      html.TextAreaElement element = domElement;
+      return _compareSelection(element.selectionStart, element.selectionEnd);
+    }
+    throw UnsupportedError('Unsupported input type');
+  }
+
+  bool _compareSelection(int selectionStart, int selectionEnd) {
+    if (selectionStart != _start || selectionEnd != _end) {
+      _start = selectionStart;
+      _end = selectionEnd;
+      return true;
+    } else {
+      return false;
+    }
+  }
 }
