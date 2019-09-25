@@ -204,10 +204,6 @@ class _GoldensRepoFetcher {
   }
 
   Future<String> _getLocalRevision() async {
-    if (!environment.webUiGoldensRepositoryDirectory.existsSync()) {
-      return null;
-    }
-
     final io.File head = io.File(path.join(
       environment.webUiGoldensRepositoryDirectory.path, '.git', 'HEAD'
     ));
