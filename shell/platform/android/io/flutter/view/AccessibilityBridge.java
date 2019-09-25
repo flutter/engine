@@ -1502,6 +1502,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
      * Android's accessibility system.
      *
      * It sets the content change types to {@link AccessibilityEvent#CONTENT_CHANGE_TYPE_SUBTREE}
+     * when supported by the API level.
      *
      * The given {@code virtualViewId} should be a {@link SemanticsNode} below which the content has
      * changed.
@@ -1511,7 +1512,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             virtualViewId,
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
         );
-        event.setContentChangeTypes(AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            event.setContentChangeTypes(AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE);
+        }
         sendAccessibilityEvent(event);
     }
 
