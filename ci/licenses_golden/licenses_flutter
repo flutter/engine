@@ -486,7 +486,6 @@ FILE: ../../../flutter/shell/common/canvas_spy_unittests.cc
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
 FILE: ../../../flutter/shell/common/fixtures/shell_test.dart
-FILE: ../../../flutter/shell/common/input_events_unittests.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.h
 FILE: ../../../flutter/shell/common/persistent_cache.cc
@@ -496,8 +495,6 @@ FILE: ../../../flutter/shell/common/pipeline.h
 FILE: ../../../flutter/shell/common/pipeline_unittests.cc
 FILE: ../../../flutter/shell/common/platform_view.cc
 FILE: ../../../flutter/shell/common/platform_view.h
-FILE: ../../../flutter/shell/common/pointer_data_dispatcher.cc
-FILE: ../../../flutter/shell/common/pointer_data_dispatcher.h
 FILE: ../../../flutter/shell/common/rasterizer.cc
 FILE: ../../../flutter/shell/common/rasterizer.h
 FILE: ../../../flutter/shell/common/run_configuration.cc
@@ -718,6 +715,7 @@ FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterCha
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChannels.mm
+FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChannelsTest.m
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterCodecs.mm
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec.mm
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h
@@ -1038,6 +1036,7 @@ FILE: ../../../flutter/third_party/txt/src/txt/platform_android.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_fuchsia.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_linux.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_mac.mm
+FILE: ../../../flutter/third_party/txt/src/txt/platform_windows.cc
 FILE: ../../../flutter/vulkan/vulkan_application.cc
 FILE: ../../../flutter/vulkan/vulkan_application.h
 FILE: ../../../flutter/vulkan/vulkan_backbuffer.cc

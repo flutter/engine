@@ -41,10 +41,8 @@ class ShellTest : public ThreadTest {
   static void PlatformViewNotifyCreated(
       Shell* shell);  // This creates the surface
   static void RunEngine(Shell* shell, RunConfiguration configuration);
-  static void RestartEngine(Shell* shell, RunConfiguration configuration);
 
   static void PumpOneFrame(Shell* shell);
-  static void DispatchFakePointerData(Shell* shell);
 
   // Declare |UnreportedTimingsCount|, |GetNeedsReportTimings| and
   // |SetNeedsReportTimings| inside |ShellTest| mainly for easier friend class
@@ -52,6 +50,8 @@ class ShellTest : public ThreadTest {
 
   static bool GetNeedsReportTimings(Shell* shell);
   static void SetNeedsReportTimings(Shell* shell, bool value);
+
+  std::shared_ptr<txt::FontCollection> GetFontCollection(Shell* shell);
 
   // Do not assert |UnreportedTimingsCount| to be positive in any tests.
   // Otherwise those tests will be flaky as the clearing of unreported timings
@@ -85,9 +85,6 @@ class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
-
-  // |PlatformView|
-  PointerDataDispatcherMaker GetDispatcherMaker() override;
 
   // |GPUSurfaceGLDelegate|
   bool GLContextMakeCurrent() override;
