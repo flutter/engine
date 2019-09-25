@@ -125,6 +125,12 @@ void Win32FlutterWindow::OnPointerUp(double x, double y) {
   }
 }
 
+void Win32FlutterWindow::OnPointerLeave() {
+  if (process_events_) {
+    SendPointerLeave();
+  }
+}
+
 void Win32FlutterWindow::OnChar(char32_t code_point) {
   if (process_events_) {
     SendChar(code_point);
@@ -145,6 +151,13 @@ void Win32FlutterWindow::OnScroll(double delta_x, double delta_y) {
 
 void Win32FlutterWindow::OnClose() {
   messageloop_running_ = false;
+}
+
+void Win32FlutterWindow::OnFontChange() {
+  if (engine_ == nullptr) {
+    return;
+  }
+  FlutterEngineReloadSystemFonts(engine_);
 }
 
 // Sends new size information to FlutterEngine.
@@ -204,6 +217,12 @@ void Win32FlutterWindow::SendPointerUp(double x, double y) {
   event.phase = FlutterPointerPhase::kUp;
   event.x = x;
   event.y = y;
+  SendPointerEventWithData(event);
+}
+
+void Win32FlutterWindow::SendPointerLeave() {
+  FlutterPointerEvent event = {};
+  event.phase = FlutterPointerPhase::kRemove;
   SendPointerEventWithData(event);
 }
 

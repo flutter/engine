@@ -121,7 +121,8 @@ void ShellTest::PumpOneFrame(Shell* shell) {
   fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
       [&latch, runtime_delegate]() {
-        auto layer_tree = std::make_unique<LayerTree>();
+        auto layer_tree = std::make_unique<LayerTree>(
+            SkISize::Make(1, 1), static_cast<float>(kUnsetDepth), 1.0f);
         SkMatrix identity;
         identity.setIdentity();
         auto root_layer = std::make_shared<TransformLayer>(identity);
@@ -142,6 +143,11 @@ void ShellTest::SetNeedsReportTimings(Shell* shell, bool value) {
 
 bool ShellTest::GetNeedsReportTimings(Shell* shell) {
   return shell->needs_report_timings_;
+}
+
+std::shared_ptr<txt::FontCollection> ShellTest::GetFontCollection(
+    Shell* shell) {
+  return shell->weak_engine_->GetFontCollection().GetFontCollection();
 }
 
 Settings ShellTest::CreateSettingsForFixture() {

@@ -1,4 +1,4 @@
-Signature: abda6c90331b97cb6c2f9c01d1563f06
+Signature: d01d058fc5b4f4421ba2c904e6f4af20
 
 UNUSED LICENSES:
 
@@ -10,6 +10,7 @@ USED LICENSES:
 LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/COPYRIGHT.musl
 TYPE: LicenseType.mit
+FILE: ../../../fuchsia/sdk/linux/.versions/core.cipd_version
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_core_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_object_lifetimes.so
@@ -476,6 +477,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.ethernet/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish.address.space/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish.control/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish.pipe/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/meta.json
@@ -502,6 +504,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.netstack/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix.socket/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.scheduling/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.simplecamera/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys.test/meta.json
@@ -703,6 +706,7 @@ obstacle to adoption, that text has been removed.
 LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../fuchsia/sdk/linux/.versions/core.cipd_version
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_core_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_object_lifetimes.so
@@ -1268,6 +1272,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish.control/goldfish
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish.control/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish.pipe/goldfish-pipe.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish.pipe/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/hwinfo.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/image_pipe2.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/meta.json
@@ -1293,6 +1299,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.sessions2/player.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.sessions2/publisher.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/audio_core.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/usage_reporter.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mediacodec/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mem/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mem/range.fidl
@@ -1315,6 +1322,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.netstack/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix.socket/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix.socket/socket.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.scheduling/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.scheduling/prediction_info.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/accessibility.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/audio.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/device.fidl
@@ -1542,6 +1551,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/LICENSE.vulkan
 TYPE: LicenseType.apache
+FILE: ../../../fuchsia/sdk/linux/.versions/core.cipd_version
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_core_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_object_lifetimes.so
@@ -2008,6 +2018,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.ethernet/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish.address.space/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish.control/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish.pipe/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/meta.json
@@ -2034,6 +2045,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.netstack/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix.socket/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.scheduling/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.simplecamera/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys.test/meta.json
@@ -2716,7 +2728,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/agent/agent_context.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/agent/agent_controller/agent_controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/clipboard/clipboard.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/component/component_context.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/component/message_queue.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/config/config.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/entity/entity.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/entity/entity_provider.fidl
