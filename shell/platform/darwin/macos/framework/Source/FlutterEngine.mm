@@ -87,7 +87,7 @@
   return _flutterEngine.binaryMessenger;
 }
 
-- (id<FlutterTextureRegistrar>)textures {
+- (id<FlutterTextureRegistry>)textures {
   return _flutterEngine;
 }
 

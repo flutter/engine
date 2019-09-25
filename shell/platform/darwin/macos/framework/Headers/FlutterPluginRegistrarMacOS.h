@@ -30,9 +30,10 @@ FLUTTER_EXPORT
 @property(nonnull, readonly) id<FlutterBinaryMessenger> messenger;
 
 /**
- * ReturThe texture registrar.
+ * Returns a `FlutterTextureRegistry` for registering textures
+ * provided by the plugin.
  */
-@property(nonnull, readonly) id<FlutterTextureRegistrar> textures;
+@property(nonnull, readonly) id<FlutterTextureRegistry> textures;
 
 /**
  * The view displaying Flutter content. May return |nil|, for instance in a headless environment.

@@ -44,7 +44,7 @@ static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
                           height:(size_t)height
                    openGLTexture:(FlutterOpenGLTexture*)openGLTexture {
   // Copy the pixel buffer from the FlutterTexture instance implemented on the user side.
-  _pixelBuffer = [_texture copyPixelBuffer:width height:height];
+  _pixelBuffer = [_texture copyPixelBuffer];
 
   if (!_pixelBuffer) {
     return NO;
@@ -79,6 +79,8 @@ static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
   openGLTexture->format = static_cast<uint32_t>(GL_RGBA8);
   openGLTexture->destruction_callback = (VoidCallback)OnGLTextureRelease;
   openGLTexture->user_data = cvOpenGLTexture;
+  openGLTexture->width = CVPixelBufferGetWidth(_pixelBuffer);
+  openGLTexture->height = CVPixelBufferGetHeight(_pixelBuffer);
   return YES;
 }
 

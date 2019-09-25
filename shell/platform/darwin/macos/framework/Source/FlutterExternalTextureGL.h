@@ -4,7 +4,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterTexture.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
 /**

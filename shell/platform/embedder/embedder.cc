@@ -45,6 +45,8 @@ extern const intptr_t kPlatformStrongDillSize;
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 
+#define GL_TEXTURE_RECTANGLE              0x84F5
+
 static FlutterEngineResult LogEmbedderError(FlutterEngineResult code,
                                             const char* name,
                                             const char* function,
@@ -807,7 +809,18 @@ FlutterEngineResult FlutterEngineRun(size_t version,
         GrGLTextureInfo gr_texture_info = {texture.target, texture.name,
                                            texture.format};
 
-        GrBackendTexture gr_backend_texture(size.width(), size.height(),
+        size_t width = size.width();
+        size_t height = size.height();
+
+        /// When the texture type is GL_TEXTURE_RECTANGLE, the image size must
+        /// first be set to the actual size, and then resize to the bounds size.
+        /// see: https://stackoverflow.com/questions/13933503/core-video-pixel-buffers-as-gl-texture-2d
+        if(texture.target == GL_TEXTURE_RECTANGLE) {
+          width = texture.width;
+          height = texture.height;
+        }
+
+        GrBackendTexture gr_backend_texture(width, height,
                                             GrMipMapped::kNo, gr_texture_info);
         SkImage::TextureReleaseProc release_proc = texture.destruction_callback;
         auto image = SkImage::MakeFromTexture(
@@ -820,6 +833,25 @@ FlutterEngineResult FlutterEngineRun(size_t version,
             release_proc,              // texture release proc
             texture.user_data          // texture release context
         );
+
+        /// Scale to the bounds size to adapt the user to change the Texture widget size.
+        if(image && texture.target == GL_TEXTURE_RECTANGLE) {
+            const auto resized_dimensions = SkISize::Make(size.width(), size.height());
+
+            if (resized_dimensions != image->dimensions()) {
+                const auto scaled_image_info = image->imageInfo().makeWH(
+                    resized_dimensions.width(), resized_dimensions.height());
+
+                SkBitmap scaled_bitmap;
+
+                if (scaled_bitmap.tryAllocPixels(scaled_image_info)
+                 && image->scalePixels(scaled_bitmap.pixmap(), kLow_SkFilterQuality,
+                                        SkImage::kDisallow_CachingHint)) {
+                    scaled_bitmap.setImmutable();
+                    image = SkImage::MakeFromBitmap(scaled_bitmap);
+                }
+            }
+        }
 
         if (!image) {
           // In case Skia rejects the image, call the release proc so that

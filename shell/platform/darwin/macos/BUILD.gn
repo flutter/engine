@@ -35,7 +35,6 @@ _flutter_framework_headers = [
   "framework/Headers/FlutterMacOS.h",
   "framework/Headers/FlutterPluginMacOS.h",
   "framework/Headers/FlutterPluginRegistrarMacOS.h",
-  "framework/Headers/FlutterTexture.h",
   "framework/Headers/FlutterViewController.h",
 ]
 

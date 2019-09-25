@@ -714,6 +714,7 @@ FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterBin
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h
+FILE: ../../../flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChannels.mm
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChannelsTest.m
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterCodecs.mm
@@ -731,7 +732,6 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterHeadle
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h
-FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterTexture.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Info.plist
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate.mm
@@ -802,7 +802,6 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngi
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterMacOS.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginMacOS.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginRegistrarMacOS.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterTexture.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Info.plist
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate.mm
