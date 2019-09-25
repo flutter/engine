@@ -132,16 +132,6 @@ void ShellTest::PumpOneFrame(Shell* shell) {
   latch.Wait();
 }
 
-void ShellTest::DispatchFakePointerData(Shell* shell) {
-  fml::AutoResetWaitableEvent latch;
-  shell->GetTaskRunners().GetPlatformTaskRunner()->PostTask([&latch, shell]() {
-    auto packet = std::make_unique<PointerDataPacket>(1);
-    shell->OnPlatformViewDispatchPointerDataPacket(std::move(packet));
-    latch.Signal();
-  });
-  latch.Wait();
-}
-
 int ShellTest::UnreportedTimingsCount(Shell* shell) {
   return shell->unreported_timings_.size();
 }
@@ -152,6 +142,11 @@ void ShellTest::SetNeedsReportTimings(Shell* shell, bool value) {
 
 bool ShellTest::GetNeedsReportTimings(Shell* shell) {
   return shell->needs_report_timings_;
+}
+
+std::shared_ptr<txt::FontCollection> ShellTest::GetFontCollection(
+    Shell* shell) {
+  return shell->weak_engine_->GetFontCollection().GetFontCollection();
 }
 
 Settings ShellTest::CreateSettingsForFixture() {
@@ -222,22 +217,14 @@ void ShellTest::AddNativeCallback(std::string name,
 
 ShellTestPlatformView::ShellTestPlatformView(PlatformView::Delegate& delegate,
                                              TaskRunners task_runners)
-    : PlatformView(delegate, std::move(task_runners)) {}
+    : PlatformView(delegate, std::move(task_runners)),
+      gl_surface_(SkISize::Make(800, 600)) {}
 
 ShellTestPlatformView::~ShellTestPlatformView() = default;
 
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformView::CreateRenderingSurface() {
   return std::make_unique<GPUSurfaceGL>(this, true);
-}
-
-// |PlatformView|
-PointerDataDispatcherMaker ShellTestPlatformView::GetDispatcherMaker() {
-  return [](Animator& animator, RuntimeController& controller,
-            TaskRunners task_runners) {
-    return std::make_unique<SmoothPointerDataDispatcher>(animator, controller,
-                                                         task_runners);
-  };
 }
 
 // |GPUSurfaceGLDelegate|

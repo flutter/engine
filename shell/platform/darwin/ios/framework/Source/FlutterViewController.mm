@@ -25,6 +25,8 @@
 
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
 
+NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
+
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
@@ -521,7 +523,9 @@ typedef enum UIAccessibilityContrast : NSInteger {
 }
 
 - (void)dealloc {
-  [_engine.get() notifyViewControllerDeallocated];
+  [[NSNotificationCenter defaultCenter] postNotificationName:FlutterViewControllerWillDealloc
+                                                      object:self
+                                                    userInfo:nil];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [_ongoingTouches release];
   [super dealloc];
@@ -533,23 +537,32 @@ typedef enum UIAccessibilityContrast : NSInteger {
   TRACE_EVENT0("flutter", "applicationBecameActive");
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
   [self surfaceUpdated:NO];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.paused"];
 }
 
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
+}
+
+// Make this transition only while this current view controller is visible.
+- (void)goToApplicationLifecycle:(nonnull NSString*)state {
+  // Accessing self.view will create the view. Check whether the view is organically loaded
+  // first before checking whether the view is attached to window.
+  if (self.isViewLoaded && self.view.window) {
+    [[_engine.get() lifecycleChannel] sendMessage:state];
+  }
 }
 
 #pragma mark - Touch event handling

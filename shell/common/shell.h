@@ -29,7 +29,6 @@
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell_io_manager.h"
 #include "flutter/shell/common/surface.h"
@@ -284,6 +283,16 @@ class Shell final : public PlatformView::Delegate,
   ///          thread, 'kDeadlineExceeded' if there is a timeout.
   ///
   fml::Status WaitForFirstFrame(fml::TimeDelta timeout);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to reload the system fonts in
+  /// FontCollection.
+  ///             It also clears the cached font families and send system
+  ///             channel message to framework to rebuild affected widgets.
+  ///
+  /// @return     Returns if shell reloads system fonts successfully.
+  ///
+  bool ReloadSystemFonts();
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to get the last error from the Dart UI
