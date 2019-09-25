@@ -152,6 +152,8 @@ def to_gn_args(args):
         gn_args['dart_runtime_mode'] = 'profile'
     elif runtime_mode == 'dynamic_release':
         gn_args['dart_runtime_mode'] = 'release'
+    elif runtime_mode == 'jit_release':
+        gn_args['dart_runtime_mode'] = 'release';
     else:
         gn_args['dart_runtime_mode'] = runtime_mode
 
@@ -271,7 +273,7 @@ def parse_args(args):
 
   parser.add_argument('--unoptimized', default=False, action='store_true')
 
-  parser.add_argument('--runtime-mode', type=str, choices=['debug', 'profile', 'release'], default='debug')
+  parser.add_argument('--runtime-mode', type=str, choices=['debug', 'profile', 'release', 'jit_release'], default='debug')
   parser.add_argument('--dynamic', default=False, action='store_true')
   parser.add_argument('--interpreter', default=False, action='store_true')
   parser.add_argument('--dart-debug', default=False, action='store_true', help='Enables assertsion in the Dart VM. ' +

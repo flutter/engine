@@ -39,7 +39,7 @@
 namespace dart {
 namespace observatory {
 
-#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE)
+#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE && FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_JIT_RELEASE)
 
 // These two symbols are defined in |observatory_archive.cc| which is generated
 // by the |//third_party/dart/runtime/observatory:archive_observatory| rule.
@@ -148,7 +148,7 @@ bool DartFileModifiedCallback(const char* source_url, int64_t since_ms) {
 void ThreadExitCallback() {}
 
 Dart_Handle GetVMServiceAssetsArchiveCallback() {
-#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE)
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE || FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_JIT_RELEASE)
   return nullptr;
 #elif OS_FUCHSIA
   fml::UniqueFD fd = fml::OpenFile("pkg/data/observatory.tar", false,

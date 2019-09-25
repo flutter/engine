@@ -15,11 +15,11 @@
 #endif  // OS_WIN
 
 extern "C" {
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG || FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_JIT_RELEASE
 // Used for debugging dart:* sources.
 extern const uint8_t kPlatformStrongDill[];
 extern const intptr_t kPlatformStrongDillSize;
-#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG || FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_JIT_RELEASE
 }
 
 #include "flutter/assets/directory_asset_bundle.h"
