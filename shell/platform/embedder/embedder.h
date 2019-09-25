@@ -170,6 +170,8 @@ typedef enum {
   ///
   /// Only applicable when kFlutterSemanticsFlagIsTextField flag is on.
   kFlutterSemanticsFlagIsReadOnly = 1 << 20,
+  /// Whether the semantics node represents a link.
+  kFlutterSemanticsFlagIsLink = 1 << 21,
 } FlutterSemanticsFlag;
 
 typedef enum {
