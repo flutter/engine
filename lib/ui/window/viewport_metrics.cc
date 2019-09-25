@@ -40,9 +40,9 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
           p_physical_system_gesture_inset_bottom),
       physical_system_gesture_inset_left(p_physical_system_gesture_inset_left) {
   // Ensure we don't have nonsensical dimensions.
-  // FML_DCHECK(physical_width > 0);
-  // FML_DCHECK(physical_height > 0);
-  // FML_DCHECK(device_pixel_ratio > 0);
+  FML_DCHECK(physical_width >= 0);
+  FML_DCHECK(physical_height >= 0);
+  FML_DCHECK(device_pixel_ratio > 0);
 }
 
 ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
