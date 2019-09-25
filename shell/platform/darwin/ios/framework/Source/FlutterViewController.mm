@@ -233,7 +233,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
              selector:@selector(onAccessibilityStatusChanged:)
                  name:UIAccessibilityBoldTextStatusDidChangeNotification
                object:nil];
-  
+
   [center addObserver:self
              selector:@selector(onAccessibilityStatusChanged:)
                  name:UIAccessibilityOnOffSwitchLabelsDidChangeNotification
