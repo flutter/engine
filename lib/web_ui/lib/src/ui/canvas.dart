@@ -1584,12 +1584,15 @@ class Path {
     if (dx == 0.0 && dy == 0.0) {
       subpaths.addAll(path.subpaths);
     } else {
-      throw UnimplementedError('Cannot add path with non-zero offset');
+      subpaths.addAll(path.transform(
+          engine.Matrix4.translationValues(dx, dy, 0.0).storage).subpaths);
     }
   }
 
   void _addPathWithMatrix(Path path, double dx, double dy, Float64List matrix) {
-    throw UnimplementedError('Cannot add path with transform matrix');
+    final engine.Matrix4 transform = engine.Matrix4.fromFloat64List(matrix);
+    transform.translate(dx, dy);
+    subpaths.addAll(path.transform(transform.storage).subpaths);
   }
 
   /// Adds the given path to this path by extending the current segment of this
