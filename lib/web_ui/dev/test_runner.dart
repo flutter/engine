@@ -52,11 +52,10 @@ class TestsCommand extends Command<bool> {
 
     final List<FilePath> targets =
         this.targets.map((t) => FilePath.fromCwd(t)).toList();
+    await _buildTests(targets: targets);
     if (targets.isEmpty) {
-      await _buildTests();
       await _runAllTests();
     } else {
-      await _buildTests(targets: targets);
       await _runTargetTests(targets);
     }
     return true;
