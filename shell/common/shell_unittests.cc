@@ -224,7 +224,7 @@ TEST_F(ShellTest, BlacklistedDartVMFlag) {
       fml::CommandLine::Option("dart-flags", "--verify_after_gc")};
   fml::CommandLine command_line("", options, std::vector<std::string>());
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
+#if !FLUTTER_RELEASE
   // Upon encountering a non-whitelisted Dart flag the process terminates.
   const char* expected =
       "Encountered blacklisted Dart VM flag: --verify_after_gc";
@@ -242,7 +242,7 @@ TEST_F(ShellTest, WhitelistedDartVMFlag) {
   fml::CommandLine command_line("", options, std::vector<std::string>());
   flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
+#if !FLUTTER_RELEASE
   EXPECT_EQ(settings.dart_flags.size(), 2u);
   EXPECT_EQ(settings.dart_flags[0], "--max_profile_depth 1");
   EXPECT_EQ(settings.dart_flags[1], "--random_seed 42");
