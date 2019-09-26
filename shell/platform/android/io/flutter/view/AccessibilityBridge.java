@@ -594,9 +594,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         if (semanticsNode.hasFlag(Flag.IS_BUTTON)) {
             result.setClassName("android.widget.Button");
         }
-        // TODO(Piinks): Update when ready for SpannableString implementation.
+
         if (semanticsNode.hasFlag(Flag.IS_LINK)) {
-            result.setClassName("android.widget.Button");
+            result.setClassName("android.text.style.URLSpan");
         }
         if (semanticsNode.hasFlag(Flag.IS_IMAGE)) {
             result.setClassName("android.widget.ImageView");
@@ -1629,8 +1629,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         IS_TOGGLED(1 << 17),
         HAS_IMPLICIT_SCROLLING(1 << 18),
         // The Dart API defines the following flag but it isn't used in Android.
-        // IS_MULTILINE(1 << 19);
-        IS_READ_ONLY(1 << 20);
+        // IS_MULTILINE(1 << 19),
+        IS_READ_ONLY(1 << 20),
         IS_LINK(1 << 21);
 
         final int value;
