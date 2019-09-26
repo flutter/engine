@@ -1745,20 +1745,20 @@ class Path {
   /// subpath translated by the given offset.
   Path shift(Offset offset) {
     assert(engine.offsetIsValid(offset));
-    final List<engine.Subpath> shiftedSubpaths = <engine.Subpath>[];
-    for (final engine.Subpath subpath in subpaths) {
-      shiftedSubpaths.add(subpath.shift(offset));
+    final List<engine.Subpath> shiftedSubPaths = <engine.Subpath>[];
+    for (final engine.Subpath subPath in subpaths) {
+      shiftedSubPaths.add(subPath.shift(offset));
     }
-    return Path._clone(shiftedSubpaths, fillType);
+    return Path._clone(shiftedSubPaths, fillType);
   }
 
   /// Returns a copy of the path with all the segments of every
-  /// subpath transformed by the given matrix.
+  /// sub path transformed by the given matrix.
   Path transform(Float64List matrix4) {
     assert(engine.matrix4IsValid(matrix4));
     final Path transformedPath = Path();
-    for (final engine.Subpath subpath in subpaths) {
-      for (final engine.PathCommand cmd in subpath.commands) {
+    for (final engine.Subpath subPath in subpaths) {
+      for (final engine.PathCommand cmd in subPath.commands) {
         cmd.transform(matrix4, transformedPath);
       }
     }

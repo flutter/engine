@@ -1240,15 +1240,15 @@ class Ellipse extends PathCommand {
 
   @override
   void transform(Float64List matrix4, ui.Path targetPath) {
-    // TODO(flutter_web): Implement rotation.
-    _drawArcWithBezier(x, y, radiusX, radiusY,
+    _drawArcWithBezier(x, y, radiusX, radiusY, rotation,
       startAngle,
         anticlockwise ? startAngle - endAngle : endAngle - startAngle,
         targetPath);
   }
 
-  void _drawArcWithBezier(double centerX, double centerY, double radiusX, double radiusY,
-      double startAngle, double sweep, ui.Path targetPath) {
+  void _drawArcWithBezier(double centerX, double centerY,
+      double radiusX, double radiusY, double rotation, double startAngle,
+      double sweep, ui.Path targetPath) {
     double ratio = sweep.abs() / (math.pi / 2.0);
     if ((1.0 - ratio).abs() < 0.0000001) {
       ratio = 1.0;
@@ -1257,46 +1257,64 @@ class Ellipse extends PathCommand {
     final double anglePerSegment = sweep / segments;
     double angle = startAngle;
     for (int segment = 0; segment < segments; segment++) {
-      _drawArcSegment(targetPath, centerX, centerY, radiusX, radiusY, angle, anglePerSegment, segment == 0);
+      _drawArcSegment(targetPath, centerX, centerY, radiusX, radiusY, rotation,
+          angle, anglePerSegment, segment == 0);
       angle += anglePerSegment;
     }
   }
 
-  void _drawArcSegment(ui.Path path, double cx, double cy, double rx, double ry, double startAngle, double sweep,
-      bool startPath) {
-    final double s = (sweep == 1.5707963267948966)
-        ? 0.551915024494
-        : sweep == -1.5707963267948966 ? -0.551915024494 : 4 / 3 * math.tan(sweep / 4);
+  void _drawArcSegment(ui.Path path, double centerX, double centerY,
+      double radiusX, double radiusY, double rotation, double startAngle,
+      double sweep, bool startPath) {
+    final double s = 4 / 3 * math.tan(sweep / 4);
 
+    // Rotate unit vector to startAngle and endAngle to use for computing start
+    // and end points of segment.
     final double x1 = math.cos(startAngle);
     final double y1 = math.sin(startAngle);
     final double endAngle = startAngle + sweep;
-    double x2 = math.cos(endAngle);
-    double y2 = math.sin(endAngle);
+    final double x2 = math.cos(endAngle);
+    final double y2 = math.sin(endAngle);
 
-    double x = x1 - y1 * s;
-    double y = y1 + x1 * s;
-    x *= rx;
-    y *= ry;
-    final double cpx1 = x + cx;
-    final double cpy1 = y + cy;
+    // Compute scaled curve control points.
+    final double cpx1 = (x1 - y1 * s) * radiusX;
+    final double cpy1 = (y1 + x1 * s) * radiusY;
+    final double cpx2 = (x2 + y2 * s) * radiusX;
+    final double cpy2 = (y2 - x2 * s) * radiusY;
 
-    x = x2 + y2 * s;
-    y = y2 - x2 * s;
-    x *= rx;
-    y *= ry;
+    final double endPointX = centerX + x2 * radiusX;
+    final double endPointY = centerY + y2 * radiusY;
 
-    final double cpx2 = x + cx;
-    final double cpy2 = y + cy;
-
-    x2 *= rx;
-    y2 *= ry;
-    x2 += cx;
-    y2 += cy;
+    final double rotationRad = rotation * math.pi / 180.0;
+    final double cosR = math.cos(rotationRad);
+    final double sinR = math.sin(rotationRad);
     if (startPath) {
-      path.moveTo(cx + x1 * rx, cy + y1 * ry);
+      final double scaledX1 = x1 * radiusX;
+      final double scaledY1 = y1 * radiusY;
+      if (rotation == 0.0) {
+        path.moveTo(centerX + scaledX1, centerY + scaledY1);
+      } else {
+        final double rotatedStartX = (scaledX1 * cosR) + (scaledY1 * sinR);
+        final double rotatedStartY = (scaledY1 * cosR) - (scaledX1 * sinR);
+        path.moveTo(centerX + rotatedStartX, centerY + rotatedStartY);
+      }
     }
-    path.cubicTo(cpx1, cpy1, cpx2, cpy2, x2, y2);
+    if (rotation == 0.0) {
+      path.cubicTo(centerX + cpx1, centerY + cpy1,
+          centerX + cpx2, centerY + cpy2,
+          endPointX, endPointY);
+    } else {
+      final double rotatedCpx1 = centerX + (cpx1 * cosR) + (cpy1 * sinR);
+      final double rotatedCpy1 = centerY + (cpy1 * cosR) - (cpx1 * sinR);
+      final double rotatedCpx2 = centerX + (cpx2 * cosR) + (cpy2 * sinR);
+      final double rotatedCpy2 = centerY + (cpy2 * cosR) - (cpx2 * sinR);
+      final double rotatedEndX = centerX + ((endPointX - centerX) * cosR)
+          + ((endPointY - centerY) * sinR);
+      final double rotatedEndY = centerY + ((endPointY - centerY) * cosR)
+          - ((endPointX - centerX) * sinR);
+      path.cubicTo(rotatedCpx1, rotatedCpy1, rotatedCpx2, rotatedCpy2,
+          rotatedEndX, rotatedEndY);
+    }
   }
 
   @override
@@ -1331,14 +1349,16 @@ class QuadraticCurveTo extends PathCommand {
 
   @override
   void transform(Float64List matrix4, ui.Path targetPath) {
-    final double transformedX1 = (matrix4[0] * x1) + (matrix4[4] * y1)
-        + matrix4[12];
-    final double transformedY1 = (matrix4[1] * x1) + (matrix4[5] * y1)
-        + matrix4[13];
-    final double transformedX2 = (matrix4[0] * x2) + (matrix4[4] * y2)
-        + matrix4[12];
-    final double transformedY2 = (matrix4[1] * x2) + (matrix4[5] * y2)
-        + matrix4[13];
+    final double m0 = matrix4[0];
+    final double m1 = matrix4[1];
+    final double m4 = matrix4[4];
+    final double m5 = matrix4[5];
+    final double m12 = matrix4[12];
+    final double m13 = matrix4[13];
+    final double transformedX1 = (m0 * x1) + (m4 * y1) + m12;
+    final double transformedY1 = (m1 * x1) + (m5 * y1) + m13;
+    final double transformedX2 = (m0 * x2) + (m4 * y2) + m12;
+    final double transformedY2 = (m1 * x2) + (m5 * y2) + m13;
     targetPath.quadraticBezierTo(transformedX1, transformedY1,
         transformedX2, transformedY2);
   }
