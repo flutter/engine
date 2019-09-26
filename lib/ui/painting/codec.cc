@@ -33,6 +33,9 @@ namespace flutter {
 
 namespace {
 
+// This needs to be kept in sync with _kDoNotResizeDimension in painting.dart
+const int kDoNotResizeDimension = -1;
+
 // This must be kept in sync with the enum in painting.dart
 enum PixelFormat {
   kRGBA8888,
@@ -214,10 +217,10 @@ static void InstantiateImageCodec(Dart_NativeArguments args) {
     ImageDecoder::ImageDescriptor descriptor;
     descriptor.decompressed_image_info = image_info;
 
-    if (targetWidth >= 0 && targetWidth < image_info->sk_info.width()) {
+    if (targetWidth > kDoNotResizeDimension) {
       descriptor.target_width = targetWidth;
     }
-    if (targetHeight >= 0 && targetHeight < image_info->sk_info.height()) {
+    if (targetHeight > kDoNotResizeDimension) {
       descriptor.target_height = targetHeight;
     }
     descriptor.data = std::move(buffer);
