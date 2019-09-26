@@ -113,7 +113,7 @@ void FlutterMain::Init(JNIEnv* env,
 
   settings.dart_library_sources_kernel =
       make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
-#endif  // FLUTTER_JIT_RUNTIME
+#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
   // Not thread safe. Will be removed when FlutterMain is refactored to no
   // longer be a singleton.

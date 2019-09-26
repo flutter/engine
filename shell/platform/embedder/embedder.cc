@@ -19,7 +19,7 @@ extern "C" {
 // Used for debugging dart:* sources.
 extern const uint8_t kPlatformStrongDill[];
 extern const intptr_t kPlatformStrongDillSize;
-#endif  // FLUTTER_JIT_RUNTIME
+#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 }
 
 #include "flutter/assets/directory_asset_bundle.h"
