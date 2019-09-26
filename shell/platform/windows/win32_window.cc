@@ -170,7 +170,7 @@ Win32Window::MessageHandler(HWND hwnd,
           SetCapture(hwnd);
         }
         button_pressed = message;
-        if (message == WM_XBUTTONUP) {
+        if (message == WM_XBUTTONDOWN) {
           button_pressed = GET_XBUTTON_WPARAM(wparam);
         }
         xPos = GET_X_LPARAM(lparam);
