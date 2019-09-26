@@ -8,8 +8,8 @@
 #import <CoreVideo/CoreVideo.h>
 #import <OpenGL/gl.h>
 
-static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
-  CVPixelBufferRelease(pixelBuffer);
+static void OnCVOpenGLTextureRelease(CVOpenGLTextureRef cvOpenGLTexture) {
+  CVOpenGLTextureRelease(cvOpenGLTexture);
 }
 
 @implementation FlutterExternalTextureGL {
@@ -72,15 +72,16 @@ static void OnGLTextureRelease(CVPixelBufferRef pixelBuffer) {
     CVPixelBufferRelease(_pixelBuffer);
     return NO;
   }
-  CVPixelBufferRelease(_pixelBuffer);
 
   openGLTexture->target = static_cast<uint32_t>(CVOpenGLTextureGetTarget(cvOpenGLTexture));
   openGLTexture->name = static_cast<uint32_t>(CVOpenGLTextureGetName(cvOpenGLTexture));
   openGLTexture->format = static_cast<uint32_t>(GL_RGBA8);
-  openGLTexture->destruction_callback = (VoidCallback)OnGLTextureRelease;
+  openGLTexture->destruction_callback = (VoidCallback)OnCVOpenGLTextureRelease;
   openGLTexture->user_data = cvOpenGLTexture;
   openGLTexture->width = CVPixelBufferGetWidth(_pixelBuffer);
   openGLTexture->height = CVPixelBufferGetHeight(_pixelBuffer);
+
+  CVPixelBufferRelease(_pixelBuffer);
   return YES;
 }
 

@@ -45,7 +45,8 @@ extern const intptr_t kPlatformStrongDillSize;
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 
-#define GL_TEXTURE_RECTANGLE 0x84F5
+// Fixed value of GL_TEXTURE_RECTANGLE in OpenGL.
+const int32_t kGlTextureRectangle = 0x84F5;
 
 static FlutterEngineResult LogEmbedderError(FlutterEngineResult code,
                                             const char* name,
@@ -812,11 +813,11 @@ FlutterEngineResult FlutterEngineRun(size_t version,
         size_t width = size.width();
         size_t height = size.height();
 
-        /// When the texture type is GL_TEXTURE_RECTANGLE, the image size must
-        /// first be set to the actual size, and then resize to the bounds size.
-        /// see:
-        /// https://stackoverflow.com/questions/13933503/core-video-pixel-buffers-as-gl-texture-2d
-        if (texture.target == GL_TEXTURE_RECTANGLE) {
+        // When the texture type is GL_TEXTURE_RECTANGLE, the image size must
+        // first be set to the actual size, and then resized to the bounds size.
+        // see:
+        // https://stackoverflow.com/questions/13933503/core-video-pixel-buffers-as-gl-texture-2d
+        if (texture.target == kGlTextureRectangle) {
           width = texture.width;
           height = texture.height;
         }
@@ -835,9 +836,10 @@ FlutterEngineResult FlutterEngineRun(size_t version,
             texture.user_data          // texture release context
         );
 
-        /// Scale to the bounds size to adapt the user to change the Texture
-        /// widget size.
-        if (image && texture.target == GL_TEXTURE_RECTANGLE) {
+        // SkImage::MakeFromTexture can automatically scale a GL_TEXTURE_2D texture
+        // to the bounds size, but GL_TEXTURE_RECTANGLE does not stretch properly,
+        // so we need to resize the image.
+        if (image && texture.target == kGlTextureRectangle) {
           const auto resized_dimensions =
               SkISize::Make(size.width(), size.height());
 

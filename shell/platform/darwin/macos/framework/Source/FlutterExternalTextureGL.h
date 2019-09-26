@@ -9,7 +9,7 @@
 
 /**
  * Used to bridge FlutterTexture object and handle the texture copy request the
- * flutter engine.
+ * Flutter engine.
  */
 @interface FlutterExternalTextureGL : NSObject
 
@@ -19,8 +19,8 @@
 - (nonnull instancetype)initWithFlutterTexture:(nonnull id<FlutterTexture>)texture;
 
 /**
- * Accepts texture buffer copy request from the flutter engine.
- * When the user side marks the textureId as available, the flutter engine will
+ * Accepts texture buffer copy request from the Flutter engine.
+ * When the user side marks the textureID as available, the Flutter engine will
  * callback to this method and ask for populate the |openGLTexture| object,
  * such as the texture type and the format of the pixel buffer and the texture object.
  */
