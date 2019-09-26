@@ -8,6 +8,7 @@
 
 #include <vector>
 
+#include "flutter/common/runtime.h"
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/macros.h"
@@ -26,8 +27,7 @@
 namespace flutter {
 
 extern "C" {
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG || \
-    FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_JIT_RELEASE
+#if FLUTTER_JIT_RUNTIME
 // Used for debugging dart:* sources.
 extern const uint8_t kPlatformStrongDill[];
 extern const intptr_t kPlatformStrongDillSize;
@@ -103,8 +103,7 @@ void FlutterMain::Init(JNIEnv* env,
     fml::MessageLoop::GetCurrent().RemoveTaskObserver(key);
   };
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG || \
-    FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_JIT_RELEASE
+#if FLUTTER_JIT_RUNTIME
   // There are no ownership concerns here as all mappings are owned by the
   // embedder and not the engine.
   auto make_mapping_callback = [](const uint8_t* mapping, size_t size) {
@@ -115,7 +114,7 @@ void FlutterMain::Init(JNIEnv* env,
 
   settings.dart_library_sources_kernel =
       make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
-#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+#endif  // FLUTTER_JIT_RUNTIME
 
   // Not thread safe. Will be removed when FlutterMain is refactored to no
   // longer be a singleton.

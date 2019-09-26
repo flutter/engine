@@ -21,7 +21,7 @@ if (is_ios || is_mac) {
 }
 
 declare_args() {
-  # The runtime mode ("debug", "profile", or "release")
+  # The runtime mode ("debug", "profile", "release", or "jit_release")
   flutter_runtime_mode = "debug"
 
   # Whether to use the Skia text shaper module
