@@ -85,7 +85,7 @@ class Environment {
   ));
 
   /// Path to the "web_engine_tester" package.
-  io.Directory get goldenTesterRootDir => io.Directory(pathlib.join(
+  io.Directory get webEngineTesterRootDir => io.Directory(pathlib.join(
     webSdkRootDir.path,
     'web_engine_tester',
   ));
@@ -102,5 +102,18 @@ class Environment {
   io.Directory get webUiDartToolDir => io.Directory(pathlib.join(
     webUiRootDir.path,
     '.dart_tool',
+  ));
+
+  /// Path to the "dev" directory containing engine developer tools and
+  /// configuration files.
+  io.Directory get webUiDevDir => io.Directory(pathlib.join(
+    webUiRootDir.path,
+    'dev',
+  ));
+
+  /// Path to the clone of the flutter/goldens repository.
+  io.Directory get webUiGoldensRepositoryDirectory => io.Directory(pathlib.join(
+    webUiDartToolDir.path,
+    'goldens',
   ));
 }
