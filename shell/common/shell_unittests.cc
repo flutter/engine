@@ -8,6 +8,7 @@
 #include <future>
 #include <memory>
 
+#include "flutter/common/runtime.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/fml/command_line.h"
@@ -433,7 +434,7 @@ TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
   }
 }
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+#if FLUTTER_RELEASE
 TEST_F(ShellTest, ReportTimingsIsCalledLaterInReleaseMode) {
 #else
 TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
@@ -472,8 +473,8 @@ TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
 
   fml::TimePoint finish = fml::TimePoint::Now();
   fml::TimeDelta ellapsed = finish - start;
-
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+ 
+#if FLUTTER_RELEASE
   // Our batch time is 1000ms. Hopefully the 800ms limit is relaxed enough to
   // make it not too flaky.
   ASSERT_TRUE(ellapsed >= fml::TimeDelta::FromMilliseconds(800));

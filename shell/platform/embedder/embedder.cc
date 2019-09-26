@@ -15,7 +15,7 @@
 #endif  // OS_WIN
 
 extern "C" {
-#if FLUTTER_JIT_RUNTIME
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 // Used for debugging dart:* sources.
 extern const uint8_t kPlatformStrongDill[];
 extern const intptr_t kPlatformStrongDillSize;

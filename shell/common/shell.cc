@@ -9,6 +9,7 @@
 #include <sstream>
 #include <vector>
 
+#include "flutter/common/runtime.h"
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/icu_util.h"
@@ -1049,7 +1050,7 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     first_frame_rasterized_ = true;
     ReportTimings();
   } else if (!frame_timings_report_scheduled_) {
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+#if FLUTTER_RELEASE
     constexpr int kBatchTimeInMilliseconds = 1000;
 #else
     constexpr int kBatchTimeInMilliseconds = 100;
