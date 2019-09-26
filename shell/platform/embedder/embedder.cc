@@ -836,9 +836,9 @@ FlutterEngineResult FlutterEngineRun(size_t version,
             texture.user_data          // texture release context
         );
 
-        // SkImage::MakeFromTexture can automatically scale a GL_TEXTURE_2D texture
-        // to the bounds size, but GL_TEXTURE_RECTANGLE does not stretch properly,
-        // so we need to resize the image.
+        // SkImage::MakeFromTexture can automatically scale a GL_TEXTURE_2D
+        // texture to the bounds size, but GL_TEXTURE_RECTANGLE does not stretch
+        // properly, so we need to resize the image.
         if (image && texture.target == kGlTextureRectangle) {
           const auto resized_dimensions =
               SkISize::Make(size.width(), size.height());
