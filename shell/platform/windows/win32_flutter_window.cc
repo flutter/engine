@@ -116,8 +116,8 @@ void Win32FlutterWindow::HandlePlatformMessage(
   auto message = ConvertToDesktopMessage(*engine_message);
 
   message_dispatcher_->HandleMessage(
-    message, [this] { this->process_events_ = false; },
-    [this] { this->process_events_ = true; });
+      message, [this] { this->process_events_ = false; },
+      [this] { this->process_events_ = true; });
 }
 
 void Win32FlutterWindow::OnDpiScale(unsigned int dpi){};
