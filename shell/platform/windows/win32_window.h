@@ -96,10 +96,10 @@ class Win32Window {
   // window bounds.
   virtual void OnPointerMove(double x, double y) = 0;
 
-  // Called when the left mouse button goes down
+  // Called when the a mouse button, determined by |button|, goes down.
   virtual void OnPointerDown(double x, double y, UINT button) = 0;
 
-  // Called when the left mouse button goes from
+  // Called when the a mouse button, determined by |button|, goes from
   // down to up
   virtual void OnPointerUp(double x, double y, UINT button) = 0;
 
