@@ -1019,12 +1019,10 @@ enum Clip {
   antiAliasWithSaveLayer,
 }
 
-// Indicates that the image should not be resized in this dimension.
-//
-// Used by [instantiateImageCodec] as a magical value to disable resizing
-// in the given dimension.
-//
-// This needs to be kept in sync with "kDoNotResizeDimension" in codec.cc
+/// Indicates that the image should not be resized in this dimension.
+///
+/// Used by [instantiateImageCodec] as a magical value to disable resizing
+/// in the given dimension.
 const int kDoNotResizeDimension = -1;
 
 /// A description of the style to use when drawing on a [Canvas].
