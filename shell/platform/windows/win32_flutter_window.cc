@@ -224,10 +224,11 @@ void Win32FlutterWindow::SetEventPhaseFromCursorButtonState(
   MouseState state = GetMouseState();
   // For details about this logic, see FlutterPointerPhase in the embedder.h
   // file.
-  event_data->phase = state.buttons == 0
-                          ? state.pointer_down ? FlutterPointerPhase::kUp
+  event_data->phase = state.buttons == 0 ? state.flutter_state_is_down
+                                               ? FlutterPointerPhase::kUp
                                                : FlutterPointerPhase::kHover
-                          : state.pointer_down ? FlutterPointerPhase::kMove
+                                         : state.flutter_state_is_down
+                                               ? FlutterPointerPhase::kMove
                                                : FlutterPointerPhase::kDown;
 }
 
@@ -245,7 +246,7 @@ void Win32FlutterWindow::SendPointerDown(double x, double y) {
   event.x = x;
   event.y = y;
   SendPointerEventWithData(event);
-  SetMousePointerDown(true);
+  SetMouseFlutterStateDown(true);
 }
 
 void Win32FlutterWindow::SendPointerUp(double x, double y) {
@@ -255,7 +256,7 @@ void Win32FlutterWindow::SendPointerUp(double x, double y) {
   event.y = y;
   SendPointerEventWithData(event);
   if (event.phase == FlutterPointerPhase::kUp) {
-    SetMousePointerDown(false);
+    SetMouseFlutterStateDown(false);
   }
 }
 
@@ -295,7 +296,7 @@ void Win32FlutterWindow::SendPointerEventWithData(
   MouseState mouse_state = GetMouseState();
   // If sending anything other than an add, and the pointer isn't already added,
   // synthesize an add to satisfy Flutter's expectations about events.
-  if (!mouse_state.pointer_currently_added &&
+  if (!mouse_state.flutter_state_is_added &&
       event_data.phase != FlutterPointerPhase::kAdd) {
     FlutterPointerEvent event = {};
     event.phase = FlutterPointerPhase::kAdd;
@@ -306,7 +307,7 @@ void Win32FlutterWindow::SendPointerEventWithData(
   }
   // Don't double-add (e.g., if events are delivered out of order, so an add has
   // already been synthesized).
-  if (mouse_state.pointer_currently_added &&
+  if (mouse_state.flutter_state_is_added &&
       event_data.phase == FlutterPointerPhase::kAdd) {
     return;
   }
@@ -332,9 +333,9 @@ void Win32FlutterWindow::SendPointerEventWithData(
   FlutterEngineSendPointerEvent(engine_, &event, 1);
 
   if (event_data.phase == FlutterPointerPhase::kAdd) {
-    SetMousePointerAdded(true);
+    SetMouseFlutterStateAdded(true);
   } else if (event_data.phase == FlutterPointerPhase::kRemove) {
-    SetMousePointerAdded(false);
+    SetMouseFlutterStateAdded(false);
     ResetMouseState();
   }
 }

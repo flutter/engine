@@ -16,15 +16,16 @@
 namespace flutter {
 
 // Struct holding the mouse state. The engine doesn't keep track of which mouse
-// buttons have been pressed, so it's the embedder's responsibility.
+// buttons have been pressed, so it's the embedding's responsibility.
 struct MouseState {
-  // True if at least one mouse button is currently pressed.
-  bool pointer_down = false;
+  // True if the last event sent to Flutter had at least one mouse button
+  // pressed.
+  bool flutter_state_is_down = false;
 
   // True if kAdd has been sent to Flutter. Used to determine whether
   // to send a kAdd event before sending an incoming mouse event, since Flutter
   // expects pointers to be added before events are sent for them.
-  bool pointer_currently_added = false;
+  bool flutter_state_is_added = false;
 
   // The currently pressed buttons, as represented in FlutterPointerEvent.
   uint64_t buttons = 0;
@@ -133,15 +134,16 @@ class Win32Window {
   // Resets the mouse state to its default values.
   void ResetMouseState() { mouse_state_ = MouseState(); }
 
-  // Set to true if at least one mouse button is pressed. Set to false if none
-  // are pressed.
-  void SetMousePointerDown(bool is_down) {
-    mouse_state_.pointer_down = is_down;
+  // Updates the mouse state to whether the last event to Flutter had at least
+  // one mouse button pressed.
+  void SetMouseFlutterStateDown(bool is_down) {
+    mouse_state_.flutter_state_is_down = is_down;
   }
 
-  // Set to true if a kAdd message has been sent to Flutter.
-  void SetMousePointerAdded(bool is_added) {
-    mouse_state_.pointer_currently_added = is_added;
+  // Updates the mouse state to whether the last event to Flutter was a kAdd
+  // event.
+  void SetMouseFlutterStateAdded(bool is_added) {
+    mouse_state_.flutter_state_is_added = is_added;
   }
 
   // Updates the currently pressed buttons.
