@@ -473,7 +473,7 @@ TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
 
   fml::TimePoint finish = fml::TimePoint::Now();
   fml::TimeDelta ellapsed = finish - start;
- 
+
 #if FLUTTER_RELEASE
   // Our batch time is 1000ms. Hopefully the 800ms limit is relaxed enough to
   // make it not too flaky.
