@@ -14,7 +14,9 @@
 #include <sstream>
 
 #include "flutter/fml/eintr_wrapper.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/unique_fd.h"
 
 namespace fml {
 
@@ -163,7 +165,11 @@ bool UnlinkFile(const char* path) {
 }
 
 bool UnlinkFile(const fml::UniqueFD& base_directory, const char* path) {
-  return ::unlinkat(base_directory.get(), path, 0) == 0;
+  int code = ::unlinkat(base_directory.get(), path, 0);
+  if (code != 0) {
+    FML_DLOG(ERROR) << strerror(errno);
+  }
+  return code == 0;
 }
 
 bool FileExists(const fml::UniqueFD& base_directory, const char* path) {
@@ -211,20 +217,21 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
                     base_directory.get(), file_name) == 0;
 }
 
-std::vector<std::string> ListFiles(const fml::UniqueFD& directory) {
-  std::vector<std::string> files;
+void VisitFiles(const fml::UniqueFD& directory, const FileVisitor& visitor) {
+  // We cannot call closedir(dir) because it will also close the corresponding
+  // UniqueFD, and later reference to that UniqueFD will fail. Also, we don't
+  // have to call closedir because UniqueFD will call close on its destructor.
   DIR* dir = ::fdopendir(directory.get());
   if (dir == nullptr) {
-    FML_LOG(ERROR) << "Can't open the directory.";
-    return files;
+    FML_DLOG(ERROR) << "Can't open the directory. Error: " << strerror(errno);
+    return;
   }
   while (dirent* ent = readdir(dir)) {
-    std::string name = ent->d_name;
-    if (name != "." && name != "..") {
-      files.push_back(std::move(name));
+    std::string filename = ent->d_name;
+    if (filename != "." && filename != "..") {
+      visitor(directory, filename);
     }
   }
-  return files;
 }
 
 }  // namespace fml

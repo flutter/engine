@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 
+#include "flutter/fml/unique_fd.h"
 #include "gtest/gtest.h"
 
 #include "flutter/fml/build_config.h"
@@ -126,6 +127,43 @@ TEST(FileTest, CreateDirectoryStructure) {
 
   // Cleanup.
   ASSERT_TRUE(fml::UnlinkFile(dir.fd(), file_path));
+  ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a/b/c"));
+  ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a/b"));
+  ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a"));
+}
+
+TEST(FileTest, CanListFilesRecursively) {
+  fml::ScopedTemporaryDirectory dir;
+
+  {
+    auto sub = fml::CreateDirectory(dir.fd(), {"a", "b", "c"},
+                                    fml::FilePermission::kReadWrite);
+    ASSERT_TRUE(sub.is_valid());
+    auto file1 =
+        fml::OpenFile(sub, "file1", true, fml::FilePermission::kReadWrite);
+    auto file2 =
+        fml::OpenFile(sub, "file2", true, fml::FilePermission::kReadWrite);
+    ASSERT_TRUE(file1.is_valid());
+    ASSERT_TRUE(file2.is_valid());
+  }
+
+  std::vector<std::string> names;
+  fml::FileVisitor visitor = [&names, &visitor](const fml::UniqueFD& directory,
+                                                const std::string& filename) {
+    names.push_back(filename);
+    fml::UniqueFD file = fml::OpenFile(directory, filename.c_str(), false,
+                                       fml::FilePermission::kRead);
+    if (fml::IsDirectory(file)) {
+      fml::VisitFiles(file, visitor);
+    }
+  };
+
+  fml::VisitFiles(dir.fd(), visitor);
+  ASSERT_EQ(names, std::vector<std::string>({"a", "b", "c", "file1", "file2"}));
+
+  // Cleanup.
+  ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "a/b/c/file1"));
+  ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "a/b/c/file2"));
   ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a/b/c"));
   ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a/b"));
   ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a"));

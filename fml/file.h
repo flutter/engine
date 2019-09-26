@@ -73,7 +73,13 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
                      const char* file_name,
                      const Mapping& mapping);
 
-std::vector<std::string> ListFiles(const fml::UniqueFD& directory);
+using FileVisitor = std::function<void(const fml::UniqueFD& directory,
+                                       const std::string& filename)>;
+
+/// Call `visitor` on all files inside the `directory` non-recursively. If
+/// recursive visiting is needed, call `VisitFiles` inside the `visitor`.
+/// The trivial file "." and ".." will not be visited.
+void VisitFiles(const fml::UniqueFD& directory, const FileVisitor& visitor);
 
 class ScopedTemporaryDirectory {
  public:

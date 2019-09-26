@@ -102,21 +102,22 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
   const char* path = cache_sksl_ ? "." : "sksl";
   fml::UniqueFD dir = fml::OpenDirectory(*cache_directory_, path, false,
                                          fml::FilePermission::kRead);
-  std::vector<std::string> names = fml::ListFiles(dir);
-  for (const std::string& name : names) {
-    std::pair<bool, std::string> decode_result = fml::Base32Decode(name);
+  fml::FileVisitor visitor = [&result](const fml::UniqueFD& directory,
+                                       const std::string& filename) {
+    std::pair<bool, std::string> decode_result = fml::Base32Decode(filename);
     if (!decode_result.first) {
-      FML_LOG(ERROR) << "Base32 can't decode: " << name;
-      continue;
+      FML_LOG(ERROR) << "Base32 can't decode: " << filename;
+      return;
     }
     const std::string& data_string = decode_result.second;
     sk_sp<SkData> key =
         SkData::MakeWithCopy(data_string.data(), data_string.length());
-    sk_sp<SkData> data = LoadFile(dir, name);
+    sk_sp<SkData> data = LoadFile(directory, filename);
     if (data != nullptr) {
       result.push_back({key, data});
     }
-  }
+  };
+  fml::VisitFiles(dir, visitor);
   return result;
 }
 
