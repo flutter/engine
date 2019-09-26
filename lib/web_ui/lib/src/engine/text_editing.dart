@@ -914,8 +914,8 @@ class _EditableSizeAndTransform {
 /// keys to move the text cursor.
 class SelectionChangeDetection {
   final html.HtmlElement _domElement;
-  int _start;
-  int _end;
+  int _start = -1;
+  int _end = -1;
 
   SelectionChangeDetection(this._domElement) {
     if (_domElement is html.InputElement) {
