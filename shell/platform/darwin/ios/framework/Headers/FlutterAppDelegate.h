@@ -32,9 +32,9 @@ FLUTTER_EXPORT
 /**
  * Handle StatusBar touches.
  *
- * If you want your Flutter views to respond to StatusBar touches, like scroll-to-top behavior, you
- * need to call this function from your AppDelegate's `touchesBegan:withEvent:`.  FlutterAppDelegate
- * already calls it so you only need to manually call it if you aren't using a FlutterAppDelegate.
+ * Call this from your AppDelegate's `touchesBegan:withEvent:` to have Flutter respond to StatusBar
+ * touches.  For example, to enable scroll-to-top behavior.  FlutterAppDelegate already calls it so
+ * you only need to manually call it if you aren't using a FlutterAppDelegate.
  */
 + (void)handleStatusBarTouches:(NSSet*)touches withEvent:(UIEvent*)event;
 

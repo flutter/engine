@@ -49,15 +49,12 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 }
 
 + (void)handleStatusBarTouches:(NSSet*)touches withEvent:(UIEvent*)event {
-  if (self.class.rootFlutterViewController != nil) {
-    [self.class.rootFlutterViewController handleStatusBarTouches:event];
-  }
+  [self.rootFlutterViewController handleStatusBarTouches:event];
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
   [super touchesBegan:touches withEvent:event];
-
-  [self.class handleStatusBarTouches:touches withEvent:event];
+  [[self class] handleStatusBarTouches:touches withEvent:event];
 }
 
 #pragma GCC diagnostic push
