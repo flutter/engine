@@ -14,7 +14,6 @@
 #error ARC must be enabled!
 #endif
 
-
 @interface FlutteEngineTest : XCTestCase
 @end
 
@@ -28,15 +27,13 @@
 
 - (void)testCreate {
   id project = OCMClassMock([FlutterDartProject class]);
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"
-                                                      project:project];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   XCTAssertNotNil(engine);
 }
 
 - (void)testSendMessageBeforeRun {
   id project = OCMClassMock([FlutterDartProject class]);
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"
-                                                      project:project];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   XCTAssertNotNil(engine);
   XCTAssertThrows([engine.binaryMessenger
       sendOnChannel:@"foo"
@@ -46,8 +43,7 @@
 
 - (void)testSetMessageHandlerBeforeRun {
   id project = OCMClassMock([FlutterDartProject class]);
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"
-                                                      project:project];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   XCTAssertNotNil(engine);
   XCTAssertThrows([engine.binaryMessenger
       setMessageHandlerOnChannel:@"foo"
