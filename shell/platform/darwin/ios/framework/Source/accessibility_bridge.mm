@@ -567,6 +567,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
       platform_view_(platform_view),
       platform_views_controller_(platform_views_controller),
       objects_([[NSMutableDictionary alloc] init]),
+      live_regions_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
       previous_route_id_(0),
       previous_routes_({}) {
@@ -631,6 +632,16 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
         [accessibilityCustomActions addObject:customAction];
       }
       object.accessibilityCustomActions = accessibilityCustomActions;
+    }
+
+    if (node.HasFlag(flutter::SemanticsFlags::kIsLiveRegion)) {
+      NSNumber* identifer = *(node.id);
+      NSString* label = @(node.label.data());
+      NSString* previousLabel = live_regions_[identifer];
+      if (previousLabel == nil || ![label isEqualToString: previousLabel]) {
+        UIAccessibilityPostNotification(label, nil);
+        live_regions_[identifer] = label;
+      }
     }
 
     if (object.node.IsPlatformViewNode()) {
@@ -758,6 +769,7 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
 void AccessibilityBridge::VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
                                                            NSMutableArray<NSNumber*>* doomed_uids) {
   [doomed_uids removeObject:@(object.uid)];
+  [live_regions_ removeObject:@(object.uid)];
   for (SemanticsObject* child in [object children])
     VisitObjectsRecursivelyAndRemove(child, doomed_uids);
 }

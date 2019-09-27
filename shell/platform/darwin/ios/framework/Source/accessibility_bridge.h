@@ -183,6 +183,7 @@ class AccessibilityBridge final {
   int32_t previous_route_id_;
   std::unordered_map<int32_t, flutter::CustomAccessibilityAction> actions_;
   std::vector<int32_t> previous_routes_;
+  fml::scoped_nsobject<NSMutableDictionary<NSNumber*, NSString*>> live_regions_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);
 };
