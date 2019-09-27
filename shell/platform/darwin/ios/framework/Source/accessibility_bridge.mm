@@ -593,6 +593,8 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
                                           flutter::CustomAccessibilityActionUpdates actions) {
   BOOL layoutChanged = NO;
   BOOL scrollOccured = NO;
+  BOOL liveRegionUpdated = NO:
+  NSString* liveRegionValue = nil;
   for (const auto& entry : actions) {
     const flutter::CustomAccessibilityAction& action = entry.second;
     actions_[action.id] = action;
@@ -639,8 +641,9 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
       NSString* label = @(node.label.data());
       NSString* previousLabel = live_regions_.get()[identifer];
       if (previousLabel == nil || ![label isEqualToString: previousLabel]) {
-        UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, label);
         live_regions_.get()[identifer] = label;
+        liveRegionValue = label;
+        liveRegionUpdated = YES:
       }
     }
 
@@ -704,6 +707,9 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
   if (scrollOccured) {
     // TODO(tvolkert): provide meaningful string (e.g. "page 2 of 5")
     UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, @"");
+  }
+  if (liveRegionUpdated) {
+    UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, liveRegionValue);
   }
 }
 
