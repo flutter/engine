@@ -28,6 +28,7 @@ RasterCacheResult::RasterCacheResult(sk_sp<SkImage> image,
     : image_(std::move(image)), logical_rect_(logical_rect) {}
 
 void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
+  TRACE_EVENT0("flutter", "RasterCacheResult::draw");
   SkAutoCanvasRestore auto_restore(&canvas, true);
   SkIRect bounds =
       RasterCache::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
@@ -172,7 +173,9 @@ void RasterCache::Prepare(PrerollContext* context,
                                   context->ui_time,
                                   context->texture_registry,
                                   context->raster_cache,
-                                  context->checkerboard_offscreen_layers};
+                                  context->checkerboard_offscreen_layers,
+                                  context->frame_physical_depth,
+                                  context->frame_device_pixel_ratio};
                               if (layer->needs_painting()) {
                                 layer->Paint(paintContext);
                               }

@@ -42,12 +42,11 @@ Engine::Engine(Delegate& delegate,
                TaskRunners task_runners,
                Settings settings,
                std::unique_ptr<Animator> animator,
-               fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
                fml::WeakPtr<IOManager> io_manager)
     : delegate_(delegate),
       settings_(std::move(settings)),
       animator_(std::move(animator)),
-      activity_running_(false),
+      activity_running_(true),
       have_surface_(false),
       image_decoder_(task_runners,
                      vm.GetConcurrentWorkerTaskRunner(),
@@ -62,7 +61,6 @@ Engine::Engine(Delegate& delegate,
       std::move(isolate_snapshot),           // isolate snapshot
       std::move(shared_snapshot),            // shared snapshot
       std::move(task_runners),               // task runners
-      std::move(snapshot_delegate),          // snapshot delegate
       std::move(io_manager),                 // io manager
       image_decoder_.GetWeakPtr(),           // image decoder
       settings_.advisory_script_uri,         // advisory script uri
@@ -220,8 +218,9 @@ void Engine::ReportTimings(std::vector<int64_t> timings) {
 }
 
 void Engine::NotifyIdle(int64_t deadline) {
+  auto trace_event = std::to_string(deadline - Dart_TimelineGetMicros());
   TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
-               std::to_string(deadline - Dart_TimelineGetMicros()).c_str());
+               trace_event.c_str());
   runtime_controller_->NotifyIdle(deadline);
 }
 
@@ -289,8 +288,13 @@ void Engine::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
   }
 
   // If there's no runtime_, we may still need to set the initial route.
-  if (message->channel() == kNavigationChannel)
+  if (message->channel() == kNavigationChannel) {
     HandleNavigationPlatformMessage(std::move(message));
+    return;
+  }
+
+  FML_DLOG(WARNING) << "Dropping platform message on channel: "
+                    << message->channel();
 }
 
 bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
@@ -423,12 +427,12 @@ void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
   if (!layer_tree)
     return;
 
-  SkISize frame_size = SkISize::Make(viewport_metrics_.physical_width,
-                                     viewport_metrics_.physical_height);
-  if (frame_size.isEmpty())
+  // Ensure frame dimensions are sane.
+  if (layer_tree->frame_size().isEmpty() ||
+      layer_tree->frame_physical_depth() <= 0.0f ||
+      layer_tree->frame_device_pixel_ratio() <= 0.0f)
     return;
 
-  layer_tree->set_frame_size(frame_size);
   animator_->Render(std::move(layer_tree));
 }
 
@@ -450,8 +454,8 @@ void Engine::UpdateIsolateDescription(const std::string isolate_name,
   delegate_.UpdateIsolateDescription(isolate_name, isolate_port);
 }
 
-void Engine::SetNeedsReportTimings(bool value) {
-  delegate_.SetNeedsReportTimings(value);
+void Engine::SetNeedsReportTimings(bool needs_reporting) {
+  delegate_.SetNeedsReportTimings(needs_reporting);
 }
 
 FontCollection& Engine::GetFontCollection() {

@@ -1019,13 +1019,11 @@ enum Clip {
   antiAliasWithSaveLayer,
 }
 
-// Indicates that the image should not be resized in this dimension.
-//
-// Used by [instantiateImageCodec] as a magical value to disable resizing
-// in the given dimension.
-//
-// This needs to be kept in sync with "kDoNotResizeDimension" in codec.cc
-const int _kDoNotResizeDimension = -1;
+/// Indicates that the image should not be resized in this dimension.
+///
+/// Used by [instantiateImageCodec] as a magical value to disable resizing
+/// in the given dimension.
+const int kDoNotResizeDimension = -1;
 
 /// A description of the style to use when drawing on a [Canvas].
 ///
@@ -1343,16 +1341,17 @@ class Paint {
   }
 
   set colorFilter(ColorFilter value) {
-    if (value == null) {
+    final _ColorFilter nativeFilter = value?._toNativeColorFilter();
+    if (nativeFilter == null) {
       if (_objects != null) {
         _objects[_kColorFilterIndex] = null;
       }
     } else {
       if (_objects == null) {
         _objects = List<dynamic>(_kObjectCount);
-        _objects[_kColorFilterIndex] = value._toNativeColorFilter();
+        _objects[_kColorFilterIndex] = nativeFilter;
       } else if (_objects[_kColorFilterIndex]?.creator != value) {
-        _objects[_kColorFilterIndex] = value._toNativeColorFilter();
+        _objects[_kColorFilterIndex] = nativeFilter;
       }
     }
   }
@@ -1666,7 +1665,7 @@ Future<Codec> instantiateImageCodec(Uint8List list, {
   int targetHeight,
 }) {
   return _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, targetWidth ?? _kDoNotResizeDimension, targetHeight ?? _kDoNotResizeDimension)
+    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, targetWidth ?? kDoNotResizeDimension, targetHeight ?? kDoNotResizeDimension)
   );
 }
 
@@ -1676,9 +1675,9 @@ Future<Codec> instantiateImageCodec(Uint8List list, {
 /// image, in image pixels. Image in this context refers to image in every frame of the [Codec].
 /// If [targetWidth] and [targetHeight] are not equal to the intrinsic dimensions of the
 /// image, then the image will be scaled after being decoded. If exactly one of
-/// these two arguments is not equal to [_kDoNotResizeDimension], then the aspect
+/// these two arguments is not equal to [kDoNotResizeDimension], then the aspect
 /// ratio will be maintained while forcing the image to match the given dimension.
-/// If both are equal to [_kDoNotResizeDimension], then the image maintains its real size.
+/// If both are equal to [kDoNotResizeDimension], then the image maintains its real size.
 ///
 /// Returns an error message if the instantiation has failed, null otherwise.
 String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, int targetWidth, int targetHeight)
@@ -1723,7 +1722,7 @@ void decodeImageFromPixels(
 ) {
   final _ImageInfo imageInfo = _ImageInfo(width, height, format.index, rowBytes);
   final Future<Codec> codecFuture = _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, targetWidth ?? _kDoNotResizeDimension, targetHeight ?? _kDoNotResizeDimension)
+    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, targetWidth ?? kDoNotResizeDimension, targetHeight ?? kDoNotResizeDimension)
   );
   codecFuture.then((Codec codec) => codec.getNextFrame())
       .then((FrameInfo frameInfo) => callback(frameInfo.image));
@@ -2489,9 +2488,7 @@ class ColorFilter {
   /// to the [Paint.blendMode], using the output of this filter as the source
   /// and the background as the destination.
   const ColorFilter.mode(Color color, BlendMode blendMode)
-      : assert(color != null),
-        assert(blendMode != null),
-        _color = color,
+      : _color = color,
         _blendMode = blendMode,
         _matrix = null,
         _type = _TypeMode;
@@ -2500,9 +2497,7 @@ class ColorFilter {
   /// matrix is in row-major order and the translation column is specified in
   /// unnormalized, 0...255, space.
   const ColorFilter.matrix(List<double> matrix)
-      : assert(matrix != null, 'Color Matrix argument was null.'),
-        assert(matrix.length == 20, 'Color Matrix must have 20 entries.'),
-        _color = null,
+      : _color = null,
         _blendMode = null,
         _matrix = matrix,
         _type = _TypeMatrix;
@@ -2556,8 +2551,15 @@ class ColorFilter {
   _ColorFilter _toNativeColorFilter() {
     switch (_type) {
       case _TypeMode:
+        if (_color == null || _blendMode == null) {
+          return null;
+        }
         return _ColorFilter.mode(this);
       case _TypeMatrix:
+        if (_matrix == null) {
+          return null;
+        }
+        assert(_matrix.length == 20, 'Color Matrix must have 20 entries.');
         return _ColorFilter.matrix(this);
       case _TypeLinearToSrgbGamma:
         return _ColorFilter.linearToSrgbGamma(this);

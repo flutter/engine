@@ -24,11 +24,13 @@
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
 #include "font_collection.h"
+#include "line_metrics.h"
 #include "minikin/LineBreaker.h"
 #include "paint_record.h"
 #include "paragraph.h"
 #include "paragraph_style.h"
 #include "placeholder_run.h"
+#include "run_metrics.h"
 #include "styled_runs.h"
 #include "third_party/googletest/googletest/include/gtest/gtest_prod.h"  // nogncheck
 #include "third_party/skia/include/core/SkFontMetrics.h"
@@ -113,6 +115,10 @@ class ParagraphTxt : public Paragraph {
 
   bool DidExceedMaxLines() override;
 
+  // Gets the full vector of LineMetrics which includes detailed data on each
+  // line in the final layout.
+  std::vector<LineMetrics>& GetLineMetrics() override;
+
   // Sets the needs_layout_ to dirty. When Layout() is called, a new Layout will
   // be performed when this is set to true. Can also be used to prevent a new
   // Layout from being calculated by setting to false.
@@ -130,6 +136,7 @@ class ParagraphTxt : public Paragraph {
   FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, CenterAlignParagraph);
   FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, JustifyAlignParagraph);
   FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, JustifyRTL);
+  FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, JustifyRTLNewLine);
   FRIEND_TEST(ParagraphTest, DecorationsParagraph);
   FRIEND_TEST(ParagraphTest, ItalicsParagraph);
   FRIEND_TEST(ParagraphTest, ChineseParagraph);
@@ -139,6 +146,7 @@ class ParagraphTxt : public Paragraph {
   FRIEND_TEST(ParagraphTest, KernScaleParagraph);
   FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, NewlineParagraph);
   FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, EmojiParagraph);
+  FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, EmojiMultiLineRectsParagraph);
   FRIEND_TEST(ParagraphTest, HyphenBreakParagraph);
   FRIEND_TEST(ParagraphTest, RepeatLayoutParagraph);
   FRIEND_TEST(ParagraphTest, Ellipsize);
@@ -149,6 +157,7 @@ class ParagraphTxt : public Paragraph {
   FRIEND_TEST(ParagraphTest, FontFallbackParagraph);
   FRIEND_TEST(ParagraphTest, InlinePlaceholder0xFFFCParagraph);
   FRIEND_TEST(ParagraphTest, FontFeaturesParagraph);
+  FRIEND_TEST(ParagraphTest, GetGlyphPositionAtCoordinateSegfault);
 
   // Starting data to layout.
   std::vector<uint16_t> text_;
@@ -171,26 +180,13 @@ class ParagraphTxt : public Paragraph {
   minikin::LineBreaker breaker_;
   mutable std::unique_ptr<icu::BreakIterator> word_breaker_;
 
-  struct LineRange {
-    LineRange(size_t s, size_t e, size_t eew, size_t ein, bool h)
-        : start(s),
-          end(e),
-          end_excluding_whitespace(eew),
-          end_including_newline(ein),
-          hard_break(h) {}
-    size_t start, end;
-    size_t end_excluding_whitespace;
-    size_t end_including_newline;
-    bool hard_break;
-  };
-  std::vector<LineRange> line_ranges_;
+  std::vector<LineMetrics> line_metrics_;
+  size_t final_line_count_;
   std::vector<double> line_widths_;
 
   // Stores the result of Layout().
   std::vector<PaintRecord> records_;
 
-  std::vector<double> line_heights_;
-  std::vector<double> line_baselines_;
   bool did_exceed_max_lines_;
 
   // Strut metrics of zero will have no effect on the layout.
@@ -205,11 +201,6 @@ class ParagraphTxt : public Paragraph {
 
   StrutMetrics strut_;
 
-  // Metrics for use in GetRectsForRange(...);
-  // Per-line max metrics over all runs in a given line.
-  std::vector<SkScalar> line_max_spacings_;
-  std::vector<SkScalar> line_max_descent_;
-  std::vector<SkScalar> line_max_ascent_;
   // Overall left and right extremes over all lines.
   double max_right_;
   double min_left_;
@@ -262,11 +253,17 @@ class ParagraphTxt : public Paragraph {
   struct GlyphPosition {
     Range<size_t> code_units;
     Range<double> x_pos;
+    // Tracks the cluster that this glyph position belongs to. For example, in
+    // extended emojis, multiple glyph positions will have the same cluster. The
+    // cluster can be used as a key to distinguish between codepoints that
+    // contribute to the drawing of a single glyph.
+    size_t cluster;
 
     GlyphPosition(double x_start,
                   double x_advance,
                   size_t code_unit_index,
-                  size_t code_unit_width);
+                  size_t code_unit_width,
+                  size_t cluster);
 
     void Shift(double delta);
   };
@@ -286,6 +283,7 @@ class ParagraphTxt : public Paragraph {
     Range<double> x_pos;
     size_t line_number;
     SkFontMetrics font_metrics;
+    const TextStyle* style;
     TextDirection direction;
     const PlaceholderRun* placeholder_run;
 
@@ -294,6 +292,7 @@ class ParagraphTxt : public Paragraph {
                 Range<double> x,
                 size_t line,
                 const SkFontMetrics& metrics,
+                const TextStyle& st,
                 TextDirection dir,
                 const PlaceholderRun* placeholder);
 
@@ -362,7 +361,9 @@ class ParagraphTxt : public Paragraph {
 
   // Calculate the starting X offset of a line based on the line's width and
   // alignment.
-  double GetLineXOffset(double line_total_advance);
+  double GetLineXOffset(double line_total_advance,
+                        size_t line_number,
+                        bool justify_line);
 
   // Creates and draws the decorations onto the canvas.
   void PaintDecorations(SkCanvas* canvas,

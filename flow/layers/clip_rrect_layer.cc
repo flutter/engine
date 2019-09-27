@@ -18,40 +18,17 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkRect clip_rrect_bounds = clip_rrect_.getBounds();
   if (context->cull_rect.intersect(clip_rrect_bounds)) {
     context->mutators_stack.PushClipRRect(clip_rrect_);
-    SkRect child_paint_bounds = SkRect::MakeEmpty();
-    PrerollChildren(context, matrix, &child_paint_bounds);
+    ContainerLayer::Preroll(context, matrix);
 
-    if (child_paint_bounds.intersect(clip_rrect_bounds)) {
-      set_paint_bounds(child_paint_bounds);
+    if (clip_rrect_bounds.intersect(paint_bounds())) {
+      set_paint_bounds(clip_rrect_bounds);
+    } else {
+      set_paint_bounds(SkRect::MakeEmpty());
     }
     context->mutators_stack.Pop();
   }
   context->cull_rect = previous_cull_rect;
 }
-
-#if defined(OS_FUCHSIA)
-
-void ClipRRectLayer::UpdateScene(SceneUpdateContext& context) {
-  FML_DCHECK(needs_system_composite());
-
-  // TODO(SCN-137): Need to be able to express the radii as vectors.
-  scenic::RoundedRectangle shape(
-      context.session(),                                   // session
-      clip_rrect_.width(),                                 //  width
-      clip_rrect_.height(),                                //  height
-      clip_rrect_.radii(SkRRect::kUpperLeft_Corner).x(),   //  top_left_radius
-      clip_rrect_.radii(SkRRect::kUpperRight_Corner).x(),  //  top_right_radius
-      clip_rrect_.radii(SkRRect::kLowerRight_Corner)
-          .x(),                                          //  bottom_right_radius
-      clip_rrect_.radii(SkRRect::kLowerLeft_Corner).x()  //  bottom_left_radius
-  );
-
-  // TODO(liyuqian): respect clip_behavior_
-  SceneUpdateContext::Clip clip(context, shape, clip_rrect_.getBounds());
-  UpdateSceneChildren(context);
-}
-
-#endif  // defined(OS_FUCHSIA)
 
 void ClipRRectLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipRRectLayer::Paint");
@@ -64,10 +41,21 @@ void ClipRRectLayer::Paint(PaintContext& context) const {
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->saveLayer(paint_bounds(), nullptr);
   }
-  PaintChildren(context);
+  ContainerLayer::Paint(context);
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->restore();
   }
+}
+
+void ClipRRectLayer::UpdateScene(SceneUpdateContext& context) {
+#if defined(OS_FUCHSIA)
+  FML_DCHECK(needs_system_composite());
+
+  // TODO(liyuqian): respect clip_behavior_
+  SceneUpdateContext::Clip clip(context, clip_rrect_.getBounds());
+
+  ContainerLayer::UpdateScene(context);
+#endif  // defined(OS_FUCHSIA)
 }
 
 }  // namespace flutter

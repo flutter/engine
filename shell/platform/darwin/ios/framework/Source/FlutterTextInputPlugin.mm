@@ -433,6 +433,12 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
 - (UITextPosition*)positionFromPosition:(UITextPosition*)position offset:(NSInteger)offset {
   NSUInteger offsetPosition = ((FlutterTextPosition*)position).index;
+
+  NSInteger newLocation = (NSInteger)offsetPosition + offset;
+  if (newLocation < 0 || newLocation > (NSInteger)self.text.length) {
+    return nil;
+  }
+
   if (offset >= 0) {
     for (NSInteger i = 0; i < offset && offsetPosition < self.text.length; ++i)
       offsetPosition = [self incrementOffsetPosition:offsetPosition];
@@ -591,8 +597,9 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   NSUInteger selectionBase = ((FlutterTextPosition*)_selectedTextRange.start).index;
   NSUInteger selectionExtent = ((FlutterTextPosition*)_selectedTextRange.end).index;
 
-  NSUInteger composingBase = 0;
-  NSUInteger composingExtent = 0;
+  // Empty compositing range is represented by the framework's TextRange.empty.
+  NSInteger composingBase = -1;
+  NSInteger composingExtent = -1;
   if (self.markedTextRange != nil) {
     composingBase = ((FlutterTextPosition*)self.markedTextRange.start).index;
     composingExtent = ((FlutterTextPosition*)self.markedTextRange.end).index;
@@ -627,17 +634,19 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   // because it is the expected behavior of Thai input.
   // https://github.com/flutter/flutter/issues/24203
   // https://github.com/flutter/flutter/issues/21745
+  // https://github.com/flutter/flutter/issues/39399
   //
   // This is needed for correct handling of the deletion of Thai vowel input.
   // TODO(cbracken): Get a good understanding of expected behavior of Thai
   // input and ensure that this is the correct solution.
   // https://github.com/flutter/flutter/issues/28962
   if (_selectedTextRange.isEmpty && [self hasText]) {
-    NSRange oldRange = ((FlutterTextRange*)_selectedTextRange).range;
+    UITextRange* oldSelectedRange = _selectedTextRange;
+    NSRange oldRange = ((FlutterTextRange*)oldSelectedRange).range;
     if (oldRange.location > 0) {
       NSRange newRange = NSMakeRange(oldRange.location - 1, 1);
-      [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:newRange]
-              updateEditingState:false];
+      _selectedTextRange = [[FlutterTextRange rangeWithNSRange:newRange] copy];
+      [oldSelectedRange release];
     }
   }
 
