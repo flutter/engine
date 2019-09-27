@@ -404,9 +404,6 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsImage)) {
     traits |= UIAccessibilityTraitImage;
   }
-  if ([self node].HasFlag(flutter::SemanticsFlags::kIsLiveRegion)) {
-    traits |= UIAccessibilityTraitUpdatesFrequently;
-  }
   return traits;
 }
 
