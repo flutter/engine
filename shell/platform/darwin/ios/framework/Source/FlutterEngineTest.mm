@@ -24,4 +24,27 @@
   XCTAssertNotNil(engine);
 }
 
+- (void)testSendMessageBeforeRun {
+  id project = OCMClassMock([FlutterDartProject class]);
+  FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"foobar"
+                                                       project:project] autorelease];
+  XCTAssertNotNil(engine);
+  XCTAssertThrows([engine.binaryMessenger
+      sendOnChannel:@"foo"
+            message:[@"bar" dataUsingEncoding:NSUTF8StringEncoding]
+        binaryReply:nil]);
+}
+
+- (void)testSetMessageHandlerBeforeRun {
+  id project = OCMClassMock([FlutterDartProject class]);
+  FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"foobar"
+                                                       project:project] autorelease];
+  XCTAssertNotNil(engine);
+  XCTAssertThrows([engine.binaryMessenger
+      setMessageHandlerOnChannel:@"foo"
+            binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply){
+
+            }]);
+}
+
 @end
