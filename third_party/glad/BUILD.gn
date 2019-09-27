@@ -9,7 +9,9 @@ config("glad_public") {
 source_set("glad") {
   public_configs = [ ":glad_public" ]
 
-  defines = []
+  public = [
+    "include/glad/gl.h",
+  ]
 
   sources = [
     "src/gl.c",
