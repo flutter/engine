@@ -40,7 +40,7 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 
 // Returns the key window's rootViewController, if it's a FlutterViewController.
 // Otherwise, returns nil.
-- (FlutterViewController*)rootFlutterViewController {
++ (FlutterViewController*)rootFlutterViewController {
   UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
   if ([viewController isKindOfClass:[FlutterViewController class]]) {
     return (FlutterViewController*)viewController;
@@ -48,13 +48,16 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
   return nil;
 }
 
++ (void)handleStatusBarTouches:(NSSet*)touches withEvent:(UIEvent*)event {
+  if (self.class.rootFlutterViewController != nil) {
+    [self.class.rootFlutterViewController handleStatusBarTouches:event];
+  }
+}
+
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
   [super touchesBegan:touches withEvent:event];
 
-  // Pass status bar taps to key window Flutter rootViewController.
-  if (self.rootFlutterViewController != nil) {
-    [self.rootFlutterViewController handleStatusBarTouches:event];
-  }
+  [self.class handleStatusBarTouches:touches withEvent:event];
 }
 
 #pragma GCC diagnostic push
