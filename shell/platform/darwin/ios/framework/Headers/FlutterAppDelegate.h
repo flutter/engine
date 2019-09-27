@@ -36,7 +36,7 @@ FLUTTER_EXPORT
  * touches.  For example, to enable scroll-to-top behavior.  FlutterAppDelegate already calls it so
  * you only need to manually call it if you aren't using a FlutterAppDelegate.
  */
-+ (void)handleStatusBarTouches:(NSSet*)touches withEvent:(UIEvent*)event;
++ (void)handleStatusBarTouches:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event;
 
 @end
 

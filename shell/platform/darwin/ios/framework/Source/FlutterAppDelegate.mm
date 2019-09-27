@@ -48,11 +48,11 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
   return nil;
 }
 
-+ (void)handleStatusBarTouches:(NSSet*)touches withEvent:(UIEvent*)event {
++ (void)handleStatusBarTouches:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
   [self.rootFlutterViewController handleStatusBarTouches:event];
 }
 
-- (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
+- (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
   [super touchesBegan:touches withEvent:event];
   [[self class] handleStatusBarTouches:touches withEvent:event];
 }
