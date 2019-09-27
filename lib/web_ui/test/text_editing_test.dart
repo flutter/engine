@@ -685,7 +685,7 @@ void main() {
       _editingState =
           EditingState(text: 'Test', baseOffset: 1, extentOffset: 2);
 
-      _editingState.configureDomElementFromEditingState(input);
+      _editingState.applyToDomElement(input);
 
       expect(input.value, 'Test');
       expect(input.selectionStart, 1);
@@ -698,7 +698,7 @@ void main() {
       _editingState =
           EditingState(text: 'Test', baseOffset: 1, extentOffset: 2);
 
-      _editingState.configureDomElementFromEditingState(textArea);
+      _editingState.applyToDomElement(textArea);
 
       expect(textArea.value, 'Test');
       expect(textArea.selectionStart, 1);

@@ -12,7 +12,7 @@ void _emptyCallback(dynamic _) {}
 /// These style attributes are constant throughout the life time of an input
 /// element.
 ///
-/// They are assigned once during the creation of the dom element.
+/// They are assigned once during the creation of the DOM element.
 void _setStaticStyleAttributes(html.HtmlElement domElement) {
   final html.CssStyleDeclaration elementStyle = domElement.style;
   elementStyle
@@ -67,10 +67,10 @@ class EditingState {
         extentOffset = flutterEditingState['selectionExtent'];
 
   /// Creates an [EditingState] instance using values from the editing element
-  /// in the dom.
+  /// in the DOM.
   ///
-  /// This element can be a InputElement or a TextAreaElement depending on the
-  /// [InputType] of the text field.
+  /// [domElement] can be a [InputElement] or a [TextAreaElement] depending on
+  /// the [InputType] of the text field.
   factory EditingState.fromDomElement(html.HtmlElement domElement) {
     if (domElement is html.InputElement) {
       html.InputElement element = domElement;
@@ -134,11 +134,11 @@ class EditingState {
         : super.toString();
   }
 
-  /// Sets the selection values of a dom element using [EditingState].
+  /// Sets the selection values of a DOM element using this [EditingState].
   ///
-  /// This element can be a InputElement or a TextAreaElement depending on the
-  /// [InputType] of the text field.
-  void configureDomElementFromEditingState(html.HtmlElement domElement) {
+  /// [domElement] can be a [InputElement] or a [TextAreaElement] depending on
+  /// the [InputType] of the text field.
+  void applyToDomElement(html.HtmlElement domElement) {
     if (domElement is html.InputElement) {
       html.InputElement element = domElement;
       element.value = text;
@@ -148,7 +148,7 @@ class EditingState {
       element.value = text;
       element.setSelectionRange(baseOffset, extentOffset);
     } else {
-      throw UnsupportedError('Initialized with unsupported input type');
+      throw UnsupportedError('Unsupported DOM element type');
     }
   }
 }
@@ -310,9 +310,7 @@ class TextEditingElement {
     }
 
     // Subscribe to text and selection changes.
-    _subscriptions
-      ..add(html.document.onSelectionChange.listen(_handleChange))
-      ..add(domElement.onInput.listen(_handleChange));
+    _subscriptions.add(domElement.onInput.listen(_handleChange));
 
     /// Detects changes in text selection.
     ///
@@ -322,8 +320,8 @@ class TextEditingElement {
     /// events are triggered. We are listening to keyup event. Selection start,
     /// end values are used to decide if the text cursor moved.
     ///
-    /// Specific keycodes are not checked since users/applicatins can bind their own
-    /// keys to move the text cursor.
+    /// Specific keycodes are not checked since users/applications can bind
+    /// their own keys to move the text cursor.
     /// Decides if the selection has changed (cursor moved) compared to the
     /// previous values.
     ///
@@ -333,6 +331,8 @@ class TextEditingElement {
       _subscriptions.add(domElement.onKeyUp.listen((event) {
         _handleChange(event);
       }));
+    } else {
+      _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
     }
   }
 
@@ -413,7 +413,7 @@ class TextEditingElement {
       return;
     }
 
-    _lastEditingState.configureDomElementFromEditingState(domElement);
+    _lastEditingState.applyToDomElement(domElement);
 
     if (owner.inputElementNeedsToBePositioned) {
       _preventShiftDuringFocus();
@@ -424,21 +424,16 @@ class TextEditingElement {
   }
 
   void _handleChange(html.Event event) {
-    EditingState newEditingState = calculateEditingState();
+    assert(domElement != null);
+
+    EditingState newEditingState = EditingState.fromDomElement(domElement);
+
+    assert(newEditingState != null);
+
     if (newEditingState != _lastEditingState) {
       _lastEditingState = newEditingState;
       _onChange(_lastEditingState);
     }
-  }
-
-  @visibleForTesting
-  EditingState calculateEditingState() {
-    assert(domElement != null);
-
-    EditingState editingState = EditingState.fromDomElement(domElement);
-
-    assert(editingState != null);
-    return editingState;
   }
 }
 
@@ -460,22 +455,14 @@ class PersistentTextEditingElement extends TextEditingElement {
   /// [domElement] so the caller can insert it before calling
   /// [PersistentTextEditingElement.enable].
   PersistentTextEditingElement(
-    HybridTextEditing owner,
-    html.HtmlElement domElement, {
-    @required html.VoidCallback onDomElementSwap,
-  })  : _onDomElementSwap = onDomElementSwap,
-        super(owner) {
-    // Make sure the dom element is of a type that we support for text editing.
+      HybridTextEditing owner, html.HtmlElement domElement)
+      : super(owner) {
+    // Make sure the DOM element is of a type that we support for text editing.
     // TODO(yjbanov): move into initializer list when https://github.com/dart-lang/sdk/issues/37881 is fixed.
     assert((domElement is html.InputElement) ||
         (domElement is html.TextAreaElement));
     this.domElement = domElement;
   }
-
-  // Unfortunately, in persistent mode, the user of this class has to be
-  // notified that the element is being swapped.
-  // TODO(mdebbar): do we need to call `old.replaceWith(new)` here?
-  final html.VoidCallback _onDomElementSwap;
 
   @override
   void _initDomElement(InputConfiguration inputConfig) {
@@ -726,7 +713,7 @@ class HybridTextEditing {
     }
   }
 
-  /// Set style to the native dom element used for text editing.
+  /// Set style to the native DOM element used for text editing.
   ///
   /// It will be located exactly in the same place with the editable widgets,
   /// however it's contents and cursor will be invisible.
@@ -747,7 +734,7 @@ class HybridTextEditing {
   // TODO(flutter_web): After the browser closes and re-opens the virtual
   // shifts the page in iOS. Call this method from visibility change listener
   // attached to body.
-  /// Set the dom element's location somewhere outside of the screen.
+  /// Set the DOM element's location somewhere outside of the screen.
   ///
   /// This is useful for not triggering a scroll when iOS virtual keyboard is
   /// coming up.
