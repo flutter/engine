@@ -677,53 +677,76 @@ void main() {
     });
   });
 
-  group('SelectionChangeDetection', () {
-    SelectionChangeDetection _selectionChangeDetection;
+  group('EditingState', () {
+    EditingState _editingState;
 
-    test('Change detected on an input field', () {
+    test('Configure input element from the editing state', () {
       final InputElement input = document.getElementsByTagName('input')[0];
-      _selectionChangeDetection = SelectionChangeDetection(input);
+      _editingState =
+          EditingState(text: 'Test', baseOffset: 1, extentOffset: 2);
 
-      input.value = 'foo\nbar';
-      input.setSelectionRange(1, 3);
+      _editingState.configureDomElementFromEditingState(input);
 
-      expect(_selectionChangeDetection.detectChange(), true);
-      expect(_selectionChangeDetection.detectChange(), false);
-
-      input.setSelectionRange(1, 5);
-
-      expect(_selectionChangeDetection.detectChange(), true);
+      expect(input.value, 'Test');
+      expect(input.selectionStart, 1);
+      expect(input.selectionEnd, 2);
     });
 
-    test('Change detected on an text area', () {
-      final TextAreaElement textarea =
+    test('Configure text area element from the editing state', () {
+      final TextAreaElement textArea =
           document.getElementsByTagName('textarea')[0];
-      _selectionChangeDetection = SelectionChangeDetection(textarea);
+      _editingState =
+          EditingState(text: 'Test', baseOffset: 1, extentOffset: 2);
 
-      textarea.value = 'foo\nbar';
-      textarea.setSelectionRange(4, 6);
+      _editingState.configureDomElementFromEditingState(textArea);
 
-      expect(_selectionChangeDetection.detectChange(), true);
-      expect(_selectionChangeDetection.detectChange(), false);
-
-      textarea.setSelectionRange(4, 5);
-
-      expect(_selectionChangeDetection.detectChange(), true);
+      expect(textArea.value, 'Test');
+      expect(textArea.selectionStart, 1);
+      expect(textArea.selectionEnd, 2);
     });
 
-    test('No change if selection stayed the same', () {
+    test('Get Editing State from input element', () {
       final InputElement input = document.getElementsByTagName('input')[0];
-      _selectionChangeDetection = SelectionChangeDetection(input);
+      input.value = 'Test';
+      input.selectionStart = 1;
+      input.selectionEnd = 2;
 
-      input.value = 'foo\nbar';
+      _editingState = EditingState.fromDomElement(input);
+
+      expect(_editingState.text, 'Test');
+      expect(_editingState.baseOffset, 1);
+      expect(_editingState.extentOffset, 2);
+    });
+
+    test('Get Editing State from text area element', () {
+      final TextAreaElement input =
+          document.getElementsByTagName('textarea')[0];
+      input.value = 'Test';
+      input.selectionStart = 1;
+      input.selectionEnd = 2;
+
+      _editingState = EditingState.fromDomElement(input);
+
+      expect(_editingState.text, 'Test');
+      expect(_editingState.baseOffset, 1);
+      expect(_editingState.extentOffset, 2);
+    });
+
+    test('Compare two editing states', () {
+      final InputElement input = document.getElementsByTagName('input')[0];
+      input.value = 'Test';
+      input.selectionStart = 1;
+      input.selectionEnd = 2;
+
+      EditingState editingState1 = EditingState.fromDomElement(input);
+      EditingState editingState2 = EditingState.fromDomElement(input);
+
       input.setSelectionRange(1, 3);
 
-      expect(_selectionChangeDetection.detectChange(), true);
-      expect(_selectionChangeDetection.detectChange(), false);
+      EditingState editingState3 = EditingState.fromDomElement(input);
 
-      input.setSelectionRange(1, 3);
-
-      expect(_selectionChangeDetection.detectChange(), false);
+      expect(editingState1 == editingState2, true);
+      expect(editingState1 != editingState3, true);
     });
   });
 }
