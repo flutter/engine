@@ -208,6 +208,10 @@ TEST(ShellTestNoFixture, EnableMirrorsIsWhitelisted) {
     GTEST_SKIP();
     return;
   }
+#if FLUTTER_RELEASE
+  GTEST_SKIP();
+  return;
+#endif
 
   const std::vector<fml::CommandLine::Option> options = {
       fml::CommandLine::Option("dart-flags", "--enable_mirrors")};
