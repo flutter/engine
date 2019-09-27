@@ -568,7 +568,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/clang/linux-amd64',
-        'version': '2Zhb_d8mlEZ32DvudCzH3qfmpsPvqXiGxDKoEbepTdcC'
+        'version': 'q4DVY3W2m2eGCDeeGvLYhBRi-_0yQ4apcmRECxXKPmcC'
        }
      ],
      'condition': 'host_os == "linux"',
