@@ -31,19 +31,17 @@ ContainerLayer::ContainerLayer(bool force_single_child) {
   // Place all "child" layers under a single child if requested.
   if (force_single_child) {
     single_child_ = std::make_shared<TransformLayer>(SkMatrix::I());
-    single_child_->set_parent(this);
     layers_.push_back(single_child_);
   }
 }
+
 void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
   // Place all "child" layers under a single child if requested.
   if (single_child_) {
     single_child_->Add(std::move(layer));
-    return;
+  } else {
+    layers_.push_back(std::move(layer));
   }
-
-  layer->set_parent(this);
-  layers_.push_back(std::move(layer));
 }
 
 void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {

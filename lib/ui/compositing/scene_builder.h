@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 #include <memory>
-#include <stack>
+#include <vector>
 
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/dart_wrapper.h"
@@ -35,9 +35,11 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   static fml::RefPtr<SceneBuilder> create() {
     return fml::MakeRefCounted<SceneBuilder>();
   }
+  ~SceneBuilder() override = default;
 
-  ~SceneBuilder() override;
-
+  // Container-type layers.  These layers affect (are the parent of) any further
+  // pushed or added layers.  Call |pop()| to undo the effects of the last
+  // pushed layer.
   fml::RefPtr<EngineLayer> pushTransform(tonic::Float64List& matrix4);
   fml::RefPtr<EngineLayer> pushOffset(double dx, double dy);
   fml::RefPtr<EngineLayer> pushClipRect(double left,
@@ -62,32 +64,28 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                                              int color,
                                              int shadowColor,
                                              int clipBehavior);
-
-  void addRetained(fml::RefPtr<EngineLayer> retainedLayer);
-
   void pop();
 
+  // Leaf-type layers.  These layers are always a child of a Container-type
+  // layer.
+  void addRetained(fml::RefPtr<EngineLayer> retainedLayer);
   void addPerformanceOverlay(uint64_t enabledOptions,
                              double left,
                              double right,
                              double top,
                              double bottom);
-
   void addPicture(double dx, double dy, Picture* picture, int hints);
-
   void addTexture(double dx,
                   double dy,
                   double width,
                   double height,
                   int64_t textureId,
                   bool freeze);
-
   void addPlatformView(double dx,
                        double dy,
                        double width,
                        double height,
                        int64_t viewId);
-
 #if defined(OS_FUCHSIA)
   void addChildScene(double dx,
                      double dy,
@@ -98,7 +96,6 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
 #endif
 
   void setRasterizerTracingThreshold(uint32_t frameInterval);
-
   void setCheckerboardRasterCacheImages(bool checkerboard);
   void setCheckerboardOffscreenLayers(bool checkerboard);
 
@@ -109,14 +106,14 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
  private:
   SceneBuilder();
 
-  std::shared_ptr<flutter::ContainerLayer> root_layer_;
-  flutter::ContainerLayer* current_layer_ = nullptr;
+  void AddLayer(std::shared_ptr<Layer> layer);
+  void PushLayer(std::shared_ptr<ContainerLayer> layer);
+  void PopLayer();
 
+  std::vector<std::shared_ptr<ContainerLayer>> layer_stack_;
   int rasterizer_tracing_threshold_ = 0;
   bool checkerboard_raster_cache_images_ = false;
   bool checkerboard_offscreen_layers_ = false;
-
-  void PushLayer(std::shared_ptr<flutter::ContainerLayer> layer);
 
   FML_DISALLOW_COPY_AND_ASSIGN(SceneBuilder);
 };

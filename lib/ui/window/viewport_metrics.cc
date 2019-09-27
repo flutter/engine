@@ -4,8 +4,9 @@
 
 #include "flutter/lib/ui/window/viewport_metrics.h"
 
+#include "flutter/fml/logging.h"
+
 namespace flutter {
-ViewportMetrics::ViewportMetrics() = default;
 
 ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
                                  double p_physical_width,
@@ -40,8 +41,9 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
           p_physical_system_gesture_inset_bottom),
       physical_system_gesture_inset_left(p_physical_system_gesture_inset_left) {
   // Ensure we don't have nonsensical dimensions.
-  FML_DCHECK(physical_width > 0);
-  FML_DCHECK(physical_height > 0);
+  FML_DCHECK(physical_width >= 0);
+  FML_DCHECK(physical_height >= 0);
+  FML_DCHECK(physical_depth >= 0);
   FML_DCHECK(device_pixel_ratio > 0);
 }
 
@@ -74,11 +76,10 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
       physical_view_inset_front(p_physical_view_inset_front),
       physical_view_inset_back(p_physical_view_inset_back) {
   // Ensure we don't have nonsensical dimensions.
-  FML_DCHECK(physical_width > 0);
-  FML_DCHECK(physical_height > 0);
+  FML_DCHECK(physical_width >= 0);
+  FML_DCHECK(physical_height >= 0);
+  FML_DCHECK(physical_depth >= 0);
   FML_DCHECK(device_pixel_ratio > 0);
 }
-
-ViewportMetrics::ViewportMetrics(const ViewportMetrics& other) = default;
 
 }  // namespace flutter

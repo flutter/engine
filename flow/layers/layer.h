@@ -133,9 +133,6 @@ class Layer {
   // Updates the system composited scene.
   virtual void UpdateScene(SceneUpdateContext& context) {}
 
-  ContainerLayer* parent() const { return parent_; }
-  void set_parent(ContainerLayer* parent) { parent_ = parent; }
-
   bool needs_system_composite() const { return needs_system_composite_; }
   void set_needs_system_composite(bool value) {
     needs_system_composite_ = value;
@@ -151,7 +148,6 @@ class Layer {
   uint64_t unique_id() const { return unique_id_; }
 
  private:
-  ContainerLayer* parent_;
   SkRect paint_bounds_;
   uint64_t unique_id_;
   bool needs_system_composite_;
