@@ -533,7 +533,7 @@
 - (void)sendOnChannel:(NSString*)channel
               message:(NSData*)message
           binaryReply:(FlutterBinaryReply)callback {
-  NSAssert(channel, @"The channel must not be nil");
+  NSParameterAssert(channel);
   NSAssert(_shell && _shell->IsSetup(),
            @"Sending a message before the FlutterEngine has been run.");
   fml::RefPtr<flutter::PlatformMessageResponseDarwin> response =
@@ -553,7 +553,7 @@
 
 - (void)setMessageHandlerOnChannel:(NSString*)channel
               binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
-  NSAssert(channel, @"The channel must not be null");
+  NSParameterAssert(channel);
   NSAssert(_shell && _shell->IsSetup(),
            @"Setting a message handler before the FlutterEngine has been run.");
   self.iosPlatformView->GetPlatformMessageRouter().SetMessageHandler(channel.UTF8String, handler);
