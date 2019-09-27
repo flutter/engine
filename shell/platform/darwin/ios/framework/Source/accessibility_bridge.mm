@@ -590,7 +590,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
                                           flutter::CustomAccessibilityActionUpdates actions) {
   BOOL layoutChanged = NO;
   BOOL scrollOccured = NO;
-  BOOL liveRegionUpdated = NO:
+  BOOL liveRegionUpdated = NO;
   NSString* liveRegionValue = nil;
   for (const auto& entry : actions) {
     const flutter::CustomAccessibilityAction& action = entry.second;
