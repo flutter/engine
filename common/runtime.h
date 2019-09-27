@@ -4,11 +4,11 @@
 
 namespace flutter {
 
-#define FLUTTER_JIT_RUNTIME                     \
+#define FLUTTER_JIT_RUNTIME                             \
   FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG || \
       FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_JIT_RELEASE
 
-#define FLUTTER_RELEASE                           \
+#define FLUTTER_RELEASE                                   \
   FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE || \
       FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_JIT_RELEASE
 
