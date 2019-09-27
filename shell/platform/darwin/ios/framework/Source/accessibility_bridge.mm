@@ -638,7 +638,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
       NSNumber* identifer = @(node.id);
       NSString* label = @(node.label.data());
       NSString* previousLabel = live_regions_.get()[identifer];
-      if (previousLabel == nil || ![label isEqualToString: previousLabel]) {
+      if (previousLabel == nil || ![label isEqualToString:previousLabel]) {
         UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, label);
         live_regions_.get()[identifer] = label;
       }
