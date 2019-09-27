@@ -46,7 +46,7 @@ const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 
 // Fixed value of GL_TEXTURE_RECTANGLE in OpenGL.
-const int32_t kGlTextureRectangle = 0x84F5;
+static const int32_t kGlTextureRectangle = 0x84F5;
 
 static FlutterEngineResult LogEmbedderError(FlutterEngineResult code,
                                             const char* name,
