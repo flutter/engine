@@ -101,6 +101,24 @@ class PointerSupportDetector {
       'pointers:$hasPointerEvents, touch:$hasTouchEvents, mouse:$hasMouseEvents';
 }
 
+class _PressedButton {
+  const _PressedButton(this.deviceId, this.button);
+
+  // The id of the device pressing the button.
+  final int deviceId;
+
+  // The id of the button being pressed.
+  final int button;
+
+  bool operator ==(other) {
+    if (other is! _PressedButton) return false;
+    final _PressedButton otherButton = other;
+    return deviceId == otherButton.deviceId && button == otherButton.button;
+  }
+
+  int get hashCode => ((13801 + deviceId) * 37) + button;
+}
+
 /// Common functionality that's shared among adapters.
 abstract class BaseAdapter {
   static final Map<String, html.EventListener> _listeners =
@@ -108,15 +126,20 @@ abstract class BaseAdapter {
 
   final DomRenderer domRenderer;
   PointerDataCallback _callback;
-  Map<int, Map<int, bool>> _isDownMap = <int, Map<int,bool>>{};
+
+  // A set of the buttons that are currently being pressed.
+  Set<_PressedButton> _pressedButtons = Set<_PressedButton>();
+
   bool _isButtonDown(int device, int button) {
-    _isDownMap.putIfAbsent(device, () => <int, bool>{});
-    return _isDownMap[device][button] == true;
+    return _pressedButtons.contains(_PressedButton(device, button));
   }
 
   void _updateButtonDownState(int device, int button, bool value) {
-    _isDownMap.putIfAbsent(device, () => <int, bool>{});
-    _isDownMap[device][button] = value;
+    if (value) {
+      _pressedButtons.add(_PressedButton(device, button));
+    } else {
+      _pressedButtons.remove(_PressedButton(device, button));
+    }
   }
 
   BaseAdapter(this._callback, this.domRenderer) {
@@ -322,7 +345,8 @@ class TouchAdapter extends BaseAdapter {
   @override
   void _setup() {
     _addEventListener('touchstart', (html.Event event) {
-      _updateButtonDownState(_deviceFromHtmlEvent(event), _kPrimaryMouseButton, true);
+      _updateButtonDownState(
+          _deviceFromHtmlEvent(event), _kPrimaryMouseButton, true);
       _callback(_convertEventToPointerData(ui.PointerChange.down, event));
     });
 
@@ -338,7 +362,8 @@ class TouchAdapter extends BaseAdapter {
       // On Safari Mobile, the keyboard does not show unless this line is
       // added.
       event.preventDefault();
-      _updateButtonDownState(_deviceFromHtmlEvent(event), _kPrimaryMouseButton, false);
+      _updateButtonDownState(
+          _deviceFromHtmlEvent(event), _kPrimaryMouseButton, false);
       _callback(_convertEventToPointerData(ui.PointerChange.up, event));
     });
 
