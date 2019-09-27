@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <future>
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/shell/common/shell_test.h"
@@ -102,15 +103,13 @@ void ShellTest::RunEngine(Shell* shell, RunConfiguration configuration) {
 }
 
 void ShellTest::RestartEngine(Shell* shell, RunConfiguration configuration) {
-  std::promise<bool> finished;
+  std::promise<bool> restarted;
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetUITaskRunner(),
-      [shell, &finished, &configuration]() {
-        bool restarted = shell->engine_->Restart(std::move(configuration));
-        ASSERT_TRUE(restarted);
-        finished.set_value(true);
+      [shell, &restarted, &configuration]() {
+        restarted.set_value(shell->engine_->Restart(std::move(configuration)));
       });
-  finished.get_future().wait();
+  ASSERT_TRUE(restarted.get_future().get());
 }
 
 void ShellTest::VSyncFlush(Shell* shell, bool& will_draw_new_frame) {
@@ -277,21 +276,25 @@ std::future<int> ShellTestVsyncClock::NextVSync() {
 void ShellTestVsyncWaiter::AwaitVSync() {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   auto vsync_future = clock_.NextVSync();
-  vsync_future.wait();
 
-  // Post the `FireCallback` to the Platform thread so earlier Platform tasks
-  // (specifically, the `VSyncFlush` call) will be finished before
-  // `FireCallback` is executed. This is only needed for our unit tests.
-  //
-  // Without this, the repeated VSYNC signals in `VSyncFlush` may start both the
-  // current frame in the UI thread and the next frame in the secondary
-  // callback (both of them are waiting for VSYNCs). That breaks the unit test's
-  // assumption that each frame's VSYNC must be issued by different `VSyncFlush`
-  // call (which reset the `will_draw_new_frame` bit).
-  //
-  // For example, HandlesActualIphoneXsInputEvents will fail without this.
-  task_runners_.GetPlatformTaskRunner()->PostTask(
-      [this]() { FireCallback(fml::TimePoint::Now(), fml::TimePoint::Now()); });
+  auto async_wait = std::async([&vsync_future, this]() {
+    vsync_future.wait();
+
+    // Post the `FireCallback` to the Platform thread so earlier Platform tasks
+    // (specifically, the `VSyncFlush` call) will be finished before
+    // `FireCallback` is executed. This is only needed for our unit tests.
+    //
+    // Without this, the repeated VSYNC signals in `VSyncFlush` may start both
+    // the current frame in the UI thread and the next frame in the secondary
+    // callback (both of them are waiting for VSYNCs). That breaks the unit
+    // test's assumption that each frame's VSYNC must be issued by different
+    // `VSyncFlush` call (which resets the `will_draw_new_frame` bit).
+    //
+    // For example, HandlesActualIphoneXsInputEvents will fail without this.
+    task_runners_.GetPlatformTaskRunner()->PostTask([this]() {
+      FireCallback(fml::TimePoint::Now(), fml::TimePoint::Now());
+    });
+  });
 }
 
 ShellTestPlatformView::ShellTestPlatformView(PlatformView::Delegate& delegate,

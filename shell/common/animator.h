@@ -52,10 +52,22 @@ class Animator final {
 
   void Render(std::unique_ptr<flutter::LayerTree> layer_tree);
 
-  /// Add a secondary callback for the next vsync.
+  //--------------------------------------------------------------------------
+  /// @brief    Schedule a secondary callback to be executed right after the
+  ///           main `VsyncWaiter::AsyncWaitForVsync` callback (which is added
+  ///           by `Animator::RequestFrame`).
   ///
-  /// See also |PointerDataDispatcher::ScheduleSecondaryVsyncCallback|.
-  void ScheduleSecondaryVsyncCallback(std::function<void()> callback);
+  ///           Like the callback in `AsyncWaitForVsync`, this callback is
+  ///           only scheduled to be called once, and it's supposed to be
+  ///           called in the UI thread. If there is no AsyncWaitForVsync
+  ///           callback (`Animator::RequestFrame` is not called), this
+  ///           secondary callback will still be executed at vsync.
+  ///
+  ///           This callback is used to provide the vsync signal needed by
+  ///           `SmoothPointerDataDispatcher`.
+  ///
+  /// @see      `PointerDataDispatcher::ScheduleSecondaryVsyncCallback`.
+  void ScheduleSecondaryVsyncCallback(fml::closure callback);
 
   void Start();
 

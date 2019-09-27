@@ -29,7 +29,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   /// Add a secondary callback for the next vsync.
   ///
   /// See also |PointerDataDispatcher::ScheduleSecondaryVsyncCallback|.
-  void ScheduleSecondaryCallback(std::function<void()> callback);
+  void ScheduleSecondaryCallback(fml::closure callback);
 
   static constexpr float kUnknownRefreshRateFPS = 0.0;
 
@@ -50,7 +50,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   // Implementations are meant to override this method and arm their vsync
   // latches when in response to this invocation. On vsync, they are meant to
   // invoke the |FireCallback| method once (and only once) with the appropriate
-  // arguments.
+  // arguments. This method should not block the current thread.
   virtual void AwaitVSync() = 0;
 
   void FireCallback(fml::TimePoint frame_start_time,
@@ -61,7 +61,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   Callback callback_ FML_GUARDED_BY(callback_mutex_);
 
   std::mutex secondary_callback_mutex_;
-  std::function<void()> secondary_callback_ FML_GUARDED_BY(callback_mutex_);
+  fml::closure secondary_callback_ FML_GUARDED_BY(callback_mutex_);
 
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiter);
 };

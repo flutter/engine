@@ -474,7 +474,7 @@ void Engine::DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
   }
 }
 
-void Engine::ScheduleSecondaryVsyncCallback(std::function<void()> callback) {
+void Engine::ScheduleSecondaryVsyncCallback(fml::closure callback) {
   animator_->ScheduleSecondaryVsyncCallback(std::move(callback));
 }
 

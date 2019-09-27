@@ -8,6 +8,9 @@ namespace flutter {
 
 PointerDataDispatcher::~PointerDataDispatcher() = default;
 DefaultPointerDataDispatcher::~DefaultPointerDataDispatcher() = default;
+
+SmoothPointerDataDispatcher::SmoothPointerDataDispatcher(Delegate& delegate)
+    : DefaultPointerDataDispatcher(delegate), weak_factory_(this) {}
 SmoothPointerDataDispatcher::~SmoothPointerDataDispatcher() = default;
 
 void DefaultPointerDataDispatcher::DispatchPacket(

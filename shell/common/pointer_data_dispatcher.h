@@ -47,21 +47,20 @@ class PointerDataDispatcher {
     virtual void DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                                   uint64_t trace_flow_id) = 0;
 
-    //----------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     /// @brief    Schedule a secondary callback to be executed right after the
     ///           main `VsyncWaiter::AsyncWaitForVsync` callback (which is added
     ///           by `Animator::RequestFrame`).
     ///
     ///           Like the callback in `AsyncWaitForVsync`, this callback is
-    ///           only scheduled to be called once, and it's supposed to be
-    ///           called in the UI thread. If there is no AsyncWaitForVsync
-    ///           callback (`Animator::RequestFrame` is not called), this
-    ///           secondary callback will still be executed at vsync.
+    ///           only scheduled to be called once, and it will be called in the
+    ///           UI thread. If there is no AsyncWaitForVsync callback
+    ///           (`Animator::RequestFrame` is not called), this secondary
+    ///           callback will still be executed at vsync.
     ///
     ///           This callback is used to provide the vsync signal needed by
     ///           `SmoothPointerDataDispatcher`.
-    virtual void ScheduleSecondaryVsyncCallback(
-        std::function<void()> callback) = 0;
+    virtual void ScheduleSecondaryVsyncCallback(fml::closure callback) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -97,10 +96,11 @@ class DefaultPointerDataDispatcher : public PointerDataDispatcher {
 };
 
 //------------------------------------------------------------------------------
-/// The dispatcher that filters out irregular input events delivery to provide
-/// a smooth scroll on iPhone X/Xs.
-///
-/// This fixes https://github.com/flutter/flutter/issues/31086.
+/// A dispatcher that may temporarily store and defer the last received
+/// PointerDataPacket if multiple packets are received in one VSYNC. The
+/// deferred packet will be sent in the next vsync in order to smooth out the
+/// events. This filters out irregular input events delivery to provide a smooth
+/// scroll on iPhone X/Xs.
 ///
 /// It works as follows:
 ///
@@ -135,8 +135,7 @@ class DefaultPointerDataDispatcher : public PointerDataDispatcher {
 /// See also input_events_unittests.cc where we test all our claims above.
 class SmoothPointerDataDispatcher : public DefaultPointerDataDispatcher {
  public:
-  SmoothPointerDataDispatcher(Delegate& delegate)
-      : DefaultPointerDataDispatcher(delegate), weak_factory_(this) {}
+  SmoothPointerDataDispatcher(Delegate& delegate);
 
   // |PointerDataDispatcer|
   void DispatchPacket(std::unique_ptr<PointerDataPacket> packet,
