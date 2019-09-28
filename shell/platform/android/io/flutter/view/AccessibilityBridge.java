@@ -519,7 +519,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         result.setClassName("android.view.View");
         result.setSource(rootAccessibilityView, virtualViewId);
         result.setFocusable(semanticsNode.isFocusable());
-        if (semanticsNode.isFocusable()) {
+        if (semanticsNode.isFocusable() && !semanticsNode.hasFlag(Flag.IS_FOCUSED)) {
            result.addAction(AccessibilityNodeInfo.ACTION_FOCUS);
         }
 
@@ -1230,7 +1230,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             if (semanticsNode.hasFlag(Flag.IS_HIDDEN)) {
                 continue;
             }
-            if (semanticsNode.hasFlag(Flag.IS_FOCUSED)) {
+            if (semanticsNode.hasFlag(Flag.IS_FOCUSED) && semanticsNode.isFocusable()) {
                 inputFocusedSemanticsNode = semanticsNode;
                 AccessibilityEvent event = obtainAccessibilityEvent(
                     inputFocusedSemanticsNode.id,
@@ -1656,7 +1656,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         HAS_IMPLICIT_SCROLLING(1 << 18),
         // The Dart API defines the following flag but it isn't used in Android.
         // IS_MULTILINE(1 << 19);
-        IS_READ_ONLY(1 << 20);
+        IS_READ_ONLY(1 << 20),
+        IS_FOCUSABLE(1 << 21);
 
         final int value;
 
@@ -2030,6 +2031,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             if (hasFlag(Flag.SCOPES_ROUTE)) {
                 return false;
             }
+            if (hasFlag(Flag.IS_FOCUSABLE)) {
+                return true;
+            }
+            // If not explicitly set as focusable, then use our legacy
+            // algorithm. Once all focusable widgets have a Focus widget, then
+            // this won't be needed.
             int scrollableActions = Action.SCROLL_RIGHT.value | Action.SCROLL_LEFT.value
                     | Action.SCROLL_UP.value | Action.SCROLL_DOWN.value;
             return (actions & ~scrollableActions) != 0 || flags != 0
