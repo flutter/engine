@@ -24,19 +24,17 @@ import 'package:vm/frontend_server.dart' as frontend
 /// A kernel transformer which applies multiple transformers in order.
 class CompositeProgramTransformer implements frontend.ProgramTransformer {
   /// Create a new [CompositeProgramTransformer] from zero or more
-  /// [frontend.ProgramTransformer].
+  /// [kernel.Transformer].
   ///
   /// [_transformers] must not be null.
   const CompositeProgramTransformer(this._transformers)
       : assert(_transformers != null);
 
-  final List<frontend.ProgramTransformer> _transformers;
+  final List<Transformer> _transformers;
 
   @override
   void transform(Component component) {
-    for (frontend.ProgramTransformer programTransformer in _transformers) {
-      programTransformer.transform(component);
-    }
+    _transformers.forEach(component.transformChildren);
   }
 }
 
