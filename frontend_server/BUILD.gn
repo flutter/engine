@@ -75,6 +75,9 @@ if (is_fuchsia_host || is_fuchsia) {
     inputs = frontend_server_files
   }
 
+  # For flutter/flutter#36738 we make the source files availible so that
+  # we can generate a local frontend_server snapshot in the tools cache.
+
   # Creates a packageable vm.
   prebuilt_dart_action("flutter_package_vm") {
     packages = "//third_party/dart/.packages"
