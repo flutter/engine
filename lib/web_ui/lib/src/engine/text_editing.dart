@@ -62,9 +62,9 @@ class EditingState {
   /// }
   /// ```
   ///
-  /// Flutter Framework can send the selectionBase and selectionExtent as -1,
-  /// if so 0 assigned to baseOffset and extentOffset. -1 is not a valid
-  /// selection range for input DOM elements.
+  /// Flutter Framework can send the [selectionBase] and [selectionExtent] as
+  /// -1, if so 0 assigned to the [baseOffset] and [extentOffset]. -1 is not a
+  /// valid selection range for input DOM elements.
   factory EditingState.fromFlutter(Map<String, dynamic> flutterEditingState) {
     final int selectionBase = flutterEditingState['selectionBase'];
     final int selectionExtent = flutterEditingState['selectionExtent'];
@@ -72,8 +72,8 @@ class EditingState {
 
     return EditingState(
         text: text,
-        baseOffset: (selectionBase >= 0) ? selectionBase : 0,
-        extentOffset: (selectionExtent >= 0) ? selectionExtent : 0);
+        baseOffset: math.max(0, selectionBase),
+        extentOffset: math.max(0, selectionExtent));
   }
 
   /// Creates an [EditingState] instance using values from the editing element

@@ -549,21 +549,27 @@ void main() {
       expect(spy.messages, isEmpty);
     });
 
-    test('negative base and offset values in editing state is handled', () {
+    test(
+        'negative base offset and selection extent values in editing state is handled',
+        () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
       textEditing.handleTextInput(codec.encodeMethodCall(setClient));
 
       const MethodCall setEditingState1 =
           MethodCall('TextInput.setEditingState', <String, dynamic>{
-        'text': 'abcd',
-        'selectionBase': 2,
-        'selectionExtent': 3,
+        'text': 'xyz',
+        'selectionBase': 1,
+        'selectionExtent': 2,
       });
       textEditing.handleTextInput(codec.encodeMethodCall(setEditingState1));
 
       const MethodCall show = MethodCall('TextInput.show');
       textEditing.handleTextInput(codec.encodeMethodCall(show));
+
+      // Check if the selection range is correct.
+      checkInputEditingState(
+          textEditing.editingElement.domElement, 'xyz', 1, 2);
 
       const MethodCall setEditingState2 =
           MethodCall('TextInput.setEditingState', <String, dynamic>{
