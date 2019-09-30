@@ -8,6 +8,8 @@ import 'package:path/path.dart' as path;
 const String vmPubspec = r'''
 name: vm
 version: 0.0.1
+environment:
+  sdk: ">=2.2.2 <3.0.0"
 
 dependencies:
   front_end: any
@@ -19,6 +21,8 @@ dependencies:
 const String buildIntegrationPubspec = r'''
 name: build_integration
 version: 0.0.1
+environment:
+  sdk: ">=2.2.2 <3.0.0"
 
 dependencies:
   front_end: any

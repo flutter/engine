@@ -8,7 +8,6 @@ import 'dart:async';
 import 'dart:io' hide FileSystemEntity;
 
 import 'package:args/args.dart';
-import 'package:kernel/ast.dart';
 import 'package:path/path.dart' as path;
 
 import 'package:vm/incremental_compiler.dart';
