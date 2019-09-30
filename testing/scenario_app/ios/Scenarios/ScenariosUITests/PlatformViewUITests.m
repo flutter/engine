@@ -24,21 +24,12 @@
 }
 
 - (void)testPlatformView {
-
-  XCUIElement *element = self.application.textViews.firstMatch;
-  BOOL exists = [element waitForExistenceWithTimeout:5];
-  if (!exists) {
-    XCTFail(@"It took longer than 3 second to find the platform view."
-            @"There might be issues with the platform view's construction,
-            @"or with how the scenario is built.");
-  }
-
   NSBundle* bundle = [NSBundle bundleForClass:[self class]];
   NSString* goldenName =
       [NSString stringWithFormat:@"golden_platform_view_%@", [self platformName]];
   NSString* path = [bundle pathForResource:goldenName ofType:@"png"];
   UIImage* golden = [[UIImage alloc] initWithContentsOfFile:path];
-  
+
   XCUIScreenshot* screenshot = [[XCUIScreen mainScreen] screenshot];
   XCTAttachment* attachment = [XCTAttachment attachmentWithScreenshot:screenshot];
   attachment.lifetime = XCTAttachmentLifetimeKeepAlways;
