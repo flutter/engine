@@ -20,6 +20,10 @@ if [[ ! -d "$DEVICE_TOOLS" ]]; then
   exit 1
 fi
 
+echo "Using pub from $HOST_TOOLS/dart-sdk/bin/pub"
+
+$HOST_TOOLS/dart-sdk/bin/pub get
+
 echo "Using dart from $HOST_TOOLS, gen_snapshot from $DEVICE_TOOLS."
 
 OUTDIR="${BASH_SOURCE%/*}/build/ios"
