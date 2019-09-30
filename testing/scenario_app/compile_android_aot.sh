@@ -21,7 +21,7 @@ if [[ ! -d "$DEVICE_TOOLS" ]]; then
 fi
 
 PUB=$($HOST_TOOLS/dart-sdk/bin/pub --version)
-echo "Using ${PUB} from $HOST_TOOLS/dart-sdk/bin/pub"
+echo "Using Pub ${PUB} from $HOST_TOOLS/dart-sdk/bin/pub"
 
 $HOST_TOOLS/dart-sdk/bin/pub get
 
