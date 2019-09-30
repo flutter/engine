@@ -1090,7 +1090,6 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     // Also make sure that frame times get reported with a max latency of 1
     // second. Otherwise, the timings of last few frames of an animation may
     // never be reported until the next animation starts.
-
     frame_timings_report_scheduled_ = true;
     task_runners_.GetGPUTaskRunner()->PostDelayedTask(
         [self = weak_factory_gpu_->GetWeakPtr()]() {
