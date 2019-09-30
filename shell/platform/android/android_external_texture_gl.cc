@@ -135,6 +135,6 @@ void AndroidExternalTextureGL::Detach() {
   }
 }
 
-void AndroidExternalTextureGL::OnUnregistered() {}
+void AndroidExternalTextureGL::OnTextureUnregistered() {}
 
 }  // namespace flutter

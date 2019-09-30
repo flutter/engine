@@ -28,7 +28,7 @@ class MockTexture : public Texture {
 
   void MarkNewFrameAvailable() override {}
 
-  void OnUnregistered() override { unregistered = true; }
+  void OnTextureUnregistered() override { unregistered = true; }
 };
 
 TEST(TextureRegistry, UnregisterTextureCallbackTriggered) {

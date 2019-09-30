@@ -30,7 +30,7 @@ class AndroidExternalTextureGL : public flutter::Texture {
 
   void MarkNewFrameAvailable() override;
 
-  void OnUnregistered() override;
+  void OnTextureUnregistered() override;
 
  private:
   void Attach(jint textureName);

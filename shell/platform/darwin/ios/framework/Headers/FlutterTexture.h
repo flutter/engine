@@ -22,7 +22,7 @@ FLUTTER_EXPORT
  * Called on the GPU thread.
  */
 @optional
-- (void)onUnregistered;
+- (void)onTextureUnregistered:(NSObject<FlutterTexture>*)texture;
 @end
 
 FLUTTER_EXPORT

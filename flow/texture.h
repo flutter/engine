@@ -37,7 +37,7 @@ class Texture {
   virtual void MarkNewFrameAvailable() = 0;
 
   // Called on GPU thread.
-  virtual void OnUnregistered() = 0;
+  virtual void OnTextureUnregistered() = 0;
 
   int64_t Id() { return id_; }
 

@@ -45,6 +45,6 @@ void EmbedderExternalTextureGL::OnGrContextDestroyed() {}
 void EmbedderExternalTextureGL::MarkNewFrameAvailable() {}
 
 // |flutter::Texture|
-void EmbedderExternalTextureGL::OnUnregistered() {}
+void EmbedderExternalTextureGL::OnTextureUnregistered() {}
 
 }  // namespace flutter

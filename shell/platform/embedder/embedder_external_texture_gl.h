@@ -42,7 +42,7 @@ class EmbedderExternalTextureGL : public flutter::Texture {
   void MarkNewFrameAvailable() override;
 
   // |flutter::Texture|
-  void OnUnregistered() override;
+  void OnTextureUnregistered() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderExternalTextureGL);
 };
