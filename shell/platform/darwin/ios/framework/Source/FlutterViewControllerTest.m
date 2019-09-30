@@ -5,12 +5,11 @@
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 
 #include "FlutterBinaryMessenger.h"
 
-#if !__has_feature(objc_arc)
-#error ARC must be enabled!
-#endif
+FLUTTER_ASSERT_ARC
 
 extern NSNotificationName const FlutterViewControllerWillDealloc;
 
