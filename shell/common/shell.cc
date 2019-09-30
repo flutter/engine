@@ -90,11 +90,16 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   std::promise<fml::WeakPtr<ShellIOManager>> weak_io_manager_promise;
   auto weak_io_manager_future = weak_io_manager_promise.get_future();
   auto io_task_runner = shell->GetTaskRunners().GetIOTaskRunner();
+
+  // We are able to extract the raw pointer from the platform_view unique_ptr
+  // because we know this is guaranteed to execute before the unique_ptr
+  // goes out of scope as we will block on this lambda completing execution
+  // when calling Shell::Setup() when resolving the io_manager_future.
   fml::TaskRunner::RunNowOrPostTask(
       io_task_runner,
       [&io_manager_promise,                          //
        &weak_io_manager_promise,                     //
-       platform_view = platform_view->GetWeakPtr(),  //
+       platform_view = platform_view.get(),          //
        io_task_runner                                //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupIOSubsystem");
