@@ -21,23 +21,6 @@ import 'package:vm/frontend_server.dart' as frontend
         usage,
         ProgramTransformer;
 
-/// A kernel transformer which applies multiple transformers in order.
-class CompositeProgramTransformer implements frontend.ProgramTransformer {
-  /// Create a new [CompositeProgramTransformer] from zero or more
-  /// [kernel.Transformer].
-  ///
-  /// [_transformers] must not be null.
-  const CompositeProgramTransformer(this._transformers)
-      : assert(_transformers != null);
-
-  final List<Transformer> _transformers;
-
-  @override
-  void transform(Component component) {
-    _transformers.forEach(component.transformChildren);
-  }
-}
-
 /// Wrapper around [FrontendCompiler] that adds [widgetCreatorTracker] kernel
 /// transformation to the compilation.
 class _FlutterFrontendCompiler implements frontend.CompilerInterface {
@@ -45,7 +28,7 @@ class _FlutterFrontendCompiler implements frontend.CompilerInterface {
 
   _FlutterFrontendCompiler(StringSink output,
       {bool unsafePackageSerialization,
-      CompositeProgramTransformer transformer})
+      frontend.ProgramTransformer transformer})
       : _compiler = frontend.FrontendCompiler(output,
             transformer: transformer,
             unsafePackageSerialization: unsafePackageSerialization);
@@ -108,7 +91,7 @@ Future<int> starter(
   frontend.CompilerInterface compiler,
   Stream<List<int>> input,
   StringSink output,
-  CompositeProgramTransformer transformer,
+  frontend.ProgramTransformer transformer,
 }) async {
   ArgResults options;
   try {
