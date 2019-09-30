@@ -41,11 +41,34 @@ dependencies:
   vm: any
 ''';
 
+const String kernelPubspec = r'''
+name: kernel
+version: 0.0.1
+environment:
+  sdk: '>=2.2.2 <3.0.0'
+
+dependencies:
+  args: any
+  meta: any
+''';
+
+const String frontendPubspec = r'''
+name: front_end
+version: 0.0.1
+environment:
+  sdk: '>=2.2.2 <3.0.0'
+dependencies:
+  kernel: any
+  package_config: any
+  meta: any
+''';
 
 const Map<String, String> packages = <String, String>{
   'vm': vmPubspec,
   'build_integration': buildIntegrationPubspec,
   'frontend_server': frontendServerPubspec,
+  'kernel': kernelPubspec,
+  'front_end': frontendPubspec,
 };
 
 // A script for creating a packagable version of several SDK libraries.
