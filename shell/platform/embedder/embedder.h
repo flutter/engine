@@ -63,8 +63,7 @@ typedef enum {
 /// Must match the `SemanticsAction` enum in semantics.dart.
 typedef enum {
   /// The equivalent of a user briefly tapping the screen with the finger
-  /// without
-  /// moving it.
+  /// without moving it.
   kFlutterSemanticsActionTap = 1 << 0,
   /// The equivalent of a user pressing and holding the screen with the finger
   /// for a few seconds without moving it.

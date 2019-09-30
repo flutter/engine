@@ -591,12 +591,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             }
         }
 
-        if (semanticsNode.hasFlag(Flag.IS_BUTTON)) {
+        if (semanticsNode.hasFlag(Flag.IS_BUTTON) || semanticsNode.hasFlag(Flag.IS_LINK)) {
             result.setClassName("android.widget.Button");
-        }
-
-        if (semanticsNode.hasFlag(Flag.IS_LINK)) {
-            result.setClassName("android.text.style.URLSpan");
         }
         if (semanticsNode.hasFlag(Flag.IS_IMAGE)) {
             result.setClassName("android.widget.ImageView");
