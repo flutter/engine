@@ -290,7 +290,8 @@ class SemanticsFlag {
   static const int _kHasImplicitScrollingIndex = 1 << 18;
   static const int _kIsMultilineIndex = 1 << 19;
   static const int _kIsReadOnlyIndex = 1 << 20;
-  static const int _kIsLinkIndex = 1 << 21;
+  static const int _kIsFocusableIndex = 1 << 21;
+  static const int _kIsLinkIndex = 1 << 22;
 
   const SemanticsFlag._(this.index);
 
@@ -356,6 +357,11 @@ class SemanticsFlag {
   /// a link, as well as the ability to parse the links through another
   /// navigation menu.
   static const SemanticsFlag isLink = SemanticsFlag._(_kIsLinkIndex);
+
+  /// Whether the semantic node is able to hold the user's focus.
+  ///
+  /// The focused element is usually the current receiver of keyboard inputs.
+  static const SemanticsFlag isFocusable = SemanticsFlag._(_kIsFocusableIndex);
 
   /// Whether the semantic node currently holds the user's focus.
   ///
