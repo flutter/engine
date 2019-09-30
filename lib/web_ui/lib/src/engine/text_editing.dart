@@ -12,7 +12,7 @@ void _emptyCallback(dynamic _) {}
 /// These style attributes are constant throughout the life time of an input
 /// element.
 ///
-/// They are assigned once during the creation of the dom element.
+/// They are assigned once during the creation of the DOM element.
 void _setStaticStyleAttributes(html.HtmlElement domElement) {
   final html.CssStyleDeclaration elementStyle = domElement.style;
   elementStyle
@@ -66,6 +66,29 @@ class EditingState {
         baseOffset = flutterEditingState['selectionBase'],
         extentOffset = flutterEditingState['selectionExtent'];
 
+  /// Creates an [EditingState] instance using values from the editing element
+  /// in the DOM.
+  ///
+  /// [domElement] can be a [InputElement] or a [TextAreaElement] depending on
+  /// the [InputType] of the text field.
+  factory EditingState.fromDomElement(html.HtmlElement domElement) {
+    if (domElement is html.InputElement) {
+      html.InputElement element = domElement;
+      return EditingState(
+          text: element.value,
+          baseOffset: element.selectionStart,
+          extentOffset: element.selectionEnd);
+    } else if (domElement is html.TextAreaElement) {
+      html.TextAreaElement element = domElement;
+      return EditingState(
+          text: element.value,
+          baseOffset: element.selectionStart,
+          extentOffset: element.selectionEnd);
+    } else {
+      throw UnsupportedError('Initialized with unsupported input type');
+    }
+  }
+
   /// The counterpart of [EditingState.fromFlutter]. It generates a Map that
   /// can be sent to Flutter.
   // TODO(mdebbar): Should we get `selectionAffinity` and other properties from flutter's editing state?
@@ -109,6 +132,24 @@ class EditingState {
     return assertionsEnabled
         ? 'EditingState("$text", base:$baseOffset, extent:$extentOffset)'
         : super.toString();
+  }
+
+  /// Sets the selection values of a DOM element using this [EditingState].
+  ///
+  /// [domElement] can be a [InputElement] or a [TextAreaElement] depending on
+  /// the [InputType] of the text field.
+  void applyToDomElement(html.HtmlElement domElement) {
+    if (domElement is html.InputElement) {
+      html.InputElement element = domElement;
+      element.value = text;
+      element.setSelectionRange(baseOffset, extentOffset);
+    } else if (domElement is html.TextAreaElement) {
+      html.TextAreaElement element = domElement;
+      element.value = text;
+      element.setSelectionRange(baseOffset, extentOffset);
+    } else {
+      throw UnsupportedError('Unsupported DOM element type');
+    }
   }
 }
 
@@ -163,33 +204,6 @@ class InputConfiguration {
 
 typedef _OnChangeCallback = void Function(EditingState editingState);
 
-enum ElementType {
-  /// The backing element is an `<input>`.
-  input,
-
-  /// The backing element is a `<textarea>`.
-  textarea,
-
-  /// The backing element is a `<span contenteditable="true">`.
-  contentEditable,
-}
-
-ElementType _getTypeFromElement(html.HtmlElement domElement) {
-  if (domElement is html.InputElement) {
-    return ElementType.input;
-  }
-  if (domElement is html.TextAreaElement) {
-    return ElementType.textarea;
-  }
-  final String contentEditable = domElement.contentEditable;
-  if (contentEditable != null &&
-      contentEditable.isNotEmpty &&
-      contentEditable != 'inherit') {
-    return ElementType.contentEditable;
-  }
-  return null;
-}
-
 /// Wraps the DOM element used to provide text editing capabilities.
 ///
 /// The backing DOM element could be one of:
@@ -203,6 +217,22 @@ class TextEditingElement {
   /// See [TextEditingElement.persistent] to understand what persistent mode is.
   TextEditingElement(this.owner);
 
+  /// Timer that times when to set the location of the input text.
+  ///
+  /// This is only used for iOS. In iOS, virtual keyboard shifts the screen.
+  /// There is no callback to know if the keyboard is up and how much the screen
+  /// has shifted. Therefore instead of listening to the shift and passing this
+  /// information to Flutter Framework, we are trying to stop the shift.
+  ///
+  /// In iOS, the virtual keyboard shifts the screen up if the focused input
+  /// element is under the keyboard or very close to the keyboard. Before the
+  /// focus is called we are positioning it offscreen. The location of the input
+  /// in iOS is set to correct place, 100ms after focus. We use this timer for
+  /// timing this delay.
+  Timer _positionInputElementTimer;
+  static const Duration _delayBeforePositioning =
+      const Duration(milliseconds: 100);
+
   final HybridTextEditing owner;
   bool _enabled = false;
 
@@ -213,29 +243,25 @@ class TextEditingElement {
   final List<StreamSubscription<html.Event>> _subscriptions =
       <StreamSubscription<html.Event>>[];
 
-  ElementType get _elementType {
-    final ElementType type = _getTypeFromElement(domElement);
-    assert(type != null);
-    return type;
-  }
-
   /// On iOS, sets the location of the input element after focusing on it.
   ///
   /// On iOS, keyboard causes scrolling in the UI. This scrolling does not
-  /// trigger an event. In order to position the input element correctly, it is
+  /// trigger an event. In order not to trigger a shift on the page, it is
   /// important we set it's final location after focusing on it (after keyboard
   /// is up).
   ///
-  /// This method is called in the end of the 'touchend' event, therefore it is
-  /// called after the editing state is set.
+  /// This method is called after a delay.
+  /// See [_positionInputElementTimer].
   void configureInputElementForIOS() {
     if (browserEngine != BrowserEngine.webkit ||
         operatingSystem != OperatingSystem.iOs) {
-      // Only relevant on Safari.
+      // Only relevant on Safari-based on iOS.
       return;
     }
+
     if (domElement != null) {
       owner.setStyle(domElement);
+      owner.inputPositioned = true;
     }
   }
 
@@ -274,6 +300,9 @@ class TextEditingElement {
       }));
     }
 
+    if (owner.doesKeyboardShiftInput) {
+      _preventShiftDuringFocus();
+    }
     domElement.focus();
 
     if (_lastEditingState != null) {
@@ -281,9 +310,30 @@ class TextEditingElement {
     }
 
     // Subscribe to text and selection changes.
-    _subscriptions
-      ..add(html.document.onSelectionChange.listen(_handleChange))
-      ..add(domElement.onInput.listen(_handleChange));
+    _subscriptions.add(domElement.onInput.listen(_handleChange));
+
+    /// Detects changes in text selection.
+    ///
+    /// Currently only used in Firefox.
+    ///
+    /// In Firefox, when cursor moves, neither selectionChange nor onInput
+    /// events are triggered. We are listening to keyup event. Selection start,
+    /// end values are used to decide if the text cursor moved.
+    ///
+    /// Specific keycodes are not checked since users/applications can bind
+    /// their own keys to move the text cursor.
+    /// Decides if the selection has changed (cursor moved) compared to the
+    /// previous values.
+    ///
+    /// After each keyup, the start/end values of the selection is compared to the
+    /// previously saved editing state.
+    if (browserEngine == BrowserEngine.firefox) {
+      _subscriptions.add(domElement.onKeyUp.listen((event) {
+        _handleChange(event);
+      }));
+    } else {
+      _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
+    }
   }
 
   /// Disables the element so it's no longer used for text editing.
@@ -299,6 +349,9 @@ class TextEditingElement {
       _subscriptions[i].cancel();
     }
     _subscriptions.clear();
+    _positionInputElementTimer?.cancel();
+    _positionInputElementTimer = null;
+    owner.inputPositioned = false;
     _removeDomElement();
   }
 
@@ -328,131 +381,59 @@ class TextEditingElement {
     domElement.focus();
   }
 
+  void _preventShiftDuringFocus() {
+    // Position the element outside of the page before focusing on it.
+    //
+    // See [_positionInputElementTimer].
+    owner.setStyleOutsideOfScreen(domElement);
+
+    _subscriptions.add(domElement.onFocus.listen((_) {
+      // Cancel previous timer if exists.
+      _positionInputElementTimer?.cancel();
+      _positionInputElementTimer = Timer(_delayBeforePositioning, () {
+        if (textEditing.inputElementNeedsToBePositioned) {
+          configureInputElementForIOS();
+        }
+      });
+
+      // When the virtual keyboard is closed on iOS, onBlur is triggered.
+      _subscriptions.add(domElement.onBlur.listen((_) {
+        // Cancel the timer since there is no need to set the location of the
+        // input element anymore. It needs to be focused again to be editable
+        // by the user.
+        _positionInputElementTimer?.cancel();
+        _positionInputElementTimer = null;
+      }));
+    }));
+  }
+
   void setEditingState(EditingState editingState) {
     _lastEditingState = editingState;
     if (!_enabled || !editingState.isValid) {
       return;
     }
 
-    switch (_elementType) {
-      case ElementType.input:
-        final html.InputElement input = domElement;
-        input.value = editingState.text;
-        input.setSelectionRange(
-          editingState.baseOffset,
-          editingState.extentOffset,
-        );
-        break;
+    _lastEditingState.applyToDomElement(domElement);
 
-      case ElementType.textarea:
-        final html.TextAreaElement textarea = domElement;
-        textarea.value = editingState.text;
-        textarea.setSelectionRange(
-          editingState.baseOffset,
-          editingState.extentOffset,
-        );
-        break;
-
-      case ElementType.contentEditable:
-        domRenderer.clearDom(domElement);
-        domElement.append(html.Text(editingState.text));
-        html.window.getSelection()
-          ..removeAllRanges()
-          ..addRange(_createRange(editingState));
-        break;
+    if (owner.inputElementNeedsToBePositioned) {
+      _preventShiftDuringFocus();
     }
 
-    // Safari on iOS requires that we focus explicitly. Otherwise, the on-screen
-    // keyboard won't show up.
+    // Re-focuses when setting editing state.
     domElement.focus();
   }
 
-  /// Swap out the current DOM element and replace it with a new one of type
-  /// [newElementType].
-  ///
-  /// Ideally, swapping the underlying DOM element should be seamless to the
-  /// user of this class.
-  ///
-  /// See also:
-  ///
-  /// * [PersistentTextEditingElement._swapDomElement], which notifies its users
-  ///   that the element has been swapped.
-  void _swapDomElement(ElementType newElementType) {
-    // TODO(mdebbar): Create the appropriate dom element and initialize it.
-  }
-
   void _handleChange(html.Event event) {
-    _lastEditingState = calculateEditingState();
-    _onChange(_lastEditingState);
-  }
-
-  @visibleForTesting
-  EditingState calculateEditingState() {
     assert(domElement != null);
 
-    EditingState editingState;
-    switch (_elementType) {
-      case ElementType.input:
-        final html.InputElement inputElement = domElement;
-        editingState = EditingState(
-          text: inputElement.value,
-          baseOffset: inputElement.selectionStart,
-          extentOffset: inputElement.selectionEnd,
-        );
-        break;
+    EditingState newEditingState = EditingState.fromDomElement(domElement);
 
-      case ElementType.textarea:
-        final html.TextAreaElement textAreaElement = domElement;
-        editingState = EditingState(
-          text: textAreaElement.value,
-          baseOffset: textAreaElement.selectionStart,
-          extentOffset: textAreaElement.selectionEnd,
-        );
-        break;
+    assert(newEditingState != null);
 
-      case ElementType.contentEditable:
-        // In a contenteditable element, we want `innerText` since it correctly
-        // converts <br> to newline characters, for example.
-        //
-        // If we later decide to use <input> and/or <textarea> then we can go back
-        // to using `textContent` (or `value` in the case of <input>)
-        final String text = js_util.getProperty(domElement, 'innerText');
-        if (domElement.childNodes.length > 1) {
-          // Having multiple child nodes in a content editable element means one of
-          // two things:
-          // 1. Text contains new lines.
-          // 2. User pasted rich text.
-          final int prevSelectionEnd = math.max(
-              _lastEditingState.baseOffset, _lastEditingState.extentOffset);
-          final String prevText = _lastEditingState.text;
-          final int offsetFromEnd = prevText.length - prevSelectionEnd;
-
-          final int newSelectionExtent = text.length - offsetFromEnd;
-          // TODO(mdebbar): we may need to `setEditingState()` here.
-          editingState = EditingState(
-            text: text,
-            baseOffset: newSelectionExtent,
-            extentOffset: newSelectionExtent,
-          );
-        } else {
-          final html.Selection selection = html.window.getSelection();
-          editingState = EditingState(
-            text: text,
-            baseOffset: selection.baseOffset,
-            extentOffset: selection.extentOffset,
-          );
-        }
+    if (newEditingState != _lastEditingState) {
+      _lastEditingState = newEditingState;
+      _onChange(_lastEditingState);
     }
-
-    assert(editingState != null);
-    return editingState;
-  }
-
-  html.Range _createRange(EditingState editingState) {
-    final html.Node firstChild = domElement.firstChild;
-    return html.document.createRange()
-      ..setStart(firstChild, editingState.baseOffset)
-      ..setEnd(firstChild, editingState.extentOffset);
   }
 }
 
@@ -474,18 +455,14 @@ class PersistentTextEditingElement extends TextEditingElement {
   /// [domElement] so the caller can insert it before calling
   /// [PersistentTextEditingElement.enable].
   PersistentTextEditingElement(
-    HybridTextEditing owner,
-    html.HtmlElement domElement, {
-    @required html.VoidCallback onDomElementSwap,
-  })  : _onDomElementSwap = onDomElementSwap,
-        super(owner) {
-    // Make sure the dom element is of a type that we support for text editing.
+      HybridTextEditing owner, html.HtmlElement domElement)
+      : super(owner) {
+    // Make sure the DOM element is of a type that we support for text editing.
     // TODO(yjbanov): move into initializer list when https://github.com/dart-lang/sdk/issues/37881 is fixed.
-    assert(_getTypeFromElement(domElement) != null);
+    assert((domElement is html.InputElement) ||
+        (domElement is html.TextAreaElement));
     this.domElement = domElement;
   }
-
-  final html.VoidCallback _onDomElementSwap;
 
   @override
   void _initDomElement(InputConfiguration inputConfig) {
@@ -512,16 +489,6 @@ class PersistentTextEditingElement extends TextEditingElement {
     // switch to a new text field. If we refocus here, we break that
     // functionality and the user can't switch from one text field to another in
     // accessibility mode.
-  }
-
-  @override
-  void _swapDomElement(ElementType newElementType) {
-    super._swapDomElement(newElementType);
-
-    // Unfortunately, in persistent mode, the user of this class has to be
-    // notified that the element is being swapped.
-    // TODO(mdebbar): do we need to call `old.replaceWith(new)` here?
-    _onDomElementSwap();
   }
 }
 
@@ -583,8 +550,16 @@ class HybridTextEditing {
   /// Also used to define if a keyboard is needed.
   bool _isEditing = false;
 
-  /// Flag indicating if the flutter framework requested a keyboard.
-  bool get needsKeyboard => _isEditing;
+  /// Indicates whether the input element needs to be positioned.
+  ///
+  /// See [TextEditingElement._delayBeforePositioning].
+  bool get inputElementNeedsToBePositioned =>
+      !inputPositioned && _isEditing && doesKeyboardShiftInput;
+
+  /// Flag indicating whether the input element's position is set.
+  ///
+  /// See [inputElementNeedsToBePositioned].
+  bool inputPositioned = false;
 
   Map<String, dynamic> _configuration;
 
@@ -710,20 +685,35 @@ class HybridTextEditing {
     );
   }
 
+  /// Positioning of input element is only done if we are not expecting input
+  /// to be shifted by a virtual keyboard or if the input is already positioned.
+  ///
+  /// Otherwise positioning will be done after focusing on the input.
+  /// See [TextEditingElement._delayBeforePositioning].
+  bool get _canPositionInput => inputPositioned || !doesKeyboardShiftInput;
+
+  /// Indicates whether virtual keyboard shifts the location of input element.
+  ///
+  /// Value decided using the operating system and the browser engine.
+  ///
+  /// In iOS, the virtual keyboard might shifts the screen up to make input
+  /// visible depending on the location of the focused input element.
+  bool get doesKeyboardShiftInput =>
+      browserEngine == BrowserEngine.webkit &&
+      operatingSystem == OperatingSystem.iOs;
+
   /// These style attributes are dynamic throughout the life time of an input
   /// element.
   ///
   /// They are changed depending on the messages coming from method calls:
   /// "TextInput.setStyle", "TextInput.setEditableSizeAndTransform".
   void _setDynamicStyleAttributes(html.HtmlElement domElement) {
-    if (_editingLocationAndSize != null &&
-        !(browserEngine == BrowserEngine.webkit &&
-            operatingSystem == OperatingSystem.iOs)) {
+    if (_editingLocationAndSize != null && _canPositionInput) {
       setStyle(domElement);
     }
   }
 
-  /// Set style to the native dom element used for text editing.
+  /// Set style to the native DOM element used for text editing.
   ///
   /// It will be located exactly in the same place with the editable widgets,
   /// however it's contents and cursor will be invisible.
@@ -739,6 +729,19 @@ class HybridTextEditing {
       ..textAlign = _editingStyle.align
       ..font = font()
       ..transform = transformCss;
+  }
+
+  // TODO(flutter_web): After the browser closes and re-opens the virtual
+  // shifts the page in iOS. Call this method from visibility change listener
+  // attached to body.
+  /// Set the DOM element's location somewhere outside of the screen.
+  ///
+  /// This is useful for not triggering a scroll when iOS virtual keyboard is
+  /// coming up.
+  ///
+  /// See [TextEditingElement._delayBeforePositioning].
+  void setStyleOutsideOfScreen(html.HtmlElement domElement) {
+    domElement.style.transform = 'translate(-9999px, -9999px)';
   }
 
   html.InputElement createInputElement() {
@@ -785,8 +788,6 @@ class _EditingStyle {
 ///
 /// This information is received via "TextInput.setEditableSizeAndTransform"
 /// message. Framework currently sends this information on paint.
-// TODO(flutter_web): send the location during the scroll for more frequent
-// updates from the framework.
 class _EditableSizeAndTransform {
   _EditableSizeAndTransform({
     @required this.width,
