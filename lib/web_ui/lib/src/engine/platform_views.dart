@@ -50,6 +50,9 @@ void handlePlatformViewCall(
     case 'create':
       _createPlatformView(decoded, callback);
       return;
+    case 'dispose':
+      _disposePlatformView(decoded, callback);
+      return;
   }
   callback(null);
 }
@@ -59,15 +62,32 @@ void _createPlatformView(
   final Map<dynamic, dynamic> args = methodCall.arguments;
   final int id = args['id'];
   final String viewType = args['viewType'];
+  const MethodCodec codec = StandardMethodCodec();
+
   // TODO(het): Use 'direction', 'width', and 'height'.
   if (!platformViewRegistry._registeredFactories.containsKey(viewType)) {
-    // TODO(het): Do we have a way of nicely reporting errors during platform
-    // channel calls?
-    callback(null);
+    callback(codec.encodeErrorEnvelope(
+      code: 'Unregistered factory',
+      message: "No factory registered for viewtype '$viewType'",
+    ));
+    return;
   }
   // TODO(het): Use creation parameters.
   final html.Element element =
       platformViewRegistry._registeredFactories[viewType](id);
 
   platformViewRegistry._createdViews[id] = element;
+  callback(codec.encodeSuccessEnvelope(null));
+}
+
+void _disposePlatformView(
+    MethodCall methodCall, ui.PlatformMessageResponseCallback callback) {
+  final int id = methodCall.arguments;
+  const MethodCodec codec = StandardMethodCodec();
+
+  // Remove the root element of the view from the DOM.
+  platformViewRegistry._createdViews[id]?.remove();
+  platformViewRegistry._createdViews.remove(id);
+
+  callback(codec.encodeSuccessEnvelope(null));
 }

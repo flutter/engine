@@ -6,8 +6,6 @@ part of engine;
 
 const String _testFontFamily = 'Ahem';
 const String _testFontUrl = 'packages/ui/assets/ahem.ttf';
-const String _robotoFontUrl =
-    'packages/flutter_web_ui/assets/Roboto-Regular.ttf';
 
 /// This class is responsible for registering and loading fonts.
 ///
@@ -52,13 +50,6 @@ class FontCollection {
       _assetFontManager = _FontManager();
     } else {
       _assetFontManager = _PolyfillFontManager();
-    }
-
-    // If not on Chrome, add Roboto to the bundled fonts since it is provided
-    // by default by Flutter.
-    if (browserEngine != BrowserEngine.blink) {
-      _assetFontManager
-          .registerAsset('Roboto', 'url($_robotoFontUrl)', <String, String>{});
     }
 
     for (Map<String, dynamic> fontFamily in fontManifest) {
@@ -123,14 +114,27 @@ class _FontManager {
     String asset,
     Map<String, String> descriptors,
   ) {
-    final html.FontFace fontFace = html.FontFace(family, asset, descriptors);
-    _fontLoadingFutures.add(fontFace
-        .load()
-        .then((_) => html.document.fonts.add(fontFace), onError: (dynamic e) {
+    // Safari and Firefox crash if you create a [html.FontFace] with a font
+    // family that is not correct CSS syntax. To ensure the font family is
+    // accepted on these browsers, wrap it in quotes.
+    // See: https://drafts.csswg.org/css-fonts-3/#font-family-prop
+    if (browserEngine == BrowserEngine.webkit || browserEngine == BrowserEngine.firefox) {
+      family = "'$family'";
+    }
+    // try/catch because `new FontFace` can crash with an improper font family.
+    try {
+      final html.FontFace fontFace = html.FontFace(family, asset, descriptors);
+      _fontLoadingFutures.add(fontFace
+          .load()
+          .then((_) => html.document.fonts.add(fontFace), onError: (dynamic e) {
+        html.window.console
+            .warn('Error while trying to load font family "$family":\n$e');
+        return null;
+      }));
+    } catch (e) {
       html.window.console
-          .warn('Error while trying to load font family "$family":\n$e');
-      return null;
-    }));
+          .warn('Error while loading font family "$family":\n$e');
+    }
   }
 
   /// Returns a [Future] that completes when all fonts that have been
@@ -176,7 +180,7 @@ class _PolyfillFontManager extends _FontManager {
     html.document.body.append(paragraph);
     final int sansSerifWidth = paragraph.offsetWidth;
 
-    paragraph.style.fontFamily = '$family, sans-serif';
+    paragraph.style.fontFamily = "'$family', sans-serif";
 
     final Completer<void> completer = Completer<void>();
 

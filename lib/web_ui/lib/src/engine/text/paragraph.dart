@@ -293,7 +293,7 @@ class EngineParagraph implements ui.Paragraph {
 
   @override
   List<ui.LineMetrics> computeLineMetrics() {
-    // TODO(flutter_web): Implement this.
+    // TODO(flutter_web): https://github.com/flutter/flutter/issues/39537
     return null;
   }
 }
@@ -1059,7 +1059,7 @@ void _applyParagraphStyleToElement({
       cssStyle.lineHeight = '${style._lineHeight}';
     }
     if (style._textDirection != null) {
-      cssStyle.direction = _textDirectionToCssValue(style._textDirection);
+      cssStyle.direction = _textDirectionToCss(style._textDirection);
     }
     if (style._fontSize != null) {
       cssStyle.fontSize = '${style._fontSize.floor()}px';
@@ -1072,7 +1072,7 @@ void _applyParagraphStyleToElement({
           style._fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
     }
     if (style._effectiveFontFamily != null) {
-      cssStyle.fontFamily = style._effectiveFontFamily;
+      cssStyle.fontFamily = quoteFontFamily(style._effectiveFontFamily);
     }
   } else {
     if (style._textAlign != previousStyle._textAlign) {
@@ -1083,7 +1083,7 @@ void _applyParagraphStyleToElement({
       cssStyle.lineHeight = '${style._lineHeight}';
     }
     if (style._textDirection != previousStyle._textDirection) {
-      cssStyle.direction = _textDirectionToCssValue(style._textDirection);
+      cssStyle.direction = _textDirectionToCss(style._textDirection);
     }
     if (style._fontSize != previousStyle._fontSize) {
       cssStyle.fontSize =
@@ -1098,7 +1098,7 @@ void _applyParagraphStyleToElement({
           : null;
     }
     if (style._fontFamily != previousStyle._fontFamily) {
-      cssStyle.fontFamily = style._fontFamily;
+      cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
     }
   }
 }
@@ -1138,11 +1138,11 @@ void _applyTextStyleToElement({
     // consistently use Ahem font.
     if (isSpan && !ui.debugEmulateFlutterTesterEnvironment) {
       if (style._fontFamily != null) {
-        cssStyle.fontFamily = style._fontFamily;
+        cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
       }
     } else {
       if (style._effectiveFontFamily != null) {
-        cssStyle.fontFamily = style._effectiveFontFamily;
+        cssStyle.fontFamily = quoteFontFamily(style._effectiveFontFamily);
       }
     }
     if (style._letterSpacing != null) {
@@ -1176,7 +1176,7 @@ void _applyTextStyleToElement({
           : null;
     }
     if (style._fontFamily != previousStyle._fontFamily) {
-      cssStyle.fontFamily = style._fontFamily;
+      cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
     }
     if (style._letterSpacing != previousStyle._letterSpacing) {
       cssStyle.letterSpacing = '${style._letterSpacing}px';
@@ -1272,10 +1272,28 @@ String _decorationStyleToCssString(ui.TextDecorationStyle decorationStyle) {
 /// ```css
 /// direction: rtl;
 /// ```
-String _textDirectionToCssValue(ui.TextDirection textDirection) {
-  return textDirection == ui.TextDirection.ltr
-      ? null // it's the default
-      : 'rtl';
+String _textDirectionToCss(ui.TextDirection textDirection) {
+  if (textDirection == null) {
+    return null;
+  }
+  return textDirectionIndexToCss(textDirection.index);
+}
+
+String textDirectionIndexToCss(int textDirectionIndex) {
+  switch (textDirectionIndex) {
+    case 0:
+      return 'rtl';
+    case 1:
+      return null; // ltr is the default
+  }
+
+  assert(() {
+    throw AssertionError(
+      'Failed to convert text direction $textDirectionIndex to CSS',
+    );
+  }());
+
+  return null;
 }
 
 /// Converts [align] to its corresponding CSS value.

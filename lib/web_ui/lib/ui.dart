@@ -15,9 +15,15 @@ import 'dart:typed_data';
 
 import 'src/engine.dart' as engine;
 export 'src/engine.dart'
-    show persistedPictureFactory, houdiniPictureFactory, platformViewRegistry;
+    show
+        persistedPictureFactory,
+        houdiniPictureFactory,
+        platformViewRegistry,
+        webOnlySetPluginHandler,
+        webOnlyInitializeEngine;
 
 part 'src/ui/canvas.dart';
+part 'src/ui/channel_buffers.dart';
 part 'src/ui/compositing.dart';
 part 'src/ui/geometry.dart';
 part 'src/ui/hash_codes.dart';

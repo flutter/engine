@@ -23,7 +23,7 @@ PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
                                  flutter::TaskRunners task_runners)
     : PlatformView(delegate, std::move(task_runners)) {
 #if !TARGET_IPHONE_SIMULATOR
-  gl_context_ = std::make_shared<IOSGLContext>();
+  resource_gl_context_ = std::make_unique<IOSGLContext>();
 #endif  // !TARGET_IPHONE_SIMULATOR
 }
 
@@ -42,18 +42,50 @@ fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() co
   return owner_controller_;
 }
 
+std::unique_ptr<IOSSurface> PlatformViewIOS::CreateIOSSurface() const {
+  if (!owner_controller_) {
+    FML_DLOG(INFO) << "Could not CreateIOSSurface, this PlatformViewIOS "
+                      "has no ViewController.";
+    return nullptr;
+  }
+
+  fml::WeakPtr<IOSGLContext> weak_gl_context;
+  if (resource_gl_context_) {
+    weak_gl_context = resource_gl_context_->GetWeakPtr();
+  }
+
+  std::unique_ptr<IOSSurface> ios_surface = [static_cast<FlutterView*>(owner_controller_.get().view)
+      createSurfaceWithResourceGLContext:weak_gl_context];
+  FML_DCHECK(ios_surface != nullptr);
+  return ios_surface;
+}
+
+void PlatformViewIOS::NotifyDestroyed() {
+  PlatformView::NotifyDestroyed();
+  ios_surface_.reset();
+}
+
 void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller) {
   if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
-    ios_surface_.reset();
     accessibility_bridge_.reset();
   }
   owner_controller_ = owner_controller;
-  if (owner_controller_) {
-    ios_surface_ =
-        [static_cast<FlutterView*>(owner_controller.get().view) createSurface:gl_context_];
-    FML_DCHECK(ios_surface_ != nullptr);
 
+  // Add an observer that will clear out the owner_controller_ ivar and
+  // the accessibility_bridge_ in case the view controller is deleted.
+  dealloc_view_controller_observer_.reset([[NSNotificationCenter defaultCenter]
+      addObserverForName:FlutterViewControllerWillDealloc
+                  object:owner_controller_.get()
+                   queue:[NSOperationQueue mainQueue]
+              usingBlock:^(NSNotification* note) {
+                // Implicit copy of 'this' is fine.
+                accessibility_bridge_.reset();
+                owner_controller_.reset();
+              }]);
+
+  if (owner_controller_) {
+    ios_surface_ = CreateIOSSurface();
     if (accessibility_bridge_) {
       accessibility_bridge_.reset(
           new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
@@ -74,16 +106,18 @@ void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
 // |PlatformView|
 std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
   if (!ios_surface_) {
-    FML_DLOG(INFO) << "Could not CreateRenderingSurface, this PlatformViewIOS "
-                      "has no ViewController.";
-    return nullptr;
+    ios_surface_ = CreateIOSSurface();
+
+    if (!ios_surface_) {
+      return nullptr;
+    }
   }
   return ios_surface_->CreateGPUSurface();
 }
 
 // |PlatformView|
 sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
-  if (!gl_context_ || !gl_context_->ResourceMakeCurrent()) {
+  if (!resource_gl_context_ || !resource_gl_context_->MakeCurrent()) {
     FML_DLOG(INFO) << "Could not make resource context current on IO thread. "
                       "Async texture uploads will be disabled. On Simulators, "
                       "this is expected.";
