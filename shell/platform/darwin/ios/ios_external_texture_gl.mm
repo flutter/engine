@@ -11,7 +11,6 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "flutter/shell/platform/embedder/embedder_engine.h"
 
 namespace flutter {
 
