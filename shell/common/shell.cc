@@ -97,10 +97,10 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // when calling Shell::Setup() when resolving the io_manager_future.
   fml::TaskRunner::RunNowOrPostTask(
       io_task_runner,
-      [&io_manager_promise,                          //
-       &weak_io_manager_promise,                     //
-       platform_view = platform_view.get(),          //
-       io_task_runner                                //
+      [&io_manager_promise,                  //
+       &weak_io_manager_promise,             //
+       platform_view = platform_view.get(),  //
+       io_task_runner                        //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupIOSubsystem");
         auto io_manager = std::make_unique<ShellIOManager>(
