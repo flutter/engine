@@ -14,7 +14,6 @@
 
 #else  // OS_WIN
 
-#include <dirent.h>
 #include <unistd.h>
 
 #endif  // OS_WIN

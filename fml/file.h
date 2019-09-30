@@ -37,6 +37,11 @@ fml::UniqueFD OpenFile(const fml::UniqueFD& base_directory,
                        bool create_if_necessary,
                        FilePermission permission);
 
+/// Helper method that calls `OpenFile` with create_if_necessary = false
+/// and permission = kRead.
+fml::UniqueFD OpenFileReadOnly(const fml::UniqueFD& base_directory,
+                               const char* path);
+
 fml::UniqueFD OpenDirectory(const char* path,
                             bool create_if_necessary,
                             FilePermission permission);
@@ -76,10 +81,26 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
 using FileVisitor = std::function<void(const fml::UniqueFD& directory,
                                        const std::string& filename)>;
 
-/// Call `visitor` on all files inside the `directory` non-recursively. If
-/// recursive visiting is needed, call `VisitFiles` inside the `visitor`.
-/// The trivial file "." and ".." will not be visited.
+/// Call `visitor` on all files inside the `directory` non-recursively. The
+/// trivial file "." and ".." will not be visited.
+///
+/// If recursive visiting is needed, call `VisitFiles` inside the `visitor`, or
+/// use our helper method `VisitFilesRecursively`.
+///
+/// @see `VisitFilesRecursively`.
 void VisitFiles(const fml::UniqueFD& directory, const FileVisitor& visitor);
+
+/// Recursively call `visitor` on all files inside the `directory`.
+///
+/// This is a helper method that wraps the general `VisitFiles` method. The
+/// `VisitFiles` is strictly more powerful as it has the access of the recursion
+/// stack to the file. For example, `VisitFiles` may be able to maintain a
+/// vector of directory names that lead to a file. That could be useful to
+/// compute the relative path between the root directory and the visited file.
+///
+/// @see `VisitFiles`.
+void VisitFilesRecursively(const fml::UniqueFD& directory,
+                           const FileVisitor& visitor);
 
 class ScopedTemporaryDirectory {
  public:
@@ -87,6 +108,7 @@ class ScopedTemporaryDirectory {
 
   ~ScopedTemporaryDirectory();
 
+  const std::string& path() const { return path_; }
   const UniqueFD& fd() { return dir_fd_; }
 
  private:

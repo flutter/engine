@@ -99,9 +99,6 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
   if (!IsValid()) {
     return result;
   }
-  const char* path = cache_sksl_ ? "." : "sksl";
-  fml::UniqueFD dir = fml::OpenDirectory(*cache_directory_, path, false,
-                                         fml::FilePermission::kRead);
   fml::FileVisitor visitor = [&result](const fml::UniqueFD& directory,
                                        const std::string& filename) {
     std::pair<bool, std::string> decode_result = fml::Base32Decode(filename);
@@ -117,14 +114,15 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
       result.push_back({key, data});
     }
   };
-  fml::VisitFiles(dir, visitor);
+  fml::VisitFiles(*sksl_cache_directory_, visitor);
   return result;
 }
 
 PersistentCache::PersistentCache(bool read_only)
     : is_read_only_(read_only),
-      cache_directory_(
-          MakeCacheDirectory(cache_base_path_, read_only, cache_sksl_)) {
+      cache_directory_(MakeCacheDirectory(cache_base_path_, read_only, false)),
+      sksl_cache_directory_(
+          MakeCacheDirectory(cache_base_path_, read_only, true)) {
   if (!IsValid()) {
     FML_LOG(WARNING) << "Could not acquire the persistent cache directory. "
                         "Caching of GPU resources on disk is disabled.";
@@ -139,8 +137,7 @@ bool PersistentCache::IsValid() const {
 
 sk_sp<SkData> PersistentCache::LoadFile(const fml::UniqueFD& dir,
                                         const std::string& file_name) {
-  auto file =
-      fml::OpenFile(dir, file_name.c_str(), false, fml::FilePermission::kRead);
+  auto file = fml::OpenFileReadOnly(dir, file_name.c_str());
   if (!file.is_valid()) {
     return nullptr;
   }
@@ -225,7 +222,8 @@ void PersistentCache::store(const SkData& key, const SkData& data) {
     return;
   }
 
-  PersistentCacheStore(GetWorkerTaskRunner(), cache_directory_,
+  PersistentCacheStore(GetWorkerTaskRunner(),
+                       cache_sksl_ ? sksl_cache_directory_ : cache_directory_,
                        std::move(file_name), std::move(mapping));
 }
 

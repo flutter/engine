@@ -49,10 +49,6 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   bool IsDumpingSkp() const { return is_dumping_skp_; }
   void SetIsDumpingSkp(bool value) { is_dumping_skp_ = value; }
 
-  // Return a list of file names inside the sksl cache directory. The name is
-  // the Base32 encoding of the SkSL key (of type SkData).
-  std::vector<std::string> ListSkSL() const;
-
   // |GrContextOptions::PersistentCache|
   sk_sp<SkData> load(const SkData& key) override;
 
@@ -80,6 +76,7 @@ class PersistentCache : public GrContextOptions::PersistentCache {
 
   const bool is_read_only_;
   const std::shared_ptr<fml::UniqueFD> cache_directory_;
+  const std::shared_ptr<fml::UniqueFD> sksl_cache_directory_;
   mutable std::mutex worker_task_runners_mutex_;
   std::multiset<fml::RefPtr<fml::TaskRunner>> worker_task_runners_
       FML_GUARDED_BY(worker_task_runners_mutex_);

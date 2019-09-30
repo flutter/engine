@@ -226,6 +226,11 @@ void VisitFiles(const fml::UniqueFD& directory, const FileVisitor& visitor) {
     FML_DLOG(ERROR) << "Can't open the directory. Error: " << strerror(errno);
     return;
   }
+
+  // Without `rewinddir`, `readir` will directly return NULL (end of dir is
+  // reached) after a previuos `VisitFiles` call for the same `const
+  // fml::UniqueFd& directory`.
+  rewinddir(dir);
   while (dirent* ent = readdir(dir)) {
     std::string filename = ent->d_name;
     if (filename != "." && filename != "..") {

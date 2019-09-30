@@ -132,38 +132,65 @@ TEST(FileTest, CreateDirectoryStructure) {
   ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a"));
 }
 
+TEST(FileTest, VisitFilesCanBeCalledTwice) {
+  fml::ScopedTemporaryDirectory dir;
+
+  auto file = fml::OpenFile(dir.fd(), "my_contents", true,
+                            fml::FilePermission::kReadWrite);
+  ASSERT_TRUE(file.is_valid());
+
+  int count;
+  fml::FileVisitor count_visitor = [&count](const fml::UniqueFD& directory,
+                                            const std::string& filename) {
+    count += 1;
+  };
+  count = 0;
+  fml::VisitFiles(dir.fd(), count_visitor);
+  ASSERT_EQ(count, 1);
+
+  // Without `rewinddir` in `VisitFiles`, the following check would fail.
+  count = 0;
+  fml::VisitFiles(dir.fd(), count_visitor);
+  ASSERT_EQ(count, 1);
+
+  ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "my_contents"));
+}
+
 TEST(FileTest, CanListFilesRecursively) {
   fml::ScopedTemporaryDirectory dir;
 
   {
-    auto sub = fml::CreateDirectory(dir.fd(), {"a", "b", "c"},
-                                    fml::FilePermission::kReadWrite);
-    ASSERT_TRUE(sub.is_valid());
+    auto c = fml::CreateDirectory(dir.fd(), {"a", "b", "c"},
+                                  fml::FilePermission::kReadWrite);
+    ASSERT_TRUE(c.is_valid());
     auto file1 =
-        fml::OpenFile(sub, "file1", true, fml::FilePermission::kReadWrite);
+        fml::OpenFile(c, "file1", true, fml::FilePermission::kReadWrite);
     auto file2 =
-        fml::OpenFile(sub, "file2", true, fml::FilePermission::kReadWrite);
+        fml::OpenFile(c, "file2", true, fml::FilePermission::kReadWrite);
+    auto d = fml::CreateDirectory(c, {"d"}, fml::FilePermission::kReadWrite);
+    ASSERT_TRUE(d.is_valid());
+    auto file3 =
+        fml::OpenFile(d, "file3", true, fml::FilePermission::kReadWrite);
     ASSERT_TRUE(file1.is_valid());
     ASSERT_TRUE(file2.is_valid());
+    ASSERT_TRUE(file3.is_valid());
   }
 
-  std::vector<std::string> names;
-  fml::FileVisitor visitor = [&names, &visitor](const fml::UniqueFD& directory,
-                                                const std::string& filename) {
-    names.push_back(filename);
-    fml::UniqueFD file = fml::OpenFile(directory, filename.c_str(), false,
-                                       fml::FilePermission::kRead);
-    if (fml::IsDirectory(file)) {
-      fml::VisitFiles(file, visitor);
-    }
+  std::set<std::string> names;
+  fml::FileVisitor visitor = [&names](const fml::UniqueFD& directory,
+                                      const std::string& filename) {
+    names.insert(filename);
   };
 
-  fml::VisitFiles(dir.fd(), visitor);
-  ASSERT_EQ(names, std::vector<std::string>({"a", "b", "c", "file1", "file2"}));
+  fml::VisitFilesRecursively(dir.fd(), visitor);
+  ASSERT_EQ(names, std::set<std::string>(
+                       {"a", "b", "c", "d", "file1", "file2", "file3"}));
 
   // Cleanup.
+  ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "a/b/c/d/file3"));
   ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "a/b/c/file1"));
   ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "a/b/c/file2"));
+  ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a/b/c/d"));
   ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a/b/c"));
   ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a/b"));
   ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a"));

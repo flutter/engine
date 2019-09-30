@@ -5,6 +5,7 @@
 #include "flutter/fml/file.h"
 
 #include "flutter/fml/logging.h"
+#include "flutter/fml/unique_fd.h"
 
 namespace fml {
 
@@ -56,6 +57,25 @@ ScopedTemporaryDirectory::~ScopedTemporaryDirectory() {
       FML_LOG(ERROR) << "Could not remove directory: " << path_;
     }
   }
+}
+
+void VisitFilesRecursively(const fml::UniqueFD& directory,
+                           const FileVisitor& visitor) {
+  FileVisitor recursive_visitor = [&recursive_visitor, &visitor](
+                                      const UniqueFD& directory,
+                                      const std::string& filename) {
+    visitor(directory, filename);
+    UniqueFD file = OpenFileReadOnly(directory, filename.c_str());
+    if (IsDirectory(file)) {
+      VisitFiles(file, recursive_visitor);
+    }
+  };
+  VisitFiles(directory, recursive_visitor);
+}
+
+fml::UniqueFD OpenFileReadOnly(const fml::UniqueFD& base_directory,
+                               const char* path) {
+  return OpenFile(base_directory, path, false, FilePermission::kRead);
 }
 
 }  // namespace fml
