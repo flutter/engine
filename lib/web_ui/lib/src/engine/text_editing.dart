@@ -61,10 +61,20 @@ class EditingState {
   ///   "composingExtent": -1
   /// }
   /// ```
-  EditingState.fromFlutter(Map<String, dynamic> flutterEditingState)
-      : text = flutterEditingState['text'],
-        baseOffset = flutterEditingState['selectionBase'],
-        extentOffset = flutterEditingState['selectionExtent'];
+  ///
+  /// Flutter Framework can send the selectionBase and selectionExtent as -1,
+  /// if so 0 assigned to baseOffset and extentOffset. -1 is not a valid
+  /// selection range for input DOM elements.
+  factory EditingState.fromFlutter(Map<String, dynamic> flutterEditingState) {
+    final int selectionBase = flutterEditingState['selectionBase'];
+    final int selectionExtent = flutterEditingState['selectionExtent'];
+    final String text = flutterEditingState['text'];
+
+    return EditingState(
+        text: text,
+        baseOffset: (selectionBase >= 0) ? selectionBase : 0,
+        extentOffset: (selectionExtent >= 0) ? selectionExtent : 0);
+  }
 
   /// Creates an [EditingState] instance using values from the editing element
   /// in the DOM.

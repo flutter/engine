@@ -549,6 +549,41 @@ void main() {
       expect(spy.messages, isEmpty);
     });
 
+    test('negative base and offset values in editing state is handled', () {
+      final MethodCall setClient = MethodCall(
+          'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
+      textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      textEditing.handleTextInput(codec.encodeMethodCall(show));
+
+      const MethodCall setEditingState2 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'xyz',
+        'selectionBase': -1,
+        'selectionExtent': -1,
+      });
+      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState2));
+
+      // The negative offset values are applied to the dom element as 0.
+      checkInputEditingState(
+          textEditing.editingElement.domElement, 'xyz', 0, 0);
+
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      textEditing.handleTextInput(codec.encodeMethodCall(clearClient));
+
+      // Confirm that [HybridTextEditing] didn't send any messages.
+      expect(spy.messages, isEmpty);
+    });
+
     test('Syncs the editing state back to Flutter', () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
