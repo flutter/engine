@@ -46,6 +46,7 @@ if (is_fuchsia_host || is_fuchsia) {
       "$flutter_root/lib/snapshot:kernel_platform_files",
       ":flutter_package_vm",
       ":flutter_package_build_integration",
+      ":flutter_package_frontend_server",
     ]
     dot_packages = rebase_path(".packages")
     flutter_patched_sdk = rebase_path("$root_out_dir/flutter_patched_sdk")
@@ -115,6 +116,29 @@ if (is_fuchsia_host || is_fuchsia) {
       rebase_path("//third_party/dart/pkg/build_integration"),
       rebase_path("$root_gen_dir/dart-pkg/build_integration"),
       "build_integration",
+    ]
+
+  }
+
+   # Creates a packageable frontend_server.
+  prebuilt_dart_action("flutter_package_frontend_server") {
+    packages = "//third_party/dart/.packages"
+
+    script = "$flutter_root/frontend_server/publish.dart"
+
+    inputs = exec_script("//third_party/dart/tools/list_dart_files.py",
+            [
+              "absolute",
+              rebase_path("lib"),
+            ],
+            "list lines")
+
+    outputs = ["$root_build_dir/dist/packages/frontend_server/pubspec.yaml"]
+
+    args = [
+      rebase_path("lib"),
+      rebase_path("$root_gen_dir/dart-pkg/frontend_server"),
+      "frontend_server",
     ]
 
   }

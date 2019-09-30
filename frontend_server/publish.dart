@@ -29,9 +29,23 @@ dependencies:
   meta: any
 ''';
 
+const String frontendServerPubspec = r'''
+name: frontend_server
+version: 0.0.1
+environment:
+  sdk: ">=2.2.2 <3.0.0"
+
+dependencies:
+  args: any
+  path: any
+  vm: any
+''';
+
+
 const Map<String, String> packages = <String, String>{
   'vm': vmPubspec,
   'build_integration': buildIntegrationPubspec,
+  'frontend_server': frontendServerPubspec,
 };
 
 // A script for creating a packagable version of several SDK libraries.
@@ -40,6 +54,10 @@ void main(List<String> arguments) {
   final String destination = arguments[1];
   final String packageName = arguments[2];
   for (File file in packageSource.listSync(recursive: true).whereType<File>()) {
+    if (!file.path.contains('lib')) {
+      // Skip test/bin directories and pubspec.
+      continue;
+    }
     final File destinationFile = File(path.join(destination, path.relative(file.path, from: packageSource.path)));
     destinationFile.parent.createSync(recursive: true);
     file.copySync(destinationFile.path);
