@@ -4,8 +4,8 @@
 
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
 
 FLUTTER_ASSERT_ARC
 
