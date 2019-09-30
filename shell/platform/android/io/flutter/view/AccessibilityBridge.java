@@ -519,6 +519,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         result.setClassName("android.view.View");
         result.setSource(rootAccessibilityView, virtualViewId);
         result.setFocusable(semanticsNode.isFocusable());
+        if (semanticsNode.isFocusable() && !semanticsNode.hasFlag(Flag.IS_FOCUSED)) {
+            result.addAction(AccessibilityNodeInfo.ACTION_FOCUS);
+        }
         if (inputFocusedSemanticsNode != null) {
             result.setFocused(inputFocusedSemanticsNode.id == virtualViewId);
         }
