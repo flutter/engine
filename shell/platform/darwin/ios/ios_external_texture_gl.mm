@@ -105,7 +105,9 @@ void IOSExternalTextureGL::MarkNewFrameAvailable() {
 }
 
 void IOSExternalTextureGL::OnUnregistered() {
-  [external_texture_ onUnregistered];
+  if ([external_texture_ respondsToSelector:@selector(onUnregistered)]) {
+    [external_texture_ onUnregistered];
+  }
 }
 
 }  // namespace flutter

@@ -21,6 +21,7 @@ FLUTTER_EXPORT
  *
  * Called on the GPU thread.
  */
+@optional
 - (void)onUnregistered;
 @end
 
