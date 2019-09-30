@@ -91,7 +91,7 @@ if (is_fuchsia_host || is_fuchsia) {
 
     args = [
       rebase_path("//third_party/dart/pkg/vm"),
-      rebase_path("$root_build_dir/dist/packages/vm"),
+      rebase_path("$root_gen_dir/dart-pkg/vm"),
       "vm",
     ]
   }
@@ -113,7 +113,7 @@ if (is_fuchsia_host || is_fuchsia) {
 
     args = [
       rebase_path("//third_party/dart/pkg/build_integration"),
-      rebase_path("$root_build_dir/dist/packages/build_integration"),
+      rebase_path("$root_gen_dir/dart-pkg/build_integration"),
       "build_integration",
     ]
 
