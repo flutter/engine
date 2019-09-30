@@ -184,17 +184,12 @@ void main() {
       expect(document.getElementsByTagName('textarea'), hasLength(0));
     });
 
-    test('Can swap backing elements on the fly', () {
-      // TODO(mdebbar): implement.
-    });
-
     group('[persistent mode]', () {
       test('Does not accept dom elements of a wrong type', () {
         // A regular <span> shouldn't be accepted.
         final HtmlElement span = SpanElement();
         expect(
-          () => PersistentTextEditingElement(HybridTextEditing(), span,
-              onDomElementSwap: null),
+          () => PersistentTextEditingElement(HybridTextEditing(), span),
           throwsAssertionError,
         );
       });
@@ -204,8 +199,7 @@ void main() {
         // re-acquiring focus shouldn't happen in persistent mode.
         final InputElement input = InputElement();
         final PersistentTextEditingElement persistentEditingElement =
-            PersistentTextEditingElement(HybridTextEditing(), input,
-                onDomElementSwap: () {});
+            PersistentTextEditingElement(HybridTextEditing(), input);
         expect(document.activeElement, document.body);
 
         document.body.append(input);
@@ -223,8 +217,7 @@ void main() {
       test('Does not dispose and recreate dom elements in persistent mode', () {
         final InputElement input = InputElement();
         final PersistentTextEditingElement persistentEditingElement =
-            PersistentTextEditingElement(HybridTextEditing(), input,
-                onDomElementSwap: () {});
+            PersistentTextEditingElement(HybridTextEditing(), input);
 
         // The DOM element should've been eagerly created.
         expect(input, isNotNull);
@@ -257,8 +250,7 @@ void main() {
       test('Refocuses when setting editing state', () {
         final InputElement input = InputElement();
         final PersistentTextEditingElement persistentEditingElement =
-            PersistentTextEditingElement(HybridTextEditing(), input,
-                onDomElementSwap: () {});
+            PersistentTextEditingElement(HybridTextEditing(), input);
 
         document.body.append(input);
         persistentEditingElement.enable(singlelineConfig,
@@ -278,8 +270,7 @@ void main() {
       test('Works in multi-line mode', () {
         final TextAreaElement textarea = TextAreaElement();
         final PersistentTextEditingElement persistentEditingElement =
-            PersistentTextEditingElement(HybridTextEditing(), textarea,
-                onDomElementSwap: () {});
+            PersistentTextEditingElement(HybridTextEditing(), textarea);
 
         expect(persistentEditingElement.domElement, textarea);
         expect(document.activeElement, document.body);
@@ -674,6 +665,79 @@ void main() {
 
       // Confirm that [HybridTextEditing] didn't send any more messages.
       expect(spy.messages, isEmpty);
+    });
+  });
+
+  group('EditingState', () {
+    EditingState _editingState;
+
+    test('Configure input element from the editing state', () {
+      final InputElement input = document.getElementsByTagName('input')[0];
+      _editingState =
+          EditingState(text: 'Test', baseOffset: 1, extentOffset: 2);
+
+      _editingState.applyToDomElement(input);
+
+      expect(input.value, 'Test');
+      expect(input.selectionStart, 1);
+      expect(input.selectionEnd, 2);
+    });
+
+    test('Configure text area element from the editing state', () {
+      final TextAreaElement textArea =
+          document.getElementsByTagName('textarea')[0];
+      _editingState =
+          EditingState(text: 'Test', baseOffset: 1, extentOffset: 2);
+
+      _editingState.applyToDomElement(textArea);
+
+      expect(textArea.value, 'Test');
+      expect(textArea.selectionStart, 1);
+      expect(textArea.selectionEnd, 2);
+    });
+
+    test('Get Editing State from input element', () {
+      final InputElement input = document.getElementsByTagName('input')[0];
+      input.value = 'Test';
+      input.selectionStart = 1;
+      input.selectionEnd = 2;
+
+      _editingState = EditingState.fromDomElement(input);
+
+      expect(_editingState.text, 'Test');
+      expect(_editingState.baseOffset, 1);
+      expect(_editingState.extentOffset, 2);
+    });
+
+    test('Get Editing State from text area element', () {
+      final TextAreaElement input =
+          document.getElementsByTagName('textarea')[0];
+      input.value = 'Test';
+      input.selectionStart = 1;
+      input.selectionEnd = 2;
+
+      _editingState = EditingState.fromDomElement(input);
+
+      expect(_editingState.text, 'Test');
+      expect(_editingState.baseOffset, 1);
+      expect(_editingState.extentOffset, 2);
+    });
+
+    test('Compare two editing states', () {
+      final InputElement input = document.getElementsByTagName('input')[0];
+      input.value = 'Test';
+      input.selectionStart = 1;
+      input.selectionEnd = 2;
+
+      EditingState editingState1 = EditingState.fromDomElement(input);
+      EditingState editingState2 = EditingState.fromDomElement(input);
+
+      input.setSelectionRange(1, 3);
+
+      EditingState editingState3 = EditingState.fromDomElement(input);
+
+      expect(editingState1 == editingState2, true);
+      expect(editingState1 != editingState3, true);
     });
   });
 }
