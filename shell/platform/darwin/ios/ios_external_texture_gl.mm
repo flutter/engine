@@ -11,6 +11,7 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "flutter/shell/platform/embedder/embedder_engine.h"
 
 namespace flutter {
 
@@ -102,6 +103,10 @@ void IOSExternalTextureGL::OnGrContextDestroyed() {
 
 void IOSExternalTextureGL::MarkNewFrameAvailable() {
   new_frame_ready_ = true;
+}
+
+void IOSExternalTextureGL::OnUnregistered() {
+  [external_texture_ onUnregistered];
 }
 
 }  // namespace flutter

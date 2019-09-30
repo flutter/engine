@@ -26,6 +26,8 @@ class IOSExternalTextureGL : public flutter::Texture {
 
   void MarkNewFrameAvailable() override;
 
+  void OnUnregistered() override;
+
  private:
   void CreateTextureFromPixelBuffer();
 
