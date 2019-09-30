@@ -20,7 +20,8 @@ if [[ ! -d "$DEVICE_TOOLS" ]]; then
   exit 1
 fi
 
-echo "Using pub from $HOST_TOOLS/dart-sdk/bin/pub"
+PUB=$($HOST_TOOLS/dart-sdk/bin/pub --version)
+echo "Using ${PUB} from $HOST_TOOLS/dart-sdk/bin/pub"
 
 $HOST_TOOLS/dart-sdk/bin/pub get
 
@@ -34,7 +35,7 @@ mkdir -p $OUTDIR
 
 echo "Compiling kernel..."
 
-"$HOST_TOOLS/dart-s" \
+"$HOST_TOOLS/dart" \
   "$HOST_TOOLS/gen/frontend_server.dart.snapshot" \
   --sdk-root "$HOST_TOOLS/flutter_patched_sdk" \
   --aot --tfa --target=flutter \

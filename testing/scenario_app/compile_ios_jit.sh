@@ -20,7 +20,8 @@ if [[ ! -d "$DEVICE_TOOLS" ]]; then
   exit 1
 fi
 
-echo "Using pub from $HOST_TOOLS/dart-sdk/bin/pub"
+PUB=$($HOST_TOOLS/dart-sdk/bin/pub --version)
+echo "Using ${PUB} from $HOST_TOOLS/dart-sdk/bin/pub"
 
 $HOST_TOOLS/dart-sdk/bin/pub get
 
