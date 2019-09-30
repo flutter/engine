@@ -184,17 +184,12 @@ void main() {
       expect(document.getElementsByTagName('textarea'), hasLength(0));
     });
 
-    test('Can swap backing elements on the fly', () {
-      // TODO(mdebbar): implement.
-    });
-
     group('[persistent mode]', () {
       test('Does not accept dom elements of a wrong type', () {
         // A regular <span> shouldn't be accepted.
         final HtmlElement span = SpanElement();
         expect(
-          () => PersistentTextEditingElement(HybridTextEditing(), span,
-              onDomElementSwap: null),
+          () => PersistentTextEditingElement(HybridTextEditing(), span),
           throwsAssertionError,
         );
       });
@@ -204,8 +199,7 @@ void main() {
         // re-acquiring focus shouldn't happen in persistent mode.
         final InputElement input = InputElement();
         final PersistentTextEditingElement persistentEditingElement =
-            PersistentTextEditingElement(HybridTextEditing(), input,
-                onDomElementSwap: () {});
+            PersistentTextEditingElement(HybridTextEditing(), input);
         expect(document.activeElement, document.body);
 
         document.body.append(input);
@@ -223,8 +217,7 @@ void main() {
       test('Does not dispose and recreate dom elements in persistent mode', () {
         final InputElement input = InputElement();
         final PersistentTextEditingElement persistentEditingElement =
-            PersistentTextEditingElement(HybridTextEditing(), input,
-                onDomElementSwap: () {});
+            PersistentTextEditingElement(HybridTextEditing(), input);
 
         // The DOM element should've been eagerly created.
         expect(input, isNotNull);
@@ -257,8 +250,7 @@ void main() {
       test('Refocuses when setting editing state', () {
         final InputElement input = InputElement();
         final PersistentTextEditingElement persistentEditingElement =
-            PersistentTextEditingElement(HybridTextEditing(), input,
-                onDomElementSwap: () {});
+            PersistentTextEditingElement(HybridTextEditing(), input);
 
         document.body.append(input);
         persistentEditingElement.enable(singlelineConfig,
@@ -278,8 +270,7 @@ void main() {
       test('Works in multi-line mode', () {
         final TextAreaElement textarea = TextAreaElement();
         final PersistentTextEditingElement persistentEditingElement =
-            PersistentTextEditingElement(HybridTextEditing(), textarea,
-                onDomElementSwap: () {});
+            PersistentTextEditingElement(HybridTextEditing(), textarea);
 
         expect(persistentEditingElement.domElement, textarea);
         expect(document.activeElement, document.body);
