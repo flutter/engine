@@ -1,4 +1,4 @@
-Signature: 9b906e6ac4f1da3a62163204fad5639d
+Signature: edb2f7fbf7c7728378faebae38cba93d
 
 UNUSED LICENSES:
 
@@ -1359,6 +1359,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input2/keys.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input2/layout.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input2/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input2/modifiers.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/device_listener.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.types/meta.json
