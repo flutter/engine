@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/common/runtime.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/icu_util.h"
 #include "flutter/fml/log_settings.h"
@@ -26,6 +27,8 @@
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/vsync_waiter.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/skia/include/core/SkGraphics.h"
 #include "third_party/tonic/common/log.h"
@@ -33,6 +36,9 @@
 namespace flutter {
 
 constexpr char kSkiaChannel[] = "flutter/skia";
+constexpr char kSystemChannel[] = "flutter/system";
+constexpr char kTypeKey[] = "type";
+constexpr char kFontChange[] = "fontsChange";
 
 std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     DartVMRef vm,
@@ -98,6 +104,10 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
         io_manager_promise.set_value(std::move(io_manager));
       });
 
+  // Send dispatcher_maker to the engine constructor because shell won't have
+  // platform_view set until Shell::Setup is called later.
+  auto dispatcher_maker = platform_view->GetDispatcherMaker();
+
   // Create the engine on the UI thread.
   std::promise<std::unique_ptr<Engine>> engine_promise;
   auto engine_future = engine_promise.get_future();
@@ -105,6 +115,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
       shell->GetTaskRunners().GetUITaskRunner(),
       fml::MakeCopyable([&engine_promise,                                 //
                          shell = shell.get(),                             //
+                         &dispatcher_maker,                               //
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          shared_snapshot = std::move(shared_snapshot),    //
                          vsync_waiter = std::move(vsync_waiter),          //
@@ -120,6 +131,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
 
         engine_promise.set_value(std::make_unique<Engine>(
             *shell,                       //
+            dispatcher_maker,             //
             *shell->GetDartVM(),          //
             std::move(isolate_snapshot),  //
             std::move(shared_snapshot),   //
@@ -715,11 +727,11 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = engine_->GetWeakPtr(), packet = std::move(packet),
-       flow_id = next_pointer_flow_id_] {
+  task_runners_.GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([engine = weak_engine_, packet = std::move(packet),
+                         flow_id = next_pointer_flow_id_]() mutable {
         if (engine) {
-          engine->DispatchPointerDataPacket(*packet, flow_id);
+          engine->DispatchPointerDataPacket(std::move(packet), flow_id);
         }
       }));
   next_pointer_flow_id_++;
@@ -1044,7 +1056,7 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     first_frame_rasterized_ = true;
     ReportTimings();
   } else if (!frame_timings_report_scheduled_) {
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+#if FLUTTER_RELEASE
     constexpr int kBatchTimeInMilliseconds = 1000;
 #else
     constexpr int kBatchTimeInMilliseconds = 100;
@@ -1349,6 +1361,37 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   } else {
     return fml::Status(fml::StatusCode::kDeadlineExceeded, "timeout");
   }
+}
+
+bool Shell::ReloadSystemFonts() {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  if (!engine_) {
+    return false;
+  }
+  engine_->GetFontCollection().GetFontCollection()->SetupDefaultFontManager();
+  engine_->GetFontCollection().GetFontCollection()->ClearFontFamilyCache();
+  // After system fonts are reloaded, we send a system channel message
+  // to notify flutter framework.
+  rapidjson::Document document;
+  document.SetObject();
+  auto& allocator = document.GetAllocator();
+  rapidjson::Value message_value;
+  message_value.SetString(kFontChange, allocator);
+  document.AddMember(kTypeKey, message_value, allocator);
+
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  document.Accept(writer);
+  std::string message = buffer.GetString();
+  fml::RefPtr<PlatformMessage> fontsChangeMessage =
+      fml::MakeRefCounted<flutter::PlatformMessage>(
+          kSystemChannel, std::vector<uint8_t>(message.begin(), message.end()),
+          nullptr);
+
+  OnPlatformViewDispatchPlatformMessage(fontsChangeMessage);
+  return true;
 }
 
 }  // namespace flutter

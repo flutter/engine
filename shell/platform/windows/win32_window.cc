@@ -98,6 +98,17 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
   return DefWindowProc(window, message, wparam, lparam);
 }
 
+void Win32Window::TrackMouseLeaveEvent(HWND hwnd) {
+  if (!tracking_mouse_leave_) {
+    TRACKMOUSEEVENT tme;
+    tme.cbSize = sizeof(tme);
+    tme.hwndTrack = hwnd;
+    tme.dwFlags = TME_LEAVE;
+    TrackMouseEvent(&tme);
+    tracking_mouse_leave_ = true;
+  }
+}
+
 LRESULT
 Win32Window::MessageHandler(HWND hwnd,
                             UINT const message,
@@ -107,7 +118,7 @@ Win32Window::MessageHandler(HWND hwnd,
   UINT width = 0, height = 0;
   auto window =
       reinterpret_cast<Win32Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-
+  UINT button_pressed = 0;
   if (window != nullptr) {
     switch (message) {
       case WM_DPICHANGED:
@@ -120,7 +131,6 @@ Win32Window::MessageHandler(HWND hwnd,
         window->OnClose();
         return 0;
         break;
-
       case WM_SIZE:
         width = LOWORD(lparam);
         height = HIWORD(lparam);
@@ -129,25 +139,60 @@ Win32Window::MessageHandler(HWND hwnd,
         current_height_ = height;
         window->HandleResize(width, height);
         break;
-
+      case WM_FONTCHANGE:
+        window->OnFontChange();
+        break;
       case WM_MOUSEMOVE:
+        window->TrackMouseLeaveEvent(hwnd);
+
         xPos = GET_X_LPARAM(lparam);
         yPos = GET_Y_LPARAM(lparam);
-
         window->OnPointerMove(static_cast<double>(xPos),
                               static_cast<double>(yPos));
         break;
+      case WM_MOUSELEAVE:;
+        window->OnPointerLeave();
+        // Once the tracked event is received, the TrackMouseEvent function
+        // resets. Set to false to make sure it's called once mouse movement is
+        // detected again.
+        tracking_mouse_leave_ = false;
+        break;
       case WM_LBUTTONDOWN:
+      case WM_RBUTTONDOWN:
+      case WM_MBUTTONDOWN:
+      case WM_XBUTTONDOWN:
+        if (message == WM_LBUTTONDOWN) {
+          // Capture the pointer in case the user drags outside the client area.
+          // In this case, the "mouse leave" event is delayed until the user
+          // releases the button. It's only activated on left click given that
+          // it's more common for apps to handle dragging with only the left
+          // button.
+          SetCapture(hwnd);
+        }
+        button_pressed = message;
+        if (message == WM_XBUTTONDOWN) {
+          button_pressed = GET_XBUTTON_WPARAM(wparam);
+        }
         xPos = GET_X_LPARAM(lparam);
         yPos = GET_Y_LPARAM(lparam);
         window->OnPointerDown(static_cast<double>(xPos),
-                              static_cast<double>(yPos));
+                              static_cast<double>(yPos), button_pressed);
         break;
       case WM_LBUTTONUP:
+      case WM_RBUTTONUP:
+      case WM_MBUTTONUP:
+      case WM_XBUTTONUP:
+        if (message == WM_LBUTTONUP) {
+          ReleaseCapture();
+        }
+        button_pressed = message;
+        if (message == WM_XBUTTONUP) {
+          button_pressed = GET_XBUTTON_WPARAM(wparam);
+        }
         xPos = GET_X_LPARAM(lparam);
         yPos = GET_Y_LPARAM(lparam);
         window->OnPointerUp(static_cast<double>(xPos),
-                            static_cast<double>(yPos));
+                            static_cast<double>(yPos), button_pressed);
         break;
       case WM_MOUSEWHEEL:
         window->OnScroll(

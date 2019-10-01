@@ -170,6 +170,8 @@ typedef enum {
   ///
   /// Only applicable when kFlutterSemanticsFlagIsTextField flag is on.
   kFlutterSemanticsFlagIsReadOnly = 1 << 20,
+  /// Whether the semantic node can hold the user's focus.
+  kFlutterSemanticsFlagIsFocusable = 1 << 21,
 } FlutterSemanticsFlag;
 
 typedef enum {
@@ -1199,6 +1201,17 @@ FlutterEngineResult FlutterEngineOnVsync(FLUTTER_API_SYMBOL(FlutterEngine)
                                          intptr_t baton,
                                          uint64_t frame_start_time_nanos,
                                          uint64_t frame_target_time_nanos);
+
+//------------------------------------------------------------------------------
+/// @brief      Reloads the system fonts in engine.
+///
+/// @param[in]  engine.                  A running engine instance.
+///
+/// @return     The result of the call.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineReloadSystemFonts(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine);
 
 //------------------------------------------------------------------------------
 /// @brief      A profiling utility. Logs a trace duration begin event to the

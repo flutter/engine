@@ -4,9 +4,12 @@
 
 package io.flutter.plugin.editing;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Selection;
@@ -15,6 +18,7 @@ import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.InputMethodSubtype;
 
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
@@ -41,6 +45,7 @@ public class TextInputPlugin {
     private InputConnection lastInputConnection;
     @NonNull
     private PlatformViewsController platformViewsController;
+    private final boolean restartAlwaysRequired;
 
     // When true following calls to createInputConnection will return the cached lastInputConnection if the input
     // target is a platform view. See the comments on lockPlatformViewInputConnection for more details.
@@ -86,6 +91,7 @@ public class TextInputPlugin {
 
         this.platformViewsController = platformViewsController;
         this.platformViewsController.attachTextInputPlugin(this);
+        restartAlwaysRequired = isRestartAlwaysRequired();
     }
 
     @NonNull
@@ -261,7 +267,7 @@ public class TextInputPlugin {
         mImm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
     }
 
-    private void setTextInputClient(int client, TextInputChannel.Configuration configuration) {
+    @VisibleForTesting void setTextInputClient(int client, TextInputChannel.Configuration configuration) {
         inputTarget = new InputTarget(InputTarget.Type.FRAMEWORK_CLIENT, client);
         this.configuration = configuration;
         mEditable = Editable.Factory.getInstance().newEditable("");
@@ -293,8 +299,8 @@ public class TextInputPlugin {
         }
     }
 
-    private void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
-        if (!mRestartInputPending && state.text.equals(mEditable.toString())) {
+    @VisibleForTesting void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
+        if (!restartAlwaysRequired && !mRestartInputPending && state.text.equals(mEditable.toString())) {
             applyStateToSelection(state);
             mImm.updateSelection(mView, Math.max(Selection.getSelectionStart(mEditable), 0),
                     Math.max(Selection.getSelectionEnd(mEditable), 0),
@@ -306,6 +312,25 @@ public class TextInputPlugin {
             mImm.restartInput(view);
             mRestartInputPending = false;
         }
+    }
+
+    // Samsung's Korean keyboard has a bug where it always attempts to combine characters based on
+    // its internal state, ignoring if and when the cursor is moved programmatically.
+    //
+    // Fully restarting the IMM works around this because it flushes the keyboard's internal state
+    // and stops it from trying to incorrectly combine characters. However this also has some
+    // negative performance implications, so we don't want to apply this workaround in every case.
+    @SuppressLint("NewApi") // New API guard is inline, the linter can't see it.
+    @SuppressWarnings("deprecation")
+    private boolean isRestartAlwaysRequired() {
+        InputMethodSubtype subtype = mImm.getCurrentInputMethodSubtype();
+        if (subtype == null) {
+            return false;
+        }
+        String language = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+                ? subtype.getLanguageTag()
+                : subtype.getLocale();
+        return Build.MANUFACTURER.equals("samsung") && language.equals("ko");
     }
 
     private void clearTextInputClient() {
