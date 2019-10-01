@@ -516,16 +516,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             result.setViewIdResourceName("");
         }
         result.setPackageName(rootAccessibilityView.getContext().getPackageName());
-        if (semanticsNode.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)) {
-            result.setClassName("android.view.ListView");
-        } else {
-            result.setClassName("android.view.View");
-        }
+        result.setClassName("android.view.View");
         result.setSource(rootAccessibilityView, virtualViewId);
         result.setFocusable(semanticsNode.isFocusable());
-        if (semanticsNode.isFocusable() && !semanticsNode.hasFlag(Flag.IS_FOCUSED)) {
-            result.addAction(AccessibilityNodeInfo.ACTION_FOCUS);
-        }
         if (inputFocusedSemanticsNode != null) {
             result.setFocused(inputFocusedSemanticsNode.id == virtualViewId);
         }
@@ -734,17 +727,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         result.setCheckable(hasCheckedState || hasToggledState);
         if (hasCheckedState) {
             result.setChecked(semanticsNode.hasFlag(Flag.IS_CHECKED));
+            result.setContentDescription(semanticsNode.getValueLabelHint());
             if (semanticsNode.hasFlag(Flag.IS_IN_MUTUALLY_EXCLUSIVE_GROUP)) {
-                result.setContentDescription(semanticsNode.getValueLabelHint());
                 result.setClassName("android.widget.RadioButton");
             } else {
-                if (semanticsNode.label != null && !semanticsNode.label.isEmpty()) {
-                    result.setText(semanticsNode.getValueLabelHint());
-                    result.setClassName("android.widget.CheckedTextView");
-                } else {
-                    result.setContentDescription(semanticsNode.getValueLabelHint());
-                    result.setClassName("android.widget.CheckBox");
-                }
+                result.setClassName("android.widget.CheckBox");
             }
         } else if (hasToggledState) {
             result.setChecked(semanticsNode.hasFlag(Flag.IS_TOGGLED));
@@ -898,6 +885,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                     virtualViewId,
                     Action.DID_GAIN_ACCESSIBILITY_FOCUS
                 );
+                sendAccessibilityEvent(
+                    virtualViewId,
+                    AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED
+                );
+
                 if (accessibilityFocusedSemanticsNode == null) {
                     // When Android focuses a node, it doesn't invalidate the view.
                     // (It does when it sends ACTION_CLEAR_ACCESSIBILITY_FOCUS, so
@@ -905,10 +897,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                     rootAccessibilityView.invalidate();
                 }
                 accessibilityFocusedSemanticsNode = semanticsNode;
-                sendAccessibilityEvent(
-                    virtualViewId,
-                    AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED
-                );
 
                 if (semanticsNode.hasAction(Action.INCREASE) || semanticsNode.hasAction(Action.DECREASE)) {
                     // SeekBars only announce themselves after this event.
@@ -1394,7 +1382,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
             // If the object is the input-focused node, then tell the reader about it.
             if (inputFocusedSemanticsNode != null && inputFocusedSemanticsNode.id == object.id) {
-                Log.e(TAG, "Sending VIEW_FOCUSED for " + inputFocusedSemanticsNode.id);
                 sendAccessibilityEvent(obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_FOCUSED));
             }
 
@@ -2038,9 +2025,17 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         // TODO(goderbauer): This should be decided by the framework once we have more information
         //     about focusability there.
         private boolean isFocusable() {
+            // We enforce in the framework that no other useful semantics are merged with these
+            // nodes.
+            if (hasFlag(Flag.SCOPES_ROUTE)) {
+                return false;
+            }
             if (hasFlag(Flag.IS_FOCUSABLE)) {
                 return true;
             }
+            // If not explicitly set as focusable, then use our legacy
+            // algorithm. Once all focusable widgets have a Focus widget, then
+            // this won't be needed.
             int scrollableActions = Action.SCROLL_RIGHT.value | Action.SCROLL_LEFT.value
                     | Action.SCROLL_UP.value | Action.SCROLL_DOWN.value;
             return (actions & ~scrollableActions) != 0 || flags != 0
