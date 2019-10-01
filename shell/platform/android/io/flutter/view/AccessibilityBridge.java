@@ -737,12 +737,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             result.setChecked(semanticsNode.hasFlag(Flag.IS_TOGGLED));
             result.setClassName("android.widget.Switch");
             result.setContentDescription(semanticsNode.getValueLabelHint());
-        } else {
+        } else if (!semanticsNode.hasFlag(Flag.SCOPES_ROUTE)) {
             // Setting the text directly instead of the content description
             // will replace the "checked" or "not-checked" label.
-            if (!semanticsNode.hasFlag(Flag.SCOPES_ROUTE)) {
-                result.setText(semanticsNode.getValueLabelHint());
-            }
+            result.setText(semanticsNode.getValueLabelHint());
         }
 
         result.setSelected(semanticsNode.hasFlag(Flag.IS_SELECTED));
@@ -1379,12 +1377,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 event.getText().add(object.label);
                 sendAccessibilityEvent(event);
             }
-
-            // If the object is the input-focused node, then tell the reader about it.
-            if (inputFocusedSemanticsNode != null && inputFocusedSemanticsNode.id == object.id) {
-                sendAccessibilityEvent(obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_FOCUSED));
-            }
-
             if (inputFocusedSemanticsNode != null && inputFocusedSemanticsNode.id == object.id
                     && object.hadFlag(Flag.IS_TEXT_FIELD) && object.hasFlag(Flag.IS_TEXT_FIELD)
                     // If we have a TextField that has InputFocus, we should avoid announcing it if something
