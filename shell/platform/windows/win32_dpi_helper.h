@@ -28,17 +28,32 @@ class Win32DpiHelper {
   // Wrapper for OS functionality to return the DPI for |HWND|
   UINT GetDpiForWindow(HWND);
 
+  // Wrapper for OS functionality to return the DPI for the System. Only used if
+  // Per Monitor V2 is not supported by the current Windows version.
+  UINT GetDpiForSystem();
+
   // Sets the current process to a specified DPI awareness context.
   BOOL SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT);
+
+  // Sets the current process to System-level DPI awareness.
+  BOOL SetProcessDpiAware();
+
+  // Sets the DPI awareness for the application. For versions >= Windows 1703,
+  // use Per Monitor V2. For any older versions, use System.
+  void SetDpiAwerenessAllVersions();
 
  private:
   using EnableNonClientDpiScaling_ = BOOL __stdcall(HWND);
   using GetDpiForWindow_ = UINT __stdcall(HWND);
   using SetProcessDpiAwarenessContext_ = BOOL __stdcall(DPI_AWARENESS_CONTEXT);
+  using SetProcessDpiAware_ = BOOL __stdcall();
+  using GetDpiForSystem_ = UINT __stdcall();
 
   EnableNonClientDpiScaling_* enable_non_client_dpi_scaling_ = nullptr;
   GetDpiForWindow_* get_dpi_for_window_ = nullptr;
   SetProcessDpiAwarenessContext_* set_process_dpi_awareness_context_ = nullptr;
+  SetProcessDpiAware_* set_process_dpi_aware_ = nullptr;
+  GetDpiForSystem_* get_dpi_for_system_ = nullptr;
 
   HMODULE user32_module_ = nullptr;
   bool permonitorv2_supported_ = false;
