@@ -5,13 +5,11 @@
 package io.flutter.embedding.engine.plugins;
 
 import android.arch.lifecycle.Lifecycle;
-import android.arch.lifecycle.LifecycleOwner;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
 import io.flutter.embedding.engine.FlutterEngine;
-import io.flutter.embedding.engine.plugins.lifecycle.ConcreteLifecycleReference;
-import io.flutter.embedding.engine.plugins.lifecycle.LifecycleReference;
+import io.flutter.embedding.engine.plugins.lifecycle.HiddenLifecycleReference;
 
 /**
  * Interface to be implemented by all Flutter plugins.
@@ -98,7 +96,7 @@ public interface FlutterPlugin {
   class FlutterPluginBinding {
         private final Context applicationContext;
         private final FlutterEngine flutterEngine;
-        private final ConcreteLifecycleReference concreteLifecycleReference;
+        private final HiddenLifecycleReference hiddenLifecycleReference;
 
         public FlutterPluginBinding(
             @NonNull Context applicationContext,
@@ -107,7 +105,7 @@ public interface FlutterPlugin {
         ) {
             this.applicationContext = applicationContext;
             this.flutterEngine = flutterEngine;
-            this.concreteLifecycleReference = new ConcreteLifecycleReference(lifecycle);
+            this.hiddenLifecycleReference = new HiddenLifecycleReference(lifecycle);
         }
 
         @NonNull
@@ -121,8 +119,8 @@ public interface FlutterPlugin {
         }
 
         @NonNull
-        public LifecycleReference getLifecycle() {
-            return concreteLifecycleReference;
+        public Object getLifecycle() {
+            return hiddenLifecycleReference;
         }
     }
 }
