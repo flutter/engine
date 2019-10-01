@@ -14,8 +14,6 @@ class MockTexture : public Texture {
 
   ~MockTexture() override = default;
 
-  bool unregistered = false;
-
   // Called from GPU thread.
   void Paint(SkCanvas& canvas,
              const SkRect& bounds,
@@ -28,7 +26,12 @@ class MockTexture : public Texture {
 
   void MarkNewFrameAvailable() override {}
 
-  void OnTextureUnregistered() override { unregistered = true; }
+  void OnTextureUnregistered() override { unregistered_ = true; }
+
+  bool unregistered() { return unregistered_; }
+
+ private:
+  bool unregistered_ = false;
 };
 
 TEST(TextureRegistry, UnregisterTextureCallbackTriggered) {
@@ -36,7 +39,7 @@ TEST(TextureRegistry, UnregisterTextureCallbackTriggered) {
   std::shared_ptr<MockTexture> mockTexture = std::make_shared<MockTexture>(0);
   textureRegistry.RegisterTexture(mockTexture);
   textureRegistry.UnregisterTexture(0);
-  ASSERT_TRUE(mockTexture->unregistered);
+  ASSERT_TRUE(mockTexture->unregistered());
 }
 
 }  // namespace testing
