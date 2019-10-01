@@ -686,13 +686,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                             semanticsNode.scrollChildren, // columns
                             false // hierarchical
                         ));
-                        // result.setCollectionItemInfo(AccessibilityNodeInfo.CollectionItemInfo.obtain(
-                        //     0,
-                        //     0,
-                        //     semanticsNode.scrollIndex,
-                        //     1,
-                        //     false
-                        // ));
                     } else {
                         result.setClassName("android.widget.HorizontalScrollView");
                     }
@@ -703,13 +696,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                             0, // columns
                             false // hierarchical
                         ));
-                        // result.setCollectionItemInfo(AccessibilityNodeInfo.CollectionItemInfo.obtain(
-                        //     semanticsNode.scrollIndex,
-                        //     1,
-                        //     0,
-                        //     0,
-                        //     false
-                        // ));
                     } else {
                         result.setClassName("android.widget.ScrollView");
                     }
@@ -767,7 +753,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         } else {
             // Setting the text directly instead of the content description
             // will replace the "checked" or "not-checked" label.
-            result.setText(semanticsNode.getValueLabelHint());
+            if (!semanticsNode.hasFlag(Flag.SCOPES_ROUTE)) {
+                result.setText(semanticsNode.getValueLabelHint());
+            }
         }
 
         result.setSelected(semanticsNode.hasFlag(Flag.IS_SELECTED));
@@ -910,11 +898,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                     virtualViewId,
                     Action.DID_GAIN_ACCESSIBILITY_FOCUS
                 );
-                sendAccessibilityEvent(
-                    virtualViewId,
-                    AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED
-                );
-
                 if (accessibilityFocusedSemanticsNode == null) {
                     // When Android focuses a node, it doesn't invalidate the view.
                     // (It does when it sends ACTION_CLEAR_ACCESSIBILITY_FOCUS, so
@@ -922,6 +905,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                     rootAccessibilityView.invalidate();
                 }
                 accessibilityFocusedSemanticsNode = semanticsNode;
+                sendAccessibilityEvent(
+                    virtualViewId,
+                    AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED
+                );
 
                 if (semanticsNode.hasAction(Action.INCREASE) || semanticsNode.hasAction(Action.DECREASE)) {
                     // SeekBars only announce themselves after this event.
@@ -2051,17 +2038,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         // TODO(goderbauer): This should be decided by the framework once we have more information
         //     about focusability there.
         private boolean isFocusable() {
-            // We enforce in the framework that no other useful semantics are merged with these
-            // nodes.
-            if (hasFlag(Flag.SCOPES_ROUTE)) {
-                return true;
-            }
             if (hasFlag(Flag.IS_FOCUSABLE)) {
                 return true;
             }
-            // If not explicitly set as focusable, then use our legacy
-            // algorithm. Once all focusable widgets have a Focus widget, then
-            // this won't be needed.
             int scrollableActions = Action.SCROLL_RIGHT.value | Action.SCROLL_LEFT.value
                     | Action.SCROLL_UP.value | Action.SCROLL_DOWN.value;
             return (actions & ~scrollableActions) != 0 || flags != 0
