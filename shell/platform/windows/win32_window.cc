@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/windows/win32_window.h"
+#include <iostream>
 
 namespace flutter {
 
@@ -26,7 +27,11 @@ void Win32Window::InitializeChild(const char* title,
   Destroy();
   std::wstring converted_title = NarrowToWide(title);
 
-  WNDCLASS window_class = ResgisterWindowClass(converted_title);
+  // Set DPI awareness for all Windows versions. This call has to be made before
+  // the HWND is created.
+  dpi_helper_->SetDpiAwerenessAllVersions();
+
+  WNDCLASS window_class = RegisterWindowClass(converted_title);
 
   auto* result = CreateWindowEx(
       0, window_class.lpszClassName, converted_title.c_str(),
@@ -54,7 +59,7 @@ std::wstring Win32Window::NarrowToWide(const char* source) {
   return wideTitle;
 }
 
-WNDCLASS Win32Window::ResgisterWindowClass(std::wstring& title) {
+WNDCLASS Win32Window::RegisterWindowClass(std::wstring& title) {
   window_class_name_ = title;
 
   WNDCLASS window_class{};
@@ -83,13 +88,17 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
 
     auto that = static_cast<Win32Window*>(cs->lpCreateParams);
 
-    // Since the application is running in Per-monitor V2 mode, turn on
-    // automatic titlebar scaling
-    BOOL result = that->dpi_helper_->EnableNonClientDpiScaling(window);
-    if (result != TRUE) {
-      OutputDebugString(L"Failed to enable non-client area autoscaling");
+    if (that->dpi_helper_->IsPerMonitorV2Available()) {
+      // Since the application is running in Per-monitor V2 mode, turn on
+      // automatic titlebar scaling
+      BOOL result = that->dpi_helper_->EnableNonClientDpiScaling(window);
+      if (result != TRUE) {
+        OutputDebugString(L"Failed to enable non-client area autoscaling");
+      }
+      that->current_dpi_ = that->dpi_helper_->GetDpiForWindow(window);
+    } else {
+      that->current_dpi_ = that->dpi_helper_->GetDpiForSystem();
     }
-    that->current_dpi_ = that->dpi_helper_->GetDpiForWindow(window);
     that->window_handle_ = window;
   } else if (Win32Window* that = GetThisFromHandle(window)) {
     return that->MessageHandler(window, message, wparam, lparam);
