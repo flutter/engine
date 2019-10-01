@@ -10,6 +10,8 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 
 import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.embedding.engine.plugins.lifecycle.ConcreteLifecycleReference;
+import io.flutter.embedding.engine.plugins.lifecycle.LifecycleReference;
 
 /**
  * Interface to be implemented by all Flutter plugins.
@@ -93,10 +95,10 @@ public interface FlutterPlugin {
    * concerned about which Android Component is currently holding the {@link FlutterEngine}.
    * TODO(mattcarroll): add info about ActivityAware and ServiceAware for plugins that care.
    */
-  class FlutterPluginBinding implements LifecycleOwner {
+  class FlutterPluginBinding {
         private final Context applicationContext;
         private final FlutterEngine flutterEngine;
-        private final Lifecycle lifecycle;
+        private final ConcreteLifecycleReference concreteLifecycleReference;
 
         public FlutterPluginBinding(
             @NonNull Context applicationContext,
@@ -105,7 +107,7 @@ public interface FlutterPlugin {
         ) {
             this.applicationContext = applicationContext;
             this.flutterEngine = flutterEngine;
-            this.lifecycle = lifecycle;
+            this.concreteLifecycleReference = new ConcreteLifecycleReference(lifecycle);
         }
 
         @NonNull
@@ -118,10 +120,9 @@ public interface FlutterPlugin {
             return flutterEngine;
         }
 
-        @Override
         @NonNull
-        public Lifecycle getLifecycle() {
-            return lifecycle;
+        public LifecycleReference getLifecycle() {
+            return concreteLifecycleReference;
         }
     }
 }
