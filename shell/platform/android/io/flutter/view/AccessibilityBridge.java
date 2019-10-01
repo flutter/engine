@@ -516,7 +516,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             result.setViewIdResourceName("");
         }
         result.setPackageName(rootAccessibilityView.getContext().getPackageName());
-        result.setClassName("android.view.View");
+        if (semanticsNode.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)) {
+            result.setClassName("android.view.ListView");
+        } else {
+            result.setClassName("android.view.View");
+        }
         result.setSource(rootAccessibilityView, virtualViewId);
         result.setFocusable(semanticsNode.isFocusable());
         if (semanticsNode.isFocusable() && !semanticsNode.hasFlag(Flag.IS_FOCUSED)) {
@@ -682,6 +686,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                             semanticsNode.scrollChildren, // columns
                             false // hierarchical
                         ));
+                        // result.setCollectionItemInfo(AccessibilityNodeInfo.CollectionItemInfo.obtain(
+                        //     0,
+                        //     0,
+                        //     semanticsNode.scrollIndex,
+                        //     1,
+                        //     false
+                        // ));
                     } else {
                         result.setClassName("android.widget.HorizontalScrollView");
                     }
@@ -692,6 +703,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                             0, // columns
                             false // hierarchical
                         ));
+                        // result.setCollectionItemInfo(AccessibilityNodeInfo.CollectionItemInfo.obtain(
+                        //     semanticsNode.scrollIndex,
+                        //     1,
+                        //     0,
+                        //     0,
+                        //     false
+                        // ));
                     } else {
                         result.setClassName("android.widget.ScrollView");
                     }
@@ -730,11 +748,17 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         result.setCheckable(hasCheckedState || hasToggledState);
         if (hasCheckedState) {
             result.setChecked(semanticsNode.hasFlag(Flag.IS_CHECKED));
-            result.setContentDescription(semanticsNode.getValueLabelHint());
             if (semanticsNode.hasFlag(Flag.IS_IN_MUTUALLY_EXCLUSIVE_GROUP)) {
+                result.setContentDescription(semanticsNode.getValueLabelHint());
                 result.setClassName("android.widget.RadioButton");
             } else {
-                result.setClassName("android.widget.CheckBox");
+                if (semanticsNode.label != null && !semanticsNode.label.isEmpty()) {
+                    result.setText(semanticsNode.getValueLabelHint());
+                    result.setClassName("android.widget.CheckedTextView");
+                } else {
+                    result.setContentDescription(semanticsNode.getValueLabelHint());
+                    result.setClassName("android.widget.CheckBox");
+                }
             }
         } else if (hasToggledState) {
             result.setChecked(semanticsNode.hasFlag(Flag.IS_TOGGLED));
@@ -1383,6 +1407,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
             // If the object is the input-focused node, then tell the reader about it.
             if (inputFocusedSemanticsNode != null && inputFocusedSemanticsNode.id == object.id) {
+                Log.e(TAG, "Sending VIEW_FOCUSED for " + inputFocusedSemanticsNode.id);
                 sendAccessibilityEvent(obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_FOCUSED));
             }
 
@@ -2029,7 +2054,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             // We enforce in the framework that no other useful semantics are merged with these
             // nodes.
             if (hasFlag(Flag.SCOPES_ROUTE)) {
-                return false;
+                return true;
             }
             if (hasFlag(Flag.IS_FOCUSABLE)) {
                 return true;
