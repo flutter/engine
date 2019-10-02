@@ -1,7 +1,5 @@
 #include "flutter/shell/platform/windows/win32_dpi_helper.h"
 
-#include <iostream>
-
 namespace flutter {
 
 namespace {
@@ -43,17 +41,17 @@ Win32DpiHelper::~Win32DpiHelper() {
   }
 }
 
-void Win32DpiHelper::SetDpiAwerenessAllVersions() {
+BOOL Win32DpiHelper::SetDpiAwareness() {
   if (permonitorv2_supported_) {
-    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    return set_process_dpi_awareness_context_(
+        DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
   } else {
-    std::cerr << "Per Monitor V2 DPI awareness is not supported on this "
-                 "version of Windows. Setting System DPI awareness\n";
     AssignProcAddress(user32_module_, "GetDpiForSystem", get_dpi_for_system_);
     AssignProcAddress(user32_module_, "SetProcessDpiAware",
                       set_process_dpi_aware_);
 
-    SetProcessDPIAware();
+    return set_process_dpi_aware_();
   }
 }
 
@@ -68,27 +66,11 @@ BOOL Win32DpiHelper::EnableNonClientDpiScaling(HWND hwnd) {
   return enable_non_client_dpi_scaling_(hwnd);
 }
 
-UINT Win32DpiHelper::GetDpiForWindow(HWND hwnd) {
-  if (!permonitorv2_supported_) {
-    return false;
+UINT Win32DpiHelper::GetDpi(HWND hwnd) {
+  if (permonitorv2_supported_) {
+    return get_dpi_for_window_(hwnd);
   }
-  return get_dpi_for_window_(hwnd);
-}
-
-UINT Win32DpiHelper::GetDpiForSystem() {
   return get_dpi_for_system_();
-}
-
-BOOL Win32DpiHelper::SetProcessDpiAwarenessContext(
-    DPI_AWARENESS_CONTEXT context) {
-  if (!permonitorv2_supported_) {
-    return false;
-  }
-  return set_process_dpi_awareness_context_(context);
-}
-
-BOOL Win32DpiHelper::SetProcessDpiAware() {
-  return set_process_dpi_aware_();
 }
 
 }  // namespace flutter
