@@ -12,8 +12,7 @@ namespace flutter {
 Win32TaskRunner::Win32TaskRunner(std::thread::id main_thread_id,
                                  TaskExpiredCallback on_task_expired)
     : main_thread_id_(main_thread_id),
-      on_task_expired_(std::move(on_task_expired)),
-      wait_duration_(std::chrono::seconds::max()) {}
+      on_task_expired_(std::move(on_task_expired)) {}
 
 Win32TaskRunner::~Win32TaskRunner() = default;
 
@@ -21,69 +20,50 @@ bool Win32TaskRunner::RunsTasksOnCurrentThread() const {
   return std::this_thread::get_id() == main_thread_id_;
 }
 
-void Win32TaskRunner::GetMessage(LPMSG message,
-                                 HWND window,
-                                 UINT message_filter_min,
-                                 UINT message_filter_max) {
-  BOOL got_message = FALSE;
+std::chrono::nanoseconds Win32TaskRunner::ProcessTasks() {
+  const TaskTimePoint now = TaskTimePoint::clock::now();
 
-  // Repeat until a message is retrieved from the win32 message queue.
-  while (!got_message) {
-    const auto now = TaskTimePoint::clock::now();
+  std::vector<FlutterTask> expired_tasks;
 
-    // Wait for either a window message or timeout.
-    // if a timeout has been set at the end of a previous iteration, wait for
-    // that duration, else wait until there a new message is posted.
-    MsgWaitForMultipleObjects(
-        0, NULL, FALSE, (DWORD)(wait_duration_.count() * 1000), QS_ALLEVENTS);
-
-    std::vector<FlutterTask> expired_tasks;
-
-    // Process expired tasks.
-    {
-      std::lock_guard<std::mutex> lock(task_queue_mutex_);
-      while (!task_queue_.empty()) {
-        const auto& top = task_queue_.top();
-        // If this task (and all tasks after this) has not yet expired, there is
-        // nothing more to do. Quit iterating.
-        if (top.fire_time > now) {
-          break;
-        }
-
-        // Make a record of the expired task. Do NOT service the task here
-        // because we are still holding onto the task queue mutex. We don't want
-        // other threads to block on posting tasks onto this thread till we are
-        // done processing expired tasks.
-        expired_tasks.push_back(task_queue_.top().task);
-
-        // Remove the tasks from the delayed tasks queue.
-        task_queue_.pop();
+  // Process expired tasks.
+  {
+    std::lock_guard<std::mutex> lock(task_queue_mutex_);
+    while (!task_queue_.empty()) {
+      const auto& top = task_queue_.top();
+      // If this task (and all tasks after this) has not yet expired, there is
+      // nothing more to do. Quit iterating.
+      if (top.fire_time > now) {
+        break;
       }
+
+      // Make a record of the expired task. Do NOT service the task here
+      // because we are still holding onto the task queue mutex. We don't want
+      // other threads to block on posting tasks onto this thread till we are
+      // done processing expired tasks.
+      expired_tasks.push_back(task_queue_.top().task);
+
+      // Remove the tasks from the delayed tasks queue.
+      task_queue_.pop();
     }
+  }
 
-    // Fire expired tasks.
-    {
-      // Flushing tasks here without holing onto the task queue mutex.
-      for (const auto& task : expired_tasks) {
-        on_task_expired_(&task);
-      }
+  // Fire expired tasks.
+  {
+    // Flushing tasks here without holing onto the task queue mutex.
+    for (const auto& task : expired_tasks) {
+      on_task_expired_(&task);
     }
+  }
 
-    // Calculate duration to sleep for on next iteration.
-    {
-      std::lock_guard<std::mutex> lock(task_queue_mutex_);
-      const auto next_wake = task_queue_.empty() ? TaskTimePoint::max()
-                                                 : task_queue_.top().fire_time;
+  // Calculate duration to sleep for on next iteration.
+  {
+    std::lock_guard<std::mutex> lock(task_queue_mutex_);
+    const auto next_wake = task_queue_.empty() ? TaskTimePoint::max()
+                                                : task_queue_.top().fire_time;
 
-      wait_duration_ = std::chrono::duration_cast<Seconds>(std::min(
-          next_wake - now,
-          std::chrono::nanoseconds::max()));  // TODO if task queue is empty,
-                                              // wait should be seconds
-    }
-
-    // PeekMessage
-    auto got_message = PeekMessage(message, window, message_filter_min,
-                                   message_filter_max, PM_REMOVE);
+    return std::min(
+        next_wake - now,
+        std::chrono::nanoseconds::max());
   }
 }
 

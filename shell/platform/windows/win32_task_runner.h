@@ -31,11 +31,7 @@ class Win32TaskRunner {
   // Returns if the current thread is the thread used by the win32 event loop.
   bool RunsTasksOnCurrentThread() const;
 
-  // TODO
-  void GetMessage(LPMSG message,
-                  HWND window,
-                  UINT message_filter_min,
-                  UINT message_filter_max);
+  std::chrono::nanoseconds ProcessTasks();
 
   // Post a Flutter engine tasks to the event loop for delayed execution.
   void PostTask(HWND window,
@@ -70,11 +66,6 @@ class Win32TaskRunner {
 
   static TaskTimePoint TimePointFromFlutterTime(
       uint64_t flutter_target_time_nanos);
-
-  // Make sure the seconds are not integral.
-  using Seconds = std::chrono::duration<double, std::ratio<1>>;
-
-  Seconds wait_duration_;
 };
 
 }  // namespace flutter

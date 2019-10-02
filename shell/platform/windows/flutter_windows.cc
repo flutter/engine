@@ -115,16 +115,17 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
   // Configure task runner interop.
   FlutterTaskRunnerDescription platform_task_runner = {};
   platform_task_runner.struct_size = sizeof(FlutterTaskRunnerDescription);
-  platform_task_runner.user_data = state;
+  // XXX move task runner to |state|, and change this user_data accordingly.
+  platform_task_runner.user_data = state->view.get();
   platform_task_runner.runs_task_on_current_thread_callback =
-      [](void* state) -> bool {
-    return reinterpret_cast<flutter::Win32FlutterWindow*>(state)
+      [](void* user_data) -> bool {
+    return reinterpret_cast<flutter::Win32FlutterWindow*>(user_data)
         ->RunsTasksOnCurrentThread();
     return nullptr;
   };
   platform_task_runner.post_task_callback =
-      [](FlutterTask task, uint64_t target_time_nanos, void* state) -> void {
-    reinterpret_cast<flutter::Win32FlutterWindow*>(state)->PostTask(
+      [](FlutterTask task, uint64_t target_time_nanos, void* user_data) -> void {
+    reinterpret_cast<flutter::Win32FlutterWindow*>(user_data)->PostTask(
         task, target_time_nanos);
   };
 
@@ -146,12 +147,12 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
   return state;
 }
 
-void FlutterDesktopProcessMessages() {
-  __FlutterEngineFlushPendingTasksNow();
+uint64_t FlutterDesktopProcessMessages(FlutterDesktopViewControllerRef controller) {
+  return controller->view->ProcessTasks();
 }
 
 HWND FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller) {
-  return (controller)->view->GetWindowHandle();
+  return controller->view->GetWindowHandle();
 }
 
 void FlutterDesktopDestroyViewController(

@@ -105,6 +105,8 @@ class Win32FlutterWindow : public Win32Window {
     // Returns if the current thread is the thread used by the GLFW event loop.
   bool RunsTasksOnCurrentThread() const;
 
+  uint64_t ProcessTasks();
+
  private:
   // Reports a mouse movement to Flutter engine.
   void SendPointerMove(double x, double y);

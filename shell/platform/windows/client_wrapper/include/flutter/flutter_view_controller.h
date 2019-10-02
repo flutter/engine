@@ -7,6 +7,7 @@
 
 #include <flutter_windows.h>
 
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -51,9 +52,8 @@ class FlutterViewController : public PluginRegistry {
   // Return backing HWND for manipulation in host application.
   HWND GetNativeWindow();
 
-  // Must be called in run loop to enable the view to do work on each tick of
-  // loop.
-  void ProcessMessages();
+  // XXX rewrite. Returns nano delay.
+  std::chrono::nanoseconds ProcessMessages();
 
   // flutter::PluginRegistry:
   FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(

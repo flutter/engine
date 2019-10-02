@@ -65,9 +65,8 @@ FlutterDesktopGetPluginRegistrar(FlutterDesktopViewControllerRef controller,
 FLUTTER_EXPORT HWND
 FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller);
 
-// Must be called in run loop to enable the view to do work on each tick of
-// loop.
-FLUTTER_EXPORT void FlutterDesktopProcessMessages();
+// XXX
+FLUTTER_EXPORT uint64_t FlutterDesktopProcessMessages(FlutterDesktopViewControllerRef controller);
 
 // Runs an instance of a headless Flutter engine.
 //

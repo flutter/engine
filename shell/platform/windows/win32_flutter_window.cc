@@ -384,4 +384,8 @@ bool Win32FlutterWindow::RunsTasksOnCurrentThread() const {
   return task_runner_->RunsTasksOnCurrentThread();
 }
 
+uint64_t Win32FlutterWindow::ProcessTasks() {
+  return task_runner_->ProcessTasks().count();
+}
+
 }  // namespace flutter
