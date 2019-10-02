@@ -101,6 +101,46 @@ void main() {
       });
     });
 
+    test('dispatches repeat events', () {
+      List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
+      ui.window.onPlatformMessage = (String channel, ByteData data,
+          ui.PlatformMessageResponseCallback callback) {
+        messages.add(const JSONMessageCodec().decodeMessage(data));
+      };
+
+      dispatchKeyboardEvent(
+        'keydown',
+        key: 'SomeKey',
+        code: 'SomeCode',
+        repeat: true,
+      );
+      dispatchKeyboardEvent(
+        'keydown',
+        key: 'SomeKey',
+        code: 'SomeCode',
+        repeat: true,
+      );
+      dispatchKeyboardEvent(
+        'keydown',
+        key: 'SomeKey',
+        code: 'SomeCode',
+        repeat: true,
+      );
+
+      final Map<String, dynamic> expectedMessage = <String, dynamic>{
+        'type': 'keydown',
+        'keymap': 'web',
+        'code': 'SomeCode',
+        'key': 'SomeKey',
+        'metaState': 0,
+      };
+      expect(messages, <Map<String, dynamic>>[
+        expectedMessage,
+        expectedMessage,
+        expectedMessage,
+      ]);
+    });
+
     test('stops dispatching events after dispose', () {
       int count = 0;
       ui.window.onPlatformMessage = (String channel, ByteData data,
@@ -129,6 +169,7 @@ void dispatchKeyboardEvent(
   String type, {
   String key,
   String code,
+  bool repeat = false,
   bool isShiftPressed = false,
   bool isAltPressed = false,
   bool isControlPressed = false,
@@ -141,6 +182,7 @@ void dispatchKeyboardEvent(
     <String, dynamic>{
       'key': key,
       'code': code,
+      'repeat': repeat,
       'shiftKey': isShiftPressed,
       'altKey': isAltPressed,
       'ctrlKey': isControlPressed,

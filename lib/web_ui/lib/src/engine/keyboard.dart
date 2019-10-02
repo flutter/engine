@@ -50,10 +50,6 @@ class Keyboard {
   static const JSONMessageCodec _messageCodec = JSONMessageCodec();
 
   void _handleHtmlEvent(html.KeyboardEvent event) {
-    if (event.repeat) {
-      // We don't care about repeat events. All we need is keydown and keyup.
-      return;
-    }
     final Map<String, dynamic> eventData = <String, dynamic>{
       'type': event.type,
       'keymap': 'web',
