@@ -40,6 +40,9 @@ class Win32DpiHelper {
 
   // Sets the DPI awareness for the application. For versions >= Windows 1703,
   // use Per Monitor V2. For any older versions, use System.
+  //
+  // This call is overriden if DPI awareness is stated in the application
+  // manifest.
   void SetDpiAwerenessAllVersions();
 
  private:
