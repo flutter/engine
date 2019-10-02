@@ -24,9 +24,11 @@ class EmbedderTaskRunner final : public fml::TaskRunner {
     std::function<bool(void)> runs_task_on_current_thread_callback;
   };
 
-  EmbedderTaskRunner(DispatchTable table);
+  EmbedderTaskRunner(DispatchTable table, size_t embedder_identifier);
 
   ~EmbedderTaskRunner() override;
+
+  size_t GetEmbedderIdentifier() const;
 
   bool PostTask(uint64_t baton);
 
@@ -46,6 +48,7 @@ class EmbedderTaskRunner final : public fml::TaskRunner {
   fml::TaskQueueId GetTaskQueueId() override;
 
  private:
+  const size_t embedder_identifier_;
   DispatchTable dispatch_table_;
   std::mutex tasks_mutex_;
   uint64_t last_baton_ FML_GUARDED_BY(tasks_mutex_);
