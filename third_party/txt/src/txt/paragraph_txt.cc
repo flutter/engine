@@ -1119,10 +1119,43 @@ void ParagraphTxt::Layout(double width) {
           // descent is `fontsize * style.height * style.font_size`.
           //
           // The raw metrics do not add up to fontSize. The state of font
-          // metrics is a mess, see
-          // https://glyphsapp.com/tutorials/vertical-metrics for a good
-          // explanation of all the available metrics for fonts. Doing this
-          // allows a sane and reasonable line height to be specified.
+          // metrics is a mess:
+          //
+          // Each font has 4 sets of vertical metrics:
+          //
+          // * hhea: hheaAscender, hheaDescender, hheaLineGap.
+          //     Used by Apple.
+          // * OS/2 typo: typoAscender, typoDescender, typoLineGap.
+          //     Used sometimes by Windows for layout.
+          // * OS/2 win: winAscent, winDescent.
+          //     Also used by Windows, generally will be cut if extends past
+          //     these metrics.
+          // * EM Square: ascent, descent
+          //     Not actively used, but this defines the 'scale' of the
+          //     units used.
+          //
+          // `Use Typo Metrics` is a boolean that, when enabled, prefers
+          // typo metrics over win metrics. Default is off. Enabled by most
+          // modern fonts.
+          //
+          // In addition to these different sets of metrics, there are also
+          // multiple strategies for using these metrics:
+          //
+          // * Adobe: Set hhea values to typo equivalents.
+          // * Microsoft: Set hhea values to win equivalents.
+          // * Web: Use hhea values for text, regardless of `Use Typo Metrics`
+          //     The hheaLineGap is distributed half across the top and half
+          //     across the bottom of the line.
+          //   Exceptions:
+          //     Windows: All browsers respect `Use Typo Metrics`
+          //     Firefox respects `Use Typo Metrics`.
+          //
+          // A more thorough explanation is available at
+          // https://glyphsapp.com/tutorials/vertical-metrics
+          //
+          // Doing this ascent/descent normalization to the EM Square allows
+          // a sane, consistent, and reasonable line height to be specified,
+          // though it breaks with what is done by any of the platforms above.
           double metrics_height = -metrics.fAscent + metrics.fDescent;
           ascent = (-metrics.fAscent / metrics_height) * style.height *
                    style.font_size;
