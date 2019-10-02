@@ -27,12 +27,15 @@
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
+NSString* const FlutterDefaultDartEntrypoint = nil;
+
 @interface FlutterEngine () <FlutterTextInputDelegate, FlutterBinaryMessenger>
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
 
 @property(nonatomic, readwrite, copy) NSString* isolateId;
+@property(nonatomic, retain) id<NSObject> flutterViewControllerWillDeallocObserver;
 @end
 
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
@@ -69,12 +72,16 @@
   FlutterBinaryMessengerRelay* _binaryMessenger;
 }
 
-- (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)projectOrNil {
-  return [self initWithName:labelPrefix project:projectOrNil allowHeadlessExecution:YES];
+- (instancetype)initWithName:(NSString*)labelPrefix {
+  return [self initWithName:labelPrefix project:nil allowHeadlessExecution:YES];
+}
+
+- (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
+  return [self initWithName:labelPrefix project:project allowHeadlessExecution:YES];
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix
-                     project:(FlutterDartProject*)projectOrNil
+                     project:(FlutterDartProject*)project
       allowHeadlessExecution:(BOOL)allowHeadlessExecution {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
@@ -85,15 +92,14 @@
 
   _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(self);
 
-  if (projectOrNil == nil)
+  if (project == nil)
     _dartProject.reset([[FlutterDartProject alloc] init]);
   else
-    _dartProject.reset([projectOrNil retain]);
+    _dartProject.reset([project retain]);
 
   _pluginPublications = [NSMutableDictionary new];
   _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
 
-  [self setupChannels];
   _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
@@ -112,6 +118,7 @@
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   [center removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+  [_flutterViewControllerWillDeallocObserver release];
 
   [super dealloc];
 }
@@ -168,12 +175,21 @@
   _viewController = [viewController getWeakPtr];
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
+
+  self.flutterViewControllerWillDeallocObserver =
+      [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
+                                                        object:viewController
+                                                         queue:[NSOperationQueue mainQueue]
+                                                    usingBlock:^(NSNotification* note) {
+                                                      [self notifyViewControllerDeallocated];
+                                                    }];
 }
 
 - (void)notifyViewControllerDeallocated {
   if (!_allowHeadlessExecution) {
     [self destroyContext];
   }
+  _viewController.reset();
 }
 
 - (void)destroyContext {
@@ -419,6 +435,10 @@
   return _shell != nullptr;
 }
 
+- (BOOL)run {
+  return [self runWithEntrypoint:FlutterDefaultDartEntrypoint libraryURI:nil];
+}
+
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
   if ([self createShell:entrypoint libraryURI:libraryURI]) {
     [self launchEngine:entrypoint libraryURI:libraryURI];
@@ -523,7 +543,9 @@
 - (void)sendOnChannel:(NSString*)channel
               message:(NSData*)message
           binaryReply:(FlutterBinaryReply)callback {
-  NSAssert(channel, @"The channel must not be null");
+  NSParameterAssert(channel);
+  NSAssert(_shell && _shell->IsSetup(),
+           @"Sending a message before the FlutterEngine has been run.");
   fml::RefPtr<flutter::PlatformMessageResponseDarwin> response =
       (callback == nil) ? nullptr
                         : fml::MakeRefCounted<flutter::PlatformMessageResponseDarwin>(
@@ -541,8 +563,9 @@
 
 - (void)setMessageHandlerOnChannel:(NSString*)channel
               binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
-  NSAssert(channel, @"The channel must not be null");
-  FML_DCHECK(_shell && _shell->IsSetup());
+  NSParameterAssert(channel);
+  NSAssert(_shell && _shell->IsSetup(),
+           @"Setting a message handler before the FlutterEngine has been run.");
   self.iosPlatformView->GetPlatformMessageRouter().SetMessageHandler(channel.UTF8String, handler);
 }
 

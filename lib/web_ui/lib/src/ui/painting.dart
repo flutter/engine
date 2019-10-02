@@ -275,11 +275,7 @@ class Color {
 
   @override
   String toString() {
-    if (engine.assertionsEnabled) {
-      return 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
-    } else {
-      return super.toString();
-    }
+    return 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
   }
 }
 
@@ -1192,36 +1188,32 @@ class Paint {
 
   @override
   String toString() {
-    if (engine.assertionsEnabled) {
-      final StringBuffer result = StringBuffer();
-      String semicolon = '';
-      result.write('Paint(');
-      if (style == PaintingStyle.stroke) {
-        result.write('$style');
-        if (strokeWidth != null && strokeWidth != 0.0)
-          result.write(' $strokeWidth');
-        else
-          result.write(' hairline');
-        if (strokeCap != null && strokeCap != StrokeCap.butt)
-          result.write(' $strokeCap');
-        semicolon = '; ';
-      }
-      if (isAntiAlias != true) {
-        result.write('${semicolon}antialias off');
-        semicolon = '; ';
-      }
-      if (color != _defaultPaintColor) {
-        if (color != null)
-          result.write('$semicolon$color');
-        else
-          result.write('${semicolon}no color');
-        semicolon = '; ';
-      }
-      result.write(')');
-      return result.toString();
-    } else {
-      return super.toString();
+    final StringBuffer result = StringBuffer();
+    String semicolon = '';
+    result.write('Paint(');
+    if (style == PaintingStyle.stroke) {
+      result.write('$style');
+      if (strokeWidth != null && strokeWidth != 0.0)
+        result.write(' $strokeWidth');
+      else
+        result.write(' hairline');
+      if (strokeCap != null && strokeCap != StrokeCap.butt)
+        result.write(' $strokeCap');
+      semicolon = '; ';
     }
+    if (isAntiAlias != true) {
+      result.write('${semicolon}antialias off');
+      semicolon = '; ';
+    }
+    if (color != _defaultPaintColor) {
+      if (color != null)
+        result.write('$semicolon$color');
+      else
+        result.write('${semicolon}no color');
+      semicolon = '; ';
+    }
+    result.write(')');
+    return result.toString();
   }
 }
 
@@ -1447,9 +1439,7 @@ class ColorFilter {
   }
 
   @override
-  String toString() => engine.assertionsEnabled
-      ? 'ColorFilter($_color, $_blendMode)'
-      : super.toString();
+  String toString() => 'ColorFilter($_color, $_blendMode)';
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
@@ -1638,6 +1628,12 @@ enum PixelFormat {
   bgra8888,
 }
 
+/// Indicates that the image should not be resized in this dimension.
+///
+/// Used by [instantiateImageCodec] as a magical value to disable resizing
+/// in the given dimension.
+const int kDoNotResizeDimension = -1;
+
 class _ImageInfo {
   _ImageInfo(this.width, this.height, this.format, this.rowBytes) {
     rowBytes ??= width * 4;
@@ -1715,9 +1711,12 @@ class Codec {
 ///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
-Future<Codec> instantiateImageCodec(Uint8List list,
-    {double decodedCacheRatioCap = double.infinity}) {
+Future<Codec> instantiateImageCodec(Uint8List list, {
+  int targetWidth,
+  int targetHeight,
+}) {
   return engine.futurize((engine.Callback<Codec> callback) =>
+      // TODO: Implement targetWidth and targetHeight support.
       _instantiateImageCodec(list, callback, null));
 }
 

@@ -20,6 +20,11 @@ if [[ ! -d "$DEVICE_TOOLS" ]]; then
   exit 1
 fi
 
+PUB_VERSION=$($HOST_TOOLS/dart-sdk/bin/pub --version)
+echo "Using Pub ${PUB_VERSION} from $HOST_TOOLS/dart-sdk/bin/pub"
+
+$HOST_TOOLS/dart-sdk/bin/pub get
+
 echo "Using dart from $HOST_TOOLS, gen_snapshot from $DEVICE_TOOLS."
 
 OUTDIR="${BASH_SOURCE%/*}/build/ios"
@@ -47,6 +52,7 @@ echo "Using $SYSROOT as sysroot."
 echo "Compiling Assembly..."
 
 cc -arch arm64 \
+  -fembed-bitcode \
   -isysroot "$SYSROOT" \
   -miphoneos-version-min=8.0 \
   -c "$OUTDIR/snapshot_assembly.S" \
@@ -55,6 +61,7 @@ cc -arch arm64 \
 echo "Linking App using $SYSROOT..."
 
 clang -arch arm64 \
+  -fembed-bitcode \
   -isysroot "$SYSROOT" \
   -miphoneos-version-min=8.0 \
   -dynamiclib -Xlinker -rpath -Xlinker @executable_path/Frameworks \

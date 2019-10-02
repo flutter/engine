@@ -135,9 +135,11 @@ action("flutter_shell_java") {
     "io/flutter/embedding/android/DrawableSplashScreen.java",
     "io/flutter/embedding/android/FlutterActivity.java",
     "io/flutter/embedding/android/FlutterActivityAndFragmentDelegate.java",
+    "io/flutter/embedding/android/FlutterActivityLaunchConfigs.java",
     "io/flutter/embedding/android/FlutterEngineConfigurator.java",
     "io/flutter/embedding/android/FlutterEngineProvider.java",
     "io/flutter/embedding/android/FlutterFragment.java",
+    "io/flutter/embedding/android/FlutterFragmentActivity.java",
     "io/flutter/embedding/android/FlutterSplashView.java",
     "io/flutter/embedding/android/FlutterSurfaceView.java",
     "io/flutter/embedding/android/FlutterTextureView.java",
@@ -170,7 +172,8 @@ action("flutter_shell_java") {
     "io/flutter/embedding/engine/plugins/shim/ShimPluginRegistry.java",
     "io/flutter/embedding/engine/plugins/shim/ShimRegistrar.java",
     "io/flutter/embedding/engine/renderer/FlutterRenderer.java",
-    "io/flutter/embedding/engine/renderer/OnFirstFrameRenderedListener.java",
+    "io/flutter/embedding/engine/renderer/FlutterUiDisplayListener.java",
+    "io/flutter/embedding/engine/renderer/RenderSurface.java",
     "io/flutter/embedding/engine/systemchannels/AccessibilityChannel.java",
     "io/flutter/embedding/engine/systemchannels/KeyEventChannel.java",
     "io/flutter/embedding/engine/systemchannels/LifecycleChannel.java",
@@ -231,7 +234,6 @@ action("flutter_shell_java") {
   sources += get_target_outputs(":gen_android_build_config_java")
 
   android_support_jars = [
-    "//third_party/android_support/android_support_v13.jar",
     "//third_party/android_support/android_support_compat.jar",
     "//third_party/android_support/android_support_annotations.jar",
     "//third_party/android_support/android_support_fragment.jar",
@@ -412,7 +414,13 @@ action("robolectric_tests") {
     "test/io/flutter/embedding/android/FlutterActivityTest.java",
     "test/io/flutter/embedding/android/FlutterFragmentTest.java",
     "test/io/flutter/embedding/engine/FlutterEngineCacheTest.java",
+    "test/io/flutter/embedding/engine/FlutterJNITest.java",
+    "test/io/flutter/embedding/engine/RenderingComponentTest.java",
+    "test/io/flutter/embedding/engine/renderer/FlutterRendererTest.java",
     "test/io/flutter/embedding/engine/systemchannels/PlatformChannelTest.java",
+    "test/io/flutter/plugin/common/StandardMessageCodecTest.java",
+    "test/io/flutter/plugin/editing/TextInputPluginTest.java",
+    "test/io/flutter/plugin/platform/SingleViewPresentationTest.java",
     "test/io/flutter/util/PreconditionsTest.java",
   ]
 
@@ -430,6 +438,7 @@ action("robolectric_tests") {
     "//third_party/robolectric/lib/robolectric-3.8.jar",
     "//third_party/robolectric/lib/shadows-framework-3.8.jar",
     "//third_party/robolectric/lib/annotations-3.8.jar",
+    "//third_party/robolectric/lib/shadowapi-3.8.jar",
     "//third_party/robolectric/lib/runtime-1.1.1.jar",
     "//third_party/robolectric/lib/common-1.1.1.jar",
     "//third_party/robolectric/lib/common-java8-1.1.1.jar",

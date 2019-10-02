@@ -161,7 +161,9 @@ void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
       },
     );
   } else {
-    window._respondToPlatformMessage(responseId, null);
+    channelBuffers.push(name, data, (ByteData responseData) {
+      window._respondToPlatformMessage(responseId, responseData);
+    });
   }
 }
 
@@ -198,7 +200,7 @@ void _reportTimings(List<int> timings) {
   for (int i = 0; i < timings.length; i += FramePhase.values.length) {
     frameTimings.add(FrameTiming(timings.sublist(i, i + FramePhase.values.length)));
   }
-  _invoke1(window._onReportTimings, window._onReportTimingsZone, frameTimings);
+  _invoke1(window.onReportTimings, window._onReportTimingsZone, frameTimings);
 }
 
 @pragma('vm:entry-point')

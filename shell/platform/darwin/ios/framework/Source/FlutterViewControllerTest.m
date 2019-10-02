@@ -4,13 +4,29 @@
 
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
+#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 
 #include "FlutterBinaryMessenger.h"
 
-#if !__has_feature(objc_arc)
-#error ARC must be enabled!
-#endif
+FLUTTER_ASSERT_ARC
+
+extern NSNotificationName const FlutterViewControllerWillDealloc;
+
+/// A simple mock class for FlutterEngine.
+///
+/// OCMockClass can't be used for FlutterEngine sometimes because OCMock retains arguments to
+/// invocations and since the init for FlutterViewController calls a method on the
+/// FlutterEngine it creates a retain cycle that stops us from testing behaviors related to
+/// deleting FlutterViewControllers.
+@interface MockEngine : NSObject
+@end
+
+@implementation MockEngine
+- (void)setViewController:(FlutterViewController*)viewController {
+  // noop
+}
+@end
 
 @interface FlutterViewControllerTest : XCTestCase
 @end
@@ -242,6 +258,24 @@ typedef enum UIAccessibilityContrast : NSInteger {
   id mockTraitCollection = OCMClassMock([UITraitCollection class]);
   OCMStub([mockTraitCollection accessibilityContrast]).andReturn(contrast);
   return mockTraitCollection;
+}
+
+- (void)testWillDeallocNotification {
+  XCTestExpectation* expectation =
+      [[XCTestExpectation alloc] initWithDescription:@"notification called"];
+  id engine = [[MockEngine alloc] init];
+  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
+                                                                        nibName:nil
+                                                                         bundle:nil];
+  id observer =
+      [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
+                                                        object:nil
+                                                         queue:[NSOperationQueue mainQueue]
+                                                    usingBlock:^(NSNotification* _Nonnull note) {
+                                                      [expectation fulfill];
+                                                    }];
+  realVC = nil;
+  [self waitForExpectations:@[ expectation ] timeout:1.0];
 }
 
 @end
