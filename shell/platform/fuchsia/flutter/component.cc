@@ -111,12 +111,10 @@ static std::unique_ptr<fml::FileMapping> MakeFileMapping(const char* path,
 }
 
 // Defaults to readonly. If executable is `true`, we treat it as `read + exec`.
-static flutter::MappingCallback MakeDataFileMapping(const char* file_name,
+static flutter::MappingCallback MakeDataFileMapping(const char* absolute_path,
                                                     bool executable = false) {
-  std::string absolute_path = "/pkg/data/";
-  absolute_path.append(file_name);
-  return [&absolute_path, executable = executable](void) {
-    return MakeFileMapping(absolute_path.c_str(), executable);
+  return [absolute_path, executable = executable](void) {
+    return MakeFileMapping(absolute_path, executable);
   };
 }
 
@@ -268,14 +266,15 @@ Application::Application(
   }
 
   // Compare flutter_jit_runner in BUILD.gn.
-  settings_.vm_snapshot_data = MakeDataFileMapping("vm_snapshot_data.bin");
+  settings_.vm_snapshot_data =
+      MakeDataFileMapping("/pkg/data/vm_snapshot_data.bin");
   settings_.vm_snapshot_instr =
-      MakeDataFileMapping("vm_snapshot_instructions.bin", true);
+      MakeDataFileMapping("/pkg/data/vm_snapshot_instructions.bin", true);
 
   settings_.isolate_snapshot_data =
-      MakeDataFileMapping("isolate_core_snapshot_data.bin");
-  settings_.isolate_snapshot_instr =
-      MakeDataFileMapping("isolate_core_snapshot_instructions.bin", true);
+      MakeDataFileMapping("/pkg/data/isolate_core_snapshot_data.bin");
+  settings_.isolate_snapshot_instr = MakeDataFileMapping(
+      "/pkg/data/isolate_core_snapshot_instructions.bin", true);
 
   {
     // Check if we can use the snapshot with the framework already loaded.
@@ -288,14 +287,14 @@ Application::Application(
                                        &app_framework) &&
         (runner_framework.compare(app_framework) == 0)) {
       settings_.vm_snapshot_data =
-          MakeDataFileMapping("framework_vm_snapshot_data.bin");
+          MakeDataFileMapping("/pkg/data/framework_vm_snapshot_data.bin");
       settings_.vm_snapshot_instr =
-          MakeDataFileMapping("framework_vm_snapshot_instructions.bin", true);
+          MakeDataFileMapping("/pkg/data/vm_snapshot_instructions.bin", true);
 
-      settings_.isolate_snapshot_data =
-          MakeDataFileMapping("framework_isolate_core_snapshot_data.bin");
+      settings_.isolate_snapshot_data = MakeDataFileMapping(
+          "/pkg/data/framework_isolate_core_snapshot_data.bin");
       settings_.isolate_snapshot_instr = MakeDataFileMapping(
-          "framework_isolate_core_snapshot_instructions.bin", true);
+          "/pkg/data/isolate_core_snapshot_instructions.bin", true);
 
       FML_LOG(INFO) << "Using snapshot with framework for "
                     << package.resolved_url;
