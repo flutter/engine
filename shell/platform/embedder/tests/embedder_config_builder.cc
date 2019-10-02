@@ -170,6 +170,16 @@ void EmbedderConfigBuilder::SetPlatformTaskRunner(
   project_args_.custom_task_runners = &custom_task_runners_;
 }
 
+void EmbedderConfigBuilder::SetRenderTaskRunner(
+    const FlutterTaskRunnerDescription* runner) {
+  if (runner == nullptr) {
+    return;
+  }
+
+  custom_task_runners_.render_task_runner = runner;
+  project_args_.custom_task_runners = &custom_task_runners_;
+}
+
 void EmbedderConfigBuilder::SetPlatformMessageCallback(
     std::function<void(const FlutterPlatformMessage*)> callback) {
   context_.SetPlatformMessageCallback(callback);

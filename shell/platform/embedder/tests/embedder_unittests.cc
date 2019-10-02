@@ -163,7 +163,7 @@ class EmbedderTestTaskRunner {
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTestTaskRunner);
 };
 
-TEST_F(EmbedderTest, CanSpecifyCustomTaskRunner) {
+TEST_F(EmbedderTest, CanSpecifyCustomPlatformTaskRunner) {
   auto& context = GetEmbedderContext();
   fml::AutoResetWaitableEvent latch;
 
@@ -2253,6 +2253,51 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {
   ASSERT_NE(renderered_scene, nullptr);
 
   ASSERT_TRUE(ImageMatchesFixture("gradient_xform.png", renderered_scene));
+}
+
+//------------------------------------------------------------------------------
+/// Asserts that embedders can provide a task runner for the render thread.
+///
+TEST_F(EmbedderTest, CanCreateEmbedderWithCustomRenderTaskRunner) {
+  std::mutex engine_mutex;
+  UniqueEngine engine;
+  fml::AutoResetWaitableEvent task_latch;
+  bool task_executed = false;
+  EmbedderTestTaskRunner render_task_runner(
+      CreateNewThread("custom_render_thread"), [&](FlutterTask task) {
+        std::scoped_lock engine_lock(engine_mutex);
+        if (engine.is_valid()) {
+          ASSERT_EQ(FlutterEngineRunTask(engine.get(), &task), kSuccess);
+          task_executed = true;
+          task_latch.Signal();
+        }
+      });
+  EmbedderConfigBuilder builder(GetEmbedderContext());
+  builder.SetDartEntrypoint("can_render_scene_without_custom_compositor");
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetRenderTaskRunner(
+      &render_task_runner.GetFlutterTaskRunnerDescription());
+
+  {
+    std::scoped_lock lock(engine_mutex);
+    engine = builder.LaunchEngine();
+  }
+
+  ASSERT_TRUE(engine.is_valid());
+
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  task_latch.Wait();
+  ASSERT_TRUE(task_executed);
+
+  {
+    std::scoped_lock engine_lock(engine_mutex);
+    engine.reset();
+  }
 }
 
 }  // namespace testing

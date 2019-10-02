@@ -599,8 +599,15 @@ typedef struct {
   /// The size of this struct. Must be sizeof(FlutterCustomTaskRunners).
   size_t struct_size;
   /// Specify the task runner for the thread on which the `FlutterEngineRun`
-  /// call is made.
+  /// call is made. The same task runner description can be specified for both
+  /// the render and platform task runners. This makes the Flutter engine use
+  /// the same thread for both task runners.
   const FlutterTaskRunnerDescription* platform_task_runner;
+  /// Specify the task runner for the thread on which the render tasks will be
+  /// run. The same task runner description can be specified for both the render
+  /// and platform task runners. This makes the Flutter engine use the same
+  /// thread for both task runners.
+  const FlutterTaskRunnerDescription* render_task_runner;
 } FlutterCustomTaskRunners;
 
 typedef struct {
