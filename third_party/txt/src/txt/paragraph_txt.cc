@@ -1150,6 +1150,11 @@ void ParagraphTxt::Layout(double width) {
           //     Windows: All browsers respect `Use Typo Metrics`
           //     Firefox respects `Use Typo Metrics`.
           //
+          // This pertains to this code in that it is ambiguous which set of
+          // metrics we are actually using via SkFontMetrics. This in turn
+          // means that if we use the raw metrics, we will see differences
+          // between platforms as well as unpredictable line heights.
+          //
           // A more thorough explanation is available at
           // https://glyphsapp.com/tutorials/vertical-metrics
           //
