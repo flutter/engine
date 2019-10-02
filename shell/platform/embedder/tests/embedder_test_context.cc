@@ -20,7 +20,7 @@ EmbedderTestContext::EmbedderTestContext(std::string assets_path)
 
   if (flutter::DartVM::IsRunningPrecompiledCode()) {
     std::string filename(assets_path_);
-    filename += "/binary.so";
+    filename += "/app_elf_snapshot.so";
 
     const uint8_t *vm_snapshot_data = nullptr,
                   *vm_snapshot_instructions = nullptr,

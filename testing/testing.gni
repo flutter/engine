@@ -125,7 +125,8 @@ template("dart_snapshot_aot") {
       invoker.dart_kernel,
     ]
 
-    elf_object = "$target_gen_dir/assets/binary.so"
+    # Custom ELF loader is used for Mac and Windows.
+    elf_object = "$target_gen_dir/assets/app_elf_snapshot.so"
 
     outputs = [elf_object]
 
