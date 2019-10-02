@@ -143,6 +143,7 @@ TEST(FileTest, VisitFilesCanBeCalledTwice) {
   fml::FileVisitor count_visitor = [&count](const fml::UniqueFD& directory,
                                             const std::string& filename) {
     count += 1;
+    return true;
   };
   count = 0;
   fml::VisitFiles(dir.fd(), count_visitor);
@@ -180,6 +181,7 @@ TEST(FileTest, CanListFilesRecursively) {
   fml::FileVisitor visitor = [&names](const fml::UniqueFD& directory,
                                       const std::string& filename) {
     names.insert(filename);
+    return true;
   };
 
   fml::VisitFilesRecursively(dir.fd(), visitor);
@@ -190,6 +192,31 @@ TEST(FileTest, CanListFilesRecursively) {
   ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "a/b/c/d/file3"));
   ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "a/b/c/file1"));
   ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "a/b/c/file2"));
+  ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a/b/c/d"));
+  ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a/b/c"));
+  ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a/b"));
+  ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a"));
+}
+
+TEST(FileTest, CanStopVisitEarly) {
+  fml::ScopedTemporaryDirectory dir;
+
+  auto d = fml::CreateDirectory(dir.fd(), {"a", "b", "c", "d"},
+                                fml::FilePermission::kReadWrite);
+  ASSERT_TRUE(d.is_valid());
+
+  std::set<std::string> names;
+  fml::FileVisitor visitor = [&names](const fml::UniqueFD& directory,
+                                      const std::string& filename) {
+    names.insert(filename);
+    return filename == "c" ? false : true;  // stop if c is found
+  };
+
+  // Check the d is not visited as we stop at c.
+  ASSERT_FALSE(fml::VisitFilesRecursively(dir.fd(), visitor));
+  ASSERT_EQ(names, std::set<std::string>({"a", "b", "c"}));
+
+  // Cleanup.
   ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a/b/c/d"));
   ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a/b/c"));
   ASSERT_TRUE(fml::UnlinkDirectory(dir.fd(), "a/b"));

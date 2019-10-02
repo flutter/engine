@@ -5,6 +5,7 @@
 #ifndef FLUTTER_FML_FILE_H_
 #define FLUTTER_FML_FILE_H_
 
+#include <functional>
 #include <initializer_list>
 #include <string>
 #include <vector>
@@ -78,19 +79,27 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
                      const char* file_name,
                      const Mapping& mapping);
 
-using FileVisitor = std::function<void(const fml::UniqueFD& directory,
+/// Signature of a callback on a file in `directory` with `filename` (relative
+/// to `directory`). The returned bool should be false if and only if further
+/// traversal should be stopped. For example, a file-search visitor may return
+/// false when the file is found so no more visiting is needed.
+using FileVisitor = std::function<bool(const fml::UniqueFD& directory,
                                        const std::string& filename)>;
 
 /// Call `visitor` on all files inside the `directory` non-recursively. The
 /// trivial file "." and ".." will not be visited.
 ///
+/// Return false if and only if the visitor returns false during the
+/// traversal.
+///
 /// If recursive visiting is needed, call `VisitFiles` inside the `visitor`, or
 /// use our helper method `VisitFilesRecursively`.
 ///
 /// @see `VisitFilesRecursively`.
-void VisitFiles(const fml::UniqueFD& directory, const FileVisitor& visitor);
+bool VisitFiles(const fml::UniqueFD& directory, FileVisitor visitor);
 
-/// Recursively call `visitor` on all files inside the `directory`.
+/// Recursively call `visitor` on all files inside the `directory`. Return false
+/// if and only if the visitor returns false during the traversal.
 ///
 /// This is a helper method that wraps the general `VisitFiles` method. The
 /// `VisitFiles` is strictly more powerful as it has the access of the recursion
@@ -99,8 +108,7 @@ void VisitFiles(const fml::UniqueFD& directory, const FileVisitor& visitor);
 /// compute the relative path between the root directory and the visited file.
 ///
 /// @see `VisitFiles`.
-void VisitFilesRecursively(const fml::UniqueFD& directory,
-                           const FileVisitor& visitor);
+bool VisitFilesRecursively(const fml::UniqueFD& directory, FileVisitor visitor);
 
 class ScopedTemporaryDirectory {
  public:

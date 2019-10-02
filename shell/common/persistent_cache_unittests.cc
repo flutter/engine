@@ -66,6 +66,7 @@ TEST_F(ShellTest, CacheSkSLWorks) {
         filename.substr(filename.size() - 4, 4) == ".skp") {
       skp_count += 1;
     }
+    return true;
   };
   fml::VisitFilesRecursively(dir.fd(), skp_visitor);
   ASSERT_GT(skp_count, 0);
@@ -107,6 +108,7 @@ TEST_F(ShellTest, CacheSkSLWorks) {
     } else {
       fml::UnlinkFile(directory, filename.c_str());
     }
+    return true;
   };
   fml::VisitFiles(dir.fd(), remove_visitor);
 }

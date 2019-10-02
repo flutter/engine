@@ -59,18 +59,23 @@ ScopedTemporaryDirectory::~ScopedTemporaryDirectory() {
   }
 }
 
-void VisitFilesRecursively(const fml::UniqueFD& directory,
-                           const FileVisitor& visitor) {
+bool VisitFilesRecursively(const fml::UniqueFD& directory,
+                           FileVisitor visitor) {
   FileVisitor recursive_visitor = [&recursive_visitor, &visitor](
                                       const UniqueFD& directory,
                                       const std::string& filename) {
-    visitor(directory, filename);
+    if (!visitor(directory, filename)) {
+      return false;
+    }
     UniqueFD file = OpenFileReadOnly(directory, filename.c_str());
     if (IsDirectory(file)) {
-      VisitFiles(file, recursive_visitor);
+      if (!VisitFiles(file, recursive_visitor)) {
+        return false;
+      }
     }
+    return true;
   };
-  VisitFiles(directory, recursive_visitor);
+  return VisitFiles(directory, recursive_visitor);
 }
 
 fml::UniqueFD OpenFileReadOnly(const fml::UniqueFD& base_directory,

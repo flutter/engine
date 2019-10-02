@@ -104,7 +104,7 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
     std::pair<bool, std::string> decode_result = fml::Base32Decode(filename);
     if (!decode_result.first) {
       FML_LOG(ERROR) << "Base32 can't decode: " << filename;
-      return;
+      return true;  // continue to visit other files
     }
     const std::string& data_string = decode_result.second;
     sk_sp<SkData> key =
@@ -112,7 +112,10 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
     sk_sp<SkData> data = LoadFile(directory, filename);
     if (data != nullptr) {
       result.push_back({key, data});
+    } else {
+      FML_LOG(ERROR) << "Failed to load: " << filename;
     }
+    return true;
   };
   fml::VisitFiles(*sksl_cache_directory_, visitor);
   return result;

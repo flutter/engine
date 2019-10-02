@@ -217,14 +217,14 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
                     base_directory.get(), file_name) == 0;
 }
 
-void VisitFiles(const fml::UniqueFD& directory, const FileVisitor& visitor) {
+bool VisitFiles(const fml::UniqueFD& directory, FileVisitor visitor) {
   // We cannot call closedir(dir) because it will also close the corresponding
   // UniqueFD, and later reference to that UniqueFD will fail. Also, we don't
   // have to call closedir because UniqueFD will call close on its destructor.
   DIR* dir = ::fdopendir(directory.get());
   if (dir == nullptr) {
     FML_DLOG(ERROR) << "Can't open the directory. Error: " << strerror(errno);
-    return;
+    return true;  // continue to visit other files
   }
 
   // Without `rewinddir`, `readir` will directly return NULL (end of dir is
@@ -234,9 +234,12 @@ void VisitFiles(const fml::UniqueFD& directory, const FileVisitor& visitor) {
   while (dirent* ent = readdir(dir)) {
     std::string filename = ent->d_name;
     if (filename != "." && filename != "..") {
-      visitor(directory, filename);
+      if (!visitor(directory, filename)) {
+        return false;
+      }
     }
   }
+  return true;
 }
 
 }  // namespace fml
