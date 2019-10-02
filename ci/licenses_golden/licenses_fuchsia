@@ -1,4 +1,4 @@
-Signature: 8ea0debab303cd8efc2d44a5c76b3ac4
+Signature: dad2ede579bd0becf3775e7deaee60b0
 
 UNUSED LICENSES:
 
@@ -523,6 +523,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.types/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.vectorial/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channel/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channelcontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.web/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.service/meta.json
@@ -1314,8 +1315,10 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.testing/test_harness.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/annotation/annotation.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story/story_shell_factory.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.dhcp/dhcp.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.dhcp/client.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.dhcp/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.dhcp/options.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.dhcp/server.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.http/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.oldhttp/meta.json
@@ -1359,6 +1362,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input2/keys.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input2/layout.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input2/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input2/modifiers.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/device_listener.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.types/meta.json
@@ -1369,6 +1373,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/view.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/view_token.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channel/channel.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channel/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channelcontrol/channelcontrol.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channelcontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.web/constants.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.web/context.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.web/cookie.fidl
@@ -2068,6 +2074,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.types/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.vectorial/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channel/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update.channelcontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.web/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.service/meta.json
