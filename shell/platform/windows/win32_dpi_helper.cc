@@ -43,8 +43,6 @@ Win32DpiHelper::~Win32DpiHelper() {
   }
 }
 
-// SetAwareness
-// Check the available api. Start with v2, then fall back.
 void Win32DpiHelper::SetDpiAwerenessAllVersions() {
   if (permonitorv2_supported_) {
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
