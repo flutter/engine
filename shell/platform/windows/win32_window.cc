@@ -20,7 +20,9 @@ void Win32Window::InitializeChild(const char* title,
 
   // Set DPI awareness for all Windows versions. This call has to be made before
   // the HWND is created.
-  dpi_helper_->SetDpiAwerenessAllVersions();
+  if (!dpi_helper_->SetDpiAwareness()) {
+    OutputDebugString(L"Failed to set DPI awareness");
+  }
 
   WNDCLASS window_class = RegisterWindowClass(converted_title);
 
@@ -86,10 +88,9 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
       if (result != TRUE) {
         OutputDebugString(L"Failed to enable non-client area autoscaling");
       }
-      that->current_dpi_ = that->dpi_helper_->GetDpiForWindow(window);
-    } else {
-      that->current_dpi_ = that->dpi_helper_->GetDpiForSystem();
     }
+    that->current_dpi_ = that->dpi_helper_->GetDpi(window);
+
     that->window_handle_ = window;
   } else if (Win32Window* that = GetThisFromHandle(window)) {
     return that->MessageHandler(window, message, wparam, lparam);
@@ -282,7 +283,7 @@ Win32Window::HandleDpiChange(HWND hwnd,
     // The DPI is only passed for DPI change messages on top level windows,
     // hence call function to get DPI if needed.
     if (uDpi == 0) {
-      uDpi = dpi_helper_->GetDpiForWindow(hwnd);
+      uDpi = dpi_helper_->GetDpi(hwnd);
     }
     current_dpi_ = uDpi;
     window->OnDpiScale(uDpi);
