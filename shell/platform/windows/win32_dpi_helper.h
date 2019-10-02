@@ -29,9 +29,6 @@ class Win32DpiHelper {
   // awareness has been set. Otherwise, returns the DPI for the System.
   UINT GetDpi(HWND);
 
-  // Sets the current process to a specified DPI awareness context.
-  BOOL SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT);
-
   // Sets the current process to System-level DPI awareness.
   BOOL SetProcessDpiAware();
 
