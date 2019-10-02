@@ -8,7 +8,7 @@
 
 static NSString* const FlutterChannelBuffersChannel = @"dev.flutter/channel-buffers";
 
-static void resizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenger,
+static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenger,
                                 NSString* channel,
                                 NSInteger newSize) {
   NSString* messageString = [NSString stringWithFormat:@"resize\r%@\r%@", channel, @(newSize)];
@@ -82,7 +82,7 @@ static void resizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
 }
 
 - (void)resizeChannelBuffer:(NSInteger)newSize {
-  resizeChannelBuffer(_messenger, _name, newSize);
+  ResizeChannelBuffer(_messenger, _name, newSize);
 }
 
 @end
@@ -242,7 +242,7 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
 }
 
 - (void)resizeChannelBuffer:(NSInteger)newSize {
-  resizeChannelBuffer(_messenger, _name, newSize);
+  ResizeChannelBuffer(_messenger, _name, newSize);
 }
 
 @end
