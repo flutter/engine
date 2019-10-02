@@ -10,7 +10,7 @@ import android.support.annotation.NonNull;
 /**
  * An {@code Object} that can be used to obtain a {@link Lifecycle} reference.
  * <p>
- * <strong>DO NOT INSTANTIATE THIS CLASS IN AN APP.</strong>
+ * <strong>DO NOT USE THIS CLASS IN AN APP OR A PLUGIN.</strong>
  * <p>
  * This class is used by the flutter_android_lifecycle package to provide access to a
  * {@link Lifecycle} in a way that makes it easier for Flutter and the Flutter plugin ecosystem to
