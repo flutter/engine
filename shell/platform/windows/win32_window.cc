@@ -6,16 +6,8 @@
 
 namespace flutter {
 
-Win32Window::Win32Window() {
-  // Assume Windows 10 1703 or greater for DPI handling.  When running on a
-  // older release of Windows where this context doesn't exist, DPI calls will
-  // fail and Flutter rendering will be impacted until this is fixed.
-  // To handle downlevel correctly, dpi_helper must use the most recent DPI
-  // context available should be used: Windows 1703: Per-Monitor V2, 8.1:
-  // Per-Monitor V1, Windows 7: System See
-  // https://docs.microsoft.com/en-us/windows/win32/hidpi/high-dpi-desktop-application-development-on-windows
-  // for more information.
-}
+Win32Window::Win32Window() {}
+
 Win32Window::~Win32Window() {
   Destroy();
 }
