@@ -40,13 +40,27 @@ if (is_fuchsia_host || is_fuchsia) {
 } else {
   import("//third_party/dart/utils/application_snapshot.gni")
 
+  frontend_server_files =
+      exec_script("//third_party/dart/tools/list_dart_files.py",
+                  [
+                    "absolute",
+                    rebase_path("."),
+                  ],
+                  "list lines")
+
+  frontend_server_files +=
+      exec_script("//third_party/dart/tools/list_dart_files.py",
+                  [
+                    "absolute",
+                    rebase_path("../../third_party/dart/pkg"),
+                  ],
+                  "list lines")
+
   application_snapshot("frontend_server") {
     main_dart = "bin/starter.dart"
     deps = [
+      ":package_incremental_compiler",
       "$flutter_root/lib/snapshot:kernel_platform_files",
-      ":flutter_package_vm",
-      ":flutter_package_build_integration",
-      ":flutter_package_frontend_server",
     ]
     dot_packages = rebase_path(".packages")
     flutter_patched_sdk = rebase_path("$root_out_dir/flutter_patched_sdk")
@@ -56,136 +70,28 @@ if (is_fuchsia_host || is_fuchsia) {
       rebase_path(main_dart),
     ]
 
-    frontend_server_files =
-        exec_script("//third_party/dart/tools/list_dart_files.py",
-                    [
-                      "absolute",
-                      rebase_path("."),
-                    ],
-                    "list lines")
-
-    frontend_server_files +=
-        exec_script("//third_party/dart/tools/list_dart_files.py",
-                    [
-                      "absolute",
-                      rebase_path("../../third_party/dart/pkg"),
-                    ],
-                    "list lines")
-
     inputs = frontend_server_files
   }
 
-  # For flutter/flutter#36738 we make the source files availible so that
+  # For flutter/flutter#36738 we make the source files available so that
   # we can generate a local frontend_server snapshot in the tools cache.
+  action("package_incremental_compiler") {
+    script = "$flutter_root/frontend_server/package_incremental.py"
 
-  # Creates a packageable vm.
-  prebuilt_dart_action("flutter_package_vm") {
-    packages = "//third_party/dart/.packages"
+    inputs = frontend_server_files
 
-    script = "$flutter_root/frontend_server/publish.dart"
+    outputs = [
+      "$root_build_dir/dist/packages/frontend_server/pubspec.yaml",
+      "$root_build_dir/dist/packages/vm/pubspec.yaml",
+      "$root_build_dir/dist/packages/build_integration/pubspec.yaml",
 
-    inputs = exec_script("//third_party/dart/tools/list_dart_files.py",
-            [
-              "absolute",
-              rebase_path("../../third_party/dart/pkg/vm"),
-            ],
-            "list lines")
-
-    outputs = ["$root_build_dir/dist/packages/vm/pubspec.yaml"]
-
-    args = [
-      rebase_path("//third_party/dart/pkg/vm"),
-      rebase_path("$root_gen_dir/dart-pkg/vm"),
-      "vm",
-    ]
-  }
-
-  # Creates a packageable build_integration.
-  prebuilt_dart_action("flutter_package_build_integration") {
-    packages = "//third_party/dart/.packages"
-
-    script = "$flutter_root/frontend_server/publish.dart"
-
-    inputs = exec_script("//third_party/dart/tools/list_dart_files.py",
-            [
-              "absolute",
-              rebase_path("../../third_party/dart/pkg/build_integration"),
-            ],
-            "list lines")
-
-    outputs = ["$root_build_dir/dist/packages/build_integration/pubspec.yaml"]
-
-    args = [
-      rebase_path("//third_party/dart/pkg/build_integration"),
-      rebase_path("$root_gen_dir/dart-pkg/build_integration"),
-      "build_integration",
+      "$root_build_dir/dist/packages/front_end/pubspec.yaml",
+      "$root_build_dir/dist/packages/kernel/pubspec.yaml",
     ]
 
-  }
-
-  # Creates a packageable frontend_server.
-  prebuilt_dart_action("flutter_package_frontend_server") {
-    packages = "//third_party/dart/.packages"
-
-    script = "$flutter_root/frontend_server/publish.dart"
-
-    inputs = exec_script("//third_party/dart/tools/list_dart_files.py",
-            [
-              "absolute",
-              rebase_path("lib"),
-            ],
-            "list lines")
-
-    outputs = ["$root_build_dir/dist/packages/frontend_server/pubspec.yaml"]
-
     args = [
-      rebase_path("lib"),
-      rebase_path("$root_gen_dir/dart-pkg/frontend_server"),
-      "frontend_server",
-    ]
-  }
-
-  # Creates a packageable front_end.
-  prebuilt_dart_action("flutter_package_front_end") {
-    packages = "//third_party/dart/.packages"
-
-    script = "$flutter_root/frontend_server/publish.dart"
-
-    inputs = exec_script("//third_party/dart/tools/list_dart_files.py",
-            [
-              "absolute",
-              rebase_path("lib"),
-            ],
-            "list lines")
-
-    outputs = ["$root_build_dir/dist/packages/front_end/pubspec.yaml"]
-
-    args = [
-      rebase_path("lib"),
-      rebase_path("$root_gen_dir/dart-pkg/front_end"),
-      "front_end",
-    ]
-  }
-
-  # Creates a packageable kernel.
-  prebuilt_dart_action("flutter_package_kernel") {
-    packages = "//third_party/dart/.packages"
-
-    script = "$flutter_root/frontend_server/publish.dart"
-
-    inputs = exec_script("//third_party/dart/tools/list_dart_files.py",
-            [
-              "absolute",
-              rebase_path("lib"),
-            ],
-            "list lines")
-
-    outputs = ["$root_build_dir/dist/packages/kernel/pubspec.yaml"]
-
-    args = [
-      rebase_path("lib"),
-      rebase_path("$root_gen_dir/dart-pkg/kernel"),
-      "kernel",
+      "--input-root=" + rebase_path("//third_party/dart/pkg"),
+      "--output-root=" + rebase_path("$root_gen_dir/dart-pkg"),
     ]
   }
 }
