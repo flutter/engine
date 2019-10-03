@@ -273,7 +273,7 @@ fuchsia_archive("flutter_runner_tests") {
 
   meta = [
     {
-      path = "meta/$target_name.cmx"
+      path = rebase_path("meta/$target_name.cmx")
       dest = "$target_name.cmx"
     },
   ]

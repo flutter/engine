@@ -65,6 +65,13 @@ template("fuchsia_archive") {
     ]
   }
 
+  write_file("${far_base_dir}/meta/package",
+             {
+               name = pkg.package_name
+               version = pkg.package_version
+             },
+             "json")
+
   pkg_dir_deps = pkg.deps + [ ":$cmx_target" ]
 
   action("${target_name}_dir") {
