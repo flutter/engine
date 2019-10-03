@@ -50,6 +50,7 @@ class PlatformViewIOS final : public PlatformView {
  private:
   fml::WeakPtr<FlutterViewController> owner_controller_;
   std::unique_ptr<IOSSurface> ios_surface_;
+  std::mutex ios_surface_mutex_;
   std::shared_ptr<IOSGLContext> gl_context_;
   PlatformMessageRouter platform_message_router_;
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
