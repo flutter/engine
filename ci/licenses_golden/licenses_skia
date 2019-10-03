@@ -1,4 +1,4 @@
-Signature: 877193075413edb1ff5b362c3d87ec45
+Signature: 4ea3f2a92943d49f7a2f95e532749f03
 
 UNUSED LICENSES:
 
@@ -1351,6 +1351,7 @@ FILE: ../../../third_party/skia/infra/bots/assets/opencl_intel_neo_linux/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/opencl_ocl_icd_linux/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/procdump_win/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/protoc/VERSION
+FILE: ../../../third_party/skia/infra/bots/assets/provisioning_profile_ios/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/skimage/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/skp/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/skparagraph/VERSION
@@ -3609,8 +3610,8 @@ FILE: ../../../third_party/skia/src/gpu/GrAHardwareBufferImageGenerator.h
 FILE: ../../../third_party/skia/src/gpu/GrBackendSurface.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBackendTextureImageGenerator.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBackendTextureImageGenerator.h
-FILE: ../../../third_party/skia/src/gpu/GrColorSpaceInfo.cpp
-FILE: ../../../third_party/skia/src/gpu/GrColorSpaceInfo.h
+FILE: ../../../third_party/skia/src/gpu/GrColorInfo.cpp
+FILE: ../../../third_party/skia/src/gpu/GrColorInfo.h
 FILE: ../../../third_party/skia/src/gpu/GrDeferredProxyUploader.h
 FILE: ../../../third_party/skia/src/gpu/GrDeferredUpload.h
 FILE: ../../../third_party/skia/src/gpu/GrOnFlushResourceProvider.cpp
@@ -3820,6 +3821,7 @@ FILE: ../../../third_party/skia/src/core/SkVM.h
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkImageFilters.cpp
 FILE: ../../../third_party/skia/src/gpu/GrCopyRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrCopyRenderTask.h
+FILE: ../../../third_party/skia/src/gpu/GrImageInfo.h
 FILE: ../../../third_party/skia/src/gpu/GrRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/GrShaderUtils.cpp

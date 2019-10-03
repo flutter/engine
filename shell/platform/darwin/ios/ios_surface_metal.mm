@@ -102,7 +102,7 @@ bool IOSSurfaceMetal::SubmitFrame(GrContext* context) {
     return true;
   }
 
-  bool submitted = platform_views_controller->SubmitFrame(std::move(context), nullptr);
+  bool submitted = platform_views_controller->SubmitFrame(context, nullptr);
   [CATransaction commit];
   return submitted;
 }
