@@ -16,7 +16,6 @@ import sys
 import tempfile
 
 from gather_flutter_runner_artifacts import CopyPath
-from gen_package import CreateFarPackage
 
 _script_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..'))
 _src_root_dir = os.path.join(_script_dir, '..', '..', '..')
@@ -100,6 +99,9 @@ def CopyToBucketWithMode(source, destination, aot, product, runner_type):
   patched_sdk_dirname = '%s_runner_patched_sdk' % runner_type
   patched_sdk_dir = os.path.join(source_root, patched_sdk_dirname)
   dest_sdk_path = os.path.join(destination, patched_sdk_dirname)
+  far_name = '%s-0.far' % runner_name
+  far_file = os.path.join(source_root, far_name)
+  CopyPath(far_file, os.path.join(destination, far_name))
   if not os.path.exists(dest_sdk_path):
     CopyPath(patched_sdk_dir, dest_sdk_path)
   CopyGenSnapshotIfExists(source_root, destination)
