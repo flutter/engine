@@ -1389,7 +1389,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             // If the object is the input-focused node, then tell the reader about it, but only if
             // it has changed since the last update.
             if (inputFocusedSemanticsNode != null && inputFocusedSemanticsNode.id == object.id &&
-                (lastInputFocusedSemanticsNode == null || lastInputFocusedSemanticsNode.id != inputFocusedSemanticsNode.id)) {
+                    (lastInputFocusedSemanticsNode == null || lastInputFocusedSemanticsNode.id != inputFocusedSemanticsNode.id)) {
                 lastInputFocusedSemanticsNode = inputFocusedSemanticsNode;
                 sendAccessibilityEvent(obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_FOCUSED));
             } else if (inputFocusedSemanticsNode == null) {
