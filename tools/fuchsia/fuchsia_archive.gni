@@ -98,6 +98,7 @@ template("fuchsia_archive") {
       target_name,
     ]
     outputs = [
+      "${far_base_dir}.manifest",
       "$root_out_dir/${target_name}.far",
     ]
     testonly = pkg_testonly
