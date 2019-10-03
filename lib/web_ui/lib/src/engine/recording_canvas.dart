@@ -1131,6 +1131,11 @@ abstract class PathCommand {
 
   /// Transform the command and add to targetPath.
   void transform(Float64List matrix4, ui.Path targetPath);
+
+  /// Helper method for implementing transforms.
+  static ui.Offset _transformOffset(double x, double y, Float64List matrix4) =>
+    ui.Offset((matrix4[0] * x) + (matrix4[4] * y) + matrix4[12],
+    (matrix4[1] * x) + (matrix4[5] * y) + matrix4[13]);
 }
 
 class MoveTo extends PathCommand {
@@ -1151,11 +1156,8 @@ class MoveTo extends PathCommand {
 
   @override
   void transform(Float64List matrix4, ui.Path targetPath) {
-    final double transformedX = (matrix4[0] * x) + (matrix4[4] * y)
-        + matrix4[12];
-    final double transformedY = (matrix4[1] * x) + (matrix4[5] * y)
-        + matrix4[13];
-    targetPath.moveTo(transformedX, transformedY);
+    final ui.Offset offset = PathCommand._transformOffset(x, y, matrix4);
+    targetPath.moveTo(offset.dx, offset.dy);
   }
 
   @override
@@ -1186,11 +1188,8 @@ class LineTo extends PathCommand {
 
   @override
   void transform(Float64List matrix4, ui.Path targetPath) {
-    final double transformedX = (matrix4[0] * x) + (matrix4[4] * y)
-        + matrix4[12];
-    final double transformedY = (matrix4[1] * x) + (matrix4[5] * y)
-        + matrix4[13];
-    targetPath.lineTo(transformedX, transformedY);
+    final ui.Offset offset = PathCommand._transformOffset(x, y, matrix4);
+    targetPath.lineTo(offset.dx, offset.dy);
   }
 
   @override
@@ -1240,15 +1239,17 @@ class Ellipse extends PathCommand {
 
   @override
   void transform(Float64List matrix4, ui.Path targetPath) {
+    final ui.Path bezierPath = ui.Path();
     _drawArcWithBezier(x, y, radiusX, radiusY, rotation,
       startAngle,
         anticlockwise ? startAngle - endAngle : endAngle - startAngle,
-        targetPath);
+        matrix4, bezierPath);
+    targetPath.addPath(bezierPath, ui.Offset.zero, matrix4: matrix4);
   }
 
   void _drawArcWithBezier(double centerX, double centerY,
       double radiusX, double radiusY, double rotation, double startAngle,
-      double sweep, ui.Path targetPath) {
+      double sweep, Float64List matrix4, ui.Path targetPath) {
     double ratio = sweep.abs() / (math.pi / 2.0);
     if ((1.0 - ratio).abs() < 0.0000001) {
       ratio = 1.0;
@@ -1258,14 +1259,14 @@ class Ellipse extends PathCommand {
     double angle = startAngle;
     for (int segment = 0; segment < segments; segment++) {
       _drawArcSegment(targetPath, centerX, centerY, radiusX, radiusY, rotation,
-          angle, anglePerSegment, segment == 0);
+          angle, anglePerSegment, segment == 0, matrix4);
       angle += anglePerSegment;
     }
   }
 
   void _drawArcSegment(ui.Path path, double centerX, double centerY,
       double radiusX, double radiusY, double rotation, double startAngle,
-      double sweep, bool startPath) {
+      double sweep, bool startPath, Float64List matrix4) {
     final double s = 4 / 3 * math.tan(sweep / 4);
 
     // Rotate unit vector to startAngle and endAngle to use for computing start
@@ -1503,6 +1504,7 @@ class RRectCommand extends PathCommand {
   void transform(Float64List matrix4, ui.Path targetPath) {
     final ui.Path roundRectPath = ui.Path();
     _RRectToPathRenderer(roundRectPath).render(rrect);
+    targetPath.addPath(roundRectPath, ui.Offset.zero, matrix4: matrix4);
   }
 
     @override
