@@ -324,13 +324,14 @@ public class TextInputPlugin {
     @SuppressWarnings("deprecation")
     private boolean isRestartAlwaysRequired() {
         InputMethodSubtype subtype = mImm.getCurrentInputMethodSubtype();
-        if (subtype == null) {
+        // Impacted devices all shipped with Android Lollipop or newer.
+        if (subtype == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.L) {
             return false;
         }
         String language = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
                 ? subtype.getLanguageTag()
                 : subtype.getLocale();
-        return Build.MANUFACTURER.equals("samsung") && language.equals("ko");
+        return Build.MANUFACTURER.equals("samsung");
     }
 
     private void clearTextInputClient() {

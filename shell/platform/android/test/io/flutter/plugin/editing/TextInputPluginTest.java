@@ -69,6 +69,30 @@ public class TextInputPluginTest {
         assertEquals(2, testImm.getRestartCount(testView));
     }
 
+    // See https://github.com/flutter/flutter/issues/31512
+    // All modern Samsung keybords are affected including non-korean languages and thus
+    // need the restart.
+    @Test
+    public void setTextInputEditingState_alwaysRestartsOnAffectedDevices() {
+        // Initialize a TextInputPlugin that needs to be always restarted.
+        ShadowBuild.setManufacturer("samsung");
+        InputMethodSubtype inputMethodSubtype = new InputMethodSubtype(0, 0, /*locale=*/"en", "", "", false, false);
+        TestImm testImm = Shadow.extract(RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+        testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
+        View testView = new View(RuntimeEnvironment.application);
+        TextInputPlugin textInputPlugin = new TextInputPlugin(testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
+        textInputPlugin.setTextInputClient(0, new TextInputChannel.Configuration(false, false, TextInputChannel.TextCapitalization.NONE, null, null, null));
+        // There's a pending restart since we initialized the text input client. Flush that now.
+        textInputPlugin.setTextInputEditingState(testView, new TextInputChannel.TextEditState("", 0, 0));
+
+        // Move the cursor.
+        assertEquals(1, testImm.getRestartCount(testView));
+        textInputPlugin.setTextInputEditingState(testView, new TextInputChannel.TextEditState("", 0, 0));
+
+        // Verify that we've restarted the input.
+        assertEquals(2, testImm.getRestartCount(testView));
+    }
+
     @Test
     public void setTextInputEditingState_nullInputMethodSubtype() {
         TestImm testImm = Shadow.extract(RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
