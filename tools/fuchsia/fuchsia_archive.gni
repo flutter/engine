@@ -82,9 +82,6 @@ template("fuchsia_archive") {
     script = "$flutter_root/tools/fuchsia/gen_package.py"
     deps = pkg_dir_deps + [ ":${target_name}_dir" ]
     sources = copy_outputs
-    inputs = [
-      "$flutter_root/tools/fuchsia/gather_flutter_runner_artifacts.py",
-    ]
     args = [
       "--pm-bin",
       rebase_path("//fuchsia/sdk/$host_os/tools/pm"),

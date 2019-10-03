@@ -13,8 +13,6 @@ import os
 import subprocess
 import sys
 
-from gather_flutter_runner_artifacts import CreateMetaPackage
-
 
 # Generates the manifest and returns the file.
 def GenerateManifest(package_dir):
@@ -71,7 +69,7 @@ def main():
 
   pkg_dir = args.package_dir
   if not os.path.exists(os.path.join(pkg_dir, 'meta', 'package')):
-    CreateMetaPackage(pkg_dir, args.far_name)
+    raise Exception('Expected to find meta/package directory!')
 
   manifest_file = None
   if args.manifest_file is not None:

@@ -15,7 +15,7 @@ import subprocess
 import sys
 import tempfile
 
-from gather_flutter_runner_artifacts import CreateMetaPackage, CopyPath
+from gather_flutter_runner_artifacts import CopyPath
 from gen_package import CreateFarPackage
 
 _script_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..'))
@@ -23,28 +23,6 @@ _src_root_dir = os.path.join(_script_dir, '..', '..', '..')
 _out_dir = os.path.join(_src_root_dir, 'out')
 _bucket_directory = os.path.join(_out_dir, 'fuchsia_bucket')
 _fuchsia_base = 'flutter/shell/platform/fuchsia'
-
-
-def IsLinux():
-  return platform.system() == 'Linux'
-
-
-def IsMac():
-  return platform.system() == 'Darwin'
-
-
-def GetPMBinPath():
-  # host_os references the gn host_os
-  # https://gn.googlesource.com/gn/+/master/docs/reference.md#var_host_os
-  host_os = ''
-  if IsLinux():
-    host_os = 'linux'
-  elif IsMac():
-    host_os = 'mac'
-  else:
-    host_os = 'windows'
-
-  return os.path.join(_src_root_dir, 'fuchsia', 'sdk', host_os, 'tools', 'pm')
 
 
 def RunExecutable(command):
@@ -116,15 +94,9 @@ def CopyToBucketWithMode(source, destination, aot, product, runner_type):
   mode = 'aot' if aot else 'jit'
   product_suff = '_product' if product else ''
   runner_name = '%s_%s%s_runner' % (runner_type, mode, product_suff)
-  far_dir_name = '%s_far' % runner_name
   source_root = os.path.join(_out_dir, source)
-  far_base = os.path.join(source_root, far_dir_name)
-  CreateMetaPackage(far_base, runner_name)
-  pm_bin = GetPMBinPath()
-  key_path = os.path.join(_script_dir, 'development.key')
 
   destination = os.path.join(_bucket_directory, destination, mode)
-  CreateFarPackage(pm_bin, far_base, key_path, destination)
   patched_sdk_dirname = '%s_runner_patched_sdk' % runner_type
   patched_sdk_dir = os.path.join(source_root, patched_sdk_dirname)
   dest_sdk_path = os.path.join(destination, patched_sdk_dirname)
