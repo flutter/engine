@@ -20,8 +20,6 @@ namespace flutter {
 
 class SceneHost : public RefCountedDartWrappable<SceneHost> {
   DEFINE_WRAPPERTYPEINFO();
-  FML_FRIEND_MAKE_REF_COUNTED(SceneHost);
-
  public:
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
   static fml::RefPtr<SceneHost> Create(
@@ -34,13 +32,14 @@ class SceneHost : public RefCountedDartWrappable<SceneHost> {
   static void OnViewStateChanged(scenic::ResourceId id, bool state);
 
   SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderToken,
-            Dart_Handle viewConnectedCallback,
-            Dart_Handle viewDisconnectedCallback,
-            Dart_Handle viewStateChangedCallback);
+          Dart_Handle viewConnectedCallback,
+          Dart_Handle viewDisconnectedCallback,
+          Dart_Handle viewStateChangedCallback);
   ~SceneHost() override;
 
   zx_koid_t id() const { return koid_; }
 
+  // These are visible to Dart.
   void dispose();
   void setProperties(double width,
                      double height,
@@ -49,7 +48,6 @@ class SceneHost : public RefCountedDartWrappable<SceneHost> {
                      double insetBottom,
                      double insetLeft,
                      bool focusable);
-  void setOpacity(double opacity);
 
  private:
   fml::RefPtr<fml::TaskRunner> gpu_task_runner_;
