@@ -16,7 +16,6 @@
 
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/window.h"
-#include "flutter/shell/platform/fuchsia/flutter/flutter_runner_fakes.h"
 #include "fuchsia/ui/views/cpp/fidl.h"
 #include "googletest/googletest/include/gtest/gtest.h"
 
@@ -84,11 +83,8 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   int32_t semantics_features_ = 0;
 };
 
-TEST_F(PlatformViewTests, ChangesSettings) {
-  MockSemanticsManager semantics_manager = MockSemanticsManager();
+TEST_F(PlatformViewTests, ChangesAccessibilitySettings) {
   sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
-  services_provider.AddService(semantics_manager.GetHandler(dispatcher()),
-                               SemanticsManager::Name_);
 
   MockPlatformViewDelegate delegate;
   zx::eventpair a, b;
@@ -117,21 +113,20 @@ TEST_F(PlatformViewTests, ChangesSettings) {
       nullptr,  // on_session_listener_error_callback
       nullptr,  // session_metrics_did_change_callback
       nullptr,  // session_size_change_hint_callback
-      nullptr,  // wireframe_enabled_callback
+      nullptr,  // on_enable_wireframe_callback,
       0u        // vsync_event_handle
   );
 
   RunLoopUntilIdle();
 
-  std::unique_ptr<flutter::PlatformView> flutter_platform_view(&platform_view);
-  flutter_platform_view->SetSemanticsEnabled(true);
+  platform_view.SetSemanticsEnabled(true);
 
   EXPECT_TRUE(delegate.SemanticsEnabled());
   EXPECT_EQ(delegate.SemanticsFeatures(),
             static_cast<int32_t>(
                 flutter::AccessibilityFeatureFlag::kAccessibleNavigation));
 
-  flutter_platform_view->SetSemanticsEnabled(false);
+  platform_view.SetSemanticsEnabled(false);
 
   EXPECT_FALSE(delegate.SemanticsEnabled());
   EXPECT_EQ(delegate.SemanticsFeatures(), 0);

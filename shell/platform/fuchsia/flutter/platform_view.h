@@ -67,6 +67,10 @@ class PlatformView final : public flutter::PlatformView,
 
   void UpdateViewportMetrics(const fuchsia::ui::gfx::Metrics& metrics);
 
+  // |flutter::PlatformView|
+  // |flutter_runner::AccessibilityBridge::Delegate|
+  void SetSemanticsEnabled(bool enabled) override;
+
  private:
   const std::string debug_label_;
   // TODO(MI4-2490): remove once ViewRefControl is passed to Scenic and kept
@@ -153,10 +157,6 @@ class PlatformView final : public flutter::PlatformView,
   // |flutter::PlatformView|
   void HandlePlatformMessage(
       fml::RefPtr<flutter::PlatformMessage> message) override;
-
-  // |flutter::PlatformView|
-  // |flutter_runner::AccessibilityBridge::Delegate|
-  void SetSemanticsEnabled(bool enabled) override;
 
   // |flutter::PlatformView|
   void UpdateSemantics(
