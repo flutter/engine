@@ -3,8 +3,6 @@
 # found in the LICENSE file.
 
 # Creates a Fuchsia archive (.far) file using PM from the Fuchsia SDK.
-#
-# This currently ignores the CMX files and does minimal validation.
 template("fuchsia_archive") {
   assert(defined(invoker.binary), "package must define binary")
   assert(defined(invoker.meta_dir), "package must define meta_dir")
