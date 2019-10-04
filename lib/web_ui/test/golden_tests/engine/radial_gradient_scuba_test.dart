@@ -30,7 +30,7 @@ void main() async {
       await matchGoldenFile('$fileName.png', region: region, write: write);
     } finally {
       // The page is reused across tests, so remove the element after taking the
-      // Scuba screenshot.
+      // golden screenshot.
       sceneElement.remove();
     }
   }
