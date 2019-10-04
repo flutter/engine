@@ -12,7 +12,6 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "flutter/common/runtime.h"
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -522,12 +521,12 @@ static FLUTTER_API_SYMBOL(FlutterEngine)
     config.open_gl.make_resource_current = GLFWMakeResourceContextCurrent;
     config.open_gl.gl_proc_resolver = GLFWProcResolver;
   }
-#if !FLUTTER_JIT_RUNTIME
+#ifndef NDEBUG
   std::string shared_library_path("--aot-shared-library-name=");
   shared_library_path.append(engine_properties.assets_path);
   shared_library_path.append("/libapp.so");
   argv.insert(argv.end(), shared_library_path.c_str());
-#endif  // !FLUTTER_JIT_RUNTIME
+#endif // NDEBUG
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
   args.assets_path = engine_properties.assets_path;
