@@ -52,6 +52,8 @@ ScopedTemporaryDirectory::ScopedTemporaryDirectory() {
 }
 
 ScopedTemporaryDirectory::~ScopedTemporaryDirectory() {
+  // Windows has to close UniqueFD first before UnlinkDirectory
+  dir_fd_.reset();
   if (path_ != "") {
     if (!UnlinkDirectory(path_.c_str())) {
       FML_LOG(ERROR) << "Could not remove directory: " << path_;
@@ -67,11 +69,13 @@ bool VisitFilesRecursively(const fml::UniqueFD& directory,
     if (!visitor(directory, filename)) {
       return false;
     }
-    UniqueFD file = OpenFileReadOnly(directory, filename.c_str());
-    if (IsDirectory(file)) {
-      if (!VisitFiles(file, recursive_visitor)) {
-        return false;
+    if (IsDirectory(directory, filename.c_str())) {
+      UniqueFD sub_dir = OpenDirectoryReadOnly(directory, filename.c_str());
+      if (!sub_dir.is_valid()) {
+        FML_LOG(ERROR) << "Can't open sub-directory: " << filename;
+        return true;
       }
+      return VisitFiles(sub_dir, recursive_visitor);
     }
     return true;
   };
@@ -81,6 +85,11 @@ bool VisitFilesRecursively(const fml::UniqueFD& directory,
 fml::UniqueFD OpenFileReadOnly(const fml::UniqueFD& base_directory,
                                const char* path) {
   return OpenFile(base_directory, path, false, FilePermission::kRead);
+}
+
+fml::UniqueFD OpenDirectoryReadOnly(const fml::UniqueFD& base_directory,
+                                    const char* path) {
+  return OpenDirectory(base_directory, path, false, FilePermission::kRead);
 }
 
 }  // namespace fml

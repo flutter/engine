@@ -5,12 +5,12 @@
 #include <memory>
 #include <vector>
 
-#include "flutter/fml/unique_fd.h"
 #include "gtest/gtest.h"
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/unique_fd.h"
 
 static bool WriteStringToFile(const fml::UniqueFD& fd,
                               const std::string& contents) {
@@ -135,9 +135,11 @@ TEST(FileTest, CreateDirectoryStructure) {
 TEST(FileTest, VisitFilesCanBeCalledTwice) {
   fml::ScopedTemporaryDirectory dir;
 
-  auto file = fml::OpenFile(dir.fd(), "my_contents", true,
-                            fml::FilePermission::kReadWrite);
-  ASSERT_TRUE(file.is_valid());
+  {
+    auto file = fml::OpenFile(dir.fd(), "my_contents", true,
+                              fml::FilePermission::kReadWrite);
+    ASSERT_TRUE(file.is_valid());
+  }
 
   int count;
   fml::FileVisitor count_visitor = [&count](const fml::UniqueFD& directory,
@@ -201,9 +203,11 @@ TEST(FileTest, CanListFilesRecursively) {
 TEST(FileTest, CanStopVisitEarly) {
   fml::ScopedTemporaryDirectory dir;
 
-  auto d = fml::CreateDirectory(dir.fd(), {"a", "b", "c", "d"},
-                                fml::FilePermission::kReadWrite);
-  ASSERT_TRUE(d.is_valid());
+  {
+    auto d = fml::CreateDirectory(dir.fd(), {"a", "b", "c", "d"},
+                                  fml::FilePermission::kReadWrite);
+    ASSERT_TRUE(d.is_valid());
+  }
 
   std::set<std::string> names;
   fml::FileVisitor visitor = [&names](const fml::UniqueFD& directory,
@@ -251,13 +255,15 @@ TEST(FileTest, AtomicWriteTest) {
 TEST(FileTest, EmptyMappingTest) {
   fml::ScopedTemporaryDirectory dir;
 
-  auto file = fml::OpenFile(dir.fd(), "my_contents", true,
-                            fml::FilePermission::kReadWrite);
+  {
+    auto file = fml::OpenFile(dir.fd(), "my_contents", true,
+                              fml::FilePermission::kReadWrite);
 
-  fml::FileMapping mapping(file);
-  ASSERT_TRUE(mapping.IsValid());
-  ASSERT_EQ(mapping.GetSize(), 0ul);
-  ASSERT_EQ(mapping.GetMapping(), nullptr);
+    fml::FileMapping mapping(file);
+    ASSERT_TRUE(mapping.IsValid());
+    ASSERT_EQ(mapping.GetSize(), 0ul);
+    ASSERT_EQ(mapping.GetMapping(), nullptr);
+  }
 
   ASSERT_TRUE(fml::UnlinkFile(dir.fd(), "my_contents"));
 }

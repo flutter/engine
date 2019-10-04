@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <memory>
+
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/layers/physical_shape_layer.h"
@@ -49,7 +50,7 @@ TEST_F(ShellTest, CacheSkSLWorks) {
     SkPath path;
     path.addCircle(50, 50, 20);
     auto physical_shape_layer = std::make_shared<PhysicalShapeLayer>(
-        SK_ColorRED, SK_ColorBLUE, 1.0, 1.0, 1.0, path, Clip::antiAlias);
+        SK_ColorRED, SK_ColorBLUE, 1.0f, 1.0f, 1.0f, path, Clip::antiAlias);
     root->Add(physical_shape_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -101,9 +102,12 @@ TEST_F(ShellTest, CacheSkSLWorks) {
   fml::FileVisitor remove_visitor = [&remove_visitor](
                                         const fml::UniqueFD& directory,
                                         const std::string& filename) {
-    fml::UniqueFD file = fml::OpenFileReadOnly(directory, filename.c_str());
-    if (fml::IsDirectory(file)) {
-      fml::VisitFiles(file, remove_visitor);
+    if (fml::IsDirectory(directory, filename.c_str())) {
+      {  // To trigger fml::~UniqueFD before fml::UnlinkDirectory
+        fml::UniqueFD sub_dir =
+            fml::OpenDirectoryReadOnly(directory, filename.c_str());
+        fml::VisitFiles(sub_dir, remove_visitor);
+      }
       fml::UnlinkDirectory(directory, filename.c_str());
     } else {
       fml::UnlinkFile(directory, filename.c_str());

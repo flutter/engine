@@ -29,10 +29,12 @@ enum class FilePermission {
 
 std::string CreateTemporaryDirectory();
 
+/// This can open a directory on POSIX, but not on Windows.
 fml::UniqueFD OpenFile(const char* path,
                        bool create_if_necessary,
                        FilePermission permission);
 
+/// This can open a directory on POSIX, but not on Windows.
 fml::UniqueFD OpenFile(const fml::UniqueFD& base_directory,
                        const char* path,
                        bool create_if_necessary,
@@ -40,6 +42,8 @@ fml::UniqueFD OpenFile(const fml::UniqueFD& base_directory,
 
 /// Helper method that calls `OpenFile` with create_if_necessary = false
 /// and permission = kRead.
+///
+/// This can open a directory on POSIX, but not on Windows.
 fml::UniqueFD OpenFileReadOnly(const fml::UniqueFD& base_directory,
                                const char* path);
 
@@ -52,9 +56,16 @@ fml::UniqueFD OpenDirectory(const fml::UniqueFD& base_directory,
                             bool create_if_necessary,
                             FilePermission permission);
 
+/// Helper method that calls `OpenDirectory` with create_if_necessary = false
+/// and permission = kRead.
+fml::UniqueFD OpenDirectoryReadOnly(const fml::UniqueFD& base_directory,
+                                    const char* path);
+
 fml::UniqueFD Duplicate(fml::UniqueFD::element_type descriptor);
 
 bool IsDirectory(const fml::UniqueFD& directory);
+
+bool IsDirectory(const fml::UniqueFD& base_directory, const char* path);
 
 // Returns whether the given path is a file.
 bool IsFile(const std::string& path);

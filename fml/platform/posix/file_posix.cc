@@ -135,6 +135,11 @@ bool IsDirectory(const fml::UniqueFD& directory) {
   return S_ISDIR(stat_result.st_mode);
 }
 
+bool IsDirectory(const fml::UniqueFD& base_directory, const char* path) {
+  UniqueFD file = OpenFileReadOnly(base_directory, path);
+  return (file.is_valid() && IsDirectory(file));
+}
+
 bool IsFile(const std::string& path) {
   struct stat buf;
   if (stat(path.c_str(), &buf) != 0) {
