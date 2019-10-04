@@ -5,8 +5,7 @@
 #include <chrono>
 #include <iostream>
 
-// If your flutter app is drawing at the wrong size you may need to adjust your
-// pixel ratio.
+// This value is calculated after the window is created.
 static double g_pixelRatio = 1.0;
 static const size_t kInitialWindowWidth = 800;
 static const size_t kInitialWindowHeight = 600;
