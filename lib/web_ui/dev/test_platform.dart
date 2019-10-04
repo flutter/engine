@@ -55,7 +55,7 @@ class BrowserPlatform extends PlatformPlugin {
   ///
   /// [root] is the root directory that the server should serve. It defaults to
   /// the working directory.
-  static Future<BrowserPlatform> start({String root, bool isUpdateScreenshotGoldens: false}) async {
+  static Future<BrowserPlatform> start({String root, bool doUpdateScreenshotGoldens: false}) async {
     var server = shelf_io.IOServer(await HttpMultiServer.loopback(0));
     return BrowserPlatform._(
       server,
@@ -63,7 +63,7 @@ class BrowserPlatform extends PlatformPlugin {
       p.fromUri(await Isolate.resolvePackageUri(
           Uri.parse('package:test/src/runner/browser/static/favicon.ico'))),
       root: root,
-      isUpdateScreenshotGoldens: isUpdateScreenshotGoldens,
+      doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
     );
   }
 
@@ -102,10 +102,10 @@ class BrowserPlatform extends PlatformPlugin {
   bool get _closed => _closeMemo.hasRun;
 
   /// Whether to update screenshot golden files.
-  final bool isUpdateScreenshotGoldens;
+  final bool doUpdateScreenshotGoldens;
 
   BrowserPlatform._(this._server, Configuration config, String faviconPath,
-      {String root, this.isUpdateScreenshotGoldens})
+      {String root, this.doUpdateScreenshotGoldens})
       : _config = config,
         _root = root == null ? p.current : root,
         _http = config.pubServeUrl == null ? null : HttpClient() {
@@ -152,7 +152,7 @@ class BrowserPlatform extends PlatformPlugin {
   }
 
   Future<String> _diffScreenshot(String filename, bool write, [ Map<String, dynamic> region ]) async {
-    if (isUpdateScreenshotGoldens) {
+    if (doUpdateScreenshotGoldens) {
       write = true;
     }
 
@@ -224,7 +224,7 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
       // Don't even bother with the comparison, just write and return
       print('Updating screenshot golden: $file');
       file.writeAsBytesSync(encodePng(screenshot), flush: true);
-      if (isUpdateScreenshotGoldens) {
+      if (doUpdateScreenshotGoldens) {
         // Do not fail tests when bulk-updating screenshot goldens.
         return 'OK';
       } else {

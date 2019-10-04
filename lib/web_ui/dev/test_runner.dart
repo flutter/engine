@@ -82,7 +82,7 @@ class TestCommand extends Command<bool> {
 
   /// When running screenshot tests writes them to the file system into
   /// ".dart_tool/goldens".
-  bool get isUpdateScreenshotGoldens => argResults['update-screenshot-goldens'];
+  bool get doUpdateScreenshotGoldens => argResults['update-screenshot-goldens'];
 
   Future<void> _runTargetTests(List<FilePath> targets) async {
     await _runTestBatch(targets, concurrency: 1, expectFailure: false);
@@ -248,7 +248,7 @@ class TestCommand extends Command<bool> {
       return BrowserPlatform.start(
         root: io.Directory.current.path,
         // It doesn't make sense to update a screenshot for a test that is expected to fail.
-        isUpdateScreenshotGoldens: !expectFailure && isUpdateScreenshotGoldens,
+        doUpdateScreenshotGoldens: !expectFailure && doUpdateScreenshotGoldens,
       );
     });
 
