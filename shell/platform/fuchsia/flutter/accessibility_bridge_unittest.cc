@@ -53,7 +53,7 @@ class AccessibilityBridgeTest : public testing::Test {
     accessibility_bridge_ =
         std::make_unique<flutter_runner::AccessibilityBridge>(
             accessibility_delegate_, services_provider_.service_directory(),
-            std::move(view_ref));
+            std::move(view_ref_));
     RunLoopUntilIdle();
   }
 
