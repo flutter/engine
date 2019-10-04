@@ -56,7 +56,7 @@ public class TextInputPluginTest {
         InputMethodSubtype inputMethodSubtype = new InputMethodSubtype(0, 0, /*locale=*/"ko", "", "", false, false);
         TestImm testImm = Shadow.extract(RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
         testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-        Settings.Secure.getString(RuntimeEnvironment.application.getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD, "com.sec.android.inputmethod/.SamsungKeypad");
+        Settings.Secure.putString(RuntimeEnvironment.application.getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD, "com.sec.android.inputmethod/.SamsungKeypad");
         View testView = new View(RuntimeEnvironment.application);
         TextInputPlugin textInputPlugin = new TextInputPlugin(testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
         textInputPlugin.setTextInputClient(0, new TextInputChannel.Configuration(false, false, TextInputChannel.TextCapitalization.NONE, null, null, null));
@@ -81,7 +81,7 @@ public class TextInputPluginTest {
         InputMethodSubtype inputMethodSubtype = new InputMethodSubtype(0, 0, /*locale=*/"en", "", "", false, false);
         TestImm testImm = Shadow.extract(RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
         testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-        Settings.Secure.getString(RuntimeEnvironment.application.getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD, "com.sec.android.inputmethod/.SamsungKeypad");
+        Settings.Secure.putString(RuntimeEnvironment.application.getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD, "com.sec.android.inputmethod/.SamsungKeypad");
         View testView = new View(RuntimeEnvironment.application);
         TextInputPlugin textInputPlugin = new TextInputPlugin(testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
         textInputPlugin.setTextInputClient(0, new TextInputChannel.Configuration(false, false, TextInputChannel.TextCapitalization.NONE, null, null, null));
