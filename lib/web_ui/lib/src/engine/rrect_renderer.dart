@@ -184,12 +184,15 @@ class _RRectToCanvasRenderer extends _RRectRenderer {
   void beginPath() {
     context.beginPath();
   }
+
   void moveTo(double x, double y) {
     context.moveTo(x, y);
   }
+
   void lineTo(double x, double y) {
     context.lineTo(x, y);
   }
+
   void ellipse(double centerX, double centerY, double radiusX, double radiusY,
       double rotation, double startAngle, double endAngle, bool antiClockwise) {
     context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
@@ -201,18 +204,21 @@ class _RRectToCanvasRenderer extends _RRectRenderer {
 class _RRectToPathRenderer extends _RRectRenderer {
   final ui.Path path;
   _RRectToPathRenderer(this.path);
-  void beginPath() {
-  }
+  void beginPath() {}
   void moveTo(double x, double y) {
     path.moveTo(x, y);
   }
+
   void lineTo(double x, double y) {
     path.lineTo(x, y);
   }
+
   void ellipse(double centerX, double centerY, double radiusX, double radiusY,
       double rotation, double startAngle, double endAngle, bool antiClockwise) {
-    path.addArc(ui.Rect.fromLTRB(centerX - radiusX, centerY - radiusY,
-        centerX + radiusX, centerY + radiusY), startAngle,
+    path.addArc(
+        ui.Rect.fromLTRB(centerX - radiusX, centerY - radiusY,
+            centerX + radiusX, centerY + radiusY),
+        startAngle,
         antiClockwise ? startAngle - endAngle : endAngle - startAngle);
   }
 }
