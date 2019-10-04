@@ -272,7 +272,7 @@ class TestCommand extends Command<bool> {
   }
 }
 
-const List<String> _kTestFonts = <String>['ahem.ttf', 'Roboto-Light.ttf'];
+const List<String> _kTestFonts = <String>['ahem.ttf', 'Roboto-Regular.ttf'];
 
 void _copyTestFontsIntoWebUi() {
   final String fontsPath = path.join(

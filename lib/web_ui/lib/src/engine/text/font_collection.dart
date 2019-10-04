@@ -7,7 +7,7 @@ part of engine;
 const String _ahemFontFamily = 'Ahem';
 const String _ahemFontUrl = 'packages/ui/assets/ahem.ttf';
 const String _robotoFontFamily = 'Roboto';
-const String _robotoFontUrl = 'packages/ui/assets/Roboto-Light.ttf';
+const String _robotoFontUrl = 'packages/ui/assets/Roboto-Regular.ttf';
 
 /// This class is responsible for registering and loading fonts.
 ///
