@@ -21,9 +21,8 @@ void main() async {
 
   // Commit a recording canvas to a bitmap, and compare with the expected
   Future<void> _checkScreenshot(RecordingCanvas rc, String fileName,
-      { Rect region = const Rect.fromLTWH(0, 0, 500, 500), bool write = false
-      }) async {
-
+      {Rect region = const Rect.fromLTWH(0, 0, 500, 500),
+      bool write = false}) async {
     final EngineCanvas engineCanvas = BitmapCanvas(screenRect);
     rc.apply(engineCanvas);
 
@@ -61,8 +60,7 @@ void main() async {
           ..color = const Color(0xFF404000));
     final Path transformedPath = Path();
     final Matrix4 testMatrixTranslateRotate =
-        Matrix4.rotationZ(math.pi * 30.0 / 180.0)
-        ..translate(100,20);
+        Matrix4.rotationZ(math.pi * 30.0 / 180.0)..translate(100, 20);
     transformedPath.addPath(path, Offset.zero,
         matrix4: testMatrixTranslateRotate.storage);
     rc.drawPath(
@@ -74,10 +72,9 @@ void main() async {
     await _checkScreenshot(rc, 'path_transform_with_line');
   });
 
-  
   test('Should draw transformed line.', () async {
     final RecordingCanvas rc =
-    RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
+        RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     final Path path = Path();
     path.addRect(Rect.fromLTRB(50, 40, 300, 100));
     rc.drawPath(
@@ -88,8 +85,7 @@ void main() async {
           ..color = const Color(0xFF404000));
     final Path transformedPath = Path();
     final Matrix4 testMatrixTranslateRotate =
-    Matrix4.rotationZ(math.pi * 30.0 / 180.0)
-      ..translate(100,20);
+        Matrix4.rotationZ(math.pi * 30.0 / 180.0)..translate(100, 20);
     transformedPath.addPath(path, Offset.zero,
         matrix4: testMatrixTranslateRotate.storage);
     rc.drawPath(
@@ -103,10 +99,10 @@ void main() async {
 
   test('Should draw transformed quadratic curve.', () async {
     final RecordingCanvas rc =
-    RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
+        RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     final Path path = Path();
     path.moveTo(100, 100);
-    path.quadraticBezierTo(100, 300, 400,300);
+    path.quadraticBezierTo(100, 300, 400, 300);
     rc.drawPath(
         path,
         Paint()
@@ -115,8 +111,7 @@ void main() async {
           ..color = const Color(0xFF404000));
     final Path transformedPath = Path();
     final Matrix4 testMatrixTranslateRotate =
-    Matrix4.rotationZ(math.pi * 30.0 / 180.0)
-      ..translate(100, -80);
+        Matrix4.rotationZ(math.pi * 30.0 / 180.0)..translate(100, -80);
     transformedPath.addPath(path, Offset.zero,
         matrix4: testMatrixTranslateRotate.storage);
     rc.drawPath(
@@ -130,7 +125,7 @@ void main() async {
 
   test('Should draw transformed conic.', () async {
     final RecordingCanvas rc =
-    RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
+        RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     const double yStart = 20;
 
     const Offset p0 = Offset(25, yStart + 25);
@@ -153,8 +148,7 @@ void main() async {
           ..color = const Color(0xFF404000));
     final Path transformedPath = Path();
     final Matrix4 testMatrixTranslateRotate =
-    Matrix4.rotationZ(math.pi * 30.0 / 180.0)
-      ..translate(100, -80);
+        Matrix4.rotationZ(math.pi * 30.0 / 180.0)..translate(100, -80);
     transformedPath.addPath(path, Offset.zero,
         matrix4: testMatrixTranslateRotate.storage);
     rc.drawPath(
@@ -168,13 +162,16 @@ void main() async {
 
   test('Should draw transformed arc.', () async {
     final RecordingCanvas rc =
-    RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
+        RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     const double yStart = 20;
 
     final Path path = Path();
     path.moveTo(350, 280);
-    path.arcToPoint(Offset(450,90), radius: Radius.elliptical(200, 50),
-      rotation: -math.pi/6.0, largeArc: true, clockwise: true);
+    path.arcToPoint(Offset(450, 90),
+        radius: Radius.elliptical(200, 50),
+        rotation: -math.pi / 6.0,
+        largeArc: true,
+        clockwise: true);
     path.close();
 
     rc.drawPath(
@@ -186,8 +183,7 @@ void main() async {
 
     final Path transformedPath = Path();
     final Matrix4 testMatrixTranslateRotate =
-    Matrix4.rotationZ(math.pi * 30.0 / 180.0)
-      ..translate(100, 10);
+        Matrix4.rotationZ(math.pi * 30.0 / 180.0)..translate(100, 10);
     transformedPath.addPath(path, Offset.zero,
         matrix4: testMatrixTranslateRotate.storage);
     rc.drawPath(
@@ -201,7 +197,7 @@ void main() async {
 
   test('Should draw transformed rrect.', () async {
     final RecordingCanvas rc =
-    RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
+        RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     const double yStart = 20;
 
     final Path path = Path();
@@ -216,8 +212,7 @@ void main() async {
 
     final Path transformedPath = Path();
     final Matrix4 testMatrixTranslateRotate =
-    Matrix4.rotationZ(math.pi * 30.0 / 180.0)
-      ..translate(100, -80);
+        Matrix4.rotationZ(math.pi * 30.0 / 180.0)..translate(100, -80);
     transformedPath.addPath(path, Offset.zero,
         matrix4: testMatrixTranslateRotate.storage);
     rc.drawPath(
