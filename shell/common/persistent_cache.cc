@@ -21,6 +21,9 @@ namespace flutter {
 
 std::string PersistentCache::cache_base_path_;
 
+std::mutex PersistentCache::instance_mutex_;
+std::unique_ptr<PersistentCache> PersistentCache::gPersistentCache;
+
 static std::string SkKeyToFilePath(const SkData& data) {
   if (data.data() == nullptr || data.size() == 0) {
     return "";
@@ -53,11 +56,17 @@ void PersistentCache::SetCacheSkSL(bool value) {
 }
 
 PersistentCache* PersistentCache::GetCacheForProcess() {
-  static std::unique_ptr<PersistentCache> gPersistentCache;
-  static std::once_flag once = {};
-  std::call_once(
-      once, []() { gPersistentCache.reset(new PersistentCache(gIsReadOnly)); });
+  std::scoped_lock lock(instance_mutex_);
+  if (gPersistentCache == nullptr) {
+    gPersistentCache.reset(new PersistentCache(gIsReadOnly));
+  }
   return gPersistentCache.get();
+}
+
+void PersistentCache::ResetCacheForProcess() {
+  std::scoped_lock lock(instance_mutex_);
+  gPersistentCache.reset(new PersistentCache(gIsReadOnly));
+  strategy_set_ = false;
 }
 
 void PersistentCache::SetCacheDirectoryPath(std::string path) {

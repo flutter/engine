@@ -31,6 +31,7 @@ TEST_F(ShellTest, CacheSkSLWorks) {
   // Create a temp dir to store the persistent cache
   fml::ScopedTemporaryDirectory dir;
   PersistentCache::SetCacheDirectoryPath(dir.path());
+  PersistentCache::ResetCacheForProcess();
 
   auto settings = CreateSettingsForFixture();
   settings.cache_sksl = true;
@@ -78,6 +79,7 @@ TEST_F(ShellTest, CacheSkSLWorks) {
 
   // Run the engine again with cache_sksl = false and check that the previously
   // generated SkSL cache is used for precompile.
+  PersistentCache::ResetCacheForProcess();
   settings.cache_sksl = false;
   settings.dump_skp_on_shader_compilation = true;
   auto normal_config = RunConfiguration::InferFromSettings(settings);

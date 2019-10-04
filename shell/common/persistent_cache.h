@@ -31,6 +31,7 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   static bool gIsReadOnly;
 
   static PersistentCache* GetCacheForProcess();
+  static void ResetCacheForProcess();
 
   static void SetCacheDirectoryPath(std::string path);
 
@@ -64,6 +65,10 @@ class PersistentCache : public GrContextOptions::PersistentCache {
  private:
   static std::string cache_base_path_;
 
+  static std::mutex instance_mutex_;
+  static std::unique_ptr<PersistentCache> gPersistentCache
+      FML_GUARDED_BY(instance_mutex_);
+
   // Mutable static switch that can be set before GetCacheForProcess is called
   // and GrContextOptions.fShaderCacheStrategy is set. If true, it means that
   // we'll set `GrContextOptions::fShaderCacheStrategy` to `kSkSL`, and all the
@@ -71,7 +76,7 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   static std::atomic<bool> cache_sksl_;
 
   // Guard flag to make sure that cache_sksl_ is not modified after
-  // cache_strategy_set_ becomes true.
+  // strategy_set_ becomes true.
   static std::atomic<bool> strategy_set_;
 
   const bool is_read_only_;
