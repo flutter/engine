@@ -26,7 +26,7 @@ import java.io.File;
 import java.util.*;
 
 /**
- * This class finds Flutter resources in an application APK and also loads Flutter's native library.
+ * Finds Flutter resources in an application APK and also loads Flutter's native library.
  */
 public class FlutterLoader {
     private static final String TAG = "FlutterLoader";
@@ -39,13 +39,13 @@ public class FlutterLoader {
     private static final String FLUTTER_ASSETS_DIR_KEY = "flutter-assets-dir";
 
     // XML Attribute keys supported in AndroidManifest.xml
-    public static final String PUBLIC_AOT_SHARED_LIBRARY_NAME =
+    private static final String PUBLIC_AOT_SHARED_LIBRARY_NAME =
         FlutterLoader.class.getName() + '.' + AOT_SHARED_LIBRARY_NAME;
-    public static final String PUBLIC_VM_SNAPSHOT_DATA_KEY =
+    private static final String PUBLIC_VM_SNAPSHOT_DATA_KEY =
         FlutterLoader.class.getName() + '.' + VM_SNAPSHOT_DATA_KEY;
-    public static final String PUBLIC_ISOLATE_SNAPSHOT_DATA_KEY =
+    private static final String PUBLIC_ISOLATE_SNAPSHOT_DATA_KEY =
         FlutterLoader.class.getName() + '.' + ISOLATE_SNAPSHOT_DATA_KEY;
-    public static final String PUBLIC_FLUTTER_ASSETS_DIR_KEY =
+    private static final String PUBLIC_FLUTTER_ASSETS_DIR_KEY =
         FlutterLoader.class.getName() + '.' + FLUTTER_ASSETS_DIR_KEY;
 
     // Resource names used for components of the precompiled snapshot.
@@ -64,6 +64,13 @@ public class FlutterLoader {
 
     private static FlutterLoader instance;
 
+    /**
+     * Returns a singleton {@code FlutterLoader} instance.
+     * <p>
+     * The returned instance loads Flutter native libraries in the standard way. A singleton object
+     * is used instead of static methods to facilitate testing without actually running native
+     * library linking.
+     */
     @NonNull
     public static FlutterLoader getInstance() {
         if (instance == null) {
@@ -98,12 +105,12 @@ public class FlutterLoader {
      * @param settings Configuration settings.
      */
     public void startInitialization(@NonNull Context applicationContext, @NonNull Settings settings) {
-        if (Looper.myLooper() != Looper.getMainLooper()) {
-          throw new IllegalStateException("startInitialization must be called on the main thread");
-        }
         // Do not run startInitialization more than once.
         if (this.settings != null) {
           return;
+        }
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+          throw new IllegalStateException("startInitialization must be called on the main thread");
         }
 
         this.settings = settings;
@@ -136,14 +143,14 @@ public class FlutterLoader {
      * @param args Flags sent to the Flutter runtime.
      */
     public void ensureInitializationComplete(@NonNull Context applicationContext, @Nullable String[] args) {
+        if (initialized) {
+            return;
+        }
         if (Looper.myLooper() != Looper.getMainLooper()) {
           throw new IllegalStateException("ensureInitializationComplete must be called on the main thread");
         }
         if (settings == null) {
           throw new IllegalStateException("ensureInitializationComplete must be called after startInitialization");
-        }
-        if (initialized) {
-            return;
         }
         try {
             if (resourceExtractor != null) {
