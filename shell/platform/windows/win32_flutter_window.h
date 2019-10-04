@@ -48,10 +48,13 @@ class Win32FlutterWindow : public Win32Window {
   void OnPointerMove(double x, double y) override;
 
   // |Win32Window|
-  void OnPointerDown(double x, double y) override;
+  void OnPointerDown(double x, double y, UINT button) override;
 
   // |Win32Window|
-  void OnPointerUp(double x, double y) override;
+  void OnPointerUp(double x, double y, UINT button) override;
+
+  // |Win32Window|
+  void OnPointerLeave() override;
 
   // |Win32Window|
   void OnChar(char32_t code_point) override;
@@ -64,6 +67,9 @@ class Win32FlutterWindow : public Win32Window {
 
   // |Win32Window|
   void OnClose();
+
+  // |Win32Window|
+  void OnFontChange() override;
 
   // Configures the window instance with an instance of a running Flutter engine
   // returning a configured FlutterDesktopWindowControllerRef.
@@ -101,6 +107,13 @@ class Win32FlutterWindow : public Win32Window {
 
   // Reports mouse release to Flutter engine.
   void SendPointerUp(double x, double y);
+
+  // Reports mouse left the window client area.
+  //
+  // Win32 api doesn't have "mouse enter" event. Therefore, there is no
+  // SendPointerEnter method. A mouse enter event is tracked then the "move"
+  // event is called.
+  void SendPointerLeave();
 
   // Reports a keyboard character to Flutter engine.
   void SendChar(char32_t code_point);

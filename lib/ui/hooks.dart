@@ -150,7 +150,15 @@ void _updateAccessibilityFeatures(int values) {
 
 @pragma('vm:entry-point')
 void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
-  if (window.onPlatformMessage != null) {
+  if (name == ChannelBuffers.kControlChannelName) {
+    try {
+      channelBuffers.handleMessage(data);
+    } catch (ex) {
+      _printDebug('Message to "$name" caused exception $ex');
+    } finally {
+      window._respondToPlatformMessage(responseId, null);
+    }
+  } else if (window.onPlatformMessage != null) {
     _invoke3<String, ByteData, PlatformMessageResponseCallback>(
       window.onPlatformMessage,
       window._onPlatformMessageZone,
@@ -161,7 +169,9 @@ void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
       },
     );
   } else {
-    window._respondToPlatformMessage(responseId, null);
+    channelBuffers.push(name, data, (ByteData responseData) {
+      window._respondToPlatformMessage(responseId, responseData);
+    });
   }
 }
 

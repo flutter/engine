@@ -59,23 +59,37 @@ enum VertexMode {
 
 /// A set of vertex data used by [Canvas.drawVertices].
 class Vertices {
-  Vertices(
+  factory Vertices(
     VertexMode mode,
     List<Offset> positions, {
     List<Offset> textureCoordinates,
     List<Color> colors,
     List<int> indices,
-  })  : assert(mode != null),
-        assert(positions != null);
+  }) {
+    if (engine.experimentalUseSkia) {
+      return engine.SkVertices(mode, positions,
+          textureCoordinates: textureCoordinates,
+          colors: colors,
+          indices: indices);
+    }
+    return null;
+  }
 
-  Vertices.raw(
+  factory Vertices.raw(
     VertexMode mode,
     Float32List positions, {
     Float32List textureCoordinates,
     Int32List colors,
     Uint16List indices,
-  })  : assert(mode != null),
-        assert(positions != null);
+  }) {
+    if (engine.experimentalUseSkia) {
+      return engine.SkVertices.raw(mode, positions,
+          textureCoordinates: textureCoordinates,
+          colors: colors,
+          indices: indices);
+    }
+    return null;
+  }
 }
 
 /// Records a [Picture] containing a sequence of graphical operations.
@@ -877,7 +891,7 @@ class Canvas {
     assert(vertices != null); // vertices is checked on the engine side
     assert(paint != null);
     assert(blendMode != null);
-    throw UnimplementedError();
+    _canvas.drawVertices(vertices, blendMode, paint);
   }
 
   //
@@ -2191,7 +2205,7 @@ class Path {
 ///
 /// When iterating across a [PathMetrics]' contours, the [PathMetric] objects
 /// are only valid until the next one is obtained.
-class PathMetrics extends IterableBase<PathMetric> {
+class PathMetrics extends collection.IterableBase<PathMetric> {
   PathMetrics._(Path path, bool forceClosed)
       : _iterator = PathMetricIterator._(PathMetric._(path, forceClosed));
 

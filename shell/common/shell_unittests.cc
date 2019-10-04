@@ -8,6 +8,7 @@
 #include <future>
 #include <memory>
 
+#include "flutter/common/runtime.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/fml/command_line.h"
@@ -207,6 +208,10 @@ TEST(ShellTestNoFixture, EnableMirrorsIsWhitelisted) {
     GTEST_SKIP();
     return;
   }
+#if FLUTTER_RELEASE
+  GTEST_SKIP();
+  return;
+#endif
 
   const std::vector<fml::CommandLine::Option> options = {
       fml::CommandLine::Option("dart-flags", "--enable_mirrors")};
@@ -223,7 +228,7 @@ TEST_F(ShellTest, BlacklistedDartVMFlag) {
       fml::CommandLine::Option("dart-flags", "--verify_after_gc")};
   fml::CommandLine command_line("", options, std::vector<std::string>());
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
+#if !FLUTTER_RELEASE
   // Upon encountering a non-whitelisted Dart flag the process terminates.
   const char* expected =
       "Encountered blacklisted Dart VM flag: --verify_after_gc";
@@ -241,7 +246,7 @@ TEST_F(ShellTest, WhitelistedDartVMFlag) {
   fml::CommandLine command_line("", options, std::vector<std::string>());
   flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
+#if !FLUTTER_RELEASE
   EXPECT_EQ(settings.dart_flags.size(), 2u);
   EXPECT_EQ(settings.dart_flags[0], "--max_profile_depth 1");
   EXPECT_EQ(settings.dart_flags[1], "--random_seed 42");
@@ -433,7 +438,7 @@ TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
   }
 }
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+#if FLUTTER_RELEASE
 TEST_F(ShellTest, ReportTimingsIsCalledLaterInReleaseMode) {
 #else
 TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
@@ -473,7 +478,7 @@ TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
   fml::TimePoint finish = fml::TimePoint::Now();
   fml::TimeDelta ellapsed = finish - start;
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+#if FLUTTER_RELEASE
   // Our batch time is 1000ms. Hopefully the 800ms limit is relaxed enough to
   // make it not too flaky.
   ASSERT_TRUE(ellapsed >= fml::TimeDelta::FromMilliseconds(800));
@@ -517,6 +522,36 @@ TEST_F(ShellTest, ReportTimingsIsCalledImmediatelyAfterTheFirstFrame) {
   // Check for the immediate callback of the first frame that doesn't wait for
   // the other 9 frames to be rasterized.
   ASSERT_EQ(timestamps.size(), FrameTiming::kCount);
+}
+
+TEST_F(ShellTest, ReloadSystemFonts) {
+  auto settings = CreateSettingsForFixture();
+
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  auto shell = CreateShell(std::move(settings), std::move(task_runners));
+
+  auto fontCollection = GetFontCollection(shell.get());
+  std::vector<std::string> families(1, "Robotofake");
+  auto font =
+      fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
+  if (font == nullptr) {
+    // The system does not have default font. Aborts this test.
+    return;
+  }
+  unsigned int id = font->getId();
+  // The result should be cached.
+  font = fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
+  ASSERT_EQ(font->getId(), id);
+  bool result = shell->ReloadSystemFonts();
+
+  // The cache is cleared, and FontCollection will be assigned a new id.
+  font = fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
+  ASSERT_NE(font->getId(), id);
+  ASSERT_TRUE(result);
+  shell.reset();
 }
 
 TEST_F(ShellTest, WaitForFirstFrame) {

@@ -14,6 +14,7 @@
 
 #include "flutter_window.h"
 #include "plugin_registrar.h"
+#include "plugin_registry.h"
 
 namespace flutter {
 
@@ -40,14 +41,14 @@ struct WindowProperties {
 // requires control of the application's event loop, and is thus useful
 // primarily for building a simple one-window shell hosting a Flutter
 // application. The final implementation and API will be very different.
-class FlutterWindowController {
+class FlutterWindowController : public PluginRegistry {
  public:
   // There must be only one instance of this class in an application at any
   // given time, as Flutter does not support multiple engines in one process,
   // or multiple views in one engine.
   explicit FlutterWindowController(const std::string& icu_data_path);
 
-  ~FlutterWindowController();
+  virtual ~FlutterWindowController();
 
   // Prevent copying.
   FlutterWindowController(FlutterWindowController const&) = delete;
@@ -68,15 +69,15 @@ class FlutterWindowController {
                     const std::string& assets_path,
                     const std::vector<std::string>& arguments);
 
-  // Returns the FlutterDesktopPluginRegistrarRef to register a plugin with the
-  // given name.
+  // Destroys the current window, if any.
   //
-  // The name must be unique across the application.
-  FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
-      const std::string& plugin_name);
+  // Because only one window can exist at a time, this method must be called
+  // between calls to CreateWindow, or the second one will fail.
+  void DestroyWindow();
 
   // The FlutterWindow managed by this controller, if any. Returns nullptr
-  // before CreateWindow is called, and after RunEventLoop returns;
+  // before CreateWindow is called, after DestroyWindow is called, and after
+  // RunEventLoop returns;
   FlutterWindow* window() { return window_.get(); }
 
   // Processes the next event on this window, or returns early if |timeout| is
@@ -88,6 +89,10 @@ class FlutterWindowController {
 
   // Deprecated. Use RunEventLoopWithTimeout.
   void RunEventLoop();
+
+  // flutter::PluginRegistry:
+  FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
+      const std::string& plugin_name) override;
 
  private:
   // The path to the ICU data file. Set at creation time since it is the same

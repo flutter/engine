@@ -262,12 +262,22 @@ flt-semantics input[type=range] {
           '  background-color: transparent;'
           '}',
           sheet.cssRules.length);
+      sheet.insertRule(
+          'textarea::-moz-selection {'
+          '  background-color: transparent;'
+          '}',
+          sheet.cssRules.length);
     } else {
       // On iOS, the invisible semantic text field has a visible cursor and
       // selection highlight. The following 2 CSS rules force everything to be
       // transparent.
       sheet.insertRule(
           'input::selection {'
+          '  background-color: transparent;'
+          '}',
+          sheet.cssRules.length);
+      sheet.insertRule(
+          'textarea::selection {'
           '  background-color: transparent;'
           '}',
           sheet.cssRules.length);
@@ -317,19 +327,8 @@ flt-glass-pane * {
     setElementStyle(bodyElement, 'font', defaultCssFont);
     setElementStyle(bodyElement, 'color', 'red');
 
-    // TODO(flutter_web): send the location during the scroll for more frequent
-    // location updates from the framework. Remove spellcheck=false property.
-    /// The spell check is being disabled for now.
-    ///
-    /// Flutter web is positioning the input box on top of editable widget.
-    /// This location is updated only in the paint phase of the widget.
-    /// It is wrong during the scroll. It is not important for text editing
-    /// since the content is already invisible. On the other hand, the red
-    /// indicator for spellcheck gets confusing due to the wrong positioning.
-    /// We are disabling spellcheck until the location starts getting updated
-    /// via scroll. This is possible since we can listen to the scroll on
-    /// Flutter.
-    /// See [HybridTextEditing].
+    // TODO(flutter_web): Disable spellcheck until changes in the framework and
+    // engine are complete.
     bodyElement.spellcheck = false;
 
     for (html.Element viewportMeta

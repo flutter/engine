@@ -20,6 +20,11 @@ if [[ ! -d "$DEVICE_TOOLS" ]]; then
   exit 1
 fi
 
+PUB_VERSION=$($HOST_TOOLS/dart-sdk/bin/pub --version)
+echo "Using Pub ${PUB_VERSION} from $HOST_TOOLS/dart-sdk/bin/pub"
+
+$HOST_TOOLS/dart-sdk/bin/pub get
+
 echo "Using dart from $HOST_TOOLS, gen_snapshot from $DEVICE_TOOLS."
 
 OUTDIR="${BASH_SOURCE%/*}/build/ios"
@@ -61,6 +66,7 @@ echo "Creating stub App using $SYSROOT..."
 
 echo "static const int Moo = 88;" | xcrun clang -x c \
   -arch x86_64 \
+  -fembed-bitcode-marker \
   -isysroot "$SYSROOT" \
   -miphoneos-version-min=8.0 \
   -dynamiclib \

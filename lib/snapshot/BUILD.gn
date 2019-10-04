@@ -22,7 +22,7 @@ copy("generate_dart_ui") {
 compiled_action("generate_snapshot_bin") {
   tool = "//third_party/dart/runtime/bin:gen_snapshot"
 
-  if (is_fuchsia || is_fuchsia_host) {
+  if ((is_fuchsia || is_fuchsia_host) && !using_fuchsia_sdk) {
     platform_kernel =
         "$root_out_dir/flutter_runner_patched_sdk/platform_strong.dill"
   } else {
@@ -59,7 +59,8 @@ compiled_action("generate_snapshot_bin") {
   ]
 
   if (is_debug && flutter_runtime_mode != "profile" &&
-      flutter_runtime_mode != "release") {
+      flutter_runtime_mode != "release" &&
+      flutter_runtime_mode != "jit_release") {
     args += [ "--enable_asserts" ]
   }
 
@@ -208,7 +209,7 @@ bin_to_linkable("platform_strong_dill_linkable") {
   deps = [
     ":kernel_platform_files",
   ]
-  if (is_fuchsia || is_fuchsia_host) {
+  if ((is_fuchsia || is_fuchsia_host) && !using_fuchsia_sdk) {
     input = "$root_out_dir/flutter_runner_patched_sdk/platform_strong.dill"
   } else {
     input = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
@@ -261,7 +262,8 @@ compile_platform("strong_platform") {
     "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill",
   ]
 
-  is_runtime_mode_release = flutter_runtime_mode == "release"
+  is_runtime_mode_release =
+      flutter_runtime_mode == "release" || flutter_runtime_mode == "jit_release"
   allow_causal_async_stacks = !is_runtime_mode_release
   args = [
     "--target=flutter",
@@ -273,10 +275,10 @@ compile_platform("strong_platform") {
 }
 
 # Fuchsia's snapshot requires a different platform with extra dart: libraries.
-if (is_fuchsia || is_fuchsia_host) {
+if ((is_fuchsia || is_fuchsia_host) && !using_fuchsia_sdk) {
   group("kernel_platform_files") {
     public_deps = [
-      "$flutter_root/shell/platform/fuchsia/flutter/kernel:kernel_platform_files",
+      "//topaz/runtime/flutter_runner/kernel:kernel_platform_files",
     ]
   }
 } else {

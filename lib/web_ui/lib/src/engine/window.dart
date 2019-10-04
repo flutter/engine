@@ -9,6 +9,11 @@ const bool _debugPrintPlatformMessages = false;
 
 /// The Web implementation of [ui.Window].
 class EngineWindow extends ui.Window {
+
+  EngineWindow() {
+    _addBrightnessMediaQueryListener();
+  }
+
   @override
   double get devicePixelRatio => _devicePixelRatio;
 
@@ -79,12 +84,6 @@ class EngineWindow extends ui.Window {
   /// By setting this to null, the browser history will be disabled.
   set locationStrategy(LocationStrategy strategy) {
     _browserHistory.locationStrategy = strategy;
-  }
-
-  /// This setter is used by [WebNavigatorObserver] to update the url to
-  /// reflect the [Navigator]'s current route name.
-  set webOnlyRouteName(String routeName) {
-    _browserHistory.setRouteName(routeName);
   }
 
   @override
@@ -204,6 +203,56 @@ class EngineWindow extends ui.Window {
       callback(data);
     });
   }
+
+  @override
+  ui.Brightness get platformBrightness => _platformBrightness;
+  ui.Brightness _platformBrightness = ui.Brightness.light;
+
+  /// Updates [_platformBrightness] and invokes [onPlatformBrightnessChanged]
+  /// callback if [_platformBrightness] changed.
+  void _updatePlatformBrightness(ui.Brightness newPlatformBrightness) {
+    ui.Brightness previousPlatformBrightness = _platformBrightness;
+    _platformBrightness = newPlatformBrightness;
+
+    if (previousPlatformBrightness != _platformBrightness &&
+        onPlatformBrightnessChanged != null)
+      onPlatformBrightnessChanged();
+  }
+
+  /// Reference to css media query that indicates the user theme preference on the web.
+  final html.MediaQueryList _brightnessMediaQuery = html.window.matchMedia('(prefers-color-scheme: dark)');
+
+  /// A callback that is invoked whenever [_brightnessMediaQuery] changes value.
+  ///
+  /// Updates the [_platformBrightness] with the new user preference.
+  html.EventListener _brightnessMediaQueryListener;
+
+  /// Set the callback function for listening changes in [_brightnessMediaQuery] value.
+  void _addBrightnessMediaQueryListener() {
+    _updatePlatformBrightness(_brightnessMediaQuery.matches ? ui.Brightness.dark : ui.Brightness.light);
+
+    _brightnessMediaQueryListener = (html.Event event) {
+      final html.MediaQueryListEvent mqEvent = event;
+      _updatePlatformBrightness(mqEvent.matches ? ui.Brightness.dark : ui.Brightness.light);
+    };
+    _brightnessMediaQuery.addListener(_brightnessMediaQueryListener);
+    registerHotRestartListener(() {
+      _removeBrightnessMediaQueryListener();
+    });
+  }
+
+  /// Remove the callback function for listening changes in [_brightnessMediaQuery] value.
+  void _removeBrightnessMediaQueryListener() {
+    _brightnessMediaQuery.removeListener(_brightnessMediaQueryListener);
+    _brightnessMediaQueryListener = null;
+  }
+
+
+  @override
+  void dispose() {
+    _removeBrightnessMediaQueryListener();
+  }
+
 }
 
 /// The window singleton.
