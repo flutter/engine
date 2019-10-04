@@ -30,6 +30,7 @@ class SkVertices implements ui.Vertices {
   js.JsObject skVertices;
   final Int32List _colors;
   final Float32List _positions;
+  final ui.VertexMode _mode;
 
   SkVertices(ui.VertexMode mode,
       List<ui.Offset> positions, {
@@ -40,7 +41,8 @@ class SkVertices implements ui.Vertices {
       : assert(mode != null),
         assert(positions != null),
         _colors = Int32List.fromList(colors.map((ui.Color c) => c.value)),
-        _positions = _offsetListToInt32List(positions) {
+        _positions = _offsetListToInt32List(positions),
+        _mode = mode {
     if (textureCoordinates != null &&
         textureCoordinates.length != positions.length)
       throw ArgumentError(
@@ -75,7 +77,8 @@ class SkVertices implements ui.Vertices {
       : assert(mode != null),
         assert(positions != null),
         _colors = colors,
-        _positions = positions {
+        _positions = positions,
+        _mode = mode {
     if (textureCoordinates != null &&
         textureCoordinates.length != positions.length)
       throw ArgumentError(
@@ -155,4 +158,7 @@ class SkVertices implements ui.Vertices {
 
   @override
   Float32List get positions => _positions;
+
+  @override
+  ui.VertexMode get mode => _mode;
 }
