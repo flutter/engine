@@ -47,7 +47,7 @@ class AccessibilityBridgeTest : public testing::Test {
  protected:
   void SetUp() override {
     zx_status_t status = zx::eventpair::create(
-      /*flags*/ 0u, &view_ref_control_.reference, &view_ref_.reference);
+        /*flags*/ 0u, &view_ref_control_.reference, &view_ref_.reference);
     EXPECT_EQ(status, ZX_OK);
 
     accessibility_bridge_ =
