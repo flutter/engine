@@ -1,4 +1,4 @@
-# Flutter Embedder Engine Example GLFW
+# Flutter Embedder Engine GLFW Example
 ## Description
 This is an example of how to use Flutter Engine Embedder in order to get a
 Flutter project rendering in a new host environment.  The intended audience is
