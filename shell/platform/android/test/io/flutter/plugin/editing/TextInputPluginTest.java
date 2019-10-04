@@ -25,7 +25,7 @@ import io.flutter.plugin.platform.PlatformViewsController;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
-@Config(manifest = Config.NONE, shadows = TextInputPluginTest.TestImm.class)
+@Config(manifest = Config.NONE, shadows = TextInputPluginTest.TestImm.class, sdk = 27)
 @RunWith(RobolectricTestRunner.class)
 public class TextInputPluginTest {
     @Test
@@ -48,30 +48,7 @@ public class TextInputPluginTest {
         assertEquals(1, testImm.getRestartCount(testView));
     }
 
-    // See https://github.com/flutter/flutter/issues/29341
-    @Test
-    public void setTextInputEditingState_alwaysRestartsOnAffectedDevices() {
-        // Initialize a TextInputPlugin that needs to be always restarted.
-        ShadowBuild.setManufacturer("samsung");
-        InputMethodSubtype inputMethodSubtype = new InputMethodSubtype(0, 0, /*locale=*/"ko", "", "", false, false);
-        TestImm testImm = Shadow.extract(RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
-        testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-        Settings.Secure.putString(RuntimeEnvironment.application.getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD, "com.sec.android.inputmethod/.SamsungKeypad");
-        View testView = new View(RuntimeEnvironment.application);
-        TextInputPlugin textInputPlugin = new TextInputPlugin(testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
-        textInputPlugin.setTextInputClient(0, new TextInputChannel.Configuration(false, false, TextInputChannel.TextCapitalization.NONE, null, null, null));
-        // There's a pending restart since we initialized the text input client. Flush that now.
-        textInputPlugin.setTextInputEditingState(testView, new TextInputChannel.TextEditState("", 0, 0));
-
-        // Move the cursor.
-        assertEquals(1, testImm.getRestartCount(testView));
-        textInputPlugin.setTextInputEditingState(testView, new TextInputChannel.TextEditState("", 0, 0));
-
-        // Verify that we've restarted the input.
-        assertEquals(2, testImm.getRestartCount(testView));
-    }
-
-    // See https://github.com/flutter/flutter/issues/31512
+    // See https://github.com/flutter/flutter/issues/29341 and https://github.com/flutter/flutter/issues/31512
     // All modern Samsung keybords are affected including non-korean languages and thus
     // need the restart.
     @Test
