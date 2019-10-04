@@ -1,6 +1,7 @@
 package io.flutter.plugin.editing;
 
 import android.content.Context;
+import android.provider.Settings;
 import android.util.SparseIntArray;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -96,7 +97,7 @@ public class TextInputPluginTest {
     }
 
     @Test
-    public void setTextInputEditingState_doesNotRestartsOnUnaffectedDevices() {
+    public void setTextInputEditingState_doesNotRestartOnUnaffectedDevices() {
         // Initialize a TextInputPlugin that needs to be always restarted.
         ShadowBuild.setManufacturer("samsung");
         InputMethodSubtype inputMethodSubtype = new InputMethodSubtype(0, 0, /*locale=*/"en", "", "", false, false);
