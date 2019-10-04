@@ -527,7 +527,7 @@ static FLUTTER_API_SYMBOL(FlutterEngine)
   shared_library_path.append(engine_properties.assets_path);
   shared_library_path.append("/libapp.so");
   argv.insert(argv.end(), shared_library_path.c_str());
-#endif // !FLUTTER_JIT_RUNTIME
+#endif  // !FLUTTER_JIT_RUNTIME
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
   args.assets_path = engine_properties.assets_path;
