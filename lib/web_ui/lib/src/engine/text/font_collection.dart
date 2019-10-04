@@ -122,7 +122,7 @@ class _FontManager {
     // family that is not correct CSS syntax. To ensure the font family is
     // accepted on these browsers, wrap it in quotes.
     // See: https://drafts.csswg.org/css-fonts-3/#font-family-prop
-    if (browserEngine == BrowserEngine.webkit || browserEngine == BrowserEngine.firefox) {
+    if (browserEngine == BrowserEngine.firefox) {
       family = "'$family'";
     }
     // try/catch because `new FontFace` can crash with an improper font family.
