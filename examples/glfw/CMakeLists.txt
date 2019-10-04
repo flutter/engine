@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 project(FlutterEmbedderGLFW)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
 find_path(GLFW_INCLUDE_PATH "glfw3.h" /usr/local/Cellar/glfw/3.3/include/GLFW/)
 include_directories(${CMAKE_SOURCE_DIR}/../../shell/platform/embedder)
 include_directories(${GLFW_INCLUDE_PATH})
