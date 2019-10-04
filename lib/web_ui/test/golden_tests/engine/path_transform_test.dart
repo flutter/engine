@@ -74,6 +74,7 @@ void main() async {
     await _checkScreenshot(rc, 'path_transform_with_line');
   });
 
+  
   test('Should draw transformed line.', () async {
     final RecordingCanvas rc =
     RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
