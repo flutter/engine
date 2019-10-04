@@ -51,7 +51,7 @@ void main() async {
     final Path path = Path();
     path.addRect(paintRect);
     rc.drawPath(path, paint);
-    await _checkScreenshot(rc, fileName, write: true);
+    await _checkScreenshot(rc, fileName);
   }
 
   test('Should draw centered radial gradient.', () async {
