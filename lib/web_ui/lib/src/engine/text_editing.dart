@@ -341,6 +341,9 @@ class TextEditingElement {
       _subscriptions.add(domElement.onKeyUp.listen((event) {
         _handleChange(event);
       }));
+      /// In Firefox the context menu item "Select All" does not work without
+      /// listening onSelect. On the other browersers onSelectionChange is
+      /// enough for covering "Select All" functionality.
       _subscriptions.add(domElement.onSelect.listen(_handleChange));
     } else {
       _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
