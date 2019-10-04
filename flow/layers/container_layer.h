@@ -44,6 +44,52 @@ class ContainerLayer : public Layer {
   FML_DISALLOW_COPY_AND_ASSIGN(ContainerLayer);
 };
 
+class ElevatedContainerLayer : public ContainerLayer {
+ public:
+  ElevatedContainerLayer(float elevation);
+  ~ElevatedContainerLayer() override = default;
+
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+
+  float elevation() const { return clamped_elevation_; }
+  float total_elevation() const {
+    return parent_elevation_ + clamped_elevation_;
+  }
+
+ private:
+  float parent_elevation_ = 0.0f;
+  float elevation_ = 0.0f;
+  float clamped_elevation_ = 0.0f;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(ElevatedContainerLayer);
+};
+
+class FuchsiaSystemCompositedContainerLayer : public ElevatedContainerLayer {
+ public:
+  static bool should_system_composite() { return true; }
+
+  FuchsiaSystemCompositedContainerLayer(SkColor color, float elevation);
+  ~FuchsiaSystemCompositedContainerLayer() override = default;
+
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+#if defined(OS_FUCHSIA)
+  void UpdateScene(SceneUpdateContext& context) override;
+#endif  // defined(OS_FUCHSIA)
+  void Paint(PaintContext& context) const override;
+
+  void set_dimensions(SkRRect rrect) {
+    rrect_ = rrect;
+  }
+
+  SkColor color() const { return color_; }
+
+ private:
+  SkRRect rrect_ = SkRRect::MakeEmpty();
+  SkColor color_ = SK_ColorTRANSPARENT;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(FuchsiaSystemCompositedContainerLayer);
+};
+
 }  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_CONTAINER_LAYER_H_

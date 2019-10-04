@@ -294,29 +294,17 @@ SceneUpdateContext::Shape::Shape(SceneUpdateContext& context)
 SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
                                  const SkRRect& rrect,
                                  SkColor color,
-                                 float local_elevation,
-                                 float world_elevation,
+                                 float elevation,
                                  Layer* layer)
     : Shape(context),
       rrect_(rrect),
       color_(color),
       paint_bounds_(SkRect::MakeEmpty()),
       layer_(layer) {
-  const float depth = context.frame_physical_depth();
-  if (depth > -1 && world_elevation > depth) {
-    // TODO(mklim): Deal with bounds overflow more elegantly. We'd like to be
-    // able to have developers specify the behavior here to alternatives besides
-    // clamping, like normalization on some arbitrary curve.
+  entity_node().SetTranslation(0.f, 0.f, -elevation);
+  SetEntityNodeClipPlanes(entity_node(), rrect_.getBounds());
 
-    // Clamp the local z coordinate at our max bound. Take into account the
-    // parent z position here to fix clamping in cases where the child is
-    // overflowing because of its parents.
-    const float parent_elevation = world_elevation - local_elevation;
-    local_elevation = depth - parent_elevation;
-  }
-  if (local_elevation != 0.0) {
-    entity_node().SetTranslation(0.f, 0.f, -local_elevation);
-  }
+  entity_node().AddChild(shape_node());
 }
 
 SceneUpdateContext::Frame::~Frame() {

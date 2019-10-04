@@ -9,15 +9,26 @@
 
 namespace flutter {
 
-class PhysicalShapeLayer : public ContainerLayer {
+#if defined(OS_FUCHSIA)
+using PhysicalShapeLayerBase = FuchsiaSystemCompositedContainerLayer;
+#else
+class PhysicalShapeLayerBase : public ElevatedContainerLayer {
  public:
-  PhysicalShapeLayer(SkColor color,
-                     SkColor shadow_color,
-                     float elevation,
-                     const SkPath& path,
-                     Clip clip_behavior);
-  ~PhysicalShapeLayer() override;
+  static bool should_system_composite() { return false; }
 
+  PhysicalShapeLayerBase(SkColor color, float elevation)
+    : ElevatedContainerLayer(elevation),
+      color_(color) {}
+
+  SkColor color() const { return color_; }
+
+ private:
+  SkColor color_;
+};
+#endif
+
+class PhysicalShapeLayer : public PhysicalShapeLayerBase {
+ public:
   static void DrawShadow(SkCanvas* canvas,
                          const SkPath& path,
                          SkColor color,
@@ -25,25 +36,20 @@ class PhysicalShapeLayer : public ContainerLayer {
                          bool transparentOccluder,
                          SkScalar dpr);
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  PhysicalShapeLayer(SkColor color,
+                     SkColor shadow_color,
+                     float elevation,
+                     const SkPath& path,
+                     Clip clip_behavior);
+  ~PhysicalShapeLayer() override = default;
 
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
 
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
-
  private:
-  SkColor color_;
   SkColor shadow_color_;
-  float elevation_ = 0.0f;
-  float total_elevation_ = 0.0f;
   SkPath path_;
-  bool isRect_;
-  SkRRect frameRRect_;
   Clip clip_behavior_;
-
-  friend class PhysicalShapeLayer_TotalElevation_Test;
 };
 
 }  // namespace flutter
