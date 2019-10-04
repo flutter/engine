@@ -6,6 +6,10 @@
 
 #include <cstdlib>
 
+#if defined(OS_POSIX)
+#include <signal.h>
+#endif // defined(OS_POSIX)
+
 #include "flutter/assets/asset_manager.h"
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/fml/file.h"
@@ -71,8 +75,30 @@ class ScriptCompletionTaskObserver {
   FML_DISALLOW_COPY_AND_ASSIGN(ScriptCompletionTaskObserver);
 };
 
+// Processes spawned via dart:io inherit their signal handling from the parent
+// process. As part of spawning, the spawner blocks signals temporarily, so we
+// need to explicitly unblock the signals we care about in the new process. In
+// particular, we need to unblock SIGPROF for CPU profiling to work on the
+// mutator thread in the main isolate in this process (threads spawned by the VM
+// know about this limitation and automatically have this signal unblocked).
+static void UnblockSIGPROF() {
+#if defined(OS_POSIX)
+  sigset_t set;
+  sigemptyset(&set);
+  sigaddset(&set, SIGPROF);
+  pthread_sigmask(SIG_UNBLOCK, &set, NULL);
+#endif // defined(OS_POSIX)
+}
+
 int RunTester(const flutter::Settings& settings, bool run_forever) {
   const auto thread_label = "io.flutter.test";
+
+  // Necessary if we want to use the CPU profiler on the main isolate's mutator
+  // thread. See https://github.com/flutter/flutter/issues/35140.
+  //
+  // OSX WARNING: avoid spawning additional threads before this call due to a
+  // kernel bug that may enable SIGPROF on an unintended thread in the process.
+  UnblockSIGPROF();
 
   fml::MessageLoop::EnsureInitializedForCurrentThread();
 
