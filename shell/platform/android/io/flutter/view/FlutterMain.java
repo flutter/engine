@@ -9,7 +9,6 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import io.flutter.FlutterInjector;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 
 /**
@@ -39,7 +38,7 @@ public class FlutterMain {
      * @param applicationContext The Android application context.
      */
     public static void startInitialization(@NonNull Context applicationContext) {
-        FlutterInjector.instance().flutterLoader().startInitialization(applicationContext);
+        FlutterLoader.getInstance().startInitialization(applicationContext);
     }
 
     /**
@@ -56,7 +55,7 @@ public class FlutterMain {
     public static void startInitialization(@NonNull Context applicationContext, @NonNull Settings settings) {
         FlutterLoader.Settings newSettings = new FlutterLoader.Settings();
         newSettings.setLogTag(settings.getLogTag());
-        FlutterInjector.instance().flutterLoader().startInitialization(applicationContext, newSettings);
+        FlutterLoader.getInstance().startInitialization(applicationContext, newSettings);
     }
 
     /**
@@ -68,7 +67,7 @@ public class FlutterMain {
      * @param args Flags sent to the Flutter runtime.
      */
     public static void ensureInitializationComplete(@NonNull Context applicationContext, @Nullable String[] args) {
-        FlutterInjector.instance().flutterLoader().ensureInitializationComplete(applicationContext, args);
+        FlutterLoader.getInstance().ensureInitializationComplete(applicationContext, args);
     }
 
     /**
@@ -81,19 +80,19 @@ public class FlutterMain {
         @NonNull Handler callbackHandler,
         @NonNull Runnable callback
     ) {
-        FlutterInjector.instance().flutterLoader().ensureInitializationCompleteAsync(
+        FlutterLoader.getInstance().ensureInitializationCompleteAsync(
             applicationContext, args, callbackHandler, callback);
     }
 
     @NonNull
     public static String findAppBundlePath() {
-        return FlutterInjector.instance().flutterLoader().findAppBundlePath();
+        return FlutterLoader.getInstance().findAppBundlePath();
     }
 
     @Deprecated
     @Nullable
     public static String findAppBundlePath(@NonNull Context applicationContext) {
-        return FlutterInjector.instance().flutterLoader().findAppBundlePath(applicationContext);
+        return FlutterLoader.getInstance().findAppBundlePath();
     }
 
     /**
@@ -106,7 +105,7 @@ public class FlutterMain {
      */
     @NonNull
     public static String getLookupKeyForAsset(@NonNull String asset) {
-        return FlutterInjector.instance().flutterLoader().getLookupKeyForAsset(asset);
+        return FlutterLoader.getInstance().getLookupKeyForAsset(asset);
     }
 
     /**
@@ -120,6 +119,6 @@ public class FlutterMain {
      */
     @NonNull
     public static String getLookupKeyForAsset(@NonNull String asset, @NonNull String packageName) {
-        return FlutterInjector.instance().flutterLoader().getLookupKeyForAsset(asset, packageName);
+        return FlutterLoader.getInstance().getLookupKeyForAsset(asset, packageName);
     }
 }

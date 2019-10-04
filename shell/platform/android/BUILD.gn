@@ -117,7 +117,6 @@ embedding_sources_jar_filename = "$embedding_artifact_id-sources.jar"
 embedding_source_jar_path = "$root_out_dir/$embedding_sources_jar_filename"
 
 android_java_sources = [
-  "io/flutter/FlutterInjector.java",
   "io/flutter/Log.java",
   "io/flutter/app/FlutterActivity.java",
   "io/flutter/app/FlutterActivityDelegate.java",
@@ -413,7 +412,6 @@ action("robolectric_tests") {
   jar_path = "$root_out_dir/robolectric_tests.jar"
 
   sources = [
-    "test/io/flutter/FlutterInjectorTest.java",
     "test/io/flutter/FlutterTestSuite.java",
     "test/io/flutter/SmokeTest.java",
     "test/io/flutter/embedding/android/FlutterActivityAndFragmentDelegateTest.java",

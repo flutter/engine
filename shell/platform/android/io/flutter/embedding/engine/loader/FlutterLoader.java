@@ -14,11 +14,9 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 import android.view.WindowManager;
 
-import io.flutter.FlutterInjector;
 import io.flutter.BuildConfig;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.util.PathUtils;
@@ -58,50 +56,33 @@ public class FlutterLoader {
     private static final String DEFAULT_KERNEL_BLOB = "kernel_blob.bin";
     private static final String DEFAULT_FLUTTER_ASSETS_DIR = "flutter_assets";
 
-    @NonNull
-    private static String fromFlutterAssets(@NonNull String filePath) {
-        return sFlutterAssetsDir + File.separator + filePath;
-    }
-
     // Mutable because default values can be overridden via config properties
-    private static String sAotSharedLibraryName = DEFAULT_AOT_SHARED_LIBRARY_NAME;
-    private static String sVmSnapshotData = DEFAULT_VM_SNAPSHOT_DATA;
-    private static String sIsolateSnapshotData = DEFAULT_ISOLATE_SNAPSHOT_DATA;
-    private static String sFlutterAssetsDir = DEFAULT_FLUTTER_ASSETS_DIR;
+    private String aotSharedLibraryName = DEFAULT_AOT_SHARED_LIBRARY_NAME;
+    private String vmSnapshotData = DEFAULT_VM_SNAPSHOT_DATA;
+    private String isolateSnapshotData = DEFAULT_ISOLATE_SNAPSHOT_DATA;
+    private String flutterAssetsDir = DEFAULT_FLUTTER_ASSETS_DIR;
 
-    private static boolean sInitialized = false;
+    private static FlutterLoader instance;
 
-    @Nullable
-    private static ResourceExtractor sResourceExtractor;
-    @Nullable
-    private static Settings sSettings;
-
-    public static class Settings {
-        private String logTag;
-
-        @Nullable
-        public String getLogTag() {
-            return logTag;
+    @NonNull
+    public static FlutterLoader getInstance() {
+        if (instance == null) {
+            instance = new FlutterLoader();
         }
-
-        /**
-         * Set the tag associated with Flutter app log messages.
-         * @param tag Log tag.
-         */
-        public void setLogTag(String tag) {
-            logTag = tag;
-        }
+        return instance;
     }
+
+    private boolean initialized = false;
+    @Nullable
+    private ResourceExtractor resourceExtractor;
+    @Nullable
+    private Settings settings;
 
     /**
      * Starts initialization of the native system.
      * @param applicationContext The Android application context.
      */
-    public static void startInitialization(@NonNull Context applicationContext) {
-        // Do nothing if we're running this in a Robolectric test.
-        if (FlutterInjector.instance().isRunningInRobolectricTest()) {
-            return;
-        }
+    public void startInitialization(@NonNull Context applicationContext) {
         startInitialization(applicationContext, new Settings());
     }
 
@@ -116,21 +97,16 @@ public class FlutterLoader {
      * @param applicationContext The Android application context.
      * @param settings Configuration settings.
      */
-    public static void startInitialization(@NonNull Context applicationContext, @NonNull Settings settings) {
-        // Do nothing if we're running this in a Robolectric test.
-        if (FlutterInjector.instance().isRunningInRobolectricTest()) {
-            return;
-        }
-
+    public void startInitialization(@NonNull Context applicationContext, @NonNull Settings settings) {
         if (Looper.myLooper() != Looper.getMainLooper()) {
           throw new IllegalStateException("startInitialization must be called on the main thread");
         }
         // Do not run startInitialization more than once.
-        if (sSettings != null) {
+        if (this.settings != null) {
           return;
         }
 
-        sSettings = settings;
+        this.settings = settings;
 
         long initStartTimestampMillis = SystemClock.uptimeMillis();
         initConfig(applicationContext);
@@ -159,24 +135,19 @@ public class FlutterLoader {
      * @param applicationContext The Android application context.
      * @param args Flags sent to the Flutter runtime.
      */
-    public static void ensureInitializationComplete(@NonNull Context applicationContext, @Nullable String[] args) {
-        // Do nothing if we're running this in a Robolectric test.
-        if (FlutterInjector.instance().isRunningInRobolectricTest()) {
-            return;
-        }
-
+    public void ensureInitializationComplete(@NonNull Context applicationContext, @Nullable String[] args) {
         if (Looper.myLooper() != Looper.getMainLooper()) {
           throw new IllegalStateException("ensureInitializationComplete must be called on the main thread");
         }
-        if (sSettings == null) {
+        if (settings == null) {
           throw new IllegalStateException("ensureInitializationComplete must be called after startInitialization");
         }
-        if (sInitialized) {
+        if (initialized) {
             return;
         }
         try {
-            if (sResourceExtractor != null) {
-                sResourceExtractor.waitForCompletion();
+            if (resourceExtractor != null) {
+                resourceExtractor.waitForCompletion();
             }
 
             List<String> shellArgs = new ArrayList<>();
@@ -191,23 +162,23 @@ public class FlutterLoader {
 
             String kernelPath = null;
             if (BuildConfig.DEBUG || BuildConfig.JIT_RELEASE) {
-                String snapshotAssetPath = PathUtils.getDataDirectory(applicationContext) + File.separator + sFlutterAssetsDir;
+                String snapshotAssetPath = PathUtils.getDataDirectory(applicationContext) + File.separator + flutterAssetsDir;
                 kernelPath = snapshotAssetPath + File.separator + DEFAULT_KERNEL_BLOB;
                 shellArgs.add("--" + SNAPSHOT_ASSET_PATH_KEY + "=" + snapshotAssetPath);
-                shellArgs.add("--" + VM_SNAPSHOT_DATA_KEY + "=" + sVmSnapshotData);
-                shellArgs.add("--" + ISOLATE_SNAPSHOT_DATA_KEY + "=" + sIsolateSnapshotData);
+                shellArgs.add("--" + VM_SNAPSHOT_DATA_KEY + "=" + vmSnapshotData);
+                shellArgs.add("--" + ISOLATE_SNAPSHOT_DATA_KEY + "=" + isolateSnapshotData);
             } else {
-                shellArgs.add("--" + AOT_SHARED_LIBRARY_NAME + "=" + sAotSharedLibraryName);
+                shellArgs.add("--" + AOT_SHARED_LIBRARY_NAME + "=" + aotSharedLibraryName);
 
                 // Most devices can load the AOT shared library based on the library name
                 // with no directory path.  Provide a fully qualified path to the library
                 // as a workaround for devices where that fails.
-                shellArgs.add("--" + AOT_SHARED_LIBRARY_NAME + "=" + applicationInfo.nativeLibraryDir + File.separator + sAotSharedLibraryName);
+                shellArgs.add("--" + AOT_SHARED_LIBRARY_NAME + "=" + applicationInfo.nativeLibraryDir + File.separator + aotSharedLibraryName);
             }
 
             shellArgs.add("--cache-dir-path=" + PathUtils.getCacheDirectory(applicationContext));
-            if (sSettings.getLogTag() != null) {
-                shellArgs.add("--log-tag=" + sSettings.getLogTag());
+            if (settings.getLogTag() != null) {
+                shellArgs.add("--log-tag=" + settings.getLogTag());
             }
 
             String appStoragePath = PathUtils.getFilesDir(applicationContext);
@@ -215,7 +186,7 @@ public class FlutterLoader {
             FlutterJNI.nativeInit(applicationContext, shellArgs.toArray(new String[0]),
                 kernelPath, appStoragePath, engineCachesPath);
 
-            sInitialized = true;
+            initialized = true;
         } catch (Exception e) {
             Log.e(TAG, "Flutter initialization failed.", e);
             throw new RuntimeException(e);
@@ -226,31 +197,26 @@ public class FlutterLoader {
      * Same as {@link #ensureInitializationComplete(Context, String[])} but waiting on a background
      * thread, then invoking {@code callback} on the {@code callbackHandler}.
      */
-    public static void ensureInitializationCompleteAsync(
+    public void ensureInitializationCompleteAsync(
         @NonNull Context applicationContext,
         @Nullable String[] args,
         @NonNull Handler callbackHandler,
         @NonNull Runnable callback
     ) {
-        // Do nothing if we're running this in a Robolectric test.
-        if (FlutterInjector.instance().isRunningInRobolectricTest()) {
-            return;
-        }
-
         if (Looper.myLooper() != Looper.getMainLooper()) {
             throw new IllegalStateException("ensureInitializationComplete must be called on the main thread");
         }
-        if (sSettings == null) {
+        if (settings == null) {
             throw new IllegalStateException("ensureInitializationComplete must be called after startInitialization");
         }
-        if (sInitialized) {
+        if (initialized) {
             return;
         }
         new Thread(new Runnable() {
             @Override
             public void run() {
-                if (sResourceExtractor != null) {
-                    sResourceExtractor.waitForCompletion();
+                if (resourceExtractor != null) {
+                    resourceExtractor.waitForCompletion();
                 }
                 new Handler(Looper.getMainLooper()).post(new Runnable() {
                     @Override
@@ -264,7 +230,7 @@ public class FlutterLoader {
     }
 
     @NonNull
-    private static ApplicationInfo getApplicationInfo(@NonNull Context applicationContext) {
+    private ApplicationInfo getApplicationInfo(@NonNull Context applicationContext) {
         try {
             return applicationContext
                 .getPackageManager()
@@ -278,7 +244,7 @@ public class FlutterLoader {
      * Initialize our Flutter config values by obtaining them from the
      * manifest XML file, falling back to default values.
      */
-    private static void initConfig(@NonNull Context applicationContext) {
+    private void initConfig(@NonNull Context applicationContext) {
         Bundle metadata = getApplicationInfo(applicationContext).metaData;
 
         // There isn't a `<meta-data>` tag as a direct child of `<application>` in
@@ -287,18 +253,18 @@ public class FlutterLoader {
             return;
         }
 
-        sAotSharedLibraryName = metadata.getString(PUBLIC_AOT_SHARED_LIBRARY_NAME, DEFAULT_AOT_SHARED_LIBRARY_NAME);
-        sFlutterAssetsDir = metadata.getString(PUBLIC_FLUTTER_ASSETS_DIR_KEY, DEFAULT_FLUTTER_ASSETS_DIR);
+        aotSharedLibraryName = metadata.getString(PUBLIC_AOT_SHARED_LIBRARY_NAME, DEFAULT_AOT_SHARED_LIBRARY_NAME);
+        flutterAssetsDir = metadata.getString(PUBLIC_FLUTTER_ASSETS_DIR_KEY, DEFAULT_FLUTTER_ASSETS_DIR);
 
-        sVmSnapshotData = metadata.getString(PUBLIC_VM_SNAPSHOT_DATA_KEY, DEFAULT_VM_SNAPSHOT_DATA);
-        sIsolateSnapshotData = metadata.getString(PUBLIC_ISOLATE_SNAPSHOT_DATA_KEY, DEFAULT_ISOLATE_SNAPSHOT_DATA);
+        vmSnapshotData = metadata.getString(PUBLIC_VM_SNAPSHOT_DATA_KEY, DEFAULT_VM_SNAPSHOT_DATA);
+        isolateSnapshotData = metadata.getString(PUBLIC_ISOLATE_SNAPSHOT_DATA_KEY, DEFAULT_ISOLATE_SNAPSHOT_DATA);
     }
 
     /**
      * Extract assets out of the APK that need to be cached as uncompressed
      * files on disk.
      */
-    private static void initResources(@NonNull Context applicationContext) {
+    private void initResources(@NonNull Context applicationContext) {
         new ResourceCleaner(applicationContext).start();
 
         if (BuildConfig.DEBUG || BuildConfig.JIT_RELEASE) {
@@ -306,28 +272,22 @@ public class FlutterLoader {
             final String packageName = applicationContext.getPackageName();
             final PackageManager packageManager = applicationContext.getPackageManager();
             final AssetManager assetManager = applicationContext.getResources().getAssets();
-            sResourceExtractor = new ResourceExtractor(dataDirPath, packageName, packageManager, assetManager);
+            resourceExtractor = new ResourceExtractor(dataDirPath, packageName, packageManager, assetManager);
 
             // In debug/JIT mode these assets will be written to disk and then
             // mapped into memory so they can be provided to the Dart VM.
-            sResourceExtractor
-                .addResource(fromFlutterAssets(sVmSnapshotData))
-                .addResource(fromFlutterAssets(sIsolateSnapshotData))
-                .addResource(fromFlutterAssets(DEFAULT_KERNEL_BLOB));
+            resourceExtractor
+                .addResource(fullAssetPathFrom(vmSnapshotData))
+                .addResource(fullAssetPathFrom(isolateSnapshotData))
+                .addResource(fullAssetPathFrom(DEFAULT_KERNEL_BLOB));
 
-            sResourceExtractor.start();
+            resourceExtractor.start();
         }
     }
 
     @NonNull
-    public static String findAppBundlePath() {
-        return sFlutterAssetsDir;
-    }
-
-    @Deprecated
-    @Nullable
-    public static String findAppBundlePath(@NonNull Context applicationContext) {
-        return sFlutterAssetsDir;
+    public String findAppBundlePath() {
+        return flutterAssetsDir;
     }
 
     /**
@@ -339,8 +299,8 @@ public class FlutterLoader {
      * @return      the filename to be used with {@link android.content.res.AssetManager}
      */
     @NonNull
-    public static String getLookupKeyForAsset(@NonNull String asset) {
-        return fromFlutterAssets(asset);
+    public String getLookupKeyForAsset(@NonNull String asset) {
+        return fullAssetPathFrom(asset);
     }
 
     /**
@@ -353,8 +313,30 @@ public class FlutterLoader {
      * @return            the file name to be used with {@link android.content.res.AssetManager}
      */
     @NonNull
-    public static String getLookupKeyForAsset(@NonNull String asset, @NonNull String packageName) {
+    public String getLookupKeyForAsset(@NonNull String asset, @NonNull String packageName) {
         return getLookupKeyForAsset(
             "packages" + File.separator + packageName + File.separator + asset);
+    }
+
+    @NonNull
+    private String fullAssetPathFrom(@NonNull String filePath) {
+        return flutterAssetsDir + File.separator + filePath;
+    }
+
+    public static class Settings {
+        private String logTag;
+
+        @Nullable
+        public String getLogTag() {
+            return logTag;
+        }
+
+        /**
+         * Set the tag associated with Flutter app log messages.
+         * @param tag Log tag.
+         */
+        public void setLogTag(String tag) {
+            logTag = tag;
+        }
     }
 }

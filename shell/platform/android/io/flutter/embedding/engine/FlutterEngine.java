@@ -12,7 +12,6 @@ import android.support.annotation.NonNull;
 import java.util.HashSet;
 import java.util.Set;
 
-import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.loader.FlutterLoader;
@@ -140,13 +139,17 @@ public class FlutterEngine implements LifecycleOwner {
    * native library and start a Dart VM.
    * <p>
    * In order to pass Dart VM initialization arguments (see {@link io.flutter.embedding.engine.FlutterShellArgs})
-   * when creating the VM, manually set the initialization arguments by calling {@link FlutterMain#startInitialization(io.flutter.view.Context)}
-   * and {@link FlutterMain#ensureInitializationComplete(io.flutter.view.Context, String[])}.
+   * when creating the VM, manually set the initialization arguments by calling {@link FlutterLoader#startInitialization(Context)}
+   * and {@link FlutterLoader#ensureInitializationComplete(Context, String[])}.
    */
   public FlutterEngine(@NonNull Context context) {
-    FlutterLoader flutterLoader = FlutterInjector.instance().flutterLoader();
+    this(context, FlutterLoader.getInstance());
+  }
+
+  /* package */ FlutterEngine(@NonNull Context context, @NonNull FlutterLoader flutterLoader) {
     flutterLoader.startInitialization(context);
-    FlutterLoader.ensureInitializationComplete(context, null);
+    flutterLoader.ensureInitializationComplete(context, null);
+
     this.flutterJNI = new FlutterJNI();
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
     attachToJni();

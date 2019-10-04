@@ -8,7 +8,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-import io.flutter.FlutterInjectorTest;
 import io.flutter.embedding.android.FlutterActivityTest;
 import io.flutter.embedding.android.FlutterFragmentTest;
 import io.flutter.embedding.engine.FlutterEngineCacheTest;
@@ -27,7 +26,6 @@ import io.flutter.util.PreconditionsTest;
     FlutterActivityTest.class,
     FlutterEngineCacheTest.class,
     FlutterFragmentTest.class,
-    FlutterInjectorTest.class,
     FlutterJNITest.class,
     FlutterRendererTest.class,
     PlatformChannelTest.class,
