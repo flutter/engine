@@ -46,11 +46,9 @@ class AccessibilityBridgeTest : public testing::Test {
 
  protected:
   void SetUp() override {
-    zx::eventpair a, b;
-    zx::eventpair::create(/* flags */ 0u, &a, &b);
-    auto view_ref = fuchsia::ui::views::ViewRef({
-        .reference = std::move(a),
-    });
+    zx_status_t status = zx::eventpair::create(
+      /*flags*/ 0u, &view_ref_control_.reference, &view_ref_.reference);
+    EXPECT_EQ(status, ZX_OK);
 
     accessibility_bridge_ =
         std::make_unique<flutter_runner::AccessibilityBridge>(
@@ -61,6 +59,8 @@ class AccessibilityBridgeTest : public testing::Test {
 
   void TearDown() override { semantics_manager_.ResetTree(); }
 
+  fuchsia::ui::views::ViewRefControl view_ref_control_;
+  fuchsia::ui::views::ViewRef view_ref_;
   MockSemanticsManager semantics_manager_;
   AccessibilityBridgeTestDelegate accessibility_delegate_;
   std::unique_ptr<flutter_runner::AccessibilityBridge> accessibility_bridge_;
