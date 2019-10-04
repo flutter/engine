@@ -1,2 +1,3 @@
 repository: https://github.com/flutter/goldens.git
-revision: dd993a32c23c5c542f083134467e7cda09cac975
+# TODO: DO NOT SUBMIT - this SHA is from a pending PR
+revision: 1fda4f5305bbbd787c0b2a3e0f04b6aa358e64ce
