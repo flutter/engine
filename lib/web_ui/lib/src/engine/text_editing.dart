@@ -341,6 +341,7 @@ class TextEditingElement {
       _subscriptions.add(domElement.onKeyUp.listen((event) {
         _handleChange(event);
       }));
+      _subscriptions.add(domElement.onSelect.listen(_handleChange));
     } else {
       _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
     }
@@ -379,7 +380,7 @@ class TextEditingElement {
         throw UnsupportedError(
             'Unsupported input type: ${inputConfig.inputType}');
     }
-    html.document.body.append(domElement);
+    domRenderer.glassPaneElement.append(domElement);
   }
 
   void _removeDomElement() {

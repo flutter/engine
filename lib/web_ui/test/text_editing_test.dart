@@ -75,6 +75,9 @@ void main() {
       expect(document.activeElement, input);
       expect(editingElement.domElement, input);
 
+      // Input is appended to the glass pane.
+      expect('${editingElement.domElement.parent.tagName}', 'FLT-GLASS-PANE');
+
       editingElement.disable();
       expect(
         document.getElementsByTagName('input'),
