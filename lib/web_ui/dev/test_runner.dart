@@ -54,7 +54,7 @@ class TestCommand extends Command<bool> {
   Future<bool> run() async {
     Chrome.version = chromeVersion;
 
-    _copyAhemFontIntoWebUi();
+    _copyTestFontsIntoWebUi();
     await _buildHostPage();
 
     final List<FilePath> targets =
@@ -272,15 +272,20 @@ class TestCommand extends Command<bool> {
   }
 }
 
-void _copyAhemFontIntoWebUi() {
-  final io.File sourceAhemTtf = io.File(path.join(
-      environment.flutterDirectory.path,
-      'third_party',
-      'txt',
-      'third_party',
-      'fonts',
-      'ahem.ttf'));
-  final String destinationAhemTtfPath =
-      path.join(environment.webUiRootDir.path, 'lib', 'assets', 'ahem.ttf');
-  sourceAhemTtf.copySync(destinationAhemTtfPath);
+const List<String> _kTestFonts = <String>['ahem.ttf', 'Roboto-Light.ttf'];
+
+void _copyTestFontsIntoWebUi() {
+  final String fontsPath = path.join(
+    environment.flutterDirectory.path,
+    'third_party',
+    'txt',
+    'third_party',
+    'fonts',
+  );
+
+  for (String fontFile in _kTestFonts) {
+    final io.File sourceTtf = io.File(path.join(fontsPath, fontFile));
+    final String destinationTtfPath = path.join(environment.webUiRootDir.path, 'lib', 'assets', fontFile);
+    sourceTtf.copySync(destinationTtfPath);
+  }
 }
