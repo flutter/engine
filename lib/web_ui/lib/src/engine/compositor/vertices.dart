@@ -28,15 +28,19 @@ Float32List _encodePointList(List<ui.Offset> points) {
 
 class SkVertices implements ui.Vertices {
   js.JsObject skVertices;
+  final Int32List _colors;
+  final Float32List _positions;
 
-  SkVertices(
-    ui.VertexMode mode,
-    List<ui.Offset> positions, {
-    List<ui.Offset> textureCoordinates,
-    List<ui.Color> colors,
-    List<int> indices,
-  })  : assert(mode != null),
-        assert(positions != null) {
+  SkVertices(ui.VertexMode mode,
+      List<ui.Offset> positions, {
+        List<ui.Offset> textureCoordinates,
+        List<ui.Color> colors,
+        List<int> indices,
+      })
+      : assert(mode != null),
+        assert(positions != null),
+        _colors = Int32List.fromList(colors.map((ui.Color c) => c.value)),
+        _positions = _offsetListToInt32List(positions) {
     if (textureCoordinates != null &&
         textureCoordinates.length != positions.length)
       throw ArgumentError(
@@ -53,23 +57,25 @@ class SkVertices implements ui.Vertices {
         ? _encodePointList(textureCoordinates)
         : null;
     final Int32List encodedColors =
-        colors != null ? _encodeColorList(colors) : null;
+    colors != null ? _encodeColorList(colors) : null;
     final Uint16List encodedIndices =
-        indices != null ? Uint16List.fromList(indices) : null;
+    indices != null ? Uint16List.fromList(indices) : null;
 
     if (!_init(mode, encodedPositions, encodedTextureCoordinates, encodedColors,
         encodedIndices))
       throw ArgumentError('Invalid configuration for vertices.');
   }
 
-  SkVertices.raw(
-    ui.VertexMode mode,
-    Float32List positions, {
-    Float32List textureCoordinates,
-    Int32List colors,
-    Uint16List indices,
-  })  : assert(mode != null),
-        assert(positions != null) {
+  SkVertices.raw(ui.VertexMode mode,
+      Float32List positions, {
+        Float32List textureCoordinates,
+        Int32List colors,
+        Uint16List indices,
+      })
+      : assert(mode != null),
+        assert(positions != null),
+        _colors = colors,
+        _positions = positions {
     if (textureCoordinates != null &&
         textureCoordinates.length != positions.length)
       throw ArgumentError(
@@ -101,7 +107,7 @@ class SkVertices implements ui.Vertices {
     }
 
     final js.JsObject vertices =
-        canvasKit.callMethod('MakeSkVertices', <dynamic>[
+    canvasKit.callMethod('MakeSkVertices', <dynamic>[
       skVertexMode,
       _encodePoints(positions),
       _encodePoints(textureCoordinates),
@@ -123,11 +129,30 @@ class SkVertices implements ui.Vertices {
     if (points == null) return null;
 
     js.JsArray<js.JsArray<double>> encodedPoints =
-        js.JsArray<js.JsArray<double>>();
+    js.JsArray<js.JsArray<double>>();
     encodedPoints.length = points.length ~/ 2;
     for (int i = 0; i < points.length; i += 2) {
       encodedPoints[i ~/ 2] = makeSkPoint(ui.Offset(points[i], points[i + 1]));
     }
     return encodedPoints;
   }
+
+  static Float32List _offsetListToInt32List(List<ui.Offset> offsetList) {
+    if (offsetList == null) {
+      return null;
+    }
+    final int length = offsetList.length;
+    final floatList = Float32List(length * 2);
+    for (int i = 0, destIndex = 0; i < length; i++, destIndex += 2) {
+      floatList[destIndex] = offsetList[i].dx;
+      floatList[destIndex + 1] = offsetList[i].dx;
+    }
+    return floatList;
+  }
+
+  @override
+  Int32List get colors => _colors;
+
+  @override
+  Float32List get positions => _positions;
 }
