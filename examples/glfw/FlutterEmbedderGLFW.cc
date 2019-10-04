@@ -11,7 +11,11 @@ static double g_pixelRatio = 1.0;
 static const size_t kInitialWindowWidth = 800;
 static const size_t kInitialWindowHeight = 600;
 
-static_assert(FLUTTER_ENGINE_VERSION == 1, "");
+static_assert(FLUTTER_ENGINE_VERSION == 1,
+              "This Flutter Embedder was authored against the stable Flutter "
+              "API at version 1. There has been a serious breakage in the "
+              "API. Please read the ChangeLog and take appropriate action "
+              "before updating this assertion");
 
 void GLFWcursorPositionCallbackAtPhase(GLFWwindow* window,
                                        FlutterPointerPhase phase,
