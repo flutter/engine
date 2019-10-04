@@ -352,10 +352,9 @@ class SemanticsFlag {
 
   /// Whether the semantic node is an interactive link.
   ///
-  /// Platforms have special handling for links, for example Android's TalkBack
-  /// and iOS's VoiceOver provides an additional hint when the focused object is
-  /// a link, as well as the ability to parse the links through another
-  /// navigation menu.
+  /// Platforms have special handling for links, for example iOS's VoiceOver
+  /// provides an additional hint when the focused object is a link, as well as
+  /// the ability to parse the links through another navigation menu.
   static const SemanticsFlag isLink = SemanticsFlag._(_kIsLinkIndex);
 
   /// Whether the semantic node is able to hold the user's focus.
