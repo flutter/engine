@@ -52,6 +52,7 @@ source_set("flutter_glfw") {
 
   deps = [
     ":flutter_glfw_headers",
+    "$flutter_root/common",
     "$flutter_root/shell/platform/common/cpp:common_cpp",
     "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper",
     "$flutter_root/shell/platform/embedder:embedder_with_symbol_prefix",
