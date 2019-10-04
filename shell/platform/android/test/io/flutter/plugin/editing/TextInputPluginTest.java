@@ -73,7 +73,7 @@ public class TextInputPluginTest {
     // All modern Samsung keybords are affected including non-korean languages and thus
     // need the restart.
     @Test
-    public void setTextInputEditingState_alwaysRestartsOnAffectedDevices() {
+    public void setTextInputEditingState_alwaysRestartsOnAffectedDevices2() {
         // Initialize a TextInputPlugin that needs to be always restarted.
         ShadowBuild.setManufacturer("samsung");
         InputMethodSubtype inputMethodSubtype = new InputMethodSubtype(0, 0, /*locale=*/"en", "", "", false, false);

@@ -334,7 +334,7 @@ public class TextInputPlugin {
         String keyboardName = Settings.Secure.getString(mView.getContext().getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
         // The Samsung keyboard is called "com.sec.android.inputmethod/.SamsungKeypad" but look
         // for "Samsung" just in case Samsung changes the name of the keyboard.
-        return Build.MANUFACTURER.equals("samsung") && keyboardName.contains("Samsung");
+        return Build.MANUFACTURER.equals("samsung") && keyboardName.toLowerCase().contains("samsung");
     }
 
     private void clearTextInputClient() {
