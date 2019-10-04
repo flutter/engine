@@ -7,7 +7,7 @@
 
 // If your flutter app is drawing at the wrong size you may need to adjust your
 // pixel ratio.
-static const double kPixelRatio = 2.0;
+static double g_pixelRatio = 1.0;
 static const size_t kInitialWindowWidth = 800;
 static const size_t kInitialWindowHeight = 600;
 
@@ -20,8 +20,8 @@ void GLFWcursorPositionCallbackAtPhase(GLFWwindow* window,
   FlutterPointerEvent event = {};
   event.struct_size = sizeof(event);
   event.phase = phase;
-  event.x = x * kPixelRatio;
-  event.y = y * kPixelRatio;
+  event.x = x * g_pixelRatio;
+  event.y = y * g_pixelRatio;
   event.timestamp =
       std::chrono::duration_cast<std::chrono::microseconds>(
           std::chrono::high_resolution_clock::now().time_since_epoch())
@@ -67,9 +67,9 @@ static void GLFWKeyCallback(GLFWwindow* window,
 void GLFWwindowSizeCallback(GLFWwindow* window, int width, int height) {
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
-  event.width = width * kPixelRatio;
-  event.height = height * kPixelRatio;
-  event.pixel_ratio = kPixelRatio;
+  event.width = width * g_pixelRatio;
+  event.height = height * g_pixelRatio;
+  event.pixel_ratio = g_pixelRatio;
   FlutterEngineSendWindowMetricsEvent(
       reinterpret_cast<FlutterEngine>(glfwGetWindowUserPointer(window)),
       &event);
@@ -106,8 +106,9 @@ bool RunFlutter(GLFWwindow* window,
           icudtl_path.c_str(),  // Find this in your bin/cache directory.
   };
   FlutterEngine engine = nullptr;
-  auto result = FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config,  // renderer
-                                 &args, window, &engine);
+  FlutterEngineResult result =
+      FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config,  // renderer
+                       &args, window, &engine);
   assert(result == kSuccess && engine != nullptr);
 
   glfwSetWindowUserPointer(window, engine);
@@ -130,12 +131,16 @@ int main(int argc, const char* argv[]) {
   std::string project_path = argv[1];
   std::string icudtl_path = argv[2];
 
-  auto result = glfwInit();
+  int result = glfwInit();
   assert(result == GLFW_TRUE);
 
-  auto window = glfwCreateWindow(kInitialWindowWidth, kInitialWindowHeight,
-                                 "Flutter", NULL, NULL);
+  GLFWwindow* window = glfwCreateWindow(
+      kInitialWindowWidth, kInitialWindowHeight, "Flutter", NULL, NULL);
   assert(window != nullptr);
+
+  int framebuffer_width, framebuffer_height;
+  glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
+  g_pixelRatio = framebuffer_width / kInitialWindowWidth;
 
   bool runResult = RunFlutter(window, project_path, icudtl_path);
   assert(runResult);
