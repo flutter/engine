@@ -11,7 +11,6 @@ ContainerLayer::ContainerLayer() {}
 ContainerLayer::~ContainerLayer() = default;
 
 void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
-  layer->set_parent(this);
   layers_.push_back(std::move(layer));
 }
 
@@ -48,6 +47,10 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
   }
 
   context->has_platform_view = child_has_platform_view;
+}
+
+void ContainerLayer::Paint(PaintContext& context) const {
+  PaintChildren(context);
 }
 
 void ContainerLayer::PaintChildren(PaintContext& context) const {

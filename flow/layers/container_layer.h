@@ -18,10 +18,10 @@ class ContainerLayer : public Layer {
   void Add(std::shared_ptr<Layer> layer);
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
 #if defined(OS_FUCHSIA)
   void UpdateScene(SceneUpdateContext& context) override;
 #endif  // defined(OS_FUCHSIA)
+  void Paint(PaintContext& context) const override;
 
   const std::vector<std::shared_ptr<Layer>>& layers() const { return layers_; }
 
