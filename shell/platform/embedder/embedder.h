@@ -216,10 +216,6 @@ typedef enum {
 } FlutterOpenGLTargetType;
 
 typedef struct {
-  /// Width of the texture.
-  size_t width;
-  /// Height of the texture.
-  size_t height;
   /// Target texture of the active texture unit (example GL_TEXTURE_2D or
   /// GL_TEXTURE_RECTANGLE).
   uint32_t target;
@@ -232,6 +228,14 @@ typedef struct {
   /// Callback invoked (on an engine managed thread) that asks the embedder to
   /// collect the texture.
   VoidCallback destruction_callback;
+  /// Optional parameters for texture height/width, default is 0, non-zero means
+  /// the texture has the specified width/height. Usually, when the texture type
+  /// is GL_TEXTURE_RECTANGLE, we need to specify the texture width/height to
+  /// tell the embedder to scale when rendering.
+  /// Width of the texture.
+  size_t width;
+  /// Height of the texture.
+  size_t height;
 } FlutterOpenGLTexture;
 
 typedef struct {

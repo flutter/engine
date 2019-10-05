@@ -45,9 +45,6 @@ extern const intptr_t kPlatformStrongDillSize;
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 
-// Fixed value of GL_TEXTURE_RECTANGLE in OpenGL.
-const int32_t kGlTextureRectangle = 0x84F5;
-
 static FlutterEngineResult LogEmbedderError(FlutterEngineResult code,
                                             const char* name,
                                             const char* function,
@@ -800,7 +797,10 @@ FlutterEngineResult FlutterEngineRun(size_t version,
           [ptr = open_gl_config->gl_external_texture_frame_callback, user_data](
               int64_t texture_identifier, GrContext* context,
               const SkISize& size) -> sk_sp<SkImage> {
-        FlutterOpenGLTexture texture = {};
+        FlutterOpenGLTexture texture = {
+            .width = 0,
+            .height = 0,
+        };
 
         if (!ptr(user_data, texture_identifier, size.width(), size.height(),
                  &texture)) {
@@ -813,11 +813,7 @@ FlutterEngineResult FlutterEngineRun(size_t version,
         size_t width = size.width();
         size_t height = size.height();
 
-        // When the texture type is GL_TEXTURE_RECTANGLE, the image size must
-        // first be set to the actual size, and then resized to the bounds size.
-        // see:
-        // https://stackoverflow.com/questions/13933503/core-video-pixel-buffers-as-gl-texture-2d
-        if (texture.target == kGlTextureRectangle) {
+        if (texture.width != 0 && texture.height != 0) {
           width = texture.width;
           height = texture.height;
         }
@@ -835,28 +831,6 @@ FlutterEngineResult FlutterEngineRun(size_t version,
             release_proc,              // texture release proc
             texture.user_data          // texture release context
         );
-
-        // SkImage::MakeFromTexture can automatically scale a GL_TEXTURE_2D
-        // texture to the bounds size, but GL_TEXTURE_RECTANGLE does not stretch
-        // properly, so we need to resize the image.
-        if (image && texture.target == kGlTextureRectangle) {
-          const auto resized_dimensions =
-              SkISize::Make(size.width(), size.height());
-
-          if (resized_dimensions != image->dimensions()) {
-            const auto scaled_image_info = image->imageInfo().makeWH(
-                resized_dimensions.width(), resized_dimensions.height());
-
-            SkBitmap scaled_bitmap;
-
-            if (scaled_bitmap.tryAllocPixels(scaled_image_info) &&
-                image->scalePixels(scaled_bitmap.pixmap(), kLow_SkFilterQuality,
-                                   SkImage::kDisallow_CachingHint)) {
-              scaled_bitmap.setImmutable();
-              image = SkImage::MakeFromBitmap(scaled_bitmap);
-            }
-          }
-        }
 
         if (!image) {
           // In case Skia rejects the image, call the release proc so that
