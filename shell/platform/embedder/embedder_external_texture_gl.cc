@@ -31,9 +31,9 @@ void EmbedderExternalTextureGL::Paint(SkCanvas& canvas,
   }
 
   if (last_image_) {
-    if(bounds != SkRect::Make(last_image_->bounds())) {
+    if (bounds != SkRect::Make(last_image_->bounds())) {
       canvas.drawImageRect(last_image_, bounds, nullptr);
-    }else {
+    } else {
       canvas.drawImage(last_image_, bounds.x(), bounds.y());
     }
   }
