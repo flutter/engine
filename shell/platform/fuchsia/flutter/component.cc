@@ -17,12 +17,17 @@
 #include <sys/stat.h>
 #include <zircon/dlfcn.h>
 #include <zircon/status.h>
+#include <zircon/types.h>
+#include <memory>
 #include <regex>
 #include <sstream>
 
+#include "flutter/fml/mapping.h"
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/switches.h"
+#include "lib/fdio/io.h"
 #include "runtime/dart/utils/files.h"
 #include "runtime/dart/utils/handle_exception.h"
 #include "runtime/dart/utils/tempfs.h"
@@ -32,14 +37,20 @@
 #include "task_runner_adapter.h"
 #include "thread.h"
 
+// TODO(kaushikiska): Use these constants from ::llcpp::fuchsia::io
+// Can read from target object.
+constexpr uint32_t OPEN_RIGHT_READABLE = 1u;
+
+// Connection can map target object executable.
+constexpr uint32_t OPEN_RIGHT_EXECUTABLE = 8u;
+
 namespace flutter_runner {
 
 constexpr char kDataKey[] = "data";
 constexpr char kTmpPath[] = "/tmp";
 constexpr char kServiceRootPath[] = "/svc";
 
-std::pair<std::unique_ptr<Thread>, std::unique_ptr<Application>>
-Application::Create(
+ActiveApplication Application::Create(
     TerminationCallback termination_callback,
     fuchsia::sys::Package package,
     fuchsia::sys::StartupInfo startup_info,
@@ -58,7 +69,7 @@ Application::Create(
   });
 
   latch.Wait();
-  return {std::move(thread), std::move(application)};
+  return {.thread = std::move(thread), .application = std::move(application)};
 }
 
 static std::string DebugLabelForURL(const std::string& url) {
@@ -68,6 +79,43 @@ static std::string DebugLabelForURL(const std::string& url) {
   } else {
     return {url, found + 1};
   }
+}
+
+static std::unique_ptr<fml::FileMapping> MakeFileMapping(const char* path,
+                                                         bool executable) {
+  uint32_t flags = OPEN_RIGHT_READABLE;
+  if (executable) {
+    flags |= OPEN_RIGHT_EXECUTABLE;
+  }
+
+  int fd = 0;
+  // The returned file descriptor is compatible with standard posix operations
+  // such as close, mmap, etc. We only need to treat open/open_at specially.
+  zx_status_t status = fdio_open_fd(path, flags, &fd);
+
+  if (status != ZX_OK) {
+    return nullptr;
+  }
+
+  using Protection = fml::FileMapping::Protection;
+
+  auto mapping = std::make_unique<fml::FileMapping>(
+      fml::UniqueFD{fd}, std::initializer_list<Protection>{
+                             Protection::kRead, Protection::kExecute});
+
+  if (!mapping->IsValid()) {
+    return nullptr;
+  }
+
+  return mapping;
+}
+
+// Defaults to readonly. If executable is `true`, we treat it as `read + exec`.
+static flutter::MappingCallback MakeDataFileMapping(const char* absolute_path,
+                                                    bool executable = false) {
+  return [absolute_path, executable = executable](void) {
+    return MakeFileMapping(absolute_path, executable);
+  };
 }
 
 Application::Application(
@@ -218,12 +266,15 @@ Application::Application(
   }
 
   // Compare flutter_jit_runner in BUILD.gn.
-  settings_.vm_snapshot_data_path = "pkg/data/vm_snapshot_data.bin";
-  settings_.vm_snapshot_instr_path = "pkg/data/vm_snapshot_instructions.bin";
-  settings_.isolate_snapshot_data_path =
-      "pkg/data/isolate_core_snapshot_data.bin";
-  settings_.isolate_snapshot_instr_path =
-      "pkg/data/isolate_core_snapshot_instructions.bin";
+  settings_.vm_snapshot_data =
+      MakeDataFileMapping("/pkg/data/vm_snapshot_data.bin");
+  settings_.vm_snapshot_instr =
+      MakeDataFileMapping("/pkg/data/vm_snapshot_instructions.bin", true);
+
+  settings_.isolate_snapshot_data =
+      MakeDataFileMapping("/pkg/data/isolate_core_snapshot_data.bin");
+  settings_.isolate_snapshot_instr = MakeDataFileMapping(
+      "/pkg/data/isolate_core_snapshot_instructions.bin", true);
 
   {
     // Check if we can use the snapshot with the framework already loaded.
@@ -235,14 +286,15 @@ Application::Application(
                                        "app.frameworkversion",
                                        &app_framework) &&
         (runner_framework.compare(app_framework) == 0)) {
-      settings_.vm_snapshot_data_path =
-          "pkg/data/framework_vm_snapshot_data.bin";
-      settings_.vm_snapshot_instr_path =
-          "pkg/data/framework_vm_snapshot_instructions.bin";
-      settings_.isolate_snapshot_data_path =
-          "pkg/data/framework_isolate_core_snapshot_data.bin";
-      settings_.isolate_snapshot_instr_path =
-          "pkg/data/framework_isolate_core_snapshot_instructions.bin";
+      settings_.vm_snapshot_data =
+          MakeDataFileMapping("/pkg/data/framework_vm_snapshot_data.bin");
+      settings_.vm_snapshot_instr =
+          MakeDataFileMapping("/pkg/data/vm_snapshot_instructions.bin", true);
+
+      settings_.isolate_snapshot_data = MakeDataFileMapping(
+          "/pkg/data/framework_isolate_core_snapshot_data.bin");
+      settings_.isolate_snapshot_instr = MakeDataFileMapping(
+          "/pkg/data/isolate_core_snapshot_instructions.bin", true);
 
       FML_LOG(INFO) << "Using snapshot with framework for "
                     << package.resolved_url;
@@ -320,38 +372,41 @@ Application::Application(
   auto platform_task_runner =
       CreateFMLTaskRunner(async_get_default_dispatcher());
   const std::string component_url = package.resolved_url;
-  settings_.unhandled_exception_callback =
-      [weak_application, platform_task_runner, runner_incoming_services,
-       component_url](const std::string& error,
-                      const std::string& stack_trace) {
+  settings_.unhandled_exception_callback = [weak_application,
+                                            platform_task_runner,
+                                            runner_incoming_services,
+                                            component_url](
+                                               const std::string& error,
+                                               const std::string& stack_trace) {
+    if (weak_application) {
+      // TODO(cbracken): unsafe. The above check and the PostTask below are
+      // happening on the UI thread. If the Application dtor and thread
+      // termination happen (on the platform thread) between the previous
+      // line and the next line, a crash will occur since we'll be posting
+      // to a dead thread. See Runner::OnApplicationTerminate() in
+      // runner.cc.
+      platform_task_runner->PostTask([weak_application,
+                                      runner_incoming_services, component_url,
+                                      error, stack_trace]() {
         if (weak_application) {
-          // TODO(cbracken): unsafe. The above check and the PostTask below are
-          // happening on the UI thread. If the Application dtor and thread
-          // termination happen (on the platform thread) between the previous
-          // line and the next line, a crash will occur since we'll be posting
-          // to a dead thread. See Runner::OnApplicationTerminate() in
-          // runner.cc.
-          platform_task_runner->PostTask([weak_application,
-                                          runner_incoming_services,
-                                          component_url, error, stack_trace]() {
-            if (weak_application) {
-              dart_utils::HandleException(runner_incoming_services,
-                                          component_url, error, stack_trace);
-            } else {
-              FML_LOG(ERROR)
-                  << "Unhandled exception after application shutdown: "
-                  << error;
-            }
-          });
+          dart_utils::HandleException(runner_incoming_services, component_url,
+                                      error, stack_trace);
         } else {
-          FML_LOG(ERROR) << "Unhandled exception after application shutdown: "
-                         << error;
+          FML_LOG(WARNING)
+              << "Exception was thrown which was not caught in Flutter app: "
+              << error;
         }
-        // Ideally we would return whether HandleException returned ZX_OK, but
-        // short of knowing if the exception was correctly handled, we return
-        // false to have the error and stack trace printed in the logs.
-        return false;
-      };
+      });
+    } else {
+      FML_LOG(WARNING)
+          << "Exception was thrown which was not caught in Flutter app: "
+          << error;
+    }
+    // Ideally we would return whether HandleException returned ZX_OK, but
+    // short of knowing if the exception was correctly handled, we return
+    // false to have the error and stack trace printed in the logs.
+    return false;
+  };
 
   AttemptVMLaunchWithCurrentSettings(settings_);
 }
