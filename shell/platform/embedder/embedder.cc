@@ -797,10 +797,9 @@ FlutterEngineResult FlutterEngineRun(size_t version,
           [ptr = open_gl_config->gl_external_texture_frame_callback, user_data](
               int64_t texture_identifier, GrContext* context,
               const SkISize& size) -> sk_sp<SkImage> {
-        FlutterOpenGLTexture texture = {
-            .width = 0,
-            .height = 0,
-        };
+        FlutterOpenGLTexture texture = {};
+        texture.width = 0;
+        texture.height = 0;
 
         if (!ptr(user_data, texture_identifier, size.width(), size.height(),
                  &texture)) {
