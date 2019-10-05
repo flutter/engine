@@ -15,7 +15,7 @@ CommandRunner runner = CommandRunner<bool>(
   'Command-line utility for building and testing Flutter web engine.',
 )
   ..addCommand(LicensesCommand())
-  ..addCommand(TestsCommand())
+  ..addCommand(TestCommand())
   ..addCommand(BuildCommand());
 
 void main(List<String> args) async {
@@ -24,6 +24,8 @@ void main(List<String> args) async {
     runner.printUsage();
     io.exit(64); // Exit code 64 indicates a usage error.
   }
+
+  _listenToShutdownSignals();
 
   try {
     final bool result = await runner.run(args);
@@ -40,4 +42,15 @@ void main(List<String> args) async {
 
   // Sometimes the Dart VM refuses to quit.
   io.exit(io.exitCode);
+}
+
+void _listenToShutdownSignals() {
+  io.ProcessSignal.sigint.watch().listen((_) {
+    print('Received SIGINT. Shutting down.');
+    io.exit(1);
+  });
+  io.ProcessSignal.sigterm.watch().listen((_) {
+    print('Received SIGTERM. Shutting down.');
+    io.exit(1);
+  });
 }

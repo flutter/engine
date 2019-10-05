@@ -37,6 +37,9 @@ class PlatformViewIOS final : public PlatformView {
 
   void RegisterExternalTexture(int64_t id, NSObject<FlutterTexture>* texture);
 
+  // |PlatformView|
+  PointerDataDispatcherMaker GetDispatcherMaker() override;
+
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> GetTextInputPlugin() const;
 
   void SetTextInputPlugin(fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin);
@@ -46,8 +49,11 @@ class PlatformViewIOS final : public PlatformView {
 
  private:
   fml::WeakPtr<FlutterViewController> owner_controller_;
-  std::unique_ptr<IOSSurface> ios_surface_;
-  std::unique_ptr<IOSGLContext> resource_gl_context_;
+  // Since the `ios_surface_` is created on the platform thread but
+  // used on the GPU thread we need to protect it with a mutex.
+  std::mutex ios_surface_mutex_;
+  std::unique_ptr<IOSSurface> ios_surface_ FML_GUARDED_BY(ios_surface_mutex_);
+  std::shared_ptr<IOSGLContext> gl_context_;
   PlatformMessageRouter platform_message_router_;
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> text_input_plugin_;
@@ -75,11 +81,6 @@ class PlatformViewIOS final : public PlatformView {
 
   // |PlatformView|
   void OnPreEngineRestart() const override;
-
-  // |PlatformView|
-  void NotifyDestroyed() override;
-
-  std::unique_ptr<IOSSurface> CreateIOSSurface() const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewIOS);
 };
