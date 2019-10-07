@@ -111,8 +111,10 @@ EncodableValue StandardCodecSerializer::ReadValue(
     case EncodedType::kString: {
       size_t size = ReadSize(stream);
       std::string string_value;
-      string_value.resize(size);
-      stream->ReadBytes(reinterpret_cast<uint8_t*>(&string_value[0]), size);
+      if (size > 0) {
+        string_value.resize(size);
+        stream->ReadBytes(reinterpret_cast<uint8_t*>(&string_value[0]), size);
+      }
       return EncodableValue(string_value);
     }
     case EncodedType::kUInt8List:
@@ -126,6 +128,9 @@ EncodableValue StandardCodecSerializer::ReadValue(
     case EncodedType::kList: {
       size_t length = ReadSize(stream);
       EncodableList list_value;
+      if (length == 0) {
+        return EncodableValue(list_value);
+      }
       list_value.reserve(length);
       for (size_t i = 0; i < length; ++i) {
         list_value.push_back(ReadValue(stream));
@@ -176,8 +181,10 @@ void StandardCodecSerializer::WriteValue(const EncodableValue& value,
       const auto& string_value = value.StringValue();
       size_t size = string_value.size();
       WriteSize(size, stream);
-      stream->WriteBytes(reinterpret_cast<const uint8_t*>(string_value.data()),
-                         size);
+      if (size > 0) {
+        stream->WriteBytes(
+            reinterpret_cast<const uint8_t*>(string_value.data()), size);
+      }
       break;
     }
     case EncodableValue::Type::kByteList:
@@ -259,6 +266,9 @@ void StandardCodecSerializer::WriteVector(
     ByteBufferStreamWriter* stream) const {
   size_t count = vector.size();
   WriteSize(count, stream);
+  if (count == 0) {
+    return;
+  }
   uint8_t type_size = static_cast<uint8_t>(sizeof(T));
   if (type_size > 1) {
     stream->WriteAlignment(type_size);
