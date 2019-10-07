@@ -9,7 +9,8 @@ add_executable(flutter_glfw FlutterEmbedderGLFW.cc)
 ############################################################
 find_path(GLFW_INCLUDE_PATH "glfw3.h"
     /usr/local/Cellar/glfw/3.3/include/GLFW/
-    /usr/local/include/include/GLFW/)
+    /usr/local/include/include/GLFW/
+    /usr/include/GLFW)
 include_directories(${GLFW_INCLUDE_PATH})
 find_library(GLFW_LIB glfw /usr/local/Cellar/glfw/3.3/lib)
 target_link_libraries(flutter_glfw ${GLFW_LIB})
