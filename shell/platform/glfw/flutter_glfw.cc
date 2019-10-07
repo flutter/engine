@@ -114,6 +114,7 @@ struct FlutterDesktopPluginRegistrar {
   // The plugin messenger handle given to API clients.
   std::unique_ptr<FlutterDesktopMessenger> messenger;
 
+  // The plugin texture registrar handle given to API clients.
   std::unique_ptr<FlutterDesktopTextureRegistrar> texture_registrar;
 
   // The handle for the window associated with this registrar.
@@ -897,8 +898,8 @@ int64_t FlutterDesktopRegisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
     FlutterTexutreCallback texture_callback,
     void* user_data) {
-  std::unique_ptr<flutter::ExternalTextureGL> texture_gl(
-      new flutter::ExternalTextureGL(texture_callback, user_data));
+  auto texture_gl =
+      std::make_unique<flutter::ExternalTextureGL>(texture_callback, user_data);
   int64_t texture_id = texture_gl->texture_id();
   texture_registrar->textures[texture_id] = std::move(texture_gl);
   if (FlutterEngineRegisterExternalTexture(texture_registrar->engine,

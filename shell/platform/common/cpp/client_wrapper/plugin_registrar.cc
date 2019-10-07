@@ -155,7 +155,7 @@ class TextureRegistrarImpl : public TextureRegistrar {
   virtual int64_t RegisterTexture(Texture* texture) override {
     FlutterTexutreCallback callback =
         [](size_t width, size_t height, void* user_data) -> const PixelBuffer* {
-      return ((Texture*)user_data)->CopyPixelBuffer(width, height);
+      return static_cast<Texture*>(user_data)->CopyPixelBuffer(width, height);
     };
     int64_t texture_id = FlutterDesktopRegisterExternalTexture(
         texture_registrar_ref_, callback, texture);
