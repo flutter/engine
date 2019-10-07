@@ -97,7 +97,7 @@ TEST(StandardMessageCodec, CanEncodeAndDecodeStringWithNonBMPCodePoint) {
   CheckEncodeDecode(EncodableValue(u8"h\U0001F602w"), bytes);
 }
 
-TEST(StandardMessageCodex, CanEncodeAndDecodeEmptyString) {
+TEST(StandardMessageCodec, CanEncodeAndDecodeEmptyString) {
   std::vector<uint8_t> bytes = {0x07, 0x00};
   CheckEncodeDecode(EncodableValue(u8""), bytes);
 }
