@@ -885,11 +885,14 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       ui.PaintData paint) {
 
     final Int32List colors = vertices.colors;
+    final ui.VertexMode mode = vertices.mode;
+    final Float32List positions = mode == ui.VertexMode.triangles
+        ? vertices.positions
+        : _convertVertexPositions(mode, vertices.positions);
     if (colors == null) {
       // Draw hairline for vertices if no vertex colors are specified.
-      _drawHairline(vertices, paint.color ?? ui.Color(0xFF000000));
-      throw UnimplementedError();
-      //return;
+      _drawHairline(positions, paint.color ?? ui.Color(0xFF000000));
+      return;
     }
 
     final html.CanvasElement glCanvas = html.CanvasElement(
@@ -907,7 +910,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
     _GlContext gl = _GlContext(glCanvas);
 
-    //gl.viewport(0, 0, _widthInBitmapPixels.toDouble(), _heightInBitmapPixels.toDouble());
     // Create and compile shaders.
     Object vertexShader = gl.compileShader('VERTEX_SHADER', _vertexShaderTriangle);
     Object fragmentShader = gl.compileShader('FRAGMENT_SHADER', _fragmentShaderTriangle);
@@ -923,15 +925,15 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     assert(positionsBuffer != null);
     gl.bindArrayBuffer(positionsBuffer);
 
-    int positionCount = vertices.positions.length;
+    int positionCount = positions.length;
     Float32List scaledList = Float32List(3 * positionCount ~/ 2);
     for (int i = 0, destIndex = 0; i < positionCount; i += 2, destIndex += 3) {
       // Scale.
       scaledList[destIndex] =
-          ((vertices.positions[i]) / (_widthInBitmapPixels / 2)) - 1;
+          ((positions[i]) / (_widthInBitmapPixels / 2)) - 1;
       // Scale + invert axis.
       scaledList[destIndex + 1] =
-          -(vertices.positions[i + 1] / (_heightInBitmapPixels / 2)) + 1;// + (_heightInBitmapPixels / 2) / _heightInBitmapPixels;
+          -(positions[i + 1] / (_heightInBitmapPixels / 2)) + 1;// + (_heightInBitmapPixels / 2) / _heightInBitmapPixels;
       // Set depth to 0.
       scaledList[destIndex + 2] = 0.0;
     }
@@ -951,10 +953,10 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     gl.drawTriangles(positionCount ~/ 2);
   }
 
-  void _drawHairline(ui.Vertices vertices, ui.Color color) {
+  void _drawHairline(Float32List positions, ui.Color color) {
+    assert(positions != null);
     html.CanvasRenderingContext2D _ctx = ctx;
     save();
-    final Float32List positions = vertices.positions;
     final int pointCount = positions.length ~/ 2;
     _setFillAndStrokeStyle('', color.toCssString());
     _ctx.lineWidth = 1.0;
@@ -977,6 +979,58 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       }
     }
     restore();
+  }
+
+  // Converts from [VertexMode] triangleFan and triangleStrip to triangles.
+  Float32List _convertVertexPositions(ui.VertexMode mode, Float32List
+      positions) {
+    assert(mode != ui.VertexMode.triangles);
+    if (mode == ui.VertexMode.triangleFan) {
+      final int coordinateCount = positions.length ~/ 2;
+      final int triangleCount = (coordinateCount - 2) ~/ 2;
+      final Float32List triangleList = Float32List(triangleCount * 3 * 2);
+      double centerX = positions[0];
+      double centerY = positions[1];
+      int destIndex = 0;
+      int positionIndex = 2;
+      for (int triangleIndex = 0; triangleIndex < triangleCount;
+          triangleIndex++, positionIndex += 2) {
+        triangleList[destIndex++] = centerX;
+        triangleList[destIndex++] = centerY;
+        triangleList[destIndex++] = positions[positionIndex];
+        triangleList[destIndex++] = positions[positionIndex + 1];
+        triangleList[destIndex++] = positions[positionIndex + 2];
+        triangleList[destIndex++] = positions[positionIndex + 3];
+      }
+      return triangleList;
+    } else {
+      // Set of connected triangles. Each triangle shares 2 last vertices.
+      final int vertexCount = positions.length ~/ 2;
+      int triangleCount = vertexCount  - 2;
+      double x0 = positions[0];
+      double y0 = positions[1];
+      double x1 = positions[2];
+      double y1 = positions[3];
+      double x2 = positions[4];
+      double y2 = positions[5];
+      final Float32List triangleList = Float32List(triangleCount * 3 * 2);
+      int destIndex = 0;
+      for (int i = 0, positionIndex = 6; i < triangleCount; i++, positionIndex += 2) {
+        triangleList[destIndex++] = x0;
+        triangleList[destIndex++] = y0;
+        triangleList[destIndex++] = x1;
+        triangleList[destIndex++] = y1;
+        triangleList[destIndex++] = x2;
+        triangleList[destIndex++] = y2;
+        x0 = x1;
+        y0 = y1;
+        x1 = x2;
+        y1 = y2;
+        x2 = positions[positionIndex];
+        y2 = positions[positionIndex + 1];
+      }
+      return triangleList;
+    }
   }
 
   ui.Path _verticesToPath(ui.Vertices vertices) {
@@ -1022,7 +1076,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
         }
         break;
       case ui.VertexMode.triangleStrip:
-      // Set of connected triangles. Each triangle shares 2 last vertices.
+        // Set of connected triangles. Each triangle shares 2 last vertices.
         int triangleCount = vertexCount  - 2;
         double x0 = positions[0];
         double y0 = positions[1];
@@ -1365,7 +1419,6 @@ class _GlContext {
     assert(blendMode != ui.BlendMode.src,
     'No need to setup default blend mode');
     assert(blendMode != ui.BlendMode.dst);
-
   }
 
   dynamic get error => js_util.callMethod(glContext, 'getError', const []);
