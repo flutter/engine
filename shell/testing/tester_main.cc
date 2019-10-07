@@ -6,10 +6,6 @@
 
 #include <cstdlib>
 
-#if defined(OS_POSIX)
-#include <signal.h>
-#endif // defined(OS_POSIX)
-
 #include "flutter/assets/asset_manager.h"
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/fml/file.h"
@@ -25,6 +21,10 @@
 #include "flutter/shell/common/thread_host.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
+
+#if defined(OS_POSIX)
+#include <signal.h>
+#endif // defined(OS_POSIX)
 
 namespace flutter {
 
