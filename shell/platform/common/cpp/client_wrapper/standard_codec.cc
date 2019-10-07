@@ -111,10 +111,8 @@ EncodableValue StandardCodecSerializer::ReadValue(
     case EncodedType::kString: {
       size_t size = ReadSize(stream);
       std::string string_value;
-      if (size > 0) {
-        string_value.resize(size);
-        stream->ReadBytes(reinterpret_cast<uint8_t*>(&string_value[0]), size);
-      }
+      string_value.resize(size);
+      stream->ReadBytes(reinterpret_cast<uint8_t*>(&string_value[0]), size);
       return EncodableValue(string_value);
     }
     case EncodedType::kUInt8List:
