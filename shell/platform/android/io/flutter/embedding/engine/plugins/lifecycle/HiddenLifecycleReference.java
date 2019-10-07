@@ -5,6 +5,7 @@
 package io.flutter.embedding.engine.plugins.lifecycle;
 
 import android.arch.lifecycle.Lifecycle;
+import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
 /**
@@ -16,6 +17,7 @@ import android.support.annotation.NonNull;
  * {@link Lifecycle} in a way that makes it easier for Flutter and the Flutter plugin ecosystem to
  * handle breaking changes in Lifecycle libraries.
  */
+@Keep
 public class HiddenLifecycleReference {
   @NonNull
   private final Lifecycle lifecycle;
