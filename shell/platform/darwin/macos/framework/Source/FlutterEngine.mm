@@ -135,8 +135,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
                                      size_t width,
                                      size_t height,
                                      FlutterOpenGLTexture* open_gl_texture) {
-  return [engine populateTextureWithIdentifier:texture_identifier
-                                 openGLTexture:open_gl_texture];
+  return [engine populateTextureWithIdentifier:texture_identifier openGLTexture:open_gl_texture];
 }
 
 #pragma mark -
