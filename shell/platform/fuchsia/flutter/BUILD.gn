@@ -251,6 +251,10 @@ executable("flutter_runner_unittests") {
 
   output_name = "flutter_runner_tests"
 
+  # This is needed by dart/runtime/platform it expects either DEBUG
+  # or NDEBUG to be defined.
+  defines = [ "NDEBUG" ]
+
   sources = [
     "accessibility_bridge.cc",
     "accessibility_bridge.h",
@@ -260,6 +264,7 @@ executable("flutter_runner_unittests") {
     "platform_view.cc",
     "platform_view.h",
     "platform_view_unittest.cc",
+    "socket_base_fuchsia_unittest.cc",
     "surface.cc",
     "surface.h",
     "vsync_recorder.cc",

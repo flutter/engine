@@ -962,6 +962,7 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/session_connection.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/session_connection.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/socket_base_fuchsia_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_observers.cc
