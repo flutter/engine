@@ -801,9 +801,9 @@ TEST_F(ShellTest, CanCreateImagefromDecompressedBytes) {
 
 class MockTexture : public Texture {
  public:
-  MockTexture(int64_t textureId, std::shared_ptr<fml::AutoResetWaitableEvent> latch) :
-  Texture(textureId),
-  latch_(latch) {}
+  MockTexture(int64_t textureId,
+              std::shared_ptr<fml::AutoResetWaitableEvent> latch)
+      : Texture(textureId), latch_(latch) {}
 
   ~MockTexture() override = default;
 
@@ -818,7 +818,7 @@ class MockTexture : public Texture {
   void OnGrContextDestroyed() override {}
 
   void MarkNewFrameAvailable() override {
-    frames_available_ ++;
+    frames_available_++;
     latch_->Signal();
   }
 
@@ -833,7 +833,7 @@ class MockTexture : public Texture {
  private:
   bool unregistered_ = false;
   int frames_available_ = 0;
-   std::shared_ptr<fml::AutoResetWaitableEvent> latch_;
+  std::shared_ptr<fml::AutoResetWaitableEvent> latch_;
 };
 
 TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
@@ -850,9 +850,11 @@ TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
 
   RunEngine(shell.get(), std::move(configuration));
 
-  std::shared_ptr<fml::AutoResetWaitableEvent> latch = std::make_shared<fml::AutoResetWaitableEvent>();
+  std::shared_ptr<fml::AutoResetWaitableEvent> latch =
+      std::make_shared<fml::AutoResetWaitableEvent>();
 
-  std::shared_ptr<MockTexture> mockTexture = std::make_shared<MockTexture>(0, latch);
+  std::shared_ptr<MockTexture> mockTexture =
+      std::make_shared<MockTexture>(0, latch);
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
@@ -861,17 +863,14 @@ TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
       });
   latch->Wait();
 
-  EXPECT_EQ(mockTexture->frames_available(),
-            1);
+  EXPECT_EQ(mockTexture->frames_available(), 1);
 
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
-        shell->GetPlatformView()->UnregisterTexture(0);
-      });
+      shell->GetTaskRunners().GetGPUTaskRunner(),
+      [&]() { shell->GetPlatformView()->UnregisterTexture(0); });
   latch->Wait();
 
-  EXPECT_EQ(mockTexture->unregistered(),
-            true);
+  EXPECT_EQ(mockTexture->unregistered(), true);
 }
 
 }  // namespace testing
