@@ -24,7 +24,7 @@
 
 #if defined(OS_POSIX)
 #include <signal.h>
-#endif // defined(OS_POSIX)
+#endif  // defined(OS_POSIX)
 
 namespace flutter {
 
@@ -87,7 +87,7 @@ static void UnblockSIGPROF() {
   sigemptyset(&set);
   sigaddset(&set, SIGPROF);
   pthread_sigmask(SIG_UNBLOCK, &set, NULL);
-#endif // defined(OS_POSIX)
+#endif  // defined(OS_POSIX)
 }
 
 int RunTester(const flutter::Settings& settings, bool run_forever) {
