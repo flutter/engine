@@ -11,7 +11,7 @@ import 'package:test/test.dart';
 import 'package:web_engine_tester/golden_tester.dart';
 
 void main() async {
-  final Rect region = Rect.fromLTWH(0, 0, 400, 600); 
+  final Rect region = Rect.fromLTWH(0, 0, 400, 600);
 
   BitmapCanvas canvas;
 
