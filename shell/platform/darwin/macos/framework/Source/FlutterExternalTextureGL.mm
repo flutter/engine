@@ -35,9 +35,7 @@ static void OnCVOpenGLTextureRelease(CVOpenGLTextureRef cvOpenGLTexture) {
   return reinterpret_cast<int64_t>(self);
 }
 
-- (BOOL)populateTextureWithWidth:(size_t)width
-                          height:(size_t)height
-                   openGLTexture:(FlutterOpenGLTexture*)openGLTexture {
+- (BOOL)populateTexture:(FlutterOpenGLTexture*)openGLTexture {
   // Copy the pixel buffer from the FlutterTexture instance implemented on the user side.
   CVPixelBufferRef pixelBuffer = [_texture copyPixelBuffer];
 

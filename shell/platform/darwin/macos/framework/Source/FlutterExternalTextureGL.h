@@ -24,9 +24,7 @@
  * callback to this method and ask for populate the |openGLTexture| object,
  * such as the texture type and the format of the pixel buffer and the texture object.
  */
-- (BOOL)populateTextureWithWidth:(size_t)width
-                          height:(size_t)height
-                   openGLTexture:(nonnull FlutterOpenGLTexture*)openGLTexture;
+- (BOOL)populateTexture:(nonnull FlutterOpenGLTexture*)openGLTexture;
 
 /**
  * Returns the ID for the FlutterTexture instance.

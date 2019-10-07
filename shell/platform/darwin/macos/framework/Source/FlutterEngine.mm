@@ -51,8 +51,6 @@
  * Forwards texture copy request to the corresponding texture via |textureID|.
  */
 - (BOOL)populateTextureWithIdentifier:(int64_t)textureID
-                                width:(size_t)width
-                               height:(size_t)height
                         openGLTexture:(FlutterOpenGLTexture*)openGLTexture;
 
 @end
@@ -138,8 +136,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
                                      size_t height,
                                      FlutterOpenGLTexture* open_gl_texture) {
   return [engine populateTextureWithIdentifier:texture_identifier
-                                         width:width
-                                        height:height
                                  openGLTexture:open_gl_texture];
 }
 
@@ -430,12 +426,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 #pragma mark - FlutterTextureRegistrar
 
 - (BOOL)populateTextureWithIdentifier:(int64_t)textureID
-                                width:(size_t)width
-                               height:(size_t)height
                         openGLTexture:(FlutterOpenGLTexture*)openGLTexture {
-  return [_textures[@(textureID)] populateTextureWithWidth:width
-                                                    height:height
-                                             openGLTexture:openGLTexture];
+  return [_textures[@(textureID)] populateTexture:openGLTexture];
 }
 
 - (int64_t)registerTexture:(id<FlutterTexture>)texture {
