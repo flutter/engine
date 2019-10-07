@@ -128,9 +128,6 @@ EncodableValue StandardCodecSerializer::ReadValue(
     case EncodedType::kList: {
       size_t length = ReadSize(stream);
       EncodableList list_value;
-      if (length == 0) {
-        return EncodableValue(list_value);
-      }
       list_value.reserve(length);
       for (size_t i = 0; i < length; ++i) {
         list_value.push_back(ReadValue(stream));
