@@ -41,6 +41,8 @@ class PluginRegistrar {
   // This pointer will remain valid for the lifetime of this instance.
   BinaryMessenger* messenger() { return messenger_.get(); }
 
+  // Returns the texture registrar to use for the plugin to render a pixel
+  // buffer.
   TextureRegistrar* textures() { return textures_.get(); }
 
   // Takes ownership of |plugin|.
