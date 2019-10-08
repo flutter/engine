@@ -63,8 +63,7 @@ typedef enum {
 /// Must match the `SemanticsAction` enum in semantics.dart.
 typedef enum {
   /// The equivalent of a user briefly tapping the screen with the finger
-  /// without
-  /// moving it.
+  /// without moving it.
   kFlutterSemanticsActionTap = 1 << 0,
   /// The equivalent of a user pressing and holding the screen with the finger
   /// for a few seconds without moving it.
@@ -172,6 +171,8 @@ typedef enum {
   kFlutterSemanticsFlagIsReadOnly = 1 << 20,
   /// Whether the semantic node can hold the user's focus.
   kFlutterSemanticsFlagIsFocusable = 1 << 21,
+  /// Whether the semantics node represents a link.
+  kFlutterSemanticsFlagIsLink = 1 << 22,
 } FlutterSemanticsFlag;
 
 typedef enum {
@@ -875,7 +876,8 @@ typedef struct {
   // which is used in `flutter::Settings` as `temp_directory_path`.
   const char* persistent_cache_path;
 
-  /// If true, we'll only read the existing cache, but not write new ones.
+  /// If true, the engine would only read the existing cache, but not write new
+  /// ones.
   bool is_persistent_cache_read_only;
 
   /// A callback that gets invoked by the engine when it attempts to wait for a
