@@ -94,7 +94,7 @@ int RunTester(const flutter::Settings& settings, bool run_forever) {
   const auto thread_label = "io.flutter.test";
 
   // Necessary if we want to use the CPU profiler on the main isolate's mutator
-  // thread. See https://github.com/flutter/flutter/issues/35140.
+  // thread.
   //
   // OSX WARNING: avoid spawning additional threads before this call due to a
   // kernel bug that may enable SIGPROF on an unintended thread in the process.
