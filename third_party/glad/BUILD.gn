@@ -10,10 +10,15 @@ source_set("glad") {
   public_configs = [ ":glad_public" ]
 
   public = [
-    "include/glad/gl.h",
+    "include/glad/glad.h",
+    "include/KHR/khrplatform.h",
   ]
 
+  #TODO:
+  # `cd scripts`
+  # `python -m glad --profile="compatibility" --api="gl=3.3" --generator="c" --spec="gl" --extensions="" --reproducible --out-path=..`
+
   sources = [
-    "src/gl.c",
+    "src/glad.c",
   ]
 }

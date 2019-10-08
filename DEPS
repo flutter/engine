@@ -424,6 +424,9 @@ deps = {
   'src/third_party/pkg/when':
    Var('dart_git') + '/when.git' + '@' + '0.2.0',
 
+  'src/flutter/third_party/glad/scripts':
+   Var('github_git') + '/Dav1dde/glad.git' + '@' + 'de6c39e3040c987323b8ed078c36442f4fb681b3',
+
    'src/third_party/android_tools/ndk': {
      'packages': [
        {
