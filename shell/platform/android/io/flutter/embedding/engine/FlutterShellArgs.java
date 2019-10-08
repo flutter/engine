@@ -47,6 +47,8 @@ public class FlutterShellArgs {
   public static final String ARG_VERBOSE_LOGGING = "--verbose-logging";
   public static final String ARG_KEY_OBSERVATORY_PORT = "observatory-port";
   public static final String ARG_OBSERVATORY_PORT = "--observatory-port=";
+  public static final String ARG_KEY_WRITE_SERVICE_INFO = "write-service-info";
+  public static final String ARG_WRITE_SERVICE_INFO = "--write-service-info=";
 
   @NonNull
   public static FlutterShellArgs fromIntent(@NonNull Intent intent) {
@@ -92,6 +94,10 @@ public class FlutterShellArgs {
     }
     if (intent.getBooleanExtra(ARG_KEY_VERBOSE_LOGGING, false)) {
       args.add(ARG_VERBOSE_LOGGING);
+    }
+    final String serviceInfoFile = intent.getStringExtra(ARG_KEY_WRITE_SERVICE_INFO);
+    if (serviceInfoFile != null) {
+      args.add(ARG_WRITE_SERVICE_INFO + serviceInfoFile);
     }
 
     return new FlutterShellArgs(args);
