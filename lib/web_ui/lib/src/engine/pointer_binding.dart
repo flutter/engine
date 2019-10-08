@@ -154,7 +154,7 @@ abstract class BaseAdapter {
   void clearListeners() {
     final html.Element glassPane = domRenderer.glassPaneElement;
     _listeners.forEach((String eventName, html.EventListener listener) {
-      glassPane.removeEventListener(eventName, listener);
+      glassPane.removeEventListener(eventName, listener, true);
     });
     _listeners.clear();
   }
