@@ -81,7 +81,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
  * there for structure and they don't provide any semantic information to VoiceOver (they return
  * NO for isAccessibilityElement).
  */
-@interface SemanticsObjectContainer : NSObject
+@interface SemanticsObjectContainer : UIAccessibilityElement
 - (instancetype)init __attribute__((unavailable("Use initWithSemanticsObject instead")));
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
                                  bridge:(fml::WeakPtr<flutter::AccessibilityBridge>)bridge
@@ -109,7 +109,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridge>)bridge uid:(int32_t)uid {
   FML_DCHECK(bridge) << "bridge must be set";
   FML_DCHECK(uid >= kRootNodeId);
-  self = [super init];
+  self = [super initWithAccessibilityContainer:bridge->view()];
 
   if (self) {
     _bridge = bridge;
@@ -426,7 +426,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)object {
   FML_CHECK(object);
-  if (self = [super init]) {
+  if (self = [super initWithAccessibilityContainer:object.bridge->view()]) {
     _semanticsObject = object;
     flutter::FlutterPlatformViewsController* controller =
         object.bridge->GetPlatformViewsController();
@@ -473,7 +473,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
                                  bridge:(fml::WeakPtr<flutter::AccessibilityBridge>)bridge {
   FML_DCHECK(semanticsObject) << "semanticsObject must be set";
-  self = [super init];
+  self = [super initWithAccessibilityContainer:bridge->view()];
 
   if (self) {
     _semanticsObject = semanticsObject;
@@ -507,6 +507,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
   if ([child hasChildren])
     return [child accessibilityContainer];
+
   return child;
 }
 
