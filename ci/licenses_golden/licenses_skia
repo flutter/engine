@@ -1,4 +1,4 @@
-Signature: fe891caa898ebe22641e423a2bbcd936
+Signature: b35707ca8349df36a7f4d427fcb59c05
 
 UNUSED LICENSES:
 
@@ -3821,6 +3821,7 @@ FILE: ../../../third_party/skia/src/gpu/GrClientMappedBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/GrCopyRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrCopyRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/GrImageInfo.h
+FILE: ../../../third_party/skia/src/gpu/GrProgramInfo.h
 FILE: ../../../third_party/skia/src/gpu/GrRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/GrShaderUtils.cpp
