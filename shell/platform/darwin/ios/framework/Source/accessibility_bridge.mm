@@ -507,7 +507,6 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
   if ([child hasChildren])
     return [child accessibilityContainer];
-
   return child;
 }
 
