@@ -146,6 +146,7 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 }
 
 @implementation FlutterDartProject {
+  fml::scoped_nsobject<NSBundle> _precompiledDartBundle;
   flutter::Settings _settings;
 }
 
@@ -157,10 +158,11 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 
 #pragma mark - Designated initializers
 
-- (instancetype)initWithPrecompiledDartBundle:(nullable NSBundle*)bundle {
+- (instancetype)initWithPrecompiledDartBundle:(NSBundle*)bundle {
   self = [super init];
 
   if (self) {
+    _precompiledDartBundle.reset([bundle retain]);
     _settings = DefaultSettingsForProcess(bundle);
   }
 
@@ -177,12 +179,12 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   return [self runConfigurationForEntrypoint:nil];
 }
 
-- (flutter::RunConfiguration)runConfigurationForEntrypoint:(nullable NSString*)entrypointOrNil {
+- (flutter::RunConfiguration)runConfigurationForEntrypoint:(NSString*)entrypointOrNil {
   return [self runConfigurationForEntrypoint:entrypointOrNil libraryOrNil:nil];
 }
 
-- (flutter::RunConfiguration)runConfigurationForEntrypoint:(nullable NSString*)entrypointOrNil
-                                              libraryOrNil:(nullable NSString*)dartLibraryOrNil {
+- (flutter::RunConfiguration)runConfigurationForEntrypoint:(NSString*)entrypointOrNil
+                                              libraryOrNil:(NSString*)dartLibraryOrNil {
   auto config = flutter::RunConfiguration::InferFromSettings(_settings);
   if (dartLibraryOrNil && entrypointOrNil) {
     config.SetEntrypointAndLibrary(std::string([entrypointOrNil UTF8String]),
@@ -214,7 +216,7 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   return [self lookupKeyForAsset:asset fromBundle:nil];
 }
 
-+ (NSString*)lookupKeyForAsset:(NSString*)asset fromBundle:(nullable NSBundle*)bundle {
++ (NSString*)lookupKeyForAsset:(NSString*)asset fromBundle:(NSBundle*)bundle {
   NSString* flutterAssetsName = [FlutterDartProject flutterAssetsName:bundle];
   return [NSString stringWithFormat:@"%@/%@", flutterAssetsName, asset];
 }
@@ -225,7 +227,7 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset
                    fromPackage:(NSString*)package
-                    fromBundle:(nullable NSBundle*)bundle {
+                    fromBundle:(NSBundle*)bundle {
   return [self lookupKeyForAsset:[NSString stringWithFormat:@"packages/%@/%@", package, asset]
                       fromBundle:bundle];
 }

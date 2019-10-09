@@ -153,7 +153,6 @@ class EngineWindow extends ui.Window {
         final Map<String, dynamic> message = decoded.arguments;
         switch (decoded.method) {
           case 'routePushed':
-          case 'routeReplaced':
             _browserHistory.setRouteName(message['routeName']);
             break;
           case 'routePopped':

@@ -81,7 +81,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
  * there for structure and they don't provide any semantic information to VoiceOver (they return
  * NO for isAccessibilityElement).
  */
-@interface SemanticsObjectContainer : UIAccessibilityElement
+@interface SemanticsObjectContainer : NSObject
 - (instancetype)init __attribute__((unavailable("Use initWithSemanticsObject instead")));
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
                                  bridge:(fml::WeakPtr<flutter::AccessibilityBridge>)bridge
@@ -109,11 +109,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridge>)bridge uid:(int32_t)uid {
   FML_DCHECK(bridge) << "bridge must be set";
   FML_DCHECK(uid >= kRootNodeId);
-  // Initialize with the UIView as the container.
-  // The UIView will not necessarily be accessibility parent for this object.
-  // The bridge informs the OS of the actual structure via
-  // `accessibilityContainer` and `accessibilityElementAtIndex`.
-  self = [super initWithAccessibilityContainer:bridge->view()];
+  self = [super init];
 
   if (self) {
     _bridge = bridge;
@@ -433,11 +429,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)object {
   FML_CHECK(object);
-  // Initialize with the UIView as the container.
-  // The UIView will not necessarily be accessibility parent for this object.
-  // The bridge informs the OS of the actual structure via
-  // `accessibilityContainer` and `accessibilityElementAtIndex`.
-  if (self = [super initWithAccessibilityContainer:object.bridge->view()]) {
+  if (self = [super init]) {
     _semanticsObject = object;
     flutter::FlutterPlatformViewsController* controller =
         object.bridge->GetPlatformViewsController();
@@ -484,11 +476,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
                                  bridge:(fml::WeakPtr<flutter::AccessibilityBridge>)bridge {
   FML_DCHECK(semanticsObject) << "semanticsObject must be set";
-  // Initialize with the UIView as the container.
-  // The UIView will not necessarily be accessibility parent for this object.
-  // The bridge informs the OS of the actual structure via
-  // `accessibilityContainer` and `accessibilityElementAtIndex`.
-  self = [super initWithAccessibilityContainer:bridge->view()];
+  self = [super init];
 
   if (self) {
     _semanticsObject = semanticsObject;
