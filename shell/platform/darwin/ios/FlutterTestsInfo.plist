@@ -16,9 +16,5 @@
   <string>1.0</string>
   <key>CFBundleShortVersionString</key>
   <string>1.0</string>
-  <key>FlutterEngine</key>
-  <string>b3cbc030a5a8f380d075789f3ecbcf8bc21231ca</string>
-  <key>ClangVersion</key>
-  <string>Fuchsia clang version 8.0.0  (based on LLVM 8.0.0svn)</string>
 </dict>
 </plist>
