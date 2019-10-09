@@ -71,7 +71,8 @@ FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller);
 // This should be called on every run of the application-level runloop, and
 // a wait for native events in the runloop should never be longer than the
 // last return value from this function.
-FLUTTER_EXPORT uint64_t FlutterDesktopProcessMessages(FlutterDesktopViewControllerRef controller);
+FLUTTER_EXPORT uint64_t
+FlutterDesktopProcessMessages(FlutterDesktopViewControllerRef controller);
 
 // Runs an instance of a headless Flutter engine.
 //
