@@ -52,7 +52,12 @@ class FlutterViewController : public PluginRegistry {
   // Return backing HWND for manipulation in host application.
   HWND GetNativeWindow();
 
-  // XXX rewrite. Returns nano delay.
+  // Processes any pending events in the Flutter engine, and returns the
+  // nanosecond delay until the next scheduled event (or  max, if none).
+  //
+  // This should be called on every run of the application-level runloop, and
+  // a wait for native events in the runloop should never be longer than the
+  // last return value from this function.
   std::chrono::nanoseconds ProcessMessages();
 
   // flutter::PluginRegistry:
