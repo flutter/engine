@@ -19,7 +19,6 @@
 #include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
-#include "flutter/shell/platform/windows/win32_task_runner.h"
 #include "flutter/shell/platform/windows/win32_window.h"
 #include "flutter/shell/platform/windows/window_state.h"
 
@@ -98,14 +97,6 @@ class Win32FlutterWindow : public Win32Window {
   // Sends a window metrics update to the Flutter engine using current window
   // dimensions in physical
   void SendWindowMetrics();
-
-  // Post a Flutter engine tasks to the event loop for delayed execution.
-  void PostTask(FlutterTask flutter_task, uint64_t flutter_target_time_nanos);
-
-    // Returns if the current thread is the thread used by the GLFW event loop.
-  bool RunsTasksOnCurrentThread() const;
-
-  uint64_t ProcessTasks();
 
  private:
   // Reports a mouse movement to Flutter engine.
@@ -186,8 +177,6 @@ class Win32FlutterWindow : public Win32Window {
 
   // flag indicating if the message loop should be running
   bool messageloop_running_ = false;
-
-  std::unique_ptr<Win32TaskRunner> task_runner_ = nullptr;
 };
 
 }  // namespace flutter

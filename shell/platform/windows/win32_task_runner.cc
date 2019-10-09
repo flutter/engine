@@ -9,7 +9,7 @@
 
 namespace flutter {
 
-Win32TaskRunner::Win32TaskRunner(std::thread::id main_thread_id,
+Win32TaskRunner::Win32TaskRunner(DWORD main_thread_id,
                                  TaskExpiredCallback on_task_expired)
     : main_thread_id_(main_thread_id),
       on_task_expired_(std::move(on_task_expired)) {}
@@ -17,7 +17,7 @@ Win32TaskRunner::Win32TaskRunner(std::thread::id main_thread_id,
 Win32TaskRunner::~Win32TaskRunner() = default;
 
 bool Win32TaskRunner::RunsTasksOnCurrentThread() const {
-  return std::this_thread::get_id() == main_thread_id_;
+  return GetCurrentThreadId() == main_thread_id_;
 }
 
 std::chrono::nanoseconds Win32TaskRunner::ProcessTasks() {
@@ -75,8 +75,7 @@ Win32TaskRunner::TaskTimePoint Win32TaskRunner::TimePointFromFlutterTime(
   return now + std::chrono::nanoseconds(flutter_duration);
 }
 
-void Win32TaskRunner::PostTask(HWND window,
-                               FlutterTask flutter_task,
+void Win32TaskRunner::PostTask(FlutterTask flutter_task,
                                uint64_t flutter_target_time_nanos) {
   static std::atomic_uint64_t sGlobalTaskOrder(0);
 
@@ -95,10 +94,7 @@ void Win32TaskRunner::PostTask(HWND window,
     // the lock here momentarily till the end of the scope is a pessimization.
   }
 
-  DWORD proc_id;
-  DWORD main_thread_id = GetWindowThreadProcessId(window, &proc_id);
-
-  BOOL success = PostThreadMessage(main_thread_id, WM_NULL, 0, 0);
+  BOOL success = PostThreadMessage(main_thread_id_, WM_NULL, 0, 0);
   if (!success) {
     OutputDebugString(L"Failed to post message to main thread.");
   }

@@ -23,7 +23,7 @@ namespace flutter {
 class Win32TaskRunner {
  public:
   using TaskExpiredCallback = std::function<void(const FlutterTask*)>;
-  Win32TaskRunner(std::thread::id main_thread_id,
+  Win32TaskRunner(DWORD main_thread_id,
                   TaskExpiredCallback on_task_expired);
 
   ~Win32TaskRunner();
@@ -34,8 +34,7 @@ class Win32TaskRunner {
   std::chrono::nanoseconds ProcessTasks();
 
   // Post a Flutter engine tasks to the event loop for delayed execution.
-  void PostTask(HWND window,
-                FlutterTask flutter_task,
+  void PostTask(FlutterTask flutter_task,
                 uint64_t flutter_target_time_nanos);
 
  private:
@@ -54,7 +53,7 @@ class Win32TaskRunner {
       }
     };
   };
-  std::thread::id main_thread_id_;
+  DWORD main_thread_id_;
   TaskExpiredCallback on_task_expired_;
   std::mutex task_queue_mutex_;
   std::priority_queue<Task, std::deque<Task>, Task::Comparer> task_queue_;
