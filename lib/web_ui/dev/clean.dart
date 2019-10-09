@@ -30,12 +30,6 @@ class CleanCommand extends Command<bool> {
 
   @override
   FutureOr<bool> run() async {
-    final io.File packagesFile = io.File(path.join(
-      environment.webUiRootDir.path, '.packages'
-    ));
-    final io.File pubspecLockFile = io.File(path.join(
-      environment.webUiRootDir.path, 'pubspec.lock'
-    ));
     final io.Directory assetsDir = io.Directory(path.join(
       environment.webUiRootDir.path, 'lib', 'assets'
     ));
@@ -44,20 +38,21 @@ class CleanCommand extends Command<bool> {
       .whereType<io.File>()
       .where((io.File file) => file.path.endsWith('.ttf'));
 
-    await Future.wait(<Future<dynamic>>[
-      if (environment.webUiDartToolDir.existsSync())
-        environment.webUiDartToolDir.delete(recursive: true),
-      if (environment.webUiBuildDir.existsSync())
-        environment.webUiBuildDir.delete(recursive: true),
-      if (packagesFile.existsSync())
-        packagesFile.delete(),
-      if (pubspecLockFile.existsSync())
-        pubspecLockFile.delete(),
-      for (io.File fontFile in fontFiles)
-        fontFile.delete(),
+    final List<io.FileSystemEntity> thingsToBeCleaned = <io.FileSystemEntity>[
+      environment.webUiDartToolDir,
+      environment.webUiBuildDir,
+      io.File(path.join(environment.webUiRootDir.path, '.packages')),
+      io.File(path.join(environment.webUiRootDir.path, 'pubspec.lock')),
+      ...fontFiles,
       if (_alsoCleanNinja)
-        environment.outDir.delete(recursive: true),
-    ]);
+        environment.outDir,
+    ];
+
+    await Future.wait(
+      thingsToBeCleaned
+        .where((io.FileSystemEntity entity) => entity.existsSync())
+        .map((io.FileSystemEntity entity) => entity.delete(recursive: true))
+    );
     return true;
   }
 }
