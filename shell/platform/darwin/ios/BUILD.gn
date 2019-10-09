@@ -270,7 +270,7 @@ ios_app("FlutterTests") {
 
   deps = [
     ":flutter_tests_fixtures",
-    "$flutter_root/runtime:libdart",
+    "//flutter/runtime:libdart",
     "//flutter/testing",
   ]
 }

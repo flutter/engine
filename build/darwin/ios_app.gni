@@ -3,6 +3,8 @@
 # found in the LICENSE file.
 
 template("ios_app") {
+  assert(is_ios)
+
   copy("${target_name}__info_plist") {
     sources = [ invoker.info_plist ]
     outputs = [ "$root_out_dir/${target_name}.app/Info.plist" ]

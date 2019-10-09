@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/fml/build_config.h"
-#include "flutter/fml/logging.h"
 #include "gtest/gtest.h"
 
 #ifdef OS_IOS
