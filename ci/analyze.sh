@@ -48,6 +48,8 @@ if [ -n "$RESULTS" ]; then
 fi
 
 echo "Analyzing testing/dart..."
+flutter/tools/gn --unoptimized
+ninja -C out/host_debug_unopt sky_engine sky_services
 (cd flutter/testing/dart && pub get)
 RESULTS=`dartanalyzer                                                          \
   --packages=flutter/testing/dart/.packages                                    \
