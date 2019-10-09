@@ -57,6 +57,11 @@ task:
       test_framework_script: |
         cd $FRAMEWORK_PATH/flutter/packages/flutter
         ../../bin/flutter test --local-engine=host_debug_unopt
+      analyze_framework_script: |
+        cd $FRAMEWORK_PATH/flutter
+        rm -rf bin/cache/pkg/sky_engine
+        cp -r $ENGINE_PATH/src/out/host_debug_unopt/gen/dart-pkg/sky_engine bin/cache/pkg/
+        bin/flutter analyze --dartdocs --flutter-repo
     - name: build_and_test_android_unopt_debug
       env:
         USE_ANDROID: "True"
