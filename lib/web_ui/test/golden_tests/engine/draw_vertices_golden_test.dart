@@ -49,7 +49,7 @@ void main() async {
     final RecordingCanvas rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.drawVertices(vertices, blendMode, paint);
-    await _checkScreenshot(rc, fileName, write: true);
+    await _checkScreenshot(rc, fileName);
   }
 
   test('Should draw green hairline triangles when colors array is null.',
@@ -69,6 +69,11 @@ void main() async {
   test('Should draw black hairline triangles when colors array is null'
       ' and Paint() has no color.',
           () async {
+    final Int32List colors = Int32List.fromList(<int>[
+        0xFFFF0000, 0xFF00FF00, 0xFF0000FF,
+        0xFFFF0000, 0xFF00FF00, 0xFF0000FF,
+        0xFFFF0000, 0xFF00FF00, 0xFF0000FF,
+        0xFFFF0000, 0xFF00FF00, 0xFF0000FF]);
     final Vertices vertices = Vertices.raw(VertexMode.triangles,
         Float32List.fromList([
           20.0, 20.0, 220.0, 10.0, 110.0, 220.0,
@@ -88,6 +93,7 @@ void main() async {
           150.0, 150.0, 20.0, 10.0, 80.0, 20.0,
           220.0, 15.0, 280.0, 30.0, 300.0, 420.0
         ]));
+
     await _testVertices(
         'draw_vertices_hairline_triangle_fan',
         vertices,
@@ -104,6 +110,59 @@ void main() async {
         ]));
     await _testVertices(
         'draw_vertices_hairline_triangle_strip',
+        vertices,
+        BlendMode.src,
+        Paint()..color = Color.fromARGB(255, 0, 128, 0));
+  });
+
+  test('Should draw triangles with colors.',
+      () async {
+    final Int32List colors = Int32List.fromList(<int>[
+        0xFFFF0000, 0xFF00FF00, 0xFF0000FF,
+        0xFFFF0000, 0xFF00FF00, 0xFF0000FF]);
+    final Vertices vertices = Vertices.raw(VertexMode.triangles,
+        Float32List.fromList([
+          150.0, 150.0, 20.0, 10.0, 80.0, 20.0,
+          220.0, 15.0, 280.0, 30.0, 300.0, 420.0
+        ]), colors: colors);
+
+    await _testVertices(
+        'draw_vertices_triangles',
+        vertices,
+        BlendMode.src,
+        Paint()..color = Color.fromARGB(255, 0, 128, 0));
+  });
+
+  test('Should draw triangleFan with colors.',
+      () async {
+    final Int32List colors = Int32List.fromList(<int>[
+        0xFFFF0000, 0xFF00FF00, 0xFF0000FF,
+        0xFFFF0000, 0xFF00FF00, 0xFF0000FF]);
+    final Vertices vertices = Vertices.raw(VertexMode.triangleFan,
+        Float32List.fromList([
+          150.0, 150.0, 20.0, 10.0, 80.0, 20.0,
+          220.0, 15.0, 280.0, 30.0, 300.0, 420.0
+        ]), colors: colors);
+
+    await _testVertices(
+        'draw_vertices_triangle_fan',
+        vertices,
+        BlendMode.src,
+        Paint()..color = Color.fromARGB(255, 0, 128, 0));
+  });
+
+  test('Should draw triangleStrip with colors.',
+      () async {
+    final Int32List colors = Int32List.fromList(<int>[
+        0xFFFF0000, 0xFF00FF00, 0xFF0000FF,
+        0xFFFF0000, 0xFF00FF00, 0xFF0000FF]);
+    final Vertices vertices = Vertices.raw(VertexMode.triangleStrip,
+        Float32List.fromList([
+          20.0, 20.0, 220.0, 10.0, 110.0, 220.0,
+          220.0, 320.0, 20.0, 310.0, 200.0, 420.0
+        ]), colors: colors);
+    await _testVertices(
+        'draw_vertices_triangle_strip',
         vertices,
         BlendMode.src,
         Paint()..color = Color.fromARGB(255, 0, 128, 0));

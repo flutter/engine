@@ -697,13 +697,14 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   @override
   void drawVertices(ui.Vertices vertices, ui.BlendMode blendMode,
       ui.PaintData paint) {
-
+    assert(paint.shader == null,
+        'Linear/Radial/SweepGradient and ImageShader not supported yet');
     final Int32List colors = vertices.colors;
     final ui.VertexMode mode = vertices.mode;
-    final Float32List positions = mode == ui.VertexMode.triangles
-        ? vertices.positions
-        : _convertVertexPositions(mode, vertices.positions);
     if (colors == null) {
+      final Float32List positions = mode == ui.VertexMode.triangles
+          ? vertices.positions
+          : _convertVertexPositions(mode, vertices.positions);
       // Draw hairline for vertices if no vertex colors are specified.
       _drawHairline(positions, paint.color ?? ui.Color(0xFF000000));
       return;
@@ -738,7 +739,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     Object positionsBuffer = gl.createBuffer();
     assert(positionsBuffer != null);
     gl.bindArrayBuffer(positionsBuffer);
-
+    final Float32List positions = vertices.positions;
     int positionCount = positions.length;
     Float32List scaledList = Float32List(3 * positionCount ~/ 2);
     for (int i = 0, destIndex = 0; i < positionCount; i += 2, destIndex += 3) {
@@ -764,7 +765,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     js_util.callMethod(gl.glContext, 'vertexAttribPointer', [1, 4, gl.UNSIGNED_BYTE, true, 0 , 0]);
     gl.enableVertexAttribArray(1);
     gl.clear();
-    gl.drawTriangles(positionCount ~/ 2);
+    gl.drawTriangles(positionCount ~/ 2, mode);
   }
 
   void _drawHairline(Float32List positions, ui.Color color) {
@@ -801,7 +802,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     assert(mode != ui.VertexMode.triangles);
     if (mode == ui.VertexMode.triangleFan) {
       final int coordinateCount = positions.length ~/ 2;
-      final int triangleCount = (coordinateCount - 2) ~/ 2;
+      final int triangleCount = coordinateCount - 2;
       final Float32List triangleList = Float32List(triangleCount * 3 * 2);
       double centerX = positions[0];
       double centerY = positions[1];
@@ -825,11 +826,11 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       double y0 = positions[1];
       double x1 = positions[2];
       double y1 = positions[3];
-      double x2 = positions[4];
-      double y2 = positions[5];
       final Float32List triangleList = Float32List(triangleCount * 3 * 2);
       int destIndex = 0;
-      for (int i = 0, positionIndex = 6; i < triangleCount; i++, positionIndex += 2) {
+      for (int i = 0, positionIndex = 4; i < triangleCount; i++) {
+        final double x2 = positions[positionIndex++];
+        final double y2 = positions[positionIndex++];
         triangleList[destIndex++] = x0;
         triangleList[destIndex++] = y0;
         triangleList[destIndex++] = x1;
@@ -840,8 +841,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
         y0 = y1;
         x1 = x2;
         y1 = y2;
-        x2 = positions[positionIndex];
-        y2 = positions[positionIndex + 1];
       }
       return triangleList;
     }
@@ -1222,8 +1221,23 @@ class _GlContext {
     js_util.callMethod(glContext, 'clear', [COLOR_BUFFER_BIT]);
   }
 
-  void drawTriangles(int triangleCount) {
-    js_util.callMethod(glContext, 'drawArrays', [TRIANGLES, 0, triangleCount]);
+  void drawTriangles(int triangleCount, ui.VertexMode vertexMode) {
+    dynamic mode = _triangleTypeFromMode(vertexMode);
+    js_util.callMethod(glContext, 'drawArrays', [mode, 0, triangleCount]);
+  }
+
+  dynamic _triangleTypeFromMode(ui.VertexMode mode) {
+    switch (mode) {
+      case ui.VertexMode.triangles:
+        return TRIANGLES;
+        break;
+      case ui.VertexMode.triangleFan:
+        return TRIANGLE_FAN;
+        break;
+      case ui.VertexMode.triangleStrip:
+        return TRIANGLE_STRIP;
+        break;
+    }
   }
 
   void viewport(double x, double y, double width, double height) {
@@ -1255,6 +1269,10 @@ class _GlContext {
 
   dynamic get TRIANGLES =>
       _triangles ??= js_util.getProperty(glContext, 'TRIANGLES');
+  dynamic get TRIANGLE_FAN =>
+      _triangles ??= js_util.getProperty(glContext, 'TRIANGLE_FAN');
+  dynamic get TRIANGLE_STRIP =>
+      _triangles ??= js_util.getProperty(glContext, 'TRIANGLE_STRIP');
 
   dynamic get COLOR_BUFFER_BIT =>
       _color_buffer_bit ??= js_util.getProperty(glContext, 'COLOR_BUFFER_BIT');
