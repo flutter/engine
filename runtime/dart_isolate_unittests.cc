@@ -405,5 +405,53 @@ TEST_F(DartIsolateTest, CanRecieveArguments) {
   latch.Wait();
 }
 
+TEST_F(DartIsolateTest, RootIsolateShutdownStopsChildIsolates) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  fml::CountDownLatch latch(9);
+  fml::CountDownLatch shutdown_latch(4);
+  fml::AutoResetWaitableEvent child_shutdown_latch;
+  AddNativeCallback("NotifyNative",
+                    CREATE_NATIVE_ENTRY(([&latch](Dart_NativeArguments args) {
+                      latch.CountDown();
+                    })));
+  AddNativeCallback(
+      "PassMessage", CREATE_NATIVE_ENTRY(([&latch](Dart_NativeArguments args) {
+        auto message = tonic::DartConverter<std::string>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        ASSERT_EQ("In child Isolate.", message);
+        latch.CountDown();
+      })));
+
+  size_t destruction_callback_count = 0;
+  auto settings = CreateSettingsForFixture();
+  settings.isolate_shutdown_callback = [&child_shutdown_latch, &shutdown_latch,
+                                        &destruction_callback_count]() {
+    child_shutdown_latch.Signal();
+    destruction_callback_count++;
+    shutdown_latch.CountDown();
+  };
+  auto vm_ref = DartVMRef::Create(settings);
+  auto vm_data = vm_ref.GetVMData();
+  TaskRunners task_runners(GetCurrentTestName(),    //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner()   //
+  );
+
+  std::unique_ptr<AutoIsolateShutdown> isolate;
+  fml::RefPtr<fml::TaskRunner> task_runner = CreateNewThread();
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runner, fml::MakeCopyable([&]() mutable {
+        RunDartCodeInIsolate(vm_ref, isolate, settings, task_runner,
+                             "testSecondaryIsolateShutdown", {});
+      }));
+  child_shutdown_latch.Wait();  // wait for child isolate to shutdown first
+  latch.Wait();  // wait for last NotifyNative called by main isolate
+  shutdown_latch.Wait();
+  // root isolate will be auto-shutdown
+  ASSERT_EQ(destruction_callback_count, 4u);
+}
+
 }  // namespace testing
 }  // namespace flutter
