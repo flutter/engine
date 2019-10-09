@@ -64,7 +64,8 @@ HWND FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller) {
   return reinterpret_cast<HWND>(-1);
 }
 
-uint64_t FlutterDesktopProcessMessages(FlutterDesktopViewControllerRef controller) {
+uint64_t FlutterDesktopProcessMessages(
+    FlutterDesktopViewControllerRef controller) {
   if (s_stub_implementation) {
     return s_stub_implementation->FlutterDesktopProcessMessages();
   }

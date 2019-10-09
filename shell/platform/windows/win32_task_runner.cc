@@ -59,11 +59,9 @@ std::chrono::nanoseconds Win32TaskRunner::ProcessTasks() {
   {
     std::lock_guard<std::mutex> lock(task_queue_mutex_);
     const auto next_wake = task_queue_.empty() ? TaskTimePoint::max()
-                                                : task_queue_.top().fire_time;
+                                               : task_queue_.top().fire_time;
 
-    return std::min(
-        next_wake - now,
-        std::chrono::nanoseconds::max());
+    return std::min(next_wake - now, std::chrono::nanoseconds::max());
   }
 }
 

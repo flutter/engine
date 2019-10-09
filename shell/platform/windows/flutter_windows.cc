@@ -33,12 +33,12 @@ static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 //
 // Returns the state object for the engine, or null on failure to start the
 // engine.
-static std::unique_ptr<FlutterDesktopEngineState>
-    RunFlutterEngine(flutter::Win32FlutterWindow* window,
-                     const char* assets_path,
-                     const char* icu_data_path,
-                     const char** arguments,
-                     size_t arguments_count) {
+static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
+    flutter::Win32FlutterWindow* window,
+    const char* assets_path,
+    const char* icu_data_path,
+    const char** arguments,
+    size_t arguments_count) {
   auto state = std::make_unique<FlutterDesktopEngineState>();
 
   // FlutterProjectArgs is expecting a full argv, so when processing it for
@@ -93,8 +93,9 @@ static std::unique_ptr<FlutterDesktopEngineState>
     return reinterpret_cast<flutter::Win32TaskRunner*>(user_data)
         ->RunsTasksOnCurrentThread();
   };
-  platform_task_runner.post_task_callback =
-      [](FlutterTask task, uint64_t target_time_nanos, void* user_data) -> void {
+  platform_task_runner.post_task_callback = [](FlutterTask task,
+                                               uint64_t target_time_nanos,
+                                               void* user_data) -> void {
     reinterpret_cast<flutter::Win32TaskRunner*>(user_data)->PostTask(
         task, target_time_nanos);
   };
@@ -140,9 +141,8 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
       flutter::Win32FlutterWindow::CreateWin32FlutterWindow(initial_width,
                                                             initial_height);
 
-  auto engine_state =
-      RunFlutterEngine(state->view.get(), assets_path, icu_data_path, arguments,
-                       argument_count);
+  auto engine_state = RunFlutterEngine(
+      state->view.get(), assets_path, icu_data_path, arguments, argument_count);
 
   if (!engine_state) {
     return nullptr;
@@ -152,7 +152,8 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
   return state;
 }
 
-uint64_t FlutterDesktopProcessMessages(FlutterDesktopViewControllerRef controller) {
+uint64_t FlutterDesktopProcessMessages(
+    FlutterDesktopViewControllerRef controller) {
   return controller->engine_state->task_runner->ProcessTasks().count();
 }
 
@@ -180,9 +181,8 @@ FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,
                                                 const char* icu_data_path,
                                                 const char** arguments,
                                                 size_t argument_count) {
-  auto engine =
-      RunFlutterEngine(nullptr, assets_path, icu_data_path, arguments,
-                       argument_count);
+  auto engine = RunFlutterEngine(nullptr, assets_path, icu_data_path, arguments,
+                                 argument_count);
   return engine.release();
 }
 
