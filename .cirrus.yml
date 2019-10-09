@@ -54,14 +54,14 @@ task:
         cd $FRAMEWORK_PATH/flutter/dev/integration_tests/web
         ../../../bin/flutter config --local-engine=host_debug_unopt --no-analytics --enable-web
         ../../../bin/flutter --local-engine=host_debug_unopt build web -v
-      test_framework_script: |
-        cd $FRAMEWORK_PATH/flutter/packages/flutter
-        ../../bin/flutter test --local-engine=host_debug_unopt
       analyze_framework_script: |
         cd $FRAMEWORK_PATH/flutter
         rm -rf bin/cache/pkg/sky_engine
         cp -r $ENGINE_PATH/src/out/host_debug_unopt/gen/dart-pkg/sky_engine bin/cache/pkg/
-        bin/flutter analyze --dartdocs --flutter-repo
+        bin/flutter analyze --dartdocs --flutter-repo --local-engine=host_debug_unopt
+      test_framework_script: |
+        cd $FRAMEWORK_PATH/flutter/packages/flutter
+        ../../bin/flutter test --local-engine=host_debug_unopt
     - name: build_and_test_android_unopt_debug
       env:
         USE_ANDROID: "True"
