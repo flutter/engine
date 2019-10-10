@@ -664,6 +664,8 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     picture.recordingCanvas.apply(this);
   }
 
+  // Vertex shader transforms pixel space [Vertices.positions] to
+  // final clipSpace -1..1 coordinates with inverted Y Axis.
   static const _vertexShaderTriangle = '''
       #version 300 es
       layout (location=0) in vec4 position;
@@ -676,6 +678,8 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
         gl_Position = (position * u_scale) + u_shift;
         vColor = color;
       }''';
+  // This fragment shader enables Int32List of colors to be passed directly
+  // to gl context buffer for rendering by decoding RGBA8888.
   static const _fragmentShaderTriangle = '''
       #version 300 es
       precision highp float;
