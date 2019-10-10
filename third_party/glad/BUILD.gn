@@ -2,23 +2,36 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+_glad_gen_dir = "$root_out_dir/gen/flutter/third_party/glad"
+
 config("glad_public") {
-  include_dirs = [ "include" ]
+  include_dirs = [ "$_glad_gen_dir/include" ]
 }
 
 source_set("glad") {
   public_configs = [ ":glad_public" ]
 
   public = [
-    "include/glad/glad.h",
-    "include/KHR/khrplatform.h",
+    "$_glad_gen_dir/include/glad/glad.h",
+    "$_glad_gen_dir/include/KHR/khrplatform.h",
   ]
-
-  #TODO:
-  # `cd scripts`
-  # `python -m glad --profile="compatibility" --api="gl=3.3" --generator="c" --spec="gl" --extensions="" --reproducible --out-path=..`
 
   sources = [
-    "src/glad.c",
+    "$_glad_gen_dir/src/glad.c"
   ]
+
+  deps = [
+    ":gen_glad_sources",
+  ]
+}
+
+action("gen_glad_sources") {
+  script = "$flutter_root/third_party/glad/generate.py"
+  outputs = [
+    "$_glad_gen_dir/src/glad.c",
+    "$_glad_gen_dir/include/glad/glad.h",
+    "$_glad_gen_dir/include/KHR/khrplatform.h"
+  ]
+
+  args = [ rebase_path("$_glad_gen_dir") ]
 }
