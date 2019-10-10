@@ -19,11 +19,9 @@ import android.view.View;
 import android.view.Window;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
-import io.flutter.plugin.common.ActivityLifecycleListener;
 
 /**
  * Android implementation of the platform plugin.
@@ -89,7 +87,12 @@ public class PlatformPlugin {
         }
 
         @Override
-        public void setSystemGestureExclusionRects(@NonNull ArrayList rects) {
+        public List<Rect> getSystemGestureExclusionRects() {
+            return PlatformPlugin.this.getSystemGestureExclusionRects();
+        }
+
+        @Override
+        public void setSystemGestureExclusionRects(@NonNull ArrayList<Rect> rects) {
             PlatformPlugin.this.setSystemGestureExclusionRects(rects);
         }
     };
@@ -279,6 +282,16 @@ public class PlatformPlugin {
         ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData clip = ClipData.newPlainText("text label?", text);
         clipboard.setPrimaryClip(clip);
+    }
+
+    private List<Rect> getSystemGestureExclusionRects() {
+        if (Build.VERSION.SDK_INT >= 29) {
+            Window window = activity.getWindow();
+            View view = window.getDecorView();
+            return view.getSystemGestureExclusionRects();
+        }
+
+        return null;
     }
 
     private void setSystemGestureExclusionRects(ArrayList<Rect> rects) {

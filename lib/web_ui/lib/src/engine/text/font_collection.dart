@@ -4,10 +4,10 @@
 
 part of engine;
 
-const String _testFontFamily = 'Ahem';
-const String _testFontUrl = 'packages/ui/assets/ahem.ttf';
-const String _robotoFontUrl =
-    'packages/flutter_web_ui/assets/Roboto-Regular.ttf';
+const String _ahemFontFamily = 'Ahem';
+const String _ahemFontUrl = 'packages/ui/assets/ahem.ttf';
+const String _robotoFontFamily = 'Roboto';
+const String _robotoFontUrl = 'packages/ui/assets/Roboto-Regular.ttf';
 
 /// This class is responsible for registering and loading fonts.
 ///
@@ -54,13 +54,6 @@ class FontCollection {
       _assetFontManager = _PolyfillFontManager();
     }
 
-    // If not on Chrome, add Roboto to the bundled fonts since it is provided
-    // by default by Flutter.
-    if (browserEngine != BrowserEngine.blink) {
-      _assetFontManager
-          .registerAsset('Roboto', 'url($_robotoFontUrl)', <String, String>{});
-    }
-
     for (Map<String, dynamic> fontFamily in fontManifest) {
       final String family = fontFamily['family'];
       final List<dynamic> fontAssets = fontFamily['fonts'];
@@ -84,7 +77,9 @@ class FontCollection {
   void debugRegisterTestFonts() {
     _testFontManager = _FontManager();
     _testFontManager.registerAsset(
-        _testFontFamily, 'url($_testFontUrl)', const <String, String>{});
+        _ahemFontFamily, 'url($_ahemFontUrl)', const <String, String>{});
+    _testFontManager.registerAsset(
+        _robotoFontFamily, 'url($_robotoFontUrl)', const <String, String>{});
   }
 
   /// Returns a [Future] that completes when the registered fonts are loaded
@@ -123,11 +118,11 @@ class _FontManager {
     String asset,
     Map<String, String> descriptors,
   ) {
-    // Safari crashes if you create a [html.FontFace] with a font family that
-    // is not correct CSS syntax. To ensure the font family is accepted on
-    // Safari, wrap it in quotes.
+    // Safari and Firefox crash if you create a [html.FontFace] with a font
+    // family that is not correct CSS syntax. To ensure the font family is
+    // accepted on these browsers, wrap it in quotes.
     // See: https://drafts.csswg.org/css-fonts-3/#font-family-prop
-    if (browserEngine == BrowserEngine.webkit) {
+    if (browserEngine == BrowserEngine.webkit || browserEngine == BrowserEngine.firefox) {
       family = "'$family'";
     }
     // try/catch because `new FontFace` can crash with an improper font family.

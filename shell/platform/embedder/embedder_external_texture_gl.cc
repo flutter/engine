@@ -31,7 +31,11 @@ void EmbedderExternalTextureGL::Paint(SkCanvas& canvas,
   }
 
   if (last_image_) {
-    canvas.drawImage(last_image_, bounds.x(), bounds.y());
+    if (bounds != SkRect::Make(last_image_->bounds())) {
+      canvas.drawImageRect(last_image_, bounds, nullptr);
+    } else {
+      canvas.drawImage(last_image_, bounds.x(), bounds.y());
+    }
   }
 }
 
@@ -43,5 +47,8 @@ void EmbedderExternalTextureGL::OnGrContextDestroyed() {}
 
 // |flutter::Texture|
 void EmbedderExternalTextureGL::MarkNewFrameAvailable() {}
+
+// |flutter::Texture|
+void EmbedderExternalTextureGL::OnTextureUnregistered() {}
 
 }  // namespace flutter

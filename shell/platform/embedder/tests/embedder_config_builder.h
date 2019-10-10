@@ -43,9 +43,9 @@ class EmbedderConfigBuilder {
 
   FlutterProjectArgs& GetProjectArgs();
 
-  void SetSoftwareRendererConfig();
+  void SetSoftwareRendererConfig(SkISize surface_size = SkISize::Make(1, 1));
 
-  void SetOpenGLRendererConfig();
+  void SetOpenGLRendererConfig(SkISize surface_size);
 
   void SetAssetsPath();
 
@@ -68,7 +68,7 @@ class EmbedderConfigBuilder {
 
   FlutterCompositor& GetCompositor();
 
-  UniqueEngine LaunchEngine();
+  UniqueEngine LaunchEngine() const;
 
  private:
   EmbedderTestContext& context_;

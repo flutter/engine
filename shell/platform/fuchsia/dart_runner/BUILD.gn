@@ -8,7 +8,7 @@ import("//build/fuchsia/sdk.gni")
 import("$flutter_root/common/fuchsia_config.gni")
 import("$flutter_root/tools/fuchsia/common_libs.gni")
 import("$flutter_root/tools/fuchsia/dart.gni")
-import("$flutter_root/tools/fuchsia/package_dir.gni")
+import("$flutter_root/tools/fuchsia/fuchsia_archive.gni")
 
 template("runner") {
   assert(defined(invoker.product), "The parameter 'product' must be defined")
@@ -53,15 +53,18 @@ template("runner") {
              "$flutter_root/shell/platform/fuchsia/dart-pkg/fuchsia",
              "$flutter_root/shell/platform/fuchsia/dart-pkg/zircon",
              "$flutter_root/shell/platform/fuchsia/runtime/dart/utils",
+             "$fuchsia_sdk_root/pkg:async",
              "$fuchsia_sdk_root/pkg:async-cpp",
+             "$fuchsia_sdk_root/pkg:async-default",
              "$fuchsia_sdk_root/pkg:async-loop",
              "$fuchsia_sdk_root/pkg:async-loop-cpp",
+             "$fuchsia_sdk_root/pkg:async-loop-default",
              "$fuchsia_sdk_root/pkg:fidl_cpp",
+             "$fuchsia_sdk_root/pkg:sys_cpp",
              "$fuchsia_sdk_root/pkg:syslog",
              "$fuchsia_sdk_root/pkg:trace",
              "$fuchsia_sdk_root/pkg:trace-provider-so",
-             "$fuchsia_sdk_root/pkg/lib/sys/cpp",
-             "$fuchsia_sdk_root/pkg/lib/vfs/cpp",
+             "$fuchsia_sdk_root/pkg:vfs_cpp",
              "//third_party/tonic",
            ] + dart_deps + extra_deps
   }
@@ -97,7 +100,7 @@ template("jit_runner_package") {
     product_suffix = "_product"
   }
 
-  package_dir(target_name) {
+  fuchsia_archive(target_name) {
     deps = [
       ":dart_jit${product_suffix}_runner_bin",
       "kernel:kernel_core_snapshot${product_suffix}",

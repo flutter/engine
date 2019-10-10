@@ -82,7 +82,10 @@ class PointerBinding {
 
   void _onPointerData(List<ui.PointerData> data) {
     final ui.PointerDataPacket packet = ui.PointerDataPacket(data: data);
-    ui.window?.onPointerDataPacket(packet);
+    final ui.PointerDataPacketCallback callback = ui.window.onPointerDataPacket;
+    if (callback != null) {
+      callback(packet);
+    }
   }
 }
 
@@ -98,6 +101,24 @@ class PointerSupportDetector {
       'pointers:$hasPointerEvents, touch:$hasTouchEvents, mouse:$hasMouseEvents';
 }
 
+class _PressedButton {
+  const _PressedButton(this.deviceId, this.button);
+
+  // The id of the device pressing the button.
+  final int deviceId;
+
+  // The id of the button being pressed.
+  final int button;
+
+  bool operator ==(other) {
+    if (other is! _PressedButton) return false;
+    final _PressedButton otherButton = other;
+    return deviceId == otherButton.deviceId && button == otherButton.button;
+  }
+
+  int get hashCode => ((13801 + deviceId) * 37) + button;
+}
+
 /// Common functionality that's shared among adapters.
 abstract class BaseAdapter {
   static final Map<String, html.EventListener> _listeners =
@@ -105,13 +126,20 @@ abstract class BaseAdapter {
 
   final DomRenderer domRenderer;
   PointerDataCallback _callback;
-  Map<int, bool> _isDownMap = <int, bool>{};
-  bool _isButtonDown(int button) {
-    return _isDownMap[button] == true;
+
+  // A set of the buttons that are currently being pressed.
+  Set<_PressedButton> _pressedButtons = Set<_PressedButton>();
+
+  bool _isButtonDown(int device, int button) {
+    return _pressedButtons.contains(_PressedButton(device, button));
   }
 
-  void _updateButtonDownState(int button, bool value) {
-    _isDownMap[button] = value;
+  void _updateButtonDownState(int device, int button, bool value) {
+    if (value) {
+      _pressedButtons.add(_PressedButton(device, button));
+    } else {
+      _pressedButtons.remove(_PressedButton(device, button));
+    }
   }
 
   BaseAdapter(this._callback, this.domRenderer) {
@@ -126,7 +154,7 @@ abstract class BaseAdapter {
   void clearListeners() {
     final html.Element glassPane = domRenderer.glassPaneElement;
     _listeners.forEach((String eventName, html.EventListener listener) {
-      glassPane.removeEventListener(eventName, listener);
+      glassPane.removeEventListener(eventName, listener, true);
     });
     _listeners.clear();
   }
@@ -167,6 +195,14 @@ int _pointerButtonFromHtmlEvent(html.Event event) {
   return _kPrimaryMouseButton;
 }
 
+int _deviceFromHtmlEvent(event) {
+  if (event is html.PointerEvent) {
+    final html.PointerEvent pointerEvent = event;
+    return pointerEvent.pointerId;
+  }
+  return _mouseDeviceId;
+}
+
 /// Adapter class to be used with browsers that support native pointer events.
 class PointerAdapter extends BaseAdapter {
   PointerAdapter(PointerDataCallback callback, DomRenderer domRenderer)
@@ -176,12 +212,13 @@ class PointerAdapter extends BaseAdapter {
   void _setup() {
     _addEventListener('pointerdown', (html.Event event) {
       final int pointerButton = _pointerButtonFromHtmlEvent(event);
-      if (_isButtonDown(pointerButton)) {
+      final int device = _deviceFromHtmlEvent(event);
+      if (_isButtonDown(device, pointerButton)) {
         // TODO(flutter_web): Remove this temporary fix for right click
         // on web platform once context guesture is implemented.
         _callback(_convertEventToPointerData(ui.PointerChange.up, event));
       }
-      _updateButtonDownState(pointerButton, true);
+      _updateButtonDownState(device, pointerButton, true);
       _callback(_convertEventToPointerData(ui.PointerChange.down, event));
     });
 
@@ -192,8 +229,9 @@ class PointerAdapter extends BaseAdapter {
       // Change this when context gesture is implemented in flutter framework.
       final html.PointerEvent pointerEvent = event;
       final int pointerButton = _pointerButtonFromHtmlEvent(pointerEvent);
+      final int device = _deviceFromHtmlEvent(event);
       final List<ui.PointerData> data = _convertEventToPointerData(
-          _isButtonDown(pointerButton)
+          _isButtonDown(device, pointerButton)
               ? ui.PointerChange.move
               : ui.PointerChange.hover,
           pointerEvent);
@@ -211,10 +249,11 @@ class PointerAdapter extends BaseAdapter {
       // The pointer could have been released by a `pointerout` event, in which
       // case `pointerup` should have no effect.
       final int pointerButton = _pointerButtonFromHtmlEvent(event);
-      if (!_isButtonDown(pointerButton)) {
+      final int device = _deviceFromHtmlEvent(event);
+      if (!_isButtonDown(device, pointerButton)) {
         return;
       }
-      _updateButtonDownState(pointerButton, false);
+      _updateButtonDownState(device, pointerButton, false);
       _callback(_convertEventToPointerData(ui.PointerChange.up, event));
     });
 
@@ -222,7 +261,8 @@ class PointerAdapter extends BaseAdapter {
     // be able to generate events (example: device is deactivated)
     _addEventListener('pointercancel', (html.Event event) {
       final int pointerButton = _pointerButtonFromHtmlEvent(event);
-      _updateButtonDownState(pointerButton, false);
+      final int device = _deviceFromHtmlEvent(event);
+      _updateButtonDownState(pointerButton, device, false);
       _callback(_convertEventToPointerData(ui.PointerChange.cancel, event));
     });
 
@@ -305,13 +345,14 @@ class TouchAdapter extends BaseAdapter {
   @override
   void _setup() {
     _addEventListener('touchstart', (html.Event event) {
-      _updateButtonDownState(_kPrimaryMouseButton, true);
+      _updateButtonDownState(
+          _deviceFromHtmlEvent(event), _kPrimaryMouseButton, true);
       _callback(_convertEventToPointerData(ui.PointerChange.down, event));
     });
 
     _addEventListener('touchmove', (html.Event event) {
       event.preventDefault(); // Prevents standard overscroll on iOS/Webkit.
-      if (!_isButtonDown(_kPrimaryMouseButton)) {
+      if (!_isButtonDown(_deviceFromHtmlEvent(event), _kPrimaryMouseButton)) {
         return;
       }
       _callback(_convertEventToPointerData(ui.PointerChange.move, event));
@@ -321,13 +362,9 @@ class TouchAdapter extends BaseAdapter {
       // On Safari Mobile, the keyboard does not show unless this line is
       // added.
       event.preventDefault();
-      _updateButtonDownState(_kPrimaryMouseButton, false);
+      _updateButtonDownState(
+          _deviceFromHtmlEvent(event), _kPrimaryMouseButton, false);
       _callback(_convertEventToPointerData(ui.PointerChange.up, event));
-      if (textEditing.needsKeyboard &&
-          browserEngine == BrowserEngine.webkit &&
-          operatingSystem == OperatingSystem.iOs) {
-        textEditing.editingElement.configureInputElementForIOS();
-      }
     });
 
     _addEventListener('touchcancel', (html.Event event) {
@@ -374,19 +411,21 @@ class MouseAdapter extends BaseAdapter {
   void _setup() {
     _addEventListener('mousedown', (html.Event event) {
       final int pointerButton = _pointerButtonFromHtmlEvent(event);
-      if (_isButtonDown(pointerButton)) {
+      final int device = _deviceFromHtmlEvent(event);
+      if (_isButtonDown(device, pointerButton)) {
         // TODO(flutter_web): Remove this temporary fix for right click
         // on web platform once context guesture is implemented.
         _callback(_convertEventToPointerData(ui.PointerChange.up, event));
       }
-      _updateButtonDownState(pointerButton, true);
+      _updateButtonDownState(device, pointerButton, true);
       _callback(_convertEventToPointerData(ui.PointerChange.down, event));
     });
 
     _addEventListener('mousemove', (html.Event event) {
       final int pointerButton = _pointerButtonFromHtmlEvent(event);
+      final int device = _deviceFromHtmlEvent(event);
       final List<ui.PointerData> data = _convertEventToPointerData(
-          _isButtonDown(pointerButton)
+          _isButtonDown(device, pointerButton)
               ? ui.PointerChange.move
               : ui.PointerChange.hover,
           event);
@@ -394,7 +433,8 @@ class MouseAdapter extends BaseAdapter {
     });
 
     _addEventListener('mouseup', (html.Event event) {
-      _updateButtonDownState(_pointerButtonFromHtmlEvent(event), false);
+      final int device = _deviceFromHtmlEvent(event);
+      _updateButtonDownState(device, _pointerButtonFromHtmlEvent(event), false);
       _callback(_convertEventToPointerData(ui.PointerChange.up, event));
     });
 

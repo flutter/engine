@@ -8,7 +8,8 @@
 library ui;
 
 import 'dart:async';
-import 'dart:collection';
+import 'dart:collection' as collection;
+import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -23,6 +24,7 @@ export 'src/engine.dart'
         webOnlyInitializeEngine;
 
 part 'src/ui/canvas.dart';
+part 'src/ui/channel_buffers.dart';
 part 'src/ui/compositing.dart';
 part 'src/ui/geometry.dart';
 part 'src/ui/hash_codes.dart';

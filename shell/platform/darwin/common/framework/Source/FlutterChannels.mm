@@ -6,6 +6,16 @@
 
 #pragma mark - Basic message channel
 
+static NSString* const FlutterChannelBuffersChannel = @"dev.flutter/channel-buffers";
+
+static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenger,
+                                NSString* channel,
+                                NSInteger newSize) {
+  NSString* messageString = [NSString stringWithFormat:@"resize\r%@\r%@", channel, @(newSize)];
+  NSData* message = [messageString dataUsingEncoding:NSUTF8StringEncoding];
+  [binaryMessenger sendOnChannel:FlutterChannelBuffersChannel message:message];
+}
+
 @implementation FlutterBasicMessageChannel {
   NSObject<FlutterBinaryMessenger>* _messenger;
   NSString* _name;
@@ -70,6 +80,11 @@
   };
   [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
 }
+
+- (void)resizeChannelBuffer:(NSInteger)newSize {
+  ResizeChannelBuffer(_messenger, _name, newSize);
+}
+
 @end
 
 #pragma mark - Method channel
@@ -225,6 +240,11 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
   };
   [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
 }
+
+- (void)resizeChannelBuffer:(NSInteger)newSize {
+  ResizeChannelBuffer(_messenger, _name, newSize);
+}
+
 @end
 
 #pragma mark - Event channel

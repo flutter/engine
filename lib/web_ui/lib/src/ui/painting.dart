@@ -275,11 +275,7 @@ class Color {
 
   @override
   String toString() {
-    if (engine.assertionsEnabled) {
-      return 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
-    } else {
-      return super.toString();
-    }
+    return 'Color(0x${value.toRadixString(16).padLeft(8, '0')})';
   }
 }
 
@@ -1192,36 +1188,32 @@ class Paint {
 
   @override
   String toString() {
-    if (engine.assertionsEnabled) {
-      final StringBuffer result = StringBuffer();
-      String semicolon = '';
-      result.write('Paint(');
-      if (style == PaintingStyle.stroke) {
-        result.write('$style');
-        if (strokeWidth != null && strokeWidth != 0.0)
-          result.write(' $strokeWidth');
-        else
-          result.write(' hairline');
-        if (strokeCap != null && strokeCap != StrokeCap.butt)
-          result.write(' $strokeCap');
-        semicolon = '; ';
-      }
-      if (isAntiAlias != true) {
-        result.write('${semicolon}antialias off');
-        semicolon = '; ';
-      }
-      if (color != _defaultPaintColor) {
-        if (color != null)
-          result.write('$semicolon$color');
-        else
-          result.write('${semicolon}no color');
-        semicolon = '; ';
-      }
-      result.write(')');
-      return result.toString();
-    } else {
-      return super.toString();
+    final StringBuffer result = StringBuffer();
+    String semicolon = '';
+    result.write('Paint(');
+    if (style == PaintingStyle.stroke) {
+      result.write('$style');
+      if (strokeWidth != null && strokeWidth != 0.0)
+        result.write(' $strokeWidth');
+      else
+        result.write(' hairline');
+      if (strokeCap != null && strokeCap != StrokeCap.butt)
+        result.write(' $strokeCap');
+      semicolon = '; ';
     }
+    if (isAntiAlias != true) {
+      result.write('${semicolon}antialias off');
+      semicolon = '; ';
+    }
+    if (color != _defaultPaintColor) {
+      if (color != null)
+        result.write('$semicolon$color');
+      else
+        result.write('${semicolon}no color');
+      semicolon = '; ';
+    }
+    result.write(')');
+    return result.toString();
   }
 }
 
@@ -1408,9 +1400,64 @@ class ColorFilter {
       : _color = color,
         _blendMode = blendMode;
 
-  /// Construct a color filter that transforms a color by a 4x5 matrix. The
-  /// matrix is in row-major order and the translation column is specified in
-  /// unnormalized, 0...255, space.
+  /// Construct a color filter that transforms a color by a 4x5 matrix.
+  ///
+  /// Every pixel's color value, repsented as an `[R, G, B, A]`, is matrix
+  /// multiplied to create a new color:
+  ///
+  /// ```
+  /// | R' |   | a00 a01 a02 a03 a04 |   | R |
+  /// | G' | = | a10 a11 a22 a33 a44 | * | G |
+  /// | B' |   | a20 a21 a22 a33 a44 |   | B |
+  /// | A' |   | a30 a31 a22 a33 a44 |   | A |
+  /// ```
+  ///
+  /// The matrix is in row-major order and the translation column is specified
+  /// in unnormalized, 0...255, space. For example, the identity matrix is:
+  ///
+  /// ```
+  /// const ColorMatrix identity = ColorFilter.matrix(<double>[
+  ///   1, 0, 0, 0, 0,
+  ///   0, 1, 0, 0, 0,
+  ///   0, 0, 1, 0, 0,
+  ///   0, 0, 0, 1, 0,
+  /// ]);
+  /// ```
+  ///
+  /// ## Examples
+  ///
+  /// An inversion color matrix:
+  ///
+  /// ```
+  /// const ColorFilter invert = ColorFilter.matrix(<double>[
+  ///   -1,  0,  0, 0, 255,
+  ///    0, -1,  0, 0, 255,
+  ///    0,  0, -1, 0, 255,
+  ///    0,  0,  0, 1,   0,
+  /// ]);
+  /// ```
+  ///
+  /// A sepia-toned color matrix (values based on the [Filter Effects Spec](https://www.w3.org/TR/filter-effects-1/#sepiaEquivalent)):
+  ///
+  /// ```
+  /// const ColorFilter sepia = ColorFilter.matrix(<double>[
+  ///   0.393, 0.769, 0.189, 0, 0,
+  ///   0.349, 0.686, 0.168, 0, 0,
+  ///   0.272, 0.534, 0.131, 0, 0,
+  ///   0,     0,     0,     1, 0,
+  /// ]);
+  /// ```
+  ///
+  /// A greyscale color filter (values based on the [Filter Effects Spec](https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent)):
+  ///
+  /// ```
+  /// const ColorFilter greyscale = ColorFilter.matrix(<double>[
+  ///   0.2126, 0.7152, 0.0722, 0, 0,
+  ///   0.2126, 0.7152, 0.0722, 0, 0,
+  ///   0.2126, 0.7152, 0.0722, 0, 0,
+  ///   0,      0,      0,      1, 0,
+  /// ]);
+  /// ```
   const ColorFilter.matrix(List<double> matrix)
       : _color = null,
         _blendMode = null;
@@ -1447,9 +1494,7 @@ class ColorFilter {
   }
 
   @override
-  String toString() => engine.assertionsEnabled
-      ? 'ColorFilter($_color, $_blendMode)'
-      : super.toString();
+  String toString() => 'ColorFilter($_color, $_blendMode)';
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
@@ -1715,9 +1760,12 @@ class Codec {
 ///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
-Future<Codec> instantiateImageCodec(Uint8List list,
-    {double decodedCacheRatioCap = double.infinity}) {
+Future<Codec> instantiateImageCodec(Uint8List list, {
+  int targetWidth,
+  int targetHeight,
+}) {
   return engine.futurize((engine.Callback<Codec> callback) =>
+      // TODO: Implement targetWidth and targetHeight support.
       _instantiateImageCodec(list, callback, null));
 }
 

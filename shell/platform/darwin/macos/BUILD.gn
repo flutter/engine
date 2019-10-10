@@ -29,6 +29,7 @@ _flutter_framework_dir = "$root_out_dir/$_flutter_framework_filename"
 # The headers that will be copied to the framework and be accessed from outside
 # the Flutter engine source root.
 _flutter_framework_headers = [
+  "framework/Headers/FlutterAppDelegate.h",
   "framework/Headers/FlutterDartProject.h",
   "framework/Headers/FlutterEngine.h",
   "framework/Headers/FlutterMacOS.h",
@@ -46,10 +47,13 @@ shared_library("create_flutter_framework_dylib") {
   output_name = "$_flutter_framework_name"
 
   sources = [
+    "framework/Source/FlutterAppDelegate.mm",
     "framework/Source/FlutterDartProject.mm",
     "framework/Source/FlutterDartProject_Internal.h",
     "framework/Source/FlutterEngine.mm",
     "framework/Source/FlutterEngine_Internal.h",
+    "framework/Source/FlutterExternalTextureGL.h",
+    "framework/Source/FlutterExternalTextureGL.mm",
     "framework/Source/FlutterTextInputModel.h",
     "framework/Source/FlutterTextInputModel.mm",
     "framework/Source/FlutterTextInputPlugin.h",
@@ -73,7 +77,10 @@ shared_library("create_flutter_framework_dylib") {
 
   cflags_objcc = [ "-fobjc-arc" ]
 
-  libs = [ "Cocoa.framework" ]
+  libs = [
+    "Cocoa.framework",
+    "CoreVideo.framework",
+  ]
 }
 
 action("copy_dylib_and_update_framework_install_name") {

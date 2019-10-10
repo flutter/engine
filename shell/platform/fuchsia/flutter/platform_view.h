@@ -17,6 +17,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/shell/common/platform_view.h"
+#include "flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h"
 #include "lib/fidl/cpp/binding.h"
 #include "lib/ui/scenic/cpp/id.h"
 
@@ -37,11 +38,15 @@ using OnEnableWireframe = fit::function<void(bool)>;
 // thread.
 class PlatformView final : public flutter::PlatformView,
                            private fuchsia::ui::scenic::SessionListener,
-                           public fuchsia::ui::input::InputMethodEditorClient {
+                           public fuchsia::ui::input::InputMethodEditorClient,
+                           public AccessibilityBridge::Delegate {
  public:
-  PlatformView(PlatformView::Delegate& delegate,
+  PlatformView(flutter::PlatformView::Delegate& delegate,
                std::string debug_label,
+               fuchsia::ui::views::ViewRefControl view_ref_control,
+               fuchsia::ui::views::ViewRef view_ref,
                flutter::TaskRunners task_runners,
+               std::shared_ptr<sys::ServiceDirectory> runner_services,
                fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
                    parent_environment_service_provider,
                fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener>
@@ -51,7 +56,7 @@ class PlatformView final : public flutter::PlatformView,
                OnSizeChangeHint session_size_change_hint_callback,
                OnEnableWireframe wireframe_enabled_callback,
                zx_handle_t vsync_event_handle);
-  PlatformView(PlatformView::Delegate& delegate,
+  PlatformView(flutter::PlatformView::Delegate& delegate,
                std::string debug_label,
                flutter::TaskRunners task_runners,
                fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
@@ -62,8 +67,17 @@ class PlatformView final : public flutter::PlatformView,
 
   void UpdateViewportMetrics(const fuchsia::ui::gfx::Metrics& metrics);
 
+  // |flutter::PlatformView|
+  // |flutter_runner::AccessibilityBridge::Delegate|
+  void SetSemanticsEnabled(bool enabled) override;
+
  private:
   const std::string debug_label_;
+  // TODO(MI4-2490): remove once ViewRefControl is passed to Scenic and kept
+  // alive there
+  const fuchsia::ui::views::ViewRefControl view_ref_control_;
+  const fuchsia::ui::views::ViewRef view_ref_;
+  std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
 
   fidl::Binding<fuchsia::ui::scenic::SessionListener> session_listener_binding_;
   fit::closure session_listener_error_callback_;

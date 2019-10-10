@@ -18,6 +18,7 @@ import 'dart:typed_data';
 import 'package:test/test.dart';
 
 // HACK: these parts are to get access to private functions tested here.
+part '../../lib/ui/channel_buffers.dart';
 part '../../lib/ui/compositing.dart';
 part '../../lib/ui/geometry.dart';
 part '../../lib/ui/hash_codes.dart';
@@ -338,13 +339,6 @@ void main() {
     });
 
     test('Window padding/insets/viewPadding/systemGestureInsets', () {
-      final double oldDPR = window.devicePixelRatio;
-      final Size oldSize = window.physicalSize;
-      final double oldPhysicalDepth = window.physicalDepth;
-      final WindowPadding oldPadding = window.viewPadding;
-      final WindowPadding oldInsets = window.viewInsets;
-      final WindowPadding oldSystemGestureInsets = window.systemGestureInsets;
-
       _updateWindowMetrics(
         1.0,   // DPR
         800.0, // width

@@ -5,6 +5,8 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
 
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
+#include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
@@ -15,16 +17,33 @@ EmbedderTestContext::EmbedderTestContext(std::string assets_path)
       native_resolver_(std::make_shared<TestDartNativeResolver>()) {
   auto assets_dir = fml::OpenDirectory(assets_path_.c_str(), false,
                                        fml::FilePermission::kRead);
-  vm_snapshot_data_ =
-      fml::FileMapping::CreateReadOnly(assets_dir, "vm_snapshot_data");
-  isolate_snapshot_data_ =
-      fml::FileMapping::CreateReadOnly(assets_dir, "isolate_snapshot_data");
 
   if (flutter::DartVM::IsRunningPrecompiledCode()) {
-    vm_snapshot_instructions_ =
-        fml::FileMapping::CreateReadExecute(assets_dir, "vm_snapshot_instr");
-    isolate_snapshot_instructions_ = fml::FileMapping::CreateReadExecute(
-        assets_dir, "isolate_snapshot_instr");
+    std::string filename(assets_path_);
+    filename += "/app_elf_snapshot.so";
+
+    const uint8_t *vm_snapshot_data = nullptr,
+                  *vm_snapshot_instructions = nullptr,
+                  *isolate_snapshot_data = nullptr,
+                  *isolate_snapshot_instructions = nullptr;
+    const char* error = nullptr;
+
+    elf_library_handle_ =
+        Dart_LoadELF(filename.c_str(), /*file_offset=*/0, &error,
+                     &vm_snapshot_data, &vm_snapshot_instructions,
+                     &isolate_snapshot_data, &isolate_snapshot_instructions);
+
+    if (elf_library_handle_ != nullptr) {
+      vm_snapshot_data_.reset(new fml::NonOwnedMapping(vm_snapshot_data, 0));
+      vm_snapshot_instructions_.reset(
+          new fml::NonOwnedMapping(vm_snapshot_instructions, 0));
+      isolate_snapshot_data_.reset(
+          new fml::NonOwnedMapping(isolate_snapshot_data, 0));
+      isolate_snapshot_instructions_.reset(
+          new fml::NonOwnedMapping(isolate_snapshot_instructions, 0));
+    } else {
+      FML_LOG(WARNING) << "Could not load snapshot: " << error;
+    }
   }
 
   isolate_create_callbacks_.push_back(
@@ -36,7 +55,11 @@ EmbedderTestContext::EmbedderTestContext(std::string assets_path)
       });
 }
 
-EmbedderTestContext::~EmbedderTestContext() = default;
+EmbedderTestContext::~EmbedderTestContext() {
+  if (elf_library_handle_ != nullptr) {
+    Dart_UnloadELF(elf_library_handle_);
+  }
+}
 
 const std::string& EmbedderTestContext::GetAssetsPath() const {
   return assets_path_;
@@ -57,6 +80,10 @@ const fml::Mapping* EmbedderTestContext::GetIsolateSnapshotData() const {
 const fml::Mapping* EmbedderTestContext::GetIsolateSnapshotInstructions()
     const {
   return isolate_snapshot_instructions_.get();
+}
+
+void EmbedderTestContext::SetRootSurfaceTransformation(SkMatrix matrix) {
+  root_surface_transformation_ = matrix;
 }
 
 void EmbedderTestContext::AddIsolateCreateCallback(fml::closure closure) {
@@ -126,10 +153,9 @@ EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook() {
   };
 }
 
-void EmbedderTestContext::SetupOpenGLSurface() {
-  if (!gl_surface_) {
-    gl_surface_ = std::make_unique<TestGLSurface>();
-  }
+void EmbedderTestContext::SetupOpenGLSurface(SkISize surface_size) {
+  FML_CHECK(!gl_surface_);
+  gl_surface_ = std::make_unique<TestGLSurface>(surface_size);
 }
 
 bool EmbedderTestContext::GLMakeCurrent() {
@@ -143,16 +169,11 @@ bool EmbedderTestContext::GLClearCurrent() {
 }
 
 bool EmbedderTestContext::GLPresent() {
-  gl_surface_present_count_++;
   FML_CHECK(gl_surface_) << "GL surface must be initialized.";
+  gl_surface_present_count_++;
 
-  if (next_scene_callback_) {
-    auto raster_snapshot = gl_surface_->GetRasterSurfaceSnapshot();
-    FML_CHECK(raster_snapshot);
-    auto callback = next_scene_callback_;
-    next_scene_callback_ = nullptr;
-    callback(std::move(raster_snapshot));
-  }
+  FireRootSurfacePresentCallbackIfPresent(
+      [&]() { return gl_surface_->GetRasterSurfaceSnapshot(); });
 
   if (!gl_surface_->Present()) {
     return false;
@@ -176,18 +197,21 @@ void* EmbedderTestContext::GLGetProcAddress(const char* name) {
   return gl_surface_->GetProcAddress(name);
 }
 
+FlutterTransformation EmbedderTestContext::GetRootSurfaceTransformation() {
+  return FlutterTransformationMake(root_surface_transformation_);
+}
+
 void EmbedderTestContext::SetupCompositor() {
-  if (compositor_) {
-    return;
-  }
-  SetupOpenGLSurface();
-  compositor_ =
-      std::make_unique<EmbedderTestCompositor>(gl_surface_->GetGrContext());
+  FML_CHECK(!compositor_) << "Already ssetup a compositor in this context.";
+  FML_CHECK(gl_surface_)
+      << "Setup the GL surface before setting up a compositor.";
+  compositor_ = std::make_unique<EmbedderTestCompositor>(
+      gl_surface_->GetSurfaceSize(), gl_surface_->GetGrContext());
 }
 
 EmbedderTestCompositor& EmbedderTestContext::GetCompositor() {
   FML_CHECK(compositor_)
-      << "Accessed the compositor on a context where one was not setup. Used "
+      << "Accessed the compositor on a context where one was not setup. Use "
          "the config builder to setup a context with a custom compositor.";
   return *compositor_;
 }
@@ -203,8 +227,10 @@ void EmbedderTestContext::SetNextSceneCallback(
 
 bool EmbedderTestContext::SofwarePresent(sk_sp<SkImage> image) {
   software_surface_present_count_++;
-  software_surface_ = std::move(image);
-  return software_surface_ != nullptr;
+
+  FireRootSurfacePresentCallbackIfPresent([image] { return image; });
+
+  return true;
 }
 
 size_t EmbedderTestContext::GetGLSurfacePresentCount() const {
@@ -213,6 +239,16 @@ size_t EmbedderTestContext::GetGLSurfacePresentCount() const {
 
 size_t EmbedderTestContext::GetSoftwareSurfacePresentCount() const {
   return software_surface_present_count_;
+}
+
+void EmbedderTestContext::FireRootSurfacePresentCallbackIfPresent(
+    std::function<sk_sp<SkImage>(void)> image_callback) {
+  if (!next_scene_callback_) {
+    return;
+  }
+  auto callback = next_scene_callback_;
+  next_scene_callback_ = nullptr;
+  callback(image_callback());
 }
 
 }  // namespace testing
