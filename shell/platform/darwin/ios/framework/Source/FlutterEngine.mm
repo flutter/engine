@@ -35,7 +35,6 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
 
 @property(nonatomic, readwrite, copy) NSString* isolateId;
-@property(nonatomic, retain) id<NSObject> flutterViewControllerWillDeallocObserver;
 @end
 
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
@@ -118,7 +117,6 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   [center removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
-  [_flutterViewControllerWillDeallocObserver release];
 
   [super dealloc];
 }
@@ -175,14 +173,11 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   _viewController = [viewController getWeakPtr];
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onFlutterVCWillDeallocNotif:) name:FlutterViewControllerWillDealloc object:viewController];
+}
 
-  self.flutterViewControllerWillDeallocObserver =
-      [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
-                                                        object:viewController
-                                                         queue:[NSOperationQueue mainQueue]
-                                                    usingBlock:^(NSNotification* note) {
-                                                      [self notifyViewControllerDeallocated];
-                                                    }];
+- (void)onFlutterVCWillDeallocNotif:(NSNotification *)aNotification {
+  [self notifyViewControllerDeallocated];
 }
 
 - (void)notifyViewControllerDeallocated {
@@ -638,6 +633,7 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 }
 
 - (void)dealloc {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
   [_pluginKey release];
   [_flutterEngine release];
   [super dealloc];
