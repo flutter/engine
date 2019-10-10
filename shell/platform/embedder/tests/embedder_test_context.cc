@@ -28,9 +28,10 @@ EmbedderTestContext::EmbedderTestContext(std::string assets_path)
                   *isolate_snapshot_instructions = nullptr;
     const char* error = nullptr;
 
-    elf_library_handle_ = Dart_LoadELF(
-        filename.c_str(), &error, &vm_snapshot_data, &vm_snapshot_instructions,
-        &isolate_snapshot_data, &isolate_snapshot_instructions);
+    elf_library_handle_ =
+        Dart_LoadELF(filename.c_str(), /*file_offset=*/0, &error,
+                     &vm_snapshot_data, &vm_snapshot_instructions,
+                     &isolate_snapshot_data, &isolate_snapshot_instructions);
 
     if (elf_library_handle_ != nullptr) {
       vm_snapshot_data_.reset(new fml::NonOwnedMapping(vm_snapshot_data, 0));

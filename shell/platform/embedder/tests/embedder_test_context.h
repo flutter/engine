@@ -73,7 +73,7 @@ class EmbedderTestContext {
   std::string assets_path_;
 
   // Pieces of the Dart snapshot in ELF form, loaded by Dart's ELF library.
-  LoadedElfLibrary elf_library_handle_ = nullptr;
+  Dart_LoadedElf* elf_library_handle_ = nullptr;
   std::unique_ptr<fml::Mapping> vm_snapshot_data_;
   std::unique_ptr<fml::Mapping> vm_snapshot_instructions_;
   std::unique_ptr<fml::Mapping> isolate_snapshot_data_;
