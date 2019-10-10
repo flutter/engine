@@ -111,7 +111,6 @@ class AutoIsolateShutdown {
       FML_LOG(INFO) << "Shutting down isolate.";
       if (!isolate->Shutdown()) {
         FML_LOG(ERROR) << "Could not shutdown isolate.";
-        FML_CHECK(false);
       }
       latch.Signal();
     });
@@ -407,9 +406,8 @@ TEST_F(DartIsolateTest, CanRecieveArguments) {
 
 TEST_F(DartIsolateTest, RootIsolateShutdownStopsChildIsolates) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
-  fml::CountDownLatch latch(9);
-  fml::CountDownLatch shutdown_latch(4);
-  fml::AutoResetWaitableEvent child_shutdown_latch;
+  fml::CountDownLatch latch(12);
+  fml::CountDownLatch shutdown_latch(5);
   AddNativeCallback("NotifyNative",
                     CREATE_NATIVE_ENTRY(([&latch](Dart_NativeArguments args) {
                       latch.CountDown();
@@ -424,20 +422,13 @@ TEST_F(DartIsolateTest, RootIsolateShutdownStopsChildIsolates) {
 
   size_t destruction_callback_count = 0;
   auto settings = CreateSettingsForFixture();
-  settings.isolate_shutdown_callback = [&child_shutdown_latch, &shutdown_latch,
+  settings.isolate_shutdown_callback = [&shutdown_latch,
                                         &destruction_callback_count]() {
-    child_shutdown_latch.Signal();
     destruction_callback_count++;
     shutdown_latch.CountDown();
   };
   auto vm_ref = DartVMRef::Create(settings);
   auto vm_data = vm_ref.GetVMData();
-  TaskRunners task_runners(GetCurrentTestName(),    //
-                           GetCurrentTaskRunner(),  //
-                           GetCurrentTaskRunner(),  //
-                           GetCurrentTaskRunner(),  //
-                           GetCurrentTaskRunner()   //
-  );
 
   std::unique_ptr<AutoIsolateShutdown> isolate;
   fml::RefPtr<fml::TaskRunner> task_runner = CreateNewThread();
@@ -446,11 +437,11 @@ TEST_F(DartIsolateTest, RootIsolateShutdownStopsChildIsolates) {
         RunDartCodeInIsolate(vm_ref, isolate, settings, task_runner,
                              "testSecondaryIsolateShutdown", {});
       }));
-  child_shutdown_latch.Wait();  // wait for child isolate to shutdown first
   latch.Wait();  // wait for last NotifyNative called by main isolate
+  ASSERT_TRUE(isolate->get()->Shutdown() || true);
   shutdown_latch.Wait();
   // root isolate will be auto-shutdown
-  ASSERT_EQ(destruction_callback_count, 4u);
+  ASSERT_EQ(destruction_callback_count, 5u);
 }
 
 }  // namespace testing
