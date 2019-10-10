@@ -19,6 +19,10 @@
 
 namespace flutter {
 
+static void notificationHandler(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
+  (static_cast<PlatformViewIOS *>(observer))->OnFlutterViewControllerDealloced();
+}
+
 PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
                                  flutter::TaskRunners task_runners)
     : PlatformView(delegate, std::move(task_runners)) {
@@ -27,7 +31,13 @@ PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
 #endif  // !TARGET_IPHONE_SIMULATOR
 }
 
-PlatformViewIOS::~PlatformViewIOS() = default;
+PlatformViewIOS::~PlatformViewIOS() {
+  CFNotificationCenterRemoveEveryObserver
+  (
+    CFNotificationCenterGetLocalCenter(),
+    this
+  );
+};
 
 PlatformMessageRouter& PlatformViewIOS::GetPlatformMessageRouter() {
   return platform_message_router_;
@@ -54,15 +64,15 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
 
   // Add an observer that will clear out the owner_controller_ ivar and
   // the accessibility_bridge_ in case the view controller is deleted.
-  dealloc_view_controller_observer_.reset([[NSNotificationCenter defaultCenter]
-      addObserverForName:FlutterViewControllerWillDealloc
-                  object:owner_controller_.get()
-                   queue:[NSOperationQueue mainQueue]
-              usingBlock:^(NSNotification* note) {
-                // Implicit copy of 'this' is fine.
-                accessibility_bridge_.reset();
-                owner_controller_.reset();
-              }]);
+  CFNotificationCenterAddObserver
+  (
+      CFNotificationCenterGetLocalCenter(),
+      this,
+      &notificationHandler,
+      (__bridge CFStringRef)FlutterViewControllerWillDealloc,
+      owner_controller_.get(),
+      CFNotificationSuspensionBehaviorDeliverImmediately
+  );
 
   if (owner_controller_) {
     ios_surface_ =
@@ -79,6 +89,11 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
     // it can occasionally get invoked before the viewport is sized resulting in
     // a framebuffer that will not be able to completely attach.
   }
+}
+
+void PlatformViewIOS::OnFlutterViewControllerDealloced() {
+    accessibility_bridge_.reset();
+    owner_controller_.reset();
 }
 
 PointerDataDispatcherMaker PlatformViewIOS::GetDispatcherMaker() {
