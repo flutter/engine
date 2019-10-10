@@ -21,7 +21,7 @@ source_set("glad") {
   ]
 
   deps = [
-    ":gen_glad_sources",
+    ":gen_glad_sources"
   ]
 }
 
@@ -33,5 +33,5 @@ action("gen_glad_sources") {
     "$_glad_gen_dir/include/KHR/khrplatform.h"
   ]
 
-  args = [ rebase_path("$_glad_gen_dir") ]
+  args = [ "--output", rebase_path("$_glad_gen_dir") ]
 }
