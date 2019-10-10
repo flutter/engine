@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/build/zip_bundle.gni")
+
 if (is_android) {
   action("flutter_services") {
     script = "$flutter_root/sky/tools/dist_dart_pkg.py"
@@ -80,8 +82,23 @@ if (is_android) {
   }
 }
 
-group("dist") {
+zip_bundle("dist") {
   if (is_android) {
+    output = "$root_build_dir/sky_engine.zip"
+    files = [
+      {
+        source = "$root_build_dir/dist/packages/flutter_services"
+        destination = "flutter_services"
+      },
+      {
+        source = "$root_build_dir/dist/packages/sky_engine"
+        destination = "sky_engine"
+      },
+      {
+        source = "$root_build_dir/dist/packages/sky_services"
+        destination = "sky_services"
+      },
+    ]
     deps = [
       ":flutter_services",
       ":sky_engine",
