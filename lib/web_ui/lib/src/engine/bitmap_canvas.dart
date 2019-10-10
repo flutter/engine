@@ -668,9 +668,12 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       #version 300 es
       layout (location=0) in vec4 position;
       layout (location=1) in vec4 color;
+      uniform vec4 u_scale;
+      uniform vec4 u_shift;
+      
       out vec4 vColor;
       void main() {
-        gl_Position = position;
+        gl_Position = (position * u_scale) + u_shift;
         vColor = color;
       }''';
   static const _fragmentShaderTriangle = '''
@@ -695,10 +698,13 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   /// If colors is specified, convert colors to premultiplied (alpha) colors
   /// and use a SkTriColorShader to render.
   @override
-  void drawVertices(ui.Vertices vertices, ui.BlendMode blendMode,
-      ui.PaintData paint) {
+  void drawVertices(
+      ui.Vertices vertices, ui.BlendMode blendMode, ui.PaintData paint) {
+    // TODO(flutter_web): Implement shaders for [Paint.shader] and
+    // blendMode. https://github.com/flutter/flutter/issues/40096
     assert(paint.shader == null,
         'Linear/Radial/SweepGradient and ImageShader not supported yet');
+    assert(blendMode == ui.BlendMode.srcOver);
     final Int32List colors = vertices.colors;
     final ui.VertexMode mode = vertices.mode;
     if (colors == null) {
@@ -714,6 +720,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       width: _widthInBitmapPixels,
       height: _heightInBitmapPixels,
     );
+
     glCanvas.style
       ..position = 'absolute'
       ..width = _canvas.style.width
@@ -726,8 +733,10 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     _GlContext gl = _GlContext(glCanvas);
 
     // Create and compile shaders.
-    Object vertexShader = gl.compileShader('VERTEX_SHADER', _vertexShaderTriangle);
-    Object fragmentShader = gl.compileShader('FRAGMENT_SHADER', _fragmentShaderTriangle);
+    Object vertexShader =
+        gl.compileShader('VERTEX_SHADER', _vertexShaderTriangle);
+    Object fragmentShader =
+        gl.compileShader('FRAGMENT_SHADER', _fragmentShaderTriangle);
     // Create a gl program and link shaders.
     Object program = gl.createProgram();
     gl.attachShader(program, vertexShader);
@@ -735,37 +744,36 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     gl.linkProgram(program);
     gl.useProgram(program);
 
+    // Set uniform to scale 0..width/height pixels coordinates to -1..1
+    // clipspace range and flip the Y axis.
+    Object resolution = gl.getUniformLocation(program, 'u_scale');
+    gl.setUniform4f(resolution, 2.0 / _widthInBitmapPixels.toDouble(),
+        -2.0 / _heightInBitmapPixels.toDouble(), 1, 1);
+    Object shift = gl.getUniformLocation(program, 'u_shift');
+    gl.setUniform4f(shift, -1, 1, 0, 0);
+
     // Setup geometry.
     Object positionsBuffer = gl.createBuffer();
     assert(positionsBuffer != null);
     gl.bindArrayBuffer(positionsBuffer);
     final Float32List positions = vertices.positions;
-    int positionCount = positions.length;
-    Float32List scaledList = Float32List(3 * positionCount ~/ 2);
-    for (int i = 0, destIndex = 0; i < positionCount; i += 2, destIndex += 3) {
-      // Scale.
-      scaledList[destIndex] =
-          ((positions[i]) / (_widthInBitmapPixels / 2)) - 1;
-      // Scale + invert axis.
-      scaledList[destIndex + 1] =
-          -(positions[i + 1] / (_heightInBitmapPixels / 2)) + 1;// + (_heightInBitmapPixels / 2) / _heightInBitmapPixels;
-      // Set depth to 0.
-      scaledList[destIndex + 2] = 0.0;
-    }
-    gl.bufferData(scaledList, gl.STATIC_DRAW);
-    js_util.callMethod(gl.glContext, 'vertexAttribPointer', [0, 3, gl.FLOAT, false, 0 , 0]);
+    gl.bufferData(positions, gl.kStaticDraw);
+    js_util.callMethod(
+        gl.glContext, 'vertexAttribPointer', [0, 2, gl.kFloat, false, 0, 0]);
     gl.enableVertexAttribArray(0);
 
     // Setup color buffer.
     Object colorsBuffer = gl.createBuffer();
     gl.bindArrayBuffer(colorsBuffer);
     // Buffer kBGRA_8888.
-    gl.bufferData(colors, gl.STATIC_DRAW);
+    gl.bufferData(colors, gl.kStaticDraw);
 
-    js_util.callMethod(gl.glContext, 'vertexAttribPointer', [1, 4, gl.UNSIGNED_BYTE, true, 0 , 0]);
+    js_util.callMethod(gl.glContext, 'vertexAttribPointer',
+        [1, 4, gl.kUnsignedByte, true, 0, 0]);
     gl.enableVertexAttribArray(1);
     gl.clear();
-    gl.drawTriangles(positionCount ~/ 2, mode);
+    final int vertexCount = positions.length ~/ 2;
+    gl.drawTriangles(vertexCount, mode);
   }
 
   void _drawHairline(Float32List positions, ui.Color color) {
@@ -797,8 +805,8 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   }
 
   // Converts from [VertexMode] triangleFan and triangleStrip to triangles.
-  Float32List _convertVertexPositions(ui.VertexMode mode, Float32List
-      positions) {
+  Float32List _convertVertexPositions(
+      ui.VertexMode mode, Float32List positions) {
     assert(mode != ui.VertexMode.triangles);
     if (mode == ui.VertexMode.triangleFan) {
       final int coordinateCount = positions.length ~/ 2;
@@ -808,7 +816,8 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       double centerY = positions[1];
       int destIndex = 0;
       int positionIndex = 2;
-      for (int triangleIndex = 0; triangleIndex < triangleCount;
+      for (int triangleIndex = 0;
+          triangleIndex < triangleCount;
           triangleIndex++, positionIndex += 2) {
         triangleList[destIndex++] = centerX;
         triangleList[destIndex++] = centerY;
@@ -821,7 +830,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     } else {
       // Set of connected triangles. Each triangle shares 2 last vertices.
       final int vertexCount = positions.length ~/ 2;
-      int triangleCount = vertexCount  - 2;
+      int triangleCount = vertexCount - 2;
       double x0 = positions[0];
       double y0 = positions[1];
       double x1 = positions[2];
@@ -844,74 +853,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       }
       return triangleList;
     }
-  }
-
-  ui.Path _verticesToPath(ui.Vertices vertices) {
-    final Float32List positions = vertices.positions;
-    final ui.Path path = ui.Path();
-    final int vertexCount = positions.length ~/ 2;
-    switch (vertices.mode) {
-      case ui.VertexMode.triangles:
-        for (int i = 0, len = vertexCount * 2; i < len;) {
-          for (int triangleIndex = 0; triangleIndex < 3; ++triangleIndex,
-          i += 2) {
-            final double dx = positions[i];
-            final double dy = positions[i + 1];
-            switch (triangleIndex) {
-              case 0:
-                path.moveTo(dx, dy);
-                break;
-              case 1:
-                path.lineTo(dx, dy);
-                break;
-              case 2:
-                path.lineTo(dx, dy);
-                path.close();
-                break;
-            }
-          }
-        }
-        break;
-      case ui.VertexMode.triangleFan:
-      // Set of triangles connected to a central point (first vertex).
-      // Each point defines new triangle connected to prior vertex.
-        final double centerX = positions[0];
-        final double centerY = positions[1];
-        for (int i = 2, len = vertexCount * 2; i < len; i += 2) {
-          final double dx1 = positions[i];
-          final double dy1 = positions[i + 1];
-          final double dx2 = positions[i + 2];
-          final double dy2 = positions[i + 3];
-          path.moveTo(centerX, centerY);
-          path.lineTo(dx1, dy1);
-          path.lineTo(dx2, dy2);
-          path.close();
-        }
-        break;
-      case ui.VertexMode.triangleStrip:
-        // Set of connected triangles. Each triangle shares 2 last vertices.
-        int triangleCount = vertexCount  - 2;
-        double x0 = positions[0];
-        double y0 = positions[1];
-        double x1 = positions[2];
-        double y1 = positions[3];
-        double x2 = positions[4];
-        double y2 = positions[5];
-        for (int i = 0, positionIndex = 6; i < triangleCount; i++, positionIndex += 2) {
-          path.moveTo(x0, y0);
-          path.lineTo(x1, y1);
-          path.lineTo(x2, y2);
-          path.close();
-          x0 = x1;
-          y0 = y1;
-          x1 = x2;
-          y1 = y2;
-          x2 = positions[positionIndex];
-          y2 = positions[positionIndex + 1];
-        }
-        break;
-    }
-    return path;
   }
 
   /// 'Runs' the given [path] by applying all of its commands to the canvas.
@@ -950,8 +891,8 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
             break;
           case PathCommandTypes.rRect:
             final RRectCommand rrectCommand = command;
-            _RRectToCanvasRenderer(ctx).render(rrectCommand.rrect,
-                startNewPath: false);
+            _RRectToCanvasRenderer(ctx)
+                .render(rrectCommand.rrect, startNewPath: false);
             break;
           case PathCommandTypes.rect:
             final RectCommand rectCommand = command;
@@ -1153,30 +1094,29 @@ String _cssTransformAtOffset(
       transformWithOffset(transform, ui.Offset(offsetX, offsetY)));
 }
 
-/// JS Interop wrapper around webgl apis.
+/// JS Interop helper for webgl apis.
 class _GlContext {
   final Object glContext;
-  dynamic _compileStatus;
-  dynamic _array_buffer;
-  dynamic _static_draw;
-  dynamic _float;
-  dynamic _color_buffer_bit;
-  dynamic _triangles;
-  dynamic _link_status;
-  dynamic _unsigned_byte;
+  dynamic _kCompileStatus;
+  dynamic _kArrayBuffer;
+  dynamic _kStaticDraw;
+  dynamic _kFloat;
+  dynamic _kColorBufferBit;
+  dynamic _kTriangles;
+  dynamic _kLinkStatus;
+  dynamic _kUnsignedByte;
 
   _GlContext(html.CanvasElement canvas)
       : glContext = canvas.getContext('webgl2');
 
   Object compileShader(String shaderType, String source) {
-    Object shader = js_util.callMethod(glContext, 'createShader',
-        [js_util.getProperty(glContext, shaderType)]);
+    Object shader = _createShader(shaderType);
     js_util.callMethod(glContext, 'shaderSource', [shader, source]);
-    js_util.callMethod(glContext,'compileShader', [shader]);
-    bool shaderStatus = js_util.callMethod(glContext,'getShaderParameter',
-        [shader, compileStatus]);
+    js_util.callMethod(glContext, 'compileShader', [shader]);
+    bool shaderStatus = js_util
+        .callMethod(glContext, 'getShaderParameter', [shader, compileStatus]);
     if (!shaderStatus) {
-      throw Exception('Shader compilation failed');
+      throw Exception('Shader compilation failed: ${getShaderInfoLog(shader)}');
     }
     return shader;
   }
@@ -1190,9 +1130,9 @@ class _GlContext {
 
   void linkProgram(Object program) {
     js_util.callMethod(glContext, 'linkProgram', [program]);
-    if (!js_util.callMethod(glContext,'getProgramParameter',
-        [program, LINK_STATUS])) {
-      throw Exception(_getProgramInfoLog(program));
+    if (!js_util
+        .callMethod(glContext, 'getProgramParameter', [program, kLinkStatus])) {
+      throw Exception(getProgramInfoLog(program));
     }
   }
 
@@ -1204,21 +1144,20 @@ class _GlContext {
       js_util.callMethod(glContext, 'createBuffer', const []);
 
   void bindArrayBuffer(Object buffer) {
-    js_util.callMethod(glContext, 'bindBuffer', [ARRAY_BUFFER , buffer]);
+    js_util.callMethod(glContext, 'bindBuffer', [kArrayBuffer, buffer]);
   }
 
   void bufferData(TypedData data, dynamic type) {
-    js_util.callMethod(glContext, 'bufferData',
-        [ARRAY_BUFFER, data, type]);
+    js_util.callMethod(glContext, 'bufferData', [kArrayBuffer, data, type]);
   }
 
   void enableVertexAttribArray(int index) {
     js_util.callMethod(glContext, 'enableVertexAttribArray', [index]);
   }
 
-  // Fill background.
+  /// Clear background.
   void clear() {
-    js_util.callMethod(glContext, 'clear', [COLOR_BUFFER_BIT]);
+    js_util.callMethod(glContext, 'clear', [kColorBufferBit]);
   }
 
   void drawTriangles(int triangleCount, ui.VertexMode vertexMode) {
@@ -1226,61 +1165,90 @@ class _GlContext {
     js_util.callMethod(glContext, 'drawArrays', [mode, 0, triangleCount]);
   }
 
-  dynamic _triangleTypeFromMode(ui.VertexMode mode) {
-    switch (mode) {
-      case ui.VertexMode.triangles:
-        return TRIANGLES;
-        break;
-      case ui.VertexMode.triangleFan:
-        return TRIANGLE_FAN;
-        break;
-      case ui.VertexMode.triangleStrip:
-        return TRIANGLE_STRIP;
-        break;
-    }
-  }
-
+  /// Sets affine transformation from normalized device coordinates
+  /// to window coordinates
   void viewport(double x, double y, double width, double height) {
     js_util.callMethod(glContext, 'viewport', [x, y, width, height]);
   }
 
-  void setupBlendMode(ui.BlendMode blendMode) {
-    assert(blendMode != ui.BlendMode.src,
-    'No need to setup default blend mode');
-    assert(blendMode != ui.BlendMode.dst);
+  dynamic _triangleTypeFromMode(ui.VertexMode mode) {
+    switch (mode) {
+      case ui.VertexMode.triangles:
+        return kTriangles;
+        break;
+      case ui.VertexMode.triangleFan:
+        return kTriangleFan;
+        break;
+      case ui.VertexMode.triangleStrip:
+        return kTriangleStrip;
+        break;
+    }
   }
 
+  Object _createShader(String shaderType) => js_util.callMethod(
+      glContext, 'createShader', [js_util.getProperty(glContext, shaderType)]);
+
+  /// Error state of gl context.
   dynamic get error => js_util.callMethod(glContext, 'getError', const []);
 
-  dynamic get ARRAY_BUFFER =>
-      _array_buffer ??= js_util.getProperty(glContext, 'ARRAY_BUFFER');
-
-  dynamic get LINK_STATUS =>
-      _link_status ??= js_util.getProperty(glContext, 'LINK_STATUS');
-
-  dynamic get FLOAT =>
-      _float ??= js_util.getProperty(glContext, 'FLOAT');
-
-  dynamic get UNSIGNED_BYTE =>
-      _unsigned_byte ??= js_util.getProperty(glContext,'UNSIGNED_BYTE');
-
-  dynamic get STATIC_DRAW =>
-      _static_draw ??= js_util.getProperty(glContext, 'STATIC_DRAW');
-
-  dynamic get TRIANGLES =>
-      _triangles ??= js_util.getProperty(glContext, 'TRIANGLES');
-  dynamic get TRIANGLE_FAN =>
-      _triangles ??= js_util.getProperty(glContext, 'TRIANGLE_FAN');
-  dynamic get TRIANGLE_STRIP =>
-      _triangles ??= js_util.getProperty(glContext, 'TRIANGLE_STRIP');
-
-  dynamic get COLOR_BUFFER_BIT =>
-      _color_buffer_bit ??= js_util.getProperty(glContext, 'COLOR_BUFFER_BIT');
-
+  /// Shader compiler error, if this returns [kFalse], to get details use
+  /// [getShaderInfoLog].
   dynamic get compileStatus =>
-      _compileStatus ??= js_util.getProperty(glContext, 'COMPILE_STATUS');
+      _kCompileStatus ??= js_util.getProperty(glContext, 'COMPILE_STATUS');
 
-  String _getProgramInfoLog(Object glProgram) {
+  dynamic get kArrayBuffer =>
+      _kArrayBuffer ??= js_util.getProperty(glContext, 'ARRAY_BUFFER');
+
+  dynamic get kLinkStatus =>
+      _kLinkStatus ??= js_util.getProperty(glContext, 'LINK_STATUS');
+
+  dynamic get kFloat => _kFloat ??= js_util.getProperty(glContext, 'FLOAT');
+
+  dynamic get kUnsignedByte =>
+      _kUnsignedByte ??= js_util.getProperty(glContext, 'UNSIGNED_BYTE');
+
+  dynamic get kStaticDraw =>
+      _kStaticDraw ??= js_util.getProperty(glContext, 'STATIC_DRAW');
+
+  dynamic get kTriangles =>
+      _kTriangles ??= js_util.getProperty(glContext, 'TRIANGLES');
+
+  dynamic get kTriangleFan =>
+      _kTriangles ??= js_util.getProperty(glContext, 'TRIANGLE_FAN');
+
+  dynamic get kTriangleStrip =>
+      _kTriangles ??= js_util.getProperty(glContext, 'TRIANGLE_STRIP');
+
+  dynamic get kColorBufferBit =>
+      _kColorBufferBit ??= js_util.getProperty(glContext, 'COLOR_BUFFER_BIT');
+
+  /// Returns reference to uniform in program.
+  Object getUniformLocation(Object program, String uniformName) {
+    return js_util
+        .callMethod(glContext, 'getUniformLocation', [program, uniformName]);
+  }
+
+  /// Sets vec2 uniform values.
+  void setUniform2f(Object uniform, double value1, double value2) {
+    return js_util
+        .callMethod(glContext, 'uniform2f', [uniform, value1, value2]);
+  }
+
+  /// Sets vec4 uniform values.
+  void setUniform4f(Object uniform, double value1, double value2, double value3,
+      double value4) {
+    return js_util.callMethod(
+        glContext, 'uniform4f', [uniform, value1, value2, value3, value4]);
+  }
+
+  /// Shader compile error log.
+  dynamic getShaderInfoLog(Object glShader) {
+    return js_util.callMethod(glContext, 'getShaderInfoLog', [glShader]);
+  }
+
+  ///  Errors that occurred during failed linking or validation of program
+  ///  objects. Typically called after [linkProgram].
+  String getProgramInfoLog(Object glProgram) {
     return js_util.callMethod(glContext, 'getProgramInfoLog', [glProgram]);
   }
 }
