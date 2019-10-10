@@ -47,29 +47,14 @@
     [self readyContextForPlatformViewTests:goldenTestName];
   } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
     self.window.rootViewController = [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:nil];
+  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--acessibility"]) {
+    [self readyContextForAccessibilityTests:@"accessibility"];
   } else {
     self.window.rootViewController = [[UIViewController alloc] init];
   }
 
   [self.window makeKeyAndVisible];
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
-
-
-    //   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"AccessibilityTest" project:nil];
-    // [engine runWithEntrypoint:nil];
-
-    // FlutterViewController* flutterViewController =
-    // [[NoStatusBarFlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    // [engine.binaryMessenger
-    //  setMessageHandlerOnChannel:@"scenario_status"
-    //  binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
-    //    [engine.binaryMessenger
-    //     sendOnChannel:@"set_scenario"
-    //     message:[@"accessibility" dataUsingEncoding:NSUTF8StringEncoding]];
-    //  }];
-    // [engine ensureSemanticsEnabled];
-    // self.window.rootViewController = flutterViewController;
-
 }
 
 - (void)readyContextForPlatformViewTests:(NSString*)scenarioIdentifier {
@@ -91,6 +76,23 @@
       [flutterViewController.engine registrarForPlugin:@"scenarios/TextPlatformViewPlugin"];
   [registrar registerViewFactory:textPlatformViewFactory withId:@"scenarios/textPlatformView"];
   self.window.rootViewController = flutterViewController;
+}
+
+- (void)readyContextForAccessibilityTests:(NSString *)scenarioIdentifier {
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"ScenarioTest" project:nil];
+   [engine runWithEntrypoint:nil];
+
+   FlutterViewController* flutterViewController =
+   [[NoStatusBarFlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+   [engine.binaryMessenger
+    setMessageHandlerOnChannel:@"scenario_status"
+    binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
+      [engine.binaryMessenger
+       sendOnChannel:@"set_scenario"
+       message:[scenarioIdentifier dataUsingEncoding:NSUTF8StringEncoding]];
+    }];
+   [engine ensureSemanticsEnabled];
+   self.window.rootViewController = flutterViewController;
 }
 
 @end
