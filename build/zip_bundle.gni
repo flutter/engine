@@ -5,11 +5,11 @@
 template("zip_bundle") {
   action(target_name) {
     script = "//flutter/build/zip.py"
-    args = [ "-o", rebase_path(invoker.output) ]
+    outputs = [ "$root_build_dir/zip_archives/${invoker.output}" ]
     inputs = []
-    outputs = [ invoker.output ]
     deps = invoker.deps
 
+    args = [ "-o", rebase_path(outputs[0]) ]
     foreach(input, invoker.files) {
       args += [
         "-i",
