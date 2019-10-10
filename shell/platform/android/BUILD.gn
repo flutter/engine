@@ -473,7 +473,7 @@ action("robolectric_tests") {
 }
 
 zip_bundle("android_symbols") {
-  output = "symbols.zip"
+  output = "$android_zip_archive_dir/symbols.zip"
   files = [
     {
       source = "$root_build_dir/libflutter.so"
@@ -487,7 +487,7 @@ zip_bundle("android_symbols") {
 }
 
 zip_bundle("android") {
-  output = "artifacts.zip"
+  output = "$android_zip_archive_dir/artifacts.zip"
   files = [
     {
       source = "$root_build_dir/flutter.jar"

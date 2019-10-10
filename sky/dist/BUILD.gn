@@ -84,7 +84,7 @@ if (is_android) {
 
 zip_bundle("dist") {
   if (is_android) {
-    output = "sky_engine.zip"
+    output = "$android_zip_archive_dir/sky_engine.zip"
     files = [
       {
         source = "$root_build_dir/dist/packages/flutter_services"

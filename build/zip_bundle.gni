@@ -2,6 +2,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/common/config.gni")
+
+if (flutter_runtime_mode == "jit_release") {
+  android_zip_archive_dir = "android-$target_cpu-jit-release"
+} else {
+  android_zip_archive_dir = "android-$target_cpu"
+}
+
 template("zip_bundle") {
   action(target_name) {
     script = "//flutter/build/zip.py"
