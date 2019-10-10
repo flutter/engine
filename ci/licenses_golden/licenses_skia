@@ -1,4 +1,4 @@
-Signature: 575d2b39ef228d25c5168a2ec2eabaea
+Signature: 1148c355227131325fd7900c08ce17ab
 
 UNUSED LICENSES:
 
@@ -1471,6 +1471,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/infra/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/run/examples/full.expected/test.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.expected/Build-Debian9-Clang-x86_64-Release-SKNX_NO_SIMD.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.expected/Housekeeper-Weekly-RecreateSKPs.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.expected/integer_issue.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.expected/win_test.json
 FILE: ../../../third_party/skia/infra/bots/recipes.isolate
 FILE: ../../../third_party/skia/infra/bots/recipes/android_compile.expected/android_compile_nontrybot.json
@@ -1711,6 +1712,7 @@ FILE: ../../../third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../third_party/skia/modules/pathkit/ready.js
 FILE: ../../../third_party/skia/modules/skparagraph/include/DartTypes.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/FontCollection.h
+FILE: ../../../third_party/skia/modules/skparagraph/include/Metrics.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/Paragraph.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphBuilder.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphCache.h
@@ -3791,18 +3793,15 @@ FILE: ../../../third_party/skia/include/gpu/gl/GrGLAssembleHelpers.h
 FILE: ../../../third_party/skia/include/private/GrGLTypesPriv.h
 FILE: ../../../third_party/skia/include/private/SkThreadAnnotations.h
 FILE: ../../../third_party/skia/modules/canvaskit/WasmAliases.h
-FILE: ../../../third_party/skia/modules/canvaskit/fonts/nofonts.cpp
 FILE: ../../../third_party/skia/modules/canvaskit/paragraph_bindings.cpp
 FILE: ../../../third_party/skia/modules/canvaskit/particles_bindings.cpp
 FILE: ../../../third_party/skia/modules/canvaskit/skottie_bindings.cpp
-FILE: ../../../third_party/skia/modules/particles/include/SkCurve.h
 FILE: ../../../third_party/skia/modules/particles/include/SkParticleBinding.h
 FILE: ../../../third_party/skia/modules/particles/include/SkParticleData.h
 FILE: ../../../third_party/skia/modules/particles/include/SkParticleDrawable.h
 FILE: ../../../third_party/skia/modules/particles/include/SkParticleEffect.h
 FILE: ../../../third_party/skia/modules/particles/include/SkParticleSerialization.h
 FILE: ../../../third_party/skia/modules/particles/include/SkReflected.h
-FILE: ../../../third_party/skia/modules/particles/src/SkCurve.cpp
 FILE: ../../../third_party/skia/modules/particles/src/SkParticleBinding.cpp
 FILE: ../../../third_party/skia/modules/particles/src/SkParticleDrawable.cpp
 FILE: ../../../third_party/skia/modules/particles/src/SkParticleEffect.cpp
@@ -3821,6 +3820,8 @@ FILE: ../../../third_party/skia/src/gpu/GrClientMappedBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/GrCopyRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrCopyRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/GrImageInfo.h
+FILE: ../../../third_party/skia/src/gpu/GrProgramInfo.cpp
+FILE: ../../../third_party/skia/src/gpu/GrProgramInfo.h
 FILE: ../../../third_party/skia/src/gpu/GrRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/GrShaderUtils.cpp
