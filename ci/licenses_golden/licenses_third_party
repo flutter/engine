@@ -1,4 +1,4 @@
-Signature: a2d49b14022a4fb8fc74726a0861087f
+Signature: 8f28039a02671d7c9b041966d6ad52f7
 
 UNUSED LICENSES:
 
@@ -7585,7 +7585,6 @@ FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/collections/closable_
 FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/database.dart
 FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/ffi/arena.dart
 FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/ffi/dylib_utils.dart
-FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/ffi/utf8.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/rti.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/shared/recipe_syntax.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_dynamic_library_patch.dart
