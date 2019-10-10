@@ -5,10 +5,10 @@
 assert(is_fuchsia)
 
 import("//build/fuchsia/sdk.gni")
-import("$flutter_root/common/fuchsia_config.gni")
-import("$flutter_root/tools/fuchsia/common_libs.gni")
-import("$flutter_root/tools/fuchsia/dart.gni")
-import("$flutter_root/tools/fuchsia/fuchsia_archive.gni")
+import("//flutter/common/fuchsia_config.gni")
+import("//flutter/tools/fuchsia/common_libs.gni")
+import("//flutter/tools/fuchsia/dart.gni")
+import("//flutter/tools/fuchsia/fuchsia_archive.gni")
 
 template("runner") {
   assert(defined(invoker.product), "The parameter 'product' must be defined")
@@ -47,12 +47,12 @@ template("runner") {
     }
 
     deps = [
-             "$flutter_root/common",
-             "$flutter_root/fml",
-             "$flutter_root/runtime:libdart",
-             "$flutter_root/shell/platform/fuchsia/dart-pkg/fuchsia",
-             "$flutter_root/shell/platform/fuchsia/dart-pkg/zircon",
-             "$flutter_root/shell/platform/fuchsia/runtime/dart/utils",
+             "//flutter/common",
+             "//flutter/fml",
+             "//flutter/runtime:libdart",
+             "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
+             "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
+             "//flutter/shell/platform/fuchsia/runtime/dart/utils",
              "$fuchsia_sdk_root/pkg:async",
              "$fuchsia_sdk_root/pkg:async-cpp",
              "$fuchsia_sdk_root/pkg:async-default",
@@ -112,7 +112,7 @@ template("jit_runner_package") {
 
     binary = "dart_jit${product_suffix}_runner"
 
-    meta_dir = "$flutter_root/shell/platform/fuchsia/dart_runner/meta"
+    meta_dir = "//flutter/shell/platform/fuchsia/dart_runner/meta"
 
     libraries = common_libs
 

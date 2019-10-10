@@ -6,7 +6,7 @@ if (is_fuchsia) {
   import("//build/fuchsia/sdk.gni")
 }
 
-import("$flutter_root/testing/testing.gni")
+import("//flutter/testing/testing.gni")
 
 source_set("flow") {
   sources = [
@@ -62,13 +62,13 @@ source_set("flow") {
     "texture.h",
   ]
 
-  public_configs = [ "$flutter_root:config" ]
+  public_configs = [ "//flutter:config" ]
 
   public_deps = []
 
   deps = [
-    "$flutter_root/common",
-    "$flutter_root/fml",
+    "//flutter/common",
+    "//flutter/fml",
     "//third_party/skia",
   ]
 
@@ -120,7 +120,7 @@ executable("flow_unittests") {
   deps = [
     ":flow",
     ":flow_fixtures",
-    "$flutter_root/fml",
+    "//flutter/fml",
     "//third_party/dart/runtime:libdart_jit",  # for tracing
     "//third_party/googletest:gtest",
     "//third_party/skia",

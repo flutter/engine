@@ -5,9 +5,9 @@
 assert(is_mac)
 
 import("//build/config/mac/mac_sdk.gni")
-import("$flutter_root/common/config.gni")
-import("$flutter_root/shell/platform/darwin/common/framework_shared.gni")
-import("$flutter_root/shell/platform/glfw/config.gni")
+import("//flutter/common/config.gni")
+import("//flutter/shell/platform/darwin/common/framework_shared.gni")
+import("//flutter/shell/platform/glfw/config.gni")
 
 group("macos") {
   deps = [
@@ -16,8 +16,8 @@ group("macos") {
   if (build_glfw_shell) {
     deps += [
       ":flutter_macos_glfw",
-      "$flutter_root/shell/platform/glfw:publish_headers_glfw",
-      "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
+      "//flutter/shell/platform/glfw:publish_headers_glfw",
+      "//flutter/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
     ]
   }
 }
@@ -65,11 +65,11 @@ shared_library("create_flutter_framework_dylib") {
   sources += _flutter_framework_headers
 
   deps = [
-    "$flutter_root/shell/platform/darwin/common:framework_shared",
-    "$flutter_root/shell/platform/embedder:embedder_with_symbol_prefix",
+    "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/shell/platform/embedder:embedder_with_symbol_prefix",
   ]
 
-  public_configs = [ "$flutter_root:config" ]
+  public_configs = [ "//flutter:config" ]
 
   defines = [ "FLUTTER_FRAMEWORK" ]
 
@@ -80,7 +80,7 @@ shared_library("create_flutter_framework_dylib") {
 
 action("copy_dylib_and_update_framework_install_name") {
   visibility = [ ":*" ]
-  script = "$flutter_root/sky/tools/change_install_name.py"
+  script = "//flutter/sky/tools/change_install_name.py"
   framework_binary_subpath = "Versions/A/$_flutter_framework_name"
 
   inputs = [
@@ -128,7 +128,7 @@ copy("copy_framework_module_map") {
 }
 
 action("copy_framework_headers") {
-  script = "$flutter_root/sky/tools/install_framework_headers.py"
+  script = "//flutter/sky/tools/install_framework_headers.py"
   visibility = [ ":*" ]
   sources = get_path_info(_flutter_framework_headers, "abspath") +
             framework_shared_headers
@@ -213,9 +213,9 @@ group("flutter_framework") {
 if (build_glfw_shell) {
   shared_library("flutter_macos_glfw") {
     deps = [
-      "$flutter_root/shell/platform/glfw:flutter_glfw",
+      "//flutter/shell/platform/glfw:flutter_glfw",
     ]
 
-    public_configs = [ "$flutter_root:config" ]
+    public_configs = [ "//flutter:config" ]
   }
 }

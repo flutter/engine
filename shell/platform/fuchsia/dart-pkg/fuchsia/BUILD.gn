@@ -21,7 +21,7 @@ source_set("sdk_ext") {
   ]
 
   deps = [
-    "$flutter_root/fml",
+    "//flutter/fml",
     "$fuchsia_sdk_root/fidl:fuchsia.sys",
     "$fuchsia_sdk_root/pkg:async-cpp",
     "../zircon",

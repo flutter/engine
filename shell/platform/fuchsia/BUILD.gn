@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
-import("$flutter_root/common/config.gni")
+import("//flutter/common/config.gni")
 
 if (using_fuchsia_sdk) {
   testonly = true

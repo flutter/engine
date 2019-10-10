@@ -12,7 +12,7 @@ declare_args() {
 
 if (engine_version == "") {
   engine_version_lines =
-      exec_script("$flutter_root/build/git_revision.py",
+      exec_script("//flutter/build/git_revision.py",
                   [
                     "--repository",
                     rebase_path(flutter_root, "", flutter_root),
@@ -23,7 +23,7 @@ if (engine_version == "") {
 
 if (skia_version == "") {
   skia_version_lines =
-      exec_script("$flutter_root/build/git_revision.py",
+      exec_script("//flutter/build/git_revision.py",
                   [
                     "--repository",
                     rebase_path("//third_party/skia", "", flutter_root),
@@ -34,7 +34,7 @@ if (skia_version == "") {
 
 if (dart_version == "") {
   dart_version_lines =
-      exec_script("$flutter_root/build/git_revision.py",
+      exec_script("//flutter/build/git_revision.py",
                   [
                     "--repository",
                     rebase_path("//third_party/dart", "", flutter_root),
