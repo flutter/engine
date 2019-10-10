@@ -103,6 +103,14 @@ class FontCollection {
 class FontManager {
   final List<Future<void>> _fontLoadingFutures = <Future<void>>[];
 
+  // Regular expression to detect punctuations. For example font family
+  // 'Ahem!' falls into this category.
+  static final RegExp punctuations = RegExp(r"[.,:;!`\/#\$\%\^&~\*=\-_(){}]");
+  // Regular expression to detect tokens starting with a digit.
+  // For example font family 'Goudy Bookletter 1911' falls into this
+  // category.
+  static final RegExp startWithDigit = RegExp(r"\b\d");
+
   factory FontManager() {
     if (supportsFontLoadingApi) {
       return FontManager._();
@@ -115,37 +123,40 @@ class FontManager {
 
   /// Registers assets to Flutter Web Engine.
   ///
-  /// Browsers and browesers versions differ siginificantly on how a valid font
+  /// Browsers and browsers versions differ significantly on how a valid font
   /// family name should be formatted. Notable issues are:
-  /// Safari12 and Firefox crash if you create a [html.FontFace] with a font
-  /// family that is not correct CSS syntax. Font family names accepted on these
-  /// browsers, when wrapped it in quotes.
-  /// Additionally, for Safari12 to work [html.FontFace] name should be loaded
-  /// correctly on the first try.
-  /// A font in Chrome chrashes if a [html.FontFace] is loaded only with quotes.
-  /// Unlike Safari12 if a valid version is loaded afterwards it will show
-  /// that fonts normally.
+  ///
+  /// Safari 12 and Firefox crash if you create a [html.FontFace] with a font
+  /// family that is not correct CSS syntax. Font family names with invalid
+  /// characters are accepted accepted on these browsers, when wrapped it in
+  /// quotes.
+  ///
+  /// Additionally, for Safari 12 to work [html.FontFace] name should be
+  /// loaded correctly on the first try.
+  ///
+  /// A font in Chrome is not usable other than inside a '<p>' tag, if a
+  /// [html.FontFace] is loaded wrapped with quotes. Unlike Safari 12 if a
+  /// valid version of the font is also loaded afterwards it will show
+  /// that font normally.
+  ///
   /// In Safari 13 the [html.FontFace] should be loaded with unquoted family
   /// names.
-  /// In order to avoid all these browser compatibility issues this method;
-  /// detects the family names that might cause a conflict, loads it with
-  /// quotes and loads it again without quotes. For all the other family names
-  /// [html.FontFace] is loaded only once.
-  /// See: https://developer.mozilla.org/en-US/docs/Web/CSS/font-family#Valid_family_names
-  /// See: https://drafts.csswg.org/css-fonts-3/#font-family-prop
+  ///
+  /// In order to avoid all these browser compatibility issues this method:
+  /// * Detects the family names that might cause a conflict.
+  /// * Loads it with quotes.
+  /// * Loads it again without quotes.
+  /// * For all the other family names [html.FontFace] is loaded only once.
+  ///
+  /// See also:
+  ///
+  /// * https://developer.mozilla.org/en-US/docs/Web/CSS/font-family#Valid_family_names
+  /// * https://drafts.csswg.org/css-fonts-3/#font-family-prop
   void registerAsset(
     String family,
     String asset,
     Map<String, String> descriptors,
   ) {
-    final String familyNameInQuotes = "'$family'";
-    // Regular expression to detect punctuations. For example font family
-    // 'Ahem!' falls into this category.
-    final RegExp punctuations = RegExp(r"[.,:;!`\/#\$\%\^&~\*=\-_(){}]");
-    // Regular expression to detect tokens starting with a digit.
-    // For example font family 'Goudy Bookletter 1911' falls into this
-    // category.
-    final RegExp startWithDigit = RegExp(r"\b\d");
     // Fonts names when a package dependency is added has '/' in the family
     // names such as 'package/material_design_icons_flutter/...'
     if (family.contains('/') ||
@@ -153,7 +164,7 @@ class FontManager {
         startWithDigit.hasMatch(family)) {
       // Load a font family name with special chracters once here wrapped in
       // quotes.
-      _loadFontFace(familyNameInQuotes, asset, descriptors);
+      _loadFontFace("'$family'", asset, descriptors);
     }
     // Load all font fonts, without quoted family names.
     _loadFontFace(family, asset, descriptors);
