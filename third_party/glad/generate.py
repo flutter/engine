@@ -16,7 +16,7 @@ def generate(output):
 def main():
     parser = argparse.ArgumentParser();
     parser.add_argument('-o', '--output', dest='output',
-      required=True, help='The output directory for coverage results.')
+      required=True, help='The output directory for glad sources.')
     args = parser.parse_args()
     output = os.path.abspath(args.output)
 
