@@ -4,7 +4,7 @@
 
 #include "flutter/shell/platform/glfw/external_texture_gl.h"
 
-#include <glad/gl.h>
+#include <glad/glad.h>
 
 // glad/gl.h must be included before GLFW/glfw3.h.
 #include <GLFW/glfw3.h>
@@ -44,7 +44,7 @@ bool ExternalTextureGL::PopulateTextureWithIdentifier(
     }
     glfwMakeContextCurrent(state_->window);
     // Load GL functions.
-    gladLoadGL((GLADloadfunc)glfwGetProcAddress);
+    gladLoadGL();
   }
 
   const PixelBuffer* pixel_buffer =
