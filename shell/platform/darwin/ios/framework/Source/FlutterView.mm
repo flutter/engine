@@ -90,7 +90,7 @@ static bool UseMetalRenderer() {
     return false;
   }
 
-  // If the application want to use metal on a per run basis with disregard for version checks or
+  // If the application wants to use metal on a per run basis with disregard for version checks or
   // plist based opt ins, respect that opinion. This allows selectively testing features on older
   // version of iOS than those explicitly stated as being supported.
   if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--force-metal"]) {
