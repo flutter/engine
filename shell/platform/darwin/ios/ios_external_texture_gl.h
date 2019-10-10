@@ -8,7 +8,7 @@
 #include "flutter/flow/texture.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterTexture.h"
+#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
 
 namespace flutter {
 
@@ -26,6 +26,8 @@ class IOSExternalTextureGL : public flutter::Texture {
   void OnGrContextDestroyed() override;
 
   void MarkNewFrameAvailable() override;
+
+  void OnTextureUnregistered() override;
 
  private:
   void CreateTextureFromPixelBuffer();

@@ -63,8 +63,7 @@ typedef enum {
 /// Must match the `SemanticsAction` enum in semantics.dart.
 typedef enum {
   /// The equivalent of a user briefly tapping the screen with the finger
-  /// without
-  /// moving it.
+  /// without moving it.
   kFlutterSemanticsActionTap = 1 << 0,
   /// The equivalent of a user pressing and holding the screen with the finger
   /// for a few seconds without moving it.
@@ -172,6 +171,8 @@ typedef enum {
   kFlutterSemanticsFlagIsReadOnly = 1 << 20,
   /// Whether the semantic node can hold the user's focus.
   kFlutterSemanticsFlagIsFocusable = 1 << 21,
+  /// Whether the semantics node represents a link.
+  kFlutterSemanticsFlagIsLink = 1 << 22,
 } FlutterSemanticsFlag;
 
 typedef enum {
@@ -218,7 +219,8 @@ typedef enum {
 } FlutterOpenGLTargetType;
 
 typedef struct {
-  /// Target texture of the active texture unit (example GL_TEXTURE_2D).
+  /// Target texture of the active texture unit (example GL_TEXTURE_2D or
+  /// GL_TEXTURE_RECTANGLE).
   uint32_t target;
   /// The name of the texture.
   uint32_t name;
@@ -229,6 +231,14 @@ typedef struct {
   /// Callback invoked (on an engine managed thread) that asks the embedder to
   /// collect the texture.
   VoidCallback destruction_callback;
+  /// Optional parameters for texture height/width, default is 0, non-zero means
+  /// the texture has the specified width/height. Usually, when the texture type
+  /// is GL_TEXTURE_RECTANGLE, we need to specify the texture width/height to
+  /// tell the embedder to scale when rendering.
+  /// Width of the texture.
+  size_t width;
+  /// Height of the texture.
+  size_t height;
 } FlutterOpenGLTexture;
 
 typedef struct {
@@ -875,7 +885,8 @@ typedef struct {
   // which is used in `flutter::Settings` as `temp_directory_path`.
   const char* persistent_cache_path;
 
-  /// If true, we'll only read the existing cache, but not write new ones.
+  /// If true, the engine would only read the existing cache, but not write new
+  /// ones.
   bool is_persistent_cache_read_only;
 
   /// A callback that gets invoked by the engine when it attempts to wait for a
