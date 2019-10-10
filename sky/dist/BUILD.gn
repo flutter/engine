@@ -80,10 +80,8 @@ if (is_android) {
       "$flutter_root/sky/packages/sky_services:sky_services_pkg_helper",
     ]
   }
-}
 
-zip_bundle("dist") {
-  if (is_android) {
+  zip_bundle("zip") {
     output = "$android_zip_archive_dir/sky_engine.zip"
     files = [
       {
@@ -103,6 +101,14 @@ zip_bundle("dist") {
       ":flutter_services",
       ":sky_engine",
       ":sky_services",
+    ]
+  }
+}
+
+group("dist") {
+  if (is_android) {
+    deps = [
+      ":zip",
     ]
   }
 }

@@ -30,7 +30,7 @@ def main(args):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(
       description='This script creates zip files.')
-  parser.add_argument('-o', dest='output' action='store',
+  parser.add_argument('-o', dest='output', action='store',
       help='The name of the output zip file.')
   parser.add_argument('-i', dest='input_pairs', nargs=2, action='append',
       help='The input file and its destination location in the zip archive.')
