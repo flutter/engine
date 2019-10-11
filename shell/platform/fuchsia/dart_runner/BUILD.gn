@@ -155,17 +155,31 @@ template("aot_runner_package") {
 
     resources = []
     if (!invoker.product) {
+      vmservice_data = rebase_path(
+              get_label_info("vmservice:vmservice_snapshot", "target_gen_dir") +
+              "/vmservice_data.aotsnapshot")
+      vmservice_instr = rebase_path(
+              get_label_info("vmservice:vmservice_snapshot", "target_gen_dir") +
+              "/vmservice_instructions.aotsnapshot")
+      dart_profiler_symbols = rebase_path(
+              get_label_info(
+                  "$flutter_root/shell/platform/fuchsia/runtime/dart/profiler_symbols:dart_aot_runner",
+                  "target_gen_dir") + "/dart_aot_runner.dartprofilersymbols")
+
+      inputs = [
+        vmservice_data,
+        vmservice_instr,
+        observatory_archive_file,
+        dart_profiler_symbols,
+      ]
+
       resources += [
         {
-          path = rebase_path(get_label_info("vmservice:vmservice_snapshot",
-                                            "target_gen_dir") +
-                             "/vmservice_data.aotsnapshot")
+          path = vmservice_data
           dest = "vmservice_isolate_snapshot_data.bin"
         },
         {
-          path = rebase_path(get_label_info("vmservice:vmservice_snapshot",
-                                            "target_gen_dir") +
-                             "/vmservice_instructions.aotsnapshot")
+          path = vmservice_instr
           dest = "vmservice_isolate_snapshot_instructions.bin"
         },
         {
@@ -173,10 +187,7 @@ template("aot_runner_package") {
           dest = "observatory.tar"
         },
         {
-          path = rebase_path(
-                  get_label_info(
-                      "$flutter_root/shell/platform/fuchsia/runtime/dart/profiler_symbols:dart_aot_runner",
-                      "target_gen_dir") + "/dart_aot_runner.dartprofilersymbols")
+          path = dart_profiler_symbols
           dest = "dart_aot_runner.dartprofilersymbols"
         },
       ]
