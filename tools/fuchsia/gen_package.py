@@ -43,10 +43,10 @@ def CreateFarPackage(pm_bin, package_dir, signing_key, dst_dir):
   ]
 
   # Build the package
-  subprocess.check_call(pm_command_base + ['build'])
+  subprocess.check_output(pm_command_base + ['build'])
 
   # Archive the package
-  subprocess.check_call(pm_command_base + ['archive'])
+  subprocess.check_output(pm_command_base + ['archive'])
 
   return 0
 
@@ -91,13 +91,17 @@ def main():
       manifest_file,
   ]
 
-  # Build the package
+  # Build and then archive the package
   # Use check_output so if anything goes wrong we get the output.
-  subprocess.check_output(pm_command_base + ['build'])
-
-  # Archive the package
-  # Use check_output so if anything goes wrong we get the output.
-  subprocess.check_output(pm_command_base + ['archive'])
+  try:
+    subprocess.check_output(pm_command_base + ['build'])
+    subprocess.check_output(pm_command_base + ['archive'])
+  except subprocess.CalledProcessError as e:
+    print('==================== Manifest contents =========================================')
+    with open(manifest_file, 'r') as manifest:
+      print(manifest))
+    print('==================== End manifest contents =====================================').
+    raise
 
   return 0
 
