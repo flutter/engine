@@ -672,7 +672,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       layout (location=1) in vec4 color;
       uniform vec4 u_scale;
       uniform vec4 u_shift;
-      
       out vec4 vColor;
       void main() {
         gl_Position = (position * u_scale) + u_shift;
