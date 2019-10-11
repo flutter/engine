@@ -724,6 +724,8 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       ui.Vertices vertices, ui.BlendMode blendMode, ui.PaintData paint) {
     // TODO(flutter_web): Implement shaders for [Paint.shader] and
     // blendMode. https://github.com/flutter/flutter/issues/40096
+    // Move rendering to OffscreenCanvas so that transform is preserved
+    // as well.
     assert(paint.shader == null,
         'Linear/Radial/SweepGradient and ImageShader not supported yet');
     assert(blendMode == ui.BlendMode.srcOver);
