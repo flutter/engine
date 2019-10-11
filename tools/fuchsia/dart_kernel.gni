@@ -14,8 +14,6 @@ template("dart_kernel") {
 
     main_dart = rebase_path(invoker.main_dart)
 
-    print(main_dart)
-
     deps = [
       invoker.kernel_platform_files,
     ]
