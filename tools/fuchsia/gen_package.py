@@ -24,6 +24,7 @@ def GenerateManifest(package_dir):
       common_prefix = os.path.commonprefix([root, package_dir])
       rel_path = os.path.relpath(os.path.join(root, f), common_prefix)
       from_package = os.path.abspath(os.path.join(package_dir, rel_path))
+      assert from_package, 'Failed to create from_package for %s' % os.path.join(root, f)
       full_paths.append('%s=%s' % (rel_path, from_package))
   parent_dir = os.path.abspath(os.path.join(package_dir, os.pardir))
   manifest_file_name = os.path.basename(package_dir) + '.manifest'
