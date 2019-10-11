@@ -47,11 +47,38 @@ template("dart_shim_kernel") {
       "--packages=" + rebase_path(dot_packages),
       "--target=dart_runner",
       "--platform=" + rebase_path(platform_dill),
-      "--no-aot",
-      "--no-embed-sources",
       "--no-link-platform",
       "--output=" + rebase_path(output),
     ]
+
+    if (is_debug) {
+      args += [ "--embed-sources" ]
+    } else {
+      args += [ "--no-embed-sources" ]
+    }
+
+    if (defined(invoker.aot) && invoker.aot) {
+      args += [
+        "--aot",
+        "--tfa",
+      ]
+    }
+
+    if (defined(invoker.product) && invoker.product) {
+      # Setting this flag in a non-product release build for AOT (a "profile"
+      # build) causes the vm service isolate code to be tree-shaken from an app.
+      # See the pragma on the entrypoint here:
+      #
+      # https://github.com/dart-lang/sdk/blob/master/runtime/bin/vmservice/vmservice_io.dart#L240
+      #
+      # Also, this define excludes debugging and profiling code from Flutter.
+      args += [ "-Ddart.vm.product=true" ]
+    } else {
+      if (!is_debug) {
+        # The following define excludes debugging code from Flutter.
+        args += [ "-Ddart.vm.profile=true" ]
+      }
+    }
 
     visibility = [ ":*" ]
 
@@ -61,6 +88,14 @@ template("dart_shim_kernel") {
 
 dart_shim_kernel("shim_kernel") {
   main_dart = "shim.dart"
+  product = false
+  aot = true
+}
+
+dart_shim_kernel("shim_product_kernel") {
+  main_dart = "shim.dart"
+  product = true
+  aot = true
 }
 
 template("create_aot_snapshot") {
@@ -73,9 +108,9 @@ template("create_aot_snapshot") {
     snapshot_assembly = "$target_gen_dir/aot${product_suffix}_vm_snapshot.S"
 
     # gen_snapshot only needs this to go through the motions of setting up an isolate.
-    shim_target = ":shim_kernel"
-    shim_kernel =
-        get_label_info(shim_target, "target_gen_dir") + "/shim_kernel.dill"
+    shim_target = ":shim${product_suffix}_kernel"
+    shim_kernel = get_label_info(shim_target, "target_gen_dir") +
+                  "/shim${product_suffix}_kernel.dill"
 
     inputs = [
       shim_kernel,
