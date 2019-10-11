@@ -62,7 +62,7 @@ void main() async {
     await _testVertices(
         'draw_vertices_hairline_triangle',
         vertices,
-        BlendMode.src,
+        BlendMode.srcOver,
         Paint()..color = Color.fromARGB(255, 0, 128, 0));
   });
 
@@ -82,7 +82,7 @@ void main() async {
     await _testVertices(
         'draw_vertices_hairline_triangle_black',
         vertices,
-        BlendMode.src,
+        BlendMode.srcOver,
         Paint());
   });
 
@@ -97,7 +97,7 @@ void main() async {
     await _testVertices(
         'draw_vertices_hairline_triangle_fan',
         vertices,
-        BlendMode.src,
+        BlendMode.srcOver,
         Paint()..color = Color.fromARGB(255, 0, 128, 0));
   });
 
@@ -111,7 +111,7 @@ void main() async {
     await _testVertices(
         'draw_vertices_hairline_triangle_strip',
         vertices,
-        BlendMode.src,
+        BlendMode.srcOver,
         Paint()..color = Color.fromARGB(255, 0, 128, 0));
   });
 
@@ -129,7 +129,7 @@ void main() async {
     await _testVertices(
         'draw_vertices_triangles',
         vertices,
-        BlendMode.src,
+        BlendMode.srcOver,
         Paint()..color = Color.fromARGB(255, 0, 128, 0));
   });
 
@@ -147,7 +147,7 @@ void main() async {
     await _testVertices(
         'draw_vertices_triangle_fan',
         vertices,
-        BlendMode.src,
+        BlendMode.srcOver,
         Paint()..color = Color.fromARGB(255, 0, 128, 0));
   });
 
@@ -164,7 +164,7 @@ void main() async {
     await _testVertices(
         'draw_vertices_triangle_strip',
         vertices,
-        BlendMode.src,
+        BlendMode.srcOver,
         Paint()..color = Color.fromARGB(255, 0, 128, 0));
   });
 }

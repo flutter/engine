@@ -820,6 +820,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
             _ctx.lineTo(dx, dy);
             break;
           case 2:
+            _ctx.lineTo(dx, dy);
             _ctx.closePath();
             _ctx.stroke();
         }
