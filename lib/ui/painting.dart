@@ -2499,7 +2499,7 @@ class ColorFilter {
   /// Every pixel's color value, repsented as an `[R, G, B, A]`, is matrix
   /// multiplied to create a new color:
   ///
-  /// ```
+  /// ```text
   /// | R' |   | a00 a01 a02 a03 a04 |   | R |
   /// | G' |   | a10 a11 a22 a33 a44 |   | G |
   /// | B' | = | a20 a21 a22 a33 a44 | * | B |
