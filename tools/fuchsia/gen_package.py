@@ -99,7 +99,7 @@ def main():
   except subprocess.CalledProcessError as e:
     print('==================== Manifest contents =========================================')
     with open(manifest_file, 'r') as manifest:
-      print(manifest)
+      print(manifest.read())
     print('==================== End manifest contents =====================================')
     raise
 
