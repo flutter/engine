@@ -92,11 +92,11 @@ def main():
 
   # Build the package
   # Use check_output so if anything goes wrong we get the output.
-  output = subprocess.check_output(pm_command_base + ['build'])
+  subprocess.check_output(pm_command_base + ['build'])
 
   # Archive the package
   # Use check_output so if anything goes wrong we get the output.
-  output = subprocess.check_output(pm_command_base + ['archive'])
+  subprocess.check_output(pm_command_base + ['archive'])
 
   return 0
 
