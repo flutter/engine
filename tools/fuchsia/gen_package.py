@@ -100,7 +100,7 @@ def main():
     print('==================== Manifest contents =========================================')
     with open(manifest_file, 'r') as manifest:
       print(manifest)
-    print('==================== End manifest contents =====================================').
+    print('==================== End manifest contents =====================================')
     raise
 
   return 0
