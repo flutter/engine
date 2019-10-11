@@ -31,12 +31,12 @@ felt test
 
 To run a single test:
 ```
-felt test -t test/golden_tests/engine/canvas_golden_test.dart
+felt test test/golden_tests/engine/canvas_golden_test.dart
 ```
 
 To debug a test:
 ```
-felt test --debug -t test/golden_tests/engine/canvas_golden_test.dart
+felt test --debug test/golden_tests/engine/canvas_golden_test.dart
 ```
 
 ## Configuration files
