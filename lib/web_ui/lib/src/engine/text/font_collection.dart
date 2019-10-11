@@ -103,9 +103,11 @@ class FontCollection {
 class FontManager {
   final List<Future<void>> _fontLoadingFutures = <Future<void>>[];
 
-  // Regular expression to detect punctuations. For example font family
-  // 'Ahem!' falls into this category.
-  static final RegExp punctuations = RegExp(r"[.,:;!`\/#\$\%\^&~\*=\-_(){}]");
+  // Regular expression to detect a string with no punctuations.
+  // For example font family 'Ahem!' does not fall into this category
+  // so the family name will be wrapped in quotes.
+  static final RegExp notPunctuation =
+      RegExp(r"[a-z0-9\s]+", caseSensitive: false);
   // Regular expression to detect tokens starting with a digit.
   // For example font family 'Goudy Bookletter 1911' falls into this
   // category.
@@ -144,8 +146,8 @@ class FontManager {
   ///
   /// In order to avoid all these browser compatibility issues this method:
   /// * Detects the family names that might cause a conflict.
-  /// * Loads it with quotes.
-  /// * Loads it again without quotes.
+  /// * Loads it with the quotes.
+  /// * Loads it again without the quotes.
   /// * For all the other family names [html.FontFace] is loaded only once.
   ///
   /// See also:
@@ -157,16 +159,13 @@ class FontManager {
     String asset,
     Map<String, String> descriptors,
   ) {
-    // Fonts names when a package dependency is added has '/' in the family
-    // names such as 'package/material_design_icons_flutter/...'
-    if (family.contains('/') ||
-        punctuations.hasMatch(family) ||
-        startWithDigit.hasMatch(family)) {
-      // Load a font family name with special chracters once here wrapped in
+    if (startWithDigit.hasMatch(family) ||
+        notPunctuation.stringMatch(family) != family) {
+      // Load a font family name with special characters once here wrapped in
       // quotes.
-      _loadFontFace("'$family'", asset, descriptors);
+      _loadFontFace('\'$family\'', asset, descriptors);
     }
-    // Load all font fonts, without quoted family names.
+    // Load all fonts, without quoted family names.
     _loadFontFace(family, asset, descriptors);
   }
 
