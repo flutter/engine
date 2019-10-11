@@ -79,6 +79,11 @@ static const char* kDartDisableIntegerDivisionArgs[] = {
     "--no_use_integer_division",
 };
 
+FML_ALLOW_UNUSED_TYPE
+static const char* kDartEnableInterpreterArgs[] = {
+   "--enable-interpreter",
+};
+
 static const char* kDartAssertArgs[] = {
     // clang-format off
     "--enable_asserts",
@@ -340,6 +345,13 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
 #endif  // !OS_IOS || TARGET_OS_SIMULATOR
 #endif  // (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_JIT_RELEASE)
+  // In jit_release mode we enable the interpreter for a faster
+  // startup.
+  PushBackAll(&args, kDartEnableInterpreterArgs,
+              fml::size(kDartEnableInterpreterArgs));
+#endif // (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_JIT_RELEASE)
+  
   if (enable_asserts) {
     PushBackAll(&args, kDartAssertArgs, fml::size(kDartAssertArgs));
   }
