@@ -89,6 +89,6 @@ template("aot_snapshot") {
   }
 }
 
-aot_snapshot("vmservice") {
+aot_snapshot("vmservice_snapshot") {
   product = false
 }
