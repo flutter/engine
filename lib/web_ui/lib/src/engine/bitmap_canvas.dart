@@ -676,7 +676,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       out vec4 vColor;
       void main() {
         gl_Position = (position * u_scale) + u_shift;
-        vColor = color;
+        vColor = color.zyxw;
       }''';
   // This fragment shader enables Int32List of colors to be passed directly
   // to gl context buffer for rendering by decoding RGBA8888.
@@ -686,7 +686,26 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       in vec4 vColor;
       out vec4 fragColor;
       void main() {
-        fragColor = vec4(vColor[2], vColor[1], vColor[0], vColor[3]);
+        fragColor = vColor;
+      }''';
+
+  // WebGL 1 version of shaders above for compatibility with Safari.
+  static const _vertexShaderTriangleEs1 = '''
+      attribute vec4 position;
+      attribute vec4 color;
+      uniform vec4 u_scale;
+      uniform vec4 u_shift;
+      varying vec4 vColor;
+      void main() {
+        gl_Position = (position * u_scale) + u_shift;
+        vColor = color.zyxw;
+      }''';
+  // WebGL 1 version of shaders above for compatibility with Safari.
+  static const _fragmentShaderTriangleEs1 = '''
+      precision highp float;
+      varying vec4 vColor;
+      void main() {
+        gl_FragColor = vColor;
       }''';
 
   /// Draws vertices on a gl context.
@@ -734,13 +753,13 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     _children.add(glCanvas);
     rootElement.append(glCanvas);
 
-    _GlContext gl = _GlContext(glCanvas);
-
+    final bool isWebKit = (browserEngine == BrowserEngine.webkit);
+    _GlContext gl = _GlContext(glCanvas, isWebKit);
     // Create and compile shaders.
-    Object vertexShader =
-        gl.compileShader('VERTEX_SHADER', _vertexShaderTriangle);
-    Object fragmentShader =
-        gl.compileShader('FRAGMENT_SHADER', _fragmentShaderTriangle);
+    Object vertexShader = gl.compileShader('VERTEX_SHADER',
+        isWebKit ? _vertexShaderTriangleEs1 : _vertexShaderTriangle);
+    Object fragmentShader = gl.compileShader('FRAGMENT_SHADER',
+        isWebKit ? _fragmentShaderTriangleEs1 : _fragmentShaderTriangle);
     // Create a gl program and link shaders.
     Object program = gl.createProgram();
     gl.attachShader(program, vertexShader);
@@ -787,22 +806,24 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     final int pointCount = positions.length ~/ 2;
     _setFillAndStrokeStyle('', color.toCssString());
     _ctx.lineWidth = 1.0;
-    int triIndex = 0;
     _ctx.beginPath();
-    for (int i = 0, len = pointCount * 2; i < len; i += 2) {
-      final double dx = positions[i];
-      final double dy = positions[i + 1];
-      if (triIndex & 3 == 0) {
-        _ctx.moveTo(dx, dy);
-      } else {
-        _ctx.lineTo(dx, dy);
-      }
-      if (triIndex & 3 == 2) {
-        _ctx.closePath();
-        _ctx.stroke();
-        triIndex = 0;
-      } else {
-        triIndex++;
+    for (int i = 0, len = pointCount * 2; i < len;) {
+      for (int triangleVertexIndex = 0;
+          triangleVertexIndex < 3;
+          triangleVertexIndex++, i += 2) {
+        final double dx = positions[i];
+        final double dy = positions[i + 1];
+        switch (triangleVertexIndex) {
+          case 0:
+            _ctx.moveTo(dx, dy);
+            break;
+          case 1:
+            _ctx.lineTo(dx, dy);
+            break;
+          case 2:
+            _ctx.closePath();
+            _ctx.stroke();
+        }
       }
     }
     restore();
@@ -832,6 +853,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       }
       return triangleList;
     } else {
+      assert(mode == ui.VertexMode.triangleStrip);
       // Set of connected triangles. Each triangle shares 2 last vertices.
       final int vertexCount = positions.length ~/ 2;
       int triangleCount = vertexCount - 2;
@@ -1110,8 +1132,8 @@ class _GlContext {
   dynamic _kLinkStatus;
   dynamic _kUnsignedByte;
 
-  _GlContext(html.CanvasElement canvas)
-      : glContext = canvas.getContext('webgl2');
+  _GlContext(html.CanvasElement canvas, bool useWebGl1)
+      : glContext = canvas.getContext(useWebGl1 ? 'webgl' : 'webgl2');
 
   Object compileShader(String shaderType, String source) {
     Object shader = _createShader(shaderType);

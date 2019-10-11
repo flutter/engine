@@ -32,13 +32,13 @@ class SkVertices implements ui.Vertices {
   final Float32List _positions;
   final ui.VertexMode _mode;
 
-  SkVertices(ui.VertexMode mode,
-      List<ui.Offset> positions, {
-        List<ui.Offset> textureCoordinates,
-        List<ui.Color> colors,
-        List<int> indices,
-      })
-      : assert(mode != null),
+  SkVertices(
+    ui.VertexMode mode,
+    List<ui.Offset> positions, {
+    List<ui.Offset> textureCoordinates,
+    List<ui.Color> colors,
+    List<int> indices,
+  })  : assert(mode != null),
         assert(positions != null),
         _colors = Int32List.fromList(colors.map((ui.Color c) => c.value)),
         _positions = _offsetListToInt32List(positions),
@@ -59,22 +59,22 @@ class SkVertices implements ui.Vertices {
         ? _encodePointList(textureCoordinates)
         : null;
     final Int32List encodedColors =
-    colors != null ? _encodeColorList(colors) : null;
+        colors != null ? _encodeColorList(colors) : null;
     final Uint16List encodedIndices =
-    indices != null ? Uint16List.fromList(indices) : null;
+        indices != null ? Uint16List.fromList(indices) : null;
 
     if (!_init(mode, encodedPositions, encodedTextureCoordinates, encodedColors,
         encodedIndices))
       throw ArgumentError('Invalid configuration for vertices.');
   }
 
-  SkVertices.raw(ui.VertexMode mode,
-      Float32List positions, {
-        Float32List textureCoordinates,
-        Int32List colors,
-        Uint16List indices,
-      })
-      : assert(mode != null),
+  SkVertices.raw(
+    ui.VertexMode mode,
+    Float32List positions, {
+    Float32List textureCoordinates,
+    Int32List colors,
+    Uint16List indices,
+  })  : assert(mode != null),
         assert(positions != null),
         _colors = colors,
         _positions = positions,
@@ -110,7 +110,7 @@ class SkVertices implements ui.Vertices {
     }
 
     final js.JsObject vertices =
-    canvasKit.callMethod('MakeSkVertices', <dynamic>[
+        canvasKit.callMethod('MakeSkVertices', <dynamic>[
       skVertexMode,
       _encodePoints(positions),
       _encodePoints(textureCoordinates),
@@ -132,7 +132,7 @@ class SkVertices implements ui.Vertices {
     if (points == null) return null;
 
     js.JsArray<js.JsArray<double>> encodedPoints =
-    js.JsArray<js.JsArray<double>>();
+        js.JsArray<js.JsArray<double>>();
     encodedPoints.length = points.length ~/ 2;
     for (int i = 0; i < points.length; i += 2) {
       encodedPoints[i ~/ 2] = makeSkPoint(ui.Offset(points[i], points[i + 1]));
