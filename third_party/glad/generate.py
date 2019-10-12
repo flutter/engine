@@ -3,24 +3,8 @@
 
 import os
 import sys
-import argparse
-
-def generate(output):
-    dirname, _ = os.path.split(os.path.abspath(__file__))
-    command = 'cd ' + dirname + '/scripts;'
-    command += 'python -m glad --profile="compatibility" --api="gl=3.3" --generator="c" --spec="gl" --extensions="" --reproducible --quiet --out-path='
-    command += output
-    os.system(command)
-
-
-def main():
-    parser = argparse.ArgumentParser();
-    parser.add_argument('-o', '--output', dest='output',
-      required=True, help='The output directory for glad sources.')
-    args = parser.parse_args()
-    output = os.path.abspath(args.output)
-
-    generate(output)
+sys.path.append(os.path.split(os.path.abspath(__file__))[0] + '/scripts')
+from glad import __main__
 
 if __name__ == '__main__':
-    main()
+    __main__.main()

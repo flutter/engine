@@ -33,5 +33,14 @@ action("gen_glad_sources") {
     "$_glad_gen_dir/include/KHR/khrplatform.h"
   ]
 
-  args = [ "--output", rebase_path("$_glad_gen_dir") ]
+  args = [
+    "--profile=compatibility",
+    "--api=gl=3.3",
+    "--generator=c",
+    "--spec=gl",
+    "--extensions=",
+    "--reproducible",
+    "--quiet",
+    "--out-path", rebase_path("$_glad_gen_dir")
+  ]
 }
