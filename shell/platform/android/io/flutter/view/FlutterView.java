@@ -61,6 +61,7 @@ import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.plugin.common.ActivityLifecycleListener;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.plugin.mouse.MouseCursorController;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 
@@ -119,6 +120,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     private final SystemChannel systemChannel;
     private final InputMethodManager mImm;
     private final TextInputPlugin mTextInputPlugin;
+    private final MouseCursorController mMouseCursorController;
     private final AndroidKeyProcessor androidKeyProcessor;
     private final AndroidTouchProcessor androidTouchProcessor;
     private AccessibilityBridge mAccessibilityNodeProvider;
@@ -214,6 +216,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         PlatformViewsController platformViewsController = mNativeView.getPluginRegistry().getPlatformViewsController();
         mTextInputPlugin = new TextInputPlugin(this, dartExecutor, platformViewsController);
+        mMouseCursorController = new MouseCursorController(this, dartExecutor, context);
         androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
         androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer);
         mNativeView.getPluginRegistry().getPlatformViewsController().attachTextInputPlugin(mTextInputPlugin);

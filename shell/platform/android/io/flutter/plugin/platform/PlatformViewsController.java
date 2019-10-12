@@ -21,6 +21,7 @@ import android.view.View;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.plugin.mouse.MouseCursorController;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.TextureRegistry;
 
@@ -52,6 +53,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     private TextureRegistry textureRegistry;
 
     private TextInputPlugin textInputPlugin;
+
+    private MouseCursorController mouseCursorController;
 
     // The system channel used to communicate with the framework about platform views.
     private PlatformViewsChannel platformViewsChannel;
