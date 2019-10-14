@@ -41,7 +41,7 @@ felt test --debug test/golden_tests/engine/canvas_golden_test.dart
 
 ## Configuration files
 
-`chrome_lock.yaml` contains the version of Chrome we use to test Flutter for
+`browser_lock.yaml` contains the version of Chrome we use to test Flutter for
 web. Chrome is not automatically updated whenever a new release is available.
 Instead, we update this file manually once in a while.
 
