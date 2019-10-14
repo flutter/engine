@@ -34,9 +34,7 @@ abstract class PlatformBinding {
 
   int getChromeBuild(YamlMap chromeLock);
   String getChromeDownloadUrl(String version);
-  String getFirefoxDownloadUrl(String version);
   String getChromeExecutablePath(io.Directory versionDir);
-  String getFirefoxExecutablePath(io.Directory versionDir);
 }
 
 const String _kBaseDownloadUrl =
@@ -56,18 +54,6 @@ class _LinuxBinding implements PlatformBinding {
   @override
   String getChromeExecutablePath(io.Directory versionDir) =>
       path.join(versionDir.path, 'chrome-linux', 'chrome');
-
-  @override
-  String getFirefoxDownloadUrl(String version) {
-    // TODO: implement getFirefoxDownloadUrl
-    return null;
-  }
-
-  @override
-  String getFirefoxExecutablePath(io.Directory versionDir) {
-    // TODO: implement getFirefoxExecutablePath
-    return null;
-  }
 }
 
 class _MacBinding implements PlatformBinding {
@@ -86,16 +72,4 @@ class _MacBinding implements PlatformBinding {
       'Contents',
       'MacOS',
       'Chromium');
-
-  @override
-  String getFirefoxDownloadUrl(String version) {
-    // TODO: implement getFirefoxDownloadUrl
-    return null;
-  }
-
-  @override
-  String getFirefoxExecutablePath(io.Directory versionDir) {
-    // TODO: implement getFirefoxExecutablePath
-    return null;
-  }
 }
