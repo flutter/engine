@@ -361,6 +361,7 @@ class RecordingCanvas {
     _hasArbitraryPaint = true;
     _didDraw = true;
     final Float32List positions = vertices.positions;
+    assert(positions.length >= 2);
     double minValueX, maxValueX, minValueY, maxValueY;
     minValueX = maxValueX = positions[0];
     minValueY = maxValueY = positions[1];
