@@ -111,7 +111,7 @@ Future<int> starter(
     final Directory temp =
         Directory.systemTemp.createTempSync('train_frontend_server');
     try {
-      for (var i = 0; i < 3; i++) {
+      for (int i = 0; i < 3; i++) {
         final String outputTrainingDill = path.join(temp.path, 'app.dill');
         options = frontend.argParser.parse(<String>[
           '--incremental',
