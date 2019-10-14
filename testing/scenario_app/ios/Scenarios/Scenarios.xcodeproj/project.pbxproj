@@ -30,7 +30,6 @@
 		24D47D1B230C79840069DD5E /* golden_platform_view_D211AP.png in Resources */ = {isa = PBXBuildFile; fileRef = 24D47D1A230C79840069DD5E /* golden_platform_view_D211AP.png */; };
 		24D47D1D230CA2700069DD5E /* golden_platform_view_iPhone SE_simulator.png in Resources */ = {isa = PBXBuildFile; fileRef = 24D47D1C230CA2700069DD5E /* golden_platform_view_iPhone SE_simulator.png */; };
 		24F1FB89230B4579005ACE7C /* TextPlatformView.m in Sources */ = {isa = PBXBuildFile; fileRef = 24F1FB87230B4579005ACE7C /* TextPlatformView.m */; };
-		68A1B94A231F746100A3C10F /* AccessibilityUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = 68A1B949231F746100A3C10F /* AccessibilityUITests.m */; };
 		6816DB9E231750ED00A51400 /* GoldenPlatformViewTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6816DB9D231750ED00A51400 /* GoldenPlatformViewTests.m */; };
 		6816DBA12317573300A51400 /* GoldenImage.m in Sources */ = {isa = PBXBuildFile; fileRef = 6816DBA02317573300A51400 /* GoldenImage.m */; };
 		6816DBA42318358200A51400 /* PlatformViewGoldenTestManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 6816DBA32318358200A51400 /* PlatformViewGoldenTestManager.m */; };
@@ -39,6 +38,7 @@
 		6816DBAC2318696600A51400 /* golden_platform_view_opacity_iPhone SE_simulator.png in Resources */ = {isa = PBXBuildFile; fileRef = 6816DBA72318696600A51400 /* golden_platform_view_opacity_iPhone SE_simulator.png */; };
 		6816DBAD2318696600A51400 /* golden_platform_view_cliprect_iPhone SE_simulator.png in Resources */ = {isa = PBXBuildFile; fileRef = 6816DBA82318696600A51400 /* golden_platform_view_cliprect_iPhone SE_simulator.png */; };
 		6816DBAE2318696600A51400 /* golden_platform_view_cliprrect_iPhone SE_simulator.png in Resources */ = {isa = PBXBuildFile; fileRef = 6816DBA92318696600A51400 /* golden_platform_view_cliprrect_iPhone SE_simulator.png */; };
+		68A1B94A231F746100A3C10F /* AccessibilityUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = 68A1B949231F746100A3C10F /* AccessibilityUITests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -122,7 +122,6 @@
 		24D47D1E230CA4480069DD5E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		24F1FB87230B4579005ACE7C /* TextPlatformView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TextPlatformView.m; sourceTree = "<group>"; };
 		24F1FB88230B4579005ACE7C /* TextPlatformView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TextPlatformView.h; sourceTree = "<group>"; };
-		68A1B949231F746100A3C10F /* AccessibilityUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AccessibilityUITests.m; sourceTree = "<group>"; };
 		6816DB9C231750ED00A51400 /* GoldenPlatformViewTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GoldenPlatformViewTests.h; sourceTree = "<group>"; };
 		6816DB9D231750ED00A51400 /* GoldenPlatformViewTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GoldenPlatformViewTests.m; sourceTree = "<group>"; };
 		6816DB9F2317573300A51400 /* GoldenImage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GoldenImage.h; sourceTree = "<group>"; };
@@ -134,6 +133,7 @@
 		6816DBA72318696600A51400 /* golden_platform_view_opacity_iPhone SE_simulator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "golden_platform_view_opacity_iPhone SE_simulator.png"; sourceTree = "<group>"; };
 		6816DBA82318696600A51400 /* golden_platform_view_cliprect_iPhone SE_simulator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "golden_platform_view_cliprect_iPhone SE_simulator.png"; sourceTree = "<group>"; };
 		6816DBA92318696600A51400 /* golden_platform_view_cliprrect_iPhone SE_simulator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "golden_platform_view_cliprrect_iPhone SE_simulator.png"; sourceTree = "<group>"; };
+		68A1B949231F746100A3C10F /* AccessibilityUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AccessibilityUITests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -557,6 +557,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
+				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -580,6 +581,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
+				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -655,6 +657,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
+				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -681,6 +684,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = S8QB4VV633;
+				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",

@@ -235,6 +235,10 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   return nil;
 }
 
+- (NSString *)accessibilityIdentifier {
+  return [NSString stringWithFormat:@"%d", self.node.id];
+}
+
 - (NSString*)accessibilityLabel {
   if ([self node].label.empty())
     return nil;
@@ -499,6 +503,10 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 #pragma mark - UIAccessibilityContainer overrides
+
+- (NSString *)accessibilityIdentifier {
+  return [NSString stringWithFormat:@"c%@", self.semanticsObject.accessibilityIdentifier];
+}
 
 - (NSInteger)accessibilityElementCount {
   NSInteger count = [[_semanticsObject children] count] + 1;

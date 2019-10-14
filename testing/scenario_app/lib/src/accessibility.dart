@@ -9,7 +9,7 @@ import 'scenario.dart';
 
 /// Regular Accessibility Scenario.
 ///
-/// Builds an accessibility tree with element traversal order as 1, 3, 4, 2.
+/// Builds an accessibility tree with element traversal order as 0, 1, 3, 4, 2.
 class AccessibilityScenario extends Scenario {
   /// Creates the Accessibility scenario.
   ///
@@ -45,7 +45,7 @@ class AccessibilityScenario extends Scenario {
     builder.updateNode(
       id: 0,
       rect: const Rect.fromLTWH(
-        0,
+        10,
         0,
         300,
         400,
@@ -61,7 +61,7 @@ class AccessibilityScenario extends Scenario {
      builder.updateNode(
       id: 1,
       rect: const Rect.fromLTWH(
-        0,
+        10,
         0,
         300,
         100,
@@ -77,8 +77,8 @@ class AccessibilityScenario extends Scenario {
     builder.updateNode(
       id: 2,
       rect: const Rect.fromLTWH(
-        0,
-        100,
+        10,
+        105,
         300,
         300,
       ),
@@ -91,7 +91,7 @@ class AccessibilityScenario extends Scenario {
     builder.updateNode(
       id: 3,
       rect: const Rect.fromLTWH(
-        0,
+        10,
         0,
         50,
         50,
@@ -105,7 +105,7 @@ class AccessibilityScenario extends Scenario {
     builder.updateNode(
       id: 4,
       rect: const Rect.fromLTWH(
-        50,
+        70,
         0,
         50,
         50,
