@@ -28,7 +28,9 @@ void main() async {
     try {
       sceneElement.append(engineCanvas.rootElement);
       html.document.body.append(sceneElement);
-      await matchGoldenFile('$fileName.png', region: region, write: write);
+      // Set rate to 0.66% for webGL difference across platforms.
+      await matchGoldenFile('$fileName.png', region: region, write: write,
+          maxDiffRate: 0.66 / 100.0);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // golden screenshot.
