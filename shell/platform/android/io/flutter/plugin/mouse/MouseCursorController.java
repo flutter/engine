@@ -81,7 +81,6 @@ public class MouseCursorController {
     public void setCursor(int cursor) {
       if (currentCursor != cursor) {
         currentCursor = cursor;
-        int systemCursorConstant = MouseCursors.resolveSystemCursorConstant(cursor);
         view.setPointerIcon(resolveCursor(cursor));
       }
     }
@@ -110,8 +109,10 @@ public class MouseCursorController {
     final PointerIcon cached = cursorObjects.get(new Integer(cursor));
     if (cached != null)
       return cached;
-    final int systemCursorConstant = MouseCursors.resolveSystemCursorConstant(cursor);
-    final PointerIcon result = PointerIcon.getSystemIcon(context, systemCursorConstant);
+    final PointerIcon result = PointerIcon.getSystemIcon(
+      context,
+      MouseCursors.resolveSystemCursorConstant(cursor),
+    );
     cursorObjects.put(new Integer(cursor), result);
     return result;
   }
