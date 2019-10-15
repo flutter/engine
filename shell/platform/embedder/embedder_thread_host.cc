@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// This is why we can't yet export the UI thread to embedders.
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
@@ -30,9 +29,9 @@ namespace flutter {
 static std::pair<bool, fml::RefPtr<EmbedderTaskRunner>>
 CreateEmbedderTaskRunner(const FlutterTaskRunnerDescription* description) {
   if (description == nullptr) {
-    // This is not embedder error. We will just have to create a plain old task
-    // runner (and create a thread for it) instead of using a task runner
-    // provided to us by the embedder.
+    // This is not embedder error. The embedder API will just have to create a
+    // plain old task runner (and create a thread for it) instead of using a
+    // task runner provided to us by the embedder.
     return {true, {}};
   }
 
@@ -91,9 +90,9 @@ EmbedderThreadHost::CreateEmbedderOrEngineManagedThreadHost(
   }
 
   // Only attempt to create the engine managed host if the embedder did not
-  // specify a custom configuration. We don't want to fallback to the engine
-  // managed configuration if the embedder attempted to specify a configuration
-  // but messed up with an incorrect configuration.
+  // specify a custom configuration. Don't fallback to the engine managed
+  // configuration if the embedder attempted to specify a configuration but
+  // messed up with an incorrect configuration.
   if (custom_task_runners == nullptr) {
     auto host = CreateEngineManagedThreadHost();
     if (host && host->IsValid()) {
@@ -121,8 +120,8 @@ EmbedderThreadHost::CreateEmbedderManagedThreadHost(
 
   // The UI and IO threads are always created by the engine and the embedder has
   // no opportunity to specify task runners for the same.
-  // TODO(chinmaygarde): If we ever decide to expose more task runners to engine
-  // managed threads, this mask will need to be updated.
+  //
+  // If/when more task runners are exposed, this mask will need to be updated.
   uint64_t engine_thread_host_mask =
       ThreadHost::Type::UI | ThreadHost::Type::IO;
 
@@ -133,13 +132,13 @@ EmbedderThreadHost::CreateEmbedderManagedThreadHost(
 
   if (!platform_task_runner_pair.first || !render_task_runner_pair.first) {
     // User error while supplying a custom task runner. Return an invalid thread
-    // host. This will abort engine initialization. We don't want to fallback to
-    // defaults if the user wanted to specify a task runner but just messed up
-    // instead.
+    // host. This will abort engine initialization. Don't fallback to defaults
+    // if the user wanted to specify a task runner but just messed up instead.
     return nullptr;
   }
 
-  // If the embedder has not supplied a GPU task runner, we need to create one.
+  // If the embedder has not supplied a GPU task runner, one needs to be
+  // created.
   if (!render_task_runner_pair.second) {
     engine_thread_host_mask |= ThreadHost::Type::GPU;
   }
@@ -153,8 +152,8 @@ EmbedderThreadHost::CreateEmbedderManagedThreadHost(
     }
   }
 
-  // Create a thread host with just the threads we have to manage. The
-  // embedder has provided the rest.
+  // Create a thread host with just the threads that need to be managed by the
+  // engine. The embedder has provided the rest.
   ThreadHost thread_host(kFlutterThreadName, engine_thread_host_mask);
 
   // If the embedder has supplied a platform task runner, use that. If not, use

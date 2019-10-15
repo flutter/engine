@@ -2484,10 +2484,9 @@ TEST_F(EmbedderTest, CanCreateEmbedderWithCustomRenderTaskRunner) {
 ///
 TEST_F(EmbedderTest,
        CanCreateEmbedderWithCustomRenderTaskRunnerTheSameAsPlatformTaskRunner) {
-  // We need to create a new thread to act as the platform thread because we
-  // can't wait on assertions on that same thread to which tasks are being
-  // posted to.
-
+  // A new thread needs to be created for the platform thread because the test
+  // can't wait for assertions to be completed on the same thread that services
+  // platform task runner tasks.
   auto platform_task_runner = CreateNewThread("platform_thread");
 
   static std::mutex engine_mutex;

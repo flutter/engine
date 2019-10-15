@@ -54,8 +54,8 @@ bool EmbedderEngine::LaunchShell() {
                          shell_args_->on_create_platform_view,
                          shell_args_->on_create_rasterizer);
 
-  // Reset the args no matter what. We are never going to use them to initialize
-  // a shell again.
+  // Reset the args no matter what. They will never be used to initialize a
+  // shell again.
   shell_args_.reset();
 
   return IsValid();

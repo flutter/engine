@@ -995,7 +995,7 @@ FlutterEngineResult FlutterEngineRun(size_t version,
                                          engine_out);
 
 //------------------------------------------------------------------------------
-/// @brief      Shuts down a Flutter engine instance. the engine handle is no
+/// @brief      Shuts down a Flutter engine instance. The engine handle is no
 ///             longer valid for any calls in the embedder API after this point.
 ///             Making additional calls with this handle is undefined behavior.
 ///
