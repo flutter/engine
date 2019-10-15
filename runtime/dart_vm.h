@@ -32,7 +32,7 @@ namespace flutter {
 ///             time. The Dart VM may be created and destroyed on any thread.
 ///             Typically, the first Flutter shell instance running in the
 ///             process bootstraps the Dart VM in the process as it starts up.
-///             This cost is borne on he platform task runner of that first
+///             This cost is borne on the platform task runner of that first
 ///             Flutter shell. When the last Flutter shell instance is
 ///             destroyed, the VM is destroyed as well if all shell instances
 ///             were launched with the `Settings::leak_vm` flag set to false. If
@@ -56,7 +56,7 @@ namespace flutter {
 ///             necessary to create a VM (even if they end up not being used).
 ///
 ///             In a running VM instance, the service isolate is launched by
-///             default is the VM is configured to do so. All root isolates must
+///             default if the VM is configured to do so. All root isolates must
 ///             be launched and referenced explicitly.
 class DartVM {
  public:
@@ -105,7 +105,7 @@ class DartVM {
   std::shared_ptr<const DartVMData> GetVMData() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      The service protocol instance associated with this running VM
+  /// @brief      The service protocol instance associated with this running
   ///             Dart VM instance. This object manages native handlers for
   ///             engine vended service protocol methods.
   ///
@@ -124,20 +124,20 @@ class DartVM {
   std::shared_ptr<IsolateNameServer> GetIsolateNameServer() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      The task runner whose tasks may may be executed concurrently
-  ///             on a pool of worker threads. All subsystems within a running
-  ///             shell instance use this worker pool for their concurrent
-  ///             tasks. This also means that the concurrent worker pool may
-  ///             service tasks from multiple shell instances. The number of
-  ///             workers in a concurrent worker pool depending on the hardware
-  ///             concurrency of the target device (usually equal to the number
-  ///             of logical CPU cores).
+  /// @brief      The task runner whose tasks may be executed concurrently on a
+  ///             pool of worker threads. All subsystems within a running shell
+  ///             instance use this worker pool for their concurrent tasks. This
+  ///             also means that the concurrent worker pool may service tasks
+  ///             from multiple shell instances. The number of workers in a
+  ///             concurrent worker pool depends on the hardware concurrency
+  ///             of the target device (usually equal to the number of logical
+  ///             CPU cores).
   ///
   ///
   /// @attention  Even though concurrent task queue is associated with a running
-  ///             Dart VM instance, the worker pool used to by the Flutter
-  ///             engine is NOT shared with the Dart VM internal worker pool.
-  ///             The presence of this worker pool as member of the Dart VM is
+  ///             Dart VM instance, the worker pool used by the Flutter engine
+  ///             is NOT shared with the Dart VM internal worker pool. The
+  ///             presence of this worker pool as member of the Dart VM is
   ///             merely to utilize the strong thread safety guarantees around
   ///             Dart VM lifecycle for the lifecycle of the concurrent worker
   ///             pool as well.
