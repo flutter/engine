@@ -51,13 +51,9 @@ public class MouseCursorChannel {
     private void handleSetCursor(@NonNull JSONArray argumentList, @NonNull MethodChannel.Result result) {
       int cursor;
       try {
-        // Android only supports one pointer device
-        final JSONObject deviceCursorsRaw = argumentList.getJSONObject(0);
-        if (deviceCursorsRaw.length() != 1) {
-          throw new Exception(String.format("Expect one device request but received %d", deviceCursorsRaw.length()));
-        }
-        final String key = deviceCursorsRaw.keys().next();
-        cursor = deviceCursorsRaw.getInt(key);
+        // Argument list is [device, cursor]. Since Android only supports one pointer device,
+        // we can ignore argument 0.
+        cursor = argumentList.getInt(1);
       } catch (Exception e) {
         result.error("error", "Parameter error: " + e.getMessage(), null);
         return;
@@ -84,7 +80,7 @@ public class MouseCursorChannel {
       Log.v(TAG, "Received '" + method + "' message.");
       try {
         switch (method) {
-          case "setCursors":
+          case "setCursor":
             handleSetCursor(argumentList, result);
             break;
           default:
