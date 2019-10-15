@@ -9,7 +9,6 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Iterator;
