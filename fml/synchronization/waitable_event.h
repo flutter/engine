@@ -52,9 +52,8 @@ class AutoResetWaitableEvent final {
   // called) each |Signal()| unblocks exactly one |Wait()|.
   void Wait();
 
-  // Like |Wait()|, but with a timeout. Also unblocks if |timeout_microseconds|
-  // without being signaled in which case it returns true (otherwise, it returns
-  // false).
+  // Like |Wait()|, but with a timeout. Also unblocks if |timeout| without being
+  // signaled in which case it returns true (otherwise, it returns false).
   bool WaitWithTimeout(TimeDelta timeout);
 
   // Returns whether this event is in a signaled state or not. For use in tests
@@ -95,9 +94,8 @@ class ManualResetWaitableEvent final {
   // Blocks the calling thread until the event is signaled.
   void Wait();
 
-  // Like |Wait()|, but with a timeout. Also unblocks if |timeout_microseconds|
-  // without being signaled in which case it returns true (otherwise, it returns
-  // false).
+  // Like |Wait()|, but with a timeout. Also unblocks if |timeout| without being
+  // signaled in which case it returns true (otherwise, it returns false).
   bool WaitWithTimeout(TimeDelta timeout);
 
   // Returns whether this event is in a signaled state or not. For use in tests
