@@ -92,8 +92,7 @@ void Win32TaskRunner::PostTask(FlutterTask flutter_task,
     // the lock here momentarily till the end of the scope is a pessimization.
   }
 
-  BOOL success = PostThreadMessage(main_thread_id_, WM_NULL, 0, 0);
-  if (!success) {
+  if (!PostThreadMessage(main_thread_id_, WM_NULL, 0, 0)) {
     OutputDebugString(L"Failed to post message to main thread.");
   }
 }

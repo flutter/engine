@@ -18,7 +18,7 @@
 namespace flutter {
 
 // A custom task runner that integrates with user32 GetMessage semantics so that
-// host app can own it's own message loop and flutter still gets to process
+// host app can own its own message loop and flutter still gets to process
 // tasks on a timely basis.
 class Win32TaskRunner {
  public:
