@@ -4,10 +4,12 @@
 
 #define FML_USED_ON_EMBEDDER
 
+#include <algorithm>
 #include <functional>
 #include <future>
 #include <memory>
 
+#include "flutter/common/runtime.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/fml/command_line.h"
@@ -207,6 +209,10 @@ TEST(ShellTestNoFixture, EnableMirrorsIsWhitelisted) {
     GTEST_SKIP();
     return;
   }
+#if FLUTTER_RELEASE
+  GTEST_SKIP();
+  return;
+#endif
 
   const std::vector<fml::CommandLine::Option> options = {
       fml::CommandLine::Option("dart-flags", "--enable_mirrors")};
@@ -223,7 +229,7 @@ TEST_F(ShellTest, BlacklistedDartVMFlag) {
       fml::CommandLine::Option("dart-flags", "--verify_after_gc")};
   fml::CommandLine command_line("", options, std::vector<std::string>());
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
+#if !FLUTTER_RELEASE
   // Upon encountering a non-whitelisted Dart flag the process terminates.
   const char* expected =
       "Encountered blacklisted Dart VM flag: --verify_after_gc";
@@ -241,7 +247,7 @@ TEST_F(ShellTest, WhitelistedDartVMFlag) {
   fml::CommandLine command_line("", options, std::vector<std::string>());
   flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
+#if !FLUTTER_RELEASE
   EXPECT_EQ(settings.dart_flags.size(), 2u);
   EXPECT_EQ(settings.dart_flags[0], "--max_profile_depth 1");
   EXPECT_EQ(settings.dart_flags[1], "--random_seed 42");
@@ -433,7 +439,7 @@ TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
   }
 }
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+#if FLUTTER_RELEASE
 TEST_F(ShellTest, ReportTimingsIsCalledLaterInReleaseMode) {
 #else
 TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
@@ -473,7 +479,7 @@ TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
   fml::TimePoint finish = fml::TimePoint::Now();
   fml::TimeDelta ellapsed = finish - start;
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+#if FLUTTER_RELEASE
   // Our batch time is 1000ms. Hopefully the 800ms limit is relaxed enough to
   // make it not too flaky.
   ASSERT_TRUE(ellapsed >= fml::TimeDelta::FromMilliseconds(800));
@@ -792,6 +798,118 @@ TEST_F(ShellTest, CanCreateImagefromDecompressedBytes) {
   RunEngine(shell.get(), std::move(configuration));
 
   latch.Wait();
+}
+
+class MockTexture : public Texture {
+ public:
+  MockTexture(int64_t textureId,
+              std::shared_ptr<fml::AutoResetWaitableEvent> latch)
+      : Texture(textureId), latch_(latch) {}
+
+  ~MockTexture() override = default;
+
+  // Called from GPU thread.
+  void Paint(SkCanvas& canvas,
+             const SkRect& bounds,
+             bool freeze,
+             GrContext* context) override {}
+
+  void OnGrContextCreated() override {}
+
+  void OnGrContextDestroyed() override {}
+
+  void MarkNewFrameAvailable() override {
+    frames_available_++;
+    latch_->Signal();
+  }
+
+  void OnTextureUnregistered() override {
+    unregistered_ = true;
+    latch_->Signal();
+  }
+
+  bool unregistered() { return unregistered_; }
+  int frames_available() { return frames_available_; }
+
+ private:
+  bool unregistered_ = false;
+  int frames_available_ = 0;
+  std::shared_ptr<fml::AutoResetWaitableEvent> latch_;
+};
+
+TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
+  Settings settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  ASSERT_TRUE(ValidateShell(shell.get()));
+  PlatformViewNotifyCreated(shell.get());
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  std::shared_ptr<fml::AutoResetWaitableEvent> latch =
+      std::make_shared<fml::AutoResetWaitableEvent>();
+
+  std::shared_ptr<MockTexture> mockTexture =
+      std::make_shared<MockTexture>(0, latch);
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
+        shell->GetPlatformView()->RegisterTexture(mockTexture);
+        shell->GetPlatformView()->MarkTextureFrameAvailable(0);
+      });
+  latch->Wait();
+
+  EXPECT_EQ(mockTexture->frames_available(), 1);
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetGPUTaskRunner(),
+      [&]() { shell->GetPlatformView()->UnregisterTexture(0); });
+  latch->Wait();
+
+  EXPECT_EQ(mockTexture->unregistered(), true);
+}
+
+TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
+  const std::string message = "dummy isolate launch data.";
+
+  Settings settings = CreateSettingsForFixture();
+  settings.persistent_isolate_data =
+      std::make_shared<fml::DataMapping>(message);
+  TaskRunners task_runners("test",                  // label
+                           GetCurrentTaskRunner(),  // platform
+                           CreateNewThread(),       // gpu
+                           CreateNewThread(),       // ui
+                           CreateNewThread()        // io
+  );
+
+  fml::AutoResetWaitableEvent message_latch;
+  AddNativeCallback("NotifyMessage",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      const auto message_from_dart =
+                          tonic::DartConverter<std::string>::FromDart(
+                              Dart_GetNativeArgument(args, 0));
+                      ASSERT_EQ(message, message_from_dart);
+                      message_latch.Signal();
+                    }));
+
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  ASSERT_TRUE(shell->IsSetup());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("canAccessIsolateLaunchData");
+
+  fml::AutoResetWaitableEvent event;
+  shell->RunEngine(std::move(configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
+
+  message_latch.Wait();
 }
 
 }  // namespace testing

@@ -1019,12 +1019,10 @@ enum Clip {
   antiAliasWithSaveLayer,
 }
 
-// Indicates that the image should not be resized in this dimension.
-//
-// Used by [instantiateImageCodec] as a magical value to disable resizing
-// in the given dimension.
-//
-// This needs to be kept in sync with "kDoNotResizeDimension" in codec.cc
+/// Indicates that the image should not be resized in this dimension.
+///
+/// Used by [instantiateImageCodec] as a magical value to disable resizing
+/// in the given dimension.
 const int _kDoNotResizeDimension = -1;
 
 /// A description of the style to use when drawing on a [Canvas].
@@ -2495,9 +2493,66 @@ class ColorFilter {
         _matrix = null,
         _type = _TypeMode;
 
-  /// Construct a color filter that transforms a color by a 4x5 matrix. The
-  /// matrix is in row-major order and the translation column is specified in
-  /// unnormalized, 0...255, space.
+  /// Construct a color filter that transforms a color by a 5x5 matrix, where
+  /// the fifth row is implicitly added in an identity configuration.
+  ///
+  /// Every pixel's color value, repsented as an `[R, G, B, A]`, is matrix
+  /// multiplied to create a new color:
+  ///
+  /// ```text
+  /// | R' |   | a00 a01 a02 a03 a04 |   | R |
+  /// | G' |   | a10 a11 a22 a33 a44 |   | G |
+  /// | B' | = | a20 a21 a22 a33 a44 | * | B |
+  /// | A' |   | a30 a31 a22 a33 a44 |   | A |
+  /// | 1  |   |  0   0   0   0   1  |   | 1 |
+  /// ```
+  ///
+  /// The matrix is in row-major order and the translation column is specified
+  /// in unnormalized, 0...255, space. For example, the identity matrix is:
+  ///
+  /// ```
+  /// const ColorMatrix identity = ColorFilter.matrix(<double>[
+  ///   1, 0, 0, 0, 0,
+  ///   0, 1, 0, 0, 0,
+  ///   0, 0, 1, 0, 0,
+  ///   0, 0, 0, 1, 0,
+  /// ]);
+  /// ```
+  ///
+  /// ## Examples
+  ///
+  /// An inversion color matrix:
+  ///
+  /// ```
+  /// const ColorFilter invert = ColorFilter.matrix(<double>[
+  ///   -1,  0,  0, 0, 255,
+  ///    0, -1,  0, 0, 255,
+  ///    0,  0, -1, 0, 255,
+  ///    0,  0,  0, 1,   0,
+  /// ]);
+  /// ```
+  ///
+  /// A sepia-toned color matrix (values based on the [Filter Effects Spec](https://www.w3.org/TR/filter-effects-1/#sepiaEquivalent)):
+  ///
+  /// ```
+  /// const ColorFilter sepia = ColorFilter.matrix(<double>[
+  ///   0.393, 0.769, 0.189, 0, 0,
+  ///   0.349, 0.686, 0.168, 0, 0,
+  ///   0.272, 0.534, 0.131, 0, 0,
+  ///   0,     0,     0,     1, 0,
+  /// ]);
+  /// ```
+  ///
+  /// A greyscale color filter (values based on the [Filter Effects Spec](https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent)):
+  ///
+  /// ```
+  /// const ColorFilter greyscale = ColorFilter.matrix(<double>[
+  ///   0.2126, 0.7152, 0.0722, 0, 0,
+  ///   0.2126, 0.7152, 0.0722, 0, 0,
+  ///   0.2126, 0.7152, 0.0722, 0, 0,
+  ///   0,      0,      0,      1, 0,
+  /// ]);
+  /// ```
   const ColorFilter.matrix(List<double> matrix)
       : _color = null,
         _blendMode = null,

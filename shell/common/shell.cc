@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/common/runtime.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/icu_util.h"
 #include "flutter/fml/log_settings.h"
@@ -103,6 +104,10 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
         io_manager_promise.set_value(std::move(io_manager));
       });
 
+  // Send dispatcher_maker to the engine constructor because shell won't have
+  // platform_view set until Shell::Setup is called later.
+  auto dispatcher_maker = platform_view->GetDispatcherMaker();
+
   // Create the engine on the UI thread.
   std::promise<std::unique_ptr<Engine>> engine_promise;
   auto engine_future = engine_promise.get_future();
@@ -110,6 +115,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
       shell->GetTaskRunners().GetUITaskRunner(),
       fml::MakeCopyable([&engine_promise,                                 //
                          shell = shell.get(),                             //
+                         &dispatcher_maker,                               //
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          shared_snapshot = std::move(shared_snapshot),    //
                          vsync_waiter = std::move(vsync_waiter),          //
@@ -125,6 +131,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
 
         engine_promise.set_value(std::make_unique<Engine>(
             *shell,                       //
+            dispatcher_maker,             //
             *shell->GetDartVM(),          //
             std::move(isolate_snapshot),  //
             std::move(shared_snapshot),   //
@@ -201,6 +208,7 @@ std::unique_ptr<Shell> Shell::Create(
     Shell::CreateCallback<PlatformView> on_create_platform_view,
     Shell::CreateCallback<Rasterizer> on_create_rasterizer) {
   PerformInitializationTasks(settings);
+  PersistentCache::SetCacheSkSL(settings.cache_sksl);
 
   TRACE_EVENT0("flutter", "Shell::Create");
 
@@ -228,6 +236,7 @@ std::unique_ptr<Shell> Shell::Create(
     Shell::CreateCallback<Rasterizer> on_create_rasterizer,
     DartVMRef vm) {
   PerformInitializationTasks(settings);
+  PersistentCache::SetCacheSkSL(settings.cache_sksl);
 
   TRACE_EVENT0("flutter", "Shell::CreateWithSnapshots");
 
@@ -720,11 +729,11 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = engine_->GetWeakPtr(), packet = std::move(packet),
-       flow_id = next_pointer_flow_id_] {
+  task_runners_.GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([engine = weak_engine_, packet = std::move(packet),
+                         flow_id = next_pointer_flow_id_]() mutable {
         if (engine) {
-          engine->DispatchPointerDataPacket(*packet, flow_id);
+          engine->DispatchPointerDataPacket(std::move(packet), flow_id);
         }
       }));
   next_pointer_flow_id_++;
@@ -1049,7 +1058,7 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     first_frame_rasterized_ = true;
     ReportTimings();
   } else if (!frame_timings_report_scheduled_) {
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+#if FLUTTER_RELEASE
     constexpr int kBatchTimeInMilliseconds = 1000;
 #else
     constexpr int kBatchTimeInMilliseconds = 100;

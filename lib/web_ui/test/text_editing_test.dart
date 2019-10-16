@@ -18,22 +18,14 @@ TextEditingElement editingElement;
 EditingState lastEditingState;
 
 final InputConfiguration singlelineConfig =
-    InputConfiguration(inputType: InputType.text);
-final Map<String, dynamic> flutterSinglelineConfig = <String, dynamic>{
-  'inputType': <String, String>{
-    'name': 'TextInputType.text',
-  },
-  'obscureText': false,
-};
+    InputConfiguration(inputType: EngineInputType.text);
+final Map<String, dynamic> flutterSinglelineConfig =
+    createFlutterConfig('text');
 
 final InputConfiguration multilineConfig =
-    InputConfiguration(inputType: InputType.multiline);
-final Map<String, dynamic> flutterMultilineConfig = <String, dynamic>{
-  'inputType': <String, String>{
-    'name': 'TextInputType.multiline',
-  },
-  'obscureText': false,
-};
+    InputConfiguration(inputType: EngineInputType.multiline);
+final Map<String, dynamic> flutterMultilineConfig =
+    createFlutterConfig('multiline');
 
 void trackEditingState(EditingState editingState) {
   lastEditingState = editingState;
@@ -74,6 +66,10 @@ void main() {
       // Now the editing element should have focus.
       expect(document.activeElement, input);
       expect(editingElement.domElement, input);
+
+      // Input is appended to the glass pane.
+      expect(domRenderer.glassPaneElement.contains(editingElement.domElement),
+          isTrue);
 
       editingElement.disable();
       expect(
@@ -184,17 +180,12 @@ void main() {
       expect(document.getElementsByTagName('textarea'), hasLength(0));
     });
 
-    test('Can swap backing elements on the fly', () {
-      // TODO(mdebbar): implement.
-    });
-
     group('[persistent mode]', () {
       test('Does not accept dom elements of a wrong type', () {
         // A regular <span> shouldn't be accepted.
         final HtmlElement span = SpanElement();
         expect(
-          () => PersistentTextEditingElement(HybridTextEditing(), span,
-              onDomElementSwap: null),
+          () => PersistentTextEditingElement(HybridTextEditing(), span),
           throwsAssertionError,
         );
       });
@@ -204,8 +195,7 @@ void main() {
         // re-acquiring focus shouldn't happen in persistent mode.
         final InputElement input = InputElement();
         final PersistentTextEditingElement persistentEditingElement =
-            PersistentTextEditingElement(HybridTextEditing(), input,
-                onDomElementSwap: () {});
+            PersistentTextEditingElement(HybridTextEditing(), input);
         expect(document.activeElement, document.body);
 
         document.body.append(input);
@@ -223,8 +213,7 @@ void main() {
       test('Does not dispose and recreate dom elements in persistent mode', () {
         final InputElement input = InputElement();
         final PersistentTextEditingElement persistentEditingElement =
-            PersistentTextEditingElement(HybridTextEditing(), input,
-                onDomElementSwap: () {});
+            PersistentTextEditingElement(HybridTextEditing(), input);
 
         // The DOM element should've been eagerly created.
         expect(input, isNotNull);
@@ -257,8 +246,7 @@ void main() {
       test('Refocuses when setting editing state', () {
         final InputElement input = InputElement();
         final PersistentTextEditingElement persistentEditingElement =
-            PersistentTextEditingElement(HybridTextEditing(), input,
-                onDomElementSwap: () {});
+            PersistentTextEditingElement(HybridTextEditing(), input);
 
         document.body.append(input);
         persistentEditingElement.enable(singlelineConfig,
@@ -278,8 +266,7 @@ void main() {
       test('Works in multi-line mode', () {
         final TextAreaElement textarea = TextAreaElement();
         final PersistentTextEditingElement persistentEditingElement =
-            PersistentTextEditingElement(HybridTextEditing(), textarea,
-                onDomElementSwap: () {});
+            PersistentTextEditingElement(HybridTextEditing(), textarea);
 
         expect(persistentEditingElement.domElement, textarea);
         expect(document.activeElement, document.body);
@@ -319,6 +306,30 @@ void main() {
   group('$HybridTextEditing', () {
     HybridTextEditing textEditing;
     final PlatformMessagesSpy spy = PlatformMessagesSpy();
+
+    int clientId = 0;
+    void showKeyboard({String inputType}) {
+      final MethodCall setClient = MethodCall(
+        'TextInput.setClient',
+        <dynamic>[++clientId, createFlutterConfig(inputType)],
+      );
+      textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      textEditing.handleTextInput(codec.encodeMethodCall(show));
+    }
+
+    void hideKeyboard() {
+      const MethodCall hide = MethodCall('TextInput.hide');
+      textEditing.handleTextInput(codec.encodeMethodCall(hide));
+
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      textEditing.handleTextInput(codec.encodeMethodCall(clearClient));
+    }
+
+    String getEditingInputMode() {
+      return textEditing.editingElement.domElement.getAttribute('inputmode');
+    }
 
     setUp(() {
       textEditing = HybridTextEditing();
@@ -427,6 +438,8 @@ void main() {
 
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
+
+      hideKeyboard();
     });
 
     test('setClient, setEditingState, show, setEditingState, clearClient', () {
@@ -551,11 +564,44 @@ void main() {
       expect(
           textEditing.editingElement.domElement.style.font, '12px sans-serif');
 
-      const MethodCall clearClient = MethodCall('TextInput.clearClient');
-      textEditing.handleTextInput(codec.encodeMethodCall(clearClient));
+      hideKeyboard();
+    });
 
-      // Confirm that [HybridTextEditing] didn't send any messages.
-      expect(spy.messages, isEmpty);
+    test(
+        'negative base offset and selection extent values in editing state is handled',
+        () {
+      final MethodCall setClient = MethodCall(
+          'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
+      textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'xyz',
+        'selectionBase': 1,
+        'selectionExtent': 2,
+      });
+      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      textEditing.handleTextInput(codec.encodeMethodCall(show));
+
+      // Check if the selection range is correct.
+      checkInputEditingState(
+          textEditing.editingElement.domElement, 'xyz', 1, 2);
+
+      const MethodCall setEditingState2 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'xyz',
+        'selectionBase': -1,
+        'selectionExtent': -1,
+      });
+      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState2));
+
+      // The negative offset values are applied to the dom element as 0.
+      checkInputEditingState(
+          textEditing.editingElement.domElement, 'xyz', 0, 0);
+
+      hideKeyboard();
     });
 
     test('Syncs the editing state back to Flutter', () {
@@ -614,8 +660,7 @@ void main() {
         ],
       );
 
-      const MethodCall clearClient = MethodCall('TextInput.clearClient');
-      textEditing.handleTextInput(codec.encodeMethodCall(clearClient));
+      hideKeyboard();
     });
 
     test('Multi-line mode also works', () {
@@ -674,6 +719,125 @@ void main() {
 
       // Confirm that [HybridTextEditing] didn't send any more messages.
       expect(spy.messages, isEmpty);
+    });
+
+    test('sets correct input type in Android', () {
+      debugOperatingSystemOverride = OperatingSystem.android;
+
+      showKeyboard(inputType: 'text');
+      expect(getEditingInputMode(), 'text');
+
+      showKeyboard(inputType: 'number');
+      expect(getEditingInputMode(), 'numeric');
+
+      showKeyboard(inputType: 'phone');
+      expect(getEditingInputMode(), 'tel');
+
+      showKeyboard(inputType: 'emailAddress');
+      expect(getEditingInputMode(), 'email');
+
+      showKeyboard(inputType: 'url');
+      expect(getEditingInputMode(), 'url');
+
+      hideKeyboard();
+
+      debugOperatingSystemOverride = null;
+    });
+
+    test('sets correct input type in iOS', () {
+      debugOperatingSystemOverride = OperatingSystem.iOs;
+
+      showKeyboard(inputType: 'text');
+      expect(getEditingInputMode(), 'text');
+
+      showKeyboard(inputType: 'number');
+      expect(getEditingInputMode(), 'numeric');
+
+      showKeyboard(inputType: 'phone');
+      expect(getEditingInputMode(), 'tel');
+
+      showKeyboard(inputType: 'emailAddress');
+      expect(getEditingInputMode(), 'email');
+
+      showKeyboard(inputType: 'url');
+      expect(getEditingInputMode(), 'url');
+
+      hideKeyboard();
+
+      debugOperatingSystemOverride = null;
+    });
+  });
+
+  group('EditingState', () {
+    EditingState _editingState;
+
+    test('Configure input element from the editing state', () {
+      final InputElement input = document.getElementsByTagName('input')[0];
+      _editingState =
+          EditingState(text: 'Test', baseOffset: 1, extentOffset: 2);
+
+      _editingState.applyToDomElement(input);
+
+      expect(input.value, 'Test');
+      expect(input.selectionStart, 1);
+      expect(input.selectionEnd, 2);
+    });
+
+    test('Configure text area element from the editing state', () {
+      final TextAreaElement textArea =
+          document.getElementsByTagName('textarea')[0];
+      _editingState =
+          EditingState(text: 'Test', baseOffset: 1, extentOffset: 2);
+
+      _editingState.applyToDomElement(textArea);
+
+      expect(textArea.value, 'Test');
+      expect(textArea.selectionStart, 1);
+      expect(textArea.selectionEnd, 2);
+    });
+
+    test('Get Editing State from input element', () {
+      final InputElement input = document.getElementsByTagName('input')[0];
+      input.value = 'Test';
+      input.selectionStart = 1;
+      input.selectionEnd = 2;
+
+      _editingState = EditingState.fromDomElement(input);
+
+      expect(_editingState.text, 'Test');
+      expect(_editingState.baseOffset, 1);
+      expect(_editingState.extentOffset, 2);
+    });
+
+    test('Get Editing State from text area element', () {
+      final TextAreaElement input =
+          document.getElementsByTagName('textarea')[0];
+      input.value = 'Test';
+      input.selectionStart = 1;
+      input.selectionEnd = 2;
+
+      _editingState = EditingState.fromDomElement(input);
+
+      expect(_editingState.text, 'Test');
+      expect(_editingState.baseOffset, 1);
+      expect(_editingState.extentOffset, 2);
+    });
+
+    test('Compare two editing states', () {
+      final InputElement input = document.getElementsByTagName('input')[0];
+      input.value = 'Test';
+      input.selectionStart = 1;
+      input.selectionEnd = 2;
+
+      EditingState editingState1 = EditingState.fromDomElement(input);
+      EditingState editingState2 = EditingState.fromDomElement(input);
+
+      input.setSelectionRange(1, 3);
+
+      EditingState editingState3 = EditingState.fromDomElement(input);
+
+      expect(editingState1 == editingState2, true);
+      expect(editingState1 != editingState3, true);
     });
   });
 }
@@ -740,4 +904,16 @@ class PlatformMessagesSpy {
     messages.clear();
     ui.window.onPlatformMessage = _backup;
   }
+}
+
+Map<String, dynamic> createFlutterConfig(
+  String inputType, {
+  bool obscureText = false,
+}) {
+  return <String, dynamic>{
+    'inputType': <String, String>{
+      'name': 'TextInputType.$inputType',
+    },
+    'obscureText': obscureText,
+  };
 }

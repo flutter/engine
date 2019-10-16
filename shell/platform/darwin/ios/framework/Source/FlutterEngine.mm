@@ -27,6 +27,8 @@
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
+NSString* const FlutterDefaultDartEntrypoint = nil;
+
 @interface FlutterEngine () <FlutterTextInputDelegate, FlutterBinaryMessenger>
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
@@ -68,6 +70,10 @@
 
   BOOL _allowHeadlessExecution;
   FlutterBinaryMessengerRelay* _binaryMessenger;
+}
+
+- (instancetype)initWithName:(NSString*)labelPrefix {
+  return [self initWithName:labelPrefix project:nil allowHeadlessExecution:YES];
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -112,7 +118,10 @@
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   [center removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
-  [_flutterViewControllerWillDeallocObserver release];
+  if (_flutterViewControllerWillDeallocObserver) {
+    [center removeObserver:_flutterViewControllerWillDeallocObserver];
+    [_flutterViewControllerWillDeallocObserver release];
+  }
 
   [super dealloc];
 }
@@ -170,13 +179,25 @@
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
 
+  __block FlutterEngine* blockSelf = self;
   self.flutterViewControllerWillDeallocObserver =
       [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
                                                         object:viewController
                                                          queue:[NSOperationQueue mainQueue]
                                                     usingBlock:^(NSNotification* note) {
-                                                      [self notifyViewControllerDeallocated];
+                                                      [blockSelf notifyViewControllerDeallocated];
                                                     }];
+}
+
+- (void)setFlutterViewControllerWillDeallocObserver:(id<NSObject>)observer {
+  if (observer != _flutterViewControllerWillDeallocObserver) {
+    if (_flutterViewControllerWillDeallocObserver) {
+      [[NSNotificationCenter defaultCenter]
+          removeObserver:_flutterViewControllerWillDeallocObserver];
+      [_flutterViewControllerWillDeallocObserver release];
+    }
+    _flutterViewControllerWillDeallocObserver = [observer retain];
+  }
 }
 
 - (void)notifyViewControllerDeallocated {
@@ -429,6 +450,10 @@
   return _shell != nullptr;
 }
 
+- (BOOL)run {
+  return [self runWithEntrypoint:FlutterDefaultDartEntrypoint libraryURI:nil];
+}
+
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
   if ([self createShell:entrypoint libraryURI:libraryURI]) {
     [self launchEngine:entrypoint libraryURI:libraryURI];
@@ -533,7 +558,9 @@
 - (void)sendOnChannel:(NSString*)channel
               message:(NSData*)message
           binaryReply:(FlutterBinaryReply)callback {
-  NSAssert(channel, @"The channel must not be null");
+  NSParameterAssert(channel);
+  NSAssert(_shell && _shell->IsSetup(),
+           @"Sending a message before the FlutterEngine has been run.");
   fml::RefPtr<flutter::PlatformMessageResponseDarwin> response =
       (callback == nil) ? nullptr
                         : fml::MakeRefCounted<flutter::PlatformMessageResponseDarwin>(
@@ -551,8 +578,9 @@
 
 - (void)setMessageHandlerOnChannel:(NSString*)channel
               binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
-  NSAssert(channel, @"The channel must not be null");
-  FML_DCHECK(_shell && _shell->IsSetup());
+  NSParameterAssert(channel);
+  NSAssert(_shell && _shell->IsSetup(),
+           @"Setting a message handler before the FlutterEngine has been run.");
   self.iosPlatformView->GetPlatformMessageRouter().SetMessageHandler(channel.UTF8String, handler);
 }
 

@@ -153,6 +153,7 @@ class EngineWindow extends ui.Window {
         final Map<String, dynamic> message = decoded.arguments;
         switch (decoded.method) {
           case 'routePushed':
+          case 'routeReplaced':
             _browserHistory.setRouteName(message['routeName']);
             break;
           case 'routePopped':
@@ -247,12 +248,23 @@ class EngineWindow extends ui.Window {
     _brightnessMediaQueryListener = null;
   }
 
-
   @override
-  void dispose() {
-    _removeBrightnessMediaQueryListener();
+  void render(ui.Scene scene) {
+    if (experimentalUseSkia) {
+      final LayerScene layerScene = scene;
+      _rasterizer.draw(layerScene.layerTree);
+    } else {
+      final SurfaceScene surfaceScene = scene;
+      domRenderer.renderScene(surfaceScene.webOnlyRootElement);
+    }
   }
 
+  final Rasterizer _rasterizer = experimentalUseSkia
+      ? Rasterizer(Surface((SkCanvas canvas) {
+          domRenderer.renderScene(canvas.htmlCanvas);
+          canvas.skSurface.callMethod('flush');
+        }))
+      : null;
 }
 
 /// The window singleton.
