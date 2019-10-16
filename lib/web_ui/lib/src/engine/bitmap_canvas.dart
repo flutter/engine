@@ -704,14 +704,14 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     final Int32List colors = vertices.colors;
     final ui.VertexMode mode = vertices.mode;
     if (colors == null) {
-      final Float32List positions2 = mode == ui.VertexMode.triangles
+      final Float32List positions = mode == ui.VertexMode.triangles
           ? vertices.positions
           : _convertVertexPositions(mode, vertices.positions);
       // Draw hairline for vertices if no vertex colors are specified.
       save();
       final ui.Color color = paint.color ?? ui.Color(0xFF000000);
       _setFillAndStrokeStyle('', color.toCssString());
-      _glRenderer.drawHairline(_ctx, positions2);
+      _glRenderer.drawHairline(_ctx, positions);
       restore();
       return;
     }
