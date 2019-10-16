@@ -728,59 +728,70 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     // as well.
     assert(paint.shader == null,
         'Linear/Radial/SweepGradient and ImageShader not supported yet');
-    assert(blendMode == ui.BlendMode.srcOver);
     final Int32List colors = vertices.colors;
     final ui.VertexMode mode = vertices.mode;
     if (colors == null) {
-      final Float32List positions = mode == ui.VertexMode.triangles
+      final Float32List positions2 = mode == ui.VertexMode.triangles
           ? vertices.positions
           : _convertVertexPositions(mode, vertices.positions);
       // Draw hairline for vertices if no vertex colors are specified.
-      _drawHairline(positions, paint.color ?? ui.Color(0xFF000000));
+      _drawHairline(positions2, paint.color ?? ui.Color(0xFF000000));
       return;
     }
-
-    final html.CanvasElement glCanvas = html.CanvasElement(
-      width: _widthInBitmapPixels,
-      height: _heightInBitmapPixels,
-    );
-
-    glCanvas.style
-      ..position = 'absolute'
-      ..width = _canvas.style.width
-      ..height = _canvas.style.height;
-    glCanvas.className = 'gl-canvas';
-
-    _children.add(glCanvas);
-    rootElement.append(glCanvas);
-
+    // Compute bounds of vertices.
+    final Float32List positions = vertices.positions;
+    ui.Rect bounds = _computeVerticesBounds(positions, currentTransform);
+    double minValueX = bounds.left;
+    double minValueY = bounds.top;
+    double maxValueX = bounds.right;
+    double maxValueY = bounds.bottom;
+    double offsetX = 0;
+    double offsetY = 0;
+    int widthPixels = _widthInBitmapPixels;
+    int heightPixels = _heightInBitmapPixels;
+    // If vertices fall outside the bitmap area, cull.
+    if (maxValueX < 0 || maxValueY < 0) return;
+    if (minValueX > _widthInBitmapPixels || minValueY > _heightInBitmapPixels) {
+      return;
+    }
+    minValueX = math.max(0, minValueX);
+    minValueY = math.max(0, minValueY);
+    maxValueX = math.min(maxValueX, widthPixels.toDouble());
+    maxValueY = math.min(maxValueY, heightPixels.toDouble());
+    // If Vertices are is smaller than hosting canvas, allocate minimal
+    // offscreen canvas to reduce readPixels data size.
+    if ((maxValueX - minValueX) < _widthInBitmapPixels &&
+        (maxValueY - minValueY) < _heightInBitmapPixels) {
+      widthPixels = maxValueX.ceil() - minValueX.floor();
+      heightPixels = maxValueY.ceil() - minValueY.floor();
+      offsetX = minValueX.floor().toDouble();
+      offsetY = minValueY.floor().toDouble();
+    }
+    if (widthPixels == 0 || heightPixels == 0) {
+      return;
+    }
+    _GlContext gl = _OffscreenCanvas.createGlContext(
+        widthPixels, heightPixels);
     final bool isWebKit = (browserEngine == BrowserEngine.webkit);
-    _GlContext gl = _GlContext(glCanvas, isWebKit);
-    // Create and compile shaders.
-    Object vertexShader = gl.compileShader('VERTEX_SHADER',
-        isWebKit ? _vertexShaderTriangleEs1 : _vertexShaderTriangle);
-    Object fragmentShader = gl.compileShader('FRAGMENT_SHADER',
-        isWebKit ? _fragmentShaderTriangleEs1 : _fragmentShaderTriangle);
-    // Create a gl program and link shaders.
-    Object program = gl.createProgram();
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    gl.useProgram(program);
+    _GlProgram glProgram = isWebKit
+        ? gl.createAndCacheProgram(_vertexShaderTriangleEs1,
+            _fragmentShaderTriangleEs1)
+        : gl.createAndCacheProgram(_vertexShaderTriangle,
+            _fragmentShaderTriangle);
+    gl.useProgram(glProgram.program);
 
     // Set uniform to scale 0..width/height pixels coordinates to -1..1
     // clipspace range and flip the Y axis.
-    Object resolution = gl.getUniformLocation(program, 'u_scale');
+    Object resolution = gl.getUniformLocation(glProgram.program, 'u_scale');
     gl.setUniform4f(resolution, 2.0 / _widthInBitmapPixels.toDouble(),
         -2.0 / _heightInBitmapPixels.toDouble(), 1, 1);
-    Object shift = gl.getUniformLocation(program, 'u_shift');
-    gl.setUniform4f(shift, -1, 1, 0, 0);
+    Object shift = gl.getUniformLocation(glProgram.program, 'u_shift');
+    gl.setUniform4f(shift, -1 , 1, 0, 0);
 
     // Setup geometry.
     Object positionsBuffer = gl.createBuffer();
     assert(positionsBuffer != null);
     gl.bindArrayBuffer(positionsBuffer);
-    final Float32List positions = vertices.positions;
     gl.bufferData(positions, gl.kStaticDraw);
     js_util.callMethod(
         gl.glContext, 'vertexAttribPointer', [0, 2, gl.kFloat, false, 0, 0]);
@@ -798,6 +809,55 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     gl.clear();
     final int vertexCount = positions.length ~/ 2;
     gl.drawTriangles(vertexCount, mode);
+    final html.ImageData imageData = gl.readImageData();
+    print('Offset = $offsetX , $offsetY , w/h = $widthPixels, $heightPixels');
+    offsetX += _widthInBitmapPixels / 2;
+    offsetY += _heightInBitmapPixels / 2;
+    _ctx.putImageData(imageData, offsetX.toInt(), offsetY.toInt());
+  }
+
+  static ui.Rect _computeVerticesBounds(Float32List positions, Matrix4 transform) {
+    double minValueX, maxValueX, minValueY, maxValueY;
+    minValueX = maxValueX = positions[0];
+    minValueY = maxValueY = positions[1];
+    for (int i = 2, len = positions.length; i < len; i += 2) {
+      final double x = positions[i];
+      final double y = positions[i + 1];
+      if (x.isNaN || y.isNaN) {
+        // Follows skia implementation that sets bounds to empty
+        // and aborts.
+        return ui.Rect.zero;
+      }
+      minValueX = math.min(minValueX, x);
+      maxValueX = math.max(maxValueX, x);
+      minValueY = math.min(minValueY, y);
+      maxValueY = math.max(maxValueY, y);
+    }
+    return _transformBounds(
+        transform, minValueX, minValueY, maxValueX, maxValueY);
+  }
+
+  static ui.Rect _transformBounds(Matrix4 transform, double left, double top,
+      double right, double bottom) {
+    final Float64List storage = transform.storage;
+    final double m0 = storage[0];
+    final double m1 = storage[1];
+    final double m4 = storage[4];
+    final double m5 = storage[5];
+    final double m12 = storage[12];
+    final double m13 = storage[13];
+    final double x0 = (m0 * left) + (m4 * top) + m12;
+    final double y0 = (m1 * left) + (m5 * top) + m13;
+    final double x1 = (m0 * right) + (m4 * top) + m12;
+    final double y1 = (m1 * right) + (m5 * top) + m13;
+    final double x2 = (m0 * right) + (m4 * bottom) + m12;
+    final double y2 = (m1 * right) + (m5 * bottom) + m13;
+    final double x3 = (m0 * left) + (m4 * bottom) + m12;
+    final double y3 = (m1 * left) + (m5 * bottom) + m13;
+    return ui.Rect.fromLTRB(math.min(x0, math.min(x1, math.min(x2, x3))),
+        math.min(y0, math.min(y1, math.min(y2, y3))),
+        math.max(x0, math.max(x1, math.max(x2, x3))),
+        math.max(y0, math.max(y1, math.max(y2, y3))));
   }
 
   void _drawHairline(Float32List positions, ui.Color color) {
@@ -1122,9 +1182,16 @@ String _cssTransformAtOffset(
       transformWithOffset(transform, ui.Offset(offsetX, offsetY)));
 }
 
+/// Compiled and cached gl program.
+class _GlProgram {
+  final Object program;
+  _GlProgram(this.program);
+}
+
 /// JS Interop helper for webgl apis.
 class _GlContext {
   final Object glContext;
+  final bool isOffscreen;
   dynamic _kCompileStatus;
   dynamic _kArrayBuffer;
   dynamic _kStaticDraw;
@@ -1133,12 +1200,50 @@ class _GlContext {
   dynamic _kTriangles;
   dynamic _kLinkStatus;
   dynamic _kUnsignedByte;
+  dynamic _kRGBA;
+  int _widthInPixels;
+  int _heightInPixels;
+  static Map<String, _GlProgram> _programCache;
 
-  _GlContext(html.CanvasElement canvas, bool useWebGl1)
-      : glContext = canvas.getContext(useWebGl1 ? 'webgl' : 'webgl2');
+  _GlContext.fromOffscreenCanvas(html.OffscreenCanvas canvas)
+      : glContext = canvas.getContext('webgl2'), isOffscreen = true {
+    _programCache = <String, _GlProgram>{};
+  }
+
+  _GlContext.fromCanvas(html.CanvasElement canvas, bool useWebGl1)
+      : glContext = canvas.getContext(useWebGl1 ? 'webgl' : 'webgl2'),
+        isOffscreen = false {
+    _programCache = <String, _GlProgram>{};
+  }
+
+  void setViewportSize(int width, int height) {
+    _widthInPixels = width;
+    _heightInPixels = height;
+  }
+
+  _GlProgram createAndCacheProgram(String vertexShaderSource, String fragmentShaderSource) {
+    String cacheKey = '$vertexShaderSource||$fragmentShaderSource';
+    _GlProgram cachedProgram = _programCache[cacheKey];
+    if (cachedProgram == null) {
+      // Create and compile shaders.
+      Object vertexShader = compileShader('VERTEX_SHADER', vertexShaderSource);
+      Object fragmentShader = compileShader('FRAGMENT_SHADER', fragmentShaderSource);
+      // Create a gl program and link shaders.
+      Object program = createProgram();
+      attachShader(program, vertexShader);
+      attachShader(program, fragmentShader);
+      linkProgram(program);
+      cachedProgram = _GlProgram(program);
+      _programCache[cacheKey] = cachedProgram;
+    }
+    return cachedProgram;
+  }
 
   Object compileShader(String shaderType, String source) {
     Object shader = _createShader(shaderType);
+    if (shader == null) {
+      throw Exception(error);
+    }
     js_util.callMethod(glContext, 'shaderSource', [shader, source]);
     js_util.callMethod(glContext, 'compileShader', [shader]);
     bool shaderStatus = js_util
@@ -1188,6 +1293,22 @@ class _GlContext {
     js_util.callMethod(glContext, 'clear', [kColorBufferBit]);
   }
 
+  /// Destroys gl context.
+  void dispose() {
+    js_util.callMethod(_getExtension('WEBGL_lose_context'), 'loseContext', []);
+  }
+
+  void deleteProgram(Object program) {
+    js_util.callMethod(glContext, 'deleteProgram', [program]);
+  }
+
+  void deleteShader(Object shader) {
+    js_util.callMethod(glContext, 'deleteShader', [shader]);
+  }
+
+  dynamic _getExtension(String extensionName) =>
+    js_util.callMethod(glContext, 'getExtension', [extensionName]);
+
   void drawTriangles(int triangleCount, ui.VertexMode vertexMode) {
     dynamic mode = _triangleTypeFromMode(vertexMode);
     js_util.callMethod(glContext, 'drawArrays', [mode, 0, triangleCount]);
@@ -1231,6 +1352,8 @@ class _GlContext {
       _kLinkStatus ??= js_util.getProperty(glContext, 'LINK_STATUS');
 
   dynamic get kFloat => _kFloat ??= js_util.getProperty(glContext, 'FLOAT');
+
+  dynamic get kRGBA => _kRGBA ??= js_util.getProperty(glContext, 'RGBA');
 
   dynamic get kUnsignedByte =>
       _kUnsignedByte ??= js_util.getProperty(glContext, 'UNSIGNED_BYTE');
@@ -1279,4 +1402,99 @@ class _GlContext {
   String getProgramInfoLog(Object glProgram) {
     return js_util.callMethod(glContext, 'getProgramInfoLog', [glProgram]);
   }
+
+  int get drawingBufferWidth => js_util.getProperty(glContext, 'drawingBufferWidth');
+  int get drawingBufferHeight => js_util.getProperty(glContext, 'drawingBufferWidth');
+
+  html.ImageData readImageData() {
+    if (browserEngine == BrowserEngine.webkit ||
+        browserEngine == BrowserEngine.firefox) {
+      const int kBytesPerPixel = 4;
+      final int bufferWidth = _widthInPixels;
+      final int bufferHeight = _heightInPixels;
+      final Uint8List pixels = Uint8List(
+          bufferWidth * bufferHeight * kBytesPerPixel);
+      js_util.callMethod(
+          glContext, 'readPixels', [0, 0, bufferWidth, bufferHeight,
+        kRGBA, kUnsignedByte, pixels]);
+      return html.ImageData(
+          Uint8ClampedList.fromList(pixels), bufferWidth, bufferHeight);
+    } else {
+      const int kBytesPerPixel = 4;
+      final int bufferWidth = _widthInPixels;
+      final int bufferHeight = _heightInPixels;
+      final Uint8ClampedList pixels = Uint8ClampedList(
+          bufferWidth * bufferHeight * kBytesPerPixel);
+      js_util.callMethod(
+          glContext, 'readPixels', [0, 0, bufferWidth, bufferHeight,
+        kRGBA, kUnsignedByte, pixels]);
+      for (int i = 0; i < bufferWidth * bufferHeight * kBytesPerPixel; i += 4) {
+        pixels[i] = 0;
+        pixels[i + 1] = 0; // G
+        pixels[i + 2] = (255.0 * (i / bufferWidth)).toInt();
+        pixels[i + 3] = 0xFF;
+      }
+      return html.ImageData(pixels, bufferWidth, bufferHeight);
+    }
+  }
+}
+
+/// Shared Cached OffscreenCanvas for webgl rendering to image.
+class _OffscreenCanvas {
+  static int _maxPixelWidth = 0;
+  static int _maxPixelHeight = 0;
+  static html.OffscreenCanvas _canvas;
+  static html.CanvasElement _glCanvas;
+  static _GlContext _cachedContext;
+
+  _OffscreenCanvas(int width, int height) {
+    assert(width > 0 && height > 0);
+    if (width > _maxPixelWidth || height > _maxPixelHeight) {
+      print('Allocating $width $height Offscreen');
+      // Allocate bigger offscreen canvas.
+      _canvas = html.OffscreenCanvas(width, height);
+      _maxPixelWidth = width;
+      _maxPixelHeight = height;
+      _cachedContext?.dispose();
+      _cachedContext = null;
+    }
+  }
+
+  html.OffscreenCanvas get canvas => _canvas;
+
+  static _GlContext createGlContext(int widthInPixels, int heightInPixels) {
+    final bool isWebKit = (browserEngine == BrowserEngine.webkit);
+
+    if (_OffscreenCanvas.supported) {
+      final _OffscreenCanvas offScreenCanvas =
+        _OffscreenCanvas(widthInPixels, heightInPixels);
+      _cachedContext ??= _GlContext.fromOffscreenCanvas(offScreenCanvas.canvas);
+      _cachedContext.setViewportSize(widthInPixels, heightInPixels);
+      return _cachedContext;
+    } else {
+      // Allocate new canvas element is size is larger.
+      if (widthInPixels > _maxPixelWidth || heightInPixels > _maxPixelHeight) {
+        _glCanvas = html.CanvasElement(
+          width: widthInPixels,
+          height: heightInPixels,
+        );
+        _glCanvas.className = 'gl-canvas';
+        final double cssWidth = widthInPixels / html.window.devicePixelRatio;
+        final double cssHeight = heightInPixels / html.window.devicePixelRatio;
+        _glCanvas.style
+          ..position = 'absolute'
+          ..width = '${cssWidth}px'
+          ..height = '${cssHeight}px';
+        _maxPixelWidth = widthInPixels;
+        _maxPixelHeight = widthInPixels;
+      }
+      _GlContext glContext = _GlContext.fromCanvas(_glCanvas, isWebKit);
+      glContext.setViewportSize(widthInPixels, heightInPixels);
+      return glContext;
+    }
+  }
+
+  /// Feature detects OffscreenCanvas.
+  static bool get supported =>
+      js_util.hasProperty(html.window, 'OffscreenCanvas');
 }

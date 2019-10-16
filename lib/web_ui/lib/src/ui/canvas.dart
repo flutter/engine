@@ -74,8 +74,8 @@ class Vertices {
       }) : assert(mode != null),
         assert(positions != null),
         _mode = mode,
-        _colors = Int32List.fromList(colors.map((Color c) => c.value)),
-        _indices = Uint16List.fromList(indices),
+        _colors = _int32ListFromColors(colors),
+        _indices = indices != null ? Uint16List.fromList(indices) : null,
         _positions = _offsetListToInt32List(positions),
         _textureCoordinates = _offsetListToInt32List(textureCoordinates);
 
@@ -119,9 +119,17 @@ class Vertices {
     final floatList = Float32List(length * 2);
     for (int i = 0, destIndex = 0; i < length; i++, destIndex += 2) {
       floatList[destIndex] = offsetList[i].dx;
-      floatList[destIndex + 1] = offsetList[i].dx;
+      floatList[destIndex + 1] = offsetList[i].dy;
     }
     return floatList;
+  }
+
+  static Int32List _int32ListFromColors(List<Color> colors) {
+    Int32List list = Int32List(colors.length);
+    for (int i = 0, len = colors.length; i < len; i++) {
+      list[i] = colors[i].value;
+    }
+    return list;
   }
 
   factory Vertices.raw(
