@@ -66,26 +66,28 @@ class Vertices {
   final Uint16List _indices;
 
   Vertices._(
-      VertexMode mode,
-      List<Offset> positions, {
-        List<Offset> textureCoordinates,
-        List<Color> colors,
-        List<int> indices,
-      }) : assert(mode != null),
+    VertexMode mode,
+    List<Offset> positions, {
+    List<Offset> textureCoordinates,
+    List<Color> colors,
+    List<int> indices,
+  })  : assert(mode != null),
         assert(positions != null),
         _mode = mode,
         _colors = _int32ListFromColors(colors),
         _indices = indices != null ? Uint16List.fromList(indices) : null,
         _positions = _offsetListToInt32List(positions),
-        _textureCoordinates = _offsetListToInt32List(textureCoordinates);
+        _textureCoordinates = _offsetListToInt32List(textureCoordinates) {
+    engine._glRenderer ??= engine._WebGlRenderer();
+  }
 
   factory Vertices(
-      VertexMode mode,
-      List<Offset> positions, {
-        List<Offset> textureCoordinates,
-        List<Color> colors,
-        List<int> indices,
-      }) {
+    VertexMode mode,
+    List<Offset> positions, {
+    List<Offset> textureCoordinates,
+    List<Color> colors,
+    List<int> indices,
+  }) {
     if (engine.experimentalUseSkia) {
       return engine.SkVertices(mode, positions,
           textureCoordinates: textureCoordinates,
@@ -94,22 +96,25 @@ class Vertices {
     }
     return Vertices._(mode, positions,
         textureCoordinates: textureCoordinates,
-        colors: colors , indices: indices);
+        colors: colors,
+        indices: indices);
   }
 
   Vertices._raw(
-      VertexMode mode,
-      Float32List positions, {
-        Float32List textureCoordinates,
-        Int32List colors,
-        Uint16List indices,
-      })  : assert(mode != null),
+    VertexMode mode,
+    Float32List positions, {
+    Float32List textureCoordinates,
+    Int32List colors,
+    Uint16List indices,
+  })  : assert(mode != null),
         assert(positions != null),
         _mode = mode,
         _positions = positions,
         _textureCoordinates = textureCoordinates,
         _colors = colors,
-        _indices = indices;
+        _indices = indices {
+    engine._glRenderer ??= engine._WebGlRenderer();
+  }
 
   static Float32List _offsetListToInt32List(List<Offset> offsetList) {
     if (offsetList == null) {
@@ -133,12 +138,12 @@ class Vertices {
   }
 
   factory Vertices.raw(
-      VertexMode mode,
-      Float32List positions, {
-        Float32List textureCoordinates,
-        Int32List colors,
-        Uint16List indices,
-      }) {
+    VertexMode mode,
+    Float32List positions, {
+    Float32List textureCoordinates,
+    Int32List colors,
+    Uint16List indices,
+  }) {
     if (engine.experimentalUseSkia) {
       return engine.SkVertices.raw(mode, positions,
           textureCoordinates: textureCoordinates,
@@ -146,7 +151,9 @@ class Vertices {
           indices: indices);
     }
     return Vertices._raw(mode, positions,
-        textureCoordinates: textureCoordinates, colors: colors , indices: indices);
+        textureCoordinates: textureCoordinates,
+        colors: colors,
+        indices: indices);
   }
 
   VertexMode get mode => _mode;
@@ -1647,8 +1654,9 @@ class Path {
     if (dx == 0.0 && dy == 0.0) {
       subpaths.addAll(path.subpaths);
     } else {
-      subpaths.addAll(path.transform(
-          engine.Matrix4.translationValues(dx, dy, 0.0).storage).subpaths);
+      subpaths.addAll(path
+          .transform(engine.Matrix4.translationValues(dx, dy, 0.0).storage)
+          .subpaths);
     }
   }
 
