@@ -84,7 +84,13 @@ class WeakPtr {
     return *this ? ptr_ : nullptr;
   }
 
-  T* getUnsafe() const { return *this ? ptr_ : nullptr; }
+  T* getUnsafe() const {
+    // This is an unsafe method to get access to the raw pointer.
+    // We still check the flag_ to determine if the pointer is valid
+    // but callees should note that this WeakPtr could have been
+    // invalidated on another thread.
+    return flag_ && flag_->is_valid() ? ptr_ : nullptr;
+  }
 
   T& operator*() const {
     FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
