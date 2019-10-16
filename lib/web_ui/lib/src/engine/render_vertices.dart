@@ -6,6 +6,10 @@ part of engine;
 
 _GlRenderer _glRenderer;
 
+void initWebGl() {
+  _glRenderer = _WebGlRenderer();
+}
+
 abstract class _GlRenderer {
   void drawVertices(
       html.CanvasRenderingContext2D context,
@@ -35,7 +39,7 @@ class _WebGlRenderer implements _GlRenderer {
       uniform vec4 u_shift;
       out vec4 vColor;
       void main() {
-        gl_Position = (u_ctransform * (position * u_scale)) + u_shift;
+        gl_Position = ((u_ctransform * position) * u_scale) + u_shift;
         vColor = color.zyxw;
       }''';
   // This fragment shader enables Int32List of colors to be passed directly
@@ -58,7 +62,7 @@ class _WebGlRenderer implements _GlRenderer {
       uniform vec4 u_shift;
       varying vec4 vColor;
       void main() {
-        gl_Position = (u_ctransform * (position * u_scale)) + u_shift;
+        gl_Position = ((u_ctransform * position) * u_scale) + u_shift;
         vColor = color.zyxw;
       }''';
   // WebGL 1 version of shaders above for compatibility with Safari.
@@ -90,14 +94,14 @@ class _WebGlRenderer implements _GlRenderer {
     int widthInPixels = canvasWidthInPixels;
     int heightInPixels = canvasHeightInPixels;
     // If vertices fall outside the bitmap area, cull.
-    if (maxValueX < 0 || maxValueY < 0) return;
-    if (minValueX > widthInPixels || minValueY > heightInPixels) {
+    if (maxValueX < 0 || maxValueY < 0) {
+      print('abort1');
       return;
     }
-    minValueX = math.max(0, minValueX);
-    minValueY = math.max(0, minValueY);
-    maxValueX = math.min(maxValueX, widthInPixels.toDouble());
-    maxValueY = math.min(maxValueY, heightInPixels.toDouble());
+    if (minValueX > widthInPixels || minValueY > heightInPixels) {
+      print('abort2');
+      return;
+    }
     // If Vertices are is smaller than hosting canvas, allocate minimal
     // offscreen canvas to reduce readPixels data size.
     if ((maxValueX - minValueX) < widthInPixels &&
@@ -108,6 +112,7 @@ class _WebGlRenderer implements _GlRenderer {
       offsetY = minValueY.floor().toDouble();
     }
     if (widthInPixels == 0 || heightInPixels == 0) {
+      print('abort3');
       return;
     }
     _GlContext gl =
@@ -121,13 +126,14 @@ class _WebGlRenderer implements _GlRenderer {
     gl.useProgram(glProgram.program);
 
     Object transformUniform = gl.getUniformLocation(glProgram.program, 'u_ctransform');
-    gl.setUniformMatrix4fv(transformUniform, false, transform.storage);
+    Matrix4 transformAtOffset = transform.clone()..translate(-offsetX, -offsetY);
+    gl.setUniformMatrix4fv(transformUniform, false, transformAtOffset.storage);
 
     // Set uniform to scale 0..width/height pixels coordinates to -1..1
     // clipspace range and flip the Y axis.
     Object resolution = gl.getUniformLocation(glProgram.program, 'u_scale');
-    gl.setUniform4f(resolution, 2.0 / canvasWidthInPixels.toDouble(),
-        -2.0 / canvasHeightInPixels.toDouble(), 1, 1);
+    gl.setUniform4f(resolution, 2.0 / widthInPixels.toDouble(),
+        -2.0 / heightInPixels.toDouble(), 1, 1);
     Object shift = gl.getUniformLocation(glProgram.program, 'u_shift');
     gl.setUniform4f(shift, -1, 1, 0, 0);
 
@@ -152,10 +158,11 @@ class _WebGlRenderer implements _GlRenderer {
     gl.clear();
     final int vertexCount = positions.length ~/ 2;
     gl.drawTriangles(vertexCount, vertices.mode);
-    final html.ImageData imageData = gl.readImageData();
-    print(
-        'Offset = $offsetX , $offsetY , w/h = $widthInPixels, $heightInPixels');
-    context.putImageData(imageData, offsetX.toInt(), offsetY.toInt());
+
+    context.save();
+    context.resetTransform();
+    gl.drawImage(context, offsetX, offsetY);
+    context.restore();
   }
 
   @override
@@ -302,25 +309,39 @@ class _GlContext {
   dynamic _kLinkStatus;
   dynamic _kUnsignedByte;
   dynamic _kRGBA;
+  Object _canvas;
   int _widthInPixels;
   int _heightInPixels;
   static Map<String, _GlProgram> _programCache;
 
   _GlContext.fromOffscreenCanvas(html.OffscreenCanvas canvas)
-      : glContext = canvas.getContext('webgl2'),
+      : glContext = canvas.getContext('webgl2', {'premultipliedAlpha': false}),
         isOffscreen = true {
     _programCache = <String, _GlProgram>{};
+    _canvas = canvas;
   }
 
   _GlContext.fromCanvas(html.CanvasElement canvas, bool useWebGl1)
-      : glContext = canvas.getContext(useWebGl1 ? 'webgl' : 'webgl2'),
+      : glContext = canvas.getContext(useWebGl1 ? 'webgl' : 'webgl2',
+          {'premultipliedAlpha': false}),
         isOffscreen = false {
     _programCache = <String, _GlProgram>{};
+    _canvas = canvas;
   }
 
   void setViewportSize(int width, int height) {
     _widthInPixels = width;
     _heightInPixels = height;
+  }
+
+  /// Draws Gl context contents to canvas context.
+  void drawImage(html.CanvasRenderingContext2D context,
+      double left, double top) {
+    // Actual size of canvas may be larger than viewport size. Use
+    // source/destination to draw part of the image data.
+    js_util.callMethod(context, 'drawImage',
+        [_canvas, 0, 0, _widthInPixels, _heightInPixels,
+        left, top, _widthInPixels, _heightInPixels]);
   }
 
   _GlProgram createAndCacheProgram(
@@ -416,6 +437,7 @@ class _GlContext {
   void drawTriangles(int triangleCount, ui.VertexMode vertexMode) {
     dynamic mode = _triangleTypeFromMode(vertexMode);
     js_util.callMethod(glContext, 'drawArrays', [mode, 0, triangleCount]);
+    print('glerror: $error');
   }
 
   /// Sets affine transformation from normalized device coordinates
@@ -499,7 +521,7 @@ class _GlContext {
   /// Sets mat4 uniform values.
   void setUniformMatrix4fv(Object uniform, bool transpose, Float64List value) {
     return js_util.callMethod(
-        glContext, 'uniformmatrix4fv', [uniform, transpose, value]);
+        glContext, 'uniformMatrix4fv', [uniform, transpose, value]);
   }
 
   /// Shader compile error log.
@@ -538,12 +560,6 @@ class _GlContext {
           Uint8ClampedList(bufferWidth * bufferHeight * kBytesPerPixel);
       js_util.callMethod(glContext, 'readPixels',
           [0, 0, bufferWidth, bufferHeight, kRGBA, kUnsignedByte, pixels]);
-      for (int i = 0; i < bufferWidth * bufferHeight * kBytesPerPixel; i += 4) {
-        pixels[i] = 0;
-        pixels[i + 1] = 0; // G
-        pixels[i + 2] = (255.0 * (i / bufferWidth)).toInt();
-        pixels[i + 3] = 0xFF;
-      }
       return html.ImageData(pixels, bufferWidth, bufferHeight);
     }
   }
@@ -551,16 +567,15 @@ class _GlContext {
 
 /// Shared Cached OffscreenCanvas for webgl rendering to image.
 class _OffscreenCanvas {
+  static html.OffscreenCanvas _canvas;
   static int _maxPixelWidth = 0;
   static int _maxPixelHeight = 0;
-  static html.OffscreenCanvas _canvas;
   static html.CanvasElement _glCanvas;
   static _GlContext _cachedContext;
 
   _OffscreenCanvas(int width, int height) {
     assert(width > 0 && height > 0);
     if (width > _maxPixelWidth || height > _maxPixelHeight) {
-      print('Allocating $width $height Offscreen');
       // Allocate bigger offscreen canvas.
       _canvas = html.OffscreenCanvas(width, height);
       _maxPixelWidth = width;
@@ -596,11 +611,13 @@ class _OffscreenCanvas {
           ..width = '${cssWidth}px'
           ..height = '${cssHeight}px';
         _maxPixelWidth = widthInPixels;
-        _maxPixelHeight = widthInPixels;
+        _maxPixelHeight = heightInPixels;
+        _cachedContext?.dispose();
+        _cachedContext = null;
       }
-      _GlContext glContext = _GlContext.fromCanvas(_glCanvas, isWebKit);
-      glContext.setViewportSize(widthInPixels, heightInPixels);
-      return glContext;
+      _cachedContext ??= _GlContext.fromCanvas(_glCanvas, isWebKit);
+      _cachedContext.setViewportSize(widthInPixels, heightInPixels);
+      return _cachedContext;
     }
   }
 

@@ -78,7 +78,7 @@ class Vertices {
         _indices = indices != null ? Uint16List.fromList(indices) : null,
         _positions = _offsetListToInt32List(positions),
         _textureCoordinates = _offsetListToInt32List(textureCoordinates) {
-    engine._glRenderer ??= engine._WebGlRenderer();
+    engine.initWebGl();
   }
 
   factory Vertices(
@@ -113,7 +113,7 @@ class Vertices {
         _textureCoordinates = textureCoordinates,
         _colors = colors,
         _indices = indices {
-    engine._glRenderer ??= engine._WebGlRenderer();
+    engine.initWebGl();
   }
 
   static Float32List _offsetListToInt32List(List<Offset> offsetList) {
@@ -1803,8 +1803,8 @@ class Path {
     final Size size = window.physicalSize / window.devicePixelRatio;
     _rawRecorder ??= RawRecordingCanvas(size);
     // Account for the shift due to padding.
-    _rawRecorder.translate(-engine.BitmapCanvas.paddingPixels.toDouble(),
-        -engine.BitmapCanvas.paddingPixels.toDouble());
+    _rawRecorder.translate(-engine.BitmapCanvas.kPaddingPixels.toDouble(),
+        -engine.BitmapCanvas.kPaddingPixels.toDouble());
     _rawRecorder.drawPath(
         this, (Paint()..color = const Color(0xFF000000)).webOnlyPaintData);
     final bool result = _rawRecorder.ctx.isPointInPath(pointX, pointY);

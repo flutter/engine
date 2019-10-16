@@ -20,7 +20,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   /// The amount of padding to add around the edges of this canvas to
   /// ensure that anti-aliased arcs are not clipped.
-  static const int paddingPixels = 1;
+  static const int kPaddingPixels = 1;
 
   @override
   final html.Element rootElement = html.Element.tag('flt-canvas');
@@ -84,11 +84,9 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     // Adds one extra pixel to the requested size. This is to compensate for
     // _initializeViewport() snapping canvas position to 1 pixel, causing
     // painting to overflow by at most 1 pixel.
-    final double boundsWidth = size.width + 1 + 2 * paddingPixels;
-    final double boundsHeight = size.height + 1 + 2 * paddingPixels;
-    _widthInBitmapPixels = (boundsWidth * html.window.devicePixelRatio).ceil();
-    _heightInBitmapPixels =
-        (boundsHeight * html.window.devicePixelRatio).ceil();
+
+    _widthInBitmapPixels = _widthToPhysical(_bounds.width);
+    _heightInBitmapPixels = _heightToPhysical(_bounds.height);
 
     // Compute the final CSS canvas size given the actual pixel count we
     // allocated. This is done for the following reasons:
@@ -111,6 +109,24 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     _ctx = _canvas.context2D;
     rootElement.append(_canvas);
     _initializeViewport();
+  }
+
+  int _widthToPhysical(double width) {
+    final double boundsWidth = width + 1;
+    return (boundsWidth * html.window.devicePixelRatio).ceil()
+        + 2 * kPaddingPixels;
+  }
+
+  int  _heightToPhysical(double height) {
+    final double boundsHeight = height + 1;
+    return (boundsHeight * html.window.devicePixelRatio).ceil()
+        + 2 * kPaddingPixels;
+  }
+
+  bool doesFitBounds(ui.Rect newBounds) {
+    assert(newBounds != null);
+    return _widthInBitmapPixels >= _widthToPhysical(newBounds.width) &&
+        _heightInBitmapPixels >= _heightToPhysical(newBounds.height);
   }
 
   @override
@@ -193,20 +209,20 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
     // The flooring of the value is to ensure that canvas' top-left corner
     // lands on the physical pixel.
-    final int canvasPositionX = _bounds.left.floor() - paddingPixels;
-    final int canvasPositionY = _bounds.top.floor() - paddingPixels;
+    final int canvasPositionX = _bounds.left.floor() - kPaddingPixels;
+    final int canvasPositionY = _bounds.top.floor() - kPaddingPixels;
     final double canvasPositionCorrectionX =
-        _bounds.left - paddingPixels - canvasPositionX.toDouble();
+        _bounds.left - kPaddingPixels - canvasPositionX.toDouble();
     final double canvasPositionCorrectionY =
-        _bounds.top - paddingPixels - canvasPositionY.toDouble();
+        _bounds.top - kPaddingPixels - canvasPositionY.toDouble();
 
     rootElement.style.transform =
-        'translate(${canvasPositionX}px, ${canvasPositionY}px)';
+    'translate(${canvasPositionX}px, ${canvasPositionY}px)';
 
     // This compensates for the translate on the `rootElement`.
     translate(
-      -_bounds.left + canvasPositionCorrectionX + paddingPixels,
-      -_bounds.top + canvasPositionCorrectionY + paddingPixels,
+      -_bounds.left + canvasPositionCorrectionX + kPaddingPixels,
+      -_bounds.top + canvasPositionCorrectionY + kPaddingPixels,
     );
   }
 
@@ -495,7 +511,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
     final List<CanvasShadow> shadows =
-        ElevationShadow.computeCanvasShadows(elevation, color);
+    ElevationShadow.computeCanvasShadows(elevation, color);
     if (shadows.isNotEmpty) {
       for (final CanvasShadow shadow in shadows) {
         // TODO(het): Shadows with transparent occluders are not supported
@@ -639,18 +655,18 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     }
 
     final html.Element paragraphElement =
-        _drawParagraphElement(paragraph, offset);
+    _drawParagraphElement(paragraph, offset);
 
     if (isClipped) {
       final List<html.Element> clipElements =
-          _clipContent(_clipStack, paragraphElement, offset, currentTransform);
+      _clipContent(_clipStack, paragraphElement, offset, currentTransform);
       for (html.Element clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
     } else {
       final String cssTransform =
-          matrix4ToCssTransform(transformWithOffset(currentTransform, offset));
+      matrix4ToCssTransform(transformWithOffset(currentTransform, offset));
       paragraphElement.style
         ..transformOrigin = '0 0 0'
         ..transform = cssTransform;
@@ -684,7 +700,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     // Move rendering to OffscreenCanvas so that transform is preserved
     // as well.
     assert(paint.shader == null,
-        'Linear/Radial/SweepGradient and ImageShader not supported yet');
+    'Linear/Radial/SweepGradient and ImageShader not supported yet');
     final Int32List colors = vertices.colors;
     final ui.VertexMode mode = vertices.mode;
     if (colors == null) {
@@ -759,6 +775,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     }
   }
 }
+
 
 String _stringForBlendMode(ui.BlendMode blendMode) {
   if (blendMode == null) {
