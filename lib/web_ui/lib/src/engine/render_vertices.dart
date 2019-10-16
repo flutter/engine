@@ -119,11 +119,10 @@ class _WebGlRenderer implements _GlRenderer {
         _OffscreenCanvas.createGlContext(widthInPixels, heightInPixels);
     final bool isWebKit = (browserEngine == BrowserEngine.webkit);
     _GlProgram glProgram = isWebKit
-        ? gl.createAndCacheProgram(
+        ? gl.useAndCacheProgram(
             _vertexShaderTriangleEs1, _fragmentShaderTriangleEs1)
-        : gl.createAndCacheProgram(
+        : gl.useAndCacheProgram(
             _vertexShaderTriangle, _fragmentShaderTriangle);
-    gl.useProgram(glProgram.program);
 
     Object transformUniform = gl.getUniformLocation(glProgram.program, 'u_ctransform');
     Matrix4 transformAtOffset = transform.clone()..translate(-offsetX, -offsetY);
@@ -344,7 +343,7 @@ class _GlContext {
         left, top, _widthInPixels, _heightInPixels]);
   }
 
-  _GlProgram createAndCacheProgram(
+  _GlProgram useAndCacheProgram(
       String vertexShaderSource, String fragmentShaderSource) {
     String cacheKey = '$vertexShaderSource||$fragmentShaderSource';
     _GlProgram cachedProgram = _programCache[cacheKey];
@@ -360,6 +359,7 @@ class _GlContext {
       linkProgram(program);
       cachedProgram = _GlProgram(program);
       _programCache[cacheKey] = cachedProgram;
+      useProgram(program);
     }
     return cachedProgram;
   }
