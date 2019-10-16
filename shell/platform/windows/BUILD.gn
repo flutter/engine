@@ -5,6 +5,7 @@
 assert(is_win)
 
 import("$flutter_root/shell/platform/glfw/config.gni")
+import("$flutter_root/testing/testing.gni")
 
 _public_headers = [ "public/flutter_windows.h" ]
 
@@ -100,6 +101,35 @@ shared_library("flutter_windows") {
   ]
 
   public_configs = [ "$flutter_root:config" ]
+}
+
+test_fixtures("flutter_windows_fixtures") {
+  fixtures = []
+}
+
+executable("flutter_windows_unittests") {
+  testonly = true
+
+  sources = [
+    "testing/win32_flutter_window_test.cc",
+    "testing/win32_flutter_window_test.h",
+    "win32_window_unittests.cc",
+  ]
+
+  public_configs = [ "$flutter_root:config" ]
+
+  deps = [
+    ":flutter_windows_fixtures",
+    ":flutter_windows_headers",
+    ":flutter_windows_source",
+    "$flutter_root/testing",
+
+    # TODO(chunhtai): Consider refactoring flutter_root/testing so that there's a testing
+    # target that doesn't require a Dart runtime to be linked in.
+    # https://github.com/flutter/flutter/issues/41414.
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/rapidjson",
+  ]
 }
 
 shared_library("flutter_windows_glfw") {

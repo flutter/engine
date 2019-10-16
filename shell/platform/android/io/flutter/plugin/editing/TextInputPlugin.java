@@ -7,6 +7,7 @@ package io.flutter.plugin.editing;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
@@ -18,6 +19,7 @@ import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.InputMethodSubtype;
 
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
@@ -314,17 +316,25 @@ public class TextInputPlugin {
     }
 
     // Samsung's Korean keyboard has a bug where it always attempts to combine characters based on
-    // its internal state, ignoring if and when the cursor is moved programmatically.
+    // its internal state, ignoring if and when the cursor is moved programmatically. The same bug
+    // also causes non-korean keyboards to occasionally duplicate text when tapping in the middle
+    // of existing text to edit it.
     //
     // Fully restarting the IMM works around this because it flushes the keyboard's internal state
     // and stops it from trying to incorrectly combine characters. However this also has some
     // negative performance implications, so we don't want to apply this workaround in every case.
     @SuppressLint("NewApi") // New API guard is inline, the linter can't see it.
+    @SuppressWarnings("deprecation")
     private boolean isRestartAlwaysRequired() {
-        String language = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                ? mImm.getCurrentInputMethodSubtype().getLanguageTag()
-                : mImm.getCurrentInputMethodSubtype().getLocale();
-        return Build.MANUFACTURER.equals("samsung") && language.equals("ko");
+        InputMethodSubtype subtype = mImm.getCurrentInputMethodSubtype();
+        // Impacted devices all shipped with Android Lollipop or newer.
+        if (subtype == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP || !Build.MANUFACTURER.equals("samsung")) {
+            return false;
+        }
+        String keyboardName = Settings.Secure.getString(mView.getContext().getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
+        // The Samsung keyboard is called "com.sec.android.inputmethod/.SamsungKeypad" but look
+        // for "Samsung" just in case Samsung changes the name of the keyboard.
+        return keyboardName.contains("Samsung");
     }
 
     private void clearTextInputClient() {

@@ -13,7 +13,6 @@
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
-#include "flutter/shell/platform/darwin/ios/ios_gl_context.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
@@ -22,10 +21,9 @@
 #include "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
 #endif  //  FLUTTER_SHELL_ENABLE_METAL
 
-@implementation FlutterView {
-  id<FlutterViewEngineDelegate> _delegate;
-  std::unique_ptr<flutter::IOSGLContext> _onscreenGLContext;
-}
+@implementation FlutterView
+
+id<FlutterViewEngineDelegate> _delegate;
 
 - (instancetype)init {
   @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
@@ -83,26 +81,54 @@
   [super layoutSubviews];
 }
 
+#if FLUTTER_SHELL_ENABLE_METAL
+static bool UseMetalRenderer() {
+  // If there is a command line argument that says Metal should not be used, that takes precedence
+  // over everything else. This allows disabling Metal on a per run basis to check for regressions
+  // on an application that has otherwise opted into Metal on an iOS version that supports it.
+  if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--disable-metal"]) {
+    return false;
+  }
+
+  // If the application wants to use metal on a per run basis with disregard for version checks or
+  // plist based opt ins, respect that opinion. This allows selectively testing features on older
+  // version of iOS than those explicitly stated as being supported.
+  if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--force-metal"]) {
+    return true;
+  }
+
+  // This is just a version we picked that is easy to support and has all necessary Metal features.
+  bool ios_version_supports_metal = false;
+  if (@available(iOS 11.0, *)) {
+    ios_version_supports_metal = true;
+  }
+
+  // The application must opt-in by default to use Metal without command line flags.
+  bool application_opts_into_metal =
+      [[[NSBundle mainBundle] objectForInfoDictionaryKey:@"io.flutter.metal_preview"] boolValue];
+
+  return ios_version_supports_metal && application_opts_into_metal;
+}
+#endif  // FLUTTER_SHELL_ENABLE_METAL
+
 + (Class)layerClass {
 #if TARGET_IPHONE_SIMULATOR
   return [CALayer class];
 #else  // TARGET_IPHONE_SIMULATOR
 #if FLUTTER_SHELL_ENABLE_METAL
-  return [CAMetalLayer class];
+  if (UseMetalRenderer()) {
+    return [CAMetalLayer class];
+  } else {
+    return [CAEAGLLayer class];
+  }
 #else   // FLUTTER_SHELL_ENABLE_METAL
   return [CAEAGLLayer class];
 #endif  //  FLUTTER_SHELL_ENABLE_METAL
 #endif  // TARGET_IPHONE_SIMULATOR
 }
 
-- (std::unique_ptr<flutter::IOSSurface>)createSurfaceWithResourceGLContext:
-    (fml::WeakPtr<flutter::IOSGLContext>)resourceGLContext {
-#if !TARGET_IPHONE_SIMULATOR
-  if (!_onscreenGLContext) {
-    _onscreenGLContext = resourceGLContext->MakeSharedContext();
-  }
-#endif  // !TARGET_IPHONE_SIMULATOR
-
+- (std::unique_ptr<flutter::IOSSurface>)createSurface:
+    (std::shared_ptr<flutter::IOSGLContext>)context {
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
         reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
@@ -113,9 +139,8 @@
         eagl_layer.get().presentsWithTransaction = YES;
       }
     }
-    return std::make_unique<flutter::IOSSurfaceGL>(
-        _onscreenGLContext->GetWeakPtr(), std::move(resourceGLContext), std::move(eagl_layer),
-        [_delegate platformViewsController]);
+    return std::make_unique<flutter::IOSSurfaceGL>(context, std::move(eagl_layer),
+                                                   [_delegate platformViewsController]);
 #if FLUTTER_SHELL_ENABLE_METAL
   } else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
     fml::scoped_nsobject<CAMetalLayer> metalLayer(

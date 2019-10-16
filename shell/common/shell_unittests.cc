@@ -4,6 +4,7 @@
 
 #define FML_USED_ON_EMBEDDER
 
+#include <algorithm>
 #include <functional>
 #include <future>
 #include <memory>
@@ -797,6 +798,118 @@ TEST_F(ShellTest, CanCreateImagefromDecompressedBytes) {
   RunEngine(shell.get(), std::move(configuration));
 
   latch.Wait();
+}
+
+class MockTexture : public Texture {
+ public:
+  MockTexture(int64_t textureId,
+              std::shared_ptr<fml::AutoResetWaitableEvent> latch)
+      : Texture(textureId), latch_(latch) {}
+
+  ~MockTexture() override = default;
+
+  // Called from GPU thread.
+  void Paint(SkCanvas& canvas,
+             const SkRect& bounds,
+             bool freeze,
+             GrContext* context) override {}
+
+  void OnGrContextCreated() override {}
+
+  void OnGrContextDestroyed() override {}
+
+  void MarkNewFrameAvailable() override {
+    frames_available_++;
+    latch_->Signal();
+  }
+
+  void OnTextureUnregistered() override {
+    unregistered_ = true;
+    latch_->Signal();
+  }
+
+  bool unregistered() { return unregistered_; }
+  int frames_available() { return frames_available_; }
+
+ private:
+  bool unregistered_ = false;
+  int frames_available_ = 0;
+  std::shared_ptr<fml::AutoResetWaitableEvent> latch_;
+};
+
+TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
+  Settings settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  ASSERT_TRUE(ValidateShell(shell.get()));
+  PlatformViewNotifyCreated(shell.get());
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  std::shared_ptr<fml::AutoResetWaitableEvent> latch =
+      std::make_shared<fml::AutoResetWaitableEvent>();
+
+  std::shared_ptr<MockTexture> mockTexture =
+      std::make_shared<MockTexture>(0, latch);
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
+        shell->GetPlatformView()->RegisterTexture(mockTexture);
+        shell->GetPlatformView()->MarkTextureFrameAvailable(0);
+      });
+  latch->Wait();
+
+  EXPECT_EQ(mockTexture->frames_available(), 1);
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetGPUTaskRunner(),
+      [&]() { shell->GetPlatformView()->UnregisterTexture(0); });
+  latch->Wait();
+
+  EXPECT_EQ(mockTexture->unregistered(), true);
+}
+
+TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
+  const std::string message = "dummy isolate launch data.";
+
+  Settings settings = CreateSettingsForFixture();
+  settings.persistent_isolate_data =
+      std::make_shared<fml::DataMapping>(message);
+  TaskRunners task_runners("test",                  // label
+                           GetCurrentTaskRunner(),  // platform
+                           CreateNewThread(),       // gpu
+                           CreateNewThread(),       // ui
+                           CreateNewThread()        // io
+  );
+
+  fml::AutoResetWaitableEvent message_latch;
+  AddNativeCallback("NotifyMessage",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      const auto message_from_dart =
+                          tonic::DartConverter<std::string>::FromDart(
+                              Dart_GetNativeArgument(args, 0));
+                      ASSERT_EQ(message, message_from_dart);
+                      message_latch.Signal();
+                    }));
+
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  ASSERT_TRUE(shell->IsSetup());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("canAccessIsolateLaunchData");
+
+  fml::AutoResetWaitableEvent event;
+  shell->RunEngine(std::move(configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
+
+  message_latch.Wait();
 }
 
 }  // namespace testing
