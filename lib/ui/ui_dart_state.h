@@ -67,19 +67,8 @@ class UIDartState : public tonic::DartState {
       return {};
     }
     auto* state = UIDartState::Current();
-    auto io_task_runner = state->GetTaskRunners().GetIOTaskRunner();
-
     FML_DCHECK(state);
-
-    fml::RefPtr<flutter::SkiaUnrefQueue> queue;
-    fml::AutoResetWaitableEvent latch;
-
-    auto io_task = [&state, &queue, &latch]() {
-      queue = state->GetSkiaUnrefQueue();
-      latch.Signal();
-    };
-    fml::TaskRunner::RunNowOrPostTask(io_task_runner, io_task);
-    latch.Wait();
+    auto queue = state->GetSkiaUnrefQueue();
 
     return {std::move(object), std::move(queue)};
   };

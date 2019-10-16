@@ -84,6 +84,8 @@ class WeakPtr {
     return *this ? ptr_ : nullptr;
   }
 
+  T* getUnsafe() const { return *this ? ptr_ : nullptr; }
+
   T& operator*() const {
     FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
     FML_DCHECK(*this);

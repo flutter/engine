@@ -883,6 +883,7 @@ TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
   latch->Wait();
 
   EXPECT_EQ(mockTexture->unregistered(), true);
+  DestroyShell(std::move(shell), std::move(task_runners));
 }
 
 TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
@@ -921,6 +922,7 @@ TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
   });
 
   message_latch.Wait();
+  DestroyShell(std::move(shell), std::move(task_runners));
 }
 
 }  // namespace testing
