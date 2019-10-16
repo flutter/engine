@@ -442,17 +442,17 @@ typedef enum UIAccessibilityContrast : NSInteger {
       [[XCTestExpectation alloc] initWithDescription:@"notification called"];
   id engine = [[MockEngine alloc] init];
   @autoreleasepool {
-  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
-                                                                        nibName:nil
-                                                                         bundle:nil];
-  id observer =
-      [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
-                                                        object:nil
-                                                         queue:[NSOperationQueue mainQueue]
-                                                    usingBlock:^(NSNotification* _Nonnull note) {
-                                                      [expectation fulfill];
-                                                    }];
-  realVC = nil;
+    FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
+                                                                          nibName:nil
+                                                                           bundle:nil];
+    id observer =
+        [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
+                                                          object:nil
+                                                           queue:[NSOperationQueue mainQueue]
+                                                      usingBlock:^(NSNotification* _Nonnull note) {
+                                                        [expectation fulfill];
+                                                      }];
+    realVC = nil;
   }
   [self waitForExpectations:@[ expectation ] timeout:1.0];
 }
