@@ -62,10 +62,10 @@ class DartIsolate : public UIDartState {
   ///             the engine transition the Dart isolate from one phase to the
   ///             next. The Dart isolate will only move from one phase to the
   ///             next in the order specified in the `DartIsolate::Phase` enum.
-  ///             That is, the once the isolate has moved out of a particular
-  ///             phase, it can never transition back to that phase in the
-  ///             future. There is no error recovery mechanism and callers that
-  ///             find their isolates in an undesirable phase must discard the
+  ///             That is, once the isolate has moved out of a particular phase,
+  ///             it can never transition back to that phase in the future.
+  ///             There is no error recovery mechanism and callers that find
+  ///             their isolates in an undesirable phase must discard the
   ///             isolate and start over.
   ///
   enum class Phase {
@@ -176,14 +176,18 @@ class DartIsolate : public UIDartState {
   ///                                         this point and an isolate scope is
   ///                                         current.
   /// @param[in]  isolate_shutdown_callback   The isolate shutdown callback.
-  ///                                         This will be called before it
+  ///                                         This will be called before the
   ///                                         isolate is about to transition
   ///                                         into the Shutdown phase. The
   ///                                         isolate is still running at this
   ///                                         point and an isolate scope is
   ///                                         current.
   ///
-  /// @return     { description_of_the_return_value }
+  /// @return     A weak pointer to the root Dart isolate. The caller must
+  ///             ensure that the isolate is not referenced for long periods of
+  ///             time as it prevents isolate collection when the isolate
+  ///             terminates itself. The caller may also only use the isolate on
+  ///             the thread on which the isolate was created.
   ///
   static std::weak_ptr<DartIsolate> CreateRootIsolate(
       const Settings& settings,
@@ -212,13 +216,13 @@ class DartIsolate : public UIDartState {
   //----------------------------------------------------------------------------
   /// @brief      The current phase of the isolate. The engine represents all
   ///             dart isolates as being in one of the known phases. By invoking
-  ///             various methods on the Dart isolate, the engine transition the
-  ///             Dart isolate from one phase to the next. The Dart isolate will
-  ///             only move from one phase to the next in the order specified in
-  ///             the `DartIsolate::Phase` enum. That is, the once the isolate
-  ///             has moved out of a particular phase, it can never transition
-  ///             back to that phase in the future. There is no error recovery
-  ///             mechanism and callers that find their isolates in an
+  ///             various methods on the Dart isolate, the engine transitions
+  ///             the Dart isolate from one phase to the next. The Dart isolate
+  ///             will only move from one phase to the next in the order
+  ///             specified in the `DartIsolate::Phase` enum. That is, the once
+  ///             the isolate has moved out of a particular phase, it can never
+  ///             transition back to that phase in the future. There is no error
+  ///             recovery mechanism and callers that find their isolates in an
   ///             undesirable phase must discard the isolate and start over.
   ///
   /// @return     The current isolate phase.
@@ -320,7 +324,7 @@ class DartIsolate : public UIDartState {
   /// @param[in]  args        A list of string arguments to the entrypoint.
   /// @param[in]  on_run      A callback to run in isolate scope after the main
   ///                         entrypoint has been invoked. There is no isolate
-  ///                         scoped current on the thread once this method
+  ///                         scope current on the thread once this method
   ///                         returns.
   ///
   /// @return     If the isolate successfully transitioned to the running phase
@@ -343,7 +347,7 @@ class DartIsolate : public UIDartState {
   /// @param[in]  args          A list of string arguments to the entrypoint.
   /// @param[in]  on_run        A callback to run in isolate scope after the
   ///                           main entrypoint has been invoked. There is no
-  ///                           isolate scoped current on the thread once this
+  ///                           isolate scope current on the thread once this
   ///                           method returns.
   ///
   /// @return     If the isolate successfully transitioned to the running phase
