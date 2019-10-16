@@ -441,6 +441,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   XCTestExpectation* expectation =
       [[XCTestExpectation alloc] initWithDescription:@"notification called"];
   id engine = [[MockEngine alloc] init];
+  @autoreleasepool {
   FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
                                                                         nibName:nil
                                                                          bundle:nil];
@@ -452,6 +453,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                       [expectation fulfill];
                                                     }];
   realVC = nil;
+  }
   [self waitForExpectations:@[ expectation ] timeout:1.0];
 }
 
