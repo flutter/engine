@@ -22,43 +22,43 @@ namespace flutter {
 ///             the host snapshot the state of the Dart heap at specific points
 ///             and package the same with the Flutter application. When the Dart
 ///             VM on the target is configured to run AOT compiled Dart code,
-///             the tools also compile the developers Flutter application code
+///             the tools also compile the developer's Flutter application code
 ///             to target specific machine code (instructions). This class deals
 ///             with the mapping of both these buffers at runtime on the target.
 ///
-///             A flutter application typically needs two instances of this
+///             A Flutter application typically needs two instances of this
 ///             class at runtime to run Dart code. One instance is for the VM
-///             and is also called the "core snapshot". The other is the isolate
+///             and is called the "core snapshot". The other is the isolate
 ///             and called the "isolate snapshot". Different root isolates can
 ///             be launched with different isolate snapshots.
 ///
 ///             These snapshots are typically memory-mapped at runtime, or,
 ///             referenced directly as symbols present in Mach or ELF binaries.
 ///
-///             In case of the core snapshot, the snapshot is collected when the
-///             VM shuts down. The isolate snapshot is collected when the
+///             In the case of the core snapshot, the snapshot is collected when
+///             the VM shuts down. The isolate snapshot is collected when the
 ///             isolate group shuts down.
 ///
 class DartSnapshot : public fml::RefCountedThreadSafe<DartSnapshot> {
  public:
   //----------------------------------------------------------------------------
-  /// When referencing the heap component of the core snapshot via the dynamic
-  /// linker, the symbols name is expected to be this constant.
+  /// The symbol name of the heap data of the core snapshot in a dynamic library
+  /// or currently loaded process.
   ///
   static const char* kVMDataSymbol;
   //----------------------------------------------------------------------------
-  /// When referencing the instructions component of the core snapshot via the
-  /// dynamic linker, the symbols name is expected to be this constant.
+  /// The symbol name of the instructions data of the core snapshot in a dynamic
+  /// library or currently loaded process.
   ///
   static const char* kVMInstructionsSymbol;
   //----------------------------------------------------------------------------
-  /// When referencing the heap component of the isolate snapshot via the
-  /// dynamic linker, the symbols name is expected to be this constant.
+  /// The symbol name of the heap data of the isolate snapshot in a dynamic
+  /// library or currently loaded process.
   ///
   static const char* kIsolateDataSymbol;
   //----------------------------------------------------------------------------
-  /// When referencing the instructions component of the isolate snapshot via
-  /// the dynamic linker, the symbols name is expected to be this constant.
+  /// The symbol name of the instructions data of the isolate snapshot in a
+  /// dynamic library or currently loaded process.
   ///
   static const char* kIsolateInstructionsSymbol;
 
@@ -67,7 +67,7 @@ class DartSnapshot : public fml::RefCountedThreadSafe<DartSnapshot> {
   ///             the core snapshot.
   ///
   /// @attention  Depending on the runtime mode of the Flutter application and
-  ///             the target the Flutter is running on, a complex fallback
+  ///             the target that Flutter is running on, a complex fallback
   ///             mechanism is in place to infer the locations of each snapshot
   ///             buffer. If the caller wants to explicitly specify the buffers
   ///             of the core snapshot, the `Settings::vm_snapshot_data` and
@@ -87,7 +87,7 @@ class DartSnapshot : public fml::RefCountedThreadSafe<DartSnapshot> {
   ///             the isolate snapshot.
   ///
   /// @attention  Depending on the runtime mode of the Flutter application and
-  ///             the target the Flutter is running on, a complex fallback
+  ///             the target that Flutter is running on, a complex fallback
   ///             mechanism is in place to infer the locations of each snapshot
   ///             buffer. If the caller wants to explicitly specify the buffers
   ///             of the isolate snapshot, the `Settings::isolate_snapshot_data`
