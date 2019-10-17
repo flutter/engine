@@ -113,14 +113,14 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   int _widthToPhysical(double width) {
     final double boundsWidth = width + 1;
-    return (boundsWidth * html.window.devicePixelRatio).ceil()
-        + 2 * kPaddingPixels;
+    return (boundsWidth * html.window.devicePixelRatio).ceil() +
+        2 * kPaddingPixels;
   }
 
-  int  _heightToPhysical(double height) {
+  int _heightToPhysical(double height) {
     final double boundsHeight = height + 1;
-    return (boundsHeight * html.window.devicePixelRatio).ceil()
-        + 2 * kPaddingPixels;
+    return (boundsHeight * html.window.devicePixelRatio).ceil() +
+        2 * kPaddingPixels;
   }
 
   bool doesFitBounds(ui.Rect newBounds) {
@@ -217,7 +217,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
         _bounds.top - kPaddingPixels - canvasPositionY.toDouble();
 
     rootElement.style.transform =
-    'translate(${canvasPositionX}px, ${canvasPositionY}px)';
+        'translate(${canvasPositionX}px, ${canvasPositionY}px)';
 
     // This compensates for the translate on the `rootElement`.
     translate(
@@ -511,7 +511,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
     final List<CanvasShadow> shadows =
-    ElevationShadow.computeCanvasShadows(elevation, color);
+        ElevationShadow.computeCanvasShadows(elevation, color);
     if (shadows.isNotEmpty) {
       for (final CanvasShadow shadow in shadows) {
         // TODO(het): Shadows with transparent occluders are not supported
@@ -655,18 +655,18 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     }
 
     final html.Element paragraphElement =
-    _drawParagraphElement(paragraph, offset);
+        _drawParagraphElement(paragraph, offset);
 
     if (isClipped) {
       final List<html.Element> clipElements =
-      _clipContent(_clipStack, paragraphElement, offset, currentTransform);
+          _clipContent(_clipStack, paragraphElement, offset, currentTransform);
       for (html.Element clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
     } else {
       final String cssTransform =
-      matrix4ToCssTransform(transformWithOffset(currentTransform, offset));
+          matrix4ToCssTransform(transformWithOffset(currentTransform, offset));
       paragraphElement.style
         ..transformOrigin = '0 0 0'
         ..transform = cssTransform;
@@ -700,7 +700,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     // Move rendering to OffscreenCanvas so that transform is preserved
     // as well.
     assert(paint.shader == null,
-    'Linear/Radial/SweepGradient and ImageShader not supported yet');
+        'Linear/Radial/SweepGradient and ImageShader not supported yet');
     final Int32List colors = vertices.colors;
     final ui.VertexMode mode = vertices.mode;
     if (colors == null) {
@@ -775,7 +775,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     }
   }
 }
-
 
 String _stringForBlendMode(ui.BlendMode blendMode) {
   if (blendMode == null) {
