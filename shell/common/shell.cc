@@ -91,20 +91,22 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   auto weak_io_manager_future = weak_io_manager_promise.get_future();
   auto io_task_runner = shell->GetTaskRunners().GetIOTaskRunner();
 
-  // We are able to extract the raw pointer from the platform_view unique_ptr
-  // because we know this is guaranteed to execute before the unique_ptr
-  // goes out of scope as we will block on this lambda completing execution
-  // when calling Shell::Setup() when resolving the io_manager_future.
+  // TODO(gw280): The WeakPtr here asserts that we are derefing it on the
+  // same thread as it was created on. We are currently on the IO thread
+  // inside this lambda but we need to deref the PlatformView, which was
+  // constructed on the platform thread.
+  //
+  // https://github.com/flutter/flutter/issues/42948
   fml::TaskRunner::RunNowOrPostTask(
       io_task_runner,
-      [&io_manager_promise,                  //
-       &weak_io_manager_promise,             //
-       platform_view = platform_view.get(),  //
-       io_task_runner                        //
+      [&io_manager_promise,                          //
+       &weak_io_manager_promise,                     //
+       platform_view = platform_view->GetWeakPtr(),  //
+       io_task_runner                                //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupIOSubsystem");
         auto io_manager = std::make_unique<ShellIOManager>(
-            platform_view->CreateResourceContext(), io_task_runner);
+            platform_view.getUnsafe()->CreateResourceContext(), io_task_runner);
         weak_io_manager_promise.set_value(io_manager->GetWeakPtr());
         io_manager_promise.set_value(std::move(io_manager));
       });
@@ -500,17 +502,13 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   PersistentCache::GetCacheForProcess()->SetIsDumpingSkp(
       settings_.dump_skp_on_shader_compilation);
 
-  fml::AutoResetWaitableEvent ui_latch;
-
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetUITaskRunner(),
-      fml::MakeCopyable(
-          [engine = weak_engine_, &ui_latch,
-           &display_refresh_rate = this->display_refresh_rate_]() mutable {
-            display_refresh_rate = engine->GetDisplayRefreshRate();
-            ui_latch.Signal();
-          }));
-  ui_latch.Wait();
+  // TODO(gw280): The WeakPtr here asserts that we are derefing it on the
+  // same thread as it was created on. Shell is constructed on the platform
+  // thread but we need to call into the Engine on the UI thread, so we need
+  // to use getUnsafe() here to avoid failing the assertion.
+  //
+  // https://github.com/flutter/flutter/issues/42947
+  display_refresh_rate_ = weak_engine_.getUnsafe()->GetDisplayRefreshRate();
 
   return true;
 }

@@ -79,6 +79,7 @@ const TaskRunners& UIDartState::GetTaskRunners() const {
 }
 
 fml::RefPtr<flutter::SkiaUnrefQueue> UIDartState::GetSkiaUnrefQueue() const {
+  // TODO(gw280): Remove this usage of getUnsafe()
   if (!io_manager_.getUnsafe()) {
     return nullptr;
   }
