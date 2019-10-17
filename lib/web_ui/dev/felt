@@ -71,11 +71,8 @@ else
     install_deps
     mkdir -p $DART_TOOL_DIR
 
-    echo "Creating the snapshot"
     "$DART_SDK_DIR/bin/dart" --snapshot="$SNAPSHOT_PATH" --packages="$WEB_UI_DIR/.packages" "$SCRIPT_PATH"
     echo "$REVISION" > "$STAMP_PATH"
-  else
-    echo "[Snapshot mode: on] (using existing snapshot)"
   fi
 
   $DART_SDK_DIR/bin/dart --packages="$WEB_UI_DIR/.packages" "$SNAPSHOT_PATH" $@
