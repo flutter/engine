@@ -84,7 +84,8 @@ class WeakPtr {
     return *this ? ptr_ : nullptr;
   }
 
-  // TODO(gw280): Remove all remaining usages of getUnsafe()
+  // TODO(gw280): Remove all remaining usages of getUnsafe().
+  // No new usages of getUnsafe() are allowed.
   //
   // https://github.com/flutter/flutter/issues/42949
   T* getUnsafe() const {
