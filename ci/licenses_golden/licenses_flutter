@@ -203,8 +203,6 @@ FILE: ../../../flutter/fml/synchronization/semaphore_unittest.cc
 FILE: ../../../flutter/fml/synchronization/shared_mutex.h
 FILE: ../../../flutter/fml/synchronization/shared_mutex_std.cc
 FILE: ../../../flutter/fml/synchronization/shared_mutex_std.h
-FILE: ../../../flutter/fml/synchronization/thread_annotations.h
-FILE: ../../../flutter/fml/synchronization/thread_annotations_unittest.cc
 FILE: ../../../flutter/fml/synchronization/waitable_event.cc
 FILE: ../../../flutter/fml/synchronization/waitable_event.h
 FILE: ../../../flutter/fml/synchronization/waitable_event_unittest.cc
@@ -1041,6 +1039,8 @@ FILE: ../../../flutter/shell/platform/windows/win32_dpi_helper.cc
 FILE: ../../../flutter/shell/platform/windows/win32_dpi_helper.h
 FILE: ../../../flutter/shell/platform/windows/win32_flutter_window.cc
 FILE: ../../../flutter/shell/platform/windows/win32_flutter_window.h
+FILE: ../../../flutter/shell/platform/windows/win32_task_runner.cc
+FILE: ../../../flutter/shell/platform/windows/win32_task_runner.h
 FILE: ../../../flutter/shell/platform/windows/win32_window.cc
 FILE: ../../../flutter/shell/platform/windows/win32_window.h
 FILE: ../../../flutter/shell/platform/windows/win32_window_unittests.cc
@@ -1216,7 +1216,9 @@ FILE: ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.cc
 FILE: ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.h
 FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.cpp
 FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.h
+FILE: ../../../flutter/third_party/txt/src/utils/LinuxUtils.h
 FILE: ../../../flutter/third_party/txt/src/utils/LruCache.h
+FILE: ../../../flutter/third_party/txt/src/utils/MacUtils.h
 FILE: ../../../flutter/third_party/txt/src/utils/TypeHelpers.h
 FILE: ../../../flutter/third_party/txt/src/utils/WindowsUtils.h
 ----------------------------------------------------------------------------------------------------
