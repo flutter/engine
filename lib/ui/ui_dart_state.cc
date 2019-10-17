@@ -79,7 +79,12 @@ const TaskRunners& UIDartState::GetTaskRunners() const {
 }
 
 fml::RefPtr<flutter::SkiaUnrefQueue> UIDartState::GetSkiaUnrefQueue() const {
-  // TODO(gw280): Remove this usage of getUnsafe()
+  // TODO(gw280): The WeakPtr here asserts that we are derefing it on the
+  // same thread as it was created on. As we can't guarantee that currently
+  // we're being called from the IO thread (construction thread), we need
+  // to use getUnsafe() here to avoid failing the assertion.
+  //
+  // https://github.com/flutter/flutter/issues/42946
   if (!io_manager_.getUnsafe()) {
     return nullptr;
   }
