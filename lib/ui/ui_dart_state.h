@@ -69,7 +69,6 @@ class UIDartState : public tonic::DartState {
     auto* state = UIDartState::Current();
     FML_DCHECK(state);
     auto queue = state->GetSkiaUnrefQueue();
-
     return {std::move(object), std::move(queue)};
   };
 
