@@ -7,7 +7,7 @@ part of engine;
 _GlRenderer _glRenderer;
 
 void initWebGl() {
-  _glRenderer = _WebGlRenderer();
+  _glRenderer ??= _WebGlRenderer();
 }
 
 abstract class _GlRenderer {
