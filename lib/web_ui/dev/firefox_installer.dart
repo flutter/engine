@@ -122,15 +122,8 @@ Future<String> fetchLatestFirefoxVersion() async {
   // We will parse the HttpHeaders to find the redirect location.
   final io.HttpClientResponse response = await request.close();
 
-  String version;
-
-  response.headers.forEach((String s, List<String> list) {
-    // Get the version from the redirect location.
-    if (s == 'location') {
-      final String location = list.first;
-      version = forFirefoxVersion.stringMatch(location);
-    }
-  });
+  final String location = response.headers.value('location');
+  final String version = forFirefoxVersion.stringMatch(location);
 
   return version.substring(version.lastIndexOf('-') + 1);
 }
