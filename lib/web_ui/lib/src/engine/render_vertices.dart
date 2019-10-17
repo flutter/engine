@@ -10,6 +10,11 @@ void initWebGl() {
   _glRenderer ??= _WebGlRenderer();
 }
 
+void disposeWebGl() {
+  _OffscreenCanvas.dispose();
+  _glRenderer = null;
+}
+
 abstract class _GlRenderer {
   void drawVertices(
       html.CanvasRenderingContext2D context,
@@ -95,11 +100,9 @@ class _WebGlRenderer implements _GlRenderer {
     int heightInPixels = canvasHeightInPixels;
     // If vertices fall outside the bitmap area, cull.
     if (maxValueX < 0 || maxValueY < 0) {
-      print('abort1');
       return;
     }
     if (minValueX > widthInPixels || minValueY > heightInPixels) {
-      print('abort2');
       return;
     }
     // If Vertices are is smaller than hosting canvas, allocate minimal
@@ -112,7 +115,6 @@ class _WebGlRenderer implements _GlRenderer {
       offsetY = minValueY.floor().toDouble();
     }
     if (widthInPixels == 0 || heightInPixels == 0) {
-      print('abort3');
       return;
     }
     _GlContext gl =
@@ -405,6 +407,10 @@ class _GlContext {
     js_util.callMethod(glContext, 'bindBuffer', [kArrayBuffer, buffer]);
   }
 
+  void deleteBuffer(Object buffer) {
+    js_util.callMethod(glContext, 'deleteBuffer', [buffer]);
+  }
+
   void bufferData(TypedData data, dynamic type) {
     js_util.callMethod(glContext, 'bufferData', [kArrayBuffer, data, type]);
   }
@@ -437,7 +443,6 @@ class _GlContext {
   void drawTriangles(int triangleCount, ui.VertexMode vertexMode) {
     dynamic mode = _triangleTypeFromMode(vertexMode);
     js_util.callMethod(glContext, 'drawArrays', [mode, 0, triangleCount]);
-    print('glerror: $error');
   }
 
   /// Sets affine transformation from normalized device coordinates
@@ -583,6 +588,14 @@ class _OffscreenCanvas {
       _cachedContext?.dispose();
       _cachedContext = null;
     }
+  }
+
+  static void dispose() {
+    _canvas = null;
+    _maxPixelWidth = 0;
+    _maxPixelHeight = 0;
+    _glCanvas = null;
+    _cachedContext = null;
   }
 
   html.OffscreenCanvas get canvas => _canvas;
