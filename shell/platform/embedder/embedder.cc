@@ -53,7 +53,13 @@ static FlutterEngineResult LogEmbedderError(FlutterEngineResult code,
                                             const char* function,
                                             const char* file,
                                             int line) {
-  const auto file_base = (::strrchr(file, '/') ? strrchr(file, '/') + 1 : file);
+#if OS_WIN
+  constexpr char kSeparator = '\\';
+#else
+  constexpr char kSeparator = '/';
+#endif
+  const auto file_base =
+      (::strrchr(file, kSeparator) ? strrchr(file, kSeparator) + 1 : file);
   char error[256] = {};
   snprintf(error, (sizeof(error) / sizeof(char)) - 1,
            "%s (%d): '%s' returned '%s'. %s", file_base, line, function,
@@ -588,8 +594,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   if (version != FLUTTER_ENGINE_VERSION) {
     return LOG_EMBEDDER_ERROR(
         kInvalidLibraryVersion,
-        "Flutter engine version the embedder was built for did not match the "
-        "actual version of the embedder. There has been a breaking change. "
+        "Flutter embedder version mismatch. There has been a breaking change. "
         "Please consult the changelog and update the embedder.");
   }
 
@@ -621,7 +626,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 
   if (!IsRendererValid(config)) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments,
-                              "The renderer configuration was not valid.");
+                              "The renderer configuration was invalid.");
   }
 
   std::string icu_data_path;
