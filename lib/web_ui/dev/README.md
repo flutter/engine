@@ -23,6 +23,14 @@ felt build --watch
 
 If you don't want to add `felt` to your path, you can still invoke it using a relative path like `./web_ui/dev/felt <command>`
 
+## Using goma
+Goma is a great way to speed up your builds. In order to use goma, you first need to install it. Here are the instructions for [linux](https://g3doc.corp.google.com/devtools/goma/g3doc/how-to-use-goma/how-to-install-goma-linux.md) and [mac](https://g3doc.corp.google.com/devtools/goma/g3doc/how-to-use-goma/how-to-install-goma-mac.md).
+
+Once goma is installed, you can take advantage of it in your builds:
+```
+felt build [-w] -j 100
+```
+
 ## Running web engine tests
 To run all tests:
 ```

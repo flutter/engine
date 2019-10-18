@@ -20,6 +20,11 @@ class BuildCommand extends Command<bool> {
         abbr: 'w',
         help: 'Run the build in watch mode so it rebuilds whenever a change'
             'is made.',
+      )
+      ..addOption(
+        'goma',
+        abbr: 'j',
+        help: 'Enable parallelization through goma',
       );
   }
 
@@ -31,12 +36,20 @@ class BuildCommand extends Command<bool> {
 
   bool get isWatchMode => argResults['watch'];
 
+  int get gomaWorkers {
+    final String gomaWorkersArg = argResults['goma'];
+    if (gomaWorkersArg != null) {
+      return int.parse(gomaWorkersArg);
+    }
+    return null;
+  }
+
   @override
   FutureOr<bool> run() async {
     final FilePath libPath = FilePath.fromWebUi('lib');
     final Pipeline buildPipeline = Pipeline(steps: <PipelineStep>[
       gn,
-      ninja,
+      () => ninja(gomaWorkers),
     ]);
     await buildPipeline.start();
 
@@ -67,11 +80,17 @@ Future<void> gn() {
 }
 
 // TODO(mdebbar): Make the ninja step interruptable in the pipeline.
-Future<void> ninja() {
-  print('Running ninja...');
+Future<void> ninja(int gomaWorkers) {
+  if (gomaWorkers == null) {
+    print('Running ninja (with no goma workers)...');
+  } else {
+    print('Running ninja (with $gomaWorkers goma workers)...');
+  }
+
   return runProcess('ninja', <String>[
     '-C',
     environment.hostDebugUnoptDir.path,
+    if (gomaWorkers != null) ...['-j', '$gomaWorkers'],
   ]);
 }
 
@@ -106,8 +125,10 @@ class Pipeline {
         await _currentStepFuture;
       }
       status = PipelineStatus.done;
-    } catch (_) {
+    } catch (error, stackTrace) {
       status = PipelineStatus.error;
+      print('Error in the pipeline: $error');
+      print(stackTrace);
     } finally {
       _currentStepFuture = null;
     }
