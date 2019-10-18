@@ -18,6 +18,7 @@
 #include "flutter/shell/platform/glfw/glfw_event_loop.h"
 #include "flutter/shell/platform/glfw/key_event_handler.h"
 #include "flutter/shell/platform/glfw/keyboard_hook_handler.h"
+#include "flutter/shell/platform/glfw/mouse_cursor_controller.h"
 #include "flutter/shell/platform/glfw/platform_handler.h"
 #include "flutter/shell/platform/glfw/text_input_plugin.h"
 
@@ -77,6 +78,9 @@ struct FlutterDesktopWindowControllerState {
   // The screen coordinates per inch on the primary monitor. Defaults to a sane
   // value based on pixel_ratio 1.0.
   double monitor_screen_coordinates_per_inch = kDpPerInch;
+
+  // TODOC
+  std::unique_ptr<flutter::MouseCursorController> mouse_cursor_controller;
 };
 
 // Opaque reference for the GLFW window itself. This is separate from the
@@ -643,6 +647,10 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   int width_px, height_px;
   glfwGetFramebufferSize(window, &width_px, &height_px);
   GLFWFramebufferSizeCallback(window, width_px, height_px);
+
+  // Set up the mouse cursor controller
+  state->mouse_cursor_controller = std::make_unique<flutter::MouseCursorController>(
+      internal_plugin_messenger, window);
 
   // Set up GLFW callbacks for the window.
   glfwSetFramebufferSizeCallback(window, GLFWFramebufferSizeCallback);

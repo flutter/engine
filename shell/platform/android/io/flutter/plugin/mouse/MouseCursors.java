@@ -29,7 +29,7 @@ import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
  * constants defined in {@code PointerIcon}.
  */
 public class MouseCursors {
-  // Constants here must be kept in sync with Flutter's mouse_cursors.dart
+  // Constants here must be kept in sync with mouse_cursors.dart
 
   /* Displays no cursor at the pointer.
    */
@@ -68,7 +68,7 @@ public class MouseCursors {
       case none:
         return PointerIcon.TYPE_NULL;
       case basic:
-        return PointerIcon.TYPE_ARROW;
+        break;
       case click:
         return PointerIcon.TYPE_HAND;
       case text:
