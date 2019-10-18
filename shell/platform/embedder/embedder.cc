@@ -61,7 +61,7 @@ static FlutterEngineResult LogEmbedderError(FlutterEngineResult code,
   const auto file_base =
       (::strrchr(file, kSeparator) ? strrchr(file, kSeparator) + 1 : file);
   char error[256] = {};
-  snprintf(error, (sizeof(error) / sizeof(char)) - 1,
+  snprintf(error, (sizeof(error) / sizeof(char)),
            "%s (%d): '%s' returned '%s'. %s", file_base, line, function,
            code_name, reason);
   std::cerr << error << std::endl;
