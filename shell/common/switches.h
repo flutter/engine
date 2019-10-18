@@ -165,6 +165,10 @@ DEF_SWITCH(DisableDartAsserts,
            "disabled. This flag may be specified if the user wishes to run "
            "with assertions disabled in the debug product mode (i.e. with JIT "
            "or DBC).")
+DEF_SWITCH(ForceMultithreading,
+           "force-multithreading",
+           "Forcibly turn on multithreading. Currently only used in the "
+           "flutter-tester tool.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);
