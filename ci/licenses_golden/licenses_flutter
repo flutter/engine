@@ -203,8 +203,6 @@ FILE: ../../../flutter/fml/synchronization/semaphore_unittest.cc
 FILE: ../../../flutter/fml/synchronization/shared_mutex.h
 FILE: ../../../flutter/fml/synchronization/shared_mutex_std.cc
 FILE: ../../../flutter/fml/synchronization/shared_mutex_std.h
-FILE: ../../../flutter/fml/synchronization/thread_annotations.h
-FILE: ../../../flutter/fml/synchronization/thread_annotations_unittest.cc
 FILE: ../../../flutter/fml/synchronization/waitable_event.cc
 FILE: ../../../flutter/fml/synchronization/waitable_event.h
 FILE: ../../../flutter/fml/synchronization/waitable_event_unittest.cc
@@ -390,6 +388,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/plugins.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_binding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/recording_canvas.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/render_vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/rrect_renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/accessibility.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/checkable.dart
@@ -415,6 +414,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/opacity.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/platform_view.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/scene.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/scene_builder.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/surface.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/transform.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/test_embedding.dart
@@ -426,7 +426,8 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/ruler.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/unicode_range.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/word_break_properties.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/word_breaker.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/input_type.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_editing.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/validators.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/vector_math.dart
@@ -1039,6 +1040,8 @@ FILE: ../../../flutter/shell/platform/windows/win32_dpi_helper.cc
 FILE: ../../../flutter/shell/platform/windows/win32_dpi_helper.h
 FILE: ../../../flutter/shell/platform/windows/win32_flutter_window.cc
 FILE: ../../../flutter/shell/platform/windows/win32_flutter_window.h
+FILE: ../../../flutter/shell/platform/windows/win32_task_runner.cc
+FILE: ../../../flutter/shell/platform/windows/win32_task_runner.h
 FILE: ../../../flutter/shell/platform/windows/win32_window.cc
 FILE: ../../../flutter/shell/platform/windows/win32_window.h
 FILE: ../../../flutter/shell/platform/windows/win32_window_unittests.cc
@@ -1214,7 +1217,9 @@ FILE: ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.cc
 FILE: ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.h
 FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.cpp
 FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.h
+FILE: ../../../flutter/third_party/txt/src/utils/LinuxUtils.h
 FILE: ../../../flutter/third_party/txt/src/utils/LruCache.h
+FILE: ../../../flutter/third_party/txt/src/utils/MacUtils.h
 FILE: ../../../flutter/third_party/txt/src/utils/TypeHelpers.h
 FILE: ../../../flutter/third_party/txt/src/utils/WindowsUtils.h
 ----------------------------------------------------------------------------------------------------

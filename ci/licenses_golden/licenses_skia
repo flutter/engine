@@ -1,4 +1,4 @@
-Signature: cf6fcce8933676cb66739929493a01ce
+Signature: 5d135b9aa2c4d5e55ca7d29bbed28183
 
 UNUSED LICENSES:
 
@@ -1292,6 +1292,7 @@ FILE: ../../../third_party/skia/bench/microbench.json
 FILE: ../../../third_party/skia/bench/skpbench.json
 FILE: ../../../third_party/skia/docker/binary-size/Dockerfile
 FILE: ../../../third_party/skia/docker/cmake-release/Dockerfile
+FILE: ../../../third_party/skia/docker/skia-build-tools/Dockerfile
 FILE: ../../../third_party/skia/docker/skia-release/Dockerfile
 FILE: ../../../third_party/skia/docker/skia-wasm-release/Dockerfile
 FILE: ../../../third_party/skia/docker/skia-with-swift-shader-base/Dockerfile

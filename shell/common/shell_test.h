@@ -10,7 +10,6 @@
 #include "flutter/common/settings.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/fml/macros.h"
-#include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell.h"
@@ -35,6 +34,8 @@ class ShellTest : public ThreadTest {
   std::unique_ptr<Shell> CreateShell(Settings settings,
                                      TaskRunners task_runners,
                                      bool simulate_vsync = false);
+  void DestroyShell(std::unique_ptr<Shell> shell);
+  void DestroyShell(std::unique_ptr<Shell> shell, TaskRunners task_runners);
   TaskRunners GetTaskRunnersForFixture();
 
   void SendEnginePlatformMessage(Shell* shell,
@@ -101,8 +102,8 @@ class ShellTestVsyncClock {
 
  private:
   std::mutex mutex_;
-  std::vector<std::promise<int>> vsync_promised_ FML_GUARDED_BY(mutex_);
-  size_t vsync_issued_ FML_GUARDED_BY(mutex_) = 0;
+  std::vector<std::promise<int>> vsync_promised_;
+  size_t vsync_issued_ = 0;
 };
 
 class ShellTestVsyncWaiter : public VsyncWaiter {
