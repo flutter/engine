@@ -762,7 +762,8 @@ public class FlutterView extends FrameLayout {
    *
    * FlutterEngine must be non-null when this method is invoked.
    */
-  private void sendUserSettingsToFlutter() {
+  @VisibleForTesting
+  /* package */ void sendUserSettingsToFlutter() {
     // Lookup the current brightness of the Android OS.
     boolean isNightModeOn = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
     SettingsChannel.PlatformBrightness brightness = isNightModeOn
