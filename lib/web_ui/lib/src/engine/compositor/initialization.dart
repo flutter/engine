@@ -6,10 +6,10 @@ part of engine;
 
 /// EXPERIMENTAL: Enable the Skia-based rendering backend.
 const bool experimentalUseSkia =
-    bool.fromEnvironment('FLUTTER_WEB_USE_SKIA', defaultValue: false);
+    bool.fromEnvironment('FLUTTER_WEB_USE_SKIA', defaultValue: true);
 
 /// The URL to use when downloading the CanvasKit script and associated wasm.
-const String canvasKitBaseUrl = 'https://unpkg.com/canvaskit-wasm@0.6.0/bin/';
+const String canvasKitBaseUrl = 'https://unpkg.com/canvaskit-wasm@0.7.0/bin/';
 
 /// Initialize the Skia backend.
 ///
