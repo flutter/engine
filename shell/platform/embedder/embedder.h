@@ -1445,7 +1445,7 @@ FlutterEngineResult FlutterEngineRunTask(FLUTTER_API_SYMBOL(FlutterEngine)
 ///             fallback.
 ///
 /// @param[in]  engine         A running engine instance.
-/// @param[in]  locales        The updates locales in the order of preference.
+/// @param[in]  locales        The updated locales in the order of preference.
 /// @param[in]  locales_count  The count of locales supplied.
 ///
 /// @return     Whether the locale updates were applied.

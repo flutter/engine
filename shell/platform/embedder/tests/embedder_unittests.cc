@@ -2779,7 +2779,7 @@ TEST_F(EmbedderTest, CanUpdateLocales) {
   locale2.struct_size = sizeof(locale2);
   locale2.language_code = "zh";
   locale2.country_code = "CN";
-  locale2.script_code = "";
+  locale2.script_code = "Hans";
   locale2.variant_code = nullptr;
 
   std::vector<const FlutterLocale*> locales;
