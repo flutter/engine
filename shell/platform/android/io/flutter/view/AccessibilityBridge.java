@@ -754,7 +754,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         result.setSelected(semanticsNode.hasFlag(Flag.IS_SELECTED));
 
         // Heading support
-        if (Build.VERSION.SDK_INT >= 28) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             result.setHeading(semanticsNode.hasFlag(Flag.IS_HEADER));
         }
 
