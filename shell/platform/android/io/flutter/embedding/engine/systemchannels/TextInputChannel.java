@@ -271,7 +271,7 @@ public class TextInputChannel {
       return new Configuration(
           json.optBoolean("obscureText"),
           json.optBoolean("autocorrect", true),
-          json.optBoolean("noSuggestions"),
+          json.optBoolean("enableSuggestions"),
           TextCapitalization.fromValue(json.getString("textCapitalization")),
           InputType.fromJson(json.getJSONObject("inputType")),
           inputAction,
@@ -308,7 +308,7 @@ public class TextInputChannel {
 
     public final boolean obscureText;
     public final boolean autocorrect;
-    public final boolean noSuggestions;
+    public final boolean enableSuggestions;
     @NonNull
     public final TextCapitalization textCapitalization;
     @NonNull
@@ -321,7 +321,7 @@ public class TextInputChannel {
     public Configuration(
         boolean obscureText,
         boolean autocorrect,
-        boolean noSuggestions,
+        boolean enableSuggestions,
         @NonNull TextCapitalization textCapitalization,
         @NonNull InputType inputType,
         @Nullable Integer inputAction,
@@ -329,7 +329,7 @@ public class TextInputChannel {
     ) {
       this.obscureText = obscureText;
       this.autocorrect = autocorrect;
-      this.noSuggestions = noSuggestions;
+      this.enableSuggestions = enableSuggestions;
       this.textCapitalization = textCapitalization;
       this.inputType = inputType;
       this.inputAction = inputAction;

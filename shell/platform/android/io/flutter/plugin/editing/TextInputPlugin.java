@@ -138,7 +138,7 @@ public class TextInputPlugin {
         TextInputChannel.InputType type,
         boolean obscureText,
         boolean autocorrect,
-        boolean noSuggestions,
+        boolean enableSuggestions,
         TextInputChannel.TextCapitalization textCapitalization
     ) {
         if (type.type == TextInputChannel.TextInputType.DATETIME) {
@@ -173,7 +173,7 @@ public class TextInputPlugin {
             textType |= InputType.TYPE_TEXT_VARIATION_PASSWORD;
         } else {
             if (autocorrect) textType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT;
-            if (noSuggestions) textType |= InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
+            if (!enableSuggestions) textType |= InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
         }
 
         if (textCapitalization == TextInputChannel.TextCapitalization.CHARACTERS) {
@@ -205,7 +205,7 @@ public class TextInputPlugin {
             configuration.inputType,
             configuration.obscureText,
             configuration.autocorrect,
-            configuration.noSuggestions,
+            configuration.enableSuggestions,
             configuration.textCapitalization
         );
         outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN;
