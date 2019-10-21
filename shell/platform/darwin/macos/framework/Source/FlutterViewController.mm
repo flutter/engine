@@ -398,14 +398,19 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type {
-  [_keyEventChannel sendMessage:@{
+  NSMutableDictionary* keyMessage = [[NSMutableDictionary alloc] init];
+  [keyMessage addEntriesFromDictionary:@{
     @"keymap" : @"macos",
     @"type" : type,
     @"keyCode" : @(event.keyCode),
     @"modifiers" : @(event.modifierFlags),
-    @"characters" : event.characters,
-    @"charactersIgnoringModifiers" : event.charactersIgnoringModifiers,
   }];
+  // Calling these methods on any other type of event will raise an exception.
+  if (event.type == NSEventTypeKeyDown || event.type == NSEventTypeKeyUp) {
+    keyMessage[@"characters"] = event.characters;
+    keyMessage[@"charactersIgnoringModifiers"] = event.charactersIgnoringModifiers;
+  }
+  [_keyEventChannel sendMessage:keyMessage];
 }
 
 - (void)onSettingsChanged:(NSNotification*)notification {
@@ -498,6 +503,14 @@ static void CommonInit(FlutterViewController* controller) {
     if ([responder respondsToSelector:@selector(keyUp:)]) {
       [responder keyUp:event];
     }
+  }
+}
+
+- (void)flagsChanged:(NSEvent*)event {
+  if ((event.modifierFlags & NSEventModifierFlagDeviceIndependentFlagsMask) == 0) {
+    [self keyUp:event];
+  } else {
+    [self keyDown:event];
   }
 }
 
