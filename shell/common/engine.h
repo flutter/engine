@@ -726,7 +726,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @brief      Get the last Entrypoint Library that was used in the
   ///             RunConfiguration when |Engine::Run| was called.
   ///
-  const std::string& GetEntrypointLibrary() const { return entry_point_library_; }
+  const std::string& GetEntrypointLibrary() const {
+    return entry_point_library_;
+  }
 
  private:
   Engine::Delegate& delegate_;
