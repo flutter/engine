@@ -1231,6 +1231,9 @@ bool Shell::OnServiceProtocolRunInView(
 
   RunConfiguration configuration(std::move(isolate_configuration));
 
+  configuration.SetEntrypointAndLibrary(engine_->GetEntrypoint(),
+                                        engine_->GetEntrypointLibrary());
+
   configuration.AddAssetResolver(
       std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
           asset_directory_path.c_str(), false, fml::FilePermission::kRead)));

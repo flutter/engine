@@ -126,6 +126,9 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
     return RunStatus::Failure;
   }
 
+  entry_point_ = configuration.GetEntrypoint();
+  entry_point_library_ = configuration.GetEntrypointLibrary();
+
   auto isolate_launch_status =
       PrepareAndLaunchIsolate(std::move(configuration));
   if (isolate_launch_status == Engine::RunStatus::Failure) {
