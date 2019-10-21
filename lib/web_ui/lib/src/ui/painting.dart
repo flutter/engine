@@ -1469,6 +1469,15 @@ abstract class ColorFilter {
   List<dynamic> webOnlySerializeToCssPaint() {
     throw UnsupportedError('ColorFilter for CSS paint not yet supported');
   }
+
+  @override
+  bool operator==(dynamic other);
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
