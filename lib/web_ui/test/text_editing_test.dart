@@ -56,6 +56,7 @@ void main() {
 
     tearDown(() {
       if (editingElement.isEnabled) {
+        // Clean up all the DOM elements and event listeners.
         editingElement.disable();
       }
     });

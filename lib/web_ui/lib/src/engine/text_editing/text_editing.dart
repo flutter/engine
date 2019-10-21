@@ -7,6 +7,9 @@ part of engine;
 /// Make the content editable span visible to facilitate debugging.
 const bool _debugVisibleTextEditing = false;
 
+/// The `keyCode` of the "Enter" key.
+const int _kReturnKeyCode = 13;
+
 void _emptyCallback(dynamic _) {}
 
 /// These style attributes are constant throughout the life time of an input
@@ -434,7 +437,7 @@ class TextEditingElement {
   }
 
   void _maybeSendAction(html.KeyboardEvent event) {
-    if (event.keyCode == 13) {
+    if (event.keyCode == _kReturnKeyCode) {
       event.preventDefault();
       _onAction(_inputConfiguration.inputAction);
     }
