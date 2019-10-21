@@ -753,6 +753,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
         result.setSelected(semanticsNode.hasFlag(Flag.IS_SELECTED));
 
+        // Heading support
+        if (Build.VERSION.SDK_INT >= 28) {
+            result.setHeading(semanticsNode.hasFlag(Flag.IS_HEADER));
+        }
+
         // Accessibility Focus
         if (accessibilityFocusedSemanticsNode != null && accessibilityFocusedSemanticsNode.id == virtualViewId) {
             result.addAction(AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS);
