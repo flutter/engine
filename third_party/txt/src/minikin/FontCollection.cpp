@@ -307,7 +307,8 @@ const std::shared_ptr<FontFamily>& FontCollection::getFamilyForChar(
     int variant) const {
   if (ch >= mMaxChar) {
     for (size_t i = 0; i < sFallbackFamilies.size(); i++) {
-      const uint32_t score = calcFamilyScore(ch, vs, variant, langListId, sFallbackFamilies[i]);
+      const uint32_t score =
+          calcFamilyScore(ch, vs, variant, langListId, sFallbackFamilies[i]);
       if (score >= kMinFallbackScore) {
         return sFallbackFamilies[i];
       }
@@ -352,7 +353,8 @@ const std::shared_ptr<FontFamily>& FontCollection::getFamilyForChar(
   }
   if (bestFamilyIndex == -1) {
     for (size_t i = 0; i < sFallbackFamilies.size(); i++) {
-      const uint32_t score = calcFamilyScore(ch, vs, variant, langListId, sFallbackFamilies[i]);
+      const uint32_t score =
+          calcFamilyScore(ch, vs, variant, langListId, sFallbackFamilies[i]);
       if (score >= kMinFallbackScore) {
         return sFallbackFamilies[i];
       }
