@@ -783,20 +783,20 @@ typedef struct {
   size_t struct_size;
   /// The language code of the locale. For example, "en". This is a required
   /// field. The string must be null terminated. It may be collected after the
-  /// call the `FlutterEngineUpdateLocales`.
+  /// call to `FlutterEngineUpdateLocales`.
   const char* language_code;
   /// The country code of the locale. For example, "US". This is a an optional
   /// field. The string must be null terminated if present. It may be collected
-  /// after the call the `FlutterEngineUpdateLocales`. If not present, a
+  /// after the call to `FlutterEngineUpdateLocales`. If not present, a
   /// `nullptr` may be specified.
   const char* country_code;
   /// The script code of the locale. This is a an optional field. The string
-  /// must be null terminated if present. It may be collected after the call the
+  /// must be null terminated if present. It may be collected after the call to
   /// `FlutterEngineUpdateLocales`. If not present, a `nullptr` may be
   /// specified.
   const char* script_code;
   /// The variant code of the locale. This is a an optional field. The string
-  /// must be null terminated if present. It may be collected after the call the
+  /// must be null terminated if present. It may be collected after the call to
   /// `FlutterEngineUpdateLocales`. If not present, a `nullptr` may be
   /// specified.
   const char* variant_code;
