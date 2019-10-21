@@ -126,8 +126,8 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
     return RunStatus::Failure;
   }
 
-  entry_point_ = configuration.GetEntrypoint();
-  entry_point_library_ = configuration.GetEntrypointLibrary();
+  last_entry_point_ = configuration.GetEntrypoint();
+  last_entry_point_library_ = configuration.GetEntrypointLibrary();
 
   auto isolate_launch_status =
       PrepareAndLaunchIsolate(std::move(configuration));
@@ -175,6 +175,9 @@ Engine::RunStatus Engine::PrepareAndLaunchIsolate(
   TRACE_EVENT0("flutter", "Engine::PrepareAndLaunchIsolate");
 
   UpdateAssetManager(configuration.GetAssetManager());
+
+  last_entry_point_ = configuration.GetEntrypoint();
+  last_entry_point_library_ = configuration.GetEntrypointLibrary();
 
   auto isolate_configuration = configuration.TakeIsolateConfiguration();
 
@@ -501,6 +504,14 @@ void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {
   }
 
   response->CompleteEmpty();
+}
+
+const std::string& Engine::GetLastEntrypoint() const {
+  return last_entry_point_;
+}
+
+const std::string& Engine::GetLastEntrypointLibrary() const {
+  return last_entry_point_library_;
 }
 
 }  // namespace flutter
