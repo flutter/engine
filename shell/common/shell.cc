@@ -505,14 +505,10 @@ fml::WeakPtr<Rasterizer> Shell::GetRasterizer() {
   return weak_rasterizer_;
 }
 
-// TODO(dnfield): Remove this when either Topaz is up to date or flutter_runner
-// is built out of this repo.
-#ifdef OS_FUCHSIA
 fml::WeakPtr<Engine> Shell::GetEngine() {
   FML_DCHECK(is_setup_);
   return weak_engine_;
 }
-#endif  // OS_FUCHSIA
 
 fml::WeakPtr<PlatformView> Shell::GetPlatformView() {
   FML_DCHECK(is_setup_);
