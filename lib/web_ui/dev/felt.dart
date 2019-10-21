@@ -8,7 +8,6 @@ import 'package:args/command_runner.dart';
 
 import 'build.dart';
 import 'clean.dart';
-import 'download.dart';
 import 'licenses.dart';
 import 'test_runner.dart';
 
@@ -19,8 +18,7 @@ CommandRunner runner = CommandRunner<bool>(
   ..addCommand(CleanCommand())
   ..addCommand(LicensesCommand())
   ..addCommand(TestCommand())
-  ..addCommand(BuildCommand())
-  ..addCommand(DownloadCommand());
+  ..addCommand(BuildCommand());
 
 void main(List<String> args) async {
   if (args.isEmpty) {
