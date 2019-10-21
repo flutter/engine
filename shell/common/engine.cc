@@ -176,9 +176,6 @@ Engine::RunStatus Engine::PrepareAndLaunchIsolate(
 
   UpdateAssetManager(configuration.GetAssetManager());
 
-  last_entry_point_ = configuration.GetEntrypoint();
-  last_entry_point_library_ = configuration.GetEntrypointLibrary();
-
   auto isolate_configuration = configuration.TakeIsolateConfiguration();
 
   std::shared_ptr<DartIsolate> isolate =
