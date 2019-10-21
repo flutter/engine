@@ -45,6 +45,9 @@ const uint32_t TEXT_STYLE_VS = 0xFE0E;
 
 uint32_t FontCollection::sNextId = 0;
 
+const uint32_t kMinFallbackScore = 0x20000000;
+std::vector<std::shared_ptr<FontFamily>> sFallbackFamilies;
+
 // libtxt: return a locale string for a language list ID
 std::string GetFontLocale(uint32_t langListId) {
   const FontLanguages& langs = FontLanguageListCache::getById(langListId);
@@ -62,6 +65,10 @@ FontCollection::FontCollection(
     const vector<std::shared_ptr<FontFamily>>& typefaces)
     : mMaxChar(0) {
   init(typefaces);
+}
+
+FontCollection::~FontCollection() {
+  sFallbackFamilies.clear();
 }
 
 void FontCollection::init(
@@ -299,12 +306,19 @@ const std::shared_ptr<FontFamily>& FontCollection::getFamilyForChar(
     uint32_t langListId,
     int variant) const {
   if (ch >= mMaxChar) {
+    for (size_t i = 0; i < sFallbackFamilies.size(); i++) {
+      const uint32_t score = calcFamilyScore(ch, vs, variant, langListId, sFallbackFamilies[i]);
+      if (score >= kMinFallbackScore) {
+        return sFallbackFamilies[i];
+      }
+    }
     // libtxt: check if the fallback font provider can match this character
     if (mFallbackFontProvider) {
       const std::shared_ptr<FontFamily>& fallback =
           mFallbackFontProvider->matchFallbackFont(ch,
                                                    GetFontLocale(langListId));
       if (fallback) {
+        sFallbackFamilies.push_back(fallback);
         return fallback;
       }
     }
@@ -337,12 +351,19 @@ const std::shared_ptr<FontFamily>& FontCollection::getFamilyForChar(
     }
   }
   if (bestFamilyIndex == -1) {
+    for (size_t i = 0; i < sFallbackFamilies.size(); i++) {
+      const uint32_t score = calcFamilyScore(ch, vs, variant, langListId, sFallbackFamilies[i]);
+      if (score >= kMinFallbackScore) {
+        return sFallbackFamilies[i];
+      }
+    }
     // libtxt: check if the fallback font provider can match this character
     if (mFallbackFontProvider) {
       const std::shared_ptr<FontFamily>& fallback =
           mFallbackFontProvider->matchFallbackFont(ch,
                                                    GetFontLocale(langListId));
       if (fallback) {
+        sFallbackFamilies.push_back(fallback);
         return fallback;
       }
     }

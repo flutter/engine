@@ -32,6 +32,8 @@ class FontCollection {
       const std::vector<std::shared_ptr<FontFamily>>& typefaces);
   explicit FontCollection(std::shared_ptr<FontFamily>&& typeface);
 
+  ~FontCollection();
+
   // libtxt extension: an interface for looking up fallback fonts for characters
   // that do not match this collection's font families.
   class FallbackFontProvider {
