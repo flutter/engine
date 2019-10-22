@@ -17,10 +17,9 @@ class SkRecordingCanvas implements RecordingCanvas {
   @override
   int get saveCount => skCanvas.callMethod('getSaveCount');
 
-  set saveCount(int newSaveCount) {
-    throw UnimplementedError(
-        "The Skia backend doesn't support setting saveCount");
-  }
+  // This is required to implement RecordingCanvas.
+  @override
+  int _saveCount = -1;
 
   @override
   // TODO: implement _commands
