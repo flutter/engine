@@ -214,13 +214,19 @@ TEST_F(ShellTest, LastEntrypoint) {
   configuration.SetEntrypoint(entry_point);
 
   fml::AutoResetWaitableEvent main_latch;
+  std::string last_entry_point;
   AddNativeCallback(
-      "SayHiFromFixturesAreFunctionalMain",
-      CREATE_NATIVE_ENTRY([&main_latch](auto args) { main_latch.Signal(); }));
+      "SayHiFromFixturesAreFunctionalMain", CREATE_NATIVE_ENTRY([&](auto args) {
+        last_entry_point = shell->GetEngine()->GetLastEntrypoint();
+        main_latch.Signal();
+      }));
 
   RunEngine(shell.get(), std::move(configuration));
   main_latch.Wait();
-  EXPECT_EQ(entry_point, shell->GetEngine()->GetLastEntrypoint());
+  EXPECT_EQ(entry_point, last_entry_point);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  DestroyShell(std::move(shell));
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
 TEST(ShellTestNoFixture, EnableMirrorsIsWhitelisted) {
