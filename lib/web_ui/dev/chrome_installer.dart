@@ -10,12 +10,14 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
 
+import 'common.dart';
 import 'environment.dart';
 
 void addChromeVersionOption(ArgParser argParser) {
-  final io.File lockFile = io.File(path.join(environment.webUiRootDir.path, 'dev', 'chrome_lock.yaml'));
+  final io.File lockFile = io.File(
+      path.join(environment.webUiRootDir.path, 'dev', 'browser_lock.yaml'));
   final YamlMap lock = loadYaml(lockFile.readAsStringSync());
-  final int pinnedChromeVersion = _PlatformBinding.instance.getChromeBuild(lock);
+  final int pinnedChromeVersion = PlatformBinding.instance.getChromeBuild(lock);
 
   argParser
     ..addOption(
@@ -34,7 +36,7 @@ void addChromeVersionOption(ArgParser argParser) {
 ///
 /// If [requestedVersion] is null, uses the version specified on the
 /// command-line. If not specified on the command-line, uses the version
-/// specified in the "chrome_lock.yaml" file.
+/// specified in the "browser_lock.yaml" file.
 ///
 /// If [requestedVersion] is not null, installs that version. The value
 /// may be "latest" (the latest available build of Chrome), "system"
@@ -42,14 +44,14 @@ void addChromeVersionOption(ArgParser argParser) {
 /// exact build nuber, such as 695653. Build numbers can be found here:
 ///
 /// https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html?prefix=Linux_x64/
-Future<ChromeInstallation> getOrInstallChrome(
+Future<BrowserInstallation> getOrInstallChrome(
   String requestedVersion, {
   StringSink infoLog,
 }) async {
   infoLog ??= io.stdout;
 
   if (requestedVersion == 'system') {
-    return ChromeInstallation(
+    return BrowserInstallation(
       version: 'system',
       executable: await _findSystemChromeExecutable(),
     );
@@ -58,16 +60,18 @@ Future<ChromeInstallation> getOrInstallChrome(
   ChromeInstaller installer;
   try {
     installer = requestedVersion == 'latest'
-      ? await ChromeInstaller.latest()
-      : ChromeInstaller(version: requestedVersion);
+        ? await ChromeInstaller.latest()
+        : ChromeInstaller(version: requestedVersion);
 
     if (installer.isInstalled) {
-      infoLog.writeln('Installation was skipped because Chrome version ${installer.version} is already installed.');
+      infoLog.writeln(
+          'Installation was skipped because Chrome version ${installer.version} is already installed.');
     } else {
       infoLog.writeln('Installing Chrome version: ${installer.version}');
       await installer.install();
-      final ChromeInstallation installation = installer.getInstallation();
-      infoLog.writeln('Installations complete. To launch it run ${installation.executable}');
+      final BrowserInstallation installation = installer.getInstallation();
+      infoLog.writeln(
+          'Installations complete. To launch it run ${installation.executable}');
     }
     return installer.getInstallation();
   } finally {
@@ -76,28 +80,15 @@ Future<ChromeInstallation> getOrInstallChrome(
 }
 
 Future<String> _findSystemChromeExecutable() async {
-  final io.ProcessResult which = await io.Process.run('which', <String>['google-chrome']);
+  final io.ProcessResult which =
+      await io.Process.run('which', <String>['google-chrome']);
 
   if (which.exitCode != 0) {
-    throw ChromeInstallerException(
-      'Failed to locate system Chrome installation.'
-    );
+    throw BrowserInstallerException(
+        'Failed to locate system Chrome installation.');
   }
 
   return which.stdout;
-}
-
-class ChromeInstallation {
-  const ChromeInstallation({
-    @required this.version,
-    @required this.executable,
-  });
-
-  /// Chrome version.
-  final String version;
-
-  /// Path the the Chrome executable.
-  final String executable;
 }
 
 /// Manages the installation of a particular [version] of Chrome.
@@ -106,14 +97,12 @@ class ChromeInstaller {
     @required String version,
   }) {
     if (version == 'system') {
-      throw ChromeInstallerException(
-        'Cannot install system version of Chrome. System Chrome must be installed manually.'
-      );
+      throw BrowserInstallerException(
+          'Cannot install system version of Chrome. System Chrome must be installed manually.');
     }
     if (version == 'latest') {
-      throw ChromeInstallerException(
-        'Expected a concrete Chromer version, but got $version. Maybe use ChromeInstaller.latest()?'
-      );
+      throw BrowserInstallerException(
+          'Expected a concrete Chromer version, but got $version. Maybe use ChromeInstaller.latest()?');
     }
     final io.Directory chromeInstallationDir = io.Directory(
       path.join(environment.webUiDartToolDir.path, 'chrome'),
@@ -155,14 +144,14 @@ class ChromeInstaller {
     return versionDir.existsSync();
   }
 
-  ChromeInstallation getInstallation() {
+  BrowserInstallation getInstallation() {
     if (!isInstalled) {
       return null;
     }
 
-    return ChromeInstallation(
+    return BrowserInstallation(
       version: version,
-      executable: _PlatformBinding.instance.getExecutablePath(versionDir),
+      executable: PlatformBinding.instance.getChromeExecutablePath(versionDir),
     );
   }
 
@@ -172,13 +161,14 @@ class ChromeInstaller {
     }
 
     versionDir.createSync(recursive: true);
-    final String url = _PlatformBinding.instance.getDownloadUrl(version);
+    final String url = PlatformBinding.instance.getChromeDownloadUrl(version);
     final StreamedResponse download = await client.send(Request(
       'GET',
       Uri.parse(url),
     ));
 
-    final io.File downloadedFile = io.File(path.join(versionDir.path, 'chrome.zip'));
+    final io.File downloadedFile =
+        io.File(path.join(versionDir.path, 'chrome.zip'));
     await download.stream.pipe(downloadedFile.openWrite());
 
     final io.ProcessResult unzipResult = await io.Process.run('unzip', <String>[
@@ -188,10 +178,9 @@ class ChromeInstaller {
     ]);
 
     if (unzipResult.exitCode != 0) {
-      throw ChromeInstallerException(
-        'Failed to unzip the downloaded Chrome archive ${downloadedFile.path}.\n'
-        'The unzip process exited with code ${unzipResult.exitCode}.'
-      );
+      throw BrowserInstallerException(
+          'Failed to unzip the downloaded Chrome archive ${downloadedFile.path}.\n'
+          'The unzip process exited with code ${unzipResult.exitCode}.');
     }
 
     downloadedFile.deleteSync();
@@ -202,71 +191,18 @@ class ChromeInstaller {
   }
 }
 
-class ChromeInstallerException implements Exception {
-  ChromeInstallerException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
-}
-
 /// Fetches the latest available Chrome build version.
 Future<String> fetchLatestChromeVersion() async {
   final Client client = Client();
   try {
-    final Response response = await client.get('https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2FLAST_CHANGE?alt=media');
+    final Response response = await client.get(
+        'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2FLAST_CHANGE?alt=media');
     if (response.statusCode != 200) {
-      throw ChromeInstallerException(
-        'Failed to fetch latest Chrome version. Server returned status code ${response.statusCode}'
-      );
+      throw BrowserInstallerException(
+          'Failed to fetch latest Chrome version. Server returned status code ${response.statusCode}');
     }
     return response.body;
   } finally {
     client.close();
   }
-}
-
-abstract class _PlatformBinding {
-  static _PlatformBinding get instance {
-    if (_instance == null) {
-      if (io.Platform.isLinux) {
-        _instance = _LinuxBinding();
-      } else if (io.Platform.isMacOS) {
-        _instance = _MacBinding();
-      } else {
-        throw '${io.Platform.operatingSystem} is not supported';
-      }
-    }
-    return _instance;
-  }
-  static _PlatformBinding _instance;
-
-  int getChromeBuild(YamlMap chromeLock);
-  String getDownloadUrl(String version);
-  String getExecutablePath(io.Directory versionDir);
-}
-
-const String _kBaseDownloadUrl = 'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o';
-
-class _LinuxBinding implements _PlatformBinding {
-  @override
-  int getChromeBuild(YamlMap chromeLock) => chromeLock['Linux'];
-
-  @override
-  String getDownloadUrl(String version) => '$_kBaseDownloadUrl/Linux_x64%2F$version%2Fchrome-linux.zip?alt=media';
-
-  @override
-  String getExecutablePath(io.Directory versionDir) => path.join(versionDir.path, 'chrome-linux', 'chrome');
-}
-
-class _MacBinding implements _PlatformBinding {
-  @override
-  int getChromeBuild(YamlMap chromeLock) => chromeLock['Mac'];
-
-  @override
-  String getDownloadUrl(String version) => '$_kBaseDownloadUrl/Mac%2F$version%2Fchrome-mac.zip?alt=media';
-
-  @override
-  String getExecutablePath(io.Directory versionDir) => path.join(versionDir.path, 'chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium');
 }

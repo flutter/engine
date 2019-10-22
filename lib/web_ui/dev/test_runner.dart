@@ -22,11 +22,6 @@ import 'utils.dart';
 class TestCommand extends Command<bool> {
   TestCommand() {
     argParser
-      ..addMultiOption(
-        'target',
-        abbr: 't',
-        help: 'The path to the target to run. When omitted, runs all targets.',
-      )
       ..addFlag(
         'debug',
         help: 'Pauses the browser before running a test, giving you an '
@@ -75,7 +70,7 @@ class TestCommand extends Command<bool> {
   bool get isDebug => argResults['debug'];
 
   /// Paths to targets to run, e.g. a single test.
-  List<String> get targets => argResults['target'];
+  List<String> get targets => argResults.rest;
 
   /// See [ChromeInstallerCommand.chromeVersion].
   String get chromeVersion => argResults['chrome-version'];
@@ -235,7 +230,6 @@ class TestCommand extends Command<bool> {
     @required bool expectFailure,
   }) async {
     final List<String> testArgs = <String>[
-      '--no-color',
       ...<String>['-r', 'compact'],
       '--concurrency=$concurrency',
       if (isDebug) '--pause-after-load',
