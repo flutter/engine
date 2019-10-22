@@ -43,7 +43,7 @@ class Color {
   /// Bits 16-23 are the red value.
   /// Bits 8-15 are the green value.
   /// Bits 0-7 are the blue value.
-  const Color(int argbValue) : value = argbValue & 0xFFFFFFFF;
+  const Color(int value) : this.value = value & 0xFFFFFFFF;
 
   /// Construct a color from the lower 8 bits of four integers.
   const Color.fromARGB(int a, int r, int g, int b)
