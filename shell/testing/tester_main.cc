@@ -44,28 +44,26 @@ class ScriptCompletionTaskObserver {
   }
 
   void DidProcessTask() {
-    // We are installed on the UI thread so we need to move to the platform task
-    // runner
-    fml::TaskRunner::RunNowOrPostTask(main_task_runner_, [this]() {
-      last_error_ = shell_.GetUIIsolateLastError();
-      if (shell_.EngineHasLivePorts()) {
-        // The UI isolate still has live ports and is running. Nothing to do
-        // just yet.
-        return;
-      }
+    last_error_ = shell_.GetUIIsolateLastError();
+    if (shell_.EngineHasLivePorts()) {
+      // The UI isolate still has live ports and is running. Nothing to do
+      // just yet.
+      return;
+    }
 
-      if (run_forever_) {
-        // We need this script to run forever. We have already recorded the last
-        // error. Keep going.
-        return;
-      }
+    if (run_forever_) {
+      // We need this script to run forever. We have already recorded the last
+      // error. Keep going.
+      return;
+    }
 
-      if (!has_terminated) {
-        // Only try to terminate the loop once.
-        has_terminated = true;
+    if (!has_terminated) {
+      // Only try to terminate the loop once.
+      has_terminated = true;
+      fml::TaskRunner::RunNowOrPostTask(main_task_runner_, []() {
         fml::MessageLoop::GetCurrent().Terminate();
-      }
-    });
+      });
+    }
   }
 
  private:
@@ -109,17 +107,16 @@ int RunTester(const flutter::Settings& settings,
 
   auto current_task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
 
-  auto threadhost = std::make_unique<ThreadHost>(
-      thread_label, ThreadHost::Type::Platform | ThreadHost::Type::IO |
-                        ThreadHost::Type::UI | ThreadHost::Type::GPU);
-
+  std::unique_ptr<ThreadHost> threadhost;
   fml::RefPtr<fml::TaskRunner> platform_task_runner;
   fml::RefPtr<fml::TaskRunner> gpu_task_runner;
   fml::RefPtr<fml::TaskRunner> ui_task_runner;
   fml::RefPtr<fml::TaskRunner> io_task_runner;
 
-  // Setup a single threaded test runner configuration.
   if (multithreaded) {
+    threadhost = std::make_unique<ThreadHost>(
+        thread_label, ThreadHost::Type::Platform | ThreadHost::Type::IO |
+                      ThreadHost::Type::UI | ThreadHost::Type::GPU);
     platform_task_runner = current_task_runner;
     gpu_task_runner = threadhost->gpu_thread->GetTaskRunner();
     ui_task_runner = threadhost->ui_thread->GetTaskRunner();
@@ -211,23 +208,25 @@ int RunTester(const flutter::Settings& settings,
 
   bool engine_did_run = false;
 
+  fml::AutoResetWaitableEvent latch;
   auto task_observer_add = [&completion_observer]() {
     fml::MessageLoop::GetCurrent().AddTaskObserver(
         reinterpret_cast<intptr_t>(&completion_observer),
         [&completion_observer]() { completion_observer.DidProcessTask(); });
   };
 
-  auto task_observer_remove = [&completion_observer]() {
+  auto task_observer_remove = [&completion_observer, &latch]() {
     fml::MessageLoop::GetCurrent().RemoveTaskObserver(
         reinterpret_cast<intptr_t>(&completion_observer));
+    latch.Signal();
   };
 
-  fml::TaskRunner::RunNowOrPostTask(ui_task_runner, task_observer_add);
-
   shell->RunEngine(std::move(run_configuration),
-                   [&engine_did_run](Engine::RunStatus run_status) mutable {
+                   [&engine_did_run, &ui_task_runner, &task_observer_add](Engine::RunStatus run_status) mutable {
                      if (run_status != flutter::Engine::RunStatus::Failure) {
-                       engine_did_run = true;
+                      engine_did_run = true;
+                      // Now that our engine is initialized we can install the ScriptCompletionTaskObserver
+                      fml::TaskRunner::RunNowOrPostTask(ui_task_runner, task_observer_add);
                      }
                    });
 
@@ -243,6 +242,7 @@ int RunTester(const flutter::Settings& settings,
   // Cleanup the completion observer synchronously as it is living on the
   // stack.
   fml::TaskRunner::RunNowOrPostTask(ui_task_runner, task_observer_remove);
+  latch.Wait();
 
   if (!engine_did_run) {
     // If the engine itself didn't have a chance to run, there is no point in
