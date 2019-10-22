@@ -5,6 +5,7 @@
 package io.flutter.embedding.engine.plugins.activity;
 
 import android.app.Activity;
+import android.arch.lifecycle.Lifecycle;
 import android.support.annotation.NonNull;
 
 import io.flutter.plugin.common.PluginRegistry;
@@ -22,6 +23,12 @@ public interface ActivityPluginBinding {
    */
   @NonNull
   Activity getActivity();
+
+  /**
+   * Returns the {@link Lifecycle} associated with the attached {@code Activity}.
+   */
+  @NonNull
+  Lifecycle getLifecycle();
 
   /**
    * Adds a listener that is invoked whenever the associated {@link Activity}'s

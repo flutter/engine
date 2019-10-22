@@ -49,6 +49,8 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
 
   // Standard FlutterPlugin
   @NonNull
+  private final FlutterEngine flutterEngine;
+  @NonNull
   private final FlutterPlugin.FlutterPluginBinding pluginBinding;
   @NonNull
   private final FlutterEngineAndroidLifecycle flutterEngineAndroidLifecycle;
@@ -91,10 +93,14 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
       @NonNull FlutterEngine flutterEngine,
       @NonNull FlutterEngineAndroidLifecycle lifecycle
   ) {
+    this.flutterEngine = flutterEngine;
     flutterEngineAndroidLifecycle = lifecycle;
     pluginBinding = new FlutterPlugin.FlutterPluginBinding(
         appContext,
         flutterEngine,
+        flutterEngine.getDartExecutor(),
+        flutterEngine.getRenderer(),
+        flutterEngine.getPlatformViewsController().getRegistry(),
         lifecycle
     );
   }
@@ -288,16 +294,16 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
     detachFromAndroidComponent();
 
     this.activity = activity;
-    this.activityPluginBinding = new FlutterEngineActivityPluginBinding(activity);
+    this.activityPluginBinding = new FlutterEngineActivityPluginBinding(activity, lifecycle);
     this.flutterEngineAndroidLifecycle.setBackingLifecycle(lifecycle);
 
     // Activate the PlatformViewsController. This must happen before any plugins attempt
     // to use it, otherwise an error stack trace will appear that says there is no
     // flutter/platform_views channel.
-    pluginBinding.getFlutterEngine().getPlatformViewsController().attach(
+    flutterEngine.getPlatformViewsController().attach(
         activity,
-        pluginBinding.getFlutterEngine().getRenderer(),
-        pluginBinding.getFlutterEngine().getDartExecutor()
+        flutterEngine.getRenderer(),
+        flutterEngine.getDartExecutor()
     );
 
     // Notify all ActivityAware plugins that they are now attached to a new Activity.
@@ -322,7 +328,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
       }
 
       // Deactivate PlatformViewsController.
-      pluginBinding.getFlutterEngine().getPlatformViewsController().detach();
+      flutterEngine.getPlatformViewsController().detach();
 
       flutterEngineAndroidLifecycle.setBackingLifecycle(null);
       activity = null;
@@ -341,7 +347,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
       }
 
       // Deactivate PlatformViewsController.
-      pluginBinding.getFlutterEngine().getPlatformViewsController().detach();
+      flutterEngine.getPlatformViewsController().detach();
 
       flutterEngineAndroidLifecycle.setBackingLifecycle(null);
       activity = null;
@@ -400,13 +406,13 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
   }
 
   @Override
-  public void attachToService(@NonNull Service service, @NonNull Lifecycle lifecycle, boolean isForeground) {
+  public void attachToService(@NonNull Service service, @Nullable Lifecycle lifecycle, boolean isForeground) {
     Log.v(TAG, "Attaching to a Service: " + service);
     // If we were already attached to an Android component, detach from it.
     detachFromAndroidComponent();
 
     this.service = service;
-    this.servicePluginBinding = new FlutterEngineServicePluginBinding(service);
+    this.servicePluginBinding = new FlutterEngineServicePluginBinding(service, lifecycle);
     flutterEngineAndroidLifecycle.setBackingLifecycle(lifecycle);
 
     // Notify all ServiceAware plugins that they are now attached to a new Service.
@@ -523,6 +529,8 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
     @NonNull
     private final Activity activity;
     @NonNull
+    private final Lifecycle lifecycle;
+    @NonNull
     private final Set<io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener> onRequestPermissionsResultListeners = new HashSet<>();
     @NonNull
     private final Set<io.flutter.plugin.common.PluginRegistry.ActivityResultListener> onActivityResultListeners = new HashSet<>();
@@ -531,14 +539,21 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
     @NonNull
     private final Set<io.flutter.plugin.common.PluginRegistry.UserLeaveHintListener> onUserLeaveHintListeners = new HashSet<>();
 
-    public FlutterEngineActivityPluginBinding(@NonNull Activity activity) {
+    public FlutterEngineActivityPluginBinding(@NonNull Activity activity, @NonNull Lifecycle lifecycle) {
       this.activity = activity;
+      this.lifecycle = lifecycle;
     }
 
     @Override
     @NonNull
     public Activity getActivity() {
       return activity;
+    }
+
+    @NonNull
+    @Override
+    public Lifecycle getLifecycle() {
+      return lifecycle;
     }
 
     @Override
@@ -629,17 +644,26 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
   private static class FlutterEngineServicePluginBinding implements ServicePluginBinding {
     @NonNull
     private final Service service;
+    @Nullable
+    private final Lifecycle lifecycle;
     @NonNull
     private final Set<ServiceAware.OnModeChangeListener> onModeChangeListeners = new HashSet<>();
 
-    FlutterEngineServicePluginBinding(@NonNull Service service) {
+    FlutterEngineServicePluginBinding(@NonNull Service service, @Nullable Lifecycle lifecycle) {
       this.service = service;
+      this.lifecycle = lifecycle;
     }
 
     @Override
     @NonNull
     public Service getService() {
       return service;
+    }
+
+    @Nullable
+    @Override
+    public Lifecycle getLifecycle() {
+      return lifecycle;
     }
 
     @Override
