@@ -11,13 +11,12 @@ import android.support.annotation.VisibleForTesting;
 import org.json.JSONArray;
 
 import java.util.HashMap;
-import java.util.Iterator;
 
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
-import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.StandardMethodCodec;
 
 /**
  * TODO(dkwingsmt): fill in javadoc for MouseCursorChannel.
@@ -32,7 +31,7 @@ public class MouseCursorChannel {
   private MouseCursorMethodHandler mouseCursorMethodHandler;
 
   public MouseCursorChannel(@NonNull DartExecutor dartExecutor) {
-    channel = new MethodChannel(dartExecutor, CHANNEL_NAME, JSONMethodCodec.INSTANCE);
+    channel = new MethodChannel(dartExecutor, CHANNEL_NAME, StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodCallHandler);
   }
 
@@ -47,25 +46,6 @@ public class MouseCursorChannel {
   @NonNull
   @VisibleForTesting
   protected final MethodChannel.MethodCallHandler parsingMethodCallHandler = new MethodChannel.MethodCallHandler() {
-    private void handleSetCursor(@NonNull JSONArray argumentList, @NonNull MethodChannel.Result result) {
-      int cursor;
-      try {
-        // Argument list is [device, cursor]. Since Android only supports one pointer device,
-        // we can ignore argument 0.
-        cursor = argumentList.getInt(1);
-      } catch (Exception e) {
-        result.error("error", "Parameter error: " + e.getMessage(), null);
-        return;
-      }
-      try {
-        mouseCursorMethodHandler.setCursor(cursor);
-      } catch (Exception e) {
-        result.error("error", "Error when setting cursors: " + e.getMessage(), null);
-        return;
-      }
-      result.success(true);
-    }
-
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
       if (mouseCursorMethodHandler == null) {
@@ -75,12 +55,20 @@ public class MouseCursorChannel {
       }
 
       final String method = call.method;
-      final JSONArray argumentList = (JSONArray) call.arguments;
       Log.v(TAG, "Received '" + method + "' message.");
       try {
         switch (method) {
-          case "setCursor":
-            handleSetCursor(argumentList, result);
+          case "setAsSystemCursor":
+            @SuppressWarnings("unchecked")
+            final HashMap<String, Object> data = (HashMap<String, Object>) call.arguments;
+            final Integer systemConstant = (Integer) data.get("systemConstant");
+            try {
+              mouseCursorMethodHandler.setAsSystemCursor(systemConstant);
+            } catch (Exception e) {
+              result.error("error", "Error when setting cursors: " + e.getMessage(), null);
+              break;
+            }
+            result.success(true);
             break;
           default:
         }
@@ -92,7 +80,7 @@ public class MouseCursorChannel {
 
   public interface MouseCursorMethodHandler {
     // TODO(dkwingsmt): javadoc
-    void setCursor(@NonNull int cursor);
+    public void setAsSystemCursor(@NonNull Integer systemConstant);
   }
 
 

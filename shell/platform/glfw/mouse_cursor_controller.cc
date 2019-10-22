@@ -7,14 +7,18 @@
 #include <cstdint>
 #include <iostream>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_method_codec.h"
+#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/standard_method_codec.h"
 
-static constexpr char kSetCursorMethod[] = "TextInput.setCursor";
+static constexpr char kSetAsSystemCursorMethod[] = "setAsSystemCursor";
+static constexpr char kSystemConstantKey[] = "systemConstant";
+static constexpr char kHiddenKey[] = "hidden";
 
 static constexpr char kChannelName[] = "flutter/mousecursor";
 
 static constexpr char kBadArgumentError[] = "Bad Arguments";
 static constexpr char kGLFWError[] = "GLFW Error";
+
+static constexpr int kDefaultSystemConstant = GLFW_ARROW_CURSOR;
 
 typedef bool (*BoolCallback)();
 typedef void (*VoidCallback)();
@@ -64,16 +68,17 @@ const char *GLFWErrorRecorder::description_ = NULL;
 
 MouseCursorController::MouseCursorController(flutter::BinaryMessenger* messenger,
                                              GLFWwindow* window)
-    : channel_(std::make_unique<flutter::MethodChannel<rapidjson::Document>>(
+    : channel_(std::make_unique<flutter::MethodChannel<EncodableValue>>(
           messenger,
           kChannelName,
-          &flutter::JsonMethodCodec::GetInstance())),
-      currentCursor_(kMouseCursorBasic),
-      window_(window) {
+          &flutter::StandardMethodCodec::GetInstance())),
+      window_(window),
+      currentHidden_(false),
+      currentSystemConstant_(kDefaultSystemConstant) {
   channel_->SetMethodCallHandler(
       [this](
-          const flutter::MethodCall<rapidjson::Document>& call,
-          std::unique_ptr<flutter::MethodResult<rapidjson::Document>> result) {
+          const flutter::MethodCall<EncodableValue>& call,
+          std::unique_ptr<flutter::MethodResult<EncodableValue>> result) {
         HandleMethodCall(call, std::move(result));
       });
 }
@@ -82,71 +87,53 @@ MouseCursorController::MouseCursorController(flutter::BinaryMessenger* messenger
 MouseCursorController::~MouseCursorController() = default;
 
 bool MouseCursorController::changeToCursor(
-    CURSOR cursor,
-    flutter::MethodResult<rapidjson::Document>& result) {
+    bool hidden,
+    int systemConstant,
+    flutter::MethodResult<EncodableValue>& result) {
   GLFWErrorRecorder errorRecorder;
-  if (cursor == currentCursor_)
-    return true;
-  currentCursor_ = cursor;
-  if (cursor == kMouseCursorNone) {
-    glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-    return !glfwErrorOccurred(result);
-  }
-  if (currentCursor_ == kMouseCursorBasic) {
-    glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    if (glfwErrorOccurred(result))
-      return false;
-  }
-  GLFWcursor* cursorObject = resolveCursor(cursor);
-  if (cursorObject == NULL) {
-    result.Error(kGLFWError, "GLFW failed to create the cursor.");
-    return false;
-  }
-  if (glfwErrorOccurred(result))
-    return false;
-  glfwSetCursor(window_, cursorObject);
-  if (glfwErrorOccurred(result))
-    return false;
 
-  return true;
+  bool successful = [&] {
+    if (hidden != currentHidden_) {
+      glfwSetInputMode(window_, GLFW_CURSOR,
+        hidden ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
+      if (glfwErrorOccurred(result))
+        return false;
+    }
+    if (hidden != currentHidden_ || systemConstant != currentSystemConstant_) {
+      GLFWcursor* cursorObject = resolveSystemCursor(systemConstant);
+      if (cursorObject == NULL) {
+        result.Error(kGLFWError, "GLFW failed to create the cursor.");
+        return false;
+      }
+      if (glfwErrorOccurred(result))
+        return false;
+      glfwSetCursor(window_, cursorObject);
+      if (glfwErrorOccurred(result))
+        return false;
+    }
+    return true;
+  }();
+
+  currentHidden_ = hidden;
+  currentSystemConstant_ = systemConstant;
+
+  return successful;
 }
 
-GLFWcursor* MouseCursorController::resolveCursor(CURSOR cursor) {
-  auto cached = cursorObjects_.find(cursor);
+GLFWcursor* MouseCursorController::resolveSystemCursor(int systemConstant) {
+  auto cached = cursorObjects_.find(systemConstant);
   if (cached != cursorObjects_.end()) {
     return cached->second;
   }
-  GLFWcursor* cursorObject = glfwCreateStandardCursor(
-    resolveSystemCursorConstant(cursor)
-  );
-  cursorObjects_[cursor] = cursorObject;
+  GLFWcursor* cursorObject = glfwCreateStandardCursor(systemConstant);
+  cursorObjects_[systemConstant] = cursorObject;
   // |cursorObject| might be null, or glfw might has error.
   // Both cases are unhandled.
   return cursorObject;
 
 }
 
-int MouseCursorController::resolveSystemCursorConstant(CURSOR cursor) {
-  switch (cursor) {
-    case kMouseCursorNone:
-      break;
-    case kMouseCursorBasic:
-      break;
-    case kMouseCursorClick:
-      return GLFW_HAND_CURSOR;
-    case kMouseCursorText:
-      return GLFW_IBEAM_CURSOR;
-    case kMouseCursorNo:
-      break;
-    case kMouseCursorGrab:
-      return GLFW_HAND_CURSOR;
-    case kMouseCursorGrabbing:
-      return GLFW_HAND_CURSOR;
-  }
-  return GLFW_ARROW_CURSOR;
-}
-
-bool MouseCursorController::glfwErrorOccurred(flutter::MethodResult<rapidjson::Document>& result) {
+bool MouseCursorController::glfwErrorOccurred(flutter::MethodResult<EncodableValue>& result) {
   if (GLFWErrorRecorder::hasError()) {
     result.Error(kGLFWError, GLFWErrorRecorder::description());
     return true;
@@ -155,27 +142,44 @@ bool MouseCursorController::glfwErrorOccurred(flutter::MethodResult<rapidjson::D
 }
 
 void MouseCursorController::HandleMethodCall(
-    const flutter::MethodCall<rapidjson::Document>& method_call,
-    std::unique_ptr<flutter::MethodResult<rapidjson::Document>> result) {
+    const flutter::MethodCall<EncodableValue>& method_call,
+    std::unique_ptr<flutter::MethodResult<EncodableValue>> result) {
   const std::string& method = method_call.method_name();
 
   if (!method_call.arguments() || method_call.arguments()->IsNull()) {
     result->Error(kBadArgumentError, "Method invoked without args");
     return;
   }
-  const rapidjson::Document& args = *method_call.arguments();
+  const EncodableValue& args = *method_call.arguments();
 
-  if (method.compare(kSetCursorMethod) == 0) {
-    // Argument list is [device, cursor]. Since GLFW only supports one pointer
-    // device, we can ignore argument 0.
-    const rapidjson::Value& cursor_json = args[1];
-    if (cursor_json.IsNull() || !cursor_json.IsUint()) {
+  if (method.compare(kSetAsSystemCursorMethod) == 0) {
+    // Argument list is: {
+    //  "systemConstant": <uint>,
+    //  "hidden": <bool>
+    // }
+    if (!args.IsMap()) {
       result->Error(kBadArgumentError,
-                    "Could not set cursor, invalid argument cursor.");
+                    "Could not set cursor, argument is not a map.");
       return;
     }
-    CURSOR cursor = cursor_json.GetUint();
-    if (!changeToCursor(cursor, *result)) {
+    const EncodableMap& argMap = args.MapValue();
+    const auto systemConstant = argMap.find(EncodableValue(kSystemConstantKey));
+    const auto hidden = argMap.find(EncodableValue(kHiddenKey));
+    if (systemConstant == argMap.end() || !systemConstant->second.IsInt()) {
+      result->Error(kBadArgumentError,
+                    "Could not set cursor, invalid argument systemConstant.");
+      return;
+    }
+    if (hidden == argMap.end() || !hidden->second.IsBool()) {
+      result->Error(kBadArgumentError,
+                    "Could not set cursor, invalid argument hidden.");
+      return;
+    }
+    if (!changeToCursor(
+      hidden->second.BoolValue(),
+      systemConstant->second.IntValue(),
+      *result
+    )) {
       return;
     }
   } else {

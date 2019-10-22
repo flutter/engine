@@ -50,7 +50,7 @@ public class MouseCursorController {
     channel.setMethodHandler(channelHandler);
     this.view = view;
     this.context = context;
-    currentCursor = MouseCursors.basic;
+    currentSystemConstant = PointerIcon.TYPE_DEFAULT;
   }
 
   // The system channel used to communicate with the framework about mouse cursor.
@@ -67,7 +67,7 @@ public class MouseCursorController {
 
   // The current cursor of the device. It starts with the basic cursor.
   @NonNull
-  private int currentCursor;
+  private Integer currentSystemConstant;
 
   // A map from each cursor to its cursor object.
   // System icons are cached here as it's first requested. Registering a custom icons also stores
@@ -78,25 +78,13 @@ public class MouseCursorController {
 
   @NonNull
   private final MouseCursorChannel.MouseCursorMethodHandler channelHandler = new MouseCursorChannel.MouseCursorMethodHandler() {
-    public void setCursor(int cursor) {
-      if (currentCursor != cursor) {
-        currentCursor = cursor;
-        view.setPointerIcon(resolveCursor(cursor));
+    public void setAsSystemCursor(Integer systemConstant) {
+      if (currentSystemConstant != systemConstant) {
+        currentSystemConstant = systemConstant;
+        view.setPointerIcon(resolveSystemCursor(systemConstant));
       }
     }
   };
-
-  /**
-   * Registers a representation {@code cursor} with an implementation {@code cursorObject}.
-   *
-   * This method not only affects future requests, but also updates the current device if
-   * applicable.
-   */
-  public void registerCursor(@NonNull int cursor, @NonNull PointerIcon cursorObject) {
-    cursorObjects.put(new Integer(cursor), cursorObject);
-    if (currentCursor == cursor)
-      view.setPointerIcon(cursorObject);
-  }
 
   // Return a cursor object for a cursor. This method guarantees to return a non-null object.
   //
@@ -105,15 +93,12 @@ public class MouseCursorController {
   // If there is no matching cache, the method tries to create it as a system cursor, which falls
   // back to MouseCursors.basic for all unrecognized values. The value is cached in cursorObjects
   // before being returned.
-  private PointerIcon resolveCursor(@NonNull int cursor) {
-    final PointerIcon cached = cursorObjects.get(new Integer(cursor));
+  private PointerIcon resolveSystemCursor(@NonNull Integer systemConstant) {
+    final PointerIcon cached = cursorObjects.get(systemConstant);
     if (cached != null)
       return cached;
-    final PointerIcon result = PointerIcon.getSystemIcon(
-      context,
-      MouseCursors.resolveSystemCursorConstant(cursor),
-    );
-    cursorObjects.put(new Integer(cursor), result);
+    final PointerIcon result = PointerIcon.getSystemIcon(context, systemConstant);
+    cursorObjects.put(systemConstant, result);
     return result;
   }
 }
