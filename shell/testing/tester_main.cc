@@ -116,7 +116,7 @@ int RunTester(const flutter::Settings& settings,
   if (multithreaded) {
     threadhost = std::make_unique<ThreadHost>(
         thread_label, ThreadHost::Type::Platform | ThreadHost::Type::IO |
-                      ThreadHost::Type::UI | ThreadHost::Type::GPU);
+                          ThreadHost::Type::UI | ThreadHost::Type::GPU);
     platform_task_runner = current_task_runner;
     gpu_task_runner = threadhost->gpu_thread->GetTaskRunner();
     ui_task_runner = threadhost->ui_thread->GetTaskRunner();
@@ -222,11 +222,14 @@ int RunTester(const flutter::Settings& settings,
   };
 
   shell->RunEngine(std::move(run_configuration),
-                   [&engine_did_run, &ui_task_runner, &task_observer_add](Engine::RunStatus run_status) mutable {
+                   [&engine_did_run, &ui_task_runner,
+                    &task_observer_add](Engine::RunStatus run_status) mutable {
                      if (run_status != flutter::Engine::RunStatus::Failure) {
-                      engine_did_run = true;
-                      // Now that our engine is initialized we can install the ScriptCompletionTaskObserver
-                      fml::TaskRunner::RunNowOrPostTask(ui_task_runner, task_observer_add);
+                       engine_did_run = true;
+                       // Now that our engine is initialized we can install the
+                       // ScriptCompletionTaskObserver
+                       fml::TaskRunner::RunNowOrPostTask(ui_task_runner,
+                                                         task_observer_add);
                      }
                    });
 
