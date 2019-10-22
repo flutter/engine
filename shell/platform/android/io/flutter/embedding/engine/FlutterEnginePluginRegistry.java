@@ -11,6 +11,7 @@ import android.content.BroadcastReceiver;
 import android.content.ContentProvider;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -398,6 +399,26 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
       Log.e(TAG, "Attempted to notify ActivityAware plugins of onUserLeaveHint, but no Activity was attached.");
     }
   }
+
+  @Override
+  public void onSaveInstanceState(@NonNull Bundle bundle) {
+    Log.v(TAG, "Forwarding onSaveInstanceState() to plugins.");
+    if (isAttachedToActivity()) {
+      activityPluginBinding.onSaveInstanceState(bundle);
+    } else {
+      Log.e(TAG, "Attempted to notify ActivityAware plugins of onSaveInstanceState, but no Activity was attached.");
+    }
+  }
+
+  @Override
+  public void onRestoreInstanceState(@Nullable Bundle bundle) {
+    Log.v(TAG, "Forwarding onRestoreInstanceState() to plugins.");
+    if (isAttachedToActivity()) {
+      activityPluginBinding.onRestoreInstanceState(bundle);
+    } else {
+      Log.e(TAG, "Attempted to notify ActivityAware plugins of onRestoreInstanceState, but no Activity was attached.");
+    }
+  }
   //------- End ActivityControlSurface -----
 
   //----- Start ServiceControlSurface ----
@@ -538,6 +559,8 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
     private final Set<io.flutter.plugin.common.PluginRegistry.NewIntentListener> onNewIntentListeners = new HashSet<>();
     @NonNull
     private final Set<io.flutter.plugin.common.PluginRegistry.UserLeaveHintListener> onUserLeaveHintListeners = new HashSet<>();
+    @NonNull
+    private final Set<OnSaveInstanceStateListener> onSaveInstanceStateListeners = new HashSet<>();
 
     public FlutterEngineActivityPluginBinding(@NonNull Activity activity, @NonNull Lifecycle lifecycle) {
       this.activity = activity;
@@ -630,6 +653,16 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
       onUserLeaveHintListeners.remove(listener);
     }
 
+    @Override
+    public void addOnSaveStateListener(@NonNull OnSaveInstanceStateListener listener) {
+      onSaveInstanceStateListeners.add(listener);
+    }
+
+    @Override
+    public void removeOnSaveStateListener(@NonNull OnSaveInstanceStateListener listener) {
+      onSaveInstanceStateListeners.remove(listener);
+    }
+
     /**
      * Invoked by the {@link FlutterEngine} that owns this {@code ActivityPluginBinding} when its
      * associated {@link Activity} has its {@code onUserLeaveHint()} method invoked.
@@ -637,6 +670,28 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
     void onUserLeaveHint() {
       for (io.flutter.plugin.common.PluginRegistry.UserLeaveHintListener listener : onUserLeaveHintListeners) {
         listener.onUserLeaveHint();
+      }
+    }
+
+    /**
+     * Invoked by the {@link FlutterEngine} that owns this {@code ActivityPluginBinding} when its
+     * associated {@link Activity} or {@code Fragment} has its {@code onSaveInstanceState(Bundle)}
+     * method invoked.
+     */
+    void onSaveInstanceState(@NonNull Bundle bundle) {
+      for (OnSaveInstanceStateListener listener : onSaveInstanceStateListeners) {
+        listener.onSaveInstanceState(bundle);
+      }
+    }
+
+    /**
+     * Invoked by the {@link FlutterEngine} that owns this {@code ActivityPluginBinding} when its
+     * associated {@link Activity} has its {@code onCreate(Bundle)} method invoked, or its
+     * associated {@code Fragment} has its {@code onActivityCreated(Bundle)} method invoked.
+     */
+    void onRestoreInstanceState(@Nullable Bundle bundle) {
+      for (OnSaveInstanceStateListener listener : onSaveInstanceStateListeners) {
+        listener.onRestoreInstanceState(bundle);
       }
     }
   }

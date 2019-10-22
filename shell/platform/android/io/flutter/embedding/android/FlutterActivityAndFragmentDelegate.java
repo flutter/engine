@@ -257,6 +257,15 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     return flutterSplashView;
   }
 
+  void onActivityCreated(@Nullable Bundle bundle) {
+    Log.v(TAG, "onActivityCreated. Giving plugins an opportunity to restore state.");
+    ensureAlive();
+
+    if (host.shouldAttachEngineToActivity()) {
+      flutterEngine.getActivityControlSurface().onRestoreInstanceState(bundle);
+    }
+  }
+
   /**
    * Invoke this from {@code Activity#onStart()} or {@code Fragment#onStart()}.
    * <p>
@@ -402,6 +411,15 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     Log.v(TAG, "onDestroyView()");
     ensureAlive();
     flutterView.removeOnFirstFrameRenderedListener(flutterUiDisplayListener);
+  }
+
+  void onSaveInstanceState(@Nullable Bundle bundle) {
+    Log.v(TAG, "onSaveInstanceState. Giving plugins an opportunity to save state.");
+    ensureAlive();
+
+    if (host.shouldAttachEngineToActivity()) {
+      flutterEngine.getActivityControlSurface().onSaveInstanceState(bundle);
+    }
   }
 
   /**

@@ -6,10 +6,11 @@ package io.flutter.embedding.engine.plugins.activity;
 
 import android.app.Activity;
 import android.arch.lifecycle.Lifecycle;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import io.flutter.plugin.common.PluginRegistry;
-import io.flutter.plugin.platform.PlatformViewsController;
 
 /**
  * Binding that gives {@link ActivityAware} plugins access to an associated {@link Activity} and
@@ -73,4 +74,30 @@ public interface ActivityPluginBinding {
    * Removes a listener that was added in {@link #addOnUserLeaveHintListener(PluginRegistry.UserLeaveHintListener)}.
    */
   void removeOnUserLeaveHintListener(@NonNull PluginRegistry.UserLeaveHintListener listener);
+
+  /**
+   * Adds a listener that is invoked when the associated {@code Activity} or {@code Fragment}
+   * saves and restores instance state.
+   */
+  void addOnSaveStateListener(@NonNull OnSaveInstanceStateListener listener);
+
+  /**
+   * Removes a listener that was added in {@link #addOnSaveStateListener(OnSaveInstanceStateListener)}.
+   */
+  void removeOnSaveStateListener(@NonNull OnSaveInstanceStateListener listener);
+
+  interface OnSaveInstanceStateListener {
+    /**
+     * Invoked when the associated {@code Activity} or {@code Fragment} executes
+     * {@link Activity#onSaveInstanceState(Bundle)}.
+     */
+    void onSaveInstanceState(@NonNull Bundle bundle);
+
+    /**
+     * Invoked when the associated {@code Activity} executes
+     * {@link Activity#onCreate(Bundle)} or associated {@code Fragment} executes
+     * {@code Fragment#onActivityCreated(Bundle)}.
+     */
+    void onRestoreInstanceState(@Nullable Bundle bundle);
+  }
 }
