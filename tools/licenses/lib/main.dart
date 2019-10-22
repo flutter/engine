@@ -1887,10 +1887,44 @@ class _RepositoryBoringSSLDirectory extends _RepositoryDirectory {
 
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'src')
+    if (entry.name == 'src') {
       return _RepositoryBoringSSLSourceDirectory(this, entry);
+    }
+    if (entry.name.startsWith('ios') ||
+        entry.name.startsWith('linux') ||
+        entry.name.startsWith('win') ||
+        entry.name.startsWith('mac')) {
+      return _RepositoryBoringSSLGenDirectory(this, entry);
+    }
     return super.createSubdirectory(entry);
   }
+}
+
+class _RepositoryBoringSSLGenDirectory extends _RepositoryDirectory {
+  _RepositoryBoringSSLGenDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'crypto') {
+      return _RepositoryBoringSSLGenCryptoDirectory(this, entry);
+    }
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryBoringSSLGenCryptoDirectory extends _RepositoryDirectory {
+  _RepositoryBoringSSLGenCryptoDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'third_party')
+      return _RepositoryBoringSSLGenCryptoThirdPartyDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryBoringSSLGenCryptoThirdPartyDirectory extends _RepositoryDirectory {
+  _RepositoryBoringSSLGenCryptoThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 }
 
 class _RepositoryCatapultThirdPartyApiClientDirectory extends _RepositoryDirectory {
