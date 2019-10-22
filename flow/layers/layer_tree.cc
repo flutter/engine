@@ -152,6 +152,7 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
     root_layer_->Preroll(&preroll_context, root_surface_transformation);
     // The needs painting flag may be set after the preroll. So check it after.
     if (root_layer_->needs_painting()) {
+      paint_context.has_platform_view = preroll_context.has_platform_view;
       root_layer_->Paint(paint_context);
     }
   }

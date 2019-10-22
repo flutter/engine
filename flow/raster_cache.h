@@ -100,6 +100,8 @@ class RasterCache {
 
   void SetCheckboardCacheImages(bool checkerboard);
 
+  bool empty() const;
+
  private:
   struct Entry {
     bool used_this_frame = false;

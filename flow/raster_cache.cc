@@ -174,7 +174,8 @@ void RasterCache::Prepare(PrerollContext* context,
                                   context->ui_time,
                                   context->texture_registry,
                                   context->raster_cache,
-                                  context->checkerboard_offscreen_layers};
+                                  context->checkerboard_offscreen_layers,
+                                  context->has_platform_view};
                               if (layer->needs_painting()) {
                                 layer->Paint(paintContext);
                               }
@@ -249,6 +250,10 @@ void RasterCache::SweepAfterFrame() {
 void RasterCache::Clear() {
   picture_cache_.clear();
   layer_cache_.clear();
+}
+
+bool RasterCache::empty() const {
+  return layer_cache_.empty() && picture_cache_.empty();
 }
 
 void RasterCache::SetCheckboardCacheImages(bool checkerboard) {

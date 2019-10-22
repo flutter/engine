@@ -206,6 +206,37 @@ void can_composite_platform_views() {
   window.scheduleFrame();
 }
 
+@pragma('vm:entry-point')
+void can_composite_platform_views_with_opacity() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOpacity(127);
+    builder.addPicture(Offset(1.0, 1.0), CreateSimplePicture());
+    builder.pushOffset(1.0, 2.0);
+    builder.addPlatformView(42, width: 123.0, height: 456.0);
+    builder.addPicture(Offset(1.0, 1.0), CreateSimplePicture());
+    builder.pop(); // offset
+    signalNativeTest(); // Signal 2
+    window.render(builder.build());
+  };
+  signalNativeTest(); // Signal 1
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void can_composite_with_opacity() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOpacity(127);
+    builder.addPicture(Offset(1.0, 1.0), CreateSimplePicture());
+    builder.pop(); // offset
+    signalNativeTest(); // Signal 2
+    window.render(builder.build());
+  };
+  signalNativeTest(); // Signal 1
+  window.scheduleFrame();
+}
+
 Picture CreateColoredBox(Color color, Size size) {
   Paint paint = Paint();
   paint.color = color;
