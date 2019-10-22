@@ -1395,7 +1395,8 @@ abstract class ColorFilter {
   /// The output of this filter is then composited into the background according
   /// to the [Paint.blendMode], using the output of this filter as the source
   /// and the background as the destination.
-  const factory ColorFilter.mode(Color color, BlendMode blendMode) = engine.EngineColorFilter.mode;
+  const factory ColorFilter.mode(Color color, BlendMode blendMode) =
+      engine.EngineColorFilter.mode;
 
   /// Construct a color filter that transforms a color by a 4x5 matrix.
   ///
@@ -1455,22 +1456,25 @@ abstract class ColorFilter {
   ///   0,      0,      0,      1, 0,
   /// ]);
   /// ```
-  const factory ColorFilter.matrix(List<double> matrix) = engine.EngineColorFilter.matrix;
+  const factory ColorFilter.matrix(List<double> matrix) =
+      engine.EngineColorFilter.matrix;
 
   /// Construct a color filter that applies the sRGB gamma curve to the RGB
   /// channels.
-  const factory ColorFilter.linearToSrgbGamma() = engine.EngineColorFilter.linearToSrgbGamma;
+  const factory ColorFilter.linearToSrgbGamma() =
+      engine.EngineColorFilter.linearToSrgbGamma;
 
   /// Creates a color filter that applies the inverse of the sRGB gamma curve
   /// to the RGB channels.
-  const factory ColorFilter.srgbToLinearGamma() = engine.EngineColorFilter.srgbToLinearGamma;
+  const factory ColorFilter.srgbToLinearGamma() =
+      engine.EngineColorFilter.srgbToLinearGamma;
 
   List<dynamic> webOnlySerializeToCssPaint() {
     throw UnsupportedError('ColorFilter for CSS paint not yet supported');
   }
 
   @override
-  bool operator==(dynamic other);
+  bool operator ==(dynamic other);
 
   @override
   int get hashCode;
@@ -1742,7 +1746,8 @@ class Codec {
 ///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
-Future<Codec> instantiateImageCodec(Uint8List list, {
+Future<Codec> instantiateImageCodec(
+  Uint8List list, {
   int targetWidth,
   int targetHeight,
 }) {
