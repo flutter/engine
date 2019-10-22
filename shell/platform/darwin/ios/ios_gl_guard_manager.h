@@ -7,19 +7,18 @@
 
 #define GLES_SILENCE_DEPRECATION
 
+#import <OpenGLES/EAGL.h>
 #include <map>
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#import <OpenGLES/EAGL.h>
 
 namespace flutter {
 
 class IOSGLGuardManager {
  public:
   class IOSGLGuard {
-
    public:
-
-    IOSGLGuard(IOSGLGuardManager& gl_guard_manager, int64_t view_id): gl_guard_manager_(gl_guard_manager), view_id_(view_id){
+    IOSGLGuard(IOSGLGuardManager& gl_guard_manager, int64_t view_id)
+        : gl_guard_manager_(gl_guard_manager), view_id_(view_id) {
       gl_guard_manager_.SaveFlutterContext();
       gl_guard_manager_.RestorePlatformViewContext(view_id);
     };
@@ -34,13 +33,11 @@ class IOSGLGuardManager {
     int64_t view_id_;
   };
 
-  IOSGLGuard SpwanGuard(int64_t view_id) {
-    return IOSGLGuard(*this, view_id);
-  }
+  IOSGLGuard SpwanGuard(int64_t view_id) { return IOSGLGuard(*this, view_id); }
 
  private:
   fml::scoped_nsobject<EAGLContext> flutter_gl_context_;
-  std::map<int64_t, fml::scoped_nsobject<EAGLContext> > platform_view_gl_contexts_;
+  std::map<int64_t, fml::scoped_nsobject<EAGLContext>> platform_view_gl_contexts_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSGLGuardManager);
 
@@ -54,19 +51,15 @@ class IOSGLGuardManager {
     SaveContext(context);
   }
 
-  void RestoreFlutterContext() {
-    return RestoreContext(flutter_gl_context_);
-  }
+  void RestoreFlutterContext() { return RestoreContext(flutter_gl_context_); }
 
-  void SaveFlutterContext() {
-    SaveContext(flutter_gl_context_);
-  }
+  void SaveFlutterContext() { SaveContext(flutter_gl_context_); }
 
-  void SaveContext(fml::scoped_nsobject<EAGLContext> store_at){
+  void SaveContext(fml::scoped_nsobject<EAGLContext> store_at) {
     store_at = fml::scoped_nsobject<EAGLContext>([[EAGLContext currentContext] retain]);
   }
 
-  void RestoreContext(fml::scoped_nsobject<EAGLContext> stored_context){
+  void RestoreContext(fml::scoped_nsobject<EAGLContext> stored_context) {
     [EAGLContext setCurrentContext:stored_context.get()];
   }
 };
