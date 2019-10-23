@@ -2,38 +2,23 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/dart/toolchain.gni")
-import("//topaz/runtime/dart/dart_component.gni")
-import("//topaz/runtime/dart/dart_kernel.gni")
+import("//build/compiled_action.gni")
+import("//third_party/dart/build/dart/dart_action.gni")
+import("$flutter_root/common/fuchsia_config.gni")
+import("$flutter_root/tools/fuchsia/dart_kernel.gni")
 
-dart_kernel("shim") {
-  platform_name = "dart_runner"
-  platform_deps = [ "//topaz/runtime/dart_runner/kernel:kernel_platform_files" ]
-  platform_path = "$root_out_dir/dart_runner_patched_sdk"
-
-  disable_analysis = true
-
+dart_kernel("shim_kernel") {
   main_dart = "shim.dart"
-
-  aot = true
+  kernel_platform_files = "../kernel:kernel_platform_files"
   product = false
-
-  visibility = [ ":*" ]
+  aot = true
 }
 
-dart_kernel("shim_product") {
-  platform_name = "dart_runner"
-  platform_deps = [ "//topaz/runtime/dart_runner/kernel:kernel_platform_files" ]
-  platform_path = "$root_out_dir/dart_runner_patched_sdk"
-
-  disable_analysis = true
-
+dart_kernel("shim_product_kernel") {
   main_dart = "shim.dart"
-
-  aot = true
+  kernel_platform_files = "../kernel:kernel_platform_files"
   product = true
-
-  visibility = [ ":*" ]
+  aot = true
 }
 
 template("create_aot_snapshot") {
@@ -42,13 +27,13 @@ template("create_aot_snapshot") {
   if (invoker.product) {
     product_suffix = "_product"
   }
-  action("${target_name}_assembly") {
+  compiled_action("${target_name}_assembly") {
     snapshot_assembly = "$target_gen_dir/aot${product_suffix}_vm_snapshot.S"
 
     # gen_snapshot only needs this to go through the motions of setting up an isolate.
-    shim_target = ":shim${product_suffix}_kernel"
+    shim_target = ":shim${product_suffix}_kernel($host_toolchain)"
     shim_kernel = get_label_info(shim_target, "target_gen_dir") +
-                  "/shim${product_suffix}_kernel.dil"
+                  "/shim${product_suffix}_kernel.dill"
 
     inputs = [
       shim_kernel,
@@ -57,11 +42,13 @@ template("create_aot_snapshot") {
       snapshot_assembly,
     ]
 
-    deps = gen_snapshot_deps + [ shim_target ]
+    deps = [
+      shim_target,
+    ]
     if (invoker.product) {
-      script = gen_snapshot_product
+      tool = gen_snapshot_product
     } else {
-      script = gen_snapshot
+      tool = gen_snapshot
     }
 
     args = [
@@ -74,7 +61,7 @@ template("create_aot_snapshot") {
     # No asserts in debug or release product.
     # No asserts in release with flutter_profile=true (non-product)
     # Yes asserts in non-product debug.
-    if (!invoker.product && (!flutter_profile || is_debug)) {
+    if (!invoker.product && (!(flutter_runtime_mode == "profile") || is_debug)) {
       args += [ "--enable_asserts" ]
     }
     args += [ rebase_path(shim_kernel) ]

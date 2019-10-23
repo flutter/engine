@@ -492,6 +492,12 @@ public class FlutterFragmentActivity extends FragmentActivity
     flutterFragment.onTrimMemory(level);
   }
 
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    flutterFragment.onActivityResult(requestCode, resultCode, data);
+  }
+
   @SuppressWarnings("unused")
   @Nullable
   protected FlutterEngine getFlutterEngine() {
@@ -547,6 +553,17 @@ public class FlutterFragmentActivity extends FragmentActivity
    */
   @Override
   public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    // No-op. Hook for subclasses.
+  }
+
+  /**
+   * Hook for the host to cleanup references that were established in
+   * {@link #configureFlutterEngine(FlutterEngine)} before the host is destroyed or detached.
+   * <p>
+   * This method is called in {@link #onDestroy()}.
+   */
+  @Override
+  public void cleanUpFlutterEngine(@NonNull FlutterEngine flutterEngine) {
     // No-op. Hook for subclasses.
   }
 

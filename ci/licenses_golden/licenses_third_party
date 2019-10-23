@@ -1,4 +1,4 @@
-Signature: a2d49b14022a4fb8fc74726a0861087f
+Signature: 4d068bce13f439df55a7fd7fa3dd4aa3
 
 UNUSED LICENSES:
 
@@ -3308,27 +3308,6 @@ FILE: ../../../third_party/boringssl/src/util/bot/yasm-win32.exe.sha1
 FILE: ../../../third_party/boringssl/src/util/doc.config
 FILE: ../../../third_party/boringssl/src/util/doc.go
 FILE: ../../../third_party/boringssl/src/util/fipstools/delocate.peg.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-GlobalEntry/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-GlobalEntry/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-LoadToR0/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-LoadToR0/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-Sample/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-Sample/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-Sample2/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-Sample2/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-TOCWithOffset/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-TOCWithOffset/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-BSS/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-BSS/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-Basic/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-Basic/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-GOTRewrite/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-GOTRewrite/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-LabelRewrite/in1.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-LabelRewrite/in2.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-LabelRewrite/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-Sections/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-Sections/out.s
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/bigint_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/lib/bigint_patch.dart
 ----------------------------------------------------------------------------------------------------
@@ -7368,6 +7347,7 @@ FILE: ../../../third_party/dart/.mailmap
 FILE: ../../../third_party/dart/.style.yapf
 FILE: ../../../third_party/dart/.vpython
 FILE: ../../../third_party/dart/PATENT_GRANT
+FILE: ../../../third_party/dart/benchmarks/IsolateSpawn/dart/helloworld.dart
 FILE: ../../../third_party/dart/client/idea/.idea/.name
 FILE: ../../../third_party/dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../third_party/dart/client/idea/.idea/vcs.xml
@@ -7452,6 +7432,7 @@ FILE: ../../../third_party/dart/benchmarks/FfiCall/dart/native/native_functions.
 FILE: ../../../third_party/dart/benchmarks/FfiMemory/dart/FfiMemory.dart
 FILE: ../../../third_party/dart/benchmarks/FfiStruct/dart/FfiStruct.dart
 FILE: ../../../third_party/dart/benchmarks/Isolate/dart/Isolate.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateSpawn/dart/IsolateSpawn.dart
 FILE: ../../../third_party/dart/runtime/bin/abi_version.h
 FILE: ../../../third_party/dart/runtime/bin/abi_version_in.cc
 FILE: ../../../third_party/dart/runtime/bin/elf_loader.cc
@@ -7471,8 +7452,13 @@ FILE: ../../../third_party/dart/runtime/lib/wasm.cc
 FILE: ../../../third_party/dart/runtime/llvm_codegen/bit/bit.h
 FILE: ../../../third_party/dart/runtime/llvm_codegen/bit/main.cc
 FILE: ../../../third_party/dart/runtime/llvm_codegen/bit/test.cc
+FILE: ../../../third_party/dart/runtime/llvm_codegen/codegen/dart.cc
+FILE: ../../../third_party/dart/runtime/llvm_codegen/codegen/dart.h
 FILE: ../../../third_party/dart/runtime/llvm_codegen/codegen/main.cc
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/tree_map.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/isolate_group.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/repositories/isolate_group.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/isolate_group.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/timeline_base.dart
 FILE: ../../../third_party/dart/runtime/platform/elf.h
 FILE: ../../../third_party/dart/runtime/platform/thread_sanitizer.h
@@ -7585,7 +7571,6 @@ FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/collections/closable_
 FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/database.dart
 FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/ffi/arena.dart
 FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/ffi/dylib_utils.dart
-FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/ffi/utf8.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/rti.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/shared/recipe_syntax.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_dynamic_library_patch.dart
@@ -8738,7 +8723,6 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/strongl
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/target.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/type_arguments.dart
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline_message_handler.js
-FILE: ../../../third_party/dart/runtime/platform/atomic_fuchsia.h
 FILE: ../../../third_party/dart/runtime/platform/syslog_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/platform/utils_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/platform/utils_fuchsia.h
@@ -9230,10 +9214,6 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/unknown_ref
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/vm_view.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/tracer.dart
 FILE: ../../../third_party/dart/runtime/platform/atomic.h
-FILE: ../../../third_party/dart/runtime/platform/atomic_android.h
-FILE: ../../../third_party/dart/runtime/platform/atomic_linux.h
-FILE: ../../../third_party/dart/runtime/platform/atomic_macos.h
-FILE: ../../../third_party/dart/runtime/platform/atomic_win.h
 FILE: ../../../third_party/dart/runtime/platform/signal_blocker.h
 FILE: ../../../third_party/dart/runtime/vm/allocation.h
 FILE: ../../../third_party/dart/runtime/vm/class_finalizer.cc
@@ -9767,6 +9747,8 @@ LIBRARY: dart
 ORIGIN: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_scope_builder.h + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_scope_builder.h
+FILE: ../../../third_party/dart/sdk/lib/io/network_profiling.dart
+FILE: ../../../third_party/dart/sdk_nnbd/lib/io/network_profiling.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2019, the Dart project authors. Please see the AUTHORS file
 for details. All rights reserved.
@@ -11586,6 +11568,7 @@ FILE: ../../../third_party/harfbuzz/src/harfbuzz-config.cmake.in
 FILE: ../../../third_party/harfbuzz/src/harfbuzz-gobject.pc.in
 FILE: ../../../third_party/harfbuzz/src/harfbuzz-icu.pc.in
 FILE: ../../../third_party/harfbuzz/src/harfbuzz-subset.pc.in
+FILE: ../../../third_party/harfbuzz/src/harfbuzz.cc
 FILE: ../../../third_party/harfbuzz/src/harfbuzz.pc.in
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-table.cc
@@ -11710,6 +11693,8 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-color-colr-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-color-sbix-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-color-svg-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-gasp-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-metrics.h
+FILE: ../../../third_party/harfbuzz/src/hb-ot-metrics.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-stat-table.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2018  Ebrahim Byagowi
@@ -11786,6 +11771,46 @@ FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-trak-table.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2018  Ebrahim Byagowi
 Copyright © 2018  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-aat-layout-opbd-table.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-opbd-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-gdi.cc
+FILE: ../../../third_party/harfbuzz/src/hb-gdi.h
+FILE: ../../../third_party/harfbuzz/src/hb-number-parser.hh
+FILE: ../../../third_party/harfbuzz/src/hb-number-parser.rl
+FILE: ../../../third_party/harfbuzz/src/hb-number.cc
+FILE: ../../../third_party/harfbuzz/src/hb-number.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-meta-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-meta.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-meta.h
+FILE: ../../../third_party/harfbuzz/src/test-number.cc
+FILE: ../../../third_party/harfbuzz/src/test-ot-meta.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2019  Ebrahim Byagowi
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -11910,6 +11935,35 @@ FILE: ../../../third_party/harfbuzz/src/hb-object.hh
 Copyright © 2007  Chris Wilson
 Copyright © 2009,2010  Red Hat, Inc.
 Copyright © 2011,2012  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-bimap.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-bimap.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2019 Adobe Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -13023,6 +13077,8 @@ TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-glyf-table.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2015  Google, Inc.
+Copyright © 2019  Adobe Inc.
+Copyright © 2019  Ebrahim Byagowi
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -13123,9 +13179,9 @@ ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-layout-base-table.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-layout-base-table.hh
 ----------------------------------------------------------------------------------------------------
-Copyright © 2016 Elie Roux <elie.roux@telecom-bretagne.eu>
+Copyright © 2016  Elie Roux <elie.roux@telecom-bretagne.eu>
 Copyright © 2018  Google, Inc.
-Copyright © 2018  Ebrahim Byagowi
+Copyright © 2018-2019  Ebrahim Byagowi
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -13370,6 +13426,35 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-math.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-math.h
 ----------------------------------------------------------------------------------------------------
 Copyright © 2016  Igalia S.L.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-metrics.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-metrics.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2018-2019  Ebrahim Byagowi
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -13666,6 +13751,36 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-var-gvar-table.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-var-gvar-table.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2019  Adobe Inc.
+Copyright © 2019  Ebrahim Byagowi
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-serialize.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-serialize.hh
@@ -13897,6 +14012,35 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/test-bimap.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/test-bimap.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2019  Adobe, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/test-buffer-serialize.cc
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/test-buffer-serialize.cc
@@ -13989,10 +14133,12 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 LIBRARY: icu
 ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/COPYING
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14003,24 +14149,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14029,11 +14187,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14067,9 +14224,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -14082,7 +14236,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright 2006-2011, the V8 project authors. All rights reserved.
 Redistribution and use in source and binary forms, with or without
@@ -14116,10 +14272,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14130,24 +14288,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14156,11 +14326,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14194,9 +14363,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -14209,7 +14375,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 1999 Computer Systems and Communication Lab,
                    Institute of Information Science, Academia
@@ -14248,10 +14416,12 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14262,24 +14432,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14288,11 +14470,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14326,9 +14507,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -14341,7 +14519,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 1999 TaBE Project.
 Copyright (c) 1999 Pai-Hsiang Hsiao.
@@ -14379,10 +14559,12 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14393,24 +14575,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14419,11 +14613,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14457,9 +14650,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -14472,7 +14662,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2013 International Business Machines Corporation
 and others. All Rights Reserved.
@@ -14516,10 +14708,12 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14530,24 +14724,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14556,11 +14762,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14594,9 +14799,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -14609,7 +14811,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2014 International Business Machines Corporation
 and others. All Rights Reserved.
@@ -14652,10 +14856,12 @@ SUCH DAMAGE.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14666,24 +14872,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14692,11 +14910,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14730,9 +14947,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -14745,7 +14959,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 The BSD License
 http://opensource.org/licenses/bsd-license.php
@@ -14784,10 +15000,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.icu
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14798,24 +15016,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14824,11 +15054,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14862,9 +15091,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -14877,7 +15103,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 1995-2016 International Business Machines Corporation and others
 All rights reserved.
@@ -14915,10 +15143,12 @@ property of their respective owners.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14929,24 +15159,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14955,11 +15197,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14993,9 +15234,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -15008,7 +15246,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright 1996 Chih-Hao Tsai @ Beckman Institute,
     University of Illinois
@@ -15019,10 +15259,12 @@ c-tsai4@uiuc.edu  http://casper.beckman.uiuc.edu/~c-tsai4
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -15033,24 +15275,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -15059,11 +15313,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -15097,9 +15350,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -15112,7 +15362,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright 2000, 2001, 2002, 2003 Nara Institute of Science
 and Technology.  All Rights Reserved.
@@ -15190,10 +15442,12 @@ above as far as the program is concerned.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -15204,24 +15458,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -15230,11 +15496,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -15268,9 +15533,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -15283,10 +15545,12 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
-Copyright © 1991-2018 Unicode, Inc. All rights reserved.
-Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
+Copyright © 1991-2019 Unicode, Inc. All rights reserved.
+Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of the Unicode data files and any associated documentation
@@ -15316,6 +15580,48 @@ Except as contained in this notice, the name of a copyright holder
 shall not be used in advertising or otherwise to promote the sale,
 use or other dealings in these Data Files or Software without prior
 written authorization of the copyright holder.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: icu
+ORIGIN: ../../../third_party/icu/filters/android.json + ../../../third_party/dart/runtime/third_party/double-conversion/COPYING
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/icu/filters/android.json
+FILE: ../../../third_party/icu/filters/android_extra.json
+FILE: ../../../third_party/icu/filters/android_small.json
+FILE: ../../../third_party/icu/filters/cast.json
+FILE: ../../../third_party/icu/filters/chromeos.json
+FILE: ../../../third_party/icu/filters/common.json
+FILE: ../../../third_party/icu/filters/flutter.json
+FILE: ../../../third_party/icu/filters/ios.json
+----------------------------------------------------------------------------------------------------
+Copyright 2019 the V8 project authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
@@ -15412,6 +15718,8 @@ FILE: ../../../third_party/icu/source/common/bytestrie.cpp
 FILE: ../../../third_party/icu/source/common/bytestriebuilder.cpp
 FILE: ../../../third_party/icu/source/common/bytestrieiterator.cpp
 FILE: ../../../third_party/icu/source/common/caniter.cpp
+FILE: ../../../third_party/icu/source/common/capi_helper.h
+FILE: ../../../third_party/icu/source/common/characterproperties.cpp
 FILE: ../../../third_party/icu/source/common/chariter.cpp
 FILE: ../../../third_party/icu/source/common/charstr.cpp
 FILE: ../../../third_party/icu/source/common/charstr.h
@@ -15438,21 +15746,30 @@ FILE: ../../../third_party/icu/source/common/hash.h
 FILE: ../../../third_party/icu/source/common/icudataver.cpp
 FILE: ../../../third_party/icu/source/common/icuplug.cpp
 FILE: ../../../third_party/icu/source/common/icuplugimp.h
-FILE: ../../../third_party/icu/source/common/listformatter.cpp
 FILE: ../../../third_party/icu/source/common/loadednormalizer2impl.cpp
+FILE: ../../../third_party/icu/source/common/localebuilder.cpp
+FILE: ../../../third_party/icu/source/common/localematcher.cpp
+FILE: ../../../third_party/icu/source/common/localeprioritylist.cpp
+FILE: ../../../third_party/icu/source/common/localeprioritylist.h
 FILE: ../../../third_party/icu/source/common/localsvc.h
 FILE: ../../../third_party/icu/source/common/locavailable.cpp
 FILE: ../../../third_party/icu/source/common/locbased.cpp
 FILE: ../../../third_party/icu/source/common/locbased.h
 FILE: ../../../third_party/icu/source/common/locdispnames.cpp
+FILE: ../../../third_party/icu/source/common/locdistance.cpp
+FILE: ../../../third_party/icu/source/common/locdistance.h
 FILE: ../../../third_party/icu/source/common/locdspnm.cpp
 FILE: ../../../third_party/icu/source/common/locid.cpp
 FILE: ../../../third_party/icu/source/common/loclikely.cpp
+FILE: ../../../third_party/icu/source/common/loclikelysubtags.cpp
+FILE: ../../../third_party/icu/source/common/loclikelysubtags.h
 FILE: ../../../third_party/icu/source/common/locmap.cpp
 FILE: ../../../third_party/icu/source/common/locmap.h
 FILE: ../../../third_party/icu/source/common/locresdata.cpp
 FILE: ../../../third_party/icu/source/common/locutil.cpp
 FILE: ../../../third_party/icu/source/common/locutil.h
+FILE: ../../../third_party/icu/source/common/lsr.cpp
+FILE: ../../../third_party/icu/source/common/lsr.h
 FILE: ../../../third_party/icu/source/common/messageimpl.h
 FILE: ../../../third_party/icu/source/common/messagepattern.cpp
 FILE: ../../../third_party/icu/source/common/msvcres.h
@@ -15498,6 +15815,8 @@ FILE: ../../../third_party/icu/source/common/resbund.cpp
 FILE: ../../../third_party/icu/source/common/resbund_cnv.cpp
 FILE: ../../../third_party/icu/source/common/resource.cpp
 FILE: ../../../third_party/icu/source/common/resource.h
+FILE: ../../../third_party/icu/source/common/restrace.cpp
+FILE: ../../../third_party/icu/source/common/restrace.h
 FILE: ../../../third_party/icu/source/common/ruleiter.cpp
 FILE: ../../../third_party/icu/source/common/ruleiter.h
 FILE: ../../../third_party/icu/source/common/schriter.cpp
@@ -15583,6 +15902,8 @@ FILE: ../../../third_party/icu/source/common/ucnvsel.cpp
 FILE: ../../../third_party/icu/source/common/ucol_data.h
 FILE: ../../../third_party/icu/source/common/ucol_swp.cpp
 FILE: ../../../third_party/icu/source/common/ucol_swp.h
+FILE: ../../../third_party/icu/source/common/ucptrie.cpp
+FILE: ../../../third_party/icu/source/common/ucptrie_impl.h
 FILE: ../../../third_party/icu/source/common/ucurr.cpp
 FILE: ../../../third_party/icu/source/common/ucurrimp.h
 FILE: ../../../third_party/icu/source/common/udata.cpp
@@ -15601,9 +15922,9 @@ FILE: ../../../third_party/icu/source/common/uinit.cpp
 FILE: ../../../third_party/icu/source/common/uinvchar.cpp
 FILE: ../../../third_party/icu/source/common/uinvchar.h
 FILE: ../../../third_party/icu/source/common/uiter.cpp
+FILE: ../../../third_party/icu/source/common/ulayout_props.h
 FILE: ../../../third_party/icu/source/common/ulist.cpp
 FILE: ../../../third_party/icu/source/common/ulist.h
-FILE: ../../../third_party/icu/source/common/ulistformatter.cpp
 FILE: ../../../third_party/icu/source/common/uloc.cpp
 FILE: ../../../third_party/icu/source/common/uloc_keytype.cpp
 FILE: ../../../third_party/icu/source/common/uloc_tag.cpp
@@ -15611,6 +15932,7 @@ FILE: ../../../third_party/icu/source/common/ulocimp.h
 FILE: ../../../third_party/icu/source/common/umapfile.cpp
 FILE: ../../../third_party/icu/source/common/umapfile.h
 FILE: ../../../third_party/icu/source/common/umath.cpp
+FILE: ../../../third_party/icu/source/common/umutablecptrie.cpp
 FILE: ../../../third_party/icu/source/common/umutex.cpp
 FILE: ../../../third_party/icu/source/common/umutex.h
 FILE: ../../../third_party/icu/source/common/unames.cpp
@@ -15633,7 +15955,8 @@ FILE: ../../../third_party/icu/source/common/unicode/filteredbrk.h
 FILE: ../../../third_party/icu/source/common/unicode/icudataver.h
 FILE: ../../../third_party/icu/source/common/unicode/icuplug.h
 FILE: ../../../third_party/icu/source/common/unicode/idna.h
-FILE: ../../../third_party/icu/source/common/unicode/listformatter.h
+FILE: ../../../third_party/icu/source/common/unicode/localebuilder.h
+FILE: ../../../third_party/icu/source/common/unicode/localematcher.h
 FILE: ../../../third_party/icu/source/common/unicode/localpointer.h
 FILE: ../../../third_party/icu/source/common/unicode/locdspnm.h
 FILE: ../../../third_party/icu/source/common/unicode/locid.h
@@ -15671,6 +15994,8 @@ FILE: ../../../third_party/icu/source/common/unicode/ucnv_cb.h
 FILE: ../../../third_party/icu/source/common/unicode/ucnv_err.h
 FILE: ../../../third_party/icu/source/common/unicode/ucnvsel.h
 FILE: ../../../third_party/icu/source/common/unicode/uconfig.h
+FILE: ../../../third_party/icu/source/common/unicode/ucpmap.h
+FILE: ../../../third_party/icu/source/common/unicode/ucptrie.h
 FILE: ../../../third_party/icu/source/common/unicode/ucurr.h
 FILE: ../../../third_party/icu/source/common/unicode/udata.h
 FILE: ../../../third_party/icu/source/common/unicode/udisplaycontext.h
@@ -15678,10 +16003,10 @@ FILE: ../../../third_party/icu/source/common/unicode/uenum.h
 FILE: ../../../third_party/icu/source/common/unicode/uidna.h
 FILE: ../../../third_party/icu/source/common/unicode/uiter.h
 FILE: ../../../third_party/icu/source/common/unicode/uldnames.h
-FILE: ../../../third_party/icu/source/common/unicode/ulistformatter.h
 FILE: ../../../third_party/icu/source/common/unicode/uloc.h
 FILE: ../../../third_party/icu/source/common/unicode/umachine.h
 FILE: ../../../third_party/icu/source/common/unicode/umisc.h
+FILE: ../../../third_party/icu/source/common/unicode/umutablecptrie.h
 FILE: ../../../third_party/icu/source/common/unicode/unifilt.h
 FILE: ../../../third_party/icu/source/common/unicode/unifunct.h
 FILE: ../../../third_party/icu/source/common/unicode/unimatch.h
@@ -15776,6 +16101,7 @@ FILE: ../../../third_party/icu/source/common/utrie2.cpp
 FILE: ../../../third_party/icu/source/common/utrie2.h
 FILE: ../../../third_party/icu/source/common/utrie2_builder.cpp
 FILE: ../../../third_party/icu/source/common/utrie2_impl.h
+FILE: ../../../third_party/icu/source/common/utrie_swap.cpp
 FILE: ../../../third_party/icu/source/common/uts46.cpp
 FILE: ../../../third_party/icu/source/common/utypeinfo.h
 FILE: ../../../third_party/icu/source/common/utypes.cpp
@@ -15820,6 +16146,7 @@ FILE: ../../../third_party/icu/source/config/mh-solaris-gcc
 FILE: ../../../third_party/icu/source/config/mh-unknown
 FILE: ../../../third_party/icu/source/config/windows-update.sed.in
 FILE: ../../../third_party/icu/source/data/build.xml
+FILE: ../../../third_party/icu/source/data/buildtool/filtration_schema.json
 FILE: ../../../third_party/icu/source/data/icu-coll-deprecates.xml
 FILE: ../../../third_party/icu/source/data/icu-config.xml
 FILE: ../../../third_party/icu/source/data/icu-locale-deprecates.xml
@@ -16147,6 +16474,8 @@ FILE: ../../../third_party/icu/source/i18n/dtitvinf.cpp
 FILE: ../../../third_party/icu/source/i18n/dtptngen.cpp
 FILE: ../../../third_party/icu/source/i18n/dtptngen_impl.h
 FILE: ../../../third_party/icu/source/i18n/dtrule.cpp
+FILE: ../../../third_party/icu/source/i18n/erarules.cpp
+FILE: ../../../third_party/icu/source/i18n/erarules.h
 FILE: ../../../third_party/icu/source/i18n/esctrn.cpp
 FILE: ../../../third_party/icu/source/i18n/esctrn.h
 FILE: ../../../third_party/icu/source/i18n/ethpccal.cpp
@@ -16155,6 +16484,10 @@ FILE: ../../../third_party/icu/source/i18n/fmtable.cpp
 FILE: ../../../third_party/icu/source/i18n/fmtable_cnv.cpp
 FILE: ../../../third_party/icu/source/i18n/fmtableimp.h
 FILE: ../../../third_party/icu/source/i18n/format.cpp
+FILE: ../../../third_party/icu/source/i18n/formattedval_impl.h
+FILE: ../../../third_party/icu/source/i18n/formattedval_iterimpl.cpp
+FILE: ../../../third_party/icu/source/i18n/formattedval_sbimpl.cpp
+FILE: ../../../third_party/icu/source/i18n/formattedvalue.cpp
 FILE: ../../../third_party/icu/source/i18n/fphdlimp.cpp
 FILE: ../../../third_party/icu/source/i18n/fphdlimp.h
 FILE: ../../../third_party/icu/source/i18n/fpositer.cpp
@@ -16175,6 +16508,7 @@ FILE: ../../../third_party/icu/source/i18n/islamcal.cpp
 FILE: ../../../third_party/icu/source/i18n/islamcal.h
 FILE: ../../../third_party/icu/source/i18n/japancal.cpp
 FILE: ../../../third_party/icu/source/i18n/japancal.h
+FILE: ../../../third_party/icu/source/i18n/listformatter.cpp
 FILE: ../../../third_party/icu/source/i18n/measfmt.cpp
 FILE: ../../../third_party/icu/source/i18n/measunit.cpp
 FILE: ../../../third_party/icu/source/i18n/measure.cpp
@@ -16223,6 +16557,7 @@ FILE: ../../../third_party/icu/source/i18n/number_modifiers.h
 FILE: ../../../third_party/icu/source/i18n/number_multiplier.cpp
 FILE: ../../../third_party/icu/source/i18n/number_multiplier.h
 FILE: ../../../third_party/icu/source/i18n/number_notation.cpp
+FILE: ../../../third_party/icu/source/i18n/number_output.cpp
 FILE: ../../../third_party/icu/source/i18n/number_padding.cpp
 FILE: ../../../third_party/icu/source/i18n/number_patternmodifier.cpp
 FILE: ../../../third_party/icu/source/i18n/number_patternmodifier.h
@@ -16262,6 +16597,9 @@ FILE: ../../../third_party/icu/source/i18n/numparse_types.h
 FILE: ../../../third_party/icu/source/i18n/numparse_utils.h
 FILE: ../../../third_party/icu/source/i18n/numparse_validators.cpp
 FILE: ../../../third_party/icu/source/i18n/numparse_validators.h
+FILE: ../../../third_party/icu/source/i18n/numrange_fluent.cpp
+FILE: ../../../third_party/icu/source/i18n/numrange_impl.cpp
+FILE: ../../../third_party/icu/source/i18n/numrange_impl.h
 FILE: ../../../third_party/icu/source/i18n/numsys.cpp
 FILE: ../../../third_party/icu/source/i18n/numsys_impl.h
 FILE: ../../../third_party/icu/source/i18n/olsontz.cpp
@@ -16370,6 +16708,7 @@ FILE: ../../../third_party/icu/source/i18n/udatpg.cpp
 FILE: ../../../third_party/icu/source/i18n/ufieldpositer.cpp
 FILE: ../../../third_party/icu/source/i18n/uitercollationiterator.cpp
 FILE: ../../../third_party/icu/source/i18n/uitercollationiterator.h
+FILE: ../../../third_party/icu/source/i18n/ulistformatter.cpp
 FILE: ../../../third_party/icu/source/i18n/ulocdata.cpp
 FILE: ../../../third_party/icu/source/i18n/umsg.cpp
 FILE: ../../../third_party/icu/source/i18n/umsg_imp.h
@@ -16398,15 +16737,18 @@ FILE: ../../../third_party/icu/source/i18n/unicode/dtrule.h
 FILE: ../../../third_party/icu/source/i18n/unicode/fieldpos.h
 FILE: ../../../third_party/icu/source/i18n/unicode/fmtable.h
 FILE: ../../../third_party/icu/source/i18n/unicode/format.h
+FILE: ../../../third_party/icu/source/i18n/unicode/formattedvalue.h
 FILE: ../../../third_party/icu/source/i18n/unicode/fpositer.h
 FILE: ../../../third_party/icu/source/i18n/unicode/gender.h
 FILE: ../../../third_party/icu/source/i18n/unicode/gregocal.h
+FILE: ../../../third_party/icu/source/i18n/unicode/listformatter.h
 FILE: ../../../third_party/icu/source/i18n/unicode/measfmt.h
 FILE: ../../../third_party/icu/source/i18n/unicode/measunit.h
 FILE: ../../../third_party/icu/source/i18n/unicode/measure.h
 FILE: ../../../third_party/icu/source/i18n/unicode/msgfmt.h
 FILE: ../../../third_party/icu/source/i18n/unicode/nounit.h
 FILE: ../../../third_party/icu/source/i18n/unicode/numberformatter.h
+FILE: ../../../third_party/icu/source/i18n/unicode/numberrangeformatter.h
 FILE: ../../../third_party/icu/source/i18n/unicode/numfmt.h
 FILE: ../../../third_party/icu/source/i18n/unicode/numsys.h
 FILE: ../../../third_party/icu/source/i18n/unicode/plurfmt.h
@@ -16442,7 +16784,9 @@ FILE: ../../../third_party/icu/source/i18n/unicode/udateintervalformat.h
 FILE: ../../../third_party/icu/source/i18n/unicode/udatpg.h
 FILE: ../../../third_party/icu/source/i18n/unicode/ufieldpositer.h
 FILE: ../../../third_party/icu/source/i18n/unicode/uformattable.h
+FILE: ../../../third_party/icu/source/i18n/unicode/uformattedvalue.h
 FILE: ../../../third_party/icu/source/i18n/unicode/ugender.h
+FILE: ../../../third_party/icu/source/i18n/unicode/ulistformatter.h
 FILE: ../../../third_party/icu/source/i18n/unicode/ulocdata.h
 FILE: ../../../third_party/icu/source/i18n/unicode/umsg.h
 FILE: ../../../third_party/icu/source/i18n/unicode/unirepl.h
@@ -16676,6 +17020,8 @@ FILE: ../../../third_party/icu/source/tools/genrb/derb.1.in
 FILE: ../../../third_party/icu/source/tools/genrb/derb.cpp
 FILE: ../../../third_party/icu/source/tools/genrb/errmsg.c
 FILE: ../../../third_party/icu/source/tools/genrb/errmsg.h
+FILE: ../../../third_party/icu/source/tools/genrb/filterrb.cpp
+FILE: ../../../third_party/icu/source/tools/genrb/filterrb.h
 FILE: ../../../third_party/icu/source/tools/genrb/genrb.1.in
 FILE: ../../../third_party/icu/source/tools/genrb/genrb.cpp
 FILE: ../../../third_party/icu/source/tools/genrb/genrb.h
@@ -23002,4 +23348,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 360
+Total license count: 366

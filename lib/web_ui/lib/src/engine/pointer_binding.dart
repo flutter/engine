@@ -14,6 +14,7 @@ class PointerBinding {
   /// The singleton instance of this object.
   static PointerBinding get instance => _instance;
   static PointerBinding _instance;
+
   // Set of pointerIds that are added before routing hover and mouse wheel
   // events.
   //
@@ -61,6 +62,7 @@ class PointerBinding {
     newDetector ??= const PointerSupportDetector();
     // When changing the detector, we need to swap the adapter.
     if (newDetector != _detector) {
+      _activePointerIds.clear();
       _detector = newDetector;
       _adapter?.clearListeners();
       _adapter = _createAdapter();
@@ -213,6 +215,8 @@ class PointerAdapter extends BaseAdapter {
     _addEventListener('pointerdown', (html.Event event) {
       final int pointerButton = _pointerButtonFromHtmlEvent(event);
       final int device = _deviceFromHtmlEvent(event);
+      // The pointerdown event will cause an 'add' event on the framework side.
+      PointerBinding._instance._activePointerIds.add(device);
       if (_isButtonDown(device, pointerButton)) {
         // TODO(flutter_web): Remove this temporary fix for right click
         // on web platform once context guesture is implemented.
@@ -290,8 +294,8 @@ class PointerAdapter extends BaseAdapter {
         timeStamp: _eventTimeStampToDuration(event.timeStamp),
         kind: _pointerTypeToDeviceKind(event.pointerType),
         device: event.pointerId,
-        physicalX: event.client.x,
-        physicalY: event.client.y,
+        physicalX: event.client.x * ui.window.devicePixelRatio,
+        physicalY: event.client.y * ui.window.devicePixelRatio,
         buttons: event.buttons,
         pressure: event.pressure,
         pressureMin: 0.0,
@@ -387,8 +391,8 @@ class TouchAdapter extends BaseAdapter {
         kind: ui.PointerDeviceKind.touch,
         signalKind: ui.PointerSignalKind.none,
         device: touch.identifier,
-        physicalX: touch.client.x,
-        physicalY: touch.client.y,
+        physicalX: touch.client.x * ui.window.devicePixelRatio,
+        physicalY: touch.client.y * ui.window.devicePixelRatio,
         pressure: 1.0,
         pressureMin: 0.0,
         pressureMax: 1.0,
@@ -452,6 +456,10 @@ class MouseAdapter extends BaseAdapter {
     html.MouseEvent event,
   ) {
     final List<ui.PointerData> data = <ui.PointerData>[];
+    // The mousedown event will cause an 'add' event on the framework side.
+    if (event.type == 'mousedown') {
+      PointerBinding._instance._activePointerIds.add(_mouseDeviceId);
+    }
     if (event.type == 'mousemove') {
       _ensureMouseDeviceAdded(data, event.client.x, event.client.y,
           event.buttons, event.timeStamp, _mouseDeviceId);
@@ -462,8 +470,8 @@ class MouseAdapter extends BaseAdapter {
       kind: ui.PointerDeviceKind.mouse,
       signalKind: ui.PointerSignalKind.none,
       device: _mouseDeviceId,
-      physicalX: event.client.x,
-      physicalY: event.client.y,
+      physicalX: event.client.x * ui.window.devicePixelRatio,
+      physicalY: event.client.y * ui.window.devicePixelRatio,
       buttons: event.buttons,
       pressure: 1.0,
       pressureMin: 0.0,
@@ -499,8 +507,8 @@ void _ensureMouseDeviceAdded(List<ui.PointerData> data, double clientX,
         // signal to none.
         signalKind: ui.PointerSignalKind.none,
         device: deviceId,
-        physicalX: clientX,
-        physicalY: clientY,
+        physicalX: clientX * ui.window.devicePixelRatio,
+        physicalY: clientY * ui.window.devicePixelRatio,
         buttons: buttons,
         pressure: 1.0,
         pressureMin: 0.0,
@@ -544,8 +552,8 @@ List<ui.PointerData> _convertWheelEventToPointerData(
     kind: ui.PointerDeviceKind.mouse,
     signalKind: ui.PointerSignalKind.scroll,
     device: _mouseDeviceId,
-    physicalX: event.client.x,
-    physicalY: event.client.y,
+    physicalX: event.client.x * ui.window.devicePixelRatio,
+    physicalY: event.client.y * ui.window.devicePixelRatio,
     buttons: event.buttons,
     pressure: 1.0,
     pressureMin: 0.0,

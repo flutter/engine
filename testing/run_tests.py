@@ -21,7 +21,6 @@ fonts_dir = os.path.join(buildroot_dir, 'flutter', 'third_party', 'txt', 'third_
 roboto_font_path = os.path.join(fonts_dir, 'Roboto-Regular.ttf')
 dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 
-fonts_dir_flag = '--font-directory=%s' % fonts_dir
 time_sensitve_test_flag = '--gtest_filter="-*TimeSensitiveTest*"'
 
 def IsMac():
@@ -112,7 +111,7 @@ def RunCCTests(build_dir, filter):
 
   # https://github.com/flutter/flutter/issues/36296
   if IsLinux():
-    RunEngineExecutable(build_dir, 'txt_unittests', filter, [ fonts_dir_flag ] + shuffle_flags)
+    RunEngineExecutable(build_dir, 'txt_unittests', filter, shuffle_flags)
 
 
 def RunEngineBenchmarks(build_dir, filter):
@@ -123,7 +122,7 @@ def RunEngineBenchmarks(build_dir, filter):
   RunEngineExecutable(build_dir, 'fml_benchmarks', filter)
 
   if IsLinux():
-    RunEngineExecutable(build_dir, 'txt_benchmarks', filter, [ fonts_dir_flag ])
+    RunEngineExecutable(build_dir, 'txt_benchmarks', filter)
 
 
 
@@ -163,18 +162,26 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
   assert os.path.exists(kernel_file_output)
 
 
-def RunDartTest(build_dir, dart_file, verbose_dart_snapshot):
+def RunDartTest(build_dir, dart_file, verbose_dart_snapshot, multithreaded):
   kernel_file_name = os.path.basename(dart_file) + '.kernel.dill'
   kernel_file_output = os.path.join(out_dir, kernel_file_name)
 
   SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot)
 
-  print "Running test '%s' using 'flutter_tester'" % kernel_file_name
-  RunEngineExecutable(build_dir, 'flutter_tester', None, [
+  command_args = [
     '--disable-observatory',
     '--use-test-fonts',
     kernel_file_output
-  ])
+  ]
+
+  if multithreaded:
+    threading = 'multithreaded'
+    command_args.insert(0, '--force-multithreading')
+  else:
+    threading = 'single-threaded'
+
+  print "Running test '%s' using 'flutter_tester' (%s)" % (kernel_file_name, threading)
+  RunEngineExecutable(build_dir, 'flutter_tester', None, command_args)
 
 def RunPubGet(build_dir, directory):
   print "Running 'pub get' in the tests directory %s" % dart_tests_dir
@@ -288,7 +295,8 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
       print "Skipping %s due to filter." % dart_test_file
     else:
       print "Testing dart file %s" % dart_test_file
-      RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot)
+      RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot, True)
+      RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot, False)
 
 def main():
   parser = argparse.ArgumentParser();

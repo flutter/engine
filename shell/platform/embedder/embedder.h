@@ -603,14 +603,24 @@ typedef struct {
   ///
   /// @attention     This field is required.
   FlutterTaskRunnerPostTaskCallback post_task_callback;
+  /// A unique identifier for the task runner. If multiple task runners service
+  /// tasks on the same thread, their identifiers must match.
+  size_t identifier;
 } FlutterTaskRunnerDescription;
 
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterCustomTaskRunners).
   size_t struct_size;
   /// Specify the task runner for the thread on which the `FlutterEngineRun`
-  /// call is made.
+  /// call is made. The same task runner description can be specified for both
+  /// the render and platform task runners. This makes the Flutter engine use
+  /// the same thread for both task runners.
   const FlutterTaskRunnerDescription* platform_task_runner;
+  /// Specify the task runner for the thread on which the render tasks will be
+  /// run. The same task runner description can be specified for both the render
+  /// and platform task runners. This makes the Flutter engine use the same
+  /// thread for both task runners.
+  const FlutterTaskRunnerDescription* render_task_runner;
 } FlutterCustomTaskRunners;
 
 typedef struct {
@@ -767,6 +777,30 @@ typedef struct {
   /// onto the screen.
   FlutterLayersPresentCallback present_layers_callback;
 } FlutterCompositor;
+
+typedef struct {
+  /// This size of this struct. Must be sizeof(FlutterLocale).
+  size_t struct_size;
+  /// The language code of the locale. For example, "en". This is a required
+  /// field. The string must be null terminated. It may be collected after the
+  /// call to `FlutterEngineUpdateLocales`.
+  const char* language_code;
+  /// The country code of the locale. For example, "US". This is a an optional
+  /// field. The string must be null terminated if present. It may be collected
+  /// after the call to `FlutterEngineUpdateLocales`. If not present, a
+  /// `nullptr` may be specified.
+  const char* country_code;
+  /// The script code of the locale. This is a an optional field. The string
+  /// must be null terminated if present. It may be collected after the call to
+  /// `FlutterEngineUpdateLocales`. If not present, a `nullptr` may be
+  /// specified.
+  const char* script_code;
+  /// The variant code of the locale. This is a an optional field. The string
+  /// must be null terminated if present. It may be collected after the call to
+  /// `FlutterEngineUpdateLocales`. If not present, a `nullptr` may be
+  /// specified.
+  const char* variant_code;
+} FlutterLocale;
 
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterProjectArgs).
@@ -950,6 +984,32 @@ typedef struct {
   const FlutterCompositor* compositor;
 } FlutterProjectArgs;
 
+//------------------------------------------------------------------------------
+/// @brief      Initialize and run a Flutter engine instance and return a handle
+///             to it. This is a convenience method for the the pair of calls to
+///             `FlutterEngineInitialize` and `FlutterEngineRunInitialized`.
+///
+/// @note       This method of running a Flutter engine works well except in
+///             cases where the embedder specifies custom task runners via
+///             `FlutterProjectArgs::custom_task_runners`. In such cases, the
+///             engine may need the embedder to post tasks back to it before
+///             `FlutterEngineRun` has returned. Embedders can only post tasks
+///             to the engine if they have a handle to the engine. In such
+///             cases, embedders are advised to get the engine handle via the
+///             `FlutterInitializeCall`. Then they can call
+///             `FlutterEngineRunInitialized` knowing that they will be able to
+///             service custom tasks on other threads with the engine handle.
+///
+/// @param[in]  version    The Flutter embedder API version. Must be
+///                        FLUTTER_ENGINE_VERSION.
+/// @param[in]  config     The renderer configuration.
+/// @param[in]  args       The Flutter project arguments.
+/// @param      user_data  A user data baton passed back to embedders in
+///                        callbacks.
+/// @param[out] engine_out The engine handle on successful engine creation.
+///
+/// @return     The result of the call to run the Flutter engine.
+///
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineRun(size_t version,
                                      const FlutterRendererConfig* config,
@@ -958,9 +1018,80 @@ FlutterEngineResult FlutterEngineRun(size_t version,
                                      FLUTTER_API_SYMBOL(FlutterEngine) *
                                          engine_out);
 
+//------------------------------------------------------------------------------
+/// @brief      Shuts down a Flutter engine instance. The engine handle is no
+///             longer valid for any calls in the embedder API after this point.
+///             Making additional calls with this handle is undefined behavior.
+///
+/// @note       This de-initializes the Flutter engine instance (via an implicit
+///             call to `FlutterEngineDeinitialize`) if necessary.
+///
+/// @param[in]  engine  The Flutter engine instance to collect.
+///
+/// @return     The result of the call to shutdown the Flutter engine instance.
+///
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineShutdown(FLUTTER_API_SYMBOL(FlutterEngine)
                                               engine);
+
+//------------------------------------------------------------------------------
+/// @brief      Initialize a Flutter engine instance. This does not run the
+///             Flutter application code till the `FlutterEngineRunInitialized`
+///             call is made. Besides Flutter application code, no tasks are
+///             scheduled on embedder managed task runners either. This allows
+///             embedders providing custom task runners to the Flutter engine to
+///             obtain a handle to the Flutter engine before the engine can post
+///             tasks on these task runners.
+///
+/// @param[in]  version    The Flutter embedder API version. Must be
+///                        FLUTTER_ENGINE_VERSION.
+/// @param[in]  config     The renderer configuration.
+/// @param[in]  args       The Flutter project arguments.
+/// @param      user_data  A user data baton passed back to embedders in
+///                        callbacks.
+/// @param[out] engine_out The engine handle on successful engine creation.
+///
+/// @return     The result of the call to initialize the Flutter engine.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineInitialize(size_t version,
+                                            const FlutterRendererConfig* config,
+                                            const FlutterProjectArgs* args,
+                                            void* user_data,
+                                            FLUTTER_API_SYMBOL(FlutterEngine) *
+                                                engine_out);
+
+//------------------------------------------------------------------------------
+/// @brief      Stops running the Flutter engine instance. After this call, the
+///             embedder is also guaranteed that no more calls to post tasks
+///             onto custom task runners specified by the embedder are made. The
+///             Flutter engine handle still needs to be collected via a call to
+///             `FlutterEngineShutdown`.
+///
+/// @param[in]  engine    The running engine instance to de-initialize.
+///
+/// @return     The result of the call to de-initialize the Flutter engine.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineDeinitialize(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                  engine);
+
+//------------------------------------------------------------------------------
+/// @brief      Runs an initialized engine instance. An engine can be
+///             initialized via `FlutterEngineInitialize`. An initialized
+///             instance can only be run once. During and after this call,
+///             custom task runners supplied by the embedder are expected to
+///             start servicing tasks.
+///
+/// @param[in]  engine  An initialized engine instance that has not previously
+///                     been run.
+///
+/// @return     The result of the call to run the initialized Flutter
+///             engine instance.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineRunInitialized(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
@@ -1297,7 +1428,7 @@ uint64_t FlutterEngineGetCurrentTime();
 ///             must only be made at the target time specified in that callback.
 ///             Running the task before that time is undefined behavior.
 ///
-/// @param[in]  engine     a running instance.
+/// @param[in]  engine     A running engine instance.
 /// @param[in]  task       the task handle.
 ///
 /// @return     The result of the call.
@@ -1306,6 +1437,24 @@ FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineRunTask(FLUTTER_API_SYMBOL(FlutterEngine)
                                              engine,
                                          const FlutterTask* task);
+
+//------------------------------------------------------------------------------
+/// @brief      Notify a running engine instance that the locale has been
+///             updated. The preferred locale must be the first item in the list
+///             of locales supplied. The other entries will be used as a
+///             fallback.
+///
+/// @param[in]  engine         A running engine instance.
+/// @param[in]  locales        The updated locales in the order of preference.
+/// @param[in]  locales_count  The count of locales supplied.
+///
+/// @return     Whether the locale updates were applied.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineUpdateLocales(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                   engine,
+                                               const FlutterLocale** locales,
+                                               size_t locales_count);
 
 #if defined(__cplusplus)
 }  // extern "C"

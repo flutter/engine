@@ -32,10 +32,10 @@ class RuntimeController final : public WindowClient {
       RuntimeDelegate& client,
       DartVM* vm,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
-      fml::RefPtr<const DartSnapshot> shared_snapshot,
       TaskRunners task_runners,
       fml::WeakPtr<IOManager> io_manager,
-      fml::WeakPtr<ImageDecoder> iamge_decoder,
+      fml::RefPtr<SkiaUnrefQueue> unref_queue,
+      fml::WeakPtr<ImageDecoder> image_decoder,
       std::string advisory_script_uri,
       std::string advisory_script_entrypoint,
       std::function<void(int64_t)> idle_notification_callback,
@@ -128,9 +128,9 @@ class RuntimeController final : public WindowClient {
   RuntimeDelegate& client_;
   DartVM* const vm_;
   fml::RefPtr<const DartSnapshot> isolate_snapshot_;
-  fml::RefPtr<const DartSnapshot> shared_snapshot_;
   TaskRunners task_runners_;
   fml::WeakPtr<IOManager> io_manager_;
+  fml::RefPtr<SkiaUnrefQueue> unref_queue_;
   fml::WeakPtr<ImageDecoder> image_decoder_;
   std::string advisory_script_uri_;
   std::string advisory_script_entrypoint_;
@@ -146,9 +146,9 @@ class RuntimeController final : public WindowClient {
       RuntimeDelegate& client,
       DartVM* vm,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
-      fml::RefPtr<const DartSnapshot> shared_snapshot,
       TaskRunners task_runners,
       fml::WeakPtr<IOManager> io_manager,
+      fml::RefPtr<SkiaUnrefQueue> unref_queue,
       fml::WeakPtr<ImageDecoder> image_decoder,
       std::string advisory_script_uri,
       std::string advisory_script_entrypoint,

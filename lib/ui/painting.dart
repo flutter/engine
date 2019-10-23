@@ -1653,10 +1653,9 @@ class Codec extends NativeFieldWrapperClass2 {
 ///
 /// The [targetWidth] and [targetHeight] arguments specify the size of the output
 /// image, in image pixels. If they are not equal to the intrinsic dimensions of the
-/// image, then the image will be scaled after being decoded. If exactly one of
-/// these two arguments is specified, then the aspect ratio will be maintained
-/// while forcing the image to match the specified dimension. If both are not
-/// specified, then the image maintains its real size.
+/// image, then the image will be scaled after being decoded. If only one dimension
+/// is specified, the omitted dimension will remain its original size. If both are
+/// not specified, then the image maintains its real size.
 ///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
@@ -2493,16 +2492,18 @@ class ColorFilter {
         _matrix = null,
         _type = _TypeMode;
 
-  /// Construct a color filter that transforms a color by a 4x5 matrix.
+  /// Construct a color filter that transforms a color by a 5x5 matrix, where
+  /// the fifth row is implicitly added in an identity configuration.
   ///
   /// Every pixel's color value, repsented as an `[R, G, B, A]`, is matrix
   /// multiplied to create a new color:
   ///
-  /// ```
+  /// ```text
   /// | R' |   | a00 a01 a02 a03 a04 |   | R |
-  /// | G' | = | a10 a11 a22 a33 a44 | * | G |
-  /// | B' |   | a20 a21 a22 a33 a44 |   | B |
+  /// | G' |   | a10 a11 a22 a33 a44 |   | G |
+  /// | B' | = | a20 a21 a22 a33 a44 | * | B |
   /// | A' |   | a30 a31 a22 a33 a44 |   | A |
+  /// | 1  |   |  0   0   0   0   1  |   | 1 |
   /// ```
   ///
   /// The matrix is in row-major order and the translation column is specified

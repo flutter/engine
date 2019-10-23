@@ -38,10 +38,10 @@ TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
   auto weak_isolate = DartIsolate::CreateRootIsolate(
       vm_data->GetSettings(),             // settings
       vm_data->GetIsolateSnapshot(),      // isolate snapshot
-      vm_data->GetSharedSnapshot(),       // shared snapshot
       std::move(task_runners),            // task runners
       nullptr,                            // window
       {},                                 // io manager
+      {},                                 // unref queue
       {},                                 // image decoder
       "main.dart",                        // advisory uri
       "main",                             // advisory entrypoint,
@@ -71,10 +71,10 @@ TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
   auto weak_isolate = DartIsolate::CreateRootIsolate(
       vm_data->GetSettings(),             // settings
       vm_data->GetIsolateSnapshot(),      // isolate snapshot
-      vm_data->GetSharedSnapshot(),       // shared snapshot
       std::move(task_runners),            // task runners
       nullptr,                            // window
       {},                                 // io manager
+      {},                                 // unref queue
       {},                                 // image decoder
       "main.dart",                        // advisory uri
       "main",                             // advisory entrypoint
@@ -181,10 +181,10 @@ static void RunDartCodeInIsolate(DartVMRef& vm_ref,
   auto weak_isolate = DartIsolate::CreateRootIsolate(
       vm_data->GetSettings(),             // settings
       vm_data->GetIsolateSnapshot(),      // isolate snapshot
-      vm_data->GetSharedSnapshot(),       // shared snapshot
       std::move(task_runners),            // task runners
       nullptr,                            // window
       {},                                 // io manager
+      {},                                 // unref queue
       {},                                 // image decoder
       "main.dart",                        // advisory uri
       "main",                             // advisory entrypoint

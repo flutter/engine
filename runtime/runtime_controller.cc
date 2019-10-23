@@ -18,9 +18,9 @@ RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
     DartVM* p_vm,
     fml::RefPtr<const DartSnapshot> p_isolate_snapshot,
-    fml::RefPtr<const DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
     fml::WeakPtr<IOManager> p_io_manager,
+    fml::RefPtr<SkiaUnrefQueue> p_unref_queue,
     fml::WeakPtr<ImageDecoder> p_image_decoder,
     std::string p_advisory_script_uri,
     std::string p_advisory_script_entrypoint,
@@ -31,9 +31,9 @@ RuntimeController::RuntimeController(
     : RuntimeController(p_client,
                         p_vm,
                         std::move(p_isolate_snapshot),
-                        std::move(p_shared_snapshot),
                         std::move(p_task_runners),
                         std::move(p_io_manager),
+                        std::move(p_unref_queue),
                         std::move(p_image_decoder),
                         std::move(p_advisory_script_uri),
                         std::move(p_advisory_script_entrypoint),
@@ -47,9 +47,9 @@ RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
     DartVM* p_vm,
     fml::RefPtr<const DartSnapshot> p_isolate_snapshot,
-    fml::RefPtr<const DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
     fml::WeakPtr<IOManager> p_io_manager,
+    fml::RefPtr<SkiaUnrefQueue> p_unref_queue,
     fml::WeakPtr<ImageDecoder> p_image_decoder,
     std::string p_advisory_script_uri,
     std::string p_advisory_script_entrypoint,
@@ -61,9 +61,9 @@ RuntimeController::RuntimeController(
     : client_(p_client),
       vm_(p_vm),
       isolate_snapshot_(std::move(p_isolate_snapshot)),
-      shared_snapshot_(std::move(p_shared_snapshot)),
       task_runners_(p_task_runners),
       io_manager_(p_io_manager),
+      unref_queue_(p_unref_queue),
       image_decoder_(p_image_decoder),
       advisory_script_uri_(p_advisory_script_uri),
       advisory_script_entrypoint_(p_advisory_script_entrypoint),
@@ -78,10 +78,10 @@ RuntimeController::RuntimeController(
   auto strong_root_isolate =
       DartIsolate::CreateRootIsolate(vm_->GetVMData()->GetSettings(),  //
                                      isolate_snapshot_,                //
-                                     shared_snapshot_,                 //
                                      task_runners_,                    //
                                      std::make_unique<Window>(this),   //
                                      io_manager_,                      //
+                                     unref_queue_,                     //
                                      image_decoder_,                   //
                                      p_advisory_script_uri,            //
                                      p_advisory_script_entrypoint,     //
@@ -139,9 +139,9 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
       client_,                      //
       vm_,                          //
       isolate_snapshot_,            //
-      shared_snapshot_,             //
       task_runners_,                //
       io_manager_,                  //
+      unref_queue_,                 //
       image_decoder_,               //
       advisory_script_uri_,         //
       advisory_script_entrypoint_,  //
