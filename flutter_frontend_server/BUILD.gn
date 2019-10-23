@@ -38,7 +38,6 @@ if (is_fuchsia_host || is_fuchsia) {
     deps = [
       ":flutter_frontend_server",
     ]
-
   }
 } else {
   import("//third_party/dart/utils/application_snapshot.gni")

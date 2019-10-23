@@ -34,7 +34,7 @@ class PlatformViewScenario extends Scenario with _BasePlatformViewScenarioMixin 
   PlatformViewScenario(Window window, String text, {int id = 0})
       : assert(window != null),
         super(window) {
-    constructScenario(window, text, id);
+    constructScenario(window, text, id, 'scenarios/textPlatformView');
   }
 
   @override
@@ -53,7 +53,7 @@ class PlatformViewClipRectScenario extends Scenario with _BasePlatformViewScenar
   PlatformViewClipRectScenario(Window window, String text, {int id = 0})
       : assert(window != null),
         super(window) {
-    constructScenario(window, text, id);
+    constructScenario(window, text, id, 'scenarios/textPlatformView');
   }
 
   @override
@@ -157,6 +157,24 @@ class PlatformViewOpacityScenario extends PlatformViewScenario {
   }
 }
 
+/// Platform view scenario for testing EAGLContext on iOS.
+class PlatformViewGLScenario extends Scenario with _BasePlatformViewScenarioMixin {
+  /// Constructs a platform view to test EAGLContext on iOS.
+  PlatformViewGLScenario(Window window, String text, {int id = 0})
+      : assert(window != null),
+        super(window) {
+            constructScenario(window, text, id, 'scenarios/glTestPlatformView');
+      }
+
+  @override
+  void onBeginFrame(Duration duration) {
+    final SceneBuilder builder = SceneBuilder();
+
+    builder.pushOffset(0, 0);
+    finishBuilderByAddingPlatformViewAndPicture(builder, 6);
+  }
+}
+
 mixin _BasePlatformViewScenarioMixin on Scenario {
   int _textureId;
 
@@ -165,7 +183,7 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
   /// It prepare a TextPlatformView so it can be added to the SceneBuilder in `onBeginFrame`.
   /// Call this method in the constructor of the platform view related scenarios
   /// to perform necessary set up.
-  void constructScenario(Window window, String text, int id) {
+  void constructScenario(Window window, String text, int id, String viewType) {
     const int _valueInt32 = 3;
     const int _valueFloat64 = 6;
     const int _valueString = 7;
@@ -189,8 +207,8 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
       'viewType'.length,
       ...utf8.encode('viewType'),
       _valueString,
-      'scenarios/textPlatformView'.length,
-      ...utf8.encode('scenarios/textPlatformView'),
+      viewType.length,
+      ...utf8.encode(viewType),
       if (Platform.isAndroid) ...<int>[
         _valueString,
         'width'.length,

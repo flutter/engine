@@ -4,7 +4,8 @@
 
 template("fuchsia_host_bundle") {
   assert(defined(invoker.name), "'name' must be defined for $target_name.")
-  dest_dir = "${root_out_dir}/host_bundle/${invoker.name}-${host_os}-${host_cpu}"
+  dest_dir =
+      "${root_out_dir}/host_bundle/${invoker.name}-${host_os}-${host_cpu}"
 
   copy(target_name) {
     if (defined(invoker.deps)) {
