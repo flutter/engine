@@ -12,6 +12,7 @@
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/dart_message_handler.h"
+#include "third_party/tonic/dart_microtask_queue.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 
 using tonic::DartInvokeField;
@@ -88,14 +89,32 @@ void HandleWaiter::OnWaitComplete(async_dispatcher_t* dispatcher,
   FML_DCHECK(state);
   DartState::Scope scope(state);
 
-  std::vector<Dart_Handle> args{ToDart(status), ToDart(signal->observed)};
+  // Put the closure invocation on the microtask queue.
+  Dart_Handle zircon_lib = Dart_LookupLibrary(ToDart("dart:zircon"));
+  FML_DCHECK(!tonic::LogIfError(zircon_lib));
+
+  Dart_Handle owc_type =
+      Dart_GetClass(zircon_lib, ToDart("_OnWaitCompleteClosure"));
+  FML_DCHECK(!tonic::LogIfError(owc_type));
+
   FML_DCHECK(!callback_.is_empty());
-  Dart_Handle result =
-      Dart_InvokeClosure(callback_.Release(), args.size(), args.data());
-  // If there was an uncaught error from the callback propagate it out.
-  if (tonic::LogIfError(result)) {
-    state->message_handler().UnhandledError(result);
-  }
+  std::vector<Dart_Handle> owc_args{callback_.Release(), ToDart(status),
+                                    ToDart(signal->observed)};
+  Dart_Handle owc =
+      Dart_New(owc_type, Dart_Null(), owc_args.size(), owc_args.data());
+  FML_DCHECK(!tonic::LogIfError(owc));
+
+  Dart_Handle closure = Dart_GetField(owc, ToDart("_closure"));
+  FML_DCHECK(!tonic::LogIfError(closure));
+
+  // TODO(issue#tbd): Use tonic::DartMicrotaskQueue::ScheduleMicrotask()
+  // instead when tonic::DartState gets a microtask queue field.
+  Dart_Handle async_lib = Dart_LookupLibrary(ToDart("dart:async"));
+  FML_DCHECK(!tonic::LogIfError(async_lib));
+  std::vector<Dart_Handle> sm_args{closure};
+  Dart_Handle sm_result = Dart_Invoke(async_lib, ToDart("scheduleMicrotask"),
+                                      sm_args.size(), sm_args.data());
+  FML_DCHECK(!tonic::LogIfError(sm_result));
 }
 
 }  // namespace dart

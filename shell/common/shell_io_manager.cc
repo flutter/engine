@@ -19,6 +19,12 @@ sk_sp<GrContext> ShellIOManager::CreateCompatibleResourceLoadingContext(
 
   GrContextOptions options = {};
 
+  if (PersistentCache::cache_sksl()) {
+    FML_LOG(INFO) << "Cache SkSL";
+    options.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kSkSL;
+  }
+  PersistentCache::MarkStrategySet();
+
   options.fPersistentCache = PersistentCache::GetCacheForProcess();
 
   // There is currently a bug with doing GPU YUV to RGB conversions on the IO
@@ -52,7 +58,7 @@ ShellIOManager::ShellIOManager(
                             : nullptr),
       unref_queue_(fml::MakeRefCounted<flutter::SkiaUnrefQueue>(
           std::move(unref_queue_task_runner),
-          fml::TimeDelta::FromMilliseconds(250))),
+          fml::TimeDelta::FromMilliseconds(8))),
       weak_factory_(this) {
   if (!resource_context_) {
 #ifndef OS_FUCHSIA
@@ -67,12 +73,6 @@ ShellIOManager::~ShellIOManager() {
   // Last chance to drain the IO queue as the platform side reference to the
   // underlying OpenGL context may be going away.
   unref_queue_->Drain();
-}
-
-fml::WeakPtr<GrContext> ShellIOManager::GetResourceContext() const {
-  return resource_context_weak_factory_
-             ? resource_context_weak_factory_->GetWeakPtr()
-             : fml::WeakPtr<GrContext>();
 }
 
 void ShellIOManager::NotifyResourceContextAvailable(
@@ -93,11 +93,25 @@ void ShellIOManager::UpdateResourceContext(sk_sp<GrContext> resource_context) {
                         : nullptr;
 }
 
+fml::WeakPtr<ShellIOManager> ShellIOManager::GetWeakPtr() {
+  return weak_factory_.GetWeakPtr();
+}
+
+// |IOManager|
+fml::WeakPtr<GrContext> ShellIOManager::GetResourceContext() const {
+  return resource_context_weak_factory_
+             ? resource_context_weak_factory_->GetWeakPtr()
+             : fml::WeakPtr<GrContext>();
+}
+
+// |IOManager|
 fml::RefPtr<flutter::SkiaUnrefQueue> ShellIOManager::GetSkiaUnrefQueue() const {
   return unref_queue_;
 }
 
-fml::WeakPtr<ShellIOManager> ShellIOManager::GetWeakPtr() {
+// |IOManager|
+fml::WeakPtr<IOManager> ShellIOManager::GetWeakIOManager() const {
   return weak_factory_.GetWeakPtr();
 }
+
 }  // namespace flutter

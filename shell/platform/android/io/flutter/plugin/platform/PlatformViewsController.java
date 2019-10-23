@@ -11,6 +11,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
 import android.support.annotation.UiThread;
+import android.support.annotation.VisibleForTesting;
 import android.util.DisplayMetrics;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -44,6 +45,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // The context of the Activity or Fragment hosting the render target for the Flutter engine.
     private Context context;
 
+    // The View currently rendering the Flutter UI associated with these platform views.
+    private View flutterView;
+
     // The texture registry maintaining the textures into which the embedded views will be rendered.
     private TextureRegistry textureRegistry;
 
@@ -55,7 +59,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // The accessibility bridge to which accessibility events form the platform views will be dispatched.
     private final AccessibilityEventsDelegate accessibilityEventsDelegate;
 
-    private final HashMap<Integer, VirtualDisplayController> vdControllers;
+    // TODO(mattcarroll): Refactor overall platform views to facilitate testing and then make
+    // this private. This is visible as a hack to facilitate testing. This was deemed the least
+    // bad option at the time of writing.
+    @VisibleForTesting
+    /* package */ final HashMap<Integer, VirtualDisplayController> vdControllers;
 
     // Maps a virtual display's context to the platform view hosted in this virtual display.
     // Since each virtual display has it's unique context this allows associating any view with the platform view that
@@ -115,6 +123,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                     + request.viewType + " with id: " + request.viewId);
             }
 
+            // If our FlutterEngine is already attached to a Flutter UI, provide that Android
+            // View to this new platform view.
+            if (flutterView != null) {
+                vdController.onFlutterViewAttached(flutterView);
+            }
+
             vdControllers.put(request.viewId, vdController);
             View platformView = vdController.getView();
             platformView.setLayoutDirection(request.direction);
@@ -148,7 +162,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         public void resizePlatformView(@NonNull PlatformViewsChannel.PlatformViewResizeRequest request, @NonNull Runnable onComplete) {
             ensureValidAndroidVersion();
 
-            VirtualDisplayController vdController = vdControllers.get(request.viewId);
+            final VirtualDisplayController vdController = vdControllers.get(request.viewId);
             if (vdController == null) {
                 throw new IllegalStateException("Trying to resize a platform view with unknown id: "
                     + request.viewId);
@@ -158,22 +172,18 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             int physicalHeight = toPhysicalPixels(request.newLogicalHeight);
             validateVirtualDisplayDimensions(physicalWidth, physicalHeight);
 
-            if (textInputPlugin != null) {
-                // Resizing involved moving the platform view to a new virtual display.
-                // Doing so potentially results in losing an active input connection.
-                // To make sure we preserve the input connection when resizing we lock it here
-                // and unlock after the resize is complete.
-                textInputPlugin.lockPlatformViewInputConnection();
-            }
+            // Resizing involved moving the platform view to a new virtual display. Doing so
+            // potentially results in losing an active input connection. To make sure we preserve
+            // the input connection when resizing we lock it here and unlock after the resize is
+            // complete.
+            lockInputConnection(vdController);
             vdController.resize(
                     physicalWidth,
                     physicalHeight,
                     new Runnable() {
                         @Override
                         public void run() {
-                            if (textInputPlugin != null) {
-                                textInputPlugin.unlockPlatformViewInputConnection();
-                            }
+                            unlockInputConnection(vdController);
                             onComplete.run();
                         }
                     }
@@ -244,10 +254,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         private void ensureValidAndroidVersion() {
             if (Build.VERSION.SDK_INT < MINIMAL_SDK) {
-                Log.e(TAG, "Trying to use platform views with API " + Build.VERSION.SDK_INT
-                    + ", required API level is: " + MINIMAL_SDK);
-                throw new IllegalStateException("An attempt was made to use platform views on a"
-                    + " version of Android that platform views does not support.");
+                throw new IllegalStateException("Trying to use platform views with API "
+                    + Build.VERSION.SDK_INT + ", required API level is: " + MINIMAL_SDK);
             }
         }
     };
@@ -294,6 +302,37 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         platformViewsChannel = null;
         context = null;
         textureRegistry = null;
+    }
+
+    /**
+     * This {@code PlatformViewsController} and its {@code FlutterEngine} is now attached to
+     * an Android {@code View} that renders a Flutter UI.
+     */
+    public void attachToView(@NonNull View flutterView) {
+        this.flutterView = flutterView;
+
+        // Inform all existing platform views that they are now associated with
+        // a Flutter View.
+        for (VirtualDisplayController controller : vdControllers.values()) {
+            controller.onFlutterViewAttached(flutterView);
+        }
+    }
+
+    /**
+     * This {@code PlatformViewController} and its {@code FlutterEngine} are no longer attached
+     * to an Android {@code View} that renders a Flutter UI.
+     * <p>
+     * All platform views controlled by this {@code PlatformViewController} will be detached
+     * from the previously attached {@code View}.
+     */
+    public void detachFromView() {
+        this.flutterView = null;
+
+        // Inform all existing platform views that they are no longer associated with
+        // a Flutter View.
+        for (VirtualDisplayController controller : vdControllers.values()) {
+            controller.onFlutterViewDetached();
+        }
     }
 
     @Override
@@ -364,6 +403,22 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             return null;
         }
         return controller.getView();
+    }
+
+    private void lockInputConnection(@NonNull VirtualDisplayController controller) {
+        if (textInputPlugin == null) {
+            return;
+        }
+        textInputPlugin.lockPlatformViewInputConnection();
+        controller.onInputConnectionLocked();
+    }
+
+    private void unlockInputConnection(@NonNull VirtualDisplayController controller) {
+        if (textInputPlugin == null) {
+            return;
+        }
+        textInputPlugin.unlockPlatformViewInputConnection();
+        controller.onInputConnectionUnlocked();
     }
 
     private static boolean validateDirection(int direction) {

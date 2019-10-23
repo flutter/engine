@@ -16,12 +16,14 @@ ClipRectLayer::~ClipRectLayer() = default;
 void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkRect previous_cull_rect = context->cull_rect;
   if (context->cull_rect.intersect(clip_rect_)) {
+    context->mutators_stack.PushClipRect(clip_rect_);
     SkRect child_paint_bounds = SkRect::MakeEmpty();
     PrerollChildren(context, matrix, &child_paint_bounds);
 
     if (child_paint_bounds.intersect(clip_rect_)) {
       set_paint_bounds(child_paint_bounds);
     }
+    context->mutators_stack.Pop();
   }
   context->cull_rect = previous_cull_rect;
 }
@@ -31,13 +33,8 @@ void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void ClipRectLayer::UpdateScene(SceneUpdateContext& context) {
   FML_DCHECK(needs_system_composite());
 
-  scenic::Rectangle shape(context.session(),   // session
-                          clip_rect_.width(),  //  width
-                          clip_rect_.height()  //  height
-  );
-
   // TODO(liyuqian): respect clip_behavior_
-  SceneUpdateContext::Clip clip(context, shape, clip_rect_);
+  SceneUpdateContext::Clip clip(context, clip_rect_);
   UpdateSceneChildren(context);
 }
 
@@ -50,6 +47,7 @@ void ClipRectLayer::Paint(PaintContext& context) const {
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->clipRect(clip_rect_,
                                           clip_behavior_ != Clip::hardEdge);
+
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->saveLayer(clip_rect_, nullptr);
   }

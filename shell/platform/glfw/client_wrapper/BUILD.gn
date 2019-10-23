@@ -44,11 +44,12 @@ source_set("client_wrapper_glfw") {
   ]
 }
 
-# Copies the GLFW client wrapper code to the output directory, merging it into
-# the core wrapper.
-publish_client_wrapper("publish_wrapper_glfw") {
+# Copies the GLFW client wrapper code to the output directory with a _glfw
+# suffix.
+publish_client_wrapper_extension("publish_wrapper_glfw") {
   public = _wrapper_includes
   sources = _wrapper_sources
+  directory_suffix = "glfw"
 }
 
 source_set("client_wrapper_library_stubs_glfw") {
@@ -83,8 +84,9 @@ executable("client_wrapper_glfw_unittests") {
     "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_library_stubs",
     "$flutter_root/testing",
 
-    # TODO: Consider refactoring flutter_root/testing so that there's a testing
+    # TODO(chunhtai): Consider refactoring flutter_root/testing so that there's a testing
     # target that doesn't require a Dart runtime to be linked in.
+    # https://github.com/flutter/flutter/issues/41414.
     "//third_party/dart/runtime:libdart_jit",
   ]
 }

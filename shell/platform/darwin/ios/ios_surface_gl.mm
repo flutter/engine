@@ -38,12 +38,11 @@ void IOSSurfaceGL::UpdateStorageSizeIfNecessary() {
   }
 }
 
-std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface() {
-  return std::make_unique<GPUSurfaceGL>(this);
-}
-
-std::unique_ptr<Surface> IOSSurfaceGL::CreateSecondaryGPUSurface(GrContext* gr_context) {
-  return std::make_unique<GPUSurfaceGL>(sk_ref_sp(gr_context), this);
+std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface(GrContext* gr_context) {
+  if (gr_context) {
+    return std::make_unique<GPUSurfaceGL>(sk_ref_sp(gr_context), this, true);
+  }
+  return std::make_unique<GPUSurfaceGL>(this, true);
 }
 
 intptr_t IOSSurfaceGL::GLContextFBO() const {
@@ -74,6 +73,14 @@ bool IOSSurfaceGL::GLContextPresent() {
   return IsValid() && render_target_->PresentRenderBuffer();
 }
 
+// |ExternalViewEmbedder|
+sk_sp<SkSurface> IOSSurfaceGL::GetRootSurface() {
+  // On iOS, the root surface is created from the on-screen render target. Only the surfaces for the
+  // various overlays are controlled by this class.
+  return nullptr;
+}
+
+// |ExternalViewEmbedder|
 flutter::ExternalViewEmbedder* IOSSurfaceGL::GetExternalViewEmbedder() {
   if (IsIosEmbeddedViewsPreviewEnabled()) {
     return this;
@@ -82,39 +89,63 @@ flutter::ExternalViewEmbedder* IOSSurfaceGL::GetExternalViewEmbedder() {
   }
 }
 
-void IOSSurfaceGL::BeginFrame(SkISize frame_size) {
+// |ExternalViewEmbedder|
+void IOSSurfaceGL::CancelFrame() {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  platform_views_controller->CancelFrame();
+  // Committing the current transaction as |BeginFrame| will create a nested
+  // CATransaction otherwise.
+  [CATransaction commit];
+}
+
+// |ExternalViewEmbedder|
+void IOSSurfaceGL::BeginFrame(SkISize frame_size, GrContext* context, double device_pixel_ratio) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   platform_views_controller->SetFrameSize(frame_size);
   [CATransaction begin];
 }
 
-void IOSSurfaceGL::PrerollCompositeEmbeddedView(int view_id) {
+// |ExternalViewEmbedder|
+void IOSSurfaceGL::PrerollCompositeEmbeddedView(
+    int view_id,
+    std::unique_ptr<flutter::EmbeddedViewParams> params) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
-  platform_views_controller->PrerollCompositeEmbeddedView(view_id);
+  platform_views_controller->PrerollCompositeEmbeddedView(view_id, std::move(params));
 }
 
+// |ExternalViewEmbedder|
+PostPrerollResult IOSSurfaceGL::PostPrerollAction(
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  return platform_views_controller->PostPrerollAction(gpu_thread_merger);
+}
+
+// |ExternalViewEmbedder|
 std::vector<SkCanvas*> IOSSurfaceGL::GetCurrentCanvases() {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   return platform_views_controller->GetCurrentCanvases();
 }
 
-SkCanvas* IOSSurfaceGL::CompositeEmbeddedView(int view_id,
-                                              const flutter::EmbeddedViewParams& params) {
+// |ExternalViewEmbedder|
+SkCanvas* IOSSurfaceGL::CompositeEmbeddedView(int view_id) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
-  return platform_views_controller->CompositeEmbeddedView(view_id, params);
+  return platform_views_controller->CompositeEmbeddedView(view_id);
 }
 
+// |ExternalViewEmbedder|
 bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   if (platform_views_controller == nullptr) {
     return true;
   }
 
-  bool submitted = platform_views_controller->SubmitFrame(true, std::move(context), context_);
+  bool submitted = platform_views_controller->SubmitFrame(std::move(context), context_);
   [CATransaction commit];
   return submitted;
 }

@@ -5,17 +5,26 @@
 #include "flutter/shell/platform/embedder/embedder_task_runner.h"
 
 #include "flutter/fml/message_loop_impl.h"
+#include "flutter/fml/message_loop_task_queues.h"
 
 namespace flutter {
 
-EmbedderTaskRunner::EmbedderTaskRunner(DispatchTable table)
+EmbedderTaskRunner::EmbedderTaskRunner(DispatchTable table,
+                                       size_t embedder_identifier)
     : TaskRunner(nullptr /* loop implemenation*/),
-      dispatch_table_(std::move(table)) {
+      embedder_identifier_(embedder_identifier),
+      dispatch_table_(std::move(table)),
+      placeholder_id_(
+          fml::MessageLoopTaskQueues::GetInstance()->CreateTaskQueue()) {
   FML_DCHECK(dispatch_table_.post_task_callback);
   FML_DCHECK(dispatch_table_.runs_task_on_current_thread_callback);
 }
 
 EmbedderTaskRunner::~EmbedderTaskRunner() = default;
+
+size_t EmbedderTaskRunner::GetEmbedderIdentifier() const {
+  return embedder_identifier_;
+}
 
 void EmbedderTaskRunner::PostTask(fml::closure task) {
   PostTaskForTime(task, fml::TimePoint::Now());
@@ -67,6 +76,11 @@ bool EmbedderTaskRunner::PostTask(uint64_t baton) {
   FML_DCHECK(task);
   task();
   return true;
+}
+
+// |fml::TaskRunner|
+fml::TaskQueueId EmbedderTaskRunner::GetTaskQueueId() {
+  return placeholder_id_;
 }
 
 }  // namespace flutter

@@ -37,13 +37,8 @@ class StubFlutterGlfwApi {
 
   // Called for FlutterDesktopCreateWindow.
   virtual FlutterDesktopWindowControllerRef CreateWindow(
-      int initial_width,
-      int initial_height,
-      const char* title,
-      const char* assets_path,
-      const char* icu_data_path,
-      const char** arguments,
-      size_t argument_count) {
+      const FlutterDesktopWindowProperties& window_properties,
+      const FlutterDesktopEngineProperties& engine_properties) {
     return nullptr;
   }
 
@@ -70,14 +65,17 @@ class StubFlutterGlfwApi {
   // Called for FlutterDesktopWindowGetScaleFactor.
   virtual double GetWindowScaleFactor() { return 1.0; }
 
-  // Called for FlutterDesktopRunWindowLoop.
-  virtual void RunWindowLoop() {}
+  // Called for FlutterDesktopWindowSetPixelRatioOverride.
+  virtual void SetPixelRatioOverride(double pixel_ratio) {}
+
+  // Called for FlutterDesktopRunWindowEventLoopWithTimeout.
+  virtual bool RunWindowEventLoopWithTimeout(uint32_t millisecond_timeout) {
+    return true;
+  }
 
   // Called for FlutterDesktopRunEngine.
-  virtual FlutterDesktopEngineRef RunEngine(const char* assets_path,
-                                            const char* icu_data_path,
-                                            const char** arguments,
-                                            size_t argument_count) {
+  virtual FlutterDesktopEngineRef RunEngine(
+      const FlutterDesktopEngineProperties& properties) {
     return nullptr;
   }
 

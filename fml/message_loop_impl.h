@@ -18,7 +18,6 @@
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/message_loop_task_queues.h"
-#include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/fml/wakeable.h"
 
@@ -45,7 +44,7 @@ class MessageLoopImpl : public Wakeable,
 
   void DoTerminate();
 
-  void SwapTaskQueues(const fml::RefPtr<MessageLoopImpl>& other);
+  virtual TaskQueueId GetTaskQueueId() const;
 
  protected:
   // Exposed for the embedder shell which allows clients to poll for events
@@ -62,8 +61,6 @@ class MessageLoopImpl : public Wakeable,
  private:
   fml::RefPtr<MessageLoopTaskQueues> task_queue_;
   TaskQueueId queue_id_;
-
-  std::mutex tasks_flushing_mutex_;
 
   std::atomic_bool terminated_;
 

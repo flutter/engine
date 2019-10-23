@@ -28,13 +28,17 @@ source_set("test_font") {
 group("libdart") {
   public_deps = []
 
-  if (flutter_runtime_mode == "profile" || flutter_runtime_mode == "release") {
-    public_deps += [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
-  } else {
-    public_deps += [
-      "$flutter_root/lib/snapshot",
-      "//third_party/dart/runtime:libdart_jit",
-    ]
+  if (!(is_fuchsia && using_fuchsia_sdk)) {
+    if (flutter_runtime_mode == "profile" ||
+        flutter_runtime_mode == "release") {
+      public_deps +=
+          [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
+    } else {
+      public_deps += [
+        "$flutter_root/lib/snapshot",
+        "//third_party/dart/runtime:libdart_jit",
+      ]
+    }
   }
 }
 
@@ -54,12 +58,16 @@ source_set("runtime") {
     "dart_vm_lifecycle.h",
     "embedder_resources.cc",
     "embedder_resources.h",
+    "ptrace_ios.cc",
+    "ptrace_ios.h",
     "runtime_controller.cc",
     "runtime_controller.h",
     "runtime_delegate.cc",
     "runtime_delegate.h",
     "service_protocol.cc",
     "service_protocol.h",
+    "skia_concurrent_executor.cc",
+    "skia_concurrent_executor.h",
     "start_up.cc",
     "start_up.h",
   ]
@@ -78,6 +86,28 @@ source_set("runtime") {
     "//third_party/skia",
     "//third_party/tonic",
   ]
+
+  # On Windows the engine finds the Dart snapshot data through symbols
+  # that are statically linked into the executable. On other platforms this
+  # data is obtained by a dynamic symbol lookup.
+  # The current Windows platform uses static-link instead of dynamic lookups.
+  # Because:
+  #  1. The size of the executable on Windows is not as concerned as on mobile
+  #     platforms.
+  #  2. If it is a dynamic lookup method, you need to modify the properties of
+  #     the memory page after the *.bin is dynamically loaded at runtime and
+  #     mark it as executable. This is feasible (similar to V8 on Windows), but
+  #     this increases the complexity of the implementation(These operations
+  #     involve the use of some system file/memory privilege APIs and there is
+  #     a risk of failure).
+  #  3. In the executable can enjoy the advantages of the windows preload
+  #     mechanism, speed up I/O.
+  if (is_win) {
+    if (flutter_runtime_mode == "profile" ||
+        flutter_runtime_mode == "release") {
+      deps += [ "$flutter_root/lib/snapshot" ]
+    }
+  }
 
   public_deps = [
     "//third_party/rapidjson",

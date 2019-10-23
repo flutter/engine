@@ -81,7 +81,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
  * there for structure and they don't provide any semantic information to VoiceOver (they return
  * NO for isAccessibilityElement).
  */
-@interface SemanticsObjectContainer : NSObject
+@interface SemanticsObjectContainer : UIAccessibilityElement
 - (instancetype)init __attribute__((unavailable("Use initWithSemanticsObject instead")));
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
                                  bridge:(fml::WeakPtr<flutter::AccessibilityBridge>)bridge
@@ -109,7 +109,11 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridge>)bridge uid:(int32_t)uid {
   FML_DCHECK(bridge) << "bridge must be set";
   FML_DCHECK(uid >= kRootNodeId);
-  self = [super init];
+  // Initialize with the UIView as the container.
+  // The UIView will not necessarily be accessibility parent for this object.
+  // The bridge informs the OS of the actual structure via
+  // `accessibilityContainer` and `accessibilityElementAtIndex`.
+  self = [super initWithAccessibilityContainer:bridge->view()];
 
   if (self) {
     _bridge = bridge;
@@ -270,7 +274,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     point.set(vector[0] / vector[3], vector[1] / vector[3]);
   }
   SkRect rect;
-  rect.set(quad, 4);
+  rect.setBounds(quad, 4);
 
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
@@ -407,6 +411,9 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsLiveRegion)) {
     traits |= UIAccessibilityTraitUpdatesFrequently;
   }
+  if ([self node].HasFlag(flutter::SemanticsFlags::kIsLink)) {
+    traits |= UIAccessibilityTraitLink;
+  }
   return traits;
 }
 
@@ -426,7 +433,11 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)object {
   FML_CHECK(object);
-  if (self = [super init]) {
+  // Initialize with the UIView as the container.
+  // The UIView will not necessarily be accessibility parent for this object.
+  // The bridge informs the OS of the actual structure via
+  // `accessibilityContainer` and `accessibilityElementAtIndex`.
+  if (self = [super initWithAccessibilityContainer:object.bridge->view()]) {
     _semanticsObject = object;
     flutter::FlutterPlatformViewsController* controller =
         object.bridge->GetPlatformViewsController();
@@ -473,7 +484,11 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
                                  bridge:(fml::WeakPtr<flutter::AccessibilityBridge>)bridge {
   FML_DCHECK(semanticsObject) << "semanticsObject must be set";
-  self = [super init];
+  // Initialize with the UIView as the container.
+  // The UIView will not necessarily be accessibility parent for this object.
+  // The bridge informs the OS of the actual structure via
+  // `accessibilityContainer` and `accessibilityElementAtIndex`.
+  self = [super initWithAccessibilityContainer:bridge->view()];
 
   if (self) {
     _semanticsObject = semanticsObject;
@@ -572,7 +587,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
       previous_routes_({}) {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
-      binaryMessenger:platform_view->GetOwnerViewController().get()
+      binaryMessenger:platform_view->GetOwnerViewController().get().engine.binaryMessenger
                 codec:[FlutterStandardMessageCodec sharedInstance]]);
   [accessibility_channel_.get() setMessageHandler:^(id message, FlutterReply reply) {
     HandleEvent((NSDictionary*)message);
@@ -582,7 +597,6 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
 AccessibilityBridge::~AccessibilityBridge() {
   clearState();
   view_.accessibilityElements = nil;
-  [accessibility_channel_.get() setMessageHandler:nil];
 }
 
 UIView<UITextInput>* AccessibilityBridge::textInputView() {

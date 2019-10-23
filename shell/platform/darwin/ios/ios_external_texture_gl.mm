@@ -16,7 +16,8 @@ namespace flutter {
 
 IOSExternalTextureGL::IOSExternalTextureGL(int64_t textureId,
                                            NSObject<FlutterTexture>* externalTexture)
-    : Texture(textureId), external_texture_(externalTexture) {
+    : Texture(textureId),
+      external_texture_(fml::scoped_nsobject<NSObject<FlutterTexture>>([externalTexture retain])) {
   FML_DCHECK(external_texture_);
 }
 
@@ -53,17 +54,24 @@ void IOSExternalTextureGL::CreateTextureFromPixelBuffer() {
   }
 }
 
+bool IOSExternalTextureGL::NeedUpdateTexture(bool freeze) {
+  // Update texture if `texture_ref_` is reset to `nullptr` when GrContext
+  // is destroied or new frame is ready.
+  return (!freeze && new_frame_ready_) || !texture_ref_;
+}
+
 void IOSExternalTextureGL::Paint(SkCanvas& canvas,
                                  const SkRect& bounds,
                                  bool freeze,
                                  GrContext* context) {
   EnsureTextureCacheExists();
-  if (!freeze) {
-    auto pixelBuffer = [external_texture_ copyPixelBuffer];
+  if (NeedUpdateTexture(freeze)) {
+    auto pixelBuffer = [external_texture_.get() copyPixelBuffer];
     if (pixelBuffer) {
       buffer_ref_.Reset(pixelBuffer);
     }
     CreateTextureFromPixelBuffer();
+    new_frame_ready_ = false;
   }
   if (!texture_ref_) {
     return;
@@ -93,6 +101,14 @@ void IOSExternalTextureGL::OnGrContextDestroyed() {
   cache_ref_.Reset(nullptr);
 }
 
-void IOSExternalTextureGL::MarkNewFrameAvailable() {}
+void IOSExternalTextureGL::MarkNewFrameAvailable() {
+  new_frame_ready_ = true;
+}
+
+void IOSExternalTextureGL::OnTextureUnregistered() {
+  if ([external_texture_ respondsToSelector:@selector(onTextureUnregistered:)]) {
+    [external_texture_ onTextureUnregistered:external_texture_];
+  }
+}
 
 }  // namespace flutter

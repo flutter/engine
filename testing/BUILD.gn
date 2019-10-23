@@ -2,11 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-source_set("testing") {
+source_set("testing_lib") {
   testonly = true
 
   sources = [
-    "$flutter_root/testing/run_all_unittests.cc",
+    "$flutter_root/testing/assertions.h",
     "$flutter_root/testing/testing.cc",
     "$flutter_root/testing/testing.h",
     "$flutter_root/testing/thread_test.cc",
@@ -17,8 +17,19 @@ source_set("testing") {
     "$flutter_root/fml",
     "//third_party/googletest:gtest",
   ]
-
   public_configs = [ "$flutter_root:config" ]
+}
+
+source_set("testing") {
+  testonly = true
+
+  sources = [
+    "$flutter_root/testing/run_all_unittests.cc",
+  ]
+
+  public_deps = [
+    ":testing_lib",
+  ]
 }
 
 source_set("dart") {
@@ -34,4 +45,36 @@ source_set("dart") {
     "$flutter_root/runtime:libdart",
     "//third_party/tonic",
   ]
+}
+
+source_set("skia") {
+  testonly = true
+
+  sources = [
+    "$flutter_root/testing/assertions_skia.h",
+  ]
+
+  public_deps = [
+    ":testing_lib",
+    "//third_party/skia",
+  ]
+}
+
+if (current_toolchain == host_toolchain) {
+  source_set("opengl") {
+    testonly = true
+
+    configs += [ "//third_party/swiftshader_flutter:swiftshader_config" ]
+
+    sources = [
+      "$flutter_root/testing/test_gl_surface.cc",
+      "$flutter_root/testing/test_gl_surface.h",
+    ]
+
+    deps = [
+      ":skia",
+      "$flutter_root/fml",
+      "//third_party/swiftshader_flutter:swiftshader",
+    ]
+  }
 }
