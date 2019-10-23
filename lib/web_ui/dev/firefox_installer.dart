@@ -26,10 +26,9 @@ Future<BrowserInstallation> getOrInstallFirefox(
   String requestedVersion, {
   StringSink infoLog,
 }) async {
-
   // These tests are aimed to run only on the Linux containers in Cirrus.
   // Therefore Firefox installation is implemented only for Linux now.
-  if(!io.Platform.isLinux) {
+  if (!io.Platform.isLinux) {
     throw UnimplementedError();
   }
 
