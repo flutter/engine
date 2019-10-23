@@ -31,4 +31,9 @@
  */
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event;
 
+/**
+ * Shuts the Flutter engine if it is running.
+ */
+- (void)shutDownEngine;
+
 @end
