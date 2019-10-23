@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-@TestOn('vm')
+@TestOn('vm && linux')
 
 import 'dart:io' as io;
 
@@ -40,12 +40,15 @@ void main() async {
 
     expect(installation.version, '69.0.2');
     expect(installer.isInstalled, isTrue);
+    expect(io.File(installation.executable).existsSync(), isTrue);
   });
 
   test('can find the system version when a firefox is already installed',
       () async {
     final logSink = StringBuffer();
-    await getOrInstallFirefox('69.0.2', infoLog: logSink);
+    BrowserInstallation installation =
+        await getOrInstallFirefox('69.0.2', infoLog: logSink);
+    expect(io.File(installation.executable).existsSync(), isTrue);
     expect(logSink.length, greaterThanOrEqualTo(1));
 
     final logSinkForInstallation = StringBuffer();
