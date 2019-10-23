@@ -54,6 +54,8 @@ shared_library("create_flutter_framework_dylib") {
     "framework/Source/FlutterEngine_Internal.h",
     "framework/Source/FlutterExternalTextureGL.h",
     "framework/Source/FlutterExternalTextureGL.mm",
+    "framework/Source/FlutterMouseCursorPlugin.h",
+    "framework/Source/FlutterMouseCursorPlugin.mm",
     "framework/Source/FlutterTextInputModel.h",
     "framework/Source/FlutterTextInputModel.mm",
     "framework/Source/FlutterTextInputPlugin.h",
