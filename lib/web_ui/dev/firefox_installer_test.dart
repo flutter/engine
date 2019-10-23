@@ -42,22 +42,4 @@ void main() async {
     expect(installer.isInstalled, isTrue);
     expect(io.File(installation.executable).existsSync(), isTrue);
   });
-
-  test('can find the system version when a firefox is already installed',
-      () async {
-    final logSink = StringBuffer();
-    BrowserInstallation installation =
-        await getOrInstallFirefox('69.0.2', infoLog: logSink);
-    expect(io.File(installation.executable).existsSync(), isTrue);
-    expect(logSink.length, greaterThanOrEqualTo(1));
-
-    final logSinkForInstallation = StringBuffer();
-    expect(logSinkForInstallation.isEmpty, isTrue);
-    await getOrInstallFirefox('system', infoLog: logSinkForInstallation);
-
-    print(logSinkForInstallation.toString());
-
-    // There are no logs on installation since the system version is used.
-    expect(logSinkForInstallation.isEmpty, isTrue);
-  });
 }
