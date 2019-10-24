@@ -52,8 +52,8 @@ def RunExecutable(command):
 
 
 def RunGN(variant_dir, flags):
-  print('Running gn for variant "%s" with flags: %s' % (variant_dir,
-      ','.join(flags)))
+  print('Running gn for variant "%s" with flags: %s' %
+        (variant_dir, ','.join(flags)))
   RunExecutable([
       os.path.join('flutter', 'tools', 'gn'),
   ] + flags)
@@ -112,6 +112,12 @@ def CopyGenSnapshotIfExists(source, destination):
                     destination_base, 'kernel_compiler.snapshot')
 
 
+def CopyFlutterTesterBinIfExists(source, destination):
+  source_root = os.path.join(_out_dir, source)
+  destination_base = os.path.join(destination, 'flutter_binaries')
+  FindFileAndCopyTo('flutter_tester', source_root, destination_base)
+
+
 def CopyToBucketWithMode(source, destination, aot, product, runner_type):
   mode = 'aot' if aot else 'jit'
   product_suff = '_product' if product else ''
@@ -131,12 +137,14 @@ def CopyToBucketWithMode(source, destination, aot, product, runner_type):
   if not os.path.exists(dest_sdk_path):
     CopyPath(patched_sdk_dir, dest_sdk_path)
   CopyGenSnapshotIfExists(source_root, destination)
+  CopyFlutterTesterBinIfExists(source_root, destination)
 
 
 def CopyToBucket(src, dst, product=False):
   CopyToBucketWithMode(src, dst, False, product, 'flutter')
   CopyToBucketWithMode(src, dst, True, product, 'flutter')
   CopyToBucketWithMode(src, dst, False, product, 'dart')
+  CopyToBucketWithMode(src, dst, True, product, 'dart')
 
 
 def BuildBucket(runtime_mode, arch, product):
@@ -184,12 +192,7 @@ def GetRunnerTarget(runner_type, product, aot):
 
 def GetTargetsToBuild(product=False):
   targets_to_build = [
-      # The Flutter Runner.
-      GetRunnerTarget('flutter', product, False),
-      GetRunnerTarget('flutter', product, True),
-      # The Dart Runner.
-      GetRunnerTarget('dart_runner', product, False),
-      '%s/dart:kernel_compiler' % _fuchsia_base,
+      'flutter/shell/platform/fuchsia:fuchsia',
   ]
   return targets_to_build
 
@@ -234,10 +237,7 @@ def main():
       default='all')
 
   parser.add_argument(
-      '--archs',
-      type=str,
-      choices=['x64', 'arm64', 'all'],
-      default='all')
+      '--archs', type=str, choices=['x64', 'arm64', 'all'], default='all')
 
   parser.add_argument(
       '--no-lto',
@@ -246,10 +246,10 @@ def main():
       help='If set, disables LTO for the build.')
 
   parser.add_argument(
-    '--skip-build',
-    action='store_true',
-    default=False,
-    help='If set, skips building and just creates packages.')
+      '--skip-build',
+      action='store_true',
+      default=False,
+      help='If set, skips building and just creates packages.')
 
   args = parser.parse_args()
   RemoveDirectoryIfExists(_bucket_directory)

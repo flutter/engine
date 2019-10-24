@@ -24,6 +24,7 @@ def GenerateManifest(package_dir):
       common_prefix = os.path.commonprefix([root, package_dir])
       rel_path = os.path.relpath(os.path.join(root, f), common_prefix)
       from_package = os.path.abspath(os.path.join(package_dir, rel_path))
+      assert from_package, 'Failed to create from_package for %s' % os.path.join(root, f)
       full_paths.append('%s=%s' % (rel_path, from_package))
   parent_dir = os.path.abspath(os.path.join(package_dir, os.pardir))
   manifest_file_name = os.path.basename(package_dir) + '.manifest'
@@ -42,10 +43,10 @@ def CreateFarPackage(pm_bin, package_dir, signing_key, dst_dir):
   ]
 
   # Build the package
-  subprocess.check_call(pm_command_base + ['build'])
+  subprocess.check_output(pm_command_base + ['build'])
 
   # Archive the package
-  subprocess.check_call(pm_command_base + ['archive'])
+  subprocess.check_output(pm_command_base + ['archive'])
 
   return 0
 
@@ -80,7 +81,13 @@ def main():
   else:
     manifest_file = GenerateManifest(args.package_dir)
 
+  strace_out = os.path.abspath(os.path.join(os.path.dirname(pkg_dir), 'strace_out'))
+
   pm_command_base = [
+      'strace',
+      '-f',
+      '-o',
+      strace_out,
       args.pm_bin,
       '-o',
       os.path.abspath(os.path.join(pkg_dir, os.pardir)),
@@ -90,11 +97,23 @@ def main():
       manifest_file,
   ]
 
-  # Build the package
-  subprocess.check_call(pm_command_base + ['build'])
-
-  # Archive the package
-  subprocess.check_call(pm_command_base + ['archive'])
+  # Build and then archive the package
+  # Use check_output so if anything goes wrong we get the output.
+  try:
+    for pm_command in ['build', 'archive']:
+      pm_command_args = pm_command_base + [pm_command]
+      sys.stderr.write("===== Running %s\n" % pm_command_args)
+      subprocess.check_output(pm_command_args)
+  except subprocess.CalledProcessError as e:
+    print('==================== Manifest contents =========================================')
+    with open(manifest_file, 'r') as manifest:
+      sys.stdout.write(manifest.read())
+    print('==================== End manifest contents =====================================')
+    print('==================== Strace output =============================================')
+    with open(strace_out, 'r') as strace:
+      sys.stdout.write(strace.read())
+    print('==================== End strace output =========================================')
+    raise
 
   return 0
 

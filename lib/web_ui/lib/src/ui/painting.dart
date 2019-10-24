@@ -43,11 +43,11 @@ class Color {
   /// Bits 16-23 are the red value.
   /// Bits 8-15 are the green value.
   /// Bits 0-7 are the blue value.
-  const Color(int value) : _value = value & 0xFFFFFFFF;
+  const Color(int value) : this.value = value & 0xFFFFFFFF;
 
   /// Construct a color from the lower 8 bits of four integers.
   const Color.fromARGB(int a, int r, int g, int b)
-      : _value = (((a & 0xff) << 24) |
+      : value = (((a & 0xff) << 24) |
                 ((r & 0xff) << 16) |
                 ((g & 0xff) << 8) |
                 ((b & 0xff) << 0)) &
@@ -65,7 +65,7 @@ class Color {
   ///
   /// See also [fromARGB], which takes the opacity as an integer value.
   const Color.fromRGBO(int r, int g, int b, double opacity)
-      : _value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
+      : value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
                 ((r & 0xff) << 16) |
                 ((g & 0xff) << 8) |
                 ((b & 0xff) << 0)) &
@@ -77,23 +77,22 @@ class Color {
   /// Bits 16-23 are the red value.
   /// Bits 8-15 are the green value.
   /// Bits 0-7 are the blue value.
-  int get value => _value;
-  final int _value;
+  final int value;
 
   /// The alpha channel of this color in an 8 bit value.
-  int get alpha => (0xff000000 & _value) >> 24;
+  int get alpha => (0xff000000 & value) >> 24;
 
   /// The alpha channel of this color as a double.
   double get opacity => alpha / 0xFF;
 
   /// The red channel of this color in an 8 bit value.
-  int get red => (0x00ff0000 & _value) >> 16;
+  int get red => (0x00ff0000 & value) >> 16;
 
   /// The green channel of this color in an 8 bit value.
-  int get green => (0x0000ff00 & _value) >> 8;
+  int get green => (0x0000ff00 & value) >> 8;
 
   /// The blue channel of this color in an 8 bit value.
-  int get blue => (0x000000ff & _value) >> 0;
+  int get blue => (0x000000ff & value) >> 0;
 
   /// Returns a new color that matches this color with the alpha channel
   /// replaced with a (which ranges from 0 to 255).
@@ -240,22 +239,22 @@ class Color {
   }
 
   @override
-  int get hashCode => _value.hashCode;
+  int get hashCode => value.hashCode;
 
   /// Converts color to a css compatible attribute value.
   // webOnly
   String toCssString() {
-    if ((0xff000000 & _value) == 0xff000000) {
+    if ((0xff000000 & value) == 0xff000000) {
       return toCssStringRgbOnly();
     } else {
-      final double alpha = ((_value >> 24) & 0xFF) / 255.0;
+      final double alpha = ((value >> 24) & 0xFF) / 255.0;
       final StringBuffer sb = StringBuffer();
       sb.write('rgba(');
-      sb.write(((_value >> 16) & 0xFF).toString());
+      sb.write(((value >> 16) & 0xFF).toString());
       sb.write(',');
-      sb.write(((_value >> 8) & 0xFF).toString());
+      sb.write(((value >> 8) & 0xFF).toString());
       sb.write(',');
-      sb.write((_value & 0xFF).toString());
+      sb.write((value & 0xFF).toString());
       sb.write(',');
       sb.write(alpha.toString());
       sb.write(')');
@@ -269,7 +268,7 @@ class Color {
   /// with the paint opacity.
   // webOnly
   String toCssStringRgbOnly() {
-    final String paddedValue = '00000${_value.toRadixString(16)}';
+    final String paddedValue = '00000${value.toRadixString(16)}';
     return '#${paddedValue.substring(paddedValue.length - 6)}';
   }
 
@@ -1388,7 +1387,7 @@ abstract class Image {
 ///
 /// Instances of this class are used with [Paint.colorFilter] on [Paint]
 /// objects.
-class ColorFilter {
+abstract class ColorFilter {
   /// Creates a color filter that applies the blend mode given as the second
   /// argument. The source color is the one given as the first argument, and the
   /// destination color is the one from the layer being composited.
@@ -1396,50 +1395,92 @@ class ColorFilter {
   /// The output of this filter is then composited into the background according
   /// to the [Paint.blendMode], using the output of this filter as the source
   /// and the background as the destination.
-  const ColorFilter.mode(Color color, BlendMode blendMode)
-      : _color = color,
-        _blendMode = blendMode;
+  const factory ColorFilter.mode(Color color, BlendMode blendMode) =
+      engine.EngineColorFilter.mode;
 
-  /// Construct a color filter that transforms a color by a 4x5 matrix. The
-  /// matrix is in row-major order and the translation column is specified in
-  /// unnormalized, 0...255, space.
-  const ColorFilter.matrix(List<double> matrix)
-      : _color = null,
-        _blendMode = null;
+  /// Construct a color filter that transforms a color by a 4x5 matrix.
+  ///
+  /// Every pixel's color value, repsented as an `[R, G, B, A]`, is matrix
+  /// multiplied to create a new color:
+  ///
+  /// ```
+  /// | R' |   | a00 a01 a02 a03 a04 |   | R |
+  /// | G' | = | a10 a11 a22 a33 a44 | * | G |
+  /// | B' |   | a20 a21 a22 a33 a44 |   | B |
+  /// | A' |   | a30 a31 a22 a33 a44 |   | A |
+  /// ```
+  ///
+  /// The matrix is in row-major order and the translation column is specified
+  /// in unnormalized, 0...255, space. For example, the identity matrix is:
+  ///
+  /// ```
+  /// const ColorMatrix identity = ColorFilter.matrix(<double>[
+  ///   1, 0, 0, 0, 0,
+  ///   0, 1, 0, 0, 0,
+  ///   0, 0, 1, 0, 0,
+  ///   0, 0, 0, 1, 0,
+  /// ]);
+  /// ```
+  ///
+  /// ## Examples
+  ///
+  /// An inversion color matrix:
+  ///
+  /// ```
+  /// const ColorFilter invert = ColorFilter.matrix(<double>[
+  ///   -1,  0,  0, 0, 255,
+  ///    0, -1,  0, 0, 255,
+  ///    0,  0, -1, 0, 255,
+  ///    0,  0,  0, 1,   0,
+  /// ]);
+  /// ```
+  ///
+  /// A sepia-toned color matrix (values based on the [Filter Effects Spec](https://www.w3.org/TR/filter-effects-1/#sepiaEquivalent)):
+  ///
+  /// ```
+  /// const ColorFilter sepia = ColorFilter.matrix(<double>[
+  ///   0.393, 0.769, 0.189, 0, 0,
+  ///   0.349, 0.686, 0.168, 0, 0,
+  ///   0.272, 0.534, 0.131, 0, 0,
+  ///   0,     0,     0,     1, 0,
+  /// ]);
+  /// ```
+  ///
+  /// A greyscale color filter (values based on the [Filter Effects Spec](https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent)):
+  ///
+  /// ```
+  /// const ColorFilter greyscale = ColorFilter.matrix(<double>[
+  ///   0.2126, 0.7152, 0.0722, 0, 0,
+  ///   0.2126, 0.7152, 0.0722, 0, 0,
+  ///   0.2126, 0.7152, 0.0722, 0, 0,
+  ///   0,      0,      0,      1, 0,
+  /// ]);
+  /// ```
+  const factory ColorFilter.matrix(List<double> matrix) =
+      engine.EngineColorFilter.matrix;
 
   /// Construct a color filter that applies the sRGB gamma curve to the RGB
   /// channels.
-  const ColorFilter.linearToSrgbGamma()
-      : _color = null,
-        _blendMode = null;
+  const factory ColorFilter.linearToSrgbGamma() =
+      engine.EngineColorFilter.linearToSrgbGamma;
 
   /// Creates a color filter that applies the inverse of the sRGB gamma curve
   /// to the RGB channels.
-  const ColorFilter.srgbToLinearGamma()
-      : _color = null,
-        _blendMode = null;
-
-  final Color _color;
-  final BlendMode _blendMode;
-
-  @override
-  bool operator ==(dynamic other) {
-    if (other is! ColorFilter) {
-      return false;
-    }
-    final ColorFilter typedOther = other;
-    return _color == typedOther._color && _blendMode == typedOther._blendMode;
-  }
-
-  @override
-  int get hashCode => hashValues(_color, _blendMode);
+  const factory ColorFilter.srgbToLinearGamma() =
+      engine.EngineColorFilter.srgbToLinearGamma;
 
   List<dynamic> webOnlySerializeToCssPaint() {
     throw UnsupportedError('ColorFilter for CSS paint not yet supported');
   }
 
   @override
-  String toString() => 'ColorFilter($_color, $_blendMode)';
+  bool operator ==(dynamic other);
+
+  @override
+  int get hashCode;
+
+  @override
+  String toString();
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
@@ -1628,12 +1669,6 @@ enum PixelFormat {
   bgra8888,
 }
 
-/// Indicates that the image should not be resized in this dimension.
-///
-/// Used by [instantiateImageCodec] as a magical value to disable resizing
-/// in the given dimension.
-const int kDoNotResizeDimension = -1;
-
 class _ImageInfo {
   _ImageInfo(this.width, this.height, this.format, this.rowBytes) {
     rowBytes ??= width * 4;
@@ -1711,7 +1746,8 @@ class Codec {
 ///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
-Future<Codec> instantiateImageCodec(Uint8List list, {
+Future<Codec> instantiateImageCodec(
+  Uint8List list, {
   int targetWidth,
   int targetHeight,
 }) {

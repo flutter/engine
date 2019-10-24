@@ -20,7 +20,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   /// The amount of padding to add around the edges of this canvas to
   /// ensure that anti-aliased arcs are not clipped.
-  static const int paddingPixels = 1;
+  static const int kPaddingPixels = 1;
 
   @override
   final html.Element rootElement = html.Element.tag('flt-canvas');
@@ -84,11 +84,9 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     // Adds one extra pixel to the requested size. This is to compensate for
     // _initializeViewport() snapping canvas position to 1 pixel, causing
     // painting to overflow by at most 1 pixel.
-    final double boundsWidth = size.width + 1 + 2 * paddingPixels;
-    final double boundsHeight = size.height + 1 + 2 * paddingPixels;
-    _widthInBitmapPixels = (boundsWidth * html.window.devicePixelRatio).ceil();
-    _heightInBitmapPixels =
-        (boundsHeight * html.window.devicePixelRatio).ceil();
+
+    _widthInBitmapPixels = _widthToPhysical(_bounds.width);
+    _heightInBitmapPixels = _heightToPhysical(_bounds.height);
 
     // Compute the final CSS canvas size given the actual pixel count we
     // allocated. This is done for the following reasons:
@@ -111,6 +109,24 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     _ctx = _canvas.context2D;
     rootElement.append(_canvas);
     _initializeViewport();
+  }
+
+  int _widthToPhysical(double width) {
+    final double boundsWidth = width + 1;
+    return (boundsWidth * html.window.devicePixelRatio).ceil() +
+        2 * kPaddingPixels;
+  }
+
+  int _heightToPhysical(double height) {
+    final double boundsHeight = height + 1;
+    return (boundsHeight * html.window.devicePixelRatio).ceil() +
+        2 * kPaddingPixels;
+  }
+
+  bool doesFitBounds(ui.Rect newBounds) {
+    assert(newBounds != null);
+    return _widthInBitmapPixels >= _widthToPhysical(newBounds.width) &&
+        _heightInBitmapPixels >= _heightToPhysical(newBounds.height);
   }
 
   @override
@@ -193,20 +209,20 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
     // The flooring of the value is to ensure that canvas' top-left corner
     // lands on the physical pixel.
-    final int canvasPositionX = _bounds.left.floor() - paddingPixels;
-    final int canvasPositionY = _bounds.top.floor() - paddingPixels;
+    final int canvasPositionX = _bounds.left.floor() - kPaddingPixels;
+    final int canvasPositionY = _bounds.top.floor() - kPaddingPixels;
     final double canvasPositionCorrectionX =
-        _bounds.left - paddingPixels - canvasPositionX.toDouble();
+        _bounds.left - kPaddingPixels - canvasPositionX.toDouble();
     final double canvasPositionCorrectionY =
-        _bounds.top - paddingPixels - canvasPositionY.toDouble();
+        _bounds.top - kPaddingPixels - canvasPositionY.toDouble();
 
     rootElement.style.transform =
         'translate(${canvasPositionX}px, ${canvasPositionY}px)';
 
     // This compensates for the translate on the `rootElement`.
     translate(
-      -_bounds.left + canvasPositionCorrectionX + paddingPixels,
-      -_bounds.top + canvasPositionCorrectionY + paddingPixels,
+      -_bounds.left + canvasPositionCorrectionX + kPaddingPixels,
+      -_bounds.top + canvasPositionCorrectionY + kPaddingPixels,
     );
   }
 
@@ -454,202 +470,16 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   @override
   void drawRRect(ui.RRect rrect, ui.PaintData paint) {
     _applyPaint(paint);
-    _drawRRectPath(rrect);
+    _RRectToCanvasRenderer(ctx).render(rrect);
     _strokeOrFill(paint);
-  }
-
-  void _drawRRectPath(ui.RRect inputRRect, {bool startNewPath = true}) {
-    // TODO(mdebbar): Backport the overlapping corners fix to houdini_painter.js
-    // To draw the rounded rectangle, perform the following steps:
-    //   0. Ensure border radius don't overlap
-    //   1. Flip left,right top,bottom since web doesn't support flipped
-    //      coordinates with negative radii.
-    //   2. draw the line for the top
-    //   3. draw the arc for the top-right corner
-    //   4. draw the line for the right side
-    //   5. draw the arc for the bottom-right corner
-    //   6. draw the line for the bottom of the rectangle
-    //   7. draw the arc for the bottom-left corner
-    //   8. draw the line for the left side
-    //   9. draw the arc for the top-left corner
-    //
-    // After drawing, the current point will be the left side of the top of the
-    // rounded rectangle (after the corner).
-    // TODO(het): Confirm that this is the end point in Flutter for RRect
-
-    // Ensure border radius curves never overlap
-    final ui.RRect rrect = inputRRect.scaleRadii();
-
-    double left = rrect.left;
-    double right = rrect.right;
-    double top = rrect.top;
-    double bottom = rrect.bottom;
-    if (left > right) {
-      left = right;
-      right = rrect.left;
-    }
-    if (top > bottom) {
-      top = bottom;
-      bottom = rrect.top;
-    }
-    final double trRadiusX = rrect.trRadiusX.abs();
-    final double tlRadiusX = rrect.tlRadiusX.abs();
-    final double trRadiusY = rrect.trRadiusY.abs();
-    final double tlRadiusY = rrect.tlRadiusY.abs();
-    final double blRadiusX = rrect.blRadiusX.abs();
-    final double brRadiusX = rrect.brRadiusX.abs();
-    final double blRadiusY = rrect.blRadiusY.abs();
-    final double brRadiusY = rrect.brRadiusY.abs();
-
-    if (startNewPath) {
-      ctx.beginPath();
-    }
-
-    ctx.moveTo(left + trRadiusX, top);
-
-    // Top side and top-right corner
-    ctx.lineTo(right - trRadiusX, top);
-    ctx.ellipse(
-      right - trRadiusX,
-      top + trRadiusY,
-      trRadiusX,
-      trRadiusY,
-      0,
-      1.5 * math.pi,
-      2.0 * math.pi,
-      false,
-    );
-
-    // Right side and bottom-right corner
-    ctx.lineTo(right, bottom - brRadiusY);
-    ctx.ellipse(
-      right - brRadiusX,
-      bottom - brRadiusY,
-      brRadiusX,
-      brRadiusY,
-      0,
-      0,
-      0.5 * math.pi,
-      false,
-    );
-
-    // Bottom side and bottom-left corner
-    ctx.lineTo(left + blRadiusX, bottom);
-    ctx.ellipse(
-      left + blRadiusX,
-      bottom - blRadiusY,
-      blRadiusX,
-      blRadiusY,
-      0,
-      0.5 * math.pi,
-      math.pi,
-      false,
-    );
-
-    // Left side and top-left corner
-    ctx.lineTo(left, top + tlRadiusY);
-    ctx.ellipse(
-      left + tlRadiusX,
-      top + tlRadiusY,
-      tlRadiusX,
-      tlRadiusY,
-      0,
-      math.pi,
-      1.5 * math.pi,
-      false,
-    );
-  }
-
-  void _drawRRectPathReverse(ui.RRect inputRRect, {bool startNewPath = true}) {
-    // Ensure border radius curves never overlap
-    final ui.RRect rrect = inputRRect.scaleRadii();
-
-    double left = rrect.left;
-    double right = rrect.right;
-    double top = rrect.top;
-    double bottom = rrect.bottom;
-    final double trRadiusX = rrect.trRadiusX.abs();
-    final double tlRadiusX = rrect.tlRadiusX.abs();
-    final double trRadiusY = rrect.trRadiusY.abs();
-    final double tlRadiusY = rrect.tlRadiusY.abs();
-    final double blRadiusX = rrect.blRadiusX.abs();
-    final double brRadiusX = rrect.brRadiusX.abs();
-    final double blRadiusY = rrect.blRadiusY.abs();
-    final double brRadiusY = rrect.brRadiusY.abs();
-
-    if (left > right) {
-      left = right;
-      right = rrect.left;
-    }
-    if (top > bottom) {
-      top = bottom;
-      bottom = rrect.top;
-    }
-    // Draw the rounded rectangle, counterclockwise.
-    ctx.moveTo(right - trRadiusX, top);
-
-    if (startNewPath) {
-      ctx.beginPath();
-    }
-
-    // Top side and top-left corner
-    ctx.lineTo(left + tlRadiusX, top);
-    ctx.ellipse(
-      left + tlRadiusX,
-      top + tlRadiusY,
-      tlRadiusX,
-      tlRadiusY,
-      0,
-      1.5 * math.pi,
-      1 * math.pi,
-      true,
-    );
-
-    // Left side and bottom-left corner
-    ctx.lineTo(left, bottom - blRadiusY);
-    ctx.ellipse(
-      left + blRadiusX,
-      bottom - blRadiusY,
-      blRadiusX,
-      blRadiusY,
-      0,
-      1 * math.pi,
-      0.5 * math.pi,
-      true,
-    );
-
-    // Bottom side and bottom-right corner
-    ctx.lineTo(right - brRadiusX, bottom);
-    ctx.ellipse(
-      right - brRadiusX,
-      bottom - brRadiusY,
-      brRadiusX,
-      brRadiusY,
-      0,
-      0.5 * math.pi,
-      0 * math.pi,
-      true,
-    );
-
-    // Right side and top-right corner
-    ctx.lineTo(right, top + trRadiusY);
-    ctx.ellipse(
-      right - trRadiusX,
-      top + trRadiusY,
-      trRadiusX,
-      trRadiusY,
-      0,
-      0 * math.pi,
-      1.5 * math.pi,
-      true,
-    );
   }
 
   @override
   void drawDRRect(ui.RRect outer, ui.RRect inner, ui.PaintData paint) {
     _applyPaint(paint);
-    _drawRRectPath(outer);
-    _drawRRectPathReverse(inner, startNewPath: false);
+    _RRectRenderer renderer = _RRectToCanvasRenderer(ctx);
+    renderer.render(outer);
+    renderer.render(inner, startNewPath: false, reverse: true);
     _strokeOrFill(paint);
   }
 
@@ -850,6 +680,45 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     picture.recordingCanvas.apply(this);
   }
 
+  /// Draws vertices on a gl context.
+  ///
+  /// If both colors and textures is specified in paint data,
+  /// for [BlendMode.source] we skip colors and use textures,
+  /// for [BlendMode.dst] we only use colors and ignore textures.
+  /// We also skip paint shader when no texture is specified.
+  ///
+  /// If no colors or textures are specified, stroke hairlines with
+  /// [Paint.color].
+  ///
+  /// If colors is specified, convert colors to premultiplied (alpha) colors
+  /// and use a SkTriColorShader to render.
+  @override
+  void drawVertices(
+      ui.Vertices vertices, ui.BlendMode blendMode, ui.PaintData paint) {
+    // TODO(flutter_web): Implement shaders for [Paint.shader] and
+    // blendMode. https://github.com/flutter/flutter/issues/40096
+    // Move rendering to OffscreenCanvas so that transform is preserved
+    // as well.
+    assert(paint.shader == null,
+        'Linear/Radial/SweepGradient and ImageShader not supported yet');
+    final Int32List colors = vertices.colors;
+    final ui.VertexMode mode = vertices.mode;
+    if (colors == null) {
+      final Float32List positions = mode == ui.VertexMode.triangles
+          ? vertices.positions
+          : _convertVertexPositions(mode, vertices.positions);
+      // Draw hairline for vertices if no vertex colors are specified.
+      save();
+      final ui.Color color = paint.color ?? ui.Color(0xFF000000);
+      _setFillAndStrokeStyle('', color.toCssString());
+      _glRenderer.drawHairline(_ctx, positions);
+      restore();
+      return;
+    }
+    _glRenderer.drawVertices(_ctx, _widthInBitmapPixels, _heightInBitmapPixels,
+        currentTransform, vertices, blendMode, paint);
+  }
+
   /// 'Runs' the given [path] by applying all of its commands to the canvas.
   void _runPath(ui.Path path) {
     ctx.beginPath();
@@ -886,7 +755,8 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
             break;
           case PathCommandTypes.rRect:
             final RRectCommand rrectCommand = command;
-            _drawRRectPath(rrectCommand.rrect, startNewPath: false);
+            _RRectToCanvasRenderer(ctx)
+                .render(rrectCommand.rrect, startNewPath: false);
             break;
           case PathCommandTypes.rect:
             final RectCommand rectCommand = command;

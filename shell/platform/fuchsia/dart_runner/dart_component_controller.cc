@@ -314,9 +314,7 @@ bool DartComponentController::CreateIsolate(
 
   isolate_ = Dart_CreateIsolateGroup(
       url_.c_str(), label_.c_str(), isolate_snapshot_data,
-      isolate_snapshot_instructions, nullptr /* shared_snapshot_data */,
-      nullptr /* shared_snapshot_instructions */, nullptr /* flags */, state,
-      state, &error);
+      isolate_snapshot_instructions, nullptr /* flags */, state, state, &error);
   if (!isolate_) {
     FX_LOGF(ERROR, LOG_TAG, "Dart_CreateIsolateGroup failed: %s", error);
     return false;
@@ -351,8 +349,8 @@ bool DartComponentController::Main() {
 
   tonic::DartMicrotaskQueue::StartForCurrentThread();
 
-  std::vector<std::string> arguments = std::move(
-      startup_info_.launch_info.arguments.value_or(std::vector<std::string>()));
+  std::vector<std::string> arguments =
+      startup_info_.launch_info.arguments.value_or(std::vector<std::string>());
 
   stdoutfd_ = SetupFileDescriptor(std::move(startup_info_.launch_info.out));
   stderrfd_ = SetupFileDescriptor(std::move(startup_info_.launch_info.err));

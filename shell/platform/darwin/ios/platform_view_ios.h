@@ -12,7 +12,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterTexture.h"
+#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
@@ -48,17 +48,31 @@ class PlatformViewIOS final : public PlatformView {
   void SetSemanticsEnabled(bool enabled) override;
 
  private:
+  /// Smart pointer for use with objective-c observers.
+  /// This guarentees we remove the observer.
+  class ScopedObserver {
+   public:
+    ScopedObserver();
+    ~ScopedObserver();
+    void reset(id<NSObject> observer);
+    ScopedObserver(const ScopedObserver&) = delete;
+    ScopedObserver& operator=(const ScopedObserver&) = delete;
+
+   private:
+    id<NSObject> observer_;
+  };
+
   fml::WeakPtr<FlutterViewController> owner_controller_;
   // Since the `ios_surface_` is created on the platform thread but
   // used on the GPU thread we need to protect it with a mutex.
   std::mutex ios_surface_mutex_;
-  std::unique_ptr<IOSSurface> ios_surface_ FML_GUARDED_BY(ios_surface_mutex_);
+  std::unique_ptr<IOSSurface> ios_surface_;
   std::shared_ptr<IOSGLContext> gl_context_;
   PlatformMessageRouter platform_message_router_;
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> text_input_plugin_;
   fml::closure firstFrameCallback_;
-  fml::scoped_nsprotocol<NSObject*> dealloc_view_controller_observer_;
+  ScopedObserver dealloc_view_controller_observer_;
 
   // |PlatformView|
   void HandlePlatformMessage(fml::RefPtr<flutter::PlatformMessage> message) override;

@@ -1,4 +1,4 @@
-Signature: 892c1b3c90bcb828a207255b570ee16f
+Signature: 2fa9542b052e62d47f99557a8925c2ca
 
 UNUSED LICENSES:
 
@@ -753,7 +753,7 @@ FILE: ../../../third_party/wuffs/internal/cgen/data.go
 FILE: ../../../third_party/wuffs/internal/cgen/expr.go
 FILE: ../../../third_party/wuffs/internal/cgen/func.go
 FILE: ../../../third_party/wuffs/internal/cgen/gen.go
-FILE: ../../../third_party/wuffs/internal/cgen/resume.go
+FILE: ../../../third_party/wuffs/internal/cgen/liveness.go
 FILE: ../../../third_party/wuffs/internal/cgen/statement.go
 FILE: ../../../third_party/wuffs/internal/cgen/var.go
 FILE: ../../../third_party/wuffs/internal/testcut/testcut.go
@@ -780,6 +780,9 @@ FILE: ../../../third_party/wuffs/lang/token/token.go
 FILE: ../../../third_party/wuffs/lang/wuffsroot/wuffsroot.go
 FILE: ../../../third_party/wuffs/lib/base38/base38.go
 FILE: ../../../third_party/wuffs/lib/base38/base38_test.go
+FILE: ../../../third_party/wuffs/lib/cgolz4/cgolz4.go
+FILE: ../../../third_party/wuffs/lib/cgolz4/cgolz4_test.go
+FILE: ../../../third_party/wuffs/lib/cgolz4/notcgo.go
 FILE: ../../../third_party/wuffs/lib/cgozlib/cgozlib.go
 FILE: ../../../third_party/wuffs/lib/cgozlib/cgozlib_test.go
 FILE: ../../../third_party/wuffs/lib/cgozlib/notcgo.go
@@ -801,6 +804,8 @@ FILE: ../../../third_party/wuffs/lib/rac/rac.go
 FILE: ../../../third_party/wuffs/lib/rac/rac_test.go
 FILE: ../../../third_party/wuffs/lib/rac/reader.go
 FILE: ../../../third_party/wuffs/lib/rac/writer.go
+FILE: ../../../third_party/wuffs/lib/raclz4/example_test.go
+FILE: ../../../third_party/wuffs/lib/raclz4/raclz4.go
 FILE: ../../../third_party/wuffs/lib/raczlib/example_test.go
 FILE: ../../../third_party/wuffs/lib/raczlib/make_cgo.go
 FILE: ../../../third_party/wuffs/lib/raczlib/make_notcgo.go
@@ -3251,6 +3256,7 @@ FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/bn/rsaz_exp.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/bn/rsaz_exp.h
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/p256-x86_64.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/p256-x86_64.h
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/fips_shared.lds
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/intcheck1.png
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/intcheck2.png
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/intcheck3.png
@@ -3275,6 +3281,32 @@ FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCryp
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20170615.docx!/word/styles.xml
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20170615.docx!/word/theme/theme1.xml
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20170615.docx!/word/webSettings.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/[Content_Types].xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/_rels/.rels
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/customXml/_rels/item1.xml.rels
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/customXml/item1.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/customXml/itemProps1.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/docProps/app.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/docProps/core.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/docProps/thumbnail.emf
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/_rels/document.xml.rels
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/document.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/endnotes.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/fontTable.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/footer1.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/footer2.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/footer3.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/footnotes.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/header1.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/header2.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/header3.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/media/image1.png
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/media/image2.png
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/numbering.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/settings.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/styles.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/theme/theme1.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/webSettings.xml
 FILE: ../../../third_party/boringssl/src/crypto/obj/obj_mac.num
 FILE: ../../../third_party/boringssl/src/crypto/poly1305/poly1305_arm_asm.S
 FILE: ../../../third_party/boringssl/src/crypto/rsa_extra/rsa_print.c
@@ -3288,9 +3320,9 @@ FILE: ../../../third_party/boringssl/src/crypto/x509/some_names2.pem
 FILE: ../../../third_party/boringssl/src/crypto/x509/some_names3.pem
 FILE: ../../../third_party/boringssl/src/crypto/x509/x509_time_test.cc
 FILE: ../../../third_party/boringssl/src/crypto/x509v3/v3_ocsp.c
-FILE: ../../../third_party/boringssl/src/fipstools/run_cavp.go
-FILE: ../../../third_party/boringssl/src/infra/config/cq.cfg
+FILE: ../../../third_party/boringssl/src/go.mod
 FILE: ../../../third_party/boringssl/src/ssl/bio_ssl.cc
+FILE: ../../../third_party/boringssl/src/ssl/ssl_c_test.c
 FILE: ../../../third_party/boringssl/src/util/all_tests.json
 FILE: ../../../third_party/boringssl/src/util/bot/UPDATING
 FILE: ../../../third_party/boringssl/src/util/bot/cmake-linux64.tar.gz.sha1
@@ -3299,31 +3331,19 @@ FILE: ../../../third_party/boringssl/src/util/bot/cmake-win32.zip.sha1
 FILE: ../../../third_party/boringssl/src/util/bot/nasm-win32.exe.sha1
 FILE: ../../../third_party/boringssl/src/util/bot/perl-win32.zip.sha1
 FILE: ../../../third_party/boringssl/src/util/bot/sde-linux64.tar.bz2.sha1
+FILE: ../../../third_party/boringssl/src/util/bot/sde-win32.tar.bz2.sha1
 FILE: ../../../third_party/boringssl/src/util/bot/yasm-win32.exe.sha1
 FILE: ../../../third_party/boringssl/src/util/doc.config
 FILE: ../../../third_party/boringssl/src/util/doc.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/delocate.peg.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-GlobalEntry/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-GlobalEntry/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-LoadToR0/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-LoadToR0/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-Sample/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-Sample/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-Sample2/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-Sample2/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-TOCWithOffset/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/ppc64le-TOCWithOffset/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-BSS/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-BSS/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-Basic/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-Basic/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-GOTRewrite/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-GOTRewrite/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-LabelRewrite/in1.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-LabelRewrite/in2.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-LabelRewrite/out.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-Sections/in.s
-FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-Sections/out.s
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/acvp.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/acvp/acvp.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/interactive.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/parser.peg
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/parser.peg.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/hash.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/subprocess.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/run_cavp.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/delocate/delocate.peg.go
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/bigint_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/lib/bigint_patch.dart
 ----------------------------------------------------------------------------------------------------
@@ -3477,6 +3497,28 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+The code in third_party/sike also carries the MIT license:
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE
 
 Licenses for support code
 
@@ -4065,7 +4107,6 @@ FILE: ../../../third_party/boringssl/src/include/openssl/chacha.h
 FILE: ../../../third_party/boringssl/src/include/openssl/crypto.h
 FILE: ../../../third_party/boringssl/src/include/openssl/engine.h
 FILE: ../../../third_party/boringssl/src/include/openssl/hkdf.h
-FILE: ../../../third_party/boringssl/src/include/openssl/lhash_macros.h
 FILE: ../../../third_party/boringssl/src/include/openssl/objects.h
 FILE: ../../../third_party/boringssl/src/include/openssl/opensslconf.h
 FILE: ../../../third_party/boringssl/src/include/openssl/opensslv.h
@@ -4242,41 +4283,41 @@ FILE: ../../../third_party/boringssl/src/crypto/rand_extra/rand_extra.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/make_many_constraints.go
 FILE: ../../../third_party/boringssl/src/decrepit/cfb/cfb.c
 FILE: ../../../third_party/boringssl/src/decrepit/cfb/cfb_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_aes_gcm_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_aes_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_ctr_drbg_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_ecdsa2_keypair_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_ecdsa2_pkv_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_ecdsa2_siggen_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_ecdsa2_sigver_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_hmac_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_keywrap_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_main.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_rsa2_keygen_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_rsa2_siggen_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_rsa2_sigver_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_sha_monte_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_sha_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_tdes_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_test_util.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_test_util.h
-FILE: ../../../third_party/boringssl/src/fipstools/test_fips.c
 FILE: ../../../third_party/boringssl/src/include/openssl/is_boringssl.h
 FILE: ../../../third_party/boringssl/src/include/openssl/span.h
 FILE: ../../../third_party/boringssl/src/ssl/span_test.cc
 FILE: ../../../third_party/boringssl/src/ssl/ssl_versions.cc
 FILE: ../../../third_party/boringssl/src/tool/file.cc
 FILE: ../../../third_party/boringssl/src/tool/sign.cc
+FILE: ../../../third_party/boringssl/src/util/ar/ar.go
 FILE: ../../../third_party/boringssl/src/util/check_imported_libraries.go
 FILE: ../../../third_party/boringssl/src/util/convert_comments.go
 FILE: ../../../third_party/boringssl/src/util/embed_test_data.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/ar.go
 FILE: ../../../third_party/boringssl/src/util/fipstools/break-hash.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/const.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/delocate.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/delocate.peg
-FILE: ../../../third_party/boringssl/src/util/fipstools/delocate_test.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/inject-hash.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_aes_gcm_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_aes_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_ctr_drbg_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_ecdsa2_keypair_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_ecdsa2_pkv_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_ecdsa2_siggen_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_ecdsa2_sigver_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_hmac_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_keywrap_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_main.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_rsa2_keygen_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_rsa2_siggen_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_rsa2_sigver_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_sha_monte_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_sha_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_tdes_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_test_util.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_test_util.h
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/test_fips.c
+FILE: ../../../third_party/boringssl/src/util/fipstools/delocate/delocate.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/delocate/delocate.peg
+FILE: ../../../third_party/boringssl/src/util/fipstools/delocate/delocate_test.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/fipscommon/const.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/inject_hash/inject_hash.go
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2017, Google Inc.
 
@@ -4297,26 +4338,48 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 LIBRARY: boringssl
 ORIGIN: ../../../third_party/boringssl/src/crypto/bytestring/unicode.c
 TYPE: LicenseType.unknown
+FILE: ../../../third_party/boringssl/src/crypto/abi_self_test.cc
 FILE: ../../../third_party/boringssl/src/crypto/bytestring/unicode.c
 FILE: ../../../third_party/boringssl/src/crypto/chacha/internal.h
 FILE: ../../../third_party/boringssl/src/crypto/cipher_extra/e_aesccm.c
 FILE: ../../../third_party/boringssl/src/crypto/cpu-aarch64-fuchsia.c
+FILE: ../../../third_party/boringssl/src/crypto/cpu-arm-linux.h
+FILE: ../../../third_party/boringssl/src/crypto/cpu-arm-linux_test.cc
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/bn/div_extra.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/bn/gcd_extra.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/felem.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/make_ec_scalar_base_mult_tests.go
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/make_p256-x86_64-table.go
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/make_p256-x86_64-tests.go
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/scalar.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/simple_mul.c
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/md5/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/md5/md5_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/sha/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/sha/sha_test.cc
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/tls/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/hrss/hrss.c
+FILE: ../../../third_party/boringssl/src/crypto/hrss/hrss_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/hrss/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/impl_dispatch_test.cc
 FILE: ../../../third_party/boringssl/src/crypto/pem/pem_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/rand_extra/rand_test.cc
 FILE: ../../../third_party/boringssl/src/crypto/self_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_kas_test.cc
-FILE: ../../../third_party/boringssl/src/fipstools/cavp_tlskdf_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/stack/stack_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/x509v3/internal.h
 FILE: ../../../third_party/boringssl/src/include/openssl/e_os2.h
+FILE: ../../../third_party/boringssl/src/include/openssl/hrss.h
 FILE: ../../../third_party/boringssl/src/ssl/handoff.cc
+FILE: ../../../third_party/boringssl/src/third_party/sike/sike_test.cc
+FILE: ../../../third_party/boringssl/src/util/ar/ar_test.go
 FILE: ../../../third_party/boringssl/src/util/check_filenames.go
 FILE: ../../../third_party/boringssl/src/util/convert_wycheproof.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_kas_test.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/cavp_tlskdf_test.cc
+FILE: ../../../third_party/boringssl/src/util/godeps.go
+FILE: ../../../third_party/boringssl/src/util/make_prefix_headers.go
+FILE: ../../../third_party/boringssl/src/util/read_symbols.go
+FILE: ../../../third_party/boringssl/src/util/testresult/testresult.go
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2018, Google Inc.
 
@@ -5665,6 +5728,33 @@ https://www.openssl.org/source/license.html
 
 ====================================================================================================
 LIBRARY: boringssl
+ORIGIN: ../../../third_party/boringssl/src/crypto/fipsmodule/fips_shared_support.c
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/fips_shared_support.c
+FILE: ../../../third_party/boringssl/src/crypto/siphash/siphash.c
+FILE: ../../../third_party/boringssl/src/crypto/siphash/siphash_test.cc
+FILE: ../../../third_party/boringssl/src/decrepit/blowfish/blowfish_test.cc
+FILE: ../../../third_party/boringssl/src/decrepit/cast/cast_test.cc
+FILE: ../../../third_party/boringssl/src/include/openssl/siphash.h
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/modulewrapper/modulewrapper.cc
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2019, Google Inc.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: boringssl
 ORIGIN: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/cbc.c
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/cbc.c
@@ -5894,6 +5984,27 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: boringssl
+ORIGIN: ../../../third_party/boringssl/src/crypto/hrss/asm/poly_rq_mul.S
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/boringssl/src/crypto/hrss/asm/poly_rq_mul.S
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2017, the HRSS authors.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ====================================================================================================
 
 ====================================================================================================
@@ -6636,6 +6747,10 @@ LIBRARY: boringssl
 ORIGIN: ../../../third_party/boringssl/src/third_party/fiat/LICENSE
 TYPE: LicenseType.mit
 FILE: ../../../third_party/boringssl/src/third_party/fiat/METADATA
+FILE: ../../../third_party/boringssl/src/third_party/fiat/curve25519_32.h
+FILE: ../../../third_party/boringssl/src/third_party/fiat/curve25519_64.h
+FILE: ../../../third_party/boringssl/src/third_party/fiat/p256_32.h
+FILE: ../../../third_party/boringssl/src/third_party/fiat/p256_64.h
 ----------------------------------------------------------------------------------------------------
 The MIT License (MIT)
 
@@ -6721,17 +6836,17 @@ SOFTWARE.
 LIBRARY: boringssl
 ORIGIN: ../../../third_party/boringssl/src/third_party/googletest/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/boringssl/src/third_party/googletest/CHANGES
 FILE: ../../../third_party/boringssl/src/third_party/googletest/CONTRIBUTORS
 FILE: ../../../third_party/boringssl/src/third_party/googletest/METADATA
+FILE: ../../../third_party/boringssl/src/third_party/googletest/cmake/Config.cmake.in
 FILE: ../../../third_party/boringssl/src/third_party/googletest/cmake/gtest.pc.in
 FILE: ../../../third_party/boringssl/src/third_party/googletest/cmake/gtest_main.pc.in
+FILE: ../../../third_party/boringssl/src/third_party/googletest/cmake/libgtest.la.in
 FILE: ../../../third_party/boringssl/src/third_party/googletest/codegear/gtest.cbproj
 FILE: ../../../third_party/boringssl/src/third_party/googletest/codegear/gtest.groupproj
 FILE: ../../../third_party/boringssl/src/third_party/googletest/codegear/gtest_main.cbproj
 FILE: ../../../third_party/boringssl/src/third_party/googletest/codegear/gtest_unittest.cbproj
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/gtest-param-test.h
-FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/gtest-param-test.h.pump
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/gtest-test-part.h
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-filepath.h
 FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest-md.sln
@@ -6839,10 +6954,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/gtest-printers.h
+ORIGIN: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/gtest-matchers.h
 TYPE: LicenseType.bsd
+FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/gtest-matchers.h
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/gtest-printers.h
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/gtest-spi.h
+FILE: ../../../third_party/boringssl/src/third_party/googletest/src/gtest-matchers.cc
 FILE: ../../../third_party/boringssl/src/third_party/googletest/src/gtest-printers.cc
 ----------------------------------------------------------------------------------------------------
 Copyright 2007, Google Inc.
@@ -7011,47 +7128,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-linked_ptr.h
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-linked_ptr.h
-----------------------------------------------------------------------------------------------------
-Copyright 2003 Google Inc.
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-    * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-param-util-generated.h
+ORIGIN: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-param-util.h
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/gtest-typed-test.h
-FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-param-util-generated.h
-FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-param-util-generated.h.pump
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-param-util.h
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-type-util.h
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-type-util.h.pump
@@ -7062,43 +7141,6 @@ FILE: ../../../third_party/boringssl/src/third_party/googletest/samples/sample8_
 FILE: ../../../third_party/boringssl/src/third_party/googletest/src/gtest-typed-test.cc
 ----------------------------------------------------------------------------------------------------
 Copyright 2008 Google Inc.
-All Rights Reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-    * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-tuple.h
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-tuple.h
-FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-tuple.h.pump
-----------------------------------------------------------------------------------------------------
-Copyright 2009 Google Inc.
 All Rights Reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -7166,13 +7208,53 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: boringssl
+ORIGIN: ../../../third_party/boringssl/src/third_party/sike/LICENSE
+TYPE: LicenseType.mit
+FILE: ../../../third_party/boringssl/src/third_party/sike/asm/fp_generic.c
+FILE: ../../../third_party/boringssl/src/third_party/sike/curve_params.c
+FILE: ../../../third_party/boringssl/src/third_party/sike/fpx.c
+FILE: ../../../third_party/boringssl/src/third_party/sike/fpx.h
+FILE: ../../../third_party/boringssl/src/third_party/sike/isogeny.c
+FILE: ../../../third_party/boringssl/src/third_party/sike/isogeny.h
+FILE: ../../../third_party/boringssl/src/third_party/sike/sike.c
+FILE: ../../../third_party/boringssl/src/third_party/sike/sike.h
+FILE: ../../../third_party/boringssl/src/third_party/sike/utils.h
+----------------------------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE
+====================================================================================================
+
+====================================================================================================
+LIBRARY: boringssl
 ORIGIN: null
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/boringssl/ios-aarch64/crypto/chacha/chacha-armv8.S
 FILE: ../../../third_party/boringssl/ios-aarch64/crypto/fipsmodule/aesv8-armx64.S
 FILE: ../../../third_party/boringssl/ios-aarch64/crypto/fipsmodule/armv8-mont.S
+FILE: ../../../third_party/boringssl/ios-aarch64/crypto/fipsmodule/ghash-neon-armv8.S
 FILE: ../../../third_party/boringssl/ios-aarch64/crypto/fipsmodule/ghashv8-armx64.S
 FILE: ../../../third_party/boringssl/ios-aarch64/crypto/fipsmodule/sha1-armv8.S
+FILE: ../../../third_party/boringssl/ios-aarch64/crypto/fipsmodule/vpaes-armv8.S
+FILE: ../../../third_party/boringssl/ios-aarch64/crypto/third_party/sike/asm/fp-armv8.S
 FILE: ../../../third_party/boringssl/ios-arm/crypto/chacha/chacha-armv4.S
 FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/aesv8-armx32.S
 FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/armv4-mont.S
@@ -7182,8 +7264,11 @@ FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/sha1-armv4-large.
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/chacha/chacha-armv8.S
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/aesv8-armx64.S
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/armv8-mont.S
+FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/ghash-neon-armv8.S
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/ghashv8-armx64.S
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/sha1-armv8.S
+FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/vpaes-armv8.S
+FILE: ../../../third_party/boringssl/linux-aarch64/crypto/third_party/sike/asm/fp-armv8.S
 FILE: ../../../third_party/boringssl/linux-arm/crypto/chacha/chacha-armv4.S
 FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/aesv8-armx32.S
 FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/armv4-mont.S
@@ -7197,6 +7282,7 @@ FILE: ../../../third_party/boringssl/linux-x86/crypto/fipsmodule/aes-586.S
 FILE: ../../../third_party/boringssl/linux-x86/crypto/fipsmodule/aesni-x86.S
 FILE: ../../../third_party/boringssl/linux-x86/crypto/fipsmodule/bn-586.S
 FILE: ../../../third_party/boringssl/linux-x86/crypto/fipsmodule/co-586.S
+FILE: ../../../third_party/boringssl/linux-x86/crypto/fipsmodule/ghash-ssse3-x86.S
 FILE: ../../../third_party/boringssl/linux-x86/crypto/fipsmodule/ghash-x86.S
 FILE: ../../../third_party/boringssl/linux-x86/crypto/fipsmodule/md5-586.S
 FILE: ../../../third_party/boringssl/linux-x86/crypto/fipsmodule/sha1-586.S
@@ -7210,10 +7296,11 @@ FILE: ../../../third_party/boringssl/linux-x86_64/crypto/cipher_extra/chacha20_p
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/aes-x86_64.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/aesni-gcm-x86_64.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/aesni-x86_64.S
-FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/bsaes-x86_64.S
+FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/ghash-ssse3-x86_64.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/ghash-x86_64.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/md5-x86_64.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/p256-x86_64-asm.S
+FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/p256_beeu-x86_64-asm.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/rdrand-x86_64.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/rsaz-avx2.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/sha1-x86_64.S
@@ -7222,11 +7309,13 @@ FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/sha512-x86_6
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/vpaes-x86_64.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/x86_64-mont.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/x86_64-mont5.S
+FILE: ../../../third_party/boringssl/linux-x86_64/crypto/third_party/sike/asm/fp-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86/crypto/chacha/chacha-x86.S
 FILE: ../../../third_party/boringssl/mac-x86/crypto/fipsmodule/aes-586.S
 FILE: ../../../third_party/boringssl/mac-x86/crypto/fipsmodule/aesni-x86.S
 FILE: ../../../third_party/boringssl/mac-x86/crypto/fipsmodule/bn-586.S
 FILE: ../../../third_party/boringssl/mac-x86/crypto/fipsmodule/co-586.S
+FILE: ../../../third_party/boringssl/mac-x86/crypto/fipsmodule/ghash-ssse3-x86.S
 FILE: ../../../third_party/boringssl/mac-x86/crypto/fipsmodule/ghash-x86.S
 FILE: ../../../third_party/boringssl/mac-x86/crypto/fipsmodule/md5-586.S
 FILE: ../../../third_party/boringssl/mac-x86/crypto/fipsmodule/sha1-586.S
@@ -7240,10 +7329,11 @@ FILE: ../../../third_party/boringssl/mac-x86_64/crypto/cipher_extra/chacha20_pol
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/aes-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/aesni-gcm-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/aesni-x86_64.S
-FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/bsaes-x86_64.S
+FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/ghash-ssse3-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/ghash-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/md5-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/p256-x86_64-asm.S
+FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/p256_beeu-x86_64-asm.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/rdrand-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/rsaz-avx2.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/sha1-x86_64.S
@@ -7252,11 +7342,13 @@ FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/sha512-x86_64.
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/vpaes-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/x86_64-mont.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/x86_64-mont5.S
+FILE: ../../../third_party/boringssl/mac-x86_64/crypto/third_party/sike/asm/fp-x86_64.S
 FILE: ../../../third_party/boringssl/win-x86/crypto/chacha/chacha-x86.asm
 FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/aes-586.asm
 FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/aesni-x86.asm
 FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/bn-586.asm
 FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/co-586.asm
+FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/ghash-ssse3-x86.asm
 FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/ghash-x86.asm
 FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/md5-586.asm
 FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/sha1-586.asm
@@ -7270,10 +7362,11 @@ FILE: ../../../third_party/boringssl/win-x86_64/crypto/cipher_extra/chacha20_pol
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/aes-x86_64.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/aesni-gcm-x86_64.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/aesni-x86_64.asm
-FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/bsaes-x86_64.asm
+FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/ghash-ssse3-x86_64.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/ghash-x86_64.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/md5-x86_64.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/p256-x86_64-asm.asm
+FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/p256_beeu-x86_64-asm.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/rdrand-x86_64.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/rsaz-avx2.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/sha1-x86_64.asm
@@ -7282,6 +7375,7 @@ FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/sha512-x86_64.
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/vpaes-x86_64.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/x86_64-mont.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/x86_64-mont5.asm
+FILE: ../../../third_party/boringssl/win-x86_64/crypto/third_party/sike/asm/fp-x86_64.asm
 ----------------------------------------------------------------------------------------------------
 <THIS BLOCK INTENTIONALLY LEFT BLANK>
 ====================================================================================================
@@ -7363,6 +7457,7 @@ FILE: ../../../third_party/dart/.mailmap
 FILE: ../../../third_party/dart/.style.yapf
 FILE: ../../../third_party/dart/.vpython
 FILE: ../../../third_party/dart/PATENT_GRANT
+FILE: ../../../third_party/dart/benchmarks/IsolateSpawn/dart/helloworld.dart
 FILE: ../../../third_party/dart/client/idea/.idea/.name
 FILE: ../../../third_party/dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../third_party/dart/client/idea/.idea/vcs.xml
@@ -7447,6 +7542,7 @@ FILE: ../../../third_party/dart/benchmarks/FfiCall/dart/native/native_functions.
 FILE: ../../../third_party/dart/benchmarks/FfiMemory/dart/FfiMemory.dart
 FILE: ../../../third_party/dart/benchmarks/FfiStruct/dart/FfiStruct.dart
 FILE: ../../../third_party/dart/benchmarks/Isolate/dart/Isolate.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateSpawn/dart/IsolateSpawn.dart
 FILE: ../../../third_party/dart/runtime/bin/abi_version.h
 FILE: ../../../third_party/dart/runtime/bin/abi_version_in.cc
 FILE: ../../../third_party/dart/runtime/bin/elf_loader.cc
@@ -7466,16 +7562,23 @@ FILE: ../../../third_party/dart/runtime/lib/wasm.cc
 FILE: ../../../third_party/dart/runtime/llvm_codegen/bit/bit.h
 FILE: ../../../third_party/dart/runtime/llvm_codegen/bit/main.cc
 FILE: ../../../third_party/dart/runtime/llvm_codegen/bit/test.cc
+FILE: ../../../third_party/dart/runtime/llvm_codegen/codegen/dart.cc
+FILE: ../../../third_party/dart/runtime/llvm_codegen/codegen/dart.h
 FILE: ../../../third_party/dart/runtime/llvm_codegen/codegen/main.cc
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/tree_map.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/isolate_group.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/repositories/isolate_group.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/isolate_group.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/timeline_base.dart
 FILE: ../../../third_party/dart/runtime/platform/elf.h
+FILE: ../../../third_party/dart/runtime/platform/thread_sanitizer.h
 FILE: ../../../third_party/dart/runtime/tools/dartfuzz/dartfuzz_api_table.dart
 FILE: ../../../third_party/dart/runtime/tools/dartfuzz/dartfuzz_ffi_api.dart
 FILE: ../../../third_party/dart/runtime/tools/dartfuzz/dartfuzz_type_table.dart
 FILE: ../../../third_party/dart/runtime/tools/dartfuzz/gen_api_table.dart
 FILE: ../../../third_party/dart/runtime/tools/dartfuzz/gen_type_table.dart
 FILE: ../../../third_party/dart/runtime/tools/dartfuzz/gen_util.dart
+FILE: ../../../third_party/dart/runtime/tools/ffi/sdk_lib_ffi_generator.dart
 FILE: ../../../third_party/dart/runtime/tools/graphexplorer/graphexplorer.html
 FILE: ../../../third_party/dart/runtime/tools/graphexplorer/graphexplorer.js
 FILE: ../../../third_party/dart/runtime/tools/run_clang_tidy.dart
@@ -7578,7 +7681,6 @@ FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/collections/closable_
 FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/database.dart
 FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/ffi/arena.dart
 FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/ffi/dylib_utils.dart
-FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/ffi/utf8.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/rti.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/shared/recipe_syntax.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_dynamic_library_patch.dart
@@ -8731,7 +8833,6 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/strongl
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/target.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/repositories/type_arguments.dart
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline_message_handler.js
-FILE: ../../../third_party/dart/runtime/platform/atomic_fuchsia.h
 FILE: ../../../third_party/dart/runtime/platform/syslog_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/platform/utils_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/platform/utils_fuchsia.h
@@ -9223,10 +9324,6 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/unknown_ref
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/vm_view.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/tracer.dart
 FILE: ../../../third_party/dart/runtime/platform/atomic.h
-FILE: ../../../third_party/dart/runtime/platform/atomic_android.h
-FILE: ../../../third_party/dart/runtime/platform/atomic_linux.h
-FILE: ../../../third_party/dart/runtime/platform/atomic_macos.h
-FILE: ../../../third_party/dart/runtime/platform/atomic_win.h
 FILE: ../../../third_party/dart/runtime/platform/signal_blocker.h
 FILE: ../../../third_party/dart/runtime/vm/allocation.h
 FILE: ../../../third_party/dart/runtime/vm/class_finalizer.cc
@@ -9324,7 +9421,6 @@ FILE: ../../../third_party/dart/runtime/vm/thread_interrupter_android.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_interrupter_linux.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_interrupter_macos.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_interrupter_win.cc
-FILE: ../../../third_party/dart/sdk/lib/_chrome/dart2js/chrome_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/_http/http.dart
 FILE: ../../../third_party/dart/sdk/lib/_http/http_headers.dart
 FILE: ../../../third_party/dart/sdk/lib/_http/http_impl.dart
@@ -9431,7 +9527,6 @@ FILE: ../../../third_party/dart/sdk/lib/vmservice/message_router.dart
 FILE: ../../../third_party/dart/sdk/lib/vmservice/running_isolate.dart
 FILE: ../../../third_party/dart/sdk/lib/vmservice/running_isolates.dart
 FILE: ../../../third_party/dart/sdk/lib/web_gl/dart2js/web_gl_dart2js.dart
-FILE: ../../../third_party/dart/sdk_nnbd/lib/_chrome/dart2js/chrome_dart2js.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_http/http.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_http/http_headers.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_http/http_impl.dart
@@ -9762,6 +9857,8 @@ LIBRARY: dart
 ORIGIN: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_scope_builder.h + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_scope_builder.h
+FILE: ../../../third_party/dart/sdk/lib/io/network_profiling.dart
+FILE: ../../../third_party/dart/sdk_nnbd/lib/io/network_profiling.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2019, the Dart project authors. Please see the AUTHORS file
 for details. All rights reserved.
@@ -11581,6 +11678,7 @@ FILE: ../../../third_party/harfbuzz/src/harfbuzz-config.cmake.in
 FILE: ../../../third_party/harfbuzz/src/harfbuzz-gobject.pc.in
 FILE: ../../../third_party/harfbuzz/src/harfbuzz-icu.pc.in
 FILE: ../../../third_party/harfbuzz/src/harfbuzz-subset.pc.in
+FILE: ../../../third_party/harfbuzz/src/harfbuzz.cc
 FILE: ../../../third_party/harfbuzz/src/harfbuzz.pc.in
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-table.cc
@@ -11705,6 +11803,8 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-color-colr-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-color-sbix-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-color-svg-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-gasp-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-metrics.h
+FILE: ../../../third_party/harfbuzz/src/hb-ot-metrics.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-stat-table.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2018  Ebrahim Byagowi
@@ -11781,6 +11881,46 @@ FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-trak-table.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2018  Ebrahim Byagowi
 Copyright © 2018  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-aat-layout-opbd-table.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-opbd-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-gdi.cc
+FILE: ../../../third_party/harfbuzz/src/hb-gdi.h
+FILE: ../../../third_party/harfbuzz/src/hb-number-parser.hh
+FILE: ../../../third_party/harfbuzz/src/hb-number-parser.rl
+FILE: ../../../third_party/harfbuzz/src/hb-number.cc
+FILE: ../../../third_party/harfbuzz/src/hb-number.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-meta-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-meta.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-meta.h
+FILE: ../../../third_party/harfbuzz/src/test-number.cc
+FILE: ../../../third_party/harfbuzz/src/test-ot-meta.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2019  Ebrahim Byagowi
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -11905,6 +12045,35 @@ FILE: ../../../third_party/harfbuzz/src/hb-object.hh
 Copyright © 2007  Chris Wilson
 Copyright © 2009,2010  Red Hat, Inc.
 Copyright © 2011,2012  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-bimap.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-bimap.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2019 Adobe Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -13018,6 +13187,8 @@ TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-glyf-table.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2015  Google, Inc.
+Copyright © 2019  Adobe Inc.
+Copyright © 2019  Ebrahim Byagowi
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -13118,9 +13289,9 @@ ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-layout-base-table.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-layout-base-table.hh
 ----------------------------------------------------------------------------------------------------
-Copyright © 2016 Elie Roux <elie.roux@telecom-bretagne.eu>
+Copyright © 2016  Elie Roux <elie.roux@telecom-bretagne.eu>
 Copyright © 2018  Google, Inc.
-Copyright © 2018  Ebrahim Byagowi
+Copyright © 2018-2019  Ebrahim Byagowi
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -13365,6 +13536,35 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-math.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-math.h
 ----------------------------------------------------------------------------------------------------
 Copyright © 2016  Igalia S.L.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-metrics.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-metrics.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2018-2019  Ebrahim Byagowi
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -13661,6 +13861,36 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-var-gvar-table.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-var-gvar-table.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2019  Adobe Inc.
+Copyright © 2019  Ebrahim Byagowi
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-serialize.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-serialize.hh
@@ -13892,6 +14122,35 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/test-bimap.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/test-bimap.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2019  Adobe, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/test-buffer-serialize.cc
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/test-buffer-serialize.cc
@@ -13984,10 +14243,12 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 LIBRARY: icu
 ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/COPYING
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -13998,24 +14259,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14024,11 +14297,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14062,9 +14334,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -14077,7 +14346,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright 2006-2011, the V8 project authors. All rights reserved.
 Redistribution and use in source and binary forms, with or without
@@ -14111,10 +14382,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14125,24 +14398,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14151,11 +14436,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14189,9 +14473,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -14204,7 +14485,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 1999 Computer Systems and Communication Lab,
                    Institute of Information Science, Academia
@@ -14243,10 +14526,12 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14257,24 +14542,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14283,11 +14580,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14321,9 +14617,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -14336,7 +14629,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 1999 TaBE Project.
 Copyright (c) 1999 Pai-Hsiang Hsiao.
@@ -14374,10 +14669,12 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14388,24 +14685,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14414,11 +14723,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14452,9 +14760,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -14467,7 +14772,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2013 International Business Machines Corporation
 and others. All Rights Reserved.
@@ -14511,10 +14818,12 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14525,24 +14834,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14551,11 +14872,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14589,9 +14909,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -14604,7 +14921,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2014 International Business Machines Corporation
 and others. All Rights Reserved.
@@ -14647,10 +14966,12 @@ SUCH DAMAGE.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14661,24 +14982,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14687,11 +15020,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14725,9 +15057,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -14740,7 +15069,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 The BSD License
 http://opensource.org/licenses/bsd-license.php
@@ -14779,10 +15110,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.icu
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14793,24 +15126,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14819,11 +15164,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14857,9 +15201,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -14872,7 +15213,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 1995-2016 International Business Machines Corporation and others
 All rights reserved.
@@ -14910,10 +15253,12 @@ property of their respective owners.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -14924,24 +15269,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -14950,11 +15307,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -14988,9 +15344,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -15003,7 +15356,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright 1996 Chih-Hao Tsai @ Beckman Institute,
     University of Illinois
@@ -15014,10 +15369,12 @@ c-tsai4@uiuc.edu  http://casper.beckman.uiuc.edu/~c-tsai4
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -15028,24 +15385,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -15054,11 +15423,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -15092,9 +15460,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -15107,7 +15472,9 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
 Copyright 2000, 2001, 2002, 2003 Nara Institute of Science
 and Technology.  All Rights Reserved.
@@ -15185,10 +15552,12 @@ above as far as the program is concerned.
 LIBRARY: icu
 ORIGIN: ../../../third_party/icu/LICENSE
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl.dat
+FILE: ../../../third_party/icu/android_small/icudtl_extra.dat
+FILE: ../../../third_party/icu/cast/brkitr.patch
 FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/chromeos/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
 FILE: ../../../third_party/icu/flutter/brkitr.patch
@@ -15199,24 +15568,36 @@ FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/DateIntervalInfo.patch
+FILE: ../../../third_party/icu/patches/bidiunshift.patch
+FILE: ../../../third_party/icu/patches/buildtool.patch
+FILE: ../../../third_party/icu/patches/calendarToAdopt.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/clang_builtins.patch
+FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/decimalformat_align.patch
 FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/hu_minimumGroupingDigits.patch
+FILE: ../../../third_party/icu/patches/icupkg.patch
+FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/locid_map.patch
-FILE: ../../../third_party/icu/patches/nf_maxsig.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/localematcher.patch
+FILE: ../../../third_party/icu/patches/regexp.patch
+FILE: ../../../third_party/icu/patches/regexp2.patch
+FILE: ../../../third_party/icu/patches/remove_atomics_macros.patch
+FILE: ../../../third_party/icu/patches/staticmutex.patch
+FILE: ../../../third_party/icu/patches/this_hour_minute.patch
+FILE: ../../../third_party/icu/patches/timezone.patch
+FILE: ../../../third_party/icu/patches/tracing.patch
+FILE: ../../../third_party/icu/patches/trie.patch
+FILE: ../../../third_party/icu/patches/usePool.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
 FILE: ../../../third_party/icu/source/data/in/nfc.nrm
@@ -15225,11 +15606,10 @@ FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
 FILE: ../../../third_party/icu/source/data/in/pnames.icu
 FILE: ../../../third_party/icu/source/data/in/ubidi.icu
 FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/ulayout.icu
 FILE: ../../../third_party/icu/source/data/in/unames.icu
 FILE: ../../../third_party/icu/source/data/in/uprops.icu
 FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
 FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
@@ -15263,9 +15643,6 @@ FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
 FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
 FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
 FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
 FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
@@ -15278,10 +15655,12 @@ FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
 FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
 FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
+FILE: ../../../third_party/icu/tzres/metaZones.res
+FILE: ../../../third_party/icu/tzres/timezoneTypes.res
+FILE: ../../../third_party/icu/tzres/zoneinfo64.res
 ----------------------------------------------------------------------------------------------------
-Copyright © 1991-2018 Unicode, Inc. All rights reserved.
-Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
+Copyright © 1991-2019 Unicode, Inc. All rights reserved.
+Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of the Unicode data files and any associated documentation
@@ -15311,6 +15690,48 @@ Except as contained in this notice, the name of a copyright holder
 shall not be used in advertising or otherwise to promote the sale,
 use or other dealings in these Data Files or Software without prior
 written authorization of the copyright holder.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: icu
+ORIGIN: ../../../third_party/icu/filters/android.json + ../../../third_party/dart/runtime/third_party/double-conversion/COPYING
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/icu/filters/android.json
+FILE: ../../../third_party/icu/filters/android_extra.json
+FILE: ../../../third_party/icu/filters/android_small.json
+FILE: ../../../third_party/icu/filters/cast.json
+FILE: ../../../third_party/icu/filters/chromeos.json
+FILE: ../../../third_party/icu/filters/common.json
+FILE: ../../../third_party/icu/filters/flutter.json
+FILE: ../../../third_party/icu/filters/ios.json
+----------------------------------------------------------------------------------------------------
+Copyright 2019 the V8 project authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
@@ -15407,6 +15828,8 @@ FILE: ../../../third_party/icu/source/common/bytestrie.cpp
 FILE: ../../../third_party/icu/source/common/bytestriebuilder.cpp
 FILE: ../../../third_party/icu/source/common/bytestrieiterator.cpp
 FILE: ../../../third_party/icu/source/common/caniter.cpp
+FILE: ../../../third_party/icu/source/common/capi_helper.h
+FILE: ../../../third_party/icu/source/common/characterproperties.cpp
 FILE: ../../../third_party/icu/source/common/chariter.cpp
 FILE: ../../../third_party/icu/source/common/charstr.cpp
 FILE: ../../../third_party/icu/source/common/charstr.h
@@ -15433,21 +15856,30 @@ FILE: ../../../third_party/icu/source/common/hash.h
 FILE: ../../../third_party/icu/source/common/icudataver.cpp
 FILE: ../../../third_party/icu/source/common/icuplug.cpp
 FILE: ../../../third_party/icu/source/common/icuplugimp.h
-FILE: ../../../third_party/icu/source/common/listformatter.cpp
 FILE: ../../../third_party/icu/source/common/loadednormalizer2impl.cpp
+FILE: ../../../third_party/icu/source/common/localebuilder.cpp
+FILE: ../../../third_party/icu/source/common/localematcher.cpp
+FILE: ../../../third_party/icu/source/common/localeprioritylist.cpp
+FILE: ../../../third_party/icu/source/common/localeprioritylist.h
 FILE: ../../../third_party/icu/source/common/localsvc.h
 FILE: ../../../third_party/icu/source/common/locavailable.cpp
 FILE: ../../../third_party/icu/source/common/locbased.cpp
 FILE: ../../../third_party/icu/source/common/locbased.h
 FILE: ../../../third_party/icu/source/common/locdispnames.cpp
+FILE: ../../../third_party/icu/source/common/locdistance.cpp
+FILE: ../../../third_party/icu/source/common/locdistance.h
 FILE: ../../../third_party/icu/source/common/locdspnm.cpp
 FILE: ../../../third_party/icu/source/common/locid.cpp
 FILE: ../../../third_party/icu/source/common/loclikely.cpp
+FILE: ../../../third_party/icu/source/common/loclikelysubtags.cpp
+FILE: ../../../third_party/icu/source/common/loclikelysubtags.h
 FILE: ../../../third_party/icu/source/common/locmap.cpp
 FILE: ../../../third_party/icu/source/common/locmap.h
 FILE: ../../../third_party/icu/source/common/locresdata.cpp
 FILE: ../../../third_party/icu/source/common/locutil.cpp
 FILE: ../../../third_party/icu/source/common/locutil.h
+FILE: ../../../third_party/icu/source/common/lsr.cpp
+FILE: ../../../third_party/icu/source/common/lsr.h
 FILE: ../../../third_party/icu/source/common/messageimpl.h
 FILE: ../../../third_party/icu/source/common/messagepattern.cpp
 FILE: ../../../third_party/icu/source/common/msvcres.h
@@ -15493,6 +15925,8 @@ FILE: ../../../third_party/icu/source/common/resbund.cpp
 FILE: ../../../third_party/icu/source/common/resbund_cnv.cpp
 FILE: ../../../third_party/icu/source/common/resource.cpp
 FILE: ../../../third_party/icu/source/common/resource.h
+FILE: ../../../third_party/icu/source/common/restrace.cpp
+FILE: ../../../third_party/icu/source/common/restrace.h
 FILE: ../../../third_party/icu/source/common/ruleiter.cpp
 FILE: ../../../third_party/icu/source/common/ruleiter.h
 FILE: ../../../third_party/icu/source/common/schriter.cpp
@@ -15578,6 +16012,8 @@ FILE: ../../../third_party/icu/source/common/ucnvsel.cpp
 FILE: ../../../third_party/icu/source/common/ucol_data.h
 FILE: ../../../third_party/icu/source/common/ucol_swp.cpp
 FILE: ../../../third_party/icu/source/common/ucol_swp.h
+FILE: ../../../third_party/icu/source/common/ucptrie.cpp
+FILE: ../../../third_party/icu/source/common/ucptrie_impl.h
 FILE: ../../../third_party/icu/source/common/ucurr.cpp
 FILE: ../../../third_party/icu/source/common/ucurrimp.h
 FILE: ../../../third_party/icu/source/common/udata.cpp
@@ -15596,9 +16032,9 @@ FILE: ../../../third_party/icu/source/common/uinit.cpp
 FILE: ../../../third_party/icu/source/common/uinvchar.cpp
 FILE: ../../../third_party/icu/source/common/uinvchar.h
 FILE: ../../../third_party/icu/source/common/uiter.cpp
+FILE: ../../../third_party/icu/source/common/ulayout_props.h
 FILE: ../../../third_party/icu/source/common/ulist.cpp
 FILE: ../../../third_party/icu/source/common/ulist.h
-FILE: ../../../third_party/icu/source/common/ulistformatter.cpp
 FILE: ../../../third_party/icu/source/common/uloc.cpp
 FILE: ../../../third_party/icu/source/common/uloc_keytype.cpp
 FILE: ../../../third_party/icu/source/common/uloc_tag.cpp
@@ -15606,6 +16042,7 @@ FILE: ../../../third_party/icu/source/common/ulocimp.h
 FILE: ../../../third_party/icu/source/common/umapfile.cpp
 FILE: ../../../third_party/icu/source/common/umapfile.h
 FILE: ../../../third_party/icu/source/common/umath.cpp
+FILE: ../../../third_party/icu/source/common/umutablecptrie.cpp
 FILE: ../../../third_party/icu/source/common/umutex.cpp
 FILE: ../../../third_party/icu/source/common/umutex.h
 FILE: ../../../third_party/icu/source/common/unames.cpp
@@ -15628,7 +16065,8 @@ FILE: ../../../third_party/icu/source/common/unicode/filteredbrk.h
 FILE: ../../../third_party/icu/source/common/unicode/icudataver.h
 FILE: ../../../third_party/icu/source/common/unicode/icuplug.h
 FILE: ../../../third_party/icu/source/common/unicode/idna.h
-FILE: ../../../third_party/icu/source/common/unicode/listformatter.h
+FILE: ../../../third_party/icu/source/common/unicode/localebuilder.h
+FILE: ../../../third_party/icu/source/common/unicode/localematcher.h
 FILE: ../../../third_party/icu/source/common/unicode/localpointer.h
 FILE: ../../../third_party/icu/source/common/unicode/locdspnm.h
 FILE: ../../../third_party/icu/source/common/unicode/locid.h
@@ -15666,6 +16104,8 @@ FILE: ../../../third_party/icu/source/common/unicode/ucnv_cb.h
 FILE: ../../../third_party/icu/source/common/unicode/ucnv_err.h
 FILE: ../../../third_party/icu/source/common/unicode/ucnvsel.h
 FILE: ../../../third_party/icu/source/common/unicode/uconfig.h
+FILE: ../../../third_party/icu/source/common/unicode/ucpmap.h
+FILE: ../../../third_party/icu/source/common/unicode/ucptrie.h
 FILE: ../../../third_party/icu/source/common/unicode/ucurr.h
 FILE: ../../../third_party/icu/source/common/unicode/udata.h
 FILE: ../../../third_party/icu/source/common/unicode/udisplaycontext.h
@@ -15673,10 +16113,10 @@ FILE: ../../../third_party/icu/source/common/unicode/uenum.h
 FILE: ../../../third_party/icu/source/common/unicode/uidna.h
 FILE: ../../../third_party/icu/source/common/unicode/uiter.h
 FILE: ../../../third_party/icu/source/common/unicode/uldnames.h
-FILE: ../../../third_party/icu/source/common/unicode/ulistformatter.h
 FILE: ../../../third_party/icu/source/common/unicode/uloc.h
 FILE: ../../../third_party/icu/source/common/unicode/umachine.h
 FILE: ../../../third_party/icu/source/common/unicode/umisc.h
+FILE: ../../../third_party/icu/source/common/unicode/umutablecptrie.h
 FILE: ../../../third_party/icu/source/common/unicode/unifilt.h
 FILE: ../../../third_party/icu/source/common/unicode/unifunct.h
 FILE: ../../../third_party/icu/source/common/unicode/unimatch.h
@@ -15771,6 +16211,7 @@ FILE: ../../../third_party/icu/source/common/utrie2.cpp
 FILE: ../../../third_party/icu/source/common/utrie2.h
 FILE: ../../../third_party/icu/source/common/utrie2_builder.cpp
 FILE: ../../../third_party/icu/source/common/utrie2_impl.h
+FILE: ../../../third_party/icu/source/common/utrie_swap.cpp
 FILE: ../../../third_party/icu/source/common/uts46.cpp
 FILE: ../../../third_party/icu/source/common/utypeinfo.h
 FILE: ../../../third_party/icu/source/common/utypes.cpp
@@ -15815,6 +16256,7 @@ FILE: ../../../third_party/icu/source/config/mh-solaris-gcc
 FILE: ../../../third_party/icu/source/config/mh-unknown
 FILE: ../../../third_party/icu/source/config/windows-update.sed.in
 FILE: ../../../third_party/icu/source/data/build.xml
+FILE: ../../../third_party/icu/source/data/buildtool/filtration_schema.json
 FILE: ../../../third_party/icu/source/data/icu-coll-deprecates.xml
 FILE: ../../../third_party/icu/source/data/icu-config.xml
 FILE: ../../../third_party/icu/source/data/icu-locale-deprecates.xml
@@ -16142,6 +16584,8 @@ FILE: ../../../third_party/icu/source/i18n/dtitvinf.cpp
 FILE: ../../../third_party/icu/source/i18n/dtptngen.cpp
 FILE: ../../../third_party/icu/source/i18n/dtptngen_impl.h
 FILE: ../../../third_party/icu/source/i18n/dtrule.cpp
+FILE: ../../../third_party/icu/source/i18n/erarules.cpp
+FILE: ../../../third_party/icu/source/i18n/erarules.h
 FILE: ../../../third_party/icu/source/i18n/esctrn.cpp
 FILE: ../../../third_party/icu/source/i18n/esctrn.h
 FILE: ../../../third_party/icu/source/i18n/ethpccal.cpp
@@ -16150,6 +16594,10 @@ FILE: ../../../third_party/icu/source/i18n/fmtable.cpp
 FILE: ../../../third_party/icu/source/i18n/fmtable_cnv.cpp
 FILE: ../../../third_party/icu/source/i18n/fmtableimp.h
 FILE: ../../../third_party/icu/source/i18n/format.cpp
+FILE: ../../../third_party/icu/source/i18n/formattedval_impl.h
+FILE: ../../../third_party/icu/source/i18n/formattedval_iterimpl.cpp
+FILE: ../../../third_party/icu/source/i18n/formattedval_sbimpl.cpp
+FILE: ../../../third_party/icu/source/i18n/formattedvalue.cpp
 FILE: ../../../third_party/icu/source/i18n/fphdlimp.cpp
 FILE: ../../../third_party/icu/source/i18n/fphdlimp.h
 FILE: ../../../third_party/icu/source/i18n/fpositer.cpp
@@ -16170,6 +16618,7 @@ FILE: ../../../third_party/icu/source/i18n/islamcal.cpp
 FILE: ../../../third_party/icu/source/i18n/islamcal.h
 FILE: ../../../third_party/icu/source/i18n/japancal.cpp
 FILE: ../../../third_party/icu/source/i18n/japancal.h
+FILE: ../../../third_party/icu/source/i18n/listformatter.cpp
 FILE: ../../../third_party/icu/source/i18n/measfmt.cpp
 FILE: ../../../third_party/icu/source/i18n/measunit.cpp
 FILE: ../../../third_party/icu/source/i18n/measure.cpp
@@ -16218,6 +16667,7 @@ FILE: ../../../third_party/icu/source/i18n/number_modifiers.h
 FILE: ../../../third_party/icu/source/i18n/number_multiplier.cpp
 FILE: ../../../third_party/icu/source/i18n/number_multiplier.h
 FILE: ../../../third_party/icu/source/i18n/number_notation.cpp
+FILE: ../../../third_party/icu/source/i18n/number_output.cpp
 FILE: ../../../third_party/icu/source/i18n/number_padding.cpp
 FILE: ../../../third_party/icu/source/i18n/number_patternmodifier.cpp
 FILE: ../../../third_party/icu/source/i18n/number_patternmodifier.h
@@ -16257,6 +16707,9 @@ FILE: ../../../third_party/icu/source/i18n/numparse_types.h
 FILE: ../../../third_party/icu/source/i18n/numparse_utils.h
 FILE: ../../../third_party/icu/source/i18n/numparse_validators.cpp
 FILE: ../../../third_party/icu/source/i18n/numparse_validators.h
+FILE: ../../../third_party/icu/source/i18n/numrange_fluent.cpp
+FILE: ../../../third_party/icu/source/i18n/numrange_impl.cpp
+FILE: ../../../third_party/icu/source/i18n/numrange_impl.h
 FILE: ../../../third_party/icu/source/i18n/numsys.cpp
 FILE: ../../../third_party/icu/source/i18n/numsys_impl.h
 FILE: ../../../third_party/icu/source/i18n/olsontz.cpp
@@ -16365,6 +16818,7 @@ FILE: ../../../third_party/icu/source/i18n/udatpg.cpp
 FILE: ../../../third_party/icu/source/i18n/ufieldpositer.cpp
 FILE: ../../../third_party/icu/source/i18n/uitercollationiterator.cpp
 FILE: ../../../third_party/icu/source/i18n/uitercollationiterator.h
+FILE: ../../../third_party/icu/source/i18n/ulistformatter.cpp
 FILE: ../../../third_party/icu/source/i18n/ulocdata.cpp
 FILE: ../../../third_party/icu/source/i18n/umsg.cpp
 FILE: ../../../third_party/icu/source/i18n/umsg_imp.h
@@ -16393,15 +16847,18 @@ FILE: ../../../third_party/icu/source/i18n/unicode/dtrule.h
 FILE: ../../../third_party/icu/source/i18n/unicode/fieldpos.h
 FILE: ../../../third_party/icu/source/i18n/unicode/fmtable.h
 FILE: ../../../third_party/icu/source/i18n/unicode/format.h
+FILE: ../../../third_party/icu/source/i18n/unicode/formattedvalue.h
 FILE: ../../../third_party/icu/source/i18n/unicode/fpositer.h
 FILE: ../../../third_party/icu/source/i18n/unicode/gender.h
 FILE: ../../../third_party/icu/source/i18n/unicode/gregocal.h
+FILE: ../../../third_party/icu/source/i18n/unicode/listformatter.h
 FILE: ../../../third_party/icu/source/i18n/unicode/measfmt.h
 FILE: ../../../third_party/icu/source/i18n/unicode/measunit.h
 FILE: ../../../third_party/icu/source/i18n/unicode/measure.h
 FILE: ../../../third_party/icu/source/i18n/unicode/msgfmt.h
 FILE: ../../../third_party/icu/source/i18n/unicode/nounit.h
 FILE: ../../../third_party/icu/source/i18n/unicode/numberformatter.h
+FILE: ../../../third_party/icu/source/i18n/unicode/numberrangeformatter.h
 FILE: ../../../third_party/icu/source/i18n/unicode/numfmt.h
 FILE: ../../../third_party/icu/source/i18n/unicode/numsys.h
 FILE: ../../../third_party/icu/source/i18n/unicode/plurfmt.h
@@ -16437,7 +16894,9 @@ FILE: ../../../third_party/icu/source/i18n/unicode/udateintervalformat.h
 FILE: ../../../third_party/icu/source/i18n/unicode/udatpg.h
 FILE: ../../../third_party/icu/source/i18n/unicode/ufieldpositer.h
 FILE: ../../../third_party/icu/source/i18n/unicode/uformattable.h
+FILE: ../../../third_party/icu/source/i18n/unicode/uformattedvalue.h
 FILE: ../../../third_party/icu/source/i18n/unicode/ugender.h
+FILE: ../../../third_party/icu/source/i18n/unicode/ulistformatter.h
 FILE: ../../../third_party/icu/source/i18n/unicode/ulocdata.h
 FILE: ../../../third_party/icu/source/i18n/unicode/umsg.h
 FILE: ../../../third_party/icu/source/i18n/unicode/unirepl.h
@@ -16671,6 +17130,8 @@ FILE: ../../../third_party/icu/source/tools/genrb/derb.1.in
 FILE: ../../../third_party/icu/source/tools/genrb/derb.cpp
 FILE: ../../../third_party/icu/source/tools/genrb/errmsg.c
 FILE: ../../../third_party/icu/source/tools/genrb/errmsg.h
+FILE: ../../../third_party/icu/source/tools/genrb/filterrb.cpp
+FILE: ../../../third_party/icu/source/tools/genrb/filterrb.h
 FILE: ../../../third_party/icu/source/tools/genrb/genrb.1.in
 FILE: ../../../third_party/icu/source/tools/genrb/genrb.cpp
 FILE: ../../../third_party/icu/source/tools/genrb/genrb.h
@@ -22997,4 +23458,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 360
+Total license count: 367

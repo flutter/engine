@@ -190,6 +190,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     @Nullable
     private SemanticsNode inputFocusedSemanticsNode;
 
+    // Keeps track of the last semantics node that had the input focus.
+    //
+    // This is used to determine if the input focus has changed since the last time the
+    // {@code inputFocusSemanticsNode} has been set, so that we can send a {@code TYPE_VIEW_FOCUSED}
+    // event when it changes.
+    @Nullable
+    private SemanticsNode lastInputFocusedSemanticsNode;
+
     // The widget within Flutter that currently sits beneath a cursor, e.g,
     // beneath a stylus or mouse cursor.
     @Nullable
@@ -591,7 +599,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             }
         }
 
-        if (semanticsNode.hasFlag(Flag.IS_BUTTON)) {
+        if (semanticsNode.hasFlag(Flag.IS_BUTTON) || semanticsNode.hasFlag(Flag.IS_LINK)) {
             result.setClassName("android.widget.Button");
         }
         if (semanticsNode.hasFlag(Flag.IS_IMAGE)) {
@@ -1071,7 +1079,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
      */
     private SemanticsNode getRootSemanticsNode() {
         if (BuildConfig.DEBUG && !flutterSemanticsTree.containsKey(0)) {
-            Log.e(TAG, "Attempted to getRootSemanticsNode without a root sematnics node.");
+            Log.e(TAG, "Attempted to getRootSemanticsNode without a root semantics node.");
         }
         return flutterSemanticsTree.get(0);
     }
@@ -1130,6 +1138,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
      */
     public boolean onAccessibilityHoverEvent(MotionEvent event) {
         if (!accessibilityManager.isTouchExplorationEnabled()) {
+            return false;
+        }
+        if (flutterSemanticsTree.isEmpty()) {
             return false;
         }
 
@@ -1377,6 +1388,20 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 event.getText().add(object.label);
                 sendAccessibilityEvent(event);
             }
+
+            // If the object is the input-focused node, then tell the reader about it, but only if
+            // it has changed since the last update.
+            if (inputFocusedSemanticsNode != null && inputFocusedSemanticsNode.id == object.id &&
+                    (lastInputFocusedSemanticsNode == null || lastInputFocusedSemanticsNode.id != inputFocusedSemanticsNode.id)) {
+                lastInputFocusedSemanticsNode = inputFocusedSemanticsNode;
+                sendAccessibilityEvent(obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_FOCUSED));
+            } else if (inputFocusedSemanticsNode == null) {
+                // There's no TYPE_VIEW_CLEAR_FOCUSED event, so if the current input focus becomes
+                // null, then we just set the last one to null too, so that it sends the event again
+                // when something regains focus.
+                lastInputFocusedSemanticsNode = null;
+            }
+
             if (inputFocusedSemanticsNode != null && inputFocusedSemanticsNode.id == object.id
                     && object.hadFlag(Flag.IS_TEXT_FIELD) && object.hasFlag(Flag.IS_TEXT_FIELD)
                     // If we have a TextField that has InputFocus, we should avoid announcing it if something
@@ -1648,7 +1673,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         // The Dart API defines the following flag but it isn't used in Android.
         // IS_MULTILINE(1 << 19);
         IS_READ_ONLY(1 << 20),
-        IS_FOCUSABLE(1 << 21);
+        IS_FOCUSABLE(1 << 21),
+        IS_LINK(1 << 22);
 
         final int value;
 

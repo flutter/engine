@@ -7,6 +7,7 @@ import 'dart:io' as io;
 import 'package:args/command_runner.dart';
 
 import 'build.dart';
+import 'clean.dart';
 import 'licenses.dart';
 import 'test_runner.dart';
 
@@ -14,8 +15,9 @@ CommandRunner runner = CommandRunner<bool>(
   'felt',
   'Command-line utility for building and testing Flutter web engine.',
 )
+  ..addCommand(CleanCommand())
   ..addCommand(LicensesCommand())
-  ..addCommand(TestsCommand())
+  ..addCommand(TestCommand())
   ..addCommand(BuildCommand());
 
 void main(List<String> args) async {

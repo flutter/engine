@@ -17,7 +17,6 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/size.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
-#include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/io/dart_io.h"
@@ -233,12 +232,10 @@ std::shared_ptr<DartVM> DartVM::Create(
     Settings settings,
     fml::RefPtr<DartSnapshot> vm_snapshot,
     fml::RefPtr<DartSnapshot> isolate_snapshot,
-    fml::RefPtr<DartSnapshot> shared_snapshot,
     std::shared_ptr<IsolateNameServer> isolate_name_server) {
-  auto vm_data = DartVMData::Create(settings,                     //
-                                    std::move(vm_snapshot),       //
-                                    std::move(isolate_snapshot),  //
-                                    std::move(shared_snapshot)    //
+  auto vm_data = DartVMData::Create(settings,                    //
+                                    std::move(vm_snapshot),      //
+                                    std::move(isolate_snapshot)  //
   );
 
   if (!vm_data) {

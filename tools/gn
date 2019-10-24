@@ -223,7 +223,6 @@ def to_gn_args(args):
     if args.enable_metal:
       gn_args['skia_use_metal'] = True
       gn_args['shell_enable_metal'] = True
-      gn_args['ios_deployment_target'] = '11'
       gn_args['allow_deprecated_api_calls'] = True
 
     if args.enable_vulkan:
@@ -257,6 +256,21 @@ def to_gn_args(args):
 
     gn_args['stripped_symbols'] = args.stripped
 
+    if args.msan:
+      gn_args['is_msan'] = True
+
+    if args.asan:
+      gn_args['is_asan'] = True
+
+    if args.tsan:
+      gn_args['is_tsan'] = True
+
+    if args.lsan:
+      gn_args['is_lsan'] = True
+
+    if args.ubsan:
+      gn_args['is_ubsan'] = True
+
     return gn_args
 
 def parse_args(args):
@@ -267,7 +281,7 @@ def parse_args(args):
 
   parser.add_argument('--runtime-mode', type=str, choices=['debug', 'profile', 'release', 'jit_release'], default='debug')
   parser.add_argument('--interpreter', default=False, action='store_true')
-  parser.add_argument('--dart-debug', default=False, action='store_true', help='Enables assertsion in the Dart VM. ' +
+  parser.add_argument('--dart-debug', default=False, action='store_true', help='Enables assertions in the Dart VM. ' +
       'Does not affect optimization levels. If you need to disable optimizations in Dart, use --full-dart-debug')
   parser.add_argument('--full-dart-debug', default=False, action='store_true', help='Implies --dart-debug ' +
       'and also disables optimizations in the Dart VM making it easier to step through VM code in the debugger.')
@@ -329,6 +343,13 @@ def parse_args(args):
   parser.add_argument('--stripped', default=True, action='store_true',
                       help='Strip debug symbols from the output. This defaults to true and has no effect on iOS.')
   parser.add_argument('--no-stripped', dest='stripped', action='store_false')
+
+  # Sanitizers.
+  parser.add_argument('--asan', default=False, action='store_true')
+  parser.add_argument('--lsan', default=False, action='store_true')
+  parser.add_argument('--msan', default=False, action='store_true')
+  parser.add_argument('--tsan', default=False, action='store_true')
+  parser.add_argument('--ubsan', default=False, action='store_true')
 
   return parser.parse_args(args)
 

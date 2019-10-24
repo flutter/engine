@@ -47,6 +47,7 @@ Float64List kTestTransform = () {
 }();
 
 void signalNativeTest() native 'SignalNativeTest';
+void signalNativeCount(int count) native 'SignalNativeCount';
 void signalNativeMessage(String message) native 'SignalNativeMessage';
 void notifySemanticsEnabled(bool enabled) native 'NotifySemanticsEnabled';
 void notifyAccessibilityFeatures(bool reduceMotion) native 'NotifyAccessibilityFeatures';
@@ -403,4 +404,51 @@ void render_gradient_on_non_root_backing_store() {
     window.render(builder.build());
   };
   window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void verify_b141980393() {
+  window.onBeginFrame = (Duration duration) {
+    // The platform view in the test case is screen sized but with margins of 31
+    // and 37 points from the top and bottom.
+    double top_margin = 31.0;
+    double bottom_margin = 37.0;
+    Size platform_view_size = Size(800.0, 600.0 - top_margin - bottom_margin);
+
+    SceneBuilder builder = SceneBuilder();
+
+    builder.pushOffset(0.0,       // x
+                       top_margin // y
+      );
+
+    // The web view in example.
+    builder.addPlatformView(1337, width:  platform_view_size.width,
+                                  height: platform_view_size.height);
+
+    builder.pop();
+
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void can_display_platform_view_with_pixel_ratio() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 20.0);
+    builder.addPlatformView(42, width: 400.0, height: 280.0);
+    builder.addPicture(Offset(0.0, 0.0), CreateSimplePicture());
+    builder.pop();
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void can_receive_locale_updates() {
+  window.onLocaleChanged = (){
+    signalNativeCount(window.locales.length);
+  };
+  signalNativeTest();
 }
