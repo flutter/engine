@@ -73,6 +73,9 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   // |GPUSurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;
 
+  // |GPUSurfaceGLDelegate|
+  std::shared_ptr<GLContextGuardManager> GetGLContextGuardManager() override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceGL);
 };
 

@@ -11,6 +11,7 @@
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
+#include "flutter/flow/gl_context_guard_manager.h"
 
 // A UIView that is used as the parent for embedded UIViews.
 //
@@ -74,6 +75,8 @@ class FlutterPlatformViewsController {
   void SetFlutterView(UIView* flutter_view);
 
   void SetFlutterViewController(UIViewController* flutter_view_controller);
+
+  void SetGLContextGuardManager(std::shared_ptr<GLContextGuardManager> gl_context_guard_manager);
 
   void RegisterViewFactory(NSObject<FlutterPlatformViewFactory>* factory, NSString* factoryId);
 
@@ -202,6 +205,8 @@ class FlutterPlatformViewsController {
   // After each clip operation, we update the head to the super view of the current head.
   void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
   void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
+
+  std::shared_ptr<GLContextGuardManager> gl_context_guard_manager_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };

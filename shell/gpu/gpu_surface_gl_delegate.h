@@ -10,6 +10,7 @@
 #include "flutter/shell/gpu/gpu_surface_delegate.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
+#include "flutter/flow/gl_context_guard_manager.h"
 
 namespace flutter {
 
@@ -59,6 +60,8 @@ class GPUSurfaceGLDelegate : public GPUSurfaceDelegate {
   // instrumentation to specific GL calls can specify custom GL functions
   // here.
   virtual GLProcResolver GetGLProcResolver() const;
+
+  virtual std::shared_ptr<GLContextGuardManager> GetGLContextGuardManager() = 0;
 };
 
 }  // namespace flutter

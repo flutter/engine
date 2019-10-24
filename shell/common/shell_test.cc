@@ -387,5 +387,9 @@ ExternalViewEmbedder* ShellTestPlatformView::GetExternalViewEmbedder() {
   return nullptr;
 }
 
+std::shared_ptr<GLContextGuardManager> ShellTestPlatformView::GetGLContextGuardManager() {
+  return nullptr;
+}
+
 }  // namespace testing
 }  // namespace flutter

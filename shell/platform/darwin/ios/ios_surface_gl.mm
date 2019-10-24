@@ -73,6 +73,11 @@ bool IOSSurfaceGL::GLContextPresent() {
   return IsValid() && render_target_->PresentRenderBuffer();
 }
 
+// |GPUSurfaceGLDelegate|
+std::shared_ptr<GLContextGuardManager> IOSSurfaceGL::GetGLContextGuardManager() {
+  return context_->GetIOSGLContextGuardManager();
+}
+
 // |ExternalViewEmbedder|
 sk_sp<SkSurface> IOSSurfaceGL::GetRootSurface() {
   // On iOS, the root surface is created from the on-screen render target. Only the surfaces for the
@@ -141,6 +146,7 @@ SkCanvas* IOSSurfaceGL::CompositeEmbeddedView(int view_id) {
 // |ExternalViewEmbedder|
 bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  platform_views_controller->SetGLContextGuardManager(context_->GetIOSGLContextGuardManager());
   if (platform_views_controller == nullptr) {
     return true;
   }

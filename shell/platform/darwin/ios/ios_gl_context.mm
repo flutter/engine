@@ -22,6 +22,7 @@ IOSGLContext::IOSGLContext() {
     context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
                                          sharegroup:resource_context_.get().sharegroup]);
   }
+  gl_context_guard_manager_ = std::make_shared<IOSGLContextGuardManager>(context_);
 
   // TODO:
   // iOS displays are more variable than just P3 or sRGB.  Reading the display
@@ -49,7 +50,8 @@ IOSGLContext::~IOSGLContext() = default;
 std::unique_ptr<IOSGLRenderTarget> IOSGLContext::CreateRenderTarget(
     fml::scoped_nsobject<CAEAGLLayer> layer) {
   return std::make_unique<IOSGLRenderTarget>(std::move(layer), context_.get(),
-                                             resource_context_.get());
+                                             resource_context_.get(),
+                                             gl_context_guard_manager_);
 }
 
 bool IOSGLContext::MakeCurrent() {

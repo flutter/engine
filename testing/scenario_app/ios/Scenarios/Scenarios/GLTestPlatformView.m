@@ -67,6 +67,7 @@
   self = [super initWithFrame:frame];
   if (self) {
     _context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
+    _context.debugLabel = @"platform view context";
     [EAGLContext setCurrentContext:_context];
     self.backgroundColor = [UIColor redColor];
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{

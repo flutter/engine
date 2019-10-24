@@ -13,6 +13,7 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
+#include "flutter/flow/gl_context_guard_manager.h"
 
 // These are common defines present on all OpenGL headers. However, we don't
 // want to perform GL header reasolution on each platform we support. So just
@@ -39,6 +40,7 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate,
     : delegate_(delegate),
       render_to_surface_(render_to_surface),
       weak_factory_(this) {
+  GLContextGuardManager::GLGuard guard = GLContextGuardManager::GLGuard(*(delegate_->GetGLContextGuardManager()));
   if (!delegate_->GLContextMakeCurrent()) {
     FML_LOG(ERROR)
         << "Could not make the context current to setup the gr context.";
@@ -98,6 +100,7 @@ GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrContext> gr_context,
       context_(gr_context),
       render_to_surface_(render_to_surface),
       weak_factory_(this) {
+   GLContextGuardManager::GLGuard guard = GLContextGuardManager::GLGuard(*(delegate_->GetGLContextGuardManager()));
   if (!delegate_->GLContextMakeCurrent()) {
     FML_LOG(ERROR)
         << "Could not make the context current to setup the gr context.";
@@ -114,7 +117,7 @@ GPUSurfaceGL::~GPUSurfaceGL() {
   if (!valid_) {
     return;
   }
-
+  GLContextGuardManager::GLGuard guard = GLContextGuardManager::GLGuard(*(delegate_->GetGLContextGuardManager()));
   if (!delegate_->GLContextMakeCurrent()) {
     FML_LOG(ERROR) << "Could not make the context current to destroy the "
                       "GrContext resources.";
@@ -253,6 +256,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
     return nullptr;
   }
 
+  GLContextGuardManager::GLGuard guard = GLContextGuardManager::GLGuard(*(delegate_->GetGLContextGuardManager()));
   if (!delegate_->GLContextMakeCurrent()) {
     FML_LOG(ERROR)
         << "Could not make the context current to acquire the frame.";
@@ -285,7 +289,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
         return weak ? weak->PresentSurface(canvas) : false;
       };
 
-  return std::make_unique<SurfaceFrame>(surface, submit_callback);
+  std::unique_ptr<SurfaceFrame> result = std::make_unique<SurfaceFrame>(surface, submit_callback);
+  return result;
 }
 
 bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
@@ -293,6 +298,7 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
     return false;
   }
 
+  GLContextGuardManager::GLGuard guard = GLContextGuardManager::GLGuard(*(delegate_->GetGLContextGuardManager()));
   if (offscreen_surface_ != nullptr) {
     TRACE_EVENT0("flutter", "CopyTextureOnscreen");
     SkPaint paint;

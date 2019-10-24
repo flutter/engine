@@ -161,6 +161,8 @@ class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
   // |GPUSurfaceGLDelegate|
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
+  std::shared_ptr<GLContextGuardManager> GetGLContextGuardManager() override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
 };
 

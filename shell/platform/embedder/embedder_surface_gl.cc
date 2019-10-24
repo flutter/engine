@@ -79,6 +79,11 @@ EmbedderSurfaceGL::GLProcResolver EmbedderSurfaceGL::GetGLProcResolver() const {
   return gl_dispatch_table_.gl_proc_resolver;
 }
 
+// |GPUSurfaceGLDelegate|
+std::shared_ptr<GLContextGuardManager> EmbedderSurfaceGL::GetGLContextGuardManager() {
+  return nullptr;
+}
+
 // |EmbedderSurface|
 std::unique_ptr<Surface> EmbedderSurfaceGL::CreateGPUSurface() {
   const bool render_to_surface = !external_view_embedder_;

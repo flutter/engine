@@ -30,12 +30,21 @@ class IOSGLContext {
 
   bool ResourceMakeCurrent();
 
+  std::shared_ptr<IOSGLContextGuardManager> GetIOSGLContextGuardManager() {
+    return gl_context_guard_manager_;
+  }
+
   sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
+
+  fml::scoped_nsobject<EAGLContext> GetContext() const {
+    return context_;
+  }
 
  private:
   fml::scoped_nsobject<EAGLContext> context_;
   fml::scoped_nsobject<EAGLContext> resource_context_;
   sk_sp<SkColorSpace> color_space_;
+  std::shared_ptr<IOSGLContextGuardManager> gl_context_guard_manager_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSGLContext);
 };

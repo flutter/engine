@@ -11,6 +11,7 @@
 #include "flutter/shell/platform/darwin/ios/ios_gl_context.h"
 #include "flutter/shell/platform/darwin/ios/ios_gl_render_target.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "flutter/shell/platform/darwin/ios/ios_gl_context_guard_manager.h"
 
 @class CAEAGLLayer;
 
@@ -52,6 +53,9 @@ class IOSSurfaceGL final : public IOSSurface,
 
   // |GPUSurfaceGLDelegate|
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
+
+  // |GPUSurfaceGLDelegate|
+  std::shared_ptr<GLContextGuardManager> GetGLContextGuardManager() override;
 
   // |ExternalViewEmbedder|
   sk_sp<SkSurface> GetRootSurface() override;
