@@ -14,6 +14,11 @@
 
 namespace flutter {
 
+// The iOS implementation of `GLContextGuardManager`
+//
+// On `GLGuard`'s construction, it pushes the current EAGLContext to a stack and
+// sets the flutter's gl context as current.
+// On `GLGuard`'s desstruction, it pops a EAGLContext from the stack and set it to current.
 class IOSGLContextGuardManager final : public GLContextGuardManager {
  public:
   IOSGLContextGuardManager(fml::scoped_nsobject<EAGLContext> flutter_gl_context)

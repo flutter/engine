@@ -7,8 +7,16 @@
 
 namespace flutter {
 
+// Manages `GLGuard.
+//
+// Should be subclassed for each platform embedder that uses GL, and requires to protect flutter's
+// gl context from other 3rd party librarys, plugins and packages.
 class GLContextGuardManager {
  public:
+
+  // A `GLGuard` protects the flutter's gl context to be used by other 3rd party librarys, plugins and packages.
+  // On construction, it should set flutter's gl context to the current context.
+  // On destruction, it should restore the gl context before the construction of this object.
   class GLGuard {
    public:
     GLGuard(GLContextGuardManager& manager) : manager_(manager) {
