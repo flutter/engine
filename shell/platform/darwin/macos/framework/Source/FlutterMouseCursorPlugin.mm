@@ -11,30 +11,30 @@
 
 static NSString* const kMouseCursorChannel = @"flutter/mousecursor";
 
-static NSString* const kSystemConstantSetAsMethod = @"setAsSystemCursor";
-static NSString* const kSystemConstantKey = @"systemConstant";
+static NSString* const kPlatformConstantSetAsMethod = @"setAsSystemCursor";
+static NSString* const kPlatformConstantKey = @"platformConstant";
 
 static NSString* const kSetHiddenMethod = @"setHidden";
 static NSString* const kHiddenKey = @"hidden";
 
-static int const kSystemConstantArrow = 0x0001;
-static int const kSystemConstantIBeam = 0x0002;
-static int const kSystemConstantCrosshair = 0x0003;
-static int const kSystemConstantClosedHand = 0x0004;
-static int const kSystemConstantOpenHand = 0x0005;
-static int const kSystemConstantPointingHand = 0x0006;
-static int const kSystemConstantResizeLeft = 0x0007;
-static int const kSystemConstantResizeRight = 0x0008;
-static int const kSystemConstantResizeLeftRight = 0x0009;
-static int const kSystemConstantResizeUp = 0x000a;
-static int const kSystemConstantResizeDown = 0x000b;
-static int const kSystemConstantResizeUpDown = 0x000c;
-static int const kSystemConstantDisappearingItem = 0x000d;
-static int const kSystemConstantIBeamCursorForVerticalLayout = 0x000e;
-static int const kSystemConstantOperationNotAllowed = 0x000f;
-static int const kSystemConstantDragLink = 0x0010;
-static int const kSystemConstantDragCopy = 0x0011;
-static int const kSystemConstantContextualMenu = 0x0012;
+static int const kPlatformConstantArrow = 0x0001;
+static int const kPlatformConstantIBeam = 0x0002;
+static int const kPlatformConstantCrosshair = 0x0003;
+static int const kPlatformConstantClosedHand = 0x0004;
+static int const kPlatformConstantOpenHand = 0x0005;
+static int const kPlatformConstantPointingHand = 0x0006;
+static int const kPlatformConstantResizeLeft = 0x0007;
+static int const kPlatformConstantResizeRight = 0x0008;
+static int const kPlatformConstantResizeLeftRight = 0x0009;
+static int const kPlatformConstantResizeUp = 0x000a;
+static int const kPlatformConstantResizeDown = 0x000b;
+static int const kPlatformConstantResizeUpDown = 0x000c;
+static int const kPlatformConstantDisappearingItem = 0x000d;
+static int const kPlatformConstantIBeamCursorForVerticalLayout = 0x000e;
+static int const kPlatformConstantOperationNotAllowed = 0x000f;
+static int const kPlatformConstantDragLink = 0x0010;
+static int const kPlatformConstantDragCopy = 0x0011;
+static int const kPlatformConstantContextualMenu = 0x0012;
 
 /**
  * Private properties of FlutterMouseCursorPlugin.
@@ -80,7 +80,7 @@ static int const kSystemConstantContextualMenu = 0x0012;
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   BOOL handled = YES;
   NSString* method = call.method;
-  if ([method isEqualToString:kSystemConstantSetAsMethod]) {
+  if ([method isEqualToString:kPlatformConstantSetAsMethod]) {
     result([self setAsSystemCursor:call.arguments]);
   } else if ([method isEqualToString:kSetHiddenMethod]) {
     result([self setHidden:call.arguments]);
@@ -98,19 +98,19 @@ static int const kSystemConstantContextualMenu = 0x0012;
               message:@"Missing arguments"
               details:@"Missing arguments while trying to set as system mouse cursor"];
   }
-  NSNumber* systemConstant = arguments[kSystemConstantKey];
-  if (!systemConstant) {
+  NSNumber* platformConstant = arguments[kPlatformConstantKey];
+  if (!platformConstant) {
     return [FlutterError
         errorWithCode:@"error"
               message:@"Missing argument"
-              details:@"Missing argument systemConstant while trying to set as system mouse cursor"];
+              details:@"Missing argument platformConstant while trying to set as system mouse cursor"];
   }
-  NSCursor* cursor = [self resolveSystemCursor:[systemConstant intValue]];
+  NSCursor* cursor = [self resolveSystemCursor:[platformConstant intValue]];
   if (cursor == nil) {
     return [FlutterError
         errorWithCode:@"error"
               message:@"Unrecognized argument"
-              details:@"Received unrecognizable systemConstant while trying to set as system mouse cursor"];
+              details:@"Received unrecognizable platformConstant while trying to set as system mouse cursor"];
   }
   [cursor set];
   return nil;
@@ -141,43 +141,43 @@ static int const kSystemConstantContextualMenu = 0x0012;
 #pragma mark -
 #pragma mark NSCursor
 
-- (nullable NSCursor*)resolveSystemCursor:(int)systemConstant {
-  switch (systemConstant) {
-    case kSystemConstantArrow:
+- (nullable NSCursor*)resolveSystemCursor:(int)platformConstant {
+  switch (platformConstant) {
+    case kPlatformConstantArrow:
       return [NSCursor arrowCursor];
-    case kSystemConstantIBeam:
+    case kPlatformConstantIBeam:
       return [NSCursor IBeamCursor];
-    case kSystemConstantCrosshair:
+    case kPlatformConstantCrosshair:
       return [NSCursor crosshairCursor];
-    case kSystemConstantClosedHand:
+    case kPlatformConstantClosedHand:
       return [NSCursor closedHandCursor];
-    case kSystemConstantOpenHand:
+    case kPlatformConstantOpenHand:
       return [NSCursor openHandCursor];
-    case kSystemConstantPointingHand:
+    case kPlatformConstantPointingHand:
       return [NSCursor pointingHandCursor];
-    case kSystemConstantResizeLeft:
+    case kPlatformConstantResizeLeft:
       return [NSCursor resizeLeftCursor];
-    case kSystemConstantResizeRight:
+    case kPlatformConstantResizeRight:
       return [NSCursor resizeRightCursor];
-    case kSystemConstantResizeLeftRight:
+    case kPlatformConstantResizeLeftRight:
       return [NSCursor resizeLeftRightCursor];
-    case kSystemConstantResizeUp:
+    case kPlatformConstantResizeUp:
       return [NSCursor resizeUpCursor];
-    case kSystemConstantResizeDown:
+    case kPlatformConstantResizeDown:
       return [NSCursor resizeDownCursor];
-    case kSystemConstantResizeUpDown:
+    case kPlatformConstantResizeUpDown:
       return [NSCursor resizeUpDownCursor];
-    case kSystemConstantDisappearingItem:
+    case kPlatformConstantDisappearingItem:
       return [NSCursor disappearingItemCursor];
-    case kSystemConstantIBeamCursorForVerticalLayout:
+    case kPlatformConstantIBeamCursorForVerticalLayout:
       return [NSCursor IBeamCursorForVerticalLayout];
-    case kSystemConstantOperationNotAllowed:
+    case kPlatformConstantOperationNotAllowed:
       return [NSCursor operationNotAllowedCursor];
-    case kSystemConstantDragLink:
+    case kPlatformConstantDragLink:
       return [NSCursor dragLinkCursor];
-    case kSystemConstantDragCopy:
+    case kPlatformConstantDragCopy:
       return [NSCursor dragCopyCursor];
-    case kSystemConstantContextualMenu:
+    case kPlatformConstantContextualMenu:
       return [NSCursor contextualMenuCursor];
     default:
       break;

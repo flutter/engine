@@ -10,7 +10,9 @@
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/standard_method_codec.h"
 
 static constexpr char kSetAsSystemCursorMethod[] = "setAsSystemCursor";
-static constexpr char kSystemConstantKey[] = "systemConstant";
+static constexpr char kPlatformConstantKey[] = "platformConstant";
+
+static constexpr char kSetHiddenMethod[] = "setHidden";
 static constexpr char kHiddenKey[] = "hidden";
 
 static constexpr char kChannelName[] = "flutter/mousecursor";
@@ -18,14 +20,11 @@ static constexpr char kChannelName[] = "flutter/mousecursor";
 static constexpr char kBadArgumentError[] = "Bad Arguments";
 static constexpr char kGLFWError[] = "GLFW Error";
 
-static constexpr int kDefaultSystemConstant = GLFW_ARROW_CURSOR;
-
-typedef bool (*BoolCallback)();
-typedef void (*VoidCallback)();
-
 namespace flutter {
 
-// TODOC
+// Create an object of |GLFWErrorRecorder| to start recording GLFW errors.
+// Resources are released as this object is destructed.
+// TODO: After upgrading to GLFW 3.3, replace this with |glfwGetError|.
 class GLFWErrorRecorder {
  public:
   GLFWErrorRecorder() {
@@ -54,10 +53,8 @@ class GLFWErrorRecorder {
     GLFWErrorRecorder::description_ = description;
   }
 
-  // TODOC
   static int code_;
 
-  // TODOC
   static const char *description_;
 
   GLFWerrorfun previous_;
@@ -72,9 +69,7 @@ MouseCursorController::MouseCursorController(flutter::BinaryMessenger* messenger
           messenger,
           kChannelName,
           &flutter::StandardMethodCodec::GetInstance())),
-      window_(window),
-      currentHidden_(false),
-      currentSystemConstant_(kDefaultSystemConstant) {
+      window_(window) {
   channel_->SetMethodCallHandler(
       [this](
           const flutter::MethodCall<EncodableValue>& call,
@@ -84,53 +79,66 @@ MouseCursorController::MouseCursorController(flutter::BinaryMessenger* messenger
 }
 
 
-MouseCursorController::~MouseCursorController() = default;
+MouseCursorController::~MouseCursorController() {
+  for (auto cursorObjectIt : systemCursors_) {
+    glfwDestroyCursor(cursorObjectIt.second);
+  }
+}
 
-bool MouseCursorController::changeToCursor(
-    bool hidden,
-    int systemConstant,
+void MouseCursorController::setAsSystemCursor(
+    const EncodableMap& args,
     flutter::MethodResult<EncodableValue>& result) {
   GLFWErrorRecorder errorRecorder;
 
-  bool successful = [&] {
-    if (hidden != currentHidden_) {
-      glfwSetInputMode(window_, GLFW_CURSOR,
-        hidden ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
-      if (glfwErrorOccurred(result))
-        return false;
-    }
-    if (hidden != currentHidden_ || systemConstant != currentSystemConstant_) {
-      GLFWcursor* cursorObject = resolveSystemCursor(systemConstant);
-      if (cursorObject == NULL) {
-        result.Error(kGLFWError, "GLFW failed to create the cursor.");
-        return false;
-      }
-      if (glfwErrorOccurred(result))
-        return false;
-      glfwSetCursor(window_, cursorObject);
-      if (glfwErrorOccurred(result))
-        return false;
-    }
-    return true;
-  }();
+  const auto platformConstant = args.find(EncodableValue(kPlatformConstantKey));
+  if (platformConstant == args.end() || !platformConstant->second.IsInt()) {
+    result.Error(kBadArgumentError,
+                  "Could not set cursor, invalid argument platformConstant.");
+    return;
+  }
 
-  currentHidden_ = hidden;
-  currentSystemConstant_ = systemConstant;
-
-  return successful;
+  GLFWcursor* cursorObject = resolveSystemCursor(platformConstant->second.IntValue());
+  if (cursorObject == NULL) {
+    result.Error(kGLFWError, "GLFW failed to create the cursor.");
+    return;
+  }
+  if (glfwErrorOccurred(result))
+    return;
+  glfwSetCursor(window_, cursorObject);
+  if (glfwErrorOccurred(result))
+    return;
+  result.Success();
 }
 
-GLFWcursor* MouseCursorController::resolveSystemCursor(int systemConstant) {
-  auto cached = cursorObjects_.find(systemConstant);
-  if (cached != cursorObjects_.end()) {
+GLFWcursor* MouseCursorController::resolveSystemCursor(int platformConstant) {
+  auto cached = systemCursors_.find(platformConstant);
+  if (cached != systemCursors_.end()) {
     return cached->second;
   }
-  GLFWcursor* cursorObject = glfwCreateStandardCursor(systemConstant);
-  cursorObjects_[systemConstant] = cursorObject;
+  GLFWcursor* cursorObject = glfwCreateStandardCursor(platformConstant);
+  systemCursors_[platformConstant] = cursorObject;
   // |cursorObject| might be null, or glfw might has error.
   // Both cases are unhandled.
   return cursorObject;
+}
 
+void MouseCursorController::setHidden(
+    const EncodableMap& args,
+    flutter::MethodResult<EncodableValue>& result) {
+  GLFWErrorRecorder errorRecorder;
+
+  const auto hidden = args.find(EncodableValue(kHiddenKey));
+  if (hidden == args.end() || !hidden->second.IsBool()) {
+    result.Error(kBadArgumentError,
+                  "Could not set hidden, invalid argument hidden.");
+    return;
+  }
+
+  glfwSetInputMode(window_, GLFW_CURSOR,
+    hidden->second.BoolValue() ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
+  if (glfwErrorOccurred(result))
+    return;
+  result.Success();
 }
 
 bool MouseCursorController::glfwErrorOccurred(flutter::MethodResult<EncodableValue>& result) {
@@ -151,37 +159,19 @@ void MouseCursorController::HandleMethodCall(
     return;
   }
   const EncodableValue& args = *method_call.arguments();
+  if (!args.IsMap()) {
+    result->Error(kBadArgumentError,
+                  "Could not set cursor, argument is not a map.");
+    return;
+  }
+  const EncodableMap& argMap = args.MapValue();
 
   if (method.compare(kSetAsSystemCursorMethod) == 0) {
-    // Argument list is: {
-    //  "systemConstant": <uint>,
-    //  "hidden": <bool>
-    // }
-    if (!args.IsMap()) {
-      result->Error(kBadArgumentError,
-                    "Could not set cursor, argument is not a map.");
-      return;
-    }
-    const EncodableMap& argMap = args.MapValue();
-    const auto systemConstant = argMap.find(EncodableValue(kSystemConstantKey));
-    const auto hidden = argMap.find(EncodableValue(kHiddenKey));
-    if (systemConstant == argMap.end() || !systemConstant->second.IsInt()) {
-      result->Error(kBadArgumentError,
-                    "Could not set cursor, invalid argument systemConstant.");
-      return;
-    }
-    if (hidden == argMap.end() || !hidden->second.IsBool()) {
-      result->Error(kBadArgumentError,
-                    "Could not set cursor, invalid argument hidden.");
-      return;
-    }
-    if (!changeToCursor(
-      hidden->second.BoolValue(),
-      systemConstant->second.IntValue(),
-      *result
-    )) {
-      return;
-    }
+    setAsSystemCursor(argMap, *result);
+    return;
+  } else if (method.compare(kSetHiddenMethod) == 0) {
+    setHidden(argMap, *result);
+    return;
   } else {
     // Unhandled method.
     result->NotImplemented();

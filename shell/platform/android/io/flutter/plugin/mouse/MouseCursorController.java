@@ -50,7 +50,7 @@ public class MouseCursorController {
     channel.setMethodHandler(channelHandler);
     this.view = view;
     this.context = context;
-    currentSystemConstant = PointerIcon.TYPE_DEFAULT;
+    currentPlatformConstant = PointerIcon.TYPE_DEFAULT;
   }
 
   // The system channel used to communicate with the framework about mouse cursor.
@@ -67,7 +67,7 @@ public class MouseCursorController {
 
   // The current cursor of the device. It starts with the basic cursor.
   @NonNull
-  private Integer currentSystemConstant;
+  private Integer currentPlatformConstant;
 
   // A map from each cursor to its cursor object.
   // System icons are cached here as it's first requested. Registering a custom icons also stores
@@ -78,10 +78,10 @@ public class MouseCursorController {
 
   @NonNull
   private final MouseCursorChannel.MouseCursorMethodHandler channelHandler = new MouseCursorChannel.MouseCursorMethodHandler() {
-    public void setAsSystemCursor(Integer systemConstant) {
-      if (currentSystemConstant != systemConstant) {
-        currentSystemConstant = systemConstant;
-        view.setPointerIcon(resolveSystemCursor(systemConstant));
+    public void setAsSystemCursor(Integer platformConstant) {
+      if (currentPlatformConstant != platformConstant) {
+        currentPlatformConstant = platformConstant;
+        view.setPointerIcon(resolveSystemCursor(platformConstant));
       }
     }
   };
@@ -93,12 +93,12 @@ public class MouseCursorController {
   // If there is no matching cache, the method tries to create it as a system cursor, which falls
   // back to MouseCursors.basic for all unrecognized values. The value is cached in cursorObjects
   // before being returned.
-  private PointerIcon resolveSystemCursor(@NonNull Integer systemConstant) {
-    final PointerIcon cached = cursorObjects.get(systemConstant);
+  private PointerIcon resolveSystemCursor(@NonNull Integer platformConstant) {
+    final PointerIcon cached = cursorObjects.get(platformConstant);
     if (cached != null)
       return cached;
-    final PointerIcon result = PointerIcon.getSystemIcon(context, systemConstant);
-    cursorObjects.put(systemConstant, result);
+    final PointerIcon result = PointerIcon.getSystemIcon(context, platformConstant);
+    cursorObjects.put(platformConstant, result);
     return result;
   }
 }

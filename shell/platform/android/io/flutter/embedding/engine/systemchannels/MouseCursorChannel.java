@@ -61,9 +61,9 @@ public class MouseCursorChannel {
           case "setAsSystemCursor":
             @SuppressWarnings("unchecked")
             final HashMap<String, Object> data = (HashMap<String, Object>) call.arguments;
-            final Integer systemConstant = (Integer) data.get("systemConstant");
+            final Integer platformConstant = (Integer) data.get("platformConstant");
             try {
-              mouseCursorMethodHandler.setAsSystemCursor(systemConstant);
+              mouseCursorMethodHandler.setAsSystemCursor(platformConstant);
             } catch (Exception e) {
               result.error("error", "Error when setting cursors: " + e.getMessage(), null);
               break;
@@ -80,7 +80,7 @@ public class MouseCursorChannel {
 
   public interface MouseCursorMethodHandler {
     // TODO(dkwingsmt): javadoc
-    public void setAsSystemCursor(@NonNull Integer systemConstant);
+    public void setAsSystemCursor(@NonNull Integer platformConstant);
   }
 
 

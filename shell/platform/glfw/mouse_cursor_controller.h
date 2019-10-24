@@ -34,10 +34,16 @@ class MouseCursorController {
   // TODOC
   // Returns true if successful, with |result| unmodified.
   // Returns false if failed, with |result| set to the error.
-  bool changeToCursor(
-      bool hidden,
-      int cursor,
-      flutter::MethodResult<EncodableValue>& result);
+  void setAsSystemCursor(
+    const EncodableMap& args,
+    flutter::MethodResult<EncodableValue>& result);
+
+  // TODOC
+  // Returns true if successful, with |result| unmodified.
+  // Returns false if failed, with |result| set to the error.
+  void setHidden(
+    const EncodableMap& args,
+    flutter::MethodResult<EncodableValue>& result);
 
   // TODOC
   // May return NULL. May contain unhandled GLFW error.
@@ -47,20 +53,17 @@ class MouseCursorController {
   // TODOC
   bool glfwErrorOccurred(flutter::MethodResult<EncodableValue>& result);
 
-  // TODOC
-  std::map<int, GLFWcursor*> cursorObjects_;
+  // A cache of system cursor objects.
+  //
+  // It maps from platform constants to cursor objects. All cursors objects are
+  // managed by |MouseCursorController| and must be destroyed on desctruction.
+  std::map<int, GLFWcursor*> systemCursors_;
 
   // The MethodChannel used for communication with the Flutter engine.
   std::unique_ptr<flutter::MethodChannel<EncodableValue>> channel_;
 
   // TODOC
   GLFWwindow* window_;
-
-  // TODOC
-  bool currentHidden_;
-
-  // TODOC
-  int currentSystemConstant_;
 };
 
 }  // namespace flutter
