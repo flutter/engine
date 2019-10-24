@@ -4,6 +4,7 @@
 
 package io.flutter.view;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.database.ContentObserver;
@@ -489,6 +490,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
      */
     @Override
     @SuppressWarnings("deprecation")
+    // Supressing Lint warning for new API, as we are version guarding all calls to newer APIs
+    @SuppressLint("NewApi")
     public AccessibilityNodeInfo createAccessibilityNodeInfo(int virtualViewId) {
         if (virtualViewId >= MIN_ENGINE_GENERATED_NODE_ID) {
             // The node is in the engine generated range, and is provided by the accessibility view embedder.
