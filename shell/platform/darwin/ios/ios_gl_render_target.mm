@@ -68,7 +68,6 @@ IOSGLRenderTarget::IOSGLRenderTarget(
 IOSGLRenderTarget::~IOSGLRenderTarget() {
   IOSGLContextGuardManager::GLGuard guard =
       IOSGLContextGuardManager::GLGuard(*gl_context_guard_manager_);
-  [EAGLContext setCurrentContext:context_];
   FML_DCHECK(glGetError() == GL_NO_ERROR);
 
   // Deletes on GL_NONEs are ignored
