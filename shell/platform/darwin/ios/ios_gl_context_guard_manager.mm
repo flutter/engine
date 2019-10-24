@@ -26,9 +26,6 @@ void IOSGLContextGuardManager::SaveOtherContext() {
 }
 
 void IOSGLContextGuardManager::SetFlutterContextToCurrent() {
-  [EAGLContext setCurrentContext:flutter_gl_context_.get()];
-}
-
-void IOSGLContextGuardManager::SaveFlutterContext() {
+  return [EAGLContext setCurrentContext:flutter_gl_context_.get()];
 }
 }

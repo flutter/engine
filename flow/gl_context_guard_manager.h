@@ -29,8 +29,6 @@ public:
 
   virtual void SetFlutterContextToCurrent() = 0;
 
-  virtual void SaveFlutterContext() = 0;
-
 private:
   void RestoreFlutterContext() {
     SaveOtherContext();

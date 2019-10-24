@@ -30,8 +30,6 @@ public:
 
   void SetFlutterContextToCurrent() override;
 
-  void SaveFlutterContext() override;
-
  private:
   fml::scoped_nsobject<EAGLContext> flutter_gl_context_;
 
