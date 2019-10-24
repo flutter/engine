@@ -14,6 +14,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 
 
 def Touch(fname):
@@ -52,8 +53,21 @@ def main():
   parts = GetBuildIdParts(args.exec_path)
   dbg_prefix_base = '%s/%s' % (args.dest, parts['prefix_dir'])
 
-  if not os.path.exists(dbg_prefix_base):
-    os.makedirs(dbg_prefix_base)
+  success = False
+  for _ in range(3):
+    try:
+      if not os.path.exists(dbg_prefix_base):
+        os.makedirs(dbg_prefix_base)
+      success = True
+      break
+    except OSError as error:
+      print 'Failed to create dir %s, error: %s. sleeping...' % (
+          dbg_prefix_base, error)
+      time.sleep(3)
+
+  if not success:
+    print 'Unable to create directory: %s.' % dbg_prefix_base
+    return 1
 
   dbg_suffix = ''
   if not args.stripped:
