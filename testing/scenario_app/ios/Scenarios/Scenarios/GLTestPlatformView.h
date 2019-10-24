@@ -23,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-@interface GLTestView: UIView
+@interface GLTestView : UIView
 
 @end
 

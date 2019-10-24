@@ -6,11 +6,11 @@
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_GL_DELEGATE_H_
 
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/gl_context_guard_manager.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/gpu/gpu_surface_delegate.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
-#include "flutter/flow/gl_context_guard_manager.h"
 
 namespace flutter {
 

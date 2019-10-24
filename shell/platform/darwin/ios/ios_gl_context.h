@@ -36,9 +36,7 @@ class IOSGLContext {
 
   sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
 
-  fml::scoped_nsobject<EAGLContext> GetContext() const {
-    return context_;
-  }
+  fml::scoped_nsobject<EAGLContext> GetContext() const { return context_; }
 
  private:
   fml::scoped_nsobject<EAGLContext> context_;

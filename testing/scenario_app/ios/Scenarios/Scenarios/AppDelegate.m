@@ -4,9 +4,9 @@
 
 #include "AppDelegate.h"
 #import "FlutterEngine+ScenariosTest.h"
+#import "GLTestPlatformView.h"
 #import "ScreenBeforeFlutter.h"
 #import "TextPlatformView.h"
-#import "GLTestPlatformView.h"
 
 @interface NoStatusBarFlutterViewController : FlutterViewController
 
@@ -27,35 +27,36 @@
   // This argument is used by the XCUITest for Platform Views so that the app
   // under test will create platform views.
   // The launchArgsMap should match the one in the `PlatformVieGoldenTestManager`.
-//  NSDictionary<NSString*, NSString*>* launchArgsMap = @{
-//    @"--platform-view" : @"platform_view",
-//    @"--platform-view-cliprect" : @"platform_view_cliprect",
-//    @"--platform-view-cliprrect" : @"platform_view_cliprrect",
-//    @"--platform-view-clippath" : @"platform_view_clippath",
-//    @"--platform-view-transform" : @"platform_view_transform",
-//    @"--platform-view-opacity" : @"platform_view_opacity",
-//  };
-//  __block NSString* goldenTestName = nil;
-//  [launchArgsMap
-//      enumerateKeysAndObjectsUsingBlock:^(NSString* argument, NSString* testName, BOOL* stop) {
-//        if ([[[NSProcessInfo processInfo] arguments] containsObject:argument]) {
-//          goldenTestName = testName;
-//          *stop = YES;
-//        }
-//      }];
-//
-//  if (goldenTestName) {
-//    [self readyContextForPlatformViewTests:goldenTestName];
-//  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
-//    self.window.rootViewController = [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:nil];
-//  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--platform-view-gl"])  {
-//    [self readyContextForGLPlatformViewTests:@"platform_view_eaglcontext"];
-//  } else {
-//    self.window.rootViewController = [[UIViewController alloc] init];
-//  }
+  //  NSDictionary<NSString*, NSString*>* launchArgsMap = @{
+  //    @"--platform-view" : @"platform_view",
+  //    @"--platform-view-cliprect" : @"platform_view_cliprect",
+  //    @"--platform-view-cliprrect" : @"platform_view_cliprrect",
+  //    @"--platform-view-clippath" : @"platform_view_clippath",
+  //    @"--platform-view-transform" : @"platform_view_transform",
+  //    @"--platform-view-opacity" : @"platform_view_opacity",
+  //  };
+  //  __block NSString* goldenTestName = nil;
+  //  [launchArgsMap
+  //      enumerateKeysAndObjectsUsingBlock:^(NSString* argument, NSString* testName, BOOL* stop) {
+  //        if ([[[NSProcessInfo processInfo] arguments] containsObject:argument]) {
+  //          goldenTestName = testName;
+  //          *stop = YES;
+  //        }
+  //      }];
+  //
+  //  if (goldenTestName) {
+  //    [self readyContextForPlatformViewTests:goldenTestName];
+  //  } else if ([[[NSProcessInfo processInfo] arguments]
+  //  containsObject:@"--screen-before-flutter"]) {
+  //    self.window.rootViewController = [[ScreenBeforeFlutter alloc]
+  //    initWithEngineRunCompletion:nil];
+  //  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--platform-view-gl"])  {
+  //    [self readyContextForGLPlatformViewTests:@"platform_view_eaglcontext"];
+  //  } else {
+  //    self.window.rootViewController = [[UIViewController alloc] init];
+  //  }
 
   [self readyContextForGLPlatformViewTests:@"platform_view_eaglcontext"];
-
 
   [self.window makeKeyAndVisible];
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
@@ -82,8 +83,7 @@
   self.window.rootViewController = flutterViewController;
 }
 
-
-- (void)readyContextForGLPlatformViewTests:(NSString*)scenarioIdentifier{
+- (void)readyContextForGLPlatformViewTests:(NSString*)scenarioIdentifier {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"PlatformViewTest" project:nil];
   [engine runWithEntrypoint:nil];
 

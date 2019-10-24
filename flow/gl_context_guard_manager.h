@@ -8,18 +8,16 @@
 namespace flutter {
 
 class GLContextGuardManager {
-public:
+ public:
   class GLGuard {
    public:
-    GLGuard(GLContextGuardManager &manager):manager_(manager){
+    GLGuard(GLContextGuardManager& manager) : manager_(manager) {
       manager_.RestoreFlutterContext();
     };
 
-    ~GLGuard() {
-      manager_.RestoreOtherContext();
-    }
+    ~GLGuard() { manager_.RestoreOtherContext(); }
 
-  private:
+   private:
     GLContextGuardManager& manager_;
   };
 
@@ -29,17 +27,15 @@ public:
 
   virtual void SetFlutterContextToCurrent() = 0;
 
-private:
+ private:
   void RestoreFlutterContext() {
     SaveOtherContext();
     SetFlutterContextToCurrent();
   }
 
-  void RestoreOtherContext() {
-    SetOtherContextToCurrent();
-  }
+  void RestoreOtherContext() { SetOtherContextToCurrent(); }
 };
 
-}
+}  // namespace flutter
 
 #endif

@@ -9,9 +9,9 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_gl_context.h"
+#include "flutter/shell/platform/darwin/ios/ios_gl_context_guard_manager.h"
 #include "flutter/shell/platform/darwin/ios/ios_gl_render_target.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
-#include "flutter/shell/platform/darwin/ios/ios_gl_context_guard_manager.h"
 
 @class CAEAGLLayer;
 

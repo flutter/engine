@@ -387,7 +387,8 @@ ExternalViewEmbedder* ShellTestPlatformView::GetExternalViewEmbedder() {
   return nullptr;
 }
 
-std::shared_ptr<GLContextGuardManager> ShellTestPlatformView::GetGLContextGuardManager() {
+std::shared_ptr<GLContextGuardManager>
+ShellTestPlatformView::GetGLContextGuardManager() {
   return nullptr;
 }
 

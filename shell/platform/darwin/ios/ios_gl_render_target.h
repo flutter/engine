@@ -19,10 +19,11 @@ namespace flutter {
 
 class IOSGLRenderTarget {
  public:
-  IOSGLRenderTarget(fml::scoped_nsobject<CAEAGLLayer> layer,
-                    EAGLContext* context,
-                    EAGLContext* resource_context,
-                    std::shared_ptr<IOSGLContextGuardManager> gl_context_guard_manager);
+  IOSGLRenderTarget(
+      fml::scoped_nsobject<CAEAGLLayer> layer,
+      EAGLContext* context,
+      EAGLContext* resource_context,
+      std::shared_ptr<IOSGLContextGuardManager> gl_context_guard_manager);
 
   ~IOSGLRenderTarget();
 

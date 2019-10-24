@@ -9,19 +9,18 @@
 
 #import <OpenGLES/EAGL.h>
 #include <map>
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/flow/gl_context_guard_manager.h"
+#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 
 namespace flutter {
 
 class IOSGLContextGuardManager final : public GLContextGuardManager {
-
-public:
-
-  IOSGLContextGuardManager(fml::scoped_nsobject<EAGLContext> flutter_gl_context):flutter_gl_context_(flutter_gl_context){
-    stored_ = fml::scoped_nsobject<NSMutableArray> ([[NSMutableArray new] retain]);
+ public:
+  IOSGLContextGuardManager(fml::scoped_nsobject<EAGLContext> flutter_gl_context)
+      : flutter_gl_context_(flutter_gl_context) {
+    stored_ = fml::scoped_nsobject<NSMutableArray>([[NSMutableArray new] retain]);
   };
-  
+
   ~IOSGLContextGuardManager() = default;
 
   void SetOtherContextToCurrent() override;

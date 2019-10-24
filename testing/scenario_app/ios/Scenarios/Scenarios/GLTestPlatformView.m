@@ -11,7 +11,10 @@
   GLTestView* _view;
 }
 
-- (instancetype)initWithFrame:(CGRect)frame viewIdentifier:(int64_t)viewId arguments:(id)args binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
+- (instancetype)initWithFrame:(CGRect)frame
+               viewIdentifier:(int64_t)viewId
+                    arguments:(id)args
+              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
   if ([super init]) {
     _viewId = viewId;
     _view = [[GLTestView alloc] initWithFrame:CGRectMake(50.0, 50.0, 250.0, 100.0)];
@@ -19,7 +22,7 @@
   return self;
 }
 
-- (UIView *)view {
+- (UIView*)view {
   return _view;
 }
 
@@ -53,26 +56,25 @@
 
 @end
 
+@interface GLTestView ()
 
-@interface GLTestView()
-
-@property (strong, nonatomic) EAGLContext *context;
+@property(strong, nonatomic) EAGLContext* context;
 
 @end
 
 @implementation GLTestView
 
-- (instancetype)initWithFrame:(CGRect)frame
-{
+- (instancetype)initWithFrame:(CGRect)frame {
   self = [super initWithFrame:frame];
   if (self) {
     _context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
     _context.debugLabel = @"platform view context";
     [EAGLContext setCurrentContext:_context];
     self.backgroundColor = [UIColor redColor];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-      [self checkEAGLContext];
-    });
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+                     [self checkEAGLContext];
+                   });
   }
   return self;
 }

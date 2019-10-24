@@ -50,8 +50,7 @@ IOSGLContext::~IOSGLContext() = default;
 std::unique_ptr<IOSGLRenderTarget> IOSGLContext::CreateRenderTarget(
     fml::scoped_nsobject<CAEAGLLayer> layer) {
   return std::make_unique<IOSGLRenderTarget>(std::move(layer), context_.get(),
-                                             resource_context_.get(),
-                                             gl_context_guard_manager_);
+                                             resource_context_.get(), gl_context_guard_manager_);
 }
 
 bool IOSGLContext::MakeCurrent() {

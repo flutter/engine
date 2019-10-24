@@ -12,10 +12,11 @@
 
 namespace flutter {
 
-IOSGLRenderTarget::IOSGLRenderTarget(fml::scoped_nsobject<CAEAGLLayer> layer,
-                                     EAGLContext* context,
-                                     EAGLContext* resource_context,
-                                     std::shared_ptr<IOSGLContextGuardManager> gl_context_guard_manager)
+IOSGLRenderTarget::IOSGLRenderTarget(
+    fml::scoped_nsobject<CAEAGLLayer> layer,
+    EAGLContext* context,
+    EAGLContext* resource_context,
+    std::shared_ptr<IOSGLContextGuardManager> gl_context_guard_manager)
     : layer_(std::move(layer)),
       context_([context retain]),
       resource_context_([resource_context retain]),
@@ -28,7 +29,8 @@ IOSGLRenderTarget::IOSGLRenderTarget(fml::scoped_nsobject<CAEAGLLayer> layer,
   FML_DCHECK(layer_ != nullptr);
   FML_DCHECK(context_ != nullptr);
   FML_DCHECK(resource_context_ != nullptr);
-  IOSGLContextGuardManager::GLGuard guard = IOSGLContextGuardManager::GLGuard(*gl_context_guard_manager_);
+  IOSGLContextGuardManager::GLGuard guard =
+      IOSGLContextGuardManager::GLGuard(*gl_context_guard_manager_);
   bool context_current = [EAGLContext setCurrentContext:context_];
 
   FML_DCHECK(context_current);
@@ -64,7 +66,8 @@ IOSGLRenderTarget::IOSGLRenderTarget(fml::scoped_nsobject<CAEAGLLayer> layer,
 }
 
 IOSGLRenderTarget::~IOSGLRenderTarget() {
-  IOSGLContextGuardManager::GLGuard guard = IOSGLContextGuardManager::GLGuard(*gl_context_guard_manager_);
+  IOSGLContextGuardManager::GLGuard guard =
+      IOSGLContextGuardManager::GLGuard(*gl_context_guard_manager_);
   [EAGLContext setCurrentContext:context_];
   FML_DCHECK(glGetError() == GL_NO_ERROR);
 
@@ -93,7 +96,6 @@ bool IOSGLRenderTarget::PresentRenderBuffer() const {
 }
 
 bool IOSGLRenderTarget::UpdateStorageSizeIfNecessary() {
-  
   const CGSize layer_size = [layer_.get() bounds].size;
   const CGFloat contents_scale = layer_.get().contentsScale;
   const GLint size_width = layer_size.width * contents_scale;
@@ -105,7 +107,8 @@ bool IOSGLRenderTarget::UpdateStorageSizeIfNecessary() {
   }
   TRACE_EVENT_INSTANT0("flutter", "IOSGLRenderTarget::UpdateStorageSizeIfNecessary");
   FML_DLOG(INFO) << "Updating render buffer storage size.";
-  IOSGLContextGuardManager::GLGuard guard = IOSGLContextGuardManager::GLGuard(*gl_context_guard_manager_);
+  IOSGLContextGuardManager::GLGuard guard =
+      IOSGLContextGuardManager::GLGuard(*gl_context_guard_manager_);
 
   FML_DCHECK(glGetError() == GL_NO_ERROR);
 

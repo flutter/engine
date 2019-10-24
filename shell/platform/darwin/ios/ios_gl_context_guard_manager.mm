@@ -4,7 +4,6 @@
 
 #include "ios_gl_context_guard_manager.h"
 
-
 namespace flutter {
 
 void IOSGLContextGuardManager::SetOtherContextToCurrent() {

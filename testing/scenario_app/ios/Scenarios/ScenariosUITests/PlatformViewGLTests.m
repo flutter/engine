@@ -13,19 +13,23 @@
 @implementation PlatformViewGLTests
 
 - (void)setUp {
-    self.continueAfterFailure = NO;
+  self.continueAfterFailure = NO;
 
-    self.application = [[XCUIApplication alloc] init];
-    self.application.launchArguments = @[@"--platform-view-gl"];
-    [self.application launch];
+  self.application = [[XCUIApplication alloc] init];
+  self.application.launchArguments = @[ @"--platform-view-gl" ];
+  [self.application launch];
 }
 
 - (void)testExample {
-  NSPredicate *predicateToFindPlatformView = [NSPredicate predicateWithBlock:^BOOL(id  _Nullable evaluatedObject, NSDictionary<NSString *,id> * _Nullable bindings) {
-    XCUIElement *element = evaluatedObject;
-    return [element.identifier isEqualToString:@"gl_platformview_wrong_context"] || [element.identifier isEqualToString:@"gl_platformview_correct_context"] ;
-  }];
-  XCUIElement *firstElement = [self.application.otherElements elementMatchingPredicate:predicateToFindPlatformView];
+  NSPredicate* predicateToFindPlatformView =
+      [NSPredicate predicateWithBlock:^BOOL(id _Nullable evaluatedObject,
+                                            NSDictionary<NSString*, id>* _Nullable bindings) {
+        XCUIElement* element = evaluatedObject;
+        return [element.identifier isEqualToString:@"gl_platformview_wrong_context"] ||
+               [element.identifier isEqualToString:@"gl_platformview_correct_context"];
+      }];
+  XCUIElement* firstElement =
+      [self.application.otherElements elementMatchingPredicate:predicateToFindPlatformView];
   if (![firstElement waitForExistenceWithTimeout:30]) {
     NSLog(@"%@", self.application.debugDescription);
     XCTFail(@"Failed due to not able to find platform view with 30 seconds");
@@ -34,4 +38,3 @@
 }
 
 @end
- 

@@ -80,7 +80,8 @@ EmbedderSurfaceGL::GLProcResolver EmbedderSurfaceGL::GetGLProcResolver() const {
 }
 
 // |GPUSurfaceGLDelegate|
-std::shared_ptr<GLContextGuardManager> EmbedderSurfaceGL::GetGLContextGuardManager() {
+std::shared_ptr<GLContextGuardManager>
+EmbedderSurfaceGL::GetGLContextGuardManager() {
   return nullptr;
 }
 
