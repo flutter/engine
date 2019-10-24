@@ -22,7 +22,7 @@ PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
                                        float elevation,
                                        const SkPath& path,
                                        Clip clip_behavior)
-    : PhysicalShapeLayerBase(color, elevation, SK_AlphaOPAQUE),
+    : PhysicalShapeLayerBase(color, SK_AlphaOPAQUE, elevation),
       shadow_color_(shadow_color),
       path_(path),
       clip_behavior_(clip_behavior) {

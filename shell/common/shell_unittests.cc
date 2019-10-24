@@ -600,6 +600,7 @@ TEST_F(ShellTest, WaitForFirstFrame) {
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
   ASSERT_TRUE(result.ok());
+
   DestroyShell(std::move(shell));
 }
 
@@ -617,7 +618,10 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
   PumpOneFrame(shell.get(), {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+  ASSERT_FALSE(result.ok());
   ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
+
+  DestroyShell(std::move(shell));
 }
 
 TEST_F(ShellTest, WaitForFirstFrameTimeout) {
@@ -633,7 +637,9 @@ TEST_F(ShellTest, WaitForFirstFrameTimeout) {
   RunEngine(shell.get(), std::move(configuration));
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(10));
+  ASSERT_FALSE(result.ok());
   ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
+
   DestroyShell(std::move(shell));
 }
 
@@ -656,6 +662,7 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
     result = shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1));
     ASSERT_TRUE(result.ok());
   }
+
   DestroyShell(std::move(shell));
 }
 
@@ -681,10 +688,12 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
   task_runner->PostTask([&shell, &event] {
     fml::Status result =
         shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+    ASSERT_FALSE(result.ok());
     ASSERT_EQ(result.code(), fml::StatusCode::kFailedPrecondition);
     event.Signal();
   });
   ASSERT_FALSE(event.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(1000)));
+
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 

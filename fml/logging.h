@@ -89,7 +89,12 @@ bool ShouldCreateLogMessage(LogSeverity severity);
 
 #define FML_NOTREACHED() FML_DCHECK(false)
 
+#if defined(_WIN32)
+#define FML_NOTIMPLEMENTED() \
+  FML_LOG(ERROR) << "Not implemented in: " << __FUNCSIG__
+#else
 #define FML_NOTIMPLEMENTED() \
   FML_LOG(ERROR) << "Not implemented in: " << __PRETTY_FUNCTION__
+#endif
 
 #endif  // FLUTTER_FML_LOGGING_H_

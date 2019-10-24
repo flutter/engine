@@ -162,10 +162,7 @@ void ShellTest::PumpOneFrame(Shell* shell,
   // Call |Render| to rasterize a layer tree and trigger |OnFrameRasterized|
   fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, runtime_delegate, &builder]() {
-        auto viewport_metrics =
-            UIDartState::Current()->window()->viewport_metrics();
-
+      [&latch, runtime_delegate, &builder, viewport_metrics]() {
         auto layer_tree = std::make_unique<LayerTree>(
             SkISize::Make(viewport_metrics.physical_width,
                           viewport_metrics.physical_height),
