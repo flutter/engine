@@ -6,39 +6,38 @@
 # If 'unstripped' is specified, we append '.debug' to the symbols name.
 template("_copy_debug_symbols") {
   assert(defined(invoker.binary_path), "'binary_path' needs to be defined.")
-
-  bin_path = invoker.binary_path
-
-  _args = []
-  if (defined(invoker.unstripped) && invoker.unstripped) {
-    _args += [ "--unstripped" ]
-  }
+  assert(defined(invoker.unstripped), "'unstripped' needs to be defined.")
 
   action(target_name) {
-    testonly = defined(invoker.testonly) && invoker.testonly
-
-    deps = []
-    if (defined(invoker.deps)) {
-      deps = invoker.deps
-    }
+    forward_variables_from(invoker,
+                           [
+                             "deps",
+                             "unstripped",
+                             "binary_path",
+                             "testonly",
+                           ])
 
     script = "$flutter_root/tools/fuchsia/copy_debug_symbols.py"
 
     sources = [
-      bin_path,
+      binary_path,
     ]
 
     _dest_base =
         "${root_out_dir}/flutter-debug-symbols-${target_os}-${target_cpu}"
 
-    args = _args + [
-             "--executable-name",
-             target_name,
-             "--executable-path",
-             rebase_path(bin_path),
-             "--destination-base",
-             rebase_path(_dest_base),
-           ]
+    args = [
+      "--executable-name",
+      target_name,
+      "--executable-path",
+      rebase_path(binary_path),
+      "--destination-base",
+      rebase_path(_dest_base),
+    ]
+
+    if (unstripped) {
+      args += [ "--unstripped" ]
+    }
 
     outputs = [
       "${_dest_base}/.${target_name}_success",
@@ -48,32 +47,23 @@ template("_copy_debug_symbols") {
 
 # Takes a binary and generates its debug symbols following
 # the Fuchsia packaging convention.
-template("debug_symbols") {
+template("fuchsia_debug_symbols") {
   assert(defined(invoker.binary), "'binary' needs to be defined.")
-  _testonly = defined(invoker.testonly) && invoker.testonly
-
-  _deps = []
-  if (defined(invoker.deps)) {
-    _deps = invoker.deps
-  }
-
-  bin = invoker.binary
 
   _copy_debug_symbols("_${target_name}_stripped") {
-    testonly = _testonly
-    binary_path = rebase_path("${root_out_dir}/$bin")
-    deps = _deps
+    forward_variables_from(invoker, "*")
+    binary_path = rebase_path("${root_out_dir}/$binary")
+    unstripped = false
   }
 
   _copy_debug_symbols("_${target_name}_unstripped") {
-    testonly = _testonly
-    binary_path = "${root_out_dir}/exe.unstripped/$bin"
+    forward_variables_from(invoker, "*")
+    binary_path = "${root_out_dir}/exe.unstripped/$binary"
     unstripped = true
-    deps = _deps
   }
 
   group(target_name) {
-    testonly = _testonly
+    forward_variables_from(invoker, [ "testonly" ])
     deps = [
       ":_${target_name}_stripped",
       ":_${target_name}_unstripped",
