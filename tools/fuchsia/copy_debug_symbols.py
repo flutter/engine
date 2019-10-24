@@ -5,6 +5,9 @@
 # found in the LICENSE file.
 """ Gather the build_id, prefix_dir, and exec_name given the path to executable
     also copies to the specified destination.
+
+    The structure of debug symbols is as follows:
+      .build-id/<prefix>/<exec_name>[.debug]
 """
 
 import argparse
@@ -36,22 +39,43 @@ def main():
   parser = argparse.ArgumentParser()
 
   parser.add_argument(
-      '--executable-name', dest='exec_name', action='store', required=True)
+      '--executable-name',
+      dest='exec_name',
+      action='store',
+      required=True,
+      help='This is the name of the executable that we wish to layout debug symbols for.'
+  )
   parser.add_argument(
-      '--executable-path', dest='exec_path', action='store', required=True)
+      '--executable-path',
+      dest='exec_path',
+      action='store',
+      required=True,
+      help='Path to the executable on the filesystem.')
   parser.add_argument(
-      '--destination-base', dest='dest', action='store', required=True)
-
-  parser.add_argument('--stripped', dest='stripped', action='store_true')
-  parser.add_argument('--unstripped', dest='stripped', action='store_false')
-  parser.set_defaults(stripped=True)
+      '--destination-base',
+      dest='dest',
+      action='store',
+      required=True,
+      help='Path to the base directory where the debug symbols are to be laid out.'
+  )
+  parser.add_argument(
+      '--stripped',
+      dest='stripped',
+      action='store_true',
+      default=True,
+      help='Executable at the specified path is stripped.')
+  parser.add_argument(
+      '--unstripped',
+      dest='stripped',
+      action='store_false',
+      help='Executable at the specified path is unstripped.')
 
   args = parser.parse_args()
   assert os.path.exists(args.exec_path)
   assert os.path.exists(args.dest)
 
   parts = GetBuildIdParts(args.exec_path)
-  dbg_prefix_base = '%s/%s' % (args.dest, parts['prefix_dir'])
+  dbg_prefix_base = os.path.join(args.dest, parts['prefix_dir'])
 
   success = False
   for _ in range(3):
@@ -72,12 +96,13 @@ def main():
   dbg_suffix = ''
   if not args.stripped:
     dbg_suffix = '.debug'
-  dbg_file_path = '%s/%s%s' % (dbg_prefix_base, parts['exec_name'], dbg_suffix)
+  dbg_file_name = '%s%s' % (parts['exec_name'], dbg_suffix)
+  dbg_file_path = os.path.join(dbg_prefix_base, dbg_file_name)
 
   shutil.copyfile(args.exec_path, dbg_file_path)
 
   # Note this needs to be in sync with debug_symbols.gni
-  completion_file = '%s/.%s_dbg_success' % (args.dest, args.exec_name)
+  completion_file = os.path.join(args.dest, '%s_dbg_success' % args.exec_name)
   Touch(completion_file)
 
   return 0
