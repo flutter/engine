@@ -111,7 +111,7 @@ def main():
   shutil.copyfile(args.exec_path, dbg_file_path)
 
   # Note this needs to be in sync with debug_symbols.gni
-  completion_file = os.path.join(args.dest, '%s_dbg_success' % args.exec_name)
+  completion_file = os.path.join(args.dest, '.%s_dbg_success' % args.exec_name)
   Touch(completion_file)
 
   return 0
