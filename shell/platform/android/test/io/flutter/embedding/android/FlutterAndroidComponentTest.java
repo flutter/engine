@@ -25,6 +25,7 @@ import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.plugin.platform.PlatformPlugin;
 
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
@@ -54,24 +55,10 @@ public class FlutterAndroidComponentTest {
     cachedEngine.getPlugins().add(mockPlugin);
 
     // Create a fake Host, which is required by the delegate.
-    FlutterActivityAndFragmentDelegate.Host mockHost = mock(FlutterActivityAndFragmentDelegate.Host.class);
-    when(mockHost.getContext()).thenReturn(RuntimeEnvironment.application);
-    when(mockHost.getActivity()).thenReturn(Robolectric.setupActivity(Activity.class));
-    when(mockHost.getLifecycle()).thenReturn(mock(Lifecycle.class));
-    when(mockHost.getFlutterShellArgs()).thenReturn(new FlutterShellArgs(new String[]{}));
-    when(mockHost.getDartEntrypointFunctionName()).thenReturn("main");
-    when(mockHost.getAppBundlePath()).thenReturn("/fake/path");
-    when(mockHost.getInitialRoute()).thenReturn("/");
-    when(mockHost.getRenderMode()).thenReturn(FlutterView.RenderMode.surface);
-    when(mockHost.getTransparencyMode()).thenReturn(FlutterView.TransparencyMode.transparent);
-    when(mockHost.provideFlutterEngine(any(Context.class))).thenReturn(cachedEngine);
-    when(mockHost.shouldAttachEngineToActivity()).thenReturn(true);
-    when(mockHost.shouldDestroyEngineWithHost()).thenReturn(true);
-    when(mockHost.getCachedEngineId()).thenReturn("my_flutter_engine");
-    when(mockHost.shouldDestroyEngineWithHost()).thenReturn(true);
+    FlutterActivityAndFragmentDelegate.Host fakeHost = new FakeHost(cachedEngine);
 
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
 
     // --- Execute the behavior under test ---
     // Push the delegate through all lifecycle methods all the way to destruction.
@@ -133,23 +120,9 @@ public class FlutterAndroidComponentTest {
     cachedEngine.getPlugins().add(mockPlugin);
 
     // Create a fake Host, which is required by the delegate.
-    FlutterActivityAndFragmentDelegate.Host mockHost = mock(FlutterActivityAndFragmentDelegate.Host.class);
-    when(mockHost.getContext()).thenReturn(RuntimeEnvironment.application);
-    when(mockHost.getActivity()).thenReturn(Robolectric.setupActivity(Activity.class));
-    when(mockHost.getLifecycle()).thenReturn(mock(Lifecycle.class));
-    when(mockHost.getFlutterShellArgs()).thenReturn(new FlutterShellArgs(new String[]{}));
-    when(mockHost.getDartEntrypointFunctionName()).thenReturn("main");
-    when(mockHost.getAppBundlePath()).thenReturn("/fake/path");
-    when(mockHost.getInitialRoute()).thenReturn("/");
-    when(mockHost.getRenderMode()).thenReturn(FlutterView.RenderMode.surface);
-    when(mockHost.getTransparencyMode()).thenReturn(FlutterView.TransparencyMode.transparent);
-    when(mockHost.provideFlutterEngine(any(Context.class))).thenReturn(cachedEngine);
-    when(mockHost.shouldAttachEngineToActivity()).thenReturn(true);
-    when(mockHost.shouldDestroyEngineWithHost()).thenReturn(true);
-    when(mockHost.getCachedEngineId()).thenReturn("my_flutter_engine");
-    when(mockHost.shouldDestroyEngineWithHost()).thenReturn(true);
+    FlutterActivityAndFragmentDelegate.Host fakeHost = new FakeHost(cachedEngine);
 
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(fakeHost);
 
     // --- Execute the behavior under test ---
     // Push the delegate through all lifecycle methods all the way to destruction.
@@ -182,5 +155,119 @@ public class FlutterAndroidComponentTest {
 
     // Verify that the plugin was detached from the Activity.
     verify(activityAwarePlugin, times(1)).onDetachedFromActivity();
+  }
+
+  private static class FakeHost implements FlutterActivityAndFragmentDelegate.Host {
+    final FlutterEngine cachedEngine;
+    Activity activity;
+    Lifecycle lifecycle = mock(Lifecycle.class);
+
+    private FakeHost(@NonNull FlutterEngine flutterEngine) {
+      cachedEngine = flutterEngine;
+    }
+
+    @NonNull
+    @Override
+    public Context getContext() {
+      return RuntimeEnvironment.application;
+    }
+
+
+    @Nullable
+    @Override
+    public Activity getActivity() {
+      if (activity == null) {
+        activity = Robolectric.setupActivity(Activity.class);
+      }
+      return activity;
+    }
+
+    @NonNull
+    @Override
+    public Lifecycle getLifecycle() {
+      return lifecycle;
+    }
+
+    @NonNull
+    @Override
+    public FlutterShellArgs getFlutterShellArgs() {
+      return new FlutterShellArgs(new String[]{});
+    }
+
+    @Nullable
+    @Override
+    public String getCachedEngineId() {
+      return "my_flutter_engine";
+    }
+
+    @Override
+    public boolean shouldDestroyEngineWithHost() {
+      return true;
+    }
+
+    @NonNull
+    @Override
+    public String getDartEntrypointFunctionName() {
+      return "main";
+    }
+
+    @NonNull
+    @Override
+    public String getAppBundlePath() {
+      return "/fake/path";
+    }
+
+    @Nullable
+    @Override
+    public String getInitialRoute() {
+      return "/";
+    }
+
+    @NonNull
+    @Override
+    public FlutterView.RenderMode getRenderMode() {
+      return FlutterView.RenderMode.surface;
+    }
+
+    @NonNull
+    @Override
+    public FlutterView.TransparencyMode getTransparencyMode() {
+      return FlutterView.TransparencyMode.transparent;
+    }
+
+    @Nullable
+    @Override
+    public SplashScreen provideSplashScreen() {
+      return null;
+    }
+
+    @Nullable
+    @Override
+    public FlutterEngine provideFlutterEngine(@NonNull Context context) {
+      return cachedEngine;
+    }
+
+    @Nullable
+    @Override
+    public PlatformPlugin providePlatformPlugin(@Nullable Activity activity, @NonNull FlutterEngine flutterEngine) {
+      return null;
+    }
+
+    @Override
+    public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {}
+
+    @Override
+    public void cleanUpFlutterEngine(@NonNull FlutterEngine flutterEngine) {}
+
+    @Override
+    public boolean shouldAttachEngineToActivity() {
+      return true;
+    }
+
+    @Override
+    public void onFlutterUiDisplayed() {}
+
+    @Override
+    public void onFlutterUiNoLongerDisplayed() {}
   }
 }
