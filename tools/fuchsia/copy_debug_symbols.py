@@ -20,12 +20,33 @@ import sys
 import time
 
 
+def IsExecutable(fpath):
+  return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+
+def Which(program):
+  fpath, _ = os.path.split(program)
+  if fpath:
+    if IsExecutable(program):
+      return program
+  else:
+    for path in os.environ["PATH"].split(os.pathsep):
+      exe_file = os.path.join(path, program)
+      if IsExecutable(exe_file):
+        return exe_file
+
+  return None
+
+
 def Touch(fname):
   with open(fname, 'a'):
     os.utime(fname, None)
 
 
 def GetBuildIdParts(exec_path):
+  if not Which('file'):
+    print "'file' command is not present on PATH."
+    sys.exit(1)
   file_out = subprocess.check_output(['file', exec_path])
   build_id = re.match('.*=(.*?),', file_out).groups()[0]
   return {
