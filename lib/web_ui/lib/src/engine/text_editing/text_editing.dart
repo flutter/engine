@@ -293,14 +293,10 @@ class TextEditingElement {
     // outside the editable box. Instead it provides an explicit "done" button,
     // which is reported as "blur", so we must not reacquire focus when we see
     // a "blur" event and let the keyboard disappear.
-    if (browserEngine == BrowserEngine.blink ||
-        browserEngine == BrowserEngine.unknown) {
-      _subscriptions.add(domElement.onBlur.listen((_) {
-        if (isEnabled) {
-          _refocus();
-        }
-      }));
-    }
+
+    _subscriptions.add(domElement.onBlur.listen((_) {
+      owner.sendConnectionClosedToFlutter();
+    }));
 
     if (owner.doesKeyboardShiftInput) {
       _preventShiftDuringFocus();
@@ -395,15 +391,6 @@ class TextEditingElement {
           configureInputElementForIOS();
         }
       });
-
-      // When the virtual keyboard is closed on iOS, onBlur is triggered.
-      _subscriptions.add(domElement.onBlur.listen((_) {
-        // Cancel the timer since there is no need to set the location of the
-        // input element anymore. It needs to be focused again to be editable
-        // by the user.
-        _positionInputElementTimer?.cancel();
-        _positionInputElementTimer = null;
-      }));
     }));
   }
 
@@ -701,6 +688,23 @@ class HybridTextEditing {
         MethodCall(
           'TextInputClient.performAction',
           <dynamic>[_clientId, inputAction],
+        ),
+      ),
+      _emptyCallback,
+    );
+  }
+
+  void sendConnectionClosedToFlutter() {
+    print('close conection');
+    stopEditing();
+    ui.window.onPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall(
+          'TextInputClient.onConnectionClosed',
+          <dynamic>[
+            _clientId,
+          ],
         ),
       ),
       _emptyCallback,
