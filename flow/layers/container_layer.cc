@@ -26,14 +26,22 @@ void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void ContainerLayer::PrerollChildren(PrerollContext* context,
                                      const SkMatrix& child_matrix,
                                      SkRect* child_paint_bounds) {
+  const bool had_platform_view = context->has_platform_view;
+  bool child_has_platform_view = false;
   for (auto& layer : layers_) {
+    context->has_platform_view = had_platform_view;
     layer->Preroll(context, child_matrix);
 
     if (layer->needs_system_composite()) {
       set_needs_system_composite(true);
     }
     child_paint_bounds->join(layer->paint_bounds());
+
+    child_has_platform_view =
+        child_has_platform_view || context->has_platform_view;
   }
+
+  context->has_platform_view = had_platform_view || child_has_platform_view;
 }
 
 void ContainerLayer::PaintChildren(PaintContext& context) const {
