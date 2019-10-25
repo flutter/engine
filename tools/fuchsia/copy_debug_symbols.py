@@ -20,35 +20,16 @@ import sys
 import time
 
 
-def IsExecutable(fpath):
-  return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-
-def Which(program):
-  fpath, _ = os.path.split(program)
-  if fpath:
-    if IsExecutable(program):
-      return program
-  else:
-    for path in os.environ["PATH"].split(os.pathsep):
-      exe_file = os.path.join(path, program)
-      if IsExecutable(exe_file):
-        return exe_file
-
-  return None
-
-
 def Touch(fname):
   with open(fname, 'a'):
     os.utime(fname, None)
 
 
-def GetBuildIdParts(exec_path):
-  if not Which('file'):
-    print "'file' command is not present on PATH."
-    sys.exit(1)
-  file_out = subprocess.check_output(['file', exec_path])
-  build_id = re.match('.*=(.*?),', file_out).groups()[0]
+def GetBuildIdParts(exec_path, read_elf):
+  file_out = subprocess.check_output(
+      [read_elf, '--hex-dump=.note.gnu.build-id', exec_path])
+  second_line = file_out.splitlines()[-1].split()
+  build_id = second_line[1] + second_line[2]
   return {
       'build_id': build_id,
       'prefix_dir': build_id[:2],
@@ -90,12 +71,19 @@ def main():
       dest='stripped',
       action='store_false',
       help='Executable at the specified path is unstripped.')
+  parser.add_argument(
+      '--read-elf',
+      dest='read_elf',
+      action='store',
+      required=True,
+      help='Path to read-elf executable.')
 
   args = parser.parse_args()
   assert os.path.exists(args.exec_path)
   assert os.path.exists(args.dest)
+  assert os.path.exists(args.read_elf)
 
-  parts = GetBuildIdParts(args.exec_path)
+  parts = GetBuildIdParts(args.exec_path, args.read_elf)
   dbg_prefix_base = os.path.join(args.dest, parts['prefix_dir'])
 
   success = False
