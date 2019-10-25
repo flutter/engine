@@ -240,7 +240,7 @@ static hb_position_t harfbuzzGetGlyphHorizontalAdvance(hb_font_t* /* hbFont */,
                                                        void* /* userData */) {
   MinikinPaint* paint = reinterpret_cast<MinikinPaint*>(fontData);
   float advance = paint->font->GetHorizontalAdvance(glyph, *paint);
-  return 256 * advance + 0.5;
+  return 256 * advance;
 }
 
 static hb_bool_t harfbuzzGetGlyphHorizontalOrigin(hb_font_t* /* hbFont */,
