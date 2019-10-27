@@ -1144,7 +1144,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             return false;
         }
 
-        SemanticsNode semanticsNodeUnderCursor = getRootSemanticsNode().hitTest(new float[] {event.getX(), event.getY(), 0, 1});
+        final SemanticsNode rootNode = getRootSemanticsNode();
+        if (rootNode == null) {
+            return false;
+        }
+
+        SemanticsNode semanticsNodeUnderCursor = rootNode.hitTest(new float[] {event.getX(), event.getY(), 0, 1});
         if (semanticsNodeUnderCursor.platformViewId != -1) {
             return accessibilityViewEmbedder.onAccessibilityHoverEvent(semanticsNodeUnderCursor.id, event);
         }
@@ -1187,7 +1192,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         if (flutterSemanticsTree.isEmpty()) {
             return;
         }
-        SemanticsNode semanticsNodeUnderCursor = getRootSemanticsNode().hitTest(new float[] {x, y, 0, 1});
+        final SemantisNode rootNode = getRootSemanticsNode();
+        if (rootNode == null) {
+            return;
+        }
+
+        SemanticsNode semanticsNodeUnderCursor = rootNode.hitTest(new float[] {x, y, 0, 1});
         if (semanticsNodeUnderCursor != hoveredObject) {
             // sending ENTER before EXIT is how Android wants it
             if (semanticsNodeUnderCursor != null) {
