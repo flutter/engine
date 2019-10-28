@@ -10,6 +10,7 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "flutter/flow/gl_context_guard_manager.h"
 
 @class CALayer;
 
@@ -28,7 +29,7 @@ class IOSSurfaceSoftware final : public IOSSurface,
   bool IsValid() const override;
 
   // |IOSSurface|
-  bool ResourceContextMakeCurrent() override;
+  GLContextGuardManager::GLContextMakeCurrentResult ResourceContextMakeCurrent() override;
 
   // |IOSSurface|
   void UpdateStorageSizeIfNecessary() override;

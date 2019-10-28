@@ -21,21 +21,45 @@ namespace flutter {
 // On `GLGuard`'s desstruction, it pops a EAGLContext from the stack and set it to current.
 class IOSGLContextGuardManager final : public GLContextGuardManager {
  public:
-  IOSGLContextGuardManager(fml::scoped_nsobject<EAGLContext> flutter_gl_context)
-      : flutter_gl_context_(flutter_gl_context) {
-    stored_ = fml::scoped_nsobject<NSMutableArray>([[NSMutableArray new] retain]);
+
+  class IOSGLContextAutoRelease final : public GLContextMakeCurrentResult {
+
+    public:
+     IOSGLContextAutoRelease(IOSGLContextGuardManager& manager, fml::scoped_nsobject<EAGLContext> context) : manager_(manager) {
+       bool result = manager_.PushContext(context);
+       has_pushed_context_ = true;
+       make_current_result_ = result;
+     };
+
+    bool GetMakeCurrentResult() {return make_current_result_;}
+
+    ~IOSGLContextAutoRelease() {
+      if (!has_pushed_context_) {
+        return;
+      }
+      manager_.PopContext();
+    }
+
+   private:
+    IOSGLContextGuardManager& manager_;
+    bool make_current_result_;
+    bool has_pushed_context_;
   };
+
+  IOSGLContextGuardManager();
 
   ~IOSGLContextGuardManager() = default;
 
-  void SetOtherContextToCurrent() override;
+  ///=====================================================
 
-  void SaveOtherContext() override;
-
-  void SetFlutterContextToCurrent() override;
+  IOSGLContextAutoRelease MakeCurrent();
+  IOSGLContextAutoRelease ResourceMakeCurrent();
+  bool PushContext(fml::scoped_nsobject<EAGLContext> context);
+  void PopContext();
+  fml::scoped_nsobject<EAGLContext> context_;
 
  private:
-  fml::scoped_nsobject<EAGLContext> flutter_gl_context_;
+  fml::scoped_nsobject<EAGLContext> resource_context_;
 
   fml::scoped_nsobject<NSMutableArray> stored_;
 

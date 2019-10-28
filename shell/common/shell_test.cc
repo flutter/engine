@@ -355,8 +355,8 @@ PointerDataDispatcherMaker ShellTestPlatformView::GetDispatcherMaker() {
 }
 
 // |GPUSurfaceGLDelegate|
-bool ShellTestPlatformView::GLContextMakeCurrent() {
-  return gl_surface_.MakeCurrent();
+GLContextGuardManager::GLContextMakeCurrentResult ShellTestPlatformView::GLContextMakeCurrent() {
+  return GLContextGuardManager::GLContextMakeCurrentResult(gl_surface_.MakeCurrent());
 }
 
 // |GPUSurfaceGLDelegate|

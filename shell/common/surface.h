@@ -9,6 +9,7 @@
 
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/gl_context_guard_manager.h"
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
@@ -58,7 +59,7 @@ class Surface {
 
   virtual flutter::ExternalViewEmbedder* GetExternalViewEmbedder();
 
-  virtual bool MakeRenderContextCurrent();
+  virtual GLContextGuardManager::GLContextMakeCurrentResult MakeRenderContextCurrent();
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Surface);

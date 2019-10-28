@@ -27,8 +27,8 @@ bool IOSSurfaceSoftware::IsValid() const {
   return layer_;
 }
 
-bool IOSSurfaceSoftware::ResourceContextMakeCurrent() {
-  return false;
+GLContextGuardManager::GLContextMakeCurrentResult IOSSurfaceSoftware::ResourceContextMakeCurrent() {
+  return GLContextGuardManager::GLContextMakeCurrentResult(false);
 }
 
 void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {

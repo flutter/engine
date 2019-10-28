@@ -14,12 +14,8 @@ namespace flutter {
 
 IOSGLRenderTarget::IOSGLRenderTarget(
     fml::scoped_nsobject<CAEAGLLayer> layer,
-    EAGLContext* context,
-    EAGLContext* resource_context,
     std::shared_ptr<IOSGLContextGuardManager> gl_context_guard_manager)
     : layer_(std::move(layer)),
-      context_([context retain]),
-      resource_context_([resource_context retain]),
       gl_context_guard_manager_(gl_context_guard_manager),
       framebuffer_(GL_NONE),
       colorbuffer_(GL_NONE),
@@ -27,11 +23,8 @@ IOSGLRenderTarget::IOSGLRenderTarget(
       storage_size_height_(0),
       valid_(false) {
   FML_DCHECK(layer_ != nullptr);
-  FML_DCHECK(context_ != nullptr);
-  FML_DCHECK(resource_context_ != nullptr);
-  IOSGLContextGuardManager::GLGuard guard =
-      IOSGLContextGuardManager::GLGuard(*gl_context_guard_manager_);
-  bool context_current = [EAGLContext setCurrentContext:context_];
+  IOSGLContextGuardManager::IOSGLContextAutoRelease autoRelease =      gl_context_guard_manager_->MakeCurrent();
+  bool context_current = autoRelease.GetMakeCurrentResult();
 
   FML_DCHECK(context_current);
   FML_DCHECK(glGetError() == GL_NO_ERROR);
@@ -66,8 +59,7 @@ IOSGLRenderTarget::IOSGLRenderTarget(
 }
 
 IOSGLRenderTarget::~IOSGLRenderTarget() {
-  IOSGLContextGuardManager::GLGuard guard =
-      IOSGLContextGuardManager::GLGuard(*gl_context_guard_manager_);
+  IOSGLContextGuardManager::IOSGLContextAutoRelease autoRelease =      gl_context_guard_manager_->MakeCurrent();
   FML_DCHECK(glGetError() == GL_NO_ERROR);
 
   // Deletes on GL_NONEs are ignored
@@ -106,12 +98,10 @@ bool IOSGLRenderTarget::UpdateStorageSizeIfNecessary() {
   }
   TRACE_EVENT_INSTANT0("flutter", "IOSGLRenderTarget::UpdateStorageSizeIfNecessary");
   FML_DLOG(INFO) << "Updating render buffer storage size.";
-  IOSGLContextGuardManager::GLGuard guard =
-      IOSGLContextGuardManager::GLGuard(*gl_context_guard_manager_);
 
   FML_DCHECK(glGetError() == GL_NO_ERROR);
-
-  if (![EAGLContext setCurrentContext:context_]) {
+  IOSGLContextGuardManager::IOSGLContextAutoRelease autoRelease =      gl_context_guard_manager_->MakeCurrent();
+  if (!autoRelease.GetMakeCurrentResult()) {
     return false;
   }
 
@@ -122,7 +112,7 @@ bool IOSGLRenderTarget::UpdateStorageSizeIfNecessary() {
   glBindRenderbuffer(GL_RENDERBUFFER, colorbuffer_);
   FML_DCHECK(glGetError() == GL_NO_ERROR);
 
-  if (![context_.get() renderbufferStorage:GL_RENDERBUFFER fromDrawable:layer_.get()]) {
+  if (![gl_context_guard_manager_->context_.get() renderbufferStorage:GL_RENDERBUFFER fromDrawable:layer_.get()]) {
     return false;
   }
 
@@ -138,12 +128,16 @@ bool IOSGLRenderTarget::UpdateStorageSizeIfNecessary() {
   return true;
 }
 
-bool IOSGLRenderTarget::MakeCurrent() {
-  return UpdateStorageSizeIfNecessary() && [EAGLContext setCurrentContext:context_.get()];
+GLContextGuardManager::GLContextMakeCurrentResult IOSGLRenderTarget::MakeCurrent() {
+  bool isUpdateSuccessful = UpdateStorageSizeIfNecessary();
+  if (!isUpdateSuccessful) {
+    return GLContextGuardManager::GLContextMakeCurrentResult(false);
+  }
+  return gl_context_guard_manager_->MakeCurrent();
 }
 
-bool IOSGLRenderTarget::ResourceMakeCurrent() {
-  return [EAGLContext setCurrentContext:resource_context_.get()];
+GLContextGuardManager::GLContextMakeCurrentResult IOSGLRenderTarget::ResourceMakeCurrent() {
+  return gl_context_guard_manager_->ResourceMakeCurrent();
 }
 
 }  // namespace flutter

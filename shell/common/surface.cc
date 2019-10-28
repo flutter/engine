@@ -60,8 +60,8 @@ flutter::ExternalViewEmbedder* Surface::GetExternalViewEmbedder() {
   return nullptr;
 }
 
-bool Surface::MakeRenderContextCurrent() {
-  return true;
+GLContextGuardManager::GLContextMakeCurrentResult Surface::MakeRenderContextCurrent() {
+  return GLContextGuardManager::GLContextMakeCurrentResult(true);
 }
 
 }  // namespace flutter

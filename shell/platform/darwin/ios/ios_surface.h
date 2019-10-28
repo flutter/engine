@@ -12,6 +12,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/surface.h"
+#include "flutter/shell/platform/darwin/ios/ios_gl_context_guard_manager.h"
 
 namespace flutter {
 
@@ -27,7 +28,7 @@ class IOSSurface {
 
   virtual bool IsValid() const = 0;
 
-  virtual bool ResourceContextMakeCurrent() = 0;
+  virtual GLContextGuardManager::GLContextMakeCurrentResult ResourceContextMakeCurrent() = 0;
 
   virtual void UpdateStorageSizeIfNecessary() = 0;
 

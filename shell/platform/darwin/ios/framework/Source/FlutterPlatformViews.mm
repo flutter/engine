@@ -161,7 +161,7 @@ void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
 }
 
 void FlutterPlatformViewsController::SetGLContextGuardManager(
-    std::shared_ptr<GLContextGuardManager> gl_context_guard_manager) {
+    std::shared_ptr<IOSGLContextGuardManager> gl_context_guard_manager) {
   gl_context_guard_manager_ = gl_context_guard_manager;
 }
 
@@ -373,8 +373,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
 
   bool did_submit = true;
   for (int64_t view_id : composition_order_) {
-    GLContextGuardManager::GLGuard guard =
-        GLContextGuardManager::GLGuard(*gl_context_guard_manager_);
+    IOSGLContextGuardManager::IOSGLContextAutoRelease autoRelease = gl_context_guard_manager_->MakeCurrent();
     EnsureOverlayInitialized(view_id, std::move(gl_context), gr_context);
     auto frame = overlays_[view_id]->surface->AcquireFrame(frame_size_);
     SkCanvas* canvas = frame->SkiaCanvas();
@@ -463,7 +462,7 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
     GrContext* gr_context) {
   FML_DCHECK(flutter_view_);
 
-  GLContextGuardManager::GLGuard guard = GLContextGuardManager::GLGuard(*gl_context_guard_manager_);
+  IOSGLContextGuardManager::IOSGLContextAutoRelease autoRelease = gl_context_guard_manager_->MakeCurrent();
 
   auto overlay_it = overlays_.find(overlay_id);
 

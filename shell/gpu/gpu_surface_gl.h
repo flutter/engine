@@ -44,7 +44,7 @@ class GPUSurfaceGL : public Surface {
   flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   // |Surface|
-  bool MakeRenderContextCurrent() override;
+  GLContextGuardManager::GLContextMakeCurrentResult MakeRenderContextCurrent() override;
 
  private:
   GPUSurfaceGLDelegate* delegate_;

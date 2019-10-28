@@ -40,9 +40,10 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate,
     : delegate_(delegate),
       render_to_surface_(render_to_surface),
       weak_factory_(this) {
-  GLContextGuardManager::GLGuard guard =
-      GLContextGuardManager::GLGuard(*(delegate_->GetGLContextGuardManager()));
-  if (!delegate_->GLContextMakeCurrent()) {
+
+  GLContextGuardManager::GLContextMakeCurrentResult result = delegate_->GLContextMakeCurrent();
+
+  if (!result.GetMakeCurrentResult()) {
     FML_LOG(ERROR)
         << "Could not make the context current to setup the gr context.";
     return;
@@ -90,8 +91,6 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate,
   }
   FML_LOG(INFO) << "Found " << caches.size() << " SkSL shaders; precompiled "
                 << compiled_count;
-
-  delegate_->GLContextClearCurrent();
 }
 
 GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrContext> gr_context,
@@ -101,9 +100,9 @@ GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrContext> gr_context,
       context_(gr_context),
       render_to_surface_(render_to_surface),
       weak_factory_(this) {
-  GLContextGuardManager::GLGuard guard =
-      GLContextGuardManager::GLGuard(*(delegate_->GetGLContextGuardManager()));
-  if (!delegate_->GLContextMakeCurrent()) {
+
+  GLContextGuardManager::GLContextMakeCurrentResult result = delegate_->GLContextMakeCurrent();
+  if (!result.GetMakeCurrentResult()) {
     FML_LOG(ERROR)
         << "Could not make the context current to setup the gr context.";
     return;
@@ -119,9 +118,8 @@ GPUSurfaceGL::~GPUSurfaceGL() {
   if (!valid_) {
     return;
   }
-  GLContextGuardManager::GLGuard guard =
-      GLContextGuardManager::GLGuard(*(delegate_->GetGLContextGuardManager()));
-  if (!delegate_->GLContextMakeCurrent()) {
+  GLContextGuardManager::GLContextMakeCurrentResult result = delegate_->GLContextMakeCurrent();
+  if (!result.GetMakeCurrentResult()) {
     FML_LOG(ERROR) << "Could not make the context current to destroy the "
                       "GrContext resources.";
     return;
@@ -132,8 +130,6 @@ GPUSurfaceGL::~GPUSurfaceGL() {
     context_->releaseResourcesAndAbandonContext();
   }
   context_ = nullptr;
-
-  delegate_->GLContextClearCurrent();
 }
 
 // |Surface|
@@ -259,9 +255,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
     return nullptr;
   }
 
-  GLContextGuardManager::GLGuard guard =
-      GLContextGuardManager::GLGuard(*(delegate_->GetGLContextGuardManager()));
-  if (!delegate_->GLContextMakeCurrent()) {
+  GLContextGuardManager::GLContextMakeCurrentResult makeCurrentResult = delegate_->GLContextMakeCurrent();
+  if (!makeCurrentResult.GetMakeCurrentResult()) {
     FML_LOG(ERROR)
         << "Could not make the context current to acquire the frame.";
     return nullptr;
@@ -303,8 +298,7 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
     return false;
   }
 
-  GLContextGuardManager::GLGuard guard =
-      GLContextGuardManager::GLGuard(*(delegate_->GetGLContextGuardManager()));
+  GLContextGuardManager::GLContextMakeCurrentResult result = delegate_->GLContextMakeCurrent();
   if (offscreen_surface_ != nullptr) {
     TRACE_EVENT0("flutter", "CopyTextureOnscreen");
     SkPaint paint;
@@ -341,7 +335,7 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
 
     onscreen_surface_ = std::move(new_onscreen_surface);
   }
-
+  (void)result;
   return true;
 }
 
@@ -372,7 +366,7 @@ flutter::ExternalViewEmbedder* GPUSurfaceGL::GetExternalViewEmbedder() {
 }
 
 // |Surface|
-bool GPUSurfaceGL::MakeRenderContextCurrent() {
+GLContextGuardManager::GLContextMakeCurrentResult GPUSurfaceGL::MakeRenderContextCurrent() {
   return delegate_->GLContextMakeCurrent();
 }
 

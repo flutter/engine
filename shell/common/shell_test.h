@@ -144,7 +144,7 @@ class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
   PointerDataDispatcherMaker GetDispatcherMaker() override;
 
   // |GPUSurfaceGLDelegate|
-  bool GLContextMakeCurrent() override;
+  GLContextGuardManager::GLContextMakeCurrentResult GLContextMakeCurrent() override;
 
   // |GPUSurfaceGLDelegate|
   bool GLContextClearCurrent() override;

@@ -28,7 +28,7 @@ bool IOSSurfaceGL::IsValid() const {
   return render_target_->IsValid();
 }
 
-bool IOSSurfaceGL::ResourceContextMakeCurrent() {
+GLContextGuardManager::GLContextMakeCurrentResult IOSSurfaceGL::ResourceContextMakeCurrent() {
   return context_->ResourceMakeCurrent();
 }
 
@@ -56,11 +56,11 @@ bool IOSSurfaceGL::UseOffscreenSurface() const {
   return true;
 }
 
-bool IOSSurfaceGL::GLContextMakeCurrent() {
+GLContextGuardManager::GLContextMakeCurrentResult IOSSurfaceGL::GLContextMakeCurrent() {
   if (!IsValid()) {
-    return false;
+    return GLContextGuardManager::GLContextMakeCurrentResult(false);
   }
-  return render_target_->UpdateStorageSizeIfNecessary() && context_->MakeCurrent();
+  return render_target_->MakeCurrent();
 }
 
 bool IOSSurfaceGL::GLContextClearCurrent() {

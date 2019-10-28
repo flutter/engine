@@ -6,12 +6,12 @@
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/gl_context_guard_manager.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
+#include "flutter/shell/platform/darwin/ios/ios_gl_context_guard_manager.h"
 
 // A UIView that is used as the parent for embedded UIViews.
 //
@@ -76,7 +76,7 @@ class FlutterPlatformViewsController {
 
   void SetFlutterViewController(UIViewController* flutter_view_controller);
 
-  void SetGLContextGuardManager(std::shared_ptr<GLContextGuardManager> gl_context_guard_manager);
+  void SetGLContextGuardManager(std::shared_ptr<IOSGLContextGuardManager> gl_context_guard_manager);
 
   void RegisterViewFactory(NSObject<FlutterPlatformViewFactory>* factory, NSString* factoryId);
 
@@ -206,7 +206,7 @@ class FlutterPlatformViewsController {
   void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
   void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
 
-  std::shared_ptr<GLContextGuardManager> gl_context_guard_manager_;
+  std::shared_ptr<IOSGLContextGuardManager> gl_context_guard_manager_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };

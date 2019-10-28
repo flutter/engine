@@ -18,31 +18,18 @@ class GLContextGuardManager {
   // librarys, plugins and packages. On construction, it should set flutter's gl
   // context to the current context. On destruction, it should restore the gl
   // context before the construction of this object.
-  class GLGuard {
+  class GLContextMakeCurrentResult {
    public:
-    GLGuard(GLContextGuardManager& manager) : manager_(manager) {
-      manager_.RestoreFlutterContext();
-    };
+    GLContextMakeCurrentResult() = default;
+    
+    GLContextMakeCurrentResult(bool make_current_result):
+    make_current_result_(make_current_result){}
 
-    ~GLGuard() { manager_.RestoreOtherContext(); }
+   bool GetMakeCurrentResult() {return make_current_result_;}
 
    private:
-    GLContextGuardManager& manager_;
+    bool make_current_result_;
   };
-
-  virtual void SetOtherContextToCurrent() = 0;
-
-  virtual void SaveOtherContext() = 0;
-
-  virtual void SetFlutterContextToCurrent() = 0;
-
- private:
-  void RestoreFlutterContext() {
-    SaveOtherContext();
-    SetFlutterContextToCurrent();
-  }
-
-  void RestoreOtherContext() { SetOtherContextToCurrent(); }
 };
 
 }  // namespace flutter
