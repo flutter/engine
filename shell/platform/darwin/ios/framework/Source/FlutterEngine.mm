@@ -204,8 +204,11 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   if (!_allowHeadlessExecution) {
     [self destroyContext];
   } else {
-    fml::WeakPtr<FlutterViewController> null_view_controller;
-    [self iosPlatformView]->SetOwnerViewController(null_view_controller);
+    PlatformViewIOS platform_view = [self iosPlatformView];
+    if (platform_view) {
+      fml::WeakPtr<FlutterViewController> null_view_controller;
+      platform_view->SetOwnerViewController(null_view_controller);
+    }
   }
   _viewController.reset();
 }
