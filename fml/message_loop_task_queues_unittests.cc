@@ -10,7 +10,7 @@
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "gtest/gtest.h"
-#include <iostream>
+
 class TestWakeable : public fml::Wakeable {
  public:
   using WakeUpCall = std::function<void(const fml::TimePoint)>;
