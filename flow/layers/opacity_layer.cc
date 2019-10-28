@@ -78,7 +78,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
   // Embedded platform views are changing the canvas in the middle of the paint
   // traversal. To make sure we paint on the right canvas, when there are
   // platform views in the tree, we don't use the cache.
-  if (!context.has_platform_view && context.raster_cache) {
+  if (context.raster_cache) {
     const SkMatrix& ctm = context.leaf_nodes_canvas->getTotalMatrix();
     RasterCacheResult child_cache =
         context.raster_cache->Get(layers()[0].get(), ctm);

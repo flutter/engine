@@ -90,7 +90,6 @@ class Layer {
     TextureRegistry& texture_registry;
     const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
-    bool has_platform_view;
   };
 
   // Calls SkCanvas::saveLayer and restores the layer upon destruction. Also
