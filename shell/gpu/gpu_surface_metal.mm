@@ -70,7 +70,9 @@ GPUSurfaceMetal::GPUSurfaceMetal(GPUSurfaceDelegate* delegate,
   command_queue_ = metal_queue;
 }
 
-GPUSurfaceMetal::~GPUSurfaceMetal() = default;
+GPUSurfaceMetal::~GPUSurfaceMetal() {
+  ReleaseUnusedDrawableIfNecessary();
+}
 
 // |Surface|
 bool GPUSurfaceMetal::IsValid() {
@@ -95,11 +97,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& size)
     return nullptr;
   }
 
-  // Get ready for the next frame no matter what.
-  if (next_drawable_ != nullptr) {
-    CFRelease(next_drawable_);
-    next_drawable_ = nullptr;
-  }
+  ReleaseUnusedDrawableIfNecessary();
 
   auto surface = SkSurface::MakeFromCAMetalLayer(context_.get(),            // context
                                                  layer_.get(),              // layer
@@ -116,13 +114,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& size)
     return nullptr;
   }
 
-  // External views need to present with transaction. When presenting with
-  // transaction, we have to block, otherwise we risk presenting the drawable
-  // after the CATransaction has completed.
-  // See:
-  // https://developer.apple.com/documentation/quartzcore/cametallayer/1478157-presentswithtransaction
-  // TODO(dnfield): only do this if transactions are actually being used.
-  // https://github.com/flutter/flutter/issues/24133
   auto submit_callback = [this](const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
     canvas->flush();
 
@@ -140,6 +131,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& size)
         reinterpret_cast<id<CAMetalDrawable>>(next_drawable_));
     next_drawable_ = nullptr;
 
+    // External views need to present with transaction. When presenting with
+    // transaction, we have to block, otherwise we risk presenting the drawable
+    // after the CATransaction has completed.
+    // See:
+    // https://developer.apple.com/documentation/quartzcore/cametallayer/1478157-presentswithtransaction
+    // TODO(dnfield): only do this if transactions are actually being used.
+    // https://github.com/flutter/flutter/issues/24133
     if (!has_external_view_embedder) {
       [command_buffer.get() presentDrawable:drawable.get()];
       [command_buffer.get() commit];
@@ -177,6 +175,18 @@ flutter::ExternalViewEmbedder* GPUSurfaceMetal::GetExternalViewEmbedder() {
 bool GPUSurfaceMetal::MakeRenderContextCurrent() {
   // This backend has no such concept.
   return true;
+}
+
+void GPUSurfaceMetal::ReleaseUnusedDrawableIfNecessary() {
+  // If the previous surface frame was not submitted before  a new one is acquired, the old drawable
+  // needs to be released. An RAII wrapper may not be used because this needs to interoperate with
+  // Skia APIs.
+  if (next_drawable_ == nullptr) {
+    return;
+  }
+
+  CFRelease(next_drawable_);
+  next_drawable_ = nullptr;
 }
 
 }  // namespace flutter

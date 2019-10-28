@@ -51,6 +51,8 @@ class GPUSurfaceMetal : public Surface {
   // |Surface|
   bool MakeRenderContextCurrent() override;
 
+  void ReleaseUnusedDrawableIfNecessary();
+
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceMetal);
 };
 
