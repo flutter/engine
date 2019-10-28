@@ -537,12 +537,12 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
                               arguments:@[ @(client), actionString ]];
 }
 
-- (void)showPromptRectForStart:(NSUInteger)start
-                           end:(NSUInteger)end
-                         cause:(FlutterTextPromptRectAppearCause)cause
-                    withClient:(int)client {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.showPromptRect"
-                              arguments:@[ @(client), @(start), @(end), @(cause) ]];
+- (void)updatePromptRectForStart:(NSUInteger)start
+                             end:(NSUInteger)end
+                            type:(FlutterTextPromptRectType)type
+                      withClient:(int)client {
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.updatePromptRect"
+                              arguments:@[ @(client), @(start), @(end), @(type) ]];
 }
 
 #pragma mark - Screenshot Delegate

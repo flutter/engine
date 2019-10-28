@@ -544,14 +544,14 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 - (CGRect)firstRectForRange:(UITextRange*)range {
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
-  FlutterTextPromptRectAppearCause cause;
+  FlutterTextPromptRectType promptType;
   if (_markedTextRange == nil) {
-    cause = FlutterTextPromptRectAppearCauseAutocorrection;
+    promptType = FlutterTextPromptRectTypeAutocorrection;
   } else {
-    cause = FlutterTextPromptRectAppearCauseMultistageTextInput;
+    promptType = FlutterTextPromptRectTypeMultistageTextInput;
   }
 
-  [_textInputDelegate showPromptRectForStart:start end:end cause:cause withClient:_textInputClient];
+  [_textInputDelegate updatePromptRectForStart:start end:end type:promptType withClient:_textInputClient];
   // TODO(cbracken) Implement.
   return CGRectZero;
 }
