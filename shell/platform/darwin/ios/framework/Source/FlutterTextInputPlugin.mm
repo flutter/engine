@@ -542,16 +542,15 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 // physical keyboard.
 
 - (CGRect)firstRectForRange:(UITextRange*)range {
+  // If _markedTextRange is not nil, then the prompt rect is showing to
+  // indicate multi-stage text, which is handled somewhere else.
+  if (_markedTextRange != nil) {
+    return CGRectZero;
+  }
+  
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
-  FlutterTextPromptRectType promptType;
-  if (_markedTextRange == nil) {
-    promptType = FlutterTextPromptRectTypeAutocorrection;
-  } else {
-    promptType = FlutterTextPromptRectTypeMultistageTextInput;
-  }
-
-  [_textInputDelegate updatePromptRectForStart:start end:end type:promptType withClient:_textInputClient];
+  [_textInputDelegate showAutocorrectionPromptRectForStart:start end:end withClient:_textInputClient];
   // TODO(cbracken) Implement.
   return CGRectZero;
 }
