@@ -110,7 +110,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
 }
 
 - (void)testItReportsDarkPlatformBrightnessWhenTraitCollectionRequestsIt {
-  if (!@available(iOS 13, *)) {
+  if (@available(iOS 13, *)) {
+  } else {
     return;
   }
 
@@ -159,7 +160,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
 #pragma mark - Platform Contrast
 
 - (void)testItReportsNormalPlatformContrastByDefault {
-  if (!@available(iOS 13, *)) {
+  if (@available(iOS 13, *)) {
+  } else {
     return;
   }
 
@@ -187,7 +189,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
 }
 
 - (void)testItReportsPlatformContrastWhenViewWillAppear {
-  if (!@available(iOS 13, *)) {
+  if (@available(iOS 13, *)) {
+  } else {
     return;
   }
 
@@ -215,41 +218,39 @@ typedef enum UIAccessibilityContrast : NSInteger {
 }
 
 - (void)testItReportsHighContrastWhenTraitCollectionRequestsIt {
-  if (!@available(iOS 13, *)) {
-    return;
+  if (@available(iOS 13, *)) {
+    // Setup test.
+    id engine = OCMClassMock([FlutterEngine class]);
+    
+    id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+    OCMStub([engine settingsChannel]).andReturn(settingsChannel);
+    
+    FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
+                                                                          nibName:nil
+                                                                           bundle:nil];
+    id mockTraitCollection = [self fakeTraitCollectionWithContrast:UIAccessibilityContrastHigh];
+    
+    // We partially mock the real FlutterViewController to act as the OS and report
+    // the UITraitCollection of our choice. Mocking the object under test is not
+    // desirable, but given that the OS does not offer a DI approach to providing
+    // our own UITraitCollection, this seems to be the least bad option.
+    id partialMockVC = OCMPartialMock(realVC);
+    OCMStub([partialMockVC traitCollection]).andReturn(mockTraitCollection);
+    
+    // Exercise behavior under test.
+    [partialMockVC traitCollectionDidChange:mockTraitCollection];
+    
+    // Verify behavior.
+    OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
+      return [message[@"platformContrast"] isEqualToString:@"high"];
+    }]]);
+    
+    // Clean up mocks
+    [partialMockVC stopMocking];
+    [engine stopMocking];
+    [settingsChannel stopMocking];
+    [mockTraitCollection stopMocking];
   }
-
-  // Setup test.
-  id engine = OCMClassMock([FlutterEngine class]);
-
-  id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([engine settingsChannel]).andReturn(settingsChannel);
-
-  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
-                                                                        nibName:nil
-                                                                         bundle:nil];
-  id mockTraitCollection = [self fakeTraitCollectionWithContrast:UIAccessibilityContrastHigh];
-
-  // We partially mock the real FlutterViewController to act as the OS and report
-  // the UITraitCollection of our choice. Mocking the object under test is not
-  // desirable, but given that the OS does not offer a DI approach to providing
-  // our own UITraitCollection, this seems to be the least bad option.
-  id partialMockVC = OCMPartialMock(realVC);
-  OCMStub([partialMockVC traitCollection]).andReturn(mockTraitCollection);
-
-  // Exercise behavior under test.
-  [partialMockVC traitCollectionDidChange:mockTraitCollection];
-
-  // Verify behavior.
-  OCMVerify([settingsChannel sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
-                               return [message[@"platformContrast"] isEqualToString:@"high"];
-                             }]]);
-
-  // Clean up mocks
-  [partialMockVC stopMocking];
-  [engine stopMocking];
-  [settingsChannel stopMocking];
-  [mockTraitCollection stopMocking];
 }
 
 // Creates a mocked UITraitCollection with nil values for everything except accessibilityContrast,
