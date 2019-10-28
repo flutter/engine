@@ -5,7 +5,6 @@
 package io.flutter.embedding.engine.plugins.service;
 
 import android.app.Service;
-import android.arch.lifecycle.Lifecycle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -22,10 +21,13 @@ public interface ServicePluginBinding {
   Service getService();
 
   /**
-   * Returns the {@link Lifecycle} associated with the attached {@code Service}.
+   * Returns the {@code Lifecycle} associated with the attached {@code Service}.
+   * <p>
+   * Use the flutter_plugin_android_lifecycle plugin to turn the returned {@code Object}
+   * into a {@code Lifecycle} object.
    */
   @Nullable
-  Lifecycle getLifecycle();
+  Object getLifecycle();
 
   /**
    * Adds the given {@code listener} to be notified when the associated {@link Service} goes
