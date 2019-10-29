@@ -50,7 +50,8 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   sk_sp<GrContext> CreateResourceContext() const override;
 
   // |GPUSurfaceGLDelegate|
-  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> GLContextMakeCurrent() override;
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch>
+  GLContextMakeCurrent() override;
 
   // |GPUSurfaceGLDelegate|
   bool GLContextClearCurrent() override;

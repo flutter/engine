@@ -28,7 +28,8 @@ bool IOSSurfaceGL::IsValid() const {
   return render_target_->IsValid();
 }
 
-std::unique_ptr<GLContextSwitchManager::GLContextSwitch> IOSSurfaceGL::ResourceContextMakeCurrent() {
+std::unique_ptr<GLContextSwitchManager::GLContextSwitch>
+IOSSurfaceGL::ResourceContextMakeCurrent() {
   return context_->ResourceMakeCurrent();
 }
 

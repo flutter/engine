@@ -12,11 +12,11 @@ namespace flutter {
 
 // Manages `GLContextSwitch`.
 //
-// Should be subclassed for platforms that uses GL and requires context switching.
-// Always use `MakeCurrent` and `ResourceMakeCurrent` in the `GLContextSwitchManager` to set gl contexts.
+// Should be subclassed for platforms that uses GL and requires context
+// switching. Always use `MakeCurrent` and `ResourceMakeCurrent` in the
+// `GLContextSwitchManager` to set gl contexts.
 class GLContextSwitchManager {
  public:
-
   // Switches the gl context to the flutter's contexts.
   //
   // Should be subclassed for each platform embedder that uses GL.
@@ -36,24 +36,27 @@ class GLContextSwitchManager {
   GLContextSwitchManager() = default;
   ~GLContextSwitchManager() = default;
 
-  // Make the flutter's context as current context and returns a `GLContextSwitch`.
+  // Make the flutter's context as current context and returns a
+  // `GLContextSwitch`.
   virtual std::unique_ptr<GLContextSwitch> MakeCurrent() = 0;
 
-  // Make the flutter's resource context as current context and returns a `GLContextSwitch`.
+  // Make the flutter's resource context as current context and returns a
+  // `GLContextSwitch`.
   virtual std::unique_ptr<GLContextSwitch> ResourceMakeCurrent() = 0;
 
-  // A representation of a `GLContextSwitch` that doesn't require actual context switching.
+  // A representation of a `GLContextSwitch` that doesn't require actual context
+  // switching.
   class GLContextSwitchPureResult final : public GLContextSwitch {
    public:
     // Constructor that creates an `GLContextSwitchPureResult`.
     // The `GetSwitchResult` will return the same value as `switch_result`.
-    GLContextSwitchPureResult(bool switch_result):switch_result_(switch_result){}
+    GLContextSwitchPureResult(bool switch_result)
+        : switch_result_(switch_result) {}
 
     ~GLContextSwitchPureResult() = default;
 
-    bool GetSwitchResult() override {
-      return switch_result_;
-    }
+    bool GetSwitchResult() override { return switch_result_; }
+
    private:
     bool switch_result_;
 

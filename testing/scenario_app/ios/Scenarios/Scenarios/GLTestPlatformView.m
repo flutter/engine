@@ -82,8 +82,7 @@
 - (void)checkEAGLContext {
   if ([EAGLContext currentContext] != _context) {
     self.accessibilityIdentifier = @"gl_platformview_wrong_context";
-  }
-  else {
+  } else {
     self.accessibilityIdentifier = @"gl_platformview_correct_context";
   }
 }

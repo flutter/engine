@@ -24,29 +24,25 @@ std::unique_ptr<GLContextSwitchManager::GLContextSwitch> IOSGLContextSwitchManag
   return std::make_unique<IOSGLContextSwitchManager::IOSGLContextSwitch>(*this, context_);
 }
 
-std::unique_ptr<GLContextSwitchManager::GLContextSwitch> IOSGLContextSwitchManager::ResourceMakeCurrent() {
+std::unique_ptr<GLContextSwitchManager::GLContextSwitch>
+IOSGLContextSwitchManager::ResourceMakeCurrent() {
   return std::make_unique<IOSGLContextSwitchManager::IOSGLContextSwitch>(*this, resource_context_);
 }
 
 bool IOSGLContextSwitchManager::PushContext(fml::scoped_nsobject<EAGLContext> context) {
-  NSLog(@"before push store %@", stored_.get());
   EAGLContext* current = [EAGLContext currentContext];
   if (current == nil) {
     [stored_.get() addObject:[NSNull null]];
   } else {
     [stored_.get() addObject:current];
   }
-  NSLog(@"after push store %@", stored_.get());
   bool result = [EAGLContext setCurrentContext:context.get()];
-  NSLog(@"set result %@", @(result));
   return result;
 }
 
 void IOSGLContextSwitchManager::PopContext() {
-  NSLog(@"before pop store %@", stored_.get());
   EAGLContext* last = [stored_.get() lastObject];
   [stored_.get() removeLastObject];
-  NSLog(@"after pop store %@", stored_.get());
   if ([last isEqual:[NSNull null]]) {
     [EAGLContext setCurrentContext:nil];
     return;

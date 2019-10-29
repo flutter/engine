@@ -26,7 +26,7 @@ Map<String, Scenario> _scenarios = <String, Scenario>{
   'platform_view_eaglcontext': PlatformViewGLScenario(window, 'null', id:6),
 };
 
-Scenario _currentScenario = _scenarios['platform_view_eaglcontext'];
+Scenario _currentScenario = _scenarios['animated_color_square'];
 
 void main() {
   window

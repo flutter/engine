@@ -6,8 +6,8 @@
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_GL_DELEGATE_H_
 
 #include "flutter/flow/embedded_views.h"
-#include "flutter/shell/common/gl_context_switch_manager.h"
 #include "flutter/fml/macros.h"
+#include "flutter/shell/common/gl_context_switch_manager.h"
 #include "flutter/shell/gpu/gpu_surface_delegate.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
@@ -17,7 +17,8 @@ namespace flutter {
 class GPUSurfaceGLDelegate : public GPUSurfaceDelegate {
  public:
   // Called to make the main GL context current on the current thread.
-  virtual std::unique_ptr<GLContextSwitchManager::GLContextSwitch> GLContextMakeCurrent() = 0;
+  virtual std::unique_ptr<GLContextSwitchManager::GLContextSwitch>
+  GLContextMakeCurrent() = 0;
 
   // Called to clear the current GL context on the thread. This may be called on
   // either the GPU or IO threads.
@@ -61,7 +62,8 @@ class GPUSurfaceGLDelegate : public GPUSurfaceDelegate {
   // here.
   virtual GLProcResolver GetGLProcResolver() const;
 
-  virtual std::shared_ptr<GLContextSwitchManager> GetGLContextSwitchManager() = 0;
+  virtual std::shared_ptr<GLContextSwitchManager>
+  GetGLContextSwitchManager() = 0;
 };
 
 }  // namespace flutter

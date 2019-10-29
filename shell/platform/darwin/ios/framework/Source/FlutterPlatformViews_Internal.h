@@ -76,7 +76,8 @@ class FlutterPlatformViewsController {
 
   void SetFlutterViewController(UIViewController* flutter_view_controller);
 
-  void SetGLContextSwitchManager(std::shared_ptr<IOSGLContextSwitchManager> gl_context_guard_manager);
+  void SetGLContextSwitchManager(
+      std::shared_ptr<IOSGLContextSwitchManager> gl_context_guard_manager);
 
   void RegisterViewFactory(NSObject<FlutterPlatformViewFactory>* factory, NSString* factoryId);
 

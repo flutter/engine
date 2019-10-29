@@ -35,7 +35,8 @@ class IOSGLRenderTarget {
 
   std::unique_ptr<GLContextSwitchManager::GLContextSwitch> MakeCurrent();
 
-  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> ResourceMakeCurrent();
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch>
+  ResourceMakeCurrent();
 
   sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
 

@@ -23,8 +23,9 @@ IOSGLRenderTarget::IOSGLRenderTarget(
       storage_size_height_(0),
       valid_(false) {
   FML_DCHECK(layer_ != nullptr);
-  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> autoRelease = gl_context_switch_manager_->MakeCurrent();
-  bool context_current = autoRelease->GetSwitchResult();
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> context_switch =
+      gl_context_switch_manager_->MakeCurrent();
+  bool context_current = context_switch->GetSwitchResult();
 
   FML_DCHECK(context_current);
   FML_DCHECK(glGetError() == GL_NO_ERROR);
@@ -59,7 +60,8 @@ IOSGLRenderTarget::IOSGLRenderTarget(
 }
 
 IOSGLRenderTarget::~IOSGLRenderTarget() {
-  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> autoRelease = gl_context_switch_manager_->MakeCurrent();
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> context_switch =
+      gl_context_switch_manager_->MakeCurrent();
   FML_DCHECK(glGetError() == GL_NO_ERROR);
 
   // Deletes on GL_NONEs are ignored
@@ -74,7 +76,6 @@ bool IOSGLRenderTarget::IsValid() const {
 }
 
 bool IOSGLRenderTarget::PresentRenderBuffer() const {
-  FML_DLOG(ERROR) << "Present buffer start";
   const GLenum discards[] = {
       GL_DEPTH_ATTACHMENT,
       GL_STENCIL_ATTACHMENT,
@@ -100,8 +101,9 @@ bool IOSGLRenderTarget::UpdateStorageSizeIfNecessary() {
   FML_DLOG(INFO) << "Updating render buffer storage size.";
 
   FML_DCHECK(glGetError() == GL_NO_ERROR);
-  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> autoRelease = gl_context_switch_manager_->MakeCurrent();
-  if (!autoRelease->GetSwitchResult()) {
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> context_switch =
+      gl_context_switch_manager_->MakeCurrent();
+  if (!context_switch->GetSwitchResult()) {
     return false;
   }
 
@@ -112,7 +114,8 @@ bool IOSGLRenderTarget::UpdateStorageSizeIfNecessary() {
   glBindRenderbuffer(GL_RENDERBUFFER, colorbuffer_);
   FML_DCHECK(glGetError() == GL_NO_ERROR);
 
-  if (![gl_context_switch_manager_->GetContext().get() renderbufferStorage:GL_RENDERBUFFER fromDrawable:layer_.get()]) {
+  if (![gl_context_switch_manager_->GetContext().get() renderbufferStorage:GL_RENDERBUFFER
+                                                              fromDrawable:layer_.get()]) {
     return false;
   }
 
@@ -131,10 +134,8 @@ bool IOSGLRenderTarget::UpdateStorageSizeIfNecessary() {
 std::unique_ptr<GLContextSwitchManager::GLContextSwitch> IOSGLRenderTarget::MakeCurrent() {
   bool isUpdateSuccessful = UpdateStorageSizeIfNecessary();
   if (!isUpdateSuccessful) {
-    NSLog(@"update isn't successful");
     return std::make_unique<GLContextSwitchManager::GLContextSwitchPureResult>(false);
   }
-  NSLog(@"update is successful");
   return gl_context_switch_manager_->MakeCurrent();
 }
 
