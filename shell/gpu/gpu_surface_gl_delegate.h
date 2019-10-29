@@ -17,7 +17,7 @@ namespace flutter {
 class GPUSurfaceGLDelegate : public GPUSurfaceDelegate {
  public:
   // Called to make the main GL context current on the current thread.
-  virtual std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> GLContextMakeCurrent() = 0;
+  virtual std::unique_ptr<GLContextSwitchManager::GLContextSwitch> GLContextMakeCurrent() = 0;
 
   // Called to clear the current GL context on the thread. This may be called on
   // either the GPU or IO threads.
@@ -61,7 +61,7 @@ class GPUSurfaceGLDelegate : public GPUSurfaceDelegate {
   // here.
   virtual GLProcResolver GetGLProcResolver() const;
 
-  virtual std::shared_ptr<GLContextGuardManager> GetGLContextGuardManager() = 0;
+  virtual std::shared_ptr<GLContextSwitchManager> GetGLContextSwitchManager() = 0;
 };
 
 }  // namespace flutter

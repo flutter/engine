@@ -76,7 +76,7 @@ class FlutterPlatformViewsController {
 
   void SetFlutterViewController(UIViewController* flutter_view_controller);
 
-  void SetGLContextGuardManager(std::shared_ptr<IOSGLContextGuardManager> gl_context_guard_manager);
+  void SetGLContextSwitchManager(std::shared_ptr<IOSGLContextSwitchManager> gl_context_guard_manager);
 
   void RegisterViewFactory(NSObject<FlutterPlatformViewFactory>* factory, NSString* factoryId);
 
@@ -206,7 +206,7 @@ class FlutterPlatformViewsController {
   void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
   void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
 
-  std::shared_ptr<IOSGLContextGuardManager> gl_context_guard_manager_;
+  std::shared_ptr<IOSGLContextSwitchManager> gl_context_guard_manager_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };

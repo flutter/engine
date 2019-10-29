@@ -27,9 +27,9 @@ bool IOSSurfaceSoftware::IsValid() const {
   return layer_;
 }
 
-std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> IOSSurfaceSoftware::ResourceContextMakeCurrent() {
+std::unique_ptr<GLContextSwitchManager::GLContextSwitch> IOSSurfaceSoftware::ResourceContextMakeCurrent() {
   NSLog(@"ios sofeware make current false");
-  return std::make_unique<GLContextGuardManager::EmbedderGLContextMakeCurrentResult>(false);
+  return std::make_unique<GLContextSwitchManager::EmbedderGLContextSwitch>(false);
 }
 
 void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {

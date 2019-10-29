@@ -13,7 +13,7 @@
 namespace flutter {
 
 IOSGLContext::IOSGLContext() {
-  gl_context_guard_manager_ = std::make_shared<IOSGLContextGuardManager>();
+  gl_context_guard_manager_ = std::make_shared<IOSGLContextSwitchManager>();
 
   // TODO:
   // iOS displays are more variable than just P3 or sRGB.  Reading the display
@@ -43,11 +43,11 @@ std::unique_ptr<IOSGLRenderTarget> IOSGLContext::CreateRenderTarget(
   return std::make_unique<IOSGLRenderTarget>(std::move(layer), gl_context_guard_manager_);
 }
 
-std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> IOSGLContext::MakeCurrent() {
+std::unique_ptr<GLContextSwitchManager::GLContextSwitch> IOSGLContext::MakeCurrent() {
   return gl_context_guard_manager_->MakeCurrent();
 }
 
-std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> IOSGLContext::ResourceMakeCurrent() {
+std::unique_ptr<GLContextSwitchManager::GLContextSwitch> IOSGLContext::ResourceMakeCurrent() {
   return gl_context_guard_manager_->ResourceMakeCurrent();
 }
 

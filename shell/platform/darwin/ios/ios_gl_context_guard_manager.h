@@ -14,24 +14,24 @@
 
 namespace flutter {
 
-// The iOS implementation of `GLContextGuardManager`
+// The iOS implementation of `GLContextSwitchManager`
 //
 // On `GLGuard`'s construction, it pushes the current EAGLContext to a stack and
 // sets the flutter's gl context as current.
 // On `GLGuard`'s desstruction, it pops a EAGLContext from the stack and set it to current.
-class IOSGLContextGuardManager final : public GLContextGuardManager {
+class IOSGLContextSwitchManager final : public GLContextSwitchManager {
  public:
-  class IOSGLContextAutoRelease final : public GLContextMakeCurrentResult {
+  class IOSGLContextSwitch final : public GLContextSwitch {
     public:
-     IOSGLContextAutoRelease(IOSGLContextGuardManager& manager, fml::scoped_nsobject<EAGLContext> context) : manager_(manager) {
+     IOSGLContextSwitch(IOSGLContextSwitchManager& manager, fml::scoped_nsobject<EAGLContext> context) : manager_(manager) {
        bool result = manager_.PushContext(context);
        has_pushed_context_ = true;
-       make_current_result_ = result;
+       switch_result_ = result;
      };
 
-    bool GetMakeCurrentResult() override {return make_current_result_;}
+    bool GetSwitchResult() override {return switch_result_;}
 
-    ~IOSGLContextAutoRelease() {
+    ~IOSGLContextSwitch() {
       if (!has_pushed_context_) {
         return;
       }
@@ -39,21 +39,21 @@ class IOSGLContextGuardManager final : public GLContextGuardManager {
     }
 
    private:
-    IOSGLContextGuardManager& manager_;
-    bool make_current_result_;
+    IOSGLContextSwitchManager& manager_;
+    bool switch_result_;
     bool has_pushed_context_;
 
-    FML_DISALLOW_COPY_AND_ASSIGN(IOSGLContextAutoRelease);
+    FML_DISALLOW_COPY_AND_ASSIGN(IOSGLContextSwitch);
   };
 
-  IOSGLContextGuardManager();
+  IOSGLContextSwitchManager();
 
-  ~IOSGLContextGuardManager() = default;
+  ~IOSGLContextSwitchManager() = default;
 
   ///=====================================================
 
-  std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> MakeCurrent();
-  std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> ResourceMakeCurrent();
+  std::unique_ptr<GLContextSwitch> MakeCurrent() override;
+  std::unique_ptr<GLContextSwitch> ResourceMakeCurrent() override;
   bool PushContext(fml::scoped_nsobject<EAGLContext> context);
   void PopContext();
   fml::scoped_nsobject<EAGLContext> context_;
@@ -63,7 +63,7 @@ class IOSGLContextGuardManager final : public GLContextGuardManager {
 
   fml::scoped_nsobject<NSMutableArray> stored_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(IOSGLContextGuardManager);
+  FML_DISALLOW_COPY_AND_ASSIGN(IOSGLContextSwitchManager);
 };
 
 }

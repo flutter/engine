@@ -21,7 +21,7 @@ class IOSGLRenderTarget {
  public:
   IOSGLRenderTarget(
       fml::scoped_nsobject<CAEAGLLayer> layer,
-      std::shared_ptr<IOSGLContextGuardManager> gl_context_guard_manager);
+      std::shared_ptr<IOSGLContextSwitchManager> gl_context_guard_manager);
 
   ~IOSGLRenderTarget();
 
@@ -33,15 +33,15 @@ class IOSGLRenderTarget {
 
   bool UpdateStorageSizeIfNecessary();
 
-  std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> MakeCurrent();
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> MakeCurrent();
 
-  std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> ResourceMakeCurrent();
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> ResourceMakeCurrent();
 
   sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
 
  private:
   fml::scoped_nsobject<CAEAGLLayer> layer_;
-  std::shared_ptr<IOSGLContextGuardManager> gl_context_guard_manager_;
+  std::shared_ptr<IOSGLContextSwitchManager> gl_context_guard_manager_;
   GLuint framebuffer_;
   GLuint colorbuffer_;
   GLint storage_size_width_;

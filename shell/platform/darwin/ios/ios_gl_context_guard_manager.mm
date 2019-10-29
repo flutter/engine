@@ -6,7 +6,7 @@
 
 namespace flutter {
 
-IOSGLContextGuardManager::IOSGLContextGuardManager() {
+IOSGLContextSwitchManager::IOSGLContextSwitchManager() {
   resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3]);
   stored_ = fml::scoped_nsobject<NSMutableArray>([[NSMutableArray new] retain]);
   resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3]);
@@ -20,15 +20,15 @@ IOSGLContextGuardManager::IOSGLContextGuardManager() {
   }
 };
 
-std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> IOSGLContextGuardManager::MakeCurrent() {
-  return std::make_unique<IOSGLContextGuardManager::IOSGLContextAutoRelease>(*this, context_);
+std::unique_ptr<GLContextSwitchManager::GLContextSwitch> IOSGLContextSwitchManager::MakeCurrent() {
+  return std::make_unique<IOSGLContextSwitchManager::IOSGLContextSwitch>(*this, context_);
 }
 
-std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> IOSGLContextGuardManager::ResourceMakeCurrent() {
-  return std::make_unique<IOSGLContextGuardManager::IOSGLContextAutoRelease>(*this, resource_context_);
+std::unique_ptr<GLContextSwitchManager::GLContextSwitch> IOSGLContextSwitchManager::ResourceMakeCurrent() {
+  return std::make_unique<IOSGLContextSwitchManager::IOSGLContextSwitch>(*this, resource_context_);
 }
 
-bool IOSGLContextGuardManager::PushContext(fml::scoped_nsobject<EAGLContext> context) {
+bool IOSGLContextSwitchManager::PushContext(fml::scoped_nsobject<EAGLContext> context) {
   NSLog(@"before push store %@", stored_.get());
   EAGLContext* current = [EAGLContext currentContext];
   if (current == nil) {
@@ -42,7 +42,7 @@ bool IOSGLContextGuardManager::PushContext(fml::scoped_nsobject<EAGLContext> con
   return result;
 }
 
-void IOSGLContextGuardManager::PopContext() {
+void IOSGLContextSwitchManager::PopContext() {
   NSLog(@"before pop store %@", stored_.get());
   EAGLContext* last = [stored_.get() lastObject];
   [stored_.get() removeLastObject];

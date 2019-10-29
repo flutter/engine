@@ -108,8 +108,8 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
 sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
   FML_DCHECK(task_runners_.GetIOTaskRunner()->RunsTasksOnCurrentThread());
   if (gl_context_ != nullptr) {
-    std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> autoRelease = gl_context_->ResourceMakeCurrent();
-    if (autoRelease->GetMakeCurrentResult()) {
+    std::unique_ptr<GLContextSwitchManager::GLContextSwitch> autoRelease = gl_context_->ResourceMakeCurrent();
+    if (autoRelease->GetSwitchResult()) {
       return ShellIOManager::CreateCompatibleResourceLoadingContext(
           GrBackend::kOpenGL_GrBackend, GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface());
     }

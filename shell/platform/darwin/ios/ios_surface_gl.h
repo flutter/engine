@@ -33,7 +33,7 @@ class IOSSurfaceGL final : public IOSSurface,
   bool IsValid() const override;
 
   // |IOSSurface|
-  std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> ResourceContextMakeCurrent() override;
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> ResourceContextMakeCurrent() override;
 
   // |IOSSurface|
   void UpdateStorageSizeIfNecessary() override;
@@ -41,7 +41,7 @@ class IOSSurfaceGL final : public IOSSurface,
   // |IOSSurface|
   std::unique_ptr<Surface> CreateGPUSurface(GrContext* gr_context = nullptr) override;
 
-  std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> GLContextMakeCurrent() override;
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> GLContextMakeCurrent() override;
 
   bool GLContextClearCurrent() override;
 
@@ -55,7 +55,7 @@ class IOSSurfaceGL final : public IOSSurface,
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   // |GPUSurfaceGLDelegate|
-  std::shared_ptr<GLContextGuardManager> GetGLContextGuardManager() override;
+  std::shared_ptr<GLContextSwitchManager> GetGLContextSwitchManager() override;
 
   // |ExternalViewEmbedder|
   sk_sp<SkSurface> GetRootSurface() override;

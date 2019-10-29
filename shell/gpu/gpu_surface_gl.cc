@@ -41,9 +41,9 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate,
       render_to_surface_(render_to_surface),
       weak_factory_(this) {
 
-  std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> result = delegate_->GLContextMakeCurrent();
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> result = delegate_->GLContextMakeCurrent();
 
-  if (!result->GetMakeCurrentResult()) {
+  if (!result->GetSwitchResult()) {
     FML_LOG(ERROR)
         << "Could not make the context current to setup the gr context.";
     return;
@@ -101,8 +101,8 @@ GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrContext> gr_context,
       render_to_surface_(render_to_surface),
       weak_factory_(this) {
 
-  std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> result = delegate_->GLContextMakeCurrent();
-  if (!result->GetMakeCurrentResult()) {
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> result = delegate_->GLContextMakeCurrent();
+  if (!result->GetSwitchResult()) {
     FML_LOG(ERROR)
         << "Could not make the context current to setup the gr context.";
     return;
@@ -118,8 +118,8 @@ GPUSurfaceGL::~GPUSurfaceGL() {
   if (!valid_) {
     return;
   }
-  std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> result = delegate_->GLContextMakeCurrent();
-  if (!result->GetMakeCurrentResult()) {
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> result = delegate_->GLContextMakeCurrent();
+  if (!result->GetSwitchResult()) {
     FML_LOG(ERROR) << "Could not make the context current to destroy the "
                       "GrContext resources.";
     return;
@@ -255,8 +255,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
     return nullptr;
   }
 
-  std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> makeCurrentResult = delegate_->GLContextMakeCurrent();
-  if (!makeCurrentResult->GetMakeCurrentResult()) {
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> makeCurrentResult = delegate_->GLContextMakeCurrent();
+  if (!makeCurrentResult->GetSwitchResult()) {
     FML_LOG(ERROR)
         << "Could not make the context current to acquire the frame.";
     return nullptr;
@@ -298,7 +298,7 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
     return false;
   }
 
-  std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> result = delegate_->GLContextMakeCurrent();
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> result = delegate_->GLContextMakeCurrent();
   if (offscreen_surface_ != nullptr) {
     TRACE_EVENT0("flutter", "CopyTextureOnscreen");
     SkPaint paint;
@@ -366,7 +366,7 @@ flutter::ExternalViewEmbedder* GPUSurfaceGL::GetExternalViewEmbedder() {
 }
 
 // |Surface|
-std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> GPUSurfaceGL::MakeRenderContextCurrent() {
+std::unique_ptr<GLContextSwitchManager::GLContextSwitch> GPUSurfaceGL::MakeRenderContextCurrent() {
   return delegate_->GLContextMakeCurrent();
 }
 
