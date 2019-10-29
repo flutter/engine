@@ -43,15 +43,16 @@
 - (void)engineCallbackOnPlatformMessage:(const FlutterPlatformMessage*)message;
 
 /**
- * Shuts the Flutter engine if it is running.
- */
-- (void)shutDownEngine;
-
-/**
  * Forwards texture copy request to the corresponding texture via |textureID|.
  */
 - (BOOL)populateTextureWithIdentifier:(int64_t)textureID
                         openGLTexture:(FlutterOpenGLTexture*)openGLTexture;
+
+/**
+ * Requests that the task be posted back the to the Flutter engine at the target time. The target
+ * time is in the clock used by the Flutter engine.
+ */
+- (void)postMainThreadTask:(FlutterTask)task targetTimeInNanoseconds:(uint64_t)targetTime;
 
 @end
 
@@ -150,6 +151,10 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   // The context provided to the Flutter engine for resource loading.
   NSOpenGLContext* _resourceContext;
 
+  // The context that is owned by the currently displayed FlutterView. This is stashed in the engine
+  // so that the view doesn't need to be accessed from a background thread.
+  NSOpenGLContext* _mainOpenGLContext;
+
   // A mapping of channel names to the registered handlers for those channels.
   NSMutableDictionary<NSString*, FlutterBinaryMessageHandler>* _messageHandlers;
 
@@ -214,19 +219,47 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   flutterArguments.command_line_argv = &arguments[0];
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
   flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
+  static size_t sTaskRunnerIdentifiers = 0;
+  const FlutterTaskRunnerDescription cocoa_task_runner_description = {
+      .struct_size = sizeof(FlutterTaskRunnerDescription),
+      .user_data = (void*)CFBridgingRetain(self),
+      .runs_task_on_current_thread_callback = [](void* user_data) -> bool {
+        return [[NSThread currentThread] isMainThread];
+      },
+      .post_task_callback = [](FlutterTask task, uint64_t target_time_nanos,
+                               void* user_data) -> void {
+        [((__bridge FlutterEngine*)(user_data)) postMainThreadTask:task
+                                           targetTimeInNanoseconds:target_time_nanos];
+      },
+      .identifier = ++sTaskRunnerIdentifiers,
+  };
+  const FlutterCustomTaskRunners custom_task_runners = {
+      .struct_size = sizeof(FlutterCustomTaskRunners),
+      .platform_task_runner = &cocoa_task_runner_description,
+      .render_task_runner = &cocoa_task_runner_description,
+  };
+  flutterArguments.custom_task_runners = &custom_task_runners;
 
-  FlutterEngineResult result = FlutterEngineRun(
+  FlutterEngineResult result = FlutterEngineInitialize(
       FLUTTER_ENGINE_VERSION, &rendererConfig, &flutterArguments, (__bridge void*)(self), &_engine);
   if (result != kSuccess) {
-    NSLog(@"Failed to start Flutter engine: error %d", result);
+    NSLog(@"Failed to initialize Flutter engine: error %d", result);
     return NO;
   }
+
+  result = FlutterEngineRunInitialized(_engine);
+  if (result != kSuccess) {
+    NSLog(@"Failed to run an initialized engine: error %d", result);
+    return NO;
+  }
+
   [self updateWindowMetrics];
   return YES;
 }
 
 - (void)setViewController:(FlutterViewController*)controller {
   _viewController = controller;
+  _mainOpenGLContext = controller.flutterView.openGLContext;
   if (!controller && !_allowHeadlessExecution) {
     [self shutDownEngine];
     _resourceContext = nil;
@@ -281,33 +314,26 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 #pragma mark - Private methods
 
 - (bool)engineCallbackOnMakeCurrent {
-  if (!_viewController.flutterView) {
+  if (!_mainOpenGLContext) {
     return false;
   }
-  [_viewController.flutterView makeCurrentContext];
+  [_mainOpenGLContext makeCurrentContext];
   return true;
 }
 
 - (bool)engineCallbackOnClearCurrent {
-  if (!_viewController.flutterView) {
-    return false;
-  }
   [NSOpenGLContext clearCurrentContext];
   return true;
 }
 
 - (bool)engineCallbackOnPresent {
-  if (!_viewController.flutterView) {
-    return false;
+  if (!_mainOpenGLContext) {
   }
-  [_viewController.flutterView onPresent];
+  [_mainOpenGLContext flushBuffer];
   return true;
 }
 
 - (bool)engineCallbackOnMakeResourceCurrent {
-  if (!_viewController.flutterView) {
-    return false;
-  }
   [self.resourceContext makeCurrentContext];
   return true;
 }
@@ -344,11 +370,21 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
  * Note: Called from dealloc. Should not use accessors or other methods.
  */
 - (void)shutDownEngine {
-  if (_engine) {
-    FlutterEngineResult result = FlutterEngineShutdown(_engine);
-    if (result != kSuccess) {
-      NSLog(@"Failed to shut down Flutter engine: error %d", result);
-    }
+  if (_engine == nullptr) {
+    return;
+  }
+
+  FlutterEngineResult result = FlutterEngineDeinitialize(_engine);
+  if (result != kSuccess) {
+    NSLog(@"Could not de-initialize the Flutter engine: error %d", result);
+  }
+
+  // Balancing release for the retain in the task runner dispatch table.
+  CFRelease((CFTypeRef)self);
+
+  result = FlutterEngineShutdown(_engine);
+  if (result != kSuccess) {
+    NSLog(@"Failed to shut down Flutter engine: error %d", result);
   }
   _engine = nullptr;
 }
@@ -445,6 +481,31 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 - (void)unregisterTexture:(int64_t)textureID {
   FlutterEngineUnregisterExternalTexture(_engine, textureID);
   [_textures removeObjectForKey:@(textureID)];
+}
+
+#pragma mark - Task runner integration
+
+- (void)postMainThreadTask:(FlutterTask)task targetTimeInNanoseconds:(uint64_t)targetTime {
+  const auto engine_time = FlutterEngineGetCurrentTime();
+
+  __weak FlutterEngine* weak_self = self;
+  auto worker = ^{
+    FlutterEngine* strong_self = weak_self;
+    if (strong_self && strong_self->_engine) {
+      auto result = FlutterEngineRunTask(strong_self->_engine, &task);
+      if (result != kSuccess) {
+        NSLog(@"Could not post a task to the Flutter engine.");
+      }
+    }
+  };
+
+  if (targetTime <= engine_time) {
+    dispatch_async(dispatch_get_main_queue(), worker);
+
+  } else {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, targetTime - engine_time),
+                   dispatch_get_main_queue(), worker);
+  }
 }
 
 @end

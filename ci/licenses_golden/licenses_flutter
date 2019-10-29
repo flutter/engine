@@ -593,7 +593,6 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/Flutt
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/SplashScreen.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/SplashScreenProvider.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngine.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineAndroidLifecycle.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineCache.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEnginePluginRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterJNI.java
@@ -616,6 +615,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugin
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/contentprovider/ContentProviderAware.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/contentprovider/ContentProviderControlSurface.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/contentprovider/ContentProviderPluginBinding.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/lifecycle/HiddenLifecycleReference.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/service/ServiceAware.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/service/ServiceControlSurface.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/service/ServicePluginBinding.java
@@ -824,6 +824,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDe
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.mm
@@ -835,6 +836,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/fixtures/flutter_desktop_test.dart
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/module.modulemap
 FILE: ../../../flutter/shell/platform/embedder/assets/EmbedderInfo.plist
 FILE: ../../../flutter/shell/platform/embedder/assets/embedder.modulemap
@@ -951,6 +953,9 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/compositor_context.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/flutter_runner_fakes.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/isolate_configurator.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/isolate_configurator.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/kernel/extract_far.dart

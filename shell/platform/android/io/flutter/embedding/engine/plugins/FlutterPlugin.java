@@ -5,11 +5,13 @@
 package io.flutter.embedding.engine.plugins;
 
 import android.arch.lifecycle.Lifecycle;
-import android.arch.lifecycle.LifecycleOwner;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
 import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.platform.PlatformViewRegistry;
+import io.flutter.view.TextureRegistry;
 
 /**
  * Interface to be implemented by all Flutter plugins.
@@ -41,13 +43,8 @@ import io.flutter.embedding.engine.FlutterEngine;
  * Do not access any properties of the {@link FlutterPluginBinding} after the completion of
  * {@link #onDetachedFromEngine(FlutterPluginBinding)}.
  * <p>
- * The Android side of a Flutter plugin can be thought of as applying itself to a {@link FlutterEngine}.
- * Use {@link FlutterPluginBinding#getFlutterEngine()} to retrieve the {@link FlutterEngine} that
- * the {@code FlutterPlugin} is attached to. To register a
- * {@link io.flutter.plugin.common.MethodChannel}, obtain the {@link FlutterEngine}'s
- * {@link io.flutter.embedding.engine.dart.DartExecutor} with {@link FlutterEngine#getDartExecutor()},
- * then pass the {@link io.flutter.embedding.engine.dart.DartExecutor} to the
- * {@link io.flutter.plugin.common.MethodChannel} as a {@link io.flutter.plugin.common.BinaryMessenger}.
+ * To register a {@link io.flutter.plugin.common.MethodChannel}, obtain a {@link BinaryMessenger}
+ * via the {@link FlutterPluginBinding}.
  * <p>
  * An Android Flutter plugin may require access to app resources or other artifacts that can only
  * be retrieved through a {@link Context}. Developers can access the application context via
@@ -81,31 +78,32 @@ public interface FlutterPlugin {
   /**
    * Resources made available to all plugins registered with a given {@link FlutterEngine}.
    * <p>
-   * The {@code FlutterPluginBinding}'s {@code flutterEngine} refers to the {@link FlutterEngine}
-   * that the associated {@code FlutterPlugin} is intended to apply to. For example, if a
-   * {@code FlutterPlugin} needs to setup a communication channel with its associated Flutter app,
-   * that can be done by wrapping a {@code MethodChannel} around
-   * {@link FlutterEngine#getDartExecutor()}.
+   * The provided {@link BinaryMessenger} can be used to communicate with Dart code running
+   * in the Flutter context associated with this plugin binding.
    * <p>
-   * A {@link FlutterEngine} may move from foreground to background, from an {@code Activity} to
-   * a {@code Service}. {@code FlutterPluginBinding}'s {@code lifecycle} generalizes those
-   * lifecycles so that a {@code FlutterPlugin} can react to lifecycle events without being
-   * concerned about which Android Component is currently holding the {@link FlutterEngine}.
-   * TODO(mattcarroll): add info about ActivityAware and ServiceAware for plugins that care.
+   * Plugins that need to respond to {@code Lifecycle} events should implement the additional
+   * {@link ActivityAware} and/or {@link ServiceAware} interfaces, where a {@link Lifecycle}
+   * reference can be obtained.
    */
-  class FlutterPluginBinding implements LifecycleOwner {
+  class FlutterPluginBinding {
         private final Context applicationContext;
         private final FlutterEngine flutterEngine;
-        private final Lifecycle lifecycle;
+        private final BinaryMessenger binaryMessenger;
+        private final TextureRegistry textureRegistry;
+        private final PlatformViewRegistry platformViewRegistry;
 
         public FlutterPluginBinding(
             @NonNull Context applicationContext,
             @NonNull FlutterEngine flutterEngine,
-            @NonNull Lifecycle lifecycle
+            @NonNull BinaryMessenger binaryMessenger,
+            @NonNull TextureRegistry textureRegistry,
+            @NonNull PlatformViewRegistry platformViewRegistry
         ) {
             this.applicationContext = applicationContext;
             this.flutterEngine = flutterEngine;
-            this.lifecycle = lifecycle;
+            this.binaryMessenger = binaryMessenger;
+            this.textureRegistry = textureRegistry;
+            this.platformViewRegistry = platformViewRegistry;
         }
 
         @NonNull
@@ -113,15 +111,30 @@ public interface FlutterPlugin {
             return applicationContext;
         }
 
+        /**
+         * @deprecated
+         * Use {@code getBinaryMessenger()}, {@code getTextureRegistry()}, or
+         * {@code getPlatformViewRegistry()} instead.
+         */
+        @Deprecated
         @NonNull
         public FlutterEngine getFlutterEngine() {
             return flutterEngine;
         }
 
-        @Override
         @NonNull
-        public Lifecycle getLifecycle() {
-            return lifecycle;
+        public BinaryMessenger getBinaryMessenger() {
+          return binaryMessenger;
+        }
+
+        @NonNull
+        public TextureRegistry getTextureRegistry() {
+          return textureRegistry;
+        }
+
+        @NonNull
+        public PlatformViewRegistry getPlatformViewRegistry() {
+          return platformViewRegistry;
         }
     }
 }

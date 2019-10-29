@@ -47,6 +47,7 @@ Float64List kTestTransform = () {
 }();
 
 void signalNativeTest() native 'SignalNativeTest';
+void signalNativeCount(int count) native 'SignalNativeCount';
 void signalNativeMessage(String message) native 'SignalNativeMessage';
 void notifySemanticsEnabled(bool enabled) native 'NotifySemanticsEnabled';
 void notifyAccessibilityFeatures(bool reduceMotion) native 'NotifyAccessibilityFeatures';
@@ -129,6 +130,7 @@ void a11y_main() async { // ignore: non_constant_identifier_names
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
       transform: kTestTransform,
       additionalActions: Int32List.fromList(<int>[21]),
+      platformViewId: 0x3f3,
     )
     ..updateCustomAction(
       id: 21,
@@ -442,4 +444,12 @@ void can_display_platform_view_with_pixel_ratio() {
     window.render(builder.build());
   };
   window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void can_receive_locale_updates() {
+  window.onLocaleChanged = (){
+    signalNativeCount(window.locales.length);
+  };
+  signalNativeTest();
 }
