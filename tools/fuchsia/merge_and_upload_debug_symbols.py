@@ -40,7 +40,7 @@ def WriteCIPDDefinition(target_arch, out_dir):
   return temp_file
 
 
-def ProcessCIPDPakcage(upload, cipd_yaml, engine_version, out_dir, target_arch):
+def ProcessCIPDPackage(upload, cipd_yaml, engine_version, out_dir, target_arch):
   _packaging_dir = os.path.abspath(os.path.join(out_dir, os.pardir))
   if upload and IsLinux():
     command = [
@@ -94,6 +94,7 @@ def main():
 
   out_dir = NormalizeDirPathForRsync(args.out_dir)
   if os.path.exists(out_dir):
+    print 'Directory: %s is not empty, deleting it.' % out_dir
     shutil.rmtree(out_dir)
   os.makedirs(out_dir)
 
@@ -103,7 +104,7 @@ def main():
          NormalizeDirPathForRsync(symbol_dir), out_dir])
 
   cipd_def = WriteCIPDDefinition(args.target_arch, out_dir)
-  ProcessCIPDPakcage(args.upload, cipd_def, args.engine_version, out_dir,
+  ProcessCIPDPackage(args.upload, cipd_def, args.engine_version, out_dir,
                      args.target_arch)
   return 0
 
