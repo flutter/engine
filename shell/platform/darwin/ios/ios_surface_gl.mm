@@ -58,8 +58,10 @@ bool IOSSurfaceGL::UseOffscreenSurface() const {
 
 std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> IOSSurfaceGL::GLContextMakeCurrent() {
   if (!IsValid()) {
-    return std::make_unique<GLContextGuardManager::GLContextMakeCurrentResult>(false);
+    NSLog(@"not valid");
+    return std::make_unique<GLContextGuardManager::EmbedderGLContextMakeCurrentResult>(false);
   }
+  NSLog(@"valid");
   return render_target_->MakeCurrent();
 }
 

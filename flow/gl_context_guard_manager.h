@@ -21,14 +21,23 @@ class GLContextGuardManager {
   class GLContextMakeCurrentResult {
    public:
     GLContextMakeCurrentResult() = default;
-    
-    GLContextMakeCurrentResult(bool make_current_result):
-    make_current_result_(make_current_result){}
 
-   bool GetMakeCurrentResult() {return make_current_result_;}
+    virtual ~GLContextMakeCurrentResult() {}
 
+    virtual bool GetMakeCurrentResult() = 0;
+  };
+
+  class EmbedderGLContextMakeCurrentResult final : public GLContextMakeCurrentResult {
+   public:
+    EmbedderGLContextMakeCurrentResult(bool make_current_resut):make_current_resut_(make_current_resut){}
+
+    ~EmbedderGLContextMakeCurrentResult() = default;
+
+    bool GetMakeCurrentResult() override {
+      return make_current_resut_;
+    }
    private:
-    bool make_current_result_;
+    bool make_current_resut_;
   };
 };
 

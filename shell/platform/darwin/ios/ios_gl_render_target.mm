@@ -131,8 +131,10 @@ bool IOSGLRenderTarget::UpdateStorageSizeIfNecessary() {
 std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> IOSGLRenderTarget::MakeCurrent() {
   bool isUpdateSuccessful = UpdateStorageSizeIfNecessary();
   if (!isUpdateSuccessful) {
-    return std::make_unique<GLContextGuardManager::GLContextMakeCurrentResult>(false);
+    NSLog(@"update isn't successful");
+    return std::make_unique<GLContextGuardManager::EmbedderGLContextMakeCurrentResult>(false);
   }
+  NSLog(@"update is successful");
   return gl_context_guard_manager_->MakeCurrent();
 }
 

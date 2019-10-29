@@ -29,17 +29,24 @@ std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> IOSGLContextG
 }
 
 bool IOSGLContextGuardManager::PushContext(fml::scoped_nsobject<EAGLContext> context) {
-  if ([EAGLContext currentContext] == nil) {
+  NSLog(@"before push store %@", stored_.get());
+  EAGLContext* current = [EAGLContext currentContext];
+  if (current == nil) {
     [stored_.get() addObject:[NSNull null]];
   } else {
-    [stored_.get() addObject:[EAGLContext currentContext]];
+    [stored_.get() addObject:current];
   }
-  return [EAGLContext setCurrentContext:context.get()];
+  NSLog(@"after push store %@", stored_.get());
+  bool result = [EAGLContext setCurrentContext:context.get()];
+  NSLog(@"set result %@", @(result));
+  return result;
 }
 
 void IOSGLContextGuardManager::PopContext() {
+  NSLog(@"before pop store %@", stored_.get());
   EAGLContext* last = [stored_.get() lastObject];
   [stored_.get() removeLastObject];
+  NSLog(@"after pop store %@", stored_.get());
   if ([last isEqual:[NSNull null]]) {
     [EAGLContext setCurrentContext:nil];
     return;

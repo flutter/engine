@@ -21,9 +21,7 @@ namespace flutter {
 // On `GLGuard`'s desstruction, it pops a EAGLContext from the stack and set it to current.
 class IOSGLContextGuardManager final : public GLContextGuardManager {
  public:
-
   class IOSGLContextAutoRelease final : public GLContextMakeCurrentResult {
-
     public:
      IOSGLContextAutoRelease(IOSGLContextGuardManager& manager, fml::scoped_nsobject<EAGLContext> context) : manager_(manager) {
        bool result = manager_.PushContext(context);
@@ -31,7 +29,7 @@ class IOSGLContextGuardManager final : public GLContextGuardManager {
        make_current_result_ = result;
      };
 
-    bool GetMakeCurrentResult() {return make_current_result_;}
+    bool GetMakeCurrentResult() override {return make_current_result_;}
 
     ~IOSGLContextAutoRelease() {
       if (!has_pushed_context_) {
@@ -44,6 +42,8 @@ class IOSGLContextGuardManager final : public GLContextGuardManager {
     IOSGLContextGuardManager& manager_;
     bool make_current_result_;
     bool has_pushed_context_;
+
+    FML_DISALLOW_COPY_AND_ASSIGN(IOSGLContextAutoRelease);
   };
 
   IOSGLContextGuardManager();
