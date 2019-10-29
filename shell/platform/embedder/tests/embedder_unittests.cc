@@ -753,14 +753,13 @@ TEST_F(EmbedderTest, RasterCacheDisabledWithPlatformViews) {
   ASSERT_TRUE(engine.is_valid());
 
   setup.Wait();
-  const flutter::Shell& shell =
-      reinterpret_cast<flutter::EmbedderEngine*>(engine.get())->shell();
+  const flutter::Shell& shell = ToEmbedderEngine(engine.get())->GetShell();
   shell.GetTaskRunners().GetGPUTaskRunner()->PostTask([&] {
     const flutter::RasterCache& raster_cache =
         shell.GetRasterizer()->compositor_context()->raster_cache();
     // 3 layers total, but one of them had the platform view. So the cache
     // should only have 2 entries.
-    ASSERT_EQ(raster_cache.size(), 2u);
+    ASSERT_EQ(raster_cache.GetCachedEntriesCount(), 2u);
     verify.CountDown();
   });
 
@@ -826,12 +825,11 @@ TEST_F(EmbedderTest, RasterCacheEnabled) {
   ASSERT_TRUE(engine.is_valid());
 
   setup.Wait();
-  const flutter::Shell& shell =
-      reinterpret_cast<flutter::EmbedderEngine*>(engine.get())->shell();
+  const flutter::Shell& shell = ToEmbedderEngine(engine.get())->GetShell();
   shell.GetTaskRunners().GetGPUTaskRunner()->PostTask([&] {
     const flutter::RasterCache& raster_cache =
         shell.GetRasterizer()->compositor_context()->raster_cache();
-    ASSERT_EQ(raster_cache.size(), 1u);
+    ASSERT_EQ(raster_cache.GetCachedEntriesCount(), 1u);
     verify.CountDown();
   });
 

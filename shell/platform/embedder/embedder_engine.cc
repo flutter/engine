@@ -247,7 +247,7 @@ bool EmbedderEngine::RunTask(const FlutterTask* task) {
                                 task->task);
 }
 
-const Shell& EmbedderEngine::shell() const {
+const Shell& EmbedderEngine::GetShell() const {
   FML_DCHECK(shell_);
   return *shell_.get();
 }

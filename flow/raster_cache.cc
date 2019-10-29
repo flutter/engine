@@ -252,7 +252,7 @@ void RasterCache::Clear() {
   layer_cache_.clear();
 }
 
-size_t RasterCache::size() const {
+size_t RasterCache::GetCachedEntriesCount() const {
   return layer_cache_.size() + picture_cache_.size();
 }
 
