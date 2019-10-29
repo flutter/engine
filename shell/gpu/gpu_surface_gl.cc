@@ -102,7 +102,7 @@ GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrContext> gr_context,
       weak_factory_(this) {
   std::unique_ptr<GLContextSwitchManager::GLContextSwitch> context_switch =
       delegate_->GLContextMakeCurrent();
-  if (!result->GetSwitchResult()) {
+  if (!context_switch->GetSwitchResult()) {
     FML_LOG(ERROR)
         << "Could not make the context current to setup the gr context.";
     return;
