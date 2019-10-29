@@ -45,7 +45,6 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     TaskRunners task_runners,
     Settings settings,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
-    fml::RefPtr<const DartSnapshot> shared_snapshot,
     Shell::CreateCallback<PlatformView> on_create_platform_view,
     Shell::CreateCallback<Rasterizer> on_create_rasterizer) {
   if (!task_runners.IsValid()) {
@@ -128,7 +127,6 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                          shell = shell.get(),                             //
                          &dispatcher_maker,                               //
                          isolate_snapshot = std::move(isolate_snapshot),  //
-                         shared_snapshot = std::move(shared_snapshot),    //
                          vsync_waiter = std::move(vsync_waiter),          //
                          &weak_io_manager_future,                         //
                          &unref_queue_future                              //
@@ -146,7 +144,6 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
             dispatcher_maker,              //
             *shell->GetDartVM(),           //
             std::move(isolate_snapshot),   //
-            std::move(shared_snapshot),    //
             task_runners,                  //
             shell->GetSettings(),          //
             std::move(animator),           //
@@ -233,7 +230,6 @@ std::unique_ptr<Shell> Shell::Create(
   return Shell::Create(std::move(task_runners),             //
                        std::move(settings),                 //
                        vm_data->GetIsolateSnapshot(),       // isolate snapshot
-                       DartSnapshot::Empty(),               // shared snapshot
                        std::move(on_create_platform_view),  //
                        std::move(on_create_rasterizer),     //
                        std::move(vm)                        //
@@ -244,7 +240,6 @@ std::unique_ptr<Shell> Shell::Create(
     TaskRunners task_runners,
     Settings settings,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
-    fml::RefPtr<const DartSnapshot> shared_snapshot,
     Shell::CreateCallback<PlatformView> on_create_platform_view,
     Shell::CreateCallback<Rasterizer> on_create_rasterizer,
     DartVMRef vm) {
@@ -268,7 +263,6 @@ std::unique_ptr<Shell> Shell::Create(
                          task_runners = std::move(task_runners),          //
                          settings,                                        //
                          isolate_snapshot = std::move(isolate_snapshot),  //
-                         shared_snapshot = std::move(shared_snapshot),    //
                          on_create_platform_view,                         //
                          on_create_rasterizer                             //
   ]() mutable {
@@ -276,7 +270,6 @@ std::unique_ptr<Shell> Shell::Create(
                                             std::move(task_runners),      //
                                             settings,                     //
                                             std::move(isolate_snapshot),  //
-                                            std::move(shared_snapshot),   //
                                             on_create_platform_view,      //
                                             on_create_rasterizer          //
         );
@@ -439,14 +432,12 @@ void Shell::RunEngine(RunConfiguration run_configuration,
 
 std::optional<DartErrorCode> Shell::GetUIIsolateLastError() const {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
-  // We're using the unique_ptr here because we're sure we're on the Platform
-  // Thread and callers expect this to be synchronous.
-  if (!engine_) {
+  if (!weak_engine_) {
     return std::nullopt;
   }
-  switch (engine_->GetUIIsolateLastError()) {
+  switch (weak_engine_->GetUIIsolateLastError()) {
     case tonic::kCompilationErrorType:
       return DartErrorCode::CompilationError;
     case tonic::kApiErrorType:
@@ -461,27 +452,13 @@ std::optional<DartErrorCode> Shell::GetUIIsolateLastError() const {
 
 bool Shell::EngineHasLivePorts() const {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
-  // We're using the unique_ptr here because we're sure we're on the Platform
-  // Thread and callers expect this to be synchronous.
-  if (!engine_) {
+  if (!weak_engine_) {
     return false;
   }
 
-  std::promise<bool> ui_isolate_has_live_ports_promise;
-  auto ui_isolate_has_live_ports_future =
-      ui_isolate_has_live_ports_promise.get_future();
-  auto ui_task_runner = task_runners_.GetUITaskRunner();
-
-  fml::TaskRunner::RunNowOrPostTask(
-      ui_task_runner,
-      [&ui_isolate_has_live_ports_promise, engine = engine_->GetWeakPtr()]() {
-        ui_isolate_has_live_ports_promise.set_value(
-            engine->UIIsolateHasLivePorts());
-      });
-
-  return ui_isolate_has_live_ports_future.get();
+  return weak_engine_->UIIsolateHasLivePorts();
 }
 
 bool Shell::IsSetup() const {

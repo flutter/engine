@@ -4,10 +4,9 @@
 
 package io.flutter.embedding.engine;
 
-import android.arch.lifecycle.Lifecycle;
-import android.arch.lifecycle.LifecycleOwner;
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -67,7 +66,7 @@ import io.flutter.plugin.platform.PlatformViewsController;
  * {@link DartExecutor} is run. Each Isolate is a self-contained Dart environment and cannot
  * communicate with each other except via Isolate ports.
  */
-public class FlutterEngine implements LifecycleOwner {
+public class FlutterEngine {
   private static final String TAG = "FlutterEngine";
 
   @NonNull
@@ -78,8 +77,6 @@ public class FlutterEngine implements LifecycleOwner {
   private final DartExecutor dartExecutor;
   @NonNull
   private final FlutterEnginePluginRegistry pluginRegistry;
-  @NonNull
-  private final FlutterEngineAndroidLifecycle androidLifecycle;
 
   // System channels.
   @NonNull
@@ -143,7 +140,29 @@ public class FlutterEngine implements LifecycleOwner {
    * and {@link FlutterLoader#ensureInitializationComplete(Context, String[])}.
    */
   public FlutterEngine(@NonNull Context context) {
-    this(context, FlutterLoader.getInstance(), new FlutterJNI());
+    this(context, null);
+  }
+
+  /**
+   * Same as {@link #FlutterEngine(Context)} with added support for passing Dart
+   * VM arguments.
+   * <p>
+   * If the Dart VM has already started, the given arguments will have no effect.
+   */
+  public FlutterEngine(@NonNull Context context, @Nullable String[] dartVmArgs) {
+    this(context, FlutterLoader.getInstance(), new FlutterJNI(), dartVmArgs);
+  }
+
+  /**
+   * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI, String[])} but with no Dart
+   * VM flags.
+   */
+  public FlutterEngine(
+      @NonNull Context context,
+      @NonNull FlutterLoader flutterLoader,
+      @NonNull FlutterJNI flutterJNI
+  ) {
+    this(context, flutterLoader, flutterJNI, null);
   }
 
   /**
@@ -151,10 +170,15 @@ public class FlutterEngine implements LifecycleOwner {
    *
    * {@code flutterJNI} should be a new instance that has never been attached to an engine before.
    */
-  public FlutterEngine(@NonNull Context context, @NonNull FlutterLoader flutterLoader, @NonNull FlutterJNI flutterJNI) {
+  public FlutterEngine(
+      @NonNull Context context,
+      @NonNull FlutterLoader flutterLoader,
+      @NonNull FlutterJNI flutterJNI,
+      @Nullable String[] dartVmArgs
+  ) {
     this.flutterJNI = flutterJNI;
     flutterLoader.startInitialization(context);
-    flutterLoader.ensureInitializationComplete(context, null);
+    flutterLoader.ensureInitializationComplete(context, dartVmArgs);
 
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
     attachToJni();
@@ -177,11 +201,9 @@ public class FlutterEngine implements LifecycleOwner {
 
     platformViewsController = new PlatformViewsController();
 
-    androidLifecycle = new FlutterEngineAndroidLifecycle(this);
     this.pluginRegistry = new FlutterEnginePluginRegistry(
       context.getApplicationContext(),
-      this,
-        androidLifecycle
+      this
     );
   }
 
@@ -366,13 +388,6 @@ public class FlutterEngine implements LifecycleOwner {
   @NonNull
   public ContentProviderControlSurface getContentProviderControlSurface() {
     return pluginRegistry;
-  }
-
-  // TODO(mattcarroll): determine if we really need to expose this from FlutterEngine vs making PluginBinding a LifecycleOwner
-  @NonNull
-  @Override
-  public Lifecycle getLifecycle() {
-    return androidLifecycle;
   }
 
   /**

@@ -458,6 +458,11 @@ typedef struct {
   double bottom;
 } FlutterRect;
 
+/// The identifier of the platform view. This identifier is specified by the
+/// application when a platform view is added to the scene via the
+/// `SceneBuilder.addPlatformView` call.
+typedef int64_t FlutterPlatformViewIdentifier;
+
 /// `FlutterSemanticsNode` ID used as a sentinel to signal the end of a batch of
 /// semantics node updates.
 FLUTTER_EXPORT
@@ -529,6 +534,9 @@ typedef struct {
   /// Array of `FlutterSemanticsCustomAction` IDs associated with this node.
   /// Has length `custom_accessibility_actions_count`.
   const int32_t* custom_accessibility_actions;
+  /// Identifier of the platform view associated with this semantics node, or
+  /// zero if none.
+  FlutterPlatformViewIdentifier platform_view_id;
 } FlutterSemanticsNode;
 
 /// `FlutterSemanticsCustomAction` ID used as a sentinel to signal the end of a
@@ -653,11 +661,6 @@ typedef struct {
   VoidCallback destruction_callback;
 } FlutterSoftwareBackingStore;
 
-/// The identifier of the platform view. This identifier is specified by the
-/// application when a platform view is added to the scene via the
-/// `SceneBuilder.addPlatformView` call.
-typedef int64_t FlutterPlatformViewIdentifier;
-
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterPlatformView).
   size_t struct_size;
@@ -777,6 +780,30 @@ typedef struct {
   /// onto the screen.
   FlutterLayersPresentCallback present_layers_callback;
 } FlutterCompositor;
+
+typedef struct {
+  /// This size of this struct. Must be sizeof(FlutterLocale).
+  size_t struct_size;
+  /// The language code of the locale. For example, "en". This is a required
+  /// field. The string must be null terminated. It may be collected after the
+  /// call to `FlutterEngineUpdateLocales`.
+  const char* language_code;
+  /// The country code of the locale. For example, "US". This is a an optional
+  /// field. The string must be null terminated if present. It may be collected
+  /// after the call to `FlutterEngineUpdateLocales`. If not present, a
+  /// `nullptr` may be specified.
+  const char* country_code;
+  /// The script code of the locale. This is a an optional field. The string
+  /// must be null terminated if present. It may be collected after the call to
+  /// `FlutterEngineUpdateLocales`. If not present, a `nullptr` may be
+  /// specified.
+  const char* script_code;
+  /// The variant code of the locale. This is a an optional field. The string
+  /// must be null terminated if present. It may be collected after the call to
+  /// `FlutterEngineUpdateLocales`. If not present, a `nullptr` may be
+  /// specified.
+  const char* variant_code;
+} FlutterLocale;
 
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterProjectArgs).
@@ -1404,7 +1431,7 @@ uint64_t FlutterEngineGetCurrentTime();
 ///             must only be made at the target time specified in that callback.
 ///             Running the task before that time is undefined behavior.
 ///
-/// @param[in]  engine     a running instance.
+/// @param[in]  engine     A running engine instance.
 /// @param[in]  task       the task handle.
 ///
 /// @return     The result of the call.
@@ -1413,6 +1440,44 @@ FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineRunTask(FLUTTER_API_SYMBOL(FlutterEngine)
                                              engine,
                                          const FlutterTask* task);
+
+//------------------------------------------------------------------------------
+/// @brief      Notify a running engine instance that the locale has been
+///             updated. The preferred locale must be the first item in the list
+///             of locales supplied. The other entries will be used as a
+///             fallback.
+///
+/// @param[in]  engine         A running engine instance.
+/// @param[in]  locales        The updated locales in the order of preference.
+/// @param[in]  locales_count  The count of locales supplied.
+///
+/// @return     Whether the locale updates were applied.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineUpdateLocales(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                   engine,
+                                               const FlutterLocale** locales,
+                                               size_t locales_count);
+
+//------------------------------------------------------------------------------
+/// @brief      Returns if the Flutter engine instance will run AOT compiled
+///             Dart code. This call has no threading restrictions.
+///
+///             For embedder code that is configured for both AOT and JIT mode
+///             Dart execution based on the Flutter engine being linked to, this
+///             runtime check may be used to appropriately configure the
+///             `FlutterProjectArgs`. In JIT mode execution, the kernel
+///             snapshots must be present in the Flutter assets directory
+///             specified in the `FlutterProjectArgs`. For AOT execution, the
+///             fields `vm_snapshot_data`, `vm_snapshot_instructions`,
+///             `isolate_snapshot_data` and `isolate_snapshot_instructions`
+///             (along with their size fields) must be specified in
+///             `FlutterProjectArgs`.
+///
+/// @return     True, if AOT Dart code is run. JIT otherwise.
+///
+FLUTTER_EXPORT
+bool FlutterEngineRunsAOTCompiledDartCode(void);
 
 #if defined(__cplusplus)
 }  // extern "C"
