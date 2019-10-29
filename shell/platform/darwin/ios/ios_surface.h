@@ -12,7 +12,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/surface.h"
-#include "flutter/shell/platform/darwin/ios/ios_gl_context_guard_manager.h"
+#include "flutter/shell/platform/darwin/ios/ios_gl_context_switch_manager.h"
 
 namespace flutter {
 

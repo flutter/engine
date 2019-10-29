@@ -14,8 +14,6 @@ source_set("flow") {
     "compositor_context.h",
     "embedded_views.cc",
     "embedded_views.h",
-    "gl_context_guard_manager.cc",
-    "gl_context_guard_manager.h",
     "instrumentation.cc",
     "instrumentation.h",
     "layers/backdrop_filter_layer.cc",

@@ -10,8 +10,7 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
-#include "flutter/flow/gl_context_guard_manager.h"
-
+#include "flutter/shell/common/gl_context_switch_manager.h"
 @class CALayer;
 
 namespace flutter {

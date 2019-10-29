@@ -4,7 +4,7 @@
 
 #include "gpu_surface_gl.h"
 
-#include "flutter/flow/gl_context_guard_manager.h"
+#include "flutter/shell/common/gl_context_switch_manager.h"
 #include "flutter/fml/base32.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/size.h"

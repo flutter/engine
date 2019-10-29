@@ -11,7 +11,7 @@
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
-#include "flutter/shell/platform/darwin/ios/ios_gl_context_guard_manager.h"
+#include "flutter/shell/platform/darwin/ios/ios_gl_context_switch_manager.h"
 
 // A UIView that is used as the parent for embedded UIViews.
 //
@@ -206,7 +206,7 @@ class FlutterPlatformViewsController {
   void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
   void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
 
-  std::shared_ptr<IOSGLContextSwitchManager> gl_context_guard_manager_;
+  std::shared_ptr<IOSGLContextSwitchManager> gl_context_switch_manager_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };

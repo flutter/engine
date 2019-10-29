@@ -16,14 +16,14 @@ IOSGLRenderTarget::IOSGLRenderTarget(
     fml::scoped_nsobject<CAEAGLLayer> layer,
     std::shared_ptr<IOSGLContextSwitchManager> gl_context_guard_manager)
     : layer_(std::move(layer)),
-      gl_context_guard_manager_(gl_context_guard_manager),
+      gl_context_switch_manager_(gl_context_guard_manager),
       framebuffer_(GL_NONE),
       colorbuffer_(GL_NONE),
       storage_size_width_(0),
       storage_size_height_(0),
       valid_(false) {
   FML_DCHECK(layer_ != nullptr);
-  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> autoRelease = gl_context_guard_manager_->MakeCurrent();
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> autoRelease = gl_context_switch_manager_->MakeCurrent();
   bool context_current = autoRelease->GetSwitchResult();
 
   FML_DCHECK(context_current);
@@ -59,7 +59,7 @@ IOSGLRenderTarget::IOSGLRenderTarget(
 }
 
 IOSGLRenderTarget::~IOSGLRenderTarget() {
-  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> autoRelease = gl_context_guard_manager_->MakeCurrent();
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> autoRelease = gl_context_switch_manager_->MakeCurrent();
   FML_DCHECK(glGetError() == GL_NO_ERROR);
 
   // Deletes on GL_NONEs are ignored
@@ -100,7 +100,7 @@ bool IOSGLRenderTarget::UpdateStorageSizeIfNecessary() {
   FML_DLOG(INFO) << "Updating render buffer storage size.";
 
   FML_DCHECK(glGetError() == GL_NO_ERROR);
-  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> autoRelease = gl_context_guard_manager_->MakeCurrent();
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> autoRelease = gl_context_switch_manager_->MakeCurrent();
   if (!autoRelease->GetSwitchResult()) {
     return false;
   }
@@ -112,7 +112,7 @@ bool IOSGLRenderTarget::UpdateStorageSizeIfNecessary() {
   glBindRenderbuffer(GL_RENDERBUFFER, colorbuffer_);
   FML_DCHECK(glGetError() == GL_NO_ERROR);
 
-  if (![gl_context_guard_manager_->context_.get() renderbufferStorage:GL_RENDERBUFFER fromDrawable:layer_.get()]) {
+  if (![gl_context_switch_manager_->GetContext().get() renderbufferStorage:GL_RENDERBUFFER fromDrawable:layer_.get()]) {
     return false;
   }
 
@@ -132,14 +132,14 @@ std::unique_ptr<GLContextSwitchManager::GLContextSwitch> IOSGLRenderTarget::Make
   bool isUpdateSuccessful = UpdateStorageSizeIfNecessary();
   if (!isUpdateSuccessful) {
     NSLog(@"update isn't successful");
-    return std::make_unique<GLContextSwitchManager::EmbedderGLContextSwitch>(false);
+    return std::make_unique<GLContextSwitchManager::GLContextSwitchPureResult>(false);
   }
   NSLog(@"update is successful");
-  return gl_context_guard_manager_->MakeCurrent();
+  return gl_context_switch_manager_->MakeCurrent();
 }
 
 std::unique_ptr<GLContextSwitchManager::GLContextSwitch> IOSGLRenderTarget::ResourceMakeCurrent() {
-  return gl_context_guard_manager_->ResourceMakeCurrent();
+  return gl_context_switch_manager_->ResourceMakeCurrent();
 }
 
 }  // namespace flutter

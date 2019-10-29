@@ -13,7 +13,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/platform/darwin/ios/ios_gl_context_guard_manager.h"
+#include "flutter/shell/platform/darwin/ios/ios_gl_context_switch_manager.h"
 
 namespace flutter {
 
@@ -41,7 +41,7 @@ class IOSGLRenderTarget {
 
  private:
   fml::scoped_nsobject<CAEAGLLayer> layer_;
-  std::shared_ptr<IOSGLContextSwitchManager> gl_context_guard_manager_;
+  std::shared_ptr<IOSGLContextSwitchManager> gl_context_switch_manager_;
   GLuint framebuffer_;
   GLuint colorbuffer_;
   GLint storage_size_width_;

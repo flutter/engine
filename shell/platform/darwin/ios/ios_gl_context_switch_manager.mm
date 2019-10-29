@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ios_gl_context_guard_manager.h"
+#include "ios_gl_context_switch_manager.h"
 
 namespace flutter {
 

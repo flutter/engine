@@ -31,16 +31,16 @@ class IOSGLContext {
   std::unique_ptr<GLContextSwitchManager::GLContextSwitch> ResourceMakeCurrent();
 
   std::shared_ptr<IOSGLContextSwitchManager> GetIOSGLContextSwitchManager() {
-    return gl_context_guard_manager_;
+    return gl_context_switch_manager_;
   }
 
   sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
 
-  fml::scoped_nsobject<EAGLContext> GetContext() const { return gl_context_guard_manager_->context_; }
+  fml::scoped_nsobject<EAGLContext> GetContext() const { return gl_context_switch_manager_->GetContext(); }
 
  private:
   sk_sp<SkColorSpace> color_space_;
-  std::shared_ptr<IOSGLContextSwitchManager> gl_context_guard_manager_;
+  std::shared_ptr<IOSGLContextSwitchManager> gl_context_switch_manager_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSGLContext);
 };

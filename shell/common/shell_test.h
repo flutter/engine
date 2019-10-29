@@ -144,7 +144,7 @@ class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
   PointerDataDispatcherMaker GetDispatcherMaker() override;
 
   // |GPUSurfaceGLDelegate|
-  std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> GLContextMakeCurrent() override;
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> GLContextMakeCurrent() override;
 
   // |GPUSurfaceGLDelegate|
   bool GLContextClearCurrent() override;
@@ -161,7 +161,7 @@ class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
   // |GPUSurfaceGLDelegate|
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
-  std::shared_ptr<GLContextGuardManager> GetGLContextGuardManager() override;
+  std::shared_ptr<GLContextSwitchManager> GetGLContextSwitchManager() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
 };
