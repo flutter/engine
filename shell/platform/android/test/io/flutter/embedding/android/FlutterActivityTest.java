@@ -39,6 +39,21 @@ public class FlutterActivityTest {
   }
 
   @Test
+  public void itDestroysNewEngineWhenIntentIsMissingParameter() {
+    // All clients should use the static members of FlutterActivity to construct an
+    // Intent. Missing extras is an error. However, Flutter has number of tests that
+    // don't seem to use the static members of FlutterActivity to construct the
+    // launching Intent, so this test explicitly verifies that even illegal Intents
+    // result in the automatic destruction of a non-cached FlutterEngine, which prevents
+    // the breakage of memory usage benchmark tests.
+    Intent intent = new Intent(RuntimeEnvironment.application, FlutterActivity.class);
+    ActivityController<FlutterActivity> activityController = Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+
+    assertTrue(flutterActivity.shouldDestroyEngineWithHost());
+  }
+
+  @Test
   public void itCreatesNewEngineIntentWithRequestedSettings() {
     Intent intent = FlutterActivity.withNewEngine()
         .initialRoute("/custom/route")
