@@ -200,7 +200,8 @@ TEST(MessageLoopTaskQueue, ConcurrentQueueAndTaskCreatingCounts) {
           int cur_num_tasks = rand() % 10;
           for (int k = 0; k < cur_num_tasks; k++) {
             task_queues->RegisterTask(
-                fml::TaskQueueId(base_queue_id + cur_q), [] {}, fml::TimePoint::Now());
+                fml::TaskQueueId(base_queue_id + cur_q), [] {},
+                fml::TimePoint::Now());
           }
           num_tasks[cur_q] += cur_num_tasks;
         }
