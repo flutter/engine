@@ -100,7 +100,7 @@ class RasterCache {
 
   void SetCheckboardCacheImages(bool checkerboard);
 
-  bool empty() const;
+  size_t size() const;
 
  private:
   struct Entry {

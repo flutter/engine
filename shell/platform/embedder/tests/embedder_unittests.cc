@@ -663,8 +663,8 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLFramebuffer) {
 }
 
 //------------------------------------------------------------------------------
-/// The RasterCache must be disabled with platform views in the hierarchy.
-///
+/// Layers in a hierarchy containing a platform view should not be cached. The
+/// other layers in the hierarchy should be, however.
 TEST_F(EmbedderTest, RasterCacheDisabledWithPlatformViews) {
   auto& context = GetEmbedderContext();
 
@@ -758,7 +758,9 @@ TEST_F(EmbedderTest, RasterCacheDisabledWithPlatformViews) {
   shell.GetTaskRunners().GetGPUTaskRunner()->PostTask([&] {
     const flutter::RasterCache& raster_cache =
         shell.GetRasterizer()->compositor_context()->raster_cache();
-    ASSERT_TRUE(raster_cache.empty());
+    // 3 layers total, but one of them had the platform view. So the cache
+    // should only have 2 entries.
+    ASSERT_EQ(raster_cache.size(), 2u);
     verify.CountDown();
   });
 
@@ -829,7 +831,7 @@ TEST_F(EmbedderTest, RasterCacheEnabled) {
   shell.GetTaskRunners().GetGPUTaskRunner()->PostTask([&] {
     const flutter::RasterCache& raster_cache =
         shell.GetRasterizer()->compositor_context()->raster_cache();
-    ASSERT_FALSE(raster_cache.empty());
+    ASSERT_EQ(raster_cache.size(), 1u);
     verify.CountDown();
   });
 

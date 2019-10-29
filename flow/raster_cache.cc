@@ -252,8 +252,8 @@ void RasterCache::Clear() {
   layer_cache_.clear();
 }
 
-bool RasterCache::empty() const {
-  return layer_cache_.empty() && picture_cache_.empty();
+size_t RasterCache::size() const {
+  return layer_cache_.size() + picture_cache_.size();
 }
 
 void RasterCache::SetCheckboardCacheImages(bool checkerboard) {

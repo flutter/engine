@@ -210,12 +210,25 @@ void can_composite_platform_views() {
 void can_composite_platform_views_with_opacity() {
   window.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
+
+    // Root node
+    builder.pushOffset(1.0, 2.0);
+
+    // First sibling layer (no platform view, should be cached)
     builder.pushOpacity(127);
     builder.addPicture(Offset(1.0, 1.0), CreateSimplePicture());
-    builder.pushOffset(1.0, 2.0);
+    builder.pop();
+
+    // Second sibling layer (platform view, should not be cached)
+    builder.pushOpacity(127);
     builder.addPlatformView(42, width: 123.0, height: 456.0);
-    builder.addPicture(Offset(1.0, 1.0), CreateSimplePicture());
-    builder.pop(); // offset
+    builder.pop();
+
+    // Third sibling layer (no platform view, should be cached)
+    builder.pushOpacity(127);
+    builder.addPicture(Offset(2.0, 1.0), CreateSimplePicture());
+    builder.pop();
+
     signalNativeTest(); // Signal 2
     window.render(builder.build());
   };
