@@ -674,9 +674,13 @@ public class FlutterActivity extends Activity
    */
   @Override
   public boolean shouldDestroyEngineWithHost() {
+    boolean explicitDestructionRequested = getIntent().getBooleanExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, false);
     if (getCachedEngineId() != null) {
-      return false;
+      // Only destroy a cached engine if explicitly requested by app developer.
+      return explicitDestructionRequested;
     } else {
+      // If this Activity created the FlutterEngine, destroy it by default unless
+      // explicitly requested not to.
       return getIntent().getBooleanExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, true);
     }
   }
