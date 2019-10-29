@@ -27,8 +27,8 @@ bool IOSSurfaceSoftware::IsValid() const {
   return layer_;
 }
 
-GLContextGuardManager::GLContextMakeCurrentResult IOSSurfaceSoftware::ResourceContextMakeCurrent() {
-  return GLContextGuardManager::GLContextMakeCurrentResult(false);
+std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> IOSSurfaceSoftware::ResourceContextMakeCurrent() {
+  return std::make_unique<GLContextGuardManager::GLContextMakeCurrentResult>(false);
 }
 
 void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {

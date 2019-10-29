@@ -43,11 +43,11 @@ std::unique_ptr<IOSGLRenderTarget> IOSGLContext::CreateRenderTarget(
   return std::make_unique<IOSGLRenderTarget>(std::move(layer), gl_context_guard_manager_);
 }
 
-IOSGLContextGuardManager::IOSGLContextAutoRelease IOSGLContext::MakeCurrent() {
+std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> IOSGLContext::MakeCurrent() {
   return gl_context_guard_manager_->MakeCurrent();
 }
 
-IOSGLContextGuardManager::IOSGLContextAutoRelease IOSGLContext::ResourceMakeCurrent() {
+std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> IOSGLContext::ResourceMakeCurrent() {
   return gl_context_guard_manager_->ResourceMakeCurrent();
 }
 

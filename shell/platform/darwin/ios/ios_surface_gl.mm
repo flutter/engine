@@ -28,7 +28,7 @@ bool IOSSurfaceGL::IsValid() const {
   return render_target_->IsValid();
 }
 
-GLContextGuardManager::GLContextMakeCurrentResult IOSSurfaceGL::ResourceContextMakeCurrent() {
+std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> IOSSurfaceGL::ResourceContextMakeCurrent() {
   return context_->ResourceMakeCurrent();
 }
 
@@ -56,9 +56,9 @@ bool IOSSurfaceGL::UseOffscreenSurface() const {
   return true;
 }
 
-GLContextGuardManager::GLContextMakeCurrentResult IOSSurfaceGL::GLContextMakeCurrent() {
+std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> IOSSurfaceGL::GLContextMakeCurrent() {
   if (!IsValid()) {
-    return GLContextGuardManager::GLContextMakeCurrentResult(false);
+    return std::make_unique<GLContextGuardManager::GLContextMakeCurrentResult>(false);
   }
   return render_target_->MakeCurrent();
 }

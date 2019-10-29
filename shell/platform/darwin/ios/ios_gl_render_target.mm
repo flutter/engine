@@ -23,8 +23,8 @@ IOSGLRenderTarget::IOSGLRenderTarget(
       storage_size_height_(0),
       valid_(false) {
   FML_DCHECK(layer_ != nullptr);
-  IOSGLContextGuardManager::IOSGLContextAutoRelease autoRelease =      gl_context_guard_manager_->MakeCurrent();
-  bool context_current = autoRelease.GetMakeCurrentResult();
+  std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> autoRelease = gl_context_guard_manager_->MakeCurrent();
+  bool context_current = autoRelease->GetMakeCurrentResult();
 
   FML_DCHECK(context_current);
   FML_DCHECK(glGetError() == GL_NO_ERROR);
@@ -59,7 +59,7 @@ IOSGLRenderTarget::IOSGLRenderTarget(
 }
 
 IOSGLRenderTarget::~IOSGLRenderTarget() {
-  IOSGLContextGuardManager::IOSGLContextAutoRelease autoRelease =      gl_context_guard_manager_->MakeCurrent();
+  std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> autoRelease = gl_context_guard_manager_->MakeCurrent();
   FML_DCHECK(glGetError() == GL_NO_ERROR);
 
   // Deletes on GL_NONEs are ignored
@@ -100,8 +100,8 @@ bool IOSGLRenderTarget::UpdateStorageSizeIfNecessary() {
   FML_DLOG(INFO) << "Updating render buffer storage size.";
 
   FML_DCHECK(glGetError() == GL_NO_ERROR);
-  IOSGLContextGuardManager::IOSGLContextAutoRelease autoRelease =      gl_context_guard_manager_->MakeCurrent();
-  if (!autoRelease.GetMakeCurrentResult()) {
+  std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> autoRelease = gl_context_guard_manager_->MakeCurrent();
+  if (!autoRelease->GetMakeCurrentResult()) {
     return false;
   }
 
@@ -128,15 +128,15 @@ bool IOSGLRenderTarget::UpdateStorageSizeIfNecessary() {
   return true;
 }
 
-GLContextGuardManager::GLContextMakeCurrentResult IOSGLRenderTarget::MakeCurrent() {
+std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> IOSGLRenderTarget::MakeCurrent() {
   bool isUpdateSuccessful = UpdateStorageSizeIfNecessary();
   if (!isUpdateSuccessful) {
-    return GLContextGuardManager::GLContextMakeCurrentResult(false);
+    return std::make_unique<GLContextGuardManager::GLContextMakeCurrentResult>(false);
   }
   return gl_context_guard_manager_->MakeCurrent();
 }
 
-GLContextGuardManager::GLContextMakeCurrentResult IOSGLRenderTarget::ResourceMakeCurrent() {
+std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> IOSGLRenderTarget::ResourceMakeCurrent() {
   return gl_context_guard_manager_->ResourceMakeCurrent();
 }
 

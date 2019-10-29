@@ -29,7 +29,7 @@ class IOSSurfaceSoftware final : public IOSSurface,
   bool IsValid() const override;
 
   // |IOSSurface|
-  GLContextGuardManager::GLContextMakeCurrentResult ResourceContextMakeCurrent() override;
+  std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> ResourceContextMakeCurrent() override;
 
   // |IOSSurface|
   void UpdateStorageSizeIfNecessary() override;

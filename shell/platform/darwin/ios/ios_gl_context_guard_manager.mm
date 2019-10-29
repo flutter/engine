@@ -20,12 +20,12 @@ IOSGLContextGuardManager::IOSGLContextGuardManager() {
   }
 };
 
-IOSGLContextGuardManager::IOSGLContextAutoRelease IOSGLContextGuardManager::MakeCurrent() {
-  return IOSGLContextAutoRelease(*this, context_);
+std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> IOSGLContextGuardManager::MakeCurrent() {
+  return std::make_unique<IOSGLContextGuardManager::IOSGLContextAutoRelease>(*this, context_);
 }
 
-IOSGLContextGuardManager::IOSGLContextAutoRelease IOSGLContextGuardManager::ResourceMakeCurrent() {
-  return IOSGLContextAutoRelease(*this, resource_context_);
+std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> IOSGLContextGuardManager::ResourceMakeCurrent() {
+  return std::make_unique<IOSGLContextGuardManager::IOSGLContextAutoRelease>(*this, resource_context_);
 }
 
 bool IOSGLContextGuardManager::PushContext(fml::scoped_nsobject<EAGLContext> context) {

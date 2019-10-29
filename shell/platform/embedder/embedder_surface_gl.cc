@@ -34,8 +34,8 @@ bool EmbedderSurfaceGL::IsValid() const {
 }
 
 // |GPUSurfaceGLDelegate|
-GLContextGuardManager::GLContextMakeCurrentResult EmbedderSurfaceGL::GLContextMakeCurrent() {
-  return GLContextGuardManager::GLContextMakeCurrentResult(gl_dispatch_table_.gl_make_current_callback());
+std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> EmbedderSurfaceGL::GLContextMakeCurrent() {
+  return std::make_unique<GLContextGuardManager::GLContextMakeCurrentResult>(gl_dispatch_table_.gl_make_current_callback());
 }
 
 // |GPUSurfaceGLDelegate|

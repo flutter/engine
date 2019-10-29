@@ -52,8 +52,8 @@ class IOSGLContextGuardManager final : public GLContextGuardManager {
 
   ///=====================================================
 
-  IOSGLContextAutoRelease MakeCurrent();
-  IOSGLContextAutoRelease ResourceMakeCurrent();
+  std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> MakeCurrent();
+  std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> ResourceMakeCurrent();
   bool PushContext(fml::scoped_nsobject<EAGLContext> context);
   void PopContext();
   fml::scoped_nsobject<EAGLContext> context_;

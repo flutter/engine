@@ -26,9 +26,9 @@ class IOSGLContext {
   std::unique_ptr<IOSGLRenderTarget> CreateRenderTarget(
       fml::scoped_nsobject<CAEAGLLayer> layer);
 
-  IOSGLContextGuardManager::IOSGLContextAutoRelease MakeCurrent();
+  std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> MakeCurrent();
 
-  IOSGLContextGuardManager::IOSGLContextAutoRelease ResourceMakeCurrent();
+  std::unique_ptr<IOSGLContextGuardManager::IOSGLContextAutoRelease> ResourceMakeCurrent();
 
   std::shared_ptr<IOSGLContextGuardManager> GetIOSGLContextGuardManager() {
     return gl_context_guard_manager_;

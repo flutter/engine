@@ -33,9 +33,9 @@ class IOSGLRenderTarget {
 
   bool UpdateStorageSizeIfNecessary();
 
-  GLContextGuardManager::GLContextMakeCurrentResult MakeCurrent();
+  std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> MakeCurrent();
 
-  GLContextGuardManager::GLContextMakeCurrentResult ResourceMakeCurrent();
+  std::unique_ptr<GLContextGuardManager::GLContextMakeCurrentResult> ResourceMakeCurrent();
 
   sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
 
