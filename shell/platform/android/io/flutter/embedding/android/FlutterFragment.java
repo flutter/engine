@@ -766,7 +766,11 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @Override
   public boolean shouldDestroyEngineWithHost() {
-    return getArguments().getBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, false);
+    if (getCachedEngineId() != null) {
+      return false;
+    } else {
+      return getArguments().getBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, true);
+    }
   }
 
   /**

@@ -674,7 +674,11 @@ public class FlutterActivity extends Activity
    */
   @Override
   public boolean shouldDestroyEngineWithHost() {
-    return getIntent().getBooleanExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, false);
+    if (getCachedEngineId() != null) {
+      return false;
+    } else {
+      return getIntent().getBooleanExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, true);
+    }
   }
 
   /**
