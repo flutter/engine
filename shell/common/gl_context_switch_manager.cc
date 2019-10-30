@@ -6,6 +6,10 @@
 
 namespace flutter {
 
+GLContextSwitchManager::GLContextSwitchManager() = default;
+
+GLContextSwitchManager::~GLContextSwitchManager() = default;
+
 GLContextSwitchManager::GLContextSwitch::GLContextSwitch() = default;
 
 GLContextSwitchManager::GLContextSwitch::~GLContextSwitch(){};
@@ -16,5 +20,9 @@ GLContextSwitchManager::GLContextSwitchPureResult::GLContextSwitchPureResult(
 
 GLContextSwitchManager::GLContextSwitchPureResult::
     ~GLContextSwitchPureResult() = default;
+
+bool GLContextSwitchManager::GLContextSwitchPureResult::GetSwitchResult() {
+  return switch_result_;
+}
 
 }  // namespace flutter

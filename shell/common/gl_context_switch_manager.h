@@ -34,8 +34,8 @@ class GLContextSwitchManager {
     FML_DISALLOW_COPY_AND_ASSIGN(GLContextSwitch);
   };
 
-  GLContextSwitchManager() = default;
-  ~GLContextSwitchManager() = default;
+  GLContextSwitchManager();
+  ~GLContextSwitchManager();
 
   // Make the flutter's context as current context and returns a
   // `GLContextSwitch`.
@@ -55,7 +55,7 @@ class GLContextSwitchManager {
 
     ~GLContextSwitchPureResult();
 
-    bool GetSwitchResult() override { return switch_result_; }
+    bool GetSwitchResult() override;
 
    private:
     bool switch_result_;

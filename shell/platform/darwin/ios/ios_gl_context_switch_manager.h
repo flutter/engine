@@ -46,7 +46,7 @@ class IOSGLContextSwitchManager final : public GLContextSwitchManager {
   std::unique_ptr<GLContextSwitch> MakeCurrent() override;
   std::unique_ptr<GLContextSwitch> ResourceMakeCurrent() override;
 
-  fml::scoped_nsobject<EAGLContext> GetContext() { return context_; }
+  fml::scoped_nsobject<EAGLContext> GetContext();
 
  private:
   fml::scoped_nsobject<EAGLContext> context_;

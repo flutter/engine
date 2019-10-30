@@ -31,6 +31,10 @@ IOSGLContextSwitchManager::ResourceMakeCurrent() {
   return std::make_unique<IOSGLContextSwitchManager::IOSGLContextSwitch>(*this, resource_context_);
 }
 
+fml::scoped_nsobject<EAGLContext> IOSGLContextSwitchManager::GetContext() {
+  return context_;
+}
+
 bool IOSGLContextSwitchManager::PushContext(fml::scoped_nsobject<EAGLContext> context) {
   EAGLContext* current = [EAGLContext currentContext];
   if (current == nil) {
