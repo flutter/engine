@@ -584,6 +584,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    * write while exercising real lifecycle methods. At such a time, this method should be
    * removed.
    */
+  // TODO(mattcarroll): remove this when tests allow for it (https://github.com/flutter/flutter/issues/43798)
   @VisibleForTesting
   /* package */ void setDelegate(@NonNull FlutterActivityAndFragmentDelegate delegate) {
     this.delegate = delegate;
