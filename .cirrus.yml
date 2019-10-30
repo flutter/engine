@@ -2,13 +2,15 @@ gcp_credentials: ENCRYPTED[987a78af29b91ce8489594c9ab3fec21845bbe5ba68294b8f6def
 
 task:
   gke_container:
-   image: gcr.io/flutter-cirrus/build-engine-image:latest
-   cluster_name: build-32-cluster
-   zone: us-central1-a
-   namespace: default
-   cpu: 30 # can't use all 30-cores; system pods needs cores too
-   memory: 100Gb # similarly, can't use all 100Gb memory
+    #image: gcr.io/flutter-cirrus/build-engine-image:latest
+    dockerfile: "ci/docker/build/Dockerfile"
+    cluster_name: build-32-cluster
+    zone: us-central1-a
+    namespace: default
+    cpu: 30 # can't use all 30-cores; system pods needs cores too
+    memory: 100Gb # similarly, can't use all 100Gb memory
   env:
+    CIRRUS_DOCKER_CONTEXT: "ci/docker/build/Dockerfile"
     CIRRUS_WORKING_DIR: "/tmp/github_repo"
     ENGINE_PATH: "/tmp/clean_engine"
     DEPOT_TOOLS: "/tmp/depot_tools"
