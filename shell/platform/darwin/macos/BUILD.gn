@@ -46,14 +46,6 @@ _flutter_framework_headers_copy_dir =
 source_set("flutter_framework_source") {
   visibility = [ ":*" ]
 
-<<<<<<< HEAD
-  output_name = "$_flutter_framework_name"
-
-  ldflags = [
-    "-Wl,-install_name,@rpath/$_flutter_framework_filename/$_framework_binary_subpath",
-  ]
-=======
->>>>>>> upstream/master
   sources = [
     "framework/Source/FlutterAppDelegate.mm",
     "framework/Source/FlutterDartProject.mm",
@@ -93,8 +85,9 @@ source_set("flutter_framework_source") {
 
 shared_library("flutter_framework_dylib") {
   visibility = [ ":*" ]
-
   output_name = "$_flutter_framework_name"
+
+  ldflags = [ "-Wl,-install_name,@rpath/$_flutter_framework_filename/$_framework_binary_subpath" ]
 
   deps = [
     ":flutter_framework_source",

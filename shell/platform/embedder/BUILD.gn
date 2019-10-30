@@ -15,6 +15,7 @@ shell_gpu_configuration("embedder_gpu_configuration") {
 }
 
 _framework_binary_subpath = "Versions/A/FlutterEmbedder"
+
 # Template for the embedder build. Used to allow building it multiple times with
 # different flags.
 template("embedder_source_set") {
@@ -138,9 +139,7 @@ shared_library("flutter_engine_library") {
 
   output_name = "flutter_engine"
 
-  ldflags = [
-    "-Wl,-install_name,@rpath/FlutterEmbedder.framework/$_framework_binary_subpath",
-  ]
+  ldflags = [ "-Wl,-install_name,@rpath/FlutterEmbedder.framework/$_framework_binary_subpath" ]
 
   deps = [
     ":embedder",
@@ -243,11 +242,11 @@ if (is_mac && !embedder_for_target) {
       "FlutterEmbedder.stamp",
     ]
     deps = [
+      ":copy_dylib",
       ":copy_framework_headers",
       ":copy_icu",
       ":copy_info_plist",
       ":copy_module_map",
-      ":copy_dylib",
     ]
   }
 
