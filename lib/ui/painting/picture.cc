@@ -136,6 +136,7 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
   auto unref_queue = dart_state->GetSkiaUnrefQueue();
   auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
   auto io_task_runner = dart_state->GetTaskRunners().GetIOTaskRunner();
+  auto gpu_task_runner = dart_state->GetTaskRunners().GetGPUTaskRunner();
   fml::WeakPtr<IOManager> io_manager = dart_state->GetIOManager();
 
   // We can't create an image on this task runner because we don't have a
@@ -171,15 +172,20 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
     delete image_callback;
   });
 
-  fml::TaskRunner::RunNowOrPostTask(io_task_runner, [ui_task_runner, picture,
-                                                     picture_bounds, ui_task,
-                                                     io_manager] {
-    sk_sp<SkSurface> surface =
-        MakeSnapshotSurface(picture_bounds, io_manager->GetResourceContext());
-    sk_sp<SkImage> raster_image = MakeRasterSnapshot(picture, surface);
+  fml::TaskRunner::RunNowOrPostTask(gpu_task_runner, [io_task_runner,
+                                                      ui_task_runner, picture,
+                                                      picture_bounds, ui_task,
+                                                      io_manager] {
+    fml::TaskRunner::RunNowOrPostTask(io_task_runner, [ui_task_runner, picture,
+                                                       picture_bounds, ui_task,
+                                                       io_manager] {
+      sk_sp<SkSurface> surface =
+          MakeSnapshotSurface(picture_bounds, io_manager->GetResourceContext());
+      sk_sp<SkImage> raster_image = MakeRasterSnapshot(picture, surface);
 
-    fml::TaskRunner::RunNowOrPostTask(
-        ui_task_runner, [ui_task, raster_image]() { ui_task(raster_image); });
+      fml::TaskRunner::RunNowOrPostTask(
+          ui_task_runner, [ui_task, raster_image]() { ui_task(raster_image); });
+    });
   });
 
   return Dart_Null();
