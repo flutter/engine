@@ -14,12 +14,14 @@
 
 namespace flutter {
 
-// The iOS implementation of `GLContextSwitchManager`
-//
-// On `IOSGLContextSwitch`'s construction, it pushes the current EAGLContext to a stack and
-// sets the flutter's gl context as current.
-// On `IOSGLContextSwitch`'s desstruction, it pops a EAGLContext from the stack and set it to
-// current.
+//------------------------------------------------------------------------------
+/// The iOS implementation of `GLContextSwitchManager`.
+///
+/// On `IOSGLContextSwitch`'s construction, it pushes the current EAGLContext to a stack and
+/// sets the flutter's gl context as current.
+/// On `IOSGLContextSwitch`'s desstruction, it pops a EAGLContext from the stack and set it to
+/// current.
+///
 class IOSGLContextSwitchManager final : public GLContextSwitchManager {
  public:
   class IOSGLContextSwitch final : public GLContextSwitch {
