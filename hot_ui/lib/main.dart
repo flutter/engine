@@ -14,9 +14,7 @@ import 'package:vm_service/vm_service_io.dart';
 import 'package:vm/incremental_compiler.dart';
 import 'package:front_end/src/api_unstable/vm.dart'; // ignore: implementation_imports
 import 'package:vm/kernel_front_end.dart'
-    show
-        convertFileOrUriArgumentToUri,
-        createFrontEndFileSystem;
+    show convertFileOrUriArgumentToUri, createFrontEndFileSystem, createFrontEndTarget, setVMEnvironmentDefines;
 
 // These options are a subset of the overall frontend server options.
 final ArgParser argParser = ArgParser()
@@ -26,7 +24,7 @@ final ArgParser argParser = ArgParser()
   ..addOption('platform', help: 'Platform kernel filename')
   ..addOption('packages',
       help: '.packages file to use for compilation', defaultsTo: null)
-  ..addOption('target',
+  ..addOption('target-model',
       help: 'Target model that determines what core libraries are available',
       allowed: <String>[
         'vm',
@@ -62,7 +60,7 @@ final ArgParser argParser = ArgParser()
   ..addOption('vmservice', help: 'The URI of the vmservice to connect to')
   ..addOption('devfs-uri', help: 'The URI of the devFS main dill')
   ..addOption('devfs', help: 'The name of the devFS to use for hot reload')
-  ..addOption('isolate-Id', help: 'The isolate id to be reloaded');
+  ..addOption('isolate-id', help: 'The isolate id to be reloaded');
 
 const String kReadyMessage = 'READY';
 const String kFailedMessage = 'FAILED';
@@ -75,7 +73,7 @@ Future<void> main(List<String> args) async {
   final String devfsUri = options['devfs-uri'];
   final String httpAddress =
       vmServiceUri.replaceFirst('ws', 'http').replaceFirst('/ws', '');
-  final String isolateId = options['isolate-Id'];
+  final String isolateId = options['isolate-id'];
 
   final vm_service.VmService vmService = await vmServiceConnectUri(vmServiceUri);
   final HttpClient httpClient = HttpClient();
@@ -94,7 +92,12 @@ Future<void> main(List<String> args) async {
     ..packagesFileUri =
         convertFileOrUriArgumentToUri(fileSystem, options['packages'])
     ..sdkSummary = sdkRoot.resolve(platformKernelDill)
-    ..verbose = options['verbose'];
+    ..verbose = options['verbose']
+    ..target = createFrontEndTarget(
+      options['target-model'],
+      trackWidgetCreation: true,
+    );
+  setVMEnvironmentDefines(<String, String>{}, compilerOptions);
 
   // Create incremental compiler.
   final Uri initializeFromDillUri =
@@ -106,7 +109,7 @@ Future<void> main(List<String> args) async {
   );
 
   // Compile the initial component
-  final Component component = await incrementalCompiler.compile();
+  final Component component = await incrementalCompiler.compile(entryPoint: entrypointUri);
   component.computeCanonicalNames();
   incrementalCompiler.accept();
 
@@ -162,7 +165,7 @@ class HotUIService {
     final Component partialComponent = Component(libraries: <Library>[
       component.libraries.firstWhere((Library library) => library.importUri.toString() == libraryId)
     ]);
-    stderr.writeln('compiled expression in ${sw.elapsedMicroseconds}');
+    stderr.writeln('compiled expression in ${sw.elapsedMilliseconds}');
 
     // Use the HTTP request as the sink for serializing the partial dill.
     final HttpClientRequest request =
@@ -182,12 +185,10 @@ class HotUIService {
     await vmService.callServiceExtension('flutter.ext.reassemble');
   }
 
-
-
   // Expects newline denominated JSON object.
   void onMessage(String line) {
     final Map<String, Object> message = json.decode(line);
-    final String libraryId = message['library'];
+    final String libraryId = message['libraryId'];
     final String classId = message['classId'];
     final String methodId = message['methodId'];
     final String methodBody = message['methodBody'];
