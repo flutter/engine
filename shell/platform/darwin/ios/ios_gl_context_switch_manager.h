@@ -8,7 +8,6 @@
 #define GLES_SILENCE_DEPRECATION
 
 #import <OpenGLES/EAGL.h>
-#include <map>
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/gl_context_switch_manager.h"
 

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_SHELL_COMMON_GL_CONTEXT_SWITCH_MANAGER_H_
 #define FLUTTER_SHELL_COMMON_GL_CONTEXT_SWITCH_MANAGER_H_
 
-#include <map>
 #include <memory>
 #include "flutter/fml/macros.h"
 
