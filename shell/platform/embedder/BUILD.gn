@@ -139,7 +139,9 @@ shared_library("flutter_engine_library") {
 
   output_name = "flutter_engine"
 
-  ldflags = [ "-Wl,-install_name,@rpath/FlutterEmbedder.framework/$_framework_binary_subpath" ]
+  if (is_mac && !embedder_for_target) {
+    ldflags = [ "-Wl,-install_name,@rpath/FlutterEmbedder.framework/$_framework_binary_subpath" ]
+  }
 
   deps = [
     ":embedder",
