@@ -20,6 +20,8 @@ IOSGLContextSwitchManager::IOSGLContextSwitchManager() {
   }
 };
 
+IOSGLContextSwitchManager::~IOSGLContextSwitchManager() = default;
+
 std::unique_ptr<GLContextSwitchManager::GLContextSwitch> IOSGLContextSwitchManager::MakeCurrent() {
   return std::make_unique<IOSGLContextSwitchManager::IOSGLContextSwitch>(*this, context_);
 }
@@ -50,4 +52,23 @@ void IOSGLContextSwitchManager::PopContext() {
   [EAGLContext setCurrentContext:last];
 }
 
+IOSGLContextSwitchManager::IOSGLContextSwitch::IOSGLContextSwitch(
+    IOSGLContextSwitchManager& manager,
+    fml::scoped_nsobject<EAGLContext> context)
+    : manager_(manager) {
+  bool result = manager_.PushContext(context);
+  has_pushed_context_ = true;
+  switch_result_ = result;
+}
+
+IOSGLContextSwitchManager::IOSGLContextSwitch::~IOSGLContextSwitch() {
+  if (!has_pushed_context_) {
+    return;
+  }
+  manager_.PopContext();
+}
+
+bool IOSGLContextSwitchManager::IOSGLContextSwitch::GetSwitchResult() {
+  return switch_result_;
+}
 }

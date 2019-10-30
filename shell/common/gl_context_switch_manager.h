@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_COMMON_GL_CONTEXT_SWITCH_MANAGER_H_
 
 #include <map>
+#include <memory>
 #include "flutter/fml/macros.h"
 
 namespace flutter {
@@ -24,9 +25,9 @@ class GLContextSwitchManager {
   // In destruction, it should rest the current context.
   class GLContextSwitch {
    public:
-    GLContextSwitch() = default;
+    GLContextSwitch();
 
-    virtual ~GLContextSwitch() {}
+    virtual ~GLContextSwitch();
 
     virtual bool GetSwitchResult() = 0;
 
@@ -50,10 +51,9 @@ class GLContextSwitchManager {
    public:
     // Constructor that creates an `GLContextSwitchPureResult`.
     // The `GetSwitchResult` will return the same value as `switch_result`.
-    GLContextSwitchPureResult(bool switch_result)
-        : switch_result_(switch_result) {}
+    GLContextSwitchPureResult(bool switch_result);
 
-    ~GLContextSwitchPureResult() = default;
+    ~GLContextSwitchPureResult();
 
     bool GetSwitchResult() override { return switch_result_; }
 

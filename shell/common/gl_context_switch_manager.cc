@@ -3,3 +3,18 @@
 // found in the LICENSE file.
 
 #include "gl_context_switch_manager.h"
+
+namespace flutter {
+
+GLContextSwitchManager::GLContextSwitch::GLContextSwitch() = default;
+
+GLContextSwitchManager::GLContextSwitch::~GLContextSwitch(){};
+
+GLContextSwitchManager::GLContextSwitchPureResult::GLContextSwitchPureResult(
+    bool switch_result)
+    : switch_result_(switch_result){};
+
+GLContextSwitchManager::GLContextSwitchPureResult::
+    ~GLContextSwitchPureResult() = default;
+
+}  // namespace flutter

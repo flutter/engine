@@ -25,21 +25,11 @@ class IOSGLContextSwitchManager final : public GLContextSwitchManager {
   class IOSGLContextSwitch final : public GLContextSwitch {
    public:
     IOSGLContextSwitch(IOSGLContextSwitchManager& manager,
-                       fml::scoped_nsobject<EAGLContext> context)
-        : manager_(manager) {
-      bool result = manager_.PushContext(context);
-      has_pushed_context_ = true;
-      switch_result_ = result;
-    };
+                       fml::scoped_nsobject<EAGLContext> context);
 
-    bool GetSwitchResult() override { return switch_result_; }
+    ~IOSGLContextSwitch();
 
-    ~IOSGLContextSwitch() {
-      if (!has_pushed_context_) {
-        return;
-      }
-      manager_.PopContext();
-    }
+    bool GetSwitchResult() override;
 
    private:
     IOSGLContextSwitchManager& manager_;
@@ -51,7 +41,7 @@ class IOSGLContextSwitchManager final : public GLContextSwitchManager {
 
   IOSGLContextSwitchManager();
 
-  ~IOSGLContextSwitchManager() = default;
+  ~IOSGLContextSwitchManager();
 
   std::unique_ptr<GLContextSwitch> MakeCurrent() override;
   std::unique_ptr<GLContextSwitch> ResourceMakeCurrent() override;
