@@ -173,8 +173,8 @@ TEST(MessageLoopTaskQueue, NotifyObserversWhileCreatingQueues) {
   before_second_observer.Signal();
   notify_observers.join();
 }
-
-TEST(MessageLoopTaskQueue, ConcurrentQueueAndTaskCreatingCounts) {
+// TODO(chunhtai): This unit-test is flaky
+TEST(MessageLoopTaskQueue, DISABLED_ConcurrentQueueAndTaskCreatingCounts) {
   auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
   const int base_queue_id = task_queues->CreateTaskQueue();
 
