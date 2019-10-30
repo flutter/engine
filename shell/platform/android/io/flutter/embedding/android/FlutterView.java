@@ -269,9 +269,14 @@ public class FlutterView extends FrameLayout {
   @Override
   protected void onConfigurationChanged(@NonNull Configuration newConfig) {
     super.onConfigurationChanged(newConfig);
-    Log.v(TAG, "Configuration changed. Sending locales and user settings to Flutter.");
-    sendLocalesToFlutter(newConfig);
-    sendUserSettingsToFlutter();
+    // We might get invoked here before attaching again when coming back from
+    // the app switcher. In that case, we'll call these methods when we get
+    // reattached to the engine.
+    if (flutterEngine != null) {
+      Log.v(TAG, "Configuration changed. Sending locales and user settings to Flutter.");
+      sendLocalesToFlutter(newConfig);
+      sendUserSettingsToFlutter();
+    }
   }
 
   /**
