@@ -4,6 +4,7 @@ task:
   gke_container:
     #image: gcr.io/flutter-cirrus/build-engine-image:latest
     dockerfile: "ci/docker/build/Dockerfile"
+    builder_image_name: docker-engine-builder
     cluster_name: build-32-cluster
     zone: us-central1-a
     namespace: default
