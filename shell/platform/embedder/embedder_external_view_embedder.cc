@@ -96,7 +96,7 @@ void EmbedderExternalViewEmbedder::BeginFrame(SkISize frame_size,
   }
 
   // If there is no root render target, create one now.
-  // TODO(chinmaygarde): This can now be moved to be later in the submit call.
+  // TODO(43778): This should now be moved to be later in the submit call.
   if (!root_render_target_) {
     root_render_target_ = create_render_target_callback_(
         context, MakeBackingStoreConfig(surface_size));

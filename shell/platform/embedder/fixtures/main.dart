@@ -454,6 +454,7 @@ void can_receive_locale_updates() {
   signalNativeTest();
 }
 
+// Verifies behavior tracked in https://github.com/flutter/flutter/issues/43732
 @pragma('vm:entry-point')
 void verify_b143464703() {
   window.onBeginFrame = (Duration duration) {
