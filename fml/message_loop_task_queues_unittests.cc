@@ -173,7 +173,9 @@ TEST(MessageLoopTaskQueue, NotifyObserversWhileCreatingQueues) {
   before_second_observer.Signal();
   notify_observers.join();
 }
-// TODO(chunhtai): This unit-test is flaky
+// TODO(chunhtai): This unit-test is flaky and sometimes fails asynchronizely
+// after the test has finished.
+// https://github.com/flutter/flutter/issues/43858
 TEST(MessageLoopTaskQueue, DISABLED_ConcurrentQueueAndTaskCreatingCounts) {
   auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
   const int base_queue_id = task_queues->CreateTaskQueue();
