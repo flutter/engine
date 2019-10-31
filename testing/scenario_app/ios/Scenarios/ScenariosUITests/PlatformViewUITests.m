@@ -30,7 +30,7 @@
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
   PlatformViewGoldenTestManager* manager =
-  [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-multiple"];
+      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-multiple"];
   return [super initWithManager:manager invocation:invocation];
 }
 
