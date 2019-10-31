@@ -44,11 +44,12 @@ source_set("client_wrapper_glfw") {
   ]
 }
 
-# Copies the GLFW client wrapper code to the output directory, merging it into
-# the core wrapper.
-publish_client_wrapper("publish_wrapper_glfw") {
+# Copies the GLFW client wrapper code to the output directory with a _glfw
+# suffix.
+publish_client_wrapper_extension("publish_wrapper_glfw") {
   public = _wrapper_includes
   sources = _wrapper_sources
+  directory_suffix = "glfw"
 }
 
 source_set("client_wrapper_library_stubs_glfw") {

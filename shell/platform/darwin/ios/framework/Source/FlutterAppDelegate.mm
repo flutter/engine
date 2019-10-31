@@ -40,7 +40,7 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 
 // Returns the key window's rootViewController, if it's a FlutterViewController.
 // Otherwise, returns nil.
-- (FlutterViewController*)rootFlutterViewController {
++ (FlutterViewController*)rootFlutterViewController {
   UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
   if ([viewController isKindOfClass:[FlutterViewController class]]) {
     return (FlutterViewController*)viewController;
@@ -48,33 +48,13 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
   return nil;
 }
 
-- (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
++ (void)handleStatusBarTouches:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+  [self.rootFlutterViewController handleStatusBarTouches:event];
+}
+
+- (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
   [super touchesBegan:touches withEvent:event];
-
-  // Pass status bar taps to key window Flutter rootViewController.
-  if (self.rootFlutterViewController != nil) {
-    [self.rootFlutterViewController handleStatusBarTouches:event];
-  }
-}
-
-- (void)applicationDidEnterBackground:(UIApplication*)application {
-  [_lifeCycleDelegate applicationDidEnterBackground:application];
-}
-
-- (void)applicationWillEnterForeground:(UIApplication*)application {
-  [_lifeCycleDelegate applicationWillEnterForeground:application];
-}
-
-- (void)applicationWillResignActive:(UIApplication*)application {
-  [_lifeCycleDelegate applicationWillResignActive:application];
-}
-
-- (void)applicationDidBecomeActive:(UIApplication*)application {
-  [_lifeCycleDelegate applicationDidBecomeActive:application];
-}
-
-- (void)applicationWillTerminate:(UIApplication*)application {
-  [_lifeCycleDelegate applicationWillTerminate:application];
+  [[self class] handleStatusBarTouches:touches withEvent:event];
 }
 
 #pragma GCC diagnostic push
@@ -104,11 +84,28 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
        willPresentNotification:(UNNotification*)notification
          withCompletionHandler:
              (void (^)(UNNotificationPresentationOptions options))completionHandler
-    API_AVAILABLE(ios(10)) {
+    NS_AVAILABLE_IOS(10_0) {
   if (@available(iOS 10.0, *)) {
-    [_lifeCycleDelegate userNotificationCenter:center
-                       willPresentNotification:notification
-                         withCompletionHandler:completionHandler];
+    if ([_lifeCycleDelegate respondsToSelector:_cmd]) {
+      [_lifeCycleDelegate userNotificationCenter:center
+                         willPresentNotification:notification
+                           withCompletionHandler:completionHandler];
+    }
+  }
+}
+
+/**
+ * Calls all plugins registered for `UNUserNotificationCenterDelegate` callbacks.
+ */
+- (void)userNotificationCenter:(UNUserNotificationCenter*)center
+    didReceiveNotificationResponse:(UNNotificationResponse*)response
+             withCompletionHandler:(void (^)(void))completionHandler NS_AVAILABLE_IOS(10_0) {
+  if (@available(iOS 10.0, *)) {
+    if ([_lifeCycleDelegate respondsToSelector:_cmd]) {
+      [_lifeCycleDelegate userNotificationCenter:center
+                  didReceiveNotificationResponse:response
+                           withCompletionHandler:completionHandler];
+    }
   }
 }
 

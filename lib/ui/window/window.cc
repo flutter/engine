@@ -185,6 +185,7 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
           tonic::ToDart(metrics.device_pixel_ratio),
           tonic::ToDart(metrics.physical_width),
           tonic::ToDart(metrics.physical_height),
+          tonic::ToDart(metrics.physical_depth),
           tonic::ToDart(metrics.physical_padding_top),
           tonic::ToDart(metrics.physical_padding_right),
           tonic::ToDart(metrics.physical_padding_bottom),
@@ -193,6 +194,10 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
           tonic::ToDart(metrics.physical_view_inset_right),
           tonic::ToDart(metrics.physical_view_inset_bottom),
           tonic::ToDart(metrics.physical_view_inset_left),
+          tonic::ToDart(metrics.physical_system_gesture_inset_top),
+          tonic::ToDart(metrics.physical_system_gesture_inset_right),
+          tonic::ToDart(metrics.physical_system_gesture_inset_bottom),
+          tonic::ToDart(metrics.physical_system_gesture_inset_left),
       }));
 }
 
@@ -256,13 +261,21 @@ void Window::UpdateAccessibilityFeatures(int32_t values) {
 
 void Window::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
+  if (!dart_state) {
+    FML_DLOG(WARNING)
+        << "Dropping platform message for lack of DartState on channel: "
+        << message->channel();
     return;
+  }
   tonic::DartState::Scope scope(dart_state);
   Dart_Handle data_handle =
       (message->hasData()) ? ToByteData(message->data()) : Dart_Null();
-  if (Dart_IsError(data_handle))
+  if (Dart_IsError(data_handle)) {
+    FML_DLOG(WARNING)
+        << "Dropping platform message because of a Dart error on channel: "
+        << message->channel();
     return;
+  }
 
   int response_id = 0;
   if (auto response = message->response()) {

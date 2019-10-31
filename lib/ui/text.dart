@@ -103,6 +103,77 @@ class FontWeight {
 }
 
 /// A feature tag and value that affect the selection of glyphs in a font.
+///
+/// {@tool sample}
+///
+/// This example shows usage of several OpenType font features, including
+/// Small Caps (smcp), old-style figures, fractional ligatures and stylistic
+/// sets.
+///
+/// ```dart
+///class TypePage extends StatelessWidget {
+///  // The Cardo, Milonga and Raleway Dots fonts can be downloaded from
+///  // Google Fonts (https://www.google.com/fonts).
+///
+///  final titleStyle = TextStyle(
+///    fontSize: 18,
+///    fontFeatures: [FontFeature.enable('smcp')],
+///    color: Colors.blueGrey[600],
+///  );
+///
+///  @override
+///  Widget build(BuildContext context) {
+///    return Scaffold(
+///      body: Center(
+///        child: Column(
+///          mainAxisAlignment: MainAxisAlignment.center,
+///          children: <Widget>[
+///            Spacer(flex: 5),
+///            Text('regular numbers have their place:', style: titleStyle),
+///            Text('The 1972 cup final was a 1-1 draw.',
+///                style: TextStyle(
+///                  fontFamily: 'Cardo',
+///                  fontSize: 24,
+///                )),
+///            Spacer(),
+///            Text('but old-style figures blend well with lower case:',
+///                style: titleStyle),
+///            Text('The 1972 cup final was a 1-1 draw.',
+///                style: TextStyle(
+///                    fontFamily: 'Cardo',
+///                    fontSize: 24,
+///                    fontFeatures: [FontFeature.oldstyleFigures()])),
+///            Spacer(),
+///            Divider(),
+///            Spacer(),
+///            Text('fractions look better with a custom ligature:',
+///                style: titleStyle),
+///            Text('Add 1/2 tsp of flour and stir.',
+///                style: TextStyle(
+///                    fontFamily: 'Milonga',
+///                    fontSize: 24,
+///                    fontFeatures: [FontFeature.enable('frac')])),
+///            Spacer(),
+///            Divider(),
+///            Spacer(),
+///            Text('multiple stylistic sets in one font:', style: titleStyle),
+///            Text('Raleway Dots',
+///                style: TextStyle(fontFamily: 'Raleway Dots', fontSize: 48)),
+///            Text('Raleway Dots',
+///                style: TextStyle(
+///                  fontFeatures: [FontFeature.stylisticSet(1)],
+///                  fontFamily: 'Raleway Dots',
+///                  fontSize: 48,
+///                )),
+///            Spacer(flex: 5),
+///          ],
+///        ),
+///      ),
+///    );
+///  }
+///}
+/// ```
+/// {@end-tool}
 class FontFeature {
   /// Creates a [FontFeature] object, which can be added to a [TextStyle] to
   /// change how the engine selects glyphs when rendering text.
@@ -1498,6 +1569,112 @@ enum PlaceholderAlignment {
   middle,
 }
 
+/// [LineMetrics] stores the measurements and statistics of a single line in the
+/// paragraph.
+///
+/// The measurements here are for the line as a whole, and represent the maximum
+/// extent of the line instead of per-run or per-glyph metrics. For more detailed
+/// metrics, see [TextBox] and [Paragraph.getBoxesForRange].
+///
+/// [LineMetrics] should be obtained directly from the [Paragraph.computeLineMetrics]
+/// method.
+class LineMetrics {
+  /// Creates a [LineMetrics] object with only the specified values.
+  ///
+  /// Omitted values will remain null. [Paragraph.computeLineMetrics] produces
+  /// fully defined [LineMetrics] with no null values.
+  LineMetrics({
+    this.hardBreak,
+    this.ascent,
+    this.descent,
+    this.unscaledAscent,
+    this.height,
+    this.width,
+    this.left,
+    this.baseline,
+    this.lineNumber,
+  });
+
+  @pragma('vm:entry-point')
+  LineMetrics._(
+    this.hardBreak,
+    this.ascent,
+    this.descent,
+    this.unscaledAscent,
+    this.height,
+    this.width,
+    this.left,
+    this.baseline,
+    this.lineNumber,
+  );
+
+  /// True if this line ends with an explicit line break (e.g. '\n') or is the end
+  /// of the paragraph. False otherwise.
+  final bool hardBreak;
+
+  /// The rise from the [baseline] as calculated from the font and style for this line.
+  ///
+  /// This is the final computed ascent and can be impacted by the strut, height, scaling,
+  /// as well as outlying runs that are very tall.
+  ///
+  /// The [ascent] is provided as a positive value, even though it is typically defined
+  /// in fonts as negative. This is to ensure the signage of operations with these
+  /// metrics directly reflects the intended signage of the value. For example,
+  /// the y coordinate of the top edge of the line is `baseline - ascent`.
+  final double ascent;
+
+  /// The drop from the [baseline] as calculated from the font and style for this line.
+  ///
+  /// This is the final computed ascent and can be impacted by the strut, height, scaling,
+  /// as well as outlying runs that are very tall.
+  ///
+  /// The y coordinate of the bottom edge of the line is `baseline + descent`.
+  final double descent;
+
+  /// The rise from the [baseline] as calculated from the font and style for this line
+  /// ignoring the [TextStyle.height].
+  ///
+  /// The [unscaledAscent] is provided as a positive value, even though it is typically
+  /// defined in fonts as negative. This is to ensure the signage of operations with
+  /// these metrics directly reflects the intended signage of the value.
+  final double unscaledAscent;
+
+  /// Total height of the line from the top edge to the bottom edge.
+  ///
+  /// This is equivalent to `round(ascent + descent)`. This value is provided
+  /// separately due to rounding causing sub-pixel differences from the unrounded
+  /// values.
+  final double height;
+
+  /// Width of the line from the left edge of the leftmost glyph to the right
+  /// edge of the rightmost glyph.
+  ///
+  /// This is not the same as the width of the pargraph.
+  ///
+  /// See also:
+  ///
+  ///  * [Paragraph.width], the max width passed in during layout.
+  ///  * [Paragraph.longestLine], the width of the longest line in the paragraph.
+  final double width;
+
+  /// The x coordinate of left edge of the line.
+  ///
+  /// The right edge can be obtained with `left + width`.
+  final double left;
+
+  /// The y coordinate of the baseline for this line from the top of the paragraph.
+  ///
+  /// The bottom edge of the paragraph up to and including this line may be obtained
+  /// through `baseline + descent`.
+  final double baseline;
+
+  /// The number of this line in the overall paragraph, with the first line being
+  /// index zero.
+  ///
+  /// For example, the first line is line 0, second line is line 1.
+  final int lineNumber;
+}
+
 /// A paragraph of text.
 ///
 /// A paragraph retains the size and position of each glyph in the text and can
@@ -1613,6 +1790,15 @@ class Paragraph extends NativeFieldWrapperClass2 {
   // in the C++ code. If we straighten out the C++ dependencies, we can remove
   // this indirection.
   void _paint(Canvas canvas, double x, double y) native 'Paragraph_paint';
+
+  /// Returns the full list of [LineMetrics] that describe in detail the various
+  /// metrics of each laid out line.
+  ///
+  /// Not valid until after layout.
+  ///
+  /// This can potentially return a large amount of data, so it is not recommended
+  /// to repeatedly call this. Instead, cache the results.
+  List<LineMetrics> computeLineMetrics() native 'Paragraph_computeLineMetrics';
 }
 
 /// Builds a [Paragraph] containing text with the given styling information.

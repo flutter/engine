@@ -62,6 +62,8 @@ source_set("common") {
   sources = [
     "animator.cc",
     "animator.h",
+    "canvas_spy.cc",
+    "canvas_spy.h",
     "engine.cc",
     "engine.h",
     "isolate_configuration.cc",
@@ -72,6 +74,8 @@ source_set("common") {
     "pipeline.h",
     "platform_view.cc",
     "platform_view.h",
+    "pointer_data_dispatcher.cc",
+    "pointer_data_dispatcher.h",
     "rasterizer.cc",
     "rasterizer.h",
     "run_configuration.cc",
@@ -153,6 +157,8 @@ if (current_toolchain == host_toolchain) {
 
   shell_host_executable("shell_unittests") {
     sources = [
+      "canvas_spy_unittests.cc",
+      "input_events_unittests.cc",
       "pipeline_unittests.cc",
       "shell_test.cc",
       "shell_test.h",
@@ -164,6 +170,7 @@ if (current_toolchain == host_toolchain) {
       ":shell_unittests_gpu_configuration",
       "$flutter_root/common",
       "$flutter_root/flow",
+      "$flutter_root/lib/ui:ui",
       "$flutter_root/shell",
       "$flutter_root/testing:dart",
       "$flutter_root/testing:opengl",

@@ -45,7 +45,7 @@ class MessageLoopImpl : public Wakeable,
 
   void DoTerminate();
 
-  void SwapTaskQueues(const fml::RefPtr<MessageLoopImpl>& other);
+  virtual TaskQueueId GetTaskQueueId() const;
 
  protected:
   // Exposed for the embedder shell which allows clients to poll for events
@@ -62,8 +62,6 @@ class MessageLoopImpl : public Wakeable,
  private:
   fml::RefPtr<MessageLoopTaskQueues> task_queue_;
   TaskQueueId queue_id_;
-
-  std::mutex tasks_flushing_mutex_;
 
   std::atomic_bool terminated_;
 

@@ -8,15 +8,16 @@
 #include "flutter/fml/build_config.h"
 
 #if defined(OS_FUCHSIA)
-#if !defined(FUCHSIA_SDK)
 
 // Forward to the system tracing mechanism on Fuchsia.
 
-#include <trace/event.h>
+#include <lib/trace/event.h>
 
 // TODO(DNO-448): This is disabled because the Fuchsia counter id json parsing
 // only handles ints whereas this can produce ints or strings.
-#define FML_TRACE_COUNTER(a, b, c, args...)
+#define FML_TRACE_COUNTER(a, b, c, arg1, ...) \
+  ::fml::tracing::TraceCounterNopHACK((a), (b), (c), (arg1), __VA_ARGS__);
+
 #define FML_TRACE_EVENT(a, b, args...) TRACE_DURATION(a, b)
 
 #define TRACE_EVENT0(a, b) TRACE_DURATION(a, b)
@@ -28,7 +29,6 @@
 #define TRACE_EVENT_ASYNC_END1(a, b, c, d, e) TRACE_ASYNC_END(a, b, c, d, e)
 #define TRACE_EVENT_INSTANT0(a, b) TRACE_INSTANT(a, b, TRACE_SCOPE_THREAD)
 
-#endif  //  !defined(FUCHSIA_SDK)
 #endif  //  defined(OS_FUCHSIA)
 
 #include <cstddef>
@@ -41,7 +41,7 @@
 #include "flutter/fml/time/time_point.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
-#if !defined(OS_FUCHSIA) || defined(FUCHSIA_SDK)
+#if !defined(OS_FUCHSIA)
 #ifndef TRACE_EVENT_HIDE_MACROS
 
 #define __FML__TOKEN_CAT__(x, y) x##y
@@ -51,7 +51,7 @@
                                                        __LINE__)(name);
 
 // This macro has the FML_ prefix so that it does not collide with the macros
-// from trace/event.h on Fuchsia.
+// from lib/trace/event.h on Fuchsia.
 //
 // TODO(chinmaygarde): All macros here should have the FML prefix.
 #define FML_TRACE_COUNTER(category_group, name, counter_id, arg1, ...)         \
@@ -104,7 +104,7 @@
   ::fml::tracing::TraceEventFlowEnd0(category, name, id);
 
 #endif  // TRACE_EVENT_HIDE_MACROS
-#endif  // !defined(OS_FUCHSIA) || defined(FUCHSIA_SDK)
+#endif  // !defined(OS_FUCHSIA)
 
 namespace fml {
 namespace tracing {
@@ -175,6 +175,14 @@ void TraceCounter(TraceArg category,
   TraceTimelineEvent(category, name, identifier, Dart_Timeline_Event_Counter,
                      split.first, split.second);
 }
+
+// HACK: Used to NOP FML_TRACE_COUNTER macro without triggering unused var
+// warnings at usage sites.
+template <typename... Args>
+void TraceCounterNopHACK(TraceArg category,
+                         TraceArg name,
+                         TraceIDArg identifier,
+                         Args... args) {}
 
 template <typename... Args>
 void TraceEvent(TraceArg category, TraceArg name, Args... args) {

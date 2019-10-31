@@ -9,7 +9,11 @@
 
 namespace flutter {
 
-static const double kUnsetDepth = -1;
+// This is the value of double.maxFinite from dart:core.
+// Platforms that do not explicitly set a depth will use this value, which
+// avoids the need to special case logic that wants to check the max depth on
+// the Dart side.
+static const double kUnsetDepth = 1.7976931348623157e+308;
 
 struct ViewportMetrics {
   ViewportMetrics();
@@ -25,7 +29,11 @@ struct ViewportMetrics {
                   double p_physical_view_inset_top,
                   double p_physical_view_inset_right,
                   double p_physical_view_inset_bottom,
-                  double p_physical_view_inset_left);
+                  double p_physical_view_inset_left,
+                  double p_physical_system_gesture_inset_top,
+                  double p_physical_system_gesture_inset_right,
+                  double p_physical_system_gesture_inset_bottom,
+                  double p_physical_system_gesture_inset_left);
 
   // Create a ViewportMetrics instance that contains z information.
   ViewportMetrics(double p_device_pixel_ratio,
@@ -59,6 +67,10 @@ struct ViewportMetrics {
   double physical_view_inset_left = 0;
   double physical_view_inset_front = kUnsetDepth;
   double physical_view_inset_back = kUnsetDepth;
+  double physical_system_gesture_inset_top = 0;
+  double physical_system_gesture_inset_right = 0;
+  double physical_system_gesture_inset_bottom = 0;
+  double physical_system_gesture_inset_left = 0;
 };
 
 struct LogicalSize {

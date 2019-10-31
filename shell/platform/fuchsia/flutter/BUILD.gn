@@ -5,87 +5,276 @@
 assert(is_fuchsia)
 
 import("//build/fuchsia/sdk.gni")
+import("$flutter_root/common/config.gni")
+import("$flutter_root/shell/gpu/gpu.gni")
+import("$flutter_root/tools/fuchsia/common_libs.gni")
+import("$flutter_root/tools/fuchsia/dart.gni")
+import("$flutter_root/tools/fuchsia/package_dir.gni")
+import("engine_flutter_runner.gni")
 
-if (using_fuchsia_sdk) {
-  executable("flutter") {
-    output_name = "flutter_runner"
+shell_gpu_configuration("fuchsia_gpu_configuration") {
+  enable_software = false
+  enable_gl = false
+  enable_vulkan = true
+  enable_metal = false
+}
 
-    sources = [
-      "component.cc",
-      "component.h",
-      "compositor_context.cc",
-      "compositor_context.h",
-      "engine.cc",
-      "engine.h",
-      "fuchsia_font_manager.cc",
-      "fuchsia_font_manager.h",
-      "isolate_configurator.cc",
-      "isolate_configurator.h",
-      "logging.h",
-      "loop.cc",
-      "loop.h",
-      "main.cc",
-      "platform_view.cc",
-      "platform_view.h",
-      "runner.cc",
-      "runner.h",
-      "runner_context.cc",
-      "runner_context.h",
-      "service_provider_dir.cc",
-      "service_provider_dir.h",
-      "session_connection.cc",
-      "session_connection.h",
-      "surface.cc",
-      "surface.h",
-      "task_observers.cc",
-      "task_observers.h",
-      "task_runner_adapter.cc",
-      "task_runner_adapter.h",
-      "thread.cc",
-      "thread.h",
-      "unique_fdio_ns.h",
-      "vsync_recorder.cc",
-      "vsync_recorder.h",
-      "vsync_waiter.cc",
-      "vsync_waiter.h",
-      "vulkan_surface.cc",
-      "vulkan_surface.h",
-      "vulkan_surface_pool.cc",
-      "vulkan_surface_pool.h",
-      "vulkan_surface_producer.cc",
-      "vulkan_surface_producer.h",
-    ]
+# Things that explicitly being excluded:
+# 1. Kernel snapshot framework mode.
+# 2. Profiler symbols.
+
+# Dependencies for flutter tooling
+#
+# While not required to run a flutter mod, these allow interacting
+# with flutter via the fx tool and need to be built.
+#
+# This is only for builds in topaz tree.
+flutter_tool_deps = []
+if (!using_fuchsia_sdk) {
+  flutter_tool_deps += [ "//third_party/dart-pkg/git/flutter/packages/flutter_tools:fuchsia_attach($host_toolchain)" ]
+}
+
+flutter_runner("jit") {
+  output_name = "flutter_jit_runner"
+  product = false
+  if (flutter_runtime_mode == "profile") {
+    extra_defines = [ "FLUTTER_PROFILE" ]
+  }
+
+  extra_deps = [
+                 "//third_party/dart/runtime:libdart_jit",
+                 "//third_party/dart/runtime/platform:libdart_platform_jit",
+               ] + flutter_tool_deps
+}
+
+flutter_runner("jit_product") {
+  output_name = "flutter_jit_product_runner"
+  product = true
+  extra_defines = [ "DART_PRODUCT" ]
+
+  extra_deps = [
+    "//third_party/dart/runtime:libdart_jit_product",
+    "//third_party/dart/runtime/platform:libdart_platform_jit_product",
+  ]
+}
+
+flutter_runner("aot") {
+  output_name = "flutter_aot_runner"
+  product = false
+  if (flutter_runtime_mode == "profile") {
+    extra_defines = [ "FLUTTER_PROFILE" ]
+  }
+  extra_deps = [
+    "//third_party/dart/runtime:libdart_precompiled_runtime",
+    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime",
+  ]
+}
+
+flutter_runner("aot_product") {
+  output_name = "flutter_aot_product_runner"
+  product = true
+  extra_defines = [ "DART_PRODUCT" ]
+  extra_deps = [
+    "//third_party/dart/runtime:libdart_precompiled_runtime_product",
+    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime_product",
+  ]
+}
+
+template("jit_runner") {
+  product = defined(invoker.product) && invoker.product
+
+  product_suffix = ""
+
+  if (product) {
+    product_suffix = "_product"
+  }
+
+  package_dir(target_name) {
+    snapshot_label = "kernel:kernel_core_snapshot${product_suffix}"
+    snapshot_gen_dir = get_label_info(snapshot_label, "target_gen_dir")
 
     deps = [
-      "$flutter_root/common",
-      "$flutter_root/flow",
-      "$flutter_root/fml",
-      "$flutter_root/lib/ui",
-      "$flutter_root/runtime",
-      "$flutter_root/runtime:libdart",
-      "$flutter_root/shell/common",
-      "$flutter_root/shell/platform/fuchsia/dart-pkg/fuchsia",
-      "$flutter_root/shell/platform/fuchsia/dart-pkg/zircon",
-      "$flutter_root/shell/platform/fuchsia/runtime/dart/utils",
-      "$flutter_root/vulkan",
-      "$fuchsia_sdk_root/fidl:fuchsia.fonts",
-      "$fuchsia_sdk_root/fidl:fuchsia.images",
-      "$fuchsia_sdk_root/fidl:fuchsia.io",
-      "$fuchsia_sdk_root/fidl:fuchsia.modular",
-      "$fuchsia_sdk_root/fidl:fuchsia.sys",
-      "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
-      "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
-      "$fuchsia_sdk_root/pkg:async-cpp",
-      "$fuchsia_sdk_root/pkg:async-loop",
-      "$fuchsia_sdk_root/pkg:async-loop-cpp",
-      "$fuchsia_sdk_root/pkg:fdio",
-      "$fuchsia_sdk_root/pkg:fidl_cpp",
-      "$fuchsia_sdk_root/pkg:scenic_cpp",
-      "$fuchsia_sdk_root/pkg:syslog",
-      "$fuchsia_sdk_root/pkg:zx",
-      "$fuchsia_sdk_root/pkg/lib/sys/cpp",
-      "$fuchsia_sdk_root/pkg/lib/vfs/cpp",
-      "//third_party/tonic",
+      ":jit${product_suffix}",
+      snapshot_label,
+    ]
+
+    if (!product) {
+      deps += [
+        "$flutter_root/shell/platform/fuchsia/runtime/dart/profiler_symbols:flutter_jit_runner",
+        observatory_target,
+      ]
+    }
+
+    binary = "flutter_jit${product_suffix}_runner"
+
+    meta_dir = "$flutter_root/shell/platform/fuchsia/flutter/meta"
+
+    resources = [
+      {
+        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        dest = "icudtl.dat"
+      },
+    ]
+
+    if (!product) {
+      resources += [
+        {
+          path = rebase_path(observatory_archive_file)
+          dest = "observatory.tar"
+        },
+        {
+          path = rebase_path(
+                  get_label_info(
+                      "$flutter_root/shell/platform/fuchsia/runtime/dart/profiler_symbols:flutter_jit_runner",
+                      "target_gen_dir") +
+                  "/flutter_jit_runner.dartprofilersymbols")
+          dest = "flutter_jit_runner.dartprofilersymbols"
+        },
+      ]
+    }
+
+    resources += [
+      {
+        path = rebase_path(
+                "$snapshot_gen_dir/vm_isolate_snapshot${product_suffix}.bin")
+        dest = "vm_snapshot_data.bin"
+      },
+      {
+        path = rebase_path(
+                "$snapshot_gen_dir/vm_snapshot_instructions${product_suffix}.bin")
+        dest = "vm_snapshot_instructions.bin"
+      },
+      {
+        path = rebase_path(
+                "$snapshot_gen_dir/isolate_snapshot${product_suffix}.bin")
+        dest = "isolate_core_snapshot_data.bin"
+      },
+      {
+        path = rebase_path(
+                "$snapshot_gen_dir/isolate_snapshot_instructions${product_suffix}.bin")
+        dest = "isolate_core_snapshot_instructions.bin"
+      },
+    ]
+
+    libraries = common_libs
+
+    meta = [
+      {
+        path = rebase_path("meta/flutter_jit${product_suffix}_runner.cmx")
+        dest = "flutter_jit${product_suffix}_runner.cmx"
+      },
     ]
   }
+}
+
+template("aot_runner") {
+  product = defined(invoker.product) && invoker.product
+  product_suffix = ""
+  if (product) {
+    product_suffix = "_product"
+  }
+
+  package_dir(target_name) {
+    deps = [
+      ":aot${product_suffix}",
+    ]
+
+    if (!product) {
+      deps += [
+        "$flutter_root/shell/platform/fuchsia/runtime/dart/profiler_symbols:flutter_aot_runner",
+        observatory_target,
+      ]
+    }
+
+    meta_dir = "$flutter_root/shell/platform/fuchsia/flutter/meta"
+
+    binary = "flutter_aot${product_suffix}_runner"
+
+    resources = [
+      {
+        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        dest = "icudtl.dat"
+      },
+    ]
+
+    if (!product) {
+      resources += [
+        {
+          path = rebase_path(observatory_archive_file)
+          dest = "observatory.tar"
+        },
+        {
+          path = rebase_path(
+                  get_label_info(
+                      "$flutter_root/shell/platform/fuchsia/runtime/dart/profiler_symbols:flutter_aot_runner",
+                      "target_gen_dir") +
+                  "/flutter_aot_runner.dartprofilersymbols")
+          dest = "flutter_aot_runner.dartprofilersymbols"
+        },
+      ]
+    }
+
+    libraries = common_libs
+
+    meta = [
+      {
+        path = rebase_path("meta/flutter_aot${product_suffix}_runner.cmx")
+        dest = "flutter_aot${product_suffix}_runner.cmx"
+      },
+    ]
+  }
+}
+
+aot_runner("flutter_aot_runner") {
+  product = false
+}
+
+aot_runner("flutter_aot_product_runner") {
+  product = true
+}
+
+jit_runner("flutter_jit_runner") {
+  product = false
+}
+
+jit_runner("flutter_jit_product_runner") {
+  product = true
+}
+
+executable("flutter_runner_unittests") {
+  testonly = true
+
+  output_name = "flutter_runner_tests"
+
+  sources = [
+    "sample_unittests.cc",
+  ]
+
+  # This is needed for //third_party/googletest for linking zircon symbols.
+  libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+
+  deps = [
+    "//flutter/testing",
+  ]
+}
+
+package_dir("flutter_runner_tests") {
+  testonly = true
+
+  deps = [
+    ":flutter_runner_unittests",
+  ]
+
+  binary = "$target_name"
+
+  meta_dir = "$flutter_root/shell/platform/fuchsia/flutter/meta"
+
+  libraries = common_libs
+
+  meta = [
+    {
+      path = "meta/$target_name.cmx"
+      dest = "$target_name.cmx"
+    },
+  ]
 }

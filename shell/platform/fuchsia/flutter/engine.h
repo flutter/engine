@@ -31,10 +31,12 @@ class Engine final {
   Engine(Delegate& delegate,
          std::string thread_label,
          std::shared_ptr<sys::ServiceDirectory> svc,
+         std::shared_ptr<sys::ServiceDirectory> runner_services,
          flutter::Settings settings,
          fml::RefPtr<const flutter::DartSnapshot> isolate_snapshot,
-         fml::RefPtr<const flutter::DartSnapshot> shared_snapshot,
          fuchsia::ui::views::ViewToken view_token,
+         fuchsia::ui::views::ViewRefControl view_ref_control,
+         fuchsia::ui::views::ViewRef view_ref,
          UniqueFDIONS fdio_ns,
          fidl::InterfaceRequest<fuchsia::io::Directory> directory_request);
   ~Engine();
@@ -66,6 +68,8 @@ class Engine final {
   void OnSessionMetricsDidChange(const fuchsia::ui::gfx::Metrics& metrics);
   void OnSessionSizeChangeHint(float width_change_factor,
                                float height_change_factor);
+
+  void OnDebugWireframeSettingsChanged(bool enabled);
 
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);
 };

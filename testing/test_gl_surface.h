@@ -15,9 +15,11 @@ namespace testing {
 
 class TestGLSurface {
  public:
-  TestGLSurface();
+  TestGLSurface(SkISize surface_size);
 
   ~TestGLSurface();
+
+  const SkISize& GetSurfaceSize() const;
 
   bool MakeCurrent();
 
@@ -31,7 +33,13 @@ class TestGLSurface {
 
   void* GetProcAddress(const char* name) const;
 
-  sk_sp<GrContext> CreateContext();
+  sk_sp<SkSurface> GetOnscreenSurface();
+
+  sk_sp<GrContext> GetGrContext();
+
+  sk_sp<GrContext> CreateGrContext();
+
+  sk_sp<SkImage> GetRasterSurfaceSnapshot();
 
  private:
   // Importing the EGL.h pulls in platform headers which are problematic
@@ -42,11 +50,13 @@ class TestGLSurface {
   using EGLContext = void*;
   using EGLSurface = void*;
 
+  const SkISize surface_size_;
   EGLDisplay display_;
   EGLContext onscreen_context_;
   EGLContext offscreen_context_;
   EGLSurface onscreen_surface_;
   EGLSurface offscreen_surface_;
+  sk_sp<GrContext> context_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TestGLSurface);
 };

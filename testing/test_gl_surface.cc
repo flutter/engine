@@ -10,8 +10,11 @@
 #include <sstream>
 #include <string>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
+#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
+#include "third_party/skia/src/gpu/gl/GrGLDefines.h"
 
 namespace flutter {
 namespace testing {
@@ -77,7 +80,8 @@ static std::string GetEGLError() {
   return stream.str();
 }
 
-TestGLSurface::TestGLSurface() {
+TestGLSurface::TestGLSurface(SkISize surface_size)
+    : surface_size_(surface_size) {
   display_ = ::eglGetDisplay(EGL_DEFAULT_DISPLAY);
   FML_CHECK(display_ != EGL_NO_DISPLAY);
 
@@ -108,24 +112,31 @@ TestGLSurface::TestGLSurface() {
   FML_CHECK(num_config == 1) << GetEGLError();
 
   {
-    const EGLint surface_attributes[] = {
-        EGL_HEIGHT, 1,  //
-        EGL_WIDTH,  1,  //
+    const EGLint onscreen_surface_attributes[] = {
+        EGL_WIDTH,  surface_size_.width(),   //
+        EGL_HEIGHT, surface_size_.height(),  //
         EGL_NONE,
     };
 
-    onscreen_surface_ =
-        ::eglCreatePbufferSurface(display_,           // display connection
-                                  config,             // config
-                                  surface_attributes  // surface attributes
-        );
+    onscreen_surface_ = ::eglCreatePbufferSurface(
+        display_,                    // display connection
+        config,                      // config
+        onscreen_surface_attributes  // surface attributes
+    );
     FML_CHECK(onscreen_surface_ != EGL_NO_SURFACE) << GetEGLError();
+  }
 
-    offscreen_surface_ =
-        ::eglCreatePbufferSurface(display_,           // display connection
-                                  config,             // config
-                                  surface_attributes  // surface attributes
-        );
+  {
+    const EGLint offscreen_surface_attributes[] = {
+        EGL_WIDTH,  1,  //
+        EGL_HEIGHT, 1,  //
+        EGL_NONE,
+    };
+    offscreen_surface_ = ::eglCreatePbufferSurface(
+        display_,                     // display connection
+        config,                       // config
+        offscreen_surface_attributes  // surface attributes
+    );
     FML_CHECK(offscreen_surface_ != EGL_NO_SURFACE) << GetEGLError();
   }
 
@@ -155,6 +166,8 @@ TestGLSurface::TestGLSurface() {
 }
 
 TestGLSurface::~TestGLSurface() {
+  context_ = nullptr;
+
   auto result = ::eglDestroyContext(display_, onscreen_context_);
   FML_CHECK(result == EGL_TRUE) << GetEGLError();
 
@@ -169,6 +182,10 @@ TestGLSurface::~TestGLSurface() {
 
   result = ::eglTerminate(display_);
   FML_CHECK(result == EGL_TRUE);
+}
+
+const SkISize& TestGLSurface::GetSurfaceSize() const {
+  return surface_size_;
 }
 
 bool TestGLSurface::MakeCurrent() {
@@ -231,7 +248,17 @@ void* TestGLSurface::GetProcAddress(const char* name) const {
   return reinterpret_cast<void*>(symbol);
 }
 
-sk_sp<GrContext> TestGLSurface::CreateContext() {
+sk_sp<GrContext> TestGLSurface::GetGrContext() {
+  if (context_) {
+    return context_;
+  }
+
+  context_ = CreateGrContext();
+
+  return context_;
+}
+
+sk_sp<GrContext> TestGLSurface::CreateGrContext() {
   if (!MakeCurrent()) {
     return nullptr;
   }
@@ -263,7 +290,78 @@ sk_sp<GrContext> TestGLSurface::CreateContext() {
     return nullptr;
   }
 
-  return GrContext::MakeGL(interface);
+  context_ = GrContext::MakeGL(interface);
+  return context_;
+}
+
+sk_sp<SkSurface> TestGLSurface::GetOnscreenSurface() {
+  FML_CHECK(::eglGetCurrentContext() != EGL_NO_CONTEXT);
+
+  GrGLFramebufferInfo framebuffer_info = {};
+  framebuffer_info.fFBOID = GetFramebuffer();
+#if OS_MACOSX
+  framebuffer_info.fFormat = GR_GL_RGBA8;
+#else
+  framebuffer_info.fFormat = GR_GL_BGRA8;
+#endif
+
+  GrBackendRenderTarget backend_render_target(
+      surface_size_.width(),   // width
+      surface_size_.height(),  // height
+      1,                       // sample count
+      8,                       // stencil bits
+      framebuffer_info         // framebuffer info
+  );
+
+  SkSurfaceProps surface_properties(
+      SkSurfaceProps::InitType::kLegacyFontHost_InitType);
+
+  auto surface = SkSurface::MakeFromBackendRenderTarget(
+      GetGrContext().get(),         // context
+      backend_render_target,        // backend render target
+      kBottomLeft_GrSurfaceOrigin,  // surface origin
+      kN32_SkColorType,             // color type
+      SkColorSpace::MakeSRGB(),     // color space
+      &surface_properties,          // surface properties
+      nullptr,                      // release proc
+      nullptr                       // release context
+  );
+
+  if (!surface) {
+    FML_LOG(ERROR) << "Could not wrap the surface while attempting to "
+                      "snapshot the GL surface.";
+    return nullptr;
+  }
+
+  return surface;
+}
+
+sk_sp<SkImage> TestGLSurface::GetRasterSurfaceSnapshot() {
+  auto surface = GetOnscreenSurface();
+
+  if (!surface) {
+    FML_LOG(ERROR) << "Aborting snapshot because of on-screen surface "
+                      "acquisition failure.";
+    return nullptr;
+  }
+
+  auto device_snapshot = surface->makeImageSnapshot();
+
+  if (!device_snapshot) {
+    FML_LOG(ERROR) << "Could not create the device snapshot while attempting "
+                      "to snapshot the GL surface.";
+    return nullptr;
+  }
+
+  auto host_snapshot = device_snapshot->makeRasterImage();
+
+  if (!host_snapshot) {
+    FML_LOG(ERROR) << "Could not create the host snapshot while attempting to "
+                      "snapshot the GL surface.";
+    return nullptr;
+  }
+
+  return host_snapshot;
 }
 
 }  // namespace testing

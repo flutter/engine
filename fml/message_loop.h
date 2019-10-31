@@ -34,13 +34,13 @@ class MessageLoop {
   // instead of dedicating a thread to the message loop.
   void RunExpiredTasksNow();
 
-  void SwapTaskQueues(MessageLoop* other);
-
   static void EnsureInitializedForCurrentThread();
 
   static bool IsInitializedForCurrentThread();
 
   ~MessageLoop();
+
+  static TaskQueueId GetCurrentTaskQueueId();
 
  private:
   friend class TaskRunner;

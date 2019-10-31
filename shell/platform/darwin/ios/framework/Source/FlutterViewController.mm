@@ -25,11 +25,28 @@
 
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
 
+NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
+
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
 @interface FlutterViewController () <FlutterBinaryMessenger>
+@property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @end
+
+// The following conditional compilation defines an API 13 concept on earlier API targets so that
+// a compiler compiling against API 12 or below does not blow up due to non-existent members.
+#if __IPHONE_OS_VERSION_MAX_ALLOWED < 130000
+typedef enum UIAccessibilityContrast : NSInteger {
+  UIAccessibilityContrastUnspecified = 0,
+  UIAccessibilityContrastNormal = 1,
+  UIAccessibilityContrastHigh = 2
+} UIAccessibilityContrast;
+
+@interface UITraitCollection (MethodsFromNewerSDK)
+- (UIAccessibilityContrast)accessibilityContrast;
+@end
+#endif
 
 @implementation FlutterViewController {
   std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
@@ -49,13 +66,15 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   NSMutableSet<NSNumber*>* _ongoingTouches;
 }
 
+@synthesize displayingFlutterUI = _displayingFlutterUI;
+
 #pragma mark - Manage and override all designated initializers
 
 - (instancetype)initWithEngine:(FlutterEngine*)engine
-                       nibName:(NSString*)nibNameOrNil
-                        bundle:(NSBundle*)nibBundleOrNil {
+                       nibName:(nullable NSString*)nibName
+                        bundle:(nullable NSBundle*)nibBundle {
   NSAssert(engine != nil, @"Engine is required");
-  self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+  self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
     _viewOpaque = YES;
     _engine.reset([engine retain]);
@@ -71,15 +90,15 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   return self;
 }
 
-- (instancetype)initWithProject:(FlutterDartProject*)projectOrNil
-                        nibName:(NSString*)nibNameOrNil
-                         bundle:(NSBundle*)nibBundleOrNil {
-  self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+- (instancetype)initWithProject:(nullable FlutterDartProject*)project
+                        nibName:(nullable NSString*)nibName
+                         bundle:(nullable NSBundle*)nibBundle {
+  self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
     _viewOpaque = YES;
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter"
-                                              project:projectOrNil
+                                              project:project
                                allowHeadlessExecution:NO]);
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     [_engine.get() createShell:nil libraryURI:nil];
@@ -263,45 +282,70 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   [self.view addSubview:splashScreenView];
 }
 
-- (void)removeSplashScreenViewIfPresent {
-  if (!_splashScreenView) {
-    return;
-  }
++ (BOOL)automaticallyNotifiesObserversOfDisplayingFlutterUI {
+  return NO;
+}
 
+- (void)setDisplayingFlutterUI:(BOOL)displayingFlutterUI {
+  if (_displayingFlutterUI != displayingFlutterUI) {
+    if (displayingFlutterUI == YES) {
+      if (!self.isViewLoaded || !self.view.window) {
+        return;
+      }
+    }
+    [self willChangeValueForKey:@"displayingFlutterUI"];
+    _displayingFlutterUI = displayingFlutterUI;
+    [self didChangeValueForKey:@"displayingFlutterUI"];
+  }
+}
+
+- (void)callViewRenderedCallback {
+  self.displayingFlutterUI = YES;
+  if (_flutterViewRenderedCallback != nil) {
+    _flutterViewRenderedCallback.get()();
+    _flutterViewRenderedCallback.reset();
+  }
+}
+
+- (void)removeSplashScreenView:(dispatch_block_t _Nullable)onComplete {
+  NSAssert(_splashScreenView, @"The splash screen view must not be null");
+  UIView* splashScreen = _splashScreenView.get();
+  _splashScreenView.reset();
   [UIView animateWithDuration:0.2
       animations:^{
-        _splashScreenView.get().alpha = 0;
+        splashScreen.alpha = 0;
       }
       completion:^(BOOL finished) {
-        [_splashScreenView.get() removeFromSuperview];
-        _splashScreenView.reset();
-        if (_flutterViewRenderedCallback != nil) {
-          _flutterViewRenderedCallback.get()();
-          _flutterViewRenderedCallback.reset();
+        [splashScreen removeFromSuperview];
+        if (onComplete) {
+          onComplete();
         }
       }];
 }
 
-- (void)installSplashScreenViewCallback {
-  if (!_splashScreenView) {
+- (void)installFirstFrameCallback {
+  fml::WeakPtr<flutter::PlatformViewIOS> weakPlatformView = [_engine.get() platformView];
+  if (!weakPlatformView) {
     return;
   }
-  auto weak_platform_view = [_engine.get() platformView];
-  if (!weak_platform_view) {
-    return;
-  }
-  __unsafe_unretained auto weak_flutter_view_controller = self;
-  // This is on the platform thread.
-  weak_platform_view->SetNextFrameCallback([weak_platform_view, weak_flutter_view_controller,
-                                            task_runner = [_engine.get() platformTaskRunner]]() {
-    // This is on the GPU thread.
-    task_runner->PostTask([weak_platform_view, weak_flutter_view_controller]() {
-      // We check if the weak platform view is alive. If it is alive, then the view controller
-      // also has to be alive since the view controller owns the platform view via the shell
-      // association. Thus, we are not convinced that the unsafe unretained weak object is in
-      // fact alive.
-      if (weak_platform_view) {
-        [weak_flutter_view_controller removeSplashScreenViewIfPresent];
+
+  // Start on the platform thread.
+  weakPlatformView->SetNextFrameCallback([weakSelf = [self getWeakPtr],
+                                          platformTaskRunner = [_engine.get() platformTaskRunner],
+                                          gpuTaskRunner = [_engine.get() GPUTaskRunner]]() {
+    FML_DCHECK(gpuTaskRunner->RunsTasksOnCurrentThread());
+    // Get callback on GPU thread and jump back to platform thread.
+    platformTaskRunner->PostTask([weakSelf]() {
+      fml::scoped_nsobject<FlutterViewController> flutterViewController(
+          [(FlutterViewController*)weakSelf.get() retain]);
+      if (flutterViewController) {
+        if (flutterViewController.get()->_splashScreenView) {
+          [flutterViewController removeSplashScreenView:^{
+            [flutterViewController callViewRenderedCallback];
+          }];
+        } else {
+          [flutterViewController callViewRenderedCallback];
+        }
       }
     });
   });
@@ -363,8 +407,9 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 - (void)setSplashScreenView:(UIView*)view {
   if (!view) {
     // Special case: user wants to remove the splash screen view.
-    [self removeSplashScreenViewIfPresent];
-    _splashScreenView.reset();
+    if (_splashScreenView) {
+      [self removeSplashScreenView:nil];
+    }
     return;
   }
 
@@ -382,11 +427,12 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 - (void)surfaceUpdated:(BOOL)appeared {
   // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and GPU thread.
   if (appeared) {
-    [self installSplashScreenViewCallback];
+    [self installFirstFrameCallback];
     [_engine.get() platformViewsController] -> SetFlutterView(_flutterView.get());
     [_engine.get() platformViewsController] -> SetFlutterViewController(self);
     [_engine.get() platformView] -> NotifyCreated();
   } else {
+    self.displayingFlutterUI = NO;
     [_engine.get() platformView] -> NotifyDestroyed();
     [_engine.get() platformViewsController] -> SetFlutterView(nullptr);
     [_engine.get() platformViewsController] -> SetFlutterViewController(nullptr);
@@ -403,6 +449,9 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     [_engine.get() setViewController:self];
     _engineNeedsLaunch = NO;
   }
+
+  // Send platform settings to Flutter, e.g., platform brightness.
+  [self onUserSettingsChanged:nil];
 
   // Only recreate surface on subsequent appearances when viewport metrics are known.
   // First time surface creation is done on viewDidLayoutSubviews.
@@ -474,8 +523,11 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 }
 
 - (void)dealloc {
-  [_engine.get() notifyViewControllerDeallocated];
+  [[NSNotificationCenter defaultCenter] postNotificationName:FlutterViewControllerWillDealloc
+                                                      object:self
+                                                    userInfo:nil];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+  [_ongoingTouches release];
   [super dealloc];
 }
 
@@ -485,23 +537,32 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   TRACE_EVENT0("flutter", "applicationBecameActive");
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
   [self surfaceUpdated:NO];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.paused"];
 }
 
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
+}
+
+// Make this transition only while this current view controller is visible.
+- (void)goToApplicationLifecycle:(nonnull NSString*)state {
+  // Accessing self.view will create the view. Check whether the view is organically loaded
+  // first before checking whether the view is attached to window.
+  if (self.isViewLoaded && self.view.window) {
+    [[_engine.get() lifecycleChannel] sendMessage:state];
+  }
 }
 
 #pragma mark - Touch event handling
@@ -855,10 +916,17 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma mark - Set user settings
 
+- (void)traitCollectionDidChange:(UITraitCollection*)previousTraitCollection {
+  [super traitCollectionDidChange:previousTraitCollection];
+  [self onUserSettingsChanged:nil];
+}
+
 - (void)onUserSettingsChanged:(NSNotification*)notification {
   [[_engine.get() settingsChannel] sendMessage:@{
     @"textScaleFactor" : @([self textScaleFactor]),
     @"alwaysUse24HourFormat" : @([self isAlwaysUse24HourFormat]),
+    @"platformBrightness" : [self brightnessMode],
+    @"platformContrast" : [self contrastMode]
   }];
 }
 
@@ -930,6 +998,40 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                                                          options:0
                                                           locale:[NSLocale currentLocale]];
   return [dateFormat rangeOfString:@"a"].location == NSNotFound;
+}
+
+// The brightness mode of the platform, e.g., light or dark, expressed as a string that
+// is understood by the Flutter framework. See the settings system channel for more
+// information.
+- (NSString*)brightnessMode {
+  if (@available(iOS 13, *)) {
+    UIUserInterfaceStyle style = self.traitCollection.userInterfaceStyle;
+
+    if (style == UIUserInterfaceStyleDark) {
+      return @"dark";
+    } else {
+      return @"light";
+    }
+  } else {
+    return @"light";
+  }
+}
+
+// The contrast mode of the platform, e.g., normal or high, expressed as a string that is
+// understood by the Flutter framework. See the settings system channel for more
+// information.
+- (NSString*)contrastMode {
+  if (@available(iOS 13, *)) {
+    UIAccessibilityContrast contrast = self.traitCollection.accessibilityContrast;
+
+    if (contrast == UIAccessibilityContrastHigh) {
+      return @"high";
+    } else {
+      return @"normal";
+    }
+  } else {
+    return @"normal";
+  }
 }
 
 #pragma mark - Status Bar touch event handling

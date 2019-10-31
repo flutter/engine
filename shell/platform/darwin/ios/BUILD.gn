@@ -136,9 +136,13 @@ shared_library("create_flutter_framework_dylib") {
   ]
 }
 
-copy("copy_framework_dylib") {
+action("copy_dylib_and_update_framework_install_name") {
   visibility = [ ":*" ]
+  script = "$flutter_root/sky/tools/change_install_name.py"
 
+  inputs = [
+    script,
+  ]
   sources = [
     "$root_out_dir/libFlutter.dylib",
   ]
@@ -146,44 +150,33 @@ copy("copy_framework_dylib") {
     "$_flutter_framework_dir/Flutter",
   ]
 
+  args = [
+    "--dylib",
+    rebase_path(sources[0]),
+    "--install_name",
+    "@rpath/Flutter.framework/Flutter",
+    "--output",
+    rebase_path(outputs[0]),
+  ]
+
   deps = [
     ":create_flutter_framework_dylib",
   ]
 }
 
-action("copy_dylib_and_update_framework_install_name") {
-  visibility = [ ":*" ]
-  stamp_file = "$root_out_dir/flutter_install_name_stamp"
-  script = "$flutter_root/sky/tools/change_install_name.py"
-
-  inputs = [
-    "$_flutter_framework_dir/Flutter",
-  ]
-  outputs = [
-    stamp_file,
-  ]
-
-  args = [
-    "--dylib",
-    rebase_path("$_flutter_framework_dir/Flutter"),
-    "--install_name",
-    "@rpath/Flutter.framework/Flutter",
-    "--stamp",
-    rebase_path(stamp_file),
-  ]
-
-  deps = [
-    ":copy_framework_dylib",
-  ]
-}
-
-copy("copy_framework_info_plist") {
+action("copy_framework_info_plist") {
+  script = "$flutter_root/build/copy_info_plist.py"
   visibility = [ ":*" ]
   sources = [
     "framework/Info.plist",
   ]
   outputs = [
     "$_flutter_framework_dir/Info.plist",
+  ]
+  args = [
+    rebase_path(sources[0]),
+    rebase_path(outputs[0]),
+    "--bitcode=$flutter_enable_bitcode",
   ]
 }
 

@@ -54,7 +54,7 @@ source_set("flutter_glfw") {
     ":flutter_glfw_headers",
     "$flutter_root/shell/platform/common/cpp:common_cpp",
     "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper",
-    "$flutter_root/shell/platform/embedder:embedder",
+    "$flutter_root/shell/platform/embedder:embedder_with_symbol_prefix",
     "$flutter_root/shell/platform/glfw/client_wrapper:client_wrapper_glfw",
     "//build/secondary/third_party/glfw",
     "//third_party/rapidjson",
@@ -63,10 +63,7 @@ source_set("flutter_glfw") {
   if (is_linux) {
     libs = [ "GL" ]
 
-    configs += [
-      "$flutter_root/shell/platform/linux/config:gtk3",
-      "$flutter_root/shell/platform/linux/config:x11",
-    ]
+    configs += [ "$flutter_root/shell/platform/linux/config:x11" ]
   } else if (is_mac) {
     libs = [
       "CoreVideo.framework",

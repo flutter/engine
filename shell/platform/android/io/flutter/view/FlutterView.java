@@ -5,11 +5,13 @@
 package io.flutter.view;
 
 import android.annotation.TargetApi;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Insets;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
@@ -22,12 +24,26 @@ import android.support.annotation.UiThread;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.*;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.view.Surface;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.View;
+import android.view.WindowInsets;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicLong;
+
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.android.AndroidTouchProcessor;
@@ -42,15 +58,11 @@ import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
-import io.flutter.plugin.common.*;
+import io.flutter.plugin.common.ActivityLifecycleListener;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * An Android view containing a Flutter app.
@@ -90,6 +102,10 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         int physicalViewInsetRight = 0;
         int physicalViewInsetBottom = 0;
         int physicalViewInsetLeft = 0;
+        int systemGestureInsetTop = 0;
+        int systemGestureInsetRight = 0;
+        int systemGestureInsetBottom = 0;
+        int systemGestureInsetLeft = 0;
     }
 
     private final DartExecutor dartExecutor;
@@ -113,6 +129,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     private final AtomicLong nextTextureId = new AtomicLong(0L);
     private FlutterNativeView mNativeView;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
+    private boolean didRenderFirstFrame = false;
 
     private final AccessibilityBridge.OnAccessibilityChangeListener onAccessibilityChangeListener = new AccessibilityBridge.OnAccessibilityChangeListener() {
         @Override
@@ -188,7 +205,12 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
         // Create and setup plugins
         PlatformPlugin platformPlugin = new PlatformPlugin(activity, platformChannel);
-        addActivityLifecycleListener(platformPlugin);
+        addActivityLifecycleListener(new ActivityLifecycleListener() {
+            @Override
+            public void onPostResume() {
+                platformPlugin.updateSystemUiOverlays();
+            }
+        });
         mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         PlatformViewsController platformViewsController = mNativeView.getPluginRegistry().getPlatformViewsController();
         mTextInputPlugin = new TextInputPlugin(this, dartExecutor, platformViewsController);
@@ -282,6 +304,14 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     }
 
     /**
+     * Returns true if the Flutter experience associated with this {@code FlutterView} has
+     * rendered its first frame, or false otherwise.
+     */
+    public boolean hasRenderedFirstFrame() {
+        return didRenderFirstFrame;
+    }
+
+    /**
      * Provide a listener that will be called once when the FlutterView renders its
      * first frame to the underlaying SurfaceView.
      */
@@ -301,8 +331,12 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
      *
      * Sets it on top of its window. The background color still needs to be
      * controlled from within the Flutter UI itself.
+     *
+     * @deprecated This breaks accessibility highlighting. See https://github.com/flutter/flutter/issues/37025.
      */
+    @Deprecated
     public void enableTransparentBackground() {
+        Log.w(TAG, "Warning: FlutterView is set on top of the window. Accessibility highlights will not be visible in the Flutter UI. https://github.com/flutter/flutter/issues/37025");
         setZOrderOnTop(true);
         getHolder().setFormat(PixelFormat.TRANSPARENT);
     }
@@ -514,9 +548,13 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
     // This callback is not present in API < 20, which means lower API devices will see
     // the wider than expected padding when the status and navigation bars are hidden.
+    // The annotations to suppress "InlinedApi" and "NewApi" lints prevent lint warnings
+    // caused by usage of Android Q APIs. These calls are safe because they are
+    // guarded.
     @Override
     @TargetApi(20)
     @RequiresApi(20)
+    @SuppressLint({"InlinedApi", "NewApi"})
     public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
         boolean statusBarHidden =
             (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;
@@ -546,6 +584,14 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         mMetrics.physicalViewInsetBottom =
             navigationBarHidden ? calculateBottomKeyboardInset(insets) : insets.getSystemWindowInsetBottom();
         mMetrics.physicalViewInsetLeft = 0;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Insets systemGestureInsets = insets.getSystemGestureInsets();
+            mMetrics.systemGestureInsetTop = systemGestureInsets.top;
+            mMetrics.systemGestureInsetRight = systemGestureInsets.right;
+            mMetrics.systemGestureInsetBottom = systemGestureInsets.bottom;
+            mMetrics.systemGestureInsetLeft = systemGestureInsets.left;
+        }
         updateViewportMetrics();
         return super.onApplyWindowInsets(insets);
     }
@@ -614,37 +660,29 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     private void updateViewportMetrics() {
         if (!isAttached())
             return;
-        mNativeView.getFlutterJNI().setViewportMetrics(mMetrics.devicePixelRatio, mMetrics.physicalWidth,
-                mMetrics.physicalHeight, mMetrics.physicalPaddingTop, mMetrics.physicalPaddingRight,
-                mMetrics.physicalPaddingBottom, mMetrics.physicalPaddingLeft, mMetrics.physicalViewInsetTop,
-                mMetrics.physicalViewInsetRight, mMetrics.physicalViewInsetBottom, mMetrics.physicalViewInsetLeft);
+        mNativeView.getFlutterJNI().setViewportMetrics(
+            mMetrics.devicePixelRatio,
+            mMetrics.physicalWidth,
+            mMetrics.physicalHeight,
+            mMetrics.physicalPaddingTop,
+            mMetrics.physicalPaddingRight,
+            mMetrics.physicalPaddingBottom,
+            mMetrics.physicalPaddingLeft,
+            mMetrics.physicalViewInsetTop,
+            mMetrics.physicalViewInsetRight,
+            mMetrics.physicalViewInsetBottom,
+            mMetrics.physicalViewInsetLeft,
+            mMetrics.systemGestureInsetTop,
+            mMetrics.systemGestureInsetRight,
+            mMetrics.systemGestureInsetBottom,
+            mMetrics.systemGestureInsetLeft
+        );
     }
 
-    // Called by native to update the semantics/accessibility tree.
-    public void updateSemantics(ByteBuffer buffer, String[] strings) {
-        try {
-            if (mAccessibilityNodeProvider != null) {
-                buffer.order(ByteOrder.LITTLE_ENDIAN);
-                mAccessibilityNodeProvider.updateSemantics(buffer, strings);
-            }
-        } catch (Exception ex) {
-            Log.e(TAG, "Uncaught exception while updating semantics", ex);
-        }
-    }
-
-    public void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
-        try {
-            if (mAccessibilityNodeProvider != null) {
-                buffer.order(ByteOrder.LITTLE_ENDIAN);
-                mAccessibilityNodeProvider.updateCustomAccessibilityActions(buffer, strings);
-            }
-        } catch (Exception ex) {
-            Log.e(TAG, "Uncaught exception while updating local context actions", ex);
-        }
-    }
-
-    // Called by native to notify first Flutter frame rendered.
+    // Called by FlutterNativeView to notify first Flutter frame rendered.
     public void onFirstFrame() {
+        didRenderFirstFrame = true;
+
         // Allow listeners to remove themselves when they are called.
         List<FirstFrameListener> listeners = new ArrayList<>(mFirstFrameListeners);
         for (FirstFrameListener listener : listeners) {

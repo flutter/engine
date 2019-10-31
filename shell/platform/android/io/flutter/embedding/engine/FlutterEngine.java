@@ -20,6 +20,7 @@ import io.flutter.embedding.engine.plugins.broadcastreceiver.BroadcastReceiverCo
 import io.flutter.embedding.engine.plugins.contentprovider.ContentProviderControlSurface;
 import io.flutter.embedding.engine.plugins.service.ServiceControlSurface;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
+import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
@@ -51,8 +52,8 @@ import io.flutter.plugin.platform.PlatformViewsController;
  * invoked twice on the same {@code FlutterEngine}.
  *
  * To start rendering Flutter content to the screen, use {@link #getRenderer()} to obtain a
- * {@link FlutterRenderer} and then attach a {@link FlutterRenderer.RenderSurface}.  Consider using
- * a {@link io.flutter.embedding.android.FlutterView} as a {@link FlutterRenderer.RenderSurface}.
+ * {@link FlutterRenderer} and then attach a {@link RenderSurface}.  Consider using
+ * a {@link io.flutter.embedding.android.FlutterView} as a {@link RenderSurface}.
  */
 // TODO(mattcarroll): re-evaluate system channel APIs - some are not well named or differentiated
 public class FlutterEngine implements LifecycleOwner {
@@ -110,13 +111,16 @@ public class FlutterEngine implements LifecycleOwner {
   /**
    * Constructs a new {@code FlutterEngine}.
    *
+   * {@code FlutterMain.startInitialization} must be called before constructing a {@code FlutterEngine}
+   * to load the native libraries needed to attach to JNI.
+   *
    * A new {@code FlutterEngine} does not execute any Dart code automatically. See
    * {@link #getDartExecutor()} and {@link DartExecutor#executeDartEntrypoint(DartExecutor.DartEntrypoint)}
    * to begin executing Dart code within this {@code FlutterEngine}.
    *
    * A new {@code FlutterEngine} will not display any UI until a
-   * {@link io.flutter.embedding.engine.renderer.FlutterRenderer.RenderSurface} is registered. See
-   * {@link #getRenderer()} and {@link FlutterRenderer#attachToRenderSurface(FlutterRenderer.RenderSurface)}.
+   * {@link RenderSurface} is registered. See
+   * {@link #getRenderer()} and {@link FlutterRenderer#startRenderingToSurface(RenderSurface)}.
    *
    * A new {@code FlutterEngine} does not come with any Flutter plugins attached. To attach plugins,
    * see {@link #getPlugins()}.
@@ -128,7 +132,7 @@ public class FlutterEngine implements LifecycleOwner {
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
     attachToJni();
 
-    this.dartExecutor = new DartExecutor(flutterJNI);
+    this.dartExecutor = new DartExecutor(flutterJNI, context.getAssets());
     this.dartExecutor.onAttachedToJNI();
 
     // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if possible.
@@ -218,7 +222,7 @@ public class FlutterEngine implements LifecycleOwner {
    * The rendering system associated with this {@code FlutterEngine}.
    *
    * To render a Flutter UI that is produced by this {@code FlutterEngine}'s Dart code, attach
-   * a {@link io.flutter.embedding.engine.renderer.FlutterRenderer.RenderSurface} to this
+   * a {@link RenderSurface} to this
    * {@link FlutterRenderer}.
    */
   @NonNull

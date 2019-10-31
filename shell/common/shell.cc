@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #define RAPIDJSON_HAS_STDSTRING 1
-
 #include "flutter/shell/common/shell.h"
 
 #include <memory>
@@ -11,6 +10,7 @@
 #include <vector>
 
 #include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/common/runtime.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/icu_util.h"
 #include "flutter/fml/log_settings.h"
@@ -27,6 +27,8 @@
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/vsync_waiter.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/skia/include/core/SkGraphics.h"
 #include "third_party/tonic/common/log.h"
@@ -34,6 +36,9 @@
 namespace flutter {
 
 constexpr char kSkiaChannel[] = "flutter/skia";
+constexpr char kSystemChannel[] = "flutter/system";
+constexpr char kTypeKey[] = "type";
+constexpr char kFontChange[] = "fontsChange";
 
 std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     DartVMRef vm,
@@ -50,6 +55,18 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
 
   auto shell =
       std::unique_ptr<Shell>(new Shell(std::move(vm), task_runners, settings));
+
+  // Create the rasterizer on the GPU thread.
+  std::promise<std::unique_ptr<Rasterizer>> rasterizer_promise;
+  auto rasterizer_future = rasterizer_promise.get_future();
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners.GetGPUTaskRunner(), [&rasterizer_promise,   //
+                                        on_create_rasterizer,  //
+                                        shell = shell.get()    //
+  ]() {
+        TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
+        rasterizer_promise.set_value(on_create_rasterizer(*shell));
+      });
 
   // Create the platform view on the platform thread (this thread).
   auto platform_view = on_create_platform_view(*shell.get());
@@ -68,57 +85,41 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // first because it has state that the other subsystems depend on. It must
   // first be booted and the necessary references obtained to initialize the
   // other subsystems.
-  fml::AutoResetWaitableEvent io_latch;
-  std::unique_ptr<ShellIOManager> io_manager;
+  std::promise<std::unique_ptr<ShellIOManager>> io_manager_promise;
+  auto io_manager_future = io_manager_promise.get_future();
+  std::promise<fml::WeakPtr<ShellIOManager>> weak_io_manager_promise;
+  auto weak_io_manager_future = weak_io_manager_promise.get_future();
   auto io_task_runner = shell->GetTaskRunners().GetIOTaskRunner();
   fml::TaskRunner::RunNowOrPostTask(
       io_task_runner,
-      [&io_latch,       //
-       &io_manager,     //
-       &platform_view,  //
-       io_task_runner   //
+      [&io_manager_promise,                          //
+       &weak_io_manager_promise,                     //
+       platform_view = platform_view->GetWeakPtr(),  //
+       io_task_runner                                //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupIOSubsystem");
-        io_manager = std::make_unique<ShellIOManager>(
+        auto io_manager = std::make_unique<ShellIOManager>(
             platform_view->CreateResourceContext(), io_task_runner);
-        io_latch.Signal();
-      });
-  io_latch.Wait();
-
-  // Create the rasterizer on the GPU thread.
-  fml::AutoResetWaitableEvent gpu_latch;
-  std::unique_ptr<Rasterizer> rasterizer;
-  fml::WeakPtr<SnapshotDelegate> snapshot_delegate;
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners.GetGPUTaskRunner(), [&gpu_latch,            //
-                                        &rasterizer,           //
-                                        on_create_rasterizer,  //
-                                        shell = shell.get(),   //
-                                        &snapshot_delegate     //
-  ]() {
-        TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
-        if (auto new_rasterizer = on_create_rasterizer(*shell)) {
-          rasterizer = std::move(new_rasterizer);
-          snapshot_delegate = rasterizer->GetSnapshotDelegate();
-        }
-        gpu_latch.Signal();
+        weak_io_manager_promise.set_value(io_manager->GetWeakPtr());
+        io_manager_promise.set_value(std::move(io_manager));
       });
 
-  gpu_latch.Wait();
+  // Send dispatcher_maker to the engine constructor because shell won't have
+  // platform_view set until Shell::Setup is called later.
+  auto dispatcher_maker = platform_view->GetDispatcherMaker();
 
   // Create the engine on the UI thread.
-  fml::AutoResetWaitableEvent ui_latch;
-  std::unique_ptr<Engine> engine;
+  std::promise<std::unique_ptr<Engine>> engine_promise;
+  auto engine_future = engine_promise.get_future();
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetUITaskRunner(),
-      fml::MakeCopyable([&ui_latch,                                         //
-                         &engine,                                           //
-                         shell = shell.get(),                               //
-                         isolate_snapshot = std::move(isolate_snapshot),    //
-                         shared_snapshot = std::move(shared_snapshot),      //
-                         vsync_waiter = std::move(vsync_waiter),            //
-                         snapshot_delegate = std::move(snapshot_delegate),  //
-                         io_manager = io_manager->GetWeakPtr()              //
+      fml::MakeCopyable([&engine_promise,                                 //
+                         shell = shell.get(),                             //
+                         &dispatcher_maker,                               //
+                         isolate_snapshot = std::move(isolate_snapshot),  //
+                         shared_snapshot = std::move(shared_snapshot),    //
+                         vsync_waiter = std::move(vsync_waiter),          //
+                         &weak_io_manager_future                          //
   ]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
         const auto& task_runners = shell->GetTaskRunners();
@@ -128,27 +129,23 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
         auto animator = std::make_unique<Animator>(*shell, task_runners,
                                                    std::move(vsync_waiter));
 
-        engine = std::make_unique<Engine>(*shell,                        //
-                                          *shell->GetDartVM(),           //
-                                          std::move(isolate_snapshot),   //
-                                          std::move(shared_snapshot),    //
-                                          task_runners,                  //
-                                          shell->GetSettings(),          //
-                                          std::move(animator),           //
-                                          std::move(snapshot_delegate),  //
-                                          std::move(io_manager)          //
-        );
-        ui_latch.Signal();
+        engine_promise.set_value(std::make_unique<Engine>(
+            *shell,                       //
+            dispatcher_maker,             //
+            *shell->GetDartVM(),          //
+            std::move(isolate_snapshot),  //
+            std::move(shared_snapshot),   //
+            task_runners,                 //
+            shell->GetSettings(),         //
+            std::move(animator),          //
+            weak_io_manager_future.get()  //
+            ));
       }));
 
-  ui_latch.Wait();
-  // We are already on the platform thread. So there is no platform latch to
-  // wait on.
-
   if (!shell->Setup(std::move(platform_view),  //
-                    std::move(engine),         //
-                    std::move(rasterizer),     //
-                    std::move(io_manager))     //
+                    engine_future.get(),       //
+                    rasterizer_future.get(),   //
+                    io_manager_future.get())   //
   ) {
     return nullptr;
   }
@@ -377,6 +374,79 @@ void Shell::NotifyLowMemoryWarning() const {
   // to purge them.
 }
 
+void Shell::RunEngine(RunConfiguration run_configuration) {
+  RunEngine(std::move(run_configuration), nullptr);
+}
+
+void Shell::RunEngine(RunConfiguration run_configuration,
+                      std::function<void(Engine::RunStatus)> result_callback) {
+  auto result = [platform_runner = task_runners_.GetPlatformTaskRunner(),
+                 result_callback](Engine::RunStatus run_result) {
+    if (!result_callback) {
+      return;
+    }
+    platform_runner->PostTask(
+        [result_callback, run_result]() { result_callback(run_result); });
+  };
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  if (!weak_engine_) {
+    result(Engine::RunStatus::Failure);
+  }
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      fml::MakeCopyable(
+          [run_configuration = std::move(run_configuration),
+           weak_engine = weak_engine_, result]() mutable {
+            if (!weak_engine) {
+              FML_LOG(ERROR)
+                  << "Could not launch engine with configuration - no engine.";
+              result(Engine::RunStatus::Failure);
+              return;
+            }
+            auto run_result = weak_engine->Run(std::move(run_configuration));
+            if (run_result == flutter::Engine::RunStatus::Failure) {
+              FML_LOG(ERROR) << "Could not launch engine with configuration.";
+            }
+            result(run_result);
+          }));
+}
+
+std::optional<DartErrorCode> Shell::GetUIIsolateLastError() const {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  // We're using the unique_ptr here because we're sure we're on the Platform
+  // Thread and callers expect this to be synchronous.
+  if (!engine_) {
+    return std::nullopt;
+  }
+  switch (engine_->GetUIIsolateLastError()) {
+    case tonic::kCompilationErrorType:
+      return DartErrorCode::CompilationError;
+    case tonic::kApiErrorType:
+      return DartErrorCode::ApiError;
+    case tonic::kUnknownErrorType:
+      return DartErrorCode::UnknownError;
+    case tonic::kNoError:
+      return DartErrorCode::NoError;
+  }
+  return DartErrorCode::UnknownError;
+}
+
+bool Shell::EngineHasLivePorts() const {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  // We're using the unique_ptr here because we're sure we're on the Platform
+  // Thread and callers expect this to be synchronous.
+  if (!engine_) {
+    return false;
+  }
+  return engine_->UIIsolateHasLivePorts();
+}
+
 bool Shell::IsSetup() const {
   return is_setup_;
 }
@@ -414,6 +484,9 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   PersistentCache::GetCacheForProcess()->SetIsDumpingSkp(
       settings_.dump_skp_on_shader_compilation);
 
+  // Shell::Setup is running on the UI thread so we can do the following.
+  display_refresh_rate_ = weak_engine_->GetDisplayRefreshRate();
+
   return true;
 }
 
@@ -430,10 +503,14 @@ fml::WeakPtr<Rasterizer> Shell::GetRasterizer() {
   return weak_rasterizer_;
 }
 
+// TODO(dnfield): Remove this when either Topaz is up to date or flutter_runner
+// is built out of this repo.
+#ifdef OS_FUCHSIA
 fml::WeakPtr<Engine> Shell::GetEngine() {
   FML_DCHECK(is_setup_);
   return weak_engine_;
 }
+#endif  // OS_FUCHSIA
 
 fml::WeakPtr<PlatformView> Shell::GetPlatformView() {
   FML_DCHECK(is_setup_);
@@ -611,6 +688,16 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  // This is the formula Android uses.
+  // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
+  size_t max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [rasterizer = rasterizer_->GetWeakPtr(), max_bytes] {
+        if (rasterizer) {
+          rasterizer->SetResourceCacheMaxBytes(max_bytes, false);
+        }
+      });
+
   task_runners_.GetUITaskRunner()->PostTask(
       [engine = engine_->GetWeakPtr(), metrics]() {
         if (engine) {
@@ -640,11 +727,11 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = engine_->GetWeakPtr(), packet = std::move(packet),
-       flow_id = next_pointer_flow_id_] {
+  task_runners_.GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([engine = weak_engine_, packet = std::move(packet),
+                         flow_id = next_pointer_flow_id_]() mutable {
         if (engine) {
-          engine->DispatchPointerDataPacket(*packet, flow_id);
+          engine->DispatchPointerDataPacket(std::move(packet), flow_id);
         }
       }));
   next_pointer_flow_id_++;
@@ -868,10 +955,18 @@ void Shell::HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message) {
     return;
 
   task_runners_.GetGPUTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr(),
-       max_bytes = args->value.GetInt()] {
+      [rasterizer = rasterizer_->GetWeakPtr(), max_bytes = args->value.GetInt(),
+       response = std::move(message->response())] {
         if (rasterizer) {
-          rasterizer->SetResourceCacheMaxBytes(max_bytes);
+          rasterizer->SetResourceCacheMaxBytes(static_cast<size_t>(max_bytes),
+                                               true);
+        }
+        if (response) {
+          // The framework side expects this to be valid json encoded as a list.
+          // Return `[true]` to signal success.
+          std::vector<uint8_t> data = {'[', 't', 'r', 'u', 'e', ']'};
+          response->Complete(
+              std::make_unique<fml::DataMapping>(std::move(data)));
         }
       });
 }
@@ -912,7 +1007,7 @@ void Shell::ReportTimings() {
 
   auto timings = std::move(unreported_timings_);
   unreported_timings_ = {};
-  task_runners_.GetUITaskRunner()->PostTask([timings, engine = GetEngine()] {
+  task_runners_.GetUITaskRunner()->PostTask([timings, engine = weak_engine_] {
     if (engine) {
       engine->ReportTimings(std::move(timings));
     }
@@ -961,7 +1056,7 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     first_frame_rasterized_ = true;
     ReportTimings();
   } else if (!frame_timings_report_scheduled_) {
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+#if FLUTTER_RELEASE
     constexpr int kBatchTimeInMilliseconds = 1000;
 #else
     constexpr int kBatchTimeInMilliseconds = 100;
@@ -982,6 +1077,14 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
           }
         },
         fml::TimeDelta::FromMilliseconds(kBatchTimeInMilliseconds));
+  }
+}
+
+fml::Milliseconds Shell::GetFrameBudget() {
+  if (display_refresh_rate_ > 0) {
+    return fml::RefreshRateToFrameBudget(display_refresh_rate_.load());
+  } else {
+    return fml::kDefaultFrameBudget;
   }
 }
 
@@ -1171,6 +1274,7 @@ bool Shell::OnServiceProtocolGetDisplayRefreshRate(
     rapidjson::Document& response) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   response.SetObject();
+  response.AddMember("type", "DisplayRefreshRate", response.GetAllocator());
   response.AddMember("fps", engine_->GetDisplayRefreshRate(),
                      response.GetAllocator());
   return true;
@@ -1257,6 +1361,37 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   } else {
     return fml::Status(fml::StatusCode::kDeadlineExceeded, "timeout");
   }
+}
+
+bool Shell::ReloadSystemFonts() {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  if (!engine_) {
+    return false;
+  }
+  engine_->GetFontCollection().GetFontCollection()->SetupDefaultFontManager();
+  engine_->GetFontCollection().GetFontCollection()->ClearFontFamilyCache();
+  // After system fonts are reloaded, we send a system channel message
+  // to notify flutter framework.
+  rapidjson::Document document;
+  document.SetObject();
+  auto& allocator = document.GetAllocator();
+  rapidjson::Value message_value;
+  message_value.SetString(kFontChange, allocator);
+  document.AddMember(kTypeKey, message_value, allocator);
+
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  document.Accept(writer);
+  std::string message = buffer.GetString();
+  fml::RefPtr<PlatformMessage> fontsChangeMessage =
+      fml::MakeRefCounted<flutter::PlatformMessage>(
+          kSystemChannel, std::vector<uint8_t>(message.begin(), message.end()),
+          nullptr);
+
+  OnPlatformViewDispatchPlatformMessage(fontsChangeMessage);
+  return true;
 }
 
 }  // namespace flutter

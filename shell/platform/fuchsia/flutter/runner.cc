@@ -6,12 +6,9 @@
 
 #include <fuchsia/mem/cpp/fidl.h>
 #include <lib/async/cpp/task.h>
+#include <lib/trace-engine/instrumentation.h>
 #include <zircon/status.h>
 #include <zircon/types.h>
-
-#if !defined(FUCHSIA_SDK)
-#include <trace-engine/instrumentation.h>
-#endif  //  !defined(FUCHSIA_SDK)
 
 #include <sstream>
 #include <utility>
@@ -19,7 +16,8 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/runtime/dart_vm.h"
-#include "fuchsia_font_manager.h"
+#include "lib/sys/cpp/component_context.h"
+#include "runtime/dart/utils/files.h"
 #include "runtime/dart/utils/vmo.h"
 #include "runtime/dart/utils/vmservice_object.h"
 #include "third_party/icu/source/common/unicode/udata.h"
@@ -91,19 +89,30 @@ static void SetThreadName(const std::string& thread_name) {
                                    thread_name.size());
 }
 
+#if !defined(DART_PRODUCT)
+// Register native symbol information for the Dart VM's profiler.
+static void RegisterProfilerSymbols(const char* symbols_path,
+                                    const char* dso_name) {
+  std::string* symbols = new std::string();
+  if (dart_utils::ReadFileToString(symbols_path, symbols)) {
+    Dart_AddSymbols(dso_name, symbols->data(), symbols->size());
+  } else {
+    FML_LOG(ERROR) << "Failed to load " << symbols_path;
+  }
+}
+#endif  // !defined(DART_PRODUCT)
+
 Runner::Runner(async::Loop* loop)
-    : loop_(loop), runner_context_(RunnerContext::CreateFromStartupInfo()) {
+    : loop_(loop), context_(sys::ComponentContext::Create()) {
 #if !defined(DART_PRODUCT)
   // The VM service isolate uses the process-wide namespace. It writes the
   // vm service protocol port under /tmp. The VMServiceObject exposes that
   // port number to The Hub.
-  runner_context_->debug_dir()->AddEntry(
+  context_->outgoing()->debug_dir()->AddEntry(
       dart_utils::VMServiceObject::kPortDirName,
       std::make_unique<dart_utils::VMServiceObject>());
 
-#if !defined(FUCHSIA_SDK)
   SetupTraceObserver();
-#endif  //  !defined(FUCHSIA_SDK)
 #endif  // !defined(DART_PRODUCT)
 
   SkGraphics::Init();
@@ -114,17 +123,25 @@ Runner::Runner(async::Loop* loop)
 
   SetThreadName("io.flutter.runner.main");
 
-  runner_context_->AddPublicService<fuchsia::sys::Runner>(
+  context_->outgoing()->AddPublicService<fuchsia::sys::Runner>(
       std::bind(&Runner::RegisterApplication, this, std::placeholders::_1));
+
+#if !defined(DART_PRODUCT)
+  if (Dart_IsPrecompiledRuntime()) {
+    RegisterProfilerSymbols("pkg/data/flutter_aot_runner.dartprofilersymbols",
+                            "");
+  } else {
+    RegisterProfilerSymbols("pkg/data/flutter_jit_runner.dartprofilersymbols",
+                            "");
+  }
+#endif  // !defined(DART_PRODUCT)
 }
 
 Runner::~Runner() {
-  runner_context_->RemovePublicService<fuchsia::sys::Runner>();
+  context_->outgoing()->RemovePublicService<fuchsia::sys::Runner>();
 
 #if !defined(DART_PRODUCT)
-#if !defined(FUCHSIA_SDK)
   trace_observer_->Stop();
-#endif  //  !defined(FUCHSIA_SDK)
 #endif  // !defined(DART_PRODUCT)
 }
 
@@ -161,17 +178,16 @@ void Runner::StartComponent(
         });
       };
 
-  auto thread_application_pair = Application::Create(
+  auto active_application = Application::Create(
       std::move(termination_callback),  // termination callback
       std::move(package),               // application package
       std::move(startup_info),          // startup info
-      runner_context_->svc(),           // runner incoming services
+      context_->svc(),                  // runner incoming services
       std::move(controller)             // controller request
   );
 
-  auto key = thread_application_pair.second.get();
-
-  active_applications_[key] = std::move(thread_application_pair);
+  auto key = active_application.application.get();
+  active_applications_[key] = std::move(active_application);
 }
 
 void Runner::OnApplicationTerminate(const Application* application) {
@@ -213,7 +229,6 @@ void Runner::SetupICU() {
 }
 
 #if !defined(DART_PRODUCT)
-#if !defined(FUCHSIA_SDK)
 void Runner::SetupTraceObserver() {
   trace_observer_ = std::make_unique<trace::TraceObserver>();
   trace_observer_->Start(loop_->dispatcher(), [runner = this]() {
@@ -237,7 +252,6 @@ void Runner::SetupTraceObserver() {
     }
   });
 }
-#endif  //  !defined(FUCHSIA_SDK)
 #endif  // !defined(DART_PRODUCT)
 
 }  // namespace flutter_runner

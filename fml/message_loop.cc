@@ -73,10 +73,12 @@ void MessageLoop::RunExpiredTasksNow() {
   loop_->RunExpiredTasksNow();
 }
 
-void MessageLoop::SwapTaskQueues(MessageLoop* other) {
-  FML_CHECK(loop_);
-  FML_CHECK(other->loop_);
-  loop_->SwapTaskQueues(other->loop_);
+TaskQueueId MessageLoop::GetCurrentTaskQueueId() {
+  auto* loop = tls_message_loop.get();
+  FML_CHECK(loop != nullptr)
+      << "MessageLoop::EnsureInitializedForCurrentThread was not called on "
+         "this thread prior to message loop use.";
+  return loop->GetLoopImpl()->GetTaskQueueId();
 }
 
 }  // namespace fml
