@@ -135,7 +135,7 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
       new tonic::DartPersistentValue(dart_state, raw_image_callback);
   auto unref_queue = dart_state->GetSkiaUnrefQueue();
   auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
-  auto io_task_runner = dart_state->GetTaskRunners().GetIOTaskRunner();
+  auto gpu_task_runner = dart_state->GetTaskRunners().GetIOTaskRunner();
   fml::WeakPtr<IOManager> io_manager = dart_state->GetIOManager();
 
   // We can't create an image on this task runner because we don't have a
@@ -171,7 +171,7 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
     delete image_callback;
   });
 
-  fml::TaskRunner::RunNowOrPostTask(io_task_runner, [ui_task_runner, picture,
+  fml::TaskRunner::RunNowOrPostTask(gpu_task_runner, [ui_task_runner, picture,
                                                      picture_bounds, ui_task,
                                                      io_manager] {
     sk_sp<SkSurface> surface =
