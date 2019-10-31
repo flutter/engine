@@ -8,8 +8,7 @@
 
 #if FLUTTER_RELEASE
 
-@implementation FlutterObservatoryPublisher {
-}
+@implementation FlutterObservatoryPublisher
 @end
 
 #else  // FLUTTER_RELEASE
@@ -104,7 +103,7 @@
 #endif  // TARGET_IPHONE_SIMULATOR
   const char* registrationType = "_dartobservatory._tcp";
   const char* domain = "local.";  // default domain
-  uint16_t port = [[url port] intValue];
+  uint16_t port = [[url port] unsignedShortValue];
 
   NSData* txtData = [_owner createTxtData:url.get()];
   int err =
@@ -220,18 +219,14 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
 }
 
 - (NSString*)serviceName {
-  return [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleIdentifier"];
+  return NSBundle.mainBundle.bundleIdentifier;
 }
 
 - (NSData*)createTxtData:(NSURL*)url {
   // Check to see if there's an authentication code. If there is, we'll provide
   // it as a txt record so flutter tools can establish a connection.
-  auto path = std::string{[[url path] UTF8String]};
-  if (!path.empty()) {
-    // Remove leading "/"
-    path = path.substr(1);
-  }
-  NSData* pathData = [[[NSData alloc] initWithBytes:path.c_str() length:path.length()] autorelease];
+  NSString* path = [[url path] substringFromIndex:MIN(1, [[url path] length])];
+  NSData* pathData = [path dataUsingEncoding:NSUTF8StringEncoding];
   NSDictionary* txtDict = @{
     @"authCode" : pathData,
   };
