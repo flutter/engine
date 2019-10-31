@@ -52,15 +52,18 @@ class MultiPlatformViewScenario extends Scenario with _BasePlatformViewScenarioM
   /// Creates the PlatformView scenario.
   ///
   /// The [window] parameter must not be null.
-  MultiPlatformViewScenario(Window window, {this.first_id, this.second_id})
+  MultiPlatformViewScenario(Window window, {this.firstId, this.secondId})
       : assert(window != null),
         super(window) {
-    createPlatformView(window, 'platform view 1', first_id);
-    createPlatformView(window, 'platform view 2', second_id);
+    createPlatformView(window, 'platform view 1', firstId);
+    createPlatformView(window, 'platform view 2', secondId);
   }
 
-  final int first_id;
-  final int second_id;
+  /// The platform view identifier to use for the first platform view.
+  final int firstId;
+
+  /// The platform view identifier to use for the second platform view.
+  final int secondId;
 
   @override
   void onBeginFrame(Duration duration) {
@@ -69,10 +72,10 @@ class MultiPlatformViewScenario extends Scenario with _BasePlatformViewScenarioM
     builder.pushOffset(0, 0);
 
     builder.pushOffset(0, 600);
-    _addPlatformViewtoScene(builder, first_id, 500, 500);
+    _addPlatformViewtoScene(builder, firstId, 500, 500);
     builder.pop();
 
-    finishBuilderByAddingPlatformViewAndPicture(builder, second_id);
+    finishBuilderByAddingPlatformViewAndPicture(builder, secondId);
   }
 }
 
