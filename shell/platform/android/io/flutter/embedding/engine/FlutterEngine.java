@@ -172,7 +172,8 @@ public class FlutterEngine {
   /**
    * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI)}, plus Dart VM flags in
    * {@code dartVmArgs}, and control over whether plugins are automatically registered with this
-   * {@code FlutterEngine} in {@code automaticallyRegisterPlugins}.
+   * {@code FlutterEngine} in {@code automaticallyRegisterPlugins}. If plugins are automatically
+   * registered, then they are registered during the execution of this constructor.
    */
   public FlutterEngine(
       @NonNull Context context,
@@ -250,7 +251,7 @@ public class FlutterEngine {
       Class generatedPluginRegistrant = Class.forName("dev.plugins.GeneratedPluginRegistrant");
       Method registrationMethod = generatedPluginRegistrant.getDeclaredMethod("registerWith", FlutterEngine.class);
       registrationMethod.invoke(null, this);
-    } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+    } catch (Exception e) {
       Log.w(TAG, "Tried to automatically register plugins with FlutterEngine ("
           + this + ") but could not find and invoke the GeneratedPluginRegistrant.");
     }
