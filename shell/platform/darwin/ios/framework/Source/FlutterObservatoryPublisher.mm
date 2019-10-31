@@ -4,23 +4,7 @@
 
 #define FML_USED_ON_EMBEDDER
 
-#import <TargetConditionals.h>
-
-// NSNetService works fine on physical devices before iOS 13.2.
-// However, it doesn't expose the services to regular mDNS
-// queries on the Simulator or on iOS 13.2+ devices.
-#include <dns_sd.h>
-#include <net/if.h>
-
 #import "FlutterObservatoryPublisher.h"
-
-#include "flutter/fml/logging.h"
-#include "flutter/fml/make_copyable.h"
-#include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/fml/message_loop.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/fml/task_runner.h"
-#include "flutter/runtime/dart_service_isolate.h"
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE || \
     FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
@@ -30,6 +14,21 @@
 @end
 
 #else
+
+#import <TargetConditionals.h>
+// NSNetService works fine on physical devices before iOS 13.2.
+// However, it doesn't expose the services to regular mDNS
+// queries on the Simulator or on iOS 13.2+ devices.
+#include <dns_sd.h>
+#include <net/if.h>
+
+#include "flutter/fml/logging.h"
+#include "flutter/fml/make_copyable.h"
+#include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/message_loop.h"
+#include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/fml/task_runner.h"
+#include "flutter/runtime/dart_service_isolate.h"
 
 @protocol FlutterObservatoryPublisherDelegate
 - (instancetype)initWithOwner:(FlutterObservatoryPublisher*)owner;
