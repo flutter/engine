@@ -50,8 +50,8 @@
 @implementation MultiplePlatformViewsBackgroundForegroundTest
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  PlatformViewGoldenTestManager* manager =
-  [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-multiple-background-foreground"];
+  PlatformViewGoldenTestManager* manager = [[PlatformViewGoldenTestManager alloc]
+      initWithLaunchArg:@"--platform-view-multiple-background-foreground"];
   return [super initWithManager:manager invocation:invocation];
 }
 
