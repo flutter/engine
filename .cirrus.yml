@@ -11,7 +11,7 @@ task:
     cpu: 30 # can't use all 30-cores; system pods needs cores too
     memory: 100Gb # similarly, can't use all 100Gb memory
   env:
-    CIRRUS_DOCKER_CONTEXT: "ci/docker/build/Dockerfile"
+    CIRRUS_DOCKER_CONTEXT: "ci/docker/build"
     CIRRUS_WORKING_DIR: "/tmp/github_repo"
     ENGINE_PATH: "/tmp/clean_engine"
     DEPOT_TOOLS: "/tmp/depot_tools"
