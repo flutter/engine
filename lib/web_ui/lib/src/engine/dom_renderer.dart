@@ -403,6 +403,11 @@ flt-glass-pane * {
       //
       // Safari 13 has implemented visualViewport API so it doesn't need this
       // timer.
+      //
+      // VisualViewport API is not enabled in Firefox as well. On the other hand
+      // Firefox returns correct values for innerHeight, innerWidth.
+      // Firefox also triggers html.window.onResize therefore we don't need this
+      // timer setup for Firefox.
       final int initialInnerWidth = html.window.innerWidth;
       // Counts how many times we checked screen size. We check up to 5 times.
       int checkCount = 0;
