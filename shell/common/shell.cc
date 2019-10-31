@@ -58,13 +58,18 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // Create the rasterizer on the GPU thread.
   std::promise<std::unique_ptr<Rasterizer>> rasterizer_promise;
   auto rasterizer_future = rasterizer_promise.get_future();
+  std::promise<fml::WeakPtr<SnapshotDelegate>> snapshot_delegate_promise;
+  auto snapshot_delegate_future = snapshot_delegate_promise.get_future();
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners.GetGPUTaskRunner(), [&rasterizer_promise,   //
+      task_runners.GetGPUTaskRunner(), [&rasterizer_promise,  //
+                                        &snapshot_delegate_promise,
                                         on_create_rasterizer,  //
                                         shell = shell.get()    //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
-        rasterizer_promise.set_value(on_create_rasterizer(*shell));
+        std::unique_ptr<Rasterizer> rasterizer(on_create_rasterizer(*shell));
+        snapshot_delegate_promise.set_value(rasterizer->GetSnapshotDelegate());
+        rasterizer_promise.set_value(std::move(rasterizer));
       });
 
   // Create the platform view on the platform thread (this thread).
@@ -129,6 +134,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          vsync_waiter = std::move(vsync_waiter),          //
                          &weak_io_manager_future,                         //
+                         &snapshot_delegate_future,                       //
                          &unref_queue_future                              //
   ]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
@@ -140,15 +146,16 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                                                    std::move(vsync_waiter));
 
         engine_promise.set_value(std::make_unique<Engine>(
-            *shell,                        //
-            dispatcher_maker,              //
-            *shell->GetDartVM(),           //
-            std::move(isolate_snapshot),   //
-            task_runners,                  //
-            shell->GetSettings(),          //
-            std::move(animator),           //
-            weak_io_manager_future.get(),  //
-            unref_queue_future.get()       //
+            *shell,                         //
+            dispatcher_maker,               //
+            *shell->GetDartVM(),            //
+            std::move(isolate_snapshot),    //
+            task_runners,                   //
+            shell->GetSettings(),           //
+            std::move(animator),            //
+            weak_io_manager_future.get(),   //
+            unref_queue_future.get(),       //
+            snapshot_delegate_future.get()  //
             ));
       }));
 
@@ -548,7 +555,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // a synchronous fashion.
   fml::AutoResetWaitableEvent latch;
   auto gpu_task =
-      fml::MakeCopyable([& waiting_for_first_frame = waiting_for_first_frame_,
+      fml::MakeCopyable([&waiting_for_first_frame = waiting_for_first_frame_,
                          rasterizer = rasterizer_->GetWeakPtr(),  //
                          surface = std::move(surface),            //
                          &latch]() mutable {
@@ -893,7 +900,7 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   FML_DCHECK(is_setup_);
 
   task_runners_.GetGPUTaskRunner()->PostTask(
-      [& waiting_for_first_frame = waiting_for_first_frame_,
+      [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
        pipeline = std::move(pipeline)]() {
@@ -1371,7 +1378,7 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
   bool success = waiting_for_first_frame_condition_.wait_for(
       lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
-      [& waiting_for_first_frame = waiting_for_first_frame_] {
+      [&waiting_for_first_frame = waiting_for_first_frame_] {
         return !waiting_for_first_frame.load();
       });
   if (success) {

@@ -43,7 +43,8 @@ Engine::Engine(Delegate& delegate,
                Settings settings,
                std::unique_ptr<Animator> animator,
                fml::WeakPtr<IOManager> io_manager,
-               fml::RefPtr<SkiaUnrefQueue> unref_queue)
+               fml::RefPtr<SkiaUnrefQueue> unref_queue,
+               fml::WeakPtr<SnapshotDelegate> snapshot_delegate)
     : delegate_(delegate),
       settings_(std::move(settings)),
       animator_(std::move(animator)),
@@ -62,6 +63,7 @@ Engine::Engine(Delegate& delegate,
       &vm,                                   // VM
       std::move(isolate_snapshot),           // isolate snapshot
       task_runners_,                         // task runners
+      std::move(snapshot_delegate),
       std::move(io_manager),                 // io manager
       std::move(unref_queue),                // Skia unref queue
       image_decoder_.GetWeakPtr(),           // image decoder
