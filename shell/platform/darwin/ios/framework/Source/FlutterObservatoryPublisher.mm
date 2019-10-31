@@ -19,6 +19,22 @@
 // NSNetService works fine on physical devices before iOS 13.2.
 // However, it doesn't expose the services to regular mDNS
 // queries on the Simulator or on iOS 13.2+ devices.
+//
+// When debugging issues with this implementation, the following is helpful:
+//
+// 1) Running `dns-sd -Z _dartobservatory`. This is a built-in macOS tool that
+//    can find advertized observatories using this method. If dns-sd can't find
+//    it, then the observatory is not getting advertized over any network
+//    interface that the host machine has access to.
+// 2) The Python zeroconf package. The dns-sd tool can sometimes see things
+//    that aren't advertizing over a network interface - for example, simulators
+//    using NSNetService has been observed using dns-sd, but doesn't show up in
+//    the Python package (which is a high quality socket based implementation).
+//    If that happens, this code should be tweaked such that it shows up in both
+//    dns-sd's output and Python zeroconf's detection.
+// 3) The Dart multicast_dns package, which is what Flutter uses to find the
+//    port and auth code. If the advertizement shows up in dns-sd and Python
+//    zeroconf but not multicast_dns, then it is a bug in multicast_dns.
 #include <dns_sd.h>
 #include <net/if.h>
 
