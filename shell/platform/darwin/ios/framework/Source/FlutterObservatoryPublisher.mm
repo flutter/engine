@@ -6,13 +6,11 @@
 
 #import <TargetConditionals.h>
 
-// NSNetService works fine on physical devices, but doesn't expose the services to regular mDNS
-// queries on the Simulator.  We can work around this by using the lower level C API, but that's
-// only available from iOS 9.3+/macOS 10.11.4+.
-#if TARGET_IPHONE_SIMULATOR
-#include <dns_sd.h>  // nogncheck
-#include <net/if.h>  // nogncheck
-#endif               // TARGET_IPHONE_SIMULATOR
+// NSNetService works fine on physical devices before iOS 13.2.
+// However, it doesn't expose the services to regular mDNS
+// queries on the Simulator or on iOS 13.2+ devices.
+#include <dns_sd.h>
+#include <net/if.h>
 
 #import "FlutterObservatoryPublisher.h"
 
@@ -37,11 +35,8 @@
 
 @implementation FlutterObservatoryPublisher {
   fml::scoped_nsobject<NSURL> _url;
-#if TARGET_IPHONE_SIMULATOR
   DNSServiceRef _dnsServiceRef;
-#else   // TARGET_IPHONE_SIMULATOR
   fml::scoped_nsobject<NSNetService> _netService;
-#endif  // TARGET_IPHONE_SIMULATOR
 
   flutter::DartServiceIsolate::CallbackHandle _callbackHandle;
   std::unique_ptr<fml::WeakPtrFactory<FlutterObservatoryPublisher>> _weakFactory;
@@ -73,15 +68,15 @@
 }
 
 - (void)stopService {
-#if TARGET_IPHONE_SIMULATOR
-  if (_dnsServiceRef) {
-    DNSServiceRefDeallocate(_dnsServiceRef);
-    _dnsServiceRef = NULL;
+  if (@available(iOS 9.3, *)) {
+    if (_dnsServiceRef) {
+      DNSServiceRefDeallocate(_dnsServiceRef);
+      _dnsServiceRef = NULL;
+    }
+  } else {
+    [_netService.get() stop];
+    [_netService.get() setDelegate:nil];
   }
-#else   // TARGET_IPHONE_SIMULATOR
-  [_netService.get() stop];
-  [_netService.get() setDelegate:nil];
-#endif  // TARGET_IPHONE_SIMULATOR
 }
 
 - (void)dealloc {
@@ -116,32 +111,38 @@
   };
   NSData* txtData = [NSNetService dataFromTXTRecordDictionary:txtDict];
 
+  if (@available(iOS 9.3, *)) {
+    DNSServiceFlags flags = kDNSServiceFlagsDefault;
 #if TARGET_IPHONE_SIMULATOR
-  DNSServiceFlags flags = kDNSServiceFlagsDefault;
-  uint32_t interfaceIndex = if_nametoindex("lo0");
-  const char* registrationType = "_dartobservatory._tcp";
-  const char* domain = "local.";  // default domain
-  uint16_t port = [[_url port] intValue];
+    // Simulator needs to use local loopback explicitly to work.
+    uint32_t interfaceIndex = if_nametoindex("lo0");
+#else  // TARGET_IPHONE_SIMULATOR
+    // Physical devices need to request all interfaces.
+    uint32_t interfaceIndex = 0;
+#endif
+    const char* registrationType = "_dartobservatory._tcp";
+    const char* domain = "local.";  // default domain
+    uint16_t port = [[_url port] intValue];
 
-  int err = DNSServiceRegister(&_dnsServiceRef, flags, interfaceIndex, [serviceName UTF8String],
-                               registrationType, domain, NULL, htons(port), txtData.length,
-                               txtData.bytes, registrationCallback, NULL);
+    int err = DNSServiceRegister(&_dnsServiceRef, flags, interfaceIndex, [serviceName UTF8String],
+                                 registrationType, domain, NULL, htons(port), txtData.length,
+                                 txtData.bytes, registrationCallback, NULL);
 
-  if (err != 0) {
-    FML_LOG(ERROR) << "Failed to register observatory port with mDNS.";
+    if (err != 0) {
+      FML_LOG(ERROR) << "Failed to register observatory port with mDNS.";
+    } else {
+      DNSServiceSetDispatchQueue(_dnsServiceRef, dispatch_get_main_queue());
+    }
   } else {
-    DNSServiceSetDispatchQueue(_dnsServiceRef, dispatch_get_main_queue());
+    NSNetService* netServiceTmp = [[NSNetService alloc] initWithDomain:@"local."
+                                                                  type:@"_dartobservatory._tcp."
+                                                                  name:serviceName
+                                                                  port:[[_url port] intValue]];
+    [netServiceTmp setTXTRecordData:txtData];
+    _netService.reset(netServiceTmp);
+    [_netService.get() setDelegate:self];
+    [_netService.get() publish];
   }
-#else   // TARGET_IPHONE_SIMULATOR
-  NSNetService* netServiceTmp = [[NSNetService alloc] initWithDomain:@"local."
-                                                                type:@"_dartobservatory._tcp."
-                                                                name:serviceName
-                                                                port:[[_url port] intValue]];
-  [netServiceTmp setTXTRecordData:txtData];
-  _netService.reset(netServiceTmp);
-  [_netService.get() setDelegate:self];
-  [_netService.get() publish];
-#endif  // TARGET_IPHONE_SIMULATOR
 }
 
 - (void)netServiceDidPublish:(NSNetService*)sender {
@@ -153,7 +154,6 @@
                     "network settings and relaunch the application.";
 }
 
-#if TARGET_IPHONE_SIMULATOR
 static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
                                            DNSServiceFlags flags,
                                            DNSServiceErrorType errorCode,
@@ -168,7 +168,6 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
                       "network settings and relaunch the application.";
   }
 }
-#endif  // TARGET_IPHONE_SIMULATOR
 
 #endif  // FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE && FLUTTER_RUNTIME_MODE !=
         // FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
