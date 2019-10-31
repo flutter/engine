@@ -57,18 +57,18 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
   // being prepared to run.
   auto root_embedder_data = std::make_unique<std::shared_ptr<DartIsolate>>(
       std::shared_ptr<DartIsolate>(new DartIsolate(
-          settings,                     // settings
-          std::move(isolate_snapshot),  // isolate snapshot
-          task_runners,                 // task runners
-          std::move(snapshot_delegate),  // snapshot delegate          
-          std::move(io_manager),        // IO manager
-          std::move(unref_queue),       // Skia unref queue
-          std::move(image_decoder),     // Image Decoder
-          advisory_script_uri,          // advisory URI
-          advisory_script_entrypoint,   // advisory entrypoint
-          nullptr,                      // child isolate preparer
-          isolate_create_callback,      // isolate create callback
-          isolate_shutdown_callback     // isolate shutdown callback
+          settings,                      // settings
+          std::move(isolate_snapshot),   // isolate snapshot
+          task_runners,                  // task runners
+          std::move(snapshot_delegate),  // snapshot delegate
+          std::move(io_manager),         // IO manager
+          std::move(unref_queue),        // Skia unref queue
+          std::move(image_decoder),      // Image Decoder
+          advisory_script_uri,           // advisory URI
+          advisory_script_entrypoint,    // advisory entrypoint
+          nullptr,                       // child isolate preparer
+          isolate_create_callback,       // isolate create callback
+          isolate_shutdown_callback      // isolate shutdown callback
           )));
 
   std::tie(vm_isolate, embedder_isolate) = CreateDartVMAndEmbedderObjectPair(

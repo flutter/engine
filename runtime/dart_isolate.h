@@ -429,7 +429,7 @@ class DartIsolate : public UIDartState {
   DartIsolate(const Settings& settings,
               fml::RefPtr<const DartSnapshot> isolate_snapshot,
               TaskRunners task_runners,
-              fml::WeakPtr<SnapshotDelegate> snapshot_delegate,              
+              fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
               fml::WeakPtr<IOManager> io_manager,
               fml::RefPtr<SkiaUnrefQueue> unref_queue,
               fml::WeakPtr<ImageDecoder> image_decoder,
