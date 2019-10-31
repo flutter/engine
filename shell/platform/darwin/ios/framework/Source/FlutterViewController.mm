@@ -36,6 +36,13 @@ class TaskRunnerPause {
   /// @param[in]  task_runner    The `TaskRunner` we will pause.
   TaskRunnerPause(fml::RefPtr<fml::TaskRunner> task_runner) : task_runner_(task_runner) {}
 
+  ~TaskRunnerPause() {
+    // Flush task runner to make sure it isn't in the middle of wrapping up resuming.
+    fml::AutoResetWaitableEvent latch;
+    task_runner_->PostTask([&] { latch.Signal(); });
+    latch.Wait();
+  }
+
   /// Synchronously pauses the TaskRunnner.
   void Pause() {
     {
@@ -106,7 +113,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
   NSMutableSet<NSNumber*>* _ongoingTouches;
-  std::unique_ptr<TaskRunnerPause> _ioWorkerPause;
+  std::unique_ptr<TaskRunnerPause> _ioTaskRunnerPause;
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
@@ -125,7 +132,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     _ongoingTouches = [[NSMutableSet alloc] init];
-    _ioWorkerPause.reset(new TaskRunnerPause([_engine.get() IOTaskRunner]));
 
     [self performCommonViewControllerInitialization];
     [engine setViewController:self];
@@ -148,7 +154,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
     [_engine.get() createShell:nil libraryURI:nil];
     _engineNeedsLaunch = YES;
     _ongoingTouches = [[NSMutableSet alloc] init];
-    _ioWorkerPause.reset(new TaskRunnerPause([_engine.get() IOTaskRunner]));
     [self loadDefaultSplashScreenView];
     [self performCommonViewControllerInitialization];
   }
@@ -580,7 +585,9 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
-  _ioWorkerPause->Resume();  // Must happen before "surfaceUpdated:"
+  if (_ioTaskRunnerPause) {
+    _ioTaskRunnerPause->Resume();  // Must happen before "surfaceUpdated:"
+  }
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
   [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
@@ -590,7 +597,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
   [self surfaceUpdated:NO];
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
-  _ioWorkerPause->Pause();
+  auto ioTaskRunner = [_engine.get() IOTaskRunner];
+  if (ioTaskRunner) {
+    _ioTaskRunnerPause.reset(new TaskRunnerPause(ioTaskRunner));
+    _ioTaskRunnerPause->Pause();
+  }
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
