@@ -6,14 +6,13 @@
 
 #import "FlutterObservatoryPublisher.h"
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE || \
-    FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
+#if FLUTTER_RELEASE
 
 @implementation FlutterObservatoryPublisher {
 }
 @end
 
-#else
+#else  // FLUTTER_RELEASE
 
 #import <TargetConditionals.h>
 // NSNetService works fine on physical devices before iOS 13.2.
@@ -99,10 +98,10 @@
 #if TARGET_IPHONE_SIMULATOR
   // Simulator needs to use local loopback explicitly to work.
   uint32_t interfaceIndex = if_nametoindex("lo0");
-#else  // TARGET_IPHONE_SIMULATOR
+#else   // TARGET_IPHONE_SIMULATOR
   // Physical devices need to request all interfaces.
   uint32_t interfaceIndex = 0;
-#endif
+#endif  // TARGET_IPHONE_SIMULATOR
   const char* registrationType = "_dartobservatory._tcp";
   const char* domain = "local.";  // default domain
   uint16_t port = [[url port] intValue];
@@ -247,5 +246,4 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
 }
 @end
 
-#endif  // FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE && FLUTTER_RUNTIME_MODE !=
-        // FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
+#endif  // FLUTTER_RELEASE
