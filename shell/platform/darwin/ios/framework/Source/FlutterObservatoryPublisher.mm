@@ -146,11 +146,10 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
   // number.
   url.reset([[[NSURL alloc] initWithString:uri] retain]);
 
-  NSNetService* netServiceTmp =
-      [[NSNetService alloc] initWithDomain:@"local."
-                                      type:@"_dartobservatory._tcp."
-                                      name:_owner.get().serviceName
-                                      port:[[url port] intValue]];
+  NSNetService* netServiceTmp = [[NSNetService alloc] initWithDomain:@"local."
+                                                                type:@"_dartobservatory._tcp."
+                                                                name:_owner.get().serviceName
+                                                                port:[[url port] intValue]];
   [netServiceTmp setTXTRecordData:[_owner createTxtData:url.get()]];
   _netService.reset(netServiceTmp);
   [_netService.get() setDelegate:self];
