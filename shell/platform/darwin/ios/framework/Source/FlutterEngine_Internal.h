@@ -33,6 +33,7 @@
 
 - (fml::RefPtr<fml::TaskRunner>)platformTaskRunner;
 - (fml::RefPtr<fml::TaskRunner>)GPUTaskRunner;
+- (fml::RefPtr<fml::TaskRunner>)IOTaskRunner;
 
 - (fml::WeakPtr<flutter::PlatformView>)platformView;
 

@@ -8,6 +8,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
 #include <memory>
+#include <thread>
 
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/message_loop.h"
@@ -26,6 +27,47 @@
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
 
 NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
+
+namespace {
+/// Provides a mechanism to pause a TaskRunner.
+class TaskRunnerPause {
+ public:
+  /// Create a `TaskRunnerPause`.
+  /// @param[in]  task_runner    The `TaskRunner` we will pause.
+  TaskRunnerPause(fml::RefPtr<fml::TaskRunner> task_runner) : task_runner_(task_runner) {}
+
+  /// Synchronously pauses the TaskRunnner.
+  void Pause() {
+    {
+      std::unique_lock<std::mutex> lock(mutex_);
+      is_paused_ = true;
+    }
+    fml::AutoResetWaitableEvent latch;
+    task_runner_->PostTask([&] {
+      latch.Signal();
+      std::unique_lock<std::mutex> lock(mutex_);
+      condition_variable_.wait(lock, [&] { return !is_paused_; });
+    });
+    latch.Wait();
+  }
+
+  /// Unpauses the TaskRunner asynchronously.
+  void Resume() {
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      is_paused_ = false;
+    }
+    condition_variable_.notify_one();
+  }
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(TaskRunnerPause);
+  std::condition_variable condition_variable_;
+  bool is_paused_;
+  std::mutex mutex_;
+  fml::RefPtr<fml::TaskRunner> task_runner_;
+};
+}
 
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
@@ -64,6 +106,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
   NSMutableSet<NSNumber*>* _ongoingTouches;
+  std::unique_ptr<TaskRunnerPause> _ioWorkerPause;
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
@@ -82,6 +125,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     _ongoingTouches = [[NSMutableSet alloc] init];
+    _ioWorkerPause.reset(new TaskRunnerPause([_engine.get() IOTaskRunner]));
 
     [self performCommonViewControllerInitialization];
     [engine setViewController:self];
@@ -104,6 +148,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
     [_engine.get() createShell:nil libraryURI:nil];
     _engineNeedsLaunch = YES;
     _ongoingTouches = [[NSMutableSet alloc] init];
+    _ioWorkerPause.reset(new TaskRunnerPause([_engine.get() IOTaskRunner]));
     [self loadDefaultSplashScreenView];
     [self performCommonViewControllerInitialization];
   }
@@ -535,6 +580,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
+  _ioWorkerPause->Resume(); // Must happen before "surfaceUpdated:"
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
   [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
@@ -544,6 +590,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
   [self surfaceUpdated:NO];
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
+  _ioWorkerPause->Pause();
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {

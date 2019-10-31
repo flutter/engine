@@ -169,6 +169,11 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   return _shell->GetTaskRunners().GetGPUTaskRunner();
 }
 
+- (fml::RefPtr<fml::TaskRunner>)IOTaskRunner {
+  FML_DCHECK(_shell);
+  return _shell->GetTaskRunners().GetIOTaskRunner();
+}
+
 - (void)ensureSemanticsEnabled {
   self.iosPlatformView->SetSemanticsEnabled(true);
 }
