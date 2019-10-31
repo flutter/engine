@@ -27,131 +27,82 @@
 
 @implementation FlutterObservatoryPublisher {
 }
+@end
 
 #else
 
-@interface FlutterObservatoryPublisher () <NSNetServiceDelegate>
+@protocol FlutterObservatoryPublisherDelegate
+- (instancetype)initWithOwner:(FlutterObservatoryPublisher*)owner;
+- (void)publishServiceProtocolPort:(NSString*)uri;
+- (void)stopService;
+
+@property(readonly) fml::scoped_nsobject<NSURL> url;
 @end
 
-@implementation FlutterObservatoryPublisher {
-  fml::scoped_nsobject<NSURL> _url;
+@interface FlutterObservatoryPublisher ()
+- (NSData*)createTxtData:(NSURL*)url;
+
+@property(readonly) NSString* serviceName;
+@property(readonly) fml::scoped_nsobject<NSObject<FlutterObservatoryPublisherDelegate>> delegate;
+
+@end
+
+@interface ObservatoryNSNetServiceDelegate
+    : NSObject <FlutterObservatoryPublisherDelegate, NSNetServiceDelegate>
+@end
+
+@interface ObservatoryDNSServiceDelegate : NSObject <FlutterObservatoryPublisherDelegate>
+@end
+
+@implementation ObservatoryDNSServiceDelegate {
+  fml::scoped_nsobject<FlutterObservatoryPublisher> _owner;
   DNSServiceRef _dnsServiceRef;
-  fml::scoped_nsobject<NSNetService> _netService;
-
-  flutter::DartServiceIsolate::CallbackHandle _callbackHandle;
-  std::unique_ptr<fml::WeakPtrFactory<FlutterObservatoryPublisher>> _weakFactory;
 }
 
-- (NSURL*)url {
-  return _url.get();
-}
+@synthesize url;
 
-- (instancetype)init {
+- (instancetype)initWithOwner:(FlutterObservatoryPublisher*)owner {
   self = [super init];
   NSAssert(self, @"Super must not return null on init.");
-
-  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterObservatoryPublisher>>(self);
-
-  fml::MessageLoop::EnsureInitializedForCurrentThread();
-
-  _callbackHandle = flutter::DartServiceIsolate::AddServerStatusCallback(
-      [weak = _weakFactory->GetWeakPtr(),
-       runner = fml::MessageLoop::GetCurrent().GetTaskRunner()](const std::string& uri) {
-        runner->PostTask([weak, uri]() {
-          if (weak) {
-            [weak.get() publishServiceProtocolPort:std::move(uri)];
-          }
-        });
-      });
-
+  _owner.reset([owner retain]);
   return self;
 }
 
 - (void)stopService {
-  if (@available(iOS 9.3, *)) {
-    if (_dnsServiceRef) {
-      DNSServiceRefDeallocate(_dnsServiceRef);
-      _dnsServiceRef = NULL;
-    }
-  } else {
-    [_netService.get() stop];
-    [_netService.get() setDelegate:nil];
+  if (_dnsServiceRef) {
+    DNSServiceRefDeallocate(_dnsServiceRef);
+    _dnsServiceRef = NULL;
   }
 }
 
-- (void)dealloc {
-  [self stopService];
-
-  flutter::DartServiceIsolate::RemoveServerStatusCallback(std::move(_callbackHandle));
-  [super dealloc];
-}
-
-- (void)publishServiceProtocolPort:(std::string)uri {
-  [self stopService];
-  if (uri.empty()) {
-    return;
-  }
+- (void)publishServiceProtocolPort:(NSString*)uri {
   // uri comes in as something like 'http://127.0.0.1:XXXXX/' where XXXXX is the port
   // number.
-  _url.reset([[NSURL alloc] initWithString:[NSString stringWithUTF8String:uri.c_str()]]);
+  url.reset([[[NSURL alloc] initWithString:uri] retain]);
 
-  NSString* serviceName =
-      [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleIdentifier"];
-
-  // Check to see if there's an authentication code. If there is, we'll provide
-  // it as a txt record so flutter tools can establish a connection.
-  auto path = std::string{[[_url path] UTF8String]};
-  if (!path.empty()) {
-    // Remove leading "/"
-    path = path.substr(1);
-  }
-  NSData* pathData = [[[NSData alloc] initWithBytes:path.c_str() length:path.length()] autorelease];
-  NSDictionary* txtDict = @{
-    @"authCode" : pathData,
-  };
-  NSData* txtData = [NSNetService dataFromTXTRecordDictionary:txtDict];
-
-  if (@available(iOS 9.3, *)) {
-    DNSServiceFlags flags = kDNSServiceFlagsDefault;
+  DNSServiceFlags flags = kDNSServiceFlagsDefault;
 #if TARGET_IPHONE_SIMULATOR
-    // Simulator needs to use local loopback explicitly to work.
-    uint32_t interfaceIndex = if_nametoindex("lo0");
+  // Simulator needs to use local loopback explicitly to work.
+  uint32_t interfaceIndex = if_nametoindex("lo0");
 #else  // TARGET_IPHONE_SIMULATOR
-    // Physical devices need to request all interfaces.
-    uint32_t interfaceIndex = 0;
+  // Physical devices need to request all interfaces.
+  uint32_t interfaceIndex = 0;
 #endif
-    const char* registrationType = "_dartobservatory._tcp";
-    const char* domain = "local.";  // default domain
-    uint16_t port = [[_url port] intValue];
+  const char* registrationType = "_dartobservatory._tcp";
+  const char* domain = "local.";  // default domain
+  uint16_t port = [[url port] intValue];
 
-    int err = DNSServiceRegister(&_dnsServiceRef, flags, interfaceIndex, [serviceName UTF8String],
-                                 registrationType, domain, NULL, htons(port), txtData.length,
-                                 txtData.bytes, registrationCallback, NULL);
+  NSData* txtData = [_owner createTxtData:url.get()];
+  int err =
+      DNSServiceRegister(&_dnsServiceRef, flags, interfaceIndex,
+                         [_owner.get().serviceName UTF8String], registrationType, domain, NULL,
+                         htons(port), txtData.length, txtData.bytes, registrationCallback, NULL);
 
-    if (err != 0) {
-      FML_LOG(ERROR) << "Failed to register observatory port with mDNS.";
-    } else {
-      DNSServiceSetDispatchQueue(_dnsServiceRef, dispatch_get_main_queue());
-    }
+  if (err != 0) {
+    FML_LOG(ERROR) << "Failed to register observatory port with mDNS.";
   } else {
-    NSNetService* netServiceTmp = [[NSNetService alloc] initWithDomain:@"local."
-                                                                  type:@"_dartobservatory._tcp."
-                                                                  name:serviceName
-                                                                  port:[[_url port] intValue]];
-    [netServiceTmp setTXTRecordData:txtData];
-    _netService.reset(netServiceTmp);
-    [_netService.get() setDelegate:self];
-    [_netService.get() publish];
+    DNSServiceSetDispatchQueue(_dnsServiceRef, dispatch_get_main_queue());
   }
-}
-
-- (void)netServiceDidPublish:(NSNetService*)sender {
-  FML_DLOG(INFO) << "FlutterObservatoryPublisher is ready!";
-}
-
-- (void)netService:(NSNetService*)sender didNotPublish:(NSDictionary*)errorDict {
-  FML_LOG(ERROR) << "Could not register as server for FlutterObservatoryPublisher. Check your "
-                    "network settings and relaunch the application.";
 }
 
 static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
@@ -169,7 +120,118 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
   }
 }
 
-#endif  // FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE && FLUTTER_RUNTIME_MODE !=
-        // FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
+@end
+
+@implementation ObservatoryNSNetServiceDelegate {
+  fml::scoped_nsobject<FlutterObservatoryPublisher> _owner;
+  fml::scoped_nsobject<NSNetService> _netService;
+}
+
+@synthesize url;
+
+- (instancetype)initWithOwner:(FlutterObservatoryPublisher*)owner {
+  self = [super init];
+  NSAssert(self, @"Super must not return null on init.");
+  _owner.reset([owner retain]);
+  return self;
+}
+
+- (void)stopService {
+  [_netService.get() stop];
+  [_netService.get() setDelegate:nil];
+}
+
+- (void)publishServiceProtocolPort:(NSString*)uri {
+  // uri comes in as something like 'http://127.0.0.1:XXXXX/' where XXXXX is the port
+  // number.
+  url.reset([[[NSURL alloc] initWithString:uri] retain]);
+
+  NSNetService* netServiceTmp =
+      [[NSNetService alloc] initWithDomain:@"local."
+                                      type:@"_dartobservatory._tcp."
+                                      name:_owner.get().serviceName
+                                      port:[[url port] intValue]];
+  [netServiceTmp setTXTRecordData:[_owner createTxtData:url.get()]];
+  _netService.reset(netServiceTmp);
+  [_netService.get() setDelegate:self];
+  [_netService.get() publish];
+}
+
+- (void)netServiceDidPublish:(NSNetService*)sender {
+  FML_DLOG(INFO) << "FlutterObservatoryPublisher is ready!";
+}
+
+- (void)netService:(NSNetService*)sender didNotPublish:(NSDictionary*)errorDict {
+  FML_LOG(ERROR) << "Could not register as server for FlutterObservatoryPublisher. Check your "
+                    "network settings and relaunch the application.";
+}
 
 @end
+
+@implementation FlutterObservatoryPublisher {
+  flutter::DartServiceIsolate::CallbackHandle _callbackHandle;
+  std::unique_ptr<fml::WeakPtrFactory<FlutterObservatoryPublisher>> _weakFactory;
+}
+
+- (NSURL*)url {
+  return [_delegate.get().url copy];
+}
+
+- (instancetype)init {
+  self = [super init];
+  NSAssert(self, @"Super must not return null on init.");
+
+  if (@available(iOS 9.3, *)) {
+    _delegate.reset([[ObservatoryDNSServiceDelegate alloc] initWithOwner:self]);
+  } else {
+    _delegate.reset([[ObservatoryNSNetServiceDelegate alloc] initWithOwner:self]);
+  }
+  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterObservatoryPublisher>>(self);
+
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+
+  _callbackHandle = flutter::DartServiceIsolate::AddServerStatusCallback(
+      [weak = _weakFactory->GetWeakPtr(),
+       runner = fml::MessageLoop::GetCurrent().GetTaskRunner()](const std::string& uri) {
+        if (!uri.empty()) {
+          runner->PostTask([weak, uri]() {
+            if (weak) {
+              [[weak.get() delegate]
+                  publishServiceProtocolPort:[NSString stringWithUTF8String:uri.c_str()]];
+            }
+          });
+        }
+      });
+
+  return self;
+}
+
+- (NSString*)serviceName {
+  return [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleIdentifier"];
+}
+
+- (NSData*)createTxtData:(NSURL*)url {
+  // Check to see if there's an authentication code. If there is, we'll provide
+  // it as a txt record so flutter tools can establish a connection.
+  auto path = std::string{[[url path] UTF8String]};
+  if (!path.empty()) {
+    // Remove leading "/"
+    path = path.substr(1);
+  }
+  NSData* pathData = [[[NSData alloc] initWithBytes:path.c_str() length:path.length()] autorelease];
+  NSDictionary* txtDict = @{
+    @"authCode" : pathData,
+  };
+  return [NSNetService dataFromTXTRecordDictionary:txtDict];
+}
+
+- (void)dealloc {
+  [_delegate stopService];
+
+  flutter::DartServiceIsolate::RemoveServerStatusCallback(std::move(_callbackHandle));
+  [super dealloc];
+}
+@end
+
+#endif  // FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE && FLUTTER_RUNTIME_MODE !=
+        // FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
