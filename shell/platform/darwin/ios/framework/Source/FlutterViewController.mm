@@ -580,7 +580,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
-  _ioWorkerPause->Resume(); // Must happen before "surfaceUpdated:"
+  _ioWorkerPause->Resume();  // Must happen before "surfaceUpdated:"
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
   [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
