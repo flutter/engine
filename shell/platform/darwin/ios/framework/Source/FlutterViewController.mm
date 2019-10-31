@@ -38,6 +38,7 @@ class TaskRunnerPause {
 
   ~TaskRunnerPause() {
     // Flush task runner to make sure it isn't in the middle of wrapping up resuming.
+    Resume();
     fml::AutoResetWaitableEvent latch;
     task_runner_->PostTask([&] { latch.Signal(); });
     latch.Wait();
