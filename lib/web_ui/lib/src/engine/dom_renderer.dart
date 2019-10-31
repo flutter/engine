@@ -393,31 +393,30 @@ flt-glass-pane * {
     // is 1.0.
     window.debugOverrideDevicePixelRatio(1.0);
 
-    if (html.window.visualViewport == null) {
-      if (browserEngine == BrowserEngine.webkit) {
-        // Safari sometimes gives us bogus innerWidth/innerHeight values when the
-        // page loads. When it changes the values to correct ones it does not
-        // notify of the change via `onResize`. As a workaround, we setup a
-        // temporary periodic timer that polls innerWidth and triggers the
-        // resizeListener so that the framework can react to the change.
-        //
-        // Safari 13 has implemented visualViewport API so it doesn't need this
-        // timer.
-        final int initialInnerWidth = html.window.innerWidth;
-        // Counts how many times we checked screen size. We check up to 5 times.
-        int checkCount = 0;
-        Timer.periodic(const Duration(milliseconds: 100), (Timer t) {
-          checkCount += 1;
-          if (initialInnerWidth != html.window.innerWidth) {
-            // Window size changed. Notify.
-            t.cancel();
-            _metricsDidChange(null);
-          } else if (checkCount > 5) {
-            // Checked enough times. Stop.
-            t.cancel();
-          }
-        });
-      }
+    if (html.window.visualViewport == null &&
+        browserEngine == BrowserEngine.webkit) {
+      // Safari sometimes gives us bogus innerWidth/innerHeight values when the
+      // page loads. When it changes the values to correct ones it does not
+      // notify of the change via `onResize`. As a workaround, we setup a
+      // temporary periodic timer that polls innerWidth and triggers the
+      // resizeListener so that the framework can react to the change.
+      //
+      // Safari 13 has implemented visualViewport API so it doesn't need this
+      // timer.
+      final int initialInnerWidth = html.window.innerWidth;
+      // Counts how many times we checked screen size. We check up to 5 times.
+      int checkCount = 0;
+      Timer.periodic(const Duration(milliseconds: 100), (Timer t) {
+        checkCount += 1;
+        if (initialInnerWidth != html.window.innerWidth) {
+          // Window size changed. Notify.
+          t.cancel();
+          _metricsDidChange(null);
+        } else if (checkCount > 5) {
+          // Checked enough times. Stop.
+          t.cancel();
+        }
+      });
     }
 
     if (experimentalUseSkia) {
