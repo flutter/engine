@@ -338,8 +338,6 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
 
     onscreen_surface_ = std::move(new_onscreen_surface);
   }
-  // use the context_switch to avoid compiler warning.
-  (void)context_switch;
   return true;
 }
 
