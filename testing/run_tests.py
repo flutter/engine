@@ -161,8 +161,7 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
   if verbose_dart_snapshot:
     RunCmd(snapshot_command, cwd=buildroot_dir)
   else:
-    with open(os.devnull,"w") as out_file:
-      subprocess.check_output(snapshot_command, cwd=buildroot_dir, stdout=out_file)
+    subprocess.check_output(snapshot_command, cwd=buildroot_dir)
   assert os.path.exists(kernel_file_output)
 
 
