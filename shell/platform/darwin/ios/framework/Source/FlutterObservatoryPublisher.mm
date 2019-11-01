@@ -204,7 +204,7 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
 
   _callbackHandle = flutter::DartServiceIsolate::AddServerStatusCallback(
       [weak = _weakFactory->GetWeakPtr(),
-        runner = fml::MessageLoop::GetCurrent().GetTaskRunner()](const std::string& uri) {
+       runner = fml::MessageLoop::GetCurrent().GetTaskRunner()](const std::string& uri) {
         if (!uri.empty()) {
           runner->PostTask([weak, uri]() {
             if (weak) {
