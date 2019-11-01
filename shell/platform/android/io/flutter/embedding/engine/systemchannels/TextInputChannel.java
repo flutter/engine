@@ -119,7 +119,6 @@ public class TextInputChannel {
    */
   public void reattach() {
     channel.invokeMethod("TextInputClient.reattach", null);
-    Log.e("ASDF", "Sent reattach to flutter");
   }
 
   /**
