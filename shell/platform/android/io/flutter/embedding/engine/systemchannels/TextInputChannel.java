@@ -117,8 +117,8 @@ public class TextInputChannel {
    * to a {@link FlutterEngine}, as the engine may have kept alive a text
    * editing client on the Dart side.
    */
-  public void reattach() {
-    channel.invokeMethod("TextInputClient.reattach", null);
+  public void requestExistingInputState() {
+    channel.invokeMethod("TextInputClient.requestExistingInputState", null);
   }
 
   /**

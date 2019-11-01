@@ -90,7 +90,7 @@ public class TextInputPlugin {
             }
         });
 
-        textInputChannel.reattach();
+        textInputChannel.requestExistingInputState();
 
         this.platformViewsController = platformViewsController;
         this.platformViewsController.attachTextInputPlugin(this);

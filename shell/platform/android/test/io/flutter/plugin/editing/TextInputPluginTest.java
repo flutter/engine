@@ -49,7 +49,7 @@ public class TextInputPluginTest {
         DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
         TextInputPlugin textInputPlugin = new TextInputPlugin(testView, dartExecutor, mock(PlatformViewsController.class));
 
-        ByteBuffer message = JSONMethodCodec.INSTANCE.encodeMethodCall(new MethodCall("TextInputClient.reattach", null));
+        ByteBuffer message = JSONMethodCodec.INSTANCE.encodeMethodCall(new MethodCall("TextInputClient.requestExistingInputState", null));
         verify(dartExecutor, times(1)).send("flutter/textinput", message, null);
     }
 
