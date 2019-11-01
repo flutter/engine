@@ -241,7 +241,7 @@ if (is_fuchsia) {
   fuchsia_test_archive("fml_tests") {
     deps = [
       ":fml_unittests",
-      ]
+    ]
 
     binary = "fml_unittests"
   }
