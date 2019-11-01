@@ -6,7 +6,6 @@ import("//build/fuchsia/sdk.gni")
 import("$flutter_root/testing/testing.gni")
 
 if (is_fuchsia) {
-  import("$flutter_root/tools/fuchsia/common_libs.gni")
   import("$flutter_root/tools/fuchsia/fuchsia_archive.gni")
 }
 
@@ -239,25 +238,12 @@ executable("fml_unittests") {
 }
 
 if (is_fuchsia) {
-  fuchsia_archive("fml_tests") {
-    testonly = true
-
+  fuchsia_test_archive("fml_tests") {
     deps = [
       ":fml_unittests",
       ]
 
     binary = "fml_unittests"
-
-    libraries = common_libs
-
-    meta_dir = "$flutter_root/fml/meta"
-
-    meta = [
-      {
-        path = rebase_path("meta/$target_name.cmx")
-        dest = "$target_name.cmx"
-      },
-    ]
   }
 }
 
