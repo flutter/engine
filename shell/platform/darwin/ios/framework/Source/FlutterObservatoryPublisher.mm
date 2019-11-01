@@ -186,7 +186,7 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
 }
 
 - (NSURL*)url {
-  return [_delegate.get().url copy];
+  return [_delegate.get().url autorelease];
 }
 
 - (instancetype)init {
@@ -204,7 +204,7 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
 
   _callbackHandle = flutter::DartServiceIsolate::AddServerStatusCallback(
       [weak = _weakFactory->GetWeakPtr(),
-       runner = fml::MessageLoop::GetCurrent().GetTaskRunner()](const std::string& uri) {
+        runner = fml::MessageLoop::GetCurrent().GetTaskRunner()](const std::string& uri) {
         if (!uri.empty()) {
           runner->PostTask([weak, uri]() {
             if (weak) {
@@ -227,7 +227,7 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
   // it as a txt record so flutter tools can establish a connection.
   NSString* path = [[url path] substringFromIndex:MIN(1, [[url path] length])];
   NSData* pathData = [path dataUsingEncoding:NSUTF8StringEncoding];
-  NSDictionary* txtDict = @{
+  NSDictionary<NSString*, NSData*>* txtDict = @{
     @"authCode" : pathData,
   };
   return [NSNetService dataFromTXTRecordDictionary:txtDict];
