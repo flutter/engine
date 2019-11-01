@@ -601,6 +601,12 @@ typedef enum UIAccessibilityContrast : NSInteger {
   auto ioTaskRunner = [_engine.get() IOTaskRunner];
   if (ioTaskRunner) {
     _ioTaskRunnerPause.reset(new TaskRunnerPause(ioTaskRunner));
+    // If the remaining tasks on the IOTaskRunner take too long we
+    // might be killed by the operating system here.  It is unlikely
+    // so we've decided not to address it.  It could be solved by:
+    //  1) Adding microtasks to TaskRunners.
+    //  2) Add the ability to push to the front of the event queue.
+    //  3) Add the ability to cancel and resurrect outstanding tasks.
     _ioTaskRunnerPause->Pause();
   }
 }
