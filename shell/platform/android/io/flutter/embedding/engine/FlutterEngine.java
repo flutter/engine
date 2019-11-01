@@ -4,12 +4,12 @@
 
 package io.flutter.embedding.engine;
 
-import android.arch.lifecycle.Lifecycle;
-import android.arch.lifecycle.LifecycleOwner;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -68,7 +68,7 @@ import io.flutter.plugin.platform.PlatformViewsController;
  * {@link DartExecutor} is run. Each Isolate is a self-contained Dart environment and cannot
  * communicate with each other except via Isolate ports.
  */
-public class FlutterEngine implements LifecycleOwner {
+public class FlutterEngine {
   private static final String TAG = "FlutterEngine";
 
   @NonNull
@@ -79,8 +79,6 @@ public class FlutterEngine implements LifecycleOwner {
   private final DartExecutor dartExecutor;
   @NonNull
   private final FlutterEnginePluginRegistry pluginRegistry;
-  @NonNull
-  private final FlutterEngineAndroidLifecycle androidLifecycle;
 
   // System channels.
   @NonNull
@@ -154,31 +152,35 @@ public class FlutterEngine implements LifecycleOwner {
    * If the Dart VM has already started, the given arguments will have no effect.
    */
   public FlutterEngine(@NonNull Context context, @Nullable String[] dartVmArgs) {
-    this(context, FlutterLoader.getInstance(), new FlutterJNI(), dartVmArgs);
+    this(context, FlutterLoader.getInstance(), new FlutterJNI(), dartVmArgs, true);
   }
 
   /**
    * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI, String[])} but with no Dart
    * VM flags.
+   * <p>
+   * {@code flutterJNI} should be a new instance that has never been attached to an engine before.
    */
   public FlutterEngine(
       @NonNull Context context,
       @NonNull FlutterLoader flutterLoader,
       @NonNull FlutterJNI flutterJNI
   ) {
-    this(context, flutterLoader, flutterJNI, null);
+    this(context, flutterLoader, flutterJNI, null, true);
   }
 
   /**
-   * Constructs a new {@code FlutterEngine}. See {@link #FlutterEngine(Context)}.
-   *
-   * {@code flutterJNI} should be a new instance that has never been attached to an engine before.
+   * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI)}, plus Dart VM flags in
+   * {@code dartVmArgs}, and control over whether plugins are automatically registered with this
+   * {@code FlutterEngine} in {@code automaticallyRegisterPlugins}. If plugins are automatically
+   * registered, then they are registered during the execution of this constructor.
    */
   public FlutterEngine(
       @NonNull Context context,
       @NonNull FlutterLoader flutterLoader,
       @NonNull FlutterJNI flutterJNI,
-      @Nullable String[] dartVmArgs
+      @Nullable String[] dartVmArgs,
+      boolean automaticallyRegisterPlugins
   ) {
     this.flutterJNI = flutterJNI;
     flutterLoader.startInitialization(context);
@@ -205,12 +207,14 @@ public class FlutterEngine implements LifecycleOwner {
 
     platformViewsController = new PlatformViewsController();
 
-    androidLifecycle = new FlutterEngineAndroidLifecycle(this);
     this.pluginRegistry = new FlutterEnginePluginRegistry(
       context.getApplicationContext(),
-      this,
-        androidLifecycle
+      this
     );
+
+    if (automaticallyRegisterPlugins) {
+      registerPlugins();
+    }
   }
 
   private void attachToJni() {
@@ -226,6 +230,31 @@ public class FlutterEngine implements LifecycleOwner {
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean isAttachedToJni() {
     return flutterJNI.isAttached();
+  }
+
+  /**
+   * Registers all plugins that an app lists in its pubspec.yaml.
+   * <p>
+   * The Flutter tool generates a class called GeneratedPluginRegistrant, which includes the code
+   * necessary to register every plugin in the pubspec.yaml with a given {@code FlutterEngine}.
+   * The GeneratedPluginRegistrant must be generated per app, because each app uses different sets
+   * of plugins. Therefore, the Android embedding cannot place a compile-time dependency on this
+   * generated class. This method uses reflection to attempt to locate the generated file and then
+   * use it at runtime.
+   * <p>
+   * This method fizzles if the GeneratedPluginRegistrant cannot be found or invoked. This situation
+   * should never occur, but if any eventuality comes up that prevents an app from using this
+   * behavior, that app can still write code that explicitly registers plugins.
+   */
+  private void registerPlugins() {
+    try {
+      Class generatedPluginRegistrant = Class.forName("io.plugins.GeneratedPluginRegistrant");
+      Method registrationMethod = generatedPluginRegistrant.getDeclaredMethod("registerWith", FlutterEngine.class);
+      registrationMethod.invoke(null, this);
+    } catch (Exception e) {
+      Log.w(TAG, "Tried to automatically register plugins with FlutterEngine ("
+          + this + ") but could not find and invoke the GeneratedPluginRegistrant.");
+    }
   }
 
   /**
@@ -394,13 +423,6 @@ public class FlutterEngine implements LifecycleOwner {
   @NonNull
   public ContentProviderControlSurface getContentProviderControlSurface() {
     return pluginRegistry;
-  }
-
-  // TODO(mattcarroll): determine if we really need to expose this from FlutterEngine vs making PluginBinding a LifecycleOwner
-  @NonNull
-  @Override
-  public Lifecycle getLifecycle() {
-    return androidLifecycle;
   }
 
   /**

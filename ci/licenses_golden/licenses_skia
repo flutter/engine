@@ -1,4 +1,4 @@
-Signature: 59915216b18ceb1fdd2c82420005d336
+Signature: 6cbffaf1be0659558f92a9dcfda74195
 
 UNUSED LICENSES:
 
@@ -1431,6 +1431,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/doxygen/examples/full.
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/env/examples/full.expected/test.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Android-Clang-AndroidOne-GPU-Mali400MP2-arm-Release-All-Android_SkottieTracing.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Android-Clang-GalaxyS7_G930FD-GPU-MaliT880-arm64-Debug-All-Android.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Android-Clang-NVIDIA_Shield-CPU-TegraX1-arm64-Release-All-Android.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Android-Clang-Nexus5x-GPU-Adreno418-arm64-Debug-All-Android.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Android-Clang-Pixel-GPU-Adreno530-arm64-Release-All-Android_Skpbench_Mskp.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-ChromeOS-Clang-SamsungChromebookPlus-GPU-MaliT860-arm-Release-All.json
@@ -3406,7 +3407,9 @@ FILE: ../../../third_party/skia/include/private/GrImageContext.h
 FILE: ../../../third_party/skia/include/private/GrRecordingContext.h
 FILE: ../../../third_party/skia/include/private/SkVx.h
 FILE: ../../../third_party/skia/modules/skottie/src/Composition.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/Composition.h
 FILE: ../../../third_party/skia/modules/skottie/src/Layer.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/Layer.h
 FILE: ../../../third_party/skia/modules/skottie/src/effects/DropShadowEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/Effects.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/Effects.h
