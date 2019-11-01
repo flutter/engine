@@ -23,9 +23,8 @@ dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 
 time_sensitve_test_flag = '--gtest_filter=-*TimeSensitiveTest*'
 
-def RunCmd(cmd, **kwargs) {
+def RunCmd(cmd, **kwargs):
   print(subprocess.check_output(cmd, **kwargs))
-}
 
 def IsMac():
   return sys.platform == 'darwin'
