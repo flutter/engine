@@ -23,6 +23,10 @@ dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 
 time_sensitve_test_flag = '--gtest_filter=-*TimeSensitiveTest*'
 
+def RunCmd(cmd, **kwargs) {
+  print(subprocess.check_output(cmd, **kwargs))
+}
+
 def IsMac():
   return sys.platform == 'darwin'
 
@@ -64,7 +68,7 @@ def RunEngineExecutable(build_dir, executable_name, filter, flags=[], cwd=buildr
   print('Running %s in %s' % (executable_name, cwd))
   test_command = [ executable ] + flags
   print(' '.join(test_command))
-  print(subprocess.check_output(test_command, cwd=cwd))
+  RunCmd(test_command, cwd=cwd)
 
 
 def RunCCTests(build_dir, filter):
@@ -155,7 +159,7 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
   ]
 
   if verbose_dart_snapshot:
-    print(subprocess.check_output(snapshot_command, cwd=buildroot_dir))
+    RunCmd(snapshot_command, cwd=buildroot_dir)
   else:
     with open(os.devnull,"w") as out_file:
       subprocess.check_output(snapshot_command, cwd=buildroot_dir, stdout=out_file)
@@ -190,7 +194,7 @@ def RunPubGet(build_dir, directory):
     os.path.join(build_dir, 'dart-sdk', 'bin', 'pub'),
     'get'
   ]
-  print(subprocess.check_output(pub_get_command, cwd=directory))
+  RunCmd(pub_get_command, cwd=directory)
 
 
 def EnsureDebugUnoptSkyPackagesAreBuilt():
@@ -206,7 +210,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
   # Attempt running Ninja if the out directory exists.
   # We don't want to blow away any custom GN args the caller may have already set.
   if os.path.exists(variant_out_dir):
-    print(subprocess.check_output(ninja_command, cwd=buildroot_dir))
+    RunCmd(ninja_command, cwd=buildroot_dir)
     return
 
   gn_command = [
@@ -217,8 +221,8 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
     '--no-lto',
   ]
 
-  print(subprocess.check_output(gn_command, cwd=buildroot_dir))
-  print(subprocess.check_output(ninja_command, cwd=buildroot_dir))
+  RunCmd(gn_command, cwd=buildroot_dir)
+  RunCmd(ninja_command, cwd=buildroot_dir)
 
 def EnsureJavaTestsAreBuilt(android_out_dir):
   ninja_command = [
@@ -231,7 +235,7 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
   # Attempt running Ninja if the out directory exists.
   # We don't want to blow away any custom GN args the caller may have already set.
   if os.path.exists(android_out_dir):
-    print(subprocess.check_output(ninja_command, cwd=buildroot_dir))
+    RunCmd(ninja_command, cwd=buildroot_dir)
     return
 
   # Otherwise prepare the directory first, then build the test.
@@ -242,8 +246,8 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
     '--runtime-mode=debug',
     '--no-lto',
   ]
-  print(subprocess.check_output(gn_command, cwd=buildroot_dir))
-  print(subprocess.check_output(ninja_command, cwd=buildroot_dir))
+  RunCmd(gn_command, cwd=buildroot_dir)
+  RunCmd(ninja_command, cwd=buildroot_dir)
 
 def AssertExpectedJavaVersion():
   EXPECTED_VERSION = '1.8'
@@ -277,7 +281,7 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
     test_class
   ]
 
-  return subprocess.check_output(command)
+  RunCmd(command)
 
 def RunDartTests(build_dir, filter, verbose_dart_snapshot):
   # This one is a bit messy. The pubspec.yaml at flutter/testing/dart/pubspec.yaml
@@ -342,7 +346,7 @@ def main():
     if ',' in java_filter or '*' in java_filter:
       print('Can only filter JUnit4 tests by single entire class name, eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter)
       java_filter = None
-    print(RunJavaTests(java_filter, args.android_variant))
+    RunJavaTests(java_filter, args.android_variant)
 
   # https://github.com/flutter/flutter/issues/36300
   if 'benchmarks' in types and not IsWindows():
