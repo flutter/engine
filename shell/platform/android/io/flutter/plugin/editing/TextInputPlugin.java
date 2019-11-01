@@ -7,6 +7,7 @@ package io.flutter.plugin.editing;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
@@ -137,6 +138,7 @@ public class TextInputPlugin {
         TextInputChannel.InputType type,
         boolean obscureText,
         boolean autocorrect,
+        boolean enableSuggestions,
         TextInputChannel.TextCapitalization textCapitalization
     ) {
         if (type.type == TextInputChannel.TextInputType.DATETIME) {
@@ -171,6 +173,7 @@ public class TextInputPlugin {
             textType |= InputType.TYPE_TEXT_VARIATION_PASSWORD;
         } else {
             if (autocorrect) textType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT;
+            if (!enableSuggestions) textType |= InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
         }
 
         if (textCapitalization == TextInputChannel.TextCapitalization.CHARACTERS) {
@@ -202,6 +205,7 @@ public class TextInputPlugin {
             configuration.inputType,
             configuration.obscureText,
             configuration.autocorrect,
+            configuration.enableSuggestions,
             configuration.textCapitalization
         );
         outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN;
@@ -315,7 +319,9 @@ public class TextInputPlugin {
     }
 
     // Samsung's Korean keyboard has a bug where it always attempts to combine characters based on
-    // its internal state, ignoring if and when the cursor is moved programmatically.
+    // its internal state, ignoring if and when the cursor is moved programmatically. The same bug
+    // also causes non-korean keyboards to occasionally duplicate text when tapping in the middle
+    // of existing text to edit it.
     //
     // Fully restarting the IMM works around this because it flushes the keyboard's internal state
     // and stops it from trying to incorrectly combine characters. However this also has some
@@ -324,13 +330,14 @@ public class TextInputPlugin {
     @SuppressWarnings("deprecation")
     private boolean isRestartAlwaysRequired() {
         InputMethodSubtype subtype = mImm.getCurrentInputMethodSubtype();
-        if (subtype == null) {
+        // Impacted devices all shipped with Android Lollipop or newer.
+        if (subtype == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP || !Build.MANUFACTURER.equals("samsung")) {
             return false;
         }
-        String language = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                ? subtype.getLanguageTag()
-                : subtype.getLocale();
-        return Build.MANUFACTURER.equals("samsung") && language.equals("ko");
+        String keyboardName = Settings.Secure.getString(mView.getContext().getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
+        // The Samsung keyboard is called "com.sec.android.inputmethod/.SamsungKeypad" but look
+        // for "Samsung" just in case Samsung changes the name of the keyboard.
+        return keyboardName.contains("Samsung");
     }
 
     private void clearTextInputClient() {

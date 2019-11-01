@@ -47,6 +47,7 @@ Float64List kTestTransform = () {
 }();
 
 void signalNativeTest() native 'SignalNativeTest';
+void signalNativeCount(int count) native 'SignalNativeCount';
 void signalNativeMessage(String message) native 'SignalNativeMessage';
 void notifySemanticsEnabled(bool enabled) native 'NotifySemanticsEnabled';
 void notifyAccessibilityFeatures(bool reduceMotion) native 'NotifyAccessibilityFeatures';
@@ -129,6 +130,7 @@ void a11y_main() async { // ignore: non_constant_identifier_names
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
       transform: kTestTransform,
       additionalActions: Int32List.fromList(<int>[21]),
+      platformViewId: 0x3f3,
     )
     ..updateCustomAction(
       id: 21,
@@ -400,6 +402,88 @@ void render_gradient_on_non_root_backing_store() {
 
     builder.pop();
 
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void verify_b141980393() {
+  window.onBeginFrame = (Duration duration) {
+    // The platform view in the test case is screen sized but with margins of 31
+    // and 37 points from the top and bottom.
+    double top_margin = 31.0;
+    double bottom_margin = 37.0;
+    Size platform_view_size = Size(800.0, 600.0 - top_margin - bottom_margin);
+
+    SceneBuilder builder = SceneBuilder();
+
+    builder.pushOffset(0.0,       // x
+                       top_margin // y
+      );
+
+    // The web view in example.
+    builder.addPlatformView(1337, width:  platform_view_size.width,
+                                  height: platform_view_size.height);
+
+    builder.pop();
+
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void can_display_platform_view_with_pixel_ratio() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 20.0);
+    builder.addPlatformView(42, width: 400.0, height: 280.0);
+    builder.addPicture(Offset(0.0, 0.0), CreateSimplePicture());
+    builder.pop();
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void can_receive_locale_updates() {
+  window.onLocaleChanged = (){
+    signalNativeCount(window.locales.length);
+  };
+  signalNativeTest();
+}
+
+// Verifies behavior tracked in https://github.com/flutter/flutter/issues/43732
+@pragma('vm:entry-point')
+void verify_b143464703() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0); // base
+
+    // Background
+    builder.addPicture(Offset(0.0, 0.0), CreateColoredBox(Color.fromARGB(255, 128, 128, 128), Size(1024.0, 600.0)));
+
+    builder.pushOpacity(128);
+    builder.addPicture(Offset(10.0, 10.0), CreateColoredBox(Color.fromARGB(255, 0, 0, 255), Size(25.0, 25.0)));
+    builder.pop(); // opacity 128
+
+    // The top bar and the platform view are pushed to the side.
+    builder.pushOffset(135.0, 0.0); // 1
+    builder.pushOpacity(128); // opacity
+
+    // Platform view offset from the top
+    builder.pushOffset(0.0, 60.0); // 2
+    builder.addPlatformView(42, width: 1024.0, height: 540.0);
+    builder.pop(); // 2
+
+    // Top bar
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(1024.0, 60.0)));
+
+    builder.pop(); // opacity
+    builder.pop(); // 1
+
+    builder.pop(); // base
     window.render(builder.build());
   };
   window.scheduleFrame();

@@ -9,25 +9,17 @@
 
 namespace flutter {
 
-IOSSurfaceGL::IOSSurfaceGL(fml::WeakPtr<IOSGLContext> onscreen_gl_context,
-                           fml::WeakPtr<IOSGLContext> resource_gl_context,
+IOSSurfaceGL::IOSSurfaceGL(std::shared_ptr<IOSGLContext> context,
                            fml::scoped_nsobject<CAEAGLLayer> layer,
                            FlutterPlatformViewsController* platform_views_controller)
-    : IOSSurface(platform_views_controller),
-      onscreen_gl_context_(std::move(onscreen_gl_context)),
-      resource_gl_context_(std::move(resource_gl_context)) {
-  render_target_ = std::make_unique<IOSGLRenderTarget>(std::move(layer), onscreen_gl_context_,
-                                                       resource_gl_context_);
+    : IOSSurface(platform_views_controller), context_(context) {
+  render_target_ = context_->CreateRenderTarget(std::move(layer));
 }
 
 IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
-                           fml::WeakPtr<IOSGLContext> onscreen_gl_context,
-                           fml::WeakPtr<IOSGLContext> resource_gl_context)
-    : IOSSurface(nullptr),
-      onscreen_gl_context_(std::move(onscreen_gl_context)),
-      resource_gl_context_(std::move(resource_gl_context)) {
-  render_target_ = std::make_unique<IOSGLRenderTarget>(std::move(layer), onscreen_gl_context_,
-                                                       resource_gl_context_);
+                           std::shared_ptr<IOSGLContext> context)
+    : IOSSurface(nullptr), context_(context) {
+  render_target_ = context_->CreateRenderTarget(std::move(layer));
 }
 
 IOSSurfaceGL::~IOSSurfaceGL() = default;
@@ -37,7 +29,7 @@ bool IOSSurfaceGL::IsValid() const {
 }
 
 bool IOSSurfaceGL::ResourceContextMakeCurrent() {
-  return resource_gl_context_->MakeCurrent();
+  return context_->ResourceMakeCurrent();
 }
 
 void IOSSurfaceGL::UpdateStorageSizeIfNecessary() {
@@ -68,7 +60,7 @@ bool IOSSurfaceGL::GLContextMakeCurrent() {
   if (!IsValid()) {
     return false;
   }
-  return render_target_->UpdateStorageSizeIfNecessary() && onscreen_gl_context_->MakeCurrent();
+  return render_target_->UpdateStorageSizeIfNecessary() && context_->MakeCurrent();
 }
 
 bool IOSSurfaceGL::GLContextClearCurrent() {
@@ -82,7 +74,7 @@ bool IOSSurfaceGL::GLContextPresent() {
 }
 
 // |ExternalViewEmbedder|
-sk_sp<SkSurface> IOSSurfaceGL::GetRootSurface() {
+SkCanvas* IOSSurfaceGL::GetRootCanvas() {
   // On iOS, the root surface is created from the on-screen render target. Only the surfaces for the
   // various overlays are controlled by this class.
   return nullptr;
@@ -108,7 +100,7 @@ void IOSSurfaceGL::CancelFrame() {
 }
 
 // |ExternalViewEmbedder|
-void IOSSurfaceGL::BeginFrame(SkISize frame_size, GrContext* context) {
+void IOSSurfaceGL::BeginFrame(SkISize frame_size, GrContext* context, double device_pixel_ratio) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   platform_views_controller->SetFrameSize(frame_size);
@@ -153,8 +145,7 @@ bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
     return true;
   }
 
-  bool submitted = platform_views_controller->SubmitFrame(std::move(context), onscreen_gl_context_,
-                                                          resource_gl_context_);
+  bool submitted = platform_views_controller->SubmitFrame(std::move(context), context_);
   [CATransaction commit];
   return submitted;
 }

@@ -81,12 +81,17 @@ static std::string DebugLabelForURL(const std::string& url) {
   }
 }
 
-static std::unique_ptr<fml::FileMapping> MakeReadExecMapping(const char* path) {
+static std::unique_ptr<fml::FileMapping> MakeFileMapping(const char* path,
+                                                         bool executable) {
+  uint32_t flags = OPEN_RIGHT_READABLE;
+  if (executable) {
+    flags |= OPEN_RIGHT_EXECUTABLE;
+  }
+
   int fd = 0;
   // The returned file descriptor is compatible with standard posix operations
   // such as close, mmap, etc. We only need to treat open/open_at specially.
-  zx_status_t status =
-      fdio_open_fd(path, OPEN_RIGHT_READABLE | OPEN_RIGHT_EXECUTABLE, &fd);
+  zx_status_t status = fdio_open_fd(path, flags, &fd);
 
   if (status != ZX_OK) {
     return nullptr;
@@ -94,15 +99,25 @@ static std::unique_ptr<fml::FileMapping> MakeReadExecMapping(const char* path) {
 
   using Protection = fml::FileMapping::Protection;
 
+  std::initializer_list<Protection> protection_execute = {Protection::kRead,
+                                                          Protection::kExecute};
+  std::initializer_list<Protection> protection_read = {Protection::kRead};
   auto mapping = std::make_unique<fml::FileMapping>(
-      fml::UniqueFD{fd}, std::initializer_list<Protection>{
-                             Protection::kRead, Protection::kExecute});
+      fml::UniqueFD{fd}, executable ? protection_execute : protection_read);
 
   if (!mapping->IsValid()) {
     return nullptr;
   }
 
   return mapping;
+}
+
+// Defaults to readonly. If executable is `true`, we treat it as `read + exec`.
+static flutter::MappingCallback MakeDataFileMapping(const char* absolute_path,
+                                                    bool executable = false) {
+  return [absolute_path, executable = executable](void) {
+    return MakeFileMapping(absolute_path, executable);
+  };
 }
 
 Application::Application(
@@ -253,17 +268,15 @@ Application::Application(
   }
 
   // Compare flutter_jit_runner in BUILD.gn.
-  settings_.vm_snapshot_data_path = "pkg/data/vm_snapshot_data.bin";
-  settings_.vm_snapshot_instr = []() {
-    return MakeReadExecMapping("/pkg/data/vm_snapshot_instructions.bin");
-  };
+  settings_.vm_snapshot_data =
+      MakeDataFileMapping("/pkg/data/vm_snapshot_data.bin");
+  settings_.vm_snapshot_instr =
+      MakeDataFileMapping("/pkg/data/vm_snapshot_instructions.bin", true);
 
-  settings_.isolate_snapshot_data_path =
-      "pkg/data/isolate_core_snapshot_data.bin";
-  settings_.isolate_snapshot_instr = []() {
-    return MakeReadExecMapping(
-        "/pkg/data/isolate_core_snapshot_instructions.bin");
-  };
+  settings_.isolate_snapshot_data =
+      MakeDataFileMapping("/pkg/data/isolate_core_snapshot_data.bin");
+  settings_.isolate_snapshot_instr = MakeDataFileMapping(
+      "/pkg/data/isolate_core_snapshot_instructions.bin", true);
 
   {
     // Check if we can use the snapshot with the framework already loaded.
@@ -275,17 +288,15 @@ Application::Application(
                                        "app.frameworkversion",
                                        &app_framework) &&
         (runner_framework.compare(app_framework) == 0)) {
-      settings_.vm_snapshot_data_path =
-          "pkg/data/framework_vm_snapshot_data.bin";
-      settings_.vm_snapshot_instr = []() {
-        return MakeReadExecMapping("/pkg/data/vm_snapshot_instructions.bin");
-      };
-      settings_.isolate_snapshot_data_path =
-          "pkg/data/framework_isolate_core_snapshot_data.bin";
-      settings_.isolate_snapshot_instr = []() {
-        return MakeReadExecMapping(
-            "/pkg/data/isolate_core_snapshot_instructions.bin");
-      };
+      settings_.vm_snapshot_data =
+          MakeDataFileMapping("/pkg/data/framework_vm_snapshot_data.bin");
+      settings_.vm_snapshot_instr =
+          MakeDataFileMapping("/pkg/data/vm_snapshot_instructions.bin", true);
+
+      settings_.isolate_snapshot_data = MakeDataFileMapping(
+          "/pkg/data/framework_isolate_core_snapshot_data.bin");
+      settings_.isolate_snapshot_instr = MakeDataFileMapping(
+          "/pkg/data/isolate_core_snapshot_instructions.bin", true);
 
       FML_LOG(INFO) << "Using snapshot with framework for "
                     << package.resolved_url;

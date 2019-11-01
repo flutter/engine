@@ -59,6 +59,28 @@ enum VertexMode {
 
 /// A set of vertex data used by [Canvas.drawVertices].
 class Vertices {
+  final VertexMode _mode;
+  final Float32List _positions;
+  final Float32List _textureCoordinates;
+  final Int32List _colors;
+  final Uint16List _indices;
+
+  Vertices._(
+    VertexMode mode,
+    List<Offset> positions, {
+    List<Offset> textureCoordinates,
+    List<Color> colors,
+    List<int> indices,
+  })  : assert(mode != null),
+        assert(positions != null),
+        _mode = mode,
+        _colors = _int32ListFromColors(colors),
+        _indices = indices != null ? Uint16List.fromList(indices) : null,
+        _positions = _offsetListToInt32List(positions),
+        _textureCoordinates = _offsetListToInt32List(textureCoordinates) {
+    engine.initWebGl();
+  }
+
   factory Vertices(
     VertexMode mode,
     List<Offset> positions, {
@@ -72,7 +94,47 @@ class Vertices {
           colors: colors,
           indices: indices);
     }
-    return null;
+    return Vertices._(mode, positions,
+        textureCoordinates: textureCoordinates,
+        colors: colors,
+        indices: indices);
+  }
+
+  Vertices._raw(
+    VertexMode mode,
+    Float32List positions, {
+    Float32List textureCoordinates,
+    Int32List colors,
+    Uint16List indices,
+  })  : assert(mode != null),
+        assert(positions != null),
+        _mode = mode,
+        _positions = positions,
+        _textureCoordinates = textureCoordinates,
+        _colors = colors,
+        _indices = indices {
+    engine.initWebGl();
+  }
+
+  static Float32List _offsetListToInt32List(List<Offset> offsetList) {
+    if (offsetList == null) {
+      return null;
+    }
+    final int length = offsetList.length;
+    final floatList = Float32List(length * 2);
+    for (int i = 0, destIndex = 0; i < length; i++, destIndex += 2) {
+      floatList[destIndex] = offsetList[i].dx;
+      floatList[destIndex + 1] = offsetList[i].dy;
+    }
+    return floatList;
+  }
+
+  static Int32List _int32ListFromColors(List<Color> colors) {
+    Int32List list = Int32List(colors.length);
+    for (int i = 0, len = colors.length; i < len; i++) {
+      list[i] = colors[i].value;
+    }
+    return list;
   }
 
   factory Vertices.raw(
@@ -88,8 +150,15 @@ class Vertices {
           colors: colors,
           indices: indices);
     }
-    return null;
+    return Vertices._raw(mode, positions,
+        textureCoordinates: textureCoordinates,
+        colors: colors,
+        indices: indices);
   }
+
+  VertexMode get mode => _mode;
+  Int32List get colors => _colors;
+  Float32List get positions => _positions;
 }
 
 /// Records a [Picture] containing a sequence of graphical operations.
@@ -888,7 +957,8 @@ class Canvas {
   }
 
   void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
-    assert(vertices != null); // vertices is checked on the engine side
+    if (vertices == null) return;
+    //assert(vertices != null); // vertices is checked on the engine side
     assert(paint != null);
     assert(blendMode != null);
     _canvas.drawVertices(vertices, blendMode, paint);
@@ -993,12 +1063,26 @@ class Picture {
 
   /// Creates an image from this picture.
   ///
-  /// The picture is rasterized using the number of pixels specified by the
-  /// given width and height.
+  /// The returned image will be `width` pixels wide and `height` pixels high.
+  /// The picture is rasterized within the 0 (left), 0 (top), `width` (right),
+  /// `height` (bottom) bounds. Content outside these bounds is clipped.
   ///
   /// Although the image is returned synchronously, the picture is actually
   /// rasterized the first time the image is drawn and then cached.
-  Future<Image> toImage(int width, int height) => null;
+  Future<Image> toImage(int width, int height) async {
+    final engine.BitmapCanvas canvas = engine.BitmapCanvas(Rect.fromLTRB(0, 0, width.toDouble(), height.toDouble()));
+    recordingCanvas.apply(canvas);
+    final String imageDataUrl = canvas.canvas.toDataUrl();
+    final html.ImageElement imageElement = html.ImageElement()
+      ..src = imageDataUrl
+      ..width = width
+      ..height = height;
+    return engine.HtmlImage(
+      imageElement,
+      width,
+      height,
+    );
+  }
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
@@ -1584,12 +1668,16 @@ class Path {
     if (dx == 0.0 && dy == 0.0) {
       subpaths.addAll(path.subpaths);
     } else {
-      throw UnimplementedError('Cannot add path with non-zero offset');
+      subpaths.addAll(path
+          .transform(engine.Matrix4.translationValues(dx, dy, 0.0).storage)
+          .subpaths);
     }
   }
 
   void _addPathWithMatrix(Path path, double dx, double dy, Float64List matrix) {
-    throw UnimplementedError('Cannot add path with transform matrix');
+    final engine.Matrix4 transform = engine.Matrix4.fromFloat64List(matrix);
+    transform.translate(dx, dy);
+    subpaths.addAll(path.transform(transform.storage).subpaths);
   }
 
   /// Adds the given path to this path by extending the current segment of this
@@ -1729,8 +1817,8 @@ class Path {
     final Size size = window.physicalSize / window.devicePixelRatio;
     _rawRecorder ??= RawRecordingCanvas(size);
     // Account for the shift due to padding.
-    _rawRecorder.translate(-engine.BitmapCanvas.paddingPixels.toDouble(),
-        -engine.BitmapCanvas.paddingPixels.toDouble());
+    _rawRecorder.translate(-engine.BitmapCanvas.kPaddingPixels.toDouble(),
+        -engine.BitmapCanvas.kPaddingPixels.toDouble());
     _rawRecorder.drawPath(
         this, (Paint()..color = const Color(0xFF000000)).webOnlyPaintData);
     final bool result = _rawRecorder.ctx.isPointInPath(pointX, pointY);
@@ -1742,18 +1830,24 @@ class Path {
   /// subpath translated by the given offset.
   Path shift(Offset offset) {
     assert(engine.offsetIsValid(offset));
-    final List<engine.Subpath> shiftedSubpaths = <engine.Subpath>[];
-    for (final engine.Subpath subpath in subpaths) {
-      shiftedSubpaths.add(subpath.shift(offset));
+    final List<engine.Subpath> shiftedSubPaths = <engine.Subpath>[];
+    for (final engine.Subpath subPath in subpaths) {
+      shiftedSubPaths.add(subPath.shift(offset));
     }
-    return Path._clone(shiftedSubpaths, fillType);
+    return Path._clone(shiftedSubPaths, fillType);
   }
 
   /// Returns a copy of the path with all the segments of every
-  /// subpath transformed by the given matrix.
+  /// sub path transformed by the given matrix.
   Path transform(Float64List matrix4) {
     assert(engine.matrix4IsValid(matrix4));
-    throw UnimplementedError();
+    final Path transformedPath = Path();
+    for (final engine.Subpath subPath in subpaths) {
+      for (final engine.PathCommand cmd in subPath.commands) {
+        cmd.transform(matrix4, transformedPath);
+      }
+    }
+    return transformedPath;
   }
 
   /// Computes the bounding rectangle for this path.
@@ -2205,7 +2299,7 @@ class Path {
 ///
 /// When iterating across a [PathMetrics]' contours, the [PathMetric] objects
 /// are only valid until the next one is obtained.
-class PathMetrics extends IterableBase<PathMetric> {
+class PathMetrics extends collection.IterableBase<PathMetric> {
   PathMetrics._(Path path, bool forceClosed)
       : _iterator = PathMetricIterator._(PathMetric._(path, forceClosed));
 

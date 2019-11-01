@@ -73,7 +73,9 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   void CancelFrame() override;
 
   // |ExternalViewEmbedder|
-  void BeginFrame(SkISize frame_size, GrContext* context) override;
+  void BeginFrame(SkISize frame_size,
+                  GrContext* context,
+                  double device_pixel_ratio) override;
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
@@ -90,7 +92,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   bool SubmitFrame(GrContext* context) override;
 
   // |ExternalViewEmbedder|
-  sk_sp<SkSurface> GetRootSurface() override;
+  SkCanvas* GetRootCanvas() override;
 
  private:
   using ViewIdentifier = int64_t;
@@ -127,6 +129,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
                                       RegistryKey::Equal>;
 
   SkISize pending_frame_size_ = SkISize::Make(0, 0);
+  double pending_device_pixel_ratio_ = 1.0;
   SkMatrix pending_surface_transformation_;
   std::map<ViewIdentifier, std::unique_ptr<SkPictureRecorder>>
       pending_recorders_;
@@ -134,6 +137,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   std::map<ViewIdentifier, EmbeddedViewParams> pending_params_;
   std::vector<ViewIdentifier> composition_order_;
   std::shared_ptr<EmbedderRenderTarget> root_render_target_;
+  std::unique_ptr<SkPictureRecorder> root_picture_recorder_;
   Registry registry_;
 
   void Reset();

@@ -39,11 +39,12 @@ Engine::Engine(Delegate& delegate,
                const PointerDataDispatcherMaker& dispatcher_maker,
                DartVM& vm,
                fml::RefPtr<const DartSnapshot> isolate_snapshot,
-               fml::RefPtr<const DartSnapshot> shared_snapshot,
                TaskRunners task_runners,
                Settings settings,
                std::unique_ptr<Animator> animator,
-               fml::WeakPtr<IOManager> io_manager)
+               fml::WeakPtr<IOManager> io_manager,
+               fml::RefPtr<SkiaUnrefQueue> unref_queue,
+               fml::WeakPtr<SnapshotDelegate> snapshot_delegate)
     : delegate_(delegate),
       settings_(std::move(settings)),
       animator_(std::move(animator)),
@@ -58,18 +59,20 @@ Engine::Engine(Delegate& delegate,
   // object as its delegate. The delegate may be called in the constructor and
   // we want to be fully initilazed by that point.
   runtime_controller_ = std::make_unique<RuntimeController>(
-      *this,                                 // runtime delegate
-      &vm,                                   // VM
-      std::move(isolate_snapshot),           // isolate snapshot
-      std::move(shared_snapshot),            // shared snapshot
-      task_runners_,                         // task runners
+      *this,                        // runtime delegate
+      &vm,                          // VM
+      std::move(isolate_snapshot),  // isolate snapshot
+      task_runners_,                // task runners
+      std::move(snapshot_delegate),
       std::move(io_manager),                 // io manager
+      std::move(unref_queue),                // Skia unref queue
       image_decoder_.GetWeakPtr(),           // image decoder
       settings_.advisory_script_uri,         // advisory script uri
       settings_.advisory_script_entrypoint,  // advisory script entrypoint
       settings_.idle_notification_callback,  // idle notification callback
       settings_.isolate_create_callback,     // isolate create callback
-      settings_.isolate_shutdown_callback    // isolate shutdown callback
+      settings_.isolate_shutdown_callback,   // isolate shutdown callback
+      settings_.persistent_isolate_data      // persistent isolate data
   );
 
   pointer_data_dispatcher_ = dispatcher_maker(*this);
@@ -124,6 +127,9 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
     FML_LOG(ERROR) << "Engine run configuration was invalid.";
     return RunStatus::Failure;
   }
+
+  last_entry_point_ = configuration.GetEntrypoint();
+  last_entry_point_library_ = configuration.GetEntrypointLibrary();
 
   auto isolate_launch_status =
       PrepareAndLaunchIsolate(std::move(configuration));
@@ -437,6 +443,7 @@ void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
     return;
 
   layer_tree->set_frame_size(frame_size);
+  layer_tree->set_device_pixel_ratio(viewport_metrics_.device_pixel_ratio);
   animator_->Render(std::move(layer_tree));
 }
 
@@ -497,6 +504,14 @@ void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {
   }
 
   response->CompleteEmpty();
+}
+
+const std::string& Engine::GetLastEntrypoint() const {
+  return last_entry_point_;
+}
+
+const std::string& Engine::GetLastEntrypointLibrary() const {
+  return last_entry_point_library_;
 }
 
 }  // namespace flutter

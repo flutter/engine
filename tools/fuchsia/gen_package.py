@@ -24,6 +24,7 @@ def GenerateManifest(package_dir):
       common_prefix = os.path.commonprefix([root, package_dir])
       rel_path = os.path.relpath(os.path.join(root, f), common_prefix)
       from_package = os.path.abspath(os.path.join(package_dir, rel_path))
+      assert from_package, 'Failed to create from_package for %s' % os.path.join(root, f)
       full_paths.append('%s=%s' % (rel_path, from_package))
   parent_dir = os.path.abspath(os.path.join(package_dir, os.pardir))
   manifest_file_name = os.path.basename(package_dir) + '.manifest'
@@ -42,10 +43,10 @@ def CreateFarPackage(pm_bin, package_dir, signing_key, dst_dir):
   ]
 
   # Build the package
-  subprocess.check_call(pm_command_base + ['build'])
+  subprocess.check_output(pm_command_base + ['build'])
 
   # Archive the package
-  subprocess.check_call(pm_command_base + ['archive'])
+  subprocess.check_output(pm_command_base + ['archive'])
 
   return 0
 
@@ -73,6 +74,10 @@ def main():
   if not os.path.exists(os.path.join(pkg_dir, 'meta', 'package')):
     CreateMetaPackage(pkg_dir, args.far_name)
 
+  output_dir = os.path.abspath(pkg_dir + '_out')
+  if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
   manifest_file = None
   if args.manifest_file is not None:
     assert os.path.exists(args.manifest_file)
@@ -80,21 +85,49 @@ def main():
   else:
     manifest_file = GenerateManifest(args.package_dir)
 
+  strace_out = os.path.join(output_dir, 'strace_out')
+
   pm_command_base = [
+      'strace',
+      '-f',
+      '-o',
+      strace_out,
       args.pm_bin,
       '-o',
-      os.path.abspath(os.path.join(pkg_dir, os.pardir)),
+      output_dir,
       '-k',
       args.signing_key,
       '-m',
       manifest_file,
   ]
 
-  # Build the package
-  subprocess.check_call(pm_command_base + ['build'])
-
-  # Archive the package
-  subprocess.check_call(pm_command_base + ['archive'])
+  # Build and then archive the package
+  # Use check_output so if anything goes wrong we get the output.
+  try:
+    pm_commands = [
+        ['build'],
+        ['archive', '--output='+ os.path.join(os.path.dirname(output_dir), args.far_name + "-0")],
+    ]
+    for pm_command in pm_commands:
+      pm_command_args = pm_command_base + pm_command
+      sys.stderr.write("===== Running %s\n" % pm_command_args)
+      subprocess.check_output(pm_command_args)
+  except subprocess.CalledProcessError as e:
+    print('==================== Manifest contents =========================================')
+    with open(manifest_file, 'r') as manifest:
+      sys.stdout.write(manifest.read())
+    print('==================== End manifest contents =====================================')
+    meta_contents_path = os.path.join(output_dir, 'meta', 'contents')
+    if os.path.exists(meta_contents_path):
+      print('==================== meta/contents =============================================')
+      with open(meta_contents_path, 'r') as meta_contents:
+        sys.stdout.write(meta_contents.read())
+      print('==================== End meta/contents =========================================')
+    print('==================== Strace output =============================================')
+    with open(strace_out, 'r') as strace:
+      sys.stdout.write(strace.read())
+    print('==================== End strace output =========================================')
+    raise
 
   return 0
 

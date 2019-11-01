@@ -67,9 +67,12 @@ static SkISize TransformedSurfaceSize(const SkISize& size,
 
 // |ExternalViewEmbedder|
 void EmbedderExternalViewEmbedder::BeginFrame(SkISize frame_size,
-                                              GrContext* context) {
+                                              GrContext* context,
+                                              double device_pixel_ratio) {
   Reset();
+
   pending_frame_size_ = frame_size;
+  pending_device_pixel_ratio_ = device_pixel_ratio;
   pending_surface_transformation_ = GetSurfaceTransformation();
 
   const auto surface_size = TransformedSurfaceSize(
@@ -92,24 +95,14 @@ void EmbedderExternalViewEmbedder::BeginFrame(SkISize frame_size,
     }
   }
 
-  // If there is no root render target, create one now. This will be accessed by
-  // the rasterizer before the submit call layer to access the surface surface
-  // canvas.
+  // If there is no root render target, create one now.
+  // TODO(43778): This should now be moved to be later in the submit call.
   if (!root_render_target_) {
     root_render_target_ = create_render_target_callback_(
         context, MakeBackingStoreConfig(surface_size));
-  }
-
-  // Install the root surface transformation on the root canvas at the beginning
-  // of each frame.
-  if (root_render_target_) {
-    auto surface = root_render_target_->GetRenderSurface();
-    if (surface) {
-      auto canvas = surface->getCanvas();
-      if (canvas) {
-        canvas->setMatrix(pending_surface_transformation_);
-      }
-    }
+    root_picture_recorder_ = std::make_unique<SkPictureRecorder>();
+    root_picture_recorder_->beginRecording(pending_frame_size_.width(),
+                                           pending_frame_size_.height());
   }
 }
 
@@ -155,7 +148,8 @@ SkCanvas* EmbedderExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
 static FlutterLayer MakeBackingStoreLayer(
     const SkISize& frame_size,
     const FlutterBackingStore* store,
-    const SkMatrix& surface_transformation) {
+    const SkMatrix& surface_transformation,
+    double device_pixel_ratio) {
   FlutterLayer layer = {};
 
   layer.struct_size = sizeof(layer);
@@ -166,7 +160,9 @@ static FlutterLayer MakeBackingStoreLayer(
       SkRect::MakeWH(frame_size.width(), frame_size.height());
 
   const auto transformed_layer_bounds =
-      surface_transformation.mapRect(layer_bounds);
+      SkMatrix::Concat(surface_transformation,
+                       SkMatrix::MakeScale(device_pixel_ratio))
+          .mapRect(layer_bounds);
 
   layer.offset.x = transformed_layer_bounds.x();
   layer.offset.y = transformed_layer_bounds.y();
@@ -190,7 +186,8 @@ static FlutterPlatformView MakePlatformView(
 static FlutterLayer MakePlatformViewLayer(
     const EmbeddedViewParams& params,
     const FlutterPlatformView& platform_view,
-    const SkMatrix& surface_transformation) {
+    const SkMatrix& surface_transformation,
+    double device_pixel_ratio) {
   FlutterLayer layer = {};
 
   layer.struct_size = sizeof(layer);
@@ -204,7 +201,9 @@ static FlutterLayer MakePlatformViewLayer(
   );
 
   const auto transformed_layer_bounds =
-      surface_transformation.mapRect(layer_bounds);
+      SkMatrix::Concat(surface_transformation,
+                       SkMatrix::MakeScale(device_pixel_ratio))
+          .mapRect(layer_bounds);
 
   layer.offset.x = transformed_layer_bounds.x();
   layer.offset.y = transformed_layer_bounds.y();
@@ -228,15 +227,25 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
     return false;
   }
 
+  // Copy the contents of the root picture recorder onto the root surface
+  // while making sure to take into account any surface transformations.
   if (auto root_canvas = root_render_target_->GetRenderSurface()->getCanvas()) {
+    root_canvas->setMatrix(pending_surface_transformation_);
+    root_canvas->clear(SK_ColorTRANSPARENT);
+    root_canvas->drawPicture(
+        root_picture_recorder_->finishRecordingAsPicture());
     root_canvas->flush();
+    root_picture_recorder_.reset();
   }
 
   {
     // The root surface is expressed as a layer.
     presented_layers.push_back(MakeBackingStoreLayer(
-        pending_frame_size_, root_render_target_->GetBackingStore(),
-        pending_surface_transformation_));
+        pending_frame_size_,                     // frame size
+        root_render_target_->GetBackingStore(),  // backing store
+        pending_surface_transformation_,         // surface transformation
+        pending_device_pixel_ratio_              // device pixel ratio
+        ));
   }
 
   const auto surface_size = TransformedSurfaceSize(
@@ -262,9 +271,12 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
     // The layers presented to the embedder will contain a back pointer to this
     // struct. It is safe to deallocate when the embedder callback is done.
     presented_platform_views[view_id] = MakePlatformView(view_id);
-    presented_layers.push_back(
-        MakePlatformViewLayer(params, presented_platform_views.at(view_id),
-                              pending_surface_transformation_));
+    presented_layers.push_back(MakePlatformViewLayer(
+        params,                                // embedded view params
+        presented_platform_views.at(view_id),  // platform view
+        pending_surface_transformation_,       // surface transformation
+        pending_device_pixel_ratio_            // device pixel ratio
+        ));
 
     if (!pending_canvas_spies_.at(view_id)->DidDrawIntoCanvas()) {
       // Nothing was drawn into the overlay canvas, we don't need to composite
@@ -312,8 +324,11 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
     // Indicate a layer for the backing store containing contents rendered by
     // Flutter.
     presented_layers.push_back(MakeBackingStoreLayer(
-        pending_frame_size_, render_target->GetBackingStore(),
-        pending_surface_transformation_));
+        pending_frame_size_,               // frame size
+        render_target->GetBackingStore(),  // backing store
+        pending_surface_transformation_,   // surface transformation
+        pending_device_pixel_ratio_        // device pixel ratio
+        ));
   }
 
   {
@@ -331,9 +346,11 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
 }
 
 // |ExternalViewEmbedder|
-sk_sp<SkSurface> EmbedderExternalViewEmbedder::GetRootSurface() {
-  return root_render_target_ ? root_render_target_->GetRenderSurface()
-                             : nullptr;
+SkCanvas* EmbedderExternalViewEmbedder::GetRootCanvas() {
+  if (!root_picture_recorder_) {
+    return nullptr;
+  }
+  return root_picture_recorder_->getRecordingCanvas();
 }
 
 }  // namespace flutter
