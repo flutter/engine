@@ -21,8 +21,7 @@ fonts_dir = os.path.join(buildroot_dir, 'flutter', 'third_party', 'txt', 'third_
 roboto_font_path = os.path.join(fonts_dir, 'Roboto-Regular.ttf')
 dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 
-time_sensitve_test_flag = '--gtest_filter=-*TimeSensitiveTest*'
-gpu_thread_merger_test_flag = '--gtest_filter=-*GpuThreadMerger*'
+fml_unittests_filter = '--gtest_filter=-*TimeSensitiveTest*:*GpuThreadMerger*'
 
 def IsMac():
   return sys.platform == 'darwin'
@@ -96,7 +95,7 @@ def RunCCTests(build_dir, filter):
     ]
   RunEngineExecutable(build_dir, 'flow_unittests', filter, flow_flags + shuffle_flags)
 
-  RunEngineExecutable(build_dir, 'fml_unittests', filter, [ time_sensitve_test_flag, gpu_thread_merger_test_flag ] + shuffle_flags)
+  RunEngineExecutable(build_dir, 'fml_unittests', filter, [ fml_unittests_filter ] + shuffle_flags)
 
   RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags)
 
