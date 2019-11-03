@@ -67,6 +67,7 @@ if (is_fuchsia_host || is_fuchsia) {
     deps = [
       ":package_incremental_compiler",
       "$flutter_root/lib/snapshot:kernel_platform_files",
+      "$flutter_root/hotui_server",
     ]
     dot_packages = rebase_path(".packages")
     flutter_patched_sdk = rebase_path("$root_out_dir/flutter_patched_sdk")

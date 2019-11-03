@@ -11,6 +11,7 @@ import shutil
 
 ALL_PACKAGES = {
   'flutter_frontend_server': [],
+  'hot_ui': [],
 }
 
 SRC_DIR = os.getcwd()

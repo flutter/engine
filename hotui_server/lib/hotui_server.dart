@@ -6,18 +6,24 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:kernel/binary/limited_ast_to_binary.dart';
+import 'package:path/path.dart' as path;
 import 'package:args/args.dart';
 import 'package:kernel/ast.dart';
 import 'package:kernel/binary/ast_to_binary.dart';
-import 'package:vm_service/vm_service.dart' as vm_service;
-import 'package:vm_service/vm_service_io.dart';
+
 import 'package:vm/incremental_compiler.dart';
 import 'package:front_end/src/api_unstable/vm.dart'; // ignore: implementation_imports
 import 'package:vm/kernel_front_end.dart'
-    show convertFileOrUriArgumentToUri, createFrontEndFileSystem, createFrontEndTarget, setVMEnvironmentDefines;
+    show
+        convertFileOrUriArgumentToUri,
+        createFrontEndFileSystem,
+        createFrontEndTarget,
+        setVMEnvironmentDefines;
 
 // These options are a subset of the overall frontend server options.
 final ArgParser argParser = ArgParser()
+  ..addFlag('train')
   ..addOption('sdk-root',
       help: 'Path to sdk root',
       defaultsTo: '../../out/android_debug/flutter_patched_sdk')
@@ -55,28 +61,31 @@ final ArgParser argParser = ArgParser()
       help:
           'The file URI of the library containing the applications main method')
   ..addOption('output-dill',
-      help: 'Output path for the generated dill', defaultsTo: null)
-  // hot UI specific options
-  ..addOption('vmservice', help: 'The URI of the vmservice to connect to')
-  ..addOption('devfs-uri', help: 'The URI of the devFS main dill')
-  ..addOption('devfs', help: 'The name of the devFS to use for hot reload')
-  ..addOption('isolate-id', help: 'The isolate id to be reloaded');
+      help: 'Output path for the generated dill', defaultsTo: null);
 
 const String kReadyMessage = 'READY';
 const String kFailedMessage = 'FAILED';
 
+// This implementation has three known limitations
+//
+// * The line and column numbers of the patched method are not currently
+//   correct. This might need an update to the evaulate expression logic.
+// * The full component is only compiled once during startup. Since we only
+//   send a component containing a single changed library, this will usually
+//   work. Long term, this needs to be aware of the normal invalidation
+//  cycle.
+// * This writes out an incremental dill file to the provided path.
+//   As a performance improvement, it should be written directly into an
+//   http request body for the vmservice to load from.
 Future<void> main(List<String> args) async {
   final ArgResults options = argParser.parse(args);
-  final String vmServiceUri = options['vmservice'];
-  final Uri entrypointUri = Uri.parse(options['target']);
-  final String devFs = options['devfs'];
-  final String devfsUri = options['devfs-uri'];
-  final String httpAddress =
-      vmServiceUri.replaceFirst('ws', 'http').replaceFirst('/ws', '');
-  final String isolateId = options['isolate-id'];
 
-  final vm_service.VmService vmService = await vmServiceConnectUri(vmServiceUri);
-  final HttpClient httpClient = HttpClient();
+  // Since this is a short-lived package for experimentation it is not
+  // worth training.
+  if (options['train']) {
+    return;
+  }
+  final Uri entrypointUri = Uri.parse(options['target']);
 
   // Setup compiler configuration from arguments.
   final FileSystem fileSystem = createFrontEndFileSystem(
@@ -109,13 +118,17 @@ Future<void> main(List<String> args) async {
   );
 
   // Compile the initial component
-  final Component component = await incrementalCompiler.compile(entryPoint: entrypointUri);
+  final Component component =
+      await incrementalCompiler.compile(entryPoint: entrypointUri);
   component.computeCanonicalNames();
   incrementalCompiler.accept();
 
   // Ready for hot UI.
-  HotUIService(vmService, httpClient, incrementalCompiler, component, devFs,
-      httpAddress, devfsUri, isolateId);
+  HotUIService(
+    incrementalCompiler,
+    component,
+    File(initializeFromDillUri.toFilePath()).parent,
+  );
 }
 
 /// This service avoids re-parsing dart code by maintaining a single full
@@ -130,16 +143,7 @@ Future<void> main(List<String> args) async {
 /// component in memory. Then, after modifying the AST, it manually trims the
 /// component to contain only the modified library.
 class HotUIService {
-  HotUIService(
-      this.vmService,
-      this.httpClient,
-      this.incrementalCompiler,
-      this.component,
-      this.devFs,
-      this.httpAddress,
-      this.devfsUri,
-      this.isolateId) {
-
+  HotUIService(this.incrementalCompiler, this.component, this.outputDirectory) {
     stdin
         .transform(utf8.decoder)
         .transform(const LineSplitter())
@@ -147,50 +151,56 @@ class HotUIService {
     print(kReadyMessage);
   }
 
-  final vm_service.VmService vmService;
-  final HttpClient httpClient;
   final IncrementalCompiler incrementalCompiler;
   final Component component;
-  final String devFs;
-  final String httpAddress;
-  final String devfsUri;
-  final String isolateId;
+  final Directory outputDirectory;
 
+  // Example invocation:
+  //
+  //    {"class":"_DemoItem","method":"build","library":"package:flutter_gallery/gallery/home.dart","methodBody":"Text('Hello, World')"}
   Future<void> reloadMethod(String libraryId, String classId, String methodId,
       String methodBody) async {
-    final Stopwatch sw = Stopwatch()..start();
-    final Procedure procedure = await incrementalCompiler
-      .compileExpression(methodBody, <String>['context'], <String>['BuildContext'], libraryId, classId, false);
-    component.transformChildren(BodyReplacementTransformer(libraryId, classId, methodId, procedure));
+    final Procedure procedure = await incrementalCompiler.compileExpression(
+        methodBody,
+        // This is not yet flexible for non-build expressions.
+        <String>['context'],
+        <String>['BuildContext'],
+        libraryId,
+        classId,
+        false);
+    component.transformChildren(
+        BodyReplacementTransformer(libraryId, classId, methodId, procedure));
+    final Library modifiedLibrary = component.libraries.firstWhere(
+        (Library library) => library.importUri.toString() == libraryId,
+        orElse: () => null);
+    if (modifiedLibrary == null) {
+      throw Exception('Could not find library with id: $libraryId');
+    }
     final Component partialComponent = Component(libraries: <Library>[
-      component.libraries.firstWhere((Library library) => library.importUri.toString() == libraryId)
+      modifiedLibrary,
     ]);
-    stderr.writeln('compiled expression in ${sw.elapsedMilliseconds}');
-
-    // Use the HTTP request as the sink for serializing the partial dill.
-    final HttpClientRequest request =
-        await httpClient.putUrl(Uri.parse(httpAddress));
-    request.headers.removeAll(HttpHeaders.acceptEncodingHeader);
-    request.headers.add('dev_fs_name', devFs);
-    request.headers.add(
-        'dev_fs_uri_base64',
-        base64
-            .encode(utf8.encode('${devfsUri}lib/main.dart.incremental.dill')));
-    final BinaryPrinter binaryPrinter = BinaryPrinter(request);
-    binaryPrinter.writeComponentFile(partialComponent);
-    await request.close();
-    await vmService.reloadSources(isolateId);
-
-    // Invoke reassemble.
-    await vmService.callServiceExtension('flutter.ext.reassemble');
+    partialComponent.unbindCanonicalNames();
+    partialComponent.computeCanonicalNames();
+    final IOSink sink =
+        File(path.join(outputDirectory.path, 'hotui.dill')).openWrite();
+    final BinaryPrinter printer =
+        LimitedBinaryPrinter(sink, (_) => true, false);
+    printer.writeComponentFile(partialComponent);
+    await sink.close();
   }
 
   // Expects newline denominated JSON object.
   void onMessage(String line) {
-    final Map<String, Object> message = json.decode(line);
-    final String libraryId = message['libraryId'];
-    final String classId = message['classId'];
-    final String methodId = message['methodId'];
+    Map<String, Object> message;
+    try {
+      message = json.decode(line);
+    } on FormatException catch (error) {
+      stderr.writeln(error.toString());
+      print(kFailedMessage);
+    }
+    final String libraryId = message['library'];
+    final String classId = message['class'];
+    final String methodId = message['method'];
     final String methodBody = message['methodBody'];
 
     reloadMethod(libraryId, classId, methodId, methodBody).then((void result) {
@@ -242,3 +252,4 @@ class BodyReplacementTransformer extends Transformer {
     return super.visitProcedure(node);
   }
 }
+

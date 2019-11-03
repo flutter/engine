@@ -1,0 +1,1 @@
+This package contains support for the HOT UI driven hot reload experience. This is developed as a standalone package, instead of part of either the exiting frontend_server or in the flutter tool in order to reduce the risk of accidental breakages to either. Long term, this should be folded into either the compiler or into the tool.
