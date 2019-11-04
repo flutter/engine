@@ -59,6 +59,7 @@ abstract class EngineInputType {
   /// <https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/inputmode>.
   String get inputmodeAttribute;
 
+  /// Whether this input type allows the "Enter" key to submit the input action.
   bool get submitActionOnEnter => true;
 
   /// Create the appropriate DOM element for this input type.
