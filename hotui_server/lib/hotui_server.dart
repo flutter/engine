@@ -246,6 +246,7 @@ class BodyReplacementTransformer extends Transformer {
 
   @override
   TreeNode visitProcedure(Procedure node) {
+    // TODO(jonahwilliams): Validate that the argument/return types are correct.
     if (node.name.name == methodId && node.kind == ProcedureKind.Method) {
       return procedure;
     }
