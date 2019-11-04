@@ -175,20 +175,21 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 
 - (void)setViewController:(FlutterViewController*)viewController {
   FML_DCHECK(self.iosPlatformView);
-  _viewController = [viewController getWeakPtr];
+  _viewController = viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
 
   __block FlutterEngine* blockSelf = self;
   [_flutterViewControllerWillDeallocObserver release];
-
-  self.flutterViewControllerWillDeallocObserver =
-      [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
-                                                        object:viewController
-                                                         queue:[NSOperationQueue mainQueue]
-                                                    usingBlock:^(NSNotification* note) {
-                                                      [blockSelf notifyViewControllerDeallocated];
-                                                    }];
+  if (viewController) {
+    self.flutterViewControllerWillDeallocObserver =
+        [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
+                                                          object:viewController
+                                                           queue:[NSOperationQueue mainQueue]
+                                                      usingBlock:^(NSNotification* note) {
+                                                        [blockSelf notifyViewControllerDeallocated];
+                                                      }];
+  }
 }
 
 - (void)setFlutterViewControllerWillDeallocObserver:(id<NSObject>)observer {
