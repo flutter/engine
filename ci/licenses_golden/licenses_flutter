@@ -227,6 +227,8 @@ FILE: ../../../flutter/fml/unique_fd.cc
 FILE: ../../../flutter/fml/unique_fd.h
 FILE: ../../../flutter/fml/unique_object.h
 FILE: ../../../flutter/fml/wakeable.h
+FILE: ../../../flutter/hotui_server/bin/main.dart
+FILE: ../../../flutter/hotui_server/lib/hotui_server.dart
 FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
 FILE: ../../../flutter/lib/snapshot/libraries.json
