@@ -1359,7 +1359,6 @@ static const unsigned char kAhemFont[] = {
 
 static const unsigned int kAhemFontLength = 13884;
 static const unsigned int kCoughFontLength = 1576;
-// static const unsigned int kCoughFontLength = 2064;
 
 #else  // EMBED_TEST_FONT_DATA
 
