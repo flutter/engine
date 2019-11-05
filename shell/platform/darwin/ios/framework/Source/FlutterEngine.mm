@@ -175,7 +175,8 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 
 - (void)setViewController:(FlutterViewController*)viewController {
   FML_DCHECK(self.iosPlatformView);
-  _viewController = viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
+  _viewController =
+      viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
 
@@ -191,7 +192,6 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   } else {
     self.flutterViewControllerWillDeallocObserver = nil;
   }
-
 }
 
 - (void)setFlutterViewControllerWillDeallocObserver:(id<NSObject>)observer {
