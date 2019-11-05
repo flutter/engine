@@ -27,11 +27,11 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     case UIAccessibilityScrollDirectionRight:
     case UIAccessibilityScrollDirectionPrevious:  // TODO(abarth): Support RTL using
                                                   // _node.textDirection.
-      return flutter::SemanticsAction::kScrollLeft;
+      return flutter::SemanticsAction::kScrollRight;
     case UIAccessibilityScrollDirectionLeft:
     case UIAccessibilityScrollDirectionNext:  // TODO(abarth): Support RTL using
                                               // _node.textDirection.
-      return flutter::SemanticsAction::kScrollRight;
+      return flutter::SemanticsAction::kScrollLeft;
     case UIAccessibilityScrollDirectionUp:
       return flutter::SemanticsAction::kScrollDown;
     case UIAccessibilityScrollDirectionDown:
