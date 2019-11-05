@@ -8,6 +8,7 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
@@ -168,6 +169,10 @@ struct KeyboardState {
   // The project to run in this controller's engine.
   FlutterDartProject* _project;
 
+  // The plugin used to handle mouse cursor. This is not an FlutterPlugin, so must be owned
+  // separately.
+  FlutterMouseCursorPlugin* _mouseCursorPlugin;
+
   // The plugin used to handle text input. This is not an FlutterPlugin, so must be owned
   // separately.
   FlutterTextInputPlugin* _textInputPlugin;
@@ -317,6 +322,7 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)addInternalPlugins {
+  _mouseCursorPlugin = [[FlutterMouseCursorPlugin alloc] initWithViewController:self];
   _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:self];
   _keyEventChannel =
       [FlutterBasicMessageChannel messageChannelWithName:@"flutter/keyevent"
