@@ -14,11 +14,15 @@ import platform
 import shutil
 import subprocess
 import sys
-import tempfile
+import tarfile
 
 
 def IsLinux():
   return platform.system() == 'Linux'
+
+
+def GetPackagingDir(out_dir):
+  return os.path.abspath(os.path.join(out_dir, os.pardir))
 
 
 def CreateCIPDDefinition(target_arch, out_dir):
@@ -32,16 +36,18 @@ data:
 """ % (target_arch, target_arch, dir_name)
 
 
+# CIPD CLI needs the definition and data directory to be relative to each other.
 def WriteCIPDDefinition(target_arch, out_dir):
-  _, temp_file = tempfile.mkstemp(suffix='.yaml')
-  with open(temp_file, 'w') as f:
+  _packaging_dir = GetPackagingDir(out_dir)
+  yaml_file = os.path.join(_packaging_dir, 'debug_symbols.cipd.yaml')
+  with open(yaml_file, 'w') as f:
     cipd_def = CreateCIPDDefinition(target_arch, out_dir)
     f.write(cipd_def)
-  return temp_file
+  return yaml_file
 
 
 def ProcessCIPDPackage(upload, cipd_yaml, engine_version, out_dir, target_arch):
-  _packaging_dir = os.path.abspath(os.path.join(out_dir, os.pardir))
+  _packaging_dir = GetPackagingDir(out_dir)
   if upload and IsLinux():
     command = [
         'cipd', 'create', '-pkg-def', cipd_yaml, '-ref', 'latest', '-tag',
@@ -57,9 +63,15 @@ def ProcessCIPDPackage(upload, cipd_yaml, engine_version, out_dir, target_arch):
   subprocess.check_call(command, cwd=_packaging_dir)
 
 
-def NormalizeDirPathForRsync(path):
-  norm_path = os.path.normpath(path)
-  return norm_path + os.path.sep
+def CreateTarFile(folder_path, base_dir):
+  archive_name = os.path.basename(folder_path)
+  tar_file_path = os.path.join(base_dir, archive_name + '.tar.bz2')
+  with tarfile.open(tar_file_path, "w:bz2") as archive:
+    for root, dirs, _ in os.walk(folder_path):
+      for dir_name in dirs:
+        dir_path = os.path.join(root, dir_name)
+        archive.add(dir_path, arcname=dir_name)
+  return tar_file_path
 
 
 def main():
@@ -92,20 +104,20 @@ def main():
   for symbol_dir in symbol_dirs:
     assert os.path.exists(symbol_dir) and os.path.isdir(symbol_dir)
 
-  out_dir = NormalizeDirPathForRsync(args.out_dir)
+  arch = args.target_arch
+  out_dir = os.path.join(args.out_dir,
+                         'flutter-fuchsia-debug-symbols-%s' % arch)
   if os.path.exists(out_dir):
     print 'Directory: %s is not empty, deleting it.' % out_dir
     shutil.rmtree(out_dir)
   os.makedirs(out_dir)
 
   for symbol_dir in symbol_dirs:
-    subprocess.check_output(
-        ['rsync', '--recursive',
-         NormalizeDirPathForRsync(symbol_dir), out_dir])
+    archive_path = CreateTarFile(symbol_dir, out_dir)
+    print('Created archive: ' + archive_path)
 
-  cipd_def = WriteCIPDDefinition(args.target_arch, out_dir)
-  ProcessCIPDPackage(args.upload, cipd_def, args.engine_version, out_dir,
-                     args.target_arch)
+  cipd_def = WriteCIPDDefinition(arch, out_dir)
+  ProcessCIPDPackage(args.upload, cipd_def, args.engine_version, out_dir, arch)
   return 0
 
 
