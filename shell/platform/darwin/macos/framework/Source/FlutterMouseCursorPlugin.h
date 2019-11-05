@@ -21,6 +21,6 @@
  * Initializes a mouse cursor plugin that coordinates key event handling with
  * |viewController|.
  */
-- (nonnull instancetype)initWithViewController:(FlutterViewController*)viewController;
+- (nonnull instancetype)initWithViewController:(nonnull FlutterViewController*)viewController;
 
 @end

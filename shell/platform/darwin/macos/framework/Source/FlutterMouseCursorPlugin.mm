@@ -23,8 +23,6 @@ static int const kSystemShapeForbidden = 0x7fa3b767;
 static int const kSystemShapeGrab = 0x28b91f80;
 static int const kSystemShapeGrabbing = 0x6631ce3e;
 
-static int const kDefaultSystemShape = kSystemShapeBasic;
-
 static NSString* const kMouseCursorChannel = @"flutter/mousecursor";
 
 static NSString* const kActivateShapeMethod = @"activateShape";
@@ -38,7 +36,7 @@ static NSString* const kDeviceKey = @"device";
 
 - (void)dispose;
 
-- (BOOL)activateShape: (nonnull NSCursor *)shape;
+- (void)activateShape: (nonnull NSCursor *)targetShape;
 
 @property(readonly) int device;
 
@@ -50,12 +48,12 @@ static NSString* const kDeviceKey = @"device";
   BOOL _hidden;
 }
 
-- (nonnull instancetype)initWithDevice:(int)_device
-                                 shape:(nonnull NSCursor*)_shape {
-  device = _device;
-  shape = _shape;
+- (nonnull instancetype)initWithDevice:(int)device
+                                 shape:(nonnull NSCursor*)shape {
+  _device = device;
+  _shape = shape;
   _hidden = NO;
-  [shape set];
+  [_shape set];
   return self;
 }
 
@@ -64,45 +62,48 @@ static NSString* const kDeviceKey = @"device";
     [NSCursor unhide];
 }
 
-- (void)activateShape: (NSCursor *)targetShape {
-  if (targetShape == shape)
+- (void)activateShape: (nonnull NSCursor *)targetShape {
+  if (targetShape == _shape && !_hidden)
     return;
-  [cursor set];
-  if (_hidden)
+  [targetShape set];
+  if (_hidden) {
     [NSCursor unhide];
-  shape = targetShape;
+  }
+  _shape = targetShape;
   _hidden = NO;
 }
 
 - (void)hide {
-  if (!_hidden)
+  if (!_hidden) {
     [NSCursor hide];
+  }
+  _hidden = YES;
 }
 
 #pragma mark - Private
 
 @end
 
-@interface FlutterMouseCursorPlugin
+@interface FlutterMouseCursorPlugin ()
 /**
  * The channel used to communicate with Flutter.
  */
-@property() FlutterMethodChannel* _channel;
+@property() FlutterMethodChannel* channel;
 
 /**
  * The FlutterViewController to manage input for.
  */
-@property(nonatomic, weak) FlutterViewController* _flutterViewController;
+@property(nonatomic, weak) FlutterViewController* flutterViewController;
 
-@property() NSDictionary *_shapeObjects;
+@property() NSMutableDictionary *shapeObjects;
 
-@property() FlutterMouseCursorDeviceState *_deviceState;
+@property() FlutterMouseCursorDeviceState *deviceState;
 
 @end
 
 @implementation FlutterMouseCursorPlugin
 
-- (instancetype)initWithViewController:(FlutterViewController*)viewController {
+- (instancetype)initWithViewController:(nonnull FlutterViewController*)viewController {
   self = [super init];
   if (self != nil) {
     _flutterViewController = viewController;
@@ -113,14 +114,14 @@ static NSString* const kDeviceKey = @"device";
     [_channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [weakSelf handleMethodCall:call result:result];
     }];
-    _shapeObjects = @{};
+    _shapeObjects = [[NSMutableDictionary alloc] init];
   }
   return self;
 }
 
 #pragma mark - Private
 
-- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
+- (void)handleMethodCall:(nonnull FlutterMethodCall*)call result:(FlutterResult)result {
   BOOL handled = YES;
   NSString* method = call.method;
   if ([method isEqualToString:kActivateShapeMethod]) {
@@ -132,7 +133,7 @@ static NSString* const kDeviceKey = @"device";
   }
 }
 
-- (id)activateShape:(NSDictionary*)arguments {
+- (id)activateShape:(nonnull NSDictionary*)arguments {
   if (!arguments) {
     return [FlutterError
         errorWithCode:@"error"
@@ -153,43 +154,44 @@ static NSString* const kDeviceKey = @"device";
               message:@"Missing argument"
               details:@"Missing argument device while trying to activate shape"];
   }
-  int shape = [shapeArg intValue];
-  int noNoneShape = shape == kSystemShapeNone ? kSystemShapeBasic : shape;
-  NSCursor* shapeObject = [self resolveShape: noNoneShape];
+  NSNumber *noNoneShape = [shapeArg intValue] == kSystemShapeNone ?
+    [NSNumber numberWithInt:kSystemShapeBasic] :
+    shapeArg;
+  NSCursor* shapeObject = [self resolveShape:noNoneShape];
   if (shapeObject == nil) {
     // Unregistered shape. Return false to request fallback.
-    return [false];
+    return @(NO);
   }
-  [self ensureDevice: [deviceArg intValue] withShapeObject: shapeObject];
-  if (shape == kSystemShapeNone) {
+  [self ensureDevice:deviceArg withShapeObject:shapeObject];
+  if ([shapeArg intValue] == kSystemShapeNone) {
     [_deviceState hide];
   } else {
-    [_deviceState activateShape: shapeObject];
+    [_deviceState activateShape:shapeObject];
   }
-  return [true];
+  return @(YES);
 }
 
-- (nullable NSCursor*)resolveShape:(int)shape {
+- (nullable NSCursor*)resolveShape:(NSNumber*)shape {
   NSCursor *cachedObject = _shapeObjects[shape];
   if (cachedObject)
     return cachedObject;
-  NSCursor *systemObject = [FlutterMouseCursorPlugin resolveSystemShape: shape];
+  NSCursor *systemObject = [FlutterMouseCursorPlugin resolveSystemShape:shape];
   if (!systemObject)
     return nil;
   _shapeObjects[shape] = systemObject;
   return systemObject;
 }
 
-- (void)ensureDevice:(int)device
+- (void)ensureDevice:(NSNumber*)device
      withShapeObject:(nonnull NSCursor*)shapeObject {
   // MacOS only supports one device. Destroy the old when the new one is different.
-  if (_deviceState.device != device) {
+  if (_deviceState.device != [device intValue]) {
     [_deviceState dispose];
     _deviceState = nil;
   }
   if (!_deviceState) {
-    _deviceState = [[FlutterMouseCursorDeviceState alloc] initWithDevice: device
-                                                                   shape: shapeObject];
+    _deviceState = [[FlutterMouseCursorDeviceState alloc] initWithDevice:[device intValue]
+                                                                   shape:shapeObject];
   }
 }
 
@@ -197,8 +199,8 @@ static NSString* const kDeviceKey = @"device";
 
 // Does not handle kSystemShapeNone.
 // Returns null for default.
-+ (nullable NSCursor*)resolveSystemShape:(int)platformConstant {
-  switch (platformConstant) {
++ (nullable NSCursor*)resolveSystemShape:(NSNumber*)platformConstant {
+  switch ([platformConstant intValue]) {
     case kSystemShapeBasic:
       return [NSCursor arrowCursor];
     case kSystemShapeClick:
