@@ -179,9 +179,13 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
 
-  __block FlutterEngine* blockSelf = self;
-  [_flutterViewControllerWillDeallocObserver release];
+  if (_flutterViewControllerWillDeallocObserver) {
+    [[NSNotificationCenter defaultCenter] removeObserver:_flutterViewControllerWillDeallocObserver];
+    [_flutterViewControllerWillDeallocObserver release];
+  }
+
   if (viewController) {
+    __block FlutterEngine* blockSelf = self;
     self.flutterViewControllerWillDeallocObserver =
         [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
                                                           object:viewController
@@ -190,6 +194,7 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
                                                         [blockSelf notifyViewControllerDeallocated];
                                                       }];
   }
+
 }
 
 - (void)setFlutterViewControllerWillDeallocObserver:(id<NSObject>)observer {
