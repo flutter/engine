@@ -4,6 +4,8 @@
 
 part of engine;
 
+bool bodyHasFocus = true;
+
 class DomRenderer {
   DomRenderer() {
     if (assertionsEnabled) {
@@ -28,6 +30,30 @@ class DomRenderer {
 
   /// Listens to window resize events.
   StreamSubscription<html.Event> _resizeSubscription;
+
+  // /// Listens to window blur events.
+  // void windowBlurForMobile(html.Event e) {
+  //   print('window blur target: ${e.target}');
+  //   if (e.target == html.window) {
+  //     textEditing.sendTextConnectionClosedToFlutterIfAny();
+  //   }
+  // }
+
+  // void windowBlurForDesktop(html.Event e) {
+  //   print('window desktop blur target: ${e.target}');
+  //   if(e.target == html.window) {
+  //     e.stopPropagation();
+  //   }
+  // }
+
+  void blur(html.Event e) {
+    print('body blur');
+    bodyHasFocus = false;
+  }
+
+  void focusStart(html.Event e) {
+    print('body focus');
+  }
 
   /// Contains Flutter-specific CSS rules, such as default margins and
   /// paddings.
@@ -74,6 +100,10 @@ class DomRenderer {
 
     registerHotRestartListener(() {
       _resizeSubscription?.cancel();
+      // html.window.removeEventListener('blur', windowBlurForMobile, true);
+      // html.window.removeEventListener('blur', windowBlurForDesktop, true);
+      html.window.removeEventListener('focus', focusStart);
+      html.window.removeEventListener('blur', blur);
       _staleHotRestartState.addAll(<html.Element>[
         _glassPaneElement,
         _styleElement,
@@ -244,7 +274,7 @@ flt-semantics input[type=range] {
   border: none;
   top: 0;
   right: 0;
-  bottom: 0;
+  bottom: 0;windowBlurForMobile
   left: 0;
 }''', sheet.cssRules.length);
 
@@ -423,6 +453,17 @@ flt-glass-pane * {
     }
 
     _resizeSubscription = html.window.onResize.listen(_metricsDidChange);
+
+    // if (operatingSystem == OperatingSystem.android ||
+    //     operatingSystem == OperatingSystem.iOs) {
+    //   print('added window on blur');
+    //   html.window.addEventListener('blur', windowBlurForMobile, true);
+    // } else {
+    //   print('DESKTOP added window on blur');
+    //   html.window.addEventListener('blur', windowBlurForDesktop, true);
+    // }
+    html.window.addEventListener('focus', focusStart);
+    html.window.addEventListener('blur', blur);
   }
 
   /// Called immediately after browser window metrics change.

@@ -5,7 +5,7 @@
 part of engine;
 
 /// Make the content editable span visible to facilitate debugging.
-const bool _debugVisibleTextEditing = false;
+const bool _debugVisibleTextEditing = true;
 
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
@@ -38,7 +38,7 @@ void _setStaticStyleAttributes(html.HtmlElement domElement) {
   /// This property makes the input's blinking cursor transparent.
   elementStyle.setProperty('caret-color', 'transparent');
 
-  if (_debugVisibleTextEditing) {
+  if (_debugVisibleTextEditing && operatingSystem == OperatingSystem.android) {
     elementStyle
       ..color = 'purple'
       ..outline = '1px solid purple';
@@ -227,6 +227,10 @@ class TextEditingElement {
   static const Duration _delayBeforePositioning =
       const Duration(milliseconds: 100);
 
+  Timer _pageVisibilityTimer;
+  static const Duration _delayBeforePageVisibilityTimer =
+      const Duration(milliseconds: 5);
+
   final HybridTextEditing owner;
 
   @visibleForTesting
@@ -285,6 +289,11 @@ class TextEditingElement {
     _onChange = onChange;
     _onAction = onAction;
 
+    _subscriptions.add(domElement.onFocus.listen((_) {
+        ('*******set focus to true');
+        bodyHasFocus = true;
+      }));
+
     // Chrome on Android will hide the onscreen keyboard when you tap outside
     // the text box. Instead, we want the framework to tell us to hide the
     // keyboard via `TextInput.clearClient` or `TextInput.hide`.
@@ -293,10 +302,65 @@ class TextEditingElement {
     // outside the editable box. Instead it provides an explicit "done" button,
     // which is reported as "blur", so we must not reacquire focus when we see
     // a "blur" event and let the keyboard disappear.
+    if (owner.doesBlurOnTouch) {
+      print('blur on touch');
+      // _subscriptions.add(domElement.onBlur.listen((_) {
+      //   if (isEnabled) {
+      //     print('refocus');
+      //     _refocus();
+      //   }
+      //}));
 
-    _subscriptions.add(domElement.onBlur.listen((_) {
-      owner.sendConnectionClosedToFlutter();
-    }));
+      // Cancel previous timer if exists.
+
+
+
+      _subscriptions.add(domElement.onBlur.listen((_) {
+        // Cancel previous timer if exists.
+        _pageVisibilityTimer?.cancel();
+        _pageVisibilityTimer = Timer(_delayBeforePageVisibilityTimer, () {
+          print('onBlur primary: ${html.document.visibilityState}');
+          // if (!isRemoveInProgress) {
+          //   owner.sendTextConnectionClosedToFlutterIfAny();
+          // }
+
+          // html.document.visibilityState != 'visible'
+
+          if (!bodyHasFocus &&
+              (operatingSystem == OperatingSystem.android ||
+                  operatingSystem == OperatingSystem.iOs)) {
+            print('blur for hidden');
+            owner.sendTextConnectionClosedToFlutterIfAny();
+          } else if (bodyHasFocus) {
+            print('blur for visible');
+            if (isEnabled) {
+              print('refocus');
+              _refocus();
+            }
+          }
+        });
+      }));
+    } else {
+      _subscriptions.add(domElement.onBlur.listen((_) {
+        // Cancel previous timer if exists.
+        _pageVisibilityTimer?.cancel();
+        _pageVisibilityTimer = Timer(_delayBeforePageVisibilityTimer, () {
+          print('onBlur primary: ${_.target}');
+          // if (!isRemoveInProgress) {
+          //   owner.sendTextConnectionClosedToFlutterIfAny();
+          // }
+          if (!bodyHasFocus &&
+              (operatingSystem == OperatingSystem.android ||
+                  operatingSystem == OperatingSystem.iOs)) {
+            print('blur for hidden');
+            owner.sendTextConnectionClosedToFlutterIfAny();
+          } else if (bodyHasFocus) {
+            print('blur for visible');
+            owner.sendTextConnectionClosedToFlutterIfAny();
+          }
+        });
+      }));
+    }
 
     if (owner.doesKeyboardShiftInput) {
       _preventShiftDuringFocus();
@@ -356,6 +420,8 @@ class TextEditingElement {
     _subscriptions.clear();
     _positionInputElementTimer?.cancel();
     _positionInputElementTimer = null;
+    _pageVisibilityTimer?.cancel();
+    _pageVisibilityTimer = null;
     owner.inputPositioned = false;
     _removeDomElement();
   }
@@ -368,9 +434,14 @@ class TextEditingElement {
     domRenderer.glassPaneElement.append(domElement);
   }
 
+  bool isRemoveInProgress = false;
+
   void _removeDomElement() {
+    print('_removeDomElement client: ${owner.clientId}');
+    isRemoveInProgress = true;
     domElement.remove();
     domElement = null;
+    isRemoveInProgress = false;
   }
 
   void _refocus() {
@@ -475,6 +546,7 @@ class PersistentTextEditingElement extends TextEditingElement {
     // Otherwise, the keyboard stays on screen even when the user navigates to
     // a different screen (e.g. by hitting the "back" button).
     domElement.blur();
+    print('persisten mode blur called');
   }
 
   @override
@@ -539,6 +611,12 @@ class HybridTextEditing {
 
   int _clientId;
 
+  /// Id for the text editing client.
+  ///
+  /// This value is sent by the framework and is used to identify the client
+  /// for the method calls coming from the framework.
+  int get clientId => _clientId;
+
   /// Flag which shows if there is an ongoing editing.
   ///
   /// Also used to define if a keyboard is needed.
@@ -550,6 +628,11 @@ class HybridTextEditing {
   /// See [TextEditingElement._delayBeforePositioning].
   bool get inputElementNeedsToBePositioned =>
       !inputPositioned && isEditing && doesKeyboardShiftInput;
+
+  bool get doesBlurOnTouch =>
+      (browserEngine == BrowserEngine.blink ||
+          browserEngine == BrowserEngine.unknown) &&
+      operatingSystem == OperatingSystem.android;
 
   /// Flag indicating whether the input element's position is set.
   ///
@@ -565,25 +648,32 @@ class HybridTextEditing {
       case 'TextInput.setClient':
         final bool clientIdChanged =
             _clientId != null && _clientId != call.arguments[0];
+        print('set client: ${call.arguments[0]} id changed ${clientIdChanged}');
         if (clientIdChanged && isEditing) {
+          print('set client stop editing ');
           stopEditing();
+          print('set client stop editing finished');
         }
         _clientId = call.arguments[0];
         _configuration = InputConfiguration.fromFlutter(call.arguments[1]);
         break;
 
       case 'TextInput.setEditingState':
+        print('set editing state');
         editingElement
             .setEditingState(EditingState.fromFlutter(call.arguments));
         break;
 
       case 'TextInput.show':
+        print('show ${isEditing}');
         if (!isEditing) {
+          print('show inside if');
           _startEditing();
         }
         break;
 
       case 'TextInput.setEditableSizeAndTransform':
+        print('setEditableSizeAndTransform');
         _setLocation(call.arguments);
         break;
 
@@ -593,7 +683,9 @@ class HybridTextEditing {
 
       case 'TextInput.clearClient':
       case 'TextInput.hide':
+        print('hide/clear ${isEditing}');
         if (isEditing) {
+          print('hide/clear inside');
           stopEditing();
         }
         break;
@@ -694,21 +786,23 @@ class HybridTextEditing {
     );
   }
 
-  void sendConnectionClosedToFlutter() {
-    print('close conection');
-    stopEditing();
-    ui.window.onPlatformMessage(
-      'flutter/textinput',
-      const JSONMethodCodec().encodeMethodCall(
-        MethodCall(
-          'TextInputClient.onConnectionClosed',
-          <dynamic>[
-            _clientId,
-          ],
+  void sendTextConnectionClosedToFlutterIfAny() {
+    print('sendTextConnectionClosedToFlutter for client: $clientId');
+    if (isEditing) {
+      stopEditing();
+      ui.window.onPlatformMessage(
+        'flutter/textinput',
+        const JSONMethodCodec().encodeMethodCall(
+          MethodCall(
+            'TextInputClient.onConnectionClosed',
+            <dynamic>[
+              _clientId,
+            ],
+          ),
         ),
-      ),
-      _emptyCallback,
-    );
+        _emptyCallback,
+      );
+    }
   }
 
   /// Positioning of input element is only done if we are not expecting input
