@@ -4,7 +4,15 @@
 
 part of engine;
 
-/// These keys should always be sent to Flutter, even when triggered in a text field.
+/// Contains a whitelist of keys that must be sent to Flutter under all
+/// circumstances.
+///
+/// When keys are pressed in a text field, we generally don't want to send them
+/// to Flutter. This list of keys is the exception to that rule. Keys in this
+/// list will be sent to Flutter even if pressed in a text field.
+///
+/// A good example is the "Tab" and "Shift" keys which are used by the framework
+/// to move focus between text fields.
 const List<String> _alwaysSentKeys = <String>[
   'Alt',
   'Control',
