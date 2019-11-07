@@ -34,6 +34,10 @@ struct LineMetrics {
   const double* baseline;
   // Zero indexed line number.
   const size_t* line_number;
+  // The starting text index for this line.
+  const size_t* start_index;
+  // The ending index for this line, including the newline, if any.
+  const size_t* end_index;
 
   LineMetrics();
 
@@ -45,7 +49,9 @@ struct LineMetrics {
               const double* width,
               const double* left,
               const double* baseline,
-              const size_t* line_number)
+              const size_t* line_number,
+              const size_t* start_index,
+              const size_t* end_index)
       : hard_break(hard_break),
         ascent(ascent),
         descent(descent),
@@ -54,7 +60,9 @@ struct LineMetrics {
         width(width),
         left(left),
         baseline(baseline),
-        line_number(line_number) {}
+        line_number(line_number),
+        start_index(start_index),
+        end_index(end_index) {}
 };
 
 }  // namespace flutter

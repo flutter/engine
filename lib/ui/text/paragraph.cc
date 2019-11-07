@@ -31,6 +31,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Paragraph);
   V(Paragraph, layout)                  \
   V(Paragraph, paint)                   \
   V(Paragraph, getWordBoundary)         \
+  V(Paragraph, getLineBoundary)         \
   V(Paragraph, getRectsForRange)        \
   V(Paragraph, getRectsForPlaceholders) \
   V(Paragraph, getPositionForOffset)    \
@@ -134,13 +135,31 @@ Dart_Handle Paragraph::getWordBoundary(unsigned offset) {
   return result;
 }
 
+Dart_Handle Paragraph::getLineBoundary(unsigned offset) {
+  std::vector<txt::LineMetrics> metrics = m_paragraph->GetLineMetrics();
+  int line_start = -1;
+  int line_end = -1;
+  for (txt::LineMetrics& line : metrics) {
+    if (offset >= line.start_index && offset < line.end_index) {
+      line_start = line.start_index;
+      line_end = line.end_index;
+      break;
+    }
+  }
+  Dart_Handle result = Dart_NewListOf(Dart_CoreType_Int, 2);
+  Dart_ListSetAt(result, 0, ToDart(line_start));
+  Dart_ListSetAt(result, 1, ToDart(line_end));
+  return result;
+}
+
 std::vector<LineMetrics> Paragraph::computeLineMetrics() {
   std::vector<LineMetrics> result;
   std::vector<txt::LineMetrics> metrics = m_paragraph->GetLineMetrics();
   for (txt::LineMetrics& line : metrics) {
     result.emplace_back(&line.hard_break, &line.ascent, &line.descent,
                         &line.unscaled_ascent, &line.height, &line.width,
-                        &line.left, &line.baseline, &line.line_number);
+                        &line.left, &line.baseline, &line.line_number,
+                        &line.start_index, &line.end_index);
   }
   return result;
 }
