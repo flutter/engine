@@ -10,6 +10,7 @@ import android.support.annotation.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -183,8 +184,14 @@ public class FlutterEngine {
       boolean automaticallyRegisterPlugins
   ) {
     this.flutterJNI = flutterJNI;
+
+    // Add the --write-service-info flag to the incoming Dart VM args.
+    dartVmArgs = dartVmArgs == null ? new String[] {} : dartVmArgs;
+    String[] adjustedDartVmArgs = Arrays.copyOf(dartVmArgs, dartVmArgs.length + 1);
+    adjustedDartVmArgs[adjustedDartVmArgs.length - 1] = "--write-service-info service_info.json";
+
     flutterLoader.startInitialization(context);
-    flutterLoader.ensureInitializationComplete(context, dartVmArgs);
+    flutterLoader.ensureInitializationComplete(context, adjustedDartVmArgs);
 
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
     attachToJni();
