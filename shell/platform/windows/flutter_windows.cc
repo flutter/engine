@@ -245,7 +245,7 @@ void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
 // Please refer to https://github.com/flutter/flutter/issues/38601.
 FlutterDesktopTextureRegistrarRef FlutterDesktopGetTextureRegistrar(
     FlutterDesktopPluginRegistrarRef registrar) {
-  std::cout << "Not yet implemented.\n";
+  std::cout << "Texture support is not yet implemented." << std::endl;
   return reinterpret_cast<FlutterDesktopTextureRegistrarRef>(nullptr);
 }
 
@@ -253,20 +253,20 @@ int64_t FlutterDesktopRegisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
     FlutterTexutreCallback texture_callback,
     void* user_data) {
-  std::cout << "Not yet implemented.\n";
+  std::cout << "Texture support is not yet implemented." << std::endl;
   return -1;
 }
 
 bool FlutterDesktopUnregisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
     int64_t texture_id) {
-  std::cout << "Not yet implemented.\n";
+  std::cout << "Texture support is not yet implemented." << std::endl;
   return false;
 }
 
 bool FlutterDesktopMarkExternalTextureFrameAvailable(
     FlutterDesktopTextureRegistrarRef texture_registrar,
     int64_t texture_id) {
-  std::cout << "Not yet implemented.\n";
+  std::cout << "Texture support is not yet implemented." << std::endl;
   return false;
 }

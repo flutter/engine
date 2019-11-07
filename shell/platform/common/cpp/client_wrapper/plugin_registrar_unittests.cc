@@ -35,15 +35,14 @@ class TestApi : public testing::StubFlutterApi {
 
   const uint8_t* last_data_sent() { return last_data_sent_; }
 
-  int64_t RegisterExternalTexture(
-    FlutterTexutreCallback texture_callback,
-    void* user_data) override {
-      last_texture_id_ = 1;
-      return last_texture_id_;
+  int64_t RegisterExternalTexture(FlutterTexutreCallback texture_callback,
+                                  void* user_data) override {
+    last_texture_id_ = 1;
+    return last_texture_id_;
   }
 
   bool UnregisterExternalTexture(int64_t texture_id) override {
-    if(texture_id == 2) {
+    if (texture_id == 2) {
       last_texture_id_ = -2;
       return true;
     }
@@ -51,7 +50,7 @@ class TestApi : public testing::StubFlutterApi {
   }
 
   bool TextureFrameAvailable(int64_t texture_id) override {
-     if(texture_id == 1) {
+    if (texture_id == 1) {
       last_texture_id_ = 2;
       return true;
     }

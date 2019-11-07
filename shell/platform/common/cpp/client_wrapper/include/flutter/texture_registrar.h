@@ -28,12 +28,13 @@ class TextureRegistrar {
   virtual ~TextureRegistrar() {}
 
   /**
-   * Registers a |texture| object and return textureId.
+   * Registers a |texture| object and returns the ID for that texture.
    */
   virtual int64_t RegisterTexture(Texture* texture) = 0;
 
   /**
-   * Mark a texture buffer is ready.
+   * Notify the flutter engine that the texture object corresponding
+   * to |texure_id| needs to render a new texture.
    */
   virtual void MarkTextureFrameAvailable(int64_t texture_id) = 0;
 

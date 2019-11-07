@@ -56,6 +56,9 @@ struct FlutterDesktopWindowControllerState {
   // The plugin registrar handle given to API clients.
   std::unique_ptr<FlutterDesktopPluginRegistrar> plugin_registrar;
 
+  // The plugin texture registrar handle given to API clients.
+  std::unique_ptr<FlutterDesktopTextureRegistrar> texture_registrar;
+
   // Message dispatch manager for messages from the Flutter engine.
   std::unique_ptr<flutter::IncomingMessageDispatcher> message_dispatcher;
 
@@ -115,7 +118,7 @@ struct FlutterDesktopPluginRegistrar {
   std::unique_ptr<FlutterDesktopMessenger> messenger;
 
   // The plugin texture registrar handle given to API clients.
-  std::unique_ptr<FlutterDesktopTextureRegistrar> texture_registrar;
+  FlutterDesktopTextureRegistrar* texture_registrar;
 
   // The handle for the window associated with this registrar.
   FlutterDesktopWindow* window;
@@ -653,7 +656,8 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   std::unique_ptr<FlutterDesktopTextureRegistrar> textures =
       std::make_unique<FlutterDesktopTextureRegistrar>();
   textures->engine = state->engine;
-  state->plugin_registrar->texture_registrar = std::move(textures);
+  state->texture_registrar = std::move(textures);
+  state->plugin_registrar->texture_registrar = state->texture_registrar.get();
 
   state->internal_plugin_registrar =
       std::make_unique<flutter::PluginRegistrar>(state->plugin_registrar.get());
@@ -827,7 +831,7 @@ FlutterDesktopMessengerRef FlutterDesktopRegistrarGetMessenger(
 
 FlutterDesktopTextureRegistrarRef FlutterDesktopGetTextureRegistrar(
     FlutterDesktopPluginRegistrarRef registrar) {
-  return registrar->texture_registrar.get();
+  return registrar->texture_registrar;
 }
 
 FlutterDesktopWindowRef FlutterDesktopRegistrarGetWindow(
