@@ -1111,6 +1111,8 @@ class LineMetrics {
     this.left,
     this.baseline,
     this.lineNumber,
+    this.startIndex,
+    this.endIndex,
   });
 
   @pragma('vm:entry-point')
@@ -1124,6 +1126,8 @@ class LineMetrics {
     this.left,
     this.baseline,
     this.lineNumber,
+    this.startIndex,
+    this.endIndex,
   );
 
   final bool hardBreak;
@@ -1143,6 +1147,10 @@ class LineMetrics {
   final double baseline;
 
   final int lineNumber;
+
+  final int startIndex;
+
+  final int endIndex;
 }
 
 /// A paragraph of text.
@@ -1243,6 +1251,16 @@ abstract class Paragraph {
   /// Word boundaries are defined more precisely in Unicode Standard Annex #29
   /// http://www.unicode.org/reports/tr29/#Word_Boundaries
   List<int> getWordBoundary(dynamic position);
+
+  /// Returns the [start, end] of the line at the given offset.
+  ///
+  /// The newline (if any) is returned as part of the range.
+  ///
+  /// This can potentially be expensive, since it needs to compute the line
+  /// metrics, so use it sparingly. If higher performance is needed, caching the
+  /// results of [computeLineMetrics] is recommended (which also contains the
+  /// start and end of each line).
+  List<int> getLineBoundary(int offset);
 
   /// Returns a list of text boxes that enclose all placeholders in the paragraph.
   ///
