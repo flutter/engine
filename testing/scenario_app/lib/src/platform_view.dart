@@ -34,7 +34,7 @@ class PlatformViewScenario extends Scenario with _BasePlatformViewScenarioMixin 
   PlatformViewScenario(Window window, String text, {int id = 0})
       : assert(window != null),
         super(window) {
-    constructScenario(window, text, id, 'scenarios/textPlatformView');
+    createPlatformView(window, text, id, 'scenarios/textPlatformView');
   }
 
   @override
@@ -177,7 +177,7 @@ class PlatformViewClipRectScenario extends Scenario with _BasePlatformViewScenar
   PlatformViewClipRectScenario(Window window, String text, {int id = 0})
       : assert(window != null),
         super(window) {
-    constructScenario(window, text, id, 'scenarios/textPlatformView');
+    createPlatformView(window, text, id, 'scenarios/textPlatformView');
   }
 
   @override
@@ -287,7 +287,7 @@ class PlatformViewGLScenario extends Scenario with _BasePlatformViewScenarioMixi
   PlatformViewGLScenario(Window window, String text, {int id = 0})
       : assert(window != null),
         super(window) {
-            constructScenario(window, text, id, 'scenarios/glTestPlatformView');
+            createPlatformView(window, text, id, 'scenarios/glTestPlatformView');
       }
 
   @override
@@ -307,7 +307,7 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
   /// It prepare a TextPlatformView so it can be added to the SceneBuilder in `onBeginFrame`.
   /// Call this method in the constructor of the platform view related scenarios
   /// to perform necessary set up.
-  void constructScenario(Window window, String text, int id, String viewType) {
+  void createPlatformView(Window window, String text, int id, String viewType) {
     const int _valueInt32 = 3;
     const int _valueFloat64 = 6;
     const int _valueString = 7;
