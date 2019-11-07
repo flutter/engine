@@ -570,28 +570,54 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     final HtmlImage htmlImage = image;
     final html.Element imgElement = htmlImage.imgElement.clone(true);
     imgElement.style
-      ..position = 'absolute'
-      ..transform = 'translate(${p.dx}px, ${p.dy}px)';
-    rootElement.append(imgElement);
+      ..position = 'absolute';
+//      ..transform = 'translate(${p.dx}px, ${p.dy}px)';
+
+    if (isClipped) {
+      final List<html.Element> clipElements =
+      _clipContent(_clipStack, imgElement, p, currentTransform);
+      for (html.Element clipElement in clipElements) {
+        rootElement.append(clipElement);
+        _children.add(clipElement);
+      }
+    } else {
+      final String cssTransform =
+      matrix4ToCssTransform(transformWithOffset(currentTransform, p));
+      imgElement.style
+        ..transformOrigin = '0 0 0'
+        ..transform = cssTransform;
+      rootElement.append(imgElement);
+      _children.add(imgElement);
+    }
   }
 
   @override
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, ui.PaintData paint) {
-    // TODO(het): Check if the src rect is the entire image, and if so just
-    // append the imgElement and set it's height and width.
     final HtmlImage htmlImage = image;
-    ctx.drawImageScaledFromSource(
-      htmlImage.imgElement,
-      src.left,
-      src.top,
-      src.width,
-      src.height,
-      dst.left,
-      dst.top,
-      dst.width,
-      dst.height,
-    );
+    if (dst.width == src.width && dst.height == src.height &&
+        src.left == 0 && src.top == 0) {
+      drawImage(image, dst.topLeft, paint);
+//      // No scaling.
+//      final html.Element imgElement = htmlImage.imgElement.clone(true);
+//      imgElement.style
+//        ..position = 'absolute'
+//        ..transform = 'translate(${dst.left}px, ${dst.top}px)';
+//      rootElement.append(imgElement);
+    } else {
+      print('scaling');
+      ctx.drawImageScaledFromSource(
+        htmlImage.imgElement,
+        src.left,
+        src.top,
+        src.width,
+        src.height,
+        dst.left,
+        dst.top,
+        dst.width,
+        dst.height,
+      );
+    }
   }
 
   void _drawTextLine(
