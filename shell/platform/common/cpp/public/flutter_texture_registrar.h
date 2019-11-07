@@ -44,11 +44,13 @@ FLUTTER_EXPORT int64_t FlutterDesktopRegisterExternalTexture(
     void* user_data);
 
 // Unregisters an existing texture from the Flutter engine for a |texture_id|.
+// Returns true on success, false on failure.
 FLUTTER_EXPORT bool FlutterDesktopUnregisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
     int64_t texture_id);
 
 // Marks that a new texture frame is available for a given |texture_id|.
+// Returns true on success, false on failure.
 FLUTTER_EXPORT bool FlutterDesktopMarkExternalTextureFrameAvailable(
     FlutterDesktopTextureRegistrarRef texture_registrar,
     int64_t texture_id);
