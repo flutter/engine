@@ -58,7 +58,7 @@ class IOSSurfaceGL final : public IOSSurface,
   std::shared_ptr<GLContextSwitchManager> GetGLContextSwitchManager() override;
 
   // |ExternalViewEmbedder|
-  sk_sp<SkSurface> GetRootSurface() override;
+  SkCanvas* GetRootCanvas() override;
 
   // |ExternalViewEmbedder|
   void CancelFrame() override;

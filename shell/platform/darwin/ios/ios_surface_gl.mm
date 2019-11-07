@@ -82,7 +82,7 @@ std::shared_ptr<GLContextSwitchManager> IOSSurfaceGL::GetGLContextSwitchManager(
 }
 
 // |ExternalViewEmbedder|
-sk_sp<SkSurface> IOSSurfaceGL::GetRootSurface() {
+SkCanvas* IOSSurfaceGL::GetRootCanvas() {
   // On iOS, the root surface is created from the on-screen render target. Only the surfaces for the
   // various overlays are controlled by this class.
   return nullptr;

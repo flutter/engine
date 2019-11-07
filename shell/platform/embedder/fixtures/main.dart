@@ -437,10 +437,13 @@ void verify_b141980393() {
 void can_display_platform_view_with_pixel_ratio() {
   window.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
-    builder.pushOffset(0.0, 20.0);
+    builder.pushOffset(0.0, 0.0); // base
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
+    builder.pushOffset(0.0, 20.0); // offset
     builder.addPlatformView(42, width: 400.0, height: 280.0);
-    builder.addPicture(Offset(0.0, 0.0), CreateSimplePicture());
-    builder.pop();
+    builder.pop(); // offset
+    builder.addPicture(Offset(0.0, 0.0), CreateColoredBox(Color.fromARGB(128, 255, 0, 0), Size(400.0, 300.0)));
+    builder.pop(); // base
     window.render(builder.build());
   };
   window.scheduleFrame();
@@ -452,4 +455,39 @@ void can_receive_locale_updates() {
     signalNativeCount(window.locales.length);
   };
   signalNativeTest();
+}
+
+// Verifies behavior tracked in https://github.com/flutter/flutter/issues/43732
+@pragma('vm:entry-point')
+void verify_b143464703() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0); // base
+
+    // Background
+    builder.addPicture(Offset(0.0, 0.0), CreateColoredBox(Color.fromARGB(255, 128, 128, 128), Size(1024.0, 600.0)));
+
+    builder.pushOpacity(128);
+    builder.addPicture(Offset(10.0, 10.0), CreateColoredBox(Color.fromARGB(255, 0, 0, 255), Size(25.0, 25.0)));
+    builder.pop(); // opacity 128
+
+    // The top bar and the platform view are pushed to the side.
+    builder.pushOffset(135.0, 0.0); // 1
+    builder.pushOpacity(128); // opacity
+
+    // Platform view offset from the top
+    builder.pushOffset(0.0, 60.0); // 2
+    builder.addPlatformView(42, width: 1024.0, height: 540.0);
+    builder.pop(); // 2
+
+    // Top bar
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(1024.0, 60.0)));
+
+    builder.pop(); // opacity
+    builder.pop(); // 1
+
+    builder.pop(); // base
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
 }
