@@ -12,25 +12,54 @@ source_set("glad") {
   public_configs = [ ":glad_public" ]
 
   public = [
-    "$_glad_gen_dir/include/glad/glad.h",
     "$_glad_gen_dir/include/KHR/khrplatform.h",
+    "$_glad_gen_dir/include/glad/glad.h",
   ]
 
   sources = [
-    "$_glad_gen_dir/src/glad.c"
+    "$_glad_gen_dir/src/glad.c",
   ]
 
   deps = [
-    ":gen_glad_sources"
+    ":gen_glad_sources",
   ]
 }
 
 action("gen_glad_sources") {
   script = "$flutter_root/third_party/glad/generate.py"
+  inputs = [
+    "generate.py",
+    "scripts/glad/__init__.py",
+    "scripts/glad/__main__.py",
+    "scripts/glad/opener.py",
+    "scripts/glad/parse.py",
+    "scripts/glad/spec.py",
+    "scripts/glad/util.py",
+    "scripts/glad/files/__init__.py",
+    "scripts/glad/files/egl.xml",
+    "scripts/glad/files/glx.xml",
+    "scripts/glad/files/wgl.xml",
+    "scripts/glad/files/gl.xml",
+    "scripts/glad/files/khrplatform.h",
+    "scripts/glad/lang/__init__.py",
+    "scripts/glad/lang/common/__init__.py",
+    "scripts/glad/lang/common/generator.py",
+    "scripts/glad/lang/common/loader.py",
+    "scripts/glad/lang/common/util.py",
+    "scripts/glad/lang/c/__init__.py",
+    "scripts/glad/lang/c/debug.py",
+    "scripts/glad/lang/c/generator.py",
+    "scripts/glad/lang/c/loader/__init__.py",
+    "scripts/glad/lang/c/loader/gl.py",
+    "scripts/glad/lang/c/loader/wgl.py",
+    "scripts/glad/lang/c/loader/egl.py",
+    "scripts/glad/lang/c/loader/glx.py",
+  ]
+
   outputs = [
     "$_glad_gen_dir/src/glad.c",
     "$_glad_gen_dir/include/glad/glad.h",
-    "$_glad_gen_dir/include/KHR/khrplatform.h"
+    "$_glad_gen_dir/include/KHR/khrplatform.h",
   ]
 
   args = [
@@ -41,6 +70,7 @@ action("gen_glad_sources") {
     "--extensions=",
     "--reproducible",
     "--quiet",
-    "--out-path", rebase_path("$_glad_gen_dir")
+    "--out-path",
+    rebase_path("$_glad_gen_dir"),
   ]
 }
