@@ -31,7 +31,6 @@
   XCUIElement* firstElement =
       [self.application.otherElements elementMatchingPredicate:predicateToFindPlatformView];
   if (![firstElement waitForExistenceWithTimeout:30]) {
-    NSLog(@"%@", self.application.debugDescription);
     XCTFail(@"Failed due to not able to find platform view with 30 seconds");
   }
   XCTAssertEqualObjects(firstElement.identifier, @"gl_platformview_correct_context");
