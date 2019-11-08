@@ -27,8 +27,9 @@ bool IOSSurfaceSoftware::IsValid() const {
   return layer_;
 }
 
-bool IOSSurfaceSoftware::ResourceContextMakeCurrent() {
-  return false;
+std::unique_ptr<GLContextSwitchManager::GLContextSwitch>
+IOSSurfaceSoftware::ResourceContextMakeCurrent() {
+  return std::make_unique<GLContextSwitchManager::GLContextSwitchPureResult>(false);
 }
 
 void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
@@ -136,7 +137,7 @@ ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
 }
 
 // |ExternalViewEmbedder|
-sk_sp<SkSurface> IOSSurfaceSoftware::GetRootSurface() {
+SkCanvas* IOSSurfaceSoftware::GetRootCanvas() {
   // On iOS, the root surface is created using a managed allocation that is submitted to the
   // platform. Only the surfaces for the various overlays are controlled by this class.
   return nullptr;

@@ -17,6 +17,8 @@ void _emptyCallback(dynamic _) {}
 ///
 /// They are assigned once during the creation of the DOM element.
 void _setStaticStyleAttributes(html.HtmlElement domElement) {
+  domElement.classes.add(HybridTextEditing.textEditingClass);
+
   final html.CssStyleDeclaration elementStyle = domElement.style;
   elementStyle
     ..whiteSpace = 'pre-wrap'
@@ -367,6 +369,9 @@ class TextEditingElement {
   void _initDomElement(InputConfiguration inputConfig) {
     domElement = inputConfig.inputType.createDomElement();
     inputConfig.inputType.configureDomElement(domElement);
+    if (inputConfig.obscureText) {
+      domElement.setAttribute('type', 'password');
+    }
     _setStaticStyleAttributes(domElement);
     owner._setDynamicStyleAttributes(domElement);
     domRenderer.glassPaneElement.append(domElement);
@@ -437,7 +442,8 @@ class TextEditingElement {
   }
 
   void _maybeSendAction(html.KeyboardEvent event) {
-    if (event.keyCode == _kReturnKeyCode) {
+    if (_inputConfiguration.inputType.submitActionOnEnter &&
+        event.keyCode == _kReturnKeyCode) {
       event.preventDefault();
       _onAction(_inputConfiguration.inputAction);
     }
@@ -531,6 +537,14 @@ class HybridTextEditing {
       return _customEditingElement;
     }
     return _defaultEditingElement;
+  }
+
+  /// A CSS class name used to identify all elements used for text editing.
+  @visibleForTesting
+  static const String textEditingClass = 'flt-text-editing';
+
+  static bool isEditingElement(html.Element element) {
+    return element.classes.contains(textEditingClass);
   }
 
   /// Requests that [customEditingElement] is used for managing text editing state

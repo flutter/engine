@@ -8,9 +8,9 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/shell/common/gl_context_switch_manager.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
-
 @class CALayer;
 
 namespace flutter {
@@ -28,7 +28,7 @@ class IOSSurfaceSoftware final : public IOSSurface,
   bool IsValid() const override;
 
   // |IOSSurface|
-  bool ResourceContextMakeCurrent() override;
+  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> ResourceContextMakeCurrent() override;
 
   // |IOSSurface|
   void UpdateStorageSizeIfNecessary() override;
@@ -46,7 +46,7 @@ class IOSSurfaceSoftware final : public IOSSurface,
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   // |ExternalViewEmbedder|
-  sk_sp<SkSurface> GetRootSurface() override;
+  SkCanvas* GetRootCanvas() override;
 
   // |ExternalViewEmbedder|
   void CancelFrame() override;

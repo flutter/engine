@@ -22,6 +22,47 @@
 
 @end
 
+@interface MultiplePlatformViewsTest : GoldenPlatformViewTests
+
+@end
+
+@implementation MultiplePlatformViewsTest
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  PlatformViewGoldenTestManager* manager =
+      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-multiple"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  //[self checkGolden];
+  [[XCUIDevice sharedDevice] pressButton:XCUIDeviceButtonHome];
+  [self.application activate];
+  [self checkGolden];
+}
+
+@end
+
+@interface MultiplePlatformViewsBackgroundForegroundTest : GoldenPlatformViewTests
+
+@end
+
+@implementation MultiplePlatformViewsBackgroundForegroundTest
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  PlatformViewGoldenTestManager* manager = [[PlatformViewGoldenTestManager alloc]
+      initWithLaunchArg:@"--platform-view-multiple-background-foreground"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [[XCUIDevice sharedDevice] pressButton:XCUIDeviceButtonHome];
+  [self.application activate];
+  [self checkGolden];
+}
+
+@end
+
 // Clip Rect Tests
 @interface PlatformViewMutationClipRectTests : GoldenPlatformViewTests
 
