@@ -8,7 +8,6 @@
 #include <map>
 #include <set>
 
-#include <fuchsia/modular/cpp/fidl.h>
 #include <fuchsia/ui/gfx/cpp/fidl.h>
 #include <fuchsia/ui/input/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
