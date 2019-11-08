@@ -16,6 +16,11 @@
 
 namespace flutter {
 
+//------------------------------------------------------------------------------
+/// The current information about a pointer. This struct is used by
+/// PointerDataPacketConverter to fill in necesarry information for raw pointer
+/// packet sent from embedding.
+///
 struct PointerState {
   int64_t pointer;
   bool isDown;
@@ -23,20 +28,31 @@ struct PointerState {
   double physical_y;
 };
 
+//------------------------------------------------------------------------------
 /// Converter to expend the raw pointer data packet from the platforms.
 ///
 /// All pointer data packets that are sent from all the platforms must go
 /// through this converter before sending them to framework.
+///
 class PointerDataPacketConverter {
  public:
   PointerDataPacketConverter();
   ~PointerDataPacketConverter();
 
-  /// Expands pointer data packet into a form that framework understands.
+  //----------------------------------------------------------------------------
+  /// @brief      Expands pointer data packet into a form that framework
+  ///             understands. The raw pointer data packet from embedding does
+  ///             not have sufficient information and may contain illegal pointer
+  ///             events. This method will fill out those information and attempt
+  ///             to correct pointer events.
   ///
-  /// The raw pointer data packet from engine does not have sufficient
-  /// information and may contain invalid pointer events. This method will
-  /// fill out those information and attempt to correct pointer events.
+  /// @param[in]  packet                   The raw pointer packet sent from
+  ///                                      embedding.
+  ///
+  /// @return     A full Expended packet with all the required information filled.
+  ///             It may contain synthetic pointer event as the result of converter's
+  ///             attempt to correct illegal pointer events.
+  ///
   std::unique_ptr<PointerDataPacket> Expand(
       std::unique_ptr<PointerDataPacket> packet);
 
