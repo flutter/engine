@@ -92,7 +92,7 @@ class SingleFrameInfo implements ui.FrameInfo {
 
 class HtmlImage implements ui.Image {
   final html.ImageElement imgElement;
-
+  bool _requiresClone = false;
   HtmlImage(this.imgElement, this.width, this.height);
 
   @override
@@ -115,6 +115,16 @@ class HtmlImage implements ui.Image {
         callback(encoded?.buffer?.asByteData());
       });
     });
+  }
+
+  // Returns actual image element on first call and clones on subsequent calls.
+  html.ImageElement cloneImageElement() {
+    if (_requiresClone) {
+      return imgElement.clone(true);
+    } else {
+      _requiresClone = true;
+      return imgElement;
+    }
   }
 
   /// Returns an error message on failure, null on success.

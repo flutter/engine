@@ -72,6 +72,17 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   Object _prevFillStyle;
   Object _prevStrokeStyle;
 
+  // Indicates the instructions following drawImage or drawParagraph that
+  // a child element was created to paint.
+  // TODO(flutter_web): When childElements are created by
+  // drawImage/drawParagraph commands, compositing order is not correctly
+  // handled when we interleave these with other paint commands.
+  // To solve this, recording canvas will have to check the paint queue
+  // and send a hint to EngineCanvas that additional canvas layers need
+  // to be used to composite correctly. In practice this is very rare
+  // with Widgets but CustomPainter(s) can hit this code path.
+  bool _childOverdraw = false;
+
   /// Allocates a canvas with enough memory to paint a picture within the given
   /// [bounds].
   ///
@@ -568,8 +579,9 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   void drawImage(ui.Image image, ui.Offset p, ui.PaintData paint) {
     _applyPaint(paint);
     final HtmlImage htmlImage = image;
-    final html.Element imgElement = htmlImage.imgElement.clone(true);
+    final html.Element imgElement = htmlImage.cloneImageElement();
     _drawImage(imgElement, p);
+    _childOverdraw = true;
   }
 
   void _drawImage(html.ImageElement imgElement, ui.Offset p) {
@@ -604,18 +616,39 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       drawImage(image, dst.topLeft, paint);
     } else {
       _applyPaint(paint);
-      final html.Element imgElement = htmlImage.imgElement.clone(true);
-      save();
+      final html.Element imgElement = htmlImage.cloneImageElement();
       if (requiresClipping) {
+        save();
         clipRect(dst);
       }
       _drawImage(imgElement, ui.Offset(dst.left, dst.top));
-      // To scale simply set width / height on destination image.
-      imgElement.style
-        ..width = '${dst.width.toStringAsFixed(3)}px'
-        ..height = '${dst.height.toStringAsFixed(3)}px';
-      restore();
+      // To scale set width / height on destination image.
+      // For clipping we need to scale according to
+      // clipped-width/full image width and shift it according to left/top of
+      // source rectangle.
+      double targetWidth = dst.width;
+      double targetHeight = dst.height;
+      if (requiresClipping) {
+        targetWidth *= image.width / src.width;
+        targetHeight *= image.height / src.height;
+      }
+      final html.CssStyleDeclaration imageStyle = imgElement.style;
+      imageStyle
+        ..width = '${targetWidth.toStringAsFixed(2)}px'
+        ..height = '${targetHeight.toStringAsFixed(2)}px';
+      if (requiresClipping) {
+        if (src.width != image.width) {
+          double leftMargin = -src.left * (dst.width / src.width);
+          imageStyle.marginLeft = '${leftMargin.toStringAsFixed(2)}px';
+        }
+        if (src.height != image.height) {
+          double topMargin = -src.top * (dst.height / src.height);
+          imageStyle.marginTop = '${topMargin.toStringAsFixed(2)}px';
+        }
+        restore();
+      }
     }
+    _childOverdraw = true;
   }
 
   void _drawTextLine(
@@ -649,7 +682,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
 
-    if (paragraph._drawOnCanvas) {
+    if (paragraph._drawOnCanvas && _childOverdraw == false) {
       final List<String> lines =
           paragraph._lines ?? <String>[paragraph._plainText];
 
