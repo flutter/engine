@@ -848,7 +848,7 @@ void DartIsolate::DartIsolateShutdownCallback(
   FML_DLOG(INFO) << "DartIsolateShutdownCallback"
                  << " isolate_group_data " << isolate_group_data
                  << " isolate_data " << isolate_data;
-  isolate_group_data->get()->OnShutdownCallback();
+  isolate_data->get()->OnShutdownCallback();
 }
 
 // |Dart_IsolateGroupCleanupCallback|
