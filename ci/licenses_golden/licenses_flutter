@@ -495,6 +495,8 @@ FILE: ../../../flutter/shell/common/canvas_spy_unittests.cc
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
 FILE: ../../../flutter/shell/common/fixtures/shell_test.dart
+FILE: ../../../flutter/shell/common/gl_context_switch_manager.cc
+FILE: ../../../flutter/shell/common/gl_context_switch_manager.h
 FILE: ../../../flutter/shell/common/input_events_unittests.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.h
@@ -799,6 +801,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context_switch_manager.h
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context_switch_manager.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_render_target.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_render_target.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface.h
@@ -869,6 +873,8 @@ FILE: ../../../flutter/shell/platform/embedder/fixtures/compositor_root_surface_
 FILE: ../../../flutter/shell/platform/embedder/fixtures/compositor_software.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/compositor_with_platform_layer_on_bottom.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/compositor_with_root_layer_only.png
+FILE: ../../../flutter/shell/platform/embedder/fixtures/dpr_noxform.png
+FILE: ../../../flutter/shell/platform/embedder/fixtures/dpr_xform.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/gradient.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/gradient_xform.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/main.dart

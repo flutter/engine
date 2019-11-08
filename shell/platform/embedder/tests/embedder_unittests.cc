@@ -2587,7 +2587,14 @@ TEST_F(EmbedderTest,
   context.GetCompositor().SetRenderTargetType(
       EmbedderTestCompositor::RenderTargetType::kOpenGLTexture);
 
-  fml::AutoResetWaitableEvent latch;
+  sk_sp<SkImage> renderered_scene;
+  fml::CountDownLatch latch(2);
+
+  context.SetNextSceneCallback([&](auto image) {
+    renderered_scene = std::move(image);
+    latch.CountDown();
+  });
+
   context.GetCompositor().SetNextPresentCallback(
       [&](const FlutterLayer** layers, size_t layers_count) {
         ASSERT_EQ(layers_count, 3u);
@@ -2642,7 +2649,7 @@ TEST_F(EmbedderTest,
           ASSERT_EQ(*layers[2], layer);
         }
 
-        latch.Signal();
+        latch.CountDown();
       });
 
   auto engine = builder.LaunchEngine();
@@ -2650,14 +2657,16 @@ TEST_F(EmbedderTest,
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
-  event.width = 400;
-  event.height = 300;
+  event.width = 400 * 2.0;
+  event.height = 300 * 2.0;
   event.pixel_ratio = 2.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
   latch.Wait();
+
+  ASSERT_TRUE(ImageMatchesFixture("dpr_noxform.png", renderered_scene));
 }
 
 TEST_F(
@@ -2677,8 +2686,14 @@ TEST_F(
       SkMatrix().preTranslate(0, 800).preRotate(-90, 0, 0);
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
+  sk_sp<SkImage> renderered_scene;
+  fml::CountDownLatch latch(2);
 
-  fml::AutoResetWaitableEvent latch;
+  context.SetNextSceneCallback([&](auto image) {
+    renderered_scene = std::move(image);
+    latch.CountDown();
+  });
+
   context.GetCompositor().SetNextPresentCallback(
       [&](const FlutterLayer** layers, size_t layers_count) {
         ASSERT_EQ(layers_count, 3u);
@@ -2733,7 +2748,7 @@ TEST_F(
           ASSERT_EQ(*layers[2], layer);
         }
 
-        latch.Signal();
+        latch.CountDown();
       });
 
   auto engine = builder.LaunchEngine();
@@ -2741,14 +2756,16 @@ TEST_F(
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
-  event.width = 400;
-  event.height = 300;
+  event.width = 400 * 2.0;
+  event.height = 300 * 2.0;
   event.pixel_ratio = 2.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
   latch.Wait();
+
+  ASSERT_TRUE(ImageMatchesFixture("dpr_xform.png", renderered_scene));
 }
 
 TEST_F(EmbedderTest, CanUpdateLocales) {
@@ -2933,6 +2950,86 @@ TEST_F(EmbedderTest, VerifyB143464703) {
 
   latch.Wait();
   ASSERT_TRUE(ImageMatchesFixture("verifyb143464703.png", renderered_scene));
+}
+
+TEST_F(EmbedderTest,
+       PushingMutlipleFramesSetsUpNewRecordingCanvasWithCustomCompositor) {
+  auto& context = GetEmbedderContext();
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
+  builder.SetCompositor();
+  builder.SetDartEntrypoint("push_frames_over_and_over");
+
+  context.GetCompositor().SetRenderTargetType(
+      EmbedderTestCompositor::RenderTargetType::kOpenGLTexture);
+
+  const auto root_surface_transformation =
+      SkMatrix().preTranslate(0, 1024).preRotate(-90, 0, 0);
+
+  context.SetRootSurfaceTransformation(root_surface_transformation);
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 1024;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+
+  constexpr size_t frames_expected = 10;
+  fml::CountDownLatch frame_latch(frames_expected);
+  size_t frames_seen = 0;
+  context.AddNativeCallback("SignalNativeTest",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              frames_seen++;
+                              frame_latch.CountDown();
+                            }));
+  frame_latch.Wait();
+
+  ASSERT_EQ(frames_expected, frames_seen);
+}
+
+TEST_F(EmbedderTest,
+       PushingMutlipleFramesSetsUpNewRecordingCanvasWithoutCustomCompositor) {
+  auto& context = GetEmbedderContext();
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
+  builder.SetDartEntrypoint("push_frames_over_and_over");
+
+  const auto root_surface_transformation =
+      SkMatrix().preTranslate(0, 1024).preRotate(-90, 0, 0);
+
+  context.SetRootSurfaceTransformation(root_surface_transformation);
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 1024;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+
+  constexpr size_t frames_expected = 10;
+  fml::CountDownLatch frame_latch(frames_expected);
+  size_t frames_seen = 0;
+  context.AddNativeCallback("SignalNativeTest",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              frames_seen++;
+                              frame_latch.CountDown();
+                            }));
+  frame_latch.Wait();
+
+  ASSERT_EQ(frames_expected, frames_seen);
 }
 
 }  // namespace testing

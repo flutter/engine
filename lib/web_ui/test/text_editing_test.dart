@@ -13,6 +13,9 @@ import 'package:test/test.dart';
 
 import 'matchers.dart';
 
+/// The `keyCode` of the "Enter" key.
+const int _kReturnKeyCode = 13;
+
 const MethodCodec codec = JSONMethodCodec();
 
 TextEditingElement editingElement;
@@ -82,6 +85,7 @@ void main() {
       // Now the editing element should have focus.
       expect(document.activeElement, input);
       expect(editingElement.domElement, input);
+      expect(input.getAttribute('type'), null);
 
       // Input is appended to the glass pane.
       expect(domRenderer.glassPaneElement.contains(editingElement.domElement),
@@ -94,6 +98,25 @@ void main() {
       );
       // The focus is back to the body.
       expect(document.activeElement, document.body);
+    });
+
+    test('Knows how to create password fields', () {
+      final InputConfiguration config = InputConfiguration(
+        inputType: EngineInputType.text,
+        inputAction: 'TextInputAction.done',
+        obscureText: true,
+      );
+      editingElement.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+      expect(document.getElementsByTagName('input'), hasLength(1));
+      final InputElement input = document.getElementsByTagName('input')[0];
+      expect(editingElement.domElement, input);
+      expect(input.getAttribute('type'), 'password');
+
+      editingElement.disable();
     });
 
     test('Can read editing state correctly', () {
@@ -250,8 +273,39 @@ void main() {
       // No input action so far.
       expect(lastInputAction, isNull);
 
-      dispatchKeyboardEvent(editingElement.domElement, 'keydown', keyCode: 13);
+      dispatchKeyboardEvent(
+        editingElement.domElement,
+        'keydown',
+        keyCode: _kReturnKeyCode,
+      );
       expect(lastInputAction, 'TextInputAction.done');
+    });
+
+    test('Does not trigger input action in multi-line mode', () {
+      final InputConfiguration config = InputConfiguration(
+        inputType: EngineInputType.multiline,
+        obscureText: false,
+        inputAction: 'TextInputAction.done',
+      );
+      editingElement.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+
+      // No input action so far.
+      expect(lastInputAction, isNull);
+
+      final KeyboardEvent event = dispatchKeyboardEvent(
+        editingElement.domElement,
+        'keydown',
+        keyCode: _kReturnKeyCode,
+      );
+
+      // Still no input action.
+      expect(lastInputAction, isNull);
+      // And default behavior of keyboard event shouldn't have been prevented.
+      expect(event.defaultPrevented, isFalse);
     });
 
     group('[persistent mode]', () {
@@ -883,7 +937,7 @@ void main() {
       dispatchKeyboardEvent(
         textEditing.editingElement.domElement,
         'keydown',
-        keyCode: 13,
+        keyCode: _kReturnKeyCode,
       );
 
       expect(spy.messages, hasLength(1));
@@ -893,6 +947,24 @@ void main() {
         call.arguments,
         <dynamic>[clientId, 'TextInputAction.next'],
       );
+    });
+
+    test('does not send input action in multi-line mode', () {
+      showKeyboard(
+        inputType: 'multiline',
+        inputAction: 'TextInputAction.next',
+      );
+
+      final KeyboardEvent event = dispatchKeyboardEvent(
+        textEditing.editingElement.domElement,
+        'keydown',
+        keyCode: _kReturnKeyCode,
+      );
+
+      // No input action and no platform message have been sent.
+      expect(spy.messages, isEmpty);
+      // And default behavior of keyboard event shouldn't have been prevented.
+      expect(event.defaultPrevented, isFalse);
     });
   });
 
