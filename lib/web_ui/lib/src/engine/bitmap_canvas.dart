@@ -569,10 +569,12 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     _applyPaint(paint);
     final HtmlImage htmlImage = image;
     final html.Element imgElement = htmlImage.imgElement.clone(true);
+    _drawImage(imgElement, p);
+  }
+
+  void _drawImage(html.ImageElement imgElement, ui.Offset p) {
     imgElement.style
       ..position = 'absolute';
-//      ..transform = 'translate(${p.dx}px, ${p.dy}px)';
-
     if (isClipped) {
       final List<html.Element> clipElements =
       _clipContent(_clipStack, imgElement, p, currentTransform);
@@ -595,28 +597,24 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, ui.PaintData paint) {
     final HtmlImage htmlImage = image;
-    if (dst.width == src.width && dst.height == src.height &&
-        src.left == 0 && src.top == 0) {
+    final bool requiresClipping = src.left != 0 || src.top != 0 ||
+      src.width != image.width || src.height != image.height;
+    if (dst.width == image.width && dst.height == image.height &&
+        !requiresClipping) {
       drawImage(image, dst.topLeft, paint);
-//      // No scaling.
-//      final html.Element imgElement = htmlImage.imgElement.clone(true);
-//      imgElement.style
-//        ..position = 'absolute'
-//        ..transform = 'translate(${dst.left}px, ${dst.top}px)';
-//      rootElement.append(imgElement);
     } else {
-      print('scaling');
-      ctx.drawImageScaledFromSource(
-        htmlImage.imgElement,
-        src.left,
-        src.top,
-        src.width,
-        src.height,
-        dst.left,
-        dst.top,
-        dst.width,
-        dst.height,
-      );
+      _applyPaint(paint);
+      final html.Element imgElement = htmlImage.imgElement.clone(true);
+      save();
+      if (requiresClipping) {
+        clipRect(dst);
+      }
+      _drawImage(imgElement, ui.Offset(dst.left, dst.top));
+      // To scale simply set width / height on destination image.
+      imgElement.style
+        ..width = '${dst.width.toStringAsFixed(3)}px'
+        ..height = '${dst.height.toStringAsFixed(3)}px';
+      restore();
     }
   }
 
