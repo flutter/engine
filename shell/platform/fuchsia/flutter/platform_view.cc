@@ -636,7 +636,7 @@ void PlatformView::HandleFlutterPlatformChannelPlatformMessage(
   }
 
   // Fuchsia does not handle any platform messages at this time.
-  response->CompleteEmpty();
+  message->response()->CompleteEmpty();
 }
 
 // Channel handler for kTextInputChannel
