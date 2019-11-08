@@ -110,7 +110,6 @@ PlatformView::PlatformView(
   SetInterfaceErrorHandler(session_listener_binding_, "SessionListener");
   SetInterfaceErrorHandler(ime_, "Input Method Editor");
   SetInterfaceErrorHandler(text_sync_service_, "Text Sync Service");
-  SetInterfaceErrorHandler(clipboard_, "Clipboard");
   SetInterfaceErrorHandler(parent_environment_service_provider_,
                            "Parent Environment Service Provider");
   // Access the IME service.
