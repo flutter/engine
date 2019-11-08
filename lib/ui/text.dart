@@ -1413,6 +1413,9 @@ class TextRange {
   /// The [start] and [end] arguments must not be null. Both the [start] and
   /// [end] must either be greater than or equal to zero or both exactly -1.
   ///
+  /// The text included in the range includes the character at [start], but not
+  /// the one at [end].
+  ///
   /// Instead of creating an empty text range, consider using the [empty]
   /// constant.
   const TextRange({
@@ -1596,8 +1599,8 @@ enum BoxHeightStyle {
 /// Defines various ways to horizontally bound the boxes returned by
 /// [Paragraph.getBoxesForRange].
 enum BoxWidthStyle {
-  // Provide tight bounding boxes that fit widths to the runs of each line
-  // independently.
+  /// Provide tight bounding boxes that fit widths to the runs of each line
+  /// independently.
   tight,
 
   /// Adds up to two additional boxes as needed at the beginning and/or end
@@ -1863,19 +1866,12 @@ class Paragraph extends NativeFieldWrapperClass2 {
   }
   List<int> _getPositionForOffset(double dx, double dy) native 'Paragraph_getPositionForOffset';
 
-  /// Returns the [TextRange] of the word at the given [TextPosition.offset].
-  ///
-  /// Characters not part of a word, such as spaces, symbols, and punctuation,
-  /// have word breaks on both sides. In such cases, this method will return
-  /// `TextRange(begin: position.offset, end: position.offset+1)`.
-  ///
+  /// Returns the [start, end] of the word at the given offset. Characters not
+  /// part of a word, such as spaces, symbols, and punctuation, have word breaks
+  /// on both sides. In such cases, this method will return [offset, offset+1].
   /// Word boundaries are defined more precisely in Unicode Standard Annex #29
   /// http://www.unicode.org/reports/tr29/#Word_Boundaries
-  TextRange getWordBoundary(TextPosition position) {
-    final List<int> range = _getWordBoundary(position.offset);
-    return TextRange(start: range[0], end: range[1]);
-  }
-  List<int> _getWordBoundary(int offset) native 'Paragraph_getWordBoundary';
+  List<int> getWordBoundary(int offset) native 'Paragraph_getWordBoundary';
 
   // Redirecting the paint function in this way solves some dependency problems
   // in the C++ code. If we straighten out the C++ dependencies, we can remove

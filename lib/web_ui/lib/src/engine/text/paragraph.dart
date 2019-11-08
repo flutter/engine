@@ -281,14 +281,14 @@ class EngineParagraph implements ui.Paragraph {
   }
 
   @override
-  ui.TextRange getWordBoundary(ui.TextPosition position) {
+  List<int> getWordBoundary(int offset) {
     if (_plainText == null) {
-      return ui.TextRange(start: position.offset, end: position.offset);
+      return <int>[offset, offset];
     }
 
-    final int start = WordBreaker.prevBreakIndex(_plainText, position.offset);
-    final int end = WordBreaker.nextBreakIndex(_plainText, position.offset);
-    return ui.TextRange(start: start, end: end);
+    final int start = WordBreaker.prevBreakIndex(_plainText, offset);
+    final int end = WordBreaker.nextBreakIndex(_plainText, offset);
+    return <int>[start, end];
   }
 
   @override

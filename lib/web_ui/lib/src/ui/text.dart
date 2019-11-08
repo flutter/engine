@@ -1237,15 +1237,12 @@ abstract class Paragraph {
   /// within the text.
   TextPosition getPositionForOffset(Offset offset);
 
-  /// Returns the [TextRange] of the word at the given [TextPosition.offset].
-  ///
-  /// Characters not part of a word, such as spaces, symbols, and punctuation,
-  /// have word breaks on both sides. In such cases, this method will return
-  /// `TextRange(begin: position.offset, end: position.offset+1)`.
-  ///
+  /// Returns the [start, end] of the word at the given offset. Characters not
+  /// part of a word, such as spaces, symbols, and punctuation, have word breaks
+  /// on both sides. In such cases, this method will return [offset, offset+1].
   /// Word boundaries are defined more precisely in Unicode Standard Annex #29
   /// http://www.unicode.org/reports/tr29/#Word_Boundaries
-  TextRange getWordBoundary(TextPosition position);
+  List<int> getWordBoundary(int offset);
 
   /// Returns a list of text boxes that enclose all placeholders in the paragraph.
   ///
