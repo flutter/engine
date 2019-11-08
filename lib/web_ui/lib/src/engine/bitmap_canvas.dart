@@ -621,7 +621,19 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
         save();
         clipRect(dst);
       }
-      _drawImage(imgElement, ui.Offset(dst.left, dst.top));
+      double targetLeft = dst.left;
+      double targetTop = dst.top;
+      if (requiresClipping) {
+        if (src.width != image.width) {
+          double leftMargin = -src.left * (dst.width / src.width);
+          targetLeft += leftMargin;
+        }
+        if (src.height != image.height) {
+          double topMargin = -src.top * (dst.height / src.height);
+          targetTop += topMargin;
+        }
+      }
+      _drawImage(imgElement, ui.Offset(targetLeft, targetTop));
       // To scale set width / height on destination image.
       // For clipping we need to scale according to
       // clipped-width/full image width and shift it according to left/top of
@@ -637,14 +649,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
         ..width = '${targetWidth.toStringAsFixed(2)}px'
         ..height = '${targetHeight.toStringAsFixed(2)}px';
       if (requiresClipping) {
-        if (src.width != image.width) {
-          double leftMargin = -src.left * (dst.width / src.width);
-          imageStyle.marginLeft = '${leftMargin.toStringAsFixed(2)}px';
-        }
-        if (src.height != image.height) {
-          double topMargin = -src.top * (dst.height / src.height);
-          imageStyle.marginTop = '${topMargin.toStringAsFixed(2)}px';
-        }
         restore();
       }
     }
