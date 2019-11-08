@@ -1863,12 +1863,19 @@ class Paragraph extends NativeFieldWrapperClass2 {
   }
   List<int> _getPositionForOffset(double dx, double dy) native 'Paragraph_getPositionForOffset';
 
-  /// Returns the [start, end] of the word at the given offset. Characters not
-  /// part of a word, such as spaces, symbols, and punctuation, have word breaks
-  /// on both sides. In such cases, this method will return [offset, offset+1].
+  /// Returns the [TextRange] of the word at the given [TextPosition.offset].
+  ///
+  /// Characters not part of a word, such as spaces, symbols, and punctuation,
+  /// have word breaks on both sides. In such cases, this method will return
+  /// `TextRange(begin: position.offset, end: position.offset+1)`.
+  ///
   /// Word boundaries are defined more precisely in Unicode Standard Annex #29
   /// http://www.unicode.org/reports/tr29/#Word_Boundaries
-  List<int> getWordBoundary(int offset) native 'Paragraph_getWordBoundary';
+  TextRange getWordBoundary(TextPosition position) {
+    final List<int> range = _getWordBoundary(position.offset);
+    return TextRange(start: range[0], end: range[1]);
+  }
+  List<int> _getWordBoundary(int offset) native 'Paragraph_getWordBoundary';
 
   // Redirecting the paint function in this way solves some dependency problems
   // in the C++ code. If we straighten out the C++ dependencies, we can remove
