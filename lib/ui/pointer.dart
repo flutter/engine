@@ -75,10 +75,14 @@ class PointerData {
     this.kind = PointerDeviceKind.touch,
     this.signalKind,
     this.device = 0,
+    this.pointer = 0,
     this.physicalX = 0.0,
     this.physicalY = 0.0,
+    this.physicalDeltaX = 0.0,
+    this.physicalDeltaY = 0.0,
     this.buttons = 0,
     this.obscured = false,
+    this.synthesized = false,
     this.pressure = 0.0,
     this.pressureMin = 0.0,
     this.pressureMax = 0.0,
@@ -111,6 +115,10 @@ class PointerData {
   /// Unique identifier for the pointing device, reused across interactions.
   final int device;
 
+  /// Unique identifier for the pointer, not reused. Changes for each new
+  /// pointer down event.
+  final int pointer;
+
   /// X coordinate of the position of the pointer, in physical pixels in the
   /// global coordinate space.
   final double physicalX;
@@ -118,6 +126,12 @@ class PointerData {
   /// Y coordinate of the position of the pointer, in physical pixels in the
   /// global coordinate space.
   final double physicalY;
+
+  /// The distance of pointer movement on X coordinate in physical pixels.
+  final double physicalDeltaX;
+
+  /// The distance of pointer movement on Y coordinate in physical pixels.
+  final double physicalDeltaY;
 
   /// Bit field using the *Button constants (primaryMouseButton,
   /// secondaryStylusButton, etc). For example, if this has the value 6 and the
@@ -129,6 +143,14 @@ class PointerData {
   /// obscuring this application's window. (Aspirational; not currently
   /// implemented.)
   final bool obscured;
+
+  /// Set if this pointer data was synthesized by pointer data packet converter.
+  /// pointer data packet converter will synthesize additional pointer datas if
+  /// the input sequence of pointer data is illegal.
+  ///
+  /// For example, a down pointer data will be synthesized if the converter receives
+  /// a move pointer data while the pointer is not previously down.
+  final bool synthesized;
 
   /// The pressure of the touch as a number ranging from 0.0, indicating a touch
   /// with no discernible pressure, to 1.0, indicating a touch with "normal"
@@ -242,9 +264,13 @@ class PointerData {
              'kind: $kind, '
              'signalKind: $signalKind, '
              'device: $device, '
+             'pointer: $pointer, '
              'physicalX: $physicalX, '
              'physicalY: $physicalY, '
+             'physicalDeltaX: $physicalDeltaX, '
+             'physicalDeltaY: $physicalDeltaY, '
              'buttons: $buttons, '
+             'synthesized: $synthesized, '
              'pressure: $pressure, '
              'pressureMin: $pressureMin, '
              'pressureMax: $pressureMax, '
