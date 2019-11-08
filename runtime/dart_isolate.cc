@@ -57,22 +57,21 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
   // being prepared to run.
   auto root_embedder_data = std::make_unique<std::shared_ptr<DartIsolate>>(
       std::shared_ptr<DartIsolate>(new DartIsolate(
-          settings,                     // settings
-          std::move(isolate_snapshot),  // isolate snapshot
-          task_runners,                 // task runners
+          settings,                      // settings
+          std::move(isolate_snapshot),   // isolate snapshot
+          task_runners,                  // task runners
           std::move(snapshot_delegate),  // snapshot delegate
-          std::move(io_manager),        // IO manager
-          std::move(unref_queue),       // Skia unref queue
-          std::move(image_decoder),     // Image Decoder
-          advisory_script_uri,          // advisory URI
-          advisory_script_entrypoint,   // advisory entrypoint
-          nullptr,                      // child isolate preparer
-          isolate_create_callback,      // isolate create callback
-          isolate_shutdown_callback,    // isolate shutdown callback
-          true,                         // is_root_isolate
-          true                          // is_group_root_isolate
-          ))
-      );
+          std::move(io_manager),         // IO manager
+          std::move(unref_queue),        // Skia unref queue
+          std::move(image_decoder),      // Image Decoder
+          advisory_script_uri,           // advisory URI
+          advisory_script_entrypoint,    // advisory entrypoint
+          nullptr,                       // child isolate preparer
+          isolate_create_callback,       // isolate create callback
+          isolate_shutdown_callback,     // isolate shutdown callback
+          true,                          // is_root_isolate
+          true                           // is_group_root_isolate
+          )));
 
   std::tie(vm_isolate, embedder_isolate) = CreateDartVMAndEmbedderObjectPair(
       advisory_script_uri.c_str(),         // advisory script URI
@@ -705,12 +704,14 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
           fml::WeakPtr<IOManager>{},                       // io_manager
           fml::RefPtr<SkiaUnrefQueue>{},                   // unref_queue
           fml::WeakPtr<ImageDecoder>{},                    // image_decoder
-          (*root_embedder_isolate)->GetAdvisoryScriptURI(),// advisory_script_uri
-          (*root_embedder_isolate)->GetAdvisoryScriptEntrypoint(),  // advisory_script_entrypoint
+          (*root_embedder_isolate)
+              ->GetAdvisoryScriptURI(),  // advisory_script_uri
+          (*root_embedder_isolate)
+              ->GetAdvisoryScriptEntrypoint(),  // advisory_script_entrypoint
           (*root_embedder_isolate)->child_isolate_preparer_,     // preparer
           (*root_embedder_isolate)->isolate_create_callback_,    // on create
           (*root_embedder_isolate)->isolate_shutdown_callback_,  // on shutdown
-          false,    // is_root_isolate
+          false,     // is_root_isolate
           false)));  // is_group_root_isolate
 
   // root isolate should have been created via CreateRootIsolate and
