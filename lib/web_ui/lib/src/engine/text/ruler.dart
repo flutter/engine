@@ -17,6 +17,7 @@ class ParagraphGeometricStyle {
     this.wordSpacing,
     this.decoration,
     this.ellipsis,
+    this.shadows,
   });
 
   final ui.FontWeight fontWeight;
@@ -29,6 +30,7 @@ class ParagraphGeometricStyle {
   final double wordSpacing;
   final String decoration;
   final String ellipsis;
+  final List<ui.Shadow> shadows;
 
   // Since all fields above are primitives, cache hashcode since ruler lookups
   // use this style as key.
@@ -109,7 +111,8 @@ class ParagraphGeometricStyle {
         letterSpacing == typedOther.letterSpacing &&
         wordSpacing == typedOther.wordSpacing &&
         decoration == typedOther.decoration &&
-        ellipsis == typedOther.ellipsis;
+        ellipsis == typedOther.ellipsis &&
+        shadows == typedOther.shadows;
   }
 
   @override
@@ -124,6 +127,7 @@ class ParagraphGeometricStyle {
         wordSpacing,
         decoration,
         ellipsis,
+        shadows,
       );
 
   @override
@@ -137,6 +141,7 @@ class ParagraphGeometricStyle {
           ' wordSpacing: $wordSpacing,'
           ' decoration: $decoration,'
           ' ellipsis: $ellipsis,'
+          ' shadows: $shadows',
           ')';
     } else {
       return super.toString();
@@ -240,6 +245,9 @@ class TextDimensions {
       ..textDecoration = style.decoration;
     if (style.lineHeight != null) {
       _element.style.lineHeight = style.lineHeight.toString();
+    }
+    if (style.shadows != null) {
+      throw UnimplementedError();
     }
     _invalidateBoundsCache();
   }
