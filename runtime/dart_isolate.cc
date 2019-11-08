@@ -701,6 +701,7 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
           (*root_embedder_isolate)->GetSettings(),         // settings
           (*root_embedder_isolate)->GetIsolateSnapshot(),  // isolate_snapshot
           null_task_runners,                               // task_runners
+          fml::WeakPtr<SnapshotDelegate>{},                // snapshot_delegate
           fml::WeakPtr<IOManager>{},                       // io_manager
           fml::RefPtr<SkiaUnrefQueue>{},                   // unref_queue
           fml::WeakPtr<ImageDecoder>{},                    // image_decoder
