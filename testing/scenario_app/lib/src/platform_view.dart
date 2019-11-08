@@ -55,8 +55,8 @@ class MultiPlatformViewScenario extends Scenario with _BasePlatformViewScenarioM
   MultiPlatformViewScenario(Window window, {this.firstId, this.secondId})
       : assert(window != null),
         super(window) {
-    createPlatformView(window, 'platform view 1', firstId);
-    createPlatformView(window, 'platform view 2', secondId);
+    createPlatformView(window, 'platform view 1', firstId, 'scenarios/textPlatformView');
+    createPlatformView(window, 'platform view 2', secondId, 'scenarios/textPlatformView');
   }
 
   /// The platform view identifier to use for the first platform view.
@@ -91,8 +91,8 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario with _BaseP
   MultiPlatformViewBackgroundForegroundScenario(Window window, {this.firstId, this.secondId})
       : assert(window != null),
         super(window) {
-    createPlatformView(window, 'platform view 1', firstId);
-    createPlatformView(window, 'platform view 2', secondId);
+    createPlatformView(window, 'platform view 1', firstId, 'scenarios/textPlatformView');
+    createPlatformView(window, 'platform view 2', secondId, 'scenarios/textPlatformView');
     _nextFrame = _firstFrame;
   }
 
