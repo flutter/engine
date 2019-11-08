@@ -149,11 +149,10 @@ SkCanvas* IOSSurfaceGL::CompositeEmbeddedView(int view_id) {
 // |ExternalViewEmbedder|
 bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  platform_views_controller->SetGLContextSwitchManager(context_->GetIOSGLContextSwitchManager());
   if (platform_views_controller == nullptr) {
     return true;
   }
-
+  platform_views_controller->SetGLContextSwitchManager(context_->GetIOSGLContextSwitchManager());
   bool submitted = platform_views_controller->SubmitFrame(std::move(context), context_);
   [CATransaction commit];
   return submitted;
