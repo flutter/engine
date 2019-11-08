@@ -281,7 +281,20 @@ class EngineParagraph implements ui.Paragraph {
   }
 
   @override
-  List<int> getWordBoundary(int offset) {
+  List<int> getWordBoundary(dynamic offset) {
+    // TODO(gspencergoog): have this take only a TextPosition once the framework
+    // code is calling it with that.
+    if (offset is ui.TextPosition) {
+      ui.TextPosition position = offset;
+      if (_plainText == null) {
+        return <int>[position.offset, position.offset];
+      }
+
+      final int start = WordBreaker.prevBreakIndex(_plainText, position.offset);
+      final int end = WordBreaker.nextBreakIndex(_plainText, position.offset);
+      return <int>[start, end];
+    }
+
     if (_plainText == null) {
       return <int>[offset, offset];
     }
