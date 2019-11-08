@@ -585,18 +585,16 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   }
 
   void _drawImage(html.ImageElement imgElement, ui.Offset p) {
-    imgElement.style
-      ..position = 'absolute';
     if (isClipped) {
       final List<html.Element> clipElements =
-      _clipContent(_clipStack, imgElement, p, currentTransform);
+          _clipContent(_clipStack, imgElement, p, currentTransform);
       for (html.Element clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
     } else {
       final String cssTransform =
-      matrix4ToCssTransform(transformWithOffset(currentTransform, p));
+          matrix4ToCssTransform(transformWithOffset(currentTransform, p));
       imgElement.style
         ..transformOrigin = '0 0 0'
         ..transform = cssTransform;
@@ -609,9 +607,12 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, ui.PaintData paint) {
     final HtmlImage htmlImage = image;
-    final bool requiresClipping = src.left != 0 || src.top != 0 ||
-      src.width != image.width || src.height != image.height;
-    if (dst.width == image.width && dst.height == image.height &&
+    final bool requiresClipping = src.left != 0 ||
+        src.top != 0 ||
+        src.width != image.width ||
+        src.height != image.height;
+    if (dst.width == image.width &&
+        dst.height == image.height &&
         !requiresClipping) {
       drawImage(image, dst.topLeft, paint);
     } else {
