@@ -42,16 +42,17 @@ class PointerDataPacketConverter {
   //----------------------------------------------------------------------------
   /// @brief      Expands pointer data packet into a form that framework
   ///             understands. The raw pointer data packet from embedding does
-  ///             not have sufficient information and may contain illegal pointer
-  ///             events. This method will fill out those information and attempt
-  ///             to correct pointer events.
+  ///             not have sufficient information and may contain illegal
+  ///             pointer events. This method will fill out those information
+  ///             and attempt to correct pointer events.
   ///
   /// @param[in]  packet                   The raw pointer packet sent from
   ///                                      embedding.
   ///
-  /// @return     A full Expended packet with all the required information filled.
-  ///             It may contain synthetic pointer event as the result of converter's
-  ///             attempt to correct illegal pointer events.
+  /// @return     A full Expended packet with all the required information
+  /// filled.
+  ///             It may contain synthetic pointer event as the result of
+  ///             converter's attempt to correct illegal pointer events.
   ///
   std::unique_ptr<PointerDataPacket> Expand(
       std::unique_ptr<PointerDataPacket> packet);
