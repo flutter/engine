@@ -49,8 +49,8 @@ class GPUSurfaceMetal : public Surface {
   flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   // |Surface|
-  std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
-  MakeRenderContextCurrent() override;
+  std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch> MakeRenderContextCurrent()
+      override;
 
   void ReleaseUnusedDrawableIfNecessary();
 

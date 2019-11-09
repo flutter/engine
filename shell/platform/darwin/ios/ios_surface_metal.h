@@ -30,7 +30,8 @@ class IOSSurfaceMetal final : public IOSSurface,
   bool IsValid() const override;
 
   // |IOSSurface|
-  std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch> ResourceContextMakeCurrent() override;
+  std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch> ResourceContextMakeCurrent()
+      override;
 
   // |IOSSurface|
   void UpdateStorageSizeIfNecessary() override;

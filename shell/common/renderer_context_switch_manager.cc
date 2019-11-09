@@ -10,18 +10,20 @@ RendererContextSwitchManager::RendererContextSwitchManager() = default;
 
 RendererContextSwitchManager::~RendererContextSwitchManager() = default;
 
-RendererContextSwitchManager::RendererContextSwitch::RendererContextSwitch() = default;
+RendererContextSwitchManager::RendererContextSwitch::RendererContextSwitch() =
+    default;
 
 RendererContextSwitchManager::RendererContextSwitch::~RendererContextSwitch(){};
 
-RendererContextSwitchManager::RendererContextSwitchPureResult::RendererContextSwitchPureResult(
-    bool switch_result)
+RendererContextSwitchManager::RendererContextSwitchPureResult::
+    RendererContextSwitchPureResult(bool switch_result)
     : switch_result_(switch_result){};
 
 RendererContextSwitchManager::RendererContextSwitchPureResult::
     ~RendererContextSwitchPureResult() = default;
 
-bool RendererContextSwitchManager::RendererContextSwitchPureResult::GetSwitchResult() {
+bool RendererContextSwitchManager::RendererContextSwitchPureResult::
+    GetSwitchResult() {
   return switch_result_;
 }
 

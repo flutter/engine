@@ -70,15 +70,15 @@ class RendererContextSwitchManager {
   //----------------------------------------------------------------------------
   /// @brief      Make the flutter's context as current context.
   ///
-  /// @return     A `RendererContextSwitch` with `GetSwitchResult` returning true if
-  /// the setting process is succesful.
+  /// @return     A `RendererContextSwitch` with `GetSwitchResult` returning
+  /// true if the setting process is succesful.
   virtual std::unique_ptr<RendererContextSwitch> MakeCurrent() = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Make the flutter's resources context as current context.
   ///
-  /// @return     A `RendererContextSwitch` with `GetSwitchResult` returning true if
-  /// the setting process is succesful.
+  /// @return     A `RendererContextSwitch` with `GetSwitchResult` returning
+  /// true if the setting process is succesful.
   virtual std::unique_ptr<RendererContextSwitch> ResourceMakeCurrent() = 0;
 
   //------------------------------------------------------------------------------
