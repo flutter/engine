@@ -160,9 +160,9 @@ void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
   frame_size_ = frame_size;
 }
 
-void FlutterPlatformViewsController::SetGLContextSwitchManager(
+void FlutterPlatformViewsController::SetRendererContextSwitchManager(
     std::shared_ptr<IOSGLContextSwitchManager> gl_context_guard_manager) {
-  gl_context_switch_manager_ = gl_context_guard_manager;
+  renderer_context_switch_manager_ = gl_context_guard_manager;
 }
 
 void FlutterPlatformViewsController::CancelFrame() {
@@ -373,9 +373,9 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
 
   bool did_submit = true;
   for (int64_t view_id : composition_order_) {
-    if (gl_context_switch_manager_ != nullptr) {
-      std::unique_ptr<GLContextSwitchManager::GLContextSwitch> contextSwitch =
-          gl_context_switch_manager_->MakeCurrent();
+    if (renderer_context_switch_manager_ != nullptr) {
+      std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch> contextSwitch =
+          renderer_context_switch_manager_->MakeCurrent();
     }
 
     EnsureOverlayInitialized(view_id, std::move(gl_context), gr_context);
@@ -465,9 +465,9 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
     std::shared_ptr<IOSGLContext> gl_context,
     GrContext* gr_context) {
   FML_DCHECK(flutter_view_);
-  if (gl_context_switch_manager_ != nullptr) {
-    std::unique_ptr<GLContextSwitchManager::GLContextSwitch> contextSwitch =
-        gl_context_switch_manager_->MakeCurrent();
+  if (renderer_context_switch_manager_ != nullptr) {
+    std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch> contextSwitch =
+        renderer_context_switch_manager_->MakeCurrent();
   }
 
   auto overlay_it = overlays_.find(overlay_id);

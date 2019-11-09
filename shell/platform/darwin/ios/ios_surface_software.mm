@@ -27,9 +27,9 @@ bool IOSSurfaceSoftware::IsValid() const {
   return layer_;
 }
 
-std::unique_ptr<GLContextSwitchManager::GLContextSwitch>
+std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
 IOSSurfaceSoftware::ResourceContextMakeCurrent() {
-  return std::make_unique<GLContextSwitchManager::GLContextSwitchPureResult>(false);
+  return std::make_unique<RendererContextSwitchManager::RendererContextSwitchPureResult>(false);
 }
 
 void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {

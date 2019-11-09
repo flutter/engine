@@ -8,7 +8,7 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/common/gl_context_switch_manager.h"
+#include "flutter/shell/common/renderer_context_switch_manager.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 @class CALayer;
@@ -28,7 +28,8 @@ class IOSSurfaceSoftware final : public IOSSurface,
   bool IsValid() const override;
 
   // |IOSSurface|
-  std::unique_ptr<GLContextSwitchManager::GLContextSwitch> ResourceContextMakeCurrent() override;
+  std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch> ResourceContextMakeCurrent()
+      override;
 
   // |IOSSurface|
   void UpdateStorageSizeIfNecessary() override;

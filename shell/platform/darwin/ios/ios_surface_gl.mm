@@ -28,7 +28,7 @@ bool IOSSurfaceGL::IsValid() const {
   return render_target_->IsValid();
 }
 
-std::unique_ptr<GLContextSwitchManager::GLContextSwitch>
+std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
 IOSSurfaceGL::ResourceContextMakeCurrent() {
   return context_->ResourceMakeCurrent();
 }
@@ -57,9 +57,10 @@ bool IOSSurfaceGL::UseOffscreenSurface() const {
   return true;
 }
 
-std::unique_ptr<GLContextSwitchManager::GLContextSwitch> IOSSurfaceGL::GLContextMakeCurrent() {
+std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+IOSSurfaceGL::GLContextMakeCurrent() {
   if (!IsValid()) {
-    return std::make_unique<GLContextSwitchManager::GLContextSwitchPureResult>(false);
+    return std::make_unique<RendererContextSwitchManager::RendererContextSwitchPureResult>(false);
   }
   return render_target_->MakeCurrent();
 }
@@ -75,7 +76,7 @@ bool IOSSurfaceGL::GLContextPresent() {
 }
 
 // |GPUSurfaceGLDelegate|
-std::shared_ptr<GLContextSwitchManager> IOSSurfaceGL::GetGLContextSwitchManager() {
+std::shared_ptr<RendererContextSwitchManager> IOSSurfaceGL::GetRendererContextSwitchManager() {
   return context_->GetIOSGLContextSwitchManager();
 }
 
@@ -150,7 +151,8 @@ bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
   if (platform_views_controller == nullptr) {
     return true;
   }
-  platform_views_controller->SetGLContextSwitchManager(context_->GetIOSGLContextSwitchManager());
+  platform_views_controller->SetRendererContextSwitchManager(
+      context_->GetIOSGLContextSwitchManager());
   bool submitted = platform_views_controller->SubmitFrame(std::move(context), context_);
   [CATransaction commit];
   return submitted;

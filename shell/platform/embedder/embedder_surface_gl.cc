@@ -34,9 +34,10 @@ bool EmbedderSurfaceGL::IsValid() const {
 }
 
 // |GPUSurfaceGLDelegate|
-std::unique_ptr<GLContextSwitchManager::GLContextSwitch>
+std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
 EmbedderSurfaceGL::GLContextMakeCurrent() {
-  return std::make_unique<GLContextSwitchManager::GLContextSwitchPureResult>(
+  return std::make_unique<
+      RendererContextSwitchManager::RendererContextSwitchPureResult>(
       gl_dispatch_table_.gl_make_current_callback());
 }
 
@@ -82,8 +83,8 @@ EmbedderSurfaceGL::GLProcResolver EmbedderSurfaceGL::GetGLProcResolver() const {
 }
 
 // |GPUSurfaceGLDelegate|
-std::shared_ptr<GLContextSwitchManager>
-EmbedderSurfaceGL::GetGLContextSwitchManager() {
+std::shared_ptr<RendererContextSwitchManager>
+EmbedderSurfaceGL::GetRendererContextSwitchManager() {
   return nullptr;
 }
 

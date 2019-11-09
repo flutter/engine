@@ -104,10 +104,11 @@ bool AndroidSurfaceGL::SetNativeWindow(
   return true;
 }
 
-std::unique_ptr<GLContextSwitchManager::GLContextSwitch>
+std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
 AndroidSurfaceGL::GLContextMakeCurrent() {
   FML_DCHECK(onscreen_context_ && onscreen_context_->IsValid());
-  return std::make_unique<GLContextSwitchManager::GLContextSwitchPureResult>(
+  return std::make_unique<
+      RendererContextSwitchManager::RendererContextSwitchPureResult>(
       onscreen_context_->MakeCurrent());
 }
 
@@ -133,8 +134,8 @@ ExternalViewEmbedder* AndroidSurfaceGL::GetExternalViewEmbedder() {
 }
 
 // |GPUSurfaceGLDelegate|
-std::shared_ptr<GLContextSwitchManager>
-AndroidSurfaceGL::GetGLContextSwitchManager() {
+std::shared_ptr<RendererContextSwitchManager>
+AndroidSurfaceGL::GetRendererContextSwitchManager() {
   return nullptr;
 }
 

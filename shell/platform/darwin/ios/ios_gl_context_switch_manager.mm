@@ -22,11 +22,12 @@ IOSGLContextSwitchManager::IOSGLContextSwitchManager() {
 
 IOSGLContextSwitchManager::~IOSGLContextSwitchManager() = default;
 
-std::unique_ptr<GLContextSwitchManager::GLContextSwitch> IOSGLContextSwitchManager::MakeCurrent() {
+std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+IOSGLContextSwitchManager::MakeCurrent() {
   return std::make_unique<IOSGLContextSwitchManager::IOSGLContextSwitch>(*this, context_);
 }
 
-std::unique_ptr<GLContextSwitchManager::GLContextSwitch>
+std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
 IOSGLContextSwitchManager::ResourceMakeCurrent() {
   return std::make_unique<IOSGLContextSwitchManager::IOSGLContextSwitch>(*this, resource_context_);
 }

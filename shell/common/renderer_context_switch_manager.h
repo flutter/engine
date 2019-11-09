@@ -11,13 +11,13 @@
 namespace flutter {
 
 //------------------------------------------------------------------------------
-/// Manages `GLContextSwitch`.
+/// Manages `RendererContextSwitch`.
 ///
 /// Should be subclassed for platforms that uses GL and requires context
 /// switching. Always use `MakeCurrent` and `ResourceMakeCurrent` in the
-/// `GLContextSwitchManager` to set gl contexts.
+/// `RendererContextSwitchManager` to set gl contexts.
 ///
-class GLContextSwitchManager {
+class RendererContextSwitchManager {
  public:
   //------------------------------------------------------------------------------
   /// Switches the gl context to the flutter's contexts.
@@ -26,19 +26,19 @@ class GLContextSwitchManager {
   /// In construction, it should set the current context to a flutter's context
   /// In destruction, it should rest the current context.
   ///
-  class GLContextSwitch {
+  class RendererContextSwitch {
    public:
-    GLContextSwitch();
+    RendererContextSwitch();
 
-    virtual ~GLContextSwitch();
+    virtual ~RendererContextSwitch();
 
     virtual bool GetSwitchResult() = 0;
 
-    FML_DISALLOW_COPY_AND_ASSIGN(GLContextSwitch);
+    FML_DISALLOW_COPY_AND_ASSIGN(RendererContextSwitch);
   };
 
-  GLContextSwitchManager();
-  ~GLContextSwitchManager();
+  RendererContextSwitchManager();
+  ~RendererContextSwitchManager();
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a shell instance using the provided settings. The
@@ -70,45 +70,45 @@ class GLContextSwitchManager {
   //----------------------------------------------------------------------------
   /// @brief      Make the flutter's context as current context.
   ///
-  /// @return     A `GLContextSwitch` with `GetSwitchResult` returning true if
+  /// @return     A `RendererContextSwitch` with `GetSwitchResult` returning true if
   /// the setting process is succesful.
-  virtual std::unique_ptr<GLContextSwitch> MakeCurrent() = 0;
+  virtual std::unique_ptr<RendererContextSwitch> MakeCurrent() = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Make the flutter's resources context as current context.
   ///
-  /// @return     A `GLContextSwitch` with `GetSwitchResult` returning true if
+  /// @return     A `RendererContextSwitch` with `GetSwitchResult` returning true if
   /// the setting process is succesful.
-  virtual std::unique_ptr<GLContextSwitch> ResourceMakeCurrent() = 0;
+  virtual std::unique_ptr<RendererContextSwitch> ResourceMakeCurrent() = 0;
 
   //------------------------------------------------------------------------------
-  /// A representation of a `GLContextSwitch` that doesn't require actual
+  /// A representation of a `RendererContextSwitch` that doesn't require actual
   /// context switching.
   ///
-  class GLContextSwitchPureResult final : public GLContextSwitch {
+  class RendererContextSwitchPureResult final : public RendererContextSwitch {
    public:
-    // Constructor that creates an `GLContextSwitchPureResult`.
+    // Constructor that creates an `RendererContextSwitchPureResult`.
     // The `GetSwitchResult` will return the same value as `switch_result`.
 
     //----------------------------------------------------------------------------
-    /// @brief      Constructs a  `GLContextSwitchPureResult`.
+    /// @brief      Constructs a  `RendererContextSwitchPureResult`.
     ///
     /// @param[in]  switch_result       the switch result that will be returned
     /// in `GetSwitchResult()`
     ///
-    GLContextSwitchPureResult(bool switch_result);
+    RendererContextSwitchPureResult(bool switch_result);
 
-    ~GLContextSwitchPureResult();
+    ~RendererContextSwitchPureResult();
 
     bool GetSwitchResult() override;
 
    private:
     bool switch_result_;
 
-    FML_DISALLOW_COPY_AND_ASSIGN(GLContextSwitchPureResult);
+    FML_DISALLOW_COPY_AND_ASSIGN(RendererContextSwitchPureResult);
   };
 
-  FML_DISALLOW_COPY_AND_ASSIGN(GLContextSwitchManager);
+  FML_DISALLOW_COPY_AND_ASSIGN(RendererContextSwitchManager);
 };
 
 }  // namespace flutter

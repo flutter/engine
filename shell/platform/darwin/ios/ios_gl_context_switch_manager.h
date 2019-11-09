@@ -9,21 +9,21 @@
 
 #import <OpenGLES/EAGL.h>
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/common/gl_context_switch_manager.h"
+#include "flutter/shell/common/renderer_context_switch_manager.h"
 
 namespace flutter {
 
 //------------------------------------------------------------------------------
-/// The iOS implementation of `GLContextSwitchManager`.
+/// The iOS implementation of `RendererContextSwitchManager`.
 ///
 /// On `IOSGLContextSwitch`'s construction, it pushes the current EAGLContext to a stack and
 /// sets the flutter's gl context as current.
 /// On `IOSGLContextSwitch`'s desstruction, it pops a EAGLContext from the stack and set it to
 /// current.
 ///
-class IOSGLContextSwitchManager final : public GLContextSwitchManager {
+class IOSGLContextSwitchManager final : public RendererContextSwitchManager {
  public:
-  class IOSGLContextSwitch final : public GLContextSwitch {
+  class IOSGLContextSwitch final : public RendererContextSwitch {
    public:
     IOSGLContextSwitch(IOSGLContextSwitchManager& manager,
                        fml::scoped_nsobject<EAGLContext> context);
@@ -44,8 +44,8 @@ class IOSGLContextSwitchManager final : public GLContextSwitchManager {
 
   ~IOSGLContextSwitchManager();
 
-  std::unique_ptr<GLContextSwitch> MakeCurrent() override;
-  std::unique_ptr<GLContextSwitch> ResourceMakeCurrent() override;
+  std::unique_ptr<RendererContextSwitch> MakeCurrent() override;
+  std::unique_ptr<RendererContextSwitch> ResourceMakeCurrent() override;
 
   fml::scoped_nsobject<EAGLContext> GetContext();
 

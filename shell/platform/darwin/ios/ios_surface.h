@@ -28,7 +28,7 @@ class IOSSurface {
 
   virtual bool IsValid() const = 0;
 
-  virtual std::unique_ptr<GLContextSwitchManager::GLContextSwitch>
+  virtual std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
   ResourceContextMakeCurrent() = 0;
 
   virtual void UpdateStorageSizeIfNecessary() = 0;

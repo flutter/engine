@@ -355,9 +355,10 @@ PointerDataDispatcherMaker ShellTestPlatformView::GetDispatcherMaker() {
 }
 
 // |GPUSurfaceGLDelegate|
-std::unique_ptr<GLContextSwitchManager::GLContextSwitch>
+std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
 ShellTestPlatformView::GLContextMakeCurrent() {
-  return std::make_unique<GLContextSwitchManager::GLContextSwitchPureResult>(
+  return std::make_unique<
+      RendererContextSwitchManager::RendererContextSwitchPureResult>(
       gl_surface_.MakeCurrent());
 }
 
@@ -389,8 +390,8 @@ ExternalViewEmbedder* ShellTestPlatformView::GetExternalViewEmbedder() {
   return nullptr;
 }
 
-std::shared_ptr<GLContextSwitchManager>
-ShellTestPlatformView::GetGLContextSwitchManager() {
+std::shared_ptr<RendererContextSwitchManager>
+ShellTestPlatformView::GetRendererContextSwitchManager() {
   return nullptr;
 }
 
