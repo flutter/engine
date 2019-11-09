@@ -4,6 +4,7 @@
 
 #define FML_USED_ON_EMBEDDER
 
+#include <algorithm>
 #include <functional>
 #include <future>
 #include <memory>
@@ -73,7 +74,7 @@ TEST_F(ShellTest, InitializeWithDifferentThreads) {
   auto shell = CreateShell(std::move(settings), std::move(task_runners));
   ASSERT_TRUE(ValidateShell(shell.get()));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  shell.reset();
+  DestroyShell(std::move(shell), std::move(task_runners));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -85,10 +86,10 @@ TEST_F(ShellTest, InitializeWithSingleThread) {
   auto task_runner = thread_host.platform_thread->GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  auto shell = CreateShell(std::move(settings), std::move(task_runners));
+  auto shell = CreateShell(std::move(settings), task_runners);
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
-  shell.reset();
+  DestroyShell(std::move(shell), std::move(task_runners));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -99,10 +100,10 @@ TEST_F(ShellTest, InitializeWithSingleThreadWhichIsTheCallingThread) {
   auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
-  auto shell = CreateShell(std::move(settings), std::move(task_runners));
+  auto shell = CreateShell(std::move(settings), task_runners);
   ASSERT_TRUE(ValidateShell(shell.get()));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  shell.reset();
+  DestroyShell(std::move(shell), std::move(task_runners));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -130,7 +131,7 @@ TEST_F(ShellTest,
       });
   ASSERT_TRUE(ValidateShell(shell.get()));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  shell.reset();
+  DestroyShell(std::move(shell), std::move(task_runners));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -150,7 +151,7 @@ TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
   auto shell = CreateShell(std::move(settings), std::move(task_runners));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   ASSERT_TRUE(ValidateShell(shell.get()));
-  shell.reset();
+  DestroyShell(std::move(shell), std::move(task_runners));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -172,7 +173,7 @@ TEST_F(ShellTest, FixturesAreFunctional) {
   RunEngine(shell.get(), std::move(configuration));
   main_latch.Wait();
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  shell.reset();
+  DestroyShell(std::move(shell));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -196,7 +197,34 @@ TEST_F(ShellTest, SecondaryIsolateBindingsAreSetupViaShellSettings) {
   latch.Wait();
 
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  shell.reset();
+  DestroyShell(std::move(shell));
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, LastEntrypoint) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  auto settings = CreateSettingsForFixture();
+  auto shell = CreateShell(settings);
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  ASSERT_TRUE(configuration.IsValid());
+  std::string entry_point = "fixturesAreFunctionalMain";
+  configuration.SetEntrypoint(entry_point);
+
+  fml::AutoResetWaitableEvent main_latch;
+  std::string last_entry_point;
+  AddNativeCallback(
+      "SayHiFromFixturesAreFunctionalMain", CREATE_NATIVE_ENTRY([&](auto args) {
+        last_entry_point = shell->GetEngine()->GetLastEntrypoint();
+        main_latch.Signal();
+      }));
+
+  RunEngine(shell.get(), std::move(configuration));
+  main_latch.Wait();
+  EXPECT_EQ(entry_point, last_entry_point);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  DestroyShell(std::move(shell));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -207,6 +235,10 @@ TEST(ShellTestNoFixture, EnableMirrorsIsWhitelisted) {
     GTEST_SKIP();
     return;
   }
+#if FLUTTER_RELEASE
+  GTEST_SKIP();
+  return;
+#endif
 
   const std::vector<fml::CommandLine::Option> options = {
       fml::CommandLine::Option("dart-flags", "--enable_mirrors")};
@@ -223,7 +255,7 @@ TEST_F(ShellTest, BlacklistedDartVMFlag) {
       fml::CommandLine::Option("dart-flags", "--verify_after_gc")};
   fml::CommandLine command_line("", options, std::vector<std::string>());
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
+#if !FLUTTER_RELEASE
   // Upon encountering a non-whitelisted Dart flag the process terminates.
   const char* expected =
       "Encountered blacklisted Dart VM flag: --verify_after_gc";
@@ -241,7 +273,7 @@ TEST_F(ShellTest, WhitelistedDartVMFlag) {
   fml::CommandLine command_line("", options, std::vector<std::string>());
   flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
+#if !FLUTTER_RELEASE
   EXPECT_EQ(settings.dart_flags.size(), 2u);
   EXPECT_EQ(settings.dart_flags[0], "--max_profile_depth 1");
   EXPECT_EQ(settings.dart_flags[1], "--random_seed 42");
@@ -275,6 +307,7 @@ TEST_F(ShellTest, NoNeedToReportTimingsByDefault) {
   // positive in any tests. Otherwise those tests will be flaky as the clearing
   // of unreported timings is unpredictive.
   ASSERT_EQ(UnreportedTimingsCount(shell.get()), 0);
+  DestroyShell(std::move(shell));
 }
 
 TEST_F(ShellTest, NeedsReportTimingsIsSetWithCallback) {
@@ -290,6 +323,7 @@ TEST_F(ShellTest, NeedsReportTimingsIsSetWithCallback) {
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
   ASSERT_TRUE(GetNeedsReportTimings(shell.get()));
+  DestroyShell(std::move(shell));
 }
 
 static void CheckFrameTimings(const std::vector<FrameTiming>& timings,
@@ -313,7 +347,8 @@ static void CheckFrameTimings(const std::vector<FrameTiming>& timings,
   }
 }
 
-TEST_F(ShellTest, ReportTimingsIsCalled) {
+// TODO(43192): This test is disable because of flakiness.
+TEST_F(ShellTest, DISABLED_ReportTimingsIsCalled) {
   fml::TimePoint start = fml::TimePoint::Now();
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
@@ -344,7 +379,7 @@ TEST_F(ShellTest, ReportTimingsIsCalled) {
   }
 
   reportLatch.Wait();
-  shell.reset();
+  DestroyShell(std::move(shell));
 
   fml::TimePoint finish = fml::TimePoint::Now();
   ASSERT_TRUE(timestamps.size() > 0);
@@ -414,6 +449,7 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   int64_t build_start =
       timing.Get(FrameTiming::kBuildStart).ToEpochDelta().ToMicroseconds();
   ASSERT_EQ(build_start, begin_frame);
+  DestroyShell(std::move(shell));
 }
 
 TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
@@ -433,7 +469,7 @@ TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
   }
 }
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+#if FLUTTER_RELEASE
 TEST_F(ShellTest, ReportTimingsIsCalledLaterInReleaseMode) {
 #else
 TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
@@ -468,12 +504,12 @@ TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
   PumpOneFrame(shell.get());
 
   reportLatch.Wait();
-  shell.reset();
+  DestroyShell(std::move(shell));
 
   fml::TimePoint finish = fml::TimePoint::Now();
   fml::TimeDelta ellapsed = finish - start;
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+#if FLUTTER_RELEASE
   // Our batch time is 1000ms. Hopefully the 800ms limit is relaxed enough to
   // make it not too flaky.
   ASSERT_TRUE(ellapsed >= fml::TimeDelta::FromMilliseconds(800));
@@ -512,11 +548,41 @@ TEST_F(ShellTest, ReportTimingsIsCalledImmediatelyAfterTheFirstFrame) {
   }
 
   reportLatch.Wait();
-  shell.reset();
+  DestroyShell(std::move(shell));
 
   // Check for the immediate callback of the first frame that doesn't wait for
   // the other 9 frames to be rasterized.
   ASSERT_EQ(timestamps.size(), FrameTiming::kCount);
+}
+
+TEST_F(ShellTest, ReloadSystemFonts) {
+  auto settings = CreateSettingsForFixture();
+
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  auto shell = CreateShell(std::move(settings), std::move(task_runners));
+
+  auto fontCollection = GetFontCollection(shell.get());
+  std::vector<std::string> families(1, "Robotofake");
+  auto font =
+      fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
+  if (font == nullptr) {
+    // The system does not have default font. Aborts this test.
+    return;
+  }
+  unsigned int id = font->getId();
+  // The result should be cached.
+  font = fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
+  ASSERT_EQ(font->getId(), id);
+  bool result = shell->ReloadSystemFonts();
+
+  // The cache is cleared, and FontCollection will be assigned a new id.
+  font = fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
+  ASSERT_NE(font->getId(), id);
+  ASSERT_TRUE(result);
+  shell.reset();
 }
 
 TEST_F(ShellTest, WaitForFirstFrame) {
@@ -534,6 +600,7 @@ TEST_F(ShellTest, WaitForFirstFrame) {
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
   ASSERT_TRUE(result.ok());
+  DestroyShell(std::move(shell));
 }
 
 TEST_F(ShellTest, WaitForFirstFrameTimeout) {
@@ -550,6 +617,7 @@ TEST_F(ShellTest, WaitForFirstFrameTimeout) {
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(10));
   ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
+  DestroyShell(std::move(shell));
 }
 
 TEST_F(ShellTest, WaitForFirstFrameMultiple) {
@@ -571,6 +639,7 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
     result = shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1));
     ASSERT_TRUE(result.ok());
   }
+  DestroyShell(std::move(shell));
 }
 
 /// Makes sure that WaitForFirstFrame works if we rendered a frame with the
@@ -599,6 +668,7 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
     event.Signal();
   });
   ASSERT_FALSE(event.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(1000)));
+  DestroyShell(std::move(shell), std::move(task_runners));
 }
 
 static size_t GetRasterizerResourceCacheBytesSync(Shell& shell) {
@@ -663,6 +733,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   PumpOneFrame(shell.get());
 
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell), 10000U);
+  DestroyShell(std::move(shell), std::move(task_runners));
 }
 
 TEST_F(ShellTest, SetResourceCacheSizeEarly) {
@@ -691,6 +762,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
 
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
             static_cast<size_t>(3840000U));
+  DestroyShell(std::move(shell), std::move(task_runners));
 }
 
 TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
@@ -729,6 +801,7 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
 
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
             static_cast<size_t>(10000U));
+  DestroyShell(std::move(shell), std::move(task_runners));
 }
 
 TEST_F(ShellTest, CanCreateImagefromDecompressedBytes) {
@@ -762,6 +835,121 @@ TEST_F(ShellTest, CanCreateImagefromDecompressedBytes) {
   RunEngine(shell.get(), std::move(configuration));
 
   latch.Wait();
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
+
+class MockTexture : public Texture {
+ public:
+  MockTexture(int64_t textureId,
+              std::shared_ptr<fml::AutoResetWaitableEvent> latch)
+      : Texture(textureId), latch_(latch) {}
+
+  ~MockTexture() override = default;
+
+  // Called from GPU thread.
+  void Paint(SkCanvas& canvas,
+             const SkRect& bounds,
+             bool freeze,
+             GrContext* context) override {}
+
+  void OnGrContextCreated() override {}
+
+  void OnGrContextDestroyed() override {}
+
+  void MarkNewFrameAvailable() override {
+    frames_available_++;
+    latch_->Signal();
+  }
+
+  void OnTextureUnregistered() override {
+    unregistered_ = true;
+    latch_->Signal();
+  }
+
+  bool unregistered() { return unregistered_; }
+  int frames_available() { return frames_available_; }
+
+ private:
+  bool unregistered_ = false;
+  int frames_available_ = 0;
+  std::shared_ptr<fml::AutoResetWaitableEvent> latch_;
+};
+
+TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
+  Settings settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  ASSERT_TRUE(ValidateShell(shell.get()));
+  PlatformViewNotifyCreated(shell.get());
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  std::shared_ptr<fml::AutoResetWaitableEvent> latch =
+      std::make_shared<fml::AutoResetWaitableEvent>();
+
+  std::shared_ptr<MockTexture> mockTexture =
+      std::make_shared<MockTexture>(0, latch);
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
+        shell->GetPlatformView()->RegisterTexture(mockTexture);
+        shell->GetPlatformView()->MarkTextureFrameAvailable(0);
+      });
+  latch->Wait();
+
+  EXPECT_EQ(mockTexture->frames_available(), 1);
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetGPUTaskRunner(),
+      [&]() { shell->GetPlatformView()->UnregisterTexture(0); });
+  latch->Wait();
+
+  EXPECT_EQ(mockTexture->unregistered(), true);
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
+
+TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
+  const std::string message = "dummy isolate launch data.";
+
+  Settings settings = CreateSettingsForFixture();
+  settings.persistent_isolate_data =
+      std::make_shared<fml::DataMapping>(message);
+  TaskRunners task_runners("test",                  // label
+                           GetCurrentTaskRunner(),  // platform
+                           CreateNewThread(),       // gpu
+                           CreateNewThread(),       // ui
+                           CreateNewThread()        // io
+  );
+
+  fml::AutoResetWaitableEvent message_latch;
+  AddNativeCallback("NotifyMessage",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      const auto message_from_dart =
+                          tonic::DartConverter<std::string>::FromDart(
+                              Dart_GetNativeArgument(args, 0));
+                      ASSERT_EQ(message, message_from_dart);
+                      message_latch.Signal();
+                    }));
+
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  ASSERT_TRUE(shell->IsSetup());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("canAccessIsolateLaunchData");
+
+  fml::AutoResetWaitableEvent event;
+  shell->RunEngine(std::move(configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
+
+  message_latch.Wait();
+  DestroyShell(std::move(shell), std::move(task_runners));
 }
 
 }  // namespace testing

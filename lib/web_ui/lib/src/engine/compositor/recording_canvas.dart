@@ -15,7 +15,11 @@ class SkRecordingCanvas implements RecordingCanvas {
   bool _hasArbitraryPaint = true;
 
   @override
-  int saveCount = 0;
+  int get saveCount => skCanvas.callMethod('getSaveCount');
+
+  // This is required to implement RecordingCanvas.
+  @override
+  int _saveCount = -1;
 
   @override
   // TODO: implement _commands
@@ -27,7 +31,7 @@ class SkRecordingCanvas implements RecordingCanvas {
 
   @override
   void apply(EngineCanvas engineCanvas) {
-    throw 'apply';
+    throw UnimplementedError("The Skia backend doesn't support apply()");
   }
 
   @override
@@ -76,22 +80,26 @@ class SkRecordingCanvas implements RecordingCanvas {
 
   @override
   ui.Rect computePaintBounds() {
-    throw 'computePaintBounds';
+    throw UnimplementedError(
+        "The Skia backend doesn't use computePaintBounds()");
   }
 
   @override
   void debugDumpCommands() {
-    throw 'debugDumpCommands';
+    throw UnimplementedError(
+        "The Skia backend doesn't use debugDumpCommands()");
   }
 
   @override
   void debugEnforceArbitraryPaint() {
-    throw 'debugEnforceArbitraryPaint';
+    throw UnimplementedError(
+        "The Skia backend doesn't use debugEnforceArbitraryPaint()");
   }
 
   @override
   String debugPrintCommands() {
-    throw 'debugPrintCommands';
+    throw UnimplementedError(
+        "The Skia backend doesn't use debugPrintCommands()");
   }
 
   @override
@@ -99,27 +107,38 @@ class SkRecordingCanvas implements RecordingCanvas {
 
   @override
   void drawCircle(ui.Offset c, double radius, ui.Paint paint) {
-    final js.JsObject skPaint = makeSkPaint(paint);
-    // TODO(het): Use `drawCircle` when CanvasKit makes it available.
-    // Since CanvasKit does not expose `drawCircle`, use `drawOval` instead.
-    final js.JsObject skRect = makeSkRect(ui.Rect.fromLTWH(
-        c.dx - radius, c.dy - radius, 2.0 * radius, 2.0 * radius));
-    skCanvas.callMethod('drawOval', <js.JsObject>[skRect, skPaint]);
+    skCanvas.callMethod('drawCircle', <dynamic>[
+      c.dx,
+      c.dy,
+      radius,
+      makeSkPaint(paint),
+    ]);
   }
 
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
+    // TODO(het): Implement this once SkCanvas.drawColor becomes available.
     throw 'drawColor';
   }
 
   @override
   void drawDRRect(ui.RRect outer, ui.RRect inner, ui.Paint paint) {
-    throw 'drawDRRect';
+    skCanvas.callMethod('drawDRRect', <js.JsObject>[
+      makeSkRRect(outer),
+      makeSkRRect(inner),
+      makeSkPaint(paint),
+    ]);
   }
 
   @override
   void drawImage(ui.Image image, ui.Offset offset, ui.Paint paint) {
-    throw 'drawImage';
+    final SkImage skImage = image;
+    skCanvas.callMethod('drawImage', <dynamic>[
+      skImage.skImage,
+      offset.dx,
+      offset.dy,
+      makeSkPaint(paint),
+    ]);
   }
 
   @override
@@ -147,12 +166,15 @@ class SkRecordingCanvas implements RecordingCanvas {
 
   @override
   void drawOval(ui.Rect rect, ui.Paint paint) {
-    throw 'drawOval';
+    skCanvas.callMethod('drawOval', <js.JsObject>[
+      makeSkRect(rect),
+      makeSkPaint(paint),
+    ]);
   }
 
   @override
   void drawPaint(ui.Paint paint) {
-    throw 'drawPaint';
+    skCanvas.callMethod('drawPaint', <js.JsObject>[makeSkPaint(paint)]);
   }
 
   @override
@@ -162,8 +184,8 @@ class SkRecordingCanvas implements RecordingCanvas {
     // ShapedText.
     final EngineParagraph engineParagraph = paragraph;
     final ParagraphGeometricStyle style = engineParagraph.geometricStyle;
-    final js.JsObject skFont =
-        skiaFontCollection.getFont(style.effectiveFontFamily, style.fontSize);
+    final js.JsObject skFont = skiaFontCollection.getFont(
+        style.effectiveFontFamily, style.fontSize ?? 12.0);
     final js.JsObject skShapedTextOpts = js.JsObject.jsify(<String, dynamic>{
       'font': skFont,
       'leftToRight': true,
@@ -190,19 +212,8 @@ class SkRecordingCanvas implements RecordingCanvas {
 
   @override
   void drawRRect(ui.RRect rrect, ui.Paint paint) {
-    // Since CanvasKit does not expose `drawRRect` we have to make do with
-    // `drawRoundRect`. The downside of `drawRoundRect` is that all of the
-    // corner radii must be the same.
-    assert(
-      rrect.tlRadius == rrect.trRadius &&
-          rrect.tlRadius == rrect.brRadius &&
-          rrect.tlRadius == rrect.blRadius,
-      'CanvasKit only supports drawing RRects where the radii are all the same.',
-    );
-    skCanvas.callMethod('drawRoundRect', <dynamic>[
-      makeSkRect(rrect.outerRect),
-      rrect.tlRadiusX,
-      rrect.tlRadiusY,
+    skCanvas.callMethod('drawRRect', <js.JsObject>[
+      makeSkRRect(rrect),
       makeSkPaint(paint),
     ]);
   }
@@ -221,12 +232,22 @@ class SkRecordingCanvas implements RecordingCanvas {
   }
 
   @override
+  void drawVertices(
+      ui.Vertices vertices, ui.BlendMode blendMode, ui.Paint paint) {
+    SkVertices skVertices = vertices;
+    skCanvas.callMethod('drawVertices', <js.JsObject>[
+      skVertices.skVertices,
+      makeSkBlendMode(blendMode),
+      makeSkPaint(paint)
+    ]);
+  }
+
+  @override
   bool get hasArbitraryPaint => true;
 
   @override
   void restore() {
     skCanvas.callMethod('restore');
-    saveCount--;
   }
 
   @override
@@ -238,7 +259,6 @@ class SkRecordingCanvas implements RecordingCanvas {
   @override
   void save() {
     skCanvas.callMethod('save');
-    saveCount++;
   }
 
   @override
@@ -247,12 +267,11 @@ class SkRecordingCanvas implements RecordingCanvas {
       makeSkRect(bounds),
       makeSkPaint(paint),
     ]);
-    saveCount++;
   }
 
   @override
   void saveLayerWithoutBounds(ui.Paint paint) {
-    throw 'saveLayerWithoutBounds';
+    skCanvas.callMethod('saveLayer', <js.JsObject>[null, makeSkPaint(paint)]);
   }
 
   @override
@@ -262,7 +281,7 @@ class SkRecordingCanvas implements RecordingCanvas {
 
   @override
   void skew(double sx, double sy) {
-    throw 'skew';
+    skCanvas.callMethod('skew', <double>[sx, sy]);
   }
 
   @override

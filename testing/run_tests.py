@@ -21,8 +21,10 @@ fonts_dir = os.path.join(buildroot_dir, 'flutter', 'third_party', 'txt', 'third_
 roboto_font_path = os.path.join(fonts_dir, 'Roboto-Regular.ttf')
 dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 
-fonts_dir_flag = '--font-directory=%s' % fonts_dir
-time_sensitve_test_flag = '--gtest_filter="-*TimeSensitiveTest*"'
+fml_unittests_filter = '--gtest_filter=-*TimeSensitiveTest*:*GpuThreadMerger*'
+
+def RunCmd(cmd, **kwargs):
+  print(subprocess.check_output(cmd, **kwargs))
 
 def IsMac():
   return sys.platform == 'darwin'
@@ -57,27 +59,36 @@ def FindExecutablePath(path):
 
 def RunEngineExecutable(build_dir, executable_name, filter, flags=[], cwd=buildroot_dir):
   if filter is not None and executable_name not in filter:
-    print 'Skipping %s due to filter.' % executable_name
+    print('Skipping %s due to filter.' % executable_name)
     return
 
   executable = FindExecutablePath(os.path.join(build_dir, executable_name))
 
-  print 'Running %s in %s' % (executable_name, cwd)
+  print('Running %s in %s' % (executable_name, cwd))
   test_command = [ executable ] + flags
-  print ' '.join(test_command)
-  subprocess.check_call(test_command, cwd=cwd)
+  print(' '.join(test_command))
+  RunCmd(test_command, cwd=cwd)
 
 
 def RunCCTests(build_dir, filter):
-  print "Running Engine Unit-tests."
+  print("Running Engine Unit-tests.")
 
-  RunEngineExecutable(build_dir, 'client_wrapper_glfw_unittests', filter)
+  shuffle_flags = [
+    "--gtest_shuffle",
+    "--gtest_repeat=2",
+  ]
 
-  RunEngineExecutable(build_dir, 'client_wrapper_unittests', filter)
+  RunEngineExecutable(build_dir, 'client_wrapper_glfw_unittests', filter, shuffle_flags)
+
+  RunEngineExecutable(build_dir, 'client_wrapper_unittests', filter, shuffle_flags)
 
   # https://github.com/flutter/flutter/issues/36294
   if not IsWindows():
-    RunEngineExecutable(build_dir, 'embedder_unittests', filter)
+    RunEngineExecutable(build_dir, 'embedder_unittests', filter, shuffle_flags)
+  else:
+    RunEngineExecutable(build_dir, 'flutter_windows_unittests', filter, shuffle_flags)
+
+    RunEngineExecutable(build_dir, 'client_wrapper_windows_unittests', filter, shuffle_flags)
 
   flow_flags = ['--gtest_filter=-PerformanceOverlayLayer.Gold']
   if IsLinux():
@@ -85,41 +96,41 @@ def RunCCTests(build_dir, filter):
       '--golden-dir=%s' % golden_dir,
       '--font-file=%s' % roboto_font_path,
     ]
-  RunEngineExecutable(build_dir, 'flow_unittests', filter, flow_flags)
+  RunEngineExecutable(build_dir, 'flow_unittests', filter, flow_flags + shuffle_flags)
 
-  RunEngineExecutable(build_dir, 'fml_unittests', filter, [ time_sensitve_test_flag ])
+  RunEngineExecutable(build_dir, 'fml_unittests', filter, [ fml_unittests_filter ] + shuffle_flags)
 
-  RunEngineExecutable(build_dir, 'runtime_unittests', filter)
+  RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags)
 
   # https://github.com/flutter/flutter/issues/36295
   if not IsWindows():
-    RunEngineExecutable(build_dir, 'shell_unittests', filter)
+    RunEngineExecutable(build_dir, 'shell_unittests', filter, shuffle_flags)
 
-  RunEngineExecutable(build_dir, 'ui_unittests', filter)
+  RunEngineExecutable(build_dir, 'ui_unittests', filter, shuffle_flags)
 
   # These unit-tests are Objective-C and can only run on Darwin.
   if IsMac():
-    RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter)
+    RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter, shuffle_flags)
 
   # https://github.com/flutter/flutter/issues/36296
   if IsLinux():
-    RunEngineExecutable(build_dir, 'txt_unittests', filter, [ fonts_dir_flag ])
+    RunEngineExecutable(build_dir, 'txt_unittests', filter, shuffle_flags)
 
 
 def RunEngineBenchmarks(build_dir, filter):
-  print "Running Engine Benchmarks."
+  print("Running Engine Benchmarks.")
 
   RunEngineExecutable(build_dir, 'shell_benchmarks', filter)
 
   RunEngineExecutable(build_dir, 'fml_benchmarks', filter)
 
   if IsLinux():
-    RunEngineExecutable(build_dir, 'txt_benchmarks', filter, [ fonts_dir_flag ])
+    RunEngineExecutable(build_dir, 'txt_benchmarks', filter)
 
 
 
 def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot):
-  print "Generating snapshot for test %s" % dart_file
+  print("Generating snapshot for test %s" % dart_file)
 
   dart = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart')
   frontend_server = os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot')
@@ -137,7 +148,6 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
     '--sdk-root',
     flutter_patched_sdk,
     '--incremental',
-    '--strong',
     '--target=flutter',
     '--packages',
     test_packages,
@@ -147,34 +157,41 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
   ]
 
   if verbose_dart_snapshot:
-    subprocess.check_call(snapshot_command, cwd=buildroot_dir)
+    RunCmd(snapshot_command, cwd=buildroot_dir)
   else:
-    with open(os.devnull,"w") as out_file:
-      subprocess.check_call(snapshot_command, cwd=buildroot_dir, stdout=out_file)
+    subprocess.check_output(snapshot_command, cwd=buildroot_dir)
   assert os.path.exists(kernel_file_output)
 
 
-def RunDartTest(build_dir, dart_file, verbose_dart_snapshot):
+def RunDartTest(build_dir, dart_file, verbose_dart_snapshot, multithreaded):
   kernel_file_name = os.path.basename(dart_file) + '.kernel.dill'
   kernel_file_output = os.path.join(out_dir, kernel_file_name)
 
   SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot)
 
-  print "Running test '%s' using 'flutter_tester'" % kernel_file_name
-  RunEngineExecutable(build_dir, 'flutter_tester', None, [
+  command_args = [
     '--disable-observatory',
     '--use-test-fonts',
     kernel_file_output
-  ])
+  ]
+
+  if multithreaded:
+    threading = 'multithreaded'
+    command_args.insert(0, '--force-multithreading')
+  else:
+    threading = 'single-threaded'
+
+  print("Running test '%s' using 'flutter_tester' (%s)" % (kernel_file_name, threading))
+  RunEngineExecutable(build_dir, 'flutter_tester', None, command_args)
 
 def RunPubGet(build_dir, directory):
-  print "Running 'pub get' in the tests directory %s" % dart_tests_dir
+  print("Running 'pub get' in the tests directory %s" % dart_tests_dir)
 
   pub_get_command = [
     os.path.join(build_dir, 'dart-sdk', 'bin', 'pub'),
     'get'
   ]
-  subprocess.check_call(pub_get_command, cwd=directory)
+  RunCmd(pub_get_command, cwd=directory)
 
 
 def EnsureDebugUnoptSkyPackagesAreBuilt():
@@ -190,7 +207,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
   # Attempt running Ninja if the out directory exists.
   # We don't want to blow away any custom GN args the caller may have already set.
   if os.path.exists(variant_out_dir):
-    subprocess.check_call(ninja_command, cwd=buildroot_dir)
+    RunCmd(ninja_command, cwd=buildroot_dir)
     return
 
   gn_command = [
@@ -201,8 +218,8 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
     '--no-lto',
   ]
 
-  subprocess.check_call(gn_command, cwd=buildroot_dir)
-  subprocess.check_call(ninja_command, cwd=buildroot_dir)
+  RunCmd(gn_command, cwd=buildroot_dir)
+  RunCmd(ninja_command, cwd=buildroot_dir)
 
 def EnsureJavaTestsAreBuilt(android_out_dir):
   ninja_command = [
@@ -215,7 +232,7 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
   # Attempt running Ninja if the out directory exists.
   # We don't want to blow away any custom GN args the caller may have already set.
   if os.path.exists(android_out_dir):
-    subprocess.check_call(ninja_command, cwd=buildroot_dir)
+    RunCmd(ninja_command, cwd=buildroot_dir)
     return
 
   # Otherwise prepare the directory first, then build the test.
@@ -226,8 +243,8 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
     '--runtime-mode=debug',
     '--no-lto',
   ]
-  subprocess.check_call(gn_command, cwd=buildroot_dir)
-  subprocess.check_call(ninja_command, cwd=buildroot_dir)
+  RunCmd(gn_command, cwd=buildroot_dir)
+  RunCmd(ninja_command, cwd=buildroot_dir)
 
 def AssertExpectedJavaVersion():
   EXPECTED_VERSION = '1.8'
@@ -261,7 +278,7 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
     test_class
   ]
 
-  return subprocess.check_call(command)
+  RunCmd(command)
 
 def RunDartTests(build_dir, filter, verbose_dart_snapshot):
   # This one is a bit messy. The pubspec.yaml at flutter/testing/dart/pubspec.yaml
@@ -276,10 +293,11 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
 
   for dart_test_file in dart_tests:
     if filter is not None and os.path.basename(dart_test_file) not in filter:
-      print "Skipping %s due to filter." % dart_test_file
+      print("Skipping %s due to filter." % dart_test_file)
     else:
-      print "Testing dart file %s" % dart_test_file
-      RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot)
+      print("Testing dart file %s" % dart_test_file)
+      RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot, True)
+      RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot, False)
 
 def main():
   parser = argparse.ArgumentParser();

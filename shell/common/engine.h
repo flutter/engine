@@ -15,6 +15,7 @@
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
+#include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
@@ -22,6 +23,8 @@
 #include "flutter/runtime/runtime_controller.h"
 #include "flutter/runtime/runtime_delegate.h"
 #include "flutter/shell/common/animator.h"
+#include "flutter/shell/common/platform_view.h"
+#include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell_io_manager.h"
@@ -65,7 +68,7 @@ namespace flutter {
 ///           name and it does happen to be one of the older classes in the
 ///           repository.
 ///
-class Engine final : public RuntimeDelegate {
+class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
  public:
   //----------------------------------------------------------------------------
   /// @brief      Indicates the result of the call to `Engine::Run`.
@@ -234,6 +237,12 @@ class Engine final : public RuntimeDelegate {
   ///                                tasks that require access to components
   ///                                that cannot be safely accessed by the
   ///                                engine. This is the shell.
+  /// @param      dispatcher_maker   The callback provided by `PlatformView` for
+  ///                                engine to create the pointer data
+  ///                                dispatcher. Similar to other engine
+  ///                                resources, this dispatcher_maker and its
+  ///                                returned dispatcher is only safe to be
+  ///                                called from the UI thread.
   /// @param      vm                 An instance of the running Dart VM.
   /// @param[in]  isolate_snapshot   The snapshot used to create the root
   ///                                isolate. Even though the isolate is not
@@ -241,8 +250,6 @@ class Engine final : public RuntimeDelegate {
   ///                                created when the engine is created. This
   ///                                requires access to the isolate snapshot
   ///                                upfront.
-  /// @param[in]  shared_snapshot    The portion of the isolate snapshot shared
-  ///                                among multiple isolates.
   //  TODO(chinmaygarde): This is probably redundant now that the IO manager is
   //  it's own object.
   /// @param[in]  task_runners       The task runners used by the shell that
@@ -265,13 +272,15 @@ class Engine final : public RuntimeDelegate {
   ///                                GPU.
   ///
   Engine(Delegate& delegate,
+         const PointerDataDispatcherMaker& dispatcher_maker,
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
-         fml::RefPtr<const DartSnapshot> shared_snapshot,
          TaskRunners task_runners,
          Settings settings,
          std::unique_ptr<Animator> animator,
-         fml::WeakPtr<IOManager> io_manager);
+         fml::WeakPtr<IOManager> io_manager,
+         fml::RefPtr<SkiaUnrefQueue> unref_queue,
+         fml::WeakPtr<SnapshotDelegate> snapshot_delegate);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the engine engine. Called by the shell on the UI task
@@ -649,7 +658,7 @@ class Engine final : public RuntimeDelegate {
   ///                            timeline and allow grouping frames and input
   ///                            events into logical chunks.
   ///
-  void DispatchPointerDataPacket(const PointerDataPacket& packet,
+  void DispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet,
                                  uint64_t trace_flow_id);
 
   //----------------------------------------------------------------------------
@@ -700,11 +709,38 @@ class Engine final : public RuntimeDelegate {
   // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
 
+  // |PointerDataDispatcher::Delegate|
+  void DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
+                        uint64_t trace_flow_id) override;
+
+  // |PointerDataDispatcher::Delegate|
+  void ScheduleSecondaryVsyncCallback(fml::closure callback) override;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Get the last Entrypoint that was used in the RunConfiguration
+  ///             when |Engine::Run| was called.
+  ///
+  const std::string& GetLastEntrypoint() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Get the last Entrypoint Library that was used in the
+  ///             RunConfiguration when |Engine::Run| was called.
+  ///
+  const std::string& GetLastEntrypointLibrary() const;
+
  private:
   Engine::Delegate& delegate_;
   const Settings settings_;
   std::unique_ptr<Animator> animator_;
   std::unique_ptr<RuntimeController> runtime_controller_;
+
+  // The pointer_data_dispatcher_ depends on animator_ and runtime_controller_.
+  // So it should be defined after them to ensure that pointer_data_dispatcher_
+  // is destructed first.
+  std::unique_ptr<PointerDataDispatcher> pointer_data_dispatcher_;
+
+  std::string last_entry_point_;
+  std::string last_entry_point_library_;
   std::string initial_route_;
   ViewportMetrics viewport_metrics_;
   std::shared_ptr<AssetManager> asset_manager_;
@@ -712,6 +748,7 @@ class Engine final : public RuntimeDelegate {
   bool have_surface_;
   FontCollection font_collection_;
   ImageDecoder image_decoder_;
+  TaskRunners task_runners_;
   fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|

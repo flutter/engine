@@ -11,6 +11,7 @@ void main() {}
 
 void nativeReportTimingsCallback(List<int> timings) native 'NativeReportTimingsCallback';
 void nativeOnBeginFrame(int microseconds) native 'NativeOnBeginFrame';
+void nativeOnPointerDataPacket() native 'NativeOnPointerDataPacket';
 
 @pragma('vm:entry-point')
 void reportTimingsMain() {
@@ -29,6 +30,13 @@ void reportTimingsMain() {
 void onBeginFrameMain() {
   window.onBeginFrame = (Duration beginTime) {
     nativeOnBeginFrame(beginTime.inMicroseconds);
+  };
+}
+
+@pragma('vm:entry-point')
+void onPointerDataPacketMain() {
+  window.onPointerDataPacket = (PointerDataPacket packet) {
+    nativeOnPointerDataPacket();
   };
 }
 
@@ -102,3 +110,10 @@ void canCreateImageFromDecompressedData() {
     notifyWidthHeight(image.width, image.height);
   });
 }
+
+@pragma('vm:entry-point')
+void canAccessIsolateLaunchData() {
+  notifyMessage(utf8.decode(window.getPersistentIsolateData().buffer.asUint8List()));
+}
+
+void notifyMessage(String string) native 'NotifyMessage';

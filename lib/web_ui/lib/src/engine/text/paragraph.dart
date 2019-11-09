@@ -201,7 +201,7 @@ class EngineParagraph implements ui.Paragraph {
   }) {
     assert(boxHeightStyle != null);
     assert(boxWidthStyle != null);
-    if (_plainText == null) {
+    if (_plainText == null || start == end) {
       return <ui.TextBox>[];
     }
 
@@ -281,13 +281,26 @@ class EngineParagraph implements ui.Paragraph {
   }
 
   @override
-  List<int> getWordBoundary(int offset) {
-    if (_plainText == null) {
-      return <int>[offset, offset];
+  List<int> getWordBoundary(dynamic position) {
+    // TODO(gspencergoog): have this take only a TextPosition once the framework
+    // code is calling it with that.
+    if (position is ui.TextPosition) {
+      ui.TextPosition textPosition = position;
+      if (_plainText == null) {
+        return <int>[textPosition.offset, textPosition.offset];
+      }
+
+      final int start = WordBreaker.prevBreakIndex(_plainText, textPosition.offset);
+      final int end = WordBreaker.nextBreakIndex(_plainText, textPosition.offset);
+      return <int>[start, end];
     }
 
-    final int start = WordBreaker.prevBreakIndex(_plainText, offset);
-    final int end = WordBreaker.nextBreakIndex(_plainText, offset);
+    if (_plainText == null) {
+      return <int>[position, position];
+    }
+
+    final int start = WordBreaker.prevBreakIndex(_plainText, position);
+    final int end = WordBreaker.nextBreakIndex(_plainText, position);
     return <int>[start, end];
   }
 
@@ -1072,7 +1085,7 @@ void _applyParagraphStyleToElement({
           style._fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
     }
     if (style._effectiveFontFamily != null) {
-      cssStyle.fontFamily = "'${style._effectiveFontFamily}'";
+      cssStyle.fontFamily = quoteFontFamily(style._effectiveFontFamily);
     }
   } else {
     if (style._textAlign != previousStyle._textAlign) {
@@ -1098,7 +1111,7 @@ void _applyParagraphStyleToElement({
           : null;
     }
     if (style._fontFamily != previousStyle._fontFamily) {
-      cssStyle.fontFamily = "'${style._fontFamily}'";
+      cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
     }
   }
 }
@@ -1138,11 +1151,11 @@ void _applyTextStyleToElement({
     // consistently use Ahem font.
     if (isSpan && !ui.debugEmulateFlutterTesterEnvironment) {
       if (style._fontFamily != null) {
-        cssStyle.fontFamily = "'${style._fontFamily}'";
+        cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
       }
     } else {
       if (style._effectiveFontFamily != null) {
-        cssStyle.fontFamily = "'${style._effectiveFontFamily}'";
+        cssStyle.fontFamily = quoteFontFamily(style._effectiveFontFamily);
       }
     }
     if (style._letterSpacing != null) {
@@ -1176,7 +1189,7 @@ void _applyTextStyleToElement({
           : null;
     }
     if (style._fontFamily != previousStyle._fontFamily) {
-      cssStyle.fontFamily = "'${style._fontFamily}'";
+      cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
     }
     if (style._letterSpacing != previousStyle._letterSpacing) {
       cssStyle.letterSpacing = '${style._letterSpacing}px';

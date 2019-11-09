@@ -13,9 +13,6 @@ import java.util.*;
 /**
  * Arguments that can be delivered to the Flutter shell when it is created.
  * <p>
- * WARNING: THIS CLASS IS EXPERIMENTAL. DO NOT SHIP A DEPENDENCY ON THIS CODE.
- * IF YOU USE IT, WE WILL BREAK YOU.
- * <p>
  * The term "shell" refers to the native code that adapts Flutter to different platforms. Flutter's
  * Android Java code initializes a native "shell" and passes these arguments to that native shell
  * when it is initialized. See {@link io.flutter.view.FlutterMain#ensureInitializationComplete(Context, String[])}
@@ -41,6 +38,8 @@ public class FlutterShellArgs {
   public static final String ARG_TRACE_SKIA = "--trace-skia";
   public static final String ARG_KEY_DUMP_SHADER_SKP_ON_SHADER_COMPILATION = "dump-skp-on-shader-compilation";
   public static final String ARG_DUMP_SHADER_SKP_ON_SHADER_COMPILATION = "--dump-skp-on-shader-compilation";
+  public static final String ARG_KEY_CACHE_SKSL = "cache-sksl";
+  public static final String ARG_CACHE_SKSL = "--cache-sksl";
   public static final String ARG_KEY_VERBOSE_LOGGING = "verbose-logging";
   public static final String ARG_VERBOSE_LOGGING = "--verbose-logging";
   public static final String ARG_KEY_OBSERVATORY_PORT = "observatory-port";
@@ -83,7 +82,10 @@ public class FlutterShellArgs {
       args.add(ARG_TRACE_SKIA);
     }
     if (intent.getBooleanExtra(ARG_KEY_DUMP_SHADER_SKP_ON_SHADER_COMPILATION, false)) {
-      args.add(ARG_KEY_DUMP_SHADER_SKP_ON_SHADER_COMPILATION);
+      args.add(ARG_DUMP_SHADER_SKP_ON_SHADER_COMPILATION);
+    }
+    if (intent.getBooleanExtra(ARG_KEY_CACHE_SKSL, false)) {
+      args.add(ARG_CACHE_SKSL);
     }
     if (intent.getBooleanExtra(ARG_KEY_VERBOSE_LOGGING, false)) {
       args.add(ARG_VERBOSE_LOGGING);

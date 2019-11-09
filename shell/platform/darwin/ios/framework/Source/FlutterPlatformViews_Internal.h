@@ -11,6 +11,7 @@
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
+#include "flutter/shell/platform/darwin/ios/ios_gl_context_switch_manager.h"
 
 // A UIView that is used as the parent for embedded UIViews.
 //
@@ -63,6 +64,11 @@ struct FlutterPlatformViewLayer {
   fml::scoped_nsobject<UIView> overlay_view;
   std::unique_ptr<IOSSurface> ios_surface;
   std::unique_ptr<Surface> surface;
+
+  // The GrContext that is currently used by the overlay surfaces.
+  // We track this to know when the GrContext for the Flutter app has changed
+  // so we can update the overlay with the new context.
+  GrContext* gr_context;
 };
 
 class FlutterPlatformViewsController {
@@ -74,6 +80,9 @@ class FlutterPlatformViewsController {
   void SetFlutterView(UIView* flutter_view);
 
   void SetFlutterViewController(UIViewController* flutter_view_controller);
+
+  void SetRendererContextSwitchManager(
+      std::shared_ptr<IOSGLContextSwitchManager> gl_context_guard_manager);
 
   void RegisterViewFactory(NSObject<FlutterPlatformViewFactory>* factory, NSString* factoryId);
 
@@ -123,10 +132,6 @@ class FlutterPlatformViewsController {
   // platform view last time it was composited.
   std::map<int64_t, int64_t> clip_count_;
   std::map<int64_t, std::unique_ptr<FlutterPlatformViewLayer>> overlays_;
-  // The GrContext that is currently used by all of the overlay surfaces.
-  // We track this to know when the GrContext for the Flutter app has changed
-  // so we can update the overlays with the new context.
-  GrContext* overlays_gr_context_;
   SkISize frame_size_;
 
   // This is the number of frames the task runners will stay
@@ -202,6 +207,8 @@ class FlutterPlatformViewsController {
   // After each clip operation, we update the head to the super view of the current head.
   void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
   void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
+
+  std::shared_ptr<IOSGLContextSwitchManager> renderer_context_switch_manager_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };

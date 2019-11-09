@@ -28,7 +28,8 @@ bool IOSSurfaceGL::IsValid() const {
   return render_target_->IsValid();
 }
 
-bool IOSSurfaceGL::ResourceContextMakeCurrent() {
+std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+IOSSurfaceGL::ResourceContextMakeCurrent() {
   return context_->ResourceMakeCurrent();
 }
 
@@ -56,11 +57,12 @@ bool IOSSurfaceGL::UseOffscreenSurface() const {
   return true;
 }
 
-bool IOSSurfaceGL::GLContextMakeCurrent() {
+std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+IOSSurfaceGL::GLContextMakeCurrent() {
   if (!IsValid()) {
-    return false;
+    return std::make_unique<RendererContextSwitchManager::RendererContextSwitchPureResult>(false);
   }
-  return render_target_->UpdateStorageSizeIfNecessary() && context_->MakeCurrent();
+  return render_target_->MakeCurrent();
 }
 
 bool IOSSurfaceGL::GLContextClearCurrent() {
@@ -73,8 +75,13 @@ bool IOSSurfaceGL::GLContextPresent() {
   return IsValid() && render_target_->PresentRenderBuffer();
 }
 
+// |GPUSurfaceGLDelegate|
+std::shared_ptr<RendererContextSwitchManager> IOSSurfaceGL::GetRendererContextSwitchManager() {
+  return context_->GetIOSGLContextSwitchManager();
+}
+
 // |ExternalViewEmbedder|
-sk_sp<SkSurface> IOSSurfaceGL::GetRootSurface() {
+SkCanvas* IOSSurfaceGL::GetRootCanvas() {
   // On iOS, the root surface is created from the on-screen render target. Only the surfaces for the
   // various overlays are controlled by this class.
   return nullptr;
@@ -100,7 +107,7 @@ void IOSSurfaceGL::CancelFrame() {
 }
 
 // |ExternalViewEmbedder|
-void IOSSurfaceGL::BeginFrame(SkISize frame_size, GrContext* context) {
+void IOSSurfaceGL::BeginFrame(SkISize frame_size, GrContext* context, double device_pixel_ratio) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   platform_views_controller->SetFrameSize(frame_size);
@@ -144,7 +151,8 @@ bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
   if (platform_views_controller == nullptr) {
     return true;
   }
-
+  platform_views_controller->SetRendererContextSwitchManager(
+      context_->GetIOSGLContextSwitchManager());
   bool submitted = platform_views_controller->SubmitFrame(std::move(context), context_);
   [CATransaction commit];
   return submitted;

@@ -25,6 +25,8 @@
 
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
 
+NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
+
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
@@ -69,10 +71,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
 #pragma mark - Manage and override all designated initializers
 
 - (instancetype)initWithEngine:(FlutterEngine*)engine
-                       nibName:(NSString*)nibNameOrNil
-                        bundle:(NSBundle*)nibBundleOrNil {
+                       nibName:(nullable NSString*)nibName
+                        bundle:(nullable NSBundle*)nibBundle {
   NSAssert(engine != nil, @"Engine is required");
-  self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+  self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
     _viewOpaque = YES;
     _engine.reset([engine retain]);
@@ -88,15 +90,15 @@ typedef enum UIAccessibilityContrast : NSInteger {
   return self;
 }
 
-- (instancetype)initWithProject:(FlutterDartProject*)projectOrNil
-                        nibName:(NSString*)nibNameOrNil
-                         bundle:(NSBundle*)nibBundleOrNil {
-  self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+- (instancetype)initWithProject:(nullable FlutterDartProject*)project
+                        nibName:(nullable NSString*)nibName
+                         bundle:(nullable NSBundle*)nibBundle {
+  self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
     _viewOpaque = YES;
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter"
-                                              project:projectOrNil
+                                              project:project
                                allowHeadlessExecution:NO]);
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     [_engine.get() createShell:nil libraryURI:nil];
@@ -521,7 +523,9 @@ typedef enum UIAccessibilityContrast : NSInteger {
 }
 
 - (void)dealloc {
-  [_engine.get() notifyViewControllerDeallocated];
+  [[NSNotificationCenter defaultCenter] postNotificationName:FlutterViewControllerWillDealloc
+                                                      object:self
+                                                    userInfo:nil];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [_ongoingTouches release];
   [super dealloc];
@@ -533,23 +537,32 @@ typedef enum UIAccessibilityContrast : NSInteger {
   TRACE_EVENT0("flutter", "applicationBecameActive");
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
   [self surfaceUpdated:NO];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.paused"];
 }
 
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
+}
+
+// Make this transition only while this current view controller is visible.
+- (void)goToApplicationLifecycle:(nonnull NSString*)state {
+  // Accessing self.view will create the view. Check whether the view is organically loaded
+  // first before checking whether the view is attached to window.
+  if (self.isViewLoaded && self.view.window) {
+    [[_engine.get() lifecycleChannel] sendMessage:state];
+  }
 }
 
 #pragma mark - Touch event handling
@@ -815,14 +828,36 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     if (update == nil) {
       return;
     }
-
-    NSUInteger new_preferences = update.unsignedIntegerValue;
-
-    if (new_preferences != _orientationPreferences) {
-      _orientationPreferences = new_preferences;
-      [UIViewController attemptRotationToDeviceOrientation];
-    }
+    [self performOrientationUpdate:update.unsignedIntegerValue];
   });
+}
+
+- (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences {
+  if (new_preferences != _orientationPreferences) {
+    _orientationPreferences = new_preferences;
+    [UIViewController attemptRotationToDeviceOrientation];
+
+    UIInterfaceOrientationMask currentInterfaceOrientation =
+        1 << [[UIApplication sharedApplication] statusBarOrientation];
+    if (!(_orientationPreferences & currentInterfaceOrientation)) {
+      // Force orientation switch if the current orientation is not allowed
+      if (_orientationPreferences & UIInterfaceOrientationMaskPortrait) {
+        // This is no official API but more like a workaround / hack (using
+        // key-value coding on a read-only property). This might break in
+        // the future, but currently it´s the only way to force an orientation change
+        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortrait) forKey:@"orientation"];
+      } else if (_orientationPreferences & UIInterfaceOrientationMaskPortraitUpsideDown) {
+        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortraitUpsideDown)
+                                    forKey:@"orientation"];
+      } else if (_orientationPreferences & UIInterfaceOrientationMaskLandscapeLeft) {
+        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationLandscapeLeft)
+                                    forKey:@"orientation"];
+      } else if (_orientationPreferences & UIInterfaceOrientationMaskLandscapeRight) {
+        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationLandscapeRight)
+                                    forKey:@"orientation"];
+      }
+    }
+  }
 }
 
 - (BOOL)shouldAutorotate {

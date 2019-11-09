@@ -9,20 +9,34 @@ const bool _debugPrintPlatformMessages = false;
 
 /// The Web implementation of [ui.Window].
 class EngineWindow extends ui.Window {
+  EngineWindow() {
+    _addBrightnessMediaQueryListener();
+  }
+
   @override
-  double get devicePixelRatio => _devicePixelRatio;
+  double get devicePixelRatio {
+    if (_debugDevicePixelRatio != null) {
+      return _debugDevicePixelRatio;
+    }
+
+    if (experimentalUseSkia) {
+      return html.window.devicePixelRatio;
+    } else {
+      return 1.0;
+    }
+  }
 
   /// Overrides the default device pixel ratio.
   ///
   /// This is useful in tests to emulate screens of different dimensions.
   void debugOverrideDevicePixelRatio(double value) {
     assert(() {
-      _devicePixelRatio = value;
+      _debugDevicePixelRatio = value;
       return true;
     }());
   }
 
-  double _devicePixelRatio = 1.0;
+  double _debugDevicePixelRatio;
 
   @override
   ui.Size get physicalSize {
@@ -37,15 +51,22 @@ class EngineWindow extends ui.Window {
     }());
 
     if (!override) {
-      final int windowInnerWidth = html.window.innerWidth;
-      final int windowInnerHeight = html.window.innerHeight;
+      double windowInnerWidth;
+      double windowInnerHeight;
+      if (html.window.visualViewport != null) {
+        windowInnerWidth = html.window.visualViewport.width * devicePixelRatio;
+        windowInnerHeight = html.window.visualViewport.height * devicePixelRatio;
+      } else {
+        windowInnerWidth = html.window.innerWidth * devicePixelRatio;
+        windowInnerHeight = html.window.innerHeight * devicePixelRatio;
+      }
       if (windowInnerWidth != _lastKnownWindowInnerWidth ||
           windowInnerHeight != _lastKnownWindowInnerHeight) {
         _lastKnownWindowInnerWidth = windowInnerWidth;
         _lastKnownWindowInnerHeight = windowInnerHeight;
         _physicalSize = ui.Size(
-          windowInnerWidth.toDouble(),
-          windowInnerHeight.toDouble(),
+          windowInnerWidth,
+          windowInnerHeight,
         );
       }
     }
@@ -54,8 +75,8 @@ class EngineWindow extends ui.Window {
   }
 
   ui.Size _physicalSize = ui.Size.zero;
-  int _lastKnownWindowInnerWidth = -1;
-  int _lastKnownWindowInnerHeight = -1;
+  double _lastKnownWindowInnerWidth = -1;
+  double _lastKnownWindowInnerHeight = -1;
 
   /// Overrides the value of [physicalSize] in tests.
   ui.Size webOnlyDebugPhysicalSizeOverride;
@@ -79,12 +100,6 @@ class EngineWindow extends ui.Window {
   /// By setting this to null, the browser history will be disabled.
   set locationStrategy(LocationStrategy strategy) {
     _browserHistory.locationStrategy = strategy;
-  }
-
-  /// This setter is used by [WebNavigatorObserver] to update the url to
-  /// reflect the [Navigator]'s current route name.
-  set webOnlyRouteName(String routeName) {
-    _browserHistory.setRouteName(routeName);
   }
 
   @override
@@ -132,6 +147,9 @@ class EngineWindow extends ui.Window {
             domRenderer.setTitle(arguments['label']);
             domRenderer.setThemeColor(ui.Color(arguments['primaryColor']));
             return;
+          case 'SystemSound.play':
+            // There are no default system sounds on web.
+            return;
         }
         break;
 
@@ -154,6 +172,7 @@ class EngineWindow extends ui.Window {
         final Map<String, dynamic> message = decoded.arguments;
         switch (decoded.method) {
           case 'routePushed':
+          case 'routeReplaced':
             _browserHistory.setRouteName(message['routeName']);
             break;
           case 'routePopped':
@@ -204,6 +223,70 @@ class EngineWindow extends ui.Window {
       callback(data);
     });
   }
+
+  @override
+  ui.Brightness get platformBrightness => _platformBrightness;
+  ui.Brightness _platformBrightness = ui.Brightness.light;
+
+  /// Updates [_platformBrightness] and invokes [onPlatformBrightnessChanged]
+  /// callback if [_platformBrightness] changed.
+  void _updatePlatformBrightness(ui.Brightness newPlatformBrightness) {
+    ui.Brightness previousPlatformBrightness = _platformBrightness;
+    _platformBrightness = newPlatformBrightness;
+
+    if (previousPlatformBrightness != _platformBrightness &&
+        onPlatformBrightnessChanged != null) onPlatformBrightnessChanged();
+  }
+
+  /// Reference to css media query that indicates the user theme preference on the web.
+  final html.MediaQueryList _brightnessMediaQuery =
+      html.window.matchMedia('(prefers-color-scheme: dark)');
+
+  /// A callback that is invoked whenever [_brightnessMediaQuery] changes value.
+  ///
+  /// Updates the [_platformBrightness] with the new user preference.
+  html.EventListener _brightnessMediaQueryListener;
+
+  /// Set the callback function for listening changes in [_brightnessMediaQuery] value.
+  void _addBrightnessMediaQueryListener() {
+    _updatePlatformBrightness(_brightnessMediaQuery.matches
+        ? ui.Brightness.dark
+        : ui.Brightness.light);
+
+    _brightnessMediaQueryListener = (html.Event event) {
+      final html.MediaQueryListEvent mqEvent = event;
+      _updatePlatformBrightness(
+          mqEvent.matches ? ui.Brightness.dark : ui.Brightness.light);
+    };
+    _brightnessMediaQuery.addListener(_brightnessMediaQueryListener);
+    registerHotRestartListener(() {
+      _removeBrightnessMediaQueryListener();
+    });
+  }
+
+  /// Remove the callback function for listening changes in [_brightnessMediaQuery] value.
+  void _removeBrightnessMediaQueryListener() {
+    _brightnessMediaQuery.removeListener(_brightnessMediaQueryListener);
+    _brightnessMediaQueryListener = null;
+  }
+
+  @override
+  void render(ui.Scene scene) {
+    if (experimentalUseSkia) {
+      final LayerScene layerScene = scene;
+      _rasterizer.draw(layerScene.layerTree);
+    } else {
+      final SurfaceScene surfaceScene = scene;
+      domRenderer.renderScene(surfaceScene.webOnlyRootElement);
+    }
+  }
+
+  final Rasterizer _rasterizer = experimentalUseSkia
+      ? Rasterizer(Surface((SkCanvas canvas) {
+          domRenderer.renderScene(canvas.htmlCanvas);
+          canvas.skSurface.callMethod('flush');
+        }))
+      : null;
 }
 
 /// The window singleton.

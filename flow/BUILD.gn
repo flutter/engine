@@ -12,8 +12,6 @@ source_set("flow") {
   sources = [
     "compositor_context.cc",
     "compositor_context.h",
-    "debug_print.cc",
-    "debug_print.h",
     "embedded_views.cc",
     "embedded_views.h",
     "instrumentation.cc",
@@ -116,12 +114,15 @@ executable("flow_unittests") {
     "matrix_decomposition_unittests.cc",
     "mutators_stack_unittests.cc",
     "raster_cache_unittests.cc",
+    "skia_gpu_object_unittests.cc",
+    "texture_unittests.cc",
   ]
 
   deps = [
     ":flow",
     ":flow_fixtures",
     "$flutter_root/fml",
+    "$flutter_root/testing:testing_lib",
     "//third_party/dart/runtime:libdart_jit",  # for tracing
     "//third_party/googletest:gtest",
     "//third_party/skia",

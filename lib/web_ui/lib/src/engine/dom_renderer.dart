@@ -262,12 +262,22 @@ flt-semantics input[type=range] {
           '  background-color: transparent;'
           '}',
           sheet.cssRules.length);
+      sheet.insertRule(
+          'textarea::-moz-selection {'
+          '  background-color: transparent;'
+          '}',
+          sheet.cssRules.length);
     } else {
       // On iOS, the invisible semantic text field has a visible cursor and
       // selection highlight. The following 2 CSS rules force everything to be
       // transparent.
       sheet.insertRule(
           'input::selection {'
+          '  background-color: transparent;'
+          '}',
+          sheet.cssRules.length);
+      sheet.insertRule(
+          'textarea::selection {'
           '  background-color: transparent;'
           '}',
           sheet.cssRules.length);
@@ -317,19 +327,8 @@ flt-glass-pane * {
     setElementStyle(bodyElement, 'font', defaultCssFont);
     setElementStyle(bodyElement, 'color', 'red');
 
-    // TODO(flutter_web): send the location during the scroll for more frequent
-    // location updates from the framework. Remove spellcheck=false property.
-    /// The spell check is being disabled for now.
-    ///
-    /// Flutter web is positioning the input box on top of editable widget.
-    /// This location is updated only in the paint phase of the widget.
-    /// It is wrong during the scroll. It is not important for text editing
-    /// since the content is already invisible. On the other hand, the red
-    /// indicator for spellcheck gets confusing due to the wrong positioning.
-    /// We are disabling spellcheck until the location starts getting updated
-    /// via scroll. This is possible since we can listen to the scroll on
-    /// Flutter.
-    /// See [HybridTextEditing].
+    // TODO(flutter_web): Disable spellcheck until changes in the framework and
+    // engine are complete.
     bodyElement.spellcheck = false;
 
     for (html.Element viewportMeta
@@ -394,12 +393,21 @@ flt-glass-pane * {
     // is 1.0.
     window.debugOverrideDevicePixelRatio(1.0);
 
-    if (browserEngine == BrowserEngine.webkit) {
+    if (html.window.visualViewport == null &&
+        browserEngine == BrowserEngine.webkit) {
       // Safari sometimes gives us bogus innerWidth/innerHeight values when the
       // page loads. When it changes the values to correct ones it does not
       // notify of the change via `onResize`. As a workaround, we setup a
       // temporary periodic timer that polls innerWidth and triggers the
       // resizeListener so that the framework can react to the change.
+      //
+      // Safari 13 has implemented visualViewport API so it doesn't need this
+      // timer.
+      //
+      // VisualViewport API is not enabled in Firefox as well. On the other hand
+      // Firefox returns correct values for innerHeight, innerWidth.
+      // Firefox also triggers html.window.onResize therefore we don't need this
+      // timer setup for Firefox.
       final int initialInnerWidth = html.window.innerWidth;
       // Counts how many times we checked screen size. We check up to 5 times.
       int checkCount = 0;
@@ -423,7 +431,12 @@ flt-glass-pane * {
       html.document.head.append(_canvasKitScript);
     }
 
-    _resizeSubscription = html.window.onResize.listen(_metricsDidChange);
+    if (html.window.visualViewport != null) {
+      _resizeSubscription =
+          html.window.visualViewport.onResize.listen(_metricsDidChange);
+    } else {
+      _resizeSubscription = html.window.onResize.listen(_metricsDidChange);
+    }
   }
 
   /// Called immediately after browser window metrics change.

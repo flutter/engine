@@ -186,9 +186,10 @@ class EmbeddedViewParams {
 
 enum class PostPrerollResult { kResubmitFrame, kSuccess };
 
-// This is only used on iOS when running in a non headless mode,
-// in this case ExternalViewEmbedder is a reference to the
-// FlutterPlatformViewsController which is owned by FlutterViewController.
+// Facilitates embedding of platform views within the flow layer tree.
+//
+// Used on iOS and on embedded platforms that provide a system compositor
+// as part of the project arguments.
 class ExternalViewEmbedder {
   // TODO(cyanglaz): Make embedder own the `EmbeddedViewParams`.
 
@@ -197,17 +198,19 @@ class ExternalViewEmbedder {
 
   virtual ~ExternalViewEmbedder() = default;
 
-  // Usually, the root surface is not owned by the view embedder. However, if
-  // the view embedder wants to provide a surface to the rasterizer, it may
-  // return one here. This surface takes priority over the surface materialized
+  // Usually, the root canvas is not owned by the view embedder. However, if
+  // the view embedder wants to provide a canvas to the rasterizer, it may
+  // return one here. This canvas takes priority over the canvas materialized
   // from the on-screen render target.
-  virtual sk_sp<SkSurface> GetRootSurface() = 0;
+  virtual SkCanvas* GetRootCanvas() = 0;
 
   // Call this in-lieu of |SubmitFrame| to clear pre-roll state and
   // sets the stage for the next pre-roll.
   virtual void CancelFrame() = 0;
 
-  virtual void BeginFrame(SkISize frame_size, GrContext* context) = 0;
+  virtual void BeginFrame(SkISize frame_size,
+                          GrContext* context,
+                          double device_pixel_ratio) = 0;
 
   virtual void PrerollCompositeEmbeddedView(
       int view_id,

@@ -62,4 +62,74 @@ void main() async {
       );
     }
   });
+
+  // Regression test for https://github.com/flutter/flutter/issues/37744
+  test('measures heights of multiple multi-span paragraphs', () {
+    const double fontSize = 20.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: fontSize,
+    ));
+    builder.addText('1234567890 1234567890 1234567890 1234567890 1234567890');
+    builder.addText('1234567890 1234567890 1234567890 1234567890 1234567890');
+    builder.pushStyle(TextStyle(fontWeight: FontWeight.bold));
+    builder.addText('span0');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(ParagraphConstraints(width: fontSize * 5.0));
+    expect(
+        paragraph.height, closeTo(fontSize * 3.0, 0.001)); // because it wraps
+
+    // Now create another builder with just a single line of text so
+    // it tries to reuse ruler cache but misses.
+    final ParagraphBuilder builder2 = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: fontSize,
+    ));
+    builder2.addText('span1');
+    builder2.pushStyle(TextStyle(fontWeight: FontWeight.bold));
+    builder2.addText('span2');
+    final Paragraph paragraph2 = builder2.build();
+    paragraph2.layout(ParagraphConstraints(width: fontSize * 5.0));
+    expect(paragraph2.height, closeTo(fontSize, 0.001)); // because it wraps
+  });
+
+  test('getBoxesForRange returns a box', () {
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: 10,
+      textDirection: TextDirection.rtl,
+    ));
+    builder.addText('abcd');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 1000));
+    expect(
+      paragraph.getBoxesForRange(1, 2).single,
+      const TextBox.fromLTRBD(
+        10,
+        0,
+        20,
+        10,
+        TextDirection.rtl,
+      ),
+    );
+  });
+
+  test('getBoxesForRange return empty list for zero-length range', () {
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: 10,
+    ));
+    builder.addText('abcd');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 1000));
+    expect(paragraph.getBoxesForRange(0, 0), isEmpty);
+  });
 }

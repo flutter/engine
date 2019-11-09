@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -121,8 +122,16 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
    * or {@code Fragment}.
    */
   @Nullable
-  FlutterEngine getFlutterEngine() {
+  /* package */ FlutterEngine getFlutterEngine() {
     return flutterEngine;
+  }
+
+  /**
+   * Returns true if the host {@code Activity}/{@code Fragment} provided a
+   * {@code FlutterEngine}, as opposed to this delegate creating a new one.
+   */
+  /* package */ boolean isFlutterEngineFromHost() {
+    return isFlutterEngineFromHost;
   }
 
   /**
@@ -141,8 +150,6 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
    */
   void onAttach(@NonNull Context context) {
     ensureAlive();
-
-    initializeFlutter(context);
 
     // When "retain instance" is true, the FlutterEngine will survive configuration
     // changes. Therefore, we create a new one only if one does not already exist.
@@ -178,13 +185,6 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     host.configureFlutterEngine(flutterEngine);
   }
 
-  private void initializeFlutter(@NonNull Context context) {
-    FlutterMain.ensureInitializationComplete(
-        context.getApplicationContext(),
-        host.getFlutterShellArgs().toArray()
-    );
-  }
-
   /**
    * Obtains a reference to a FlutterEngine to back this delegate and its {@code host}.
    * <p>
@@ -198,7 +198,8 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
    * If the {@code host} does not provide a {@link FlutterEngine}, then a new {@link FlutterEngine}
    * is instantiated.
    */
-  private void setupFlutterEngine() {
+  @VisibleForTesting
+  /* package */ void setupFlutterEngine() {
     Log.d(TAG, "Setting up FlutterEngine.");
 
     // First, check if the host wants to use a cached FlutterEngine.
@@ -223,7 +224,7 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     // FlutterView.
     Log.d(TAG, "No preferred FlutterEngine was provided. Creating a new FlutterEngine for"
         + " this FlutterFragment.");
-    flutterEngine = new FlutterEngine(host.getContext());
+    flutterEngine = new FlutterEngine(host.getContext(), host.getFlutterShellArgs().toArray());
     isFlutterEngineFromHost = false;
   }
 
@@ -255,6 +256,15 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     flutterSplashView.displayFlutterViewWithSplash(flutterView, host.provideSplashScreen());
 
     return flutterSplashView;
+  }
+
+  void onActivityCreated(@Nullable Bundle bundle) {
+    Log.v(TAG, "onActivityCreated. Giving plugins an opportunity to restore state.");
+    ensureAlive();
+
+    if (host.shouldAttachEngineToActivity()) {
+      flutterEngine.getActivityControlSurface().onRestoreInstanceState(bundle);
+    }
   }
 
   /**
@@ -404,6 +414,15 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     flutterView.removeOnFirstFrameRenderedListener(flutterUiDisplayListener);
   }
 
+  void onSaveInstanceState(@Nullable Bundle bundle) {
+    Log.v(TAG, "onSaveInstanceState. Giving plugins an opportunity to save state.");
+    ensureAlive();
+
+    if (host.shouldAttachEngineToActivity()) {
+      flutterEngine.getActivityControlSurface().onSaveInstanceState(bundle);
+    }
+  }
+
   /**
    * Invoke this from {@code Activity#onDestroy()} or {@code Fragment#onDetach()}.
    * <p>
@@ -420,6 +439,10 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
   void onDetach() {
     Log.v(TAG, "onDetach()");
     ensureAlive();
+
+    // Give the host an opportunity to cleanup any references that were created in
+    // configureFlutterEngine().
+    host.cleanUpFlutterEngine(flutterEngine);
 
     if (host.shouldAttachEngineToActivity()) {
       // Notify plugins that they are no longer attached to an Activity.
@@ -692,6 +715,12 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
      * Hook for the host to configure the {@link FlutterEngine} as desired.
      */
     void configureFlutterEngine(@NonNull FlutterEngine flutterEngine);
+
+    /**
+     * Hook for the host to cleanup references that were established in
+     * {@link #configureFlutterEngine(FlutterEngine)} before the host is destroyed or detached.
+     */
+    void cleanUpFlutterEngine(@NonNull FlutterEngine flutterEngine);
 
     /**
      * Returns true if the {@link FlutterEngine}'s plugin system should be connected to the

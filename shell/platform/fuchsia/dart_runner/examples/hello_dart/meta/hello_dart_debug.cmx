@@ -1,11 +1,12 @@
 {
-    "program": {
-        "data": "data/hello_dart_debug"
-    },
-    "sandbox": {
-        "features": [],
-        "services": [
-            "fuchsia.sys.Environment"
-        ]
-    }
+  "program": {
+    "data": "data/hello_dart_debug"
+  },
+  "sandbox": {
+    "features": [],
+    "services": [
+      "fuchsia.intl.PropertyProvider",
+      "fuchsia.sys.Environment"
+    ]
+  }
 }

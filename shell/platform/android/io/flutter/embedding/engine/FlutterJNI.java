@@ -9,6 +9,7 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.os.Looper;
+import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
@@ -31,9 +32,6 @@ import io.flutter.view.FlutterCallbackInformation;
 
 /**
  * Interface between Flutter embedding's Java code and Flutter engine's C/C++ code.
- *
- * WARNING: THIS CLASS IS EXPERIMENTAL. DO NOT SHIP A DEPENDENCY ON THIS CODE.
- * IF YOU USE IT, WE WILL BREAK YOU.
  *
  * Flutter's engine is built with C/C++. The Android Flutter embedding is responsible for
  * coordinating Android OS events and app user interactions with the C/C++ engine. Such coordination
@@ -92,6 +90,7 @@ import io.flutter.view.FlutterCallbackInformation;
  *    bool enabled = FlutterJNI.nativeGetIsSoftwareRenderingEnabled();
  * }
  */
+@Keep
 public class FlutterJNI {
   private static final String TAG = "FlutterJNI";
 
@@ -119,7 +118,7 @@ public class FlutterJNI {
 
   // TODO(mattcarroll): add javadocs
   @UiThread
-  public static native boolean nativeGetIsSoftwareRenderingEnabled();
+  public native boolean nativeGetIsSoftwareRenderingEnabled();
 
   @Nullable
   // TODO(mattcarroll): add javadocs

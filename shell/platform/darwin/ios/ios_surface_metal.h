@@ -30,7 +30,8 @@ class IOSSurfaceMetal final : public IOSSurface,
   bool IsValid() const override;
 
   // |IOSSurface|
-  bool ResourceContextMakeCurrent() override;
+  std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch> ResourceContextMakeCurrent()
+      override;
 
   // |IOSSurface|
   void UpdateStorageSizeIfNecessary() override;
@@ -42,13 +43,13 @@ class IOSSurfaceMetal final : public IOSSurface,
   flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   // |ExternalViewEmbedder|
-  sk_sp<SkSurface> GetRootSurface() override;
+  SkCanvas* GetRootCanvas() override;
 
   // |ExternalViewEmbedder|
   void CancelFrame() override;
 
   // |ExternalViewEmbedder|
-  void BeginFrame(SkISize frame_size, GrContext* context) override;
+  void BeginFrame(SkISize frame_size, GrContext* context, double device_pixel_ratio) override;
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(int view_id,

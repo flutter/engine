@@ -34,6 +34,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
           const FlutterBackingStoreConfig& config)>;
   using PresentCallback =
       std::function<bool(const std::vector<const FlutterLayer*>& layers)>;
+  using SurfaceTransformationCallback = std::function<SkMatrix(void)>;
 
   //----------------------------------------------------------------------------
   /// @brief      Creates an external view embedder used by the generic embedder
@@ -56,12 +57,25 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   ///
   ~EmbedderExternalViewEmbedder() override;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Sets the surface transformation callback used by the external
+  ///             view embedder to ask the platform for the per frame root
+  ///             surface transformation.
+  ///
+  /// @param[in]  surface_transformation_callback  The surface transformation
+  ///                                              callback
+  ///
+  void SetSurfaceTransformationCallback(
+      SurfaceTransformationCallback surface_transformation_callback);
+
  private:
   // |ExternalViewEmbedder|
   void CancelFrame() override;
 
   // |ExternalViewEmbedder|
-  void BeginFrame(SkISize frame_size, GrContext* context) override;
+  void BeginFrame(SkISize frame_size,
+                  GrContext* context,
+                  double device_pixel_ratio) override;
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
@@ -78,7 +92,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   bool SubmitFrame(GrContext* context) override;
 
   // |ExternalViewEmbedder|
-  sk_sp<SkSurface> GetRootSurface() override;
+  SkCanvas* GetRootCanvas() override;
 
  private:
   using ViewIdentifier = int64_t;
@@ -108,21 +122,27 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
 
   const CreateRenderTargetCallback create_render_target_callback_;
   const PresentCallback present_callback_;
+  SurfaceTransformationCallback surface_transformation_callback_;
   using Registry = std::unordered_map<RegistryKey,
                                       std::shared_ptr<EmbedderRenderTarget>,
                                       RegistryKey::Hash,
                                       RegistryKey::Equal>;
 
   SkISize pending_frame_size_ = SkISize::Make(0, 0);
+  double pending_device_pixel_ratio_ = 1.0;
+  SkMatrix pending_surface_transformation_;
   std::map<ViewIdentifier, std::unique_ptr<SkPictureRecorder>>
       pending_recorders_;
   std::map<ViewIdentifier, std::unique_ptr<CanvasSpy>> pending_canvas_spies_;
   std::map<ViewIdentifier, EmbeddedViewParams> pending_params_;
   std::vector<ViewIdentifier> composition_order_;
   std::shared_ptr<EmbedderRenderTarget> root_render_target_;
+  std::unique_ptr<SkPictureRecorder> root_picture_recorder_;
   Registry registry_;
 
   void Reset();
+
+  SkMatrix GetSurfaceTransformation() const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderExternalViewEmbedder);
 };
