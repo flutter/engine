@@ -141,7 +141,7 @@ class ParagraphGeometricStyle {
           ' wordSpacing: $wordSpacing,'
           ' decoration: $decoration,'
           ' ellipsis: $ellipsis,'
-          ' shadows: $shadows',
+          ' shadows: $shadows,'
           ')';
     } else {
       return super.toString();

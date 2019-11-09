@@ -1116,7 +1116,11 @@ void _applyParagraphStyleToElement({
       cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
     }
     if (style._shadows != previousStyle._shadows) {
-      throw UnimplementedError();
+      final List<ui.Shadow> shadows = style._shadows;
+      if (shadows.length > 1) {
+        throw UnsupportedError('Multiple shadows on text not supported');
+      }
+      cssStyle.textShadow = '';
     }
   }
 }
