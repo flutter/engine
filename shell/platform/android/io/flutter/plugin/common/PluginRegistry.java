@@ -63,6 +63,9 @@ public interface PluginRegistry {
 
     /**
      * Receiver of registrations from a single plugin.
+     *
+     * <p>This registrar is for Flutter's v1 embedding. For instructions on migrating a plugin from
+     * Flutter's v1 Android embedding to v2, visit http://flutter.dev/go/android-plugin-migration
      */
     interface Registrar {
         /**
@@ -79,7 +82,13 @@ public interface PluginRegistry {
          * get the application's context.</p>
          *
          * <p>This registrar is for Flutter's v1 embedding. To access an {@code Activity} from a
-         * plugin using the v2 embedding, see {@link ActivityPluginBinding#getActivity()}
+         * plugin using the v2 embedding, see {@link ActivityPluginBinding#getActivity()}. To obtain
+         * an instance of an {@link ActivityPluginBinding} in a Flutter plugin, implement the
+         * {@link ActivityAware} interface. A binding is provided in {@link ActivityAware#onAttachedToActivity(ActivityPluginBinding)}
+         * and {@link ActivityAware#onReattachedToActivityForConfigChanges(ActivityPluginBinding)}.
+         *
+         * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2,
+         * visit http://flutter.dev/go/android-plugin-migration
          */
         Activity activity();
 
@@ -88,6 +97,9 @@ public interface PluginRegistry {
          *
          * <p>This registrar is for Flutter's v1 embedding. To access a {@code Context} from a
          * plugin using the v2 embedding, see {@link FlutterPlugin.FlutterPluginBinding#getApplicationContext()}
+         *
+         * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2,
+         * visit http://flutter.dev/go/android-plugin-migration
          */
         Context context();
 
@@ -97,6 +109,9 @@ public interface PluginRegistry {
          * <p>This registrar is for Flutter's v1 embedding. In the v2 embedding, there is no
          * concept of an "active context". Either use the application {@code Context} or an attached
          * {@code Activity}. See {@link #context()} and {@link #activity()} for more details.
+         *
+         * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2,
+         * visit http://flutter.dev/go/android-plugin-migration
          *
          * @return the current {@link #activity() Activity}, if not null, otherwise the {@link #context() Application}.
          */
@@ -108,6 +123,9 @@ public interface PluginRegistry {
          *
          * <p>This registrar is for Flutter's v1 embedding. To access a {@code BinaryMessenger} from
          * a plugin using the v2 embedding, see {@link FlutterPlugin.FlutterPluginBinding#getBinaryMessenger()}
+         *
+         * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2,
+         * visit http://flutter.dev/go/android-plugin-migration
          */
         BinaryMessenger messenger();
 
@@ -117,6 +135,9 @@ public interface PluginRegistry {
          *
          * <p>This registrar is for Flutter's v1 embedding. To access a {@code TextureRegistry} from
          * a plugin using the v2 embedding, see {@link FlutterPlugin.FlutterPluginBinding#getTextureRegistry()}
+         *
+         * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2,
+         * visit http://flutter.dev/go/android-plugin-migration
          */
         TextureRegistry textures();
 
@@ -127,6 +148,9 @@ public interface PluginRegistry {
          *
          * <p>This registrar is for Flutter's v1 embedding. To access a {@code PlatformViewRegistry}
          * from a plugin using the v2 embedding, see {@link FlutterPlugin.FlutterPluginBinding#getPlatformViewRegistry()}
+         *
+         * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2,
+         * visit http://flutter.dev/go/android-plugin-migration
          */
         PlatformViewRegistry platformViewRegistry();
 
@@ -139,6 +163,9 @@ public interface PluginRegistry {
          * to any plugins in the v2 embedding. Platform views can access their containing
          * {@code View} using the platform views APIs. If you have a use-case that absolutely
          * requires a plugin to access an Android {@code View}, please file a ticket on GitHub.
+         *
+         * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2,
+         * visit http://flutter.dev/go/android-plugin-migration
          */
         FlutterView view();
 
@@ -184,6 +211,9 @@ public interface PluginRegistry {
          * <p>This registrar is for Flutter's v1 embedding. The concept of publishing values from
          * plugins is not supported in the v2 embedding.
          *
+         * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2,
+         * visit http://flutter.dev/go/android-plugin-migration
+         *
          * @param value the value, possibly null.
          * @return this {@link Registrar}.
          */
@@ -197,6 +227,9 @@ public interface PluginRegistry {
          * <p>This registrar is for Flutter's v1 embedding. To listen for permission results in the
          * v2 embedding, use {@link ActivityPluginBinding#addRequestPermissionsResultListener(RequestPermissionsResultListener)}.
          *
+         * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2,
+         * visit http://flutter.dev/go/android-plugin-migration
+         *
          * @param listener a {@link RequestPermissionsResultListener} callback.
          * @return this {@link Registrar}.
          */
@@ -208,6 +241,9 @@ public interface PluginRegistry {
          *
          * <p>This registrar is for Flutter's v1 embedding. To listen for {@code Activity} results
          * in the v2 embedding, use {@link ActivityPluginBinding#addActivityResultListener(ActivityResultListener)}.
+         *
+         * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2,
+         * visit http://flutter.dev/go/android-plugin-migration
          *
          * @param listener an {@link ActivityResultListener} callback.
          * @return this {@link Registrar}.
@@ -221,6 +257,9 @@ public interface PluginRegistry {
          * <p>This registrar is for Flutter's v1 embedding. To listen for new {@code Intent}s in the
          * v2 embedding, use {@link ActivityPluginBinding#addOnNewIntentListener(NewIntentListener)}.
          *
+         * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2,
+         * visit http://flutter.dev/go/android-plugin-migration
+         *
          * @param listener a {@link NewIntentListener} callback.
          * @return this {@link Registrar}.
          */
@@ -232,6 +271,9 @@ public interface PluginRegistry {
          *
          * <p>This registrar is for Flutter's v1 embedding. To listen for leave hints in the
          * v2 embedding, use {@link ActivityPluginBinding#addOnUserLeaveHintListener(UserLeaveHintListener)}.
+         *
+         * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2,
+         * visit http://flutter.dev/go/android-plugin-migration
          *
          * @param listener a {@link UserLeaveHintListener} callback.
          * @return this {@link Registrar}.
@@ -246,14 +288,20 @@ public interface PluginRegistry {
          * destruction does not exist in the v2 embedding. However, plugins in the v2 embedding
          * can respond to {@link ActivityAware#onDetachedFromActivityForConfigChanges()} and
          * {@link ActivityAware#onDetachedFromActivity()}, which indicate the loss of a visual
-         * context for the running Flutter experience. Also, plugins can respond to
+         * context for the running Flutter experience. Developers should implement
+         * {@link ActivityAware} for their {@link FlutterPlugin} if such callbacks are needed. Also,
+         * plugins can respond to
          * {@link FlutterPlugin#onDetachedFromEngine(FlutterPlugin.FlutterPluginBinding)}, which
          * indicates that the given plugin has been completely disconnected from the associated
          * Flutter experience and should clean up any resources.
          *
+         * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2,
+         * visit http://flutter.dev/go/android-plugin-migration
+         *
          * @param listener a {@link ViewDestroyListener} callback.
          * @return this {@link Registrar}.
          */
+        // TODO(amirh): Add a line in the javadoc above that points to a Platform Views website guide when one is available (but not a website API doc)
         Registrar addViewDestroyListener(ViewDestroyListener listener);
     }
 
