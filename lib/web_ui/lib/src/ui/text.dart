@@ -1250,7 +1250,7 @@ abstract class Paragraph {
   /// on both sides. In such cases, this method will return [offset, offset+1].
   /// Word boundaries are defined more precisely in Unicode Standard Annex #29
   /// http://www.unicode.org/reports/tr29/#Word_Boundaries
-  List<int> getWordBoundary(dynamic position);
+  TextRange getWordBoundary(dynamic position);
 
   /// Returns the [start, end] of the line at the given offset.
   ///

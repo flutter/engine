@@ -1882,15 +1882,17 @@ class Paragraph extends NativeFieldWrapperClass2 {
   /// on both sides. In such cases, this method will return [offset, offset+1].
   /// Word boundaries are defined more precisely in Unicode Standard Annex #29
   /// http://www.unicode.org/reports/tr29/#Word_Boundaries
-  List<int> getWordBoundary(dynamic position) {
+  TextRange getWordBoundary(dynamic position) {
     // TODO(gspencergoog): have this take only a TextPosition once the framework
     // code is calling it with that.
+    List<int> boundary;
     if (position is TextPosition) {
-      return _getWordBoundary(position.offset);
+      boundary = _getWordBoundary(position.offset);
     } else {
       final int offset = position;
-      return _getWordBoundary(offset);
+      boundary = _getWordBoundary(offset);
     }
+    return TextRange(start: boundary[0], end: boundary[1]);
   }
   List<int> _getWordBoundary(int offset) native 'Paragraph_getWordBoundary';
 
