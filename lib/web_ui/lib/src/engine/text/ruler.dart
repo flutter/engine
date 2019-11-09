@@ -127,8 +127,11 @@ class ParagraphGeometricStyle {
         wordSpacing,
         decoration,
         ellipsis,
-        shadows,
+        _hashShadows(shadows),
       );
+
+  int _hashShadows(List<ui.Shadow> shadows) =>
+      (shadows == null ? '' : _shadowListToCss(shadows)).hashCode;
 
   @override
   String toString() {
@@ -246,8 +249,9 @@ class TextDimensions {
     if (style.lineHeight != null) {
       _element.style.lineHeight = style.lineHeight.toString();
     }
-    if (style.shadows != null) {
-      throw UnimplementedError();
+    final List<ui.Shadow> shadowList = style.shadows;
+    if (shadowList != null) {
+      _element.style.textShadow = _shadowListToCss(shadowList);
     }
     _invalidateBoundsCache();
   }
@@ -773,7 +777,7 @@ class ParagraphRuler {
       return null;
     }
     final List<MeasurementResult> constraintCache =
-    _measurementCache[plainText];
+        _measurementCache[plainText];
     if (constraintCache == null) {
       return null;
     }

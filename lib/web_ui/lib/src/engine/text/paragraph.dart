@@ -1177,7 +1177,7 @@ void _applyTextStyleToElement({
       updateDecoration = true;
     }
     if (style._shadows != null) {
-      throw UnimplementedError();
+      cssStyle.textShadow = _shadowListToCss(style._shadows);
     }
   } else {
     if (style._color != previousStyle._color ||
@@ -1215,7 +1215,7 @@ void _applyTextStyleToElement({
       updateDecoration = true;
     }
     if (style._shadows != previousStyle._shadows) {
-      throw UnimplementedError();
+      cssStyle.textShadow = _shadowListToCss(style._shadows);
     }
   }
 
@@ -1232,6 +1232,27 @@ void _applyTextStyleToElement({
       }
     }
   }
+}
+
+String _shadowListToCss(List<ui.Shadow> shadows) {
+  if (shadows.isEmpty) {
+    return '';
+  }
+  // CSS text-shadow is a comma separated list of shadows.
+  // <offsetx> <offsety> <blur-radius> <color>.
+  // Shadows are applied front-to-back with first shadow on top.
+  // Color is optional. offsetx,y are required. blur-radius is optional as well
+  // and defaults to 0.
+  StringBuffer sb = new StringBuffer();
+  for (int i = 0, len = shadows.length; i < len; i++) {
+    if (i != 0) {
+      sb.write(',');
+    }
+    ui.Shadow shadow = shadows[i];
+    sb.write('${shadow.offset.dx}px ${shadow.offset.dy}px '
+        '${shadow.blurRadius}px ${shadow.color.toCssString()}');
+  }
+  return sb.toString();
 }
 
 /// Applies background color properties in text style to paragraph or span
