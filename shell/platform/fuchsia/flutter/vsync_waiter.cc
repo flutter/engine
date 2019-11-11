@@ -5,7 +5,9 @@
 #include "vsync_waiter.h"
 
 #include <lib/async/default.h>
+#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/fml/synchronization/waitable_event.h"
 
 #include "vsync_recorder.h"
 
@@ -54,7 +56,7 @@ VsyncWaiter::~VsyncWaiter() {
                      &ui_latch]() mutable {
         weak_factory_ui.reset();
         ui_latch.Signal();
-      }));
+      });
   ui_latch.Wait();
 }
 
@@ -75,7 +77,7 @@ void VsyncWaiter::AwaitVSync() {
   fml::TimePoint next_vsync = SnapToNextPhase(now, vsync_info.presentation_time,
                                               vsync_info.presentation_interval);
   task_runners_.GetUITaskRunner()->PostDelayedTask(
-      [self = weak_factory_ui_.GetWeakPtr()] {
+      [self = weak_factory_ui_->GetWeakPtr()] {
         if (self) {
           self->FireCallbackWhenSessionAvailable();
         }
