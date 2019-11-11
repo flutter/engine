@@ -14,15 +14,11 @@ const SkScalar kLightRadius = 800;
 
 PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
                                        SkColor shadow_color,
-                                       SkScalar device_pixel_ratio,
-                                       float viewport_depth,
                                        float elevation,
                                        const SkPath& path,
                                        Clip clip_behavior)
     : color_(color),
       shadow_color_(shadow_color),
-      device_pixel_ratio_(device_pixel_ratio),
-      viewport_depth_(viewport_depth),
       elevation_(elevation),
       path_(path),
       isRect_(false),
@@ -100,11 +96,13 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     //        t = tangent of AOB, i.e., multiplier for elevation to extent
     SkRect bounds(path_.getBounds());
     // tangent for x
-    double tx = (kLightRadius * device_pixel_ratio_ + bounds.width() * 0.5) /
+    double tx = (kLightRadius * context->frame_device_pixel_ratio +
+                 bounds.width() * 0.5) /
                 kLightHeight;
     // tangent for y
-    double ty = (kLightRadius * device_pixel_ratio_ + bounds.height() * 0.5) /
-                kLightHeight;
+    double ty =
+        (kLightRadius * context->frame_device_pixel_ratio + bounds.height() * 0.5) /
+        kLightHeight;
     bounds.outset(elevation_ * tx, elevation_ * ty);
     set_paint_bounds(bounds);
 #endif  // defined(OS_FUCHSIA)
@@ -130,7 +128,7 @@ void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
 
   // If we can't find an existing retained surface, create one.
   SceneUpdateContext::Frame frame(context, frameRRect_, color_, elevation_,
-                                  total_elevation_, viewport_depth_, this);
+                                  total_elevation_, this);
   for (auto& layer : layers()) {
     if (layer->needs_painting()) {
       frame.AddPaintLayer(layer.get());
@@ -148,7 +146,7 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
 
   if (elevation_ != 0) {
     DrawShadow(context.leaf_nodes_canvas, path_, shadow_color_, elevation_,
-               SkColorGetA(color_) != 0xff, device_pixel_ratio_);
+               SkColorGetA(color_) != 0xff, context.frame_device_pixel_ratio);
   }
 
   // Call drawPath without clip if possible for better performance.

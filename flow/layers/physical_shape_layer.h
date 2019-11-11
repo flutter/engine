@@ -13,8 +13,6 @@ class PhysicalShapeLayer : public ContainerLayer {
  public:
   PhysicalShapeLayer(SkColor color,
                      SkColor shadow_color,
-                     SkScalar device_pixel_ratio,
-                     float viewport_depth,
                      float elevation,
                      const SkPath& path,
                      Clip clip_behavior);
@@ -38,8 +36,6 @@ class PhysicalShapeLayer : public ContainerLayer {
  private:
   SkColor color_;
   SkColor shadow_color_;
-  SkScalar device_pixel_ratio_;
-  float viewport_depth_;
   float elevation_ = 0.0f;
   float total_elevation_ = 0.0f;
   SkPath path_;

@@ -603,6 +603,23 @@ TEST_F(ShellTest, WaitForFirstFrame) {
   DestroyShell(std::move(shell));
 }
 
+TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get(), {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  fml::Status result =
+      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+  ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
+}
+
 TEST_F(ShellTest, WaitForFirstFrameTimeout) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);

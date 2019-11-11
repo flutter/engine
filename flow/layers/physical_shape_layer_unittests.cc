@@ -16,8 +16,6 @@ TEST(PhysicalShapeLayer, TotalElevation) {
   for (int i = 0; i < 4; i += 1) {
     layers[i] =
         std::make_shared<PhysicalShapeLayer>(dummy_color, dummy_color,
-                                             1.0f,            // pixel ratio,
-                                             1.0f,            // depth
                                              (float)(i + 1),  // elevation
                                              dummy_path, Clip::none);
   }
@@ -40,6 +38,8 @@ TEST(PhysicalShapeLayer, TotalElevation) {
       unused_stopwatch,         // engine time (dont care)
       unused_texture_registry,  // texture registry (not supported)
       false,                    // checkerboard_offscreen_layers
+      1.0f,                     // physical depth
+      1.0f,                     // device pixel ratio
       0.0f,                     // total elevation
   };
 
