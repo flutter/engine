@@ -127,9 +127,12 @@ template("aot_runner_package") {
   if (invoker.product) {
     product_suffix = "_product"
   }
+  _gen_snapshot_bin_target =
+      "//third_party/dart/runtime/bin:generate_snapshot_bin"
   fuchsia_archive(target_name) {
     deps = [
       ":dart_aot${product_suffix}_runner_bin",
+      _gen_snapshot_bin_target,
     ]
     if (!invoker.product) {
       deps += [
@@ -155,7 +158,24 @@ template("aot_runner_package") {
 
     libraries = common_libs
 
-    resources = []
+    isolate_snapshot_data =
+        rebase_path(get_label_info(_gen_snapshot_bin_target, "target_gen_dir") +
+                    "/isolate_snapshot_data.bin")
+    isolate_snapshot_instr =
+        rebase_path(get_label_info(_gen_snapshot_bin_target, "target_gen_dir") +
+                    "/isolate_snapshot_instructions.bin")
+
+    resources = [
+      {
+        path = isolate_snapshot_data
+        dest = "isolate_snapshot_data.bin"
+      },
+      {
+        path = isolate_snapshot_instr
+        dest = "isolate_snapshot_instructions.bin"
+      },
+    ]
+
     if (!invoker.product) {
       vmservice_data = rebase_path(
               get_label_info("vmservice:vmservice_snapshot", "target_gen_dir") +
