@@ -75,7 +75,7 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
       context,
       SkRRect::MakeRect(
           SkRect::MakeWH(frame_size_.width(), frame_size_.height())),
-      SK_ColorTRANSPARENT, /* elevation */ 0.0f);
+      SK_ColorTRANSPARENT, /* opacity */ 1.0f, /* elevation */ 0.0f);
   if (root_layer_->needs_system_composite()) {
     root_layer_->UpdateScene(context);
   }

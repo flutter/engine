@@ -68,7 +68,7 @@ class FuchsiaSystemCompositedContainerLayer : public ElevatedContainerLayer {
  public:
   static bool should_system_composite() { return true; }
 
-  FuchsiaSystemCompositedContainerLayer(SkColor color, float elevation);
+  FuchsiaSystemCompositedContainerLayer(SkColor color, SkAlpha opacity, float elevation);
   ~FuchsiaSystemCompositedContainerLayer() override = default;
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
@@ -82,10 +82,12 @@ class FuchsiaSystemCompositedContainerLayer : public ElevatedContainerLayer {
   }
 
   SkColor color() const { return color_; }
+  SkAlpha opacity() const { return opacity_; }
 
  private:
   SkRRect rrect_ = SkRRect::MakeEmpty();
   SkColor color_ = SK_ColorTRANSPARENT;
+  SkAlpha opacity_ = 255;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FuchsiaSystemCompositedContainerLayer);
 };

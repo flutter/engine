@@ -9,11 +9,35 @@
 
 namespace flutter {
 
+#if defined(OS_FUCHSIA)
+using OpacityLayerBase = FuchsiaSystemCompositedContainerLayer;
+#else
+class OpacityLayerBase : public ContainerLayer {
+ public:
+  static bool should_system_composite() { return false; }
+
+  OpacityLayerBase(SkColor color, SkAlpha opacity, float elevation)
+    : color_(color), opacity_(opacity) {}
+
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+
+  void set_dimensions(SkRRect rrect) {}
+
+  SkColor color() const { return color_; }
+  SkAlpha opacity() const { return opacity_; }
+  float elevation() const { return 0; }
+
+ private:
+  SkColor color_;
+  SkAlpha opacity_;
+};
+#endif
+
 // Don't add an OpacityLayer with no children to the layer tree. Painting an
 // OpacityLayer is very costly due to the saveLayer call. If there's no child,
 // having the OpacityLayer or not has the same effect. In debug_unopt build, the
 // |EnsureSingleChild| will assert if there are no children.
-class OpacityLayer : public ContainerLayer {
+class OpacityLayer : public OpacityLayerBase {
  public:
   // An offset is provided here because OpacityLayer.addToScene method in the
   // Flutter framework can take an optional offset argument.
@@ -25,22 +49,20 @@ class OpacityLayer : public ContainerLayer {
   // the retained rendering inefficient as a small offset change could propagate
   // to many leaf layers. Therefore we try to capture that offset here to stop
   // the propagation as repainting the OpacityLayer is expensive.
-  OpacityLayer(int alpha, const SkPoint& offset);
+  OpacityLayer(SkAlpha alpha, const SkPoint& offset);
   ~OpacityLayer() override;
 
   void Add(std::shared_ptr<Layer> layer) override;
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
+#if defined(OS_FUCHSIA)
+  void UpdateScene(SceneUpdateContext& context) override;
+#endif
   void Paint(PaintContext& context) const override;
-
-  // TODO(chinmaygarde): Once SCN-139 is addressed, introduce a new node in the
-  // session scene hierarchy.
 
  private:
   ContainerLayer* GetChildContainer() const;
 
-  int alpha_;
   SkPoint offset_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(OpacityLayer);

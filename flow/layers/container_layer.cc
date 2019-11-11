@@ -125,9 +125,10 @@ void ElevatedContainerLayer::Preroll(PrerollContext* context, const SkMatrix& ma
   context->total_elevation = parent_elevation_;
 }
 
-FuchsiaSystemCompositedContainerLayer::FuchsiaSystemCompositedContainerLayer(SkColor color, float elevation)
+FuchsiaSystemCompositedContainerLayer::FuchsiaSystemCompositedContainerLayer(SkColor color, SkAlpha opacity, float elevation)
  : ElevatedContainerLayer(elevation),
-   color_(color) {}
+   color_(color),
+   opacity_(opacity) {}
 
 void FuchsiaSystemCompositedContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "SystemCompositedContainerLayer::Preroll");
@@ -138,18 +139,31 @@ void FuchsiaSystemCompositedContainerLayer::Preroll(PrerollContext* context, con
   // System-composite this layer.
   set_needs_system_composite(true);
 
+  const float parent_is_opaque = context->is_opaque;
+  context->mutators_stack.PushOpacity(opacity_);
+  context->is_opaque = parent_is_opaque && (opacity_ == 255);
   ElevatedContainerLayer::Preroll(context, matrix);
+  context->is_opaque = parent_is_opaque;
+  context->mutators_stack.Pop();
 }
 
 void FuchsiaSystemCompositedContainerLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "SystemCompositedContainerLayer::Paint");
+  FML_DCHECK(needs_painting());
+
+  if (needs_system_composite()) {
 #if !defined(OS_FUCHSIA)
-  FML_NOTIMPLEMENTED();
+    FML_NOTIMPLEMENTED();
 #endif  // !defined(OS_FUCHSIA)
 
-  // TODO: hole punch
-  // If this is actually called, it's because flow is attempting to paint this
-  // layer onto the frame behind it which gives us a chance to hole-punch
+    // If we are being rendered into our own frame using the system compositor,
+    // then it is neccesary to "punch a hole" in the canvas/frame behind us so
+    // that group opacity looks correct.
+    SkPaint paint;
+    paint.setColor(SK_ColorTRANSPARENT);
+    paint.setBlendMode(SkBlendMode::kSrc);
+    context.leaf_nodes_canvas->drawRect(paint_bounds(), paint);
+  }
 }
 
 #if defined(OS_FUCHSIA)
@@ -170,7 +184,7 @@ void FuchsiaSystemCompositedContainerLayer::UpdateScene(SceneUpdateContext& cont
   }
 
   SceneUpdateContext::Frame frame(context, rrect_, color_,
-                                  elevation(), this);
+                                  opacity_ / 255.0f, elevation(), this);
   // Paint the child layers into the Frame.
   for (auto& layer : layers()) {
     if (layer->needs_painting()) {

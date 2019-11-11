@@ -9,8 +9,24 @@
 
 namespace flutter {
 
-OpacityLayer::OpacityLayer(int alpha, const SkPoint& offset)
-    : alpha_(alpha), offset_(offset) {
+constexpr float kOpacityElevationWhenUsingSystemCompositor = 0.001f;
+
+#if !defined(OS_FUCHSIA)
+void OpacityLayerBase::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+  const SkAlpha alpha = SkColorGetA(color());
+  const float parent_is_opaque = context->is_opaque;
+
+  context->mutators_stack.PushOpacity(alpha);
+  context->is_opaque = parent_is_opaque && (alpha == 255);
+  ContainerLayer::Preroll(context, matrix);
+  context->is_opaque = parent_is_opaque;
+  context->mutators_stack.Pop();
+}
+#endif
+
+OpacityLayer::OpacityLayer(SkAlpha opacity, const SkPoint& offset)
+    : OpacityLayerBase(SK_ColorBLACK, opacity, kOpacityElevationWhenUsingSystemCompositor),
+      offset_(offset) {
   // Ensure OpacityLayer has only one direct child.
   //
   // This is needed to ensure that retained rendering can always be applied to
@@ -31,32 +47,72 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   ContainerLayer* container = GetChildContainer();
   FML_DCHECK(!container->layers().empty());  // OpacityLayer can't be a leaf.
 
+  // Factor in the offset during Preroll.  |OpacityLayerBase| will handle the
+  // opacity.
   SkMatrix child_matrix = matrix;
   child_matrix.postTranslate(offset_.fX, offset_.fY);
   context->mutators_stack.PushTransform(
       SkMatrix::MakeTrans(offset_.fX, offset_.fY));
-  context->mutators_stack.PushOpacity(alpha_);
-  ContainerLayer::Preroll(context, child_matrix);
+  OpacityLayerBase::Preroll(context, child_matrix);
   context->mutators_stack.Pop();
-  context->mutators_stack.Pop();
-  set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
 
-  if (!context->has_platform_view && context->raster_cache &&
-      SkRect::Intersects(context->cull_rect, paint_bounds())) {
-    SkMatrix ctm = child_matrix;
+  // When using the system compositor, do not include the offset or use the
+  // raster cache, since we are rendering as a separate piece of geometry.
+  if (OpacityLayerBase::should_system_composite()) {
+    set_needs_system_composite(true);
+    set_dimensions(SkRRect::MakeRect(paint_bounds()));
+
+    // If the frame behind us is opaque, don't punch a hole in it for group
+    // opacity.
+    if (context->is_opaque) {
+      set_paint_bounds(SkRect::MakeEmpty());
+    }
+  } else {
+    set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
+    if (!context->has_platform_view && context->raster_cache &&
+        SkRect::Intersects(context->cull_rect, paint_bounds())) {
+      SkMatrix ctm = child_matrix;
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    ctm = RasterCache::GetIntegralTransCTM(ctm);
+      ctm = RasterCache::GetIntegralTransCTM(ctm);
 #endif
-    context->raster_cache->Prepare(context, container, ctm);
+      context->raster_cache->Prepare(context, container, ctm);
+    }
   }
 }
+
+#if defined(OS_FUCHSIA)
+
+void OpacityLayer::UpdateScene(SceneUpdateContext& context) {
+  SceneUpdateContext::Transform transform(
+      context, SkMatrix::MakeTrans(offset_.fX, offset_.fY));
+
+  // OpacityLayerBase will handle applying the opacity itself.
+  OpacityLayerBase::UpdateScene(context);
+}
+
+#endif
 
 void OpacityLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "OpacityLayer::Paint");
   FML_DCHECK(needs_painting());
 
+  // The compositor will paint this layer (which is |Sk_ColorBLACK| with alpha
+  // scaled by opacity) via the model color on |SceneUpdateContext::Frame|.
+  //
+  // The child layers will be painted into the texture used by the Frame, so
+  // painting them here would actually cause them to be painted on the display
+  // twice -- once into the current canvas (which may be inside of another
+  // Frame) and once into the Frame's texture (which is then drawn on top of the
+  // current canvas).
+  if (OpacityLayerBase::should_system_composite()) {
+    FML_DCHECK(needs_system_composite());
+
+    OpacityLayerBase::Paint(context);
+    return;
+  }
+
   SkPaint paint;
-  paint.setAlpha(alpha_);
+  paint.setAlpha(opacity());
 
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->translate(offset_.fX, offset_.fY);
@@ -92,7 +148,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
 
   Layer::AutoSaveLayer save_layer =
       Layer::AutoSaveLayer::Create(context, saveLayerBounds, &paint);
-  PaintChildren(context);
+  OpacityLayerBase::Paint(context);
 }
 
 ContainerLayer* OpacityLayer::GetChildContainer() const {
