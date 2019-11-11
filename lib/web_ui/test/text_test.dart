@@ -241,12 +241,12 @@ void main() async {
     expect(paragraph.plainText, isNull);
     final List<SpanElement> spans =
         paragraph.paragraphElement.querySelectorAll('span');
-    expect(spans[0].style.fontFamily, 'Ahem, Helvetica, sans-serif');
+    expect(spans[0].style.fontFamily, 'Ahem, Arial, sans-serif');
     // The nested span here should not set it's family to default sans-serif.
-    expect(spans[1].style.fontFamily, 'Ahem, Helvetica, sans-serif');
+    expect(spans[1].style.fontFamily, 'Ahem, Arial, sans-serif');
   });
 
-  test('adds Helvetica and sans-serif as fallback fonts', () {
+  test('adds Arial and sans-serif as fallback fonts', () {
     // Set this to false so it doesn't default to 'Ahem' font.
     debugEmulateFlutterTesterEnvironment = false;
 
@@ -258,7 +258,7 @@ void main() async {
     builder.addText('Hello');
 
     final EngineParagraph paragraph = builder.build();
-    expect(paragraph.paragraphElement.style.fontFamily, 'SomeFont, Helvetica, sans-serif');
+    expect(paragraph.paragraphElement.style.fontFamily, 'SomeFont, Arial, sans-serif');
 
     debugEmulateFlutterTesterEnvironment = true;
   });
@@ -292,7 +292,7 @@ void main() async {
     builder.addText('Hello');
 
     final EngineParagraph paragraph = builder.build();
-    expect(paragraph.paragraphElement.style.fontFamily, '"MyFont 2000", Helvetica, sans-serif');
+    expect(paragraph.paragraphElement.style.fontFamily, '"MyFont 2000", Arial, sans-serif');
 
     debugEmulateFlutterTesterEnvironment = true;
   });

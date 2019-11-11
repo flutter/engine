@@ -260,9 +260,10 @@ const Set<String> _genericFontFamilies = <String>{
 
 /// A default fallback font family in case an unloaded font has been requested.
 ///
-/// Helvetica was chosen because it is a web-safe font and looks nice with
-/// Material Design.
-final String _fallbackFontFamily = 'Helvetica';
+/// For iOS, default to Helvetica, where it should be available, otherwise
+/// default to Arial.
+final String _fallbackFontFamily =
+    operatingSystem == OperatingSystem.iOs ? 'Helvetica' : 'Arial';
 
 /// Create a font-family string appropriate for CSS.
 ///
