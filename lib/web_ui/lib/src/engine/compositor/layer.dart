@@ -328,8 +328,58 @@ class PhysicalShapeLayer extends ContainerLayer
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
     prerollChildren(prerollContext, matrix);
-    paintBounds =
-        ElevationShadow.computeShadowRect(_path.getBounds(), _elevation);
+    if (_elevation == 0.0) {
+      paintBounds = _path.getBounds();
+    } else {
+      // Add some margin to the paint bounds to leave space for the shadow.
+      // We fill this whole region and clip children to it so we don't need to
+      // join the child paint bounds.
+      // The offset is calculated as follows:
+
+      //                   .---                           (kLightRadius)
+      //                -------/                          (light)
+      //                   |  /
+      //                   | /
+      //                   |/
+      //                   |O
+      //                  /|                              (kLightHeight)
+      //                 / |
+      //                /  |
+      //               /   |
+      //              /    |
+      //             -------------                        (layer)
+      //            /|     |
+      //           / |     |                              (elevation)
+      //        A /  |     |B
+      // ------------------------------------------------ (canvas)
+      //          ---                                     (extent of shadow)
+      //
+      // E = lt        }           t = (r + w/2)/h
+      //                } =>
+      // r + w/2 = ht  }           E = (l/h)(r + w/2)
+      //
+      // Where: E = extent of shadow
+      //        l = elevation of layer
+      //        r = radius of the light source
+      //        w = width of the layer
+      //        h = light height
+      //        t = tangent of AOB, i.e., multiplier for elevation to extent
+      ui.Rect bounds = _path.getBounds();
+      final double devicePixelRatio = ui.window.devicePixelRatio;
+      // tangent for x
+      double tx =
+          (kLightRadius * devicePixelRatio + bounds.width * 0.5) / kLightHeight;
+      // tangent for y
+      double ty = (kLightRadius * devicePixelRatio + bounds.height * 0.5) /
+          kLightHeight;
+
+      paintBounds = ui.Rect.fromLTRB(
+        bounds.left - tx,
+        bounds.top - ty,
+        bounds.right + tx,
+        bounds.bottom + ty,
+      );
+    }
   }
 
   @override

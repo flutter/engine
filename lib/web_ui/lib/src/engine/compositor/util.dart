@@ -187,12 +187,16 @@ js.JsArray<double> makeSkMatrix(Float64List matrix4) {
   return skMatrix;
 }
 
+const double kLightHeight = 600.0;
+const double kLightRadius = 800.0;
+
 void drawSkShadow(
   js.JsObject skCanvas,
   SkPath path,
   ui.Color color,
   double elevation,
   bool transparentOccluder,
+  double devicePixelRatio,
 ) {
   const double ambientAlpha = 0.039;
   const double spotAlpha = 0.25;
@@ -216,9 +220,10 @@ void drawSkShadow(
 
   skCanvas.callMethod('drawShadow', <dynamic>[
     path._skPath,
-    js.JsArray<double>.from(<double>[0, 0, elevation]),
-    js.JsArray<double>.from(<double>[shadowX, shadowY, 600]),
-    800,
+    js.JsArray<double>.from(<double>[0, 0, devicePixelRatio * elevation]),
+    js.JsArray<double>.from(
+        <double>[shadowX, shadowY, devicePixelRatio * kLightHeight]),
+    devicePixelRatio * kLightRadius,
     tonalColors['ambient'],
     tonalColors['spot'],
     flags,
