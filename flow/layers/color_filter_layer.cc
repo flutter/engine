@@ -4,12 +4,12 @@
 
 #include "flutter/flow/layers/color_filter_layer.h"
 
+#include "flutter/fml/trace_event.h"
+
 namespace flutter {
 
 ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
     : filter_(std::move(filter)) {}
-
-ColorFilterLayer::~ColorFilterLayer() = default;
 
 void ColorFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");
@@ -20,7 +20,7 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
 
   Layer::AutoSaveLayer save =
       Layer::AutoSaveLayer::Create(context, paint_bounds(), &paint);
-  PaintChildren(context);
+  ContainerLayer::Paint(context);
 }
 
 }  // namespace flutter

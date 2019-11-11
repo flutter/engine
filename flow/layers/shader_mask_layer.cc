@@ -4,6 +4,8 @@
 
 #include "flutter/flow/layers/shader_mask_layer.h"
 
+#include "flutter/fml/trace_event.h"
+
 namespace flutter {
 
 ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
@@ -11,15 +13,13 @@ ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
                                  SkBlendMode blend_mode)
     : shader_(shader), mask_rect_(mask_rect), blend_mode_(blend_mode) {}
 
-ShaderMaskLayer::~ShaderMaskLayer() = default;
-
 void ShaderMaskLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");
   FML_DCHECK(needs_painting());
 
   Layer::AutoSaveLayer save =
       Layer::AutoSaveLayer::Create(context, paint_bounds(), nullptr);
-  PaintChildren(context);
+  ContainerLayer::Paint(context);
 
   SkPaint paint;
   paint.setBlendMode(blend_mode_);

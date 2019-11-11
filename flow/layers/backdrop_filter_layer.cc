@@ -4,12 +4,12 @@
 
 #include "flutter/flow/layers/backdrop_filter_layer.h"
 
+#include "flutter/fml/trace_event.h"
+
 namespace flutter {
 
 BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter)
     : filter_(std::move(filter)) {}
-
-BackdropFilterLayer::~BackdropFilterLayer() = default;
 
 void BackdropFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "BackdropFilterLayer::Paint");
@@ -18,7 +18,7 @@ void BackdropFilterLayer::Paint(PaintContext& context) const {
   Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
       context,
       SkCanvas::SaveLayerRec{&paint_bounds(), nullptr, filter_.get(), 0});
-  PaintChildren(context);
+  ContainerLayer::Paint(context);
 }
 
 }  // namespace flutter

@@ -4,10 +4,10 @@
 
 #include "flutter/flow/layers/clip_path_layer.h"
 
+#include "flutter/fml/trace_event.h"
+
 #if defined(OS_FUCHSIA)
-
-#include "lib/ui/scenic/cpp/commands.h"
-
+#include "flutter/flow/scene_update_context.h"  //nogncheck
 #endif  // defined(OS_FUCHSIA)
 
 namespace flutter {
@@ -17,18 +17,17 @@ ClipPathLayer::ClipPathLayer(const SkPath& clip_path, Clip clip_behavior)
   FML_DCHECK(clip_behavior != Clip::none);
 }
 
-ClipPathLayer::~ClipPathLayer() = default;
-
 void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkRect previous_cull_rect = context->cull_rect;
   SkRect clip_path_bounds = clip_path_.getBounds();
   if (context->cull_rect.intersect(clip_path_bounds)) {
     context->mutators_stack.PushClipPath(clip_path_);
-    SkRect child_paint_bounds = SkRect::MakeEmpty();
-    PrerollChildren(context, matrix, &child_paint_bounds);
+    ContainerLayer::Preroll(context, matrix);
 
-    if (child_paint_bounds.intersect(clip_path_bounds)) {
-      set_paint_bounds(child_paint_bounds);
+    if (clip_path_bounds.intersect(paint_bounds())) {
+      set_paint_bounds(clip_path_bounds);
+    } else {
+      set_paint_bounds(SkRect::MakeEmpty());
     }
     context->mutators_stack.Pop();
   }
@@ -42,7 +41,7 @@ void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
 
   // TODO(liyuqian): respect clip_behavior_
   SceneUpdateContext::Clip clip(context, clip_path_.getBounds());
-  UpdateSceneChildren(context);
+  ContainerLayer::UpdateScene(context);
 }
 
 #endif  // defined(OS_FUCHSIA)
@@ -58,7 +57,7 @@ void ClipPathLayer::Paint(PaintContext& context) const {
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->saveLayer(paint_bounds(), nullptr);
   }
-  PaintChildren(context);
+  ContainerLayer::Paint(context);
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->restore();
   }

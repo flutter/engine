@@ -6,6 +6,8 @@
 #define FLUTTER_FLOW_LAYERS_OPACITY_LAYER_H_
 
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/fml/macros.h"
+#include "third_party/skia/include/core/SkPoint.h"
 
 namespace flutter {
 
@@ -50,7 +52,7 @@ class OpacityLayer : public OpacityLayerBase {
   // to many leaf layers. Therefore we try to capture that offset here to stop
   // the propagation as repainting the OpacityLayer is expensive.
   OpacityLayer(SkAlpha alpha, const SkPoint& offset);
-  ~OpacityLayer() override;
+  ~OpacityLayer() override = default;
 
   void Add(std::shared_ptr<Layer> layer) override;
 

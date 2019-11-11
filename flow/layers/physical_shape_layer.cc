@@ -5,7 +5,12 @@
 #include "flutter/flow/layers/physical_shape_layer.h"
 
 #include "flutter/flow/paint_utils.h"
+#include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
+
+#if defined(OS_FUCHSIA)
+#include "flutter/flow/scene_update_context.h"  //nogncheck
+#endif  // defined(OS_FUCHSIA)
 
 namespace flutter {
 

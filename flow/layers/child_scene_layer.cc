@@ -5,6 +5,7 @@
 #include "flutter/flow/layers/child_scene_layer.h"
 
 #include "flutter/flow/view_holder.h"
+#include "flutter/fml/trace_event.h"
 
 namespace flutter {
 

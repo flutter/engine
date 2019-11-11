@@ -7,6 +7,10 @@
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkPaint.h"
 
+#if defined(OS_FUCHSIA)
+#include "flutter/flow/scene_update_context.h"  //nogncheck
+#endif  // defined(OS_FUCHSIA)
+
 namespace flutter {
 
 constexpr float kOpacityElevationWhenUsingSystemCompositor = 0.001f;
@@ -36,8 +40,6 @@ OpacityLayer::OpacityLayer(SkAlpha opacity, const SkPoint& offset)
   // ContainerLayer.
   ContainerLayer::Add(std::make_shared<ContainerLayer>());
 }
-
-OpacityLayer::~OpacityLayer() = default;
 
 void OpacityLayer::Add(std::shared_ptr<Layer> layer) {
   GetChildContainer()->Add(std::move(layer));

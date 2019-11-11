@@ -15,6 +15,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "lib/ui/scenic/cpp/resources.h"
+#include "lib/ui/scenic/cpp/session.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSurface.h"
 

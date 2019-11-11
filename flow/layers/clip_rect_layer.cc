@@ -4,6 +4,12 @@
 
 #include "flutter/flow/layers/clip_rect_layer.h"
 
+#include "flutter/fml/trace_event.h"
+
+#if defined(OS_FUCHSIA)
+#include "flutter/flow/scene_update_context.h"  //nogncheck
+#endif  // defined(OS_FUCHSIA)
+
 namespace flutter {
 
 ClipRectLayer::ClipRectLayer(const SkRect& clip_rect, Clip clip_behavior)
@@ -11,17 +17,17 @@ ClipRectLayer::ClipRectLayer(const SkRect& clip_rect, Clip clip_behavior)
   FML_DCHECK(clip_behavior != Clip::none);
 }
 
-ClipRectLayer::~ClipRectLayer() = default;
-
 void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkRect previous_cull_rect = context->cull_rect;
-  if (context->cull_rect.intersect(clip_rect_)) {
-    context->mutators_stack.PushClipRect(clip_rect_);
-    SkRect child_paint_bounds = SkRect::MakeEmpty();
-    PrerollChildren(context, matrix, &child_paint_bounds);
+  SkRect clip_rect_bounds = clip_rect_;
+  if (context->cull_rect.intersect(clip_rect_bounds)) {
+    context->mutators_stack.PushClipRect(clip_rect_bounds);
+    ContainerLayer::Preroll(context, matrix);
 
-    if (child_paint_bounds.intersect(clip_rect_)) {
-      set_paint_bounds(child_paint_bounds);
+    if (clip_rect_bounds.intersect(paint_bounds())) {
+      set_paint_bounds(clip_rect_bounds);
+    } else {
+      set_paint_bounds(SkRect::MakeEmpty());
     }
     context->mutators_stack.Pop();
   }
@@ -35,7 +41,7 @@ void ClipRectLayer::UpdateScene(SceneUpdateContext& context) {
 
   // TODO(liyuqian): respect clip_behavior_
   SceneUpdateContext::Clip clip(context, clip_rect_);
-  UpdateSceneChildren(context);
+  ContainerLayer::UpdateScene(context);
 }
 
 #endif  // defined(OS_FUCHSIA)
@@ -51,7 +57,7 @@ void ClipRectLayer::Paint(PaintContext& context) const {
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->saveLayer(clip_rect_, nullptr);
   }
-  PaintChildren(context);
+  ContainerLayer::Paint(context);
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->restore();
   }

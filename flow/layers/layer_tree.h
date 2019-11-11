@@ -15,6 +15,10 @@
 #include "flutter/fml/time/time_delta.h"
 #include "third_party/skia/include/core/SkPicture.h"
 
+namespace scenic {
+  class ContainerNode;
+}
+
 namespace flutter {
 
 class LayerTree {

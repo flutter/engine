@@ -4,6 +4,12 @@
 
 #include "flutter/flow/layers/container_layer.h"
 
+#include "flutter/fml/trace_event.h"
+
+#if defined(OS_FUCHSIA)
+#include "flutter/flow/scene_update_context.h"  //nogncheck
+#endif  // defined(OS_FUCHSIA)
+
 namespace flutter {
 namespace {
 
@@ -26,10 +32,6 @@ float ClampElevation(float elevation,
 
 }  // namespace
 
-ContainerLayer::ContainerLayer() {}
-
-ContainerLayer::~ContainerLayer() = default;
-
 void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
   layers_.emplace_back(std::move(layer));
 }
@@ -37,17 +39,11 @@ void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
 void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "ContainerLayer::Preroll");
 
-  SkRect child_paint_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, matrix, &child_paint_bounds);
-  set_paint_bounds(child_paint_bounds);
-}
-
-void ContainerLayer::PrerollChildren(PrerollContext* context,
-                                     const SkMatrix& child_matrix,
-                                     SkRect* child_paint_bounds) {
   // Platform views have no children, so context->has_platform_view should
   // always be false.
   FML_DCHECK(!context->has_platform_view);
+
+  SkRect child_paint_bounds = SkRect::MakeEmpty();
   bool child_has_platform_view = false;
   for (auto& layer : layers_) {
     // Reset context->has_platform_view to false so that layers aren't treated
@@ -55,25 +51,21 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
     // sibling tree.
     context->has_platform_view = false;
 
-    layer->Preroll(context, child_matrix);
-
+    layer->Preroll(context, matrix);
     if (layer->needs_system_composite()) {
       set_needs_system_composite(true);
     }
-    child_paint_bounds->join(layer->paint_bounds());
+    child_paint_bounds.join(layer->paint_bounds());
 
     child_has_platform_view =
         child_has_platform_view || context->has_platform_view;
   }
 
   context->has_platform_view = child_has_platform_view;
+  set_paint_bounds(child_paint_bounds);
 }
 
 void ContainerLayer::Paint(PaintContext& context) const {
-  PaintChildren(context);
-}
-
-void ContainerLayer::PaintChildren(PaintContext& context) const {
   FML_DCHECK(needs_painting());
 
   // Intentionally not tracing here as there should be no self-time
@@ -88,10 +80,6 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
 #if defined(OS_FUCHSIA)
 
 void ContainerLayer::UpdateScene(SceneUpdateContext& context) {
-  UpdateSceneChildren(context);
-}
-
-void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
   FML_DCHECK(needs_system_composite());
 
   // Update all of the Layers which are part of the container.  This may cause

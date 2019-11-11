@@ -31,12 +31,13 @@
 
 #if defined(OS_FUCHSIA)
 #include "flutter/flow/layers/child_scene_layer.h"
+#include "flutter/lib/ui/compositing/scene_host.h"
 #endif
 
 namespace flutter {
 
 static void SceneBuilder_constructor(Dart_NativeArguments args) {
-  DartCallConstructor(&SceneBuilder::create, args);
+  DartCallConstructor(&SceneBuilder::Create, args);
 }
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, SceneBuilder);
@@ -78,6 +79,10 @@ void SceneBuilder::RegisterNatives(tonic::DartLibraryNatives* natives) {
   });
 }
 
+fml::RefPtr<SceneBuilder> SceneBuilder::Create() {
+  return fml::MakeRefCounted<SceneBuilder>();
+}
+
 SceneBuilder::SceneBuilder() {
   // Add a ContainerLayer as the root layer, so that AddLayer operations are
   // always valid.
@@ -93,14 +98,14 @@ fml::RefPtr<EngineLayer> SceneBuilder::pushTransform(
   PushLayer(layer);
   // matrix4 has to be released before we can return another Dart object
   matrix4.Release();
-  return EngineLayer::MakeRetained(layer);
+  return EngineLayer::Create(layer);
 }
 
 fml::RefPtr<EngineLayer> SceneBuilder::pushOffset(double dx, double dy) {
   SkMatrix sk_matrix = SkMatrix::MakeTrans(dx, dy);
   auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix);
   PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
+  return EngineLayer::Create(layer);
 }
 
 fml::RefPtr<EngineLayer> SceneBuilder::pushClipRect(double left,
@@ -113,7 +118,7 @@ fml::RefPtr<EngineLayer> SceneBuilder::pushClipRect(double left,
   auto layer =
       std::make_shared<flutter::ClipRectLayer>(clipRect, clip_behavior);
   PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
+  return EngineLayer::Create(layer);
 }
 
 fml::RefPtr<EngineLayer> SceneBuilder::pushClipRRect(const RRect& rrect,
@@ -122,7 +127,7 @@ fml::RefPtr<EngineLayer> SceneBuilder::pushClipRRect(const RRect& rrect,
   auto layer =
       std::make_shared<flutter::ClipRRectLayer>(rrect.sk_rrect, clip_behavior);
   PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
+  return EngineLayer::Create(layer);
 }
 
 fml::RefPtr<EngineLayer> SceneBuilder::pushClipPath(const CanvasPath* path,
@@ -132,7 +137,7 @@ fml::RefPtr<EngineLayer> SceneBuilder::pushClipPath(const CanvasPath* path,
   auto layer =
       std::make_shared<flutter::ClipPathLayer>(path->path(), clip_behavior);
   PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
+  return EngineLayer::Create(layer);
 }
 
 fml::RefPtr<EngineLayer> SceneBuilder::pushOpacity(int alpha,
@@ -141,7 +146,7 @@ fml::RefPtr<EngineLayer> SceneBuilder::pushOpacity(int alpha,
   auto layer =
       std::make_shared<flutter::OpacityLayer>(alpha, SkPoint::Make(dx, dy));
   PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
+  return EngineLayer::Create(layer);
 }
 
 fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilter(
@@ -149,13 +154,13 @@ fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilter(
   auto layer =
       std::make_shared<flutter::ColorFilterLayer>(color_filter->filter());
   PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
+  return EngineLayer::Create(layer);
 }
 
 fml::RefPtr<EngineLayer> SceneBuilder::pushBackdropFilter(ImageFilter* filter) {
   auto layer = std::make_shared<flutter::BackdropFilterLayer>(filter->filter());
   PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
+  return EngineLayer::Create(layer);
 }
 
 fml::RefPtr<EngineLayer> SceneBuilder::pushShaderMask(Shader* shader,
@@ -169,7 +174,7 @@ fml::RefPtr<EngineLayer> SceneBuilder::pushShaderMask(Shader* shader,
   auto layer = std::make_shared<flutter::ShaderMaskLayer>(
       shader->shader(), rect, static_cast<SkBlendMode>(blendMode));
   PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
+  return EngineLayer::Create(layer);
 }
 
 fml::RefPtr<EngineLayer> SceneBuilder::pushPhysicalShape(const CanvasPath* path,
@@ -182,15 +187,27 @@ fml::RefPtr<EngineLayer> SceneBuilder::pushPhysicalShape(const CanvasPath* path,
       static_cast<float>(elevation), path->path(),
       static_cast<flutter::Clip>(clipBehavior));
   PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
+  return EngineLayer::Create(layer);
+}
+
+void SceneBuilder::pop() {
+  PopLayer();
 }
 
 void SceneBuilder::addRetained(fml::RefPtr<EngineLayer> retainedLayer) {
   AddLayer(retainedLayer->Layer());
 }
 
-void SceneBuilder::pop() {
-  PopLayer();
+void SceneBuilder::addPerformanceOverlay(uint64_t enabledOptions,
+                                         double left,
+                                         double right,
+                                         double top,
+                                         double bottom) {
+  SkRect rect = SkRect::MakeLTRB(left, top, right, bottom);
+  auto layer =
+      std::make_unique<flutter::PerformanceOverlayLayer>(enabledOptions);
+  layer->set_paint_bounds(rect);
+  AddLayer(std::move(layer));
 }
 
 void SceneBuilder::addPicture(double dx,
@@ -227,30 +244,18 @@ void SceneBuilder::addPlatformView(double dx,
   AddLayer(std::move(layer));
 }
 
-#if defined(OS_FUCHSIA)
 void SceneBuilder::addChildScene(double dx,
                                  double dy,
                                  double width,
                                  double height,
                                  SceneHost* sceneHost,
                                  bool hitTestable) {
+#if defined(OS_FUCHSIA)
   auto layer = std::make_unique<flutter::ChildSceneLayer>(
       sceneHost->id(), SkPoint::Make(dx, dy), SkSize::Make(width, height),
       hitTestable);
   AddLayer(std::move(layer));
-}
 #endif  // defined(OS_FUCHSIA)
-
-void SceneBuilder::addPerformanceOverlay(uint64_t enabledOptions,
-                                         double left,
-                                         double right,
-                                         double top,
-                                         double bottom) {
-  SkRect rect = SkRect::MakeLTRB(left, top, right, bottom);
-  auto layer =
-      std::make_unique<flutter::PerformanceOverlayLayer>(enabledOptions);
-  layer->set_paint_bounds(rect);
-  AddLayer(std::move(layer));
 }
 
 void SceneBuilder::setRasterizerTracingThreshold(uint32_t frameInterval) {

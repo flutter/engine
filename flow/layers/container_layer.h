@@ -5,15 +5,19 @@
 #ifndef FLUTTER_FLOW_LAYERS_CONTAINER_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_CONTAINER_LAYER_H_
 
+#include <memory>
 #include <vector>
+
 #include "flutter/flow/layers/layer.h"
+#include "third_party/skia/include/core/SkMatrix.h"
+#include "third_party/skia/include/core/SkRect.h"
 
 namespace flutter {
 
 class ContainerLayer : public Layer {
  public:
-  ContainerLayer();
-  ~ContainerLayer() override;
+  ContainerLayer() = default;
+  ~ContainerLayer() override = default;
 
   virtual void Add(std::shared_ptr<Layer> layer);
 
@@ -24,19 +28,6 @@ class ContainerLayer : public Layer {
   void Paint(PaintContext& context) const override;
 
   const std::vector<std::shared_ptr<Layer>>& layers() const { return layers_; }
-
- protected:
-  void PrerollChildren(PrerollContext* context,
-                       const SkMatrix& child_matrix,
-                       SkRect* child_paint_bounds);
-  void PaintChildren(PaintContext& context) const;
-
-#if defined(OS_FUCHSIA)
-  void UpdateSceneChildren(SceneUpdateContext& context);
-#endif  // defined(OS_FUCHSIA)
-
-  // For OpacityLayer to restructure to have a single child.
-  void ClearChildren() { layers_.clear(); }
 
  private:
   std::vector<std::shared_ptr<Layer>> layers_;

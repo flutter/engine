@@ -14,7 +14,7 @@ namespace flutter {
 class PlatformViewLayer : public Layer {
  public:
   PlatformViewLayer(const SkPoint& offset, const SkSize& size, int64_t view_id);
-  ~PlatformViewLayer() override;
+  ~PlatformViewLayer() override = default;
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;

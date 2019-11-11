@@ -21,7 +21,9 @@ class PerformanceOverlayLayer : public Layer {
  public:
   explicit PerformanceOverlayLayer(uint64_t options,
                                    const char* font_path = nullptr);
+  ~PerformanceOverlayLayer() override = default;
 
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override {}
   void Paint(PaintContext& context) const override;
 
  private:

@@ -19,11 +19,9 @@ namespace flutter {
 
 class RasterCacheResult {
  public:
-  RasterCacheResult();
-
-  RasterCacheResult(const RasterCacheResult& other);
-
-  ~RasterCacheResult();
+  RasterCacheResult() = default;
+  RasterCacheResult(const RasterCacheResult& other) = default;
+  ~RasterCacheResult() = default;
 
   RasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect);
 

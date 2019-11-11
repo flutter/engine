@@ -5,37 +5,21 @@
 #ifndef FLUTTER_FLOW_LAYERS_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_LAYER_H_
 
-#include <memory>
-#include <vector>
-
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/texture.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/compiler_specific.h"
-#include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
-#include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColor.h"
-#include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkMatrix.h"
-#include "third_party/skia/include/core/SkPath.h"
-#include "third_party/skia/include/core/SkPicture.h"
-#include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
-#include "third_party/skia/include/utils/SkNWayCanvas.h"
-
-#if defined(OS_FUCHSIA)
-
-#include "flutter/flow/scene_update_context.h"  //nogncheck
-#include "lib/ui/scenic/cpp/resources.h"        //nogncheck
-#include "lib/ui/scenic/cpp/session.h"          //nogncheck
-
-#endif  // defined(OS_FUCHSIA)
 
 namespace flutter {
+
+class SceneUpdateContext;
 
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
@@ -72,9 +56,7 @@ struct PrerollContext {
 class Layer {
  public:
   Layer();
-  virtual ~Layer();
-
-  virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
+  virtual ~Layer() = default;
 
   struct PaintContext {
     // When splitting the scene into multiple canvases (e.g when embedding
@@ -129,27 +111,39 @@ class Layer {
     const SkRect bounds_;
   };
 
-  virtual void Paint(PaintContext& context) const = 0;
+  // Performs pre-Paint() optimizations on this |Layer|.
+  //
+  // |context| is used to track global values like elevation that may vary as
+  // the tree of layers is traversed.
+  //
+  // |matrix| provides a transform for this layer relative to the canvas.
+  //
+  // Primarily this computes the paint_bounds() for the layer, which allows
+  // |Paint| to be skipped if the bounds are empty or entirely clipped.
+  virtual void Preroll(PrerollContext* context, const SkMatrix& matrix) = 0;
 
 #if defined(OS_FUCHSIA)
-  // Updates the system composited scene.
-  virtual void UpdateScene(SceneUpdateContext& context);
+  // Updates the underlying system-composited scene.  This may cause new
+  // canvases to be created for additional system-composited layers.
+  virtual void UpdateScene(SceneUpdateContext& context) {}
 #endif
+
+  // Draws this layer to the underlying canvas.
+  //
+  // |context| contains painting-related state such as the canvas and the
+  // view embedder for platform views.
+  virtual void Paint(PaintContext& context) const = 0;
 
   bool needs_system_composite() const { return needs_system_composite_; }
   void set_needs_system_composite(bool value) {
     needs_system_composite_ = value;
   }
 
+  bool needs_painting() const { return !paint_bounds_.isEmpty(); }
   const SkRect& paint_bounds() const { return paint_bounds_; }
-
-  // This must be set by the time Preroll() returns otherwise the layer will
-  // be assumed to have empty paint bounds (paints no content).
   void set_paint_bounds(const SkRect& paint_bounds) {
     paint_bounds_ = paint_bounds;
   }
-
-  bool needs_painting() const { return !paint_bounds_.isEmpty(); }
 
   uint64_t unique_id() const { return unique_id_; }
 
@@ -157,8 +151,6 @@ class Layer {
   SkRect paint_bounds_;
   uint64_t unique_id_;
   bool needs_system_composite_;
-
-  static uint64_t NextUniqueID();
 
   FML_DISALLOW_COPY_AND_ASSIGN(Layer);
 };

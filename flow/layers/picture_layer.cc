@@ -4,7 +4,9 @@
 
 #include "flutter/flow/layers/picture_layer.h"
 
+#include "flutter/flow/raster_cache.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/trace_event.h"
 
 namespace flutter {
 
@@ -16,8 +18,6 @@ PictureLayer::PictureLayer(const SkPoint& offset,
       picture_(std::move(picture)),
       is_complex_(is_complex),
       will_change_(will_change) {}
-
-PictureLayer::~PictureLayer() = default;
 
 void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkPicture* sk_picture = picture();

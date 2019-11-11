@@ -6,6 +6,7 @@
 #define FLUTTER_FLOW_LAYERS_TRANSFORM_LAYER_H_
 
 #include "flutter/flow/layers/container_layer.h"
+#include "third_party/skia/include/core/SkMatrix.h"
 
 namespace flutter {
 
@@ -14,15 +15,13 @@ namespace flutter {
 class TransformLayer : public ContainerLayer {
  public:
   TransformLayer(const SkMatrix& transform);
-  ~TransformLayer() override;
+  ~TransformLayer() override = default;
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
-  void Paint(PaintContext& context) const override;
-
 #if defined(OS_FUCHSIA)
   void UpdateScene(SceneUpdateContext& context) override;
 #endif  // defined(OS_FUCHSIA)
+  void Paint(PaintContext& context) const override;
 
  private:
   SkMatrix transform_;

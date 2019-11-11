@@ -22,22 +22,22 @@
 #include "flutter/lib/ui/painting/shader.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
-#if defined(OS_FUCHSIA)
-#include "flutter/lib/ui/compositing/scene_host.h"
-#endif
-
 namespace flutter {
+
+class SceneHost;
 
 class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   DEFINE_WRAPPERTYPEINFO();
   FML_FRIEND_MAKE_REF_COUNTED(SceneBuilder);
-
  public:
-  static fml::RefPtr<SceneBuilder> create() {
-    return fml::MakeRefCounted<SceneBuilder>();
-  }
+  static void RegisterNatives(tonic::DartLibraryNatives* natives);
+  static fml::RefPtr<SceneBuilder> Create();
+
   ~SceneBuilder() override;
 
+  // Container-type layers.  These layers affect (are the parent of) any further
+  // pushed or added layers.  Call |pop()| to undo the effects of the last
+  // pushed layer.
   fml::RefPtr<EngineLayer> pushTransform(tonic::Float64List& matrix4);
   fml::RefPtr<EngineLayer> pushOffset(double dx, double dy);
   fml::RefPtr<EngineLayer> pushClipRect(double left,
@@ -62,48 +62,40 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                                              int color,
                                              int shadowColor,
                                              int clipBehavior);
-
-  void addRetained(fml::RefPtr<EngineLayer> retainedLayer);
-
   void pop();
 
+  // Leaf-type layers.  These layers are always a child of a Container-type
+  // layer.
+  void addRetained(fml::RefPtr<EngineLayer> retainedLayer);
   void addPerformanceOverlay(uint64_t enabledOptions,
                              double left,
                              double right,
                              double top,
                              double bottom);
-
   void addPicture(double dx, double dy, Picture* picture, int hints);
-
   void addTexture(double dx,
                   double dy,
                   double width,
                   double height,
                   int64_t textureId,
                   bool freeze);
-
   void addPlatformView(double dx,
                        double dy,
                        double width,
                        double height,
                        int64_t viewId);
-
-#if defined(OS_FUCHSIA)
   void addChildScene(double dx,
                      double dy,
                      double width,
                      double height,
                      SceneHost* sceneHost,
                      bool hitTestable);
-#endif
 
   void setRasterizerTracingThreshold(uint32_t frameInterval);
   void setCheckerboardRasterCacheImages(bool checkerboard);
   void setCheckerboardOffscreenLayers(bool checkerboard);
 
   fml::RefPtr<Scene> build();
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   SceneBuilder();

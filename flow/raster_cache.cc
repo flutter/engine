@@ -14,14 +14,9 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/utils/SkNWayCanvas.h"
 
 namespace flutter {
-
-RasterCacheResult::RasterCacheResult() {}
-
-RasterCacheResult::RasterCacheResult(const RasterCacheResult& other) = default;
-
-RasterCacheResult::~RasterCacheResult() = default;
 
 RasterCacheResult::RasterCacheResult(sk_sp<SkImage> image,
                                      const SkRect& logical_rect)

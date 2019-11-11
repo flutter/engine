@@ -14,7 +14,7 @@ namespace flutter {
 class BackdropFilterLayer : public ContainerLayer {
  public:
   BackdropFilterLayer(sk_sp<SkImageFilter> filter);
-  ~BackdropFilterLayer() override;
+  ~BackdropFilterLayer() override = default;
 
   void Paint(PaintContext& context) const override;
 

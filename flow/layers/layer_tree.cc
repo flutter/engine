@@ -9,6 +9,10 @@
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
 
+#if defined(OS_FUCHSIA)
+#include "flutter/flow/scene_update_context.h"  //nogncheck
+#endif  // defined(OS_FUCHSIA)
+
 namespace flutter {
 
 LayerTree::LayerTree(const SkISize& frame_size,

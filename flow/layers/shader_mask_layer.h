@@ -7,6 +7,7 @@
 
 #include "flutter/flow/layers/container_layer.h"
 
+#include "third_party/skia/include/core/SkBlendMode.h"
 #include "third_party/skia/include/core/SkShader.h"
 
 namespace flutter {
@@ -16,7 +17,7 @@ class ShaderMaskLayer : public ContainerLayer {
   ShaderMaskLayer(sk_sp<SkShader> shader,
                   const SkRect& mask_rect,
                   SkBlendMode blend_mode);
-  ~ShaderMaskLayer() override;
+  ~ShaderMaskLayer() override = default;
 
   void Paint(PaintContext& context) const override;
 

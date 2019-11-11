@@ -6,6 +6,7 @@
 #define FLUTTER_FLOW_LAYERS_PHYSICAL_SHAPE_LAYER_H_
 
 #include "flutter/flow/layers/container_layer.h"
+#include "third_party/skia/include/core/SkPath.h"
 
 namespace flutter {
 

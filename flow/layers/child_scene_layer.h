@@ -24,10 +24,8 @@ class ChildSceneLayer : public Layer {
   ~ChildSceneLayer() override = default;
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
-  void Paint(PaintContext& context) const override;
-
   void UpdateScene(SceneUpdateContext& context) override;
+  void Paint(PaintContext& context) const override;
 
  private:
   zx_koid_t layer_id_ = ZX_KOID_INVALID;

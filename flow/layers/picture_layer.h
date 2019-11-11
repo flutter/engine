@@ -8,8 +8,9 @@
 #include <memory>
 
 #include "flutter/flow/layers/layer.h"
-#include "flutter/flow/raster_cache.h"
 #include "flutter/flow/skia_gpu_object.h"
+#include "third_party/skia/include/core/SkPicture.h"
+#include "third_party/skia/include/core/SkPoint.h"
 
 namespace flutter {
 
@@ -19,13 +20,12 @@ class PictureLayer : public Layer {
                SkiaGPUObject<SkPicture> picture,
                bool is_complex,
                bool will_change);
-  ~PictureLayer() override;
-
-  SkPicture* picture() const { return picture_.get().get(); }
+  ~PictureLayer() override = default;
 
   void Preroll(PrerollContext* frame, const SkMatrix& matrix) override;
-
   void Paint(PaintContext& context) const override;
+
+  SkPicture* picture() const { return picture_.get().get(); }
 
  private:
   SkPoint offset_;

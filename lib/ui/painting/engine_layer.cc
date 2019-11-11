@@ -13,10 +13,19 @@ using tonic::ToDart;
 
 namespace flutter {
 
+IMPLEMENT_WRAPPERTYPEINFO(ui, EngineLayer);
+
+#define FOR_EACH_BINDING(V)  // nothing to bind
+
+DART_BIND_ALL(EngineLayer, FOR_EACH_BINDING)
+
+fml::RefPtr<EngineLayer> EngineLayer::Create(
+    std::shared_ptr<ContainerLayer> layer) {
+  return fml::MakeRefCounted<EngineLayer>(layer);
+}
+
 EngineLayer::EngineLayer(std::shared_ptr<flutter::ContainerLayer> layer)
     : layer_(layer) {}
-
-EngineLayer::~EngineLayer() = default;
 
 size_t EngineLayer::GetAllocationSize() {
   // Provide an approximation of the total memory impact of this object to the
@@ -24,11 +33,5 @@ size_t EngineLayer::GetAllocationSize() {
   // which in turn may contain Skia objects.
   return 3000;
 };
-
-IMPLEMENT_WRAPPERTYPEINFO(ui, EngineLayer);
-
-#define FOR_EACH_BINDING(V)  // nothing to bind
-
-DART_BIND_ALL(EngineLayer, FOR_EACH_BINDING)
 
 }  // namespace flutter
