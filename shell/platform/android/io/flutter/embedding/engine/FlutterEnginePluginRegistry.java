@@ -91,7 +91,8 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
 
   FlutterEnginePluginRegistry(
       @NonNull Context appContext,
-      @NonNull FlutterEngine flutterEngine
+      @NonNull FlutterEngine flutterEngine,
+      @NonNull FlutterLoader flutterLoader
   ) {
     this.flutterEngine = flutterEngine;
     pluginBinding = new FlutterPlugin.FlutterPluginBinding(
@@ -100,7 +101,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
         flutterEngine.getDartExecutor(),
         flutterEngine.getRenderer(),
         flutterEngine.getPlatformViewsController().getRegistry(),
-        new DefaultFlutterAssets(FlutterLoader.getInstance())
+        new DefaultFlutterAssets(flutterLoader)
     );
   }
 
