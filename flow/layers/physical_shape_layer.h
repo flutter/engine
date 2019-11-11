@@ -18,8 +18,7 @@ class PhysicalShapeLayerBase : public ElevatedContainerLayer {
   static bool should_system_composite() { return false; }
 
   PhysicalShapeLayerBase(SkColor color, SkAlpha opacity, float elevation)
-    : ElevatedContainerLayer(elevation),
-      color_(color) {}
+      : ElevatedContainerLayer(elevation), color_(color) {}
 
   void set_dimensions(SkRRect rrect) {}
 

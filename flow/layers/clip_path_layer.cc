@@ -8,7 +8,7 @@
 
 #if defined(OS_FUCHSIA)
 #include "flutter/flow/scene_update_context.h"  //nogncheck
-#endif  // defined(OS_FUCHSIA)
+#endif                                          // defined(OS_FUCHSIA)
 
 namespace flutter {
 

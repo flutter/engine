@@ -8,14 +8,14 @@
 
 #if defined(OS_FUCHSIA)
 #include "flutter/flow/scene_update_context.h"  //nogncheck
-#endif  // defined(OS_FUCHSIA)
+#endif                                          // defined(OS_FUCHSIA)
 
 namespace flutter {
 namespace {
 
 float ClampElevation(float elevation,
-                            float parent_elevation,
-                            float max_elevation) {
+                     float parent_elevation,
+                     float max_elevation) {
   // TODO(mklim): Deal with bounds overflow more elegantly. We'd like to be
   // able to have developers specify the behavior here to alternatives besides
   // clamping, like normalization on some arbitrary curve.
@@ -94,17 +94,17 @@ void ContainerLayer::UpdateScene(SceneUpdateContext& context) {
 #endif  // defined(OS_FUCHSIA)
 
 ElevatedContainerLayer::ElevatedContainerLayer(float elevation)
- : elevation_(elevation),
-   clamped_elevation_(elevation) {}
+    : elevation_(elevation), clamped_elevation_(elevation) {}
 
-void ElevatedContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void ElevatedContainerLayer::Preroll(PrerollContext* context,
+                                     const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "ElevatedContainerLayer::Preroll");
 
   // Track total elevation as we walk the tree, in order to deal with bounds
   // overflow in z.
   parent_elevation_ = context->total_elevation;
-  clamped_elevation_ =
-      ClampElevation(elevation_, parent_elevation_, context->frame_physical_depth);
+  clamped_elevation_ = ClampElevation(elevation_, parent_elevation_,
+                                      context->frame_physical_depth);
   context->total_elevation += clamped_elevation_;
 
   ContainerLayer::Preroll(context, matrix);
@@ -113,12 +113,14 @@ void ElevatedContainerLayer::Preroll(PrerollContext* context, const SkMatrix& ma
   context->total_elevation = parent_elevation_;
 }
 
-FuchsiaSystemCompositedContainerLayer::FuchsiaSystemCompositedContainerLayer(SkColor color, SkAlpha opacity, float elevation)
- : ElevatedContainerLayer(elevation),
-   color_(color),
-   opacity_(opacity) {}
+FuchsiaSystemCompositedContainerLayer::FuchsiaSystemCompositedContainerLayer(
+    SkColor color,
+    SkAlpha opacity,
+    float elevation)
+    : ElevatedContainerLayer(elevation), color_(color), opacity_(opacity) {}
 
-void FuchsiaSystemCompositedContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void FuchsiaSystemCompositedContainerLayer::Preroll(PrerollContext* context,
+                                                    const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "SystemCompositedContainerLayer::Preroll");
 #if !defined(OS_FUCHSIA)
   FML_NOTIMPLEMENTED();
@@ -156,7 +158,8 @@ void FuchsiaSystemCompositedContainerLayer::Paint(PaintContext& context) const {
 
 #if defined(OS_FUCHSIA)
 
-void FuchsiaSystemCompositedContainerLayer::UpdateScene(SceneUpdateContext& context) {
+void FuchsiaSystemCompositedContainerLayer::UpdateScene(
+    SceneUpdateContext& context) {
   FML_DCHECK(needs_system_composite());
 
   // Retained rendering: speedup by reusing a retained entity node if
@@ -171,8 +174,8 @@ void FuchsiaSystemCompositedContainerLayer::UpdateScene(SceneUpdateContext& cont
     return;
   }
 
-  SceneUpdateContext::Frame frame(context, rrect_, color_,
-                                  opacity_ / 255.0f, elevation(), this);
+  SceneUpdateContext::Frame frame(context, rrect_, color_, opacity_ / 255.0f,
+                                  elevation(), this);
   // Paint the child layers into the Frame.
   for (auto& layer : layers()) {
     if (layer->needs_painting()) {

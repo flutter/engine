@@ -147,8 +147,8 @@ class SceneUpdateContext {
   const fuchsia::ui::gfx::MetricsPtr& metrics() const { return metrics_; }
 
   void set_dimensions(const SkISize& frame_physical_size,
-                            float frame_physical_depth,
-                            float frame_device_pixel_ratio) {
+                      float frame_physical_depth,
+                      float frame_device_pixel_ratio) {
     frame_physical_size_ = frame_physical_size;
     frame_physical_depth_ = frame_physical_depth;
     frame_device_pixel_ratio_ = frame_device_pixel_ratio;

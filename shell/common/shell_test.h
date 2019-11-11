@@ -57,10 +57,12 @@ class ShellTest : public ThreadTest {
   using LayerTreeBuilder =
       std::function<void(std::shared_ptr<ContainerLayer> root)>;
   static void PumpOneFrame(Shell* shell,
-                          double width = 1,
-                          double height = 1,
-                          LayerTreeBuilder = {});
-  static void PumpOneFrame(Shell* shell, flutter::ViewportMetrics viewport_metrics, LayerTreeBuilder = {});
+                           double width = 1,
+                           double height = 1,
+                           LayerTreeBuilder = {});
+  static void PumpOneFrame(Shell* shell,
+                           flutter::ViewportMetrics viewport_metrics,
+                           LayerTreeBuilder = {});
   static void DispatchFakePointerData(Shell* shell);
 
   // Declare |UnreportedTimingsCount|, |GetNeedsReportTimings| and

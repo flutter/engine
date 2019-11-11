@@ -9,14 +9,15 @@
 
 #if defined(OS_FUCHSIA)
 #include "flutter/flow/scene_update_context.h"  //nogncheck
-#endif  // defined(OS_FUCHSIA)
+#endif                                          // defined(OS_FUCHSIA)
 
 namespace flutter {
 
 constexpr float kOpacityElevationWhenUsingSystemCompositor = 0.001f;
 
 #if !defined(OS_FUCHSIA)
-void OpacityLayerBase::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void OpacityLayerBase::Preroll(PrerollContext* context,
+                               const SkMatrix& matrix) {
   const SkAlpha alpha = SkColorGetA(color());
   const float parent_is_opaque = context->is_opaque;
 
@@ -29,7 +30,9 @@ void OpacityLayerBase::Preroll(PrerollContext* context, const SkMatrix& matrix) 
 #endif
 
 OpacityLayer::OpacityLayer(SkAlpha opacity, const SkPoint& offset)
-    : OpacityLayerBase(SK_ColorBLACK, opacity, kOpacityElevationWhenUsingSystemCompositor),
+    : OpacityLayerBase(SK_ColorBLACK,
+                       opacity,
+                       kOpacityElevationWhenUsingSystemCompositor),
       offset_(offset) {
   // Ensure OpacityLayer has only one direct child.
   //

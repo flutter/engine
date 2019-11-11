@@ -62,10 +62,7 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
                         const SkRect&,
                         const SkPaint*,
                         SrcRectConstraint) override;
-  void onDrawImage(const SkImage*,
-                   SkScalar,
-                   SkScalar,
-                   const SkPaint*) override;
+  void onDrawImage(const SkImage*, SkScalar, SkScalar, const SkPaint*) override;
   void onDrawImageRect(const SkImage*,
                        const SkRect*,
                        const SkRect&,

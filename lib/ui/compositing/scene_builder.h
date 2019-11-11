@@ -29,6 +29,7 @@ class SceneHost;
 class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   DEFINE_WRAPPERTYPEINFO();
   FML_FRIEND_MAKE_REF_COUNTED(SceneBuilder);
+
  public:
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
   static fml::RefPtr<SceneBuilder> Create();

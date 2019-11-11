@@ -5,17 +5,17 @@
 #ifndef TESTING_LAYER_TEST_H_
 #define TESTING_LAYER_TEST_H_
 
-#include "gtest/gtest.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/testing/mock_canvas.h"
+#include "gtest/gtest.h"
 
 namespace flutter {
 namespace testing {
 
 class LayerTest : public ::testing::Test {
  public:
- LayerTest(MockCanvas* canvas);
- virtual ~LayerTest() = default; 
+  LayerTest(MockCanvas* canvas);
+  virtual ~LayerTest() = default;
 
   PrerollContext* preroll_context() { return &preroll_context_; }
   Layer::PaintContext& paint_context() { return paint_context_; }

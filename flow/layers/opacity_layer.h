@@ -19,7 +19,7 @@ class OpacityLayerBase : public ContainerLayer {
   static bool should_system_composite() { return false; }
 
   OpacityLayerBase(SkColor color, SkAlpha opacity, float elevation)
-    : color_(color), opacity_(opacity) {}
+      : color_(color), opacity_(opacity) {}
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 

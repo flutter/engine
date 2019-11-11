@@ -10,7 +10,7 @@
 
 #if defined(OS_FUCHSIA)
 #include "flutter/flow/scene_update_context.h"  //nogncheck
-#endif  // defined(OS_FUCHSIA)
+#endif                                          // defined(OS_FUCHSIA)
 
 namespace flutter {
 
@@ -108,9 +108,13 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
   //        t = tangent of AOB, i.e., multiplier for elevation to extent
   SkRect bounds(paint_bounds());
   // tangent for x
-  double tx = (kLightRadius * context->frame_device_pixel_ratio + bounds.width() * 0.5) / kLightHeight;
+  double tx = (kLightRadius * context->frame_device_pixel_ratio +
+               bounds.width() * 0.5) /
+              kLightHeight;
   // tangent for y
-  double ty = (kLightRadius * context->frame_device_pixel_ratio + bounds.height() * 0.5) / kLightHeight;
+  double ty = (kLightRadius * context->frame_device_pixel_ratio +
+               bounds.height() * 0.5) /
+              kLightHeight;
   bounds.outset(elevation() * tx, elevation() * ty);
   set_paint_bounds(bounds);
 }

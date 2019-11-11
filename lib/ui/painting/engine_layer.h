@@ -20,6 +20,7 @@ class EngineLayer;
 class EngineLayer : public RefCountedDartWrappable<EngineLayer> {
   DEFINE_WRAPPERTYPEINFO();
   FML_FRIEND_MAKE_REF_COUNTED(EngineLayer);
+
  public:
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
   static fml::RefPtr<EngineLayer> Create(std::shared_ptr<ContainerLayer> layer);

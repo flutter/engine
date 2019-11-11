@@ -11,7 +11,7 @@
 
 #if defined(OS_FUCHSIA)
 #include "flutter/flow/scene_update_context.h"  //nogncheck
-#endif  // defined(OS_FUCHSIA)
+#endif                                          // defined(OS_FUCHSIA)
 
 namespace flutter {
 
@@ -62,7 +62,7 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
 
   // Ensure the context is aware of the view metrics.
   context.set_dimensions(frame_size_, frame_physical_depth_,
-                               frame_device_pixel_ratio_);
+                         frame_device_pixel_ratio_);
 
   const auto& metrics = context.metrics();
   FML_DCHECK(metrics->scale_x > 0.0f);

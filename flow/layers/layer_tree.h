@@ -16,7 +16,7 @@
 #include "third_party/skia/include/core/SkPicture.h"
 
 namespace scenic {
-  class ContainerNode;
+class ContainerNode;
 }
 
 namespace flutter {
