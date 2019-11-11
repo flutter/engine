@@ -15,7 +15,7 @@ class ContainerLayer : public Layer {
   ContainerLayer();
   ~ContainerLayer() override;
 
-  void Add(std::shared_ptr<Layer> layer);
+  virtual void Add(std::shared_ptr<Layer> layer);
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 #if defined(OS_FUCHSIA)
