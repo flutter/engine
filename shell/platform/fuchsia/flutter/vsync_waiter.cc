@@ -17,7 +17,8 @@ VsyncWaiter::VsyncWaiter(std::string debug_label,
     : flutter::VsyncWaiter(task_runners),
       debug_label_(std::move(debug_label)),
       session_wait_(session_present_handle, SessionPresentSignal),
-      weak_factory_(this) {
+      weak_factory_(this),
+      weak_factory_ui_(nullptr) {
   auto wait_handler = [&](async_dispatcher_t* dispatcher,   //
                           async::Wait* wait,                //
                           zx_status_t status,               //
@@ -31,13 +32,30 @@ VsyncWaiter::VsyncWaiter(std::string debug_label,
     wait->Cancel();
 
     FireCallbackNow();
-  };
+
+    // Generate a WeakPtrFactory for use with the UI thread. This does not need
+    // to wait on a latch because we only ever use the WeakPtrFactory on the UI thread
+    // so we have ordering guarantees (see ::AwaitVSync())
+    fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(), fml::MakeCopyable([this]() mutable {
+        this->weak_factory_ui_ =
+            std::make_unique<fml::WeakPtrFactory<VsyncWaiter>>(this);
+      }));
+    };
 
   session_wait_.set_handler(wait_handler);
 }
 
 VsyncWaiter::~VsyncWaiter() {
   session_wait_.Cancel();
+
+  fml::AutoResetWaitableEvent ui_latch;
+  fml::MakeCopyable([weak_factory_ui = std::move(weak_factory_ui_),
+                     &ui_latch]() mutable {
+        weak_factory_ui.reset();
+        ui_latch.Signal();
+      }));
+  ui_latch.Wait();
 }
 
 static fml::TimePoint SnapToNextPhase(fml::TimePoint value,
@@ -57,7 +75,7 @@ void VsyncWaiter::AwaitVSync() {
   fml::TimePoint next_vsync = SnapToNextPhase(now, vsync_info.presentation_time,
                                               vsync_info.presentation_interval);
   task_runners_.GetUITaskRunner()->PostDelayedTask(
-      [self = weak_factory_.GetWeakPtr()] {
+      [self = weak_factory_ui_.GetWeakPtr()] {
         if (self) {
           self->FireCallbackWhenSessionAvailable();
         }
