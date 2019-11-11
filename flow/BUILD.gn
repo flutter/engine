@@ -109,7 +109,10 @@ executable("flow_unittests") {
     "flow_run_all_unittests.cc",
     "flow_test_utils.cc",
     "flow_test_utils.h",
+    "layers/layer_test.cc",
+    "layers/layer_test.h",
     "layers/performance_overlay_layer_unittests.cc",
+    "layers/opacity_layer_unittests.cc",
     "layers/physical_shape_layer_unittests.cc",
     "matrix_decomposition_unittests.cc",
     "mutators_stack_unittests.cc",
@@ -122,6 +125,7 @@ executable("flow_unittests") {
     ":flow",
     ":flow_fixtures",
     "$flutter_root/fml",
+    "$flutter_root/testing:skia",
     "$flutter_root/testing:testing_lib",
     "//third_party/dart/runtime:libdart_jit",  # for tracing
     "//third_party/googletest:gtest",

@@ -52,6 +52,8 @@ source_set("skia") {
 
   sources = [
     "$flutter_root/testing/assertions_skia.h",
+    "$flutter_root/testing/mock_canvas.cc",
+    "$flutter_root/testing/mock_canvas.h",
   ]
 
   public_deps = [
