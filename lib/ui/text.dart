@@ -1680,8 +1680,6 @@ class LineMetrics {
     this.left,
     this.baseline,
     this.lineNumber,
-    this.startIndex,
-    this.endIndex,
   });
 
   @pragma('vm:entry-point')
@@ -1695,8 +1693,6 @@ class LineMetrics {
     this.left,
     this.baseline,
     this.lineNumber,
-    this.startIndex,
-    this.endIndex,
   );
 
   /// True if this line ends with an explicit line break (e.g. '\n') or is the end
@@ -1764,13 +1760,6 @@ class LineMetrics {
   ///
   /// For example, the first line is line 0, second line is line 1.
   final int lineNumber;
-
-  /// The starting text index for this line, in Unicode code points.
-  final int startIndex;
-
-  /// The ending text index, including the newline for this line, in Unicode
-  /// code points.
-  final int endIndex;
 }
 
 /// A paragraph of text.
@@ -1882,16 +1871,8 @@ class Paragraph extends NativeFieldWrapperClass2 {
   /// on both sides. In such cases, this method will return [offset, offset+1].
   /// Word boundaries are defined more precisely in Unicode Standard Annex #29
   /// http://www.unicode.org/reports/tr29/#Word_Boundaries
-  TextRange getWordBoundary(dynamic position) {
-    // TODO(gspencergoog): have this take only a TextPosition once the framework
-    // code is calling it with that.
-    List<int> boundary;
-    if (position is TextPosition) {
-      boundary = _getWordBoundary(position.offset);
-    } else {
-      final int offset = position;
-      boundary = _getWordBoundary(offset);
-    }
+  TextRange getWordBoundary(TextPosition position) {
+    final List<int> boundary = _getWordBoundary(position.offset);
     return TextRange(start: boundary[0], end: boundary[1]);
   }
   List<int> _getWordBoundary(int offset) native 'Paragraph_getWordBoundary';
@@ -1901,10 +1882,12 @@ class Paragraph extends NativeFieldWrapperClass2 {
   /// The newline (if any) is returned as part of the range.
   ///
   /// This can potentially be expensive, since it needs to compute the line
-  /// metrics, so use it sparingly. If higher performance is needed, caching the
-  /// results of [computeLineMetrics] is recommended (which also contains the
-  /// start and end of each line).
-  List<int> getLineBoundary(int offset) native 'Paragraph_getLineBoundary';
+  /// metrics, so use it sparingly.
+  TextRange getLineBoundary(TextPosition position) {
+    final List<int> boundary = _getLineBoundary(position.offset);
+    return TextRange(start: boundary[0], end: boundary[1]);
+  }
+  List<int> _getLineBoundary(int offset) native 'Paragraph_getLineBoundary';
 
   // Redirecting the paint function in this way solves some dependency problems
   // in the C++ code. If we straighten out the C++ dependencies, we can remove

@@ -158,8 +158,7 @@ std::vector<LineMetrics> Paragraph::computeLineMetrics() {
   for (txt::LineMetrics& line : metrics) {
     result.emplace_back(&line.hard_break, &line.ascent, &line.descent,
                         &line.unscaled_ascent, &line.height, &line.width,
-                        &line.left, &line.baseline, &line.line_number,
-                        &line.start_index, &line.end_index);
+                        &line.left, &line.baseline, &line.line_number);
   }
   return result;
 }
