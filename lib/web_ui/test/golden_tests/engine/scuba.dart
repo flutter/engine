@@ -72,7 +72,9 @@ class EngineScubaTester {
 typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
 
 /// Runs the given test [body] with each type of canvas.
-void testEachCanvas(String description, CanvasTest body) {
+void testEachCanvas(String description, CanvasTest body, {
+      bool bSkipHoudini = false
+    }) {
   const ui.Rect bounds = ui.Rect.fromLTWH(0, 0, 600, 800);
   test('$description (bitmap)', () {
     try {
@@ -100,14 +102,16 @@ void testEachCanvas(String description, CanvasTest body) {
       TextMeasurementService.clearCache();
     }
   });
-  test('$description (houdini)', () {
-    try {
-      TextMeasurementService.initialize(rulerCacheCapacity: 2);
-      return body(HoudiniCanvas(bounds));
-    } finally {
-      TextMeasurementService.clearCache();
-    }
-  });
+  if (!bSkipHoudini) {
+    test('$description (houdini)', () {
+      try {
+        TextMeasurementService.initialize(rulerCacheCapacity: 2);
+        return body(HoudiniCanvas(bounds));
+      } finally {
+        TextMeasurementService.clearCache();
+      }
+    });
+  }
 }
 
 final ui.TextStyle _defaultTextStyle = ui.TextStyle(

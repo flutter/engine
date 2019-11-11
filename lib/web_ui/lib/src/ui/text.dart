@@ -552,7 +552,6 @@ abstract class ParagraphStyle {
     StrutStyle strutStyle,
     String ellipsis,
     Locale locale,
-    List<Shadow> shadows,
   }) = engine.EngineParagraphStyle;
 
   @override
