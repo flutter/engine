@@ -1085,7 +1085,7 @@ void _applyParagraphStyleToElement({
           style._fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
     }
     if (style._effectiveFontFamily != null) {
-      cssStyle.fontFamily = quoteFontFamily(style._effectiveFontFamily);
+      cssStyle.fontFamily = canonicalizeFontFamily(style._effectiveFontFamily);
     }
   } else {
     if (style._textAlign != previousStyle._textAlign) {
@@ -1111,7 +1111,7 @@ void _applyParagraphStyleToElement({
           : null;
     }
     if (style._fontFamily != previousStyle._fontFamily) {
-      cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
+      cssStyle.fontFamily = canonicalizeFontFamily(style._fontFamily);
     }
   }
 }
@@ -1151,11 +1151,11 @@ void _applyTextStyleToElement({
     // consistently use Ahem font.
     if (isSpan && !ui.debugEmulateFlutterTesterEnvironment) {
       if (style._fontFamily != null) {
-        cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
+        cssStyle.fontFamily = canonicalizeFontFamily(style._fontFamily);
       }
     } else {
       if (style._effectiveFontFamily != null) {
-        cssStyle.fontFamily = quoteFontFamily(style._effectiveFontFamily);
+        cssStyle.fontFamily = canonicalizeFontFamily(style._effectiveFontFamily);
       }
     }
     if (style._letterSpacing != null) {
@@ -1189,7 +1189,7 @@ void _applyTextStyleToElement({
           : null;
     }
     if (style._fontFamily != previousStyle._fontFamily) {
-      cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
+      cssStyle.fontFamily = canonicalizeFontFamily(style._fontFamily);
     }
     if (style._letterSpacing != previousStyle._letterSpacing) {
       cssStyle.letterSpacing = '${style._letterSpacing}px';
