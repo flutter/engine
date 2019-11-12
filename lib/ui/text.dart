@@ -1343,6 +1343,15 @@ enum TextAffinity {
   /// just to the right of the "H". See the definition of [TextAffinity] for the
   /// full example.
   downstream,
+
+  /// The position is explicitly ambiguous. This indicates that at this point,
+  /// we are unable to distinguish between upstream and downstream affinity.
+  ///
+  /// Some platform APIs do not specify affinity.
+  ///
+  /// This is usually used to indicate that if a default or previous affinity is
+  /// known, we should use it instead.
+  ambiguous,
 }
 
 /// A position in a string of text.
