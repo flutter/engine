@@ -512,6 +512,8 @@ FILE: ../../../flutter/shell/common/pointer_data_dispatcher.cc
 FILE: ../../../flutter/shell/common/pointer_data_dispatcher.h
 FILE: ../../../flutter/shell/common/rasterizer.cc
 FILE: ../../../flutter/shell/common/rasterizer.h
+FILE: ../../../flutter/shell/common/renderer_context_switch_manager.cc
+FILE: ../../../flutter/shell/common/renderer_context_switch_manager.h
 FILE: ../../../flutter/shell/common/run_configuration.cc
 FILE: ../../../flutter/shell/common/run_configuration.h
 FILE: ../../../flutter/shell/common/shell.cc
@@ -801,6 +803,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context_switch_manager.h
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context_switch_manager.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_render_target.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_render_target.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface.h
@@ -879,6 +883,7 @@ FILE: ../../../flutter/shell/platform/embedder/fixtures/main.dart
 FILE: ../../../flutter/shell/platform/embedder/fixtures/scene_without_custom_compositor.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/scene_without_custom_compositor_with_xform.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/verifyb143464703.png
+FILE: ../../../flutter/shell/platform/embedder/fixtures/verifyb143464703_soft_noxform.png
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.h
 FILE: ../../../flutter/shell/platform/embedder/vsync_waiter_embedder.cc
