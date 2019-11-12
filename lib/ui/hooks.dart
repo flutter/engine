@@ -326,7 +326,7 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
       kind: PointerDeviceKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       signalKind: PointerSignalKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       device: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      pointer: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      pointerIdentifier: packet.getInt64(kStride * offset++, _kFakeHostEndian),
       physicalX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       physicalY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       physicalDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),

@@ -1125,8 +1125,8 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     pointer_data.physical_delta_x = 0.0;
     pointer_data.physical_delta_y = 0.0;
     pointer_data.device = SAFE_ACCESS(current, device, 0);
-    // Pointer will be generated in pointer_data_packet_converter.cc.
-    pointer_data.pointer = 0;
+    // Pointer identifier will be generated in pointer_data_packet_converter.cc.
+    pointer_data.pointer_identifier = 0;
     pointer_data.signal_kind = ToPointerDataSignalKind(
         SAFE_ACCESS(current, signal_kind, kFlutterPointerSignalKindNone));
     pointer_data.scroll_delta_x = SAFE_ACCESS(current, scroll_delta_x, 0.0);

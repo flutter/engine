@@ -22,17 +22,42 @@ namespace flutter {
 /// packet sent from embedding.
 ///
 struct PointerState {
-  int64_t pointer;
+  int64_t pointer_identifier;
   bool isDown;
   double physical_x;
   double physical_y;
 };
 
 //------------------------------------------------------------------------------
-/// Converter to expend the raw pointer data packet from the platforms.
+/// Converter to convert the raw pointer data packet from the platforms.
 ///
-/// All pointer data packets that are sent from all the platforms must go
-/// through this converter before sending them to framework.
+/// Framework requires certain information to process pointer data. e.g. pointer
+/// identifier and the delta of pointer moment. The converter keeps track each pointer
+/// state and fill in those information appropriately.
+///
+/// The converter is also resposible for providing a clean pointer data stream.
+/// It will attempt to correct the stream if the it contains illegal pointer
+/// transitions.
+///
+/// Example 1 Missing Add:
+///
+///     Down(position x) -> Up(position x)
+///    
+///     ###After Conversion###
+///
+///     Synthesized_Add(position x) -> Down(position x) -> Up(position x)
+///
+/// Example 2 Missing another move:
+///
+///     Add(position x) -> Down(position x) -> Move(position y) -> Up(position z)
+///
+///     ###After Conversion###
+///
+///     Add(position x) -> Down(position x) -> Move(position y) ->
+///     Synthesized_Move(position z) -> Up(position z)
+///
+/// Platform view is the only client that uses this class to convert all the
+/// incoming pointer packet and is responsible for the life cycle of its instance.
 ///
 class PointerDataPacketConverter {
  public:
@@ -40,21 +65,21 @@ class PointerDataPacketConverter {
   ~PointerDataPacketConverter();
 
   //----------------------------------------------------------------------------
-  /// @brief      Expands pointer data packet into a form that framework
+  /// @brief      Converts pointer data packet into a form that framework
   ///             understands. The raw pointer data packet from embedding does
   ///             not have sufficient information and may contain illegal
-  ///             pointer events. This method will fill out those information
-  ///             and attempt to correct pointer events.
+  ///             pointer transitions. This method will fill out that information
+  ///             and attempt to correct pointer transitions.
   ///
   /// @param[in]  packet                   The raw pointer packet sent from
   ///                                      embedding.
   ///
-  /// @return     A full Expended packet with all the required information
+  /// @return     A full converted packet with all the required information
   /// filled.
-  ///             It may contain synthetic pointer event as the result of
-  ///             converter's attempt to correct illegal pointer events.
+  ///             It may contain synthetic pointer data as the result of
+  ///             converter's attempt to correct illegal pointer transitions.
   ///
-  std::unique_ptr<PointerDataPacket> Expand(
+  std::unique_ptr<PointerDataPacket> Convert(
       std::unique_ptr<PointerDataPacket> packet);
 
  private:
@@ -62,14 +87,14 @@ class PointerDataPacketConverter {
 
   int64_t pointer_;
 
-  void ExpandPointerData(PointerData pointer_data,
+  void ConvertPointerData(PointerData pointer_data,
                          std::vector<PointerData>& converted_pointers);
 
   PointerState EnsurePointerState(PointerData pointer_data);
 
   void UpdateDeltaAndState(PointerData& pointer_data, PointerState& state);
 
-  void UpdatePointer(PointerData& pointer_data,
+  void UpdatePointerIdentifier(PointerData& pointer_data,
                      PointerState& state,
                      bool start_new_pointer);
 

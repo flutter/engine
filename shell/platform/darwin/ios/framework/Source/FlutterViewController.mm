@@ -507,7 +507,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
       pointer_data.change = flutter::PointerData::Change::kCancel;
       pointer_data.kind = flutter::PointerData::DeviceKind::kTouch;
       pointer_data.device = device.longLongValue;
-      pointer_data.pointer = 0;
+      pointer_data.pointer_identifier = 0;
 
       // Anything we put here will be arbitrary since there are no touches.
       pointer_data.physical_x = 0;
@@ -633,7 +633,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     pointer_data.device = reinterpret_cast<int64_t>(touch);
 
     // Pointer will be generated in pointer_data_packet_converter.cc.
-    pointer_data.pointer = 0;
+    pointer_data.pointer_identifier = 0;
 
     pointer_data.physical_x = windowCoordinates.x * scale;
     pointer_data.physical_y = windowCoordinates.y * scale;

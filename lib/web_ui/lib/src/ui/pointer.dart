@@ -75,7 +75,7 @@ class PointerData {
     this.kind = PointerDeviceKind.touch,
     this.signalKind,
     this.device = 0,
-    this.pointer = 0,
+    this.pointerIdentifier = 0,
     this.physicalX = 0.0,
     this.physicalY = 0.0,
     this.physicalDeltaX = 0.0,
@@ -115,9 +115,11 @@ class PointerData {
   /// Unique identifier for the pointing device, reused across interactions.
   final int device;
 
-  /// Unique identifier for the pointer, not reused. Changes for each new
-  /// pointer down event.
-  final int pointer;
+  /// Unique identifier for the pointer.
+  /// 
+  /// This field changes for each new pointer down event. Framework uses this
+  /// identifier to determine hit test result.
+  final int pointerIdentifier;
 
   /// X coordinate of the position of the pointer, in physical pixels in the
   /// global coordinate space.
@@ -264,7 +266,7 @@ class PointerData {
         'kind: $kind, '
         'signalKind: $signalKind, '
         'device: $device, '
-        'pointer: $pointer, '
+        'pointerIdentifier: $pointerIdentifier, '
         'physicalX: $physicalX, '
         'physicalY: $physicalY, '
         'physicalDeltaX: $physicalDeltaX, '

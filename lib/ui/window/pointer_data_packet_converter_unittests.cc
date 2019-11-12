@@ -18,7 +18,7 @@ void CreateSimulatedPointerData(PointerData& data,
   data.kind = PointerData::DeviceKind::kTouch;
   data.signal_kind = PointerData::SignalKind::kNone;
   data.device = device;
-  data.pointer = 0;
+  data.pointer_identifier = 0;
   data.physical_x = dx;
   data.physical_y = dy;
   data.physical_delta_x = 0.0;
@@ -56,7 +56,7 @@ void CreateSimulatedMousePointerData(PointerData& data,
   data.kind = PointerData::DeviceKind::kMouse;
   data.signal_kind = signal_kind;
   data.device = device;
-  data.pointer = 0;
+  data.pointer_identifier = 0;
   data.physical_x = dx;
   data.physical_y = dy;
   data.physical_delta_x = 0.0;
@@ -88,15 +88,13 @@ void UnpackPointerPacket(std::vector<PointerData>& output,
   size_t buffer_length = buffer.size();
 
   for (size_t i = 0; i < buffer_length / kBytesPerPointerData; i++) {
-    PointerData pointer_data;
-    memcpy(&pointer_data, &buffer[i * kBytesPerPointerData],
-           sizeof(PointerData));
+    PointerData pointer_data = *(reinterpret_cast<PointerData *>(&buffer[i * kBytesPerPointerData]));
     output.push_back(pointer_data);
   }
   packet.reset();
 }
 
-TEST(PointerDataPacketConverterTest, CanExpendPointerDataPacket) {
+TEST(PointerDataPacketConverterTest, CanConvetPointerDataPacket) {
   PointerDataPacketConverter converter;
   auto packet = std::make_unique<PointerDataPacket>(6);
   PointerData data;
@@ -112,10 +110,10 @@ TEST(PointerDataPacketConverterTest, CanExpendPointerDataPacket) {
   packet->SetPointerData(4, data);
   CreateSimulatedPointerData(data, PointerData::Change::kRemove, 0, 3.0, 4.0);
   packet->SetPointerData(5, data);
-  auto expanded_packet = converter.Expand(std::move(packet));
+  auto converted_packet = converter.Convert(std::move(packet));
 
   std::vector<PointerData> result;
-  UnpackPointerPacket(result, std::move(expanded_packet));
+  UnpackPointerPacket(result, std::move(converted_packet));
 
   ASSERT_EQ(result.size(), (size_t)6);
   ASSERT_EQ(result[0].change, PointerData::Change::kAdd);
@@ -127,17 +125,17 @@ TEST(PointerDataPacketConverterTest, CanExpendPointerDataPacket) {
   ASSERT_EQ(result[1].physical_delta_y, 0.0);
 
   ASSERT_EQ(result[2].change, PointerData::Change::kDown);
-  ASSERT_EQ(result[2].pointer, 1);
+  ASSERT_EQ(result[2].pointer_identifier, 1);
   ASSERT_EQ(result[2].synthesized, 0);
 
   ASSERT_EQ(result[3].change, PointerData::Change::kMove);
-  ASSERT_EQ(result[3].pointer, 1);
+  ASSERT_EQ(result[3].pointer_identifier, 1);
   ASSERT_EQ(result[3].synthesized, 0);
   ASSERT_EQ(result[3].physical_delta_x, 0.0);
   ASSERT_EQ(result[3].physical_delta_y, 4.0);
 
   ASSERT_EQ(result[4].change, PointerData::Change::kUp);
-  ASSERT_EQ(result[4].pointer, 1);
+  ASSERT_EQ(result[4].pointer_identifier, 1);
   ASSERT_EQ(result[4].synthesized, 0);
 
   ASSERT_EQ(result[5].change, PointerData::Change::kRemove);
@@ -156,10 +154,10 @@ TEST(PointerDataPacketConverterTest, CanSynthesizeDownAndUp) {
   packet->SetPointerData(2, data);
   CreateSimulatedPointerData(data, PointerData::Change::kRemove, 0, 3.0, 4.0);
   packet->SetPointerData(3, data);
-  auto expanded_packet = converter.Expand(std::move(packet));
+  auto converted_packet = converter.Convert(std::move(packet));
 
   std::vector<PointerData> result;
-  UnpackPointerPacket(result, std::move(expanded_packet));
+  UnpackPointerPacket(result, std::move(converted_packet));
 
   ASSERT_EQ(result.size(), (size_t)6);
   ASSERT_EQ(result[0].change, PointerData::Change::kAdd);
@@ -172,25 +170,25 @@ TEST(PointerDataPacketConverterTest, CanSynthesizeDownAndUp) {
   ASSERT_EQ(result[1].physical_delta_y, 0.0);
 
   ASSERT_EQ(result[2].change, PointerData::Change::kDown);
-  ASSERT_EQ(result[2].pointer, 1);
+  ASSERT_EQ(result[2].pointer_identifier, 1);
   ASSERT_EQ(result[2].synthesized, 0);
 
   // A move should be synthesized.
   ASSERT_EQ(result[3].change, PointerData::Change::kMove);
-  ASSERT_EQ(result[3].pointer, 1);
+  ASSERT_EQ(result[3].pointer_identifier, 1);
   ASSERT_EQ(result[3].synthesized, 1);
   ASSERT_EQ(result[3].physical_delta_x, 0.0);
   ASSERT_EQ(result[3].physical_delta_y, 4.0);
 
   ASSERT_EQ(result[4].change, PointerData::Change::kUp);
-  ASSERT_EQ(result[4].pointer, 1);
+  ASSERT_EQ(result[4].pointer_identifier, 1);
   ASSERT_EQ(result[4].synthesized, 0);
 
   ASSERT_EQ(result[5].change, PointerData::Change::kRemove);
   ASSERT_EQ(result[5].synthesized, 0);
 }
 
-TEST(PointerDataPacketConverterTest, CanUpdatePointerCount) {
+TEST(PointerDataPacketConverterTest, CanUpdatePointerIdentifier) {
   PointerDataPacketConverter converter;
   auto packet = std::make_unique<PointerDataPacket>(7);
   PointerData data;
@@ -208,36 +206,36 @@ TEST(PointerDataPacketConverterTest, CanUpdatePointerCount) {
   packet->SetPointerData(5, data);
   CreateSimulatedPointerData(data, PointerData::Change::kRemove, 0, 3.0, 0.0);
   packet->SetPointerData(6, data);
-  auto expanded_packet = converter.Expand(std::move(packet));
+  auto converted_packet = converter.Convert(std::move(packet));
 
   std::vector<PointerData> result;
-  UnpackPointerPacket(result, std::move(expanded_packet));
+  UnpackPointerPacket(result, std::move(converted_packet));
 
   ASSERT_EQ(result.size(), (size_t)7);
   ASSERT_EQ(result[0].change, PointerData::Change::kAdd);
   ASSERT_EQ(result[0].synthesized, 0);
 
   ASSERT_EQ(result[1].change, PointerData::Change::kDown);
-  ASSERT_EQ(result[1].pointer, 1);
+  ASSERT_EQ(result[1].pointer_identifier, 1);
   ASSERT_EQ(result[1].synthesized, 0);
 
   ASSERT_EQ(result[2].change, PointerData::Change::kUp);
-  ASSERT_EQ(result[2].pointer, 1);
+  ASSERT_EQ(result[2].pointer_identifier, 1);
   ASSERT_EQ(result[2].synthesized, 0);
 
   // Pointer count increase to 2.
   ASSERT_EQ(result[3].change, PointerData::Change::kDown);
-  ASSERT_EQ(result[3].pointer, 2);
+  ASSERT_EQ(result[3].pointer_identifier, 2);
   ASSERT_EQ(result[3].synthesized, 0);
 
   ASSERT_EQ(result[4].change, PointerData::Change::kMove);
-  ASSERT_EQ(result[4].pointer, 2);
+  ASSERT_EQ(result[4].pointer_identifier, 2);
   ASSERT_EQ(result[4].synthesized, 0);
   ASSERT_EQ(result[4].physical_delta_x, 3.0);
   ASSERT_EQ(result[4].physical_delta_y, 0.0);
 
   ASSERT_EQ(result[5].change, PointerData::Change::kUp);
-  ASSERT_EQ(result[5].pointer, 2);
+  ASSERT_EQ(result[5].pointer_identifier, 2);
   ASSERT_EQ(result[5].synthesized, 0);
 
   ASSERT_EQ(result[6].change, PointerData::Change::kRemove);
@@ -272,10 +270,10 @@ TEST(PointerDataPacketConverterTest, CanWorkWithDifferentDevices) {
   packet->SetPointerData(10, data);
   CreateSimulatedPointerData(data, PointerData::Change::kRemove, 1, 0.0, 4.0);
   packet->SetPointerData(11, data);
-  auto expanded_packet = converter.Expand(std::move(packet));
+  auto converted_packet = converter.Convert(std::move(packet));
 
   std::vector<PointerData> result;
-  UnpackPointerPacket(result, std::move(expanded_packet));
+  UnpackPointerPacket(result, std::move(converted_packet));
 
   ASSERT_EQ(result.size(), (size_t)12);
   ASSERT_EQ(result[0].change, PointerData::Change::kAdd);
@@ -284,7 +282,7 @@ TEST(PointerDataPacketConverterTest, CanWorkWithDifferentDevices) {
 
   ASSERT_EQ(result[1].change, PointerData::Change::kDown);
   ASSERT_EQ(result[1].device, 0);
-  ASSERT_EQ(result[1].pointer, 1);
+  ASSERT_EQ(result[1].pointer_identifier, 1);
   ASSERT_EQ(result[1].synthesized, 0);
 
   ASSERT_EQ(result[2].change, PointerData::Change::kAdd);
@@ -293,41 +291,41 @@ TEST(PointerDataPacketConverterTest, CanWorkWithDifferentDevices) {
 
   ASSERT_EQ(result[3].change, PointerData::Change::kDown);
   ASSERT_EQ(result[3].device, 1);
-  ASSERT_EQ(result[3].pointer, 2);
+  ASSERT_EQ(result[3].pointer_identifier, 2);
   ASSERT_EQ(result[3].synthesized, 0);
 
   ASSERT_EQ(result[4].change, PointerData::Change::kUp);
   ASSERT_EQ(result[4].device, 0);
-  ASSERT_EQ(result[4].pointer, 1);
+  ASSERT_EQ(result[4].pointer_identifier, 1);
   ASSERT_EQ(result[4].synthesized, 0);
 
   ASSERT_EQ(result[5].change, PointerData::Change::kDown);
   ASSERT_EQ(result[5].device, 0);
-  ASSERT_EQ(result[5].pointer, 3);
+  ASSERT_EQ(result[5].pointer_identifier, 3);
   ASSERT_EQ(result[5].synthesized, 0);
 
   ASSERT_EQ(result[6].change, PointerData::Change::kMove);
   ASSERT_EQ(result[6].device, 1);
-  ASSERT_EQ(result[6].pointer, 2);
+  ASSERT_EQ(result[6].pointer_identifier, 2);
   ASSERT_EQ(result[6].synthesized, 0);
   ASSERT_EQ(result[6].physical_delta_x, 0.0);
   ASSERT_EQ(result[6].physical_delta_y, 4.0);
 
   ASSERT_EQ(result[7].change, PointerData::Change::kMove);
   ASSERT_EQ(result[7].device, 0);
-  ASSERT_EQ(result[7].pointer, 3);
+  ASSERT_EQ(result[7].pointer_identifier, 3);
   ASSERT_EQ(result[7].synthesized, 0);
   ASSERT_EQ(result[7].physical_delta_x, 3.0);
   ASSERT_EQ(result[7].physical_delta_y, 0.0);
 
   ASSERT_EQ(result[8].change, PointerData::Change::kUp);
   ASSERT_EQ(result[8].device, 1);
-  ASSERT_EQ(result[8].pointer, 2);
+  ASSERT_EQ(result[8].pointer_identifier, 2);
   ASSERT_EQ(result[8].synthesized, 0);
 
   ASSERT_EQ(result[9].change, PointerData::Change::kUp);
   ASSERT_EQ(result[9].device, 0);
-  ASSERT_EQ(result[9].pointer, 3);
+  ASSERT_EQ(result[9].pointer_identifier, 3);
   ASSERT_EQ(result[9].synthesized, 0);
 
   ASSERT_EQ(result[10].change, PointerData::Change::kRemove);
@@ -347,10 +345,10 @@ TEST(PointerDataPacketConverterTest, CanSynthesizeAdd) {
   packet->SetPointerData(0, data);
   CreateSimulatedPointerData(data, PointerData::Change::kUp, 0, 0.0, 0.0);
   packet->SetPointerData(1, data);
-  auto expanded_packet = converter.Expand(std::move(packet));
+  auto converted_packet = converter.Convert(std::move(packet));
 
   std::vector<PointerData> result;
-  UnpackPointerPacket(result, std::move(expanded_packet));
+  UnpackPointerPacket(result, std::move(converted_packet));
 
   ASSERT_EQ(result.size(), (size_t)4);
   // A add should be synthesized.
@@ -387,14 +385,14 @@ TEST(PointerDataPacketConverterTest, CanHandleThreeFingerGesture) {
   auto packet = std::make_unique<PointerDataPacket>(1);
   CreateSimulatedPointerData(data, PointerData::Change::kDown, 0, 0.0, 0.0);
   packet->SetPointerData(0, data);
-  auto expanded_packet = converter.Expand(std::move(packet));
-  UnpackPointerPacket(result, std::move(expanded_packet));
+  auto converted_packet = converter.Convert(std::move(packet));
+  UnpackPointerPacket(result, std::move(converted_packet));
   // Second finger down.
   packet = std::make_unique<PointerDataPacket>(1);
   CreateSimulatedPointerData(data, PointerData::Change::kDown, 1, 33.0, 44.0);
   packet->SetPointerData(0, data);
-  expanded_packet = converter.Expand(std::move(packet));
-  UnpackPointerPacket(result, std::move(expanded_packet));
+  converted_packet = converter.Convert(std::move(packet));
+  UnpackPointerPacket(result, std::move(converted_packet));
   // Triggers three cancels.
   packet = std::make_unique<PointerDataPacket>(3);
   CreateSimulatedPointerData(data, PointerData::Change::kCancel, 1, 33.0, 44.0);
@@ -403,8 +401,8 @@ TEST(PointerDataPacketConverterTest, CanHandleThreeFingerGesture) {
   packet->SetPointerData(1, data);
   CreateSimulatedPointerData(data, PointerData::Change::kCancel, 2, 40.0, 50.0);
   packet->SetPointerData(2, data);
-  expanded_packet = converter.Expand(std::move(packet));
-  UnpackPointerPacket(result, std::move(expanded_packet));
+  converted_packet = converter.Convert(std::move(packet));
+  UnpackPointerPacket(result, std::move(converted_packet));
 
   ASSERT_EQ(result.size(), (size_t)6);
   ASSERT_EQ(result[0].change, PointerData::Change::kAdd);
@@ -445,7 +443,7 @@ TEST(PointerDataPacketConverterTest, CanHandleThreeFingerGesture) {
   // Third cancel should be dropped
 }
 
-TEST(PointerDataPacketConverterTest, CanExpendScroll) {
+TEST(PointerDataPacketConverterTest, CanConvetScroll) {
   PointerDataPacketConverter converter;
   auto packet = std::make_unique<PointerDataPacket>(5);
   PointerData data;
@@ -469,10 +467,10 @@ TEST(PointerDataPacketConverterTest, CanExpendScroll) {
                                   PointerData::SignalKind::kScroll, 1, 49.0,
                                   49.0, 50.0, 0.0);
   packet->SetPointerData(4, data);
-  auto expanded_packet = converter.Expand(std::move(packet));
+  auto converted_packet = converter.Convert(std::move(packet));
 
   std::vector<PointerData> result;
-  UnpackPointerPacket(result, std::move(expanded_packet));
+  UnpackPointerPacket(result, std::move(converted_packet));
 
   ASSERT_EQ(result.size(), (size_t)7);
   ASSERT_EQ(result[0].change, PointerData::Change::kAdd);

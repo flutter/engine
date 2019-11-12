@@ -150,7 +150,7 @@ void CreateSimulatedPointerData(PointerData& data,
   data.kind = PointerData::DeviceKind::kTouch;
   data.signal_kind = PointerData::SignalKind::kNone;
   data.device = 0;
-  data.pointer = 0;
+  data.pointer_identifier = 0;
   data.physical_x = dx;
   data.physical_y = dy;
   data.physical_delta_x = 0.0;

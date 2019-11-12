@@ -198,7 +198,7 @@ public class AndroidTouchProcessor {
     packet.putLong(pointerKind); // kind
     packet.putLong(signalKind); // signal_kind
     packet.putLong(event.getPointerId(pointerIndex)); // device
-    packet.putLong(0); // pointer, will be generated in pointer_data_packet_converter.cc.
+    packet.putLong(0); // pointer_identifier, will be generated in pointer_data_packet_converter.cc.
     packet.putDouble(event.getX(pointerIndex)); // physical_x
     packet.putDouble(event.getY(pointerIndex)); // physical_y
     packet.putDouble(0.0); // physical_delta_x, will be generated in pointer_data_packet_converter.cc.

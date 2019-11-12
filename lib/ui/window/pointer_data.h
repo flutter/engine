@@ -63,7 +63,7 @@ struct alignas(8) PointerData {
   DeviceKind kind;
   SignalKind signal_kind;
   int64_t device;
-  int64_t pointer;
+  int64_t pointer_identifier;
   double physical_x;
   double physical_y;
   double physical_delta_x;
