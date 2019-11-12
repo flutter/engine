@@ -216,6 +216,6 @@ void main() async {
 
   testEachCanvas('draws text with a shadow', (EngineCanvas canvas) {
     drawTextWithShadow(canvas);
-    return scuba.diffCanvasScreenshot(canvas, 'text_shadow', maxDiffRate: 0.02);
+    return scuba.diffCanvasScreenshot(canvas, 'text_shadow', maxDiffRate: 0.2);
   }, bSkipHoudini: true);
 }
