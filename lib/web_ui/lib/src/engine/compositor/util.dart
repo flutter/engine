@@ -193,6 +193,7 @@ js.JsArray<double> makeSkMatrix(Float64List matrix4) {
   return skMatrix;
 }
 
+// These must be kept in sync with `flow/layers/physical_shape_layer.cc`.
 const double kLightHeight = 600.0;
 const double kLightRadius = 800.0;
 

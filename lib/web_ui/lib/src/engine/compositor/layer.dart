@@ -341,8 +341,11 @@ class PhysicalShapeLayer extends ContainerLayer
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
     prerollChildren(prerollContext, matrix);
+
+    paintBounds = _path.getBounds();
     if (_elevation == 0.0) {
-      paintBounds = _path.getBounds();
+      // No need to extend the paint bounds if there is no shadow.
+      return;
     } else {
       // Add some margin to the paint bounds to leave space for the shadow.
       // We fill this whole region and clip children to it so we don't need to
@@ -377,20 +380,19 @@ class PhysicalShapeLayer extends ContainerLayer
       //        w = width of the layer
       //        h = light height
       //        t = tangent of AOB, i.e., multiplier for elevation to extent
-      ui.Rect bounds = _path.getBounds();
       final double devicePixelRatio = ui.window.devicePixelRatio;
+
+      final double radius = kLightRadius * devicePixelRatio;
       // tangent for x
-      double tx =
-          (kLightRadius * devicePixelRatio + bounds.width * 0.5) / kLightHeight;
+      double tx = (radius + paintBounds.width * 0.5) / kLightHeight;
       // tangent for y
-      double ty = (kLightRadius * devicePixelRatio + bounds.height * 0.5) /
-          kLightHeight;
+      double ty = (radius + paintBounds.height * 0.5) / kLightHeight;
 
       paintBounds = ui.Rect.fromLTRB(
-        bounds.left - tx,
-        bounds.top - ty,
-        bounds.right + tx,
-        bounds.bottom + ty,
+        paintBounds.left - tx,
+        paintBounds.top - ty,
+        paintBounds.right + tx,
+        paintBounds.bottom + ty,
       );
     }
   }
