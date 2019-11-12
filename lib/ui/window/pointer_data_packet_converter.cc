@@ -23,7 +23,8 @@ std::unique_ptr<PointerDataPacket> PointerDataPacketConverter::Convert(
   // Converts each pointer data in the buffer and stores it in the
   // converted_pointers.
   for (size_t i = 0; i < buffer_length / kBytesPerPointerData; i++) {
-    PointerData pointer_data = *(reinterpret_cast<PointerData *>(&buffer[i * kBytesPerPointerData]));
+    PointerData pointer_data =
+        *(reinterpret_cast<PointerData*>(&buffer[i * kBytesPerPointerData]));
     ConvertPointerData(pointer_data, converted_pointers);
   }
 
@@ -272,9 +273,10 @@ bool PointerDataPacketConverter::LocationNeedsUpdate(
          state.physical_y != pointer_data.physical_y;
 }
 
-void PointerDataPacketConverter::UpdatePointerIdentifier(PointerData& pointer_data,
-                                               PointerState& state,
-                                               bool start_new_pointer) {
+void PointerDataPacketConverter::UpdatePointerIdentifier(
+    PointerData& pointer_data,
+    PointerState& state,
+    bool start_new_pointer) {
   if (start_new_pointer) {
     state.pointer_identifier = ++pointer_;
     states_[pointer_data.device] = state;

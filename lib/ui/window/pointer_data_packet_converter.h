@@ -32,8 +32,8 @@ struct PointerState {
 /// Converter to convert the raw pointer data packet from the platforms.
 ///
 /// Framework requires certain information to process pointer data. e.g. pointer
-/// identifier and the delta of pointer moment. The converter keeps track each pointer
-/// state and fill in those information appropriately.
+/// identifier and the delta of pointer moment. The converter keeps track each
+/// pointer state and fill in those information appropriately.
 ///
 /// The converter is also resposible for providing a clean pointer data stream.
 /// It will attempt to correct the stream if the it contains illegal pointer
@@ -42,14 +42,15 @@ struct PointerState {
 /// Example 1 Missing Add:
 ///
 ///     Down(position x) -> Up(position x)
-///    
+///
 ///     ###After Conversion###
 ///
 ///     Synthesized_Add(position x) -> Down(position x) -> Up(position x)
 ///
 /// Example 2 Missing another move:
 ///
-///     Add(position x) -> Down(position x) -> Move(position y) -> Up(position z)
+///     Add(position x) -> Down(position x) -> Move(position y) ->
+///     Up(position z)
 ///
 ///     ###After Conversion###
 ///
@@ -57,7 +58,8 @@ struct PointerState {
 ///     Synthesized_Move(position z) -> Up(position z)
 ///
 /// Platform view is the only client that uses this class to convert all the
-/// incoming pointer packet and is responsible for the life cycle of its instance.
+/// incoming pointer packet and is responsible for the life cycle of its
+/// instance.
 ///
 class PointerDataPacketConverter {
  public:
@@ -68,8 +70,8 @@ class PointerDataPacketConverter {
   /// @brief      Converts pointer data packet into a form that framework
   ///             understands. The raw pointer data packet from embedding does
   ///             not have sufficient information and may contain illegal
-  ///             pointer transitions. This method will fill out that information
-  ///             and attempt to correct pointer transitions.
+  ///             pointer transitions. This method will fill out that
+  ///             information and attempt to correct pointer transitions.
   ///
   /// @param[in]  packet                   The raw pointer packet sent from
   ///                                      embedding.
@@ -88,15 +90,15 @@ class PointerDataPacketConverter {
   int64_t pointer_;
 
   void ConvertPointerData(PointerData pointer_data,
-                         std::vector<PointerData>& converted_pointers);
+                          std::vector<PointerData>& converted_pointers);
 
   PointerState EnsurePointerState(PointerData pointer_data);
 
   void UpdateDeltaAndState(PointerData& pointer_data, PointerState& state);
 
   void UpdatePointerIdentifier(PointerData& pointer_data,
-                     PointerState& state,
-                     bool start_new_pointer);
+                               PointerState& state,
+                               bool start_new_pointer);
 
   bool LocationNeedsUpdate(const PointerData pointer_data,
                            const PointerState state);
