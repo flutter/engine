@@ -36,15 +36,15 @@ VsyncWaiter::VsyncWaiter(std::string debug_label,
     FireCallbackNow();
   };
 
-  fml::AutoResetWaitableEvent ui_latch;
+  // Generate a WeakPtrFactory for use with the UI thread. This does not need
+  // to wait on a latch because we only ever use the WeakPtrFactory on the UI
+  // thread so we have ordering guarantees (see ::AwaitVSync())
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetUITaskRunner(),
-      fml::MakeCopyable([this, &ui_latch]() mutable {
+      fml::MakeCopyable([this]() mutable {
         this->weak_factory_ui_ =
             std::make_unique<fml::WeakPtrFactory<VsyncWaiter>>(this);
-        ui_latch.Signal();
       }));
-  ui_latch.Wait();
   session_wait_.set_handler(wait_handler);
 }
 
@@ -79,7 +79,11 @@ void VsyncWaiter::AwaitVSync() {
   fml::TimePoint next_vsync = SnapToNextPhase(now, vsync_info.presentation_time,
                                               vsync_info.presentation_interval);
   task_runners_.GetUITaskRunner()->PostDelayedTask(
-      [self = weak_factory_ui_->GetWeakPtr()] {
+      [&weak_factory_ui = this->weak_factory_ui_] {
+        if (!weak_factory_ui) {
+          return;
+        }
+        auto self = weak_factory_ui->GetWeakPtr();
         if (self) {
           self->FireCallbackWhenSessionAvailable();
         }
