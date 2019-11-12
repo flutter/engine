@@ -42,8 +42,6 @@ class VsyncWaiterTest : public testing::Test {
     EXPECT_EQ(status, ZX_OK);
   }
 
-  void TearDown() override {}
-
  private:
   zx::event vsync_event_;
 };
@@ -74,10 +72,10 @@ TEST_F(VsyncWaiterTest, AwaitVsync) {
                fml::TimePoint frame_target_time) { latch.Signal(); });
   SignalVsyncEvent();
 
-  bool signal = latch.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(5000));
+  bool did_timeout = latch.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(5000));
 
   // False indicates we were signalled rather than timed out
-  EXPECT_FALSE(signal);
+  EXPECT_FALSE(did_timeout);
 
   vsync_waiter.reset();
   for (const auto& thread : threads) {
