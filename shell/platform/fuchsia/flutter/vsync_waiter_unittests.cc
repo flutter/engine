@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include <array>
-#include <future>
 
 #include <gtest/gtest.h>
 #include <lib/zx/event.h>
@@ -55,6 +54,8 @@ TEST_F(VsyncWaiterTest, AwaitVsync) {
   for (auto& thread : threads) {
     thread.reset(new flutter_runner::Thread());
   }
+
+  async::Loop loop(&kAsyncLoopConfigAttachToThread);
 
   const flutter::TaskRunners task_runners(
       "VsyncWaiterTests",  // Dart thread labels
