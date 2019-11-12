@@ -4,6 +4,9 @@
 
 part of engine;
 
+/// The CanvasKit implementation of [ui.ImageFilter].
+///
+/// Currently only supports `blur`.
 class SkImageFilter implements ui.ImageFilter {
   js.JsObject skImageFilter;
 
@@ -18,10 +21,4 @@ class SkImageFilter implements ui.ImageFilter {
       ],
     );
   }
-
-  double get sigmaX => throw UnimplementedError(
-      'CanvasKit backend doesn\'t support ImageFilter.sigmaX');
-
-  double get sigmaY => throw UnimplementedError(
-      'CanvasKit backend doesn\'t support ImageFilter.sigmaY');
 }

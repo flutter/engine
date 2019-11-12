@@ -1603,29 +1603,22 @@ enum FilterQuality {
 ///  * [SceneBuilder.pushBackdropFilter], which is the low-level API for using
 ///    this class.
 class ImageFilter {
-  ImageFilter._(this.sigmaX, this.sigmaY);
-
   /// Creates an image filter that applies a Gaussian blur.
   factory ImageFilter.blur({double sigmaX = 0.0, double sigmaY = 0.0}) {
     if (engine.experimentalUseSkia) {
       return engine.SkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
     }
-    return ImageFilter._(sigmaX, sigmaY);
+    return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
   }
 
   ImageFilter.matrix(Float64List matrix4,
-      {FilterQuality filterQuality = FilterQuality.low})
-      : sigmaX = 0.0,
-        sigmaY = 0.0 {
+      {FilterQuality filterQuality = FilterQuality.low}) {
     // TODO(flutter_web): add implementation.
     throw UnimplementedError(
         'ImageFilter.matrix not implemented for web platform.');
     //    if (matrix4.length != 16)
     //      throw ArgumentError('"matrix4" must have 16 entries.');
   }
-
-  final double sigmaX;
-  final double sigmaY;
 }
 
 /// The format in which image bytes should be returned when using
