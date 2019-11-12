@@ -40,8 +40,7 @@ VsyncWaiter::VsyncWaiter(std::string debug_label,
   // to wait on a latch because we only ever use the WeakPtrFactory on the UI
   // thread so we have ordering guarantees (see ::AwaitVSync())
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetUITaskRunner(),
-      fml::MakeCopyable([this]() mutable {
+      task_runners_.GetUITaskRunner(), fml::MakeCopyable([this]() mutable {
         this->weak_factory_ui_ =
             std::make_unique<fml::WeakPtrFactory<VsyncWaiter>>(this);
       }));
@@ -79,7 +78,7 @@ void VsyncWaiter::AwaitVSync() {
   fml::TimePoint next_vsync = SnapToNextPhase(now, vsync_info.presentation_time,
                                               vsync_info.presentation_interval);
   task_runners_.GetUITaskRunner()->PostDelayedTask(
-      [&weak_factory_ui = this->weak_factory_ui_] {
+      [& weak_factory_ui = this->weak_factory_ui_] {
         if (!weak_factory_ui) {
           return;
         }
