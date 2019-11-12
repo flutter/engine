@@ -18,6 +18,7 @@ class EngineParagraph implements ui.Paragraph {
     @required ui.TextAlign textAlign,
     @required ui.TextDirection textDirection,
     @required ui.Paint background,
+    @required List<ui.Shadow> shadows,
   })  : assert((plainText == null && paint == null) ||
             (plainText != null && paint != null)),
         _paragraphElement = paragraphElement,
@@ -26,7 +27,8 @@ class EngineParagraph implements ui.Paragraph {
         _textAlign = textAlign,
         _textDirection = textDirection,
         _paint = paint,
-        _background = background;
+        _background = background,
+        _shadows = shadows;
 
   final html.HtmlElement _paragraphElement;
   final ParagraphGeometricStyle _geometricStyle;
@@ -35,6 +37,7 @@ class EngineParagraph implements ui.Paragraph {
   final ui.TextAlign _textAlign;
   final ui.TextDirection _textDirection;
   final ui.Paint _background;
+  final List<ui.Shadow> _shadows;
 
   @visibleForTesting
   String get plainText => _plainText;
@@ -281,14 +284,23 @@ class EngineParagraph implements ui.Paragraph {
   }
 
   @override
-  List<int> getWordBoundary(int offset) {
+  ui.TextRange getWordBoundary(ui.TextPosition position) {
+    ui.TextPosition textPosition = position;
     if (_plainText == null) {
-      return <int>[offset, offset];
+      return ui.TextRange(start: textPosition.offset, end: textPosition.offset);
     }
 
-    final int start = WordBreaker.prevBreakIndex(_plainText, offset);
-    final int end = WordBreaker.nextBreakIndex(_plainText, offset);
-    return <int>[start, end];
+    final int start =
+        WordBreaker.prevBreakIndex(_plainText, textPosition.offset);
+    final int end = WordBreaker.nextBreakIndex(_plainText, textPosition.offset);
+    return ui.TextRange(start: start, end: end);
+  }
+
+  @override
+  ui.TextRange getLineBoundary(ui.TextPosition position) {
+    // TODO(flutter_web): https://github.com/flutter/flutter/issues/39537
+    // Depends upon LineMetrics measurement.
+    return null;
   }
 
   @override
@@ -313,6 +325,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
     ui.StrutStyle strutStyle,
     String ellipsis,
     ui.Locale locale,
+    List<ui.Shadow> shadows,
   })  : _textAlign = textAlign,
         _textDirection = textDirection,
         _fontWeight = fontWeight,
@@ -324,7 +337,8 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
         // TODO(b/128317744): add support for strut style.
         _strutStyle = strutStyle,
         _ellipsis = ellipsis,
-        _locale = locale;
+        _locale = locale,
+        _shadows = shadows;
 
   final ui.TextAlign _textAlign;
   final ui.TextDirection _textDirection;
@@ -337,6 +351,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
   final EngineStrutStyle _strutStyle;
   final String _ellipsis;
   final ui.Locale _locale;
+  final List<ui.Shadow> _shadows;
 
   String get _effectiveFontFamily {
     if (assertionsEnabled) {
@@ -404,7 +419,8 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
           'fontSize: ${_fontSize != null ? _fontSize.toStringAsFixed(1) : "unspecified"}, '
           'height: ${_height != null ? "${_height.toStringAsFixed(1)}x" : "unspecified"}, '
           'ellipsis: ${_ellipsis != null ? "\"$_ellipsis\"" : "unspecified"}, '
-          'locale: ${_locale ?? "unspecified"}'
+          'locale: ${_locale ?? "unspecified"}, '
+          'shadows: ${_shadows ?? "unspecified"}'
           ')';
     } else {
       return super.toString();
@@ -790,6 +806,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
     ui.Locale locale = _paragraphStyle._locale;
     ui.Paint background;
     ui.Paint foreground;
+    List<ui.Shadow> shadows;
 
     int i = 0;
 
@@ -844,6 +861,9 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       if (style._foreground != null) {
         foreground = style._foreground;
       }
+      if (style._shadows != null) {
+        shadows = style._shadows;
+      }
       i++;
     }
 
@@ -863,6 +883,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       locale: locale,
       background: background,
       foreground: foreground,
+      shadows: shadows,
     );
 
     ui.Paint paint;
@@ -892,6 +913,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
           wordSpacing: wordSpacing,
           decoration: _textDecorationToCssString(decoration, decorationStyle),
           ellipsis: _paragraphStyle._ellipsis,
+          shadows: shadows,
         ),
         plainText: '',
         paint: paint,
@@ -945,6 +967,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
         wordSpacing: wordSpacing,
         decoration: _textDecorationToCssString(decoration, decorationStyle),
         ellipsis: _paragraphStyle._ellipsis,
+        shadows: shadows,
       ),
       plainText: plainText,
       paint: paint,
@@ -988,6 +1011,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
         lineHeight: _paragraphStyle._height,
         maxLines: _paragraphStyle._maxLines,
         ellipsis: _paragraphStyle._ellipsis,
+        shadows: _paragraphStyle._shadows,
       ),
       plainText: null,
       paint: null,
@@ -1072,7 +1096,10 @@ void _applyParagraphStyleToElement({
           style._fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
     }
     if (style._effectiveFontFamily != null) {
-      cssStyle.fontFamily = quoteFontFamily(style._effectiveFontFamily);
+      cssStyle.fontFamily = canonicalizeFontFamily(style._effectiveFontFamily);
+    }
+    if (style._shadows != null) {
+      cssStyle.textShadow = _shadowListToCss(style._shadows);
     }
   } else {
     if (style._textAlign != previousStyle._textAlign) {
@@ -1098,7 +1125,10 @@ void _applyParagraphStyleToElement({
           : null;
     }
     if (style._fontFamily != previousStyle._fontFamily) {
-      cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
+      cssStyle.fontFamily = canonicalizeFontFamily(style._fontFamily);
+    }
+    if (style._shadows != previousStyle._shadows) {
+      cssStyle.textShadow = _shadowListToCss(style._shadows);
     }
   }
 }
@@ -1138,11 +1168,12 @@ void _applyTextStyleToElement({
     // consistently use Ahem font.
     if (isSpan && !ui.debugEmulateFlutterTesterEnvironment) {
       if (style._fontFamily != null) {
-        cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
+        cssStyle.fontFamily = canonicalizeFontFamily(style._fontFamily);
       }
     } else {
       if (style._effectiveFontFamily != null) {
-        cssStyle.fontFamily = quoteFontFamily(style._effectiveFontFamily);
+        cssStyle.fontFamily =
+            canonicalizeFontFamily(style._effectiveFontFamily);
       }
     }
     if (style._letterSpacing != null) {
@@ -1153,6 +1184,9 @@ void _applyTextStyleToElement({
     }
     if (style._decoration != null) {
       updateDecoration = true;
+    }
+    if (style._shadows != null) {
+      cssStyle.textShadow = _shadowListToCss(style._shadows);
     }
   } else {
     if (style._color != previousStyle._color ||
@@ -1176,7 +1210,7 @@ void _applyTextStyleToElement({
           : null;
     }
     if (style._fontFamily != previousStyle._fontFamily) {
-      cssStyle.fontFamily = quoteFontFamily(style._fontFamily);
+      cssStyle.fontFamily = canonicalizeFontFamily(style._fontFamily);
     }
     if (style._letterSpacing != previousStyle._letterSpacing) {
       cssStyle.letterSpacing = '${style._letterSpacing}px';
@@ -1188,6 +1222,9 @@ void _applyTextStyleToElement({
         style._decorationStyle != previousStyle._decorationStyle ||
         style._decorationColor != previousStyle._decorationColor) {
       updateDecoration = true;
+    }
+    if (style._shadows != previousStyle._shadows) {
+      cssStyle.textShadow = _shadowListToCss(style._shadows);
     }
   }
 
@@ -1204,6 +1241,27 @@ void _applyTextStyleToElement({
       }
     }
   }
+}
+
+String _shadowListToCss(List<ui.Shadow> shadows) {
+  if (shadows.isEmpty) {
+    return '';
+  }
+  // CSS text-shadow is a comma separated list of shadows.
+  // <offsetx> <offsety> <blur-radius> <color>.
+  // Shadows are applied front-to-back with first shadow on top.
+  // Color is optional. offsetx,y are required. blur-radius is optional as well
+  // and defaults to 0.
+  StringBuffer sb = new StringBuffer();
+  for (int i = 0, len = shadows.length; i < len; i++) {
+    if (i != 0) {
+      sb.write(',');
+    }
+    ui.Shadow shadow = shadows[i];
+    sb.write('${shadow.offset.dx}px ${shadow.offset.dy}px '
+        '${shadow.blurRadius}px ${shadow.color.toCssString()}');
+  }
+  return sb.toString();
 }
 
 /// Applies background color properties in text style to paragraph or span

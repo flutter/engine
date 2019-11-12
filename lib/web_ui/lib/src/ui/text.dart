@@ -918,7 +918,7 @@ class TextRange {
   const TextRange({
     this.start,
     this.end,
-  }) : assert(start != null && start >= -1),
+  })  : assert(start != null && start >= -1),
         assert(end != null && end >= -1);
 
   /// A text range that starts and ends at offset.
@@ -971,20 +971,17 @@ class TextRange {
 
   @override
   bool operator ==(dynamic other) {
-    if (identical(this, other))
-      return true;
-    if (other is! TextRange)
-      return false;
+    if (identical(this, other)) return true;
+    if (other is! TextRange) return false;
     final TextRange typedOther = other;
-    return typedOther.start == start
-        && typedOther.end == end;
+    return typedOther.start == start && typedOther.end == end;
   }
 
   @override
   int get hashCode => hashValues(
-    start.hashCode,
-    end.hashCode,
-  );
+        start.hashCode,
+        end.hashCode,
+      );
 
   @override
   String toString() => 'TextRange(start: $start, end: $end)';
@@ -1237,12 +1234,23 @@ abstract class Paragraph {
   /// within the text.
   TextPosition getPositionForOffset(Offset offset);
 
-  /// Returns the [start, end] of the word at the given offset. Characters not
-  /// part of a word, such as spaces, symbols, and punctuation, have word breaks
-  /// on both sides. In such cases, this method will return [offset, offset+1].
-  /// Word boundaries are defined more precisely in Unicode Standard Annex #29
-  /// http://www.unicode.org/reports/tr29/#Word_Boundaries
-  List<int> getWordBoundary(int offset);
+  /// Returns the [TextRange] of the word at the given [TextPosition].
+  ///
+  /// Characters not part of a word, such as spaces, symbols, and punctuation,
+  /// have word breaks on both sides. In such cases, this method will return
+  /// [offset, offset+1]. Word boundaries are defined more precisely in Unicode
+  /// Standard Annex #29 http://www.unicode.org/reports/tr29/#Word_Boundaries
+  TextRange getWordBoundary(TextPosition  position);
+
+  /// Returns the [TextRange] of the line at the given [TextPosition].
+  ///
+  /// The newline (if any) is returned as part of the range.
+  ///
+  /// Not valid until after layout.
+  ///
+  /// This can potentially be expensive, since it needs to compute the line
+  /// metrics, so use it sparingly.
+  TextRange getLineBoundary(TextPosition position);
 
   /// Returns a list of text boxes that enclose all placeholders in the paragraph.
   ///
@@ -1252,6 +1260,13 @@ abstract class Paragraph {
   /// where positive y values indicate down.
   List<TextBox> getBoxesForPlaceholders();
 
+  /// Returns the full list of [LineMetrics] that describe in detail the various
+  /// metrics of each laid out line.
+  ///
+  /// Not valid until after layout.
+  ///
+  /// This can potentially return a large amount of data, so it is not recommended
+  /// to repeatedly call this. Instead, cache the results.
   List<LineMetrics> computeLineMetrics();
 }
 

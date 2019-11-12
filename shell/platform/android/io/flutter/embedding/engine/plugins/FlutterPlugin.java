@@ -9,6 +9,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 
 import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.platform.PlatformViewRegistry;
 import io.flutter.view.TextureRegistry;
@@ -50,7 +51,17 @@ import io.flutter.view.TextureRegistry;
  * be retrieved through a {@link Context}. Developers can access the application context via
  * {@link FlutterPluginBinding#getApplicationContext()}.
  * <p>
- * TODO(mattcarroll): explain ActivityAware when it's added to the new plugin API surface.
+ * Some plugins may require access to the {@code Activity} that is displaying a Flutter experience,
+ * or may need to react to {@code Activity} lifecycle events, e.g., {@code onCreate()},
+ * {@code onStart()}, {@code onResume()}, {@code onPause()}, {@code onStop()}, {@code onDestroy()}.
+ * Any such plugin should implement
+ * {@link io.flutter.embedding.engine.plugins.activity.ActivityAware} in addition to implementing
+ * {@code FlutterPlugin}. {@code ActivityAware} provides callback hooks that expose access to an
+ * associated {@code Activity} and its {@code Lifecycle}. All plugins must respect the possibility
+ * that a Flutter experience may never be associated with an {@code Activity}, e.g., when Flutter
+ * is used for background behavior. Additionally, all plugins must respect that a {@code Activity}s
+ * may come and go over time, thus requiring plugins to cleanup resources and recreate those
+ * resources as the {@code Activity} comes and goes.
  */
 public interface FlutterPlugin {
 
@@ -91,19 +102,22 @@ public interface FlutterPlugin {
         private final BinaryMessenger binaryMessenger;
         private final TextureRegistry textureRegistry;
         private final PlatformViewRegistry platformViewRegistry;
+        private final FlutterAssets flutterAssets;
 
         public FlutterPluginBinding(
             @NonNull Context applicationContext,
             @NonNull FlutterEngine flutterEngine,
             @NonNull BinaryMessenger binaryMessenger,
             @NonNull TextureRegistry textureRegistry,
-            @NonNull PlatformViewRegistry platformViewRegistry
+            @NonNull PlatformViewRegistry platformViewRegistry,
+            @NonNull FlutterAssets flutterAssets
         ) {
             this.applicationContext = applicationContext;
             this.flutterEngine = flutterEngine;
             this.binaryMessenger = binaryMessenger;
             this.textureRegistry = textureRegistry;
             this.platformViewRegistry = platformViewRegistry;
+            this.flutterAssets = flutterAssets;
         }
 
         @NonNull
@@ -136,5 +150,47 @@ public interface FlutterPlugin {
         public PlatformViewRegistry getPlatformViewRegistry() {
           return platformViewRegistry;
         }
+
+        @NonNull
+        public FlutterAssets getFlutterAssets() {
+          return flutterAssets;
+        }
     }
+
+  /**
+   * Provides Flutter plugins with access to Flutter asset information.
+   */
+  interface FlutterAssets {
+      /**
+       * Returns the relative file path to the Flutter asset with the given name, including the file's
+       * extension, e.g., {@code "myImage.jpg"}.
+       *
+       * <p>The returned file path is relative to the Android app's standard assets directory.
+       * Therefore, the returned path is appropriate to pass to Android's {@code AssetManager},
+       * but the path is not appropriate to load as an absolute path.
+       */
+      String getAssetFilePathByName(@NonNull String assetFileName);
+
+      /**
+       * Same as {@link #getAssetFilePathByName(String)} but with added support for an explicit
+       * Android {@code packageName}.
+       */
+      String getAssetFilePathByName(@NonNull String assetFileName, @NonNull String packageName);
+
+      /**
+       * Returns the relative file path to the Flutter asset with the given subpath, including the file's
+       * extension, e.g., {@code "/dir1/dir2/myImage.jpg"}.
+       *
+       * <p>The returned file path is relative to the Android app's standard assets directory.
+       * Therefore, the returned path is appropriate to pass to Android's {@code AssetManager},
+       * but the path is not appropriate to load as an absolute path.
+       */
+      String getAssetFilePathBySubpath(@NonNull String assetSubpath);
+
+      /**
+       * Same as {@link #getAssetFilePathBySubpath(String)} but with added support for an explicit
+       * Android {@code packageName}.
+       */
+      String getAssetFilePathBySubpath(@NonNull String assetSubpath, @NonNull String packageName);
+  }
 }
