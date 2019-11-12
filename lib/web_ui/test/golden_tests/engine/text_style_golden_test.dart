@@ -214,8 +214,8 @@ void main() async {
     return scuba.diffCanvasScreenshot(canvas, 'text_background');
   });
 
-  testEachCanvas('draws text with a background', (EngineCanvas canvas) {
+  testEachCanvas('draws text with a shadow', (EngineCanvas canvas) {
     drawTextWithShadow(canvas);
     return scuba.diffCanvasScreenshot(canvas, 'text_shadow', maxDiffRate: 0.02);
-  });
+  }, bSkipHoudini: true);
 }

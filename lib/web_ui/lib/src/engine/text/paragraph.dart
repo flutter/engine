@@ -290,7 +290,8 @@ class EngineParagraph implements ui.Paragraph {
       return ui.TextRange(start: textPosition.offset, end: textPosition.offset);
     }
 
-    final int start = WordBreaker.prevBreakIndex(_plainText, textPosition.offset);
+    final int start =
+        WordBreaker.prevBreakIndex(_plainText, textPosition.offset);
     final int end = WordBreaker.nextBreakIndex(_plainText, textPosition.offset);
     return ui.TextRange(start: start, end: end);
   }
@@ -1097,6 +1098,9 @@ void _applyParagraphStyleToElement({
     if (style._effectiveFontFamily != null) {
       cssStyle.fontFamily = canonicalizeFontFamily(style._effectiveFontFamily);
     }
+    if (style._shadows != null) {
+      cssStyle.textShadow = _shadowListToCss(style._shadows);
+    }
   } else {
     if (style._textAlign != previousStyle._textAlign) {
       cssStyle.textAlign = textAlignToCssValue(
@@ -1124,11 +1128,7 @@ void _applyParagraphStyleToElement({
       cssStyle.fontFamily = canonicalizeFontFamily(style._fontFamily);
     }
     if (style._shadows != previousStyle._shadows) {
-      final List<ui.Shadow> shadows = style._shadows;
-      if (shadows.length > 1) {
-        throw UnsupportedError('Multiple shadows on text not supported');
-      }
-      cssStyle.textShadow = '';
+      cssStyle.textShadow = _shadowListToCss(style._shadows);
     }
   }
 }
@@ -1172,7 +1172,8 @@ void _applyTextStyleToElement({
       }
     } else {
       if (style._effectiveFontFamily != null) {
-        cssStyle.fontFamily = canonicalizeFontFamily(style._effectiveFontFamily);
+        cssStyle.fontFamily =
+            canonicalizeFontFamily(style._effectiveFontFamily);
       }
     }
     if (style._letterSpacing != null) {

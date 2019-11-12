@@ -40,18 +40,17 @@ class EngineScubaTester {
   }
 
   Future<void> diffScreenshot(String fileName, {double maxDiffRate}) async {
-    await matchGoldenFile('$fileName.png', region: ui.Rect.fromLTWH(0, 0, viewportSize.width, viewportSize.height), maxDiffRate: maxDiffRate);
+    await matchGoldenFile('$fileName.png',
+        region: ui.Rect.fromLTWH(0, 0, viewportSize.width, viewportSize.height),
+        maxDiffRate: maxDiffRate);
   }
 
   /// Prepares the DOM and inserts all the necessary nodes, then invokes scuba's
   /// screenshot diffing.
   ///
   /// It also cleans up the DOM after itself.
-  Future<void> diffCanvasScreenshot(
-    EngineCanvas canvas,
-    String fileName,
-    {double maxDiffRate}
-  ) async {
+  Future<void> diffCanvasScreenshot(EngineCanvas canvas, String fileName,
+      {double maxDiffRate}) async {
     // Wrap in <flt-scene> so that our CSS selectors kick in.
     final html.Element sceneElement = html.Element.tag('flt-scene');
     try {
@@ -73,7 +72,8 @@ class EngineScubaTester {
 typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
 
 /// Runs the given test [body] with each type of canvas.
-void testEachCanvas(String description, CanvasTest body, {double maxDiffRate}) {
+void testEachCanvas(String description, CanvasTest body,
+    {double maxDiffRate, bool bSkipHoudini = false}) {
   const ui.Rect bounds = ui.Rect.fromLTWH(0, 0, 600, 800);
   test('$description (bitmap)', () {
     try {
@@ -101,14 +101,16 @@ void testEachCanvas(String description, CanvasTest body, {double maxDiffRate}) {
       TextMeasurementService.clearCache();
     }
   });
-  test('$description (houdini)', () {
-    try {
-      TextMeasurementService.initialize(rulerCacheCapacity: 2);
-      return body(HoudiniCanvas(bounds));
-    } finally {
-      TextMeasurementService.clearCache();
-    }
-  });
+  if (!bSkipHoudini) {
+    test('$description (houdini)', () {
+      try {
+        TextMeasurementService.initialize(rulerCacheCapacity: 2);
+        return body(HoudiniCanvas(bounds));
+      } finally {
+        TextMeasurementService.clearCache();
+      }
+    });
+  }
 }
 
 final ui.TextStyle _defaultTextStyle = ui.TextStyle(
