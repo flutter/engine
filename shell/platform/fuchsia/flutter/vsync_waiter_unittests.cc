@@ -72,7 +72,8 @@ TEST_F(VsyncWaiterTest, AwaitVsync) {
                fml::TimePoint frame_target_time) { latch.Signal(); });
   SignalVsyncEvent();
 
-  bool did_timeout = latch.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(5000));
+  bool did_timeout =
+      latch.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(5000));
 
   // False indicates we were signalled rather than timed out
   EXPECT_FALSE(did_timeout);
