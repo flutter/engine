@@ -952,5 +952,85 @@ TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
+TEST_F(ShellTest, Screenshot) {
+//  FML_LOG(ERROR) << "start test";
+//  Settings settings = CreateSettingsForFixture();
+//  FML_LOG(ERROR) << "settings";
+//
+//  auto configuration = RunConfiguration::InferFromSettings(settings);
+//  FML_LOG(ERROR) << "configuration";
+//
+//  auto task_runner = CreateNewThread();
+//  FML_LOG(ERROR) << "task_runner";
+//
+//  TaskRunners task_runners("test", GetCurrentTaskRunner(), task_runner, task_runner,
+//                           task_runner);
+//  FML_LOG(ERROR) << "TaskRunners";
+//
+//  std::unique_ptr<Shell> shell =
+//      CreateShell(std::move(settings), std::move(task_runners));
+//  FML_LOG(ERROR) << "shell";
+//
+//
+//  ASSERT_TRUE(ValidateShell(shell.get()));
+//  FML_LOG(ERROR) << "ASSERT_TRUE";
+//
+//  PlatformViewNotifyCreated(shell.get());
+//
+//  FML_LOG(ERROR) << "PlatformViewNotifyCreated";
+//
+//  configuration.SetEntrypoint("Screenshot");
+//
+//  AddNativeCallback("NotifyMessage",
+//                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+//                    FML_LOG(ERROR) << "before screenshot";
+//
+//                      Rasterizer::Screenshot screenshot = shell->GetRasterizer()->ScreenshotLastLayerTree(Rasterizer::ScreenshotType::CompressedImage, true);
+//                      FML_LOG(ERROR) << "after screenshot";
+//
+//                    //  latch->Wait();
+//
+//                      EXPECT_EQ(screenshot.data, nullptr);
+//
+//                      message_latch.Signal();
+//                    }));
+//
+//  fml::AutoResetWaitableEvent message_latch;
+//  shell->RunEngine(std::move(configuration), [&](auto result) {
+//    ASSERT_EQ(result, Engine::RunStatus::Success);
+//  });
+//
+//  message_latch.Wait();
+//  DestroyShell(std::move(shell), std::move(task_runners));
+
+  Settings settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  ASSERT_TRUE(ValidateShell(shell.get()));
+  PlatformViewNotifyCreated(shell.get());
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  std::shared_ptr<fml::AutoResetWaitableEvent> latch =
+      std::make_shared<fml::AutoResetWaitableEvent>();
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
+          FML_LOG(ERROR) << "before screenshot";
+          Rasterizer::Screenshot screenshot = shell->GetRasterizer()->ScreenshotLastLayerTree(Rasterizer::ScreenshotType::CompressedImage, true);
+          FML_LOG(ERROR) << "after screenshot";
+          EXPECT_EQ(screenshot.data != nullptr, true);
+
+          latch->Signal();
+      });
+  latch->Wait();
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
+
 }  // namespace testing
 }  // namespace flutter
