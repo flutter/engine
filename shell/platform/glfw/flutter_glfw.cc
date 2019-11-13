@@ -388,6 +388,7 @@ static void SetHoverCallbacksEnabled(GLFWwindow* window, bool enabled) {
 // Flushes event queue and then assigns default window callbacks.
 static void GLFWAssignEventCallbacks(GLFWwindow* window) {
   glfwPollEvents();
+  glfwSetInputMode(window, GLFW_LOCK_KEY_MODS, GLFW_TRUE);
   glfwSetKeyCallback(window, GLFWKeyCallback);
   glfwSetCharCallback(window, GLFWCharCallback);
   glfwSetMouseButtonCallback(window, GLFWMouseButtonCallback);
