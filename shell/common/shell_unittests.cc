@@ -1002,10 +1002,7 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
       std::make_shared<fml::AutoResetWaitableEvent>();
 
   PumpOneFrame(shell.get());
-
-  //  sk_sp<SkPicture> placeHolderPicture = SkPicture::MakePlaceholder({0, 0,
-  //  50, 50}); SkISize size = SkISize::Make(50, 50);
-
+  
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
         SnapshotDelegate* delegate =
