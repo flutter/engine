@@ -116,7 +116,7 @@ class PointerData {
   final int device;
 
   /// Unique identifier for the pointer.
-  /// 
+  ///
   /// This field changes for each new pointer down event. Framework uses this
   /// identifier to determine hit test result.
   final int pointerIdentifier;
