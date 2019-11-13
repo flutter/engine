@@ -433,10 +433,10 @@ class Rasterizer final : public SnapshotDelegate {
   void FireNextFrameCallbackIfPresent();
 
   sk_sp<SkData> ScreenshotLayerTreeAsImage(
-  flutter::LayerTree* tree,
-  flutter::CompositorContext& compositor_context,
-  GrContext* surface_context,
-                             bool compressed);
+      flutter::LayerTree* tree,
+      flutter::CompositorContext& compositor_context,
+      GrContext* surface_context,
+      bool compressed);
   sk_sp<SkImage> MakeImageSnapshot(sk_sp<SkSurface> snapshot_surface);
   sk_sp<SkImage> MakeRasterImage(sk_sp<SkImage> potentially_gpu_snapshot);
   void ScreenshotFlushCanvas(SkCanvas& canvas);

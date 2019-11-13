@@ -384,9 +384,6 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     flutter::CompositorContext& compositor_context,
     GrContext* surface_context,
     bool compressed) {
-
-  FML_LOG(ERROR) << "ScreenshotLayerTreeAsImage";
-
   // Attempt to create a snapshot surface depending on whether we have access to
   // a valid GPU rendering context.
   auto snapshot_surface =
@@ -396,7 +393,6 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     return nullptr;
   }
 
-  FML_LOG(ERROR) << "snapshot_surface";
   // Draw the current layer tree into the snapshot surface.
   auto* canvas = snapshot_surface->getCanvas();
 
@@ -409,15 +405,9 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
                                                root_surface_transformation,
                                                false, nullptr);
 
-  FML_LOG(ERROR) << "frame";
-
   canvas->clear(SK_ColorTRANSPARENT);
-FML_LOG(ERROR) << "clear";
   frame->Raster(*tree, true);
-FML_LOG(ERROR) << "Raster";
   ScreenshotFlushCanvas(*canvas);
-  FML_LOG(ERROR) << "ScreenshotFlushCanvas";
-
 
   // Prepare an image from the surface, this image may potentially be on th GPU.
   auto potentially_gpu_snapshot = MakeImageSnapshot(snapshot_surface);
@@ -447,7 +437,8 @@ FML_LOG(ERROR) << "Raster";
   return SkData::MakeWithCopy(pixmap.addr32(), pixmap.computeByteSize());
 }
 
-sk_sp<SkImage> Rasterizer::MakeImageSnapshot(sk_sp<SkSurface> snapshot_surface) {
+sk_sp<SkImage> Rasterizer::MakeImageSnapshot(
+    sk_sp<SkSurface> snapshot_surface) {
   std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
       context_switch = surface_->MakeRenderContextCurrent();
   if (!context_switch->GetSwitchResult()) {
@@ -461,7 +452,8 @@ sk_sp<SkImage> Rasterizer::MakeImageSnapshot(sk_sp<SkSurface> snapshot_surface) 
   return potentially_gpu_snapshot;
 }
 
-sk_sp<SkImage> Rasterizer::MakeRasterImage(sk_sp<SkImage> potentially_gpu_snapshot) {
+sk_sp<SkImage> Rasterizer::MakeRasterImage(
+    sk_sp<SkImage> potentially_gpu_snapshot) {
   std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
       context_switch = surface_->MakeRenderContextCurrent();
   if (!context_switch->GetSwitchResult()) {
@@ -479,7 +471,8 @@ void Rasterizer::ScreenshotFlushCanvas(SkCanvas& canvas) {
   std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
       context_switch = surface_->MakeRenderContextCurrent();
   if (!context_switch->GetSwitchResult()) {
-    FML_LOG(ERROR) << "Screenshot: unable to switch gl context to flutter's context";
+    FML_LOG(ERROR)
+        << "Screenshot: unable to switch gl context to flutter's context";
     return;
   }
   canvas.flush();
@@ -488,15 +481,11 @@ void Rasterizer::ScreenshotFlushCanvas(SkCanvas& canvas) {
 Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
     Rasterizer::ScreenshotType type,
     bool base64_encode) {
-
-  FML_LOG(ERROR) << "ScreenshotLastLayerTree";
-
   auto* layer_tree = GetLastLayerTree();
   if (layer_tree == nullptr) {
     FML_LOG(ERROR) << "Last layer tree was null when screenshotting.";
     return {};
   }
-  
 
   sk_sp<SkData> data = nullptr;
 
