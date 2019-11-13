@@ -581,7 +581,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     final HtmlImage htmlImage = image;
     final html.ImageElement imgElement = htmlImage.cloneImageElement();
     String blendMode = ctx.globalCompositeOperation;
-    //if (blendMode == 'source-over') {
     imgElement.style.mixBlendMode = blendMode;
     _drawImage(imgElement, p);
     _childOverdraw = true;
