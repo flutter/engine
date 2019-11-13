@@ -33,6 +33,19 @@ class SkCanvas {
         'saveLayer', <js.JsObject>[makeSkRect(bounds), makeSkPaint(paint)]);
   }
 
+  int saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter) {
+    final SkImageFilter skImageFilter = filter;
+    return skCanvas.callMethod(
+      'saveLayer',
+      <dynamic>[
+        null,
+        skImageFilter.skImageFilter,
+        0,
+        makeSkRect(bounds),
+      ],
+    );
+  }
+
   void restore() {
     skCanvas.callMethod('restore');
   }
@@ -95,6 +108,7 @@ class SkCanvas {
 
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
-    drawSkShadow(skCanvas, path, color, elevation, transparentOccluder);
+    drawSkShadow(skCanvas, path, color, elevation, transparentOccluder,
+        ui.window.devicePixelRatio);
   }
 }

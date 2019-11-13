@@ -263,12 +263,17 @@ Engine::Engine(Delegate& delegate,
   //  notification. Fire one eagerly.
   shell_->GetPlatformView()->NotifyCreated();
 
-  // Connect to the intl property provider.
+  // Connect to the intl property provider.  If the connection fails, the
+  // initialization of the engine will simply proceed, printing a warning
+  // message.  The engine will be fully functional, except that the user's
+  // locale preferences would not be communicated to flutter engine.
   {
     intl_property_provider_.set_error_handler([](zx_status_t status) {
-      FML_LOG(ERROR) << "Failed to connect to "
-                     << fuchsia::intl::PropertyProvider::Name_ << ": "
-                     << zx_status_get_string(status);
+      FML_LOG(WARNING) << "Failed to connect to "
+                       << fuchsia::intl::PropertyProvider::Name_ << ": "
+                       << zx_status_get_string(status)
+                       << " This is not a fatal error, but the user locale "
+                       << " preferences will not be forwarded to flutter apps";
     });
 
     // Note that we're using the runner's services, not the component's.

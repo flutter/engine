@@ -1,4 +1,4 @@
-Signature: dbcec9df55fdc2e823727f670cf0a663
+Signature: ebc87b511d37dd5a3b846dc7982af47b
 
 UNUSED LICENSES:
 
@@ -7457,7 +7457,9 @@ FILE: ../../../third_party/dart/.mailmap
 FILE: ../../../third_party/dart/.style.yapf
 FILE: ../../../third_party/dart/.vpython
 FILE: ../../../third_party/dart/PATENT_GRANT
+FILE: ../../../third_party/dart/benchmarks/IsolateJson/dart/sample.json
 FILE: ../../../third_party/dart/benchmarks/IsolateSpawn/dart/helloworld.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateSpawnMemory/dart/helloworld.dart
 FILE: ../../../third_party/dart/client/idea/.idea/.name
 FILE: ../../../third_party/dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../third_party/dart/client/idea/.idea/vcs.xml
@@ -7490,6 +7492,7 @@ FILE: ../../../third_party/dart/sdk/lib/vmservice_libraries.json
 FILE: ../../../third_party/dart/sdk_nnbd/lib/html/html_common/conversions_dart2js.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/html/html_common/html_common.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/libraries.json
+FILE: ../../../third_party/dart/sdk_nnbd/lib/libraries_nnbd_mix_hack.json
 FILE: ../../../third_party/dart/sdk_nnbd/lib/vmservice_libraries.json
 FILE: ../../../third_party/dart/third_party/7zip.tar.gz.sha1
 FILE: ../../../third_party/dart/third_party/clang.tar.gz.sha1
@@ -7541,7 +7544,9 @@ FILE: ../../../third_party/dart/benchmarks/FfiCall/dart/native/native_functions.
 FILE: ../../../third_party/dart/benchmarks/FfiMemory/dart/FfiMemory.dart
 FILE: ../../../third_party/dart/benchmarks/FfiStruct/dart/FfiStruct.dart
 FILE: ../../../third_party/dart/benchmarks/Isolate/dart/Isolate.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateJson/dart/IsolateJson.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateSpawn/dart/IsolateSpawn.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateSpawnMemory/dart/IsolateSpawnMemory.dart
 FILE: ../../../third_party/dart/runtime/bin/abi_version.h
 FILE: ../../../third_party/dart/runtime/bin/abi_version_in.cc
 FILE: ../../../third_party/dart/runtime/bin/elf_loader.cc
@@ -7560,6 +7565,8 @@ FILE: ../../../third_party/dart/runtime/lib/wasm.cc
 FILE: ../../../third_party/dart/runtime/llvm_codegen/bit/bit.h
 FILE: ../../../third_party/dart/runtime/llvm_codegen/bit/main.cc
 FILE: ../../../third_party/dart/runtime/llvm_codegen/bit/test.cc
+FILE: ../../../third_party/dart/runtime/llvm_codegen/codegen/custom_zone.cc
+FILE: ../../../third_party/dart/runtime/llvm_codegen/codegen/custom_zone.h
 FILE: ../../../third_party/dart/runtime/llvm_codegen/codegen/dart.cc
 FILE: ../../../third_party/dart/runtime/llvm_codegen/codegen/dart.h
 FILE: ../../../third_party/dart/runtime/llvm_codegen/codegen/main.cc
@@ -8590,8 +8597,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_flow_graph
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_reader.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_reader.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_scope_builder.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/constant_evaluator.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/constant_evaluator.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/constant_reader.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/constant_reader.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_fingerprints.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_fingerprints.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_translation_helper.cc
