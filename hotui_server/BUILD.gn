@@ -29,6 +29,4 @@ application_snapshot("hotui_server") {
     training_args = [
         "--train",
     ]
-
-    inputs = frontend_server_files
 }
