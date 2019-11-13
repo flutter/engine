@@ -1088,9 +1088,6 @@ void _applyParagraphStyleToElement({
     if (style._effectiveFontFamily != null) {
       cssStyle.fontFamily = canonicalizeFontFamily(style._effectiveFontFamily);
     }
-    if (style._shadows != null) {
-      cssStyle.textShadow = _shadowListToCss(style._shadows);
-    }
   } else {
     if (style._textAlign != previousStyle._textAlign) {
       cssStyle.textAlign = textAlignToCssValue(
