@@ -18,7 +18,6 @@ class EngineParagraph implements ui.Paragraph {
     @required ui.TextAlign textAlign,
     @required ui.TextDirection textDirection,
     @required ui.Paint background,
-    @required List<ui.Shadow> shadows,
   })  : assert((plainText == null && paint == null) ||
             (plainText != null && paint != null)),
         _paragraphElement = paragraphElement,
@@ -27,8 +26,7 @@ class EngineParagraph implements ui.Paragraph {
         _textAlign = textAlign,
         _textDirection = textDirection,
         _paint = paint,
-        _background = background,
-        _shadows = shadows;
+        _background = background;
 
   final html.HtmlElement _paragraphElement;
   final ParagraphGeometricStyle _geometricStyle;
@@ -37,7 +35,6 @@ class EngineParagraph implements ui.Paragraph {
   final ui.TextAlign _textAlign;
   final ui.TextDirection _textDirection;
   final ui.Paint _background;
-  final List<ui.Shadow> _shadows;
 
   @visibleForTesting
   String get plainText => _plainText;
@@ -909,7 +906,6 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
           wordSpacing: wordSpacing,
           decoration: _textDecorationToCssString(decoration, decorationStyle),
           ellipsis: _paragraphStyle._ellipsis,
-          shadows: shadows,
         ),
         plainText: '',
         paint: paint,
@@ -963,7 +959,6 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
         wordSpacing: wordSpacing,
         decoration: _textDecorationToCssString(decoration, decorationStyle),
         ellipsis: _paragraphStyle._ellipsis,
-        shadows: shadows,
       ),
       plainText: plainText,
       paint: paint,
@@ -1007,7 +1002,6 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
         lineHeight: _paragraphStyle._height,
         maxLines: _paragraphStyle._maxLines,
         ellipsis: _paragraphStyle._ellipsis,
-        shadows: _paragraphStyle._shadows,
       ),
       plainText: null,
       paint: null,
