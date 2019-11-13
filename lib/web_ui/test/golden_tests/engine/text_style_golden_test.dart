@@ -231,6 +231,6 @@ void main() async {
       ),
       Offset.zero,
     );
-    return scuba.diffCanvasScreenshot(canvas, 'text_strut_style_disabled');
+    return scuba.diffCanvasScreenshot(canvas, 'text_strut_style_disabled', region: Rect.fromLTRB(0, 0, 100, 100));
   });
 }
