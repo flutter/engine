@@ -1114,9 +1114,6 @@ void _applyParagraphStyleToElement({
     if (style._fontFamily != previousStyle._fontFamily) {
       cssStyle.fontFamily = canonicalizeFontFamily(style._fontFamily);
     }
-    if (style._shadows != previousStyle._shadows) {
-      cssStyle.textShadow = _shadowListToCss(style._shadows);
-    }
   }
 }
 
