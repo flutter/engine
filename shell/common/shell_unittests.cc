@@ -976,7 +976,7 @@ TEST_F(ShellTest, RasterizerScreenshot) {
         Rasterizer::Screenshot screenshot =
             shell->GetRasterizer()->ScreenshotLastLayerTree(
                 Rasterizer::ScreenshotType::CompressedImage, true);
-        EXPECT_EQ(screenshot.data != nullptr, true);
+        EXPECT_NE(screenshot.data, nullptr);
 
         latch->Signal();
       });
@@ -1002,14 +1002,14 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
       std::make_shared<fml::AutoResetWaitableEvent>();
 
   PumpOneFrame(shell.get());
-  
+
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
         SnapshotDelegate* delegate =
             reinterpret_cast<Rasterizer*>(shell->GetRasterizer().get());
         sk_sp<SkImage> image = delegate->MakeRasterSnapshot(
             SkPicture::MakePlaceholder({0, 0, 50, 50}), SkISize::Make(50, 50));
-        EXPECT_EQ(image != nullptr, true);
+        EXPECT_NE(image, nullptr);
 
         latch->Signal();
       });
