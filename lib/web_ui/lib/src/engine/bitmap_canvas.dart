@@ -247,8 +247,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   void _applyPaint(ui.PaintData paint) {
     ctx.globalCompositeOperation =
         _stringForBlendMode(paint.blendMode) ?? 'source-over';
-    print(
-        'Setting ctx.globalCompositeOperation to ${_stringForBlendMode(paint.blendMode) ?? 'source-over'}');
     ctx.lineWidth = paint.strokeWidth ?? 1.0;
     final ui.StrokeCap cap = paint.strokeCap;
     if (cap != null) {
