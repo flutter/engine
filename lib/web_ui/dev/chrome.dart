@@ -32,6 +32,8 @@ class Chrome extends Browser {
   /// Starts a new instance of Chrome open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Chrome(Uri url, {bool debug = false}) {
+    version = chromeArgParser.version;
+
     assert(version != null);
     var remoteDebuggerCompleter = Completer<Uri>.sync();
     return Chrome._(() async {
@@ -74,8 +76,8 @@ class Chrome extends Browser {
       remoteDebuggerCompleter.complete(getRemoteDebuggerUrl(
           Uri.parse('http://localhost:${kDevtoolsPort}')));
 
-      unawaited(process.exitCode
-          .then((_) => Directory(dir).deleteSync(recursive: true)));
+      // unawaited(process.exitCode
+      //     .then((_) => Directory(dir).deleteSync(recursive: true)));
 
       return process;
     }, remoteDebuggerCompleter.future);
