@@ -140,6 +140,10 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 #pragma mark - Semantic object methods
 
+- (BOOL)isAccessibilityBridgeAlive {
+  return [self bridge].get() != nil;
+}
+
 - (void)setSemanticsNode:(const flutter::SemanticsNode*)node {
   _node = *node;
 }
@@ -169,7 +173,8 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 #pragma mark - UIAccessibility overrides
 
 - (BOOL)isAccessibilityElement {
-  RETURN_IF_ORPHANED(false);
+  if (![self isAccessibilityBridgeAlive])
+    return false;
 
   // Note: hit detection will only apply to elements that report
   // -isAccessibilityElement of YES. The framework will continue scanning the
@@ -240,28 +245,35 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 - (NSString*)accessibilityLabel {
-  RETURN_IF_ORPHANED(nil);
+  if (![self isAccessibilityBridgeAlive])
+    return nil;
+
   if ([self node].label.empty())
     return nil;
   return @([self node].label.data());
 }
 
 - (NSString*)accessibilityHint {
-  RETURN_IF_ORPHANED(nil);
+  if (![self isAccessibilityBridgeAlive])
+    return nil;
+
   if ([self node].hint.empty())
     return nil;
   return @([self node].hint.data());
 }
 
 - (NSString*)accessibilityValue {
-  RETURN_IF_ORPHANED(nil);
+  if (![self isAccessibilityBridgeAlive])
+    return nil;
   if ([self node].value.empty())
     return nil;
   return @([self node].value.data());
 }
 
 - (CGRect)accessibilityFrame {
-  RETURN_IF_ORPHANED(CGRectMake(0, 0, 0, 0));
+  if (![self isAccessibilityBridgeAlive])
+    return CGRectMake(0, 0, 0, 0);
+
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsHidden)) {
     return [super accessibilityFrame];
   }
@@ -314,7 +326,8 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 #pragma mark - UIAccessibilityAction overrides
 
 - (BOOL)accessibilityActivate {
-  RETURN_IF_ORPHANED(NO);
+  if (![self isAccessibilityBridgeAlive]) 
+    return NO;
   if (![self node].HasAction(flutter::SemanticsAction::kTap))
     return NO;
   [self bridge] -> DispatchSemanticsAction([self uid], flutter::SemanticsAction::kTap);
@@ -322,7 +335,8 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 - (void)accessibilityIncrement {
-  RETURN_IF_ORPHANED();
+  if (![self isAccessibilityBridgeAlive]) 
+    return;
   if ([self node].HasAction(flutter::SemanticsAction::kIncrease)) {
     [self node].value = [self node].increasedValue;
     [self bridge] -> DispatchSemanticsAction([self uid], flutter::SemanticsAction::kIncrease);
@@ -330,7 +344,8 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 - (void)accessibilityDecrement {
-  RETURN_IF_ORPHANED();
+  if (![self isAccessibilityBridgeAlive]) 
+    return;
   if ([self node].HasAction(flutter::SemanticsAction::kDecrease)) {
     [self node].value = [self node].decreasedValue;
     [self bridge] -> DispatchSemanticsAction([self uid], flutter::SemanticsAction::kDecrease);
@@ -338,7 +353,8 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 - (BOOL)accessibilityScroll:(UIAccessibilityScrollDirection)direction {
-  RETURN_IF_ORPHANED(NO);
+  if (![self isAccessibilityBridgeAlive]) 
+    return NO;
   flutter::SemanticsAction action = GetSemanticsActionForScrollDirection(direction);
   if (![self node].HasAction(action))
     return NO;
@@ -347,7 +363,8 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 - (BOOL)accessibilityPerformEscape {
-  RETURN_IF_ORPHANED(NO);
+  if (![self isAccessibilityBridgeAlive]) 
+    return NO;
   if (![self node].HasAction(flutter::SemanticsAction::kDismiss))
     return NO;
   [self bridge] -> DispatchSemanticsAction([self uid], flutter::SemanticsAction::kDismiss);
@@ -357,7 +374,8 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 #pragma mark UIAccessibilityFocus overrides
 
 - (void)accessibilityElementDidBecomeFocused {
-  RETURN_IF_ORPHANED();
+  if (![self isAccessibilityBridgeAlive]) 
+    return;
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsHidden)) {
     [self bridge] -> DispatchSemanticsAction([self uid], flutter::SemanticsAction::kShowOnScreen);
   }
@@ -368,7 +386,8 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 - (void)accessibilityElementDidLoseFocus {
-  RETURN_IF_ORPHANED();
+  if (![self isAccessibilityBridgeAlive]) 
+    return;
   if ([self node].HasAction(flutter::SemanticsAction::kDidLoseAccessibilityFocus)) {
     [self bridge] -> DispatchSemanticsAction([self uid],
                                              flutter::SemanticsAction::kDidLoseAccessibilityFocus);
