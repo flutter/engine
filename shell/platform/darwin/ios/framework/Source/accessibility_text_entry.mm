@@ -219,33 +219,33 @@
 }
 
 - (void)accessibilityElementDidBecomeFocused {
-  if (![self isAccessibilityBridgeAlive]) 
+  if (![self isAccessibilityBridgeAlive])
     return;
   [[self textInputSurrogate] accessibilityElementDidBecomeFocused];
   [super accessibilityElementDidBecomeFocused];
 }
 
 - (void)accessibilityElementDidLoseFocus {
-  if (![self isAccessibilityBridgeAlive]) 
+  if (![self isAccessibilityBridgeAlive])
     return;
   [[self textInputSurrogate] accessibilityElementDidLoseFocus];
   [super accessibilityElementDidLoseFocus];
 }
 
 - (BOOL)accessibilityElementIsFocused {
-  if (![self isAccessibilityBridgeAlive]) 
+  if (![self isAccessibilityBridgeAlive])
     return false;
   return [self node].HasFlag(flutter::SemanticsFlags::kIsFocused);
 }
 
 - (BOOL)accessibilityActivate {
-  if (![self isAccessibilityBridgeAlive]) 
+  if (![self isAccessibilityBridgeAlive])
     return false;
   return [[self textInputSurrogate] accessibilityActivate];
 }
 
 - (NSString*)accessibilityLabel {
-  if (![self isAccessibilityBridgeAlive]) 
+  if (![self isAccessibilityBridgeAlive])
     return nil;
 
   NSString* label = [super accessibilityLabel];
@@ -255,7 +255,7 @@
 }
 
 - (NSString*)accessibilityHint {
-  if (![self isAccessibilityBridgeAlive]) 
+  if (![self isAccessibilityBridgeAlive])
     return nil;
   NSString* hint = [super accessibilityHint];
   if (hint != nil)
@@ -264,7 +264,7 @@
 }
 
 - (NSString*)accessibilityValue {
-  if (![self isAccessibilityBridgeAlive]) 
+  if (![self isAccessibilityBridgeAlive])
     return nil;
   NSString* value = [super accessibilityValue];
   if (value != nil)
@@ -273,7 +273,7 @@
 }
 
 - (UIAccessibilityTraits)accessibilityTraits {
-  if (![self isAccessibilityBridgeAlive]) 
+  if (![self isAccessibilityBridgeAlive])
     return 0;
   // Adding UIAccessibilityTraitKeyboardKey to the trait list so that iOS treats it like
   // a keyboard entry control, thus adding support for text editing features, such as

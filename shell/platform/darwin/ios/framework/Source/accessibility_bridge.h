@@ -48,8 +48,8 @@ class AccessibilityBridge;
 /**
  * The accessibility bridge that this semantics object is attached to. This
  * object may use the bridge to access contextual application information. A weak
- * pointer is used because the platform view owns the accessibility bridge. 
- * If you are referencing this property from an iOS callback, be sure to 
+ * pointer is used because the platform view owns the accessibility bridge.
+ * If you are referencing this property from an iOS callback, be sure to
  * use `isAccessibilityBridgeActive` to protect against the case where this
  * node may be orphaned.
  */
@@ -60,8 +60,8 @@ class AccessibilityBridge;
  * there can be situations where the AccessibilityBridge is shutdown, but the SemanticObject
  * will still be alive. If VoiceOver is turned on again, it may try to access this orphaned
  * SemanticObject. Methods that are called from the accessiblity framework should use
- * this to guard against this case by just returning early if its bridge has been shutdown. 
- * 
+ * this to guard against this case by just returning early if its bridge has been shutdown.
+ *
  * See https://github.com/flutter/flutter/issues/43795 for more information.
  */
 - (BOOL)isAccessibilityBridgeAlive;
@@ -101,7 +101,6 @@ class AccessibilityBridge;
                            uid:(int32_t)uid NS_DESIGNATED_INITIALIZER;
 
 @end
-
 
 /**
  * An implementation of UIAccessibilityCustomAction which also contains the
