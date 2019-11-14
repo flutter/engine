@@ -966,7 +966,7 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
         ..translate(clipOffsetX, clipOffsetY);
       curElement.style
         ..overflow = 'hidden'
-        ..transform = matrix4ToCssTransform(newClipTransform)
+        ..transform = matrix4ToCssTransform3d(newClipTransform)
         ..transformOrigin = '0 0 0'
         ..width = '${rect.right - clipOffsetX}px'
         ..height = '${rect.bottom - clipOffsetY}px';
@@ -982,7 +982,7 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
       curElement.style
         ..borderRadius = borderRadius
         ..overflow = 'hidden'
-        ..transform = matrix4ToCssTransform(newClipTransform)
+        ..transform = matrix4ToCssTransform3d(newClipTransform)
         ..transformOrigin = '0 0 0'
         ..width = '${roundRect.right - clipOffsetX}px'
         ..height = '${roundRect.bottom - clipOffsetY}px';

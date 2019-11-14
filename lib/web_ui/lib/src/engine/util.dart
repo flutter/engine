@@ -56,7 +56,7 @@ String matrix4ToCssTransform(Matrix4 matrix) {
 
 /// Converts [matrix] to CSS transform value.
 String matrix4ToCssTransform3d(Matrix4 matrix) {
-  return float64ListToCssTransform(matrix.storage);
+  return float64ListToCssTransform3d(matrix.storage);
 }
 
 /// Returns `true` is the [matrix] describes an identity transformation.
