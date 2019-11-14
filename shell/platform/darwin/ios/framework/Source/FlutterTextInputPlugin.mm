@@ -238,6 +238,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     [self.inputDelegate selectionWillChange:self];
     [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
             updateEditingState:NO];
+
     _selectionAffinity = _kTextAffinityDownstream;
     if ([state[@"selectionAffinity"] isEqualToString:@(_kTextAffinityUpstream)])
       _selectionAffinity = _kTextAffinityUpstream;
@@ -621,7 +622,6 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 }
 
 - (void)insertText:(NSString*)text {
-  _selectionAffinity = _kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
 }
 
