@@ -3,6 +3,11 @@
 # found in the LICENSE file.
 
 _glad_gen_dir = "$root_out_dir/gen/flutter/third_party/glad"
+_public_headers = [
+  "$_glad_gen_dir/include/KHR/khrplatform.h",
+  "$_glad_gen_dir/include/glad/glad.h",
+]
+_glad_sources = [ "$_glad_gen_dir/src/glad.c" ]
 
 config("glad_public") {
   include_dirs = [ "$_glad_gen_dir/include" ]
@@ -11,14 +16,9 @@ config("glad_public") {
 source_set("glad") {
   public_configs = [ ":glad_public" ]
 
-  public = [
-    "$_glad_gen_dir/include/KHR/khrplatform.h",
-    "$_glad_gen_dir/include/glad/glad.h",
-  ]
+  public = _public_headers
 
-  sources = [
-    "$_glad_gen_dir/src/glad.c",
-  ]
+  sources = _glad_sources
 
   deps = [
     ":gen_glad_sources",
@@ -26,9 +26,8 @@ source_set("glad") {
 }
 
 action("gen_glad_sources") {
-  script = "$flutter_root/third_party/glad/generate.py"
+  script = "generate.py"
   inputs = [
-    "generate.py",
     "scripts/glad/__init__.py",
     "scripts/glad/__main__.py",
     "scripts/glad/opener.py",
@@ -56,11 +55,8 @@ action("gen_glad_sources") {
     "scripts/glad/lang/c/loader/glx.py",
   ]
 
-  outputs = [
-    "$_glad_gen_dir/src/glad.c",
-    "$_glad_gen_dir/include/glad/glad.h",
-    "$_glad_gen_dir/include/KHR/khrplatform.h",
-  ]
+  outputs = _public_headers
+  outputs += _glad_sources
 
   args = [
     "--profile=compatibility",
