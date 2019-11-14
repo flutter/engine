@@ -88,8 +88,9 @@ void UnpackPointerPacket(std::vector<PointerData>& output,
   size_t buffer_length = buffer.size();
 
   for (size_t i = 0; i < buffer_length / kBytesPerPointerData; i++) {
-    PointerData pointer_data =
-        *(reinterpret_cast<PointerData*>(&buffer[i * kBytesPerPointerData]));
+    PointerData pointer_data;
+    memcpy(&pointer_data, &buffer[i * kBytesPerPointerData],
+           sizeof(PointerData));
     output.push_back(pointer_data);
   }
   packet.reset();
