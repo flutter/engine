@@ -89,6 +89,17 @@ class AccessibilityBridge;
 @end
 
 /**
+ * Due to the fact that VoiceOver may hold onto SemanticObjects even after it shuts down,
+ * there can be situations where the AccessibilityBridge is shutdown, but the SemanticObject
+ * will still be alive. If VoiceOver is turned on again, it may try to access this orphaned
+ * SemanticObject. Methods that are called from the accessiblity framework should use
+ * this to guard against this case by just returning early if its bridge has been shutdown. 
+ * 
+ * See https://github.com/flutter/flutter/issues/43795 for more information.
+ */
+#define RETURN_IF_ORPHANED(returnValue) if ([self bridge].get() == nil) return returnValue
+
+/**
  * An implementation of UIAccessibilityCustomAction which also contains the
  * Flutter uid.
  */
