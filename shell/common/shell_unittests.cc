@@ -966,13 +966,12 @@ TEST_F(ShellTest, RasterizerScreenshot) {
 
   RunEngine(shell.get(), std::move(configuration));
 
-  std::shared_ptr<fml::AutoResetWaitableEvent> latch =
-      std::make_shared<fml::AutoResetWaitableEvent>();
+  auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
   PumpOneFrame(shell.get());
 
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
+      shell->GetTaskRunners().GetGPUTaskRunner(), [&shell, &latch]() {
         Rasterizer::Screenshot screenshot =
             shell->GetRasterizer()->ScreenshotLastLayerTree(
                 Rasterizer::ScreenshotType::CompressedImage, true);
@@ -998,13 +997,12 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
 
   RunEngine(shell.get(), std::move(configuration));
 
-  std::shared_ptr<fml::AutoResetWaitableEvent> latch =
-      std::make_shared<fml::AutoResetWaitableEvent>();
+  auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
   PumpOneFrame(shell.get());
 
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
+      shell->GetTaskRunners().GetGPUTaskRunner(), [&shell, &latch]() {
         SnapshotDelegate* delegate =
             reinterpret_cast<Rasterizer*>(shell->GetRasterizer().get());
         sk_sp<SkImage> image = delegate->MakeRasterSnapshot(
