@@ -159,6 +159,8 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 @property(nonatomic) UIKeyboardType keyboardType;
 @property(nonatomic) UIReturnKeyType returnKeyType;
 @property(nonatomic, getter=isSecureTextEntry) BOOL secureTextEntry;
+@property(nonatomic) UITextSmartQuotesType smartQuotesType API_AVAILABLE(ios(11.0));
+@property(nonatomic) UITextSmartDashesType smartDashesType API_AVAILABLE(ios(11.0));
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
 
@@ -193,6 +195,10 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     _keyboardType = UIKeyboardTypeDefault;
     _returnKeyType = UIReturnKeyDone;
     _secureTextEntry = NO;
+    if (@available(iOS 11.0, *)) {
+      _smartQuotesType = UITextSmartQuotesTypeDefault;
+      _smartDashesType = UITextSmartDashesTypeDefault;
+    }
   }
 
   return self;
@@ -764,6 +770,16 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   _activeView.keyboardType = ToUIKeyboardType(inputType);
   _activeView.returnKeyType = ToUIReturnKeyType(configuration[@"inputAction"]);
   _activeView.autocapitalizationType = ToUITextAutoCapitalizationType(configuration);
+  if (@available(iOS 11.0, *)) {
+    NSString* enableSmartDashes = configuration[@"enableSmartDashes"];
+    _activeView.smartDashesType = enableSmartDashes && ![enableSmartDashes boolValue]
+                                         ? UITextSmartDashesTypeNo
+                                         : UITextSmartDashesTypeDefault;
+    NSString* enableSmartQuotes = configuration[@"enableSmartQuotes"];
+    _activeView.smartQuotesType = enableSmartQuotes && ![enableSmartQuotes boolValue]
+                                         ? UITextSmartQuotesTypeNo
+                                         : UITextSmartQuotesTypeDefault;
+  }
   if ([keyboardAppearance isEqualToString:@"Brightness.dark"]) {
     _activeView.keyboardAppearance = UIKeyboardAppearanceDark;
   } else if ([keyboardAppearance isEqualToString:@"Brightness.light"]) {
