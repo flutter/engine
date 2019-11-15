@@ -45,9 +45,9 @@ static UITextAutocapitalizationType ToUITextAutoCapitalizationType(NSDictionary*
   return UITextAutocapitalizationTypeNone;
 }
 
-@available iOS (10.0,*)
-static UITextContentType ToUITextContentType(NSDictionary* type){
-      NSString* contentType = type[@"textType"];
+@available iOS (11.0,*)
+static UITextContentType ToUITextContentType(NSDictionary* type) {
+    NSString* contentType = type[@"textType"];
     if ([contentType isEqualToString:@"TextContent.username"])
         return UITextContentTypeUsername;
 }
@@ -157,14 +157,11 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 @property(nonatomic, copy) NSDictionary* markedTextStyle;
 @property(nonatomic, assign) id<UITextInputDelegate> inputDelegate;
 /**
- This file is to make ios 10 or higher device using autofill
+ This file is to make ios 11 or higher device using autofill
  
  Reference to  github.com/flutter/flutter/issues/33040
  **/
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
-@property(nonatomic) UITextContentType textContentType;
-#else
-#endif
+@property(nonatomic) UITextContentType textContentType API_AVAILABLE(ios(11.0));
 
 
 // UITextInputTraits
@@ -208,7 +205,8 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     _enablesReturnKeyAutomatically = NO;
     _keyboardAppearance = UIKeyboardAppearanceDefault;
     _keyboardType = UIKeyboardTypeDefault;
-    _keyboardContentType = UITextContentType;
+    if(@available iOS (11.0,*))
+        _keyboardContentType = UITextContentType;
     _returnKeyType = UIReturnKeyDone;
     _secureTextEntry = NO;
   }
@@ -772,7 +770,8 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
 - (void)setTextInputClient:(int)client withConfiguration:(NSDictionary*)configuration {
   NSDictionary* inputType = configuration[@"inputType"];
-    NSDictionary* contentType = configuration[@"contentType"];
+  if(@available iOS (11.0,*))
+      NSDictionary* contentType = configuration[@"contentType"];
   NSString* keyboardAppearance = configuration[@"keyboardAppearance"];
   if ([configuration[@"obscureText"] boolValue]) {
     _activeView = _secureView;
@@ -781,7 +780,8 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   }
 
   _activeView.keyboardType = ToUIKeyboardType(inputType);
-  _activeView.textContentType = ToUITextContentType(contentType);
+  if(@available iOS (11.0,*))
+      _activeView.textContentType = ToUITextContentType(contentType);
   _activeView.returnKeyType = ToUIReturnKeyType(configuration[@"inputAction"]);
   _activeView.autocapitalizationType = ToUITextAutoCapitalizationType(configuration);
   if ([keyboardAppearance isEqualToString:@"Brightness.dark"]) {
