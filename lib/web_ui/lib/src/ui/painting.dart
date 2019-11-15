@@ -1174,6 +1174,21 @@ class Paint {
     // TODO(flutter/flutter#35156): Implement ImageFilter.
   }
 
+  /// Whether to dither the output when drawing images.
+  /// 
+  /// If false, the default value, dithering will be enabled when the input
+  /// color depth is higher than the output color depth. For example, 
+  /// drawing an RGB8 image onto an RGB565 canvas.
+  /// 
+  /// This value also controls dithering of [shader]s, which can make 
+  /// gradients appear smoother.
+  /// 
+  /// Whether or not dithering affects the output is implementation defined.
+  /// Some implementations may choose to ignore this completely, if they're
+  /// unable to control dithering.
+  bool get dither => false; // Not implemented on web
+  set dither(bool value) {}
+
   // True if Paint instance has used in RecordingCanvas.
   bool _frozen = false;
 

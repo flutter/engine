@@ -1058,6 +1058,7 @@ class Paint {
   static const int _kMaskFilterBlurStyleIndex = 10;
   static const int _kMaskFilterSigmaIndex = 11;
   static const int _kInvertColorIndex = 12;
+  static const int _kDitherIndex = 13;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
   static const int _kColorOffset = _kColorIndex << 2;
@@ -1072,8 +1073,9 @@ class Paint {
   static const int _kMaskFilterBlurStyleOffset = _kMaskFilterBlurStyleIndex << 2;
   static const int _kMaskFilterSigmaOffset = _kMaskFilterSigmaIndex << 2;
   static const int _kInvertColorOffset = _kInvertColorIndex << 2;
+  static const int _kDitherOffset = _kDitherIndex << 2;
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 52;
+  static const int _kDataByteCount = 56;
 
   // Binary format must match the deserialization code in paint.cc.
   List<dynamic> _objects;
@@ -1401,6 +1403,25 @@ class Paint {
     _data.setInt32(_kInvertColorOffset, value ? 1 : 0, _kFakeHostEndian);
   }
 
+  /// Whether to dither the output when drawing images.
+  /// 
+  /// If false, the default value, dithering will be enabled when the input
+  /// color depth is higher than the output color depth. For example, 
+  /// drawing an RGB8 image onto an RGB565 canvas.
+  /// 
+  /// This value also controls dithering of [shader]s, which can make 
+  /// gradients appear smoother.
+  /// 
+  /// Whether or not dithering affects the output is implementation defined.
+  /// Some implementations may choose to ignore this completely, if they're
+  /// unable to control dithering.
+  bool get dither {
+    return _data.getInt32(_kDitherOffset, _kFakeHostEndian) == 1;
+  }
+  set dither(bool value) {
+    _data.setInt32(_kDitherOffset, value ? 1 : 0, _kFakeHostEndian);
+  }
+
   @override
   String toString() {
     final StringBuffer result = StringBuffer();
@@ -1459,6 +1480,8 @@ class Paint {
     }
     if (invertColors)
       result.write('${semicolon}invert: $invertColors');
+    if (dither)
+      result.write('${semicolon}dither: $dither');
     result.write(')');
     return result.toString();
   }
