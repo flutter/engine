@@ -135,7 +135,8 @@ Future<void> main(List<String> args) async {
     ..target = createFrontEndTarget(
       options['target-model'],
       trackWidgetCreation: true,
-    );
+    )
+    ..omitPlatform = false;
   setVMEnvironmentDefines(<String, String>{}, compilerOptions);
 
   // Create incremental compiler.
@@ -291,7 +292,8 @@ class BodyReplacementTransformer extends Transformer {
         matchedClass &&
         node.name.name == methodId &&
         node.kind == ProcedureKind.Method) {
-      return procedure;
+      return node;
+      //return procedure;
     }
     return super.visitProcedure(node);
   }

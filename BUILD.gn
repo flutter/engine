@@ -46,6 +46,7 @@ group("flutter") {
     if (current_toolchain == host_toolchain) {
       public_deps += [
         "$flutter_root/flutter_frontend_server:frontend_server",
+        "$flutter_root/hotui_server:hotui_server",
         "//third_party/dart:create_sdk",
       ]
 
