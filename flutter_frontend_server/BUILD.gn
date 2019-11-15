@@ -46,44 +46,7 @@ if (is_fuchsia_host || is_fuchsia) {
       ":flutter_frontend_server",
     ]
   }
-<<<<<<< HEAD
-} else {
-  import("//third_party/dart/utils/application_snapshot.gni")
-
-  frontend_server_files =
-      exec_script("//third_party/dart/tools/list_dart_files.py",
-                  [
-                    "absolute",
-                    rebase_path("."),
-                  ],
-                  "list lines")
-
-  frontend_server_files +=
-      exec_script("//third_party/dart/tools/list_dart_files.py",
-                  [
-                    "absolute",
-                    rebase_path("../../third_party/dart/pkg"),
-                  ],
-                  "list lines")
-
-  application_snapshot("frontend_server") {
-    main_dart = "bin/starter.dart"
-    deps = [
-      ":package_incremental_compiler",
-      "$flutter_root/lib/snapshot:kernel_platform_files",
-      "$flutter_root/hotui_server",
-    ]
-    dot_packages = rebase_path(".packages")
-    flutter_patched_sdk = rebase_path("$root_out_dir/flutter_patched_sdk")
-    training_args = [
-      "--train",
-      "--sdk-root=$flutter_patched_sdk",
-      rebase_path(main_dart),
-    ]
-=======
 }
->>>>>>> 38a440cc0fadddb0a0713a6b94ecb0ac2d0441fd
-
 frontend_server_files =
     exec_script("//third_party/dart/tools/list_dart_files.py",
                 [

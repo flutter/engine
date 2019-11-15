@@ -86,6 +86,7 @@ final ArgParser argParser = ArgParser()
     defaultsTo: null,
   );
 
+const String kStartedMessage = 'STARTED';
 const String kReadyMessage = 'READY';
 const String kFailedMessage = 'FAILED';
 
@@ -181,7 +182,7 @@ class HotUIService {
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen(onMessage);
-    print(kReadyMessage);
+    print(kStartedMessage);
   }
 
   final IncrementalCompiler incrementalCompiler;
@@ -194,15 +195,21 @@ class HotUIService {
   Future<void> reloadMethod(String libraryId, String classId, String methodId,
       String methodBody, IOSink sink) async {
     final Procedure procedure = await incrementalCompiler.compileExpression(
-        methodBody,
-        // This is not yet flexible for non-build expressions.
-        <String>['context'],
-        <String>['BuildContext'],
-        libraryId,
-        classId,
-        false);
-    component.transformChildren(
-        BodyReplacementTransformer(libraryId, classId, methodId, procedure));
+      methodBody,
+      // This is not yet flexible for non-build expressions.
+      <String>['context'],
+      <String>['BuildContext'],
+      libraryId,
+      classId,
+      false,
+    );
+    final BodyReplacementTransformer transformer = BodyReplacementTransformer(
+      libraryId,
+      classId,
+      methodId,
+      procedure,
+    );
+    transformer.transformComponent(component);
     final Library modifiedLibrary = component.libraries.firstWhere(
         (Library library) => library.importUri.toString() == libraryId,
         orElse: () => null);
@@ -212,7 +219,7 @@ class HotUIService {
     final Component partialComponent = Component(libraries: <Library>[
       modifiedLibrary,
     ]);
-    // Unbink the canconical names so the binary printer can safely
+    // unbind the canconical names so the binary printer can safely
     // recompute them during `writeComponentFile`.
     partialComponent.unbindCanonicalNames();
     final BinaryPrinter printer =
@@ -250,7 +257,7 @@ class HotUIService {
 
 /// Replaces the body of method [methodId] on class [classId] in library
 /// [libraryId] with [procedure].
-class BodyReplacementTransformer extends Transformer {
+class BodyReplacementTransformer {
   BodyReplacementTransformer(
     this.libraryId,
     this.classId,
@@ -262,39 +269,26 @@ class BodyReplacementTransformer extends Transformer {
   final String classId;
   final String methodId;
   final Procedure procedure;
-  bool matchedClass = false;
-  bool matchedLibrary = false;
 
-  @override
-  Library visitLibrary(Library node) {
-    if (node.importUri.toString() == libraryId) {
-      matchedLibrary = true;
-      return super.visitLibrary(node);
+  void transformComponent(Component component) {
+    for (Library library in component.libraries) {
+      if (library.importUri.toString() != libraryId) {
+        continue;
+      }
+      for (Class classNode in library.classes) {
+        if (classNode.name != classId) {
+          continue;
+        }
+        for (int i = 0; i < classNode.procedures.length; i++) {
+          final Procedure currentProcedure = classNode.procedures[i];
+          if (currentProcedure.name.name == methodId &&
+              currentProcedure.kind == ProcedureKind.Method) {
+            procedure.name = Name(methodId);
+            classNode.procedures[i] = procedure;
+            continue;
+          }
+        }
+      }
     }
-    matchedLibrary = false;
-    return node;
-  }
-
-  @override
-  Class visitClass(Class clazz) {
-    if (clazz.name == classId) {
-      matchedClass = true;
-      return super.visitClass(clazz);
-    }
-    matchedClass = false;
-    return clazz;
-  }
-
-  @override
-  TreeNode visitProcedure(Procedure node) {
-    // TODO(jonahwilliams): Validate that the argument/return types are correct.
-    if (matchedLibrary &&
-        matchedClass &&
-        node.name.name == methodId &&
-        node.kind == ProcedureKind.Method) {
-      return node;
-      //return procedure;
-    }
-    return super.visitProcedure(node);
   }
 }
