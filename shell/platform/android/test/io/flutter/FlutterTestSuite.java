@@ -23,6 +23,8 @@ import io.flutter.plugin.editing.TextInputPluginTest;
 import io.flutter.plugin.platform.SingleViewPresentationTest;
 import io.flutter.util.PreconditionsTest;
 import test.io.flutter.embedding.engine.FlutterEngineTest;
+import test.io.flutter.embedding.engine.FlutterShellArgsTest;
+import test.io.flutter.embedding.engine.PluginComponentTest;
 import test.io.flutter.embedding.engine.dart.DartExecutorTest;
 
 @RunWith(Suite.class)
@@ -35,9 +37,11 @@ import test.io.flutter.embedding.engine.dart.DartExecutorTest;
     FlutterEngineTest.class,
     FlutterFragmentTest.class,
     FlutterJNITest.class,
+    FlutterShellArgsTest.class,
     FlutterRendererTest.class,
     FlutterViewTest.class,
     PlatformChannelTest.class,
+    PluginComponentTest.class,
     PreconditionsTest.class,
     RenderingComponentTest.class,
     StandardMessageCodecTest.class,
