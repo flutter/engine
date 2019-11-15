@@ -7,7 +7,6 @@ import 'dart:io' as io;
 import 'package:args/args.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
-import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
 import 'package:yaml/yaml.dart';
 
 /// The port number for debugging.
@@ -15,11 +14,6 @@ const int kDevtoolsPort = 12345;
 const int kMaxScreenshotWidth = 1024;
 const int kMaxScreenshotHeight = 1024;
 const double kMaxDiffRateFailure = 0.28 / 100; // 0.28%
-
-final Map<String, Runtime> supportedBrowsers = {
-  'chrome': Runtime.chrome,
-  'firefox': Runtime.firefox
-};
 
 class BrowserInstallerException implements Exception {
   BrowserInstallerException(this.message);

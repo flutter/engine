@@ -13,10 +13,16 @@ import 'package:yaml/yaml.dart';
 import 'common.dart';
 import 'environment.dart';
 
-const ChromeArgParser chromeArgParser = ChromeArgParser();
-
 class ChromeArgParser extends BrowserArgParser {
-  const ChromeArgParser();
+  static final ChromeArgParser _singletonInstance = ChromeArgParser._();
+
+  String _version;
+
+  factory ChromeArgParser() {
+    return _singletonInstance;
+  }
+
+  ChromeArgParser._();
 
   void addOption(YamlMap browserLock, ArgParser argParser) {
     final int pinnedChromeVersion =
@@ -37,12 +43,11 @@ class ChromeArgParser extends BrowserArgParser {
 
   @override
   void setVersion(ArgResults argResults) {
-    // TODO: implement setVersion
+    _version = argResults['chrome-version'];
   }
 
   @override
-  // TODO: implement version
-  String get version => null;
+  String get version => _version;
 }
 
 /// Returns the installation of Chrome, installing it if necessary.

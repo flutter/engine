@@ -15,17 +15,12 @@ import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
 import 'package:yaml/yaml.dart';
 
-import 'chrome_installer.dart';
-import 'common.dart';
-import 'firefox_installer.dart';
+import 'supported_browsers.dart';
 import 'test_platform.dart';
 import 'environment.dart';
 import 'utils.dart';
 
 class TestCommand extends Command<bool> {
-  final List<BrowserArgParser> argParsers =
-      List.of([chromeArgParser, firefoxArgParser]);
-
   TestCommand() {
     argParser
       ..addFlag(
@@ -52,7 +47,8 @@ class TestCommand extends Command<bool> {
         path.join(environment.webUiRootDir.path, 'dev', 'browser_lock.yaml'));
     final YamlMap browserLock = loadYaml(lockFile.readAsStringSync());
 
-    argParsers.forEach((t) => t.addOption(browserLock, argParser));
+    supportedBrowsers.argParsers
+        .forEach((t) => t.addOption(browserLock, argParser));
   }
 
   @override
@@ -61,11 +57,14 @@ class TestCommand extends Command<bool> {
   @override
   final String description = 'Run tests.';
 
+  // Browsers supported by this platform.
+  final SupportedBrowsers supportedBrowsers = SupportedBrowsers();
+
   @override
   Future<bool> run() async {
-    assert(supportedBrowsers.containsKey(browser));
+    assert(supportedBrowsers.supportedBrowserNames.contains(browser));
 
-    argParsers.forEach((t) => t.setVersion(argResults));
+    supportedBrowsers.argParsers.forEach((t) => t.setVersion(argResults));
 
     _copyTestFontsIntoWebUi();
     await _buildHostPage();
@@ -256,7 +255,9 @@ class TestCommand extends Command<bool> {
       ...testFiles.map((f) => f.relativeToWebUi).toList(),
     ];
 
-    hack.registerPlatformPlugin(<Runtime>[supportedBrowsers[browser]], () {
+    hack.registerPlatformPlugin(
+        <Runtime>[supportedBrowsers.supportedBrowsersToRuntimeMap[browser]],
+        () {
       return BrowserPlatform.start(
         browser,
         root: io.Directory.current.path,

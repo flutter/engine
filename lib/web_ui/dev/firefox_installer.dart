@@ -12,10 +12,16 @@ import 'package:yaml/yaml.dart';
 import 'common.dart';
 import 'environment.dart';
 
-const FirefoxArgParser firefoxArgParser = FirefoxArgParser();
-
 class FirefoxArgParser extends BrowserArgParser {
-  const FirefoxArgParser();
+  static final FirefoxArgParser _singletonInstance = FirefoxArgParser._();
+
+  String _version;
+
+  factory FirefoxArgParser() {
+    return _singletonInstance;
+  }
+
+  FirefoxArgParser._();
 
   void addOption(YamlMap browserLock, ArgParser argParser) {
     String firefoxVersion = browserLock['firefox']['version'];
@@ -34,12 +40,11 @@ class FirefoxArgParser extends BrowserArgParser {
 
   @override
   void setVersion(ArgResults argResults) {
-    // TODO: implement setVersion
+    _version = argResults['firefox-version'];
   }
 
   @override
-  // TODO: implement version
-  String get version => null;
+  String get version => _version;
 }
 
 /// Returns the installation of Firefox, installing it if necessary.
