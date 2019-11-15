@@ -773,12 +773,12 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   if (@available(iOS 11.0, *)) {
     NSString* enableSmartDashes = configuration[@"enableSmartDashes"];
     _activeView.smartDashesType = enableSmartDashes && ![enableSmartDashes boolValue]
-                                         ? UITextSmartDashesTypeNo
-                                         : UITextSmartDashesTypeDefault;
+                                       ? UITextSmartDashesTypeNo
+                                       : UITextSmartDashesTypeDefault;
     NSString* enableSmartQuotes = configuration[@"enableSmartQuotes"];
     _activeView.smartQuotesType = enableSmartQuotes && ![enableSmartQuotes boolValue]
-                                         ? UITextSmartQuotesTypeNo
-                                         : UITextSmartQuotesTypeDefault;
+                                       ? UITextSmartQuotesTypeNo
+                                       : UITextSmartQuotesTypeDefault;
   }
   if ([keyboardAppearance isEqualToString:@"Brightness.dark"]) {
     _activeView.keyboardAppearance = UIKeyboardAppearanceDark;
