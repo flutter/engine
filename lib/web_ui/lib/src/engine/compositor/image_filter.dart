@@ -10,7 +10,7 @@ part of engine;
 class SkImageFilter implements ui.ImageFilter {
   js.JsObject skImageFilter;
 
-  SkImageFilter.blur({double sigmaX = 0.0, double sigmaY = 0.0}) {
+  SkImageFilter.blur({this.sigmaX = 0.0, this.sigmaY = 0.0}) {
     skImageFilter = canvasKit['SkImageFilter'].callMethod(
       'MakeBlur',
       <dynamic>[
@@ -20,5 +20,25 @@ class SkImageFilter implements ui.ImageFilter {
         null,
       ],
     );
+  }
+
+  final double sigmaX;
+  final double sigmaY;
+
+  @override
+  bool operator ==(dynamic other) {
+    if (other is! SkImageFilter) {
+      return false;
+    }
+    final SkImageFilter typedOther = other;
+    return sigmaX == typedOther.sigmaX && sigmaY == typedOther.sigmaY;
+  }
+
+  @override
+  int get hashCode => ui.hashValues(sigmaX, sigmaY);
+
+  @override
+  String toString() {
+    return 'ImageFilter.blur($sigmaX, $sigmaY)';
   }
 }
