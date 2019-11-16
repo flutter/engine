@@ -238,7 +238,6 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     [self.inputDelegate selectionWillChange:self];
     [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
             updateEditingState:NO];
-
     _selectionAffinity = _kTextAffinityDownstream;
     if ([state[@"selectionAffinity"] isEqualToString:@(_kTextAffinityUpstream)])
       _selectionAffinity = _kTextAffinityUpstream;
@@ -622,6 +621,9 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 }
 
 - (void)insertText:(NSString*)text {
+  // We do not know the affinity here. Set to "" so that Flutter interprets it
+  // as ambiguous and uses a fallback affinity.
+  _selectionAffinity = "";
   [self replaceRange:_selectedTextRange withText:text];
 }
 
