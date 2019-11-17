@@ -110,6 +110,8 @@ def CopyGenSnapshotIfExists(source, destination):
   FindFileAndCopyTo('gen_snapshot_product', source_root, destination_base)
   FindFileAndCopyTo('kernel_compiler.dart.snapshot', source_root,
                     destination_base, 'kernel_compiler.snapshot')
+  FindFileAndCopyTo('frontend_server.dart.snapshot', source_root,
+                    destination_base, 'flutter_frontend_server.snapshot')
 
 
 def CopyFlutterTesterBinIfExists(source, destination):
@@ -207,8 +209,10 @@ def BuildTarget(runtime_mode, arch, product, enable_lto):
       runtime_mode,
   ]
 
-  if not enable_lto:
-    flags.append('--no-lto')
+  # Always disable lto until https://github.com/flutter/flutter/issues/44841
+  # gets fixed.
+  # if not enable_lto:
+  flags.append('--no-lto')
 
   RunGN(out_dir, flags)
   BuildNinjaTargets(out_dir, GetTargetsToBuild(product))
@@ -227,7 +231,7 @@ def main():
 
   parser.add_argument(
       '--engine-version',
-      required=True,
+      required=False,
       help='Specifies the flutter engine SHA.')
 
   parser.add_argument(
@@ -270,8 +274,13 @@ def main():
           BuildTarget(runtime_mode, arch, product, enable_lto)
         BuildBucket(runtime_mode, arch, product)
 
-  ProcessCIPDPakcage(args.upload, args.engine_version)
+  if args.upload:
+    if args.engine_version is None:
+      print('--upload requires --engine-version to be specified.')
+      return 1
+    ProcessCIPDPakcage(args.upload, args.engine_version)
+  return 0
 
 
 if __name__ == '__main__':
-  main()
+  sys.exit(main())
