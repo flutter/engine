@@ -23,7 +23,8 @@ class FirefoxArgParser extends BrowserArgParser {
 
   FirefoxArgParser._();
 
-  void addOption(YamlMap browserLock, ArgParser argParser) {
+  @override
+  void addOptions(YamlMap browserLock, ArgParser argParser) {
     String firefoxVersion = browserLock['firefox']['version'];
 
     argParser

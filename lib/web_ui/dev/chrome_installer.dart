@@ -24,7 +24,8 @@ class ChromeArgParser extends BrowserArgParser {
 
   ChromeArgParser._();
 
-  void addOption(YamlMap browserLock, ArgParser argParser) {
+  @override
+  void addOptions(YamlMap browserLock, ArgParser argParser) {
     final int pinnedChromeVersion =
         PlatformBinding.instance.getChromeBuild(browserLock);
 
@@ -34,8 +35,8 @@ class ChromeArgParser extends BrowserArgParser {
         defaultsTo: '$pinnedChromeVersion',
         help: 'The Chrome version to use while running tests. If the requested '
             'version has not been installed, it will be downloaded and installed '
-            'automatically. A specific Chrome build version number, such as 695653 '
-            'this use that version of Chrome. Value "latest" will use the latest '
+            'automatically. A specific Chrome build version number, such as 695653, '
+            'will use that version of Chrome. Value "latest" will use the latest '
             'available build of Chrome, installing it if necessary. Value "system" '
             'will use the manually installed version of Chrome on this computer.',
       );
@@ -186,7 +187,7 @@ class ChromeInstaller {
     ));
 
     final io.File downloadedFile =
-        io.File(path.join(versionDir.path, 'chrome.zip')); //.zip
+        io.File(path.join(versionDir.path, 'chrome.zip'));
     await download.stream.pipe(downloadedFile.openWrite());
 
     final io.ProcessResult unzipResult = await io.Process.run('unzip', <String>[

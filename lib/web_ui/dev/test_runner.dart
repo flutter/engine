@@ -40,7 +40,8 @@ class TestCommand extends Command<bool> {
       ..addOption(
         'browser',
         defaultsTo: 'chrome',
-        help: '',
+        help: 'An option to choose a browser to run the tests. Tests only work '
+            ' on Chrome for now.',
       );
 
     final io.File lockFile = io.File(
@@ -48,7 +49,7 @@ class TestCommand extends Command<bool> {
     final YamlMap browserLock = loadYaml(lockFile.readAsStringSync());
 
     supportedBrowsers.argParsers
-        .forEach((t) => t.addOption(browserLock, argParser));
+        .forEach((t) => t.addOptions(browserLock, argParser));
   }
 
   @override
@@ -57,13 +58,11 @@ class TestCommand extends Command<bool> {
   @override
   final String description = 'Run tests.';
 
-  // Browsers supported by this platform.
+  /// Browsers supported by this platform.
   final SupportedBrowsers supportedBrowsers = SupportedBrowsers();
 
   @override
   Future<bool> run() async {
-    assert(supportedBrowsers.supportedBrowserNames.contains(browser));
-
     supportedBrowsers.argParsers.forEach((t) => t.setVersion(argResults));
 
     _copyTestFontsIntoWebUi();

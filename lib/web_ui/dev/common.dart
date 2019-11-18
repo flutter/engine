@@ -129,7 +129,7 @@ abstract class BrowserArgParser {
   const BrowserArgParser();
 
   /// Define an option to passed [ArgParser] using a value from [BrowserLock].
-  void addOption(YamlMap browserLock, ArgParser argParser);
+  void addOptions(YamlMap browserLock, ArgParser argParser);
 
   void setVersion(ArgResults argResults);
 
