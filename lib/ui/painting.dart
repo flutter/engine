@@ -309,8 +309,7 @@ class Color {
 
   /// Returns an alpha value representative of the provided [opacity] value.
   ///
-  /// The [opacity] value may not be null, an must be between 0.0 and 1.0,
-  /// inclusive.
+  /// The [opacity] value may not be null.
   static int getAlphaFromOpacity(double opacity) {
     assert(opacity != null);
     final double clampedOpacity = opacity.clamp(0.0, 1.0);
