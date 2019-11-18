@@ -50,6 +50,15 @@ void main() {
       expect(contourLengths[0], within(distance: kTolerance, from: 111.803));
       expect(contourLengths[1], within(distance: kTolerance, from: 100.0));
     });
+
+    test('quadratic curve', () {
+      Path path = Path();
+      path.moveTo(20,100);
+      path.quadraticBezierTo(80, 10, 140, 110);
+      final List<double> contourLengths = computeLengths(path.computeMetrics());
+      expect(contourLengths.length, 1);
+      expect(contourLengths[0], within(distance: kTolerance, from: 159.473));
+    });
   });
 }
 
