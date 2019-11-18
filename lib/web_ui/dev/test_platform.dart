@@ -38,10 +38,8 @@ import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
     as wip;
 
 import 'browser.dart';
-import 'chrome.dart';
 import 'common.dart';
 import 'environment.dart' as env;
-import 'firefox.dart';
 import 'goldens.dart';
 import 'supported_browsers.dart';
 

@@ -52,13 +52,16 @@ class Chrome extends Browser {
       // --disable-gpu
       // --disallow-non-exact-resource-reuse
       // --disable-font-subpixel-positioning
-      final bool isChromeNoSandbox = Platform.environment['CHROME_NO_SANDBOX'] == 'true';
+      final bool isChromeNoSandbox =
+          Platform.environment['CHROME_NO_SANDBOX'] == 'true';
       var dir = createTempDir();
       var args = [
         '--user-data-dir=$dir',
         url.toString(),
-        if (!debug) '--headless',
-        if (isChromeNoSandbox) '--no-sandbox',
+        if (!debug)
+          '--headless',
+        if (isChromeNoSandbox)
+          '--no-sandbox',
         '--window-size=$kMaxScreenshotWidth,$kMaxScreenshotHeight', // When headless, this is the actual size of the viewport
         '--disable-extensions',
         '--disable-popup-blocking',
@@ -71,13 +74,14 @@ class Chrome extends Browser {
         '--remote-debugging-port=$kDevtoolsPort',
       ];
 
-      final Process process = await Process.start(installation.executable, args);
+      final Process process =
+          await Process.start(installation.executable, args);
 
-      remoteDebuggerCompleter.complete(getRemoteDebuggerUrl(
-          Uri.parse('http://localhost:${kDevtoolsPort}')));
+      remoteDebuggerCompleter.complete(
+          getRemoteDebuggerUrl(Uri.parse('http://localhost:${kDevtoolsPort}')));
 
-      // unawaited(process.exitCode
-      //     .then((_) => Directory(dir).deleteSync(recursive: true)));
+      unawaited(process.exitCode
+          .then((_) => Directory(dir).deleteSync(recursive: true)));
 
       return process;
     }, remoteDebuggerCompleter.future);

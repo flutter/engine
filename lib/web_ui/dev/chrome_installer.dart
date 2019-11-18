@@ -202,7 +202,7 @@ class ChromeInstaller {
           'The unzip process exited with code ${unzipResult.exitCode}.');
     }
 
-    //downloadedFile.deleteSync();
+    downloadedFile.deleteSync();
   }
 
   void close() {
