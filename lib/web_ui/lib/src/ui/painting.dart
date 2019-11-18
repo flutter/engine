@@ -232,7 +232,7 @@ class Color {
   static int getAlphaFromOpacity(double opacity) {
     assert(opacity != null);
     final double clampedOpacity = opacity.clamp(0.0, 1.0);
-    return (clampedOpacity * 255).round();
+    return (opacity.clamp(0.0, 1.0) * 255).round();
   }
 
   @override
