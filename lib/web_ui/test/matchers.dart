@@ -143,7 +143,7 @@ Matcher within<T>({
   if (distanceFunction == null) {
     throw ArgumentError(
         'The specified distanceFunction was null, and a standard distance '
-        'function was not found for type T of the provided '
+        'function was not found for type ${T} of the provided '
         '`from` argument.');
   }
 
