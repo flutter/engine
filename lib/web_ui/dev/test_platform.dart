@@ -129,7 +129,7 @@ class BrowserPlatform extends PlatformPlugin {
           .add(_wrapperHandler);
       // Screenshot tests are only enabled in chrome for now.
       if (name == 'chrome') {
-        cascade.add(_screeshotHandler);
+        cascade = cascade.add(_screeshotHandler);
       }
     }
 
@@ -144,8 +144,6 @@ class BrowserPlatform extends PlatformPlugin {
   }
 
   Future<shelf.Response> _screeshotHandler(shelf.Request request) async {
-    // Screenshot tests are only enabled in chrome for now.
-    assert(browserName == 'chrome');
     if (!request.requestedUri.path.endsWith('/screenshot')) {
       return shelf.Response.notFound(
           'This request is not handled by the screenshot handler');
