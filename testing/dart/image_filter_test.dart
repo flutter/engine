@@ -17,11 +17,6 @@ const int greenCenterScaled = 0xFF00AA00;
 const int greenSideScaled = 0x80005500;
 const int greenCornerScaled = 0x40002B00;
 
-// This file requires the ImageFilter blur and matrix to both be supported
-// and have working ==, hashcode and toString() implementations.  The web
-// versions of these classes are not quite there yet, but will be soon.
-@TestOn('!chrome')
-
 void main() {
   Future<Uint32List> getBytesForPaint(Paint paint, {int width = 3, int height = 3}) async {
     final PictureRecorder recorder = PictureRecorder();

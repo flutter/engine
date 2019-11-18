@@ -2779,10 +2779,6 @@ class ImageFilter {
       case _kTypeBlur:
         return _ImageFilter.blur(this);
       case _kTypeMatrix:
-        if (_data == null) {
-          return null;
-        }
-        assert(_data.length == 16, 'Image Matrix must have 16 entries.');
         return _ImageFilter.matrix(this);
       default:
         throw StateError('Unknown mode $_type for ImageFilter.');
