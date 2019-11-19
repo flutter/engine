@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 part of engine;
 
+// TODO(hterkelsen): Get rid of this once we can register font families with
+//     custom names.
 /// CanvasKit does not yet allow us to specify family names when registering
 /// fonts. CanvasKit reads the font name from the font's bytes. So, we map
 /// some common family names to how they are registered in the Gallery app.
@@ -144,7 +146,6 @@ class SkParagraphStyle implements ui.ParagraphStyle {
   }
 }
 
-// TODO(hterkelsen): Implement text style
 class SkTextStyle implements ui.TextStyle {
   js.JsObject skTextStyle;
 
@@ -213,7 +214,7 @@ class SkTextStyle implements ui.TextStyle {
       fontFamilies.addAll(fontFamilies);
     }
 
-      style['fontFamilies'] = fontFamilies;
+    style['fontFamilies'] = fontFamilies;
 
     if (fontWeight != null || fontStyle != null) {
       style['fontStyle'] = toSkFontStyle(fontWeight, fontStyle);
@@ -411,6 +412,7 @@ class SkParagraph implements ui.Paragraph {
     } catch (e) {
       html.window.console.warn('CanvasKit threw an exception while laying '
           'out the paragraph. The font was "$_fontFamily". Exception:\n$e');
+      rethrow;
     }
   }
 
@@ -436,11 +438,13 @@ class SkParagraphBuilder implements ui.ParagraphBuilder {
     SkParagraphStyle skStyle = style;
     _textDirection = skStyle._textDirection;
     _fontFamily = skStyle._fontFamily;
-    _paragraphBuilder =
-        canvasKit['ParagraphBuilder'].callMethod('Make', <js.JsObject>[
-      skStyle.skParagraphStyle,
-      skiaFontCollection.skFontMgr,
-    ]);
+    _paragraphBuilder = canvasKit['ParagraphBuilder'].callMethod(
+      'Make',
+      <js.JsObject>[
+        skStyle.skParagraphStyle,
+        skiaFontCollection.skFontMgr,
+      ],
+    );
   }
 
   // TODO(hterkelsen): Implement placeholders.
@@ -463,8 +467,11 @@ class SkParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   ui.Paragraph build() {
-    return SkParagraph(
+    final SkParagraph paragraph = SkParagraph(
         _paragraphBuilder.callMethod('build'), _textDirection, _fontFamily);
+    _paragraphBuilder.callMethod('delete');
+    _paragraphBuilder = null;
+    return paragraph;
   }
 
   @override
