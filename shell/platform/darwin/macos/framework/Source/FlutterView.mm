@@ -56,4 +56,9 @@
   return YES;
 }
 
+- (void)viewDidChangeBackingProperties {
+  [super viewDidChangeBackingProperties];
+  [_reshapeListener viewDidReshape:self];
+}
+
 @end
