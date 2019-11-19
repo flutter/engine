@@ -651,7 +651,9 @@ void Shell::OnPlatformViewDestroyed() {
   auto io_task = [io_manager = io_manager_.get(), &latch]() {
     // Execute any pending Skia object deletions while GPU access is still
     // allowed.
-    io_manager->GetSkiaUnrefQueue()->Drain();
+    io_manager->GetIsBackgroundedSyncSwitch()->Execute(
+        fml::SyncSwitch::Handlers().SetFalse(
+            [&] { io_manager->GetSkiaUnrefQueue()->Drain(); }));
     // Step 3: All done. Signal the latch that the platform thread is waiting
     // on.
     latch.Signal();
