@@ -195,8 +195,7 @@ class SkPath implements ui.Path {
   @override
   ui.Rect getBounds() {
     final js.JsObject bounds = _skPath.callMethod('getBounds');
-    return ui.Rect.fromLTRB(
-        bounds['fLeft'], bounds['fTop'], bounds['fRight'], bounds['fBottom']);
+    return fromSkRect(bounds);
   }
 
   @override

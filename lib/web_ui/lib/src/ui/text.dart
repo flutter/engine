@@ -471,16 +471,53 @@ abstract class TextStyle {
     Paint foreground,
     List<Shadow> shadows,
     List<FontFeature> fontFeatures,
-  }) = engine.EngineTextStyle;
-
-  @override
-  int get hashCode;
-
-  @override
-  bool operator ==(dynamic other);
-
-  @override
-  String toString();
+  }) {
+    if (engine.experimentalUseSkia) {
+      return engine.SkTextStyle(
+          color: color,
+          decoration: decoration,
+          decorationColor: decorationColor,
+          decorationStyle: decorationStyle,
+          decorationThickness: decorationThickness,
+          fontWeight: fontWeight,
+          fontStyle: fontStyle,
+          textBaseline: textBaseline,
+          fontFamily: fontFamily,
+          fontFamilyFallback: fontFamilyFallback,
+          fontSize: fontSize,
+          letterSpacing: letterSpacing,
+          wordSpacing: wordSpacing,
+          height: height,
+          locale: locale,
+          background: background,
+          foreground: foreground,
+          shadows: shadows,
+          fontFeatures: fontFeatures,
+      );
+    } else {
+      return engine.EngineTextStyle(
+          color: color,
+          decoration: decoration,
+          decorationColor: decorationColor,
+          decorationStyle: decorationStyle,
+          decorationThickness: decorationThickness,
+          fontWeight: fontWeight,
+          fontStyle: fontStyle,
+          textBaseline: textBaseline,
+          fontFamily: fontFamily,
+          fontFamilyFallback: fontFamilyFallback,
+          fontSize: fontSize,
+          letterSpacing: letterSpacing,
+          wordSpacing: wordSpacing,
+          height: height,
+          locale: locale,
+          background: background,
+          foreground: foreground,
+          shadows: shadows,
+          fontFeatures: fontFeatures,
+      );
+    }
+  }
 }
 
 /// An opaque object that determines the configuration used by
@@ -552,16 +589,37 @@ abstract class ParagraphStyle {
     StrutStyle strutStyle,
     String ellipsis,
     Locale locale,
-  }) = engine.EngineParagraphStyle;
-
-  @override
-  bool operator ==(dynamic other);
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
+  }) {
+    if (engine.experimentalUseSkia) {
+      return engine.SkParagraphStyle(
+        textAlign: textAlign,
+        textDirection: textDirection,
+        maxLines: maxLines,
+        fontFamily: fontFamily,
+        fontSize: fontSize,
+        height: height,
+        fontWeight: fontWeight,
+        fontStyle: fontStyle,
+        strutStyle: strutStyle,
+        ellipsis: ellipsis,
+        locale: locale,
+      );
+    } else {
+      return engine.EngineParagraphStyle(
+        textAlign: textAlign,
+        textDirection: textDirection,
+        maxLines: maxLines,
+        fontFamily: fontFamily,
+        fontSize: fontSize,
+        height: height,
+        fontWeight: fontWeight,
+        fontStyle: fontStyle,
+        strutStyle: strutStyle,
+        ellipsis: ellipsis,
+        locale: locale,
+      );
+    }
+  }
 }
 
 abstract class StrutStyle {
@@ -610,12 +668,6 @@ abstract class StrutStyle {
     FontStyle fontStyle,
     bool forceStrutHeight,
   }) = engine.EngineStrutStyle;
-
-  @override
-  int get hashCode;
-
-  @override
-  bool operator ==(dynamic other);
 }
 
 /// A direction in which text flows.
@@ -1240,7 +1292,7 @@ abstract class Paragraph {
   /// have word breaks on both sides. In such cases, this method will return
   /// [offset, offset+1]. Word boundaries are defined more precisely in Unicode
   /// Standard Annex #29 http://www.unicode.org/reports/tr29/#Word_Boundaries
-  TextRange getWordBoundary(TextPosition  position);
+  TextRange getWordBoundary(TextPosition position);
 
   /// Returns the [TextRange] of the line at the given [TextPosition].
   ///
@@ -1287,8 +1339,13 @@ abstract class Paragraph {
 abstract class ParagraphBuilder {
   /// Creates a [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].
-  factory ParagraphBuilder(ParagraphStyle style) =>
-      engine.EngineParagraphBuilder(style);
+  factory ParagraphBuilder(ParagraphStyle style) {
+    if (engine.experimentalUseSkia) {
+      return engine.SkParagraphBuilder(style);
+    } else {
+      return engine.EngineParagraphBuilder(style);
+    }
+  }
 
   /// Applies the given style to the added text until [pop] is called.
   ///

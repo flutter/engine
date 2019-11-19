@@ -344,6 +344,9 @@ FILE: ../../../flutter/lib/ui/window/pointer_data.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data.h
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet.h
+FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter.cc
+FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter.h
+FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter_unittests.cc
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.cc
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.h
 FILE: ../../../flutter/lib/ui/window/window.cc
@@ -376,6 +379,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/rasterizer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/recording_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/runtime_delegate.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/surface.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/viewport_metrics.dart
@@ -514,8 +518,6 @@ FILE: ../../../flutter/shell/common/pointer_data_dispatcher.cc
 FILE: ../../../flutter/shell/common/pointer_data_dispatcher.h
 FILE: ../../../flutter/shell/common/rasterizer.cc
 FILE: ../../../flutter/shell/common/rasterizer.h
-FILE: ../../../flutter/shell/common/renderer_context_switch_manager.cc
-FILE: ../../../flutter/shell/common/renderer_context_switch_manager.h
 FILE: ../../../flutter/shell/common/run_configuration.cc
 FILE: ../../../flutter/shell/common/run_configuration.h
 FILE: ../../../flutter/shell/common/shell.cc
@@ -805,8 +807,6 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context.mm
-FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context_switch_manager.h
-FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context_switch_manager.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_render_target.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_render_target.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface.h
@@ -857,6 +857,8 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_view_embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_view_embedder.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_include.c
+FILE: ../../../flutter/shell/platform/embedder/embedder_layers.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_layers.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_platform_message_response.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_platform_message_response.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target.cc

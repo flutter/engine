@@ -173,12 +173,19 @@ void ShellTest::PumpOneFrame(Shell* shell,
 }
 
 void ShellTest::DispatchFakePointerData(Shell* shell) {
+  auto packet = std::make_unique<PointerDataPacket>(1);
+  DispatchPointerData(shell, std::move(packet));
+}
+
+void ShellTest::DispatchPointerData(Shell* shell,
+                                    std::unique_ptr<PointerDataPacket> packet) {
   fml::AutoResetWaitableEvent latch;
-  shell->GetTaskRunners().GetPlatformTaskRunner()->PostTask([&latch, shell]() {
-    auto packet = std::make_unique<PointerDataPacket>(1);
-    shell->OnPlatformViewDispatchPointerDataPacket(std::move(packet));
-    latch.Signal();
-  });
+  shell->GetTaskRunners().GetPlatformTaskRunner()->PostTask(
+      [&latch, shell, &packet]() {
+        // Goes through PlatformView to ensure packet is corrected converted.
+        shell->GetPlatformView()->DispatchPointerDataPacket(std::move(packet));
+        latch.Signal();
+      });
   latch.Wait();
 }
 
@@ -355,11 +362,8 @@ PointerDataDispatcherMaker ShellTestPlatformView::GetDispatcherMaker() {
 }
 
 // |GPUSurfaceGLDelegate|
-std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
-ShellTestPlatformView::GLContextMakeCurrent() {
-  return std::make_unique<
-      RendererContextSwitchManager::RendererContextSwitchPureResult>(
-      gl_surface_.MakeCurrent());
+bool ShellTestPlatformView::GLContextMakeCurrent() {
+  return gl_surface_.MakeCurrent();
 }
 
 // |GPUSurfaceGLDelegate|
@@ -387,11 +391,6 @@ GPUSurfaceGLDelegate::GLProcResolver ShellTestPlatformView::GetGLProcResolver()
 
 // |GPUSurfaceGLDelegate|
 ExternalViewEmbedder* ShellTestPlatformView::GetExternalViewEmbedder() {
-  return nullptr;
-}
-
-std::shared_ptr<RendererContextSwitchManager>
-ShellTestPlatformView::GetRendererContextSwitchManager() {
   return nullptr;
 }
 
