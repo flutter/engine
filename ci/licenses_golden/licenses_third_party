@@ -1,4 +1,4 @@
-Signature: ca2f5a478a350df271bc591b2a64d1e6
+Signature: 967baee9da0c48803e2e6d2138c25811
 
 UNUSED LICENSES:
 
@@ -7619,6 +7619,7 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/sexpression_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/slot_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/type_propagator_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/typed_data_aot_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/yield_position_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_fingerprints.cc
