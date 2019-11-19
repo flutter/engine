@@ -6,7 +6,7 @@ part of engine;
 
 /// An implementation of [ui.Canvas] that is backed by a CanvasKit canvas.
 class CanvasKitCanvas implements ui.Canvas {
-  final SkLayerCanvas _canvas;
+  final SkCanvas _canvas;
 
   factory CanvasKitCanvas(ui.PictureRecorder recorder, [ui.Rect cullRect]) {
     assert(recorder != null);
@@ -20,10 +20,12 @@ class CanvasKitCanvas implements ui.Canvas {
 
   CanvasKitCanvas._(this._canvas);
 
+  @override
   void save() {
     _canvas.save();
   }
 
+  @override
   void saveLayer(ui.Rect bounds, ui.Paint paint) {
     assert(paint != null);
     if (bounds == null) {
@@ -35,25 +37,46 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _saveLayerWithoutBounds(ui.Paint paint) {
+    _canvas.saveLayerWithoutBounds(paint);
   }
 
-  void _saveLayer(double left, double top, double right, double bottom,
-      List<dynamic> paintObjects, ByteData paintData) native 'Canvas_saveLayer';
+  void _saveLayer(ui.Rect bounds, ui.Paint paint) {
+    _canvas.saveLayer(bounds, paint);
+  }
 
-  void restore() native 'Canvas_restore';
+  @override
+  void restore() {
+    _canvas.restore();
+  }
 
-  int getSaveCount() native 'Canvas_getSaveCount';
+  @override
+  int getSaveCount() {
+    return _canvas.saveCount;
+  }
 
-  void translate(double dx, double dy) native 'Canvas_translate';
+  @override
+  void translate(double dx, double dy) {
+    _canvas.translate(dx, dy);
+  }
 
+  @override
   void scale(double sx, [double sy]) => _scale(sx, sy ?? sx);
 
-  void _scale(double sx, double sy) native 'Canvas_scale';
+  void _scale(double sx, double sy) {
+    _canvas.scale(sx, sy);
+  }
 
-  void rotate(double radians) native 'Canvas_rotate';
+  @override
+  void rotate(double radians) {
+    _canvas.rotate(radians);
+  }
 
-  void skew(double sx, double sy) native 'Canvas_skew';
+  @override
+  void skew(double sx, double sy) {
+    _canvas.skew(sx, sy);
+  }
 
+  @override
   void transform(Float64List matrix4) {
     assert(matrix4 != null);
     if (matrix4.length != 16)
@@ -61,146 +84,159 @@ class CanvasKitCanvas implements ui.Canvas {
     _transform(matrix4);
   }
 
-  void _transform(Float64List matrix4) native 'Canvas_transform';
+  void _transform(Float64List matrix4) {
+    _canvas.transform(matrix4);
+  }
 
+  @override
   void clipRect(ui.Rect rect,
-      {ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true}) {
-    assert(_rectIsValid(rect));
+      {ui.ClipOp clipOp = ui.ClipOp.intersect, bool doAntiAlias = true}) {
+    assert(rectIsValid(rect));
     assert(clipOp != null);
     assert(doAntiAlias != null);
-    _clipRect(rect.left, rect.top, rect.right, rect.bottom, clipOp.index,
-        doAntiAlias);
+    _clipRect(rect, clipOp, doAntiAlias);
   }
 
-  void _clipRect(double left, double top, double right, double bottom,
-      int clipOp, bool doAntiAlias) native 'Canvas_clipRect';
+  void _clipRect(ui.Rect rect, ui.ClipOp clipOp, bool doAntiAlias) {
+    _canvas.clipRect(rect, clipOp, doAntiAlias);
+  }
 
+  @override
   void clipRRect(ui.RRect rrect, {bool doAntiAlias = true}) {
-    assert(_rrectIsValid(rrect));
+    assert(rrectIsValid(rrect));
     assert(doAntiAlias != null);
-    _clipRRect(rrect._value32, doAntiAlias);
+    _clipRRect(rrect, doAntiAlias);
   }
 
-  void _clipRRect(Float32List rrect, bool doAntiAlias)
-      native 'Canvas_clipRRect';
+  void _clipRRect(ui.RRect rrect, bool doAntiAlias) {
+    _canvas.clipRRect(rrect, doAntiAlias);
+  }
 
+  @override
   void clipPath(ui.Path path, {bool doAntiAlias = true}) {
     assert(path != null); // path is checked on the engine side
     assert(doAntiAlias != null);
     _clipPath(path, doAntiAlias);
   }
 
-  void _clipPath(ui.Path path, bool doAntiAlias) native 'Canvas_clipPath';
+  void _clipPath(ui.Path path, bool doAntiAlias) {
+    _canvas.clipPath(path, doAntiAlias);
+  }
 
+  @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
     assert(color != null);
     assert(blendMode != null);
-    _drawColor(color.value, blendMode.index);
+    _drawColor(color, blendMode);
   }
 
-  void _drawColor(int color, int blendMode) native 'Canvas_drawColor';
+  void _drawColor(ui.Color color, ui.BlendMode blendMode) {
+    _canvas.drawColor(color, blendMode);
+  }
 
-  void drawLine(Offset p1, Offset p2, Paint paint) {
+  @override
+  void drawLine(ui.Offset p1, ui.Offset p2, ui.Paint paint) {
     assert(_offsetIsValid(p1));
     assert(_offsetIsValid(p2));
     assert(paint != null);
-    _drawLine(p1.dx, p1.dy, p2.dx, p2.dy, paint._objects, paint._data);
+    _drawLine(p1, p2, paint);
   }
 
-  void _drawLine(double x1, double y1, double x2, double y2,
-      List<dynamic> paintObjects, ByteData paintData) native 'Canvas_drawLine';
+  void _drawLine(ui.Offset p1, ui.Offset p2, paint) {
+    _canvas.drawLine(p1, p2, paint);
+  }
 
-  void drawPaint(Paint paint) {
+  @override
+  void drawPaint(ui.Paint paint) {
     assert(paint != null);
-    _drawPaint(paint._objects, paint._data);
+    _drawPaint(paint);
   }
 
-  void _drawPaint(List<dynamic> paintObjects, ByteData paintData)
-      native 'Canvas_drawPaint';
+  void _drawPaint(ui.Paint paint) {
+    _canvas.drawPaint(paint);
+  }
 
-  void drawRect(Rect rect, Paint paint) {
-    assert(_rectIsValid(rect));
+  @override
+  void drawRect(ui.Rect rect, ui.Paint paint) {
+    assert(rectIsValid(rect));
     assert(paint != null);
-    _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects,
-        paint._data);
+    _drawRect(rect, paint);
   }
 
-  void _drawRect(double left, double top, double right, double bottom,
-      List<dynamic> paintObjects, ByteData paintData) native 'Canvas_drawRect';
+  void _drawRect(ui.Rect rect, ui.Paint paint) {
+    _canvas.drawRect(rect, paint);
+  }
 
-  void drawRRect(RRect rrect, Paint paint) {
-    assert(_rrectIsValid(rrect));
+  @override
+  void drawRRect(ui.RRect rrect, ui.Paint paint) {
+    assert(rrectIsValid(rrect));
     assert(paint != null);
-    _drawRRect(rrect._value32, paint._objects, paint._data);
+    _drawRRect(rrect, paint);
   }
 
-  void _drawRRect(Float32List rrect, List<dynamic> paintObjects,
-      ByteData paintData) native 'Canvas_drawRRect';
+  void _drawRRect(ui.RRect rrect, ui.Paint paint) {
+    _canvas.drawRRect(rrect, paint);
+  }
 
-  void drawDRRect(RRect outer, RRect inner, Paint paint) {
-    assert(_rrectIsValid(outer));
-    assert(_rrectIsValid(inner));
+  @override
+  void drawDRRect(ui.RRect outer, ui.RRect inner, ui.Paint paint) {
+    assert(rrectIsValid(outer));
+    assert(rrectIsValid(inner));
     assert(paint != null);
-    _drawDRRect(outer._value32, inner._value32, paint._objects, paint._data);
+    _drawDRRect(outer, inner, paint);
   }
 
-  void _drawDRRect(
-      Float32List outer,
-      Float32List inner,
-      List<dynamic> paintObjects,
-      ByteData paintData) native 'Canvas_drawDRRect';
+  void _drawDRRect(ui.RRect outer, ui.RRect inner, ui.Paint paint) {
+    _canvas.drawDRRect(outer, inner, paint);
+  }
 
-  void drawOval(Rect rect, Paint paint) {
-    assert(_rectIsValid(rect));
+  @override
+  void drawOval(ui.Rect rect, ui.Paint paint) {
+    assert(rectIsValid(rect));
     assert(paint != null);
-    _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects,
-        paint._data);
+    _drawOval(rect, paint);
   }
 
-  void _drawOval(double left, double top, double right, double bottom,
-      List<dynamic> paintObjects, ByteData paintData) native 'Canvas_drawOval';
+  void _drawOval(ui.Rect rect, ui.Paint paint) {
+    _canvas.drawOval(rect, paint);
+  }
 
-  void drawCircle(Offset c, double radius, Paint paint) {
+  @override
+  void drawCircle(ui.Offset c, double radius, ui.Paint paint) {
     assert(_offsetIsValid(c));
     assert(paint != null);
-    _drawCircle(c.dx, c.dy, radius, paint._objects, paint._data);
+    _drawCircle(c, radius, paint);
   }
 
-  void _drawCircle(
-      double x,
-      double y,
-      double radius,
-      List<dynamic> paintObjects,
-      ByteData paintData) native 'Canvas_drawCircle';
+  void _drawCircle(ui.Offset c, double radius, ui.Paint paint) {
+    _canvas.drawCircle(c, radius, paint);
+  }
 
-  void drawArc(Rect rect, double startAngle, double sweepAngle, bool useCenter,
-      Paint paint) {
-    assert(_rectIsValid(rect));
+  @override
+  void drawArc(ui.Rect rect, double startAngle, double sweepAngle,
+      bool useCenter, ui.Paint paint) {
+    assert(rectIsValid(rect));
     assert(paint != null);
-    _drawArc(rect.left, rect.top, rect.right, rect.bottom, startAngle,
-        sweepAngle, useCenter, paint._objects, paint._data);
+    _drawArc(rect, startAngle, sweepAngle, useCenter, paint);
   }
 
-  void _drawArc(
-      double left,
-      double top,
-      double right,
-      double bottom,
-      double startAngle,
-      double sweepAngle,
-      bool useCenter,
-      List<dynamic> paintObjects,
-      ByteData paintData) native 'Canvas_drawArc';
+  void _drawArc(ui.Rect rect, double startAngle, double sweepAngle,
+      bool useCenter, ui.Paint paint) {
+    _canvas.drawArc(rect, startAngle, sweepAngle, useCenter, paint);
+  }
 
-  void drawPath(Path path, Paint paint) {
+  @override
+  void drawPath(ui.Path path, ui.Paint paint) {
     assert(path != null); // path is checked on the engine side
     assert(paint != null);
-    _drawPath(path, paint._objects, paint._data);
+    _drawPath(path, paint);
   }
 
-  void _drawPath(Path path, List<dynamic> paintObjects, ByteData paintData)
-      native 'Canvas_drawPath';
+  void _drawPath(ui.Path path, ui.Paint paint) {
+    _canvas.drawPath(path, paint);
+  }
 
+  @override
   void drawImage(ui.Image image, ui.Offset p, ui.Paint paint) {
     assert(image != null); // image is checked on the engine side
     assert(_offsetIsValid(p));
