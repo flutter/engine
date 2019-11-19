@@ -16,6 +16,8 @@ PACKAGES = [
   "front_end",
   "dev_compiler",
   "flutter_frontend_server",
+  "frontend_server",
+  "dev_compiler",
 ]
 
 VM_PUBSPEC = r'''name: vm
@@ -84,12 +86,39 @@ dependencies:
   source_maps: any
 '''
 
+FRONTEND_SERVER_PUBSPEC = r'''name: frontend_server
+version: 0.0.1
+environment:
+  sdk: '>=2.2.2 < 3.0.0'
+dependencies:
+  build_integration: any
+  vm: any
+  dev_compiler: any
+  front_end: any
+  kernel: any
+  args: any
+''';
+
+DEV_COMPILER_PUBSPEC = r'''name: dev_compiler
+version: 0.0.1
+environment:
+  sdk: '>=2.2.2 < 3.0.0'
+dependencies:
+  analyzer: any
+  bazel_worker: any
+  build_integration: any
+  cli_util: any
+  source_maps: any
+''';
+
 PUBSPECS = {
   'vm': VM_PUBSPEC,
   'build_integration': BUILD_INTEGRATION_PUBSPEC,
   'flutter_frontend_server': FLUTTER_FRONTEND_SERVER_PUBSPEC,
   'kernel': KERNEL_PUBSPEC,
   'front_end': FRONT_END_PUBSPEC,
+  'dev_compiler': DEV_COMPILER_PUBSPEC,
+  'frontend_server': FRONTEND_SERVER_PUBSPEC,
   'dev_compiler': DEV_COMPILER_PUBSPEC,
 }
 
