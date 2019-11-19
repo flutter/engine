@@ -31,6 +31,22 @@ js.JsArray<double> makeSkPoint(ui.Offset point) {
   return skPoint;
 }
 
+/// Creates a point list using a typed buffer created by CanvasKit.Malloc.
+Float32List encodePointList(List<ui.Offset> points) {
+  assert(points != null);
+  final int pointCount = points.length;
+  final Float32List result = canvasKit.callMethod('Malloc', <dynamic>[js.context['Float32Array'], pointCount * 2]);
+  for (int i = 0; i < pointCount; ++i) {
+    final int xIndex = i * 2;
+    final int yIndex = xIndex + 1;
+    final ui.Offset point = points[i];
+    assert(_offsetIsValid(point));
+    result[xIndex] = point.dx;
+    result[yIndex] = point.dy;
+  }
+  return result;
+}
+
 js.JsObject makeSkBlendMode(ui.BlendMode blendMode) {
   switch (blendMode) {
     case ui.BlendMode.clear:

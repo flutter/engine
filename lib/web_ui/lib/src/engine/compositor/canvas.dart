@@ -4,7 +4,7 @@
 
 part of engine;
 
-/// An actual [SkCanvas] which can receive raw drawing commands.
+/// An actual [SkLayerCanvas] which can receive raw drawing commands.
 ///
 /// In order for the drawing commands to be flushed to the associated HTML
 /// canvas, you must call `flush()` on the canvas's `SkSurface`.
@@ -16,13 +16,13 @@ part of engine;
 /// drawing calls from the various `Layer` classes, e.g. [ClipRectLayer] and
 /// so only exposes a subset of the drawing operations that can be performed
 /// on a canvas.
-class SkCanvas {
+class SkLayerCanvas {
   final js.JsObject skCanvas;
   final html.CanvasElement htmlCanvas;
   final js.JsObject skSurface;
   final ui.Size size;
 
-  SkCanvas(this.skCanvas, this.htmlCanvas, this.skSurface, this.size);
+  SkLayerCanvas(this.skCanvas, this.htmlCanvas, this.skSurface, this.size);
 
   int save() {
     return skCanvas.callMethod('save');

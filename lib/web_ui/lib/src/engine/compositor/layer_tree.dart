@@ -40,7 +40,7 @@ class LayerTree {
 /// A single frame to be rendered.
 class Frame {
   /// The canvas to render this frame to.
-  final SkCanvas canvas;
+  final SkLayerCanvas canvas;
 
   /// A cache of pre-rastered pictures.
   final RasterCache rasterCache;
@@ -61,7 +61,7 @@ class CompositorContext {
   RasterCache rasterCache;
 
   /// Acquire a frame using this compositor's settings.
-  Frame acquireFrame(SkCanvas canvas) {
+  Frame acquireFrame(SkLayerCanvas canvas) {
     return Frame(canvas, rasterCache);
   }
 }

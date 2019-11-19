@@ -4,9 +4,11 @@
 
 part of engine;
 
-class SkRecordingCanvas implements RecordingCanvas {
+/// A wrapper around Skia's SKCanvas.
+class SkCanvas {
   final js.JsObject skCanvas;
-  SkRecordingCanvas(this.skCanvas);
+
+  SkCanvas(this.skCanvas);
 
   @override
   bool _didDraw = true;
@@ -50,12 +52,12 @@ class SkRecordingCanvas implements RecordingCanvas {
     ui.RRect rrect, {
     bool doAntiAlias = true,
   }) {
-    // TODO(het): Use `clipRRect` when CanvasKit makes it available.
-    // CanvasKit doesn't expose `Canvas.clipRRect`, so we create a path, add the
-    // RRect to it, and call clipPath with it.
-    final SkPath rrectPath = SkPath();
-    rrectPath.addRRect(rrect);
-    clipPath(rrectPath, doAntiAlias: doAntiAlias);
+    final js.JsObject intersectClipOp = canvasKit['ClipOp']['Intersect'];
+    skCanvas.callMethod('clipRRect', <dynamic>[
+      makeSkRRect(rrect),
+      intersectClipOp,
+      doAntiAlias,
+    ]);
   }
 
   @override
@@ -117,8 +119,10 @@ class SkRecordingCanvas implements RecordingCanvas {
 
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    // TODO(het): Implement this once SkCanvas.drawColor becomes available.
-    throw 'drawColor';
+    skCanvas.callMethod('drawColor', <dynamic>[
+      color.value,
+      makeSkBlendMode(blendMode),
+    ]);
   }
 
   @override

@@ -40,7 +40,7 @@ class PrerollContext {
 /// A context shared by all layers during the paint pass.
 class PaintContext {
   /// The canvas to paint to.
-  final SkCanvas canvas;
+  final SkLayerCanvas canvas;
 
   /// A raster cache potentially containing pre-rendered pictures.
   final RasterCache rasterCache;
@@ -444,7 +444,7 @@ class PhysicalShapeLayer extends ContainerLayer
   ///
   /// The blur of the shadow is decided by the [elevation], and the
   /// shadow is painted with the given [color].
-  static void drawShadow(SkCanvas canvas, ui.Path path, ui.Color color,
+  static void drawShadow(SkLayerCanvas canvas, ui.Path path, ui.Color color,
       double elevation, bool transparentOccluder) {
     canvas.drawShadow(path, color, elevation, transparentOccluder);
   }

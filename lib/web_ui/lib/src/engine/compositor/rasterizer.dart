@@ -15,7 +15,7 @@ class Rasterizer {
   /// [LayerTree] into it, and then submits the frame.
   void draw(LayerTree layerTree) {
     final SurfaceFrame frame = surface.acquireFrame(ui.window.physicalSize);
-    final SkCanvas canvas = frame.canvas;
+    final SkLayerCanvas canvas = frame.canvas;
     final Frame compositorFrame = context.acquireFrame(canvas);
 
     canvas.clear();

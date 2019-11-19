@@ -282,7 +282,7 @@ class EngineWindow extends ui.Window {
   }
 
   final Rasterizer _rasterizer = experimentalUseSkia
-      ? Rasterizer(Surface((SkCanvas canvas) {
+      ? Rasterizer(Surface((SkLayerCanvas canvas) {
           domRenderer.renderScene(canvas.htmlCanvas);
           canvas.skSurface.callMethod('flush');
         }))
