@@ -198,7 +198,13 @@ class InputConfiguration {
   /// Whether to hide the text being edited.
   final bool obscureText;
 
-  /// Whether to  to enable autocorrection. Only available on Webkit.
+  /// Whether to  to enable autocorrection.
+  ///
+  /// Definition of autocorrect can be found in:
+  /// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
+  ///
+  /// For future manual tests, note that autocorrect is an attribute only
+  /// supported by Safari.
   final bool autocorrect;
 }
 
@@ -377,10 +383,10 @@ class TextEditingElement {
     if (inputConfig.obscureText) {
       domElement.setAttribute('type', 'password');
     }
-    if (browserEngine == BrowserEngine.webkit && inputConfig.autocorrect) {
-      final String autocorrectValue = inputConfig.autocorrect ? 'on' : 'off';
-      domElement.setAttribute('autocorrect', autocorrectValue);
-    }
+
+    final String autocorrectValue = inputConfig.autocorrect ? 'on' : 'off';
+    domElement.setAttribute('autocorrect', autocorrectValue);
+
     _setStaticStyleAttributes(domElement);
     owner._setDynamicStyleAttributes(domElement);
     domRenderer.glassPaneElement.append(domElement);

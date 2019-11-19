@@ -122,6 +122,46 @@ void main() {
       editingElement.disable();
     });
 
+    test('Knows to turn autocorrect off', () {
+      final InputConfiguration config = InputConfiguration(
+        inputType: EngineInputType.text,
+        inputAction: 'TextInputAction.done',
+        obscureText: false,
+        autocorrect: false,
+      );
+      editingElement.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+      expect(document.getElementsByTagName('input'), hasLength(1));
+      final InputElement input = document.getElementsByTagName('input')[0];
+      expect(editingElement.domElement, input);
+      expect(input.getAttribute('autocorrect'), 'off');
+
+      editingElement.disable();
+    });
+
+    test('Knows to turn autocorrect on', () {
+      final InputConfiguration config = InputConfiguration(
+        inputType: EngineInputType.text,
+        inputAction: 'TextInputAction.done',
+        obscureText: false,
+        autocorrect: true,
+      );
+      editingElement.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+      expect(document.getElementsByTagName('input'), hasLength(1));
+      final InputElement input = document.getElementsByTagName('input')[0];
+      expect(editingElement.domElement, input);
+      expect(input.getAttribute('autocorrect'), 'on');
+
+      editingElement.disable();
+    });
+
     test('Can read editing state correctly', () {
       editingElement.enable(
         singlelineConfig,
@@ -1134,6 +1174,7 @@ class PlatformMessagesSpy {
 Map<String, dynamic> createFlutterConfig(
   String inputType, {
   bool obscureText = false,
+  bool autocorrect = true,
   String inputAction,
 }) {
   return <String, dynamic>{
@@ -1141,6 +1182,7 @@ Map<String, dynamic> createFlutterConfig(
       'name': 'TextInputType.$inputType',
     },
     'obscureText': obscureText,
+    'autocorrect': autocorrect,
     'inputAction': inputAction ?? 'TextInputAction.done',
   };
 }
