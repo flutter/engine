@@ -13,6 +13,7 @@
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/task_runner.h"
+#include "flutter/fml/thread.h"
 #include "gtest/gtest.h"
 
 #define TIME_SENSITIVE(x) TimeSensitiveTest_##x
@@ -35,6 +36,7 @@ TEST(MessageLoop, DifferentThreadsHaveDifferentLoops) {
   fml::AutoResetWaitableEvent latch1;
   fml::AutoResetWaitableEvent term1;
   std::thread thread1([&loop1, &latch1, &term1]() {
+    fml::Thread::SetCurrentThreadName("thread1");
     fml::MessageLoop::EnsureInitializedForCurrentThread();
     loop1 = &fml::MessageLoop::GetCurrent();
     latch1.Signal();
@@ -45,6 +47,7 @@ TEST(MessageLoop, DifferentThreadsHaveDifferentLoops) {
   fml::AutoResetWaitableEvent latch2;
   fml::AutoResetWaitableEvent term2;
   std::thread thread2([&loop2, &latch2, &term2]() {
+    fml::Thread::SetCurrentThreadName("thread2");
     fml::MessageLoop::EnsureInitializedForCurrentThread();
     loop2 = &fml::MessageLoop::GetCurrent();
     latch2.Signal();

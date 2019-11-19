@@ -50,6 +50,7 @@ MessageLoopTaskQueues::MessageLoopTaskQueues()
 MessageLoopTaskQueues::~MessageLoopTaskQueues() = default;
 
 void MessageLoopTaskQueues::Dispose(TaskQueueId queue_id) {
+  fml::UniqueLock lock(*queue_meta_mutex_);
   std::scoped_lock queue_lock(GetMutex(queue_id));
 
   const auto& queue_entry = queue_entries_.at(queue_id);
@@ -80,7 +81,7 @@ void MessageLoopTaskQueues::RegisterTask(TaskQueueId queue_id,
   std::scoped_lock queue_lock(GetMutex(queue_id));
 
   size_t order = order_++;
-  const auto& queue_entry = queue_entries_[queue_id];
+  const auto& queue_entry = queue_entries_.at(queue_id);
   queue_entry->delayed_tasks.push({order, std::move(task), target_time});
   TaskQueueId loop_to_wake = queue_id;
   if (queue_entry->subsumed_by != _kUnmerged) {
@@ -115,7 +116,7 @@ void MessageLoopTaskQueues::GetTasksToRunNow(
       break;
     }
     invocations.emplace_back(std::move(top.GetTask()));
-    queue_entries_[top_queue]->delayed_tasks.pop();
+    queue_entries_.at(top_queue)->delayed_tasks.pop();
     if (type == FlushType::kSingle) {
       break;
     }
@@ -161,14 +162,14 @@ void MessageLoopTaskQueues::AddTaskObserver(TaskQueueId queue_id,
   std::scoped_lock queue_lock(GetMutex(queue_id));
 
   FML_DCHECK(callback != nullptr) << "Observer callback must be non-null.";
-  queue_entries_[queue_id]->task_observers[key] = std::move(callback);
+  queue_entries_.at(queue_id)->task_observers[key] = std::move(callback);
 }
 
 void MessageLoopTaskQueues::RemoveTaskObserver(TaskQueueId queue_id,
                                                intptr_t key) {
   std::scoped_lock queue_lock(GetMutex(queue_id));
 
-  queue_entries_[queue_id]->task_observers.erase(key);
+  queue_entries_.at(queue_id)->task_observers.erase(key);
 }
 
 std::vector<fml::closure> MessageLoopTaskQueues::GetObserversToNotify(
@@ -199,7 +200,7 @@ void MessageLoopTaskQueues::SetWakeable(TaskQueueId queue_id,
                                         fml::Wakeable* wakeable) {
   std::scoped_lock queue_lock(GetMutex(queue_id));
 
-  FML_CHECK(!queue_entries_[queue_id]->wakeable)
+  FML_CHECK(!queue_entries_.at(queue_id)->wakeable)
       << "Wakeable can only be set once.";
   queue_entries_.at(queue_id)->wakeable = wakeable;
 }
@@ -244,13 +245,13 @@ bool MessageLoopTaskQueues::Merge(TaskQueueId owner, TaskQueueId subsumed) {
 bool MessageLoopTaskQueues::Unmerge(TaskQueueId owner) {
   std::scoped_lock owner_lock(GetMutex(owner));
 
-  auto& owner_entry = queue_entries_[owner];
+  auto& owner_entry = queue_entries_.at(owner);
   const TaskQueueId subsumed = owner_entry->owner_of;
   if (subsumed == _kUnmerged) {
     return false;
   }
 
-  queue_entries_[subsumed]->subsumed_by = _kUnmerged;
+  queue_entries_.at(subsumed)->subsumed_by = _kUnmerged;
   owner_entry->owner_of = _kUnmerged;
 
   if (HasPendingTasksUnlocked(owner)) {
