@@ -16,16 +16,16 @@ import 'environment.dart';
 class ChromeArgParser extends BrowserArgParser {
   static final ChromeArgParser _singletonInstance = ChromeArgParser._();
 
-  String _version;
+  /// The [ChromeArgParser] singleton.
+  static ChromeArgParser get instance => _singletonInstance;
 
-  factory ChromeArgParser() {
-    return _singletonInstance;
-  }
+  String _version;
 
   ChromeArgParser._();
 
   @override
-  void addOptions(YamlMap browserLock, ArgParser argParser) {
+  void populateOptions(ArgParser argParser) {
+    final YamlMap browserLock = BrowserLock.instance.configuration;
     final int pinnedChromeVersion =
         PlatformBinding.instance.getChromeBuild(browserLock);
 
@@ -43,7 +43,7 @@ class ChromeArgParser extends BrowserArgParser {
   }
 
   @override
-  void setVersion(ArgResults argResults) {
+  void parseOptions(ArgResults argResults) {
     _version = argResults['chrome-version'];
   }
 

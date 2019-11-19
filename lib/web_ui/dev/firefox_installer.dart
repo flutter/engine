@@ -15,16 +15,16 @@ import 'environment.dart';
 class FirefoxArgParser extends BrowserArgParser {
   static final FirefoxArgParser _singletonInstance = FirefoxArgParser._();
 
-  String _version;
+  /// The [ChromeArgParser] singleton.
+  static FirefoxArgParser get instance => _singletonInstance;
 
-  factory FirefoxArgParser() {
-    return _singletonInstance;
-  }
+  String _version;
 
   FirefoxArgParser._();
 
   @override
-  void addOptions(YamlMap browserLock, ArgParser argParser) {
+  void populateOptions(ArgParser argParser) {
+    final YamlMap browserLock = BrowserLock.instance.configuration;
     String firefoxVersion = browserLock['firefox']['version'];
 
     argParser
@@ -40,7 +40,7 @@ class FirefoxArgParser extends BrowserArgParser {
   }
 
   @override
-  void setVersion(ArgResults argResults) {
+  void parseOptions(ArgResults argResults) {
     _version = argResults['firefox-version'];
   }
 

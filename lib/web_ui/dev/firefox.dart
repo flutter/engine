@@ -32,7 +32,7 @@ class Firefox extends Browser {
   /// Starts a new instance of Firefox open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Firefox(Uri url, {bool debug = false}) {
-    version = FirefoxArgParser().version;
+    version = FirefoxArgParser.instance.version;
 
     assert(version != null);
     var remoteDebuggerCompleter = Completer<Uri>.sync();

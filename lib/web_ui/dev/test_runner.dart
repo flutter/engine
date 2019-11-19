@@ -13,7 +13,6 @@ import 'package:test_core/src/runner/hack_register_platform.dart'
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
 import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
-import 'package:yaml/yaml.dart';
 
 import 'supported_browsers.dart';
 import 'test_platform.dart';
@@ -44,12 +43,8 @@ class TestCommand extends Command<bool> {
             ' on Chrome for now.',
       );
 
-    final io.File lockFile = io.File(
-        path.join(environment.webUiRootDir.path, 'dev', 'browser_lock.yaml'));
-    final YamlMap browserLock = loadYaml(lockFile.readAsStringSync());
-
-    supportedBrowsers.argParsers
-        .forEach((t) => t.addOptions(browserLock, argParser));
+    SupportedBrowsers.instance.argParsers
+        .forEach((t) => t.populateOptions(argParser));
   }
 
   @override
@@ -58,12 +53,10 @@ class TestCommand extends Command<bool> {
   @override
   final String description = 'Run tests.';
 
-  /// Browsers supported by this platform.
-  final SupportedBrowsers supportedBrowsers = SupportedBrowsers();
-
   @override
   Future<bool> run() async {
-    supportedBrowsers.argParsers.forEach((t) => t.setVersion(argResults));
+    SupportedBrowsers.instance
+      ..argParsers.forEach((t) => t.parseOptions(argResults));
 
     _copyTestFontsIntoWebUi();
     await _buildHostPage();
@@ -254,9 +247,9 @@ class TestCommand extends Command<bool> {
       ...testFiles.map((f) => f.relativeToWebUi).toList(),
     ];
 
-    hack.registerPlatformPlugin(
-        <Runtime>[supportedBrowsers.supportedBrowsersToRuntimeMap[browser]],
-        () {
+    hack.registerPlatformPlugin(<Runtime>[
+      SupportedBrowsers.instance.supportedBrowsersToRuntimes[browser]
+    ], () {
       return BrowserPlatform.start(
         browser,
         root: io.Directory.current.path,

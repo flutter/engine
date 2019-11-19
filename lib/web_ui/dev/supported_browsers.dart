@@ -11,24 +11,29 @@ import 'common.dart';
 import 'firefox.dart';
 import 'firefox_installer.dart'; // ignore: implementation_imports
 
-/// Class that has mappings and utility methods for the browsers tests are
-/// supported.
+/// Utilities for browsers, that tests are supported.
+///
+/// Extending [Browser] is not enough for supporting test.
+///
+/// Each new browser should be added to the [Runtime] map, to the [getBrowser]
+/// method.
+///
+/// One should also implement [BrowserArgParser] and add it to the [argParsers].
 class SupportedBrowsers {
   final List<BrowserArgParser> argParsers =
-      List.of([ChromeArgParser(), FirefoxArgParser()]);
+      List.of([ChromeArgParser.instance, FirefoxArgParser.instance]);
 
   final List<String> supportedBrowserNames = ['chrome', 'firefox'];
 
-  final Map<String, Runtime> supportedBrowsersToRuntimeMap = {
+  final Map<String, Runtime> supportedBrowsersToRuntimes = {
     'chrome': Runtime.chrome,
     'firefox': Runtime.firefox
   };
 
   static final SupportedBrowsers _singletonInstance = SupportedBrowsers._();
 
-  factory SupportedBrowsers() {
-    return _singletonInstance;
-  }
+  /// The [SupportedBrowsers] singleton.
+  static SupportedBrowsers get instance => _singletonInstance;
 
   SupportedBrowsers._();
 

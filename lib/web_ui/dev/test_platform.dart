@@ -50,7 +50,7 @@ class BrowserPlatform extends PlatformPlugin {
   /// the working directory.
   static Future<BrowserPlatform> start(String name,
       {String root, bool doUpdateScreenshotGoldens: false}) async {
-    assert(SupportedBrowsers().supportedBrowserNames.contains(name));
+    assert(SupportedBrowsers.instance.supportedBrowserNames.contains(name));
     var server = shelf_io.IOServer(await HttpMultiServer.loopback(0));
     return BrowserPlatform._(
       name,
@@ -63,16 +63,13 @@ class BrowserPlatform extends PlatformPlugin {
     );
   }
 
-  // Browsers supported by this platform.
-  final SupportedBrowsers supportedBrowsers = SupportedBrowsers();
-
   /// The test runner configuration.
   final Configuration _config;
 
   /// The underlying server.
   final shelf.Server _server;
 
-  // Name for the running browser. Not final on purpose should be changed later.
+  /// Name for the running browser. Not final on purpose can be mutated later.
   String browserName;
 
   /// A randomly-generated secret.
@@ -144,6 +141,10 @@ class BrowserPlatform extends PlatformPlugin {
   }
 
   Future<shelf.Response> _screeshotHandler(shelf.Request request) async {
+    if (browserName != 'chrome') {
+      throw Exception('Screenshots tests are only available in Chrome.');
+    }
+
     if (!request.requestedUri.path.endsWith('/screenshot')) {
       return shelf.Response.notFound(
           'This request is not handled by the screenshot handler');
@@ -679,7 +680,7 @@ class BrowserManager {
   /// If [debug] is true, starts the browser in debug mode.
   static Browser _newBrowser(Uri url, Runtime browser,
       {bool debug = false}) {
-    return SupportedBrowsers().getBrowser(browser, url, debug: debug);
+    return SupportedBrowsers.instance.getBrowser(browser, url, debug: debug);
   }
 
   /// Creates a new BrowserManager that communicates with [browser] over

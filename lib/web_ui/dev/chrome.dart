@@ -32,7 +32,7 @@ class Chrome extends Browser {
   /// Starts a new instance of Chrome open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Chrome(Uri url, {bool debug = false}) {
-    version = ChromeArgParser().version;
+    version = ChromeArgParser.instance.version;
 
     assert(version != null);
     var remoteDebuggerCompleter = Completer<Uri>.sync();
