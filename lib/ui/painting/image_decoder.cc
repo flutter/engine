@@ -9,6 +9,15 @@
 #include "third_party/skia/include/codec/SkCodec.h"
 
 namespace flutter {
+namespace {
+class ImagePixmapPair {
+ public:
+  ImagePixmapPair(std::unique_ptr<SkPixmap> pixmap, sk_sp<SkImage> image)
+      : pixmap_(std::move(pixmap)), image_(image) {}
+  std::unique_ptr<SkPixmap> pixmap_;
+  sk_sp<SkImage> image_;
+};
+}  // namespace
 
 ImageDecoder::ImageDecoder(
     TaskRunners runners,
@@ -175,14 +184,15 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
   SkiaGPUObject<SkImage> result;
   io_manager->GetIsBackgroundedSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
-          .SetTrue([&result, &pixmap] {
+          .SetTrue([&result, &pixmap, &image] {
+            auto image_pixmap_pair = std::unique_ptr<ImagePixmapPair>(
+                new ImagePixmapPair(std::move(pixmap), image));
             sk_sp<SkImage> texture_image = SkImage::MakeFromRaster(
-                *pixmap,
+                *image_pixmap_pair->pixmap_,
                 [](const void* pixels, SkImage::ReleaseContext context) {
-                  SkPixmap* pixmap = static_cast<SkPixmap*>(context);
-                  delete pixmap;
+                  delete static_cast<ImagePixmapPair*>(context);
                 },
-                pixmap.release());
+                image_pixmap_pair.release());
             result = {texture_image, nullptr};
           })
           .SetFalse([&result, context = io_manager->GetResourceContext(),
