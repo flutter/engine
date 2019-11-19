@@ -189,7 +189,7 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
                      &pixmap, queue = io_manager->GetSkiaUnrefQueue()] {
             sk_sp<SkImage> texture_image = SkImage::MakeCrossContextFromPixmap(
                 context.get(),  // context
-                pixmap,        // pixmap
+                pixmap,         // pixmap
                 true,           // buildMips,
                 true            // limitToMaxTextureSize
             );
