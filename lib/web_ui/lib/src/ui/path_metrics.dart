@@ -54,7 +54,9 @@ class PathMetricIterator implements Iterator<PathMetric> {
   }
 }
 
+// Maximum range value used in curve subdivision using Casteljau algorithm.
 const int _kMaxTValue = 0x3FFFFFFF;
+// Distance at which we stop subdividing cubic and quadratic curves.
 const double _fTolerance = 0.5;
 
 /// Utilities for measuring a [Path] and extracting subpaths.
