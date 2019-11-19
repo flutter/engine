@@ -154,7 +154,11 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
 sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(sk_sp<SkPicture> picture,
                                               SkISize picture_size) {
   TRACE_EVENT0("flutter", __FUNCTION__);
-
+  std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+      context_switch = surface_->MakeRenderContextCurrent();
+  if (!context_switch->GetSwitchResult()) {
+    return nullptr;
+  }
   sk_sp<SkSurface> surface;
   SkImageInfo image_info = SkImageInfo::MakeN32Premul(
       picture_size.width(), picture_size.height(), SkColorSpace::MakeSRGB());
@@ -163,12 +167,6 @@ sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(sk_sp<SkPicture> picture,
     // happen in case of software rendering.
     surface = SkSurface::MakeRaster(image_info);
   } else {
-    std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
-        context_switch = surface_->MakeRenderContextCurrent();
-    if (!context_switch->GetSwitchResult()) {
-      return nullptr;
-    }
-
     // When there is an on screen surface, we need a render target SkSurface
     // because we want to access texture backed images.
     surface = SkSurface::MakeRenderTarget(surface_->GetContext(),  // context
@@ -270,7 +268,6 @@ RasterStatus Rasterizer::DoDraw(
 
 RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   FML_DCHECK(surface_);
-
   auto frame = surface_->AcquireFrame(layer_tree.frame_size());
 
   if (frame == nullptr) {
@@ -311,11 +308,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   );
 
   if (compositor_frame) {
-    RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
-    if (raster_status == RasterStatus::kFailed) {
-      return raster_status;
-    }
-    frame->Submit();
+    RasterStatus raster_status = RasterAndSubmitCompositorFrame(*frame, *compositor_frame, layer_tree);
     if (external_view_embedder != nullptr) {
       external_view_embedder->SubmitFrame(surface_->GetContext());
     }
@@ -323,6 +316,11 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
     FireNextFrameCallbackIfPresent();
 
     if (surface_->GetContext()) {
+      std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+          context_switch = surface_->MakeRenderContextCurrent();
+      if (!context_switch->GetSwitchResult()) {
+        return RasterStatus::kFailed;
+      }
       surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
     }
 
@@ -332,14 +330,33 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   return RasterStatus::kFailed;
 }
 
+RasterStatus Rasterizer::RasterAndSubmitCompositorFrame(SurfaceFrame &frame, CompositorContext::ScopedFrame &compositor_frame, flutter::LayerTree& layer_tree) {
+  std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+      context_switch = surface_->MakeRenderContextCurrent();
+  if (!context_switch->GetSwitchResult()) {
+    return RasterStatus::kFailed;
+  }
+  RasterStatus raster_status = compositor_frame.Raster(layer_tree, false);
+  if (raster_status == RasterStatus::kFailed) {
+    return raster_status;
+  }
+  frame.Submit();
+  return raster_status;
+}
+
 static sk_sp<SkData> SerializeTypeface(SkTypeface* typeface, void* ctx) {
   return typeface->serialize(SkTypeface::SerializeBehavior::kDoIncludeData);
 }
 
-static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
+sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsPicture(
     flutter::LayerTree* tree,
     flutter::CompositorContext& compositor_context) {
   FML_DCHECK(tree != nullptr);
+  std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+      context_switch = surface_->MakeRenderContextCurrent();
+  if (!context_switch->GetSwitchResult()) {
+    return nullptr;
+  }
   SkPictureRecorder recorder;
   recorder.beginRecording(
       SkRect::MakeWH(tree->frame_size().width(), tree->frame_size().height()));

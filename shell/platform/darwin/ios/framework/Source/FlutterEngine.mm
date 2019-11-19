@@ -457,7 +457,6 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
     _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
     [self maybeSetupPlatformViewChannels];
   }
-
   return _shell != nullptr;
 }
 
