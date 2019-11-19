@@ -198,7 +198,7 @@ class InputConfiguration {
   /// Whether to hide the text being edited.
   final bool obscureText;
 
-  /// Whether to  to enable autocorrection.
+  /// Whether to enable autocorrection.
   ///
   /// Definition of autocorrect can be found in:
   /// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
