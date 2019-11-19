@@ -53,6 +53,7 @@ sk_sp<GrContext> ShellIOManager::CreateCompatibleResourceLoadingContext(
 
 ShellIOManager::ShellIOManager(
     sk_sp<GrContext> resource_context,
+    std::shared_ptr<fml::SyncSwitch> is_backgrounded_sync_switch,
     fml::RefPtr<fml::TaskRunner> unref_queue_task_runner)
     : resource_context_(std::move(resource_context)),
       resource_context_weak_factory_(
@@ -62,7 +63,8 @@ ShellIOManager::ShellIOManager(
       unref_queue_(fml::MakeRefCounted<flutter::SkiaUnrefQueue>(
           std::move(unref_queue_task_runner),
           fml::TimeDelta::FromMilliseconds(8))),
-      weak_factory_(this) {
+      weak_factory_(this),
+      is_backgrounded_sync_switch_(is_backgrounded_sync_switch) {
   if (!resource_context_) {
 #ifndef OS_FUCHSIA
     FML_DLOG(WARNING) << "The IO manager was initialized without a resource "
@@ -118,7 +120,7 @@ fml::WeakPtr<IOManager> ShellIOManager::GetWeakIOManager() const {
 }
 
 // |IOManager|
-fml::SyncSwitch& ShellIOManager::GetIsBackgroundedSyncSwitch() {
+std::shared_ptr<fml::SyncSwitch> ShellIOManager::GetIsBackgroundedSyncSwitch() {
   return is_backgrounded_sync_switch_;
 }
 

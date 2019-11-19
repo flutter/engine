@@ -95,6 +95,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   std::promise<fml::RefPtr<SkiaUnrefQueue>> unref_queue_promise;
   auto unref_queue_future = unref_queue_promise.get_future();
   auto io_task_runner = shell->GetTaskRunners().GetIOTaskRunner();
+  auto is_backgrounded_sync_switch = std::make_shared<fml::SyncSwitch>();
 
   // TODO(gw280): The WeakPtr here asserts that we are derefing it on the
   // same thread as it was created on. We are currently on the IO thread
@@ -108,11 +109,13 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
        &weak_io_manager_promise,                     //
        &unref_queue_promise,                         //
        platform_view = platform_view->GetWeakPtr(),  //
-       io_task_runner                                //
+       io_task_runner,                               //
+       is_backgrounded_sync_switch                   //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupIOSubsystem");
         auto io_manager = std::make_unique<ShellIOManager>(
-            platform_view.getUnsafe()->CreateResourceContext(), io_task_runner);
+            platform_view.getUnsafe()->CreateResourceContext(),
+            is_backgrounded_sync_switch, io_task_runner);
         weak_io_manager_promise.set_value(io_manager->GetWeakPtr());
         unref_queue_promise.set_value(io_manager->GetSkiaUnrefQueue());
         io_manager_promise.set_value(std::move(io_manager));
@@ -134,7 +137,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                          vsync_waiter = std::move(vsync_waiter),          //
                          &weak_io_manager_future,                         //
                          &snapshot_delegate_future,                       //
-                         &unref_queue_future                              //
+                         &unref_queue_future,                             //
+                         is_backgrounded_sync_switch                      //
   ]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
         const auto& task_runners = shell->GetTaskRunners();
@@ -152,6 +156,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
             task_runners,                   //
             shell->GetSettings(),           //
             std::move(animator),            //
+            is_backgrounded_sync_switch,    //
             weak_io_manager_future.get(),   //
             unref_queue_future.get(),       //
             snapshot_delegate_future.get()  //
@@ -554,7 +559,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // a synchronous fashion.
   fml::AutoResetWaitableEvent latch;
   auto gpu_task =
-      fml::MakeCopyable([& waiting_for_first_frame = waiting_for_first_frame_,
+      fml::MakeCopyable([&waiting_for_first_frame = waiting_for_first_frame_,
                          rasterizer = rasterizer_->GetWeakPtr(),  //
                          surface = std::move(surface),            //
                          &latch]() mutable {
@@ -899,7 +904,7 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   FML_DCHECK(is_setup_);
 
   task_runners_.GetGPUTaskRunner()->PostTask(
-      [& waiting_for_first_frame = waiting_for_first_frame_,
+      [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
        pipeline = std::move(pipeline)]() {
@@ -1377,7 +1382,7 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
   bool success = waiting_for_first_frame_condition_.wait_for(
       lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
-      [& waiting_for_first_frame = waiting_for_first_frame_] {
+      [&waiting_for_first_frame = waiting_for_first_frame_] {
         return !waiting_for_first_frame.load();
       });
   if (success) {

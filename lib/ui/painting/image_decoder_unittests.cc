@@ -63,7 +63,7 @@ class TestIOManager final : public IOManager {
   }
 
   // |IOManager|
-  fml::SyncSwitch& GetIsBackgroundedSyncSwitch() override {
+  std::shared_ptr<fml::SyncSwitch> GetIsBackgroundedSyncSwitch() override {
     return is_backgrounded_sync_switch_;
   }
 
@@ -75,7 +75,7 @@ class TestIOManager final : public IOManager {
   fml::WeakPtr<TestIOManager> weak_prototype_;
   fml::RefPtr<fml::TaskRunner> runner_;
   fml::WeakPtrFactory<TestIOManager> weak_factory_;
-  fml::SyncSwitch is_backgrounded_sync_switch_;
+  std::shared_ptr<fml::SyncSwitch> is_backgrounded_sync_switch_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TestIOManager);
 };

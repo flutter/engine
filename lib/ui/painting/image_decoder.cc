@@ -173,7 +173,7 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
   }
 
   SkiaGPUObject<SkImage> result;
-  io_manager->GetIsBackgroundedSyncSwitch().Execute(
+  io_manager->GetIsBackgroundedSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
           .SetTrue([&result, &pixmap] {
             sk_sp<SkImage> texture_image =

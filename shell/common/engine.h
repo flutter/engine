@@ -278,6 +278,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          TaskRunners task_runners,
          Settings settings,
          std::unique_ptr<Animator> animator,
+         std::shared_ptr<fml::SyncSwitch> is_backgrounded_sync_switch,
          fml::WeakPtr<IOManager> io_manager,
          fml::RefPtr<SkiaUnrefQueue> unref_queue,
          fml::WeakPtr<SnapshotDelegate> snapshot_delegate);
@@ -747,7 +748,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   bool activity_running_;
   bool have_surface_;
   FontCollection font_collection_;
-  fml::WeakPtr<IOManager> io_manager_;
+  std::shared_ptr<fml::SyncSwitch> is_backgrounded_sync_switch_;
   ImageDecoder image_decoder_;
   TaskRunners task_runners_;
   fml::WeakPtrFactory<Engine> weak_factory_;
