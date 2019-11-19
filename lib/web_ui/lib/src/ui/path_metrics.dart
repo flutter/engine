@@ -36,7 +36,8 @@ class PathMetricIterator implements Iterator<PathMetric> {
   bool _firstTime = true;
 
   @override
-  PathMetric get current => _firstTime ? null : _pathMetric._segments.isEmpty ? null : _pathMetric;
+  PathMetric get current =>
+      _firstTime ? null : _pathMetric._segments.isEmpty ? null : _pathMetric;
 
   @override
   bool moveNext() {
@@ -150,7 +151,7 @@ class PathMetric {
 
   void _buildSegments() {
     _segments = <_PathSegment>[];
-    _isClosed = _forceClosed;
+    _isClosed = false;
     double distance = 0.0;
     int pointIndex = -1;
     bool haveSeenMoveTo = false;
@@ -184,7 +185,6 @@ class PathMetric {
           final engine.MoveTo moveTo = command;
           currentX = moveTo.x;
           currentY = moveTo.y;
-          _isClosed = true;
           haveSeenMoveTo = true;
           break;
         case engine.PathCommandTypes.lineTo:
@@ -197,7 +197,17 @@ class PathMetric {
           final engine.BezierCurveTo curve = command;
           // Compute cubic curve distance.
           distance = _computeCubicSegments(
-              currentX, currentY, curve.x1, curve.y1, curve.x2, curve.y2, curve.x3, curve.y3, distance, 0, _kMaxTValue);
+              currentX,
+              currentY,
+              curve.x1,
+              curve.y1,
+              curve.x2,
+              curve.y2,
+              curve.x3,
+              curve.y3,
+              distance,
+              0,
+              _kMaxTValue);
           break;
         case engine.PathCommandTypes.quadraticCurveTo:
           assert(haveSeenMoveTo);
@@ -219,10 +229,18 @@ class PathMetric {
           break;
         case engine.PathCommandTypes.ellipse:
           final engine.Ellipse ellipse = command;
-          _EllipseSegmentResult result = _computeEllipseSegments(currentX, currentY, distance,
-              ellipse.x, ellipse.y, ellipse.startAngle, ellipse.endAngle,
+          _EllipseSegmentResult result = _computeEllipseSegments(
+              currentX,
+              currentY,
+              distance,
+              ellipse.x,
+              ellipse.y,
+              ellipse.startAngle,
+              ellipse.endAngle,
               ellipse.rotation,
-              ellipse.radiusX, ellipse.radiusY, ellipse.anticlockwise);
+              ellipse.radiusX,
+              ellipse.radiusY,
+              ellipse.anticlockwise);
           distance = result.distance;
           currentX = result.endPointX;
           currentY = result.endPointY;
@@ -231,25 +249,37 @@ class PathMetric {
         case engine.PathCommandTypes.rRect:
           final engine.RRectCommand rrectCommand = command;
           final RRect rrect = rrectCommand.rrect;
-          engine.RRectMetricsRenderer(
-              moveToCallback: (double x, double y) {
-                currentX = x;
-                currentY = y;
-                _isClosed = true;
-                haveSeenMoveTo = true;
-              },
-              lineToCallback: (double x, double y) {
-                lineToHandler(x, y);
-              },
-              ellipseCallback: (double centerX, double centerY, double radiusX, double radiusY, double rotation, double startAngle, double endAngle, bool antiClockwise) {
-                _EllipseSegmentResult result =
-                    _computeEllipseSegments(currentX, currentY, distance,
-                    centerX, centerY, startAngle, endAngle, rotation,
-                    radiusX, radiusY, antiClockwise);
-                distance = result.distance;
-                currentX = result.endPointX;
-                currentY = result.endPointY;
-              }).render(rrect);
+          engine.RRectMetricsRenderer(moveToCallback: (double x, double y) {
+            currentX = x;
+            currentY = y;
+            _isClosed = true;
+            haveSeenMoveTo = true;
+          }, lineToCallback: (double x, double y) {
+            lineToHandler(x, y);
+          }, ellipseCallback: (double centerX,
+              double centerY,
+              double radiusX,
+              double radiusY,
+              double rotation,
+              double startAngle,
+              double endAngle,
+              bool antiClockwise) {
+            _EllipseSegmentResult result = _computeEllipseSegments(
+                currentX,
+                currentY,
+                distance,
+                centerX,
+                centerY,
+                startAngle,
+                endAngle,
+                rotation,
+                radiusX,
+                radiusY,
+                antiClockwise);
+            distance = result.distance;
+            currentX = result.endPointX;
+            currentY = result.endPointY;
+          }).render(rrect);
           _isClosed = true;
           break;
         case engine.PathCommandTypes.rect:
@@ -270,14 +300,17 @@ class PathMetric {
           throw UnimplementedError('Unknown path command $command');
       }
     }
+    if (!_isClosed && _forceClosed && _segments.isNotEmpty) {
+      _PathSegment firstSegment = _segments.first;
+      lineToHandler(firstSegment.points[0], firstSegment.points[1]);
+    }
     _contourLength = distance;
   }
 
   static bool _tspanBigEnough(int tSpan) => (tSpan >> 10) != 0;
 
-  static bool _cubicTooCurvy(
-      double x0, double y0, double x1, double y1, double x2, double y2,
-      double x3, double y3) {
+  static bool _cubicTooCurvy(double x0, double y0, double x1, double y1,
+      double x2, double y2, double x3, double y3) {
     // Measure distance from start-end line at 1/3 and 2/3rds to control
     // points. If distance is less than _fTolerance we should continue
     // subdividing curve. Uses approx distance for speed.
@@ -304,8 +337,18 @@ class PathMetric {
   }
 
   // Recursively subdivides cubic and adds segments.
-  double _computeCubicSegments(double x0, double y0, double x1, double y1,
-      double x2, double y2, double x3, double y3, double distance, int tMin, int tMax) {
+  double _computeCubicSegments(
+      double x0,
+      double y0,
+      double x1,
+      double y1,
+      double x2,
+      double y2,
+      double x3,
+      double y3,
+      double distance,
+      int tMin,
+      int tMax) {
     if (_tspanBigEnough(tMax - tMin) &&
         _cubicTooCurvy(x0, y0, x1, y1, x2, y2, x3, y3)) {
       // Chop cubic into two halves (De Cateljau's algorithm)
@@ -323,10 +366,10 @@ class PathMetric {
       final double abcdX = (abcX + bcdX) / 2;
       final double abcdY = (abcY + bcdY) / 2;
       final int tHalf = (tMin + tMax) >> 1;
-      distance =
-          _computeCubicSegments(x0, y0, abX, abY, abcX, abcY, abcdX, abcdY, distance, tMin, tHalf);
-      distance =
-          _computeCubicSegments(abcdX, abcdY, bcdX, bcdY, cdX, cdY, x3, y3, distance, tHalf, tMax);
+      distance = _computeCubicSegments(
+          x0, y0, abX, abY, abcX, abcY, abcdX, abcdY, distance, tMin, tHalf);
+      distance = _computeCubicSegments(
+          abcdX, abcdY, bcdX, bcdY, cdX, cdY, x3, y3, distance, tHalf, tMax);
     } else {
       final double dx = x0 - x3;
       final double dy = y0 - y3;
@@ -357,8 +400,7 @@ class PathMetric {
 
   double _computeQuadSegments(double x0, double y0, double x1, double y1,
       double x2, double y2, double distance, int tMin, int tMax) {
-    if (_tspanBigEnough(tMax - tMin) &&
-        _quadTooCurvy(x0, y0, x1, y1, x2, y2)) {
+    if (_tspanBigEnough(tMax - tMin) && _quadTooCurvy(x0, y0, x1, y1, x2, y2)) {
       final double p01x = (x0 + x1) / 2;
       final double p01y = (y0 + y1) / 2;
       final double p12x = (x1 + x2) / 2;
@@ -386,18 +428,24 @@ class PathMetric {
 
   // Create segments by converting arc to cubics.
   // See http://www.w3.org/TR/SVG/implnote.html#ArcConversionEndpointToCenter.
-  _EllipseSegmentResult _computeEllipseSegments(double startX, double startY,
-      double distance, double cx, double cy,
-      double startAngle, double endAngle,
-      double rotation, double radiusX, double radiusY, bool anticlockwise) {
-
+  _EllipseSegmentResult _computeEllipseSegments(
+      double startX,
+      double startY,
+      double distance,
+      double cx,
+      double cy,
+      double startAngle,
+      double endAngle,
+      double rotation,
+      double radiusX,
+      double radiusY,
+      bool anticlockwise) {
     final double endX = cx + (radiusX * math.cos(endAngle));
     final double endY = cy + (radiusY * math.sin(endAngle));
     // Check for http://www.w3.org/TR/SVG/implnote.html#ArcOutOfRangeParameters
     // Treat as line segment from start to end if arc has zero radii.
     // If start and end point are the same treat as zero length path.
-    if ((radiusX == 0 || radiusY == 0) ||
-        (startX == endX && startY == endY)) {
+    if ((radiusX == 0 || radiusY == 0) || (startX == endX && startY == endY)) {
       return _EllipseSegmentResult(endX, endY, distance);
     }
     final double rxAbs = radiusX.abs();
@@ -413,8 +461,10 @@ class PathMetric {
     double x0 = startX;
     double y0 = startY;
     for (int segmentIndex = 0; segmentIndex < numSegments; segmentIndex++) {
-      final double startTheta = theta1 + (segmentIndex * thetaArc / numSegments);
-      final double endTheta = theta1 + ((segmentIndex + 1 ) * thetaArc / numSegments);
+      final double startTheta =
+          theta1 + (segmentIndex * thetaArc / numSegments);
+      final double endTheta =
+          theta1 + ((segmentIndex + 1) * thetaArc / numSegments);
       final double t = (4.0 / 3.0) * math.tan((endTheta - startTheta) / 4);
       if (!t.isFinite) {
         return _EllipseSegmentResult(endX, endY, distance);
@@ -432,10 +482,8 @@ class PathMetric {
       final double p2x = targetPointX + rxAbs * (t * sinEndTheta);
       final double p2y = targetPointY + ryAbs * (-t * cosEndTheta);
 
-      print('cubic seg $x0,$y0 $p1x,$p1y,$p2x,$p2y -> $targetPointX,$targetPointY');
-      double prevDistance = distance;
-      distance = _computeCubicSegments(x0, y0, p1x, p1y, p2x, p2y, targetPointX, targetPointY, distance, 0, _kMaxTValue);
-      print('   cubic delta = ${distance - prevDistance}');
+      distance = _computeCubicSegments(x0, y0, p1x, p1y, p2x, p2y, targetPointX,
+          targetPointY, distance, 0, _kMaxTValue);
       x0 = targetPointX;
       y0 = targetPointY;
     }
