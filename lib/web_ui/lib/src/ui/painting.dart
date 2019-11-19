@@ -1618,15 +1618,6 @@ class ImageFilter {
     //    if (matrix4.length != 16)
     //      throw ArgumentError('"matrix4" must have 16 entries.');
   }
-
-  @override
-  bool operator ==(dynamic other);
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
 }
 
 /// The format in which image bytes should be returned when using
