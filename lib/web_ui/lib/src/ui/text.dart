@@ -518,15 +518,6 @@ abstract class TextStyle {
       );
     }
   }
-
-  @override
-  int get hashCode;
-
-  @override
-  bool operator ==(dynamic other);
-
-  @override
-  String toString();
 }
 
 /// An opaque object that determines the configuration used by
@@ -629,15 +620,6 @@ abstract class ParagraphStyle {
       );
     }
   }
-
-  @override
-  bool operator ==(dynamic other);
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
 }
 
 abstract class StrutStyle {
@@ -686,12 +668,6 @@ abstract class StrutStyle {
     FontStyle fontStyle,
     bool forceStrutHeight,
   }) = engine.EngineStrutStyle;
-
-  @override
-  int get hashCode;
-
-  @override
-  bool operator ==(dynamic other);
 }
 
 /// A direction in which text flows.

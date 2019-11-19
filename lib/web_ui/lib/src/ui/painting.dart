@@ -226,6 +226,14 @@ class Color {
     }
   }
 
+  /// Returns an alpha value representative of the provided [opacity] value.
+  ///
+  /// The [opacity] value may not be null.
+  static int getAlphaFromOpacity(double opacity) {
+    assert(opacity != null);
+    return (opacity.clamp(0.0, 1.0) * 255).round();
+  }
+
   @override
   bool operator ==(dynamic other) {
     if (identical(this, other)) {
@@ -1472,15 +1480,6 @@ abstract class ColorFilter {
   List<dynamic> webOnlySerializeToCssPaint() {
     throw UnsupportedError('ColorFilter for CSS paint not yet supported');
   }
-
-  @override
-  bool operator ==(dynamic other);
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
