@@ -12,14 +12,13 @@
 
 namespace fml {
 
+/// A threadsafe structure that allows you to switch between 2 different
+/// execution paths.
 class SyncSwitch {
  public:
-  class Observer {
-   public:
-    virtual void OnSetSwitch(bool value) = 0;
-  };
-
+  /// Represents the 2 code paths available when calling |SyncSwitch::Execute|.
   struct Handlers {
+    /// Creates a |Handlers| were all exection paths are noops.
     Handlers();
     Handlers& SetTrue(const std::function<void()>& handler);
     Handlers& SetFalse(const std::function<void()>& handler);
@@ -27,27 +26,27 @@ class SyncSwitch {
     std::function<void()> false_handler;
   };
 
+  /// Create a |SyncSwitch| with the false value.
   SyncSwitch();
 
+  /// Create a |SyncSwitch| with the specified value.
   SyncSwitch(bool value);
 
+  /// Diverge execution between true and false values of the SyncSwitch.
+  ///
+  /// This can be called on any thread.
   void Execute(const Handlers& handlers);
 
+  /// Set the value of the SyncSwitch.
+  ///
+  /// This can be called on any thread.
   void SetSwitch(bool value);
-
-  /// Run on same thread as |SetSwitch|.
-  void AddObserver(Observer* observer);
-
-  /// Run on same thread as |SetSwitch|.
-  void RemoveObserver(Observer* observer);
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(SyncSwitch);
 
   std::mutex mutex_;
-  std::condition_variable condition_variable_;
   bool value_;
-  std::forward_list<Observer*> observers_;
 };
 
 }  // namespace fml

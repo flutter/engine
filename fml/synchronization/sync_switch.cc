@@ -38,17 +38,6 @@ void SyncSwitch::SetSwitch(bool value) {
     std::lock_guard<std::mutex> guard(mutex_);
     value_ = value;
   }
-  for (Observer* observer : observers_) {
-    observer->OnSetSwitch(value);
-  }
-}
-
-void SyncSwitch::AddObserver(SyncSwitch::Observer* observer) {
-  observers_.push_front(observer);
-}
-
-void SyncSwitch::RemoveObserver(SyncSwitch::Observer* observer) {
-  observers_.remove(observer);
 }
 
 }  // namespace fml
