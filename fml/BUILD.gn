@@ -64,6 +64,8 @@ source_set("fml") {
     "synchronization/semaphore.cc",
     "synchronization/semaphore.h",
     "synchronization/shared_mutex.h",
+    "synchronization/sync_switch.cc",
+    "synchronization/sync_switch.h",
     "synchronization/waitable_event.cc",
     "synchronization/waitable_event.h",
     "task_runner.cc",

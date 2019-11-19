@@ -62,6 +62,11 @@ class TestIOManager final : public IOManager {
     return unref_queue_;
   }
 
+  // |IOManager|
+  fml::SyncSwitch& GetIsBackgroundedSyncSwitch() override {
+    return is_backgrounded_sync_switch_;
+  }
+
  private:
   TestGLSurface gl_surface_;
   sk_sp<GrContext> gl_context_;
@@ -70,6 +75,7 @@ class TestIOManager final : public IOManager {
   fml::WeakPtr<TestIOManager> weak_prototype_;
   fml::RefPtr<fml::TaskRunner> runner_;
   fml::WeakPtrFactory<TestIOManager> weak_factory_;
+  fml::SyncSwitch is_backgrounded_sync_switch_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TestIOManager);
 };

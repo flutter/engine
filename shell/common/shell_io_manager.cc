@@ -117,4 +117,9 @@ fml::WeakPtr<IOManager> ShellIOManager::GetWeakIOManager() const {
   return weak_factory_.GetWeakPtr();
 }
 
+// |IOManager|
+fml::SyncSwitch& ShellIOManager::GetIsBackgroundedSyncSwitch() {
+  return is_backgrounded_sync_switch_;
+}
+
 }  // namespace flutter

@@ -747,6 +747,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   bool activity_running_;
   bool have_surface_;
   FontCollection font_collection_;
+  fml::WeakPtr<IOManager> io_manager_;
   ImageDecoder image_decoder_;
   TaskRunners task_runners_;
   fml::WeakPtrFactory<Engine> weak_factory_;

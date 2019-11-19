@@ -50,6 +50,7 @@ Engine::Engine(Delegate& delegate,
       animator_(std::move(animator)),
       activity_running_(true),
       have_surface_(false),
+      io_manager_(io_manager),
       image_decoder_(task_runners,
                      vm.GetConcurrentWorkerTaskRunner(),
                      io_manager),
@@ -314,10 +315,16 @@ bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
       state == "AppLifecycleState.detached") {
     activity_running_ = false;
     StopAnimator();
+    if (io_manager_) {
+      io_manager_->GetIsBackgroundedSyncSwitch().SetSwitch(true);
+    }
   } else if (state == "AppLifecycleState.resumed" ||
              state == "AppLifecycleState.inactive") {
     activity_running_ = true;
     StartAnimatorIfPossible();
+    if (io_manager_) {
+      io_manager_->GetIsBackgroundedSyncSwitch().SetSwitch(false);
+    }
   }
 
   // Always schedule a frame when the app does become active as per API

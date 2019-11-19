@@ -51,6 +51,9 @@ class ShellIOManager final : public IOManager {
   // |IOManager|
   fml::RefPtr<flutter::SkiaUnrefQueue> GetSkiaUnrefQueue() const override;
 
+  // |IOManager|
+  fml::SyncSwitch& GetIsBackgroundedSyncSwitch() override;
+
  private:
   // Resource context management.
   sk_sp<GrContext> resource_context_;
@@ -61,6 +64,8 @@ class ShellIOManager final : public IOManager {
   fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue_;
 
   fml::WeakPtrFactory<ShellIOManager> weak_factory_;
+
+  fml::SyncSwitch is_backgrounded_sync_switch_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellIOManager);
 };
