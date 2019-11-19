@@ -49,7 +49,7 @@ class ThreadChecker final {
   bool IsCreationThreadCurrent() const {
     pthread_t current_thread = pthread_self();
     bool is_creation_thread_current = !!pthread_equal(current_thread, self_);
-#if !defined(OS_FUCHSIA)
+#ifdef __APPLE__
     if (!is_creation_thread_current) {
       static const int buffer_length = 128;
       char expected_thread[buffer_length];
@@ -62,7 +62,7 @@ class ThreadChecker final {
                         << actual_thread << "'";
       }
     }
-#endif  // !defined(OS_FUCHSIA)
+#endif  // __APPLE__
     return is_creation_thread_current;
   }
 
