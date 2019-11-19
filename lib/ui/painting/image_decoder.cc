@@ -166,8 +166,8 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
     return {};
   }
 
-  SkPixmap pixmap;
-  if (!image->peekPixels(&pixmap)) {
+  std::unique_ptr<SkPixmap> pixmap(new SkPixmap());
+  if (!image->peekPixels(pixmap.get())) {
     FML_LOG(ERROR) << "Could not peek pixels of image for texture upload.";
     return {};
   }
@@ -176,15 +176,20 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
   io_manager->GetIsBackgroundedSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
           .SetTrue([&result, &pixmap] {
-            sk_sp<SkImage> texture_image =
-                SkImage::MakeFromRaster(pixmap, nullptr, nullptr);
+            sk_sp<SkImage> texture_image = SkImage::MakeFromRaster(
+                *pixmap,
+                [](const void* pixels, SkImage::ReleaseContext context) {
+                  SkPixmap* pixmap = static_cast<SkPixmap*>(context);
+                  delete pixmap;
+                },
+                pixmap.release());
             result = {texture_image, nullptr};
           })
           .SetFalse([&result, context = io_manager->GetResourceContext(),
                      &pixmap, queue = io_manager->GetSkiaUnrefQueue()] {
             sk_sp<SkImage> texture_image = SkImage::MakeCrossContextFromPixmap(
                 context.get(),  // context
-                pixmap,         // pixmap
+                *pixmap,        // pixmap
                 true,           // buildMips,
                 true            // limitToMaxTextureSize
             );
