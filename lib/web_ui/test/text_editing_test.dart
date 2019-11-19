@@ -26,6 +26,7 @@ final InputConfiguration singlelineConfig = InputConfiguration(
   inputType: EngineInputType.text,
   obscureText: false,
   inputAction: 'TextInputAction.done',
+  autocorrect: true,
 );
 final Map<String, dynamic> flutterSinglelineConfig =
     createFlutterConfig('text');
@@ -34,6 +35,7 @@ final InputConfiguration multilineConfig = InputConfiguration(
   inputType: EngineInputType.multiline,
   obscureText: false,
   inputAction: 'TextInputAction.newline',
+  autocorrect: true,
 );
 final Map<String, dynamic> flutterMultilineConfig =
     createFlutterConfig('multiline');
@@ -105,6 +107,7 @@ void main() {
         inputType: EngineInputType.text,
         inputAction: 'TextInputAction.done',
         obscureText: true,
+        autocorrect: true,
       );
       editingElement.enable(
         config,
@@ -263,6 +266,7 @@ void main() {
         inputType: EngineInputType.text,
         obscureText: false,
         inputAction: 'TextInputAction.done',
+        autocorrect: true,
       );
       editingElement.enable(
         config,
@@ -286,6 +290,7 @@ void main() {
         inputType: EngineInputType.multiline,
         obscureText: false,
         inputAction: 'TextInputAction.done',
+        autocorrect: true,
       );
       editingElement.enable(
         config,
