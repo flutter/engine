@@ -219,10 +219,13 @@ class PathMetric {
           break;
         case engine.PathCommandTypes.ellipse:
           final engine.Ellipse ellipse = command;
-          distance = _computeEllipseSegments(currentX, currentY, distance,
+          _EllipseSegmentResult result = _computeEllipseSegments(currentX, currentY, distance,
               ellipse.x, ellipse.y, ellipse.startAngle, ellipse.endAngle,
               ellipse.rotation,
               ellipse.radiusX, ellipse.radiusY, ellipse.anticlockwise);
+          distance = result.distance;
+          currentX = result.endPointX;
+          currentY = result.endPointY;
           _isClosed = true;
           break;
         case engine.PathCommandTypes.rRect:
@@ -239,9 +242,13 @@ class PathMetric {
                 lineToHandler(x, y);
               },
               ellipseCallback: (double centerX, double centerY, double radiusX, double radiusY, double rotation, double startAngle, double endAngle, bool antiClockwise) {
-                distance = _computeEllipseSegments(currentX, currentY, distance,
+                _EllipseSegmentResult result =
+                    _computeEllipseSegments(currentX, currentY, distance,
                     centerX, centerY, startAngle, endAngle, rotation,
                     radiusX, radiusY, antiClockwise);
+                distance = result.distance;
+                currentX = result.endPointX;
+                currentY = result.endPointY;
               }).render(rrect);
           _isClosed = true;
           break;
@@ -379,7 +386,7 @@ class PathMetric {
 
   // Create segments by converting arc to cubics.
   // See http://www.w3.org/TR/SVG/implnote.html#ArcConversionEndpointToCenter.
-  double _computeEllipseSegments(double startX, double startY,
+  _EllipseSegmentResult _computeEllipseSegments(double startX, double startY,
       double distance, double cx, double cy,
       double startAngle, double endAngle,
       double rotation, double radiusX, double radiusY, bool anticlockwise) {
@@ -391,7 +398,7 @@ class PathMetric {
     // If start and end point are the same treat as zero length path.
     if ((radiusX == 0 || radiusY == 0) ||
         (startX == endX && startY == endY)) {
-      return distance;
+      return _EllipseSegmentResult(endX, endY, distance);
     }
     final double rxAbs = radiusX.abs();
     final double ryAbs = radiusY.abs();
@@ -410,7 +417,7 @@ class PathMetric {
       final double endTheta = theta1 + ((segmentIndex + 1 ) * thetaArc / numSegments);
       final double t = (4.0 / 3.0) * math.tan((endTheta - startTheta) / 4);
       if (!t.isFinite) {
-        return distance;
+        return _EllipseSegmentResult(endX, endY, distance);
       }
       final double sinStartTheta = math.sin(startTheta);
       final double cosStartTheta = math.cos(startTheta);
@@ -425,15 +432,25 @@ class PathMetric {
       final double p2x = targetPointX + rxAbs * (t * sinEndTheta);
       final double p2y = targetPointY + ryAbs * (-t * cosEndTheta);
 
+      print('cubic seg $x0,$y0 $p1x,$p1y,$p2x,$p2y -> $targetPointX,$targetPointY');
+      double prevDistance = distance;
       distance = _computeCubicSegments(x0, y0, p1x, p1y, p2x, p2y, targetPointX, targetPointY, distance, 0, _kMaxTValue);
+      print('   cubic delta = ${distance - prevDistance}');
       x0 = targetPointX;
       y0 = targetPointY;
     }
-    return distance;
+    return _EllipseSegmentResult(endX, endY, distance);
   }
 
   @override
   String toString() => 'PathMetric';
+}
+
+class _EllipseSegmentResult {
+  final double endPointX;
+  final double endPointY;
+  final double distance;
+  _EllipseSegmentResult(this.endPointX, this.endPointY, this.distance);
 }
 
 class _PathSegment {
