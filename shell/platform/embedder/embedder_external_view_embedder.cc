@@ -6,6 +6,7 @@
 
 #include <algorithm>
 
+#include "flutter/shell/platform/embedder/embedder_layers.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
 
 namespace flutter {
@@ -146,78 +147,39 @@ SkCanvas* EmbedderExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
   return found->second->GetSpyingCanvas();
 }
 
-static FlutterLayer MakeBackingStoreLayer(
-    const SkISize& frame_size,
-    const FlutterBackingStore* store,
-    const SkMatrix& surface_transformation) {
-  FlutterLayer layer = {};
+bool EmbedderExternalViewEmbedder::RenderPictureToRenderTarget(
+    sk_sp<SkPicture> picture,
+    const EmbedderRenderTarget* render_target) const {
+  if (!picture || render_target == nullptr) {
+    return false;
+  }
 
-  layer.struct_size = sizeof(layer);
-  layer.type = kFlutterLayerContentTypeBackingStore;
-  layer.backing_store = store;
+  auto render_surface = render_target->GetRenderSurface();
 
-  const auto layer_bounds =
-      SkRect::MakeWH(frame_size.width(), frame_size.height());
+  if (!render_surface) {
+    return false;
+  }
 
-  const auto transformed_layer_bounds =
-      surface_transformation.mapRect(layer_bounds);
+  auto render_canvas = render_surface->getCanvas();
 
-  layer.offset.x = transformed_layer_bounds.x();
-  layer.offset.y = transformed_layer_bounds.y();
-  layer.size.width = transformed_layer_bounds.width();
-  layer.size.height = transformed_layer_bounds.height();
+  if (render_canvas == nullptr) {
+    return false;
+  }
 
-  return layer;
-}
+  render_canvas->setMatrix(pending_surface_transformation_);
+  render_canvas->clear(SK_ColorTRANSPARENT);
+  render_canvas->drawPicture(picture);
+  render_canvas->flush();
 
-static FlutterPlatformView MakePlatformView(
-    FlutterPlatformViewIdentifier identifier) {
-  FlutterPlatformView view = {};
-
-  view.struct_size = sizeof(view);
-
-  view.identifier = identifier;
-
-  return view;
-}
-
-static FlutterLayer MakePlatformViewLayer(
-    const EmbeddedViewParams& params,
-    const FlutterPlatformView& platform_view,
-    const SkMatrix& surface_transformation,
-    double device_pixel_ratio) {
-  FlutterLayer layer = {};
-
-  layer.struct_size = sizeof(layer);
-  layer.type = kFlutterLayerContentTypePlatformView;
-  layer.platform_view = &platform_view;
-
-  const auto layer_bounds = SkRect::MakeXYWH(params.offsetPixels.x(),    //
-                                             params.offsetPixels.y(),    //
-                                             params.sizePoints.width(),  //
-                                             params.sizePoints.height()  //
-  );
-
-  const auto transformed_layer_bounds =
-      SkMatrix::Concat(surface_transformation,
-                       SkMatrix::MakeScale(device_pixel_ratio))
-          .mapRect(layer_bounds);
-
-  layer.offset.x = transformed_layer_bounds.x();
-  layer.offset.y = transformed_layer_bounds.y();
-  layer.size.width = transformed_layer_bounds.width();
-  layer.size.height = transformed_layer_bounds.height();
-
-  return layer;
+  return true;
 }
 
 // |ExternalViewEmbedder|
 bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
-  std::map<FlutterPlatformViewIdentifier, FlutterPlatformView>
-      presented_platform_views;
-  // Layers may contain pointers to platform views in the collection above.
-  std::vector<FlutterLayer> presented_layers;
   Registry render_targets_used;
+  EmbedderLayers presented_layers(pending_frame_size_,
+                                  pending_device_pixel_ratio_,
+                                  pending_surface_transformation_);
 
   if (!root_render_target_) {
     FML_LOG(ERROR)
@@ -225,26 +187,20 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
     return false;
   }
 
-  // Copy the contents of the root picture recorder onto the root surface
-  // while making sure to take into account any surface transformations.
-  if (auto root_canvas = root_render_target_->GetRenderSurface()->getCanvas()) {
-    root_canvas->setMatrix(pending_surface_transformation_);
-    root_canvas->scale(pending_device_pixel_ratio_,
-                       pending_device_pixel_ratio_);
-    root_canvas->clear(SK_ColorTRANSPARENT);
-    root_canvas->drawPicture(
-        root_picture_recorder_->finishRecordingAsPicture());
-    root_canvas->flush();
-    root_picture_recorder_.reset();
+  // Copy the contents of the root picture recorder onto the root surface.
+  if (!RenderPictureToRenderTarget(
+          root_picture_recorder_->finishRecordingAsPicture(),
+          root_render_target_.get())) {
+    FML_LOG(ERROR) << "Could not render into the the root render target.";
+    return false;
   }
+  // The root picture recorder will be reset when a new frame begins.
+  root_picture_recorder_.reset();
 
   {
     // The root surface is expressed as a layer.
-    presented_layers.push_back(MakeBackingStoreLayer(
-        pending_frame_size_,                     // frame size
-        root_render_target_->GetBackingStore(),  // backing store
-        pending_surface_transformation_          // surface transformation
-        ));
+    presented_layers.PushBackingStoreLayer(
+        root_render_target_->GetBackingStore());
   }
 
   const auto surface_size = TransformedSurfaceSize(
@@ -265,21 +221,12 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
       return false;
     }
 
-    // Indicate a layer for the platform view. Add to `presented_platform_views`
-    // in order to keep at allocated just for the scope of the current method.
-    // The layers presented to the embedder will contain a back pointer to this
-    // struct. It is safe to deallocate when the embedder callback is done.
-    presented_platform_views[view_id] = MakePlatformView(view_id);
-    presented_layers.push_back(MakePlatformViewLayer(
-        params,                                // embedded view params
-        presented_platform_views.at(view_id),  // platform view
-        pending_surface_transformation_,       // surface transformation
-        pending_device_pixel_ratio_            // device pixel ratio
-        ));
+    // Tell the embedder that a platform view layer is present at this point.
+    presented_layers.PushPlatformViewLayer(view_id, params);
 
     if (!pending_canvas_spies_.at(view_id)->DidDrawIntoCanvas()) {
-      // Nothing was drawn into the overlay canvas, we don't need to composite
-      // it.
+      // Nothing was drawn into the overlay canvas, we don't need to tell the
+      // embedder to composite it.
       continue;
     }
 
@@ -307,39 +254,23 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
 
     render_targets_used[registry_key] = render_target;
 
-    auto render_surface = render_target->GetRenderSurface();
-    auto render_canvas = render_surface ? render_surface->getCanvas() : nullptr;
-
-    if (!render_canvas) {
-      FML_LOG(ERROR)
-          << "Could not acquire render canvas for on-screen rendering.";
+    if (!RenderPictureToRenderTarget(picture, render_target.get())) {
+      FML_LOG(ERROR) << "Could not render into the render target for platform "
+                        "view of identifier "
+                     << view_id;
       return false;
     }
 
-    render_canvas->setMatrix(pending_surface_transformation_);
-    render_canvas->scale(pending_device_pixel_ratio_,
-                         pending_device_pixel_ratio_);
-    render_canvas->clear(SK_ColorTRANSPARENT);
-    render_canvas->drawPicture(picture);
-    render_canvas->flush();
     // Indicate a layer for the backing store containing contents rendered by
     // Flutter.
-    presented_layers.push_back(MakeBackingStoreLayer(
-        pending_frame_size_,               // frame size
-        render_target->GetBackingStore(),  // backing store
-        pending_surface_transformation_    // surface transformation
-        ));
+    presented_layers.PushBackingStoreLayer(render_target->GetBackingStore());
   }
 
-  {
-    std::vector<const FlutterLayer*> presented_layers_pointers;
-    presented_layers_pointers.reserve(presented_layers.size());
-    for (const auto& layer : presented_layers) {
-      presented_layers_pointers.push_back(&layer);
-    }
-    present_callback_(std::move(presented_layers_pointers));
-  }
+  // Flush the layer description down to the embedder for presentation.
+  presented_layers.InvokePresentCallback(present_callback_);
 
+  // Keep the previously used render target around in case they are required
+  // next frame.
   registry_ = std::move(render_targets_used);
 
   return true;
