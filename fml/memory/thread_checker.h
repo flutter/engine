@@ -57,8 +57,8 @@ class ThreadChecker final {
                                   buffer_length) &&
           0 == pthread_getname_np(self_, actual_thread, buffer_length)) {
         FML_DLOG(ERROR) << "IsCreationThreadCurrent expected thread: '"
-                        << expected_thread
-                        << "' actual thread:'" << actual_thread << "'";
+                        << expected_thread << "' actual thread: '"
+                        << actual_thread << "'";
       }
     }
     return is_creation_thread_current;
