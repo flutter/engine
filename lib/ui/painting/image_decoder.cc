@@ -9,15 +9,6 @@
 #include "third_party/skia/include/codec/SkCodec.h"
 
 namespace flutter {
-namespace {
-class ImagePixmapPair {
- public:
-  ImagePixmapPair(std::unique_ptr<SkPixmap> pixmap, sk_sp<SkImage> image)
-      : pixmap_(std::move(pixmap)), image_(image) {}
-  std::unique_ptr<SkPixmap> pixmap_;
-  sk_sp<SkImage> image_;
-};
-}  // namespace
 
 ImageDecoder::ImageDecoder(
     TaskRunners runners,
@@ -175,8 +166,8 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
     return {};
   }
 
-  std::unique_ptr<SkPixmap> pixmap(new SkPixmap());
-  if (!image->peekPixels(pixmap.get())) {
+  SkPixmap pixmap;
+  if (!image->peekPixels(&pixmap)) {
     FML_LOG(ERROR) << "Could not peek pixels of image for texture upload.";
     return {};
   }
@@ -185,21 +176,20 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
   io_manager->GetIsBackgroundedSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
           .SetTrue([&result, &pixmap, &image] {
-            auto image_pixmap_pair = std::unique_ptr<ImagePixmapPair>(
-                new ImagePixmapPair(std::move(pixmap), image));
+            SkSafeRef(image.get());
             sk_sp<SkImage> texture_image = SkImage::MakeFromRaster(
-                *image_pixmap_pair->pixmap_,
+                pixmap,
                 [](const void* pixels, SkImage::ReleaseContext context) {
-                  delete static_cast<ImagePixmapPair*>(context);
+                  SkSafeUnref(static_cast<SkImage*>(context));
                 },
-                image_pixmap_pair.release());
+                image.get());
             result = {texture_image, nullptr};
           })
           .SetFalse([&result, context = io_manager->GetResourceContext(),
                      &pixmap, queue = io_manager->GetSkiaUnrefQueue()] {
             sk_sp<SkImage> texture_image = SkImage::MakeCrossContextFromPixmap(
                 context.get(),  // context
-                *pixmap,        // pixmap
+                pixmap,        // pixmap
                 true,           // buildMips,
                 true            // limitToMaxTextureSize
             );
