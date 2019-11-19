@@ -8,9 +8,9 @@ import("//build/fuchsia/sdk.gni")
 import("$flutter_root/common/config.gni")
 import("$flutter_root/shell/gpu/gpu.gni")
 import("$flutter_root/testing/testing.gni")
-import("$flutter_root/tools/fuchsia/common_libs.gni")
 import("$flutter_root/tools/fuchsia/dart.gni")
 import("$flutter_root/tools/fuchsia/fuchsia_archive.gni")
+import("$flutter_root/tools/fuchsia/fuchsia_libs.gni")
 import("engine_flutter_runner.gni")
 
 shell_gpu_configuration("fuchsia_gpu_configuration") {
@@ -157,7 +157,16 @@ template("jit_runner") {
       },
     ]
 
-    libraries = common_libs
+    _vulkan_icds = []
+    _libs = common_libs
+    if (flutter_runtime_mode == "debug") {
+      _libs += vulkan_validation_libs
+      _vulkan_icds += vulkan_icds
+    }
+
+    resources += _vulkan_icds
+
+    libraries = _libs
 
     meta = [
       {
@@ -215,7 +224,16 @@ template("aot_runner") {
       ]
     }
 
-    libraries = common_libs
+    _vulkan_icds = []
+    _libs = common_libs
+    if (flutter_runtime_mode == "debug") {
+      _libs += vulkan_validation_libs
+      _vulkan_icds += vulkan_icds
+    }
+
+    resources += _vulkan_icds
+
+    libraries = _libs
 
     meta = [
       {
