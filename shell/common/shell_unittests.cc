@@ -994,23 +994,20 @@ TEST_F(ShellTest, Screenshot) {
       shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
         auto rasterizer = shell->GetRasterizer();
         screenshot = rasterizer->ScreenshotLastLayerTree(
-            Rasterizer::ScreenshotType::CompressedImage, true);
+            Rasterizer::ScreenshotType::CompressedImage, false);
         latch->Signal();
       });
   latch->Wait();
 
-  const char* reference_png =
-      "iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAAXNSR0IArs4c6QAAAARzQklU"
-      "CAgICHwIZIgAAADpSURBVHic7dHBCcAwDARBOf337FQQSB6GJcy89Ti0MwAAAEDHenu4Z/"
-      "bJIX+"
-      "3Xv76Oj2EbwSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgS"
-      "JESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgS"
-      "JESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgS"
-      "JESRGkBhBYgSJESRGkBhBYgSJEQQAAADg0Q0wHwKgbFGDCQAAAABJRU5ErkJggg==";
+  auto fixtures_dir = fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
+
+  auto reference_png =
+      fml::FileMapping::CreateReadOnly(fixtures_dir, "shelltest_screenshot.png");
+
   // Use MakeWithoutCopy instead of MakeWithCString because we don't want to
   // encode the null sentinel
   sk_sp<SkData> reference_data =
-      SkData::MakeWithoutCopy(reference_png, strlen(reference_png));
+      SkData::MakeWithoutCopy(reference_png->GetMapping(), reference_png->GetSize());
 
   ASSERT_TRUE(reference_data->equals(screenshot.data.get()));
 
