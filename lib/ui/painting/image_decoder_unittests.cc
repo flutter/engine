@@ -30,7 +30,7 @@ class TestIOManager final : public IOManager {
             fml::TimeDelta::FromNanoseconds(0))),
         runner_(task_runner),
         weak_factory_(this),
-        is_backgrounded_sync_switch_(std::make_shared<fml::SyncSwitch>()) {
+        is_gpu_disabled_sync_switch_(std::make_shared<fml::SyncSwitch>()) {
     FML_CHECK(task_runner->RunsTasksOnCurrentThread())
         << "The IO manager must be initialized its primary task runner. The "
            "test harness may not be setup correctly/safely.";
@@ -64,8 +64,8 @@ class TestIOManager final : public IOManager {
   }
 
   // |IOManager|
-  std::shared_ptr<fml::SyncSwitch> GetIsBackgroundedSyncSwitch() override {
-    return is_backgrounded_sync_switch_;
+  std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() override {
+    return is_gpu_disabled_sync_switch_;
   }
 
  private:
@@ -76,7 +76,7 @@ class TestIOManager final : public IOManager {
   fml::WeakPtr<TestIOManager> weak_prototype_;
   fml::RefPtr<fml::TaskRunner> runner_;
   fml::WeakPtrFactory<TestIOManager> weak_factory_;
-  std::shared_ptr<fml::SyncSwitch> is_backgrounded_sync_switch_;
+  std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TestIOManager);
 };

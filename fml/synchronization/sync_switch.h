@@ -20,8 +20,8 @@ class SyncSwitch {
   struct Handlers {
     /// Creates a |Handlers| were all exection paths are noops.
     Handlers();
-    Handlers& SetTrue(const std::function<void()>& handler);
-    Handlers& SetFalse(const std::function<void()>& handler);
+    Handlers& SetIfTrue(const std::function<void()>& handler);
+    Handlers& SetIfFalse(const std::function<void()>& handler);
     std::function<void()> true_handler;
     std::function<void()> false_handler;
   };

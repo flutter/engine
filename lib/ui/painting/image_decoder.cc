@@ -173,9 +173,9 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
   }
 
   SkiaGPUObject<SkImage> result;
-  io_manager->GetIsBackgroundedSyncSwitch()->Execute(
+  io_manager->GetIsGpuDisabledSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
-          .SetTrue([&result, &pixmap, &image] {
+          .SetIfTrue([&result, &pixmap, &image] {
             SkSafeRef(image.get());
             sk_sp<SkImage> texture_image = SkImage::MakeFromRaster(
                 pixmap,
@@ -185,8 +185,8 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
                 image.get());
             result = {texture_image, nullptr};
           })
-          .SetFalse([&result, context = io_manager->GetResourceContext(),
-                     &pixmap, queue = io_manager->GetSkiaUnrefQueue()] {
+          .SetIfFalse([&result, context = io_manager->GetResourceContext(),
+                       &pixmap, queue = io_manager->GetSkiaUnrefQueue()] {
             sk_sp<SkImage> texture_image = SkImage::MakeCrossContextFromPixmap(
                 context.get(),  // context
                 pixmap,         // pixmap

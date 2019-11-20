@@ -42,7 +42,6 @@ Engine::Engine(Delegate& delegate,
                TaskRunners task_runners,
                Settings settings,
                std::unique_ptr<Animator> animator,
-               std::shared_ptr<fml::SyncSwitch> is_backgrounded_sync_switch,
                fml::WeakPtr<IOManager> io_manager,
                fml::RefPtr<SkiaUnrefQueue> unref_queue,
                fml::WeakPtr<SnapshotDelegate> snapshot_delegate)
@@ -51,7 +50,6 @@ Engine::Engine(Delegate& delegate,
       animator_(std::move(animator)),
       activity_running_(true),
       have_surface_(false),
-      is_backgrounded_sync_switch_(is_backgrounded_sync_switch),
       image_decoder_(task_runners,
                      vm.GetConcurrentWorkerTaskRunner(),
                      io_manager),
@@ -316,12 +314,10 @@ bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
       state == "AppLifecycleState.detached") {
     activity_running_ = false;
     StopAnimator();
-    is_backgrounded_sync_switch_->SetSwitch(true);
   } else if (state == "AppLifecycleState.resumed" ||
              state == "AppLifecycleState.inactive") {
     activity_running_ = true;
     StartAnimatorIfPossible();
-    is_backgrounded_sync_switch_->SetSwitch(false);
   }
 
   // Always schedule a frame when the app does become active as per API

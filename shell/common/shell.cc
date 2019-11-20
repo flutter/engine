@@ -95,7 +95,6 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   std::promise<fml::RefPtr<SkiaUnrefQueue>> unref_queue_promise;
   auto unref_queue_future = unref_queue_promise.get_future();
   auto io_task_runner = shell->GetTaskRunners().GetIOTaskRunner();
-  auto is_backgrounded_sync_switch = std::make_shared<fml::SyncSwitch>();
 
   // TODO(gw280): The WeakPtr here asserts that we are derefing it on the
   // same thread as it was created on. We are currently on the IO thread
@@ -105,12 +104,12 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // https://github.com/flutter/flutter/issues/42948
   fml::TaskRunner::RunNowOrPostTask(
       io_task_runner,
-      [&io_manager_promise,                          //
-       &weak_io_manager_promise,                     //
-       &unref_queue_promise,                         //
-       platform_view = platform_view->GetWeakPtr(),  //
-       io_task_runner,                               //
-       is_backgrounded_sync_switch                   //
+      [&io_manager_promise,                                               //
+       &weak_io_manager_promise,                                          //
+       &unref_queue_promise,                                              //
+       platform_view = platform_view->GetWeakPtr(),                       //
+       io_task_runner,                                                    //
+       is_backgrounded_sync_switch = shell->GetIsGpuDisabledSyncSwitch()  //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupIOSubsystem");
         auto io_manager = std::make_unique<ShellIOManager>(
@@ -137,8 +136,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                          vsync_waiter = std::move(vsync_waiter),          //
                          &weak_io_manager_future,                         //
                          &snapshot_delegate_future,                       //
-                         &unref_queue_future,                             //
-                         is_backgrounded_sync_switch                      //
+                         &unref_queue_future                              //
   ]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
         const auto& task_runners = shell->GetTaskRunners();
@@ -156,7 +154,6 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
             task_runners,                   //
             shell->GetSettings(),           //
             std::move(animator),            //
-            is_backgrounded_sync_switch,    //
             weak_io_manager_future.get(),   //
             unref_queue_future.get(),       //
             snapshot_delegate_future.get()  //
@@ -294,6 +291,7 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
     : task_runners_(std::move(task_runners)),
       settings_(std::move(settings)),
       vm_(std::move(vm)),
+      is_gpu_disabled_sync_switch_(new fml::SyncSwitch()),
       weak_factory_(this),
       weak_factory_gpu_(nullptr) {
   FML_CHECK(vm_) << "Must have access to VM to create a shell.";
@@ -651,8 +649,8 @@ void Shell::OnPlatformViewDestroyed() {
   auto io_task = [io_manager = io_manager_.get(), &latch]() {
     // Execute any pending Skia object deletions while GPU access is still
     // allowed.
-    io_manager->GetIsBackgroundedSyncSwitch()->Execute(
-        fml::SyncSwitch::Handlers().SetFalse(
+    io_manager->GetIsGpuDisabledSyncSwitch()->Execute(
+        fml::SyncSwitch::Handlers().SetIfFalse(
             [&] { io_manager->GetSkiaUnrefQueue()->Drain(); }));
     // Step 3: All done. Signal the latch that the platform thread is waiting
     // on.
@@ -1423,6 +1421,10 @@ bool Shell::ReloadSystemFonts() {
 
   OnPlatformViewDispatchPlatformMessage(fontsChangeMessage);
   return true;
+}
+
+std::shared_ptr<fml::SyncSwitch> Shell::GetIsGpuDisabledSyncSwitch() const {
+  return is_gpu_disabled_sync_switch_;
 }
 
 }  // namespace flutter

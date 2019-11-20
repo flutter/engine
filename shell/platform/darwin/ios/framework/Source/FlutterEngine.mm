@@ -456,6 +456,7 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
     }
     _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
     [self maybeSetupPlatformViewChannels];
+    _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(_isGpuDisabled ? true : false);
   }
 
   return _shell != nullptr;
@@ -646,6 +647,13 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
     _shell->NotifyLowMemoryWarning();
   }
   [_systemChannel sendMessage:@{@"type" : @"memoryPressure"}];
+}
+
+- (void)setIsGpuDisabled:(BOOL)value {
+  if (_shell) {
+    _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(value ? true : false);
+  }
+  _isGpuDisabled = value;
 }
 
 @end

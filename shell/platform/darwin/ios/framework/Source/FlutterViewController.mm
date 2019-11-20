@@ -541,12 +541,14 @@ typedef enum UIAccessibilityContrast : NSInteger {
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
   [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
+  [_engine.get() setIsGpuDisabled:NO];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
   [self surfaceUpdated:NO];
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
+  [_engine.get() setIsGpuDisabled:YES];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
