@@ -62,6 +62,25 @@ class SkCanvas {
     ]);
   }
 
+  void drawAtlasRaw(
+    ui.Paint paint,
+    ui.Image atlas,
+    Float32List rstTransforms,
+    Float32List rects,
+    Int32List colors,
+    ui.BlendMode blendMode,
+  ) {
+    final SkImage skAtlas = atlas;
+    skCanvas.callMethod('drawAtlas', <dynamic>[
+      skAtlas.skImage,
+      rects,
+      rstTransforms,
+      makeSkPaint(paint),
+      makeSkBlendMode(blendMode),
+      colors,
+    ]);
+  }
+
   void drawCircle(ui.Offset c, double radius, ui.Paint paint) {
     skCanvas.callMethod('drawCircle', <dynamic>[
       c.dx,
@@ -107,6 +126,17 @@ class SkCanvas {
     ]);
   }
 
+  void drawImageNine(
+      ui.Image image, ui.Rect center, ui.Rect dst, ui.Paint paint) {
+    final SkImage skImage = image;
+    skCanvas.callMethod('drawImageNine', <dynamic>[
+      skImage.skImage,
+      makeSkRect(center),
+      makeSkRect(dst),
+      makeSkPaint(paint),
+    ]);
+  }
+
   void drawLine(ui.Offset p1, ui.Offset p2, ui.Paint paint) {
     skCanvas.callMethod('drawLine', <dynamic>[
       p1.dx,
@@ -129,26 +159,11 @@ class SkCanvas {
   }
 
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
-    // TODO(het): This doesn't support most paragraph features. We are just
-    // creating a font from the family and size, and drawing it with
-    // ShapedText.
-    final EngineParagraph engineParagraph = paragraph;
-    final ParagraphGeometricStyle style = engineParagraph.geometricStyle;
-    final js.JsObject skFont = skiaFontCollection.getFont(
-        style.effectiveFontFamily, style.fontSize ?? 12.0);
-    final js.JsObject skShapedTextOpts = js.JsObject.jsify(<String, dynamic>{
-      'font': skFont,
-      'leftToRight': true,
-      'text': engineParagraph.plainText,
-      'width': engineParagraph.width + 1,
-    });
-    final js.JsObject skShapedText =
-        js.JsObject(canvasKit['ShapedText'], <js.JsObject>[skShapedTextOpts]);
-    skCanvas.callMethod('drawText', <dynamic>[
-      skShapedText,
-      offset.dx + engineParagraph._alignOffset,
+    final SkParagraph skParagraph = paragraph;
+    skCanvas.callMethod('drawParagraph', <dynamic>[
+      skParagraph.skParagraph,
+      offset.dx,
       offset.dy,
-      makeSkPaint(engineParagraph._paint)
     ]);
   }
 
@@ -157,6 +172,19 @@ class SkCanvas {
     final SkPath enginePath = path;
     final js.JsObject skPath = enginePath._skPath;
     skCanvas.callMethod('drawPath', <js.JsObject>[skPath, skPaint]);
+  }
+
+  void drawPicture(ui.Picture picture) {
+    final SkPicture skPicture = picture;
+    skCanvas.callMethod('drawPicture', <js.JsObject>[skPicture.skPicture]);
+  }
+
+  void drawPoints(ui.Paint paint, ui.PointMode pointMode, Float32List points) {
+    skCanvas.callMethod('drawPoints', <dynamic>[
+      makeSkPointMode(pointMode),
+      points,
+      makeSkPaint(paint),
+    ]);
   }
 
   void drawRRect(ui.RRect rrect, ui.Paint paint) {
@@ -192,13 +220,17 @@ class SkCanvas {
     skCanvas.callMethod('restore');
   }
 
+  void restoreToCount(int count) {
+    skCanvas.callMethod('restoreToCount', <int>[count]);
+  }
+
   void rotate(double radians) {
     skCanvas
         .callMethod('rotate', <double>[radians * 180.0 / math.pi, 0.0, 0.0]);
   }
 
-  void save() {
-    skCanvas.callMethod('save');
+  int save() {
+    return skCanvas.callMethod('save');
   }
 
   void saveLayer(ui.Rect bounds, ui.Paint paint) {
@@ -210,6 +242,19 @@ class SkCanvas {
 
   void saveLayerWithoutBounds(ui.Paint paint) {
     skCanvas.callMethod('saveLayer', <js.JsObject>[null, makeSkPaint(paint)]);
+  }
+
+  void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter) {
+    final SkImageFilter skImageFilter = filter;
+    return skCanvas.callMethod(
+      'saveLayer',
+      <dynamic>[
+        null,
+        skImageFilter.skImageFilter,
+        0,
+        makeSkRect(bounds),
+      ],
+    );
   }
 
   void scale(double sx, double sy) {
@@ -226,5 +271,9 @@ class SkCanvas {
 
   void translate(double dx, double dy) {
     skCanvas.callMethod('translate', <double>[dx, dy]);
+  }
+
+  void flush() {
+    skCanvas.callMethod('flush');
   }
 }

@@ -72,6 +72,17 @@ Float32List encodePointList(List<ui.Offset> points) {
   return result;
 }
 
+js.JsObject makeSkPointMode(ui.PointMode pointMode) {
+  switch (pointMode) {
+    case ui.PointMode.points:
+      return canvasKit['PointMode']['Points'];
+    case ui.PointMode.lines:
+      return canvasKit['PointMode']['Lines'];
+    case ui.PointMode.polygon:
+      return canvasKit['PointMode']['Polygon'];
+  }
+}
+
 js.JsObject makeSkBlendMode(ui.BlendMode blendMode) {
   switch (blendMode) {
     case ui.BlendMode.clear:
@@ -138,6 +149,8 @@ js.JsObject makeSkBlendMode(ui.BlendMode blendMode) {
 }
 
 js.JsObject makeSkPaint(ui.Paint paint) {
+  if (paint == null) return null;
+
   final dynamic skPaint = js.JsObject(canvasKit['SkPaint']);
 
   if (paint.shader != null) {

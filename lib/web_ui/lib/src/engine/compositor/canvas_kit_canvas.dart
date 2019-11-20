@@ -241,79 +241,73 @@ class CanvasKitCanvas implements ui.Canvas {
     assert(image != null); // image is checked on the engine side
     assert(_offsetIsValid(p));
     assert(paint != null);
-    _drawImage(image, p.dx, p.dy, paint._objects, paint._data);
+    _drawImage(image, p, paint);
   }
 
-  void _drawImage(Image image, double x, double y, List<dynamic> paintObjects,
-      ByteData paintData) native 'Canvas_drawImage';
+  void _drawImage(ui.Image image, ui.Offset p, ui.Paint paint) {
+    _canvas.drawImage(image, p, paint);
+  }
 
+  @override
   void drawImageRect(ui.Image image, ui.Rect src, ui.Rect dst, ui.Paint paint) {
     assert(image != null); // image is checked on the engine side
-    assert(_rectIsValid(src));
-    assert(_rectIsValid(dst));
+    assert(rectIsValid(src));
+    assert(rectIsValid(dst));
     assert(paint != null);
-    _drawImageRect(image, src.left, src.top, src.right, src.bottom, dst.left,
-        dst.top, dst.right, dst.bottom, paint._objects, paint._data);
+    _drawImageRect(image, src, dst, paint);
   }
 
   void _drawImageRect(
-      ui.Image image,
-      double srcLeft,
-      double srcTop,
-      double srcRight,
-      double srcBottom,
-      double dstLeft,
-      double dstTop,
-      double dstRight,
-      double dstBottom,
-      List<dynamic> paintObjects,
-      ByteData paintData) native 'Canvas_drawImageRect';
+      ui.Image image, ui.Rect src, ui.Rect dst, ui.Paint paint) {
+    _canvas.drawImageRect(image, src, dst, paint);
+  }
 
+  @override
   void drawImageNine(
       ui.Image image, ui.Rect center, ui.Rect dst, ui.Paint paint) {
     assert(image != null); // image is checked on the engine side
-    assert(_rectIsValid(center));
-    assert(_rectIsValid(dst));
+    assert(rectIsValid(center));
+    assert(rectIsValid(dst));
     assert(paint != null);
-    _drawImageNine(image, center.left, center.top, center.right, center.bottom,
-        dst.left, dst.top, dst.right, dst.bottom, paint._objects, paint._data);
+    _drawImageNine(image, center, dst, paint);
   }
 
   void _drawImageNine(
-      Image image,
-      double centerLeft,
-      double centerTop,
-      double centerRight,
-      double centerBottom,
-      double dstLeft,
-      double dstTop,
-      double dstRight,
-      double dstBottom,
-      List<dynamic> paintObjects,
-      ByteData paintData) native 'Canvas_drawImageNine';
+      ui.Image image, ui.Rect center, ui.Rect dst, ui.Paint paint) {
+    _canvas.drawImageNine(image, center, dst, paint);
+  }
 
-  void drawPicture(Picture picture) {
+  @override
+  void drawPicture(ui.Picture picture) {
     assert(picture != null); // picture is checked on the engine side
     _drawPicture(picture);
   }
 
-  void _drawPicture(Picture picture) native 'Canvas_drawPicture';
-
-  void drawParagraph(Paragraph paragraph, Offset offset) {
-    assert(paragraph != null);
-    assert(_offsetIsValid(offset));
-    paragraph._paint(this, offset.dx, offset.dy);
+  void _drawPicture(ui.Picture picture) {
+    _canvas.drawPicture(picture);
   }
 
+  @override
+  void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
+    assert(paragraph != null);
+    assert(_offsetIsValid(offset));
+    _drawParagraph(paragraph, offset);
+  }
+
+  void _drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
+    _canvas.drawParagraph(paragraph, offset);
+  }
+
+  @override
   void drawPoints(
       ui.PointMode pointMode, List<ui.Offset> points, ui.Paint paint) {
     assert(pointMode != null);
     assert(points != null);
     assert(paint != null);
-    _drawPoints(
-        paint._objects, paint._data, pointMode.index, _encodePointList(points));
+    _drawPoints(paint, pointMode, encodePointList(points));
   }
 
+  @override
   void drawRawPoints(
       ui.PointMode pointMode, Float32List points, ui.Paint paint) {
     assert(pointMode != null);
@@ -321,27 +315,36 @@ class CanvasKitCanvas implements ui.Canvas {
     assert(paint != null);
     if (points.length % 2 != 0)
       throw ArgumentError('"points" must have an even number of values.');
-    _drawPoints(paint._objects, paint._data, pointMode.index, points);
+    _drawPoints(paint, pointMode, points);
   }
 
-  void _drawPoints(List<dynamic> paintObjects, ByteData paintData,
-      int pointMode, Float32List points) native 'Canvas_drawPoints';
+  void _drawPoints(ui.Paint paint, ui.PointMode pointMode, Float32List points) {
+    _canvas.drawPoints(paint, pointMode, points);
+  }
 
-  void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
+  @override
+  void drawVertices(
+      ui.Vertices vertices, ui.BlendMode blendMode, ui.Paint paint) {
     assert(vertices != null); // vertices is checked on the engine side
     assert(paint != null);
     assert(blendMode != null);
-    _drawVertices(vertices, blendMode.index, paint._objects, paint._data);
+    _drawVertices(vertices, blendMode, paint);
   }
 
   void _drawVertices(
-      Vertices vertices,
-      int blendMode,
-      List<dynamic> paintObjects,
-      ByteData paintData) native 'Canvas_drawVertices';
+      ui.Vertices vertices, ui.BlendMode blendMode, ui.Paint paint) {
+    _canvas.drawVertices(vertices, blendMode, paint);
+  }
 
-  void drawAtlas(Image atlas, List<RSTransform> transforms, List<Rect> rects,
-      List<Color> colors, BlendMode blendMode, Rect cullRect, Paint paint) {
+  @override
+  void drawAtlas(
+      ui.Image atlas,
+      List<ui.RSTransform> transforms,
+      List<ui.Rect> rects,
+      List<ui.Color> colors,
+      ui.BlendMode blendMode,
+      ui.Rect cullRect,
+      ui.Paint paint) {
     assert(atlas != null); // atlas is checked on the engine side
     assert(transforms != null);
     assert(rects != null);
@@ -364,9 +367,9 @@ class CanvasKitCanvas implements ui.Canvas {
       final int index1 = index0 + 1;
       final int index2 = index0 + 2;
       final int index3 = index0 + 3;
-      final RSTransform rstTransform = transforms[i];
-      final Rect rect = rects[i];
-      assert(_rectIsValid(rect));
+      final ui.RSTransform rstTransform = transforms[i];
+      final ui.Rect rect = rects[i];
+      assert(rectIsValid(rect));
       rstTransformBuffer[index0] = rstTransform.scos;
       rstTransformBuffer[index1] = rstTransform.ssin;
       rstTransformBuffer[index2] = rstTransform.tx;
@@ -379,14 +382,20 @@ class CanvasKitCanvas implements ui.Canvas {
 
     final Int32List colorBuffer =
         colors.isEmpty ? null : _encodeColorList(colors);
-    final Float32List cullRectBuffer = cullRect?._value32;
 
-    _drawAtlas(paint._objects, paint._data, atlas, rstTransformBuffer,
-        rectBuffer, colorBuffer, blendMode.index, cullRectBuffer);
+    _drawAtlas(
+        paint, atlas, rstTransformBuffer, rectBuffer, colorBuffer, blendMode);
   }
 
-  void drawRawAtlas(Image atlas, Float32List rstTransforms, Float32List rects,
-      Int32List colors, BlendMode blendMode, Rect cullRect, Paint paint) {
+  @override
+  void drawRawAtlas(
+      ui.Image atlas,
+      Float32List rstTransforms,
+      Float32List rects,
+      Int32List colors,
+      ui.BlendMode blendMode,
+      ui.Rect cullRect,
+      ui.Paint paint) {
     assert(atlas != null); // atlas is checked on the engine side
     assert(rstTransforms != null);
     assert(rects != null);
@@ -404,28 +413,32 @@ class CanvasKitCanvas implements ui.Canvas {
       throw ArgumentError(
           'If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
 
-    _drawAtlas(paint._objects, paint._data, atlas, rstTransforms, rects, colors,
-        blendMode.index, cullRect?._value32);
+    _drawAtlas(paint, atlas, rstTransforms, rects, colors, blendMode);
   }
 
+  // TODO(hterkelsen): Pass a cull_rect once CanvasKit supports that.
   void _drawAtlas(
-      List<dynamic> paintObjects,
-      ByteData paintData,
-      Image atlas,
-      Float32List rstTransforms,
-      Float32List rects,
-      Int32List colors,
-      int blendMode,
-      Float32List cullRect) native 'Canvas_drawAtlas';
+    ui.Paint paint,
+    ui.Image atlas,
+    Float32List rstTransforms,
+    Float32List rects,
+    Int32List colors,
+    ui.BlendMode blendMode,
+  ) {
+    _canvas.drawAtlasRaw(paint, atlas, rstTransforms, rects, colors, blendMode);
+  }
 
-  void drawShadow(
-      Path path, Color color, double elevation, bool transparentOccluder) {
+  @override
+  void drawShadow(ui.Path path, ui.Color color, double elevation,
+      bool transparentOccluder) {
     assert(path != null); // path is checked on the engine side
     assert(color != null);
     assert(transparentOccluder != null);
-    _drawShadow(path, color.value, elevation, transparentOccluder);
+    _drawShadow(path, color, elevation, transparentOccluder);
   }
 
-  void _drawShadow(Path path, int color, double elevation,
-      bool transparentOccluder) native 'Canvas_drawShadow';
+  void _drawShadow(ui.Path path, ui.Color color, double elevation,
+      bool transparentOccluder) {
+    _canvas.drawShadow(path, color, elevation, transparentOccluder);
+  }
 }
