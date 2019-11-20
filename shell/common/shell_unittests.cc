@@ -23,7 +23,6 @@
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
-#include "flutter/testing/test_utils.h"
 #include "flutter/testing/testing.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
@@ -955,16 +954,7 @@ TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
 }
 
 TEST_F(ShellTest, Screenshot) {
-#if !OS_LINUX
-  // TODO(gw280): Enable this on Fuchsia when shell_unittests runs on Fuchsia
-  GTEST_SKIP() << "Skipping golden tests on non-Linux OSes";
-#endif  // OS_LINUX
-
   auto settings = CreateSettingsForFixture();
-  fml::AutoResetWaitableEvent firstFrameLatch;
-  settings.frame_rasterized_callback =
-      [&firstFrameLatch](const FrameTiming& t) { firstFrameLatch.Signal(); };
-
   std::unique_ptr<Shell> shell = CreateShell(settings);
 
   // Create the surface needed by rasterizer
@@ -991,28 +981,38 @@ TEST_F(ShellTest, Screenshot) {
   };
 
   PumpOneFrame(shell.get(), 100, 100, builder);
-  firstFrameLatch.Wait();
 
-  std::promise<Rasterizer::Screenshot> screenshot_promise;
-  auto screenshot_future = screenshot_promise.get_future();
+  fml::Status result =
+      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+  ASSERT_TRUE(result.ok());
 
+  std::shared_ptr<fml::AutoResetWaitableEvent> latch =
+      std::make_shared<fml::AutoResetWaitableEvent>();
+
+  Rasterizer::Screenshot screenshot;
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(),
-      [&screenshot_promise, &shell]() {
+      shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
         auto rasterizer = shell->GetRasterizer();
-        screenshot_promise.set_value(rasterizer->ScreenshotLastLayerTree(
-            Rasterizer::ScreenshotType::CompressedImage, false));
+        screenshot = rasterizer->ScreenshotLastLayerTree(
+            Rasterizer::ScreenshotType::CompressedImage, true);
+        latch->Signal();
       });
+  latch->Wait();
 
-  std::stringstream golden_file_path;
-  // This unit test should only be run on Linux (not even on Mac since it's a
-  // golden test). Hence we don't have to worry about the "/" vs. "\".
-  golden_file_path << flutter::GetGoldenDir() << "/"
-                   << "screenshot_gold.png";
+  const char* reference_png =
+      "iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAAXNSR0IArs4c6QAAAARzQklU"
+      "CAgICHwIZIgAAADpSURBVHic7dHBCcAwDARBOf337FQQSB6GJcy89Ti0MwAAAEDHenu4Z/"
+      "bJIX+"
+      "3Xv76Oj2EbwSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgS"
+      "JESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgS"
+      "JESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgSJESRGkBhBYgS"
+      "JESRGkBhBYgSJESRGkBhBYgSJEQQAAADg0Q0wHwKgbFGDCQAAAABJRU5ErkJggg==";
+  // Use MakeWithoutCopy instead of MakeWithCString because we don't want to
+  // encode the null sentinel
   sk_sp<SkData> reference_data =
-      SkData::MakeFromFileName(golden_file_path.str().c_str());
+      SkData::MakeWithoutCopy(reference_png, strlen(reference_png));
 
-  ASSERT_TRUE(reference_data->equals(screenshot_future.get().data.get()));
+  ASSERT_TRUE(reference_data->equals(screenshot.data.get()));
 
   DestroyShell(std::move(shell));
 }

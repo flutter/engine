@@ -3,8 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/fml/build_config.h"
-#include "flutter/fml/command_line.h"
-#include "flutter/testing/test_utils.h"
 #include "gtest/gtest.h"
 
 #ifdef OS_IOS
@@ -20,8 +18,5 @@ int main(int argc, char** argv) {
 #endif  // OS_IOS
 
   ::testing::InitGoogleTest(&argc, argv);
-  fml::CommandLine cmd = fml::CommandLineFromArgcArgv(argc, argv);
-  flutter::SetGoldenDir(
-      cmd.GetOptionValueWithDefault("golden-dir", "flutter/testing/resources"));
   return RUN_ALL_TESTS();
 }
