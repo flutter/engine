@@ -13,6 +13,7 @@ import 'src/animated_color_square.dart';
 import 'src/platform_view.dart';
 import 'src/poppable_screen.dart';
 import 'src/scenario.dart';
+import 'src/image_scenario.dart';
 
 Map<String, Scenario> _scenarios = <String, Scenario>{
   'animated_color_square': AnimatedColorSquareScenario(window),
@@ -26,6 +27,7 @@ Map<String, Scenario> _scenarios = <String, Scenario>{
   'platform_view_multiple_background_foreground': MultiPlatformViewBackgroundForegroundScenario(window, firstId: 8, secondId: 9),
   'poppable_screen': PoppableScreenScenario(window),
   'platform_view_eaglcontext': PlatformViewGLScenario(window, 'null', id:6),
+  'image_scenario': ImageScenario(window),
 };
 
 Scenario _currentScenario = _scenarios['animated_color_square'];

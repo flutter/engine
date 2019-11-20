@@ -308,7 +308,8 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   );
 
   if (compositor_frame) {
-    RasterStatus raster_status = RasterAndSubmitCompositorFrame(*frame, *compositor_frame, layer_tree);
+    RasterStatus raster_status =
+        RasterAndSubmitCompositorFrame(*frame, *compositor_frame, layer_tree);
     if (external_view_embedder != nullptr) {
       external_view_embedder->SubmitFrame(surface_->GetContext());
     }
@@ -326,11 +327,13 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
 
     return raster_status;
   }
-
   return RasterStatus::kFailed;
 }
 
-RasterStatus Rasterizer::RasterAndSubmitCompositorFrame(SurfaceFrame &frame, CompositorContext::ScopedFrame &compositor_frame, flutter::LayerTree& layer_tree) {
+RasterStatus Rasterizer::RasterAndSubmitCompositorFrame(
+    SurfaceFrame& frame,
+    CompositorContext::ScopedFrame& compositor_frame,
+    flutter::LayerTree& layer_tree) {
   std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
       context_switch = surface_->MakeRenderContextCurrent();
   if (!context_switch->GetSwitchResult()) {

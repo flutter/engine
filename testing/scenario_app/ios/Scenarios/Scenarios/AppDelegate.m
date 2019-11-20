@@ -53,6 +53,8 @@
     self.window.rootViewController = [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:nil];
   } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--platform-view-gl"]) {
     [self readyContextForGLPlatformViewTests:@"platform_view_eaglcontext"];
+  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--image-scenario"]) {
+    [self readyContextForScenario:@"image_scenario"];
   } else {
     self.window.rootViewController = [[UIViewController alloc] init];
   }
@@ -100,6 +102,22 @@
   NSObject<FlutterPluginRegistrar>* registrar =
       [flutterViewController.engine registrarForPlugin:@"scenarios/glTestPlatformViewPlugin"];
   [registrar registerViewFactory:platformViewFactory withId:@"scenarios/glTestPlatformView"];
+  self.window.rootViewController = flutterViewController;
+}
+
+- (void)readyContextForScenario:(NSString*)scenarioIdentifier {
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"ScenarioTests" project:nil];
+  [engine runWithEntrypoint:nil];
+
+  FlutterViewController* flutterViewController =
+      [[NoStatusBarFlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+  [engine.binaryMessenger
+      setMessageHandlerOnChannel:@"scenario_status"
+            binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
+              [engine.binaryMessenger
+                  sendOnChannel:@"set_scenario"
+                        message:[scenarioIdentifier dataUsingEncoding:NSUTF8StringEncoding]];
+            }];
   self.window.rootViewController = flutterViewController;
 }
 

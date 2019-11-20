@@ -438,12 +438,15 @@ class Rasterizer final : public SnapshotDelegate {
       GrContext* surface_context,
       bool compressed);
   sk_sp<SkData> ScreenshotLayerTreeAsPicture(
-  flutter::LayerTree* tree,
-                                             flutter::CompositorContext& compositor_context);
-  
+      flutter::LayerTree* tree,
+      flutter::CompositorContext& compositor_context);
+
   sk_sp<SkImage> MakeImageSnapshot(sk_sp<SkSurface> snapshot_surface);
   sk_sp<SkImage> MakeRasterImage(sk_sp<SkImage> potentially_gpu_snapshot);
-  RasterStatus RasterAndSubmitCompositorFrame(SurfaceFrame &frame, CompositorContext::ScopedFrame &compositor_frame, flutter::LayerTree& layer_tree);
+  RasterStatus RasterAndSubmitCompositorFrame(
+      SurfaceFrame& frame,
+      CompositorContext::ScopedFrame& compositor_frame,
+      flutter::LayerTree& layer_tree);
   void ScreenshotFlushCanvas(SkCanvas& canvas);
 
   FML_DISALLOW_COPY_AND_ASSIGN(Rasterizer);
