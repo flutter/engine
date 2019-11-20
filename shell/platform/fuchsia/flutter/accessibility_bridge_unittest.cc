@@ -247,7 +247,7 @@ TEST_F(AccessibilityBridgeTest, HandlesCycles) {
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
 }
 
-TEST_F(AccessibilityBridgeTest, BatchesLargeMessages) {
+TEST_F(AccessibilityBridgeTest, DISABLED_BatchesLargeMessages) {
   // Tests that messages get batched appropriately.
   flutter::SemanticsNode node0;
   node0.id = 0;
