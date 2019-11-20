@@ -15,6 +15,9 @@ namespace fml {
 
 /// A threadsafe structure that allows you to switch between 2 different
 /// execution paths.
+///
+/// Execution and setting the switch is exclusive, i.e. only one will happen
+/// at a time.
 class SyncSwitch {
  public:
   /// Represents the 2 code paths available when calling |SyncSwitch::Execute|.
@@ -35,7 +38,8 @@ class SyncSwitch {
 
   /// Diverge execution between true and false values of the SyncSwitch.
   ///
-  /// This can be called on any thread.
+  /// This can be called on any thread.  Note that attempting to call
+  /// |SetSwitch| inside of the handlers will result in a self deadlock.
   void Execute(const Handlers& handlers);
 
   /// Set the value of the SyncSwitch.
