@@ -9,6 +9,8 @@ source_set("testing_lib") {
     "$flutter_root/testing/assertions.h",
     "$flutter_root/testing/testing.cc",
     "$flutter_root/testing/testing.h",
+    "$flutter_root/testing/test_utils.cc",
+    "$flutter_root/testing/test_utils.h",
     "$flutter_root/testing/thread_test.cc",
     "$flutter_root/testing/thread_test.h",
   ]

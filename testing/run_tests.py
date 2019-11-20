@@ -102,9 +102,14 @@ def RunCCTests(build_dir, filter):
 
   RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags)
 
+  shell_flags = []
+  if IsLinux():
+    shell_flags = [
+      '--golden-dir=%s' % golden_dir,
+    ]
   # https://github.com/flutter/flutter/issues/36295
   if not IsWindows():
-    RunEngineExecutable(build_dir, 'shell_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'shell_unittests', filter, shell_flags + shuffle_flags)
 
   RunEngineExecutable(build_dir, 'ui_unittests', filter, shuffle_flags)
 

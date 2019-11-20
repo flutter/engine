@@ -18,7 +18,7 @@
 #include "flutter/fml/logging.h"
 #include "gtest/gtest.h"
 
-#include "flow_test_utils.h"
+#include "flutter/testing/test_utils.h"
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
