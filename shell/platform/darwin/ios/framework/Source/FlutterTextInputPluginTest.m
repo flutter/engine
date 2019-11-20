@@ -8,13 +8,12 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
 
-//FLUTTER_ASSERT_ARC
+FLUTTER_ASSERT_ARC
 
 @interface FlutterTextInputPluginTest : XCTestCase
 @end
 
 @implementation FlutterTextInputPluginTest
-
 - (void)testItReportsLightPlatformBrightnessByDefault {
   // Setup test.
   id engine = OCMClassMock([FlutterEngine class]);
@@ -24,9 +23,7 @@
   [inputView firstRectForRange: [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
   
   // Verify behavior.
-  OCMVerify([engine showAutocorrectionPromptRectForStart:0
-                                                     end:1
-                                              withClient:0]);
+  OCMVerify([engine showAutocorrectionPromptRectForStart:0 end:1 withClient:0]);
 
   // Clean up mocks
   [engine stopMocking];
