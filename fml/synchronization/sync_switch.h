@@ -24,8 +24,13 @@ class SyncSwitch {
   struct Handlers {
     /// Creates a |Handlers| were all exection paths are noops.
     Handlers();
+
+    /// Sets the handler that will be executed if the |SyncSwitch| is true.
     Handlers& SetIfTrue(const std::function<void()>& handler);
+
+    /// Sets the handler that will be executed if the |SyncSwitch| is false.
     Handlers& SetIfFalse(const std::function<void()>& handler);
+
     std::function<void()> true_handler;
     std::function<void()> false_handler;
   };
@@ -34,17 +39,23 @@ class SyncSwitch {
   SyncSwitch();
 
   /// Create a |SyncSwitch| with the specified value.
+  ///
+  /// @param[in]  value  Default value for the |SyncSwitch|.
   SyncSwitch(bool value);
 
   /// Diverge execution between true and false values of the SyncSwitch.
   ///
   /// This can be called on any thread.  Note that attempting to call
   /// |SetSwitch| inside of the handlers will result in a self deadlock.
+  ///
+  /// @param[in]  handlers  Called for the correct value of the |SyncSwitch|.
   void Execute(const Handlers& handlers);
 
   /// Set the value of the SyncSwitch.
   ///
   /// This can be called on any thread.
+  ///
+  /// @param[in]  value  New value for the |SyncSwitch|.
   void SetSwitch(bool value);
 
  private:
