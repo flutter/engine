@@ -471,16 +471,53 @@ abstract class TextStyle {
     Paint foreground,
     List<Shadow> shadows,
     List<FontFeature> fontFeatures,
-  }) = engine.EngineTextStyle;
-
-  @override
-  int get hashCode;
-
-  @override
-  bool operator ==(dynamic other);
-
-  @override
-  String toString();
+  }) {
+    if (engine.experimentalUseSkia) {
+      return engine.SkTextStyle(
+          color: color,
+          decoration: decoration,
+          decorationColor: decorationColor,
+          decorationStyle: decorationStyle,
+          decorationThickness: decorationThickness,
+          fontWeight: fontWeight,
+          fontStyle: fontStyle,
+          textBaseline: textBaseline,
+          fontFamily: fontFamily,
+          fontFamilyFallback: fontFamilyFallback,
+          fontSize: fontSize,
+          letterSpacing: letterSpacing,
+          wordSpacing: wordSpacing,
+          height: height,
+          locale: locale,
+          background: background,
+          foreground: foreground,
+          shadows: shadows,
+          fontFeatures: fontFeatures,
+      );
+    } else {
+      return engine.EngineTextStyle(
+          color: color,
+          decoration: decoration,
+          decorationColor: decorationColor,
+          decorationStyle: decorationStyle,
+          decorationThickness: decorationThickness,
+          fontWeight: fontWeight,
+          fontStyle: fontStyle,
+          textBaseline: textBaseline,
+          fontFamily: fontFamily,
+          fontFamilyFallback: fontFamilyFallback,
+          fontSize: fontSize,
+          letterSpacing: letterSpacing,
+          wordSpacing: wordSpacing,
+          height: height,
+          locale: locale,
+          background: background,
+          foreground: foreground,
+          shadows: shadows,
+          fontFeatures: fontFeatures,
+      );
+    }
+  }
 }
 
 /// An opaque object that determines the configuration used by
@@ -552,16 +589,37 @@ abstract class ParagraphStyle {
     StrutStyle strutStyle,
     String ellipsis,
     Locale locale,
-  }) = engine.EngineParagraphStyle;
-
-  @override
-  bool operator ==(dynamic other);
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
+  }) {
+    if (engine.experimentalUseSkia) {
+      return engine.SkParagraphStyle(
+        textAlign: textAlign,
+        textDirection: textDirection,
+        maxLines: maxLines,
+        fontFamily: fontFamily,
+        fontSize: fontSize,
+        height: height,
+        fontWeight: fontWeight,
+        fontStyle: fontStyle,
+        strutStyle: strutStyle,
+        ellipsis: ellipsis,
+        locale: locale,
+      );
+    } else {
+      return engine.EngineParagraphStyle(
+        textAlign: textAlign,
+        textDirection: textDirection,
+        maxLines: maxLines,
+        fontFamily: fontFamily,
+        fontSize: fontSize,
+        height: height,
+        fontWeight: fontWeight,
+        fontStyle: fontStyle,
+        strutStyle: strutStyle,
+        ellipsis: ellipsis,
+        locale: locale,
+      );
+    }
+  }
 }
 
 abstract class StrutStyle {
@@ -610,12 +668,6 @@ abstract class StrutStyle {
     FontStyle fontStyle,
     bool forceStrutHeight,
   }) = engine.EngineStrutStyle;
-
-  @override
-  int get hashCode;
-
-  @override
-  bool operator ==(dynamic other);
 }
 
 /// A direction in which text flows.
@@ -906,6 +958,87 @@ class TextPosition {
   }
 }
 
+/// A range of characters in a string of text.
+class TextRange {
+  /// Creates a text range.
+  ///
+  /// The [start] and [end] arguments must not be null. Both the [start] and
+  /// [end] must either be greater than or equal to zero or both exactly -1.
+  ///
+  /// Instead of creating an empty text range, consider using the [empty]
+  /// constant.
+  const TextRange({
+    this.start,
+    this.end,
+  })  : assert(start != null && start >= -1),
+        assert(end != null && end >= -1);
+
+  /// A text range that starts and ends at offset.
+  ///
+  /// The [offset] argument must be non-null and greater than or equal to -1.
+  const TextRange.collapsed(int offset)
+      : assert(offset != null && offset >= -1),
+        start = offset,
+        end = offset;
+
+  /// A text range that contains nothing and is not in the text.
+  static const TextRange empty = TextRange(start: -1, end: -1);
+
+  /// The index of the first character in the range.
+  ///
+  /// If [start] and [end] are both -1, the text range is empty.
+  final int start;
+
+  /// The next index after the characters in this range.
+  ///
+  /// If [start] and [end] are both -1, the text range is empty.
+  final int end;
+
+  /// Whether this range represents a valid position in the text.
+  bool get isValid => start >= 0 && end >= 0;
+
+  /// Whether this range is empty (but still potentially placed inside the text).
+  bool get isCollapsed => start == end;
+
+  /// Whether the start of this range precedes the end.
+  bool get isNormalized => end >= start;
+
+  /// The text before this range.
+  String textBefore(String text) {
+    assert(isNormalized);
+    return text.substring(0, start);
+  }
+
+  /// The text after this range.
+  String textAfter(String text) {
+    assert(isNormalized);
+    return text.substring(end);
+  }
+
+  /// The text inside this range.
+  String textInside(String text) {
+    assert(isNormalized);
+    return text.substring(start, end);
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    if (identical(this, other)) return true;
+    if (other is! TextRange) return false;
+    final TextRange typedOther = other;
+    return typedOther.start == start && typedOther.end == end;
+  }
+
+  @override
+  int get hashCode => hashValues(
+        start.hashCode,
+        end.hashCode,
+      );
+
+  @override
+  String toString() => 'TextRange(start: $start, end: $end)';
+}
+
 /// Layout constraints for [Paragraph] objects.
 ///
 /// Instances of this class are typically used with [Paragraph.layout].
@@ -1153,12 +1286,23 @@ abstract class Paragraph {
   /// within the text.
   TextPosition getPositionForOffset(Offset offset);
 
-  /// Returns the [start, end] of the word at the given offset. Characters not
-  /// part of a word, such as spaces, symbols, and punctuation, have word breaks
-  /// on both sides. In such cases, this method will return [offset, offset+1].
-  /// Word boundaries are defined more precisely in Unicode Standard Annex #29
-  /// http://www.unicode.org/reports/tr29/#Word_Boundaries
-  List<int> getWordBoundary(int offset);
+  /// Returns the [TextRange] of the word at the given [TextPosition].
+  ///
+  /// Characters not part of a word, such as spaces, symbols, and punctuation,
+  /// have word breaks on both sides. In such cases, this method will return
+  /// [offset, offset+1]. Word boundaries are defined more precisely in Unicode
+  /// Standard Annex #29 http://www.unicode.org/reports/tr29/#Word_Boundaries
+  TextRange getWordBoundary(TextPosition position);
+
+  /// Returns the [TextRange] of the line at the given [TextPosition].
+  ///
+  /// The newline (if any) is returned as part of the range.
+  ///
+  /// Not valid until after layout.
+  ///
+  /// This can potentially be expensive, since it needs to compute the line
+  /// metrics, so use it sparingly.
+  TextRange getLineBoundary(TextPosition position);
 
   /// Returns a list of text boxes that enclose all placeholders in the paragraph.
   ///
@@ -1168,6 +1312,13 @@ abstract class Paragraph {
   /// where positive y values indicate down.
   List<TextBox> getBoxesForPlaceholders();
 
+  /// Returns the full list of [LineMetrics] that describe in detail the various
+  /// metrics of each laid out line.
+  ///
+  /// Not valid until after layout.
+  ///
+  /// This can potentially return a large amount of data, so it is not recommended
+  /// to repeatedly call this. Instead, cache the results.
   List<LineMetrics> computeLineMetrics();
 }
 
@@ -1188,8 +1339,13 @@ abstract class Paragraph {
 abstract class ParagraphBuilder {
   /// Creates a [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].
-  factory ParagraphBuilder(ParagraphStyle style) =>
-      engine.EngineParagraphBuilder(style);
+  factory ParagraphBuilder(ParagraphStyle style) {
+    if (engine.experimentalUseSkia) {
+      return engine.SkParagraphBuilder(style);
+    } else {
+      return engine.EngineParagraphBuilder(style);
+    }
+  }
 
   /// Applies the given style to the added text until [pop] is called.
   ///

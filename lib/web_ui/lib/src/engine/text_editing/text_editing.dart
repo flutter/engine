@@ -17,6 +17,8 @@ void _emptyCallback(dynamic _) {}
 ///
 /// They are assigned once during the creation of the DOM element.
 void _setStaticStyleAttributes(html.HtmlElement domElement) {
+  domElement.classes.add(HybridTextEditing.textEditingClass);
+
   final html.CssStyleDeclaration elementStyle = domElement.style;
   elementStyle
     ..whiteSpace = 'pre-wrap'
@@ -177,13 +179,15 @@ class InputConfiguration {
     @required this.inputType,
     @required this.inputAction,
     @required this.obscureText,
+    @required this.autocorrect,
   });
 
   InputConfiguration.fromFlutter(Map<String, dynamic> flutterInputConfiguration)
       : inputType = EngineInputType.fromName(
             flutterInputConfiguration['inputType']['name']),
         inputAction = flutterInputConfiguration['inputAction'],
-        obscureText = flutterInputConfiguration['obscureText'];
+        obscureText = flutterInputConfiguration['obscureText'],
+        autocorrect = flutterInputConfiguration['autocorrect'];
 
   /// The type of information being edited in the input control.
   final EngineInputType inputType;
@@ -193,6 +197,15 @@ class InputConfiguration {
 
   /// Whether to hide the text being edited.
   final bool obscureText;
+
+  /// Whether to enable autocorrection.
+  ///
+  /// Definition of autocorrect can be found in:
+  /// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
+  ///
+  /// For future manual tests, note that autocorrect is an attribute only
+  /// supported by Safari.
+  final bool autocorrect;
 }
 
 typedef _OnChangeCallback = void Function(EditingState editingState);
@@ -367,6 +380,13 @@ class TextEditingElement {
   void _initDomElement(InputConfiguration inputConfig) {
     domElement = inputConfig.inputType.createDomElement();
     inputConfig.inputType.configureDomElement(domElement);
+    if (inputConfig.obscureText) {
+      domElement.setAttribute('type', 'password');
+    }
+
+    final String autocorrectValue = inputConfig.autocorrect ? 'on' : 'off';
+    domElement.setAttribute('autocorrect', autocorrectValue);
+
     _setStaticStyleAttributes(domElement);
     owner._setDynamicStyleAttributes(domElement);
     domRenderer.glassPaneElement.append(domElement);
@@ -437,7 +457,8 @@ class TextEditingElement {
   }
 
   void _maybeSendAction(html.KeyboardEvent event) {
-    if (event.keyCode == _kReturnKeyCode) {
+    if (_inputConfiguration.inputType.submitActionOnEnter &&
+        event.keyCode == _kReturnKeyCode) {
       event.preventDefault();
       _onAction(_inputConfiguration.inputAction);
     }
@@ -531,6 +552,14 @@ class HybridTextEditing {
       return _customEditingElement;
     }
     return _defaultEditingElement;
+  }
+
+  /// A CSS class name used to identify all elements used for text editing.
+  @visibleForTesting
+  static const String textEditingClass = 'flt-text-editing';
+
+  static bool isEditingElement(html.Element element) {
+    return element.classes.contains(textEditingClass);
   }
 
   /// Requests that [customEditingElement] is used for managing text editing state

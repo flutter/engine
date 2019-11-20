@@ -9,7 +9,6 @@
 #include <sstream>
 #include <string>
 
-#include "flutter/common/runtime.h"
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/size.h"
@@ -57,6 +56,8 @@ static const std::string gDartFlagsWhitelist[] = {
     "--write-service-info",
     "--sample-buffer-duration",
     "--no-causal_async_stacks",
+    "--trace-reload",
+    "--trace-reload-verbose",
 };
 // clang-format on
 

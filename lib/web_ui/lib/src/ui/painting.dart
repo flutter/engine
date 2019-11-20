@@ -226,6 +226,14 @@ class Color {
     }
   }
 
+  /// Returns an alpha value representative of the provided [opacity] value.
+  ///
+  /// The [opacity] value may not be null.
+  static int getAlphaFromOpacity(double opacity) {
+    assert(opacity != null);
+    return (opacity.clamp(0.0, 1.0) * 255).round();
+  }
+
   @override
   bool operator ==(dynamic other) {
     if (identical(this, other)) {
@@ -1055,7 +1063,7 @@ class Paint {
       _paintData = _paintData.clone();
       _frozen = false;
     }
-   _paintData.color = value.runtimeType == Color ? value : Color(value.value);
+    _paintData.color = value.runtimeType == Color ? value : Color(value.value);
   }
 
   /// Whether the colors of the image are inverted when drawn.
@@ -1472,15 +1480,6 @@ abstract class ColorFilter {
   List<dynamic> webOnlySerializeToCssPaint() {
     throw UnsupportedError('ColorFilter for CSS paint not yet supported');
   }
-
-  @override
-  bool operator ==(dynamic other);
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
@@ -1604,24 +1603,21 @@ enum FilterQuality {
 ///    this class.
 class ImageFilter {
   /// Creates an image filter that applies a Gaussian blur.
-  ImageFilter.blur({this.sigmaX = 0.0, this.sigmaY = 0.0})
-      : matrix4 = null,
-        filterQuality = FilterQuality.low;
+  factory ImageFilter.blur({double sigmaX = 0.0, double sigmaY = 0.0}) {
+    if (engine.experimentalUseSkia) {
+      return engine.SkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
+    }
+    return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
+  }
 
-  ImageFilter.matrix(this.matrix4, {this.filterQuality = FilterQuality.low})
-      : sigmaX = 0.0,
-        sigmaY = 0.0 {
+  ImageFilter.matrix(Float64List matrix4,
+      {FilterQuality filterQuality = FilterQuality.low}) {
     // TODO(flutter_web): add implementation.
     throw UnimplementedError(
         'ImageFilter.matrix not implemented for web platform.');
     //    if (matrix4.length != 16)
     //      throw ArgumentError('"matrix4" must have 16 entries.');
   }
-
-  final Float64List matrix4;
-  final FilterQuality filterQuality;
-  final double sigmaX;
-  final double sigmaY;
 }
 
 /// The format in which image bytes should be returned when using

@@ -8,7 +8,6 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
@@ -36,8 +35,6 @@ import io.flutter.plugin.platform.PlatformViewsController;
 
 /**
  * A single Flutter execution environment.
- * <p>
- * WARNING: THIS CLASS IS CURRENTLY EXPERIMENTAL. USE AT YOUR OWN RISK.
  * <p>
  * The {@code FlutterEngine} is the container through which Dart code can be run in an Android
  * application.
@@ -209,7 +206,8 @@ public class FlutterEngine {
 
     this.pluginRegistry = new FlutterEnginePluginRegistry(
       context.getApplicationContext(),
-      this
+      this,
+      flutterLoader
     );
 
     if (automaticallyRegisterPlugins) {
@@ -248,7 +246,7 @@ public class FlutterEngine {
    */
   private void registerPlugins() {
     try {
-      Class generatedPluginRegistrant = Class.forName("io.plugins.GeneratedPluginRegistrant");
+      Class<?> generatedPluginRegistrant = Class.forName("io.flutter.plugins.GeneratedPluginRegistrant");
       Method registrationMethod = generatedPluginRegistrant.getDeclaredMethod("registerWith", FlutterEngine.class);
       registrationMethod.invoke(null, this);
     } catch (Exception e) {
