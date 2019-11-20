@@ -10,10 +10,10 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'src/animated_color_square.dart';
+import 'src/image_scenario.dart';
 import 'src/platform_view.dart';
 import 'src/poppable_screen.dart';
 import 'src/scenario.dart';
-import 'src/image_scenario.dart';
 
 Map<String, Scenario> _scenarios = <String, Scenario>{
   'animated_color_square': AnimatedColorSquareScenario(window),
