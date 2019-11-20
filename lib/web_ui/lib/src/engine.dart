@@ -42,7 +42,6 @@ part 'engine/compositor/picture_recorder.dart';
 part 'engine/compositor/platform_message.dart';
 part 'engine/compositor/raster_cache.dart';
 part 'engine/compositor/rasterizer.dart';
-part 'engine/compositor/recording_canvas.dart';
 part 'engine/compositor/runtime_delegate.dart';
 part 'engine/compositor/surface.dart';
 part 'engine/compositor/text.dart';
