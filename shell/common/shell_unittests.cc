@@ -955,6 +955,10 @@ TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
 
 TEST_F(ShellTest, Screenshot) {
   auto settings = CreateSettingsForFixture();
+  fml::AutoResetWaitableEvent firstFrameLatch;
+  settings.frame_rasterized_callback =
+      [&firstFrameLatch](const FrameTiming& t) { firstFrameLatch.Signal(); };
+
   std::unique_ptr<Shell> shell = CreateShell(settings);
 
   // Create the surface needed by rasterizer
@@ -981,23 +985,17 @@ TEST_F(ShellTest, Screenshot) {
   };
 
   PumpOneFrame(shell.get(), 100, 100, builder);
+  firstFrameLatch.Wait();
 
-  fml::Status result =
-      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
-  ASSERT_TRUE(result.ok());
+  std::promise<Rasterizer::Screenshot> screenshot_promise;
+  auto screenshot_future = screenshot_promise.get_future();
 
-  std::shared_ptr<fml::AutoResetWaitableEvent> latch =
-      std::make_shared<fml::AutoResetWaitableEvent>();
-
-  Rasterizer::Screenshot screenshot;
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
+      shell->GetTaskRunners().GetGPUTaskRunner(), [&screenshot_promise, &shell]() {
         auto rasterizer = shell->GetRasterizer();
-        screenshot = rasterizer->ScreenshotLastLayerTree(
-            Rasterizer::ScreenshotType::CompressedImage, false);
-        latch->Signal();
+        screenshot_promise.set_value(rasterizer->ScreenshotLastLayerTree(
+            Rasterizer::ScreenshotType::CompressedImage, false));
       });
-  latch->Wait();
 
   auto fixtures_dir = fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
 
@@ -1009,7 +1007,7 @@ TEST_F(ShellTest, Screenshot) {
   sk_sp<SkData> reference_data =
       SkData::MakeWithoutCopy(reference_png->GetMapping(), reference_png->GetSize());
 
-  ASSERT_TRUE(reference_data->equals(screenshot.data.get()));
+  ASSERT_TRUE(reference_data->equals(screenshot_future.get().data.get()));
 
   DestroyShell(std::move(shell));
 }
