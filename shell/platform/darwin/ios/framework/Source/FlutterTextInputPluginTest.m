@@ -14,7 +14,8 @@ FLUTTER_ASSERT_ARC
 @end
 
 @implementation FlutterTextInputPluginTest
-- (void)testItReportsLightPlatformBrightnessByDefault {
+
+- (void)testAutocorrectionPromptRectAppears {
   // Setup test.
   id engine = OCMClassMock([FlutterEngine class]);
   
