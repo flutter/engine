@@ -29,7 +29,8 @@ class TestIOManager final : public IOManager {
             task_runner,
             fml::TimeDelta::FromNanoseconds(0))),
         runner_(task_runner),
-        weak_factory_(this) {
+        weak_factory_(this),
+        is_backgrounded_sync_switch_(std::make_shared<fml::SyncSwitch>()) {
     FML_CHECK(task_runner->RunsTasksOnCurrentThread())
         << "The IO manager must be initialized its primary task runner. The "
            "test harness may not be setup correctly/safely.";
