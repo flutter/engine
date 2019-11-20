@@ -6,7 +6,7 @@
 
 namespace fml {
 
-SyncSwitch::Handlers::Handlers() : true_handler({}), false_handler({}) {}
+SyncSwitch::Handlers::Handlers() : true_handler([] {}), false_handler([] {}) {}
 
 SyncSwitch::Handlers& SyncSwitch::Handlers::SetIfTrue(
     const std::function<void()>& handler) {

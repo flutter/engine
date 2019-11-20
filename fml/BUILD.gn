@@ -212,6 +212,7 @@ executable("fml_unittests") {
     "paths_unittests.cc",
     "platform/darwin/string_range_sanitization_unittests.mm",
     "synchronization/semaphore_unittest.cc",
+    "synchronization/sync_switch_unittest.cc",    
     "synchronization/waitable_event_unittest.cc",
     "thread_local_unittests.cc",
     "time/time_delta_unittest.cc",
