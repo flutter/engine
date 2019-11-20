@@ -50,6 +50,8 @@ class ThreadChecker final {
     pthread_t current_thread = pthread_self();
     bool is_creation_thread_current = !!pthread_equal(current_thread, self_);
 #ifdef __APPLE__
+    // TODO(https://github.com/flutter/flutter/issues/45272): Implement for
+    // other platforms.
     if (!is_creation_thread_current) {
       static const int buffer_length = 128;
       char expected_thread[buffer_length];
