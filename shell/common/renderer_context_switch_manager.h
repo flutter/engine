@@ -41,33 +41,6 @@ class RendererContextSwitchManager {
   ~RendererContextSwitchManager();
 
   //----------------------------------------------------------------------------
-  /// @brief      Creates a shell instance using the provided settings. The
-  ///             callbacks to create the various shell subcomponents will be
-  ///             called on the appropriate threads before this method returns.
-  ///             If this is the first instance of a shell in the process, this
-  ///             call also bootstraps the Dart VM.
-  ///
-  /// @param[in]  task_runners             The task runners
-  /// @param[in]  settings                 The settings
-  /// @param[in]  on_create_platform_view  The callback that must return a
-  ///                                      platform view. This will be called on
-  ///                                      the platform task runner before this
-  ///                                      method returns.
-  /// @param[in]  on_create_rasterizer     That callback that must provide a
-  ///                                      valid rasterizer. This will be called
-  ///                                      on the render task runner before this
-  ///                                      method returns.
-  ///
-  /// @return     A full initialized shell if the settings and callbacks are
-  ///             valid. The root isolate has been created but not yet launched.
-  ///             It may be launched by obtaining the engine weak pointer and
-  ///             posting a task onto the UI task runner with a valid run
-  ///             configuration to run the isolate. The embedder must always
-  ///             check the validity of the shell (using the IsSetup call)
-  ///             immediately after getting a pointer to it.
-  ///
-
-  //----------------------------------------------------------------------------
   /// @brief      Make the flutter's context as current context.
   ///
   /// @return     A `RendererContextSwitch` with `GetSwitchResult` returning
