@@ -197,8 +197,10 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
     ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
       ASSERT_TRUE(image.get());
+      EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
       runners.GetIOTaskRunner()->PostTask(release_io_manager);
     };
+    EXPECT_FALSE(io_manager->did_access_is_gpu_disabled_sync_switch_);
     image_decoder->Decode(std::move(image_descriptor), callback);
   };
 
@@ -207,10 +209,8 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
     runners.GetUITaskRunner()->PostTask(decode_image);
   };
 
-  EXPECT_FALSE(io_manager->did_access_is_gpu_disabled_sync_switch_);
   runners.GetIOTaskRunner()->PostTask(setup_io_manager_and_decode);
   latch.Wait();
-  EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
 }
 
 TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
