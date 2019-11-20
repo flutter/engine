@@ -519,8 +519,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 // physical keyboard.
 
 - (CGRect)firstRectForRange:(UITextRange*)range {
-  // If _markedTextRange is not nil, then the prompt rect is showing to
-  // indicate multi-stage text, which is handled somewhere else.
+  // multi-stage text is handled somewhere else.
   if (_markedTextRange != nil) {
     return CGRectZero;
   }
