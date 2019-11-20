@@ -108,6 +108,16 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
                  name:UIApplicationDidReceiveMemoryWarningNotification
                object:nil];
 
+  [center addObserver:self
+             selector:@selector(applicationBecameActive:)
+                 name:UIApplicationDidBecomeActiveNotification
+               object:nil];
+
+  [center addObserver:self
+             selector:@selector(applicationWillResignActive:)
+                 name:UIApplicationWillResignActiveNotification
+               object:nil];
+
   return self;
 }
 
@@ -117,11 +127,11 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   [_binaryMessenger release];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
-  [center removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
   if (_flutterViewControllerWillDeallocObserver) {
     [center removeObserver:_flutterViewControllerWillDeallocObserver];
     [_flutterViewControllerWillDeallocObserver release];
   }
+  [center removeObserver:self];
 
   [super dealloc];
 }
@@ -640,7 +650,15 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   return _pluginPublications[pluginKey];
 }
 
-#pragma mark - Memory Notifications
+#pragma mark - Notifications
+
+- (void)applicationBecameActive:(NSNotification*)notification {
+  [self setIsGpuDisabled:NO];
+}
+
+- (void)applicationWillResignActive:(NSNotification*)notification {
+  [self setIsGpuDisabled:YES];
+}
 
 - (void)onMemoryWarning:(NSNotification*)notification {
   if (_shell) {
