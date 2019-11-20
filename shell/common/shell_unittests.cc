@@ -991,21 +991,23 @@ TEST_F(ShellTest, Screenshot) {
   auto screenshot_future = screenshot_promise.get_future();
 
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(), [&screenshot_promise, &shell]() {
+      shell->GetTaskRunners().GetGPUTaskRunner(),
+      [&screenshot_promise, &shell]() {
         auto rasterizer = shell->GetRasterizer();
         screenshot_promise.set_value(rasterizer->ScreenshotLastLayerTree(
             Rasterizer::ScreenshotType::CompressedImage, false));
       });
 
-  auto fixtures_dir = fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
+  auto fixtures_dir =
+      fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
 
-  auto reference_png =
-      fml::FileMapping::CreateReadOnly(fixtures_dir, "shelltest_screenshot.png");
+  auto reference_png = fml::FileMapping::CreateReadOnly(
+      fixtures_dir, "shelltest_screenshot.png");
 
   // Use MakeWithoutCopy instead of MakeWithCString because we don't want to
   // encode the null sentinel
-  sk_sp<SkData> reference_data =
-      SkData::MakeWithoutCopy(reference_png->GetMapping(), reference_png->GetSize());
+  sk_sp<SkData> reference_data = SkData::MakeWithoutCopy(
+      reference_png->GetMapping(), reference_png->GetSize());
 
   ASSERT_TRUE(reference_data->equals(screenshot_future.get().data.get()));
 
