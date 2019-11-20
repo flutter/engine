@@ -65,8 +65,11 @@ class TestIOManager final : public IOManager {
 
   // |IOManager|
   std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() override {
+    did_access_is_gpu_disabled_sync_switch_ = true;
     return is_gpu_disabled_sync_switch_;
   }
+
+  bool did_access_is_gpu_disabled_sync_switch_ = false;
 
  private:
   TestGLSurface gl_surface_;
@@ -174,7 +177,7 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
 
   fml::AutoResetWaitableEvent latch;
 
-  std::unique_ptr<IOManager> io_manager;
+  std::unique_ptr<TestIOManager> io_manager;
 
   auto release_io_manager = [&]() {
     io_manager.reset();
@@ -204,9 +207,10 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
     runners.GetUITaskRunner()->PostTask(decode_image);
   };
 
+  EXPECT_FALSE(io_manager->did_access_is_gpu_disabled_sync_switch_);
   runners.GetIOTaskRunner()->PostTask(setup_io_manager_and_decode);
-
   latch.Wait();
+  EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
 }
 
 TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
