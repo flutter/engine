@@ -8,6 +8,7 @@
 #include <forward_list>
 #include <functional>
 #include <mutex>
+
 #include "flutter/fml/macros.h"
 
 namespace fml {
