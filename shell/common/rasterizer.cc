@@ -91,6 +91,11 @@ void Rasterizer::NotifyLowMemoryWarning() const {
     FML_DLOG(INFO) << "Rasterizer::PurgeCaches called with no GrContext.";
     return;
   }
+  std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+      context_switch = surface_->MakeRenderContextCurrent();
+  if (!context_switch->GetSwitchResult()) {
+    return;
+  }
   context->freeGpuResources();
 }
 
@@ -571,6 +576,11 @@ void Rasterizer::SetResourceCacheMaxBytes(size_t max_bytes, bool from_user) {
   GrContext* context = surface_->GetContext();
   if (context) {
     int max_resources;
+    std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+        context_switch = surface_->MakeRenderContextCurrent();
+    if (!context_switch->GetSwitchResult()) {
+      return;
+    }
     context->getResourceCacheLimits(&max_resources, nullptr);
     context->setResourceCacheLimits(max_resources, max_bytes);
   }
@@ -583,6 +593,11 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
   GrContext* context = surface_->GetContext();
   if (context) {
     size_t max_bytes;
+    std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+        context_switch = surface_->MakeRenderContextCurrent();
+    if (!context_switch->GetSwitchResult()) {
+      return std::nullopt;
+    }
     context->getResourceCacheLimits(nullptr, &max_bytes);
     return max_bytes;
   }
