@@ -23,6 +23,12 @@ void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(child_paint_bounds);
 }
 
+void ContainerLayer::Paint(PaintContext& context) const {
+  FML_DCHECK(needs_painting());
+
+  PaintChildren(context);
+}
+
 void ContainerLayer::PrerollChildren(PrerollContext* context,
                                      const SkMatrix& child_matrix,
                                      SkRect* child_paint_bounds) {

@@ -5,7 +5,11 @@
 #include "flutter/flow/flow_test_utils.h"
 #include "flutter/flow/layers/performance_overlay_layer.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/testing/layer_test.h"
+#include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/build_config.h"
+#include "flutter/fml/macros.h"
+#include "flutter/testing/mock_canvas.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/utils/SkBase64.h"
@@ -13,6 +17,11 @@
 #include "gtest/gtest.h"
 
 #include <sstream>
+
+namespace flutter {
+namespace testing {
+
+using PerformanceOverlayLayerTest = LayerTest;
 
 // To get the size of kMockedTimes in compile time.
 template <class T, std::size_t N>
@@ -114,3 +123,6 @@ TEST(PerformanceOverlayLayer90fps, Gold) {
 TEST(PerformanceOverlayLayer120fps, Gold) {
   TestPerformanceOverlayLayerGold(120);
 }
+
+}  // namespace testing
+}  // namespace flutter

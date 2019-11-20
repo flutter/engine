@@ -10,15 +10,9 @@ namespace flutter {
 namespace testing {
 
 // |testing::Test|
-void ThreadTest::SetUp() {
+ThreadTest::ThreadTest() {
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   current_task_runner_ = fml::MessageLoop::GetCurrent().GetTaskRunner();
-}
-
-// |testing::Test|
-void ThreadTest::TearDown() {
-  current_task_runner_ = nullptr;
-  extra_threads_.clear();
 }
 
 fml::RefPtr<fml::TaskRunner> ThreadTest::GetCurrentTaskRunner() {

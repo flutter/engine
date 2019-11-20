@@ -142,6 +142,7 @@ class MutatorsStack {
   // Returns an iterator pointing to the bottom of the stack.
   const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator Bottom()
       const;
+  bool empty() const { return vector_.empty(); }
 
   bool operator==(const MutatorsStack& other) const {
     if (vector_.size() != other.vector_.size()) {

@@ -4,8 +4,8 @@
 
 if (is_fuchsia) {
   import("//build/fuchsia/sdk.gni")
+  import("$flutter_root/tools/fuchsia/fuchsia_archive.gni")
 }
-
 import("$flutter_root/testing/testing.gni")
 
 source_set("flow") {
@@ -102,6 +102,22 @@ test_fixtures("flow_fixtures") {
   fixtures = []
 }
 
+source_set("flow_testing") {
+  testonly = true
+
+  sources = [
+    "testing/layer_test.h",
+    "testing/mock_layer.cc",
+    "testing/mock_layer.h",
+  ]
+
+  public_deps = [
+    ":flow",
+    "$flutter_root/testing:skia",
+    "//third_party/googletest:gtest",
+  ]
+}
+
 executable("flow_unittests") {
   testonly = true
 
@@ -109,8 +125,21 @@ executable("flow_unittests") {
     "flow_run_all_unittests.cc",
     "flow_test_utils.cc",
     "flow_test_utils.h",
+    "layers/backdrop_filter_layer_unittests.cc",
+    "layers/clip_path_layer_unittests.cc",
+    "layers/clip_rect_layer_unittests.cc",
+    "layers/clip_rrect_layer_unittests.cc",
+    "layers/color_filter_layer_unittests.cc",
+    "layers/container_layer_unittests.cc",
+    "layers/layer_tree_unittests.cc",
+    "layers/opacity_layer_unittests.cc",
     "layers/performance_overlay_layer_unittests.cc",
     "layers/physical_shape_layer_unittests.cc",
+    "layers/picture_layer_unittests.cc",
+    "layers/platform_view_layer_unittests.cc",
+    "layers/shader_mask_layer_unittests.cc",
+    "layers/texture_layer_unittests.cc",
+    "layers/transform_layer_unittests.cc",
     "matrix_decomposition_unittests.cc",
     "mutators_stack_unittests.cc",
     "raster_cache_unittests.cc",
@@ -121,10 +150,22 @@ executable("flow_unittests") {
   deps = [
     ":flow",
     ":flow_fixtures",
+    ":flow_testing",
     "$flutter_root/fml",
+    "$flutter_root/testing:skia",
     "$flutter_root/testing:testing_lib",
     "//third_party/dart/runtime:libdart_jit",  # for tracing
     "//third_party/googletest:gtest",
     "//third_party/skia",
   ]
+}
+
+if (is_fuchsia) {
+  fuchsia_test_archive("flow_tests") {
+    deps = [
+      ":flow_unittests",
+    ]
+
+    binary = "flow_unittests"
+  }
 }

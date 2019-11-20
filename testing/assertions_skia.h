@@ -7,14 +7,56 @@
 
 #include <ostream>
 
+#include "third_party/skia/include/core/SkClipOp.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkMatrix44.h"
+#include "third_party/skia/include/core/SkPaint.h"
+#include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPoint3.h"
 #include "third_party/skia/include/core/SkRRect.h"
 
 //------------------------------------------------------------------------------
 // Printing
 //------------------------------------------------------------------------------
+
+inline std::ostream& operator<<(std::ostream& os, const SkClipOp& o) {
+  switch (o) {
+    case SkClipOp::kDifference:
+      os << "ClipOpDifference";
+      break;
+    case SkClipOp::kIntersect:
+      os << "ClipOpIntersect";
+      break;
+#ifdef SK_SUPPORT_DEPRECATED_CLIPOPS
+    case SkClipOp::kUnion_deprecated:
+      os << "ClipOpUnion_deprecated";
+      break;
+    case SkClipOp::kXOR_deprecated:
+      os << "ClipOpXOR_deprecated";
+      break;
+    case SkClipOp::kReverseDifference_deprecated:
+      os << "ClipOpReverseDifference_deprecated";
+      break;
+    case SkClipOp::kReplace_deprecated:
+      os << "ClipOpReplace_deprectaed";
+      break;
+#else
+    case SkClipOp::kExtraEnumNeedInternallyPleaseIgnoreWillGoAway2:
+      os << "ClipOpReserved2";
+      break;
+    case SkClipOp::kExtraEnumNeedInternallyPleaseIgnoreWillGoAway3:
+      os << "ClipOpReserved3";
+      break;
+    case SkClipOp::kExtraEnumNeedInternallyPleaseIgnoreWillGoAway4:
+      os << "ClipOpReserved4";
+      break;
+    case SkClipOp::kExtraEnumNeedInternallyPleaseIgnoreWillGoAway5:
+      os << "ClipOpReserved5";
+      break;
+#endif
+  }
+  return os;
+}
 
 inline std::ostream& operator<<(std::ostream& os, const SkMatrix& m) {
   os << std::endl;
@@ -44,36 +86,44 @@ inline std::ostream& operator<<(std::ostream& os, const SkMatrix44& m) {
 }
 
 inline std::ostream& operator<<(std::ostream& os, const SkVector3& v) {
-  os << v.x() << ", " << v.y() << ", " << v.z();
-  return os;
+  return os << v.x() << ", " << v.y() << ", " << v.z();
 }
 
 inline std::ostream& operator<<(std::ostream& os, const SkVector4& v) {
-  os << v.fData[0] << ", " << v.fData[1] << ", " << v.fData[2] << ", "
-     << v.fData[3];
-  return os;
+  return os << v.fData[0] << ", " << v.fData[1] << ", " << v.fData[2] << ", "
+            << v.fData[3];
 }
 
 inline std::ostream& operator<<(std::ostream& os, const SkRect& r) {
-  os << "LTRB: " << r.fLeft << ", " << r.fTop << ", " << r.fRight << ", "
-     << r.fBottom;
-  return os;
+  return os << "LTRB: " << r.fLeft << ", " << r.fTop << ", " << r.fRight << ", "
+            << r.fBottom;
 }
 
 inline std::ostream& operator<<(std::ostream& os, const SkRRect& r) {
-  os << "LTRB: " << r.rect().fLeft << ", " << r.rect().fTop << ", "
-     << r.rect().fRight << ", " << r.rect().fBottom;
-  return os;
+  return os << "LTRB: " << r.rect().fLeft << ", " << r.rect().fTop << ", "
+            << r.rect().fRight << ", " << r.rect().fBottom;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const SkPath& r) {
+  return os << "Valid: " << r.isValid() << ", FillType: " << r.getFillType()
+            << ", Bounds: " << r.getBounds();
 }
 
 inline std::ostream& operator<<(std::ostream& os, const SkPoint& r) {
-  os << "XY: " << r.fX << ", " << r.fY;
-  return os;
+  return os << "XY: " << r.fX << ", " << r.fY;
 }
 
 inline std::ostream& operator<<(std::ostream& os, const SkISize& size) {
-  os << size.width() << ", " << size.height();
-  return os;
+  return os << size.width() << ", " << size.height();
+}
+
+inline std::ostream& operator<<(std::ostream& os, const SkColor4f& r) {
+  return os << r.fR << ", " << r.fG << ", " << r.fB << ", " << r.fA;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const SkPaint& r) {
+  return os << "Color: " << r.getColor4f() << ", Style: " << r.getStyle()
+            << ", AA: " << r.isAntiAlias() << ", Shader: " << r.getShader();
 }
 
 #endif  // FLUTTER_TESTING_ASSERTIONS_SKIA_H_

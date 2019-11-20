@@ -2,15 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/fml/build_config.h"
+#include "flutter/flow/matrix_decomposition.h"
 
+#include "flutter/fml/build_config.h"
 #if defined(OS_WIN)
 #define _USE_MATH_DEFINES
 #endif
 #include <cmath>
 
-#include "flutter/flow/matrix_decomposition.h"
 #include "gtest/gtest.h"
+
+namespace flutter {
+namespace testing {
 
 TEST(MatrixDecomposition, Rotation) {
   SkMatrix44 matrix = SkMatrix44::I();
@@ -93,7 +96,8 @@ TEST(MatrixDecomposition, Combination) {
 }
 
 TEST(MatrixDecomposition, ScaleFloatError) {
-  for (float scale = 0.0001f; scale < 2.0f; scale += 0.000001f) {
+  constexpr float scale_increment = 0.00001f;
+  for (float scale = 0.0001f; scale < 2.0f; scale += scale_increment) {
     SkMatrix44 matrix = SkMatrix44::I();
     matrix.setScale(scale, scale, 1.0f);
 
@@ -152,3 +156,6 @@ TEST(MatrixDecomposition, ScaleFloatError) {
   ASSERT_FLOAT_EQ(0, decomposition3.rotation().fData[1]);
   ASSERT_FLOAT_EQ(0, decomposition3.rotation().fData[2]);
 }
+
+}  // namespace testing
+}  // namespace flutter

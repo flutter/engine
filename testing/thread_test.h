@@ -26,9 +26,12 @@ namespace testing {
 ///
 class ThreadTest : public ::testing::Test {
  public:
+  ThreadTest();
+  ~ThreadTest() override = default;
+
   //----------------------------------------------------------------------------
   /// @brief      Get the task runner for the thread that the current unit-test
-  ///             is running on. The creates a message loop is necessary.
+  ///             is running on. This creates a message loop as necessary.
   ///
   /// @attention  Unlike all other threads and task runners, this task runner is
   ///             shared by all tests running in the process. Tests must ensure
@@ -55,13 +58,6 @@ class ThreadTest : public ::testing::Test {
   /// @return     The task runner for the newly created thread.
   ///
   fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name = "");
-
- protected:
-  // |testing::Test|
-  void SetUp() override;
-
-  // |testing::Test|
-  void TearDown() override;
 
  private:
   fml::RefPtr<fml::TaskRunner> current_task_runner_;
