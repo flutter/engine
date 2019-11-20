@@ -399,10 +399,11 @@ static sk_sp<SkData> ScreenshotLayerTreeAsImage(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
-  // We want to ensure we call the base method for CompositorContext::AcquireFrame
-  // instead of the platform-specific method. Specifically, Fuchsia's CompositorContext
-  // handles the rendering surface itself which means that we will still continue to render
-  // to the onscreen surface if we don't call the base method.
+  // We want to ensure we call the base method for
+  // CompositorContext::AcquireFrame instead of the platform-specific method.
+  // Specifically, Fuchsia's CompositorContext handles the rendering surface
+  // itself which means that we will still continue to render to the onscreen
+  // surface if we don't call the base method.
   auto frame = compositor_context.flutter::CompositorContext::AcquireFrame(
       surface_context, canvas, nullptr, root_surface_transformation, false,
       nullptr);
