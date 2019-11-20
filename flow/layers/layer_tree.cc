@@ -15,7 +15,8 @@ LayerTree::LayerTree()
     : frame_size_{},
       rasterizer_tracing_threshold_(0),
       checkerboard_raster_cache_images_(false),
-      checkerboard_offscreen_layers_(false) {}
+      checkerboard_offscreen_layers_(false),
+      has_backdrop_filter_(false) {}
 
 LayerTree::~LayerTree() = default;
 

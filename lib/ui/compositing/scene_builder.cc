@@ -152,6 +152,7 @@ fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilter(
 fml::RefPtr<EngineLayer> SceneBuilder::pushBackdropFilter(ImageFilter* filter) {
   auto layer = std::make_shared<flutter::BackdropFilterLayer>(filter->filter());
   PushLayer(layer);
+  has_backdrop_filter_ = true;
   return EngineLayer::MakeRetained(layer);
 }
 
@@ -290,9 +291,10 @@ void SceneBuilder::setCheckerboardOffscreenLayers(bool checkerboard) {
 }
 
 fml::RefPtr<Scene> SceneBuilder::build() {
-  fml::RefPtr<Scene> scene = Scene::create(
-      std::move(root_layer_), rasterizer_tracing_threshold_,
-      checkerboard_raster_cache_images_, checkerboard_offscreen_layers_);
+  fml::RefPtr<Scene> scene =
+      Scene::create(std::move(root_layer_), rasterizer_tracing_threshold_,
+                    checkerboard_raster_cache_images_,
+                    checkerboard_offscreen_layers_, has_backdrop_filter_);
   ClearDartWrapper();
   return scene;
 }
