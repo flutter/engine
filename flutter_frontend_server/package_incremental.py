@@ -99,18 +99,6 @@ dependencies:
   args: any
 ''';
 
-DEV_COMPILER_PUBSPEC = r'''name: dev_compiler
-version: 0.0.1
-environment:
-  sdk: '>=2.2.2 < 3.0.0'
-dependencies:
-  analyzer: any
-  bazel_worker: any
-  build_integration: any
-  cli_util: any
-  source_maps: any
-''';
-
 PUBSPECS = {
   'vm': VM_PUBSPEC,
   'build_integration': BUILD_INTEGRATION_PUBSPEC,
@@ -119,7 +107,6 @@ PUBSPECS = {
   'front_end': FRONT_END_PUBSPEC,
   'dev_compiler': DEV_COMPILER_PUBSPEC,
   'frontend_server': FRONTEND_SERVER_PUBSPEC,
-  'dev_compiler': DEV_COMPILER_PUBSPEC,
 }
 
 def main():
