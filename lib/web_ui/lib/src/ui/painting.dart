@@ -1186,8 +1186,10 @@ class Paint {
   /// Whether or not dithering affects the output is implementation defined.
   /// Some implementations may choose to ignore this completely, if they're
   /// unable to control dithering.
-  bool get dither => false; // Not implemented on web
-  set dither(bool value) {}
+  /// 
+  /// To ensure that dithering is consistently enabled for your entire 
+  /// application, set this to true before invoking any drawing related code.
+  static bool enableDithering = false;
 
   // True if Paint instance has used in RecordingCanvas.
   bool _frozen = false;

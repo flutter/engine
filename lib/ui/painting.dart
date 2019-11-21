@@ -1084,6 +1084,14 @@ class Paint {
   static const int _kImageFilterIndex = 2;
   static const int _kObjectCount = 3; // Must be one larger than the largest index.
 
+  /// Constructs an empty [Paint] object with all fields initialized to
+  /// their defaults.
+  Paint() {
+    if (enableDithering) {
+      _dither = true;
+    }
+  }
+
   /// Whether to apply anti-aliasing to lines and images drawn on the
   /// canvas.
   ///
@@ -1403,6 +1411,13 @@ class Paint {
     _data.setInt32(_kInvertColorOffset, value ? 1 : 0, _kFakeHostEndian);
   }
 
+  bool get _dither {
+    return _data.getInt32(_kDitherOffset, _kFakeHostEndian) == 1;
+  }
+  set _dither(bool value) {
+    _data.setInt32(_kDitherOffset, value ? 1 : 0, _kFakeHostEndian);
+  }
+
   /// Whether to dither the output when drawing images.
   ///
   /// If false, the default value, dithering will be enabled when the input
@@ -1415,12 +1430,10 @@ class Paint {
   /// Whether or not dithering affects the output is implementation defined.
   /// Some implementations may choose to ignore this completely, if they're
   /// unable to control dithering.
-  bool get dither {
-    return _data.getInt32(_kDitherOffset, _kFakeHostEndian) == 1;
-  }
-  set dither(bool value) {
-    _data.setInt32(_kDitherOffset, value ? 1 : 0, _kFakeHostEndian);
-  }
+  /// 
+  /// To ensure that dithering is consistently enabled for your entire 
+  /// application, set this to true before invoking any drawing related code.
+  static bool enableDithering = false;
 
   @override
   String toString() {
@@ -1480,8 +1493,8 @@ class Paint {
     }
     if (invertColors)
       result.write('${semicolon}invert: $invertColors');
-    if (dither)
-      result.write('${semicolon}dither: $dither');
+    if (_dither)
+      result.write('${semicolon}dither: $_dither');
     result.write(')');
     return result.toString();
   }
