@@ -1430,8 +1430,8 @@ class Paint {
   /// Whether or not dithering affects the output is implementation defined.
   /// Some implementations may choose to ignore this completely, if they're
   /// unable to control dithering.
-  /// 
-  /// To ensure that dithering is consistently enabled for your entire 
+  ///
+  /// To ensure that dithering is consistently enabled for your entire
   /// application, set this to true before invoking any drawing related code.
   static bool enableDithering = false;
 
