@@ -306,15 +306,16 @@ public class TextInputPlugin {
     }
 
     @VisibleForTesting void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
-        if (!restartAlwaysRequired && !mRestartInputPending && state.text.equals(mEditable.toString())) {
-            applyStateToSelection(state);
+        if (!state.text.equals(mEditable.toString())) {
+            mEditable.replace(0, mEditable.length(), state.text);
+        }
+        applyStateToSelection(state);
+        if (!restartAlwaysRequired && !mRestartInputPending) {
             mImm.updateSelection(mView, Math.max(Selection.getSelectionStart(mEditable), 0),
                     Math.max(Selection.getSelectionEnd(mEditable), 0),
                     BaseInputConnection.getComposingSpanStart(mEditable),
                     BaseInputConnection.getComposingSpanEnd(mEditable));
         } else {
-            mEditable.replace(0, mEditable.length(), state.text);
-            applyStateToSelection(state);
             mImm.restartInput(view);
             mRestartInputPending = false;
         }
