@@ -25,6 +25,7 @@ source_set("fml") {
     "eintr_wrapper.h",
     "file.cc",
     "file.h",
+    "functional/function_ref.h",
     "gpu_thread_merger.cc",
     "gpu_thread_merger.h",
     "icu_util.cc",
@@ -203,6 +204,7 @@ executable("fml_unittests") {
   sources = [
     "base32_unittest.cc",
     "command_line_unittest.cc",
+    "functional/function_ref_unittest.cc",
     "memory/ref_counted_unittest.cc",
     "memory/weak_ptr_unittest.cc",
     "message_loop_task_queues_merge_unmerge_unittests.cc",
@@ -246,6 +248,20 @@ if (is_fuchsia) {
     binary = "fml_unittests"
   }
 }
+
+executable("fml_function_ref_benchmarks") {
+  testonly = true
+
+  sources = [
+    "functional/function_ref_benchmarks.cc",
+  ]
+
+  deps = [
+    "$flutter_root/fml",
+    "$flutter_root/runtime:libdart",
+  ]
+}
+
 
 executable("fml_benchmarks") {
   testonly = true

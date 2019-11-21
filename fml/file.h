@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "flutter/fml/functional/function_ref.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/unique_fd.h"
 
@@ -94,8 +95,8 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
 /// to `directory`). The returned bool should be false if and only if further
 /// traversal should be stopped. For example, a file-search visitor may return
 /// false when the file is found so no more visiting is needed.
-using FileVisitor = std::function<bool(const fml::UniqueFD& directory,
-                                       const std::string& filename)>;
+using FileVisitor = fml::FunctionRef<bool(const fml::UniqueFD& directory,
+                                          const std::string& filename)>;
 
 /// Call `visitor` on all files inside the `directory` non-recursively. The
 /// trivial file "." and ".." will not be visited.
