@@ -22,17 +22,14 @@ class SyncSwitch {
  public:
   /// Represents the 2 code paths available when calling |SyncSwitch::Execute|.
   struct Handlers {
-    /// Creates a |Handlers| were all exection paths are noops.
-    Handlers();
-
     /// Sets the handler that will be executed if the |SyncSwitch| is true.
-    Handlers& SetIfTrue(const std::function<void()>& handler);
+    Handlers& SetIfTrue(std::function<void()>&& handler);
 
     /// Sets the handler that will be executed if the |SyncSwitch| is false.
-    Handlers& SetIfFalse(const std::function<void()>& handler);
+    Handlers& SetIfFalse(std::function<void()>&& handler);
 
-    std::function<void()> true_handler;
-    std::function<void()> false_handler;
+    std::function<void()> true_handler = [] {};
+    std::function<void()> false_handler = [] {};
   };
 
   /// Create a |SyncSwitch| with the false value.
