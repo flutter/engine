@@ -1,3 +1,6 @@
+# This is the config file for `auto-assign` bot.
+# https://github.com/kentaro-m/auto-assign/
+
 # Set to true to add reviewers to pull requests
 addReviewers: true
 
@@ -5,6 +8,7 @@ addReviewers: true
 addAssignees: false
 
 # A list of reviewers to be added to pull requests (GitHub user name)
+# Note: Add new engine contributors here when joining the team.
 reviewers:
   - gaaclarke
   - liyuqian
@@ -16,6 +20,7 @@ reviewers:
   - franciscojma86
   - cbracken
   - flar
+  - stuartmorgan
 
 # A number of reviewers added to the pull request
 # Set 0 to add all the reviewers (default: 0)
