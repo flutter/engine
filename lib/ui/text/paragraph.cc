@@ -155,7 +155,10 @@ Dart_Handle Paragraph::getLineBoundary(unsigned offset) {
 std::vector<LineMetrics> Paragraph::computeLineMetrics() {
   std::vector<LineMetrics> result;
   std::vector<txt::LineMetrics> metrics = m_paragraph->GetLineMetrics();
+  FML_LOG(ERROR) << "NEW LINE METRICS " << metrics.size();
   for (txt::LineMetrics& line : metrics) {
+    FML_LOG(ERROR) << "  LN: " << line.line_number
+                   << " HB: " << line.hard_break;
     result.emplace_back(&line.hard_break, &line.ascent, &line.descent,
                         &line.unscaled_ascent, &line.height, &line.width,
                         &line.left, &line.baseline, &line.line_number);
