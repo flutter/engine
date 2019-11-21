@@ -134,11 +134,14 @@ public class PlatformPlugin {
                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                 break;
             case HEAVY_IMPACT:
-                // HapticFeedbackConstants.CONTEXT_CLICK from API level 23.
-                view.performHapticFeedback(6);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
+                }
                 break;
             case SELECTION_CLICK:
-                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                }
                 break;
         }
     }
@@ -171,7 +174,9 @@ public class PlatformPlugin {
             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 
-        if (overlaysToShow.size() == 0) {
+        // The SYSTEM_UI_FLAG_IMMERSIVE_STICKY flag was introduced in API 19, so we apply it
+        // if desired, and if the current Android version is 19 or greater.
+        if (overlaysToShow.size() == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             enabledOverlays |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
         }
 
