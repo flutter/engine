@@ -379,7 +379,11 @@ flt-glass-pane * {
 
     _glassPaneElement.append(_sceneHostElement);
 
-    EngineSemanticsOwner.instance.autoEnableOnTap(this);
+    if (isDesktop) {
+      EngineSemanticsOwner.instance.enableSemantics.autoEnableForA11yShortcut(this);
+    } else {
+      EngineSemanticsOwner.instance.enableSemantics.autoEnableOnTap(this);
+    }
     PointerBinding(this);
 
     // Hide the DOM nodes used to render the scene from accessibility, because

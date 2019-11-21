@@ -66,6 +66,7 @@ part 'engine/render_vertices.dart';
 part 'engine/rrect_renderer.dart';
 part 'engine/semantics/accessibility.dart';
 part 'engine/semantics/checkable.dart';
+part 'engine/semantics/enable_semantics.dart';
 part 'engine/semantics/image.dart';
 part 'engine/semantics/incrementable.dart';
 part 'engine/semantics/label_and_value.dart';
