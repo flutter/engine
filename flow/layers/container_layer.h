@@ -39,8 +39,21 @@ class ContainerLayer : public Layer {
   void UpdateSceneChildren(SceneUpdateContext& context);
 #endif  // defined(OS_FUCHSIA)
 
+  void set_renders_to_save_layer(bool protects) {
+    if (renders_to_save_layer_ != protects) {
+      renders_to_save_layer_ = protects;
+      update_screen_readback();
+    }
+  }
+
   // For OpacityLayer to restructure to have a single child.
-  void ClearChildren() { layers_.clear(); }
+  void ClearChildren() {
+    layers_.clear();
+    if (children_need_screen_readback_ > 0) {
+      children_need_screen_readback_ = 0;
+      update_screen_readback();
+    }
+  }
 
  private:
   std::vector<std::shared_ptr<Layer>> layers_;
