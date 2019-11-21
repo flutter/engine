@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/layers/container_layer.h"
 
 #include "flutter/flow/paint_utils.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
@@ -13,7 +14,9 @@ Layer::Layer()
     : parent_(nullptr),
       needs_system_composite_(false),
       paint_bounds_(SkRect::MakeEmpty()),
-      unique_id_(NextUniqueID()) {}
+      unique_id_(NextUniqueID()),
+      tree_reads_surface_(false),
+      layer_reads_surface_(false) {}
 
 Layer::~Layer() = default;
 
@@ -24,6 +27,21 @@ uint64_t Layer::NextUniqueID() {
     id = nextID.fetch_add(1);
   } while (id == 0);  // 0 is reserved for an invalid id.
   return id;
+}
+
+bool Layer::compute_tree_reads_surface() {
+  return layer_reads_surface_;
+}
+
+void Layer::update_screen_readback() {
+  bool new_tree_reads_surface = compute_tree_reads_surface();
+
+  if (tree_reads_surface_ != new_tree_reads_surface) {
+    tree_reads_surface_ = new_tree_reads_surface;
+    if (parent_ != nullptr) {
+      parent_->update_child_readback(this);
+    }
+  }
 }
 
 void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {}

@@ -27,25 +27,21 @@ DART_BIND_ALL(Scene, FOR_EACH_BINDING)
 fml::RefPtr<Scene> Scene::create(std::shared_ptr<flutter::Layer> rootLayer,
                                  uint32_t rasterizerTracingThreshold,
                                  bool checkerboardRasterCacheImages,
-                                 bool checkerboardOffscreenLayers,
-                                 bool hasBackdropFilter) {
+                                 bool checkerboardOffscreenLayers) {
   return fml::MakeRefCounted<Scene>(
       std::move(rootLayer), rasterizerTracingThreshold,
-      checkerboardRasterCacheImages, checkerboardOffscreenLayers,
-      hasBackdropFilter);
+      checkerboardRasterCacheImages, checkerboardOffscreenLayers);
 }
 
 Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
-             bool checkerboardOffscreenLayers,
-             bool hasBackdropFilter)
+             bool checkerboardOffscreenLayers)
     : m_layerTree(new flutter::LayerTree()) {
   m_layerTree->set_root_layer(std::move(rootLayer));
   m_layerTree->set_rasterizer_tracing_threshold(rasterizerTracingThreshold);
   m_layerTree->set_checkerboard_raster_cache_images(
       checkerboardRasterCacheImages);
-  m_layerTree->set_has_backdrop_filter(hasBackdropFilter);
   m_layerTree->set_checkerboard_offscreen_layers(checkerboardOffscreenLayers);
 }
 

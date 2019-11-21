@@ -145,13 +145,31 @@ class Layer {
 
   bool needs_painting() const { return !paint_bounds_.isEmpty(); }
 
+  bool tree_reads_surface() { return tree_reads_surface_; }
+
   uint64_t unique_id() const { return unique_id_; }
+
+ protected:
+  virtual bool compute_tree_reads_surface();
+  void update_screen_readback();
+
+  bool layer_reads_surface() { return layer_reads_surface_; }
+
+  void set_layer_reads_surface(bool reads) {
+    if (layer_reads_surface_ != reads) {
+      layer_reads_surface_ = reads;
+      update_screen_readback();
+    }
+  }
 
  private:
   ContainerLayer* parent_;
   bool needs_system_composite_;
   SkRect paint_bounds_;
   uint64_t unique_id_;
+
+  bool tree_reads_surface_;
+  bool layer_reads_surface_;
 
   static uint64_t NextUniqueID();
 

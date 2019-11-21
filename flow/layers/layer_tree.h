@@ -43,6 +43,10 @@ class LayerTree {
     root_layer_ = std::move(root_layer);
   }
 
+  bool root_needs_screen_readback() {
+    return root_layer_ && root_layer_->tree_reads_surface();
+  }
+
   const SkISize& frame_size() const { return frame_size_; }
 
   void set_frame_size(const SkISize& frame_size) { frame_size_ = frame_size; }
@@ -71,10 +75,6 @@ class LayerTree {
     checkerboard_offscreen_layers_ = checkerboard;
   }
 
-  void set_has_backdrop_filter(bool present) { has_backdrop_filter_ = present; }
-
-  bool has_backdrop_filter() { return has_backdrop_filter_; }
-
   void set_device_pixel_ratio(double device_pixel_ratio) {
     device_pixel_ratio_ = device_pixel_ratio;
   }
@@ -90,7 +90,6 @@ class LayerTree {
   uint32_t rasterizer_tracing_threshold_;
   bool checkerboard_raster_cache_images_;
   bool checkerboard_offscreen_layers_;
-  bool has_backdrop_filter_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LayerTree);
 };

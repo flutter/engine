@@ -6,13 +6,32 @@
 
 namespace flutter {
 
-ContainerLayer::ContainerLayer() {}
+ContainerLayer::ContainerLayer()
+    : children_need_screen_readback_(0), renders_to_save_layer_(false) {}
 
 ContainerLayer::~ContainerLayer() = default;
 
 void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
-  layer->set_parent(this);
+  Layer* the_layer = layer.get();
+  the_layer->set_parent(this);
   layers_.push_back(std::move(layer));
+  if (the_layer->tree_reads_surface()) {
+    update_child_readback(the_layer);
+  }
+}
+
+void ContainerLayer::update_child_readback(Layer* layer) {
+  if (layer->tree_reads_surface()) {
+    ++children_need_screen_readback_;
+  } else {
+    --children_need_screen_readback_;
+  }
+  update_screen_readback();
+}
+
+bool ContainerLayer::compute_tree_reads_surface() {
+  return layer_reads_surface() ||
+         (!renders_to_save_layer_ && children_need_screen_readback_ > 0);
 }
 
 void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {

@@ -115,7 +115,6 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   int rasterizer_tracing_threshold_ = 0;
   bool checkerboard_raster_cache_images_ = false;
   bool checkerboard_offscreen_layers_ = false;
-  bool has_backdrop_filter_ = false;
 
   void PushLayer(std::shared_ptr<flutter::ContainerLayer> layer);
 

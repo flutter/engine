@@ -25,11 +25,15 @@ class ContainerLayer : public Layer {
 
   const std::vector<std::shared_ptr<Layer>>& layers() const { return layers_; }
 
+  void update_child_readback(Layer* layer);
+
  protected:
   void PrerollChildren(PrerollContext* context,
                        const SkMatrix& child_matrix,
                        SkRect* child_paint_bounds);
   void PaintChildren(PaintContext& context) const;
+
+  virtual bool compute_tree_reads_surface() override;
 
 #if defined(OS_FUCHSIA)
   void UpdateSceneChildren(SceneUpdateContext& context);
@@ -40,6 +44,9 @@ class ContainerLayer : public Layer {
 
  private:
   std::vector<std::shared_ptr<Layer>> layers_;
+
+  int children_need_screen_readback_;
+  bool renders_to_save_layer_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContainerLayer);
 };
