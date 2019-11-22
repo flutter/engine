@@ -7,13 +7,13 @@
 namespace fml {
 
 SyncSwitch::Handlers& SyncSwitch::Handlers::SetIfTrue(
-    std::function<void()>&& handler) {
+    const std::function<void()>& handler) {
   true_handler = std::move(handler);
   return *this;
 }
 
 SyncSwitch::Handlers& SyncSwitch::Handlers::SetIfFalse(
-    std::function<void()>&& handler) {
+    const std::function<void()>& handler) {
   false_handler = std::move(handler);
   return *this;
 }
@@ -32,10 +32,8 @@ void SyncSwitch::Execute(const SyncSwitch::Handlers& handlers) {
 }
 
 void SyncSwitch::SetSwitch(bool value) {
-  {
-    std::scoped_lock guard(mutex_);
-    value_ = value;
-  }
+  std::scoped_lock guard(mutex_);
+  value_ = value;
 }
 
 }  // namespace fml

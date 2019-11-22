@@ -23,10 +23,10 @@ class SyncSwitch {
   /// Represents the 2 code paths available when calling |SyncSwitch::Execute|.
   struct Handlers {
     /// Sets the handler that will be executed if the |SyncSwitch| is true.
-    Handlers& SetIfTrue(std::function<void()>&& handler);
+    Handlers& SetIfTrue(const std::function<void()>& handler);
 
     /// Sets the handler that will be executed if the |SyncSwitch| is false.
-    Handlers& SetIfFalse(std::function<void()>&& handler);
+    Handlers& SetIfFalse(const std::function<void()>& handler);
 
     std::function<void()> true_handler = [] {};
     std::function<void()> false_handler = [] {};
