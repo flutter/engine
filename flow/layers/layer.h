@@ -145,14 +145,28 @@ class Layer {
 
   bool needs_painting() const { return !paint_bounds_.isEmpty(); }
 
+  // True iff the layer, or some descendant of the layer, performs an
+  // operation which depends on (i.e. must read back from) the surface
+  // on which it is rendered. This value has no setter as it is computed
+  // from other flags and properties on the layer.
+  // see Layer::update_screen_readback()
+  // see Layer::set_layer_reads_surface()
+  // see ContainerLayer::set_renders_to_save_layer()
+  // see ContainerLayer::update_child_readback()
   bool tree_reads_surface() { return tree_reads_surface_; }
 
   uint64_t unique_id() const { return unique_id_; }
 
  protected:
   virtual bool compute_tree_reads_surface();
+
+  // Compute a new value for tree_reads_surface_ and propagate it to
+  // ancestors if it changes.
   void update_screen_readback();
 
+  // True iff the layer itself (not a child or other descendant) performs
+  // an operation which must read back from the surface on which it is
+  // rendered.
   bool layer_reads_surface() { return layer_reads_surface_; }
 
   void set_layer_reads_surface(bool reads) {

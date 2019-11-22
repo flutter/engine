@@ -7,7 +7,7 @@
 namespace flutter {
 
 ContainerLayer::ContainerLayer()
-    : children_need_screen_readback_(0), renders_to_save_layer_(false) {}
+    : child_needs_screen_readback_(false), renders_to_save_layer_(false) {}
 
 ContainerLayer::~ContainerLayer() = default;
 
@@ -21,17 +21,27 @@ void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
 }
 
 void ContainerLayer::update_child_readback(Layer* layer) {
-  if (layer->tree_reads_surface()) {
-    ++children_need_screen_readback_;
+  if (child_needs_screen_readback_ == layer->tree_reads_surface()) {
+    return;
+  }
+  if (child_needs_screen_readback_) {
+    // Transitioning to false, but only if there are no other children
+    // that read from the surface.
+    for (auto& child : layers_) {
+      if (child->tree_reads_surface()) {
+        return;
+      }
+    }
+    child_needs_screen_readback_ = false;
   } else {
-    --children_need_screen_readback_;
+    child_needs_screen_readback_ = true;
   }
   update_screen_readback();
 }
 
 bool ContainerLayer::compute_tree_reads_surface() {
   return layer_reads_surface() ||
-         (!renders_to_save_layer_ && children_need_screen_readback_ > 0);
+         (!renders_to_save_layer_ && child_needs_screen_readback_);
 }
 
 void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {

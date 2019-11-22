@@ -25,6 +25,8 @@ class ContainerLayer : public Layer {
 
   const std::vector<std::shared_ptr<Layer>>& layers() const { return layers_; }
 
+  // Called when the layer, which must be a child of this container,
+  // changes its tree_reads_surface() result.
   void update_child_readback(Layer* layer);
 
  protected:
@@ -39,6 +41,13 @@ class ContainerLayer : public Layer {
   void UpdateSceneChildren(SceneUpdateContext& context);
 #endif  // defined(OS_FUCHSIA)
 
+  // Specify whether or not the container has its children render
+  // to a SaveLayer which will prevent many rendering anomalies
+  // from propagating to the parent - such as if the children
+  // read back from the surface on which they render, or if the
+  // children perform non-associative rendering. Those children
+  // will now be performing those operations on the SaveLayer
+  // rather than the layer that this container renders onto.
   void set_renders_to_save_layer(bool protects) {
     if (renders_to_save_layer_ != protects) {
       renders_to_save_layer_ = protects;
@@ -49,8 +58,8 @@ class ContainerLayer : public Layer {
   // For OpacityLayer to restructure to have a single child.
   void ClearChildren() {
     layers_.clear();
-    if (children_need_screen_readback_ > 0) {
-      children_need_screen_readback_ = 0;
+    if (child_needs_screen_readback_) {
+      child_needs_screen_readback_ = false;
       update_screen_readback();
     }
   }
@@ -58,7 +67,10 @@ class ContainerLayer : public Layer {
  private:
   std::vector<std::shared_ptr<Layer>> layers_;
 
-  int children_need_screen_readback_;
+  // child_needs_screen_readback_ is maintained even if the
+  // renders_to_save_layer_ property is set in case both
+  // parameters are dynamically and independently determined.
+  bool child_needs_screen_readback_;
   bool renders_to_save_layer_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContainerLayer);
