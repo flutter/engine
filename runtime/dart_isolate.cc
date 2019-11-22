@@ -481,7 +481,7 @@ static bool InvokeMainEntrypoint(Dart_Handle user_entrypoint_function,
   return true;
 }
 
-// TODO(aaclarke): Refactor to FunctionRef.
+/// @note Procedure doesn't copy all closures.
 FML_WARN_UNUSED_RESULT
 bool DartIsolate::Run(const std::string& entrypoint_name,
                       const std::vector<std::string>& args,
@@ -511,7 +511,7 @@ bool DartIsolate::Run(const std::string& entrypoint_name,
   return true;
 }
 
-// TODO(aaclarke): Refactor to FunctionRef.
+/// @note Procedure doesn't copy all closures.
 FML_WARN_UNUSED_RESULT
 bool DartIsolate::RunFromLibrary(const std::string& library_name,
                                  const std::string& entrypoint_name,

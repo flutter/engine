@@ -107,7 +107,7 @@ using FileVisitor = std::function<bool(const fml::UniqueFD& directory,
 /// use our helper method `VisitFilesRecursively`.
 ///
 /// @see `VisitFilesRecursively`.
-// TODO(aaclarke): Refactor this to use FunctionRef.
+/// @note Procedure doesn't copy all closures.
 bool VisitFiles(const fml::UniqueFD& directory, const FileVisitor& visitor);
 
 /// Recursively call `visitor` on all files inside the `directory`. Return false
@@ -120,7 +120,7 @@ bool VisitFiles(const fml::UniqueFD& directory, const FileVisitor& visitor);
 /// compute the relative path between the root directory and the visited file.
 ///
 /// @see `VisitFiles`.
-// TODO(aaclarke): Refactor this to use FunctionRef.
+/// @note Procedure doesn't copy all closures.
 bool VisitFilesRecursively(const fml::UniqueFD& directory,
                            const FileVisitor& visitor);
 

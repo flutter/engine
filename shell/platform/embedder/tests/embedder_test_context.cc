@@ -241,7 +241,7 @@ size_t EmbedderTestContext::GetSoftwareSurfacePresentCount() const {
   return software_surface_present_count_;
 }
 
-// TODO(aaclarke): Refactor to FunctionRef.
+/// @note Procedure doesn't copy all closures.
 void EmbedderTestContext::FireRootSurfacePresentCallbackIfPresent(
     const std::function<sk_sp<SkImage>(void)>& image_callback) {
   if (!next_scene_callback_) {

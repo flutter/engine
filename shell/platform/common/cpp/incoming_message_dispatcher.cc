@@ -12,7 +12,7 @@ IncomingMessageDispatcher::IncomingMessageDispatcher(
 
 IncomingMessageDispatcher::~IncomingMessageDispatcher() = default;
 
-// TODO(aaclarke): Move this to FunctionRef.
+/// @note Procedure doesn't copy all closures.
 void IncomingMessageDispatcher::HandleMessage(
     const FlutterDesktopMessage& message,
     const std::function<void(void)>& input_block_cb,

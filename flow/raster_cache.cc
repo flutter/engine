@@ -92,7 +92,7 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
   return picture->approximateOpCount() > 5;
 }
 
-// TODO(aaclarke): Refactor to FunctionRef.
+/// @note Procedure doesn't copy all closures.
 static RasterCacheResult Rasterize(
     GrContext* context,
     const SkMatrix& ctm,

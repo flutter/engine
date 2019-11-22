@@ -127,7 +127,7 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
 
   using Consumer = std::function<void(ResourcePtr)>;
 
-  // TODO(aaclarke): Transition to FunctionRef.
+  /// @note Procedure doesn't copy all closures.
   FML_WARN_UNUSED_RESULT
   PipelineConsumeResult Consume(const Consumer& consumer) {
     if (consumer == nullptr) {

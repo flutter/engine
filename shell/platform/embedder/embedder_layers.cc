@@ -203,7 +203,7 @@ void EmbedderLayers::PushPlatformViewLayer(
   presented_layers_.push_back(layer);
 }  // namespace flutter
 
-// TODO(aaclarke): Transition this to FunctionRef.
+/// @note Procedure doesn't copy all closures.
 void EmbedderLayers::InvokePresentCallback(
     const PresentCallback& callback) const {
   std::vector<const FlutterLayer*> presented_layers_pointers;
