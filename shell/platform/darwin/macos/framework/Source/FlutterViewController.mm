@@ -101,6 +101,11 @@ struct KeyboardState {
 @property(nonatomic) KeyboardState keyboardState;
 
 /**
+ * Event monitor for keyUp events.
+ */
+@property(nonatomic) id keyUpMonitor;
+
+/**
  * Starts running |engine|, including any initial setup.
  */
 - (BOOL)launchEngine;
@@ -244,9 +249,14 @@ static void CommonInit(FlutterViewController* controller) {
   }
 }
 
+- (void)viewWillDisappear {
+  // Per Apple's documentation, it is discouraged to call removeMonitor: in dealloc, and it's
+  // recommended to be called earlier in the lifecycle.
+  [NSEvent removeMonitor:_keyUpMonitor];
+}
+
 - (void)dealloc {
   _engine.viewController = nil;
-  [NSEvent removeMonitor:self];
 }
 
 #pragma mark - Public methods
@@ -295,7 +305,7 @@ static void CommonInit(FlutterViewController* controller) {
 // NOT modify the event to avoid any unexpected behavior.
 - (void)listenForMetaModifiedKeyUpEvents {
   FlutterViewController* __weak weakSelf = self;
-  [NSEvent
+  _keyUpMonitor = [NSEvent
       addLocalMonitorForEventsMatchingMask:NSEventMaskKeyUp
                                    handler:^NSEvent*(NSEvent* event) {
                                      if (([event modifierFlags] & NSEventModifierFlagCommand) &&
