@@ -234,6 +234,7 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)viewDidLoad {
   [self configureTrackingArea];
+  [self listenForMetaModifiedKeyUpEvents];
 }
 
 - (void)viewWillAppear {
@@ -245,6 +246,7 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)dealloc {
   _engine.viewController = nil;
+  [NSEvent removeMonitor:self];
 }
 
 #pragma mark - Public methods
@@ -285,6 +287,22 @@ static void CommonInit(FlutterViewController* controller) {
   // to the engine.
   [self sendInitialSettings];
   return YES;
+}
+
+// Macos does not call keyUp: on a key while the command key is pressed. This results in a loss
+// of a key event once the modified key is released. This method listens registers the
+// ViewController as a listener for a keyUp event before it's handled by NSApplication, and should
+// NOT modify the event to avoid any unexpected behavior.
+- (void)listenForMetaModifiedKeyUpEvents {
+  FlutterViewController* __weak weakSelf = self;
+  [NSEvent
+      addLocalMonitorForEventsMatchingMask:NSEventMaskKeyUp
+                                   handler:^NSEvent*(NSEvent* event) {
+                                     if (([event modifierFlags] & NSEventModifierFlagCommand) &&
+                                         ([event type] == NSEventTypeKeyUp))
+                                       [weakSelf keyUp:event];
+                                     return event;
+                                   }];
 }
 
 - (void)configureTrackingArea {
