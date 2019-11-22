@@ -78,8 +78,6 @@ source_set("common") {
     "pointer_data_dispatcher.h",
     "rasterizer.cc",
     "rasterizer.h",
-    "renderer_context_switch_manager.cc",
-    "renderer_context_switch_manager.h",
     "run_configuration.cc",
     "run_configuration.h",
     "shell.cc",
@@ -155,6 +153,8 @@ if (current_toolchain == host_toolchain) {
 
   test_fixtures("shell_unittests_fixtures") {
     dart_main = "fixtures/shell_test.dart"
+
+    fixtures = [ "fixtures/shelltest_screenshot.png" ]
   }
 
   shell_host_executable("shell_unittests") {

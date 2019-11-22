@@ -10,6 +10,7 @@
 #include <memory>
 
 #include "flutter/flow/layers/layer_tree.h"
+#include "flutter/flow/layers/picture_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/make_copyable.h"
@@ -952,67 +953,65 @@ TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
-TEST_F(ShellTest, RasterizerScreenshot) {
-  Settings settings = CreateSettingsForFixture();
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  auto task_runner = CreateNewThread();
-  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
-                           task_runner);
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+TEST_F(ShellTest, Screenshot) {
+  auto settings = CreateSettingsForFixture();
+  fml::AutoResetWaitableEvent firstFrameLatch;
+  settings.frame_rasterized_callback =
+      [&firstFrameLatch](const FrameTiming& t) { firstFrameLatch.Signal(); };
 
-  ASSERT_TRUE(ValidateShell(shell.get()));
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+
+  // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
 
-  auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
+  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+    SkPictureRecorder recorder;
+    SkCanvas* recording_canvas =
+        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
+    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
+                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
+    auto sk_picture = recorder.finishRecordingAsPicture();
+    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
+        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+    auto picture_layer = std::make_shared<PictureLayer>(
+        SkPoint::Make(10, 10),
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
+    root->Add(picture_layer);
+  };
 
-  PumpOneFrame(shell.get());
+  PumpOneFrame(shell.get(), 100, 100, builder);
+  firstFrameLatch.Wait();
 
-  fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(), [&shell, &latch]() {
-        Rasterizer::Screenshot screenshot =
-            shell->GetRasterizer()->ScreenshotLastLayerTree(
-                Rasterizer::ScreenshotType::CompressedImage, true);
-        EXPECT_NE(screenshot.data, nullptr);
-
-        latch->Signal();
-      });
-  latch->Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
-}
-
-TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
-  Settings settings = CreateSettingsForFixture();
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  auto task_runner = CreateNewThread();
-  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
-                           task_runner);
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
-
-  ASSERT_TRUE(ValidateShell(shell.get()));
-  PlatformViewNotifyCreated(shell.get());
-
-  RunEngine(shell.get(), std::move(configuration));
-
-  auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
-
-  PumpOneFrame(shell.get());
+  std::promise<Rasterizer::Screenshot> screenshot_promise;
+  auto screenshot_future = screenshot_promise.get_future();
 
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(), [&shell, &latch]() {
-        SnapshotDelegate* delegate =
-            reinterpret_cast<Rasterizer*>(shell->GetRasterizer().get());
-        sk_sp<SkImage> image = delegate->MakeRasterSnapshot(
-            SkPicture::MakePlaceholder({0, 0, 50, 50}), SkISize::Make(50, 50));
-        EXPECT_NE(image, nullptr);
-
-        latch->Signal();
+      shell->GetTaskRunners().GetGPUTaskRunner(),
+      [&screenshot_promise, &shell]() {
+        auto rasterizer = shell->GetRasterizer();
+        screenshot_promise.set_value(rasterizer->ScreenshotLastLayerTree(
+            Rasterizer::ScreenshotType::CompressedImage, false));
       });
-  latch->Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
+
+  auto fixtures_dir =
+      fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
+
+  auto reference_png = fml::FileMapping::CreateReadOnly(
+      fixtures_dir, "shelltest_screenshot.png");
+
+  // Use MakeWithoutCopy instead of MakeWithCString because we don't want to
+  // encode the null sentinel
+  sk_sp<SkData> reference_data = SkData::MakeWithoutCopy(
+      reference_png->GetMapping(), reference_png->GetSize());
+
+  ASSERT_TRUE(reference_data->equals(screenshot_future.get().data.get()));
+
+  DestroyShell(std::move(shell));
 }
 
 }  // namespace testing
