@@ -344,6 +344,9 @@ FILE: ../../../flutter/lib/ui/window/pointer_data.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data.h
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet.h
+FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter.cc
+FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter.h
+FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter_unittests.cc
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.cc
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.h
 FILE: ../../../flutter/lib/ui/window/window.cc
@@ -376,6 +379,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/rasterizer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/recording_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/runtime_delegate.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/surface.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/viewport_metrics.dart
@@ -499,6 +503,7 @@ FILE: ../../../flutter/shell/common/canvas_spy_unittests.cc
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
 FILE: ../../../flutter/shell/common/fixtures/shell_test.dart
+FILE: ../../../flutter/shell/common/fixtures/shelltest_screenshot.png
 FILE: ../../../flutter/shell/common/input_events_unittests.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.h
@@ -853,6 +858,8 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_view_embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_view_embedder.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_include.c
+FILE: ../../../flutter/shell/platform/embedder/embedder_layers.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_layers.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_platform_message_response.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_platform_message_response.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target.cc
