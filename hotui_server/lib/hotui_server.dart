@@ -159,7 +159,7 @@ Future<void> main(List<String> args) async {
   HotUIService(
     incrementalCompiler,
     component,
-    File(initializeFromDillUri.toFilePath()).parent,
+    File(initializeFromDillUri.toFilePath()),
   );
 }
 
@@ -177,7 +177,7 @@ Future<void> main(List<String> args) async {
 /// component in memory. Then, after modifying the AST, it manually trims the
 /// component to contain only the modified library.
 class HotUIService {
-  HotUIService(this.incrementalCompiler, this.component, this.outputDirectory) {
+  HotUIService(this.incrementalCompiler, this.component, this.output) {
     stdin
         .transform(utf8.decoder)
         .transform(const LineSplitter())
@@ -187,13 +187,13 @@ class HotUIService {
 
   final IncrementalCompiler incrementalCompiler;
   final Component component;
-  final Directory outputDirectory;
+  final File output;
 
   // Example invocation:
   //
   //    {"class":"_DemoItem","method":"build","library":"package:flutter_gallery/gallery/home.dart","methodBody":"Text('Hello, World')"}
-  Future<void> reloadMethod(String libraryId, String classId, String methodId,
-      String methodBody, IOSink sink) async {
+  Future<void> reloadMethod(
+      String libraryId, String classId, String methodBody, IOSink sink) async {
     final Procedure procedure = await incrementalCompiler.compileExpression(
       methodBody,
       // This is not yet flexible for non-build expressions.
@@ -206,10 +206,8 @@ class HotUIService {
     final BodyReplacementTransformer transformer = BodyReplacementTransformer(
       libraryId,
       classId,
-      methodId,
       procedure,
     );
-    transformer.transformComponent(component);
     final Library modifiedLibrary = component.libraries.firstWhere(
         (Library library) => library.importUri.toString() == libraryId,
         orElse: () => null);
@@ -219,13 +217,16 @@ class HotUIService {
     final Component partialComponent = Component(libraries: <Library>[
       modifiedLibrary,
     ]);
+    transformer.transformComponent(partialComponent);
+    // partialComponent.computeCanonicalNames();
     // unbind the canconical names so the binary printer can safely
     // recompute them during `writeComponentFile`.
-    partialComponent.unbindCanonicalNames();
+    // partialComponent.unbindCanonicalNames();
     final BinaryPrinter printer =
-        LimitedBinaryPrinter(sink, (_) => true, false);
+        LimitedBinaryPrinter(sink, (_) => true, false, skipCanonicalize: true);
     printer.writeComponentFile(partialComponent);
     await sink.close();
+    // partialComponent.unbindCanonicalNames();
   }
 
   // Expects newline delimited JSON object.
@@ -240,12 +241,9 @@ class HotUIService {
     }
     final String libraryId = message['library'];
     final String classId = message['class'];
-    final String methodId = message['method'];
     final String methodBody = message['methodBody'];
-    final IOSink sink =
-        File(path.join(outputDirectory.path, 'hotui.dill')).openWrite();
-    reloadMethod(libraryId, classId, methodId, methodBody, sink)
-        .then((void result) {
+    final IOSink sink = File(output.path + '.incremental.dill').openWrite();
+    reloadMethod(libraryId, classId, methodBody, sink).then((void result) {
       print(kReadyMessage);
     }).catchError((dynamic error, StackTrace stackTrace) {
       stderr.writeln(error.toString());
@@ -261,13 +259,11 @@ class BodyReplacementTransformer {
   BodyReplacementTransformer(
     this.libraryId,
     this.classId,
-    this.methodId,
     this.procedure,
   );
 
   final String libraryId;
   final String classId;
-  final String methodId;
   final Procedure procedure;
 
   void transformComponent(Component component) {
@@ -281,10 +277,13 @@ class BodyReplacementTransformer {
         }
         for (int i = 0; i < classNode.procedures.length; i++) {
           final Procedure currentProcedure = classNode.procedures[i];
-          if (currentProcedure.name.name == methodId &&
+          if (currentProcedure.name.name == 'build' &&
               currentProcedure.kind == ProcedureKind.Method) {
-            procedure.name = Name(methodId);
+            procedure.name = Name('build');
             classNode.procedures[i] = procedure;
+            library.canonicalName
+              .getChildFromMember(procedure)
+              .bindTo(procedure.reference);
             continue;
           }
         }
