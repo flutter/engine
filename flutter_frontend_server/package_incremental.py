@@ -97,7 +97,7 @@ dependencies:
   front_end: any
   kernel: any
   args: any
-''';
+'''
 
 PUBSPECS = {
   'vm': VM_PUBSPEC,
