@@ -147,22 +147,26 @@ class Layer {
 
   // True iff the layer, or some descendant of the layer, performs an
   // operation which depends on (i.e. must read back from) the surface
-  // on which it is rendered. This value has no setter as it is computed
-  // from other flags and properties on the layer.
-  // see Layer::update_screen_readback()
+  // on which it is rendered in any way beyond the functionality of
+  // BlendMode. This value has no setter as it is computed from other
+  // flags and properties on the layer.
+  //
+  // see Layer::UpdateTreeReadsSurface()
   // see Layer::set_layer_reads_surface()
   // see ContainerLayer::set_renders_to_save_layer()
-  // see ContainerLayer::update_child_readback()
+  // see ContainerLayer::UpdateChildReadback()
   bool tree_reads_surface() { return tree_reads_surface_; }
 
   uint64_t unique_id() const { return unique_id_; }
 
  protected:
-  virtual bool compute_tree_reads_surface();
+  // Compute a new value for tree_reads_surface_ from all of the various
+  // properties of this layer.
+  virtual bool ComputeTreeReadsSurface();
 
-  // Compute a new value for tree_reads_surface_ and propagate it to
-  // ancestors if it changes.
-  void update_screen_readback();
+  // Update the tree_reads_surface_ value and propagate changes to
+  // ancestors if needed.
+  void UpdateTreeReadsSurface();
 
   // True iff the layer itself (not a child or other descendant) performs
   // an operation which must read back from the surface on which it is
@@ -172,7 +176,7 @@ class Layer {
   void set_layer_reads_surface(bool reads) {
     if (layer_reads_surface_ != reads) {
       layer_reads_surface_ = reads;
-      update_screen_readback();
+      UpdateTreeReadsSurface();
     }
   }
 

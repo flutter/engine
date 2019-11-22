@@ -29,17 +29,17 @@ uint64_t Layer::NextUniqueID() {
   return id;
 }
 
-bool Layer::compute_tree_reads_surface() {
+bool Layer::ComputeTreeReadsSurface() {
   return layer_reads_surface_;
 }
 
-void Layer::update_screen_readback() {
-  bool new_tree_reads_surface = compute_tree_reads_surface();
+void Layer::UpdateTreeReadsSurface() {
+  bool new_tree_reads_surface = ComputeTreeReadsSurface();
 
   if (tree_reads_surface_ != new_tree_reads_surface) {
     tree_reads_surface_ = new_tree_reads_surface;
     if (parent_ != nullptr) {
-      parent_->update_child_readback(this);
+      parent_->UpdateChildReadback(this);
     }
   }
 }

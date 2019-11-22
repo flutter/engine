@@ -27,7 +27,7 @@ class ContainerLayer : public Layer {
 
   // Called when the layer, which must be a child of this container,
   // changes its tree_reads_surface() result.
-  void update_child_readback(Layer* layer);
+  void UpdateChildReadback(Layer* layer);
 
  protected:
   void PrerollChildren(PrerollContext* context,
@@ -35,7 +35,7 @@ class ContainerLayer : public Layer {
                        SkRect* child_paint_bounds);
   void PaintChildren(PaintContext& context) const;
 
-  virtual bool compute_tree_reads_surface() override;
+  virtual bool ComputeTreeReadsSurface() override;
 
 #if defined(OS_FUCHSIA)
   void UpdateSceneChildren(SceneUpdateContext& context);
@@ -51,7 +51,7 @@ class ContainerLayer : public Layer {
   void set_renders_to_save_layer(bool protects) {
     if (renders_to_save_layer_ != protects) {
       renders_to_save_layer_ = protects;
-      update_screen_readback();
+      UpdateTreeReadsSurface();
     }
   }
 
@@ -60,7 +60,7 @@ class ContainerLayer : public Layer {
     layers_.clear();
     if (child_needs_screen_readback_) {
       child_needs_screen_readback_ = false;
-      update_screen_readback();
+      UpdateTreeReadsSurface();
     }
   }
 
