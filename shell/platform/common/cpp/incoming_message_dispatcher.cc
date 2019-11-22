@@ -12,10 +12,11 @@ IncomingMessageDispatcher::IncomingMessageDispatcher(
 
 IncomingMessageDispatcher::~IncomingMessageDispatcher() = default;
 
+// TODO(aaclarke): Move this to FunctionRef.
 void IncomingMessageDispatcher::HandleMessage(
     const FlutterDesktopMessage& message,
-    std::function<void(void)> input_block_cb,
-    std::function<void(void)> input_unblock_cb) {
+    const std::function<void(void)>& input_block_cb,
+    const std::function<void(void)>& input_unblock_cb) {
   std::string channel(message.channel);
 
   // Find the handler for the channel; if there isn't one, report the failure.
