@@ -148,6 +148,7 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 
 @implementation FlutterDartProject {
   flutter::Settings _settings;
+  flutter::WindowData _windowData;
 }
 
 #pragma mark - Override base class designated initializers
@@ -163,9 +164,16 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 
   if (self) {
     _settings = DefaultSettingsForProcess(bundle);
+    [self initializesWindowData];
   }
 
   return self;
+}
+
+#pragma mark - WindowData accessors
+
+- (const flutter::WindowData&)windowData {
+  return _windowData;
 }
 
 #pragma mark - Settings accessors
@@ -251,6 +259,12 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
       persistent_isolate_data.length,                              // byte length
       data_release_proc                                            // release proc
   );
+}
+
+#pragma mark - windowData utilities
+
+- (void)initializesWindowData {
+  _windowData.lifecycle_state = std::string([@"AppLifecycleState.detached" UTF8String]);
 }
 
 @end

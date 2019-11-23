@@ -11,6 +11,7 @@
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/unique_fd.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
+#include "flutter/runtime/runtime_controller.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
@@ -48,6 +49,8 @@ class AndroidShellHolder {
   bool is_valid_ = false;
   pthread_key_t thread_destruct_key_;
   uint64_t next_pointer_flow_id_ = 0;
+
+  void InitializesWindowData(WindowData& window_data);
 
   static void ThreadDestructCallback(void* value);
 
