@@ -238,5 +238,7 @@ public class FlutterPluginRegistry
 
     public void destroy() {
         mPlatformViewsController.onFlutterViewDestroyed();
+
+        mViewDestroyListeners.clear();
     }
 }
