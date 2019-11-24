@@ -239,6 +239,10 @@ public class FlutterPluginRegistry
     public void destroy() {
         mPlatformViewsController.onFlutterViewDestroyed();
 
+        mRequestPermissionsResultListeners.clear();
+        mActivityResultListeners.clear();
+        mNewIntentListeners.clear();
+        mUserLeaveHintListeners.clear();
         mViewDestroyListeners.clear();
     }
 }
