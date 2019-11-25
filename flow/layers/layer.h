@@ -155,30 +155,26 @@ class Layer {
   // see Layer::set_layer_reads_surface()
   // see ContainerLayer::set_renders_to_save_layer()
   // see ContainerLayer::UpdateChildReadback()
-  bool tree_reads_surface() { return tree_reads_surface_; }
+  bool tree_reads_surface() const { return tree_reads_surface_; }
 
   uint64_t unique_id() const { return unique_id_; }
 
  protected:
   // Compute a new value for tree_reads_surface_ from all of the various
   // properties of this layer.
-  virtual bool ComputeTreeReadsSurface();
+  // Used by UpdateTreeReadsSurface()
+  virtual bool ComputeTreeReadsSurface() const;
 
   // Update the tree_reads_surface_ value and propagate changes to
   // ancestors if needed.
+  // Uses ComputeTreeReadsSurface()
   void UpdateTreeReadsSurface();
 
   // True iff the layer itself (not a child or other descendant) performs
-  // an operation which must read back from the surface on which it is
-  // rendered.
-  bool layer_reads_surface() { return layer_reads_surface_; }
+  // an operation which reads from the surface on which it is rendered.
+  bool layer_reads_surface() const { return layer_reads_surface_; }
 
-  void set_layer_reads_surface(bool reads) {
-    if (layer_reads_surface_ != reads) {
-      layer_reads_surface_ = reads;
-      UpdateTreeReadsSurface();
-    }
-  }
+  void set_layer_reads_surface(bool reads);
 
  private:
   ContainerLayer* parent_;

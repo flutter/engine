@@ -29,7 +29,14 @@ uint64_t Layer::NextUniqueID() {
   return id;
 }
 
-bool Layer::ComputeTreeReadsSurface() {
+void Layer::set_layer_reads_surface(bool reads) {
+  if (layer_reads_surface_ != reads) {
+    layer_reads_surface_ = reads;
+    UpdateTreeReadsSurface();
+  }
+}
+
+bool Layer::ComputeTreeReadsSurface() const {
   return layer_reads_surface_;
 }
 

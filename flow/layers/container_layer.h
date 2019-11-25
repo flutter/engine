@@ -27,7 +27,7 @@ class ContainerLayer : public Layer {
 
   // Called when the layer, which must be a child of this container,
   // changes its tree_reads_surface() result.
-  void UpdateChildReadback(Layer* layer);
+  void UpdateChildReadback(const Layer* layer);
 
  protected:
   void PrerollChildren(PrerollContext* context,
@@ -35,7 +35,7 @@ class ContainerLayer : public Layer {
                        SkRect* child_paint_bounds);
   void PaintChildren(PaintContext& context) const;
 
-  virtual bool ComputeTreeReadsSurface() override;
+  virtual bool ComputeTreeReadsSurface() const override;
 
 #if defined(OS_FUCHSIA)
   void UpdateSceneChildren(SceneUpdateContext& context);
@@ -48,21 +48,10 @@ class ContainerLayer : public Layer {
   // children perform non-associative rendering. Those children
   // will now be performing those operations on the SaveLayer
   // rather than the layer that this container renders onto.
-  void set_renders_to_save_layer(bool protects) {
-    if (renders_to_save_layer_ != protects) {
-      renders_to_save_layer_ = protects;
-      UpdateTreeReadsSurface();
-    }
-  }
+  void set_renders_to_save_layer(bool protects);
 
   // For OpacityLayer to restructure to have a single child.
-  void ClearChildren() {
-    layers_.clear();
-    if (child_needs_screen_readback_) {
-      child_needs_screen_readback_ = false;
-      UpdateTreeReadsSurface();
-    }
-  }
+  void ClearChildren();
 
  private:
   std::vector<std::shared_ptr<Layer>> layers_;

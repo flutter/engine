@@ -20,7 +20,22 @@ void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
   }
 }
 
-void ContainerLayer::UpdateChildReadback(Layer* layer) {
+void ContainerLayer::ClearChildren() {
+  layers_.clear();
+  if (child_needs_screen_readback_) {
+    child_needs_screen_readback_ = false;
+    UpdateTreeReadsSurface();
+  }
+}
+
+void ContainerLayer::set_renders_to_save_layer(bool protects) {
+  if (renders_to_save_layer_ != protects) {
+    renders_to_save_layer_ = protects;
+    UpdateTreeReadsSurface();
+  }
+}
+
+void ContainerLayer::UpdateChildReadback(const Layer* layer) {
   if (child_needs_screen_readback_ == layer->tree_reads_surface()) {
     return;
   }
@@ -39,7 +54,7 @@ void ContainerLayer::UpdateChildReadback(Layer* layer) {
   UpdateTreeReadsSurface();
 }
 
-bool ContainerLayer::ComputeTreeReadsSurface() {
+bool ContainerLayer::ComputeTreeReadsSurface() const {
   return layer_reads_surface() ||
          (!renders_to_save_layer_ && child_needs_screen_readback_);
 }
