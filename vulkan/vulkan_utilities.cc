@@ -13,7 +13,7 @@ namespace vulkan {
 bool IsDebuggingEnabled() {
 #ifndef NDEBUG
   return true;
-#elif OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+#elif defined(VULKAN_VALIDATION_LAYERS_ENABLED)
   return true;
 #else
   return false;
