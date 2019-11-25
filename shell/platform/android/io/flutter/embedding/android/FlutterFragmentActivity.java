@@ -328,7 +328,7 @@ public class FlutterFragmentActivity extends FragmentActivity
     try {
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(
           getComponentName(),
-          PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES
+          PackageManager.GET_META_DATA
       );
       Bundle metadata = activityInfo.metaData;
       Integer splashScreenId = metadata != null ? metadata.getInt(SPLASH_SCREEN_META_DATA_KEY) : null;
@@ -492,6 +492,12 @@ public class FlutterFragmentActivity extends FragmentActivity
     flutterFragment.onTrimMemory(level);
   }
 
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    flutterFragment.onActivityResult(requestCode, resultCode, data);
+  }
+
   @SuppressWarnings("unused")
   @Nullable
   protected FlutterEngine getFlutterEngine() {
@@ -551,6 +557,17 @@ public class FlutterFragmentActivity extends FragmentActivity
   }
 
   /**
+   * Hook for the host to cleanup references that were established in
+   * {@link #configureFlutterEngine(FlutterEngine)} before the host is destroyed or detached.
+   * <p>
+   * This method is called in {@link #onDestroy()}.
+   */
+  @Override
+  public void cleanUpFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    // No-op. Hook for subclasses.
+  }
+
+  /**
    * The path to the bundle that contains this Flutter app's resources, e.g., Dart code snapshots.
    * <p>
    * When this {@code FlutterFragmentActivity} is run by Flutter tooling and a data String is
@@ -592,7 +609,7 @@ public class FlutterFragmentActivity extends FragmentActivity
     try {
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(
           getComponentName(),
-          PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES
+          PackageManager.GET_META_DATA
       );
       Bundle metadata = activityInfo.metaData;
       String desiredDartEntrypoint = metadata != null ? metadata.getString(DART_ENTRYPOINT_META_DATA_KEY) : null;
@@ -630,7 +647,7 @@ public class FlutterFragmentActivity extends FragmentActivity
     try {
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(
           getComponentName(),
-          PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES
+          PackageManager.GET_META_DATA
       );
       Bundle metadata = activityInfo.metaData;
       String desiredInitialRoute = metadata != null ? metadata.getString(INITIAL_ROUTE_META_DATA_KEY) : null;

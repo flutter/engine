@@ -20,6 +20,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -380,13 +381,29 @@ public class FlutterActivity extends Activity
   // Delegate that runs all lifecycle and OS hook logic that is common between
   // FlutterActivity and FlutterFragment. See the FlutterActivityAndFragmentDelegate
   // implementation for details about why it exists.
-  private FlutterActivityAndFragmentDelegate delegate;
+  @VisibleForTesting
+  protected FlutterActivityAndFragmentDelegate delegate;
 
   @NonNull
   private LifecycleRegistry lifecycle;
 
   public FlutterActivity() {
     lifecycle = new LifecycleRegistry(this);
+  }
+
+  /**
+   * This method exists so that JVM tests can ensure that a delegate exists without
+   * putting this Activity through any lifecycle events, because JVM tests cannot handle
+   * executing any lifecycle methods, at the time of writing this.
+   * <p>
+   * The testing infrastructure should be upgraded to make FlutterActivity tests easy to
+   * write while exercising real lifecycle methods. At such a time, this method should be
+   * removed.
+   */
+  // TODO(mattcarroll): remove this when tests allow for it (https://github.com/flutter/flutter/issues/43798)
+  @VisibleForTesting
+  /* package */ void setDelegate(@NonNull FlutterActivityAndFragmentDelegate delegate) {
+    this.delegate = delegate;
   }
 
   @Override
@@ -399,6 +416,7 @@ public class FlutterActivity extends Activity
 
     delegate = new FlutterActivityAndFragmentDelegate(this);
     delegate.onAttach(this);
+    delegate.onActivityCreated(savedInstanceState);
 
     configureWindowForTransparency();
     setContentView(createFlutterView());
@@ -473,11 +491,11 @@ public class FlutterActivity extends Activity
     try {
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(
           getComponentName(),
-          PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES
+          PackageManager.GET_META_DATA
       );
       Bundle metadata = activityInfo.metaData;
-      Integer splashScreenId = metadata != null ? metadata.getInt(SPLASH_SCREEN_META_DATA_KEY) : null;
-      return splashScreenId != null
+      int splashScreenId = metadata != null ? metadata.getInt(SPLASH_SCREEN_META_DATA_KEY) : 0;
+      return splashScreenId != 0
           ? Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP
             ? getResources().getDrawable(splashScreenId, getTheme())
             : getResources().getDrawable(splashScreenId)
@@ -555,6 +573,12 @@ public class FlutterActivity extends Activity
     super.onStop();
     delegate.onStop();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
+  }
+
+  @Override
+  protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    delegate.onSaveInstanceState(outState);
   }
 
   @Override
@@ -667,7 +691,15 @@ public class FlutterActivity extends Activity
    */
   @Override
   public boolean shouldDestroyEngineWithHost() {
-    return getIntent().getBooleanExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, false);
+    boolean explicitDestructionRequested = getIntent().getBooleanExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, false);
+    if (getCachedEngineId() != null || delegate.isFlutterEngineFromHost()) {
+      // Only destroy a cached engine if explicitly requested by app developer.
+      return explicitDestructionRequested;
+    } else {
+      // If this Activity created the FlutterEngine, destroy it by default unless
+      // explicitly requested not to.
+      return getIntent().getBooleanExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, true);
+    }
   }
 
   /**
@@ -684,7 +716,7 @@ public class FlutterActivity extends Activity
     try {
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(
           getComponentName(),
-          PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES
+          PackageManager.GET_META_DATA
       );
       Bundle metadata = activityInfo.metaData;
       String desiredDartEntrypoint = metadata != null ? metadata.getString(DART_ENTRYPOINT_META_DATA_KEY) : null;
@@ -722,7 +754,7 @@ public class FlutterActivity extends Activity
     try {
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(
           getComponentName(),
-          PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES
+          PackageManager.GET_META_DATA
       );
       Bundle metadata = activityInfo.metaData;
       String desiredInitialRoute = metadata != null ? metadata.getString(INITIAL_ROUTE_META_DATA_KEY) : null;
@@ -848,6 +880,17 @@ public class FlutterActivity extends Activity
    */
   @Override
   public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    // No-op. Hook for subclasses.
+  }
+
+  /**
+   * Hook for the host to cleanup references that were established in
+   * {@link #configureFlutterEngine(FlutterEngine)} before the host is destroyed or detached.
+   * <p>
+   * This method is called in {@link #onDestroy()}.
+   */
+  @Override
+  public void cleanUpFlutterEngine(@NonNull FlutterEngine flutterEngine) {
     // No-op. Hook for subclasses.
   }
 

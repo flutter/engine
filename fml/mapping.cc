@@ -4,6 +4,7 @@
 
 #include "flutter/fml/mapping.h"
 
+#include <algorithm>
 #include <sstream>
 
 namespace fml {
@@ -67,6 +68,9 @@ std::unique_ptr<FileMapping> FileMapping::CreateReadExecute(
 
 DataMapping::DataMapping(std::vector<uint8_t> data) : data_(std::move(data)) {}
 
+DataMapping::DataMapping(const std::string& string)
+    : data_(string.begin(), string.end()) {}
+
 DataMapping::~DataMapping() = default;
 
 size_t DataMapping::GetSize() const {
@@ -81,7 +85,7 @@ const uint8_t* DataMapping::GetMapping() const {
 
 NonOwnedMapping::NonOwnedMapping(const uint8_t* data,
                                  size_t size,
-                                 ReleaseProc release_proc)
+                                 const ReleaseProc& release_proc)
     : data_(data), size_(size), release_proc_(release_proc) {}
 
 NonOwnedMapping::~NonOwnedMapping() {

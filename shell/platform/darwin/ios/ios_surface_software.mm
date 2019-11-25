@@ -136,7 +136,7 @@ ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
 }
 
 // |ExternalViewEmbedder|
-sk_sp<SkSurface> IOSSurfaceSoftware::GetRootSurface() {
+SkCanvas* IOSSurfaceSoftware::GetRootCanvas() {
   // On iOS, the root surface is created using a managed allocation that is submitted to the
   // platform. Only the surfaces for the various overlays are controlled by this class.
   return nullptr;
@@ -150,7 +150,9 @@ void IOSSurfaceSoftware::CancelFrame() {
 }
 
 // |ExternalViewEmbedder|
-void IOSSurfaceSoftware::BeginFrame(SkISize frame_size, GrContext* context) {
+void IOSSurfaceSoftware::BeginFrame(SkISize frame_size,
+                                    GrContext* context,
+                                    double device_pixel_ratio) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   platform_views_controller->SetFrameSize(frame_size);
@@ -184,8 +186,7 @@ bool IOSSurfaceSoftware::SubmitFrame(GrContext* context) {
   if (platform_views_controller == nullptr) {
     return true;
   }
-  return platform_views_controller->SubmitFrame(nullptr, fml::WeakPtr<IOSGLContext>(),
-                                                fml::WeakPtr<IOSGLContext>());
+  return platform_views_controller->SubmitFrame(nullptr, nullptr);
 }
 
 }  // namespace flutter

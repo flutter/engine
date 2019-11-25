@@ -17,6 +17,7 @@ class ParagraphGeometricStyle {
     this.wordSpacing,
     this.decoration,
     this.ellipsis,
+    this.shadows,
   });
 
   final ui.FontWeight fontWeight;
@@ -29,6 +30,7 @@ class ParagraphGeometricStyle {
   final double wordSpacing;
   final String decoration;
   final String ellipsis;
+  final List<ui.Shadow> shadows;
 
   // Since all fields above are primitives, cache hashcode since ruler lookups
   // use this style as key.
@@ -86,7 +88,7 @@ class ParagraphGeometricStyle {
       result.write(DomRenderer.defaultFontSize);
     }
     result.write(' ');
-    result.write(quoteFontFamily(effectiveFontFamily));
+    result.write(canonicalizeFontFamily(effectiveFontFamily));
 
     return result.toString();
   }
@@ -203,7 +205,7 @@ class TextDimensions {
       // Rich text: deeply copy contents. This is the slow case that should be
       // avoided if fast layout performance is desired.
       final html.Element copy = from._paragraphElement.clone(true);
-      _element.children.addAll(copy.children);
+      _element.nodes.addAll(copy.nodes);
     }
   }
 
@@ -227,7 +229,7 @@ class TextDimensions {
   void applyStyle(ParagraphGeometricStyle style) {
     _element.style
       ..fontSize = style.fontSize != null ? '${style.fontSize.floor()}px' : null
-      ..fontFamily = quoteFontFamily(style.effectiveFontFamily)
+      ..fontFamily = canonicalizeFontFamily(style.effectiveFontFamily)
       ..fontWeight =
           style.fontWeight != null ? fontWeightToCss(style.fontWeight) : null
       ..fontStyle = style.fontStyle != null
@@ -403,6 +405,10 @@ class ParagraphRuler {
       ..border = '0'
       ..padding = '0';
 
+    if (assertionsEnabled) {
+      _singleLineHost.setAttribute('data-ruler', 'single-line');
+    }
+
     singleLineDimensions.applyStyle(style);
 
     // Force single-line (even if wider than screen) and preserve whitespaces.
@@ -424,6 +430,10 @@ class ParagraphRuler {
       ..margin = '0'
       ..border = '0'
       ..padding = '0';
+
+    if (assertionsEnabled) {
+      _minIntrinsicHost.setAttribute('data-ruler', 'min-intrinsic');
+    }
 
     minIntrinsicDimensions.applyStyle(style);
 
@@ -453,6 +463,10 @@ class ParagraphRuler {
       ..margin = '0'
       ..border = '0'
       ..padding = '0';
+
+    if (assertionsEnabled) {
+      _constrainedHost.setAttribute('data-ruler', 'constrained');
+    }
 
     constrainedDimensions.applyStyle(style);
     final html.CssStyleDeclaration elementStyle =
@@ -492,6 +506,10 @@ class ParagraphRuler {
       ..margin = '0'
       ..border = '0'
       ..padding = '0';
+
+    if (assertionsEnabled) {
+      _lineHeightHost.setAttribute('data-ruler', 'line-height');
+    }
 
     lineHeightDimensions.applyStyle(style);
 
@@ -765,7 +783,7 @@ class ParagraphRuler {
       return null;
     }
     final List<MeasurementResult> constraintCache =
-    _measurementCache[plainText];
+        _measurementCache[plainText];
     if (constraintCache == null) {
       return null;
     }

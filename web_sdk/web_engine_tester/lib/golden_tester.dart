@@ -6,6 +6,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:html' as html;
 
+import 'package:ui/ui.dart';
+
 import 'package:test/test.dart';
 
 Future<dynamic> _callScreenshotServer(dynamic requestData) async {
@@ -19,11 +21,24 @@ Future<dynamic> _callScreenshotServer(dynamic requestData) async {
 }
 
 /// Attempts to match the current browser state with the screenshot [filename].
-Future<void> matchGoldenFile(String filename, { bool write = false }) async {
-  final String response = await _callScreenshotServer(<String, dynamic>{
+Future<void> matchGoldenFile(String filename,
+    {bool write = false, Rect region = null, double maxDiffRate = null}) async {
+  Map<String, dynamic> serverParams = <String, dynamic>{
     'filename': filename,
     'write': write,
-  });
+    'region': region == null
+        ? null
+        : {
+            'x': region.left,
+            'y': region.top,
+            'width': region.width,
+            'height': region.height
+          }
+  };
+  if (maxDiffRate != null) {
+    serverParams['maxdiffrate'] = maxDiffRate;
+  }
+  final String response = await _callScreenshotServer(serverParams);
   if (response == 'OK') {
     // Pass
     return;

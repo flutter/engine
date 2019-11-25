@@ -63,6 +63,11 @@ struct FlutterPlatformViewLayer {
   fml::scoped_nsobject<UIView> overlay_view;
   std::unique_ptr<IOSSurface> ios_surface;
   std::unique_ptr<Surface> surface;
+
+  // The GrContext that is currently used by the overlay surfaces.
+  // We track this to know when the GrContext for the Flutter app has changed
+  // so we can update the overlay with the new context.
+  GrContext* gr_context;
 };
 
 class FlutterPlatformViewsController {
@@ -100,9 +105,7 @@ class FlutterPlatformViewsController {
   // Discards all platform views instances and auxiliary resources.
   void Reset();
 
-  bool SubmitFrame(GrContext* gr_context,
-                   fml::WeakPtr<IOSGLContext> onscreen_gl_context,
-                   fml::WeakPtr<IOSGLContext> resource_gl_context);
+  bool SubmitFrame(GrContext* gr_context, std::shared_ptr<IOSGLContext> gl_context);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
@@ -125,10 +128,6 @@ class FlutterPlatformViewsController {
   // platform view last time it was composited.
   std::map<int64_t, int64_t> clip_count_;
   std::map<int64_t, std::unique_ptr<FlutterPlatformViewLayer>> overlays_;
-  // The GrContext that is currently used by all of the overlay surfaces.
-  // We track this to know when the GrContext for the Flutter app has changed
-  // so we can update the overlays with the new context.
-  GrContext* overlays_gr_context_;
   SkISize frame_size_;
 
   // This is the number of frames the task runners will stay
@@ -164,8 +163,7 @@ class FlutterPlatformViewsController {
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();
   void EnsureOverlayInitialized(int64_t overlay_id,
-                                fml::WeakPtr<IOSGLContext> onscreen_gl_context,
-                                fml::WeakPtr<IOSGLContext> resource_gl_context,
+                                std::shared_ptr<IOSGLContext> gl_context,
                                 GrContext* gr_context);
 
   // This will return true after pre-roll if any of the embedded views

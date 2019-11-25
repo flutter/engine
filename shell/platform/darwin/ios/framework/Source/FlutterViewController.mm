@@ -71,10 +71,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
 #pragma mark - Manage and override all designated initializers
 
 - (instancetype)initWithEngine:(FlutterEngine*)engine
-                       nibName:(NSString*)nibNameOrNil
-                        bundle:(NSBundle*)nibBundleOrNil {
+                       nibName:(nullable NSString*)nibName
+                        bundle:(nullable NSBundle*)nibBundle {
   NSAssert(engine != nil, @"Engine is required");
-  self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+  self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
     _viewOpaque = YES;
     _engine.reset([engine retain]);
@@ -90,15 +90,15 @@ typedef enum UIAccessibilityContrast : NSInteger {
   return self;
 }
 
-- (instancetype)initWithProject:(FlutterDartProject*)projectOrNil
-                        nibName:(NSString*)nibNameOrNil
-                         bundle:(NSBundle*)nibBundleOrNil {
-  self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+- (instancetype)initWithProject:(nullable FlutterDartProject*)project
+                        nibName:(nullable NSString*)nibName
+                         bundle:(nullable NSBundle*)nibBundle {
+  self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
     _viewOpaque = YES;
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter"
-                                              project:projectOrNil
+                                              project:project
                                allowHeadlessExecution:NO]);
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     [_engine.get() createShell:nil libraryURI:nil];
@@ -507,10 +507,13 @@ typedef enum UIAccessibilityContrast : NSInteger {
       pointer_data.change = flutter::PointerData::Change::kCancel;
       pointer_data.kind = flutter::PointerData::DeviceKind::kTouch;
       pointer_data.device = device.longLongValue;
+      pointer_data.pointer_identifier = 0;
 
       // Anything we put here will be arbitrary since there are no touches.
       pointer_data.physical_x = 0;
       pointer_data.physical_y = 0;
+      pointer_data.physical_delta_x = 0.0;
+      pointer_data.physical_delta_y = 0.0;
       pointer_data.pressure = 1.0;
       pointer_data.pressure_max = 1.0;
 
@@ -629,8 +632,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
     pointer_data.device = reinterpret_cast<int64_t>(touch);
 
+    // Pointer will be generated in pointer_data_packet_converter.cc.
+    pointer_data.pointer_identifier = 0;
+
     pointer_data.physical_x = windowCoordinates.x * scale;
     pointer_data.physical_y = windowCoordinates.y * scale;
+
+    // Delta will be generated in pointer_data_packet_converter.cc.
+    pointer_data.physical_delta_x = 0.0;
+    pointer_data.physical_delta_y = 0.0;
 
     NSNumber* deviceKey = [NSNumber numberWithLongLong:pointer_data.device];
     // Track touches that began and not yet stopped so we can flush them
@@ -828,14 +838,36 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     if (update == nil) {
       return;
     }
-
-    NSUInteger new_preferences = update.unsignedIntegerValue;
-
-    if (new_preferences != _orientationPreferences) {
-      _orientationPreferences = new_preferences;
-      [UIViewController attemptRotationToDeviceOrientation];
-    }
+    [self performOrientationUpdate:update.unsignedIntegerValue];
   });
+}
+
+- (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences {
+  if (new_preferences != _orientationPreferences) {
+    _orientationPreferences = new_preferences;
+    [UIViewController attemptRotationToDeviceOrientation];
+
+    UIInterfaceOrientationMask currentInterfaceOrientation =
+        1 << [[UIApplication sharedApplication] statusBarOrientation];
+    if (!(_orientationPreferences & currentInterfaceOrientation)) {
+      // Force orientation switch if the current orientation is not allowed
+      if (_orientationPreferences & UIInterfaceOrientationMaskPortrait) {
+        // This is no official API but more like a workaround / hack (using
+        // key-value coding on a read-only property). This might break in
+        // the future, but currently it´s the only way to force an orientation change
+        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortrait) forKey:@"orientation"];
+      } else if (_orientationPreferences & UIInterfaceOrientationMaskPortraitUpsideDown) {
+        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortraitUpsideDown)
+                                    forKey:@"orientation"];
+      } else if (_orientationPreferences & UIInterfaceOrientationMaskLandscapeLeft) {
+        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationLandscapeLeft)
+                                    forKey:@"orientation"];
+      } else if (_orientationPreferences & UIInterfaceOrientationMaskLandscapeRight) {
+        [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationLandscapeRight)
+                                    forKey:@"orientation"];
+      }
+    }
+  }
 }
 
 - (BOOL)shouldAutorotate {

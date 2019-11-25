@@ -11,6 +11,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/lib/ui/compositing/scene_host.h"
 #include "flutter/lib/ui/window/pointer_data.h"
+#include "flutter/lib/ui/window/window.h"
 #include "logging.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
@@ -77,7 +78,7 @@ void SetInterfaceErrorHandler(fidl::Binding<T>& binding, std::string name) {
 }
 
 PlatformView::PlatformView(
-    PlatformView::Delegate& delegate,
+    flutter::PlatformView::Delegate& delegate,
     std::string debug_label,
     fuchsia::ui::views::ViewRefControl view_ref_control,
     fuchsia::ui::views::ViewRef view_ref,
@@ -109,15 +110,11 @@ PlatformView::PlatformView(
   SetInterfaceErrorHandler(session_listener_binding_, "SessionListener");
   SetInterfaceErrorHandler(ime_, "Input Method Editor");
   SetInterfaceErrorHandler(text_sync_service_, "Text Sync Service");
-  SetInterfaceErrorHandler(clipboard_, "Clipboard");
   SetInterfaceErrorHandler(parent_environment_service_provider_,
                            "Parent Environment Service Provider");
-  // Access the clipboard.
+  // Access the IME service.
   parent_environment_service_provider_ =
       parent_environment_service_provider_handle.Bind();
-  parent_environment_service_provider_.get()->ConnectToService(
-      fuchsia::modular::Clipboard::Name_,
-      clipboard_.NewRequest().TakeChannel());
 
   parent_environment_service_provider_.get()->ConnectToService(
       fuchsia::ui::input::ImeService::Name_,
@@ -129,12 +126,7 @@ PlatformView::PlatformView(
   fuchsia::ui::views::ViewRef accessibility_view_ref;
   view_ref_.Clone(&accessibility_view_ref);
   accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
-      runner_services, std::move(accessibility_view_ref));
-
-  // TODO(SCN-975): Re-enable.  Likely that Engine should clone the ViewToken
-  // and pass the clone in here.
-  //   view_->GetToken(std::bind(&PlatformView::ConnectSemanticsProvider, this,
-  //                             std::placeholders::_1));
+      *this, runner_services, std::move(accessibility_view_ref));
 }
 
 PlatformView::~PlatformView() = default;
@@ -601,9 +593,15 @@ void PlatformView::HandlePlatformMessage(
 }
 
 // |flutter::PlatformView|
+// |flutter_runner::AccessibilityBridge::Delegate|
 void PlatformView::SetSemanticsEnabled(bool enabled) {
-  accessibility_bridge_->SetSemanticsEnabled(enabled);
   flutter::PlatformView::SetSemanticsEnabled(enabled);
+  if (enabled) {
+    SetAccessibilityFeatures(static_cast<int32_t>(
+        flutter::AccessibilityFeatureFlag::kAccessibleNavigation));
+  } else {
+    SetAccessibilityFeatures(0);
+  }
 }
 
 // |flutter::PlatformView|
@@ -636,28 +634,8 @@ void PlatformView::HandleFlutterPlatformChannelPlatformMessage(
     return;
   }
 
-  fml::RefPtr<flutter::PlatformMessageResponse> response = message->response();
-  if (method->value == "Clipboard.setData") {
-    auto text = root["args"]["text"].GetString();
-    clipboard_->Push(text);
-    response->CompleteEmpty();
-  } else if (method->value == "Clipboard.getData") {
-    clipboard_->Peek([response](fidl::StringPtr text) {
-      rapidjson::StringBuffer json_buffer;
-      rapidjson::Writer<rapidjson::StringBuffer> writer(json_buffer);
-      writer.StartArray();
-      writer.StartObject();
-      writer.Key("text");
-      writer.String(text.value_or(""));
-      writer.EndObject();
-      writer.EndArray();
-      std::string result = json_buffer.GetString();
-      response->Complete(std::make_unique<fml::DataMapping>(
-          std::vector<uint8_t>{result.begin(), result.end()}));
-    });
-  } else {
-    response->CompleteEmpty();
-  }
+  // Fuchsia does not handle any platform messages at this time.
+  message->response()->CompleteEmpty();
 }
 
 // Channel handler for kTextInputChannel

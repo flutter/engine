@@ -153,12 +153,15 @@ if (current_toolchain == host_toolchain) {
 
   test_fixtures("shell_unittests_fixtures") {
     dart_main = "fixtures/shell_test.dart"
+
+    fixtures = [ "fixtures/shelltest_screenshot.png" ]
   }
 
   shell_host_executable("shell_unittests") {
     sources = [
       "canvas_spy_unittests.cc",
       "input_events_unittests.cc",
+      "persistent_cache_unittests.cc",
       "pipeline_unittests.cc",
       "shell_test.cc",
       "shell_test.h",

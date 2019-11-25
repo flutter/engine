@@ -142,27 +142,18 @@ class GradientLinear extends EngineGradient {
       jsColors[i] = colors[i].value;
     }
 
-    js.JsArray<double> jsColorStops;
-    if (colorStops == null) {
-      jsColorStops = js.JsArray<double>();
-      jsColorStops.length = 2;
-      jsColorStops[0] = 0;
-      jsColorStops[1] = 1;
-    } else {
-      jsColorStops = js.JsArray<double>.from(colorStops);
-      jsColorStops.length = colorStops.length;
-    }
     return canvasKit.callMethod('MakeLinearGradientShader', <dynamic>[
       makeSkPoint(from),
       makeSkPoint(to),
       jsColors,
-      jsColorStops,
+      makeSkiaColorStops(colorStops),
       tileMode.index,
     ]);
   }
 }
 
-// TODO(flutter_web): Add screenshot tests when infra is ready.
+// TODO(flutter_web): For transforms and tile modes implement as webgl
+// shader instead. See https://github.com/flutter/flutter/issues/32819
 class GradientRadial extends EngineGradient {
   GradientRadial(this.center, this.radius, this.colors, this.colorStops,
       this.tileMode, this.matrix4)
@@ -177,27 +168,51 @@ class GradientRadial extends EngineGradient {
 
   @override
   Object createPaintStyle(html.CanvasRenderingContext2D ctx) {
-    // TODO(flutter_web): see https://github.com/flutter/flutter/issues/32819
-    if (matrix4 != null && !Matrix4.fromFloat64List(matrix4).isIdentity()) {
-        throw UnimplementedError('matrix4 not supported in GradientRadial shader');
+    if (!experimentalUseSkia) {
+      // The DOM backend does not (yet) support all parameters.
+      if (matrix4 != null && !Matrix4.fromFloat64List(matrix4).isIdentity()) {
+        throw UnimplementedError(
+            'matrix4 not supported in GradientRadial shader');
+      }
+      if (tileMode != ui.TileMode.clamp) {
+        throw UnimplementedError(
+            'TileMode not supported in GradientRadial shader');
+      }
     }
-    final html.CanvasGradient gradient =
-        ctx.createRadialGradient(center.dx, center.dy, 0, center.dx, center.dy, radius);
+    final html.CanvasGradient gradient = ctx.createRadialGradient(
+        center.dx, center.dy, 0, center.dx, center.dy, radius);
     if (colorStops == null) {
       assert(colors.length == 2);
       gradient.addColorStop(0, colors[0].toCssString());
       gradient.addColorStop(1, colors[1].toCssString());
       return gradient;
-    }
-    for (int i = 0; i < colors.length; i++) {
-      gradient.addColorStop(colorStops[i], colors[i].toCssString());
+    } else {
+      for (int i = 0; i < colors.length; i++) {
+        gradient.addColorStop(colorStops[i], colors[i].toCssString());
+      }
     }
     return gradient;
   }
 
   @override
   js.JsObject createSkiaShader() {
-    throw UnimplementedError();
+    assert(experimentalUseSkia);
+
+    final js.JsArray<num> jsColors = js.JsArray<num>();
+    jsColors.length = colors.length;
+    for (int i = 0; i < colors.length; i++) {
+      jsColors[i] = colors[i].value;
+    }
+
+    return canvasKit.callMethod('MakeRadialGradientShader', <dynamic>[
+      makeSkPoint(center),
+      radius,
+      jsColors,
+      makeSkiaColorStops(colorStops),
+      tileMode.index,
+      matrix4 != null ? makeSkMatrix(matrix4) : null,
+      0,
+    ]);
   }
 }
 
@@ -223,5 +238,32 @@ class GradientConical extends EngineGradient {
   @override
   js.JsObject createSkiaShader() {
     throw UnimplementedError();
+  }
+}
+
+/// Backend implementation of [ui.ImageFilter].
+///
+/// Currently only `blur` is supported.
+class EngineImageFilter implements ui.ImageFilter {
+  EngineImageFilter.blur({this.sigmaX = 0.0, this.sigmaY = 0.0});
+
+  final double sigmaX;
+  final double sigmaY;
+
+  @override
+  bool operator ==(dynamic other) {
+    if (other is! EngineImageFilter) {
+      return false;
+    }
+    final EngineImageFilter typedOther = other;
+    return sigmaX == typedOther.sigmaX && sigmaY == typedOther.sigmaY;
+  }
+
+  @override
+  int get hashCode => ui.hashValues(sigmaX, sigmaY);
+
+  @override
+  String toString() {
+    return 'ImageFilter.blur($sigmaX, $sigmaY)';
   }
 }

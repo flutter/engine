@@ -27,6 +27,8 @@
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
+NSString* const FlutterDefaultDartEntrypoint = nil;
+
 @interface FlutterEngine () <FlutterTextInputDelegate, FlutterBinaryMessenger>
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
@@ -70,6 +72,10 @@
   FlutterBinaryMessengerRelay* _binaryMessenger;
 }
 
+- (instancetype)initWithName:(NSString*)labelPrefix {
+  return [self initWithName:labelPrefix project:nil allowHeadlessExecution:YES];
+}
+
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
   return [self initWithName:labelPrefix project:project allowHeadlessExecution:YES];
 }
@@ -102,6 +108,16 @@
                  name:UIApplicationDidReceiveMemoryWarningNotification
                object:nil];
 
+  [center addObserver:self
+             selector:@selector(applicationBecameActive:)
+                 name:UIApplicationDidBecomeActiveNotification
+               object:nil];
+
+  [center addObserver:self
+             selector:@selector(applicationWillResignActive:)
+                 name:UIApplicationWillResignActiveNotification
+               object:nil];
+
   return self;
 }
 
@@ -111,8 +127,11 @@
   [_binaryMessenger release];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
-  [center removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
-  [_flutterViewControllerWillDeallocObserver release];
+  if (_flutterViewControllerWillDeallocObserver) {
+    [center removeObserver:_flutterViewControllerWillDeallocObserver];
+    [_flutterViewControllerWillDeallocObserver release];
+  }
+  [center removeObserver:self];
 
   [super dealloc];
 }
@@ -166,22 +185,45 @@
 
 - (void)setViewController:(FlutterViewController*)viewController {
   FML_DCHECK(self.iosPlatformView);
-  _viewController = [viewController getWeakPtr];
+  _viewController =
+      viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
 
-  self.flutterViewControllerWillDeallocObserver =
-      [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
-                                                        object:viewController
-                                                         queue:[NSOperationQueue mainQueue]
-                                                    usingBlock:^(NSNotification* note) {
-                                                      [self notifyViewControllerDeallocated];
-                                                    }];
+  if (viewController) {
+    __block FlutterEngine* blockSelf = self;
+    self.flutterViewControllerWillDeallocObserver =
+        [[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
+                                                          object:viewController
+                                                           queue:[NSOperationQueue mainQueue]
+                                                      usingBlock:^(NSNotification* note) {
+                                                        [blockSelf notifyViewControllerDeallocated];
+                                                      }];
+  } else {
+    self.flutterViewControllerWillDeallocObserver = nil;
+  }
+}
+
+- (void)setFlutterViewControllerWillDeallocObserver:(id<NSObject>)observer {
+  if (observer != _flutterViewControllerWillDeallocObserver) {
+    if (_flutterViewControllerWillDeallocObserver) {
+      [[NSNotificationCenter defaultCenter]
+          removeObserver:_flutterViewControllerWillDeallocObserver];
+      [_flutterViewControllerWillDeallocObserver release];
+    }
+    _flutterViewControllerWillDeallocObserver = [observer retain];
+  }
 }
 
 - (void)notifyViewControllerDeallocated {
+  [[self lifecycleChannel] sendMessage:@"AppLifecycleState.detached"];
   if (!_allowHeadlessExecution) {
     [self destroyContext];
+  } else {
+    flutter::PlatformViewIOS* platform_view = [self iosPlatformView];
+    if (platform_view) {
+      platform_view->SetOwnerViewController({});
+    }
   }
   _viewController.reset();
 }
@@ -424,9 +466,14 @@
     }
     _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
     [self maybeSetupPlatformViewChannels];
+    _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(_isGpuDisabled ? true : false);
   }
 
   return _shell != nullptr;
+}
+
+- (BOOL)run {
+  return [self runWithEntrypoint:FlutterDefaultDartEntrypoint libraryURI:nil];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
@@ -533,7 +580,9 @@
 - (void)sendOnChannel:(NSString*)channel
               message:(NSData*)message
           binaryReply:(FlutterBinaryReply)callback {
-  NSAssert(channel, @"The channel must not be null");
+  NSParameterAssert(channel);
+  NSAssert(_shell && _shell->IsSetup(),
+           @"Sending a message before the FlutterEngine has been run.");
   fml::RefPtr<flutter::PlatformMessageResponseDarwin> response =
       (callback == nil) ? nullptr
                         : fml::MakeRefCounted<flutter::PlatformMessageResponseDarwin>(
@@ -551,8 +600,9 @@
 
 - (void)setMessageHandlerOnChannel:(NSString*)channel
               binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
-  NSAssert(channel, @"The channel must not be null");
-  FML_DCHECK(_shell && _shell->IsSetup());
+  NSParameterAssert(channel);
+  NSAssert(_shell && _shell->IsSetup(),
+           @"Setting a message handler before the FlutterEngine has been run.");
   self.iosPlatformView->GetPlatformMessageRouter().SetMessageHandler(channel.UTF8String, handler);
 }
 
@@ -600,13 +650,28 @@
   return _pluginPublications[pluginKey];
 }
 
-#pragma mark - Memory Notifications
+#pragma mark - Notifications
+
+- (void)applicationBecameActive:(NSNotification*)notification {
+  [self setIsGpuDisabled:NO];
+}
+
+- (void)applicationWillResignActive:(NSNotification*)notification {
+  [self setIsGpuDisabled:YES];
+}
 
 - (void)onMemoryWarning:(NSNotification*)notification {
   if (_shell) {
     _shell->NotifyLowMemoryWarning();
   }
   [_systemChannel sendMessage:@{@"type" : @"memoryPressure"}];
+}
+
+- (void)setIsGpuDisabled:(BOOL)value {
+  if (_shell) {
+    _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(value ? true : false);
+  }
+  _isGpuDisabled = value;
 }
 
 @end

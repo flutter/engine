@@ -8,7 +8,6 @@
 #include <map>
 #include <set>
 
-#include <fuchsia/modular/cpp/fidl.h>
 #include <fuchsia/ui/gfx/cpp/fidl.h>
 #include <fuchsia/ui/input/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
@@ -38,9 +37,10 @@ using OnEnableWireframe = fit::function<void(bool)>;
 // thread.
 class PlatformView final : public flutter::PlatformView,
                            private fuchsia::ui::scenic::SessionListener,
-                           public fuchsia::ui::input::InputMethodEditorClient {
+                           public fuchsia::ui::input::InputMethodEditorClient,
+                           public AccessibilityBridge::Delegate {
  public:
-  PlatformView(PlatformView::Delegate& delegate,
+  PlatformView(flutter::PlatformView::Delegate& delegate,
                std::string debug_label,
                fuchsia::ui::views::ViewRefControl view_ref_control,
                fuchsia::ui::views::ViewRef view_ref,
@@ -55,7 +55,7 @@ class PlatformView final : public flutter::PlatformView,
                OnSizeChangeHint session_size_change_hint_callback,
                OnEnableWireframe wireframe_enabled_callback,
                zx_handle_t vsync_event_handle);
-  PlatformView(PlatformView::Delegate& delegate,
+  PlatformView(flutter::PlatformView::Delegate& delegate,
                std::string debug_label,
                flutter::TaskRunners task_runners,
                fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
@@ -65,6 +65,10 @@ class PlatformView final : public flutter::PlatformView,
   ~PlatformView();
 
   void UpdateViewportMetrics(const fuchsia::ui::gfx::Metrics& metrics);
+
+  // |flutter::PlatformView|
+  // |flutter_runner::AccessibilityBridge::Delegate|
+  void SetSemanticsEnabled(bool enabled) override;
 
  private:
   const std::string debug_label_;
@@ -86,7 +90,6 @@ class PlatformView final : public flutter::PlatformView,
   fuchsia::ui::input::ImeServicePtr text_sync_service_;
 
   fuchsia::sys::ServiceProviderPtr parent_environment_service_provider_;
-  fuchsia::modular::ClipboardPtr clipboard_;
   std::unique_ptr<Surface> surface_;
   flutter::LogicalMetrics metrics_;
   fuchsia::ui::gfx::Metrics scenic_metrics_;
@@ -152,9 +155,6 @@ class PlatformView final : public flutter::PlatformView,
   // |flutter::PlatformView|
   void HandlePlatformMessage(
       fml::RefPtr<flutter::PlatformMessage> message) override;
-
-  // |flutter::PlatformView|
-  void SetSemanticsEnabled(bool enabled) override;
 
   // |flutter::PlatformView|
   void UpdateSemantics(

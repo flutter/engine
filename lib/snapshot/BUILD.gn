@@ -20,10 +20,19 @@ copy("generate_dart_ui") {
 }
 
 compiled_action("generate_snapshot_bin") {
-  tool = "//third_party/dart/runtime/bin:gen_snapshot"
+  if (target_cpu == "x86" && host_os == "linux") {
+    # By default Dart will create a 32-bit gen_snapshot host binary if the target
+    # platform is 32-bit.  Override this to create a 64-bit gen_snapshot for x86
+    # targets because some host platforms may not support 32-bit binaries.
+    tool = "//third_party/dart/runtime/bin:gen_snapshot_host_targeting_host"
+    toolchain = "//build/toolchain/$host_os:clang_x64"
+  } else {
+    tool = "//third_party/dart/runtime/bin:gen_snapshot"
+  }
 
-  if (is_fuchsia || is_fuchsia_host) {
-    platform_kernel = "//prebuilt/gallium/flutter/artifacts/platform_strong.dill"
+  if ((is_fuchsia || is_fuchsia_host) && !using_fuchsia_sdk) {
+    platform_kernel =
+        "$root_out_dir/flutter_runner_patched_sdk/platform_strong.dill"
   } else {
     platform_kernel = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
   }
@@ -58,7 +67,8 @@ compiled_action("generate_snapshot_bin") {
   ]
 
   if (is_debug && flutter_runtime_mode != "profile" &&
-      flutter_runtime_mode != "release") {
+      flutter_runtime_mode != "release" &&
+      flutter_runtime_mode != "jit_release") {
     args += [ "--enable_asserts" ]
   }
 
@@ -78,11 +88,6 @@ template("bin_to_assembly") {
     deps = invoker.deps
     script = "//third_party/dart/runtime/tools/bin_to_assembly.py"
     output = invoker.input + ".S"
-
-    if (is_fuchsia || is_fuchsia_host) {
-      output = "$root_out_dir/flutter_runner_patched_sdk/$output"
-    }
-
     args = [
       "--input",
       rebase_path(invoker.input),
@@ -126,11 +131,6 @@ template("bin_to_coff") {
     deps = invoker.deps
     script = "//third_party/dart/runtime/tools/bin_to_coff.py"
     output = invoker.input + ".o"
-
-    if ((is_fuchsia || is_fuchsia_host) && !using_fuchsia_sdk) {
-      output = "$root_out_dir/flutter_runner_patched_sdk/$output"
-    }
-
     args = [
       "--input",
       rebase_path(invoker.input),
@@ -217,8 +217,8 @@ bin_to_linkable("platform_strong_dill_linkable") {
   deps = [
     ":kernel_platform_files",
   ]
-  if (is_fuchsia || is_fuchsia_host) {
-    input = "//prebuilt/gallium/flutter/artifacts/platform_strong.dill"
+  if ((is_fuchsia || is_fuchsia_host) && !using_fuchsia_sdk) {
+    input = "$root_out_dir/flutter_runner_patched_sdk/platform_strong.dill"
   } else {
     input = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
   }
@@ -270,7 +270,8 @@ compile_platform("strong_platform") {
     "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill",
   ]
 
-  is_runtime_mode_release = flutter_runtime_mode == "release"
+  is_runtime_mode_release =
+      flutter_runtime_mode == "release" || flutter_runtime_mode == "jit_release"
   allow_causal_async_stacks = !is_runtime_mode_release
   args = [
     "--target=flutter",
@@ -282,9 +283,11 @@ compile_platform("strong_platform") {
 }
 
 # Fuchsia's snapshot requires a different platform with extra dart: libraries.
-if (is_fuchsia || is_fuchsia_host) {
+if ((is_fuchsia || is_fuchsia_host) && !using_fuchsia_sdk) {
   group("kernel_platform_files") {
-    # We use pre-builts for the strong platform file.
+    public_deps = [
+      "//topaz/runtime/flutter_runner/kernel:kernel_platform_files",
+    ]
   }
 } else {
   group("kernel_platform_files") {

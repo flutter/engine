@@ -9,6 +9,45 @@ js.JsObject makeSkRect(ui.Rect rect) {
       <double>[rect.left, rect.top, rect.right, rect.bottom]);
 }
 
+js.JsObject makeSkRRect(ui.RRect rrect) {
+  return js.JsObject.jsify({
+    'rect': makeSkRect(rrect.outerRect),
+    'rx1': rrect.tlRadiusX,
+    'ry1': rrect.tlRadiusY,
+    'rx2': rrect.trRadiusX,
+    'ry2': rrect.trRadiusY,
+    'rx3': rrect.brRadiusX,
+    'ry3': rrect.brRadiusY,
+    'rx4': rrect.blRadiusX,
+    'ry4': rrect.blRadiusY,
+  });
+}
+
+ui.Rect fromSkRect(js.JsObject skRect) {
+  return ui.Rect.fromLTRB(
+    skRect['fLeft'],
+    skRect['fTop'],
+    skRect['fRight'],
+    skRect['fBottom'],
+  );
+}
+
+ui.TextPosition fromPositionWithAffinity(js.JsObject positionWithAffinity) {
+  if (positionWithAffinity['affinity'] == canvasKit['Affinity']['Upstream']) {
+    return ui.TextPosition(
+      offset: positionWithAffinity['pos'],
+      affinity: ui.TextAffinity.upstream,
+    );
+  } else {
+    assert(positionWithAffinity['affinity'] ==
+        canvasKit['Affinity']['Downstream']);
+    return ui.TextPosition(
+      offset: positionWithAffinity['pos'],
+      affinity: ui.TextAffinity.downstream,
+    );
+  }
+}
+
 js.JsArray<double> makeSkPoint(ui.Offset point) {
   final js.JsArray<double> skPoint = js.JsArray<double>();
   skPoint.length = 2;
@@ -142,6 +181,18 @@ js.JsObject makeSkPaint(ui.Paint paint) {
     skPaint.callMethod('setMaskFilter', <js.JsObject>[skMaskFilter]);
   }
 
+  if (paint.imageFilter != null) {
+    final SkImageFilter skImageFilter = paint.imageFilter;
+    skPaint.callMethod(
+        'setImageFilter', <js.JsObject>[skImageFilter.skImageFilter]);
+  }
+
+  if (paint.colorFilter != null) {
+    EngineColorFilter engineFilter = paint.colorFilter;
+    SkColorFilter skFilter = engineFilter._toSkColorFilter();
+    skPaint.callMethod('setColorFilter', <js.JsObject>[skFilter.skColorFilter]);
+  }
+
   return skPaint;
 }
 
@@ -167,12 +218,39 @@ js.JsArray<double> makeSkMatrix(Float64List matrix4) {
   return skMatrix;
 }
 
+/// Color stops used when the framework specifies `null`.
+final js.JsArray<double> _kDefaultColorStops = () {
+  final js.JsArray<double> jsColorStops = js.JsArray<double>();
+  jsColorStops.length = 2;
+  jsColorStops[0] = 0;
+  jsColorStops[1] = 1;
+  return jsColorStops;
+}();
+
+/// Converts a list of color stops into a Skia-compatible JS array or color stops.
+///
+/// In Flutter `null` means two color stops `[0, 1]` that in Skia must be specified explicitly.
+js.JsArray<double> makeSkiaColorStops(List<double> colorStops) {
+  if (colorStops == null) {
+    return _kDefaultColorStops;
+  }
+
+  final js.JsArray<double> jsColorStops = js.JsArray<double>.from(colorStops);
+  jsColorStops.length = colorStops.length;
+  return jsColorStops;
+}
+
+// These must be kept in sync with `flow/layers/physical_shape_layer.cc`.
+const double kLightHeight = 600.0;
+const double kLightRadius = 800.0;
+
 void drawSkShadow(
   js.JsObject skCanvas,
   SkPath path,
   ui.Color color,
   double elevation,
   bool transparentOccluder,
+  double devicePixelRatio,
 ) {
   const double ambientAlpha = 0.039;
   const double spotAlpha = 0.25;
@@ -183,42 +261,25 @@ void drawSkShadow(
   final double shadowX = (bounds.left + bounds.right) / 2.0;
   final double shadowY = bounds.top - 600.0;
 
-  final ui.Color ambientColor =
-      ui.Color.fromARGB((color.alpha * ambientAlpha).round(), 0, 0, 0);
+  ui.Color inAmbient = color.withAlpha((color.alpha * ambientAlpha).round());
+  ui.Color inSpot = color.withAlpha((color.alpha * spotAlpha).round());
 
-  // This is a port of SkShadowUtils::ComputeTonalColors
-  final int minSpot = math.min(color.red, math.min(color.green, color.blue));
-  final int maxSpot = math.max(color.red, math.max(color.green, color.blue));
-  final double luminance = 0.5 * (maxSpot + minSpot) / 255.0;
-  final double originalAlpha = (color.alpha * spotAlpha) / 255.0;
-  final double alphaAdjust =
-      (2.6 + (-2.66667 + 1.06667 * originalAlpha) * originalAlpha) *
-          originalAlpha;
-  double colorAlpha =
-      (3.544762 + (-4.891428 + 2.3466 * luminance) * luminance) * luminance;
-  colorAlpha = (colorAlpha * alphaAdjust).clamp(0.0, 1.0);
+  final js.JsObject inTonalColors = js.JsObject.jsify(<String, int>{
+    'ambient': inAmbient.value,
+    'spot': inSpot.value,
+  });
 
-  final double greyscaleAlpha =
-      (originalAlpha * (1.0 - 0.4 * luminance)).clamp(0.0, 1.0);
-
-  final double colorScale = colorAlpha * (1.0 - greyscaleAlpha);
-  final double tonalAlpha = colorScale + greyscaleAlpha;
-  final double unPremulScale = colorScale / tonalAlpha;
-
-  final ui.Color spotColor = ui.Color.fromARGB(
-    (tonalAlpha * 255.999).round(),
-    (unPremulScale * color.red).round(),
-    (unPremulScale * color.green).round(),
-    (unPremulScale * color.blue).round(),
-  );
+  final js.JsObject tonalColors =
+      canvasKit.callMethod('computeTonalColors', <js.JsObject>[inTonalColors]);
 
   skCanvas.callMethod('drawShadow', <dynamic>[
     path._skPath,
-    js.JsArray<double>.from(<double>[0, 0, elevation]),
-    js.JsArray<double>.from(<double>[shadowX, shadowY, 600]),
-    800,
-    ambientColor.value,
-    spotColor.value,
+    js.JsArray<double>.from(<double>[0, 0, devicePixelRatio * elevation]),
+    js.JsArray<double>.from(
+        <double>[shadowX, shadowY, devicePixelRatio * kLightHeight]),
+    devicePixelRatio * kLightRadius,
+    tonalColors['ambient'],
+    tonalColors['spot'],
     flags,
   ]);
 }

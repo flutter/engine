@@ -293,6 +293,8 @@ class SemanticsFlag {
   static const int _kHasImplicitScrollingIndex = 1 << 18;
   static const int _kIsMultilineIndex = 1 << 19;
   static const int _kIsReadOnlyIndex = 1 << 20;
+  static const int _kIsFocusableIndex = 1 << 21;
+  static const int _kIsLinkIndex = 1 << 22;
 
   const SemanticsFlag._(this.index);
 
@@ -340,6 +342,12 @@ class SemanticsFlag {
   /// a button.
   static const SemanticsFlag isButton = SemanticsFlag._(_kIsButtonIndex);
 
+  /// Whether the semantic node represents a link.
+  ///
+  /// Platforms have special handling for links, for example, iOS's VoiceOver
+  /// provides an additional hint when the focused object is a link.
+  static const SemanticsFlag isLink = SemanticsFlag._(_kIsLinkIndex);
+
   /// Whether the semantic node represents a text field.
   ///
   /// Text fields are announced as such and allow text input via accessibility
@@ -350,6 +358,11 @@ class SemanticsFlag {
   ///
   /// Only applicable when [isTextField] is true.
   static const SemanticsFlag isReadOnly = SemanticsFlag._(_kIsReadOnlyIndex);
+
+  /// Whether the semantic node is able to hold the user's focus.
+  ///
+  /// The focused element is usually the current receiver of keyboard inputs.
+  static const SemanticsFlag isFocusable = SemanticsFlag._(_kIsFocusableIndex);
 
   /// Whether the semantic node currently holds the user's focus.
   ///
@@ -516,7 +529,9 @@ class SemanticsFlag {
     _kIsCheckedIndex: isChecked,
     _kIsSelectedIndex: isSelected,
     _kIsButtonIndex: isButton,
+    _kIsLinkIndex: isLink,
     _kIsTextFieldIndex: isTextField,
+    _kIsFocusableIndex: isFocusable,
     _kIsFocusedIndex: isFocused,
     _kHasEnabledStateIndex: hasEnabledState,
     _kIsEnabledIndex: isEnabled,
@@ -546,8 +561,12 @@ class SemanticsFlag {
         return 'SemanticsFlag.isSelected';
       case _kIsButtonIndex:
         return 'SemanticsFlag.isButton';
+      case _kIsLinkIndex:
+        return 'SemanticsFlag.isLink';
       case _kIsTextFieldIndex:
         return 'SemanticsFlag.isTextField';
+      case _kIsFocusableIndex:
+        return 'SemanticsFlag.isFocusable';
       case _kIsFocusedIndex:
         return 'SemanticsFlag.isFocused';
       case _kHasEnabledStateIndex:

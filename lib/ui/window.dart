@@ -69,7 +69,12 @@ enum FramePhase {
 
 /// Time-related performance metrics of a frame.
 ///
-/// See [Window.onReportTimings] for how to get this.
+/// If you're using the whole Flutter framework, please use
+/// [SchedulerBinding.addTimingsCallback] to get this. It's preferred over using
+/// [Window.onReportTimings] directly because
+/// [SchedulerBinding.addTimingsCallback] allows multiple callbacks. If
+/// [SchedulerBinding] is unavailable, then see [Window.onReportTimings] for how
+/// to get this.
 ///
 /// The metrics in debug mode (`flutter run` without any flags) may be very
 /// different from those in profile and release modes due to the debug overhead.
@@ -171,18 +176,16 @@ enum AppLifecycleState {
   ///
   /// When the application is in this state, the engine will not call the
   /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
-  ///
-  /// Android apps in this state should assume that they may enter the
-  /// [suspending] state at any time.
   paused,
 
-  /// The application will be suspended momentarily.
+  /// The application is still hosted on a flutter engine but is detached from
+  /// any host views.
   ///
-  /// When the application is in this state, the engine will not call the
-  /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
-  ///
-  /// On iOS, this state is currently unused.
-  suspending,
+  /// When the application is in this state, the engine is running without
+  /// a view. It can either be in the progress of attaching a view when engine
+  /// was first initializes, or after the view being destroyed due to a Navigator
+  /// pop.
+  detached,
 }
 
 /// A representation of distances for each of the four edges of a rectangle,
@@ -933,6 +936,10 @@ class Window {
   /// A callback that is invoked to report the [FrameTiming] of recently
   /// rasterized frames.
   ///
+  /// It's prefered to use [SchedulerBinding.addTimingsCallback] than to use
+  /// [Window.onReportTimings] directly because
+  /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks.
+  ///
   /// This can be used to see if the application has missed frames (through
   /// [FrameTiming.buildDuration] and [FrameTiming.rasterDuration]), or high
   /// latencies (through [FrameTiming.totalSpan]).
@@ -1176,6 +1183,18 @@ class Window {
       registrationZone.runUnaryGuarded(callback, data);
     };
   }
+
+
+  /// The embedder can specify data that the isolate can request synchronously
+  /// on launch. This accessor fetches that data.
+  ///
+  /// This data is persistent for the duration of the Flutter application and is
+  /// available even after isolate restarts. Because of this lifecycle, the size
+  /// of this data must be kept to a minimum.
+  ///
+  /// For asynchronous communication between the embedder and isolate, a
+  /// platform channel may be used.
+  ByteData getPersistentIsolateData() native 'Window_getPersistentIsolateData';
 }
 
 /// Additional accessibility features that may be enabled by the platform.

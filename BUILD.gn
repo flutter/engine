@@ -36,13 +36,16 @@ group("flutter") {
   }
 
   if (is_fuchsia && using_fuchsia_sdk) {
-    public_deps += [ "$flutter_root/shell/platform/fuchsia" ]
+    public_deps += [
+      "$flutter_root/shell/platform/fuchsia",
+      "$flutter_root/shell/testing($host_toolchain)",
+    ]
   }
 
   if (!is_fuchsia && !is_fuchsia_host) {
     if (current_toolchain == host_toolchain) {
       public_deps += [
-        "$flutter_root/frontend_server",
+        "$flutter_root/flutter_frontend_server:frontend_server",
         "//third_party/dart:create_sdk",
       ]
 
@@ -55,8 +58,10 @@ group("flutter") {
   # If on the host, compile all unittests targets.
   if (current_toolchain == host_toolchain) {
     if (is_mac) {
-      public_deps +=
-          [ "$flutter_root/shell/platform/darwin:flutter_channels_unittests" ]
+      public_deps += [
+        "$flutter_root/shell/platform/darwin:flutter_channels_unittests",
+        "$flutter_root/shell/platform/darwin/macos:flutter_desktop_darwin_unittests",
+      ]
     }
 
     public_deps += [
@@ -68,11 +73,15 @@ group("flutter") {
       "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_unittests",
       "$flutter_root/shell/platform/embedder:embedder_unittests",
       "$flutter_root/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
+      "$flutter_root/testing:testing_unittests",
       "$flutter_root/third_party/txt:txt_unittests",
     ]
 
     if (is_win) {
-      public_deps += [ "$flutter_root/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests" ]
+      public_deps += [
+        "$flutter_root/shell/platform/windows:flutter_windows_unittests",
+        "$flutter_root/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests",
+      ]
     }
 
     if (!is_win) {
@@ -83,10 +92,20 @@ group("flutter") {
       ]
     }
   }
+
+  # Fuchsia currently only supports a subset of our unit tests
+  if (is_fuchsia) {
+    public_deps += [ "$flutter_root/fml:fml_tests" ]
+  }
 }
 
 config("config") {
   include_dirs = [ ".." ]
+  if (is_win) {
+    if (current_cpu != "x86") {
+      cflags = [ "/WX" ]  # Treat warnings as errors.
+    }
+  }
 }
 
 config("export_dynamic_symbols") {

@@ -6,22 +6,19 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
-import 'dart:typed_data';
 
 import 'package:async/async.dart';
 import 'package:http_multi_server/http_multi_server.dart';
+import 'package:image/image.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
-import 'package:pedantic/pedantic.dart';
 import 'package:pool/pool.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_static/shelf_static.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:shelf_packages_handler/shelf_packages_handler.dart';
-import 'package:stack_trace/stack_trace.dart';
 import 'package:stream_channel/stream_channel.dart';
-import 'package:typed_data/typed_buffers.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
@@ -40,25 +37,30 @@ import 'package:test_core/src/runner/load_exception.dart'; // ignore: implementa
 import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
     as wip;
 
-import 'chrome_installer.dart';
+import 'browser.dart';
+import 'common.dart';
 import 'environment.dart' as env;
-
-/// The port number Chrome exposes for debugging.
-const int _kChromeDevtoolsPort = 12345;
+import 'goldens.dart';
+import 'supported_browsers.dart';
 
 class BrowserPlatform extends PlatformPlugin {
   /// Starts the server.
   ///
   /// [root] is the root directory that the server should serve. It defaults to
   /// the working directory.
-  static Future<BrowserPlatform> start({String root}) async {
+  static Future<BrowserPlatform> start(String name,
+      {String root, bool doUpdateScreenshotGoldens: false}) async {
+    assert(SupportedBrowsers.instance.supportedBrowserNames.contains(name));
     var server = shelf_io.IOServer(await HttpMultiServer.loopback(0));
     return BrowserPlatform._(
-        server,
-        Configuration.current,
-        p.fromUri(await Isolate.resolvePackageUri(
-            Uri.parse('package:test/src/runner/browser/static/favicon.ico'))),
-        root: root);
+      name,
+      server,
+      Configuration.current,
+      p.fromUri(await Isolate.resolvePackageUri(
+          Uri.parse('package:test/src/runner/browser/static/favicon.ico'))),
+      root: root,
+      doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+    );
   }
 
   /// The test runner configuration.
@@ -66,6 +68,9 @@ class BrowserPlatform extends PlatformPlugin {
 
   /// The underlying server.
   final shelf.Server _server;
+
+  /// Name for the running browser. Not final on purpose can be mutated later.
+  String browserName;
 
   /// A randomly-generated secret.
   ///
@@ -95,9 +100,14 @@ class BrowserPlatform extends PlatformPlugin {
   /// Whether [close] has been called.
   bool get _closed => _closeMemo.hasRun;
 
-  BrowserPlatform._(this._server, Configuration config, String faviconPath,
-      {String root})
-      : _config = config,
+  /// Whether to update screenshot golden files.
+  final bool doUpdateScreenshotGoldens;
+
+  BrowserPlatform._(
+      String name, this._server, Configuration config, String faviconPath,
+      {String root, this.doUpdateScreenshotGoldens})
+      : this.browserName = name,
+        _config = config,
         _root = root == null ? p.current : root,
         _http = config.pubServeUrl == null ? null : HttpClient() {
     var cascade = shelf.Cascade().add(_webSocketHandler.handler);
@@ -107,7 +117,6 @@ class BrowserPlatform extends PlatformPlugin {
       final String staticFilePath =
           config.suiteDefaults.precompiledPath ?? _root;
       cascade = cascade
-          .add(_screeshotHandler)
           .add(packagesDirHandler())
           .add(_jsHandler.handler)
           .add(createStaticHandler(staticFilePath,
@@ -115,6 +124,10 @@ class BrowserPlatform extends PlatformPlugin {
               serveFilesOutsidePath:
                   config.suiteDefaults.precompiledPath != null))
           .add(_wrapperHandler);
+      // Screenshot tests are only enabled in chrome for now.
+      if (name == 'chrome') {
+        cascade = cascade.add(_screeshotHandler);
+      }
     }
 
     var pipeline = shelf.Pipeline()
@@ -128,6 +141,10 @@ class BrowserPlatform extends PlatformPlugin {
   }
 
   Future<shelf.Response> _screeshotHandler(shelf.Request request) async {
+    if (browserName != 'chrome') {
+      throw Exception('Screenshots tests are only available in Chrome.');
+    }
+
     if (!request.requestedUri.path.endsWith('/screenshot')) {
       return shelf.Response.notFound(
           'This request is not handled by the screenshot handler');
@@ -137,58 +154,197 @@ class BrowserPlatform extends PlatformPlugin {
     final Map<String, dynamic> requestData = json.decode(payload);
     final String filename = requestData['filename'];
     final bool write = requestData['write'];
-    final String result = await _diffScreenshot(filename, write);
+    final double maxDiffRate = requestData['maxdiffrate'];
+    final Map<String, dynamic> region = requestData['region'];
+    final String result = await _diffScreenshot(
+        filename, write, maxDiffRate ?? kMaxDiffRateFailure, region);
     return shelf.Response.ok(json.encode(result));
   }
 
-  Future<String> _diffScreenshot(String filename, bool write) async {
-    const String _kGoldensDirectory = 'test/golden_files';
+  Future<String> _diffScreenshot(
+      String filename, bool write, double maxDiffRateFailure,
+      [Map<String, dynamic> region]) async {
+    if (doUpdateScreenshotGoldens) {
+      write = true;
+    }
+
+    String goldensDirectory;
+    if (filename.startsWith('__local__')) {
+      filename = filename.substring('__local__/'.length);
+      goldensDirectory = p.join(
+        env.environment.webUiRootDir.path,
+        'test',
+        'golden_files',
+      );
+    } else {
+      await fetchGoldens();
+      goldensDirectory = p.join(
+        env.environment.webUiGoldensRepositoryDirectory.path,
+        'engine',
+        'web',
+      );
+    }
+
+    // Bail out fast if golden doesn't exist, and user doesn't want to create it.
+    final File file = File(p.join(
+      goldensDirectory,
+      filename,
+    ));
+    if (!file.existsSync() && !write) {
+      return '''
+Golden file $filename does not exist.
+
+To automatically create this file call matchGoldenFile('$filename', write: true).
+''';
+    }
+
     final wip.ChromeConnection chromeConnection =
-        wip.ChromeConnection('localhost', _kChromeDevtoolsPort);
+        wip.ChromeConnection('localhost', kDevtoolsPort);
     final wip.ChromeTab chromeTab = await chromeConnection.getTab(
         (wip.ChromeTab chromeTab) => chromeTab.url.contains('localhost'));
     final wip.WipConnection wipConnection = await chromeTab.connect();
-    final wip.WipResponse response =
-        await wipConnection.sendCommand('Page.captureScreenshot');
-    final Uint8List bytes = base64.decode(response.result['data']);
-    final File file = File(p.join(_kGoldensDirectory, filename));
+
+    Map<String, dynamic> captureScreenshotParameters = null;
+    if (region != null) {
+      captureScreenshotParameters = {
+        'format': 'png',
+        'clip': {
+          'x': region['x'],
+          'y': region['y'],
+          'width': region['width'],
+          'height': region['height'],
+          'scale':
+              1, // This is NOT the DPI of the page, instead it's the "zoom level".
+        },
+      };
+    }
+
+    // Setting hardware-independent screen parameters:
+    // https://chromedevtools.github.io/devtools-protocol/tot/Emulation
+    await wipConnection.sendCommand('Emulation.setDeviceMetricsOverride', {
+      'width': kMaxScreenshotWidth,
+      'height': kMaxScreenshotHeight,
+      'deviceScaleFactor': 1,
+      'mobile': false,
+    });
+    final wip.WipResponse response = await wipConnection.sendCommand(
+        'Page.captureScreenshot', captureScreenshotParameters);
+
+    // Compare screenshots
+    final Image screenshot = decodePng(base64.decode(response.result['data']));
+
     if (write) {
-      file.writeAsBytesSync(bytes, flush: true);
-      return 'Golden file $filename was updated. You can remove "write: true" in the call to matchGoldenFile.';
+      // Don't even bother with the comparison, just write and return
+      print('Updating screenshot golden: $file');
+      file.writeAsBytesSync(encodePng(screenshot), flush: true);
+      if (doUpdateScreenshotGoldens) {
+        // Do not fail tests when bulk-updating screenshot goldens.
+        return 'OK';
+      } else {
+        return 'Golden file $filename was updated. You can remove "write: true" in the call to matchGoldenFile.';
+      }
     }
-    if (!file.existsSync()) {
-      return '''
-  Golden file $filename does not exist.
 
-  To automatically create this file call matchGoldenFile('$filename', write: true).
-  ''';
-    }
-    final List<int> goldenBytes = file.readAsBytesSync();
-    final int lengths = bytes.length;
-    for (int i = 0; i < lengths; i++) {
-      if (goldenBytes[i] != bytes[i]) {
-        if (write) {
-          file.writeAsBytesSync(bytes, flush: true);
-          return 'Golden file $filename was updated. You can remove "write: true" in the call to matchGoldenFile.';
-        } else {
-          final File failedFile = File(p.join(file.parent.path, '.${p.basename(file.path)}'));
-          failedFile.writeAsBytesSync(bytes, flush: true);
+    ImageDiff diff = ImageDiff(
+        golden: decodeNamedImage(file.readAsBytesSync(), filename),
+        other: screenshot);
 
-          // TODO(yjbanov): do not fail Cirrus builds. They currently fail because Chrome produces
-          //                different pictures. We need to pin Chrome versions and use a fuzzy image
-          //                comparator.
-          if (Platform.environment['CIRRUS_CI'] == 'true') {
-            return 'OK';
-          }
+    if (diff.rate > 0) {
+      // Images are different, so produce some debug info
+      final String testResultsPath = isCirrus
+          ? p.join(
+              Platform.environment['CIRRUS_WORKING_DIR'],
+              'test_results',
+            )
+          : p.join(
+              env.environment.webUiDartToolDir.path,
+              'test_results',
+            );
+      Directory(testResultsPath).createSync(recursive: true);
+      final String basename = p.basenameWithoutExtension(file.path);
 
-          return '''
-  Golden file ${file.path} did not match the image generated by the test.
+      final File actualFile =
+          File(p.join(testResultsPath, '$basename.actual.png'));
+      actualFile.writeAsBytesSync(encodePng(screenshot), flush: true);
 
-  The generated image was written to ${failedFile.path}.
+      final File diffFile = File(p.join(testResultsPath, '$basename.diff.png'));
+      diffFile.writeAsBytesSync(encodePng(diff.diff), flush: true);
 
-  To update the golden file call matchGoldenFile('$filename', write: true).
-  ''';
-        }
+      final File expectedFile =
+          File(p.join(testResultsPath, '$basename.expected.png'));
+      file.copySync(expectedFile.path);
+
+      final File reportFile =
+          File(p.join(testResultsPath, '$basename.report.html'));
+      reportFile.writeAsStringSync('''
+Golden file $filename did not match the image generated by the test.
+
+<table>
+  <tr>
+    <th>Expected</th>
+    <th>Diff</th>
+    <th>Actual</th>
+  </tr>
+  <tr>
+    <td>
+      <img src="$basename.expected.png">
+    </td>
+    <td>
+      <img src="$basename.diff.png">
+    </td>
+    <td>
+      <img src="$basename.actual.png">
+    </td>
+  </tr>
+</table>
+''');
+
+      final StringBuffer message = StringBuffer();
+      message.writeln(
+          'Golden file $filename did not match the image generated by the test.');
+      message.writeln(getPrintableDiffFilesInfo(diff.rate, maxDiffRateFailure));
+      message
+          .writeln('You can view the test report in your browser by opening:');
+
+      // Cirrus cannot serve HTML pages generated by build jobs, so we
+      // archive all the files so that they can be downloaded and inspected
+      // locally.
+      if (isCirrus) {
+        final String taskId = Platform.environment['CIRRUS_TASK_ID'];
+        final String baseArtifactsUrl =
+            'https://api.cirrus-ci.com/v1/artifact/task/$taskId/web_engine_test/test_results';
+        final String cirrusReportUrl = '$baseArtifactsUrl/$basename.report.zip';
+        message.writeln(cirrusReportUrl);
+
+        await Process.run(
+          'zip',
+          <String>[
+            '$basename.report.zip',
+            '$basename.report.html',
+            '$basename.expected.png',
+            '$basename.diff.png',
+            '$basename.actual.png',
+          ],
+          workingDirectory: testResultsPath,
+        );
+      } else {
+        final String localReportPath = '$testResultsPath/$basename.report.html';
+        message.writeln(localReportPath);
+      }
+
+      message.writeln(
+          'To update the golden file call matchGoldenFile(\'$filename\', write: true).');
+      message.writeln('Golden file: ${expectedFile.path}');
+      message.writeln('Actual file: ${actualFile.path}');
+
+      if (diff.rate < maxDiffRateFailure) {
+        // Issue a warning but do not fail the test.
+        print('WARNING:');
+        print(message);
+        return 'OK';
+      } else {
+        // Fail test
+        return '$message';
       }
     }
     return 'OK';
@@ -522,8 +678,9 @@ class BrowserManager {
   /// Starts the browser identified by [browser] using [settings] and has it load [url].
   ///
   /// If [debug] is true, starts the browser in debug mode.
-  static Browser _newBrowser(Uri url, Runtime browser, {bool debug = false}) {
-    return Chrome(url, debug: debug);
+  static Browser _newBrowser(Uri url, Runtime browser,
+      {bool debug = false}) {
+    return SupportedBrowsers.instance.getBrowser(browser, url, debug: debug);
   }
 
   /// Creates a new BrowserManager that communicates with [browser] over
@@ -705,209 +862,4 @@ class _BrowserEnvironment implements Environment {
   CancelableOperation displayPause() => _manager._displayPause();
 }
 
-/// An interface for running browser instances.
-///
-/// This is intentionally coarse-grained: browsers are controlled primary from
-/// inside a single tab. Thus this interface only provides support for closing
-/// the browser and seeing if it closes itself.
-///
-/// Any errors starting or running the browser process are reported through
-/// [onExit].
-abstract class Browser {
-  String get name;
-
-  /// The Observatory URL for this browser.
-  ///
-  /// This will return `null` for browsers that aren't running the Dart VM, or
-  /// if the Observatory URL can't be found.
-  Future<Uri> get observatoryUrl => null;
-
-  /// The remote debugger URL for this browser.
-  ///
-  /// This will return `null` for browsers that don't support remote debugging,
-  /// or if the remote debugging URL can't be found.
-  Future<Uri> get remoteDebuggerUrl => null;
-
-  /// The underlying process.
-  ///
-  /// This will fire once the process has started successfully.
-  Future<Process> get _process => _processCompleter.future;
-  final _processCompleter = Completer<Process>();
-
-  /// Whether [close] has been called.
-  var _closed = false;
-
-  /// A future that completes when the browser exits.
-  ///
-  /// If there's a problem starting or running the browser, this will complete
-  /// with an error.
-  Future get onExit => _onExitCompleter.future;
-  final _onExitCompleter = Completer();
-
-  /// Standard IO streams for the underlying browser process.
-  final _ioSubscriptions = <StreamSubscription>[];
-
-  /// Creates a new browser.
-  ///
-  /// This is intended to be called by subclasses. They pass in [startBrowser],
-  /// which asynchronously returns the browser process. Any errors in
-  /// [startBrowser] (even those raised asynchronously after it returns) are
-  /// piped to [onExit] and will cause the browser to be killed.
-  Browser(Future<Process> startBrowser()) {
-    // Don't return a Future here because there's no need for the caller to wait
-    // for the process to actually start. They should just wait for the HTTP
-    // request instead.
-    runZoned(() async {
-      var process = await startBrowser();
-      _processCompleter.complete(process);
-
-      var output = Uint8Buffer();
-      drainOutput(Stream<List<int>> stream) {
-        try {
-          _ioSubscriptions
-              .add(stream.listen(output.addAll, cancelOnError: true));
-        } on StateError catch (_) {}
-      }
-
-      // If we don't drain the stdout and stderr the process can hang.
-      drainOutput(process.stdout);
-      drainOutput(process.stderr);
-
-      var exitCode = await process.exitCode;
-
-      // This hack dodges an otherwise intractable race condition. When the user
-      // presses Control-C, the signal is sent to the browser and the test
-      // runner at the same time. It's possible for the browser to exit before
-      // the [Browser.close] is called, which would trigger the error below.
-      //
-      // A negative exit code signals that the process exited due to a signal.
-      // However, it's possible that this signal didn't come from the user's
-      // Control-C, in which case we do want to throw the error. The only way to
-      // resolve the ambiguity is to wait a brief amount of time and see if this
-      // browser is actually closed.
-      if (!_closed && exitCode < 0) {
-        await Future.delayed(Duration(milliseconds: 200));
-      }
-
-      if (!_closed && exitCode != 0) {
-        var outputString = utf8.decode(output);
-        var message = '$name failed with exit code $exitCode.';
-        if (outputString.isNotEmpty) {
-          message += '\nStandard output:\n$outputString';
-        }
-
-        throw Exception(message);
-      }
-
-      _onExitCompleter.complete();
-    }, onError: (error, StackTrace stackTrace) {
-      // Ignore any errors after the browser has been closed.
-      if (_closed) return;
-
-      // Make sure the process dies even if the error wasn't fatal.
-      _process.then((process) => process.kill());
-
-      if (stackTrace == null) stackTrace = Trace.current();
-      if (_onExitCompleter.isCompleted) return;
-      _onExitCompleter.completeError(
-          Exception('Failed to run $name: ${getErrorMessage(error)}.'),
-          stackTrace);
-    });
-  }
-
-  /// Kills the browser process.
-  ///
-  /// Returns the same [Future] as [onExit], except that it won't emit
-  /// exceptions.
-  Future close() async {
-    _closed = true;
-
-    // If we don't manually close the stream the test runner can hang.
-    // For example this happens with Chrome Headless.
-    // See SDK issue: https://github.com/dart-lang/sdk/issues/31264
-    for (var stream in _ioSubscriptions) {
-      unawaited(stream.cancel());
-    }
-
-    (await _process).kill();
-
-    // Swallow exceptions. The user should explicitly use [onExit] for these.
-    return onExit.catchError((_) {});
-  }
-}
-
-/// A class for running an instance of Chrome.
-///
-/// Most of the communication with the browser is expected to happen via HTTP,
-/// so this exposes a bare-bones API. The browser starts as soon as the class is
-/// constructed, and is killed when [close] is called.
-///
-/// Any errors starting or running the process are reported through [onExit].
-class Chrome extends Browser {
-  @override
-  final name = 'Chrome';
-
-  @override
-  final Future<Uri> remoteDebuggerUrl;
-
-  static String version;
-
-  /// Starts a new instance of Chrome open to the given [url], which may be a
-  /// [Uri] or a [String].
-  factory Chrome(Uri url, {bool debug = false}) {
-    assert(version != null);
-    var remoteDebuggerCompleter = Completer<Uri>.sync();
-    return Chrome._(() async {
-      final ChromeInstallation installation = await getOrInstallChrome(version, infoLog: _DevNull());
-
-      final bool isChromeNoSandbox = Platform.environment['CHROME_NO_SANDBOX'] == 'true';
-      var dir = createTempDir();
-      var args = [
-        '--user-data-dir=$dir',
-        url.toString(),
-        if (!debug) '--headless',
-        if (isChromeNoSandbox) '--no-sandbox',
-        '--disable-extensions',
-        '--disable-popup-blocking',
-        '--bwsi',
-        '--no-first-run',
-        '--no-default-browser-check',
-        '--disable-default-apps',
-        '--disable-translate',
-        '--remote-debugging-port=$_kChromeDevtoolsPort',
-      ];
-
-      final Process process = await Process.start(installation.executable, args);
-
-      remoteDebuggerCompleter.complete(getRemoteDebuggerUrl(
-          Uri.parse('http://localhost:$_kChromeDevtoolsPort')));
-
-      unawaited(process.exitCode
-          .then((_) => Directory(dir).deleteSync(recursive: true)));
-
-      return process;
-    }, remoteDebuggerCompleter.future);
-  }
-
-  Chrome._(Future<Process> startBrowser(), this.remoteDebuggerUrl)
-      : super(startBrowser);
-}
-
-/// A string sink that swallows all input.
-class _DevNull implements StringSink {
-  @override
-  void write(Object obj) {
-  }
-
-  @override
-  void writeAll(Iterable objects, [String separator = ""]) {
-  }
-
-  @override
-  void writeCharCode(int charCode) {
-  }
-
-  @override
-  void writeln([Object obj = ""]) {
-  }
-}
+bool get isCirrus => Platform.environment['CIRRUS_CI'] == 'true';

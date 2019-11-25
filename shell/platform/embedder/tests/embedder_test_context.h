@@ -17,6 +17,7 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor.h"
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/test_gl_surface.h"
+#include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/skia/include/core/SkImage.h"
 
 namespace flutter {
@@ -48,18 +49,19 @@ class EmbedderTestContext {
 
   void AddNativeCallback(const char* name, Dart_NativeFunction function);
 
-  void SetSemanticsNodeCallback(SemanticsNodeCallback update_semantics_node);
+  void SetSemanticsNodeCallback(
+      const SemanticsNodeCallback& update_semantics_node);
 
   void SetSemanticsCustomActionCallback(
-      SemanticsActionCallback semantics_custom_action);
+      const SemanticsActionCallback& semantics_custom_action);
 
   void SetPlatformMessageCallback(
-      std::function<void(const FlutterPlatformMessage*)> callback);
+      const std::function<void(const FlutterPlatformMessage*)>& callback);
 
   EmbedderTestCompositor& GetCompositor();
 
   using NextSceneCallback = std::function<void(sk_sp<SkImage> image)>;
-  void SetNextSceneCallback(NextSceneCallback next_scene_callback);
+  void SetNextSceneCallback(const NextSceneCallback& next_scene_callback);
 
   size_t GetGLSurfacePresentCount() const;
 
@@ -70,10 +72,14 @@ class EmbedderTestContext {
   friend class EmbedderConfigBuilder;
 
   std::string assets_path_;
+
+  // Pieces of the Dart snapshot in ELF form, loaded by Dart's ELF library.
+  Dart_LoadedElf* elf_library_handle_ = nullptr;
   std::unique_ptr<fml::Mapping> vm_snapshot_data_;
   std::unique_ptr<fml::Mapping> vm_snapshot_instructions_;
   std::unique_ptr<fml::Mapping> isolate_snapshot_data_;
   std::unique_ptr<fml::Mapping> isolate_snapshot_instructions_;
+
   std::vector<fml::closure> isolate_create_callbacks_;
   std::shared_ptr<TestDartNativeResolver> native_resolver_;
   SemanticsNodeCallback update_semantics_node_callback_;
@@ -121,7 +127,7 @@ class EmbedderTestContext {
   bool SofwarePresent(sk_sp<SkImage> image);
 
   void FireRootSurfacePresentCallbackIfPresent(
-      std::function<sk_sp<SkImage>(void)> image_callback);
+      const std::function<sk_sp<SkImage>(void)>& image_callback);
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTestContext);
 };

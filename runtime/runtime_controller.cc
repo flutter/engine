@@ -18,66 +18,75 @@ RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
     DartVM* p_vm,
     fml::RefPtr<const DartSnapshot> p_isolate_snapshot,
-    fml::RefPtr<const DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
+    fml::WeakPtr<SnapshotDelegate> p_snapshot_delegate,
     fml::WeakPtr<IOManager> p_io_manager,
+    fml::RefPtr<SkiaUnrefQueue> p_unref_queue,
     fml::WeakPtr<ImageDecoder> p_image_decoder,
     std::string p_advisory_script_uri,
     std::string p_advisory_script_entrypoint,
-    std::function<void(int64_t)> p_idle_notification_callback,
-    fml::closure p_isolate_create_callback,
-    fml::closure p_isolate_shutdown_callback)
+    const std::function<void(int64_t)>& p_idle_notification_callback,
+    const fml::closure& p_isolate_create_callback,
+    const fml::closure& p_isolate_shutdown_callback,
+    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data)
     : RuntimeController(p_client,
                         p_vm,
                         std::move(p_isolate_snapshot),
-                        std::move(p_shared_snapshot),
                         std::move(p_task_runners),
+                        std::move(p_snapshot_delegate),
                         std::move(p_io_manager),
+                        std::move(p_unref_queue),
                         std::move(p_image_decoder),
                         std::move(p_advisory_script_uri),
                         std::move(p_advisory_script_entrypoint),
                         p_idle_notification_callback,
                         WindowData{/* default window data */},
                         p_isolate_create_callback,
-                        p_isolate_shutdown_callback) {}
+                        p_isolate_shutdown_callback,
+                        std::move(p_persistent_isolate_data)) {}
 
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
     DartVM* p_vm,
     fml::RefPtr<const DartSnapshot> p_isolate_snapshot,
-    fml::RefPtr<const DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
+    fml::WeakPtr<SnapshotDelegate> p_snapshot_delegate,
     fml::WeakPtr<IOManager> p_io_manager,
+    fml::RefPtr<SkiaUnrefQueue> p_unref_queue,
     fml::WeakPtr<ImageDecoder> p_image_decoder,
     std::string p_advisory_script_uri,
     std::string p_advisory_script_entrypoint,
-    std::function<void(int64_t)> idle_notification_callback,
+    const std::function<void(int64_t)>& idle_notification_callback,
     WindowData p_window_data,
-    fml::closure p_isolate_create_callback,
-    fml::closure p_isolate_shutdown_callback)
+    const fml::closure& p_isolate_create_callback,
+    const fml::closure& p_isolate_shutdown_callback,
+    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data)
     : client_(p_client),
       vm_(p_vm),
       isolate_snapshot_(std::move(p_isolate_snapshot)),
-      shared_snapshot_(std::move(p_shared_snapshot)),
       task_runners_(p_task_runners),
+      snapshot_delegate_(p_snapshot_delegate),
       io_manager_(p_io_manager),
+      unref_queue_(p_unref_queue),
       image_decoder_(p_image_decoder),
       advisory_script_uri_(p_advisory_script_uri),
       advisory_script_entrypoint_(p_advisory_script_entrypoint),
       idle_notification_callback_(idle_notification_callback),
       window_data_(std::move(p_window_data)),
       isolate_create_callback_(p_isolate_create_callback),
-      isolate_shutdown_callback_(p_isolate_shutdown_callback) {
+      isolate_shutdown_callback_(p_isolate_shutdown_callback),
+      persistent_isolate_data_(std::move(p_persistent_isolate_data)) {
   // Create the root isolate as soon as the runtime controller is initialized.
   // It will be run at a later point when the engine provides a run
   // configuration and then runs the isolate.
   auto strong_root_isolate =
       DartIsolate::CreateRootIsolate(vm_->GetVMData()->GetSettings(),  //
                                      isolate_snapshot_,                //
-                                     shared_snapshot_,                 //
                                      task_runners_,                    //
                                      std::make_unique<Window>(this),   //
+                                     snapshot_delegate_,               //
                                      io_manager_,                      //
+                                     unref_queue_,                     //
                                      image_decoder_,                   //
                                      p_advisory_script_uri,            //
                                      p_advisory_script_entrypoint,     //
@@ -135,16 +144,18 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
       client_,                      //
       vm_,                          //
       isolate_snapshot_,            //
-      shared_snapshot_,             //
       task_runners_,                //
+      snapshot_delegate_,           //
       io_manager_,                  //
+      unref_queue_,                 //
       image_decoder_,               //
       advisory_script_uri_,         //
       advisory_script_entrypoint_,  //
       idle_notification_callback_,  //
       window_data_,                 //
       isolate_create_callback_,     //
-      isolate_shutdown_callback_    //
+      isolate_shutdown_callback_,   //
+      persistent_isolate_data_      //
       ));
 }
 
@@ -296,40 +307,54 @@ Window* RuntimeController::GetWindowIfAvailable() {
   return root_isolate ? root_isolate->window() : nullptr;
 }
 
+// |WindowClient|
 std::string RuntimeController::DefaultRouteName() {
   return client_.DefaultRouteName();
 }
 
+// |WindowClient|
 void RuntimeController::ScheduleFrame() {
   client_.ScheduleFrame();
 }
 
+// |WindowClient|
 void RuntimeController::Render(Scene* scene) {
   client_.Render(scene->takeLayerTree());
 }
 
+// |WindowClient|
 void RuntimeController::UpdateSemantics(SemanticsUpdate* update) {
   if (window_data_.semantics_enabled) {
     client_.UpdateSemantics(update->takeNodes(), update->takeActions());
   }
 }
 
+// |WindowClient|
 void RuntimeController::HandlePlatformMessage(
     fml::RefPtr<PlatformMessage> message) {
   client_.HandlePlatformMessage(std::move(message));
 }
 
+// |WindowClient|
 FontCollection& RuntimeController::GetFontCollection() {
   return client_.GetFontCollection();
 }
 
+// |WindowClient|
 void RuntimeController::UpdateIsolateDescription(const std::string isolate_name,
                                                  int64_t isolate_port) {
   client_.UpdateIsolateDescription(isolate_name, isolate_port);
 }
 
+// |WindowClient|
 void RuntimeController::SetNeedsReportTimings(bool value) {
   client_.SetNeedsReportTimings(value);
+}
+
+// |WindowClient|
+std::shared_ptr<const fml::Mapping>
+RuntimeController::GetPersistentIsolateData() {
+  return persistent_isolate_data_;
 }
 
 Dart_Port RuntimeController::GetMainPort() {

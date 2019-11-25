@@ -73,18 +73,13 @@ enum AppLifecycleState {
   ///
   /// When the application is in this state, the engine will not call the
   /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
-  ///
-  /// Android apps in this state should assume that they may enter the
-  /// [suspending] state at any time.
   paused,
 
-  /// The application will be suspended momentarily.
+  /// The application is detached from view.
   ///
-  /// When the application is in this state, the engine will not call the
-  /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
-  ///
-  /// On iOS, this state is currently unused.
-  suspending,
+  /// When the application is in this state, the engine is running without
+  /// a platform UI.
+  detached,
 }
 
 /// A representation of distances for each of the four edges of a rectangle,
@@ -634,9 +629,7 @@ abstract class Window {
   }
 
   /// The setting indicating the current brightness mode of the host platform.
-  /// If the platform has no preference, [platformBrightness] defaults to [Brightness.light].
-  Brightness get platformBrightness => _platformBrightness;
-  Brightness _platformBrightness = Brightness.light;
+  Brightness get platformBrightness;
 
   /// A callback that is invoked whenever [platformBrightness] changes value.
   ///
@@ -976,27 +969,15 @@ abstract class Window {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  void render(Scene scene) {
-    if (engine.experimentalUseSkia) {
-      final engine.LayerScene layerScene = scene;
-      _rasterizer.draw(layerScene.layerTree);
-    } else {
-      engine.domRenderer.renderScene(scene.webOnlyRootElement);
-    }
-  }
-
-  final engine.Rasterizer _rasterizer = engine.experimentalUseSkia
-      ? engine.Rasterizer(engine.Surface((engine.SkCanvas canvas) {
-          engine.domRenderer.renderScene(canvas.htmlCanvas);
-          canvas.skSurface.callMethod('flush');
-        }))
-      : null;
+  void render(Scene scene);
 
   String get initialLifecycleState => _initialLifecycleState;
 
   String _initialLifecycleState;
 
   void setIsolateDebugName(String name) {}
+
+  ByteData getPersistentIsolateData() => null;
 }
 
 VoidCallback webOnlyScheduleFrameCallback;

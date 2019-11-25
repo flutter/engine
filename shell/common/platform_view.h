@@ -15,6 +15,7 @@
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
+#include "flutter/lib/ui/window/pointer_data_packet_converter.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/surface.h"
@@ -84,7 +85,8 @@ class PlatformView {
     ///
     /// @param[in]  closure  The callback to execute on the next frame.
     ///
-    virtual void OnPlatformViewSetNextFrameCallback(fml::closure closure) = 0;
+    virtual void OnPlatformViewSetNextFrameCallback(
+        const fml::closure& closure) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate the viewport metrics of the platform
@@ -421,7 +423,7 @@ class PlatformView {
 
   //--------------------------------------------------------------------------
   /// @brief      Returns a platform-specific PointerDataDispatcherMaker so the
-  ///             `Engien` can construct the PointerDataPacketDispatcher based
+  ///             `Engine` can construct the PointerDataPacketDispatcher based
   ///             on platforms.
   virtual PointerDataDispatcherMaker GetDispatcherMaker();
 
@@ -468,7 +470,7 @@ class PlatformView {
   /// @param[in]  closure  The callback to execute on the render thread when the
   ///                      next frame gets rendered.
   ///
-  void SetNextFrameCallback(fml::closure closure);
+  void SetNextFrameCallback(const fml::closure& closure);
 
   //----------------------------------------------------------------------------
   /// @brief      Dispatches pointer events from the embedder to the
@@ -544,6 +546,7 @@ class PlatformView {
   PlatformView::Delegate& delegate_;
   const TaskRunners task_runners_;
 
+  PointerDataPacketConverter pointer_data_packet_converter_;
   SkISize size_;
   fml::WeakPtrFactory<PlatformView> weak_factory_;
 
