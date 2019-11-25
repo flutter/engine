@@ -156,8 +156,8 @@ void CanvasPath::arcToPoint(float arcEndX,
                             bool isClockwiseDirection) {
   const auto arcSize = isLargeArc ? SkPath::ArcSize::kLarge_ArcSize
                                   : SkPath::ArcSize::kSmall_ArcSize;
-  const auto direction = isClockwiseDirection ? SkPathDirection::kCW
-                                              : SkPathDirection::kCCW;
+  const auto direction =
+      isClockwiseDirection ? SkPathDirection::kCW : SkPathDirection::kCCW;
 
   path_.arcTo(radiusX, radiusY, xAxisRotation, arcSize, direction, arcEndX,
               arcEndY);
@@ -172,8 +172,8 @@ void CanvasPath::relativeArcToPoint(float arcEndDeltaX,
                                     bool isClockwiseDirection) {
   const auto arcSize = isLargeArc ? SkPath::ArcSize::kLarge_ArcSize
                                   : SkPath::ArcSize::kSmall_ArcSize;
-  const auto direction = isClockwiseDirection ? SkPathDirection::kCW
-                                              : SkPathDirection::kCCW;
+  const auto direction =
+      isClockwiseDirection ? SkPathDirection::kCW : SkPathDirection::kCCW;
   path_.rArcTo(radiusX, radiusY, xAxisRotation, arcSize, direction,
                arcEndDeltaX, arcEndDeltaY);
 }
