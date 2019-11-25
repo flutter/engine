@@ -1198,7 +1198,7 @@ class EngineSemanticsOwner {
     _now = () => DateTime.now();
   }
 
-  final EnableSemanticsHelper enableSemantics = EnableSemanticsHelper();
+  final SemanticsHelper enableSemantics = SemanticsHelper();
 
   /// Whether the user has requested that [updateSemantics] be called when
   /// the semantic contents of window changes.

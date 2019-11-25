@@ -380,7 +380,7 @@ flt-glass-pane * {
     _glassPaneElement.append(_sceneHostElement);
 
     if (isDesktop) {
-      EngineSemanticsOwner.instance.enableSemantics.autoEnableForA11yShortcut(this);
+      EngineSemanticsOwner.instance.enableSemantics.autoEnableForDesktop(this);
     } else {
       EngineSemanticsOwner.instance.enableSemantics.autoEnableOnTap(this);
     }

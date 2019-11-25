@@ -4,7 +4,33 @@
 
 part of engine;
 
-class EnableSemanticsHelper {
+/// The maximum [_semanticsActivationAttempts] before we give up waiting for
+/// the user to enable semantics.
+///
+/// This number is arbitrary and can be adjusted if it doesn't work well.
+const int _kMaxSemanticsActivationAttempts = 20;
+
+/// The message in the label for the placeholder element used to enable
+/// accessibility.
+///
+/// This uses US English as the default message. Set this value prior to
+/// calling `runApp` to translate to another language.
+String placeholderMessage = 'Enable accessibility';
+
+class SemanticsHelper {
+  final _EnableSemantics _enableSemantics =
+      isDesktop ? _DesktopEnableSemantics() : _MobileEnableSemantics();
+
+  bool shouldEnableSemantics(html.Event event) {
+    return _enableSemantics.tryEnableSemantics(event);
+  }
+
+  void attachAccesibilityPlaceholder(DomRenderer domRenderer) {
+    _enableSemantics.attachAccesibilityPlaceholder(domRenderer);
+  }
+}
+
+abstract class _EnableSemantics {
   /// A temporary placeholder used to capture a request to activate semantics.
   html.Element _semanticsPlaceholder;
 
@@ -22,22 +48,6 @@ class EnableSemanticsHelper {
   /// semantics.
   int _semanticsActivationAttempts = 0;
 
-  /// The maximum [_semanticsActivationAttempts] before we give up waiting for
-  /// the user to enable semantics.
-  ///
-  /// This number is arbitrary and can be adjusted if it doesn't work well.
-  static const int _kMaxSemanticsActivationAttempts = 20;
-
-  /// The message in the label for the placeholder element used to enable
-  /// accessibility.
-  ///
-  /// This uses US English as the default message. Set this value prior to
-  /// calling `runApp` to translate to another language.
-  static String placeholderMessage = 'Enable accessibility';
-
-  /// Whether we are waiting for the user to enable semantics.
-  bool get _isWaitingToEnableSemantics => _semanticsPlaceholder != null;
-
   /// Instructs [_tryEnableSemantics] to remove [_semanticsPlaceholder].
   ///
   /// On Chrome the placeholder is removed upon any next event.
@@ -47,16 +57,15 @@ class EnableSemanticsHelper {
   /// that's being removed. Chrome doesn't have this issue.
   bool _schedulePlaceholderRemoval = false;
 
+  /// Whether we are waiting for the user to enable semantics.
+  bool get _isWaitingToEnableSemantics => _semanticsPlaceholder != null;
+
   bool shouldEnableSemantics(html.Event event) {
     if (!_isWaitingToEnableSemantics) {
       // Forward to framework as normal.
       return true;
     } else {
-      if (isDesktop) {
-        return _tryEnableSemanticsDesktop(event);
-      } else {
-        return _tryEnableSemantics(event);
-      }
+      return tryEnableSemantics(event);
     }
   }
 
@@ -64,8 +73,115 @@ class EnableSemanticsHelper {
   ///
   /// Returns true if the `event` is not related to semantics activation and
   /// should be forwarded to the framework.
-  bool _tryEnableSemantics(html.Event event) {
-    // trial 1, what if we keep the button always there for desktop
+  bool tryEnableSemantics(html.Event event);
+
+  /// Creates the placeholder for accesibility.
+  ///
+  /// Puts it inside the glasspane.
+  ///
+  /// On focus the element announces that accessibility can be enabled by
+  /// tapping/clicking. (Announcement depends on the assistive technology)
+  void attachAccesibilityPlaceholder(DomRenderer domRenderer);
+}
+
+class _DesktopEnableSemantics extends _EnableSemantics {
+  @override
+  bool tryEnableSemantics(html.Event event) {
+    if (_schedulePlaceholderRemoval) {
+      _semanticsPlaceholder.remove();
+      _semanticsPlaceholder = null;
+      _semanticsActivationTimer = null;
+      return true;
+    }
+
+    if (EngineSemanticsOwner.instance.semanticsEnabled) {
+      // Semantics already enabled, forward to framework as normal.
+      return true;
+    }
+
+    // In touch screen laptops, the touch is received as a mouse click
+    const List<String> kInterestingEventTypes = <String>[
+      'click',
+      'keyup',
+      'keydown',
+      'mouseup',
+      'mousedown',
+      'pointerdown',
+      'pointerup',
+    ];
+
+    if (!kInterestingEventTypes.contains(event.type)) {
+      // The event is not relevant, forward to framework as normal.
+      return true;
+    }
+
+    _semanticsActivationAttempts += 1;
+    if (_semanticsActivationAttempts >= _kMaxSemanticsActivationAttempts) {
+      // We have received multiple user events, none of which resulted in
+      // semantics activation. This is a signal that the user is not interested
+      // in semantics, and so we will stop waiting for it.
+      _schedulePlaceholderRemoval = true;
+      return true;
+    }
+
+    if (_semanticsActivationTimer != null) {
+      // We are in a waiting period to activate a timer. While the timer is
+      // active we should consume events pertaining to semantics activation.
+      // Otherwise the event will also be interpreted by the framework and
+      // potentially result in activating a gesture in the app.
+      return false;
+    }
+
+    // Check for the event target.
+    bool enableConditionPassed = (event.target == _semanticsPlaceholder);
+
+    if (enableConditionPassed) {
+      assert(_semanticsActivationTimer == null);
+      _semanticsActivationTimer = Timer(const Duration(milliseconds: 300), () {
+        EngineSemanticsOwner.instance.semanticsEnabled = true;
+        _schedulePlaceholderRemoval = true;
+      });
+      return false;
+    }
+
+    // This was not a semantics activating event; forward as normal.
+    return true;
+  }
+
+  @override
+  void attachAccesibilityPlaceholder(DomRenderer domRenderer) {
+    _semanticsPlaceholder = html.Element.tag('flt-semantics-placeholder');
+
+    // Only listen to "click" because other kinds of events are reported via
+    // PointerBinding.
+    _semanticsPlaceholder.addEventListener('click', (html.Event event) {
+      tryEnableSemantics(event);
+    }, true);
+
+    _semanticsPlaceholder
+      ..setAttribute('role', 'button')
+      ..setAttribute('aria-live', 'true')
+      ..setAttribute('tabindex', '0')
+      ..setAttribute('aria-label', placeholderMessage);
+    _semanticsPlaceholder.style
+      ..position = 'absolute'
+      ..left = '-1'
+      ..top = '-1'
+      ..width = '1'
+      ..height = '1';
+    // Insert the semantics placeholder after the scene host. For all widgets
+    // in the scene, except for platform widgets, the scene host will pass the
+    // pointer events through to the semantics tree. However, for platform
+    // views, the pointer events will not pass through, and will be handled
+    // by the platform view.
+    domRenderer.glassPaneElement
+        .insertBefore(_semanticsPlaceholder, domRenderer.sceneHostElement);
+  }
+}
+
+class _MobileEnableSemantics extends _EnableSemantics {
+  @override
+  bool tryEnableSemantics(html.Event event) {
     if (_schedulePlaceholderRemoval) {
       final bool removeNow = !isDesktop &&
           (browserEngine != BrowserEngine.webkit || event.type == 'touchend');
@@ -178,117 +294,14 @@ class EnableSemanticsHelper {
     return true;
   }
 
-  /// Attempts to activate semantics.
-  ///
-  /// Returns true if the `event` is not related to semantics activation and
-  /// should be forwarded to the framework.
-  bool _tryEnableSemanticsDesktop(html.Event event) {
-    assert(isDesktop);
-    if (_schedulePlaceholderRemoval) {
-      _semanticsPlaceholder.remove();
-      _semanticsPlaceholder = null;
-      _semanticsActivationTimer = null;
-      return true;
-    }
-
-    if (EngineSemanticsOwner.instance.semanticsEnabled) {
-      // Semantics already enabled, forward to framework as normal.
-      return true;
-    }
-
-    // In touch screen laptops, the touch is received as a mouse click
-    const List<String> kInterestingEventTypes = <String>[
-      'click',
-      'keyup',
-      'keydown',
-      'mouseup',
-      'mousedown',
-      'pointerdown',
-      'pointerup',
-    ];
-
-    if (!kInterestingEventTypes.contains(event.type)) {
-      // The event is not relevant, forward to framework as normal.
-      return true;
-    }
-
-    _semanticsActivationAttempts += 1;
-    if (_semanticsActivationAttempts >= _kMaxSemanticsActivationAttempts) {
-      // We have received multiple user events, none of which resulted in
-      // semantics activation. This is a signal that the user is not interested
-      // in semantics, and so we will stop waiting for it.
-      _schedulePlaceholderRemoval = true;
-      return true;
-    }
-
-
-    if (_semanticsActivationTimer != null) {
-      // We are in a waiting period to activate a timer. While the timer is
-      // active we should consume events pertaining to semantics activation.
-      // Otherwise the event will also be interpreted by the framework and
-      // potentially result in activating a gesture in the app.
-      return false;
-    }
-
-    // Check for the event target.
-    bool enableConditionPassed = (event.target == _semanticsPlaceholder);
-
-    if (enableConditionPassed) {
-      assert(_semanticsActivationTimer == null);
-      _semanticsActivationTimer = Timer(const Duration(milliseconds: 300), () {
-        EngineSemanticsOwner.instance.semanticsEnabled = true;
-        _schedulePlaceholderRemoval = true;
-      });
-      return false;
-    }
-
-    // This was not a semantics activating event; forward as normal.
-    return true;
-  }
-
-  void autoEnableForDesktop(DomRenderer domRenderer) {
-    _semanticsPlaceholder = html.Element.tag('flt-semantics-placeholder');
-
-    // Only listen to "click" because other kinds of events are reported via
-    // PointerBinding.
-
-    // bu kalsa peki zarari ne olur. silmesek hic.
-    _semanticsPlaceholder.addEventListener('click', (html.Event event) {
-      _tryEnableSemanticsDesktop(event);
-    }, true);
-
-    _semanticsPlaceholder
-      ..setAttribute('role', 'button')
-      ..setAttribute('aria-live', 'true')
-      ..setAttribute('tabindex', '0')
-      ..setAttribute('aria-label', placeholderMessage);
-    _semanticsPlaceholder.style
-      ..position = 'absolute'
-      ..left = '-1'
-      ..top = '-1'
-      ..width = '1'
-      ..height = '1';
-    // Insert the semantics placeholder after the scene host. For all widgets
-    // in the scene, except for platform widgets, the scene host will pass the
-    // pointer events through to the semantics tree. However, for platform
-    // views, the pointer events will not pass through, and will be handled
-    // by the platform view.
-    domRenderer.glassPaneElement
-        .insertBefore(_semanticsPlaceholder, domRenderer.sceneHostElement);
-  }
-
-  /// Enables accessibility when the user taps on the glasspane via an
-  /// accessibility focus.
-  ///
-  /// This creates a placeholder inside the glasspane, which, when focused,
-  /// announces that accessibility can be enabled by tapping.
-  void autoEnableOnTap(DomRenderer domRenderer) {
+  @override
+  void attachAccesibilityPlaceholder(DomRenderer domRenderer) {
     _semanticsPlaceholder = html.Element.tag('flt-semantics-placeholder');
 
     // Only listen to "click" because other kinds of events are reported via
     // PointerBinding.
     _semanticsPlaceholder.addEventListener('click', (html.Event event) {
-      _tryEnableSemantics(event);
+      tryEnableSemantics(event);
     }, true);
 
     _semanticsPlaceholder
