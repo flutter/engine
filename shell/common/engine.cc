@@ -71,7 +71,7 @@ Engine::Engine(Delegate& delegate,
       settings_.advisory_script_uri,         // advisory script uri
       settings_.advisory_script_entrypoint,  // advisory script entrypoint
       settings_.idle_notification_callback,  // idle notification callback
-      window_data,
+      window_data,                           // window data
       settings_.isolate_create_callback,     // isolate create callback
       settings_.isolate_shutdown_callback,   // isolate shutdown callback
       settings_.persistent_isolate_data      // persistent isolate data
