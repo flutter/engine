@@ -181,8 +181,8 @@ public class TextInputPluginTest {
             return restartCounter.get(view.hashCode(), /*defaultValue=*/0);
         }
 
-        // public Editable getEditable() {
-        //     return mEditable;
-        // }
+        public Editable getEditable() {
+            return mEditable;
+        }
     }
 }
