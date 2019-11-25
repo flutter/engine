@@ -28,6 +28,13 @@ class EnableSemanticsHelper {
   /// This number is arbitrary and can be adjusted if it doesn't work well.
   static const int _kMaxSemanticsActivationAttempts = 20;
 
+  /// The message in the label for the placeholder element used to enable
+  /// accessibility.
+  ///
+  /// This uses US English as the default message. Set this value prior to
+  /// calling `runApp` to translate to another language.
+  static String placeholderMessage = 'Enable accessibility';
+
   /// Whether we are waiting for the user to enable semantics.
   bool get _isWaitingToEnableSemantics => _semanticsPlaceholder != null;
 
@@ -63,7 +70,6 @@ class EnableSemanticsHelper {
       final bool removeNow = !isDesktop &&
           (browserEngine != BrowserEngine.webkit || event.type == 'touchend');
       if (removeNow) {
-        print('remove now true dont wait on semantics');
         _semanticsPlaceholder.remove();
         _semanticsPlaceholder = null;
         _semanticsActivationTimer = null;
@@ -78,7 +84,6 @@ class EnableSemanticsHelper {
 
     _semanticsActivationAttempts += 1;
     if (_semanticsActivationAttempts >= _kMaxSemanticsActivationAttempts) {
-      print('dont wait on semantics');
       // We have received multiple user events, none of which resulted in
       // semantics activation. This is a signal that the user is not interested
       // in semantics, and so we will stop waiting for it.
@@ -179,22 +184,31 @@ class EnableSemanticsHelper {
   /// should be forwarded to the framework.
   bool _tryEnableSemanticsDesktop(html.Event event) {
     assert(isDesktop);
-    // trial 1, what if we keep the button always there for desktop
-    // answer it always runs this check before sending an event to the framework
     if (_schedulePlaceholderRemoval) {
-      // final bool removeNow = !isDesktop &&
-      //     (browserEngine != BrowserEngine.webkit || event.type == 'touchend');
-      // if (removeNow) {
-      print('remove now desktop');
       _semanticsPlaceholder.remove();
       _semanticsPlaceholder = null;
       _semanticsActivationTimer = null;
-      //}
       return true;
     }
 
     if (EngineSemanticsOwner.instance.semanticsEnabled) {
       // Semantics already enabled, forward to framework as normal.
+      return true;
+    }
+
+    // In touch screen laptops, the touch is received as a mouse click
+    const List<String> kInterestingEventTypes = <String>[
+      'click',
+      'keyup',
+      'keydown',
+      'mouseup',
+      'mousedown',
+      'pointerdown',
+      'pointerup',
+    ];
+
+    if (!kInterestingEventTypes.contains(event.type)) {
+      // The event is not relevant, forward to framework as normal.
       return true;
     }
 
@@ -207,19 +221,6 @@ class EnableSemanticsHelper {
       return true;
     }
 
-    // In touch screen laptops, the touch is received as a mouse click
-    const List<String> kInterestingEventTypes = <String>[
-      'click',
-      'keyup',
-      'keydown',
-      'mouseup',
-      'mousedown',
-    ];
-
-    if (!kInterestingEventTypes.contains(event.type)) {
-      // The event is not relevant, forward to framework as normal.
-      return true;
-    }
 
     if (_semanticsActivationTimer != null) {
       // We are in a waiting period to activate a timer. While the timer is
@@ -245,14 +246,7 @@ class EnableSemanticsHelper {
     return true;
   }
 
-  /// The message in the label for the placeholder element used to enable
-  /// accessibility.
-  ///
-  /// This uses US English as the default message. Set this value prior to
-  /// calling `runApp` to translate to another language.
-  static String placeholderMessage = 'Enable accessibility';
-
-  void autoEnableForA11yShortcut(DomRenderer domRenderer) {
+  void autoEnableForDesktop(DomRenderer domRenderer) {
     _semanticsPlaceholder = html.Element.tag('flt-semantics-placeholder');
 
     // Only listen to "click" because other kinds of events are reported via
@@ -260,7 +254,6 @@ class EnableSemanticsHelper {
 
     // bu kalsa peki zarari ne olur. silmesek hic.
     _semanticsPlaceholder.addEventListener('click', (html.Event event) {
-      print('semantics clicked');
       _tryEnableSemanticsDesktop(event);
     }, true);
 

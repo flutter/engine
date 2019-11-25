@@ -1289,7 +1289,6 @@ class EngineSemanticsOwner {
     // a11y technology users are fully visually imparied, which means they
     // might find other input type such as mouse also useful.
 
-    print('temporarily disable semantics.');
     const Duration _kDebounceThreshold = Duration(milliseconds: 500);
     _getGestureModeClock().datetime = _now().add(_kDebounceThreshold);
     if (_gestureMode != GestureMode.pointerEvents) {
