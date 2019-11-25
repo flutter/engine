@@ -38,7 +38,8 @@ void PlatformView::DispatchPlatformMessage(
 
 void PlatformView::DispatchPointerDataPacket(
     std::unique_ptr<PointerDataPacket> packet) {
-  delegate_.OnPlatformViewDispatchPointerDataPacket(std::move(packet));
+  delegate_.OnPlatformViewDispatchPointerDataPacket(
+      pointer_data_packet_converter_.Convert(std::move(packet)));
 }
 
 void PlatformView::DispatchSemanticsAction(int32_t id,
@@ -128,12 +129,12 @@ std::unique_ptr<Surface> PlatformView::CreateRenderingSurface() {
   return nullptr;
 }
 
-void PlatformView::SetNextFrameCallback(fml::closure closure) {
+void PlatformView::SetNextFrameCallback(const fml::closure& closure) {
   if (!closure) {
     return;
   }
 
-  delegate_.OnPlatformViewSetNextFrameCallback(std::move(closure));
+  delegate_.OnPlatformViewSetNextFrameCallback(closure);
 }
 
 }  // namespace flutter

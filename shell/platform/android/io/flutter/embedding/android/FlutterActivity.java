@@ -491,11 +491,11 @@ public class FlutterActivity extends Activity
     try {
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(
           getComponentName(),
-          PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES
+          PackageManager.GET_META_DATA
       );
       Bundle metadata = activityInfo.metaData;
-      Integer splashScreenId = metadata != null ? metadata.getInt(SPLASH_SCREEN_META_DATA_KEY) : null;
-      return splashScreenId != null
+      int splashScreenId = metadata != null ? metadata.getInt(SPLASH_SCREEN_META_DATA_KEY) : 0;
+      return splashScreenId != 0
           ? Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP
             ? getResources().getDrawable(splashScreenId, getTheme())
             : getResources().getDrawable(splashScreenId)
@@ -716,7 +716,7 @@ public class FlutterActivity extends Activity
     try {
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(
           getComponentName(),
-          PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES
+          PackageManager.GET_META_DATA
       );
       Bundle metadata = activityInfo.metaData;
       String desiredDartEntrypoint = metadata != null ? metadata.getString(DART_ENTRYPOINT_META_DATA_KEY) : null;
@@ -754,7 +754,7 @@ public class FlutterActivity extends Activity
     try {
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(
           getComponentName(),
-          PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES
+          PackageManager.GET_META_DATA
       );
       Bundle metadata = activityInfo.metaData;
       String desiredInitialRoute = metadata != null ? metadata.getString(INITIAL_ROUTE_META_DATA_KEY) : null;

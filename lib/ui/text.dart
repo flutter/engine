@@ -1406,6 +1406,93 @@ class TextPosition {
   }
 }
 
+/// A range of characters in a string of text.
+class TextRange {
+  /// Creates a text range.
+  ///
+  /// The [start] and [end] arguments must not be null. Both the [start] and
+  /// [end] must either be greater than or equal to zero or both exactly -1.
+  ///
+  /// The text included in the range includes the character at [start], but not
+  /// the one at [end].
+  ///
+  /// Instead of creating an empty text range, consider using the [empty]
+  /// constant.
+  const TextRange({
+    this.start,
+    this.end,
+  }) : assert(start != null && start >= -1),
+        assert(end != null && end >= -1);
+
+  /// A text range that starts and ends at offset.
+  ///
+  /// The [offset] argument must be non-null and greater than or equal to -1.
+  const TextRange.collapsed(int offset)
+      : assert(offset != null && offset >= -1),
+        start = offset,
+        end = offset;
+
+  /// A text range that contains nothing and is not in the text.
+  static const TextRange empty = TextRange(start: -1, end: -1);
+
+  /// The index of the first character in the range.
+  ///
+  /// If [start] and [end] are both -1, the text range is empty.
+  final int start;
+
+  /// The next index after the characters in this range.
+  ///
+  /// If [start] and [end] are both -1, the text range is empty.
+  final int end;
+
+  /// Whether this range represents a valid position in the text.
+  bool get isValid => start >= 0 && end >= 0;
+
+  /// Whether this range is empty (but still potentially placed inside the text).
+  bool get isCollapsed => start == end;
+
+  /// Whether the start of this range precedes the end.
+  bool get isNormalized => end >= start;
+
+  /// The text before this range.
+  String textBefore(String text) {
+    assert(isNormalized);
+    return text.substring(0, start);
+  }
+
+  /// The text after this range.
+  String textAfter(String text) {
+    assert(isNormalized);
+    return text.substring(end);
+  }
+
+  /// The text inside this range.
+  String textInside(String text) {
+    assert(isNormalized);
+    return text.substring(start, end);
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    if (identical(this, other))
+      return true;
+    if (other is! TextRange)
+      return false;
+    final TextRange typedOther = other;
+    return typedOther.start == start
+        && typedOther.end == end;
+  }
+
+  @override
+  int get hashCode => hashValues(
+    start.hashCode,
+    end.hashCode,
+  );
+
+  @override
+  String toString() => 'TextRange(start: $start, end: $end)';
+}
+
 /// Layout constraints for [Paragraph] objects.
 ///
 /// Instances of this class are typically used with [Paragraph.layout].
@@ -1512,8 +1599,8 @@ enum BoxHeightStyle {
 /// Defines various ways to horizontally bound the boxes returned by
 /// [Paragraph.getBoxesForRange].
 enum BoxWidthStyle {
-  // Provide tight bounding boxes that fit widths to the runs of each line
-  // independently.
+  /// Provide tight bounding boxes that fit widths to the runs of each line
+  /// independently.
   tight,
 
   /// Adds up to two additional boxes as needed at the beginning and/or end
@@ -1779,12 +1866,31 @@ class Paragraph extends NativeFieldWrapperClass2 {
   }
   List<int> _getPositionForOffset(double dx, double dy) native 'Paragraph_getPositionForOffset';
 
-  /// Returns the [start, end] of the word at the given offset. Characters not
-  /// part of a word, such as spaces, symbols, and punctuation, have word breaks
-  /// on both sides. In such cases, this method will return [offset, offset+1].
-  /// Word boundaries are defined more precisely in Unicode Standard Annex #29
-  /// http://www.unicode.org/reports/tr29/#Word_Boundaries
-  List<int> getWordBoundary(int offset) native 'Paragraph_getWordBoundary';
+  /// Returns the [TextRange] of the word at the given [TextPosition].
+  ///
+  /// Characters not part of a word, such as spaces, symbols, and punctuation,
+  /// have word breaks on both sides. In such cases, this method will return
+  /// [offset, offset+1]. Word boundaries are defined more precisely in Unicode
+  /// Standard Annex #29 http://www.unicode.org/reports/tr29/#Word_Boundaries
+  TextRange getWordBoundary(TextPosition position) {
+    final List<int> boundary = _getWordBoundary(position.offset);
+    return TextRange(start: boundary[0], end: boundary[1]);
+  }
+  List<int> _getWordBoundary(int offset) native 'Paragraph_getWordBoundary';
+
+  /// Returns the [TextRange] of the line at the given [TextPosition].
+  ///
+  /// The newline (if any) is returned as part of the range.
+  ///
+  /// Not valid until after layout.
+  ///
+  /// This can potentially be expensive, since it needs to compute the line
+  /// metrics, so use it sparingly.
+  TextRange getLineBoundary(TextPosition position) {
+    final List<int> boundary = _getLineBoundary(position.offset);
+    return TextRange(start: boundary[0], end: boundary[1]);
+  }
+  List<int> _getLineBoundary(int offset) native 'Paragraph_getLineBoundary';
 
   // Redirecting the paint function in this way solves some dependency problems
   // in the C++ code. If we straighten out the C++ dependencies, we can remove

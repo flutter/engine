@@ -73,6 +73,7 @@ group("flutter") {
       "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_unittests",
       "$flutter_root/shell/platform/embedder:embedder_unittests",
       "$flutter_root/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
+      "$flutter_root/testing:testing_unittests",
       "$flutter_root/third_party/txt:txt_unittests",
     ]
 
@@ -90,6 +91,11 @@ group("flutter") {
         "$flutter_root/third_party/txt:txt_benchmarks",
       ]
     }
+  }
+
+  # Fuchsia currently only supports a subset of our unit tests
+  if (is_fuchsia) {
+    public_deps += [ "$flutter_root/fml:fml_tests" ]
   }
 }
 

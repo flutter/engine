@@ -311,7 +311,7 @@ bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
   const auto& data = message->data();
   std::string state(reinterpret_cast<const char*>(data.data()), data.size());
   if (state == "AppLifecycleState.paused" ||
-      state == "AppLifecycleState.suspending") {
+      state == "AppLifecycleState.detached") {
     activity_running_ = false;
     StopAnimator();
   } else if (state == "AppLifecycleState.resumed" ||
@@ -481,8 +481,8 @@ void Engine::DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
   }
 }
 
-void Engine::ScheduleSecondaryVsyncCallback(fml::closure callback) {
-  animator_->ScheduleSecondaryVsyncCallback(std::move(callback));
+void Engine::ScheduleSecondaryVsyncCallback(const fml::closure& callback) {
+  animator_->ScheduleSecondaryVsyncCallback(callback);
 }
 
 void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {
