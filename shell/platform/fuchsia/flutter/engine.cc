@@ -235,7 +235,7 @@ Engine::Engine(Delegate& delegate,
     TRACE_EVENT0("flutter", "CreateShell");
     shell_ = flutter::Shell::Create(
         task_runners,                 // host task runners
-        WindowData{},                 // default window data
+        WindowData(),                 // default window data
         settings_,                    // shell launch settings
         std::move(isolate_snapshot),  // isolate snapshot
         on_create_platform_view,      // platform view create callback
