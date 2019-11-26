@@ -22,6 +22,10 @@ void main() {
       if (_placeholder != null) {
         _placeholder.remove();
       }
+      if(desktopEnableSemantics?.semanticsActivationTimer != null) {
+        desktopEnableSemantics.semanticsActivationTimer.cancel();
+        desktopEnableSemantics.semanticsActivationTimer = null;
+      }
     });
 
     test('prepare accesibility placeholder', () async {
@@ -95,30 +99,6 @@ void main() {
       }
 
       expect(shouldForwardToFramework, true);
-    });
-
-    test(
-        'After max number of relevants events collected placeholder should be removed',
-        () async {
-      // Prework. Attach the placeholder to dom.
-      _placeholder = desktopEnableSemantics.prepareAccesibilityPlaceholder();
-      html.document.body.append(_placeholder);
-
-      html.Event event = dispatchMouseEvent('mousedown', target: _placeholder);
-      bool shouldForwardToFramework =
-          desktopEnableSemantics.tryEnableSemantics(event);
-
-      expect(shouldForwardToFramework, false);
-
-      // Send max number of events;
-      for (int i = 1; i < kMaxSemanticsActivationAttempts; i++) {
-        event = dispatchPointerEvent('mousedown');
-        desktopEnableSemantics.tryEnableSemantics(event);
-      }
-
-      expect(desktopEnableSemantics.tryEnableSemantics(event), true);
-      expect(html.document.getElementsByTagName('flt-semantics-placeholder'),
-          isEmpty);
     });
   });
 

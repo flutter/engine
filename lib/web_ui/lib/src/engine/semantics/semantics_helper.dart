@@ -42,7 +42,8 @@ abstract class _EnableSemantics {
   /// we consume all events and prevent forwarding to the framework. Otherwise,
   /// the events will be interpreted twice, once as a request to activate
   /// semantics, and a second time by Flutter's gesture recognizers.
-  Timer _semanticsActivationTimer;
+  @visibleForTesting
+  Timer semanticsActivationTimer;
 
   /// The number of events we processed that could potentially activate
   /// semantics.
@@ -91,7 +92,7 @@ class DesktopEnableSemantics extends _EnableSemantics {
     if (_schedulePlaceholderRemoval) {
       _semanticsPlaceholder.remove();
       _semanticsPlaceholder = null;
-      _semanticsActivationTimer = null;
+      semanticsActivationTimer = null;
       return true;
     }
 
@@ -125,7 +126,7 @@ class DesktopEnableSemantics extends _EnableSemantics {
       return true;
     }
 
-    if (_semanticsActivationTimer != null) {
+    if (semanticsActivationTimer != null) {
       // We are in a waiting period to activate a timer. While the timer is
       // active we should consume events pertaining to semantics activation.
       // Otherwise the event will also be interpreted by the framework and
@@ -137,8 +138,8 @@ class DesktopEnableSemantics extends _EnableSemantics {
     bool enableConditionPassed = (event.target == _semanticsPlaceholder);
 
     if (enableConditionPassed) {
-      assert(_semanticsActivationTimer == null);
-      _semanticsActivationTimer = Timer(const Duration(milliseconds: 300), () {
+      assert(semanticsActivationTimer == null);
+      semanticsActivationTimer = Timer(const Duration(milliseconds: 300), () {
         EngineSemanticsOwner.instance.semanticsEnabled = true;
         _schedulePlaceholderRemoval = true;
       });
@@ -184,7 +185,7 @@ class MobileEnableSemantics extends _EnableSemantics {
       if (removeNow) {
         _semanticsPlaceholder.remove();
         _semanticsPlaceholder = null;
-        _semanticsActivationTimer = null;
+        semanticsActivationTimer = null;
       }
       return true;
     }
@@ -214,7 +215,7 @@ class MobileEnableSemantics extends _EnableSemantics {
       return true;
     }
 
-    if (_semanticsActivationTimer != null) {
+    if (semanticsActivationTimer != null) {
       // We are in a waiting period to activate a timer. While the timer is
       // active we should consume events pertaining to semantics activation.
       // Otherwise the event will also be interpreted by the framework and
@@ -278,8 +279,8 @@ class MobileEnableSemantics extends _EnableSemantics {
     }
 
     if (blinkEnableConditionPassed || safariEnableConditionPassed) {
-      assert(_semanticsActivationTimer == null);
-      _semanticsActivationTimer = Timer(const Duration(milliseconds: 300), () {
+      assert(semanticsActivationTimer == null);
+      semanticsActivationTimer = Timer(const Duration(milliseconds: 300), () {
         EngineSemanticsOwner.instance.semanticsEnabled = true;
         _schedulePlaceholderRemoval = true;
       });
