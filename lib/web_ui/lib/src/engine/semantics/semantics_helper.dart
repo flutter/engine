@@ -4,11 +4,11 @@
 
 part of engine;
 
-/// The maximum [_semanticsActivationAttempts] before we give up waiting for
+/// The maximum [semanticsActivationAttempts] before we give up waiting for
 /// the user to enable semantics.
 ///
 /// This number is arbitrary and can be adjusted if it doesn't work well.
-const int _kMaxSemanticsActivationAttempts = 20;
+const int kMaxSemanticsActivationAttempts = 20;
 
 /// The message in the label for the placeholder element used to enable
 /// accessibility.
@@ -19,14 +19,14 @@ String placeholderMessage = 'Enable accessibility';
 
 class SemanticsHelper {
   final _EnableSemantics _enableSemantics =
-      isDesktop ? _DesktopEnableSemantics() : _MobileEnableSemantics();
+      isDesktop ? DesktopEnableSemantics() : MobileEnableSemantics();
 
   bool shouldEnableSemantics(html.Event event) {
     return _enableSemantics.tryEnableSemantics(event);
   }
 
-  void attachAccesibilityPlaceholder(DomRenderer domRenderer) {
-    _enableSemantics.attachAccesibilityPlaceholder(domRenderer);
+  html.Element prepareAccesibilityPlaceholder() {
+    return _enableSemantics.prepareAccesibilityPlaceholder();
   }
 }
 
@@ -46,7 +46,7 @@ abstract class _EnableSemantics {
 
   /// The number of events we processed that could potentially activate
   /// semantics.
-  int _semanticsActivationAttempts = 0;
+  int semanticsActivationAttempts = 0;
 
   /// Instructs [_tryEnableSemantics] to remove [_semanticsPlaceholder].
   ///
@@ -81,10 +81,11 @@ abstract class _EnableSemantics {
   ///
   /// On focus the element announces that accessibility can be enabled by
   /// tapping/clicking. (Announcement depends on the assistive technology)
-  void attachAccesibilityPlaceholder(DomRenderer domRenderer);
+  html.Element prepareAccesibilityPlaceholder();
 }
 
-class _DesktopEnableSemantics extends _EnableSemantics {
+@visibleForTesting
+class DesktopEnableSemantics extends _EnableSemantics {
   @override
   bool tryEnableSemantics(html.Event event) {
     if (_schedulePlaceholderRemoval) {
@@ -115,8 +116,8 @@ class _DesktopEnableSemantics extends _EnableSemantics {
       return true;
     }
 
-    _semanticsActivationAttempts += 1;
-    if (_semanticsActivationAttempts >= _kMaxSemanticsActivationAttempts) {
+    semanticsActivationAttempts += 1;
+    if (semanticsActivationAttempts >= kMaxSemanticsActivationAttempts) {
       // We have received multiple user events, none of which resulted in
       // semantics activation. This is a signal that the user is not interested
       // in semantics, and so we will stop waiting for it.
@@ -149,7 +150,7 @@ class _DesktopEnableSemantics extends _EnableSemantics {
   }
 
   @override
-  void attachAccesibilityPlaceholder(DomRenderer domRenderer) {
+  html.Element prepareAccesibilityPlaceholder() {
     _semanticsPlaceholder = html.Element.tag('flt-semantics-placeholder');
 
     // Only listen to "click" because other kinds of events are reported via
@@ -165,25 +166,20 @@ class _DesktopEnableSemantics extends _EnableSemantics {
       ..setAttribute('aria-label', placeholderMessage);
     _semanticsPlaceholder.style
       ..position = 'absolute'
-      ..left = '-1'
-      ..top = '-1'
-      ..width = '1'
-      ..height = '1';
-    // Insert the semantics placeholder after the scene host. For all widgets
-    // in the scene, except for platform widgets, the scene host will pass the
-    // pointer events through to the semantics tree. However, for platform
-    // views, the pointer events will not pass through, and will be handled
-    // by the platform view.
-    domRenderer.glassPaneElement
-        .insertBefore(_semanticsPlaceholder, domRenderer.sceneHostElement);
+      ..left = '-1px'
+      ..top = '-1px'
+      ..width = '1px'
+      ..height = '1px';
+    return _semanticsPlaceholder;
   }
 }
 
-class _MobileEnableSemantics extends _EnableSemantics {
+@visibleForTesting
+class MobileEnableSemantics extends _EnableSemantics {
   @override
   bool tryEnableSemantics(html.Event event) {
     if (_schedulePlaceholderRemoval) {
-      final bool removeNow = !isDesktop &&
+      final bool removeNow =
           (browserEngine != BrowserEngine.webkit || event.type == 'touchend');
       if (removeNow) {
         _semanticsPlaceholder.remove();
@@ -198,8 +194,8 @@ class _MobileEnableSemantics extends _EnableSemantics {
       return true;
     }
 
-    _semanticsActivationAttempts += 1;
-    if (_semanticsActivationAttempts >= _kMaxSemanticsActivationAttempts) {
+    semanticsActivationAttempts += 1;
+    if (semanticsActivationAttempts >= kMaxSemanticsActivationAttempts) {
       // We have received multiple user events, none of which resulted in
       // semantics activation. This is a signal that the user is not interested
       // in semantics, and so we will stop waiting for it.
@@ -295,7 +291,7 @@ class _MobileEnableSemantics extends _EnableSemantics {
   }
 
   @override
-  void attachAccesibilityPlaceholder(DomRenderer domRenderer) {
+  html.Element prepareAccesibilityPlaceholder() {
     _semanticsPlaceholder = html.Element.tag('flt-semantics-placeholder');
 
     // Only listen to "click" because other kinds of events are reported via
@@ -313,12 +309,7 @@ class _MobileEnableSemantics extends _EnableSemantics {
       ..top = '0'
       ..right = '0'
       ..bottom = '0';
-    // Insert the semantics placeholder after the scene host. For all widgets
-    // in the scene, except for platform widgets, the scene host will pass the
-    // pointer events through to the semantics tree. However, for platform
-    // views, the pointer events will not pass through, and will be handled
-    // by the platform view.
-    domRenderer.glassPaneElement
-        .insertBefore(_semanticsPlaceholder, domRenderer.sceneHostElement);
+
+    return _semanticsPlaceholder;
   }
 }
