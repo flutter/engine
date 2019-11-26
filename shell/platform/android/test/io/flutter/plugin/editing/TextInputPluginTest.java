@@ -87,7 +87,7 @@ public class TextInputPluginTest {
         textInputPlugin.setTextInputEditingState(testView, new TextInputChannel.TextEditState("hello", 0, 0));
         assertEquals(1, testImm.getRestartCount(testView));
         System.err.println("######################################################");
-        System.err.println(textInputPlugin);
+        // System.err.println(textInputPlugin);
         assertTrue(true);
         // assertTrue(textInputPlugin.getEditable().toString().equals("hello"));
 
