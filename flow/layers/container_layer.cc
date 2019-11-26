@@ -9,7 +9,6 @@ namespace flutter {
 ContainerLayer::ContainerLayer() {}
 
 void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
-  layer->set_parent(this);
   layers_.push_back(std::move(layer));
 }
 
