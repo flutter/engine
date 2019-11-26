@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/clip_path_layer.h"
 #include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/layers/clip_rrect_layer.h"
-#include "flutter/flow/layers/clip_path_layer.h"
 #include "flutter/flow/layers/color_filter_layer.h"
+#include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/layers/physical_shape_layer.h"
 #include "flutter/flow/layers/shader_mask_layer.h"
@@ -90,7 +90,7 @@ void TestClipRect(Clip clip_behavior, bool ret) {
 }
 
 TEST(Layer, ClipRectSaveLayer) {
-//   TestClipRect(Clip::none, true);     // ClipRectLayer asserts !Clip::none
+  //  TestClipRect(Clip::none, true);     // ClipRectLayer asserts !Clip::none
   TestClipRect(Clip::hardEdge, true);
   TestClipRect(Clip::antiAlias, true);
   TestClipRect(Clip::antiAliasWithSaveLayer, false);
@@ -104,7 +104,7 @@ void TestClipRRect(Clip clip_behavior, bool ret) {
 }
 
 TEST(Layer, ClipRRectSaveLayer) {
-//   TestClipRRect(Clip::none, true);     // ClipRRectLayer asserts !Clip::none
+  //  TestClipRRect(Clip::none, true);     // ClipRRectLayer asserts !Clip::none
   TestClipRRect(Clip::hardEdge, true);
   TestClipRRect(Clip::antiAlias, true);
   TestClipRRect(Clip::antiAliasWithSaveLayer, false);
@@ -122,7 +122,7 @@ void TestClipPath(Clip clip_behavior, bool ret) {
 }
 
 TEST(Layer, ClipPathSaveLayer) {
-//   TestClipPath(Clip::none, true);     // ClipRRectLayer asserts !Clip::none
+  //  TestClipPath(Clip::none, true);     // ClipRRectLayer asserts !Clip::none
   TestClipPath(Clip::hardEdge, true);
   TestClipPath(Clip::antiAlias, true);
   TestClipPath(Clip::antiAliasWithSaveLayer, false);
@@ -147,9 +147,8 @@ void TestPhysicalShapeLayer(Clip clip_behavior, bool ret) {
   path.lineTo(5, 0);
   path.lineTo(0, 5);
   path.close();
-  PhysicalShapeLayer layer = PhysicalShapeLayer(SK_ColorRED, SK_ColorBLUE,
-                                                1.0f, 100.0f, 10.0f,
-                                                path, clip_behavior);
+  PhysicalShapeLayer layer = PhysicalShapeLayer(
+      SK_ColorRED, SK_ColorBLUE, 1.0f, 100.0f, 10.0f, path, clip_behavior);
   layer.Add(ReadbackLayer::Make(true, false));
   EXPECT_EQ(layer.tree_reads_surface(), ret);
 }
@@ -162,11 +161,10 @@ TEST(Layer, PhysicalShapeSaveLayer) {
 }
 
 TEST(Layer, ShaderMaskSaveLayer) {
-  ShaderMaskLayer layer = ShaderMaskLayer(SkShaders::Empty(),
-                                          SkRect::MakeWH(5, 5),
-                                          SkBlendMode::kSrcOver);
+  ShaderMaskLayer layer = ShaderMaskLayer(
+      SkShaders::Empty(), SkRect::MakeWH(5, 5), SkBlendMode::kSrcOver);
   layer.Add(ReadbackLayer::Make(true, false));
   EXPECT_FALSE(layer.tree_reads_surface());
 }
 
-}
+}  // namespace flutter

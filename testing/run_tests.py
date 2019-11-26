@@ -24,11 +24,7 @@ dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 fml_unittests_filter = '--gtest_filter=-*TimeSensitiveTest*:*GpuThreadMerger*'
 
 def RunCmd(cmd, **kwargs):
-  try:
-    print(subprocess.check_output(cmd, **kwargs))
-  except subprocess.CalledProcessError as cpe:
-    print(cpe.output)
-    raise cpe
+  print(subprocess.check_output(cmd, **kwargs))
 
 def IsMac():
   return sys.platform == 'darwin'
