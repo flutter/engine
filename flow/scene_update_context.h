@@ -115,8 +115,7 @@ class SceneUpdateContext {
     Frame(SceneUpdateContext& context,
           const SkRRect& rrect,
           SkColor color,
-          float local_elevation = 0.0f,
-          float parent_elevation = 0.0f,
+          float elevation = 0.0f,
           Layer* layer = nullptr);
     virtual ~Frame();
 
