@@ -88,7 +88,7 @@ public class TextInputPluginTest {
         assertEquals(1, testImm.getRestartCount(testView));
         System.err.println("######################################################");
         // System.err.println(textInputPlugin);
-        assertTrue(true);
+        // assertTrue(true);
         // assertTrue(textInputPlugin.getEditable().toString().equals("hello"));
 
         // No pending restart, set Editable contents anyways.
