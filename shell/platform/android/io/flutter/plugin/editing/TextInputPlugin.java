@@ -102,6 +102,15 @@ public class TextInputPlugin {
         return mImm;
     }
 
+    @VisibleForTesting Editable getEditable() {
+        return mEditable;
+    }
+
+    // @NonNull
+    // public Editable getEditable() {
+    //     return mEditable;
+    // }
+
     /***
      * Use the current platform view input connection until unlockPlatformViewInputConnection is called.
      *
