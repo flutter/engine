@@ -16,7 +16,7 @@ void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
   the_layer->set_parent(this);
   layers_.push_back(std::move(layer));
   if (the_layer->tree_reads_surface()) {
-    UpdateChildReadback(the_layer);
+    NotifyChildReadback(the_layer);
   }
 }
 
@@ -28,29 +28,18 @@ void ContainerLayer::ClearChildren() {
   }
 }
 
-void ContainerLayer::set_renders_to_save_layer(bool protects) {
-  if (renders_to_save_layer_ != protects) {
-    renders_to_save_layer_ = protects;
+void ContainerLayer::set_renders_to_save_layer(bool value) {
+  if (renders_to_save_layer_ != value) {
+    renders_to_save_layer_ = value;
     UpdateTreeReadsSurface();
   }
 }
 
-void ContainerLayer::UpdateChildReadback(const Layer* layer) {
-  if (child_needs_screen_readback_ == layer->tree_reads_surface()) {
+void ContainerLayer::NotifyChildReadback(const Layer* layer) {
+  if (child_needs_screen_readback_ || !layer->tree_reads_surface()) {
     return;
   }
-  if (child_needs_screen_readback_) {
-    // Transitioning to false, but only if there are no other children
-    // that read from the surface.
-    for (auto& child : layers_) {
-      if (child->tree_reads_surface()) {
-        return;
-      }
-    }
-    child_needs_screen_readback_ = false;
-  } else {
-    child_needs_screen_readback_ = true;
-  }
+  child_needs_screen_readback_ = true;
   UpdateTreeReadsSurface();
 }
 

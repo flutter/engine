@@ -150,11 +150,12 @@ class Layer {
   // on which it is rendered in any way beyond the functionality of
   // BlendMode. This value has no setter as it is computed from other
   // flags and properties on the layer.
+  // For an example see |BackdropFilterLayer|.
   //
-  // see Layer::UpdateTreeReadsSurface()
-  // see Layer::set_layer_reads_surface()
-  // see ContainerLayer::set_renders_to_save_layer()
-  // see ContainerLayer::UpdateChildReadback()
+  // See |UpdateTreeReadsSurface|
+  // See |set_layer_reads_surface|
+  // See |ContainerLayer::set_renders_to_save_layer|
+  // See |ContainerLayer::NotifyChildReadback|
   bool tree_reads_surface() const { return tree_reads_surface_; }
 
   uint64_t unique_id() const { return unique_id_; }
@@ -162,19 +163,19 @@ class Layer {
  protected:
   // Compute a new value for tree_reads_surface_ from all of the various
   // properties of this layer.
-  // Used by UpdateTreeReadsSurface()
+  // Used by |UpdateTreeReadsSurface|
   virtual bool ComputeTreeReadsSurface() const;
 
   // Update the tree_reads_surface_ value and propagate changes to
   // ancestors if needed.
-  // Uses ComputeTreeReadsSurface()
+  // Uses |ComputeTreeReadsSurface|
   void UpdateTreeReadsSurface();
 
   // True iff the layer itself (not a child or other descendant) performs
   // an operation which reads from the surface on which it is rendered.
   bool layer_reads_surface() const { return layer_reads_surface_; }
 
-  void set_layer_reads_surface(bool reads);
+  void set_layer_reads_surface(bool value);
 
  private:
   ContainerLayer* parent_;

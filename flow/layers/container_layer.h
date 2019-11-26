@@ -26,8 +26,8 @@ class ContainerLayer : public Layer {
   const std::vector<std::shared_ptr<Layer>>& layers() const { return layers_; }
 
   // Called when the layer, which must be a child of this container,
-  // changes its tree_reads_surface() result.
-  void UpdateChildReadback(const Layer* layer);
+  // changes its tree_reads_surface() result from false to true.
+  void NotifyChildReadback(const Layer* layer);
 
  protected:
   void PrerollChildren(PrerollContext* context,
@@ -48,7 +48,7 @@ class ContainerLayer : public Layer {
   // children perform non-associative rendering. Those children
   // will now be performing those operations on the SaveLayer
   // rather than the layer that this container renders onto.
-  void set_renders_to_save_layer(bool protects);
+  void set_renders_to_save_layer(bool value);
 
   // For OpacityLayer to restructure to have a single child.
   void ClearChildren();

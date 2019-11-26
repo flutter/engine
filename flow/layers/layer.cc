@@ -29,9 +29,9 @@ uint64_t Layer::NextUniqueID() {
   return id;
 }
 
-void Layer::set_layer_reads_surface(bool reads) {
-  if (layer_reads_surface_ != reads) {
-    layer_reads_surface_ = reads;
+void Layer::set_layer_reads_surface(bool value) {
+  if (layer_reads_surface_ != value) {
+    layer_reads_surface_ = value;
     UpdateTreeReadsSurface();
   }
 }
@@ -46,7 +46,7 @@ void Layer::UpdateTreeReadsSurface() {
   if (tree_reads_surface_ != new_tree_reads_surface) {
     tree_reads_surface_ = new_tree_reads_surface;
     if (parent_ != nullptr) {
-      parent_->UpdateChildReadback(this);
+      parent_->NotifyChildReadback(this);
     }
   }
 }

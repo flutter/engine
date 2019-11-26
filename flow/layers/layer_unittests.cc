@@ -1,7 +1,8 @@
-// Copyright 2019 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/flow/layers/backdrop_filter_layer.h"
 #include "flutter/flow/layers/clip_path_layer.h"
 #include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/layers/clip_rrect_layer.h"
@@ -10,6 +11,8 @@
 #include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/layers/physical_shape_layer.h"
 #include "flutter/flow/layers/shader_mask_layer.h"
+
+#include "third_party/skia/include/effects/SkBlurImageFilter.h"
 
 #include "gtest/gtest.h"
 
@@ -69,18 +72,33 @@ TEST(Layer, ReadbackButSaveLayer) {
   TestChildFlag(true, true, false);
 }
 
-TEST(Layer, ChildChangesReadback) {
+TEST(Layer, AddedChildReadback) {
   ReadbackLayer parent = ReadbackLayer(false, false);
   EXPECT_FALSE(parent.tree_reads_surface());
   parent.Add(ReadbackLayer::Make(false, false));
   EXPECT_FALSE(parent.tree_reads_surface());
-  std::shared_ptr<ReadbackLayer> child_reads = ReadbackLayer::Make(true, false);
-  parent.Add(child_reads);
+  parent.Add(ReadbackLayer::Make(true, false));
   EXPECT_TRUE(parent.tree_reads_surface());
-  child_reads->set_read(false);
+}
+
+TEST(Layer, ChildChangesToReadback) {
+  ReadbackLayer parent = ReadbackLayer(false, false);
   EXPECT_FALSE(parent.tree_reads_surface());
-  child_reads->set_read(true);
+  parent.Add(ReadbackLayer::Make(false, false));
+  EXPECT_FALSE(parent.tree_reads_surface());
+  std::shared_ptr<ReadbackLayer> child = ReadbackLayer::Make(false, false);
+  parent.Add(child);
+  EXPECT_FALSE(parent.tree_reads_surface());
+  child->set_read(true);
   EXPECT_TRUE(parent.tree_reads_surface());
+}
+
+TEST(Layer, BackdropFilterLayer) {
+  sk_sp<SkImageFilter> filter = SkBlurImageFilter::Make(
+      5.0f, 5.0f, nullptr, nullptr, SkBlurImageFilter::kClamp_TileMode);
+  EXPECT_TRUE(BackdropFilterLayer(filter).tree_reads_surface());
+  filter.reset();
+  EXPECT_FALSE(BackdropFilterLayer(filter).tree_reads_surface());
 }
 
 void TestClipRect(Clip clip_behavior, bool ret) {
