@@ -1108,10 +1108,11 @@ TEST_F(ShellTest, CanConvertToAndFromMappings) {
         latch.Signal();
       }));
 
-  AddNativeCallback("GetFixtureMapping", CREATE_NATIVE_ENTRY([&](auto args) {
-                      tonic::DartConverter<decltype(mapping)>::SetReturnValue(
-                          args, mapping);
-                    }));
+  AddNativeCallback(
+      "GetFixtureMapping", CREATE_NATIVE_ENTRY([&](auto args) {
+        tonic::DartConverter<tonic::DartConverterMapping>::SetReturnValue(
+            args, mapping);
+      }));
 
   auto settings = CreateSettingsForFixture();
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -1138,7 +1139,8 @@ TEST_F(ShellTest, CanDecompressImageFromAsset) {
   AddNativeCallback(
       "GetFixtureImage", CREATE_NATIVE_ENTRY([](auto args) {
         auto fixture = OpenFixtureAsMapping("shelltest_screenshot.png");
-        tonic::DartConverter<decltype(fixture)>::SetReturnValue(args, fixture);
+        tonic::DartConverter<tonic::DartConverterMapping>::SetReturnValue(
+            args, fixture);
       }));
 
   auto settings = CreateSettingsForFixture();
