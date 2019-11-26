@@ -228,11 +228,11 @@ std::unique_ptr<Shell> Shell::Create(
     Settings settings,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
     const Shell::CreateCallback<Rasterizer>& on_create_rasterizer) {
-  return Shell::Create(std::move(task_runners),               //
-                       WindowData{/* default window data */}, //
-                       std::move(settings),                   //
-                       std::move(on_create_platform_view),    //
-                       std::move(on_create_rasterizer)        //
+  return Shell::Create(std::move(task_runners),                //
+                       WindowData{/* default window data */},  //
+                       std::move(settings),                    //
+                       std::move(on_create_platform_view),     //
+                       std::move(on_create_rasterizer)         //
   );
 }
 
