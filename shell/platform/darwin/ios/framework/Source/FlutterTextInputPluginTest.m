@@ -5,8 +5,8 @@
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -18,11 +18,11 @@ FLUTTER_ASSERT_ARC
 - (void)testAutocorrectionPromptRectAppears {
   // Setup test.
   id engine = OCMClassMock([FlutterEngine class]);
-  
+
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithFrame:CGRectZero];
   inputView.textInputDelegate = engine;
-  [inputView firstRectForRange: [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
-  
+  [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
+
   // Verify behavior.
   OCMVerify([engine showAutocorrectionPromptRectForStart:0 end:1 withClient:0]);
 

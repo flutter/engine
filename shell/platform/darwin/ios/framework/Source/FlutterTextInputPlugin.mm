@@ -140,7 +140,6 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
 @end
 
-
 @implementation FlutterTextInputView {
   int _textInputClient;
   const char* _selectionAffinity;
@@ -523,10 +522,12 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   if (_markedTextRange != nil) {
     return CGRectZero;
   }
-  
+
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
-  [_textInputDelegate showAutocorrectionPromptRectForStart:start end:end withClient:_textInputClient];
+  [_textInputDelegate showAutocorrectionPromptRectForStart:start
+                                                       end:end
+                                                withClient:_textInputClient];
   // TODO(cbracken) Implement.
   return CGRectZero;
 }
