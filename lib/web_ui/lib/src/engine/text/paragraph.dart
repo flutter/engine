@@ -101,7 +101,14 @@ class EngineLineMetrics implements ui.LineMetrics {
 
   @override
   String toString() {
-    return 'EngineLineMetrics(lineNumber: $lineNumber, text: "$text", hardBreak: $hardBreak, width: $width)';
+    if (assertionsEnabled) {
+      return 'EngineLineMetrics('
+          'lineNumber: $lineNumber, '
+          'text: "$text", '
+          'hardBreak: $hardBreak, '
+          'width: $width)';
+    }
+    return super.toString();
   }
 }
 
