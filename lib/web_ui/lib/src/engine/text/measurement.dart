@@ -614,7 +614,9 @@ double _measureSubstring(
   int start,
   int end,
 ) {
-  assert(0 <= start && start <= end && end <= text.length);
+  assert(0 <= start);
+  assert(start <= end);
+  assert(end <= text.length);
 
   if (start == end) {
     return 0;
@@ -655,7 +657,9 @@ double _roundWidth(double width) {
 /// The return value is the new end of the substring after excluding the
 /// trailing characters.
 int _excludeTrailing(String text, int start, int end, CharPredicate predicate) {
-  assert(0 <= start && start <= end && end <= text.length);
+  assert(0 <= start);
+  assert(start <= end);
+  assert(end <= text.length);
 
   while (start < end && predicate(text.codeUnitAt(end - 1))) {
     end--;
@@ -784,7 +788,7 @@ class LinesCalculator {
     final int endWithoutSpace = _excludeTrailing(
       _text,
       _lineStart,
-      lineEnd,
+      endWithoutNewlines,
       _whitespacePredicate,
     );
     final int lineNumber = lines.length;
@@ -820,7 +824,9 @@ class LinesCalculator {
     @required int start,
     @required int end,
   }) {
-    assert(0 <= start && start < end && end <= _text.length);
+    assert(0 <= start);
+    assert(start < end);
+    assert(end <= _text.length);
 
     // When there's no ellipsis, the breaking point should be at least one
     // character away from [start].
