@@ -29,6 +29,7 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.platform.PlatformViewsController;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -86,15 +87,12 @@ public class TextInputPluginTest {
         // always set the Editable contents.
         textInputPlugin.setTextInputEditingState(testView, new TextInputChannel.TextEditState("hello", 0, 0));
         assertEquals(1, testImm.getRestartCount(testView));
-        System.err.println("######################################################");
-        // System.err.println(textInputPlugin);
-        // assertTrue(true);
-        // assertTrue(textInputPlugin.getEditable().toString().equals("hello"));
+        assertTrue(textInputPlugin.getEditable().toString().equals("hello"));
 
         // No pending restart, set Editable contents anyways.
         textInputPlugin.setTextInputEditingState(testView, new TextInputChannel.TextEditState("Shibuyawoo", 0, 0));
         assertEquals(1, testImm.getRestartCount(testView));
-        // assertTrue(textInputPlugin.getEditable().toString().equals("Shibuyawoo"));
+        assertTrue(textInputPlugin.getEditable().toString().equals("Shibuyawoo"));
     }
 
     // See https://github.com/flutter/flutter/issues/29341 and https://github.com/flutter/flutter/issues/31512
