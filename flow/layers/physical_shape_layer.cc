@@ -17,7 +17,7 @@ PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
                                        float elevation,
                                        const SkPath& path,
                                        Clip clip_behavior)
-    : PhysicalShapeLayerBase(color, elevation),
+    : PhysicalShapeLayerBase(color, SK_AlphaOPAQUE, elevation),
       shadow_color_(shadow_color),
       path_(path),
       isRect_(false),
@@ -58,52 +58,14 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
       set_needs_system_composite(true);
       return;
     }
-//#if defined(OS_FUCHSIA)
-//    // Let the system compositor draw all shadows for us.
-//    set_needs_system_composite(true);
-//#else
+
     // We will draw the shadow in Paint(), so add some margin to the paint
     // bounds to leave space for the shadow. We fill this whole region and clip
     // children to it so we don't need to join the child paint bounds.
     set_paint_bounds(ComputeShadowBounds(path_.getBounds(), elevation(),
                                          context->frame_device_pixel_ratio));
-//#endif  // defined(OS_FUCHSIA)
   }
 }
-
-#if defined(OS_FUCHSIA)
-
-void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
-  FML_DCHECK(needs_system_composite());
-  TRACE_EVENT0("flutter", "PhysicalShapeLayer::UpdateScene");
-
-  // Retained rendering: speedup by reusing a retained entity node if possible.
-  // When an entity node is reused, no paint layer is added to the frame so we
-  // won't call PhysicalShapeLayer::Paint.
-  LayerRasterCacheKey key(unique_id(), context.Matrix());
-  if (context.HasRetainedNode(key)) {
-    TRACE_EVENT_INSTANT0("flutter", "retained layer cache hit");
-    const scenic::EntityNode& retained_node = context.GetRetainedNode(key);
-    FML_DCHECK(context.top_entity());
-    FML_DCHECK(retained_node.session() == context.session());
-    context.top_entity()->entity_node().AddChild(retained_node);
-    return;
-  }
-
-  TRACE_EVENT_INSTANT0("flutter", "cache miss, creating");
-  // If we can't find an existing retained surface, create one.
-  SceneUpdateContext::Frame frame(context, frameRRect_, color(), elevation(),
-                                  this);
-  for (auto& layer : layers()) {
-    if (layer->needs_painting()) {
-      frame.AddPaintLayer(layer.get());
-    }
-  }
-
-  UpdateSceneChildren(context);
-}
-
-#endif  // defined(OS_FUCHSIA)
 
 void PhysicalShapeLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");

@@ -6,29 +6,24 @@
 #define FLUTTER_FLOW_LAYERS_PHYSICAL_SHAPE_LAYER_H_
 
 #include "flutter/flow/layers/elevated_container_layer.h"
-#if defined(OS_FUCHSIA)
-#include "flutter/flow/layers/fuchsia_system_composited_layer.h"
-#endif
 
 namespace flutter {
 
-#if !defined(OS_FUCHSIA)
 class PhysicalShapeLayerBase : public ElevatedContainerLayer {
  public:
   static bool can_system_composite() { return false; }
 
-  PhysicalShapeLayerBase(SkColor color, float elevation)
+  PhysicalShapeLayerBase(SkColor color, SkAlpha opacity, float elevation)
       : ElevatedContainerLayer(elevation), color_(color) {}
 
-  void set_dimensions(SkRRect rrect) { }
+  void set_dimensions(SkRRect rrect) {}
+
   SkColor color() const { return color_; }
+  SkAlpha opacity() const { return SK_AlphaOPAQUE; }
 
  private:
   SkColor color_;
 };
-#else
-using PhysicalShapeLayerBase = FuchsiaSystemCompositedLayer;
-#endif
 
 class PhysicalShapeLayer : public PhysicalShapeLayerBase {
  public:
@@ -42,7 +37,7 @@ class PhysicalShapeLayer : public PhysicalShapeLayerBase {
                          bool transparentOccluder,
                          SkScalar dpr);
 
-PhysicalShapeLayer(SkColor color,
+  PhysicalShapeLayer(SkColor color,
                      SkColor shadow_color,
                      float elevation,
                      const SkPath& path,
@@ -50,10 +45,6 @@ PhysicalShapeLayer(SkColor color,
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
-
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
 
  private:
   SkColor shadow_color_;
