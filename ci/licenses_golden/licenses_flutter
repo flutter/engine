@@ -170,6 +170,8 @@ FILE: ../../../flutter/fml/platform/darwin/scoped_nsobject.mm
 FILE: ../../../flutter/fml/platform/darwin/string_range_sanitization.h
 FILE: ../../../flutter/fml/platform/darwin/string_range_sanitization.mm
 FILE: ../../../flutter/fml/platform/darwin/string_range_sanitization_unittests.mm
+FILE: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.cc
+FILE: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.h
 FILE: ../../../flutter/fml/platform/fuchsia/paths_fuchsia.cc
 FILE: ../../../flutter/fml/platform/linux/message_loop_linux.cc
 FILE: ../../../flutter/fml/platform/linux/message_loop_linux.h
@@ -203,6 +205,9 @@ FILE: ../../../flutter/fml/synchronization/semaphore_unittest.cc
 FILE: ../../../flutter/fml/synchronization/shared_mutex.h
 FILE: ../../../flutter/fml/synchronization/shared_mutex_std.cc
 FILE: ../../../flutter/fml/synchronization/shared_mutex_std.h
+FILE: ../../../flutter/fml/synchronization/sync_switch.cc
+FILE: ../../../flutter/fml/synchronization/sync_switch.h
+FILE: ../../../flutter/fml/synchronization/sync_switch_unittest.cc
 FILE: ../../../flutter/fml/synchronization/waitable_event.cc
 FILE: ../../../flutter/fml/synchronization/waitable_event.h
 FILE: ../../../flutter/fml/synchronization/waitable_event_unittest.cc
@@ -504,6 +509,7 @@ FILE: ../../../flutter/shell/common/canvas_spy_unittests.cc
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
 FILE: ../../../flutter/shell/common/fixtures/shell_test.dart
+FILE: ../../../flutter/shell/common/fixtures/shelltest_screenshot.png
 FILE: ../../../flutter/shell/common/input_events_unittests.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.h

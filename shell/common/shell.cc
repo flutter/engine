@@ -44,8 +44,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     TaskRunners task_runners,
     Settings settings,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
-    Shell::CreateCallback<PlatformView> on_create_platform_view,
-    Shell::CreateCallback<Rasterizer> on_create_rasterizer) {
+    const Shell::CreateCallback<PlatformView>& on_create_platform_view,
+    const Shell::CreateCallback<Rasterizer>& on_create_rasterizer) {
   if (!task_runners.IsValid()) {
     FML_LOG(ERROR) << "Task runners to run the shell were invalid.";
     return nullptr;
@@ -104,15 +104,17 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // https://github.com/flutter/flutter/issues/42948
   fml::TaskRunner::RunNowOrPostTask(
       io_task_runner,
-      [&io_manager_promise,                          //
-       &weak_io_manager_promise,                     //
-       &unref_queue_promise,                         //
-       platform_view = platform_view->GetWeakPtr(),  //
-       io_task_runner                                //
+      [&io_manager_promise,                                               //
+       &weak_io_manager_promise,                                          //
+       &unref_queue_promise,                                              //
+       platform_view = platform_view->GetWeakPtr(),                       //
+       io_task_runner,                                                    //
+       is_backgrounded_sync_switch = shell->GetIsGpuDisabledSyncSwitch()  //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupIOSubsystem");
         auto io_manager = std::make_unique<ShellIOManager>(
-            platform_view.getUnsafe()->CreateResourceContext(), io_task_runner);
+            platform_view.getUnsafe()->CreateResourceContext(),
+            is_backgrounded_sync_switch, io_task_runner);
         weak_io_manager_promise.set_value(io_manager->GetWeakPtr());
         unref_queue_promise.set_value(io_manager->GetSkiaUnrefQueue());
         io_manager_promise.set_value(std::move(io_manager));
@@ -221,8 +223,8 @@ static void PerformInitializationTasks(const Settings& settings) {
 std::unique_ptr<Shell> Shell::Create(
     TaskRunners task_runners,
     Settings settings,
-    Shell::CreateCallback<PlatformView> on_create_platform_view,
-    Shell::CreateCallback<Rasterizer> on_create_rasterizer) {
+    const Shell::CreateCallback<PlatformView>& on_create_platform_view,
+    const Shell::CreateCallback<Rasterizer>& on_create_rasterizer) {
   PerformInitializationTasks(settings);
   PersistentCache::SetCacheSkSL(settings.cache_sksl);
 
@@ -233,12 +235,12 @@ std::unique_ptr<Shell> Shell::Create(
 
   auto vm_data = vm->GetVMData();
 
-  return Shell::Create(std::move(task_runners),             //
-                       std::move(settings),                 //
-                       vm_data->GetIsolateSnapshot(),       // isolate snapshot
-                       std::move(on_create_platform_view),  //
-                       std::move(on_create_rasterizer),     //
-                       std::move(vm)                        //
+  return Shell::Create(std::move(task_runners),        //
+                       std::move(settings),            //
+                       vm_data->GetIsolateSnapshot(),  // isolate snapshot
+                       on_create_platform_view,        //
+                       on_create_rasterizer,           //
+                       std::move(vm)                   //
   );
 }
 
@@ -246,8 +248,8 @@ std::unique_ptr<Shell> Shell::Create(
     TaskRunners task_runners,
     Settings settings,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
-    Shell::CreateCallback<PlatformView> on_create_platform_view,
-    Shell::CreateCallback<Rasterizer> on_create_rasterizer,
+    const Shell::CreateCallback<PlatformView>& on_create_platform_view,
+    const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
     DartVMRef vm) {
   PerformInitializationTasks(settings);
   PersistentCache::SetCacheSkSL(settings.cache_sksl);
@@ -289,6 +291,7 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
     : task_runners_(std::move(task_runners)),
       settings_(std::move(settings)),
       vm_(std::move(vm)),
+      is_gpu_disabled_sync_switch_(new fml::SyncSwitch()),
       weak_factory_(this),
       weak_factory_gpu_(nullptr) {
   FML_CHECK(vm_) << "Must have access to VM to create a shell.";
@@ -404,8 +407,9 @@ void Shell::RunEngine(RunConfiguration run_configuration) {
   RunEngine(std::move(run_configuration), nullptr);
 }
 
-void Shell::RunEngine(RunConfiguration run_configuration,
-                      std::function<void(Engine::RunStatus)> result_callback) {
+void Shell::RunEngine(
+    RunConfiguration run_configuration,
+    const std::function<void(Engine::RunStatus)>& result_callback) {
   auto result = [platform_runner = task_runners_.GetPlatformTaskRunner(),
                  result_callback](Engine::RunStatus run_result) {
     if (!result_callback) {
@@ -646,7 +650,9 @@ void Shell::OnPlatformViewDestroyed() {
   auto io_task = [io_manager = io_manager_.get(), &latch]() {
     // Execute any pending Skia object deletions while GPU access is still
     // allowed.
-    io_manager->GetSkiaUnrefQueue()->Drain();
+    io_manager->GetIsGpuDisabledSyncSwitch()->Execute(
+        fml::SyncSwitch::Handlers().SetIfFalse(
+            [&] { io_manager->GetSkiaUnrefQueue()->Drain(); }));
     // Step 3: All done. Signal the latch that the platform thread is waiting
     // on.
     latch.Signal();
@@ -862,12 +868,12 @@ void Shell::OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) {
 }
 
 // |PlatformView::Delegate|
-void Shell::OnPlatformViewSetNextFrameCallback(fml::closure closure) {
+void Shell::OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetGPUTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr(), closure = std::move(closure)]() {
+      [rasterizer = rasterizer_->GetWeakPtr(), closure = closure]() {
         if (rasterizer) {
           rasterizer->SetNextFrameCallback(std::move(closure));
         }
@@ -1416,6 +1422,10 @@ bool Shell::ReloadSystemFonts() {
 
   OnPlatformViewDispatchPlatformMessage(fontsChangeMessage);
   return true;
+}
+
+std::shared_ptr<fml::SyncSwitch> Shell::GetIsGpuDisabledSyncSwitch() const {
+  return is_gpu_disabled_sync_switch_;
 }
 
 }  // namespace flutter
