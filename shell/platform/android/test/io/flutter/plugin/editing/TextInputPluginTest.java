@@ -73,26 +73,26 @@ public class TextInputPluginTest {
         assertEquals(1, testImm.getRestartCount(testView));
     }
 
-    // @Test
-    // public void setTextInputEditingState_alwaysSetEditableWhenDifferent() {
-    //     // Initialize a general TextInputPlugin.
-    //     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
-    //     TestImm testImm = Shadow.extract(RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
-    //     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    //     View testView = new View(RuntimeEnvironment.application);
-    //     TextInputPlugin textInputPlugin = new TextInputPlugin(testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
-    //     textInputPlugin.setTextInputClient(0, new TextInputChannel.Configuration(false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null));
-    //     // There's a pending restart since we initialized the text input client. Flush that now. With changed text, we should
-    //     // always set the Editable contents.
-    //     textInputPlugin.setTextInputEditingState(testView, new TextInputChannel.TextEditState("hello", 0, 0));
-    //     assertEquals(1, testImm.getRestartCount(testView));
-    //     assertTrue(textInputPlugin.mEditable.text.equals("hello"));
+    @Test
+    public void setTextInputEditingState_alwaysSetEditableWhenDifferent() {
+        // Initialize a general TextInputPlugin.
+        InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
+        TestImm testImm = Shadow.extract(RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+        testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
+        View testView = new View(RuntimeEnvironment.application);
+        TextInputPlugin textInputPlugin = new TextInputPlugin(testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
+        textInputPlugin.setTextInputClient(0, new TextInputChannel.Configuration(false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null));
+        // There's a pending restart since we initialized the text input client. Flush that now. With changed text, we should
+        // always set the Editable contents.
+        textInputPlugin.setTextInputEditingState(testView, new TextInputChannel.TextEditState("hello", 0, 0));
+        assertEquals(1, testImm.getRestartCount(testView));
+        assertTrue(textInputPlugin.getEditable().text.equals("hello"));
 
-    //     // No pending restart, set Editable contents anyways.
-    //     textInputPlugin.setTextInputEditingState(testView, new TextInputChannel.TextEditState("Shibuyawoo", 0, 0));
-    //     assertEquals(1, testImm.getRestartCount(testView));
-    //     assertTrue(textInputPlugin.mEditable.text.equals("Shibuyawoo"));
-    // }
+        // No pending restart, set Editable contents anyways.
+        textInputPlugin.setTextInputEditingState(testView, new TextInputChannel.TextEditState("Shibuyawoo", 0, 0));
+        assertEquals(1, testImm.getRestartCount(testView));
+        assertTrue(textInputPlugin.getEditable().text.equals("Shibuyawoo"));
+    }
 
     // See https://github.com/flutter/flutter/issues/29341 and https://github.com/flutter/flutter/issues/31512
     // All modern Samsung keybords are affected including non-korean languages and thus
