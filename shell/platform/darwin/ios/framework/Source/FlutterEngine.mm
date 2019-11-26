@@ -295,7 +295,7 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 - (void)setupChannels {
   // This will be invoked once the shell is done setting up and the isolate ID
   // for the UI isolate is available.
-  __block fml::WeakPtr<FlutterEngine> weakSelf = [self getWeakPtr];
+  fml::WeakPtr<FlutterEngine> weakSelf = [self getWeakPtr];
   [_binaryMessenger setMessageHandlerOnChannel:@"flutter/isolate"
                           binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
                             if (weakSelf) {
