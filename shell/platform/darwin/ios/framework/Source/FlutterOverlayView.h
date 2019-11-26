@@ -17,7 +17,6 @@
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 
-
 /// UIViews that are used by |FlutterPlatformViews| to present Flutter
 /// rendering on top of system compositor rendering (ex. a web view).
 ///
