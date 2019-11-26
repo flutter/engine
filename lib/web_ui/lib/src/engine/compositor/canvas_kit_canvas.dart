@@ -10,9 +10,10 @@ class CanvasKitCanvas implements ui.Canvas {
 
   factory CanvasKitCanvas(ui.PictureRecorder recorder, [ui.Rect cullRect]) {
     assert(recorder != null);
-    if (recorder.isRecording)
+    if (recorder.isRecording) {
       throw ArgumentError(
           '"recorder" must not already be associated with another Canvas.');
+    }
     cullRect ??= ui.Rect.largest;
     final SkPictureRecorder skRecorder = recorder;
     return CanvasKitCanvas._(skRecorder.beginRecording(cullRect));
@@ -79,8 +80,9 @@ class CanvasKitCanvas implements ui.Canvas {
   @override
   void transform(Float64List matrix4) {
     assert(matrix4 != null);
-    if (matrix4.length != 16)
+    if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
+    }
     _transform(matrix4);
   }
 
@@ -313,8 +315,9 @@ class CanvasKitCanvas implements ui.Canvas {
     assert(pointMode != null);
     assert(points != null);
     assert(paint != null);
-    if (points.length % 2 != 0)
+    if (points.length % 2 != 0) {
       throw ArgumentError('"points" must have an even number of values.');
+    }
     _drawPoints(paint, pointMode, points);
   }
 
@@ -353,11 +356,13 @@ class CanvasKitCanvas implements ui.Canvas {
     assert(paint != null);
 
     final int rectCount = rects.length;
-    if (transforms.length != rectCount)
+    if (transforms.length != rectCount) {
       throw ArgumentError('"transforms" and "rects" lengths must match.');
-    if (colors.isNotEmpty && colors.length != rectCount)
+    }
+    if (colors.isNotEmpty && colors.length != rectCount) {
       throw ArgumentError(
           'If non-null, "colors" length must match that of "transforms" and "rects".');
+    }
 
     final Float32List rstTransformBuffer = Float32List(rectCount * 4);
     final Float32List rectBuffer = Float32List(rectCount * 4);

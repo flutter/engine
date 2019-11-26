@@ -80,6 +80,8 @@ js.JsObject makeSkPointMode(ui.PointMode pointMode) {
       return canvasKit['PointMode']['Lines'];
     case ui.PointMode.polygon:
       return canvasKit['PointMode']['Polygon'];
+    default:
+      throw StateError('Unrecognized point mode $pointMode');
   }
 }
 
