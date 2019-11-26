@@ -444,11 +444,14 @@ bool PlatformView::OnHandlePointerEvent(
   pointer_data.time_stamp = pointer.event_time / 1000;
   pointer_data.change = GetChangeFromPointerEventPhase(pointer.phase);
   pointer_data.kind = GetKindFromPointerType(pointer.type);
-  pointer_data.device = pointer.pointer_id;
+  pointer_data.device = pointer.device_id;
   pointer_data.physical_x = pointer.x * metrics_.scale;
   pointer_data.physical_y = pointer.y * metrics_.scale;
   // Buttons are single bit values starting with kMousePrimaryButton = 1.
   pointer_data.buttons = static_cast<uint64_t>(pointer.buttons);
+  // This is currently overriden by platform_data_packet_converter, but
+  // leaving this here incase we wish to utilize this.
+  pointer_data.pointer_identifier = pointer.pointer_id;
 
   switch (pointer_data.change) {
     case flutter::PointerData::Change::kDown:
