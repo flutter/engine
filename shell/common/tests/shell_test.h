@@ -7,18 +7,18 @@
 
 #include <memory>
 
-#include "flutter/common/settings.h"
+#include "flutter/common/task_runners.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/fml/macros.h"
-#include "flutter/lib/ui/window/platform_message.h"
-#include "flutter/shell/common/run_configuration.h"
+#include "flutter/fml/unique_fd.h"
+#include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/shell/common/shell.h"
+#include "flutter/shell/common/tests/shell_test_surface.h"
 #include "flutter/shell/common/thread_host.h"
-#include "flutter/shell/common/vsync_waiters_test.h"
-#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/testing/test_dart_native_resolver.h"
-#include "flutter/testing/test_gl_surface.h"
+#include "flutter/testing/testing.h"
 #include "flutter/testing/thread_test.h"
+#include "flutter/third_party/txt/src/txt/font_collection.h"
 
 namespace flutter {
 namespace testing {
@@ -28,13 +28,21 @@ class ShellTest : public ThreadTest {
   ShellTest();
 
   Settings CreateSettingsForFixture();
+
+  std::unique_ptr<Shell> CreateShell(Settings settings,
+                                     ShellTestSurface::ClientRenderingAPI api);
+
   std::unique_ptr<Shell> CreateShell(Settings settings,
                                      bool simulate_vsync = false);
+
   std::unique_ptr<Shell> CreateShell(Settings settings,
                                      TaskRunners task_runners,
                                      bool simulate_vsync = false);
+
   void DestroyShell(std::unique_ptr<Shell> shell);
+
   void DestroyShell(std::unique_ptr<Shell> shell, TaskRunners task_runners);
+
   TaskRunners GetTaskRunnersForFixture();
 
   void SendEnginePlatformMessage(Shell* shell,
@@ -44,7 +52,9 @@ class ShellTest : public ThreadTest {
 
   static void PlatformViewNotifyCreated(
       Shell* shell);  // This creates the surface
+
   static void RunEngine(Shell* shell, RunConfiguration configuration);
+
   static void RestartEngine(Shell* shell, RunConfiguration configuration);
 
   /// Issue as many VSYNC as needed to flush the UI tasks so far, and reset
@@ -63,6 +73,7 @@ class ShellTest : public ThreadTest {
                            flutter::ViewportMetrics viewport_metrics,
                            LayerTreeBuilder = {});
   static void DispatchFakePointerData(Shell* shell);
+
   static void DispatchPointerData(Shell* shell,
                                   std::unique_ptr<PointerDataPacket> packet);
   // Declare |UnreportedTimingsCount|, |GetNeedsReportTimings| and
@@ -70,6 +81,7 @@ class ShellTest : public ThreadTest {
   // declarations as shell unit tests and Shell are in different name spaces.
 
   static bool GetNeedsReportTimings(Shell* shell);
+
   static void SetNeedsReportTimings(Shell* shell, bool value);
 
   std::shared_ptr<txt::FontCollection> GetFontCollection(Shell* shell);
@@ -80,61 +92,13 @@ class ShellTest : public ThreadTest {
   static int UnreportedTimingsCount(Shell* shell);
 
  private:
-  void SetSnapshotsAndAssets(Settings& settings);
-
   std::shared_ptr<TestDartNativeResolver> native_resolver_;
   ThreadHost thread_host_;
   fml::UniqueFD assets_dir_;
 
+  void SetSnapshotsAndAssets(Settings& settings);
+
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTest);
-};
-
-class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
- public:
-  ShellTestPlatformView(PlatformView::Delegate& delegate,
-                        TaskRunners task_runners,
-                        std::shared_ptr<ShellTestVsyncClock> vsync_clock,
-                        CreateVsyncWaiter create_vsync_waiter);
-
-  ~ShellTestPlatformView() override;
-
-  void SimulateVSync();
-
- private:
-  TestGLSurface gl_surface_;
-
-  CreateVsyncWaiter create_vsync_waiter_;
-
-  std::shared_ptr<ShellTestVsyncClock> vsync_clock_;
-
-  // |PlatformView|
-  std::unique_ptr<Surface> CreateRenderingSurface() override;
-
-  // |PlatformView|
-  std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
-
-  // |PlatformView|
-  PointerDataDispatcherMaker GetDispatcherMaker() override;
-
-  // |GPUSurfaceGLDelegate|
-  bool GLContextMakeCurrent() override;
-
-  // |GPUSurfaceGLDelegate|
-  bool GLContextClearCurrent() override;
-
-  // |GPUSurfaceGLDelegate|
-  bool GLContextPresent() override;
-
-  // |GPUSurfaceGLDelegate|
-  intptr_t GLContextFBO() const override;
-
-  // |GPUSurfaceGLDelegate|
-  GLProcResolver GetGLProcResolver() const override;
-
-  // |GPUSurfaceGLDelegate|
-  ExternalViewEmbedder* GetExternalViewEmbedder() override;
-
-  FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
 };
 
 }  // namespace testing

@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("$flutter_root/shell/config.gni")
 import("$flutter_root/shell/gpu/gpu.gni")
 import("$flutter_root/testing/testing.gni")
 
@@ -158,17 +159,30 @@ if (current_toolchain == host_toolchain) {
   }
 
   shell_host_executable("shell_unittests") {
+    defines = []
+
+    if (shell_enable_metal) {
+      defines += [ "SHELL_ENABLE_METAL" ]
+    }
+
     sources = [
-      "animator_unittests.cc",
-      "canvas_spy_unittests.cc",
-      "input_events_unittests.cc",
-      "persistent_cache_unittests.cc",
-      "pipeline_unittests.cc",
-      "shell_test.cc",
-      "shell_test.h",
-      "shell_unittests.cc",
-      "vsync_waiters_test.cc",
-      "vsync_waiters_test.h",
+      "tests/canvas_spy_unittests.cc",
+      "tests/input_events_unittests.cc",
+      "tests/persistent_cache_unittests.cc",
+      "tests/pipeline_unittests.cc",
+      "tests/shell_test.cc",
+      "tests/shell_test.h",
+      "tests/shell_test_platform_view.cc",
+      "tests/shell_test_platform_view.h",
+      "tests/shell_test_surface.cc",
+      "tests/shell_test_surface.h",
+      "tests/shell_test_surface_gl.cc",
+      "tests/shell_test_surface_gl.h",
+      "tests/shell_test_surface_metal.cc",
+      "tests/shell_test_surface_metal.h",
+      "tests/shell_test_vsync_waiter.cc",
+      "tests/shell_test_vsync_waiter.h",
+      "tests/shell_unittests.cc",
     ]
 
     deps = [
@@ -180,8 +194,25 @@ if (current_toolchain == host_toolchain) {
       "$flutter_root/lib/ui:ui",
       "$flutter_root/shell",
       "$flutter_root/testing:dart",
+      "$flutter_root/testing:metal",
       "$flutter_root/testing:opengl",
     ]
+
+    libs = []
+
+    if (shell_enable_metal) {
+      sources += [
+        "tests/shell_test_surface_metal_impl.h",
+        "tests/shell_test_surface_metal_impl.mm",
+      ]
+
+      deps += [ "//flutter/shell/gpu:gpu_surface_metal" ]
+
+      libs += [
+        "Foundation.framework",
+        "QuartzCore.framework",
+      ]
+    }
   }
 
   shell_host_executable("shell_benchmarks") {

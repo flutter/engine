@@ -4,7 +4,7 @@
 
 #define FML_USED_ON_EMBEDDER
 
-#include "flutter/shell/common/shell_test.h"
+#include "flutter/shell/common/tests/shell_test_vsync_waiter.h"
 
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/transform_layer.h"

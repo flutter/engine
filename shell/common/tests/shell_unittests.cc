@@ -21,8 +21,9 @@
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
-#include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/switches.h"
+#include "flutter/shell/common/tests/shell_test.h"
+#include "flutter/shell/common/tests/shell_test_platform_view.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
 #include "flutter/testing/testing.h"
@@ -126,15 +127,17 @@ TEST_F(ShellTest,
   auto shell = Shell::Create(
       std::move(task_runners), settings,
       [](Shell& shell) {
-        // This is unused in the platform view as we are not using the simulated
-        // vsync mechanism. We should have better DI in the tests.
-        const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
+        CreateVsyncWaiter on_create_vsync_waiter = [&]() {
+          return static_cast<std::unique_ptr<VsyncWaiter>>(
+              std::make_unique<VsyncWaiterFallback>(shell.GetTaskRunners()));
+        };
         return std::make_unique<ShellTestPlatformView>(
-            shell, shell.GetTaskRunners(), vsync_clock,
-            [task_runners = shell.GetTaskRunners()]() {
-              return static_cast<std::unique_ptr<VsyncWaiter>>(
-                  std::make_unique<VsyncWaiterFallback>(task_runners));
-            });
+            shell,                                                           //
+            shell.GetTaskRunners(),                                          //
+            std::make_shared<ShellTestVsyncClock>(),                         //
+            on_create_vsync_waiter,                                          //
+            ShellTestSurface::ClientRenderingAPI::kClientRenderingAPIOpenGL  //
+        );
       },
       [](Shell& shell) {
         return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
@@ -1121,6 +1124,36 @@ TEST_F(ShellTest, CanDecompressImageFromAsset) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("canDecompressImageFromAsset");
   std::unique_ptr<Shell> shell = CreateShell(settings);
+  ASSERT_NE(shell.get(), nullptr);
+  RunEngine(shell.get(), std::move(configuration));
+  latch.Wait();
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, CanDecompressImageFromAssetWithMetalRasterizer) {
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("NotifyWidthHeight", CREATE_NATIVE_ENTRY([&](auto args) {
+                      auto width = tonic::DartConverter<int>::FromDart(
+                          Dart_GetNativeArgument(args, 0));
+                      auto height = tonic::DartConverter<int>::FromDart(
+                          Dart_GetNativeArgument(args, 1));
+                      ASSERT_EQ(width, 100);
+                      ASSERT_EQ(height, 100);
+                      latch.Signal();
+                    }));
+
+  AddNativeCallback(
+      "GetFixtureImage", CREATE_NATIVE_ENTRY([](auto args) {
+        auto fixture = OpenFixtureAsMapping("shelltest_screenshot.png");
+        tonic::DartConverter<tonic::DartConverterMapping>::SetReturnValue(
+            args, fixture);
+      }));
+
+  auto settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("canDecompressImageFromAsset");
+  std::unique_ptr<Shell> shell = CreateShell(
+      settings, ShellTestSurface::ClientRenderingAPI::kClientRenderingAPIMetal);
   ASSERT_NE(shell.get(), nullptr);
   RunEngine(shell.get(), std::move(configuration));
   latch.Wait();

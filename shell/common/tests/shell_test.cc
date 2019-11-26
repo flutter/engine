@@ -4,16 +4,11 @@
 
 #define FML_USED_ON_EMBEDDER
 
-#include "flutter/shell/common/shell_test.h"
+#include "flutter/shell/common/tests/shell_test.h"
 
-#include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/transform_layer.h"
-#include "flutter/fml/make_copyable.h"
-#include "flutter/fml/mapping.h"
-#include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/common/tests/shell_test_platform_view.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
-#include "flutter/shell/gpu/gpu_surface_gl.h"
-#include "flutter/testing/testing.h"
 
 namespace flutter {
 namespace testing {
@@ -250,35 +245,66 @@ TaskRunners ShellTest::GetTaskRunnersForFixture() {
   };
 }
 
+static std::unique_ptr<Shell> CreateTestShell(
+    Settings settings,
+    TaskRunners task_runners,
+    bool simulate_vsync,
+    ShellTestSurface::ClientRenderingAPI api) {
+  auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
+  CreateVsyncWaiter on_create_vsync_waiter = [&]() {
+    std::unique_ptr<VsyncWaiter> waiter;
+    if (simulate_vsync) {
+      waiter =
+          std::make_unique<ShellTestVsyncWaiter>(task_runners, vsync_clock);
+    } else {
+      waiter = std::make_unique<VsyncWaiterFallback>(task_runners);
+    }
+    return waiter;
+  };
+
+  Shell::CreateCallback<PlatformView> on_create_platform_view =
+      [&](Shell& shell) {
+        return std::make_unique<ShellTestPlatformView>(
+            shell, shell.GetTaskRunners(), vsync_clock, on_create_vsync_waiter,
+            api);
+      };
+
+  Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
+    return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
+  };
+
+  return Shell::Create(task_runners,             //
+                       settings,                 //
+                       on_create_platform_view,  //
+                       on_create_rasterizer      //
+  );
+}
+
+std::unique_ptr<Shell> ShellTest::CreateShell(
+    Settings settings,
+    ShellTestSurface::ClientRenderingAPI api) {
+  return CreateTestShell(settings, GetTaskRunnersForFixture(), false, api);
+}
+
 std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
                                               bool simulate_vsync) {
-  return CreateShell(std::move(settings), GetTaskRunnersForFixture(),
-                     simulate_vsync);
+  return CreateTestShell(
+      settings,                                                        //
+      GetTaskRunnersForFixture(),                                      //
+      simulate_vsync,                                                  //
+      ShellTestSurface::ClientRenderingAPI::kClientRenderingAPIOpenGL  //
+  );
 }
 
 std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
                                               TaskRunners task_runners,
                                               bool simulate_vsync) {
-  const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
-  CreateVsyncWaiter create_vsync_waiter = [&]() {
-    if (simulate_vsync) {
-      return static_cast<std::unique_ptr<VsyncWaiter>>(
-          std::make_unique<ShellTestVsyncWaiter>(task_runners, vsync_clock));
-    } else {
-      return static_cast<std::unique_ptr<VsyncWaiter>>(
-          std::make_unique<VsyncWaiterFallback>(task_runners));
-    }
-  };
-  return Shell::Create(
-      task_runners, settings,
-      [vsync_clock, &create_vsync_waiter](Shell& shell) {
-        return std::make_unique<ShellTestPlatformView>(
-            shell, shell.GetTaskRunners(), vsync_clock,
-            std::move(create_vsync_waiter));
-      },
-      [](Shell& shell) {
-        return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
-      });
+  return CreateTestShell(
+      settings,                                                        //
+      task_runners,                                                    //
+      simulate_vsync,                                                  //
+      ShellTestSurface::ClientRenderingAPI::kClientRenderingAPIOpenGL  //
+  );
 }
 
 void ShellTest::DestroyShell(std::unique_ptr<Shell> shell) {
@@ -299,71 +325,6 @@ void ShellTest::DestroyShell(std::unique_ptr<Shell> shell,
 void ShellTest::AddNativeCallback(std::string name,
                                   Dart_NativeFunction callback) {
   native_resolver_->AddNativeCallback(std::move(name), callback);
-}
-
-ShellTestPlatformView::ShellTestPlatformView(
-    PlatformView::Delegate& delegate,
-    TaskRunners task_runners,
-    std::shared_ptr<ShellTestVsyncClock> vsync_clock,
-    CreateVsyncWaiter create_vsync_waiter)
-    : PlatformView(delegate, std::move(task_runners)),
-      gl_surface_(SkISize::Make(800, 600)),
-      create_vsync_waiter_(std::move(create_vsync_waiter)),
-      vsync_clock_(vsync_clock) {}
-
-ShellTestPlatformView::~ShellTestPlatformView() = default;
-
-std::unique_ptr<VsyncWaiter> ShellTestPlatformView::CreateVSyncWaiter() {
-  return create_vsync_waiter_();
-}
-
-void ShellTestPlatformView::SimulateVSync() {
-  vsync_clock_->SimulateVSync();
-}
-
-// |PlatformView|
-std::unique_ptr<Surface> ShellTestPlatformView::CreateRenderingSurface() {
-  return std::make_unique<GPUSurfaceGL>(this, true);
-}
-
-// |PlatformView|
-PointerDataDispatcherMaker ShellTestPlatformView::GetDispatcherMaker() {
-  return [](DefaultPointerDataDispatcher::Delegate& delegate) {
-    return std::make_unique<SmoothPointerDataDispatcher>(delegate);
-  };
-}
-
-// |GPUSurfaceGLDelegate|
-bool ShellTestPlatformView::GLContextMakeCurrent() {
-  return gl_surface_.MakeCurrent();
-}
-
-// |GPUSurfaceGLDelegate|
-bool ShellTestPlatformView::GLContextClearCurrent() {
-  return gl_surface_.ClearCurrent();
-}
-
-// |GPUSurfaceGLDelegate|
-bool ShellTestPlatformView::GLContextPresent() {
-  return gl_surface_.Present();
-}
-
-// |GPUSurfaceGLDelegate|
-intptr_t ShellTestPlatformView::GLContextFBO() const {
-  return gl_surface_.GetFramebuffer();
-}
-
-// |GPUSurfaceGLDelegate|
-GPUSurfaceGLDelegate::GLProcResolver ShellTestPlatformView::GetGLProcResolver()
-    const {
-  return [surface = &gl_surface_](const char* name) -> void* {
-    return surface->GetProcAddress(name);
-  };
-}
-
-// |GPUSurfaceGLDelegate|
-ExternalViewEmbedder* ShellTestPlatformView::GetExternalViewEmbedder() {
-  return nullptr;
 }
 
 }  // namespace testing
