@@ -102,6 +102,7 @@ public class TextInputPlugin {
         return mImm;
     }
 
+    // public Editable getEditable() {
     @VisibleForTesting Editable getEditable() {
         return mEditable;
     }
