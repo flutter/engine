@@ -14,17 +14,11 @@ const SkScalar kLightRadius = 800;
 
 PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
                                        SkColor shadow_color,
-                                       SkScalar device_pixel_ratio,
-                                       float viewport_depth,
                                        float elevation,
                                        const SkPath& path,
                                        Clip clip_behavior)
     : color_(color),
       shadow_color_(shadow_color),
-      device_pixel_ratio_(device_pixel_ratio),
-#if defined(OS_FUCHSIA)
-      viewport_depth_(viewport_depth),
-#endif
       elevation_(elevation),
       path_(path),
       isRect_(false),
@@ -70,7 +64,7 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     // bounds to leave space for the shadow. We fill this whole region and clip
     // children to it so we don't need to join the child paint bounds.
     set_paint_bounds(ComputeShadowBounds(path_.getBounds(), elevation_,
-                                         device_pixel_ratio_));
+                                         context->frame_device_pixel_ratio));
 #endif  // defined(OS_FUCHSIA)
   }
 }
@@ -97,7 +91,7 @@ void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
   TRACE_EVENT_INSTANT0("flutter", "cache miss, creating");
   // If we can't find an existing retained surface, create one.
   SceneUpdateContext::Frame frame(context, frameRRect_, color_, elevation_,
-                                  total_elevation_, viewport_depth_, this);
+                                  total_elevation_, this);
   for (auto& layer : layers()) {
     if (layer->needs_painting()) {
       frame.AddPaintLayer(layer.get());
@@ -115,7 +109,7 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
 
   if (elevation_ != 0) {
     DrawShadow(context.leaf_nodes_canvas, path_, shadow_color_, elevation_,
-               SkColorGetA(color_) != 0xff, device_pixel_ratio_);
+               SkColorGetA(color_) != 0xff, context.frame_device_pixel_ratio);
   }
 
   // Call drawPath without clip if possible for better performance.

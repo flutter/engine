@@ -212,7 +212,9 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
                                    frame.context().ui_time(),
                                    frame.context().texture_registry(),
                                    &frame.context().raster_cache(),
-                                   false};
+                                   false,
+                                   frame_physical_depth_,
+                                   frame_device_pixel_ratio_};
     canvas->restoreToCount(1);
     canvas->save();
     canvas->clear(task.background_color);
@@ -301,13 +303,13 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
                                  SkColor color,
                                  float local_elevation,
                                  float world_elevation,
-                                 float depth,
                                  Layer* layer)
     : Shape(context),
       rrect_(rrect),
       color_(color),
       paint_bounds_(SkRect::MakeEmpty()),
       layer_(layer) {
+  const float depth = context.frame_physical_depth();
   if (depth > -1 && world_elevation > depth) {
     // TODO(mklim): Deal with bounds overflow more elegantly. We'd like to be
     // able to have developers specify the behavior here to alternatives besides

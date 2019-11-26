@@ -52,11 +52,18 @@ struct PrerollContext {
   SkColorSpace* dst_color_space;
   SkRect cull_rect;
 
-  // The following allows us to paint in the end of subtree preroll
+  // These allow us to paint in the end of subtree Preroll.
   const Stopwatch& raster_time;
   const Stopwatch& ui_time;
   TextureRegistry& texture_registry;
   const bool checkerboard_offscreen_layers;
+
+  // These allow us to make use of the scene metrics during Preroll.
+  float frame_physical_depth;
+  float frame_device_pixel_ratio;
+
+  // These allow us to track properties like elevation and opacity which stack
+  // with each other during Preroll.
   float total_elevation = 0.0f;
   bool has_platform_view = false;
 };
@@ -90,6 +97,10 @@ class Layer {
     TextureRegistry& texture_registry;
     const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
+
+    // These allow us to make use of the scene metrics during Paint.
+    float frame_physical_depth;
+    float frame_device_pixel_ratio;
   };
 
   // Calls SkCanvas::saveLayer and restores the layer upon destruction. Also
