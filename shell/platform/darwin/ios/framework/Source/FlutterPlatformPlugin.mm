@@ -227,7 +227,7 @@ using namespace flutter;
   if (data[@"text"]) {
     pasteboard.string = data[@"text"];
   } else {
-    pasteboard.string = @"null";
+    pasteboard.string = @"";
   }
 }
 
