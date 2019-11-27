@@ -222,6 +222,22 @@ class InputConfiguration {
 typedef _OnChangeCallback = void Function(EditingState editingState);
 typedef _OnActionCallback = void Function(String inputAction);
 
+/// Interface defining the template for text editing strategies.
+///
+/// The starategies defined by this interface are:
+///  * position
+///  * attach
+///  * remove
+///  * add listeners
+///
+/// The algorithms will be picked in the runtime depending on the concrete
+/// class implementing the interface.
+///
+/// These algorithms is expected to differ by operating system and/or browser.
+abstract class TextEditingStrategy {
+
+}
+
 /// Wraps the DOM element used to provide text editing capabilities.
 ///
 /// The backing DOM element could be one of:
