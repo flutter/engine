@@ -98,18 +98,6 @@ class EngineLineMetrics implements ui.LineMetrics {
         baseline == typedOther.baseline &&
         lineNumber == typedOther.lineNumber;
   }
-
-  @override
-  String toString() {
-    if (assertionsEnabled) {
-      return 'EngineLineMetrics('
-          'lineNumber: $lineNumber, '
-          'text: "$text", '
-          'hardBreak: $hardBreak, '
-          'width: $width)';
-    }
-    return super.toString();
-  }
 }
 
 /// The web implementation of [ui.Paragraph].
