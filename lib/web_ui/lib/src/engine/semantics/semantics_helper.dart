@@ -36,8 +36,13 @@ String placeholderMessage = 'Enable accessibility';
 ///
 /// See [DesktopSemanticsEnabler], [MobileSemanticsEnabler].
 class SemanticsHelper {
-  final _SemanticsEnabler _enableSemantics =
+  SemanticsEnabler _enableSemantics =
       isDesktop ? DesktopSemanticsEnabler() : MobileSemanticsEnabler();
+
+  @visibleForTesting
+  set enableSemantics(SemanticsEnabler enableSemantics) {
+    this._enableSemantics = enableSemantics;
+  }
 
   bool shouldEnableSemantics(html.Event event) {
     return _enableSemantics.shouldEnableSemantics(event);
@@ -48,7 +53,8 @@ class SemanticsHelper {
   }
 }
 
-abstract class _SemanticsEnabler {
+@visibleForTesting
+abstract class SemanticsEnabler {
   /// Whether to enable semantics.
   ///
   /// Semantics should be enabled if the web engine is no longer waiting for
@@ -89,7 +95,7 @@ abstract class _SemanticsEnabler {
 }
 
 @visibleForTesting
-class DesktopSemanticsEnabler extends _SemanticsEnabler {
+class DesktopSemanticsEnabler extends SemanticsEnabler {
   /// We do not immediately enable semantics when the user requests it, but
   /// instead wait for a short period of time before doing it. This is because
   /// the request comes as an event targeted on the [_semanticsPlaceholder].
@@ -212,7 +218,7 @@ class DesktopSemanticsEnabler extends _SemanticsEnabler {
 }
 
 @visibleForTesting
-class MobileSemanticsEnabler extends _SemanticsEnabler {
+class MobileSemanticsEnabler extends SemanticsEnabler {
   /// We do not immediately enable semantics when the user requests it, but
   /// instead wait for a short period of time before doing it. This is because
   /// the request comes as an event targeted on the [_semanticsPlaceholder].
