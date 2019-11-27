@@ -10,6 +10,13 @@ part of engine;
 /// This number is arbitrary and can be adjusted if it doesn't work well.
 const int kMaxSemanticsActivationAttempts = 20;
 
+/// After an event related to semantics activation has been received, we consume
+/// the consecutive events on the engine. Do not send them to the framework.
+/// For example when a 'mousedown' targeting a placeholder received following
+/// 'mouseup' is also not sent to the framework.
+/// Otherwise these events can cause unintended gestures on the framework side.
+const Duration _periodToConsumeEvents = const Duration(milliseconds: 300);
+
 /// The message in the label for the placeholder element used to enable
 /// accessibility.
 ///
@@ -17,9 +24,20 @@ const int kMaxSemanticsActivationAttempts = 20;
 /// calling `runApp` to translate to another language.
 String placeholderMessage = 'Enable accessibility';
 
+/// A helper for [EngineSemanticsOwner].
+///
+/// [SemanticsHelper] prepares and placeholder to enable semantics.
+///
+/// It decides if an event is purely semantics enabling related or a regular
+/// event which should be forwarded to the framework.
+///
+/// It does this by using a [SemanticsEnabler]. The [SemanticsEnabler]
+/// implementation is choosen using form factor type.
+///
+/// See [DesktopSemanticsEnabler], [MobileSemanticsEnabler].
 class SemanticsHelper {
-  final _EnableSemantics _enableSemantics =
-      isDesktop ? DesktopEnableSemantics() : MobileEnableSemantics();
+  final _SemanticsEnabler _enableSemantics =
+      isDesktop ? DesktopSemanticsEnabler() : MobileSemanticsEnabler();
 
   bool shouldEnableSemantics(html.Event event) {
     return _enableSemantics.tryEnableSemantics(event);
@@ -30,39 +48,16 @@ class SemanticsHelper {
   }
 }
 
-abstract class _EnableSemantics {
-  /// A temporary placeholder used to capture a request to activate semantics.
-  html.Element _semanticsPlaceholder;
-
-  /// We do not immediately enable semantics when the user requests it, but
-  /// instead wait for a short period of time before doing it. This is because
-  /// the request comes as a tap on the [_semanticsPlaceholder]. The tap,
-  /// depending on the browser, comes as a burst of events. For example, Safari
-  /// sends "touchstart", "touchend", and "click". So during a short time period
-  /// we consume all events and prevent forwarding to the framework. Otherwise,
-  /// the events will be interpreted twice, once as a request to activate
-  /// semantics, and a second time by Flutter's gesture recognizers.
-  @visibleForTesting
-  Timer semanticsActivationTimer;
-
-  /// The number of events we processed that could potentially activate
-  /// semantics.
-  int semanticsActivationAttempts = 0;
-
-  /// Instructs [_tryEnableSemantics] to remove [_semanticsPlaceholder].
+abstract class _SemanticsEnabler {
+  /// Whether to enable semantics.
   ///
-  /// On Chrome the placeholder is removed upon any next event.
+  /// Semantics should be enabled if the web engine is no longer waiting for
+  /// extra signals from the user events. See [isWaitingToEnableSemantics].
   ///
-  /// On Safari the placeholder is removed upon the next "touchend" event. This
-  /// is to prevent Safari from swallowing the event that happens on an element
-  /// that's being removed. Chrome doesn't have this issue.
-  bool _schedulePlaceholderRemoval = false;
-
-  /// Whether we are waiting for the user to enable semantics.
-  bool get _isWaitingToEnableSemantics => _semanticsPlaceholder != null;
-
+  /// Or if the received [html.Event] is suitable/enough for enabling the
+  /// semantics. See [tryEnableSemantics].
   bool shouldEnableSemantics(html.Event event) {
-    if (!_isWaitingToEnableSemantics) {
+    if (!isWaitingToEnableSemantics) {
       // Forward to framework as normal.
       return true;
     } else {
@@ -83,10 +78,46 @@ abstract class _EnableSemantics {
   /// On focus the element announces that accessibility can be enabled by
   /// tapping/clicking. (Announcement depends on the assistive technology)
   html.Element prepareAccesibilityPlaceholder();
+
+  /// Whether platform is still consisering enabling semantics.
+  ///
+  /// At this stage a relevant set of events are always assessed to see if
+  /// they activate the semantics.
+  ///
+  /// If not they are sent to framework as normal events.
+  bool get isWaitingToEnableSemantics;
 }
 
 @visibleForTesting
-class DesktopEnableSemantics extends _EnableSemantics {
+class DesktopSemanticsEnabler extends _SemanticsEnabler {
+  /// We do not immediately enable semantics when the user requests it, but
+  /// instead wait for a short period of time before doing it. This is because
+  /// the request comes as an event targeted on the [_semanticsPlaceholder].
+  /// This event, depending on the browser, comes as a burst of events.
+  /// For example, Safari on MacOS sends "pointerup", "pointerdown". So during a
+  /// short time period we consume all events and prevent forwarding to the
+  /// framework. Otherwise, the events will be interpreted twice, once as a
+  /// request to activate semantics, and a second time by Flutter's gesture
+  /// recognizers.
+  @visibleForTesting
+  Timer semanticsActivationTimer;
+
+  /// A temporary placeholder used to capture a request to activate semantics.
+  html.Element _semanticsPlaceholder;
+
+  /// The number of events we processed that could potentially activate
+  /// semantics.
+  int semanticsActivationAttempts = 0;
+
+  /// Instructs [_tryEnableSemantics] to remove [_semanticsPlaceholder].
+  ///
+  /// The placeholder is removed upon any next event.
+  bool _schedulePlaceholderRemoval = false;
+
+  /// Whether we are waiting for the user to enable semantics.
+  @override
+  bool get isWaitingToEnableSemantics => _semanticsPlaceholder != null;
+
   @override
   bool tryEnableSemantics(html.Event event) {
     if (_schedulePlaceholderRemoval) {
@@ -102,7 +133,7 @@ class DesktopEnableSemantics extends _EnableSemantics {
     }
 
     // In touch screen laptops, the touch is received as a mouse click
-    const List<String> kInterestingEventTypes = <String>[
+    const Set<String> kInterestingEventTypes = <String>{
       'click',
       'keyup',
       'keydown',
@@ -110,7 +141,7 @@ class DesktopEnableSemantics extends _EnableSemantics {
       'mousedown',
       'pointerdown',
       'pointerup',
-    ];
+    };
 
     if (!kInterestingEventTypes.contains(event.type)) {
       // The event is not relevant, forward to framework as normal.
@@ -135,11 +166,11 @@ class DesktopEnableSemantics extends _EnableSemantics {
     }
 
     // Check for the event target.
-    bool enableConditionPassed = (event.target == _semanticsPlaceholder);
+    final bool enableConditionPassed = (event.target == _semanticsPlaceholder);
 
     if (enableConditionPassed) {
       assert(semanticsActivationTimer == null);
-      semanticsActivationTimer = Timer(const Duration(milliseconds: 300), () {
+      semanticsActivationTimer = Timer(_periodToConsumeEvents, () {
         EngineSemanticsOwner.instance.semanticsEnabled = true;
         _schedulePlaceholderRemoval = true;
       });
@@ -160,6 +191,11 @@ class DesktopEnableSemantics extends _EnableSemantics {
       tryEnableSemantics(event);
     }, true);
 
+    // Adding roles to semantics placeholder. 'aria-live' will make sure that
+    // the content is announced to the assistive technology user as soon as the
+    // page receives focus. 'tab-index' makes sure the button is the first
+    // target of tab. 'aria-label' is used to define the placeholder message
+    // to the assistive technology user.
     _semanticsPlaceholder
       ..setAttribute('role', 'button')
       ..setAttribute('aria-live', 'true')
@@ -176,7 +212,40 @@ class DesktopEnableSemantics extends _EnableSemantics {
 }
 
 @visibleForTesting
-class MobileEnableSemantics extends _EnableSemantics {
+class MobileSemanticsEnabler extends _SemanticsEnabler {
+  /// We do not immediately enable semantics when the user requests it, but
+  /// instead wait for a short period of time before doing it. This is because
+  /// the request comes as an event targeted on the [_semanticsPlaceholder].
+  /// This event, depending on the browser, comes as a burst of events.
+  /// For example, Safari on IOS sends "touchstart", "touchend", and "click".
+  /// So during a short time period we consume all events and prevent forwarding
+  /// to the framework. Otherwise, the events will be interpreted twice, once as
+  /// a request to activate semantics, and a second time by Flutter's gesture
+  /// recognizers.
+  @visibleForTesting
+  Timer semanticsActivationTimer;
+
+  /// A temporary placeholder used to capture a request to activate semantics.
+  html.Element _semanticsPlaceholder;
+
+  /// The number of events we processed that could potentially activate
+  /// semantics.
+  int semanticsActivationAttempts = 0;
+
+  /// Instructs [_tryEnableSemantics] to remove [_semanticsPlaceholder].
+  ///
+  /// For Blink browser engine the placeholder is removed upon any next event.
+  ///
+  /// For Webkit browser engine the placeholder is removed upon the next
+  /// "touchend" event. This is to prevent Safari from swallowing the event
+  /// that happens on an element that's being removed. Blink doesn't have
+  /// this issue.
+  bool _schedulePlaceholderRemoval = false;
+
+  /// Whether we are waiting for the user to enable semantics.
+  @override
+  bool get isWaitingToEnableSemantics => _semanticsPlaceholder != null;
+
   @override
   bool tryEnableSemantics(html.Event event) {
     if (_schedulePlaceholderRemoval) {
@@ -204,11 +273,11 @@ class MobileEnableSemantics extends _EnableSemantics {
       return true;
     }
 
-    const List<String> kInterestingEventTypes = <String>[
+    const Set<String> kInterestingEventTypes = <String>{
       'click',
       'touchstart',
       'touchend',
-    ];
+    };
 
     if (!kInterestingEventTypes.contains(event.type)) {
       // The event is not relevant, forward to framework as normal.
@@ -280,7 +349,7 @@ class MobileEnableSemantics extends _EnableSemantics {
 
     if (blinkEnableConditionPassed || safariEnableConditionPassed) {
       assert(semanticsActivationTimer == null);
-      semanticsActivationTimer = Timer(const Duration(milliseconds: 300), () {
+      semanticsActivationTimer = Timer(_periodToConsumeEvents, () {
         EngineSemanticsOwner.instance.semanticsEnabled = true;
         _schedulePlaceholderRemoval = true;
       });

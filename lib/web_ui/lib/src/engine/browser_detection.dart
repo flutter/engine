@@ -126,11 +126,11 @@ OperatingSystem _detectOperatingSystem() {
 ///
 /// These devices tend to behave differently on many core issues such as events,
 /// screen readers, input devices.
-List<OperatingSystem> _desktopOperatingSystems = [
+const Set<OperatingSystem> _desktopOperatingSystems = {
   OperatingSystem.macOs,
   OperatingSystem.linux,
   OperatingSystem.windows,
-];
+};
 
 /// A flag to check if the current operating system is a laptop/desktop
 /// operating system.

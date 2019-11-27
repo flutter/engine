@@ -1284,11 +1284,6 @@ class EngineSemanticsOwner {
   /// This is used to deduplicate gestures detected by Flutter and gestures
   /// detected by the browser. Flutter-detected gestures have higher precedence.
   void _temporarilyDisableBrowserGestureMode() {
-    // TODO: current issue is the semantics element is removed too quyickly.
-    // if anyone uses the mouse slightly it is gone. Yet only 75 percent of the
-    // a11y technology users are fully visually imparied, which means they
-    // might find other input type such as mouse also useful.
-
     const Duration _kDebounceThreshold = Duration(milliseconds: 500);
     _getGestureModeClock().datetime = _now().add(_kDebounceThreshold);
     if (_gestureMode != GestureMode.pointerEvents) {
@@ -1331,7 +1326,6 @@ class EngineSemanticsOwner {
     // For pointer event reference see:
     //
     // https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events
-    // which event is triggered on a windows machine with touch?
     const List<String> _pointerEventTypes = <String>[
       'pointerdown',
       'pointermove',

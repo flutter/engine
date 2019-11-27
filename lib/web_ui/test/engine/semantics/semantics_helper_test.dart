@@ -3,33 +3,32 @@
 // found in the LICENSE file.
 
 import 'dart:html' as html;
-import 'dart:js_util' as js_util;
 
 import 'package:ui/src/engine.dart';
 
 import 'package:test/test.dart';
 
 void main() {
-  group('$DesktopEnableSemantics', () {
-    DesktopEnableSemantics desktopEnableSemantics;
+  group('$DesktopSemanticsEnabler', () {
+    DesktopSemanticsEnabler desktopSemanticsEnabler;
     html.Element _placeholder;
 
     setUp(() {
-      desktopEnableSemantics = DesktopEnableSemantics();
+      desktopSemanticsEnabler = DesktopSemanticsEnabler();
     });
 
     tearDown(() {
       if (_placeholder != null) {
         _placeholder.remove();
       }
-      if(desktopEnableSemantics?.semanticsActivationTimer != null) {
-        desktopEnableSemantics.semanticsActivationTimer.cancel();
-        desktopEnableSemantics.semanticsActivationTimer = null;
+      if(desktopSemanticsEnabler?.semanticsActivationTimer != null) {
+        desktopSemanticsEnabler.semanticsActivationTimer.cancel();
+        desktopSemanticsEnabler.semanticsActivationTimer = null;
       }
     });
 
     test('prepare accesibility placeholder', () async {
-      _placeholder = desktopEnableSemantics.prepareAccesibilityPlaceholder();
+      _placeholder = desktopSemanticsEnabler.prepareAccesibilityPlaceholder();
 
       expect(_placeholder.getAttribute('role'), 'button');
       expect(_placeholder.getAttribute('aria-live'), 'true');
@@ -48,18 +47,18 @@ void main() {
 
     test('Not relevant events should be forwarded to the framework', () async {
       // Prework. Attach the placeholder to dom.
-      _placeholder = desktopEnableSemantics.prepareAccesibilityPlaceholder();
+      _placeholder = desktopSemanticsEnabler.prepareAccesibilityPlaceholder();
       html.document.body.append(_placeholder);
 
-      html.Event event = dispatchMouseEvent('mousemove');
+      html.Event event = html.MouseEvent('mousemove');
       bool shouldForwardToFramework =
-          desktopEnableSemantics.tryEnableSemantics(event);
+          desktopSemanticsEnabler.tryEnableSemantics(event);
 
       expect(shouldForwardToFramework, true);
 
-      event = dispatchPointerEvent('pointermove');
+      event = html.PointerEvent('pointermove');
       shouldForwardToFramework =
-          desktopEnableSemantics.tryEnableSemantics(event);
+          desktopSemanticsEnabler.tryEnableSemantics(event);
 
       expect(shouldForwardToFramework, true);
     });
@@ -68,12 +67,14 @@ void main() {
         'Relevants events targeting placeholder should not be forwarded to the framework',
         () async {
       // Prework. Attach the placeholder to dom.
-      _placeholder = desktopEnableSemantics.prepareAccesibilityPlaceholder();
+      _placeholder = desktopSemanticsEnabler.prepareAccesibilityPlaceholder();
       html.document.body.append(_placeholder);
 
-      html.Event event = dispatchMouseEvent('mousedown', target: _placeholder);
+      html.Event event = html.MouseEvent('mousedown');
+      _placeholder.dispatchEvent(event);
+
       bool shouldForwardToFramework =
-          desktopEnableSemantics.tryEnableSemantics(event);
+          desktopSemanticsEnabler.tryEnableSemantics(event);
 
       expect(shouldForwardToFramework, false);
     });
@@ -82,32 +83,36 @@ void main() {
         'After max number of relevant events, events should be forwarded to the framework',
         () async {
       // Prework. Attach the placeholder to dom.
-      _placeholder = desktopEnableSemantics.prepareAccesibilityPlaceholder();
+      _placeholder = desktopSemanticsEnabler.prepareAccesibilityPlaceholder();
       html.document.body.append(_placeholder);
 
-      html.Event event = dispatchMouseEvent('mousedown', target: _placeholder);
+      html.Event event = html.MouseEvent('mousedown');
+      _placeholder.dispatchEvent(event);
+
       bool shouldForwardToFramework =
-          desktopEnableSemantics.tryEnableSemantics(event);
+          desktopSemanticsEnabler.tryEnableSemantics(event);
 
       expect(shouldForwardToFramework, false);
 
       // Send max number of events;
       for (int i = 1; i <= kMaxSemanticsActivationAttempts; i++) {
-        event = dispatchPointerEvent('mousedown', target: _placeholder);
+        event = html.MouseEvent('mousedown');
+        _placeholder.dispatchEvent(event);
+
         shouldForwardToFramework =
-            desktopEnableSemantics.tryEnableSemantics(event);
+            desktopSemanticsEnabler.tryEnableSemantics(event);
       }
 
       expect(shouldForwardToFramework, true);
     });
   });
 
-  group('$MobileEnableSemantics', () {
-    MobileEnableSemantics mobileEnableSemantics;
+  group('$MobileSemanticsEnabler', () {
+    MobileSemanticsEnabler mobileSemanticsEnabler;
     html.Element _placeholder;
 
     setUp(() {
-      mobileEnableSemantics = MobileEnableSemantics();
+      mobileSemanticsEnabler = MobileSemanticsEnabler();
     });
 
     tearDown(() {
@@ -117,7 +122,7 @@ void main() {
     });
 
     test('prepare accesibility placeholder', () async {
-      _placeholder = mobileEnableSemantics.prepareAccesibilityPlaceholder();
+      _placeholder = mobileSemanticsEnabler.prepareAccesibilityPlaceholder();
 
       expect(_placeholder.getAttribute('role'), 'button');
 
@@ -132,59 +137,11 @@ void main() {
     });
 
     test('Not relevant events should be forwarded to the framework', () async {
-      final html.Event event = dispatchTouchEvent('touchcancel');
+      final html.Event event = html.TouchEvent('touchcancel');
       bool shouldForwardToFramework =
-          mobileEnableSemantics.tryEnableSemantics(event);
+          mobileSemanticsEnabler.tryEnableSemantics(event);
 
       expect(shouldForwardToFramework, true);
     });
   });
-}
-
-html.PointerEvent dispatchPointerEvent(String type, {html.EventTarget target}) {
-  target ??= html.window;
-
-  final Function jsKeyboardEvent =
-      js_util.getProperty(html.window, 'PointerEvent');
-  final List<dynamic> eventArgs = <dynamic>[
-    type,
-  ];
-  final html.PointerEvent event =
-      js_util.callConstructor(jsKeyboardEvent, js_util.jsify(eventArgs));
-
-  target.dispatchEvent(event);
-
-  return event;
-}
-
-html.MouseEvent dispatchMouseEvent(String type, {html.EventTarget target}) {
-  target ??= html.window;
-
-  final Function jsKeyboardEvent =
-      js_util.getProperty(html.window, 'MouseEvent');
-  final List<dynamic> eventArgs = <dynamic>[
-    type,
-  ];
-  final html.MouseEvent event =
-      js_util.callConstructor(jsKeyboardEvent, js_util.jsify(eventArgs));
-
-  target.dispatchEvent(event);
-
-  return event;
-}
-
-html.TouchEvent dispatchTouchEvent(String type, {html.EventTarget target}) {
-  target ??= html.window;
-
-  final Function jsKeyboardEvent =
-      js_util.getProperty(html.window, 'TouchEvent');
-  final List<dynamic> eventArgs = <dynamic>[
-    type,
-  ];
-  final html.TouchEvent event =
-      js_util.callConstructor(jsKeyboardEvent, js_util.jsify(eventArgs));
-
-  target.dispatchEvent(event);
-
-  return event;
 }
