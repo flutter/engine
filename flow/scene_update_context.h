@@ -18,7 +18,7 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-namespace flow {
+namespace flutter {
 
 class Layer;
 
@@ -37,7 +37,7 @@ class SceneUpdateContext {
     virtual SkISize GetSize() const = 0;
 
     virtual void SignalWritesFinished(
-        std::function<void(void)> on_writes_committed) = 0;
+        const std::function<void(void)>& on_writes_committed) = 0;
 
     virtual scenic::Image* GetImage() = 0;
 
@@ -69,25 +69,17 @@ class SceneUpdateContext {
   class Entity {
    public:
     Entity(SceneUpdateContext& context);
-    ~Entity();
+    virtual ~Entity();
 
     SceneUpdateContext& context() { return context_; }
-    scenic::EntityNode& entity_node() { return *entity_node_ptr_; }
-    std::unique_ptr<scenic::EntityNode>& entity_node_ptr() {
-      return entity_node_ptr_;
-    }
-
-    scenic::ShapeNode& shape_node() { return *shape_node_ptr_; }
-    std::unique_ptr<scenic::ShapeNode>& shape_node_ptr() {
-      return shape_node_ptr_;
-    }
+    scenic::EntityNode& entity_node() { return entity_node_; }
+    virtual scenic::ContainerNode& embedder_node() { return entity_node_; }
 
    private:
     SceneUpdateContext& context_;
     Entity* const previous_entity_;
 
-    std::unique_ptr<scenic::EntityNode> entity_node_ptr_;
-    std::unique_ptr<scenic::ShapeNode> shape_node_ptr_;
+    scenic::EntityNode entity_node_;
   };
 
   class Transform : public Entity {
@@ -97,14 +89,25 @@ class SceneUpdateContext {
               float scale_x,
               float scale_y,
               float scale_z);
-    ~Transform();
+    virtual ~Transform();
 
    private:
     float const previous_scale_x_;
     float const previous_scale_y_;
   };
 
-  class Frame : public Entity {
+  class Shape : public Entity {
+   public:
+    Shape(SceneUpdateContext& context);
+    virtual ~Shape() = default;
+
+    scenic::ShapeNode& shape_node() { return shape_node_; }
+
+   private:
+    scenic::ShapeNode shape_node_;
+  };
+
+  class Frame : public Shape {
    public:
     // When layer is not nullptr, the frame is associated with a layer subtree
     // rooted with that layer. The frame may then create a surface that will be
@@ -112,15 +115,16 @@ class SceneUpdateContext {
     Frame(SceneUpdateContext& context,
           const SkRRect& rrect,
           SkColor color,
-          float elevation,
+          float local_elevation = 0.0f,
+          float parent_elevation = 0.0f,
+          float depth = 0.0f,
           Layer* layer = nullptr);
-
-    ~Frame();
+    virtual ~Frame();
 
     void AddPaintLayer(Layer* layer);
 
    private:
-    const SkRRect& rrect_;
+    const SkRRect rrect_;
     SkColor const color_;
 
     std::vector<Layer*> paint_layers_;
@@ -130,9 +134,7 @@ class SceneUpdateContext {
 
   class Clip : public Entity {
    public:
-    Clip(SceneUpdateContext& context,
-         scenic::Shape& shape,
-         const SkRect& shape_bounds);
+    Clip(SceneUpdateContext& context, const SkRect& shape_bounds);
     ~Clip() = default;
   };
 
@@ -191,30 +193,29 @@ class SceneUpdateContext {
   // own the associated entity_node. If the layer pointer isn't nullptr, the
   // surface (and thus the entity_node) will be retained for that layer to
   // improve the performance.
-  void CreateFrame(std::unique_ptr<scenic::EntityNode> entity_node,
-                   std::unique_ptr<scenic::ShapeNode> shape_node,
+  void CreateFrame(scenic::EntityNode entity_node,
+                   scenic::ShapeNode shape_node,
                    const SkRRect& rrect,
                    SkColor color,
                    const SkRect& paint_bounds,
                    std::vector<Layer*> paint_layers,
                    Layer* layer);
-  void SetShapeTextureOrColor(scenic::ShapeNode& shape_node,
-                              SkColor color,
-                              SkScalar scale_x,
-                              SkScalar scale_y,
-                              const SkRect& paint_bounds,
-                              std::vector<Layer*> paint_layers,
-                              Layer* layer,
-                              std::unique_ptr<scenic::EntityNode> entity_node);
+  void SetShapeTextureAndColor(scenic::ShapeNode& shape_node,
+                               SkColor color,
+                               SkScalar scale_x,
+                               SkScalar scale_y,
+                               const SkRect& paint_bounds,
+                               std::vector<Layer*> paint_layers,
+                               Layer* layer,
+                               scenic::EntityNode entity_node);
   void SetShapeColor(scenic::ShapeNode& shape_node, SkColor color);
-  scenic::Image* GenerateImageIfNeeded(
-      SkColor color,
-      SkScalar scale_x,
-      SkScalar scale_y,
-      const SkRect& paint_bounds,
-      std::vector<Layer*> paint_layers,
-      Layer* layer,
-      std::unique_ptr<scenic::EntityNode> entity_node);
+  scenic::Image* GenerateImageIfNeeded(SkColor color,
+                                       SkScalar scale_x,
+                                       SkScalar scale_y,
+                                       const SkRect& paint_bounds,
+                                       std::vector<Layer*> paint_layers,
+                                       Layer* layer,
+                                       scenic::EntityNode entity_node);
 
   Entity* top_entity_ = nullptr;
   float top_scale_x_ = 1.f;
@@ -230,6 +231,6 @@ class SceneUpdateContext {
   FML_DISALLOW_COPY_AND_ASSIGN(SceneUpdateContext);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_

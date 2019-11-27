@@ -11,7 +11,7 @@
 
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
-#include "flutter/fml/string_view.h"
+#include "flutter/fml/size.h"
 #include "flutter/shell/version/version.h"
 
 // Include once for the default enum definition.
@@ -21,7 +21,7 @@
 
 struct SwitchDesc {
   flutter::Switch sw;
-  const fml::StringView flag;
+  const std::string_view flag;
   const char* help;
 };
 
@@ -36,8 +36,49 @@ struct SwitchDesc {
 #define DEF_SWITCHES_END };
 // clang-format on
 
+// List of common and safe VM flags to allow to be passed directly to the VM.
+#if FLUTTER_RELEASE
+
+// clang-format off
+static const std::string gDartFlagsWhitelist[] = {
+    "--no-causal_async_stacks",
+};
+// clang-format on
+
+#else
+
+// clang-format off
+static const std::string gDartFlagsWhitelist[] = {
+    "--max_profile_depth",
+    "--profile_period",
+    "--random_seed",
+    "--enable_mirrors",
+    "--write-service-info",
+    "--sample-buffer-duration",
+    "--no-causal_async_stacks",
+    "--trace-reload",
+    "--trace-reload-verbose",
+};
+// clang-format on
+
+#endif  // FLUTTER_RELEASE
+
 // Include again for struct definition.
 #include "flutter/shell/common/switches.h"
+
+// Define symbols for the ICU data that is linked into the Flutter library on
+// Android.  This is a workaround for crashes seen when doing dynamic lookups
+// of the engine's own symbols on some older versions of Android.
+#if OS_ANDROID
+extern uint8_t _binary_icudtl_dat_start[];
+extern uint8_t _binary_icudtl_dat_end[];
+
+static std::unique_ptr<fml::Mapping> GetICUStaticMapping() {
+  return std::make_unique<fml::NonOwnedMapping>(
+      _binary_icudtl_dat_start,
+      _binary_icudtl_dat_end - _binary_icudtl_dat_start);
+}
+#endif
 
 namespace flutter {
 
@@ -71,7 +112,9 @@ void PrintUsage(const std::string& executable_name) {
     auto desc = gSwitchDescs[i];
 
     std::cerr << std::setw(max_width)
-              << std::string("--") + desc.flag.ToString() << " : ";
+              << std::string("--") +
+                     std::string{desc.flag.data(), desc.flag.size()}
+              << " : ";
 
     std::istringstream stream(desc.help);
     int32_t remaining = help_width;
@@ -93,13 +136,26 @@ void PrintUsage(const std::string& executable_name) {
   std::cerr << std::string(column_width, '-') << std::endl;
 }
 
-const fml::StringView FlagForSwitch(Switch swtch) {
+const std::string_view FlagForSwitch(Switch swtch) {
   for (uint32_t i = 0; i < static_cast<uint32_t>(Switch::Sentinel); i++) {
     if (gSwitchDescs[i].sw == swtch) {
       return gSwitchDescs[i].flag;
     }
   }
-  return fml::StringView();
+  return std::string_view();
+}
+
+static bool IsWhitelistedDartVMFlag(const std::string& flag) {
+  for (uint32_t i = 0; i < fml::size(gDartFlagsWhitelist); ++i) {
+    const std::string& allowed = gDartFlagsWhitelist[i];
+    // Check that the prefix of the flag matches one of the whitelisted flags.
+    // We don't need to worry about cases like "--safe --sneaky_dangerous" as
+    // the VM will discard these as a single unrecognized flag.
+    if (std::equal(allowed.begin(), allowed.end(), flag.begin())) {
+      return true;
+    }
+  }
+  return false;
 }
 
 template <typename T>
@@ -156,6 +212,18 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.enable_observatory =
       !command_line.HasOption(FlagForSwitch(Switch::DisableObservatory));
 
+  // Set Observatory Host
+  if (command_line.HasOption(FlagForSwitch(Switch::DeviceObservatoryHost))) {
+    command_line.GetOptionValue(FlagForSwitch(Switch::DeviceObservatoryHost),
+                                &settings.observatory_host);
+  }
+  // Default the observatory port based on --ipv6 if not set.
+  if (settings.observatory_host.empty()) {
+    settings.observatory_host =
+        command_line.HasOption(FlagForSwitch(Switch::IPv6)) ? "::1"
+                                                            : "127.0.0.1";
+  }
+
   // Set Observatory Port
   if (command_line.HasOption(FlagForSwitch(Switch::DeviceObservatoryPort))) {
     if (!GetSwitchValue(command_line, Switch::DeviceObservatoryPort,
@@ -166,21 +234,20 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     }
   }
 
-  // Enable need for authentication codes for VM service communication, if
+  // Disable need for authentication codes for VM service communication, if
   // specified.
-  // TODO(bkonyi): when authentication codes are enabled by default, change
-  // to 'DisableServiceAuthCodes' and un-negate.
   settings.disable_service_auth_codes =
-      !command_line.HasOption(FlagForSwitch(Switch::EnableServiceAuthCodes));
+      command_line.HasOption(FlagForSwitch(Switch::DisableServiceAuthCodes));
 
   // Checked mode overrides.
   settings.disable_dart_asserts =
       command_line.HasOption(FlagForSwitch(Switch::DisableDartAsserts));
 
-  settings.ipv6 = command_line.HasOption(FlagForSwitch(Switch::IPv6));
-
   settings.start_paused =
       command_line.HasOption(FlagForSwitch(Switch::StartPaused));
+
+  settings.enable_checked_mode =
+      command_line.HasOption(FlagForSwitch(Switch::EnableCheckedMode));
 
   settings.enable_dart_profiling =
       command_line.HasOption(FlagForSwitch(Switch::EnableDartProfiling));
@@ -200,47 +267,46 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.verbose_logging =
       command_line.HasOption(FlagForSwitch(Switch::VerboseLogging));
 
-  command_line.GetOptionValue(FlagForSwitch(Switch::FLX), &settings.flx_path);
-
   command_line.GetOptionValue(FlagForSwitch(Switch::FlutterAssetsDir),
                               &settings.assets_path);
 
-  std::string aot_shared_library_path;
-  command_line.GetOptionValue(FlagForSwitch(Switch::AotSharedLibraryPath),
-                              &aot_shared_library_path);
+  std::vector<std::string_view> aot_shared_library_name =
+      command_line.GetOptionValues(FlagForSwitch(Switch::AotSharedLibraryName));
 
-  std::string aot_snapshot_path;
-  command_line.GetOptionValue(FlagForSwitch(Switch::AotSnapshotPath),
-                              &aot_snapshot_path);
+  std::string snapshot_asset_path;
+  command_line.GetOptionValue(FlagForSwitch(Switch::SnapshotAssetPath),
+                              &snapshot_asset_path);
 
-  std::string aot_vm_snapshot_data_filename;
-  command_line.GetOptionValue(FlagForSwitch(Switch::AotVmSnapshotData),
-                              &aot_vm_snapshot_data_filename);
+  std::string vm_snapshot_data_filename;
+  command_line.GetOptionValue(FlagForSwitch(Switch::VmSnapshotData),
+                              &vm_snapshot_data_filename);
 
-  std::string aot_vm_snapshot_instr_filename;
-  command_line.GetOptionValue(FlagForSwitch(Switch::AotVmSnapshotInstructions),
-                              &aot_vm_snapshot_instr_filename);
+  std::string vm_snapshot_instr_filename;
+  command_line.GetOptionValue(FlagForSwitch(Switch::VmSnapshotInstructions),
+                              &vm_snapshot_instr_filename);
 
-  std::string aot_isolate_snapshot_data_filename;
-  command_line.GetOptionValue(FlagForSwitch(Switch::AotIsolateSnapshotData),
-                              &aot_isolate_snapshot_data_filename);
+  std::string isolate_snapshot_data_filename;
+  command_line.GetOptionValue(FlagForSwitch(Switch::IsolateSnapshotData),
+                              &isolate_snapshot_data_filename);
 
-  std::string aot_isolate_snapshot_instr_filename;
+  std::string isolate_snapshot_instr_filename;
   command_line.GetOptionValue(
-      FlagForSwitch(Switch::AotIsolateSnapshotInstructions),
-      &aot_isolate_snapshot_instr_filename);
+      FlagForSwitch(Switch::IsolateSnapshotInstructions),
+      &isolate_snapshot_instr_filename);
 
-  if (aot_shared_library_path.size() > 0) {
-    settings.application_library_path = aot_shared_library_path;
-  } else if (aot_snapshot_path.size() > 0) {
-    settings.vm_snapshot_data_path = fml::paths::JoinPaths(
-        {aot_snapshot_path, aot_vm_snapshot_data_filename});
+  if (aot_shared_library_name.size() > 0) {
+    for (std::string_view name : aot_shared_library_name) {
+      settings.application_library_path.emplace_back(name);
+    }
+  } else if (snapshot_asset_path.size() > 0) {
+    settings.vm_snapshot_data_path =
+        fml::paths::JoinPaths({snapshot_asset_path, vm_snapshot_data_filename});
     settings.vm_snapshot_instr_path = fml::paths::JoinPaths(
-        {aot_snapshot_path, aot_vm_snapshot_instr_filename});
+        {snapshot_asset_path, vm_snapshot_instr_filename});
     settings.isolate_snapshot_data_path = fml::paths::JoinPaths(
-        {aot_snapshot_path, aot_isolate_snapshot_data_filename});
+        {snapshot_asset_path, isolate_snapshot_data_filename});
     settings.isolate_snapshot_instr_path = fml::paths::JoinPaths(
-        {aot_snapshot_path, aot_isolate_snapshot_instr_filename});
+        {snapshot_asset_path, isolate_snapshot_instr_filename});
   }
 
   command_line.GetOptionValue(FlagForSwitch(Switch::CacheDirPath),
@@ -255,27 +321,38 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
                                   &icu_symbol_prefix);
       command_line.GetOptionValue(FlagForSwitch(Switch::ICUNativeLibPath),
                                   &native_lib_path);
+
+#if OS_ANDROID
+      settings.icu_mapper = GetICUStaticMapping;
+#else
       settings.icu_mapper = [icu_symbol_prefix, native_lib_path] {
         return GetSymbolMapping(icu_symbol_prefix, native_lib_path);
       };
+#endif
     }
   }
 
   settings.use_test_fonts =
       command_line.HasOption(FlagForSwitch(Switch::UseTestFonts));
 
-  command_line.GetOptionValue(FlagForSwitch(Switch::LogTag), &settings.log_tag);
   std::string all_dart_flags;
   if (command_line.GetOptionValue(FlagForSwitch(Switch::DartFlags),
                                   &all_dart_flags)) {
     std::stringstream stream(all_dart_flags);
-    std::istream_iterator<std::string> end;
-    for (std::istream_iterator<std::string> it(stream); it != end; ++it)
-      settings.dart_flags.push_back(*it);
+    std::string flag;
+
+    // Assume that individual flags are comma separated.
+    while (std::getline(stream, flag, ',')) {
+      if (!IsWhitelistedDartVMFlag(flag)) {
+        FML_LOG(FATAL) << "Encountered blacklisted Dart VM flag: " << flag;
+      }
+      settings.dart_flags.push_back(flag);
+    }
   }
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE && \
-    FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
+#if !FLUTTER_RELEASE
+  command_line.GetOptionValue(FlagForSwitch(Switch::LogTag), &settings.log_tag);
+
   settings.trace_skia =
       command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
   settings.trace_systrace =
@@ -284,6 +361,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
   settings.dump_skp_on_shader_compilation =
       command_line.HasOption(FlagForSwitch(Switch::DumpSkpOnShaderCompilation));
+
+  settings.cache_sksl =
+      command_line.HasOption(FlagForSwitch(Switch::CacheSkSL));
 
   return settings;
 }

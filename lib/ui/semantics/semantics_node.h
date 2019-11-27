@@ -69,7 +69,15 @@ enum class SemanticsFlags : int32_t {
   kHasToggledState = 1 << 16,
   kIsToggled = 1 << 17,
   kHasImplicitScrolling = 1 << 18,
+  // The Dart API defines the following flag but it isn't used in iOS.
+  // kIsMultiline = 1 << 19,
+  kIsReadOnly = 1 << 20,
+  kIsFocusable = 1 << 21,
+  kIsLink = 1 << 22,
 };
+
+const int kScrollableSemanticsFlags =
+    static_cast<int32_t>(SemanticsFlags::kHasImplicitScrolling);
 
 struct SemanticsNode {
   SemanticsNode();
@@ -78,8 +86,8 @@ struct SemanticsNode {
 
   ~SemanticsNode();
 
-  bool HasAction(SemanticsAction action);
-  bool HasFlag(SemanticsFlags flag);
+  bool HasAction(SemanticsAction action) const;
+  bool HasFlag(SemanticsFlags flag) const;
 
   // Whether this node is for embedded platform views.
   bool IsPlatformViewNode() const;
@@ -87,6 +95,8 @@ struct SemanticsNode {
   int32_t id = 0;
   int32_t flags = 0;
   int32_t actions = 0;
+  int32_t maxValueLength = -1;
+  int32_t currentValueLength = -1;
   int32_t textSelectionBase = -1;
   int32_t textSelectionExtent = -1;
   int32_t platformViewId = -1;

@@ -5,14 +5,31 @@
 #ifndef FLUTTER_SHELL_PLATFORM_GLFW_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_WINDOW_CONTROLLER_H_
 #define FLUTTER_SHELL_PLATFORM_GLFW_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_WINDOW_CONTROLLER_H_
 
+#include <flutter_glfw.h>
+
+#include <chrono>
+#include <memory>
 #include <string>
 #include <vector>
 
-#include <flutter_glfw.h>
-
+#include "flutter_window.h"
 #include "plugin_registrar.h"
+#include "plugin_registry.h"
 
 namespace flutter {
+
+// Properties for Flutter window creation.
+struct WindowProperties {
+  // The display title.
+  std::string title;
+  // Width in screen coordinates.
+  int32_t width;
+  // Height in screen coordinates.
+  int32_t height;
+  // Whether or not the user is prevented from resizing the window.
+  // Reversed so that the default for a cleared struct is to allow resizing.
+  bool prevent_resize;
+};
 
 // A controller for a window displaying Flutter content.
 //
@@ -24,14 +41,18 @@ namespace flutter {
 // requires control of the application's event loop, and is thus useful
 // primarily for building a simple one-window shell hosting a Flutter
 // application. The final implementation and API will be very different.
-class FlutterWindowController {
+class FlutterWindowController : public PluginRegistry {
  public:
   // There must be only one instance of this class in an application at any
   // given time, as Flutter does not support multiple engines in one process,
   // or multiple views in one engine.
   explicit FlutterWindowController(const std::string& icu_data_path);
 
-  ~FlutterWindowController();
+  virtual ~FlutterWindowController();
+
+  // Prevent copying.
+  FlutterWindowController(FlutterWindowController const&) = delete;
+  FlutterWindowController& operator=(FlutterWindowController const&) = delete;
 
   // Creates and displays a window for displaying Flutter content.
   //
@@ -44,38 +65,34 @@ class FlutterWindowController {
   // for details. Not all arguments will apply to desktop.
   //
   // Only one Flutter window can exist at a time; see constructor comment.
-  bool CreateWindow(int width,
-                    int height,
-                    const std::string& title,
+  bool CreateWindow(const WindowProperties& window_properties,
                     const std::string& assets_path,
                     const std::vector<std::string>& arguments);
 
-  // Returns the FlutterDesktopPluginRegistrarRef to register a plugin with the
-  // given name.
+  // Destroys the current window, if any.
   //
-  // The name must be unique across the application.
-  FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
-      const std::string& plugin_name);
+  // Because only one window can exist at a time, this method must be called
+  // between calls to CreateWindow, or the second one will fail.
+  void DestroyWindow();
 
-  // Enables or disables hover tracking.
+  // The FlutterWindow managed by this controller, if any. Returns nullptr
+  // before CreateWindow is called, after DestroyWindow is called, and after
+  // RunEventLoop returns;
+  FlutterWindow* window() { return window_.get(); }
+
+  // Processes the next event on this window, or returns early if |timeout| is
+  // reached before the next event.
   //
-  // If hover is enabled, mouse movement will send hover events to the Flutter
-  // engine, rather than only tracking the mouse while the button is pressed.
-  // Defaults to off.
-  void SetHoverEnabled(bool enabled);
+  // Returns false if the window was closed as a result of event processing.
+  bool RunEventLoopWithTimeout(
+      std::chrono::milliseconds timeout = std::chrono::milliseconds::max());
 
-  // Sets the displayed title of the window.
-  void SetTitle(const std::string& title);
-
-  // Sets the displayed icon for the window.
-  //
-  // The pixel format is 32-bit RGBA. The provided image data only needs to be
-  // valid for the duration of the call to this method. Pass a nullptr to revert
-  // to the default icon.
-  void SetIcon(uint8_t* pixel_data, int width, int height);
-
-  // Loops on Flutter window events until the window closes.
+  // Deprecated. Use RunEventLoopWithTimeout.
   void RunEventLoop();
+
+  // flutter::PluginRegistry:
+  FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
+      const std::string& plugin_name) override;
 
  private:
   // The path to the ICU data file. Set at creation time since it is the same
@@ -85,8 +102,11 @@ class FlutterWindowController {
   // Whether or not FlutterDesktopInit succeeded at creation time.
   bool init_succeeded_ = false;
 
-  // The curent Flutter window, if any.
-  FlutterDesktopWindowRef window_ = nullptr;
+  // The owned FlutterWindow, if any.
+  std::unique_ptr<FlutterWindow> window_;
+
+  // Handle for interacting with the C API's window controller, if any.
+  FlutterDesktopWindowControllerRef controller_ = nullptr;
 };
 
 }  // namespace flutter

@@ -5,13 +5,16 @@
 #include "flutter/lib/ui/painting/paint.h"
 
 #include "flutter/fml/logging.h"
+#include "flutter/lib/ui/painting/color_filter.h"
+#include "flutter/lib/ui/painting/image_filter.h"
 #include "flutter/lib/ui/painting/shader.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/skia/include/core/SkImageFilter.h"
 #include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/core/SkString.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
-#include "third_party/tonic/typed_data/float32_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 namespace flutter {
 
@@ -25,19 +28,17 @@ constexpr int kStrokeCapIndex = 5;
 constexpr int kStrokeJoinIndex = 6;
 constexpr int kStrokeMiterLimitIndex = 7;
 constexpr int kFilterQualityIndex = 8;
-constexpr int kColorFilterIndex = 9;
-constexpr int kColorFilterColorIndex = 10;
-constexpr int kColorFilterBlendModeIndex = 11;
-constexpr int kMaskFilterIndex = 12;
-constexpr int kMaskFilterBlurStyleIndex = 13;
-constexpr int kMaskFilterSigmaIndex = 14;
-constexpr int kInvertColorIndex = 15;
-constexpr size_t kDataByteCount = 75;  // 4 * (last index + 1)
+constexpr int kMaskFilterIndex = 9;
+constexpr int kMaskFilterBlurStyleIndex = 10;
+constexpr int kMaskFilterSigmaIndex = 11;
+constexpr int kInvertColorIndex = 12;
+constexpr size_t kDataByteCount = 52;  // 4 * (last index + 1)
 
 // Indices for objects.
 constexpr int kShaderIndex = 0;
-constexpr int kColorFilterMatrixIndex = 1;
-constexpr int kObjectCount = 2;  // One larger than largest object index.
+constexpr int kColorFilterIndex = 1;
+constexpr int kImageFilterIndex = 2;
+constexpr int kObjectCount = 3;  // One larger than largest object index.
 
 // Must be kept in sync with the default in painting.dart.
 constexpr uint32_t kColorDefault = 0xFF000000;
@@ -52,7 +53,7 @@ constexpr double kStrokeMiterLimitDefault = 4.0;
 
 // A color matrix which inverts colors.
 // clang-format off
-constexpr SkScalar invert_colors[20] = {
+constexpr float invert_colors[20] = {
   -1.0,    0,    0, 1.0, 0,
      0, -1.0,    0, 1.0, 0,
      0,    0, -1.0, 1.0, 0,
@@ -62,51 +63,6 @@ constexpr SkScalar invert_colors[20] = {
 
 // Must be kept in sync with the MaskFilter private constants in painting.dart.
 enum MaskFilterType { Null, Blur };
-
-// Must be kept in sync with the ColorFilter private constants in painting.dart.
-enum ColorFilterType {
-  None,
-  Mode,
-  Matrix,
-  LinearToSRGBGamma,
-  SRGBToLinearGamma
-};
-
-sk_sp<SkColorFilter> ExtractColorFilter(const uint32_t* uint_data,
-                                        Dart_Handle* values) {
-  switch (uint_data[kColorFilterIndex]) {
-    case Mode: {
-      SkColor color = uint_data[kColorFilterColorIndex];
-      SkBlendMode blend_mode =
-          static_cast<SkBlendMode>(uint_data[kColorFilterBlendModeIndex]);
-
-      return SkColorFilters::Blend(color, blend_mode);
-    }
-    case Matrix: {
-      Dart_Handle matrixHandle = values[kColorFilterMatrixIndex];
-      if (!Dart_IsNull(matrixHandle)) {
-        FML_DCHECK(Dart_IsList(matrixHandle));
-        intptr_t length = 0;
-        Dart_ListLength(matrixHandle, &length);
-
-        FML_CHECK(length == 20);
-
-        tonic::Float32List decoded(matrixHandle);
-        return SkColorFilters::MatrixRowMajor255(decoded.data());
-      }
-      return nullptr;
-    }
-    case LinearToSRGBGamma: {
-      return SkColorFilters::LinearToSRGBGamma();
-    }
-    case SRGBToLinearGamma: {
-      return SkColorFilters::SRGBToLinearGamma();
-    }
-    default:
-      FML_DLOG(ERROR) << "Out of range value received for kColorFilterIndex.";
-      return nullptr;
-  }
-}
 
 Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
   is_null_ = Dart_IsNull(paint_data);
@@ -127,6 +83,20 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
     if (!Dart_IsNull(shader)) {
       Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader);
       paint_.setShader(decoded->shader());
+    }
+
+    Dart_Handle color_filter = values[kColorFilterIndex];
+    if (!Dart_IsNull(color_filter)) {
+      ColorFilter* decoded_color_filter =
+          tonic::DartConverter<ColorFilter*>::FromDart(color_filter);
+      paint_.setColorFilter(decoded_color_filter->filter());
+    }
+
+    Dart_Handle image_filter = values[kImageFilterIndex];
+    if (!Dart_IsNull(image_filter)) {
+      ImageFilter* decoded =
+          tonic::DartConverter<ImageFilter*>::FromDart(image_filter);
+      paint_.setImageFilter(decoded->filter());
     }
   }
 
@@ -174,20 +144,14 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
   if (filter_quality)
     paint_.setFilterQuality(static_cast<SkFilterQuality>(filter_quality));
 
-  if (uint_data[kColorFilterIndex] && uint_data[kInvertColorIndex]) {
-    sk_sp<SkColorFilter> color_filter = ExtractColorFilter(uint_data, values);
-    if (color_filter) {
-      sk_sp<SkColorFilter> invert_filter =
-          SkColorFilters::MatrixRowMajor255(invert_colors);
-      paint_.setColorFilter(invert_filter->makeComposed(color_filter));
+  if (uint_data[kInvertColorIndex]) {
+    sk_sp<SkColorFilter> invert_filter =
+        ColorFilter::MakeColorMatrixFilter255(invert_colors);
+    sk_sp<SkColorFilter> current_filter = paint_.refColorFilter();
+    if (current_filter) {
+      invert_filter = invert_filter->makeComposed(current_filter);
     }
-  } else if (uint_data[kInvertColorIndex]) {
-    paint_.setColorFilter(SkColorFilters::MatrixRowMajor255(invert_colors));
-  } else if (uint_data[kColorFilterIndex]) {
-    sk_sp<SkColorFilter> color_filter = ExtractColorFilter(uint_data, values);
-    if (color_filter) {
-      paint_.setColorFilter(color_filter);
-    }
+    paint_.setColorFilter(invert_filter);
   }
 
   switch (uint_data[kMaskFilterIndex]) {

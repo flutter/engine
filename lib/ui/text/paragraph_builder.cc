@@ -14,6 +14,7 @@
 #include "flutter/third_party/txt/src/txt/font_style.h"
 #include "flutter/third_party/txt/src/txt/font_weight.h"
 #include "flutter/third_party/txt/src/txt/paragraph_style.h"
+#include "flutter/third_party/txt/src/txt/text_baseline.h"
 #include "flutter/third_party/txt/src/txt/text_decoration.h"
 #include "flutter/third_party/txt/src/txt/text_style.h"
 #include "third_party/icu/source/common/unicode/ustring.h"
@@ -46,6 +47,7 @@ const int tsLocaleIndex = 14;
 const int tsBackgroundIndex = 15;
 const int tsForegroundIndex = 16;
 const int tsTextShadowsIndex = 17;
+const int tsFontFeaturesIndex = 18;
 
 const int tsColorMask = 1 << tsColorIndex;
 const int tsTextDecorationMask = 1 << tsTextDecorationIndex;
@@ -64,6 +66,7 @@ const int tsLocaleMask = 1 << tsLocaleIndex;
 const int tsBackgroundMask = 1 << tsBackgroundIndex;
 const int tsForegroundMask = 1 << tsForegroundIndex;
 const int tsTextShadowsMask = 1 << tsTextShadowsIndex;
+const int tsFontFeaturesMask = 1 << tsFontFeaturesIndex;
 
 // ParagraphStyle
 
@@ -101,6 +104,10 @@ constexpr uint32_t kXOffset = 1;
 constexpr uint32_t kYOffset = 2;
 constexpr uint32_t kBlurOffset = 3;
 
+// FontFeature decoding
+constexpr uint32_t kBytesPerFontFeature = 8;
+constexpr uint32_t kFontFeatureTagLength = 4;
+
 // Strut decoding
 const int sFontWeightIndex = 0;
 const int sFontStyleIndex = 1;
@@ -126,10 +133,11 @@ static void ParagraphBuilder_constructor(Dart_NativeArguments args) {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, ParagraphBuilder);
 
-#define FOR_EACH_BINDING(V)      \
-  V(ParagraphBuilder, pushStyle) \
-  V(ParagraphBuilder, pop)       \
-  V(ParagraphBuilder, addText)   \
+#define FOR_EACH_BINDING(V)           \
+  V(ParagraphBuilder, pushStyle)      \
+  V(ParagraphBuilder, pop)            \
+  V(ParagraphBuilder, addText)        \
+  V(ParagraphBuilder, addPlaceholder) \
   V(ParagraphBuilder, build)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
@@ -196,6 +204,7 @@ void decodeStrut(Dart_Handle strut_data,
   }
   if (mask & sHeightMask) {
     paragraph_style.strut_height = float_data[float_count++];
+    paragraph_style.strut_has_height_override = true;
   }
   if (mask & sLeadingMask) {
     paragraph_style.strut_leading = float_data[float_count++];
@@ -253,6 +262,7 @@ ParagraphBuilder::ParagraphBuilder(
 
   if (mask & psHeightMask) {
     style.height = height;
+    style.has_height_override = true;
   }
 
   if (mask & psStrutStyleMask) {
@@ -273,9 +283,16 @@ ParagraphBuilder::ParagraphBuilder(
 
   FontCollection& font_collection =
       UIDartState::Current()->window()->client()->GetFontCollection();
-  m_paragraphBuilder = std::make_unique<txt::ParagraphBuilder>(
-      style, font_collection.GetFontCollection());
-}  // namespace flutter
+
+#if FLUTTER_ENABLE_SKSHAPER
+#define FLUTTER_PARAGRAPH_BUILDER txt::ParagraphBuilder::CreateSkiaBuilder
+#else
+#define FLUTTER_PARAGRAPH_BUILDER txt::ParagraphBuilder::CreateTxtBuilder
+#endif
+
+  m_paragraphBuilder =
+      FLUTTER_PARAGRAPH_BUILDER(style, font_collection.GetFontCollection());
+}
 
 ParagraphBuilder::~ParagraphBuilder() = default;
 
@@ -303,6 +320,24 @@ void decodeTextShadows(Dart_Handle shadows_data,
   }
 }
 
+void decodeFontFeatures(Dart_Handle font_features_data,
+                        txt::FontFeatures& font_features) {
+  tonic::DartByteData byte_data(font_features_data);
+  FML_CHECK(byte_data.length_in_bytes() % kBytesPerFontFeature == 0);
+
+  size_t feature_count = byte_data.length_in_bytes() / kBytesPerFontFeature;
+  for (size_t feature_index = 0; feature_index < feature_count;
+       ++feature_index) {
+    size_t feature_offset = feature_index * kBytesPerFontFeature;
+    const char* feature_bytes =
+        static_cast<const char*>(byte_data.data()) + feature_offset;
+    std::string tag(feature_bytes, kFontFeatureTagLength);
+    int32_t value = *(reinterpret_cast<const int32_t*>(feature_bytes +
+                                                       kFontFeatureTagLength));
+    font_features.SetFeature(tag, value);
+  }
+}
+
 void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
                                  const std::vector<std::string>& fontFamilies,
                                  double fontSize,
@@ -315,7 +350,8 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
                                  Dart_Handle background_data,
                                  Dart_Handle foreground_objects,
                                  Dart_Handle foreground_data,
-                                 Dart_Handle shadows_data) {
+                                 Dart_Handle shadows_data,
+                                 Dart_Handle font_features_data) {
   FML_DCHECK(encoded.num_elements() == 8);
 
   int32_t mask = encoded[0];
@@ -374,6 +410,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 
   if (mask & tsHeightMask) {
     style.height = height;
+    style.has_height_override = true;
   }
 
   if (mask & tsLocaleMask) {
@@ -401,8 +438,14 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
   }
 
   if (mask & tsFontFamilyMask) {
-    style.font_families.insert(style.font_families.end(), fontFamilies.begin(),
-                               fontFamilies.end());
+    // The child style's font families override the parent's font families.
+    // If the child's fonts are not available, then the font collection will
+    // use the system fallback fonts (not the parent's fonts).
+    style.font_families = fontFamilies;
+  }
+
+  if (mask & tsFontFeaturesMask) {
+    decodeFontFeatures(font_features_data, style.font_features);
   }
 
   m_paragraphBuilder->PushStyle(style);
@@ -426,6 +469,20 @@ Dart_Handle ParagraphBuilder::addText(const std::u16string& text) {
     return tonic::ToDart("string is not well-formed UTF-16");
 
   m_paragraphBuilder->AddText(text);
+
+  return Dart_Null();
+}
+
+Dart_Handle ParagraphBuilder::addPlaceholder(double width,
+                                             double height,
+                                             unsigned alignment,
+                                             double baseline_offset,
+                                             unsigned baseline) {
+  txt::PlaceholderRun placeholder_run(
+      width, height, static_cast<txt::PlaceholderAlignment>(alignment),
+      static_cast<txt::TextBaseline>(baseline), baseline_offset);
+
+  m_paragraphBuilder->AddPlaceholder(placeholder_run);
 
   return Dart_Null();
 }

@@ -16,6 +16,14 @@
 
 @class FlutterViewController;
 
+NS_ASSUME_NONNULL_BEGIN
+
+/**
+ * The dart entrypoint that is associated with `main()`.  This is to be used as an argument to the
+ * `runWithEntrypoint*` methods.
+ */
+extern NSString* const FlutterDefaultDartEntrypoint;
+
 /**
  * The FlutterEngine class coordinates a single instance of execution for a
  * `FlutterDartProject`.  It may have zero or one `FlutterViewController` at a
@@ -38,8 +46,27 @@
  * One of these methods must be invoked before calling `-setViewController:`.
  */
 FLUTTER_EXPORT
-@interface FlutterEngine
-    : NSObject <FlutterBinaryMessenger, FlutterTextureRegistry, FlutterPluginRegistry>
+@interface FlutterEngine : NSObject <FlutterTextureRegistry, FlutterPluginRegistry>
+
+/**
+ * Initialize this FlutterEngine.
+ *
+ * The engine will execute the project located in the bundle with the identifier
+ * "io.flutter.flutter.app" (the default for Flutter projects).
+ *
+ * A newly initialized engine will not run until either `-runWithEntrypoint:` or
+ * `-runWithEntrypoint:libraryURI:` is called.
+ *
+ * FlutterEngine created with this method will have allowHeadlessExecution set to `YES`.
+ * This means that the engine will continue to run regardless of whether a `FlutterViewController`
+ * is attached to it or not, until `-destroyContext:` is called or the process finishes.
+ *
+ * @param labelPrefix The label prefix used to identify threads for this instance. Should
+ *   be unique across FlutterEngine instances, and is used in instrumentation to label
+ *   the threads used by this FlutterEngine.
+ */
+- (instancetype)initWithName:(NSString*)labelPrefix;
+
 /**
  * Initialize this FlutterEngine with a `FlutterDartProject`.
  *
@@ -57,9 +84,9 @@ FLUTTER_EXPORT
  * @param labelPrefix The label prefix used to identify threads for this instance. Should
  *   be unique across FlutterEngine instances, and is used in instrumentation to label
  *   the threads used by this FlutterEngine.
- * @param projectOrNil The `FlutterDartProject` to run.
+ * @param project The `FlutterDartProject` to run.
  */
-- (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)projectOrNil;
+- (instancetype)initWithName:(NSString*)labelPrefix project:(nullable FlutterDartProject*)project;
 
 /**
  * Initialize this FlutterEngine with a `FlutterDartProject`.
@@ -74,12 +101,12 @@ FLUTTER_EXPORT
  * @param labelPrefix The label prefix used to identify threads for this instance. Should
  *   be unique across FlutterEngine instances, and is used in instrumentation to label
  *   the threads used by this FlutterEngine.
- * @param projectOrNil The `FlutterDartProject` to run.
+ * @param project The `FlutterDartProject` to run.
  * @param allowHeadlessExecution Whether or not to allow this instance to continue
  *   running after passing a nil `FlutterViewController` to `-setViewController:`.
  */
 - (instancetype)initWithName:(NSString*)labelPrefix
-                     project:(FlutterDartProject*)projectOrNil
+                     project:(nullable FlutterDartProject*)project
       allowHeadlessExecution:(BOOL)allowHeadlessExecution NS_DESIGNATED_INITIALIZER;
 
 /**
@@ -92,19 +119,30 @@ FLUTTER_EXPORT
 
 /**
  * Runs a Dart program on an Isolate from the main Dart library (i.e. the library that
+ * contains `main()`), using `main()` as the entrypoint (the default for Flutter projects).
+ *
+ * The first call to this method will create a new Isolate. Subsequent calls will return
+ * immediately.
+ *
+ * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
+ */
+- (BOOL)run;
+
+/**
+ * Runs a Dart program on an Isolate from the main Dart library (i.e. the library that
  * contains `main()`).
  *
  * The first call to this method will create a new Isolate. Subsequent calls will return
  * immediately.
  *
  * @param entrypoint The name of a top-level function from the same Dart
- *   library that contains the app's main() function.  If this is nil, it will
- *   default to `main()`.  If it is not the app's main() function, that function
- *   must be decorated with `@pragma(vm:entry-point)` to ensure the method is not
- *   tree-shaken by the Dart compiler.
+ *   library that contains the app's main() function.  If this is FlutterDefaultDartEntrypoint (or
+ *   nil) it will default to `main()`.  If it is not the app's main() function, that function must
+ *   be decorated with `@pragma(vm:entry-point)` to ensure the method is not tree-shaken by the Dart
+ *   compiler.
  * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
  */
-- (BOOL)runWithEntrypoint:(NSString*)entrypoint;
+- (BOOL)runWithEntrypoint:(nullable NSString*)entrypoint;
 
 /**
  * Runs a Dart program on an Isolate using the specified entrypoint and Dart library,
@@ -113,15 +151,15 @@ FLUTTER_EXPORT
  * The first call to this method will create a new Isolate. Subsequent calls will return
  * immediately.
  *
- * @param entrypoint The name of a top-level function from a Dart library.  If nil, this will
- *   default to `main()`.  If it is not the app's main() function, that function
- *   must be decorated with `@pragma(vm:entry-point)` to ensure the method is not
- *   tree-shaken by the Dart compiler.
+ * @param entrypoint The name of a top-level function from a Dart library.  If this is
+ *   FlutterDefaultDartEntrypoint (or nil); this will default to `main()`.  If it is not the app's
+ *   main() function, that function must be decorated with `@pragma(vm:entry-point)` to ensure the
+ *   method is not tree-shaken by the Dart compiler.
  * @param uri The URI of the Dart library which contains the entrypoint method.  IF nil,
  *   this will default to the same library as the `main()` function in the Dart program.
  * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
  */
-- (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)uri;
+- (BOOL)runWithEntrypoint:(nullable NSString*)entrypoint libraryURI:(nullable NSString*)uri;
 
 /**
  * Destroy running context for an engine.
@@ -178,10 +216,14 @@ FLUTTER_EXPORT
 /**
  * The `FlutterMethodChannel` used for localization related platform messages, such as
  * setting the locale.
+ *
+ * Can be nil after `destroyContext` is called.
  */
-@property(nonatomic, readonly) FlutterMethodChannel* localizationChannel;
+@property(nonatomic, readonly, nullable) FlutterMethodChannel* localizationChannel;
 /**
  * The `FlutterMethodChannel` used for navigation related platform messages.
+ *
+ * Can be nil after `destroyContext` is called.
  *
  * @see [Navigation
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/navigation-constant.html)
@@ -192,12 +234,16 @@ FLUTTER_EXPORT
 /**
  * The `FlutterMethodChannel` used for core platform messages, such as
  * information about the screen orientation.
+ *
+ * Can be nil after `destroyContext` is called.
  */
 @property(nonatomic, readonly) FlutterMethodChannel* platformChannel;
 
 /**
  * The `FlutterMethodChannel` used to communicate text input events to the
  * Dart Isolate.
+ *
+ * Can be nil after `destroyContext` is called.
  *
  * @see [Text Input
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/textInput-constant.html)
@@ -208,6 +254,8 @@ FLUTTER_EXPORT
  * The `FlutterBasicMessageChannel` used to communicate app lifecycle events
  * to the Dart Isolate.
  *
+ * Can be nil after `destroyContext` is called.
+ *
  * @see [Lifecycle
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/lifecycle-constant.html)
  */
@@ -217,6 +265,8 @@ FLUTTER_EXPORT
  * The `FlutterBasicMessageChannel` used for communicating system events, such as
  * memory pressure events.
  *
+ * Can be nil after `destroyContext` is called.
+ *
  * @see [System
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/system-constant.html)
  */
@@ -225,9 +275,42 @@ FLUTTER_EXPORT
 /**
  * The `FlutterBasicMessageChannel` used for communicating user settings such as
  * clock format and text scale.
+ *
+ * Can be nil after `destroyContext` is called.
  */
 @property(nonatomic, readonly) FlutterBasicMessageChannel* settingsChannel;
 
+/**
+ * The `NSURL` of the observatory for the service isolate.
+ *
+ * This is only set in debug and profile runtime modes, and only after the
+ * observatory service is ready. In release mode or before the observatory has
+ * started, it returns `nil`.
+ */
+@property(nonatomic, readonly, nullable) NSURL* observatoryUrl;
+
+/**
+ * The `FlutterBinaryMessenger` associated with this FlutterEngine (used for communicating with
+ * channels).
+ */
+@property(nonatomic, readonly) NSObject<FlutterBinaryMessenger>* binaryMessenger;
+
+/**
+ * The UI Isolate ID of of the engine.
+ *
+ * This property will be nil if the engine is not running.
+ */
+@property(nonatomic, readonly, copy, nullable) NSString* isolateId;
+
+/**
+ * Whether or not GPU calls are allowed.
+ *
+ * Typically this is set when the app is backgrounded and foregrounded.
+ */
+@property(nonatomic, assign) BOOL isGpuDisabled;
+
 @end
+
+NS_ASSUME_NONNULL_END
 
 #endif  // FLUTTER_FLUTTERENGINE_H_

@@ -9,7 +9,7 @@
 #include "flutter/flow/layers/performance_overlay_layer.h"
 #include "third_party/skia/include/core/SkFont.h"
 
-namespace flow {
+namespace flutter {
 namespace {
 
 void DrawStatisticsText(SkCanvas& canvas,
@@ -22,10 +22,9 @@ void DrawStatisticsText(SkCanvas& canvas,
     font = SkFont(SkTypeface::MakeFromFile(font_path.c_str()));
   }
   font.setSize(15);
-  font.setLinearMetrics(false);
   SkPaint paint;
   paint.setColor(SK_ColorGRAY);
-  canvas.drawSimpleText(string.c_str(), string.size(), kUTF8_SkTextEncoding, x,
+  canvas.drawSimpleText(string.c_str(), string.size(), SkTextEncoding::kUTF8, x,
                         y, font, paint);
 }
 
@@ -85,14 +84,14 @@ void PerformanceOverlayLayer::Paint(PaintContext& context) const {
   SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
 
   VisualizeStopWatch(
-      *context.leaf_nodes_canvas, context.frame_time, x, y, width,
+      *context.leaf_nodes_canvas, context.raster_time, x, y, width,
       height - padding, options_ & kVisualizeRasterizerStatistics,
       options_ & kDisplayRasterizerStatistics, "GPU", font_path_);
 
-  VisualizeStopWatch(*context.leaf_nodes_canvas, context.engine_time, x,
-                     y + height, width, height - padding,
+  VisualizeStopWatch(*context.leaf_nodes_canvas, context.ui_time, x, y + height,
+                     width, height - padding,
                      options_ & kVisualizeEngineStatistics,
                      options_ & kDisplayEngineStatistics, "UI", font_path_);
 }
 
-}  // namespace flow
+}  // namespace flutter

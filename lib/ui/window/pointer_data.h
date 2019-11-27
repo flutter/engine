@@ -9,6 +9,28 @@
 
 namespace flutter {
 
+// If this value changes, update the pointer data unpacking code in hooks.dart.
+static constexpr int kPointerDataFieldCount = 28;
+static constexpr int kBytesPerField = sizeof(int64_t);
+// Must match the button constants in events.dart.
+enum PointerButtonMouse : int64_t {
+  kPointerButtonMousePrimary = 1 << 0,
+  kPointerButtonMouseSecondary = 1 << 1,
+  kPointerButtonMouseMiddle = 1 << 2,
+  kPointerButtonMouseBack = 1 << 3,
+  kPointerButtonMouseForward = 1 << 4,
+};
+
+enum PointerButtonTouch : int64_t {
+  kPointerButtonTouchContact = 1 << 0,
+};
+
+enum PointerButtonStylus : int64_t {
+  kPointerButtonStylusContact = 1 << 0,
+  kPointerButtonStylusPrimary = 1 << 1,
+  kPointerButtonStylusSecondary = 1 << 2,
+};
+
 // This structure is unpacked by hooks.dart.
 struct alignas(8) PointerData {
   // Must match the PointerChange enum in pointer.dart.
@@ -41,10 +63,14 @@ struct alignas(8) PointerData {
   DeviceKind kind;
   SignalKind signal_kind;
   int64_t device;
+  int64_t pointer_identifier;
   double physical_x;
   double physical_y;
+  double physical_delta_x;
+  double physical_delta_y;
   int64_t buttons;
   int64_t obscured;
+  int64_t synthesized;
   double pressure;
   double pressure_min;
   double pressure_max;

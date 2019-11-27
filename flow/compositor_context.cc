@@ -7,9 +7,10 @@
 #include "flutter/flow/layers/layer_tree.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
-namespace flow {
+namespace flutter {
 
-CompositorContext::CompositorContext() = default;
+CompositorContext::CompositorContext(fml::Milliseconds frame_budget)
+    : raster_time_(frame_budget), ui_time_(frame_budget) {}
 
 CompositorContext::~CompositorContext() = default;
 
@@ -17,7 +18,7 @@ void CompositorContext::BeginFrame(ScopedFrame& frame,
                                    bool enable_instrumentation) {
   if (enable_instrumentation) {
     frame_count_.Increment();
-    frame_time_.Start();
+    raster_time_.Start();
   }
 }
 
@@ -25,7 +26,7 @@ void CompositorContext::EndFrame(ScopedFrame& frame,
                                  bool enable_instrumentation) {
   raster_cache_.SweepAfterFrame();
   if (enable_instrumentation) {
-    frame_time_.Stop();
+    raster_time_.Stop();
   }
 }
 
@@ -34,10 +35,11 @@ std::unique_ptr<CompositorContext::ScopedFrame> CompositorContext::AcquireFrame(
     SkCanvas* canvas,
     ExternalViewEmbedder* view_embedder,
     const SkMatrix& root_surface_transformation,
-    bool instrumentation_enabled) {
-  return std::make_unique<ScopedFrame>(*this, gr_context, canvas, view_embedder,
-                                       root_surface_transformation,
-                                       instrumentation_enabled);
+    bool instrumentation_enabled,
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
+  return std::make_unique<ScopedFrame>(
+      *this, gr_context, canvas, view_embedder, root_surface_transformation,
+      instrumentation_enabled, gpu_thread_merger);
 }
 
 CompositorContext::ScopedFrame::ScopedFrame(
@@ -46,13 +48,15 @@ CompositorContext::ScopedFrame::ScopedFrame(
     SkCanvas* canvas,
     ExternalViewEmbedder* view_embedder,
     const SkMatrix& root_surface_transformation,
-    bool instrumentation_enabled)
+    bool instrumentation_enabled,
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger)
     : context_(context),
       gr_context_(gr_context),
       canvas_(canvas),
       view_embedder_(view_embedder),
       root_surface_transformation_(root_surface_transformation),
-      instrumentation_enabled_(instrumentation_enabled) {
+      instrumentation_enabled_(instrumentation_enabled),
+      gpu_thread_merger_(gpu_thread_merger) {
   context_.BeginFrame(*this, instrumentation_enabled_);
 }
 
@@ -60,16 +64,25 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
   context_.EndFrame(*this, instrumentation_enabled_);
 }
 
-bool CompositorContext::ScopedFrame::Raster(flow::LayerTree& layer_tree,
-                                            bool ignore_raster_cache) {
+RasterStatus CompositorContext::ScopedFrame::Raster(
+    flutter::LayerTree& layer_tree,
+    bool ignore_raster_cache) {
   layer_tree.Preroll(*this, ignore_raster_cache);
+  PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
+  if (view_embedder_ && gpu_thread_merger_) {
+    post_preroll_result = view_embedder_->PostPrerollAction(gpu_thread_merger_);
+  }
+
+  if (post_preroll_result == PostPrerollResult::kResubmitFrame) {
+    return RasterStatus::kResubmit;
+  }
   // Clearing canvas after preroll reduces one render target switch when preroll
   // paints some raster cache.
   if (canvas()) {
     canvas()->clear(SK_ColorTRANSPARENT);
   }
   layer_tree.Paint(*this, ignore_raster_cache);
-  return true;
+  return RasterStatus::kSuccess;
 }
 
 void CompositorContext::OnGrContextCreated() {
@@ -82,4 +95,4 @@ void CompositorContext::OnGrContextDestroyed() {
   raster_cache_.Clear();
 }
 
-}  // namespace flow
+}  // namespace flutter

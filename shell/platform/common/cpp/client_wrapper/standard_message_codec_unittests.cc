@@ -72,7 +72,7 @@ TEST(StandardMessageCodec, CanEncodeAndDecodeInt32) {
 TEST(StandardMessageCodec, CanEncodeAndDecodeInt64) {
   std::vector<uint8_t> bytes = {0x04, 0xef, 0xcd, 0xab, 0x90,
                                 0x78, 0x56, 0x34, 0x12};
-  CheckEncodeDecode(EncodableValue(0x1234567890abcdef), bytes);
+  CheckEncodeDecode(EncodableValue(INT64_C(0x1234567890abcdef)), bytes);
 }
 
 TEST(StandardMessageCodec, CanEncodeAndDecodeDouble) {
@@ -97,6 +97,11 @@ TEST(StandardMessageCodec, CanEncodeAndDecodeStringWithNonBMPCodePoint) {
   CheckEncodeDecode(EncodableValue(u8"h\U0001F602w"), bytes);
 }
 
+TEST(StandardMessageCodec, CanEncodeAndDecodeEmptyString) {
+  std::vector<uint8_t> bytes = {0x07, 0x00};
+  CheckEncodeDecode(EncodableValue(u8""), bytes);
+}
+
 TEST(StandardMessageCodec, CanEncodeAndDecodeList) {
   std::vector<uint8_t> bytes = {
       0x0c, 0x05, 0x00, 0x07, 0x05, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x06,
@@ -115,6 +120,11 @@ TEST(StandardMessageCodec, CanEncodeAndDecodeList) {
       }),
   });
   CheckEncodeDecode(value, bytes);
+}
+
+TEST(StandardMessageCodec, CanEncodeAndDecodeEmptyList) {
+  std::vector<uint8_t> bytes = {0x0c, 0x00};
+  CheckEncodeDecode(EncodableValue(EncodableList{}), bytes);
 }
 
 TEST(StandardMessageCodec, CanEncodeAndDecodeMap) {

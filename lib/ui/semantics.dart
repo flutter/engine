@@ -34,6 +34,9 @@ class SemanticsAction {
   static const int _kDismissIndex = 1 << 18;
   static const int _kMoveCursorForwardByWordIndex = 1 << 19;
   static const int _kMoveCursorBackwardByWordIndex = 1 << 20;
+  // READ THIS: if you add an action here, you MUST update the
+  // numSemanticsActions value in testing/dart/semantics_test.dart, or tests
+  // will fail.
 
   /// The numerical value for this action.
   ///
@@ -42,55 +45,55 @@ class SemanticsAction {
 
   /// The equivalent of a user briefly tapping the screen with the finger
   /// without moving it.
-  static const SemanticsAction tap = const SemanticsAction._(_kTapIndex);
+  static const SemanticsAction tap = SemanticsAction._(_kTapIndex);
 
   /// The equivalent of a user pressing and holding the screen with the finger
   /// for a few seconds without moving it.
-  static const SemanticsAction longPress = const SemanticsAction._(_kLongPressIndex);
+  static const SemanticsAction longPress = SemanticsAction._(_kLongPressIndex);
 
   /// The equivalent of a user moving their finger across the screen from right
   /// to left.
   ///
   /// This action should be recognized by controls that are horizontally
   /// scrollable.
-  static const SemanticsAction scrollLeft = const SemanticsAction._(_kScrollLeftIndex);
+  static const SemanticsAction scrollLeft = SemanticsAction._(_kScrollLeftIndex);
 
   /// The equivalent of a user moving their finger across the screen from left
   /// to right.
   ///
   /// This action should be recognized by controls that are horizontally
   /// scrollable.
-  static const SemanticsAction scrollRight = const SemanticsAction._(_kScrollRightIndex);
+  static const SemanticsAction scrollRight = SemanticsAction._(_kScrollRightIndex);
 
   /// The equivalent of a user moving their finger across the screen from
   /// bottom to top.
   ///
   /// This action should be recognized by controls that are vertically
   /// scrollable.
-  static const SemanticsAction scrollUp = const SemanticsAction._(_kScrollUpIndex);
+  static const SemanticsAction scrollUp = SemanticsAction._(_kScrollUpIndex);
 
   /// The equivalent of a user moving their finger across the screen from top
   /// to bottom.
   ///
   /// This action should be recognized by controls that are vertically
   /// scrollable.
-  static const SemanticsAction scrollDown = const SemanticsAction._(_kScrollDownIndex);
+  static const SemanticsAction scrollDown = SemanticsAction._(_kScrollDownIndex);
 
   /// A request to increase the value represented by the semantics node.
   ///
   /// For example, this action might be recognized by a slider control.
-  static const SemanticsAction increase = const SemanticsAction._(_kIncreaseIndex);
+  static const SemanticsAction increase = SemanticsAction._(_kIncreaseIndex);
 
   /// A request to decrease the value represented by the semantics node.
   ///
   /// For example, this action might be recognized by a slider control.
-  static const SemanticsAction decrease = const SemanticsAction._(_kDecreaseIndex);
+  static const SemanticsAction decrease = SemanticsAction._(_kDecreaseIndex);
 
   /// A request to fully show the semantics node on screen.
   ///
   /// For example, this action might be send to a node in a scrollable list that
   /// is partially off screen to bring it on screen.
-  static const SemanticsAction showOnScreen = const SemanticsAction._(_kShowOnScreenIndex);
+  static const SemanticsAction showOnScreen = SemanticsAction._(_kShowOnScreenIndex);
 
   /// Move the cursor forward by one character.
   ///
@@ -98,7 +101,7 @@ class SemanticsAction {
   ///
   /// The action includes a boolean argument, which indicates whether the cursor
   /// movement should extend (or start) a selection.
-  static const SemanticsAction moveCursorForwardByCharacter = const SemanticsAction._(_kMoveCursorForwardByCharacterIndex);
+  static const SemanticsAction moveCursorForwardByCharacter = SemanticsAction._(_kMoveCursorForwardByCharacterIndex);
 
   /// Move the cursor backward by one character.
   ///
@@ -106,7 +109,7 @@ class SemanticsAction {
   ///
   /// The action includes a boolean argument, which indicates whether the cursor
   /// movement should extend (or start) a selection.
-  static const SemanticsAction moveCursorBackwardByCharacter = const SemanticsAction._(_kMoveCursorBackwardByCharacterIndex);
+  static const SemanticsAction moveCursorBackwardByCharacter = SemanticsAction._(_kMoveCursorBackwardByCharacterIndex);
 
   /// Set the text selection to the given range.
   ///
@@ -117,16 +120,16 @@ class SemanticsAction {
   ///
   /// Setting `base` and `extent` to the same value will move the cursor to
   /// that position (without selecting anything).
-  static const SemanticsAction setSelection = const SemanticsAction._(_kSetSelectionIndex);
+  static const SemanticsAction setSelection = SemanticsAction._(_kSetSelectionIndex);
 
   /// Copy the current selection to the clipboard.
-  static const SemanticsAction copy = const SemanticsAction._(_kCopyIndex);
+  static const SemanticsAction copy = SemanticsAction._(_kCopyIndex);
 
   /// Cut the current selection and place it in the clipboard.
-  static const SemanticsAction cut = const SemanticsAction._(_kCutIndex);
+  static const SemanticsAction cut = SemanticsAction._(_kCutIndex);
 
   /// Paste the current content of the clipboard.
-  static const SemanticsAction paste = const SemanticsAction._(_kPasteIndex);
+  static const SemanticsAction paste = SemanticsAction._(_kPasteIndex);
 
   /// Indicates that the node has gained accessibility focus.
   ///
@@ -139,7 +142,7 @@ class SemanticsAction {
   /// The accessibility focus is different from the input focus. The input focus
   /// is usually held by the element that currently responds to keyboard inputs.
   /// Accessibility focus and input focus can be held by two different nodes!
-  static const SemanticsAction didGainAccessibilityFocus = const SemanticsAction._(_kDidGainAccessibilityFocusIndex);
+  static const SemanticsAction didGainAccessibilityFocus = SemanticsAction._(_kDidGainAccessibilityFocusIndex);
 
   /// Indicates that the node has lost accessibility focus.
   ///
@@ -152,13 +155,13 @@ class SemanticsAction {
   /// The accessibility focus is different from the input focus. The input focus
   /// is usually held by the element that currently responds to keyboard inputs.
   /// Accessibility focus and input focus can be held by two different nodes!
-  static const SemanticsAction didLoseAccessibilityFocus = const SemanticsAction._(_kDidLoseAccessibilityFocusIndex);
+  static const SemanticsAction didLoseAccessibilityFocus = SemanticsAction._(_kDidLoseAccessibilityFocusIndex);
 
   /// Indicates that the user has invoked a custom accessibility action.
   ///
   /// This handler is added automatically whenever a custom accessibility
   /// action is added to a semantics node.
-  static const SemanticsAction customAction = const SemanticsAction._(_kCustomAction);
+  static const SemanticsAction customAction = SemanticsAction._(_kCustomAction);
 
   /// A request that the node should be dismissed.
   ///
@@ -167,7 +170,7 @@ class SemanticsAction {
   /// (with TalkBack) special hint text is spoken when focusing the node and
   /// a custom action is available in the local context menu. On iOS,
   /// (with VoiceOver) users can perform a standard gesture to dismiss it.
-  static const SemanticsAction dismiss = const SemanticsAction._(_kDismissIndex);
+  static const SemanticsAction dismiss = SemanticsAction._(_kDismissIndex);
 
   /// Move the cursor forward by one word.
   ///
@@ -175,7 +178,7 @@ class SemanticsAction {
   ///
   /// The action includes a boolean argument, which indicates whether the cursor
   /// movement should extend (or start) a selection.
-  static const SemanticsAction moveCursorForwardByWord = const SemanticsAction._(_kMoveCursorForwardByWordIndex);
+  static const SemanticsAction moveCursorForwardByWord = SemanticsAction._(_kMoveCursorForwardByWordIndex);
 
   /// Move the cursor backward by one word.
   ///
@@ -183,13 +186,13 @@ class SemanticsAction {
   ///
   /// The action includes a boolean argument, which indicates whether the cursor
   /// movement should extend (or start) a selection.
-  static const SemanticsAction moveCursorBackwardByWord = const SemanticsAction._(_kMoveCursorBackwardByWordIndex);
+  static const SemanticsAction moveCursorBackwardByWord = SemanticsAction._(_kMoveCursorBackwardByWordIndex);
 
   /// The possible semantics actions.
   ///
   /// The map's key is the [index] of the action and the value is the action
   /// itself.
-  static const Map<int, SemanticsAction> values = const <int, SemanticsAction>{
+  static const Map<int, SemanticsAction> values = <int, SemanticsAction>{
     _kTapIndex: tap,
     _kLongPressIndex: longPress,
     _kScrollLeftIndex: scrollLeft,
@@ -288,6 +291,12 @@ class SemanticsFlag {
   static const int _kHasToggledStateIndex = 1 << 16;
   static const int _kIsToggledIndex = 1 << 17;
   static const int _kHasImplicitScrollingIndex = 1 << 18;
+  static const int _kIsMultilineIndex = 1 << 19;
+  static const int _kIsReadOnlyIndex = 1 << 20;
+  static const int _kIsFocusableIndex = 1 << 21;
+  static const int _kIsLinkIndex = 1 << 22;
+  // READ THIS: if you add a flag here, you MUST update the numSemanticsFlags
+  // value in testing/dart/semantics_test.dart, or tests will fail.
 
   const SemanticsFlag._(this.index);
 
@@ -305,7 +314,7 @@ class SemanticsFlag {
   /// See also:
   ///
   ///   * [SemanticsFlag.isChecked], which controls whether the node is "checked" or "unchecked".
-  static const SemanticsFlag hasCheckedState = const SemanticsFlag._(_kHasCheckedStateIndex);
+  static const SemanticsFlag hasCheckedState = SemanticsFlag._(_kHasCheckedStateIndex);
 
   /// Whether a semantics node that [hasCheckedState] is checked.
   ///
@@ -317,7 +326,7 @@ class SemanticsFlag {
   /// See also:
   ///
   ///   * [SemanticsFlag.hasCheckedState], which enables a checked state.
-  static const SemanticsFlag isChecked = const SemanticsFlag._(_kIsCheckedIndex);
+  static const SemanticsFlag isChecked = SemanticsFlag._(_kIsCheckedIndex);
 
 
   /// Whether a semantics node is selected.
@@ -326,25 +335,42 @@ class SemanticsFlag {
   /// "unselected".
   ///
   /// For example, the active tab in a tab bar has [isSelected] set to true.
-  static const SemanticsFlag isSelected = const SemanticsFlag._(_kIsSelectedIndex);
+  static const SemanticsFlag isSelected = SemanticsFlag._(_kIsSelectedIndex);
 
   /// Whether the semantic node represents a button.
   ///
-  /// Platforms has special handling for buttons, for example Android's TalkBack
+  /// Platforms have special handling for buttons, for example Android's TalkBack
   /// and iOS's VoiceOver provides an additional hint when the focused object is
   /// a button.
-  static const SemanticsFlag isButton = const SemanticsFlag._(_kIsButtonIndex);
+  static const SemanticsFlag isButton = SemanticsFlag._(_kIsButtonIndex);
 
   /// Whether the semantic node represents a text field.
   ///
   /// Text fields are announced as such and allow text input via accessibility
   /// affordances.
-  static const SemanticsFlag isTextField = const SemanticsFlag._(_kIsTextFieldIndex);
+  static const SemanticsFlag isTextField = SemanticsFlag._(_kIsTextFieldIndex);
+
+  /// Whether the semantic node is read only.
+  ///
+  /// Only applicable when [isTextField] is true.
+  static const SemanticsFlag isReadOnly = SemanticsFlag._(_kIsReadOnlyIndex);
+
+  /// Whether the semantic node is an interactive link.
+  ///
+  /// Platforms have special handling for links, for example iOS's VoiceOver
+  /// provides an additional hint when the focused object is a link, as well as
+  /// the ability to parse the links through another navigation menu.
+  static const SemanticsFlag isLink = SemanticsFlag._(_kIsLinkIndex);
+
+  /// Whether the semantic node is able to hold the user's focus.
+  ///
+  /// The focused element is usually the current receiver of keyboard inputs.
+  static const SemanticsFlag isFocusable = SemanticsFlag._(_kIsFocusableIndex);
 
   /// Whether the semantic node currently holds the user's focus.
   ///
   /// The focused element is usually the current receiver of keyboard inputs.
-  static const SemanticsFlag isFocused = const SemanticsFlag._(_kIsFocusedIndex);
+  static const SemanticsFlag isFocused = SemanticsFlag._(_kIsFocusedIndex);
 
   /// The semantics node has the quality of either being "enabled" or
   /// "disabled".
@@ -352,33 +378,40 @@ class SemanticsFlag {
   /// For example, a button can be enabled or disabled and therefore has an
   /// "enabled" state. Static text is usually neither enabled nor disabled and
   /// therefore does not have an "enabled" state.
-  static const SemanticsFlag hasEnabledState = const SemanticsFlag._(_kHasEnabledStateIndex);
+  static const SemanticsFlag hasEnabledState = SemanticsFlag._(_kHasEnabledStateIndex);
 
   /// Whether a semantic node that [hasEnabledState] is currently enabled.
   ///
   /// A disabled element does not respond to user interaction. For example, a
   /// button that currently does not respond to user interaction should be
   /// marked as disabled.
-  static const SemanticsFlag isEnabled = const SemanticsFlag._(_kIsEnabledIndex);
+  static const SemanticsFlag isEnabled = SemanticsFlag._(_kIsEnabledIndex);
 
   /// Whether a semantic node is in a mutually exclusive group.
   ///
   /// For example, a radio button is in a mutually exclusive group because
   /// only one radio button in that group can be marked as [isChecked].
-  static const SemanticsFlag isInMutuallyExclusiveGroup = const SemanticsFlag._(_kIsInMutuallyExclusiveGroupIndex);
+  static const SemanticsFlag isInMutuallyExclusiveGroup = SemanticsFlag._(_kIsInMutuallyExclusiveGroupIndex);
 
   /// Whether a semantic node is a header that divides content into sections.
   ///
   /// For example, headers can be used to divide a list of alphabetically
   /// sorted words into the sections A, B, C, etc. as can be found in many
   /// address book applications.
-  static const SemanticsFlag isHeader = const SemanticsFlag._(_kIsHeaderIndex);
+  static const SemanticsFlag isHeader = SemanticsFlag._(_kIsHeaderIndex);
 
   /// Whether the value of the semantics node is obscured.
   ///
   /// This is usually used for text fields to indicate that its content
   /// is a password or contains other sensitive information.
-  static const SemanticsFlag isObscured = const SemanticsFlag._(_kIsObscuredIndex);
+  static const SemanticsFlag isObscured = SemanticsFlag._(_kIsObscuredIndex);
+
+  /// Whether the value of the semantics node is coming from a multi-line text
+  /// field.
+  ///
+  /// This is used for text fields to distinguish single-line text fields from
+  /// multi-line ones.
+  static const SemanticsFlag isMultiline = SemanticsFlag._(_kIsMultilineIndex);
 
   /// Whether the semantics node is the root of a subtree for which a route name
   /// should be announced.
@@ -403,7 +436,7 @@ class SemanticsFlag {
   ///
   /// This is used in widgets such as Routes, Drawers, and Dialogs to
   /// communicate significant changes in the visible screen.
-  static const SemanticsFlag scopesRoute = const SemanticsFlag._(_kScopesRouteIndex);
+  static const SemanticsFlag scopesRoute = SemanticsFlag._(_kScopesRouteIndex);
 
   /// Whether the semantics node label is the name of a visually distinct
   /// route.
@@ -416,7 +449,7 @@ class SemanticsFlag {
   ///
   /// Updating this label within the same active route subtree will not cause
   /// additional announcements.
-  static const SemanticsFlag namesRoute = const SemanticsFlag._(_kNamesRouteIndex);
+  static const SemanticsFlag namesRoute = SemanticsFlag._(_kNamesRouteIndex);
 
   /// Whether the semantics node is considered hidden.
   ///
@@ -434,13 +467,13 @@ class SemanticsFlag {
   /// the semantics tree altogether. Hidden elements are only included in the
   /// semantics tree to work around platform limitations and they are mainly
   /// used to implement accessibility scrolling on iOS.
-  static const SemanticsFlag isHidden = const SemanticsFlag._(_kIsHiddenIndex);
+  static const SemanticsFlag isHidden = SemanticsFlag._(_kIsHiddenIndex);
 
   /// Whether the semantics node represents an image.
   ///
   /// Both TalkBack and VoiceOver will inform the user the the semantics node
   /// represents an image.
-  static const SemanticsFlag isImage = const SemanticsFlag._(_kIsImageIndex);
+  static const SemanticsFlag isImage = SemanticsFlag._(_kIsImageIndex);
 
   /// Whether the semantics node is a live region.
   ///
@@ -451,7 +484,7 @@ class SemanticsFlag {
   /// An example of a live region is a [SnackBar] widget. On Android, A live
   /// region causes a polite announcement to be generated automatically, even
   /// if the user does not have focus of the widget.
-  static const SemanticsFlag isLiveRegion = const SemanticsFlag._(_kIsLiveRegionIndex);
+  static const SemanticsFlag isLiveRegion = SemanticsFlag._(_kIsLiveRegionIndex);
 
   /// The semantics node has the quality of either being "on" or "off".
   ///
@@ -462,7 +495,7 @@ class SemanticsFlag {
   /// See also:
   ///
   ///    * [SemanticsFlag.isToggled], which controls whether the node is "on" or "off".
-  static const SemanticsFlag hasToggledState = const SemanticsFlag._(_kHasToggledStateIndex);
+  static const SemanticsFlag hasToggledState = SemanticsFlag._(_kHasToggledStateIndex);
 
   /// If true, the semantics node is "on". If false, the semantics node is
   /// "off".
@@ -472,7 +505,7 @@ class SemanticsFlag {
   /// See also:
   ///
   ///   * [SemanticsFlag.hasToggledState], which enables a toggled state.
-  static const SemanticsFlag isToggled = const SemanticsFlag._(_kIsToggledIndex);
+  static const SemanticsFlag isToggled = SemanticsFlag._(_kIsToggledIndex);
 
   /// Whether the platform can scroll the semantics node when the user attempts
   /// to move focus to an offscreen child.
@@ -481,12 +514,12 @@ class SemanticsFlag {
   /// easily move the accessibility focus to the next set of children. A
   /// [PageView] widget does not have implicit scrolling, so that users don't
   /// navigate to the next page when reaching the end of the current one.
-  static const SemanticsFlag hasImplicitScrolling = const SemanticsFlag._(_kHasImplicitScrollingIndex);
+  static const SemanticsFlag hasImplicitScrolling = SemanticsFlag._(_kHasImplicitScrollingIndex);
 
   /// The possible semantics flags.
   ///
   /// The map's key is the [index] of the flag and the value is the flag itself.
-  static const Map<int, SemanticsFlag> values = const <int, SemanticsFlag>{
+  static const Map<int, SemanticsFlag> values = <int, SemanticsFlag>{
     _kHasCheckedStateIndex: hasCheckedState,
     _kIsCheckedIndex: isChecked,
     _kIsSelectedIndex: isSelected,
@@ -506,6 +539,10 @@ class SemanticsFlag {
     _kHasToggledStateIndex: hasToggledState,
     _kIsToggledIndex: isToggled,
     _kHasImplicitScrollingIndex: hasImplicitScrolling,
+    _kIsMultilineIndex: isMultiline,
+    _kIsReadOnlyIndex: isReadOnly,
+    _kIsFocusableIndex: isFocusable,
+    _kIsLinkIndex: isLink,
   };
 
   @override
@@ -549,6 +586,14 @@ class SemanticsFlag {
         return 'SemanticsFlag.isToggled';
       case _kHasImplicitScrollingIndex:
         return 'SemanticsFlag.hasImplicitScrolling';
+      case _kIsMultilineIndex:
+        return 'SemanticsFlag.isMultiline';
+      case _kIsReadOnlyIndex:
+        return 'SemanticsFlag.isReadOnly';
+      case _kIsFocusableIndex:
+        return 'SemanticsFlag.isFocusable';
+      case _kIsLinkIndex:
+        return 'SemanticsFlag.isLink';
     }
     return null;
   }
@@ -598,8 +643,15 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// string describes what result an action performed on this node has. The
   /// reading direction of all these strings is given by `textDirection`.
   ///
-  /// The fields 'textSelectionBase' and 'textSelectionExtent' describe the
+  /// The fields `textSelectionBase` and `textSelectionExtent` describe the
   /// currently selected text within `value`.
+  ///
+  /// The field `maxValueLength` is used to indicate that an editable text field
+  /// has a limit on the number of characters entered. If it is -1 there is
+  /// no limit on the number of characters entered. The field
+  /// `currentValueLength` indicates how much of that limit has already been
+  /// used up. When `maxValueLength` is set, `currentValueLength` must also be
+  /// set.
   ///
   /// The field `platformViewId` references the platform view, whose semantics
   /// nodes will be added as children to this node. If a platform view is
@@ -632,6 +684,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int id,
     int flags,
     int actions,
+    int maxValueLength,
+    int currentValueLength,
     int textSelectionBase,
     int textSelectionExtent,
     int platformViewId,
@@ -654,12 +708,17 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     Int32List childrenInHitTestOrder,
     Int32List additionalActions,
   }) {
-    if (transform.length != 16)
-      throw new ArgumentError('transform argument must have 16 entries.');
+    assert(_matrix4IsValid(transform));
+    assert(
+      scrollChildren == 0 || scrollChildren == null || (scrollChildren > 0 && childrenInHitTestOrder != null),
+      'If a node has scrollChildren, it must have childrenInHitTestOrder',
+    );
     _updateNode(
       id,
       flags,
       actions,
+      maxValueLength,
+      currentValueLength,
       textSelectionBase,
       textSelectionExtent,
       platformViewId,
@@ -690,6 +749,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int id,
     int flags,
     int actions,
+    int maxValueLength,
+    int currentValueLength,
     int textSelectionBase,
     int textSelectionExtent,
     int platformViewId,

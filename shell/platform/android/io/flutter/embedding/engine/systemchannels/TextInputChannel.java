@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
@@ -32,6 +33,7 @@ import io.flutter.plugin.common.MethodChannel;
  */
 public class TextInputChannel {
   private static final String TAG = "TextInputChannel";
+
   @NonNull
   public final MethodChannel channel;
   @Nullable
@@ -39,7 +41,7 @@ public class TextInputChannel {
 
   private final MethodChannel.MethodCallHandler parsingMethodHandler = new MethodChannel.MethodCallHandler() {
     @Override
-    public void onMethodCall(MethodCall call, MethodChannel.Result result) {
+    public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
       if (textInputMethodHandler == null) {
         // If no explicit TextInputMethodHandler has been registered then we don't
         // need to forward this call to an API. Return.
@@ -48,6 +50,7 @@ public class TextInputChannel {
 
       String method = call.method;
       Object args = call.arguments;
+      Log.v(TAG, "Received '" + method + "' message.");
       switch (method) {
         case "TextInput.show":
           textInputMethodHandler.show();
@@ -69,6 +72,10 @@ public class TextInputChannel {
             // NoSuchFieldException: one or more values were invalid.
             result.error("error", exception.getMessage(), null);
           }
+          break;
+        case "TextInput.setPlatformViewClient":
+          final int id = (int) args;
+          textInputMethodHandler.setPlatformViewClient(id);
           break;
         case "TextInput.setEditingState":
           try {
@@ -104,9 +111,27 @@ public class TextInputChannel {
   }
 
   /**
+   * Instructs Flutter to reattach the last active text input client, if any.
+   *
+   * This is necessary when the view heirarchy has been detached and reattached
+   * to a {@link FlutterEngine}, as the engine may have kept alive a text
+   * editing client on the Dart side.
+   */
+  public void requestExistingInputState() {
+    channel.invokeMethod("TextInputClient.requestExistingInputState", null);
+  }
+
+  /**
    * Instructs Flutter to update its text input editing state to reflect the given configuration.
    */
   public void updateEditingState(int inputClientId, String text, int selectionStart, int selectionEnd, int composingStart, int composingEnd) {
+    Log.v(TAG, "Sending message to update editing state: \n"
+      + "Text: " + text + "\n"
+      + "Selection start: " + selectionStart + "\n"
+      + "Selection end: " + selectionEnd + "\n"
+      + "Composing start: " + composingStart + "\n"
+      + "Composing end: " + composingEnd);
+
     HashMap<Object, Object> state = new HashMap<>();
     state.put("text", text);
     state.put("selectionBase", selectionStart);
@@ -124,6 +149,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute a "newline" action.
    */
   public void newline(int inputClientId) {
+    Log.v(TAG, "Sending 'newline' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.newline")
@@ -134,6 +160,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute a "go" action.
    */
   public void go(int inputClientId) {
+    Log.v(TAG, "Sending 'go' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.go")
@@ -144,6 +171,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute a "search" action.
    */
   public void search(int inputClientId) {
+    Log.v(TAG, "Sending 'search' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.search")
@@ -154,6 +182,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute a "send" action.
    */
   public void send(int inputClientId) {
+    Log.v(TAG, "Sending 'send' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.send")
@@ -164,6 +193,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute a "done" action.
    */
   public void done(int inputClientId) {
+    Log.v(TAG, "Sending 'done' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.done")
@@ -174,6 +204,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute a "next" action.
    */
   public void next(int inputClientId) {
+    Log.v(TAG, "Sending 'next' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.next")
@@ -184,6 +215,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute a "previous" action.
    */
   public void previous(int inputClientId) {
+    Log.v(TAG, "Sending 'previous' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.previous")
@@ -194,6 +226,7 @@ public class TextInputChannel {
    * Instructs Flutter to execute an "unspecified" action.
    */
   public void unspecifiedAction(int inputClientId) {
+    Log.v(TAG, "Sending 'unspecified' message.");
     channel.invokeMethod(
         "TextInputClient.performAction",
         Arrays.asList(inputClientId, "TextInputAction.unspecified")
@@ -218,6 +251,16 @@ public class TextInputChannel {
     // TODO(mattcarroll): javadoc
     void setClient(int textInputClientId, @NonNull Configuration configuration);
 
+    /**
+     * Sets a platform view as the text input client.
+     *
+     * Subsequent calls to createInputConnection will be delegated to the platform view until a
+     * different client is set.
+     *
+     * @param id the ID of the platform view to be set as a text input client.
+     */
+    void setPlatformViewClient(int id);
+
     // TODO(mattcarroll): javadoc
     void setEditingState(@NonNull TextEditState editingState);
 
@@ -239,6 +282,7 @@ public class TextInputChannel {
       return new Configuration(
           json.optBoolean("obscureText"),
           json.optBoolean("autocorrect", true),
+          json.optBoolean("enableSuggestions"),
           TextCapitalization.fromValue(json.getString("textCapitalization")),
           InputType.fromJson(json.getJSONObject("inputType")),
           inputAction,
@@ -246,6 +290,7 @@ public class TextInputChannel {
       );
     }
 
+    @NonNull
     private static Integer inputActionFromTextInputAction(@NonNull String inputAction) {
       switch (inputAction) {
         case "TextInputAction.newline":
@@ -274,6 +319,7 @@ public class TextInputChannel {
 
     public final boolean obscureText;
     public final boolean autocorrect;
+    public final boolean enableSuggestions;
     @NonNull
     public final TextCapitalization textCapitalization;
     @NonNull
@@ -286,6 +332,7 @@ public class TextInputChannel {
     public Configuration(
         boolean obscureText,
         boolean autocorrect,
+        boolean enableSuggestions,
         @NonNull TextCapitalization textCapitalization,
         @NonNull InputType inputType,
         @Nullable Integer inputAction,
@@ -293,6 +340,7 @@ public class TextInputChannel {
     ) {
       this.obscureText = obscureText;
       this.autocorrect = autocorrect;
+      this.enableSuggestions = enableSuggestions;
       this.textCapitalization = textCapitalization;
       this.inputType = inputType;
       this.inputAction = inputAction;
@@ -338,7 +386,8 @@ public class TextInputChannel {
     PHONE("TextInputType.phone"),
     MULTILINE("TextInputType.multiline"),
     EMAIL_ADDRESS("TextInputType.emailAddress"),
-    URL("TextInputType.url");
+    URL("TextInputType.url"),
+    VISIBLE_PASSWORD("TextInputType.visiblePassword");
 
     static TextInputType fromValue(@NonNull String encodedName) throws NoSuchFieldException {
       for (TextInputType textInputType : TextInputType.values()) {

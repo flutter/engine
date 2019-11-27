@@ -34,33 +34,65 @@ TEST_F(Embedder11yTest, A11yTreeIsConsistent) {
       })));
 
   // Called by test fixture on UI thread to pass data back to this test.
-  ::testing::NativeEntry callback;
+  NativeEntry notify_semantics_enabled_callback;
   context.AddNativeCallback(
-      "NotifyTestData",
-      CREATE_NATIVE_ENTRY(([&callback](Dart_NativeArguments args) {
-        ASSERT_NE(callback, nullptr);
-        callback(args);
-      })));
+      "NotifySemanticsEnabled",
+      CREATE_NATIVE_ENTRY(
+          ([&notify_semantics_enabled_callback](Dart_NativeArguments args) {
+            ASSERT_NE(notify_semantics_enabled_callback, nullptr);
+            notify_semantics_enabled_callback(args);
+          })));
+
+  NativeEntry notify_accessibility_features_callback;
+  context.AddNativeCallback(
+      "NotifyAccessibilityFeatures",
+      CREATE_NATIVE_ENTRY((
+          [&notify_accessibility_features_callback](Dart_NativeArguments args) {
+            ASSERT_NE(notify_accessibility_features_callback, nullptr);
+            notify_accessibility_features_callback(args);
+          })));
+
+  NativeEntry notify_semantics_action_callback;
+  context.AddNativeCallback(
+      "NotifySemanticsAction",
+      CREATE_NATIVE_ENTRY(
+          ([&notify_semantics_action_callback](Dart_NativeArguments args) {
+            ASSERT_NE(notify_semantics_action_callback, nullptr);
+            notify_semantics_action_callback(args);
+          })));
 
   EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
   builder.SetDartEntrypoint("a11y_main");
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 
   // Wait for initial NotifySemanticsEnabled(false).
-  callback = [&](Dart_NativeArguments args) {
+  notify_semantics_enabled_callback = [&](Dart_NativeArguments args) {
     bool enabled = true;
-    Dart_GetNativeBooleanArgument(args, 0, &enabled);
+    auto handle = Dart_GetNativeBooleanArgument(args, 0, &enabled);
+    ASSERT_FALSE(Dart_IsError(handle));
     ASSERT_FALSE(enabled);
     latch.Signal();
   };
   latch.Wait();
 
+  // Prepare to NotifyAccessibilityFeatures call
+  fml::AutoResetWaitableEvent notify_features_latch;
+  notify_accessibility_features_callback = [&](Dart_NativeArguments args) {
+    bool enabled = true;
+    auto handle = Dart_GetNativeBooleanArgument(args, 0, &enabled);
+    ASSERT_FALSE(Dart_IsError(handle));
+    ASSERT_FALSE(enabled);
+    notify_features_latch.Signal();
+  };
+
   // Enable semantics. Wait for NotifySemanticsEnabled(true).
-  callback = [&](Dart_NativeArguments args) {
+  notify_semantics_enabled_callback = [&](Dart_NativeArguments args) {
     bool enabled = false;
-    Dart_GetNativeBooleanArgument(args, 0, &enabled);
+    auto handle = Dart_GetNativeBooleanArgument(args, 0, &enabled);
+    ASSERT_FALSE(Dart_IsError(handle));
     ASSERT_TRUE(enabled);
     latch.Signal();
   };
@@ -69,18 +101,13 @@ TEST_F(Embedder11yTest, A11yTreeIsConsistent) {
   latch.Wait();
 
   // Wait for initial accessibility features (reduce_motion == false)
-  callback = [&](Dart_NativeArguments args) {
-    bool enabled = true;
-    Dart_GetNativeBooleanArgument(args, 0, &enabled);
-    ASSERT_FALSE(enabled);
-    latch.Signal();
-  };
-  latch.Wait();
+  notify_features_latch.Wait();
 
   // Set accessibility features: (reduce_motion == true)
-  callback = [&](Dart_NativeArguments args) {
+  notify_accessibility_features_callback = [&](Dart_NativeArguments args) {
     bool enabled = false;
-    Dart_GetNativeBooleanArgument(args, 0, &enabled);
+    auto handle = Dart_GetNativeBooleanArgument(args, 0, &enabled);
+    ASSERT_FALSE(Dart_IsError(handle));
     ASSERT_TRUE(enabled);
     latch.Signal();
   };
@@ -107,6 +134,12 @@ TEST_F(Embedder11yTest, A11yTreeIsConsistent) {
           ASSERT_EQ(7.0, node->transform.pers0);
           ASSERT_EQ(8.0, node->transform.pers1);
           ASSERT_EQ(9.0, node->transform.pers2);
+
+          if (node->id == 128) {
+            ASSERT_EQ(0x3f3, node->platform_view_id);
+          } else {
+            ASSERT_EQ(0, node->platform_view_id);
+          }
         }
       });
 
@@ -130,13 +163,14 @@ TEST_F(Embedder11yTest, A11yTreeIsConsistent) {
   ASSERT_EQ(1, action_batch_end_count);
 
   // Dispatch a tap to semantics node 42. Wait for NotifySemanticsAction.
-  callback = [&](Dart_NativeArguments args) {
+  notify_semantics_action_callback = [&](Dart_NativeArguments args) {
     int64_t node_id = 0;
     Dart_GetNativeIntegerArgument(args, 0, &node_id);
     ASSERT_EQ(42, node_id);
 
     int64_t action_id;
-    Dart_GetNativeIntegerArgument(args, 1, &action_id);
+    auto handle = Dart_GetNativeIntegerArgument(args, 1, &action_id);
+    ASSERT_FALSE(Dart_IsError(handle));
     ASSERT_EQ(static_cast<int32_t>(flutter::SemanticsAction::kTap), action_id);
 
     Dart_Handle semantic_args = Dart_GetNativeArgument(args, 2);
@@ -156,7 +190,7 @@ TEST_F(Embedder11yTest, A11yTreeIsConsistent) {
   latch.Wait();
 
   // Disable semantics. Wait for NotifySemanticsEnabled(false).
-  callback = [&](Dart_NativeArguments args) {
+  notify_semantics_enabled_callback = [&](Dart_NativeArguments args) {
     bool enabled = true;
     Dart_GetNativeBooleanArgument(args, 0, &enabled);
     ASSERT_FALSE(enabled);

@@ -11,7 +11,7 @@
 
 namespace flutter {
 
-class AndroidExternalTextureGL : public flow::Texture {
+class AndroidExternalTextureGL : public flutter::Texture {
  public:
   AndroidExternalTextureGL(
       int64_t id,
@@ -29,6 +29,8 @@ class AndroidExternalTextureGL : public flow::Texture {
   void OnGrContextDestroyed() override;
 
   void MarkNewFrameAvailable() override;
+
+  void OnTextureUnregistered() override;
 
  private:
   void Attach(jint textureName);

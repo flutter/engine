@@ -3,8 +3,14 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h"
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate_internal.h"
+
+static NSString* kUIBackgroundMode = @"UIBackgroundModes";
+static NSString* kRemoteNotificationCapabitiliy = @"remote-notification";
+static NSString* kBackgroundFetchCapatibility = @"fetch";
 
 @implementation FlutterAppDelegate {
   FlutterPluginAppLifeCycleDelegate* _lifeCycleDelegate;
@@ -34,7 +40,7 @@
 
 // Returns the key window's rootViewController, if it's a FlutterViewController.
 // Otherwise, returns nil.
-- (FlutterViewController*)rootFlutterViewController {
++ (FlutterViewController*)rootFlutterViewController {
   UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
   if ([viewController isKindOfClass:[FlutterViewController class]]) {
     return (FlutterViewController*)viewController;
@@ -42,33 +48,33 @@
   return nil;
 }
 
-- (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
++ (void)handleStatusBarTouches:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+  [self.rootFlutterViewController handleStatusBarTouches:event];
+}
+
+- (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
   [super touchesBegan:touches withEvent:event];
-
-  // Pass status bar taps to key window Flutter rootViewController.
-  if (self.rootFlutterViewController != nil) {
-    [self.rootFlutterViewController handleStatusBarTouches:event];
-  }
+  [[self class] handleStatusBarTouches:touches withEvent:event];
 }
 
+// Do not remove, some clients may be calling these via `super`.
 - (void)applicationDidEnterBackground:(UIApplication*)application {
-  [_lifeCycleDelegate applicationDidEnterBackground:application];
 }
 
+// Do not remove, some clients may be calling these via `super`.
 - (void)applicationWillEnterForeground:(UIApplication*)application {
-  [_lifeCycleDelegate applicationWillEnterForeground:application];
 }
 
+// Do not remove, some clients may be calling these via `super`.
 - (void)applicationWillResignActive:(UIApplication*)application {
-  [_lifeCycleDelegate applicationWillResignActive:application];
 }
 
+// Do not remove, some clients may be calling these via `super`.
 - (void)applicationDidBecomeActive:(UIApplication*)application {
-  [_lifeCycleDelegate applicationDidBecomeActive:application];
 }
 
+// Do not remove, some clients may be calling these via `super`.
 - (void)applicationWillTerminate:(UIApplication*)application {
-  [_lifeCycleDelegate applicationWillTerminate:application];
 }
 
 #pragma GCC diagnostic push
@@ -86,28 +92,40 @@
       didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
 }
 
-- (void)application:(UIApplication*)application
-    didReceiveRemoteNotification:(NSDictionary*)userInfo
-          fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
-  [_lifeCycleDelegate application:application
-      didReceiveRemoteNotification:userInfo
-            fetchCompletionHandler:completionHandler];
-}
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 - (void)application:(UIApplication*)application
     didReceiveLocalNotification:(UILocalNotification*)notification {
   [_lifeCycleDelegate application:application didReceiveLocalNotification:notification];
 }
+#pragma GCC diagnostic pop
 
 - (void)userNotificationCenter:(UNUserNotificationCenter*)center
        willPresentNotification:(UNNotification*)notification
          withCompletionHandler:
              (void (^)(UNNotificationPresentationOptions options))completionHandler
-    API_AVAILABLE(ios(10)) {
+    NS_AVAILABLE_IOS(10_0) {
   if (@available(iOS 10.0, *)) {
-    [_lifeCycleDelegate userNotificationCenter:center
-                       willPresentNotification:notification
-                         withCompletionHandler:completionHandler];
+    if ([_lifeCycleDelegate respondsToSelector:_cmd]) {
+      [_lifeCycleDelegate userNotificationCenter:center
+                         willPresentNotification:notification
+                           withCompletionHandler:completionHandler];
+    }
+  }
+}
+
+/**
+ * Calls all plugins registered for `UNUserNotificationCenterDelegate` callbacks.
+ */
+- (void)userNotificationCenter:(UNUserNotificationCenter*)center
+    didReceiveNotificationResponse:(UNNotificationResponse*)response
+             withCompletionHandler:(void (^)(void))completionHandler NS_AVAILABLE_IOS(10_0) {
+  if (@available(iOS 10.0, *)) {
+    if ([_lifeCycleDelegate respondsToSelector:_cmd]) {
+      [_lifeCycleDelegate userNotificationCenter:center
+                  didReceiveNotificationResponse:response
+                           withCompletionHandler:completionHandler];
+    }
   }
 }
 
@@ -145,11 +163,6 @@
   [_lifeCycleDelegate application:application
       handleEventsForBackgroundURLSession:identifier
                         completionHandler:completionHandler];
-}
-
-- (void)application:(UIApplication*)application
-    performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
-  [_lifeCycleDelegate application:application performFetchWithCompletionHandler:completionHandler];
 }
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 120000
@@ -195,10 +208,60 @@
   return nil;
 }
 
-#pragma mark - FlutterAppLifeCycleProvider methods
+#pragma mark - Selectors handling
 
 - (void)addApplicationLifeCycleDelegate:(NSObject<FlutterPlugin>*)delegate {
   [_lifeCycleDelegate addDelegate:delegate];
+}
+
+#pragma mark - UIApplicationDelegate method dynamic implementation
+
+- (BOOL)respondsToSelector:(SEL)selector {
+  if ([_lifeCycleDelegate isSelectorAddedDynamically:selector]) {
+    return [self delegateRespondsSelectorToPlugins:selector];
+  }
+  return [super respondsToSelector:selector];
+}
+
+- (BOOL)delegateRespondsSelectorToPlugins:(SEL)selector {
+  if ([_lifeCycleDelegate hasPluginThatRespondsToSelector:selector]) {
+    return [_lifeCycleDelegate respondsToSelector:selector];
+  } else {
+    return NO;
+  }
+}
+
+- (id)forwardingTargetForSelector:(SEL)aSelector {
+  if ([_lifeCycleDelegate isSelectorAddedDynamically:aSelector]) {
+    [self logCapabilityConfigurationWarningIfNeeded:aSelector];
+    return _lifeCycleDelegate;
+  }
+  return [super forwardingTargetForSelector:aSelector];
+}
+
+// Mimic the logging from Apple when the capability is not set for the selectors.
+// However the difference is that Apple logs these message when the app launches, we only
+// log it when the method is invoked. We can possibly also log it when the app launches, but
+// it will cause an additional scan over all the plugins.
+- (void)logCapabilityConfigurationWarningIfNeeded:(SEL)selector {
+  NSArray* backgroundModesArray =
+      [[NSBundle mainBundle] objectForInfoDictionaryKey:kUIBackgroundMode];
+  NSSet* backgroundModesSet = [[[NSSet alloc] initWithArray:backgroundModesArray] autorelease];
+  if (selector == @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:)) {
+    if (![backgroundModesSet containsObject:kRemoteNotificationCapabitiliy]) {
+      NSLog(
+          @"You've implemented -[<UIApplicationDelegate> "
+          @"application:didReceiveRemoteNotification:fetchCompletionHandler:], but you still need "
+          @"to add \"remote-notification\" to the list of your supported UIBackgroundModes in your "
+          @"Info.plist.");
+    }
+  } else if (selector == @selector(application:performFetchWithCompletionHandler:)) {
+    if (![backgroundModesSet containsObject:kBackgroundFetchCapatibility]) {
+      NSLog(@"You've implemented -[<UIApplicationDelegate> "
+            @"application:performFetchWithCompletionHandler:], but you still need to add \"fetch\" "
+            @"to the list of your supported UIBackgroundModes in your Info.plist.");
+    }
+  }
 }
 
 @end

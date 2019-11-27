@@ -4,10 +4,11 @@
 
 #include "flutter/fml/command_line.h"
 
+#include <string_view>
 #include <utility>
 
-#include "flutter/fml/arraysize.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/size.h"
 #include "gtest/gtest.h"
 
 namespace fml {
@@ -197,7 +198,7 @@ TEST(CommandLineTest, CommmandLineFromIterators) {
   {
     static const char* const argv[] = {"my_program", "--flag=value", "arg"};
 
-    auto cl = CommandLineFromIterators(argv, argv + arraysize(argv));
+    auto cl = CommandLineFromIterators(argv, argv + fml::size(argv));
     EXPECT_TRUE(cl.has_argv0());
     EXPECT_EQ(argv[0], cl.argv0());
     std::vector<CommandLine::Option> expected_options = {
@@ -211,7 +212,7 @@ TEST(CommandLineTest, CommmandLineFromIterators) {
 
 TEST(CommandLineTest, CommandLineFromArgcArgv) {
   static const char* const argv[] = {"my_program", "--flag=value", "arg"};
-  const int argc = static_cast<int>(arraysize(argv));
+  const int argc = static_cast<int>(fml::size(argv));
 
   auto cl = CommandLineFromArgcArgv(argc, argv);
   EXPECT_TRUE(cl.has_argv0());
@@ -315,7 +316,7 @@ TEST(CommandLineTest, MultipleOccurrencesOfOption) {
       CommandLine::Option("flag1", "value3")};
   EXPECT_EQ("value3", cl.GetOptionValueWithDefault("flag1", "nope"));
   EXPECT_EQ("value2", cl.GetOptionValueWithDefault("flag2", "nope"));
-  std::vector<StringView> values = cl.GetOptionValues("flag1");
+  std::vector<std::string_view> values = cl.GetOptionValues("flag1");
   ASSERT_EQ(2u, values.size());
   EXPECT_EQ("value1", values[0]);
   EXPECT_EQ("value3", values[1]);

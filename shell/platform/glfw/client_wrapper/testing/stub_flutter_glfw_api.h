@@ -36,33 +36,46 @@ class StubFlutterGlfwApi {
   virtual void Terminate() {}
 
   // Called for FlutterDesktopCreateWindow.
-  virtual FlutterDesktopWindowRef CreateWindow(int initial_width,
-                                               int initial_height,
-                                               const char* title,
-                                               const char* assets_path,
-                                               const char* icu_data_path,
-                                               const char** arguments,
-                                               size_t argument_count) {
+  virtual FlutterDesktopWindowControllerRef CreateWindow(
+      const FlutterDesktopWindowProperties& window_properties,
+      const FlutterDesktopEngineProperties& engine_properties) {
     return nullptr;
   }
 
-  // Called for FlutterDesktopSetHoverEnabled.
+  // Called for FlutterDesktopDestroyWindow
+  virtual void DestroyWindow() {}
+
+  // Called for FlutterDesktopWindowSetHoverEnabled.
   virtual void SetHoverEnabled(bool enabled) {}
 
-  // Called for FlutterDesktopSetWindowTitle.
+  // Called for FlutterDesktopWindowSetTitle.
   virtual void SetWindowTitle(const char* title) {}
 
-  //  Called for FlutterDesktopSetWindowIcon.
+  //  Called for FlutterDesktopWindowSetIcon.
   virtual void SetWindowIcon(uint8_t* pixel_data, int width, int height) {}
 
-  // Called for FlutterDesktopRunWindowLoop.
-  virtual void RunWindowLoop() {}
+  // Called for FlutterDesktopWindowGetFrame.
+  virtual void GetWindowFrame(int* x, int* y, int* width, int* height) {
+    x = y = width = height = 0;
+  }
+
+  // Called for FlutterDesktopWindowGetFrame.
+  virtual void SetWindowFrame(int x, int y, int width, int height) {}
+
+  // Called for FlutterDesktopWindowGetScaleFactor.
+  virtual double GetWindowScaleFactor() { return 1.0; }
+
+  // Called for FlutterDesktopWindowSetPixelRatioOverride.
+  virtual void SetPixelRatioOverride(double pixel_ratio) {}
+
+  // Called for FlutterDesktopRunWindowEventLoopWithTimeout.
+  virtual bool RunWindowEventLoopWithTimeout(uint32_t millisecond_timeout) {
+    return true;
+  }
 
   // Called for FlutterDesktopRunEngine.
-  virtual FlutterDesktopEngineRef RunEngine(const char* assets_path,
-                                            const char* icu_data_path,
-                                            const char** arguments,
-                                            size_t argument_count) {
+  virtual FlutterDesktopEngineRef RunEngine(
+      const FlutterDesktopEngineProperties& properties) {
     return nullptr;
   }
 

@@ -85,30 +85,6 @@ class LineWidths {
   std::vector<float> mIndents;
 };
 
-class TabStops {
- public:
-  void set(const int* stops, size_t nStops, int tabWidth) {
-    if (stops != nullptr) {
-      mStops.assign(stops, stops + nStops);
-    } else {
-      mStops.clear();
-    }
-    mTabWidth = tabWidth;
-  }
-  float nextTab(float widthSoFar) const {
-    for (size_t i = 0; i < mStops.size(); i++) {
-      if (mStops[i] > widthSoFar) {
-        return mStops[i];
-      }
-    }
-    return floor(widthSoFar / mTabWidth + 1) * mTabWidth;
-  }
-
- private:
-  std::vector<int> mStops;
-  int mTabWidth;
-};
-
 class LineBreaker {
  public:
   const static int kTab_Shift =
@@ -143,10 +119,6 @@ class LineBreaker {
 
   void setIndents(const std::vector<float>& indents);
 
-  void setTabStops(const int* stops, size_t nStops, int tabWidth) {
-    mTabStops.set(stops, nStops, tabWidth);
-  }
-
   BreakStrategy getStrategy() const { return mStrategy; }
 
   void setStrategy(BreakStrategy strategy) { mStrategy = strategy; }
@@ -176,6 +148,13 @@ class LineBreaker {
   void addReplacement(size_t start, size_t end, float width);
 
   size_t computeBreaks();
+
+  // libtxt: Add ability to set custom char widths. This allows manual
+  // definition of the widths of arbitrary glyphs. To linebreak properly, call
+  // addStyleRun with nullptr as the paint property, which will lead it to
+  // assume the width has already been calculated. Used for properly breaking
+  // inline placeholders.
+  void setCustomCharWidth(size_t offset, float width);
 
   const int* getBreaks() const { return mBreaks.data(); }
 
@@ -246,7 +225,6 @@ class LineBreaker {
   HyphenationFrequency mHyphenationFrequency = kHyphenationFrequency_Normal;
   bool mJustified;
   LineWidths mLineWidths;
-  TabStops mTabStops;
 
   // result of line breaking
   std::vector<int> mBreaks;

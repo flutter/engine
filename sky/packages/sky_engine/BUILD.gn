@@ -2,18 +2,25 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/fuchsia/sdk.gni")
 import("//third_party/dart/sdk/lib/_http/http_sources.gni")
+import(
+    "//third_party/dart/sdk/lib/_internal/js_runtime/interceptors_sources.gni")
 import("//third_party/dart/sdk/lib/async/async_sources.gni")
 import("//third_party/dart/sdk/lib/collection/collection_sources.gni")
 import("//third_party/dart/sdk/lib/convert/convert_sources.gni")
 import("//third_party/dart/sdk/lib/core/core_sources.gni")
 import("//third_party/dart/sdk/lib/developer/developer_sources.gni")
+import("//third_party/dart/sdk/lib/ffi/ffi_sources.gni")
+import("//third_party/dart/sdk/lib/html/html_sources.gni")
 import("//third_party/dart/sdk/lib/internal/internal_sources.gni")
 import("//third_party/dart/sdk/lib/io/io_sources.gni")
 import("//third_party/dart/sdk/lib/isolate/isolate_sources.gni")
+import("//third_party/dart/sdk/lib/js/js_sources.gni")
+import("//third_party/dart/sdk/lib/js_util/js_util_sources.gni")
 import("//third_party/dart/sdk/lib/math/math_sources.gni")
 import("//third_party/dart/sdk/lib/typed_data/typed_data_sources.gni")
-
+import("//third_party/dart/sdk/lib/wasm/wasm_sources.gni")
 import("$flutter_root/build/dart/rules.gni")
 import("$flutter_root/lib/ui/dart_ui.gni")
 
@@ -79,6 +86,14 @@ copy("_http") {
   ]
 }
 
+copy("_interceptors") {
+  lib_path = rebase_path("_internal/js_runtime", "", dart_sdk_lib_path)
+  sources = rebase_path(interceptors_sdk_sources, "", lib_path)
+  outputs = [
+    "$root_gen_dir/dart-pkg/sky_engine/lib/_interceptors/{{source_file_part}}",
+  ]
+}
+
 copy("internal") {
   lib_path = rebase_path("internal", "", dart_sdk_lib_path)
   sources = rebase_path(internal_sdk_sources, "", lib_path)
@@ -95,11 +110,43 @@ copy("io") {
   ]
 }
 
+copy("ffi") {
+  lib_path = rebase_path("ffi", "", dart_sdk_lib_path)
+  sources = rebase_path(ffi_sdk_sources, "", lib_path)
+  outputs = [
+    "$root_gen_dir/dart-pkg/sky_engine/lib/ffi/{{source_file_part}}",
+  ]
+}
+
+copy("html") {
+  lib_path = rebase_path("html", "", dart_sdk_lib_path)
+  sources = rebase_path(html_sdk_sources, "", lib_path)
+  outputs = [
+    "$root_gen_dir/dart-pkg/sky_engine/lib/html/{{source_file_part}}",
+  ]
+}
+
 copy("isolate") {
   lib_path = rebase_path("isolate", "", dart_sdk_lib_path)
   sources = rebase_path(isolate_sdk_sources, "", lib_path)
   outputs = [
     "$root_gen_dir/dart-pkg/sky_engine/lib/isolate/{{source_file_part}}",
+  ]
+}
+
+copy("js") {
+  lib_path = rebase_path("js", "", dart_sdk_lib_path)
+  sources = rebase_path(js_sdk_sources, "", lib_path)
+  outputs = [
+    "$root_gen_dir/dart-pkg/sky_engine/lib/js/{{source_file_part}}",
+  ]
+}
+
+copy("js_util") {
+  lib_path = rebase_path("js_util", "", dart_sdk_lib_path)
+  sources = rebase_path(js_util_sdk_sources, "", lib_path)
+  outputs = [
+    "$root_gen_dir/dart-pkg/sky_engine/lib/js_util/{{source_file_part}}",
   ]
 }
 
@@ -119,6 +166,14 @@ copy("typed_data") {
   ]
 }
 
+copy("wasm") {
+  lib_path = rebase_path("wasm", "", dart_sdk_lib_path)
+  sources = rebase_path(wasm_sdk_sources, "", lib_path)
+  outputs = [
+    "$root_gen_dir/dart-pkg/sky_engine/lib/wasm/{{source_file_part}}",
+  ]
+}
+
 copy("copy_dart_ui") {
   sources = dart_ui_files
 
@@ -130,16 +185,22 @@ copy("copy_dart_ui") {
 group("copy_dart_sdk") {
   deps = [
     ":_http",
+    ":_interceptors",
     ":async",
     ":collection",
     ":convert",
     ":core",
     ":developer",
+    ":ffi",
+    ":html",
     ":internal",
     ":io",
     ":isolate",
+    ":js",
+    ":js_util",
     ":math",
     ":typed_data",
+    ":wasm",
   ]
 }
 
@@ -170,7 +231,7 @@ dart_pkg("sky_engine") {
   ]
 }
 
-if (is_fuchsia) {
+if (is_fuchsia && !using_fuchsia_sdk) {
   import("//build/dart/dart_library.gni")
 
   dart_library("sky_engine_dart") {

@@ -12,13 +12,13 @@
 
 namespace flutter {
 
-class EmbedderExternalTextureGL : public flow::Texture {
+class EmbedderExternalTextureGL : public flutter::Texture {
  public:
   using ExternalTextureCallback = std::function<
       sk_sp<SkImage>(int64_t texture_identifier, GrContext*, const SkISize&)>;
 
   EmbedderExternalTextureGL(int64_t texture_identifier,
-                            ExternalTextureCallback callback);
+                            const ExternalTextureCallback& callback);
 
   ~EmbedderExternalTextureGL();
 
@@ -26,20 +26,23 @@ class EmbedderExternalTextureGL : public flow::Texture {
   ExternalTextureCallback external_texture_callback_;
   sk_sp<SkImage> last_image_;
 
-  // |flow::Texture|
+  // |flutter::Texture|
   void Paint(SkCanvas& canvas,
              const SkRect& bounds,
              bool freeze,
              GrContext* context) override;
 
-  // |flow::Texture|
+  // |flutter::Texture|
   void OnGrContextCreated() override;
 
-  // |flow::Texture|
+  // |flutter::Texture|
   void OnGrContextDestroyed() override;
 
-  // |flow::Texture|
+  // |flutter::Texture|
   void MarkNewFrameAvailable() override;
+
+  // |flutter::Texture|
+  void OnTextureUnregistered() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderExternalTextureGL);
 };

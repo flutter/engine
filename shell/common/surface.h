@@ -21,7 +21,7 @@ class SurfaceFrame {
   using SubmitCallback =
       std::function<bool(const SurfaceFrame& surface_frame, SkCanvas* canvas)>;
 
-  SurfaceFrame(sk_sp<SkSurface> surface, SubmitCallback submit_callback);
+  SurfaceFrame(sk_sp<SkSurface> surface, const SubmitCallback& submit_callback);
 
   ~SurfaceFrame();
 
@@ -41,6 +41,7 @@ class SurfaceFrame {
   FML_DISALLOW_COPY_AND_ASSIGN(SurfaceFrame);
 };
 
+/// Abstract Base Class that represents where we will be rendering content.
 class Surface {
  public:
   Surface();
@@ -55,7 +56,7 @@ class Surface {
 
   virtual GrContext* GetContext() = 0;
 
-  virtual flow::ExternalViewEmbedder* GetExternalViewEmbedder();
+  virtual flutter::ExternalViewEmbedder* GetExternalViewEmbedder();
 
   virtual bool MakeRenderContextCurrent();
 

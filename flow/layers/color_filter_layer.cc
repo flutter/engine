@@ -4,9 +4,10 @@
 
 #include "flutter/flow/layers/color_filter_layer.h"
 
-namespace flow {
+namespace flutter {
 
-ColorFilterLayer::ColorFilterLayer() = default;
+ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
+    : filter_(std::move(filter)) {}
 
 ColorFilterLayer::~ColorFilterLayer() = default;
 
@@ -15,11 +16,11 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting());
 
   SkPaint paint;
-  paint.setColorFilter(SkColorFilters::Blend(color_, blend_mode_));
+  paint.setColorFilter(filter_);
 
   Layer::AutoSaveLayer save =
       Layer::AutoSaveLayer::Create(context, paint_bounds(), &paint);
   PaintChildren(context);
 }
 
-}  // namespace flow
+}  // namespace flutter

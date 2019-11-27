@@ -7,11 +7,12 @@
 
 #include "flutter/flow/texture.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterTexture.h"
+#include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
 
 namespace flutter {
 
-class IOSExternalTextureGL : public flow::Texture {
+class IOSExternalTextureGL : public flutter::Texture {
  public:
   IOSExternalTextureGL(int64_t textureId, NSObject<FlutterTexture>* externalTexture);
 
@@ -26,10 +27,19 @@ class IOSExternalTextureGL : public flow::Texture {
 
   void MarkNewFrameAvailable() override;
 
+  void OnTextureUnregistered() override;
+
  private:
-  NSObject<FlutterTexture>* external_texture_;
+  void CreateTextureFromPixelBuffer();
+
+  void EnsureTextureCacheExists();
+  bool NeedUpdateTexture(bool freeze);
+
+  bool new_frame_ready_ = false;
+  fml::scoped_nsobject<NSObject<FlutterTexture>> external_texture_;
   fml::CFRef<CVOpenGLESTextureCacheRef> cache_ref_;
   fml::CFRef<CVOpenGLESTextureRef> texture_ref_;
+  fml::CFRef<CVPixelBufferRef> buffer_ref_;
   FML_DISALLOW_COPY_AND_ASSIGN(IOSExternalTextureGL);
 };
 

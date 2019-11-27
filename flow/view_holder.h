@@ -21,7 +21,7 @@
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/task_runner.h"
 
-namespace flow {
+namespace flutter {
 
 // Represents a Scenic |ViewHolder| resource that imports a |View| from another
 // session.
@@ -34,11 +34,16 @@ class ViewHolder {
   static void Create(zx_koid_t id,
                      fml::RefPtr<fml::TaskRunner> ui_task_runner,
                      fuchsia::ui::views::ViewHolderToken view_holder_token,
-                     BindCallback on_bind_callback);
+                     const BindCallback& on_bind_callback);
   static void Destroy(zx_koid_t id);
   static ViewHolder* FromId(zx_koid_t id);
 
-  // Sets the properties of the child view by issuing a Scenic command.
+  ViewHolder(fml::RefPtr<fml::TaskRunner> ui_task_runner,
+             fuchsia::ui::views::ViewHolderToken view_holder_token,
+             const BindCallback& on_bind_callback);
+  ~ViewHolder() = default;
+
+  // Sets the properties/opacity of the child view by issuing a Scenic command.
   void SetProperties(double width,
                      double height,
                      double insetTop,
@@ -46,6 +51,7 @@ class ViewHolder {
                      double insetBottom,
                      double insetLeft,
                      bool focusable);
+  void SetOpacity(double opacity);
 
   // Creates or updates the contained ViewHolder resource using the specified
   // |SceneUpdateContext|.
@@ -55,21 +61,23 @@ class ViewHolder {
                    bool hit_testable);
 
  private:
-  ViewHolder(fml::RefPtr<fml::TaskRunner> ui_task_runner,
-             fuchsia::ui::views::ViewHolderToken view_holder_token,
-             BindCallback on_bind_callback);
-
-  fuchsia::ui::gfx::ViewProperties pending_properties_;
-  fuchsia::ui::views::ViewHolderToken pending_view_holder_token_;
   fml::RefPtr<fml::TaskRunner> ui_task_runner_;
+
+  std::unique_ptr<scenic::OpacityNodeHACK> opacity_node_;
   std::unique_ptr<scenic::EntityNode> entity_node_;
   std::unique_ptr<scenic::ViewHolder> view_holder_;
+
+  fuchsia::ui::views::ViewHolderToken pending_view_holder_token_;
   BindCallback pending_bind_callback_;
+
+  fuchsia::ui::gfx::ViewProperties pending_properties_;
+  double pending_opacity_;
   bool has_pending_properties_ = false;
+  bool has_pending_opacity_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ViewHolder);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_VIEW_HOLDER_H_

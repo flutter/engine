@@ -10,7 +10,7 @@
 namespace flutter {
 
 SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
-                           SubmitCallback submit_callback)
+                           const SubmitCallback& submit_callback)
     : submitted_(false), surface_(surface), submit_callback_(submit_callback) {
   FML_DCHECK(submit_callback_);
 }
@@ -56,7 +56,7 @@ Surface::Surface() = default;
 
 Surface::~Surface() = default;
 
-flow::ExternalViewEmbedder* Surface::GetExternalViewEmbedder() {
+flutter::ExternalViewEmbedder* Surface::GetExternalViewEmbedder() {
   return nullptr;
 }
 

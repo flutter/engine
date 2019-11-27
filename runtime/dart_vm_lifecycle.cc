@@ -12,8 +12,8 @@ namespace flutter {
 // critical section. All accesses (not just const members) to the global VM
 // object weak pointer are behind this mutex.
 static std::mutex gVMMutex;
-static std::weak_ptr<DartVM> gVM FML_GUARDED_BY(gVMMutex);
-static std::shared_ptr<DartVM>* gVMLeak FML_GUARDED_BY(gVMMutex);
+static std::weak_ptr<DartVM> gVM;
+static std::shared_ptr<DartVM>* gVMLeak;
 
 // We are going to be modifying more than just the control blocks of the
 // following weak pointers (in the |Create| case where an old VM could not be
@@ -21,12 +21,9 @@ static std::shared_ptr<DartVM>* gVMLeak FML_GUARDED_BY(gVMMutex);
 // but that is only available since C++20. We don't expect contention on these
 // locks so we just use one mutex for all.
 static std::mutex gVMDependentsMutex;
-static std::weak_ptr<const DartVMData> gVMData
-    FML_GUARDED_BY(gVMDependentsMutex);
-static std::weak_ptr<ServiceProtocol> gVMServiceProtocol
-    FML_GUARDED_BY(gVMDependentsMutex);
-static std::weak_ptr<IsolateNameServer> gVMIsolateNameServer
-    FML_GUARDED_BY(gVMDependentsMutex);
+static std::weak_ptr<const DartVMData> gVMData;
+static std::weak_ptr<ServiceProtocol> gVMServiceProtocol;
+static std::weak_ptr<IsolateNameServer> gVMIsolateNameServer;
 
 DartVMRef::DartVMRef(std::shared_ptr<DartVM> vm) : vm_(vm) {}
 
@@ -40,15 +37,22 @@ DartVMRef::~DartVMRef() {
     // pessimization and not required for correctness.
     return;
   }
-  std::lock_guard<std::mutex> lifecycle_lock(gVMMutex);
+  std::scoped_lock lifecycle_lock(gVMMutex);
   vm_.reset();
 }
 
 DartVMRef DartVMRef::Create(Settings settings,
                             fml::RefPtr<DartSnapshot> vm_snapshot,
-                            fml::RefPtr<DartSnapshot> isolate_snapshot,
-                            fml::RefPtr<DartSnapshot> shared_snapshot) {
-  std::lock_guard<std::mutex> lifecycle_lock(gVMMutex);
+                            fml::RefPtr<DartSnapshot> isolate_snapshot) {
+  std::scoped_lock lifecycle_lock(gVMMutex);
+
+  if (!settings.leak_vm) {
+    FML_CHECK(!gVMLeak)
+        << "Launch settings indicated that the VM should shut down in the "
+           "process when done but a previous launch asked the VM to leak in "
+           "the same process. For proper VM shutdown, all VM launches must "
+           "indicate that they should shut down when done.";
+  }
 
   // If there is already a running VM in the process, grab a strong reference to
   // it.
@@ -60,7 +64,7 @@ DartVMRef DartVMRef::Create(Settings settings,
     return DartVMRef{std::move(vm)};
   }
 
-  std::lock_guard<std::mutex> dependents_lock(gVMDependentsMutex);
+  std::scoped_lock dependents_lock(gVMDependentsMutex);
 
   gVMData.reset();
   gVMServiceProtocol.reset();
@@ -73,7 +77,6 @@ DartVMRef DartVMRef::Create(Settings settings,
   auto vm = DartVM::Create(std::move(settings),          //
                            std::move(vm_snapshot),       //
                            std::move(isolate_snapshot),  //
-                           std::move(shared_snapshot),   //
                            isolate_name_server           //
   );
 
@@ -95,27 +98,27 @@ DartVMRef DartVMRef::Create(Settings settings,
 }
 
 bool DartVMRef::IsInstanceRunning() {
-  std::lock_guard<std::mutex> lock(gVMMutex);
+  std::scoped_lock lock(gVMMutex);
   return !gVM.expired();
 }
 
 std::shared_ptr<const DartVMData> DartVMRef::GetVMData() {
-  std::lock_guard<std::mutex> lock(gVMDependentsMutex);
+  std::scoped_lock lock(gVMDependentsMutex);
   return gVMData.lock();
 }
 
 std::shared_ptr<ServiceProtocol> DartVMRef::GetServiceProtocol() {
-  std::lock_guard<std::mutex> lock(gVMDependentsMutex);
+  std::scoped_lock lock(gVMDependentsMutex);
   return gVMServiceProtocol.lock();
 }
 
 std::shared_ptr<IsolateNameServer> DartVMRef::GetIsolateNameServer() {
-  std::lock_guard<std::mutex> lock(gVMDependentsMutex);
+  std::scoped_lock lock(gVMDependentsMutex);
   return gVMIsolateNameServer.lock();
 }
 
 DartVM* DartVMRef::GetRunningVM() {
-  std::lock_guard<std::mutex> lock(gVMMutex);
+  std::scoped_lock lock(gVMMutex);
   auto vm = gVM.lock().get();
   FML_CHECK(vm) << "Caller assumed VM would be running when it wasn't";
   return vm;

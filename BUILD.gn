@@ -4,6 +4,10 @@
 
 import("$flutter_root/common/config.gni")
 
+if (is_fuchsia) {
+  import("//build/fuchsia/sdk.gni")
+}
+
 # Whether to build the dartdevc sdk, libraries, and source files
 # required for the flutter web sdk.
 declare_args() {
@@ -13,9 +17,16 @@ declare_args() {
 group("flutter") {
   testonly = true
 
-  public_deps = [
-    "$flutter_root/lib/snapshot:generate_snapshot_bin",
-    "$flutter_root/lib/snapshot:kernel_platform_files",
+  public_deps = []
+
+  if (!(is_fuchsia && using_fuchsia_sdk)) {
+    public_deps += [
+      "$flutter_root/lib/snapshot:generate_snapshot_bin",
+      "$flutter_root/lib/snapshot:kernel_platform_files",
+    ]
+  }
+
+  public_deps += [
     "$flutter_root/shell/platform/embedder:flutter_engine",
     "$flutter_root/sky",
   ]
@@ -24,10 +35,17 @@ group("flutter") {
     public_deps += [ "$flutter_root/shell/testing" ]
   }
 
+  if (is_fuchsia && using_fuchsia_sdk) {
+    public_deps += [
+      "$flutter_root/shell/platform/fuchsia",
+      "$flutter_root/shell/testing($host_toolchain)",
+    ]
+  }
+
   if (!is_fuchsia && !is_fuchsia_host) {
     if (current_toolchain == host_toolchain) {
       public_deps += [
-        "$flutter_root/frontend_server",
+        "$flutter_root/flutter_frontend_server:frontend_server",
         "//third_party/dart:create_sdk",
       ]
 
@@ -40,34 +58,63 @@ group("flutter") {
   # If on the host, compile all unittests targets.
   if (current_toolchain == host_toolchain) {
     if (is_mac) {
-      public_deps +=
-          [ "$flutter_root/shell/platform/darwin:flutter_channels_unittests" ]
+      public_deps += [
+        "$flutter_root/shell/platform/darwin:flutter_channels_unittests",
+        "$flutter_root/shell/platform/darwin/macos:flutter_desktop_darwin_unittests",
+      ]
     }
 
     public_deps += [
       "$flutter_root/flow:flow_unittests",
       "$flutter_root/fml:fml_unittests",
+      "$flutter_root/lib/ui:ui_unittests",
       "$flutter_root/runtime:runtime_unittests",
       "$flutter_root/shell/common:shell_unittests",
+      "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_unittests",
       "$flutter_root/shell/platform/embedder:embedder_unittests",
+      "$flutter_root/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
+      "$flutter_root/testing:testing_unittests",
       "$flutter_root/third_party/txt:txt_unittests",
     ]
 
-    if (!is_win) {
-      public_deps += [ "$flutter_root/shell/common:shell_benchmarks" ]
-    }
-
-    if (is_linux) {
+    if (is_win) {
       public_deps += [
-        "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_unittests",
-        "$flutter_root/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
+        "$flutter_root/shell/platform/windows:flutter_windows_unittests",
+        "$flutter_root/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests",
       ]
     }
+
+    if (!is_win) {
+      public_deps += [
+        "$flutter_root/fml:fml_benchmarks",
+        "$flutter_root/shell/common:shell_benchmarks",
+        "$flutter_root/third_party/txt:txt_benchmarks",
+      ]
+    }
+  }
+
+  # Fuchsia currently only supports a subset of our unit tests
+  if (is_fuchsia) {
+    public_deps += [ "$flutter_root/fml:fml_tests" ]
   }
 }
 
 config("config") {
   include_dirs = [ ".." ]
+  if (is_win) {
+    if (current_cpu != "x86") {
+      cflags = [ "/WX" ]  # Treat warnings as errors.
+    }
+  }
+}
+
+config("export_dynamic_symbols") {
+  if (is_linux) {
+    inputs = [
+      "$flutter_root/common/exported_symbols.sym",
+    ]
+    ldflags = [ "-Wl,--dynamic-list=" + rebase_path(inputs[0], root_build_dir) ]
+  }
 }
 
 group("dist") {

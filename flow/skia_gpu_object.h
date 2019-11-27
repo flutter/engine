@@ -13,7 +13,7 @@
 #include "flutter/fml/task_runner.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 
-namespace flow {
+namespace flutter {
 
 // A queue that holds Skia objects that must be destructed on the the given task
 // runner.
@@ -57,7 +57,7 @@ class SkiaGPUObject {
 
   SkiaGPUObject(sk_sp<SkiaObjectType> object, fml::RefPtr<SkiaUnrefQueue> queue)
       : object_(std::move(object)), queue_(std::move(queue)) {
-    FML_DCHECK(queue_ && object_);
+    FML_DCHECK(object_);
   }
 
   SkiaGPUObject(SkiaGPUObject&&) = default;
@@ -69,7 +69,7 @@ class SkiaGPUObject {
   sk_sp<SkiaObjectType> get() const { return object_; }
 
   void reset() {
-    if (object_) {
+    if (object_ && queue_) {
       queue_->Unref(object_.release());
     }
     queue_ = nullptr;
@@ -83,6 +83,6 @@ class SkiaGPUObject {
   FML_DISALLOW_COPY_AND_ASSIGN(SkiaGPUObject);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_SKIA_GPU_OBJECT_H_

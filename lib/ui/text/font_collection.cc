@@ -19,7 +19,7 @@
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/logging/dart_invoke.h"
-#include "third_party/tonic/typed_data/uint8_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 #include "txt/asset_font_manager.h"
 #include "txt/test_font_manager.h"
 
@@ -129,17 +129,24 @@ void FontCollection::RegisterFonts(
 }
 
 void FontCollection::RegisterTestFonts() {
-  sk_sp<SkTypeface> test_typeface =
-      SkTypeface::MakeFromStream(GetTestFontData());
+  std::vector<sk_sp<SkTypeface>> test_typefaces;
+  std::vector<std::unique_ptr<SkStreamAsset>> font_data = GetTestFontData();
+  for (auto& font : font_data) {
+    test_typefaces.push_back(SkTypeface::MakeFromStream(std::move(font)));
+  }
 
   std::unique_ptr<txt::TypefaceFontAssetProvider> font_provider =
       std::make_unique<txt::TypefaceFontAssetProvider>();
 
-  font_provider->RegisterTypeface(std::move(test_typeface),
-                                  GetTestFontFamilyName());
+  size_t index = 0;
+  std::vector<std::string> names = GetTestFontFamilyNames();
+  for (sk_sp<SkTypeface> typeface : test_typefaces) {
+    font_provider->RegisterTypeface(std::move(typeface), names[index]);
+    index++;
+  }
 
-  collection_->SetTestFontManager(sk_make_sp<txt::TestFontManager>(
-      std::move(font_provider), GetTestFontFamilyName()));
+  collection_->SetTestFontManager(
+      sk_make_sp<txt::TestFontManager>(std::move(font_provider), names));
 
   collection_->DisableFontFallback();
 }

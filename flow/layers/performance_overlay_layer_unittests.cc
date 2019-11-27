@@ -5,11 +5,14 @@
 #include "flutter/flow/flow_test_utils.h"
 #include "flutter/flow/layers/performance_overlay_layer.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/fml/build_config.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
 #include "gtest/gtest.h"
+
+#include <sstream>
 
 // To get the size of kMockedTimes in compile time.
 template <class T, std::size_t N>
@@ -21,20 +24,22 @@ constexpr int kMockedTimes[] = {17, 1,  4,  24, 4,  25, 30, 4,  13, 34,
                                 14, 0,  18, 9,  32, 36, 26, 23, 5,  8,
                                 32, 18, 29, 16, 29, 18, 0,  36, 33, 10};
 
-// Relative to the flutter/src/engine/flutter directory
-const char* kGoldenFileName = "performance_overlay_gold.png";
-
-// Relative to the flutter/src/engine/flutter directory
-const char* kNewGoldenFileName = "performance_overlay_gold_new.png";
-
-TEST(PerformanceOverlayLayer, Gold) {
-  const std::string& golden_dir = flow::GetGoldenDir();
+static std::string GetGoldenFilePath(int refresh_rate, bool is_new) {
+  std::stringstream ss;
   // This unit test should only be run on Linux (not even on Mac since it's a
   // golden test). Hence we don't have to worry about the "/" vs. "\".
-  std::string golden_file_path = golden_dir + "/" + kGoldenFileName;
-  std::string new_golden_file_path = golden_dir + "/" + kNewGoldenFileName;
+  ss << flutter::GetGoldenDir() << "/"
+     << "performance_overlay_gold_" << refresh_rate << "fps"
+     << (is_new ? "_new" : "") << ".png";
+  return ss.str();
+}
 
-  flow::Stopwatch mock_stopwatch;
+static void TestPerformanceOverlayLayerGold(int refresh_rate) {
+  std::string golden_file_path = GetGoldenFilePath(refresh_rate, false);
+  std::string new_golden_file_path = GetGoldenFilePath(refresh_rate, true);
+
+  flutter::Stopwatch mock_stopwatch(
+      fml::RefreshRateToFrameBudget(refresh_rate));
   for (int i = 0; i < size(kMockedTimes); ++i) {
     mock_stopwatch.SetLapTime(
         fml::TimeDelta::FromMilliseconds(kMockedTimes[i]));
@@ -45,19 +50,19 @@ TEST(PerformanceOverlayLayer, Gold) {
 
   ASSERT_TRUE(surface != nullptr);
 
-  flow::TextureRegistry unused_texture_registry;
-
-  flow::Layer::PaintContext paintContext = {
+  flutter::TextureRegistry unused_texture_registry;
+  flutter::Layer::PaintContext paintContext = {
       nullptr,        surface->getCanvas(),    nullptr, nullptr, mock_stopwatch,
       mock_stopwatch, unused_texture_registry, nullptr, false};
 
   // Specify font file to ensure the same font across different operation
   // systems.
-  flow::PerformanceOverlayLayer layer(flow::kDisplayRasterizerStatistics |
-                                          flow::kVisualizeRasterizerStatistics |
-                                          flow::kDisplayEngineStatistics |
-                                          flow::kVisualizeEngineStatistics,
-                                      flow::GetFontFile().c_str());
+  flutter::PerformanceOverlayLayer layer(
+      flutter::kDisplayRasterizerStatistics |
+          flutter::kVisualizeRasterizerStatistics |
+          flutter::kDisplayEngineStatistics |
+          flutter::kVisualizeEngineStatistics,
+      flutter::GetFontFile().c_str());
   layer.set_paint_bounds(SkRect::MakeWH(1000, 400));
   surface->getCanvas()->clear(SK_ColorTRANSPARENT);
   layer.Paint(paintContext);
@@ -72,6 +77,9 @@ TEST(PerformanceOverlayLayer, Gold) {
       << "Please either set --golden-dir, or make sure that the unit test is "
       << "run from the right directory (e.g., flutter/engine/src).";
 
+#if !OS_LINUX
+  GTEST_SKIP() << "Skipping golden tests on non-Linux OSes";
+#endif  // OS_LINUX
   const bool golden_data_matches = golden_data->equals(snapshot_data.get());
   if (!golden_data_matches) {
     SkFILEWStream wstream(new_golden_file_path.c_str());
@@ -87,10 +95,22 @@ TEST(PerformanceOverlayLayer, Gold) {
 
     EXPECT_TRUE(golden_data_matches)
         << "Golden file mismatch. Please check "
-        << "the difference between " << kGoldenFileName << " and "
-        << kNewGoldenFileName << ", and  replace the former "
+        << "the difference between " << golden_file_path << " and "
+        << new_golden_file_path << ", and  replace the former "
         << "with the latter if the difference looks good.\n\n"
-        << "See also the base64 encoded " << kNewGoldenFileName << ":\n"
+        << "See also the base64 encoded " << new_golden_file_path << ":\n"
         << b64_char;
   }
+}
+
+TEST(PerformanceOverlayLayerDefault, Gold) {
+  TestPerformanceOverlayLayerGold(60);
+}
+
+TEST(PerformanceOverlayLayer90fps, Gold) {
+  TestPerformanceOverlayLayerGold(90);
+}
+
+TEST(PerformanceOverlayLayer120fps, Gold) {
+  TestPerformanceOverlayLayerGold(120);
 }

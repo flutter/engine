@@ -23,7 +23,7 @@ class RuntimeDelegate {
 
   virtual void ScheduleFrame(bool regenerate_layer_tree = true) = 0;
 
-  virtual void Render(std::unique_ptr<flow::LayerTree> layer_tree) = 0;
+  virtual void Render(std::unique_ptr<flutter::LayerTree> layer_tree) = 0;
 
   virtual void UpdateSemantics(SemanticsNodeUpdates update,
                                CustomAccessibilityActionUpdates actions) = 0;
@@ -34,6 +34,8 @@ class RuntimeDelegate {
 
   virtual void UpdateIsolateDescription(const std::string isolate_name,
                                         int64_t isolate_port) = 0;
+
+  virtual void SetNeedsReportTimings(bool value) = 0;
 
  protected:
   virtual ~RuntimeDelegate();
