@@ -36,20 +36,20 @@ String placeholderMessage = 'Enable accessibility';
 ///
 /// See [DesktopSemanticsEnabler], [MobileSemanticsEnabler].
 class SemanticsHelper {
-  SemanticsEnabler _enableSemantics =
+  SemanticsEnabler _semanticsEnabler =
       isDesktop ? DesktopSemanticsEnabler() : MobileSemanticsEnabler();
 
   @visibleForTesting
-  set enableSemantics(SemanticsEnabler enableSemantics) {
-    this._enableSemantics = enableSemantics;
+  set semanticsEnabler(SemanticsEnabler semanticsEnabler) {
+    this._semanticsEnabler = semanticsEnabler;
   }
 
   bool shouldEnableSemantics(html.Event event) {
-    return _enableSemantics.shouldEnableSemantics(event);
+    return _semanticsEnabler.shouldEnableSemantics(event);
   }
 
   html.Element prepareAccesibilityPlaceholder() {
-    return _enableSemantics.prepareAccesibilityPlaceholder();
+    return _semanticsEnabler.prepareAccesibilityPlaceholder();
   }
 }
 

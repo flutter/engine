@@ -192,21 +192,21 @@ void _testEngineSemanticsOwner() {
     });
   });
   test('checks shouldEnableSemantics for every global event', () {
-    final MockSemanticsEnabler mockEnableSemantics = MockSemanticsEnabler();
-    semantics().enableSemantics.enableSemantics = mockEnableSemantics;
+    final MockSemanticsEnabler mockSemanticsEnabler = MockSemanticsEnabler();
+    semantics().semanticsHelper.semanticsEnabler = mockSemanticsEnabler;
     final html.Event pointerEvent = html.Event('pointermove');
 
     semantics().receiveGlobalEvent(pointerEvent);
 
     // Verify the interactions.
-    verify(mockEnableSemantics.shouldEnableSemantics(pointerEvent));
+    verify(mockSemanticsEnabler.shouldEnableSemantics(pointerEvent));
   });
 
   test('Forward events to framewors if shouldEnableSemantics', () {
-    final MockSemanticsEnabler mockEnableSemantics = MockSemanticsEnabler();
-    semantics().enableSemantics.enableSemantics = mockEnableSemantics;
+    final MockSemanticsEnabler mockSemanticsEnabler = MockSemanticsEnabler();
+    semantics().semanticsHelper.semanticsEnabler = mockSemanticsEnabler;
     final html.Event pointerEvent = html.Event('pointermove');
-    when(mockEnableSemantics.shouldEnableSemantics(pointerEvent))
+    when(mockSemanticsEnabler.shouldEnableSemantics(pointerEvent))
         .thenReturn(true);
 
     expect(semantics().receiveGlobalEvent(pointerEvent), isTrue);
