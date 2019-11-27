@@ -280,7 +280,7 @@ public class PlatformPlugin {
 
     private void setClipboardData(String text) {
         ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData clip = ClipData.newPlainText("text label?", text != null ? text : "");
+        ClipData clip = ClipData.newPlainText("text label?", text);
         clipboard.setPrimaryClip(clip);
     }
 
