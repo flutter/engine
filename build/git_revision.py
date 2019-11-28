@@ -25,7 +25,7 @@ def GetRepositoryVersion(repository):
     repository,
     'rev-parse',
     'HEAD',
-  ])
+  ], shell=True)
 
   return version.strip()
 
