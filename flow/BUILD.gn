@@ -133,6 +133,8 @@ executable("flow_unittests") {
     "layers/opacity_layer_unittests.cc",
     "layers/performance_overlay_layer_unittests.cc",
     "layers/physical_shape_layer_unittests.cc",
+    "layers/platform_view_layer_unittests.cc",
+    "layers/transform_layer_unittests.cc",
     "matrix_decomposition_unittests.cc",
     "mutators_stack_unittests.cc",
     "raster_cache_unittests.cc",
