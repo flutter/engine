@@ -4,8 +4,8 @@
 
 if (is_fuchsia) {
   import("//build/fuchsia/sdk.gni")
+  import("$flutter_root/tools/fuchsia/fuchsia_archive.gni")
 }
-
 import("$flutter_root/testing/testing.gni")
 
 source_set("flow") {
@@ -165,4 +165,39 @@ executable("flow_unittests") {
     "//third_party/googletest:gtest",
     "//third_party/skia",
   ]
+}
+
+if (is_fuchsia) {
+  fuchsia_archive("flow_tests") {
+    testonly = true
+
+    deps = [
+      ":flow_unittests",
+    ]
+
+    binary = "flow_unittests"
+
+    libraries = common_libs
+
+    meta_dir = "$flutter_root/testing/fuchsia/meta"
+    cmx_file = "$meta_dir/fuchsia_test.cmx"
+
+    resources = [
+      {
+        path = rebase_path(
+                "$flutter_root/testing/resources/performance_overlay_gold_60fps.png")
+        dest = "flutter/testing/resources/performance_overlay_gold_60fps.png"
+      },
+      {
+        path = rebase_path(
+                "$flutter_root/testing/resources/performance_overlay_gold_90fps.png")
+        dest = "flutter/testing/resources/performance_overlay_gold_90fps.png"
+      },
+      {
+        path = rebase_path(
+                "$flutter_root/testing/resources/performance_overlay_gold_120fps.png")
+        dest = "flutter/testing/resources/performance_overlay_gold_120fps.png"
+      },
+    ]
+  }
 }
