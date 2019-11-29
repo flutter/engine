@@ -135,6 +135,7 @@ executable("flow_unittests") {
     "layers/clip_rrect_layer_unittests.cc",
     "layers/color_filter_layer_unittests.cc",
     "layers/container_layer_unittests.cc",
+    "layers/layer_tree_unittests.cc",
     "layers/opacity_layer_unittests.cc",
     "layers/performance_overlay_layer_unittests.cc",
     "layers/physical_shape_layer_unittests.cc",
