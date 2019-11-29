@@ -102,6 +102,26 @@ test_fixtures("flow_fixtures") {
   fixtures = []
 }
 
+source_set("flow_testing") {
+  testonly = true
+
+  sources = [
+    "testing/layer_test.h",
+    "testing/mock_layer.cc",
+    "testing/mock_layer.h",
+    "testing/mock_texture.cc",
+    "testing/mock_texture.h",
+    "testing/skia_gpu_object_layer_test.cc",
+    "testing/skia_gpu_object_layer_test.h",
+  ]
+
+  public_deps = [
+    ":flow",
+    "$flutter_root/testing:skia",
+    "//third_party/googletest:gtest",
+  ]
+}
+
 executable("flow_unittests") {
   testonly = true
 
@@ -116,13 +136,17 @@ executable("flow_unittests") {
     "mutators_stack_unittests.cc",
     "raster_cache_unittests.cc",
     "skia_gpu_object_unittests.cc",
+    "testing/mock_layer_unittests.cc",
+    "testing/mock_texture_unittests.cc",
     "texture_unittests.cc",
   ]
 
   deps = [
     ":flow",
     ":flow_fixtures",
+    ":flow_testing",
     "$flutter_root/fml",
+    "$flutter_root/testing:skia",
     "$flutter_root/testing:testing_lib",
     "//third_party/dart/runtime:libdart_jit",  # for tracing
     "//third_party/googletest:gtest",
