@@ -416,6 +416,11 @@ class DomTextMeasurementService extends TextMeasurementService {
     List<EngineLineMetrics> lines;
     if (text != null) {
       final double lineWidth = maxIntrinsicWidth;
+      final double alignOffset = calculateAlignOffsetForLine(
+        paragraph: paragraph,
+        lineWidth: lineWidth,
+        maxWidth: width,
+      );
       lines = <EngineLineMetrics>[
         EngineLineMetrics.withText(
           text,
@@ -423,12 +428,14 @@ class DomTextMeasurementService extends TextMeasurementService {
           endIndex: text.length,
           hardBreak: true,
           width: lineWidth,
+          left: alignOffset,
           lineNumber: 0,
         ),
       ];
     }
 
-    return MeasurementResult(
+    return MeasurementResult.forParagraph(
+      paragraph,
       constraints.width,
       isSingleLine: true,
       width: width,
@@ -476,7 +483,8 @@ class DomTextMeasurementService extends TextMeasurementService {
         _applySubPixelRoundingHack(minIntrinsicWidth, maxIntrinsicWidth);
     assert(minIntrinsicWidth <= maxIntrinsicWidth);
     final double ideographicBaseline = alphabeticBaseline * _baselineRatioHack;
-    return MeasurementResult(
+    return MeasurementResult.forParagraph(
+      paragraph,
       constraints.width,
       isSingleLine: false,
       width: width,
@@ -546,7 +554,7 @@ class CanvasTextMeasurementService extends TextMeasurementService {
     // TODO(mdebbar): Check if the whole text can fit in a single-line. Then avoid all this ceremony.
     _canvasContext.font = style.cssFontString;
     final LinesCalculator linesCalculator =
-        LinesCalculator(_canvasContext, text, style, constraints.width);
+        LinesCalculator(_canvasContext, paragraph, constraints.width);
     final MinIntrinsicCalculator minIntrinsicCalculator =
         MinIntrinsicCalculator(_canvasContext, text, style);
     final MaxIntrinsicCalculator maxIntrinsicCalculator =
@@ -581,7 +589,8 @@ class CanvasTextMeasurementService extends TextMeasurementService {
         ? naturalHeight
         : math.min(lineCount, style.maxLines) * lineHeight;
 
-    final MeasurementResult result = MeasurementResult(
+    final MeasurementResult result = MeasurementResult.forParagraph(
+      paragraph,
       constraints.width,
       isSingleLine: lineCount == 1,
       alphabeticBaseline: ruler.alphabeticBaseline,
@@ -705,12 +714,14 @@ int _excludeTrailing(String text, int start, int end, CharPredicate predicate) {
 /// It mimicks the Flutter engine's behavior when it comes to handling ellipsis
 /// and max lines.
 class LinesCalculator {
-  LinesCalculator(this._canvasContext, this._text, this._style, this._maxWidth);
+  LinesCalculator(this._canvasContext, this._paragraph, this._maxWidth);
 
   final html.CanvasRenderingContext2D _canvasContext;
-  final String _text;
-  final ParagraphGeometricStyle _style;
+  final EngineParagraph _paragraph;
   final double _maxWidth;
+
+  String get _text => _paragraph._plainText;
+  ParagraphGeometricStyle get _style => _paragraph._geometricStyle;
 
   /// The lines that have been consumed so far.
   List<EngineLineMetrics> lines = <EngineLineMetrics>[];
@@ -768,12 +779,20 @@ class LinesCalculator {
           start: _lineStart,
           end: chunkEndWithoutSpace,
         );
+        final double widthOfResultingLine =
+            measureSubstring(_lineStart, breakingPoint) + _ellipsisWidth;
+        final double alignOffset = calculateAlignOffsetForLine(
+          paragraph: _paragraph,
+          lineWidth: widthOfResultingLine,
+          maxWidth: _maxWidth,
+        );
         lines.add(EngineLineMetrics.withText(
           _text.substring(_lineStart, breakingPoint) + _style.ellipsis,
           startIndex: _lineStart,
           endIndex: chunkEnd,
           hardBreak: false,
-          width: measureSubstring(_lineStart, breakingPoint) + _ellipsisWidth,
+          width: widthOfResultingLine,
+          left: alignOffset,
           lineNumber: lines.length,
         ));
       } else if (isChunkTooLong) {
@@ -826,12 +845,19 @@ class LinesCalculator {
       _whitespacePredicate,
     );
     final int lineNumber = lines.length;
+    final double lineWidth = measureSubstring(_lineStart, endWithoutSpace);
+    final double alignOffset = calculateAlignOffsetForLine(
+      paragraph: _paragraph,
+      lineWidth: lineWidth,
+      maxWidth: _maxWidth,
+    );
     final EngineLineMetrics metrics = EngineLineMetrics.withText(
       _text.substring(_lineStart, endWithoutNewlines),
       startIndex: _lineStart,
       endIndex: lineEnd,
       hardBreak: isHardBreak,
-      width: measureSubstring(_lineStart, endWithoutSpace),
+      width: lineWidth,
+      left: alignOffset,
       lineNumber: lineNumber,
     );
     lines.add(metrics);
@@ -956,5 +982,30 @@ class MaxIntrinsicCalculator {
       value = lineWidth;
     }
     _lastHardLineEnd = hardLineEnd;
+  }
+}
+
+double calculateAlignOffsetForLine({
+  @required EngineParagraph paragraph,
+  @required double lineWidth,
+  @required double maxWidth,
+}) {
+  final double emptySpace = maxWidth - lineWidth;
+  // WARNING: the [paragraph] may not be laid out yet at this point.
+  switch (paragraph._textAlign) {
+    case ui.TextAlign.center:
+      return emptySpace / 2.0;
+    case ui.TextAlign.right:
+      return emptySpace;
+    case ui.TextAlign.start:
+      return paragraph._textDirection == ui.TextDirection.rtl
+          ? emptySpace
+          : 0.0;
+    case ui.TextAlign.end:
+      return paragraph._textDirection == ui.TextDirection.rtl
+          ? 0.0
+          : emptySpace;
+    default:
+      return 0.0;
   }
 }
