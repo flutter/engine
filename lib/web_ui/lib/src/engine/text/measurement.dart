@@ -388,8 +388,11 @@ class DomTextMeasurementService extends TextMeasurementService {
   ///   value.
   ///
   /// This method still needs to measure `minIntrinsicWidth`.
-  MeasurementResult _measureSingleLineParagraph(ParagraphRuler ruler,
-      ui.Paragraph paragraph, ui.ParagraphConstraints constraints) {
+  MeasurementResult _measureSingleLineParagraph(
+    ParagraphRuler ruler,
+    EngineParagraph paragraph,
+    ui.ParagraphConstraints constraints,
+  ) {
     final double width = constraints.width;
     final double minIntrinsicWidth = ruler.minIntrinsicDimensions.width;
     double maxIntrinsicWidth = ruler.singleLineDimensions.width;
@@ -399,6 +402,20 @@ class DomTextMeasurementService extends TextMeasurementService {
     maxIntrinsicWidth =
         _applySubPixelRoundingHack(minIntrinsicWidth, maxIntrinsicWidth);
     final double ideographicBaseline = alphabeticBaseline * _baselineRatioHack;
+
+    List<EngineLineMetrics> lines;
+    if (paragraph._plainText != null) {
+      final double lineWidth = maxIntrinsicWidth;
+      lines = <EngineLineMetrics>[
+        EngineLineMetrics.withText(
+          paragraph._plainText,
+          hardBreak: true,
+          width: lineWidth,
+          lineNumber: 0,
+        ),
+      ];
+    }
+
     return MeasurementResult(
       constraints.width,
       isSingleLine: true,
@@ -410,7 +427,7 @@ class DomTextMeasurementService extends TextMeasurementService {
       maxIntrinsicWidth: maxIntrinsicWidth,
       alphabeticBaseline: alphabeticBaseline,
       ideographicBaseline: ideographicBaseline,
-      lines: null,
+      lines: lines,
     );
   }
 
