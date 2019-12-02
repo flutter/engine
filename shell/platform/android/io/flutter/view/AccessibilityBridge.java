@@ -1551,9 +1551,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
      * invoked to create an {@link AccessibilityEvent} for the {@link #rootAccessibilityView}.
      */
     private AccessibilityEvent obtainAccessibilityEvent(int virtualViewId, int eventType) {
-        if (BuildConfig.DEBUG && virtualViewId == ROOT_NODE_ID) {
-            Log.e(TAG, "VirtualView node must not be the root node.");
-        }
         AccessibilityEvent event = AccessibilityEvent.obtain(eventType);
         event.setPackageName(rootAccessibilityView.getContext().getPackageName());
         event.setSource(rootAccessibilityView, virtualViewId);
