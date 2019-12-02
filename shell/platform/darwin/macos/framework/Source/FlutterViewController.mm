@@ -310,8 +310,8 @@ static void CommonInit(FlutterViewController* controller) {
       addLocalMonitorForEventsMatchingMask:NSEventMaskKeyUp
                                    handler:^NSEvent*(NSEvent* event) {
                                      // Intercept keyUp only for events triggered on the current
-                                     // window.
-                                     if (([event window] == weakSelf.view.window) &&
+                                     // view.
+                                     if (([[event window] firstResponder] == weakSelf.view) &&
                                          ([event modifierFlags] & NSEventModifierFlagCommand) &&
                                          ([event type] == NSEventTypeKeyUp))
                                        [weakSelf keyUp:event];
