@@ -20,10 +20,12 @@ class PointerBinding {
       _instance = this;
       _detector = const PointerSupportDetector();
       _adapter = _createAdapter();
+      _pointerDataConverter = PointerDataConverter();
     }
     assert(() {
       registerHotRestartListener(() {
         _adapter?.clearListeners();
+        _pointerDataConverter?.clearPointerState();
       });
       return true;
     }());
@@ -32,7 +34,7 @@ class PointerBinding {
   final DomRenderer domRenderer;
   PointerSupportDetector _detector;
   BaseAdapter _adapter;
-
+  PointerDataConverter _pointerDataConverter;
   /// Should be used in tests to define custom detection of pointer support.
   ///
   /// ```dart
@@ -57,6 +59,7 @@ class PointerBinding {
       _detector = newDetector;
       _adapter?.clearListeners();
       _adapter = _createAdapter();
+      _pointerDataConverter?.clearPointerState();
     }
   }
 
@@ -75,9 +78,8 @@ class PointerBinding {
 
   void _onPointerData(List<ui.PointerData> data) {
     final List<ui.PointerData> converted = List<ui.PointerData>.from(
-      PointerDataConverter.convert(data),
+      _pointerDataConverter.convert(data),
     );
-    print('from data ${data} to converted ${converted}');
     final ui.PointerDataPacket packet = ui.PointerDataPacket(data: converted);
     final ui.PointerDataPacketCallback callback = ui.window.onPointerDataPacket;
     if (callback != null) {

@@ -40,20 +40,29 @@ class _PointerState {
 ///   after:
 ///     add(synthesize) -> down -> move -> up
 class PointerDataConverter {
-  PointerDataConverter._();
+  PointerDataConverter();
 
   // Map from platform pointer identifiers to PointerEvent pointer identifiers.
   // Static to guarantee that pointers are unique.
-  static final Map<int, _PointerState> _pointers = <int, _PointerState>{};
+  final Map<int, _PointerState> _pointers = <int, _PointerState>{};
 
-  static _PointerState _ensureStateForPointer(ui.PointerData datum, double x, double y) {
+  /// Clears the existing pointer states.
+  ///
+  /// This method is invoked during hot reload to make sure we have a clean
+  /// converter after hot reload.
+  void clearPointerState() {
+    _pointers.clear();
+    _PointerState._pointerCount = 0;
+  }
+
+  _PointerState _ensureStateForPointer(ui.PointerData datum, double x, double y) {
     return _pointers.putIfAbsent(
       datum.device,
         () => _PointerState(x, y),
     );
   }
 
-  static ui.PointerData _generateCompletePointerData(ui.PointerData datum) {
+  ui.PointerData _generateCompletePointerData(ui.PointerData datum) {
     assert(_pointers.containsKey(datum.device));
     final _PointerState state = _pointers[datum.device];
     final double deltaX = datum.physicalX - state.x;
@@ -92,13 +101,13 @@ class PointerDataConverter {
     );
   }
 
-  static bool _locationHasChanged(ui.PointerData datum) {
+  bool _locationHasChanged(ui.PointerData datum) {
     assert(_pointers.containsKey(datum.device));
     final _PointerState state = _pointers[datum.device];
     return state.x != datum.physicalX || state.y != datum.physicalY;
   }
 
-  static ui.PointerData _synthesizeFrom(ui.PointerData datum, ui.PointerChange change) {
+  ui.PointerData _synthesizeFrom(ui.PointerData datum, ui.PointerChange change) {
     assert(_pointers.containsKey(datum.device));
     final _PointerState state = _pointers[datum.device];
     final double deltaX = datum.physicalX - state.x;
@@ -142,7 +151,7 @@ class PointerDataConverter {
 
   /// Convert the given list pointer data into a sequence of framework-compatible
   /// pointer data.
-  static Iterable<ui.PointerData> convert(List<ui.PointerData> data) sync* {
+  Iterable<ui.PointerData> convert(List<ui.PointerData> data) sync* {
     for (ui.PointerData datum in data) {
       assert(datum.change != null);
       if (datum.signalKind == null ||
