@@ -46,6 +46,7 @@ FILE: ../../../flutter/flow/layers/layer.cc
 FILE: ../../../flutter/flow/layers/layer.h
 FILE: ../../../flutter/flow/layers/layer_tree.cc
 FILE: ../../../flutter/flow/layers/layer_tree.h
+FILE: ../../../flutter/flow/layers/layer_unittests.cc
 FILE: ../../../flutter/flow/layers/opacity_layer.cc
 FILE: ../../../flutter/flow/layers/opacity_layer.h
 FILE: ../../../flutter/flow/layers/performance_overlay_layer.cc
@@ -98,6 +99,8 @@ FILE: ../../../flutter/fml/command_line_unittest.cc
 FILE: ../../../flutter/fml/compiler_specific.h
 FILE: ../../../flutter/fml/concurrent_message_loop.cc
 FILE: ../../../flutter/fml/concurrent_message_loop.h
+FILE: ../../../flutter/fml/dart/dart_converter.cc
+FILE: ../../../flutter/fml/dart/dart_converter.h
 FILE: ../../../flutter/fml/delayed_task.cc
 FILE: ../../../flutter/fml/delayed_task.h
 FILE: ../../../flutter/fml/eintr_wrapper.h
@@ -170,6 +173,8 @@ FILE: ../../../flutter/fml/platform/darwin/scoped_nsobject.mm
 FILE: ../../../flutter/fml/platform/darwin/string_range_sanitization.h
 FILE: ../../../flutter/fml/platform/darwin/string_range_sanitization.mm
 FILE: ../../../flutter/fml/platform/darwin/string_range_sanitization_unittests.mm
+FILE: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.cc
+FILE: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.h
 FILE: ../../../flutter/fml/platform/fuchsia/paths_fuchsia.cc
 FILE: ../../../flutter/fml/platform/linux/message_loop_linux.cc
 FILE: ../../../flutter/fml/platform/linux/message_loop_linux.h
@@ -363,6 +368,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/browser_detection.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/browser_location.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/color_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/canvas.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/canvas_kit_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/color_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/engine_delegate.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/fonts.dart
@@ -379,7 +385,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/picture_recorder.dar
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/platform_message.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/raster_cache.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/rasterizer.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/recording_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/runtime_delegate.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/surface.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/text.dart
@@ -396,6 +401,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/html_image_codec.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/keyboard.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/path_to_svg.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/plugins.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_binding.dart
@@ -410,6 +416,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/label_and_value.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/live_region.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/scrollable.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/semantics.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/semantics_helper.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/tappable.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/text_field.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/buffers.dart
