@@ -208,6 +208,9 @@ class FlutterPlatformViewsController {
   void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
   void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
 
+  std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+  ConstructRendererContextSwitchIfAvailable();
+
   std::shared_ptr<IOSGLContextSwitchManager> renderer_context_switch_manager_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);

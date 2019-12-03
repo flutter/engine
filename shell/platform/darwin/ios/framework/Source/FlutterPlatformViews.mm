@@ -373,10 +373,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
 
   bool did_submit = true;
   for (int64_t view_id : composition_order_) {
-    if (renderer_context_switch_manager_ != nullptr) {
-      std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch> contextSwitch =
-          renderer_context_switch_manager_->MakeCurrent();
-    }
+    auto contextSwitch = ConstructRendererContextSwitchIfAvailable();
 
     EnsureOverlayInitialized(view_id, std::move(gl_context), gr_context);
     auto frame = overlays_[view_id]->surface->AcquireFrame(frame_size_);
@@ -465,10 +462,6 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
     std::shared_ptr<IOSGLContext> gl_context,
     GrContext* gr_context) {
   FML_DCHECK(flutter_view_);
-  if (renderer_context_switch_manager_ != nullptr) {
-    std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch> contextSwitch =
-        renderer_context_switch_manager_->MakeCurrent();
-  }
 
   auto overlay_it = overlays_.find(overlay_id);
 
@@ -513,6 +506,14 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
   overlays_[overlay_id] = std::make_unique<FlutterPlatformViewLayer>(
       std::move(overlay_view), std::move(ios_surface), std::move(surface));
   overlays_[overlay_id]->gr_context = gr_context;
+}
+
+std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+FlutterPlatformViewsController::ConstructRendererContextSwitchIfAvailable() {
+  if (renderer_context_switch_manager_ == nullptr) {
+    return nullptr;
+  }
+  return renderer_context_switch_manager_->MakeCurrent();
 }
 
 }  // namespace flutter
