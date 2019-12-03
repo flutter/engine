@@ -7,11 +7,7 @@
 namespace flutter {
 
 ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
-    : filter_(std::move(filter)) {
-  set_renders_to_save_layer(true);
-}
-
-ColorFilterLayer::~ColorFilterLayer() = default;
+    : filter_(std::move(filter)) {}
 
 void ColorFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");

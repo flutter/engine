@@ -7,11 +7,7 @@
 namespace flutter {
 
 BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter)
-    : filter_(std::move(filter)) {
-  set_layer_reads_surface(filter_.get() != nullptr);
-}
-
-BackdropFilterLayer::~BackdropFilterLayer() = default;
+    : filter_(std::move(filter)) {}
 
 void BackdropFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "BackdropFilterLayer::Paint");
