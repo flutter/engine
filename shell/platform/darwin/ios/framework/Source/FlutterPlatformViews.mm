@@ -370,8 +370,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
   for (int64_t view_id : composition_order_) {
     EnsureOverlayInitialized(view_id, gl_context, gr_context);
     auto frame = overlays_[view_id]->surface->AcquireFrame(frame_size_, true);
+    // If frame is null, AcquireFrame already printed out an error message.
     if (frame) {
-      // We should already be printing an error if we got here.
       SkCanvas* canvas = frame->SkiaCanvas();
       canvas->drawPicture(picture_recorders_[view_id]->finishRecordingAsPicture());
       canvas->flush();
