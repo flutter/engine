@@ -7,7 +7,7 @@ part of engine;
 class _PointerState {
   _PointerState(this.x, this.y);
 
-  int get pointer => _pointer; // The identifier used in PointerEvent objects.
+  int get pointer => _pointer; // The identifier used in framework hit test.
   int _pointer;
   static int _pointerCount = 0;
   void startNewPointer() {
@@ -21,7 +21,8 @@ class _PointerState {
   double y;
 }
 
-/// Converter to convert web pointer data to a framework-compatible form.
+/// Converter to convert web pointer data into a form that framework can
+/// understand.
 ///
 /// This converter calculates pointer location delta and pointer identifier for
 /// each pointer. Both are required by framework to correctly trigger gesture
@@ -42,8 +43,7 @@ class _PointerState {
 class PointerDataConverter {
   PointerDataConverter();
 
-  // Map from platform pointer identifiers to PointerEvent pointer identifiers.
-  // Static to guarantee that pointers are unique.
+  // Map from browser pointer identifiers to PointerEvent pointer identifiers.
   final Map<int, _PointerState> _pointers = <int, _PointerState>{};
 
   /// Clears the existing pointer states.
