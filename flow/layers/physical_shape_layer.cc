@@ -46,7 +46,6 @@ PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
     // an SkPath.
     frameRRect_ = SkRRect::MakeRect(path.getBounds());
   }
-  set_renders_to_save_layer(clip_behavior == Clip::antiAliasWithSaveLayer);
 }
 
 PhysicalShapeLayer::~PhysicalShapeLayer() = default;
