@@ -1208,12 +1208,12 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   // renderer is being torn down and recreated at the new size. Since Flutter won't generating
   // frames in transitionary state states, snpashotted contents have to interpolated instead.
   //
-  // iOS seems the layout the view in the final state after the transition, snapshot it, and animate
-  // to in reverse before discarding the snapshot. Flutter cannot do this because frame rendering is
-  // asynchronous and the viewport metrics update has not propagated to the framework yet (much less
-  // that a frame has been rendered). Instead, the current state of the Flutter view is snapshotted
-  // before a content transition is applied to the final state. At the final state, the snapshot is
-  // discarded.
+  // iOS seems to layout the view in the final state after the transition, snapshots it, and
+  // animates to it in reverse before discarding the snapshot. Flutter cannot do this because frame
+  // rendering is asynchronous and the viewport metrics update has not propagated to the framework
+  // yet (much less that a frame has been rendered). Instead, the current state of the Flutter view
+  // is snapshotted before a content transition is applied to the final state. At the final state,
+  // the snapshot is discarded.
   //
   // Flutter cannot render the scene in all intermediate states because of the asynchronous nature
   // of rendering where the backing store for the renderer is being torn down and recreated on one
