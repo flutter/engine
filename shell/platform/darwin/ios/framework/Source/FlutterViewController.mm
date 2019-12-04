@@ -1197,4 +1197,87 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   return [_engine.get() valuePublishedByPlugin:pluginKey];
 }
 
+- (void)viewWillTransitionToSize:(CGSize)size
+       withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+  [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+
+  // On transition behavior on iOS and how Flutter tries to reconcile differences.
+  // -----------------------------------------------------------------------------
+  //
+  // The point of this method is to hide rendering artifacts as the old backing store for the
+  // renderer is being torn down and recreated at the new size. Since Flutter won't generating
+  // frames in transitionary state states, snpashotted contents have to interpolated instead.
+  //
+  // iOS seems the layout the view in the final state after the transition, snapshot it, and animate
+  // to in reverse before discarding the snapshot. Flutter cannot do this because frame rendering is
+  // asynchronous and the viewport metrics update has not propagated to the framework yet (much less
+  // that a frame has been rendered). Instead, the current state of the Flutter view is snapshotted
+  // before a content transition is applied to the final state. At the final state, the snapshot is
+  // discarded.
+  //
+  // Flutter cannot render the scene in all intermediate states because of the asynchronous nature
+  // of rendering where the backing store for the renderer is being torn down and recreated on one
+  // thread while the framework and engine are generating frames asynchronously on different
+  // threads.
+
+  // If the transition in interactive, bail and avoid getting in the way of user as they interact
+  // with the application.
+  if (coordinator.isInteractive) {
+    return;
+  }
+
+  // Since the view is going to be accessed later for snapshotting purposes, avoid accidentally
+  // inflating a view when not necessary.
+  if (!self.isViewLoaded) {
+    return;
+  }
+
+  // There is no transition and hence nothing to do.
+  if (CGSizeEqualToSize(self.view.bounds.size, size)) {
+    return;
+  }
+
+  // Check if the engine and the shell are alive. This might happen very early on in the application
+  // lifecycle and the defaults suffice in such cases.
+  if (!_engine) {
+    return;
+  }
+
+  auto& shell = [_engine.get() shell];
+
+  if (!shell.IsSetup()) {
+    return;
+  }
+
+  // Snapshot the view in its current state.
+  auto snapshot = [self.view snapshotViewAfterScreenUpdates:NO];
+
+  // Add the snapshot over the FlutterView of this view controller.
+  [self.view addSubview:snapshot];
+  snapshot.frame = self.view.bounds;
+  snapshot.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+
+  // The way orientation transitions are handled seems to be extremely different between actual
+  // devices and the iOS simulator. On devices, a content transition is applied by the system. On
+  // the simulator, the view seems to be resized. Do what looks least jerky on both devices and
+  // simulators. Either way, the overlay has to be removed and discarded.
+#if TARGET_OS_SIMULATOR
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW,
+                               static_cast<int64_t>(coordinator.transitionDuration * NSEC_PER_SEC)),
+                 dispatch_get_main_queue(), ^{
+                   [snapshot removeFromSuperview];
+                 });
+#else   // TARGET_OS_SIMULATOR
+  [UIView animateWithDuration:0.25
+      delay:coordinator.transitionDuration
+      options:UIViewAnimationOptionCurveEaseOut
+      animations:^() {
+        snapshot.alpha = 0.0;
+      }
+      completion:^(BOOL finished) {
+        [snapshot removeFromSuperview];
+      }];
+#endif  // TARGET_OS_SIMULATOR
+}
+
 @end
