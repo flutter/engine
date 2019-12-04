@@ -11,6 +11,13 @@ ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
                                  SkBlendMode blend_mode)
     : shader_(shader), mask_rect_(mask_rect), blend_mode_(blend_mode) {}
 
+void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+  bool prev_read = context->layer_reads_from_surface;
+  context->layer_reads_from_surface = false;
+  ContainerLayer::Preroll(context, matrix);
+  context->layer_reads_from_surface = prev_read;
+}
+
 void ShaderMaskLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");
   FML_DCHECK(needs_painting());

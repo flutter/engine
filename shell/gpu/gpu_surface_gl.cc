@@ -228,7 +228,7 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
     return false;
   }
 
-  if (delegate_->UseOffscreenSurface()) {
+  if (false && delegate_->UseOffscreenSurface()) {
     offscreen_surface = CreateOffscreenSurface(context_.get(), size);
     if (offscreen_surface == nullptr) {
       FML_LOG(ERROR) << "Could not create offscreen surface.";
@@ -263,7 +263,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   // external view embedder may want to render to the root surface.
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
-        nullptr, [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+        nullptr, true, [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
           return true;
         });
   }
@@ -285,7 +285,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
         return weak ? weak->PresentSurface(canvas) : false;
       };
 
-  return std::make_unique<SurfaceFrame>(surface, submit_callback);
+  return std::make_unique<SurfaceFrame>(
+      surface, !delegate_->UseOffscreenSurface(), submit_callback);
 }
 
 bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {

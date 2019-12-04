@@ -49,6 +49,7 @@ struct PrerollContext {
   MutatorsStack& mutators_stack;
   SkColorSpace* dst_color_space;
   SkRect cull_rect;
+  bool layer_reads_from_surface;
 
   // These allow us to paint in the end of subtree Preroll.
   const Stopwatch& raster_time;

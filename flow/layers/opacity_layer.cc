@@ -58,7 +58,10 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   child_matrix.postTranslate(offset_.fX, offset_.fY);
   context->mutators_stack.PushTransform(
       SkMatrix::MakeTrans(offset_.fX, offset_.fY));
+  bool prev_read = context->layer_reads_from_surface;
+  context->layer_reads_from_surface = false;
   OpacityLayerBase::Preroll(context, child_matrix);
+  context->layer_reads_from_surface = prev_read;
   context->mutators_stack.Pop();
 
   // When using the system compositor, do not include the offset since we are

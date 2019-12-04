@@ -9,6 +9,14 @@ namespace flutter {
 ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
     : filter_(std::move(filter)) {}
 
+void ColorFilterLayer::Preroll(PrerollContext* context,
+                               const SkMatrix& matrix) {
+  bool prev_read = context->layer_reads_from_surface;
+  context->layer_reads_from_surface = false;
+  ContainerLayer::Preroll(context, matrix);
+  context->layer_reads_from_surface = prev_read;
+}
+
 void ColorFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");
   FML_DCHECK(needs_painting());

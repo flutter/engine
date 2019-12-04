@@ -23,7 +23,7 @@ class LayerTree {
             float frame_physical_depth,
             float frame_device_pixel_ratio);
 
-  void Preroll(CompositorContext::ScopedFrame& frame,
+  bool Preroll(CompositorContext::ScopedFrame& frame,
                bool ignore_raster_cache = false);
 
 #if defined(OS_FUCHSIA)
