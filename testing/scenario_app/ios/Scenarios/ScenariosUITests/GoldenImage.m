@@ -67,8 +67,11 @@
   CGContextDrawImage(contextB, CGRectMake(0, 0, widthA, heightA), imageRefB);
   CGContextRelease(contextB);
 
-  BOOL isSame = memcmp(rawA.mutableBytes, rawB.mutableBytes, size) == 0;
-  return isSame;
+  if (memcmp(rawA.mutableBytes, rawB.mutableBytes, size)) {
+    return NO;
+  }
+
+  return YES;
 }
 
 NS_INLINE NSString* _platformName() {
