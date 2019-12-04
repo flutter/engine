@@ -97,7 +97,6 @@ group("flutter") {
   if (is_fuchsia) {
     public_deps += [
       "$flutter_root/flow:flow_tests",
-      "$flutter_root/fml:fml_tests",
     ]
   }
 }
