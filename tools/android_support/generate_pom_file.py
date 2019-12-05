@@ -41,8 +41,8 @@ def main():
   parser = argparse.ArgumentParser(description='Generate the POM file for the engine artifacts')
   parser.add_argument('--engine-artifact-id', type=str, required=True,
                       help='The artifact id. e.g. android_arm_release')
-  parser.add_argument('--engine-version', type=str, required=True,
-                      help='The engine commit hash')
+  parser.add_argument('--artifact-version', type=str, required=True,
+                      help='The artifact version to use, e.g. 1.0.0-$ENGINE_COMMIT_HASH')
   parser.add_argument('--destination', type=str, required=True,
                       help='The destination directory absolute path')
   parser.add_argument('--include-embedding-dependencies', type=bool,
@@ -50,8 +50,7 @@ def main():
 
   args = parser.parse_args()
   engine_artifact_id = args.engine_artifact_id
-  engine_version = args.engine_version
-  artifact_version = '1.0.0-' + engine_version
+  artifact_version = args.artifact_version
   out_file_name = '%s.pom' % engine_artifact_id
 
   pom_dependencies = ''

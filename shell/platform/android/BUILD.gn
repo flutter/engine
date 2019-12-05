@@ -116,6 +116,9 @@ embedding_jar_path = "$root_out_dir/$embedding_jar_filename"
 embedding_sources_jar_filename = "$embedding_artifact_id-sources.jar"
 embedding_source_jar_path = "$root_out_dir/$embedding_sources_jar_filename"
 
+# Version string used by genrate_pom_file.py, as well
+_maven_version_string = "1.0.0-$engine_version"
+
 android_java_sources = [
   "io/flutter/Log.java",
   "io/flutter/app/FlutterActivity.java",
@@ -371,8 +374,8 @@ action("pom_libflutter") {
   args = [
     "--destination",
     rebase_path(root_build_dir),
-    "--engine-version",
-    engine_version,
+    "--artifact-version",
+    _maven_version_string,
     "--engine-artifact-id",
     artifact_id,
   ]
@@ -394,8 +397,8 @@ action("pom_embedding") {
   args = [
     "--destination",
     rebase_path(root_build_dir),
-    "--engine-version",
-    engine_version,
+    "--artifact-version",
+    _maven_version_string,
     "--engine-artifact-id",
     artifact_id,
     "--include-embedding-dependencies",
@@ -506,6 +509,7 @@ zip_bundle("android") {
   deps = [
     ":android_jar",
     ":android_symbols",
+    ":maven_repo",
   ]
 
   if (current_cpu == "x86" || current_cpu == "x64") {
@@ -552,5 +556,65 @@ zip_bundle("android_javadoc") {
   ]
   deps = [
     ":gen_android_javadoc",
+  ]
+}
+
+# Creates a local Maven repo structure under $root_out_dir/maven_repo
+maven_repo_dir = "maven_repo"
+maven_prefix = "$root_out_dir/$maven_repo_dir/io/flutter/"
+
+copy("flutter_embedding_repo_jar") {
+  sources = [ embedding_jar_path ]
+
+  outputs = [
+    "$maven_prefix/flutter_embedding_$flutter_runtime_mode/$_maven_version_string/{{source_name_part}}-$_maven_version_string.jar",
+  ]
+
+  deps = [
+    ":flutter_shell_java",
+  ]
+}
+copy("flutter_embedding_repo_pom") {
+  sources = get_target_outputs(":pom_embedding")
+
+  outputs = [
+    "$maven_prefix/flutter_embedding_$flutter_runtime_mode/$_maven_version_string/{{source_name_part}}-$_maven_version_string.pom",
+  ]
+
+  deps = [
+    ":pom_embedding",
+  ]
+}
+
+copy("libflutter_repo_jar") {
+  sources = get_target_outputs(":android_jar")
+
+  outputs = [
+    "$maven_prefix/{{source_name_part}}/$_maven_version_string/{{source_name_part}}-$_maven_version_string/{{source_name_part}}-$_maven_version_string.jar",
+  ]
+
+  deps = [
+    ":android_jar",
+  ]
+}
+
+copy("libflutter_repo_pom") {
+  sources = get_target_outputs(":pom_libflutter")
+
+  outputs = [
+    "$maven_prefix/{{source_name_part}}/$_maven_version_string/{{source_name_part}}-$_maven_version_string/{{source_name_part}}-$_maven_version_string.pom",
+  ]
+
+  deps = [
+    ":pom_libflutter",
+  ]
+}
+
+group("maven_repo") {
+  deps = [
+    ":flutter_embedding_repo_jar",
+    ":flutter_embedding_repo_pom",
+    ":libflutter_repo_jar",
+    ":libflutter_repo_pom",
   ]
 }
