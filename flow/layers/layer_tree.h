@@ -23,6 +23,13 @@ class LayerTree {
             float frame_physical_depth,
             float frame_device_pixel_ratio);
 
+  // Perform a preroll pass on the tree and return information about
+  // the tree that affects rendering this frame.
+  //
+  // Returns:
+  // - a boolean indicating whether or not the top level of the
+  //   layer tree performs any operations that require readback
+  //   from the root surface.
   bool Preroll(CompositorContext::ScopedFrame& frame,
                bool ignore_raster_cache = false);
 
