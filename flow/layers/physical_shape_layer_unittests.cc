@@ -204,8 +204,6 @@ TEST_F(PhysicalShapeLayerTest, ElevationComplex) {
 
 #define MAKE_PHYSICAL_SHAPE_LAYER(clip)                              \
   std::make_shared<PhysicalShapeLayer>(SK_ColorGREEN, SK_ColorBLACK, \
-                                       1.0f, /* pixel ratio */       \
-                                       1.0f, /* depth */             \
                                        0.0f, /* elevation */         \
                                        layer_path, clip)
 
