@@ -52,7 +52,6 @@ class Firefox extends Browser {
         '-width $kMaxScreenshotWidth',
         '-height $kMaxScreenshotHeight',
         '-new-window',
-        '-headless',
         '-new-instance',
         '-prefs { "dom.disable_beforeunload" = true, "toolkit.startup.max_resumed_crashes"=999999 } ',
         '--start-debugger-server $kDevtoolsPort',
