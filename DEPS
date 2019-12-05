@@ -26,7 +26,7 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '0af32fdf5feaf1a5a46fb793b5d25849bd34a57b',
+  'skia_revision': '77eae2c7ae072a03460d7cf6e9e49e1e43514e2f',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
