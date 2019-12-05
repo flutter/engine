@@ -83,6 +83,8 @@ class TestCommand extends Command<bool> {
 
   String get browser => argResults['browser'];
 
+  bool get isChrome => argResults['browser'] == 'chrome';
+
   /// When running screenshot tests writes them to the file system into
   /// ".dart_tool/goldens".
   bool get doUpdateScreenshotGoldens => argResults['update-screenshot-goldens'];
@@ -243,6 +245,7 @@ class TestCommand extends Command<bool> {
       if (isDebug) '--pause-after-load',
       '--platform=$browser',
       '--precompiled=${environment.webUiRootDir.path}/build',
+      SupportedBrowsers.instance.browserToConfiguration[browser],
       '--',
       ...testFiles.map((f) => f.relativeToWebUi).toList(),
     ];
