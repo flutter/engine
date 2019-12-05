@@ -564,7 +564,9 @@ maven_repo_dir = "maven_repo"
 maven_prefix = "$root_out_dir/$maven_repo_dir/io/flutter/"
 
 copy("flutter_embedding_repo_jar") {
-  sources = [ embedding_jar_path ]
+  sources = [
+    embedding_jar_path,
+  ]
 
   outputs = [
     "$maven_prefix/flutter_embedding_$flutter_runtime_mode/$_maven_version_string/{{source_name_part}}-$_maven_version_string.jar",
@@ -574,6 +576,7 @@ copy("flutter_embedding_repo_jar") {
     ":flutter_shell_java",
   ]
 }
+
 copy("flutter_embedding_repo_pom") {
   sources = get_target_outputs(":pom_embedding")
 
