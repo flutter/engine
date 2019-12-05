@@ -297,7 +297,7 @@ class EngineParagraph implements ui.Paragraph {
     }
 
     bool canDrawTextOnCanvas;
-    if (_measurementService is CanvasTextMeasurementService) {
+    if (_measurementService.isCanvas) {
       canDrawTextOnCanvas = true;
     } else {
       canDrawTextOnCanvas = _geometricStyle.ellipsis == null;

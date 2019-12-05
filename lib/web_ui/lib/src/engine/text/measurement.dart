@@ -159,6 +159,8 @@ class RulerManager {
 /// in [DomTextMeasurementService], or a canvas-based approach in
 /// [CanvasTextMeasurementService].
 abstract class TextMeasurementService {
+  bool get isCanvas;
+
   /// Initializes the text measurement service with a specific
   /// [rulerCacheCapacity] that gets passed to the [RulerManager].
   static void initialize({@required int rulerCacheCapacity}) {
@@ -312,6 +314,8 @@ abstract class TextMeasurementService {
 /// needed for some cases that aren't yet supported in the canvas-based
 /// implementation such as letter-spacing, word-spacing, etc.
 class DomTextMeasurementService extends TextMeasurementService {
+  final bool isCanvas = false;
+
   /// The text measurement service singleton.
   static DomTextMeasurementService get instance =>
       _instance ??= DomTextMeasurementService();
@@ -509,6 +513,8 @@ class DomTextMeasurementService extends TextMeasurementService {
 /// This is a faster implementation than [DomTextMeasurementService] and
 /// provides line breaks information that can be useful for multi-line text.
 class CanvasTextMeasurementService extends TextMeasurementService {
+  final bool isCanvas = true;
+
   /// The text measurement service singleton.
   static CanvasTextMeasurementService get instance =>
       _instance ??= CanvasTextMeasurementService();
