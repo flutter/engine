@@ -11,13 +11,10 @@ BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter)
 
 void BackdropFilterLayer::Preroll(PrerollContext* context,
                                   const SkMatrix& matrix) {
-  // We will not be restoring the previous read flag (see below).
-  // bool prev_read = context->layer_reads_from_surface;
+  bool prev_read = context->layer_reads_from_surface;
   context->layer_reads_from_surface = false;
   ContainerLayer::Preroll(context, matrix);
-  // Normally we would reset the flag to the previous value since we protected
-  // the children but the BackdropFilterLayer itself performs a readback
-  context->layer_reads_from_surface = true;
+  context->layer_reads_from_surface = prev_read || filter_.get() != nullptr;
 }
 
 void BackdropFilterLayer::Paint(PaintContext& context) const {
