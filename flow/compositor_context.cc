@@ -85,9 +85,10 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   if (canvas()) {
     if (needs_save_layer) {
       FML_LOG(INFO) << "Using SaveLayer to protect non-readback surface";
-      SkRect bounds = SkRect::MakeIWH(layer_tree.frame_size().width(),
-                                      layer_tree.frame_size().height());
-      canvas()->saveLayer(&bounds, nullptr);
+      SkRect bounds = SkRect::Make(layer_tree.frame_size());
+      SkPaint paint;
+      paint.setBlendMode(SkBlendMode::kSrc);
+      canvas()->saveLayer(&bounds, &paint);
     }
     canvas()->clear(SK_ColorTRANSPARENT);
   }
