@@ -159,6 +159,10 @@ class RulerManager {
 /// in [DomTextMeasurementService], or a canvas-based approach in
 /// [CanvasTextMeasurementService].
 abstract class TextMeasurementService {
+  /// Whether this service uses a canvas to make the text measurements.
+  ///
+  /// If [isCanvas] is false, it indicates that this service uses DOM elements
+  /// to make the text measurements.
   bool get isCanvas;
 
   /// Initializes the text measurement service with a specific
@@ -314,6 +318,7 @@ abstract class TextMeasurementService {
 /// needed for some cases that aren't yet supported in the canvas-based
 /// implementation such as letter-spacing, word-spacing, etc.
 class DomTextMeasurementService extends TextMeasurementService {
+  @override
   final bool isCanvas = false;
 
   /// The text measurement service singleton.
@@ -513,6 +518,7 @@ class DomTextMeasurementService extends TextMeasurementService {
 /// This is a faster implementation than [DomTextMeasurementService] and
 /// provides line breaks information that can be useful for multi-line text.
 class CanvasTextMeasurementService extends TextMeasurementService {
+  @override
   final bool isCanvas = true;
 
   /// The text measurement service singleton.
