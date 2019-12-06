@@ -202,73 +202,67 @@ TEST_F(PhysicalShapeLayerTest, ElevationComplex) {
                0, MockCanvas::DrawPathData{layer_path, layer_paint}}}));
 }
 
-#define MAKE_PHYSICAL_SHAPE_LAYER(clip)                              \
-  std::make_shared<PhysicalShapeLayer>(SK_ColorGREEN, SK_ColorBLACK, \
-                                       0.0f, /* elevation */         \
-                                       layer_path, clip)
-
-#define CHECK_READBACK(layer, before, after)                       \
-  do {                                                             \
-    preroll_context()->layer_reads_from_surface = before;          \
-    layer->Preroll(preroll_context(), initial_matrix);             \
-    EXPECT_EQ(preroll_context()->layer_reads_from_surface, after); \
-  } while (0)
-
-#define CLIP_RECT_CHECK_READBACK(clip, before, after) \
-  do {                                                \
-    auto layer = MAKE_PHYSICAL_SHAPE_LAYER(clip);     \
-    CHECK_READBACK(layer, before, after);             \
-  } while (0)
-
-#define CLIP_RECT_CHILD_CHECK_READBACK(clip, child, before, after) \
-  do {                                                             \
-    auto layer = MAKE_PHYSICAL_SHAPE_LAYER(clip);                  \
-    layer->Add(child);                                             \
-    CHECK_READBACK(layer, before, after);                          \
-  } while (0)
-
-TEST_F(PhysicalShapeLayerTest, Readback) {
+static bool ReadbackResult(PrerollContext* context,
+                           Clip clip_behavior,
+                           std::shared_ptr<Layer> child,
+                           bool before) {
   const SkMatrix initial_matrix = SkMatrix();
   const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
   const SkPath layer_path = SkPath().addRect(layer_bounds);
+  auto layer =
+      std::make_shared<PhysicalShapeLayer>(SK_ColorGREEN, SK_ColorBLACK,
+                                           0.0f,  // elevation
+                                           layer_path, clip_behavior);
+  if (child != nullptr) {
+    layer->Add(child);
+  }
+  context->layer_reads_from_surface = before;
+  layer->Preroll(context, initial_matrix);
+  return context->layer_reads_from_surface;
+}
+
+TEST_F(PhysicalShapeLayerTest, Readback) {
+  PrerollContext* context = preroll_context();
+  SkPath path;
+  SkPaint paint;
 
   const Clip hard = Clip::hardEdge;
   const Clip soft = Clip::antiAlias;
   const Clip save_layer = Clip::antiAliasWithSaveLayer;
 
-  auto mock_read_layer =
-      std::make_shared<MockLayer>(SkPath(), SkPaint(), false, false, true);
-  auto mock_no_read_layer = std::make_shared<MockLayer>(SkPath(), SkPaint());
+  std::shared_ptr<MockLayer> nochild;
+  auto reader = std::make_shared<MockLayer>(path, paint, false, false, true);
+  auto nonreader = std::make_shared<MockLayer>(path, paint);
 
   // No children, no prior readback -> no readback after
-  CLIP_RECT_CHECK_READBACK(hard, false, false);
-  CLIP_RECT_CHECK_READBACK(soft, false, false);
-  CLIP_RECT_CHECK_READBACK(save_layer, false, false);
+  EXPECT_FALSE(ReadbackResult(context, hard, nochild, false));
+  EXPECT_FALSE(ReadbackResult(context, soft, nochild, false));
+  EXPECT_FALSE(ReadbackResult(context, save_layer, nochild, false));
 
   // No children, prior readback -> readback after
-  CLIP_RECT_CHECK_READBACK(hard, true, true);
-  CLIP_RECT_CHECK_READBACK(soft, true, true);
-  CLIP_RECT_CHECK_READBACK(save_layer, true, true);
+  EXPECT_TRUE(ReadbackResult(context, hard, nochild, true));
+  EXPECT_TRUE(ReadbackResult(context, soft, nochild, true));
+  EXPECT_TRUE(ReadbackResult(context, save_layer, nochild, true));
 
   // Non readback child, no prior readback -> no readback after
-  CLIP_RECT_CHILD_CHECK_READBACK(hard, mock_no_read_layer, false, false);
-  CLIP_RECT_CHILD_CHECK_READBACK(soft, mock_no_read_layer, false, false);
-  CLIP_RECT_CHILD_CHECK_READBACK(save_layer, mock_no_read_layer, false, false);
+  EXPECT_FALSE(ReadbackResult(context, hard, nonreader, false));
+  EXPECT_FALSE(ReadbackResult(context, soft, nonreader, false));
+  EXPECT_FALSE(ReadbackResult(context, save_layer, nonreader, false));
 
   // Non readback child, prior readback -> readback after
-  CLIP_RECT_CHILD_CHECK_READBACK(hard, mock_no_read_layer, true, true);
-  CLIP_RECT_CHILD_CHECK_READBACK(soft, mock_no_read_layer, true, true);
-  CLIP_RECT_CHILD_CHECK_READBACK(save_layer, mock_no_read_layer, true, true);
+  EXPECT_TRUE(ReadbackResult(context, hard, nonreader, true));
+  EXPECT_TRUE(ReadbackResult(context, soft, nonreader, true));
+  EXPECT_TRUE(ReadbackResult(context, save_layer, nonreader, true));
 
   // Readback child, no prior readback -> readback after unless SaveLayer
-  CLIP_RECT_CHILD_CHECK_READBACK(hard, mock_read_layer, false, true);
-  CLIP_RECT_CHILD_CHECK_READBACK(soft, mock_read_layer, false, true);
-  CLIP_RECT_CHILD_CHECK_READBACK(save_layer, mock_read_layer, false, false);
+  EXPECT_TRUE(ReadbackResult(context, hard, reader, false));
+  EXPECT_TRUE(ReadbackResult(context, soft, reader, false));
+  EXPECT_FALSE(ReadbackResult(context, save_layer, reader, false));
 
   // Readback child, prior readback -> readback after
-  CLIP_RECT_CHILD_CHECK_READBACK(hard, mock_read_layer, true, true);
-  CLIP_RECT_CHILD_CHECK_READBACK(soft, mock_read_layer, true, true);
-  CLIP_RECT_CHILD_CHECK_READBACK(save_layer, mock_read_layer, true, true);
+  EXPECT_TRUE(ReadbackResult(context, hard, reader, true));
+  EXPECT_TRUE(ReadbackResult(context, soft, reader, true));
+  EXPECT_TRUE(ReadbackResult(context, save_layer, reader, true));
 }
 
 }  // namespace testing
