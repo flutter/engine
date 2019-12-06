@@ -773,14 +773,12 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   if (@available(iOS 11.0, *)) {
     NSString* smartDashesType = configuration[@"smartDashesType"];
     // This index comes from the SmartDashesType enum in the framework.
-    bool smartDashesIsDisabled =
-        smartDashesType && [smartDashesType isEqualToString:@"0"];
+    bool smartDashesIsDisabled = smartDashesType && [smartDashesType isEqualToString:@"0"];
     _activeView.smartDashesType =
         smartDashesIsDisabled ? UITextSmartDashesTypeNo : UITextSmartDashesTypeYes;
     NSString* smartQuotesType = configuration[@"smartQuotesType"];
     // This index comes from the SmartQuotesType enum in the framework.
-    bool smartQuotesIsDisabled =
-        smartQuotesType && [smartQuotesType isEqualToString:@"0"];
+    bool smartQuotesIsDisabled = smartQuotesType && [smartQuotesType isEqualToString:@"0"];
     _activeView.smartQuotesType =
         smartQuotesIsDisabled ? UITextSmartQuotesTypeNo : UITextSmartQuotesTypeYes;
   }
