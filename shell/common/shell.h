@@ -21,6 +21,7 @@
 #include "flutter/fml/synchronization/sync_switch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/thread.h"
+#include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/window/platform_message.h"
@@ -429,7 +430,8 @@ class Shell final : public PlatformView::Delegate,
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override;
 
   // |Animator::Delegate|
-  void OnAnimatorBeginFrame(fml::TimePoint frame_time) override;
+  void OnAnimatorBeginFrame(fml::TimePoint begin_frame_time,
+                            fml::TimePoint target_frame_time) override;
 
   // |Animator::Delegate|
   void OnAnimatorNotifyIdle(int64_t deadline) override;

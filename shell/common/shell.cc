@@ -881,12 +881,13 @@ void Shell::OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_time) {
+void Shell::OnAnimatorBeginFrame(fml::TimePoint begin_frame_time,
+                                 fml::TimePoint target_frame_time) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   if (engine_) {
-    engine_->BeginFrame(frame_time);
+    engine_->BeginFrame(begin_frame_time);
   }
 }
 
