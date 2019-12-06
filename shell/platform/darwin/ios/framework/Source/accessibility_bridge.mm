@@ -93,10 +93,12 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 @end
 
-//fix bug: https://github.com/flutter/flutter/issues/45599
-//When accessibility element got focus, it will be kept by __UIAccessibilityFocusedElements. 
-//Consequently, accessibility bridge will fail to dealloc all the semantics object when FlutterEngine need to reset its FlutterViewController and reset the platform view's accesssiblity bridge.
-//To fix it, we use focusedAccessibilityElements to keep those transiently focused elements, and reset its bridge to the new one. As long as __UIAccessibilityFocusedElements release them,
+// fix bug: https://github.com/flutter/flutter/issues/45599
+// When accessibility element got focus, it will be kept by __UIAccessibilityFocusedElements.
+// Consequently, accessibility bridge will fail to dealloc all the semantics object when
+// FlutterEngine need to reset its FlutterViewController and reset the platform view's accesssiblity
+// bridge. To fix it, we use focusedAccessibilityElements to keep those transiently focused elements,
+// and reset its bridge to the new one. As long as __UIAccessibilityFocusedElements release them,
 // they will be dealloced nicely.
 static std::vector<SemanticsObject*> focusedAccessibilityElements;
 
@@ -400,7 +402,9 @@ static std::vector<SemanticsObject*> focusedAccessibilityElements;
     [self bridge] -> DispatchSemanticsAction([self uid],
                                              flutter::SemanticsAction::kDidLoseAccessibilityFocus);
   }
-  focusedAccessibilityElements.erase(std::remove(focusedAccessibilityElements.begin(),focusedAccessibilityElements.end(),self), focusedAccessibilityElements.end());
+  focusedAccessibilityElements.erase(
+      std::remove(focusedAccessibilityElements.begin(), focusedAccessibilityElements.end(), self),
+      focusedAccessibilityElements.end());
 }
 
 @end
@@ -635,7 +639,8 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
   [accessibility_channel_.get() setMessageHandler:^(id message, FlutterReply reply) {
     HandleEvent((NSDictionary*)message);
   }];
-  for(std::vector<SemanticsObject*>::iterator it = focusedAccessibilityElements.begin(); it<focusedAccessibilityElements.end(); it++){
+  for (std::vector<SemanticsObject*>::iterator it = focusedAccessibilityElements.begin();
+       it < focusedAccessibilityElements.end(); it++) {
     (*it).bridge = GetWeakPtr();
   }
 }
