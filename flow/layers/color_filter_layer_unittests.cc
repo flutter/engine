@@ -201,17 +201,17 @@ TEST_F(ColorFilterLayerTest, Readback) {
 
   // ColorFilterLayer does not read from surface
   auto layer = std::make_shared<ColorFilterLayer>(layer_filter);
-  preroll_context()->layer_reads_from_surface = false;
+  preroll_context()->subtree_performs_readback_operation = false;
   layer->Preroll(preroll_context(), initial_transform);
-  EXPECT_FALSE(preroll_context()->layer_reads_from_surface);
+  EXPECT_FALSE(preroll_context()->subtree_performs_readback_operation);
 
   // ColorFilterLayer blocks child with readback
   auto mock_layer =
       std::make_shared<MockLayer>(SkPath(), SkPaint(), false, false, true);
   layer->Add(mock_layer);
-  preroll_context()->layer_reads_from_surface = false;
+  preroll_context()->subtree_performs_readback_operation = false;
   layer->Preroll(preroll_context(), initial_transform);
-  EXPECT_FALSE(preroll_context()->layer_reads_from_surface);
+  EXPECT_FALSE(preroll_context()->subtree_performs_readback_operation);
 }
 
 }  // namespace testing

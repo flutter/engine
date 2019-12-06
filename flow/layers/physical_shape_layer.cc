@@ -49,14 +49,9 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Preroll");
 
-  bool prev_read = context->layer_reads_from_surface;
-  if (uses_save_layer()) {
-    context->layer_reads_from_surface = false;
-  }
+  Layer::AutoPrerollSaveLayer save =
+      Layer::AutoPrerollSaveLayer::Create(context, uses_save_layer());
   PhysicalShapeLayerBase::Preroll(context, matrix);
-  if (uses_save_layer()) {
-    context->layer_reads_from_surface = prev_read;
-  }
 
   if (elevation() == 0) {
     set_paint_bounds(path_.getBounds());

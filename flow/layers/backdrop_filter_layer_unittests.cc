@@ -183,34 +183,34 @@ TEST_F(BackdropFilterLayerTest, Nested) {
 }
 
 TEST_F(BackdropFilterLayerTest, Readback) {
+  sk_sp<SkImageFilter> no_filter;
   auto layer_filter = SkImageFilters::Paint(SkPaint(SkColors::kMagenta));
   auto initial_transform = SkMatrix();
 
   // BDF with filter always reads from surface
   auto layer1 = std::make_shared<BackdropFilterLayer>(layer_filter);
-  preroll_context()->layer_reads_from_surface = false;
+  preroll_context()->subtree_performs_readback_operation = false;
   layer1->Preroll(preroll_context(), initial_transform);
-  EXPECT_TRUE(preroll_context()->layer_reads_from_surface);
+  EXPECT_TRUE(preroll_context()->subtree_performs_readback_operation);
 
   // BDF with no filter does not read from surface itself
-  layer_filter.reset();
-  auto layer2 = std::make_shared<BackdropFilterLayer>(layer_filter);
-  preroll_context()->layer_reads_from_surface = false;
+  auto layer2 = std::make_shared<BackdropFilterLayer>(no_filter);
+  preroll_context()->subtree_performs_readback_operation = false;
   layer2->Preroll(preroll_context(), initial_transform);
-  EXPECT_FALSE(preroll_context()->layer_reads_from_surface);
+  EXPECT_FALSE(preroll_context()->subtree_performs_readback_operation);
 
   // BDF with no filter does not block prior readback value
-  preroll_context()->layer_reads_from_surface = true;
+  preroll_context()->subtree_performs_readback_operation = true;
   layer2->Preroll(preroll_context(), initial_transform);
-  EXPECT_TRUE(preroll_context()->layer_reads_from_surface);
+  EXPECT_TRUE(preroll_context()->subtree_performs_readback_operation);
 
   // BDF with no filter blocks child with readback
   auto mock_layer =
       std::make_shared<MockLayer>(SkPath(), SkPaint(), false, false, true);
   layer2->Add(mock_layer);
-  preroll_context()->layer_reads_from_surface = false;
+  preroll_context()->subtree_performs_readback_operation = false;
   layer2->Preroll(preroll_context(), initial_transform);
-  EXPECT_FALSE(preroll_context()->layer_reads_from_surface);
+  EXPECT_FALSE(preroll_context()->subtree_performs_readback_operation);
 }
 
 }  // namespace testing

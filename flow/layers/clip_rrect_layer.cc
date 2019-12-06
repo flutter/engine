@@ -16,16 +16,12 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkRect clip_rrect_bounds = clip_rrect_.getBounds();
   children_inside_clip_ = context->cull_rect.intersect(clip_rrect_bounds);
   if (children_inside_clip_) {
+    Layer::AutoPrerollSaveLayer save =
+        Layer::AutoPrerollSaveLayer::Create(context, uses_save_layer());
     context->mutators_stack.PushClipRRect(clip_rrect_);
-    bool prev_read = context->layer_reads_from_surface;
-    if (uses_save_layer()) {
-      context->layer_reads_from_surface = false;
-    }
+
     SkRect child_paint_bounds = SkRect::MakeEmpty();
     PrerollChildren(context, matrix, &child_paint_bounds);
-    if (uses_save_layer()) {
-      context->layer_reads_from_surface = prev_read;
-    }
 
     if (child_paint_bounds.intersect(clip_rrect_bounds)) {
       set_paint_bounds(child_paint_bounds);

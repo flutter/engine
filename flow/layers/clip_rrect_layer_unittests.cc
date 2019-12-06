@@ -206,9 +206,9 @@ static bool ReadbackResult(PrerollContext* context,
   if (child != nullptr) {
     layer->Add(child);
   }
-  context->layer_reads_from_surface = before;
+  context->subtree_performs_readback_operation = before;
   layer->Preroll(context, initial_matrix);
-  return context->layer_reads_from_surface;
+  return context->subtree_performs_readback_operation;
 }
 
 TEST_F(ClipRRectLayerTest, Readback) {
