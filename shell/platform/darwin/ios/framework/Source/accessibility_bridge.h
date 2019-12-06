@@ -53,7 +53,7 @@ class AccessibilityBridge;
  * use `isAccessibilityBridgeActive` to protect against the case where this
  * node may be orphaned.
  */
-@property(nonatomic, readonly) fml::WeakPtr<flutter::AccessibilityBridge> bridge;
+@property(atomic) fml::WeakPtr<flutter::AccessibilityBridge> bridge;
 
 /**
  * Due to the fact that VoiceOver may hold onto SemanticObjects even after it shuts down,

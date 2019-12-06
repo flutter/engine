@@ -48,7 +48,7 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
   if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
     ios_surface_.reset();
-    accessibility_bridge_.reset();
+    this->SetSemanticsEnabled(false);
   }
   owner_controller_ = owner_controller;
 
