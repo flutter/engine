@@ -67,11 +67,14 @@ class Keyboard {
   static const JSONMessageCodec _messageCodec = JSONMessageCodec();
 
   void _handleHtmlEvent(html.KeyboardEvent event) {
+    print('event: ${event.type}');
     if (_shouldIgnoreEvent(event)) {
+      print('event:IGNORE');
       return;
     }
 
     if (_shouldPreventDefault(event)) {
+      print('event:PREVENT');
       event.preventDefault();
     }
 
