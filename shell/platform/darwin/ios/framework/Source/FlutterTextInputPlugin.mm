@@ -772,15 +772,15 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   _activeView.autocapitalizationType = ToUITextAutoCapitalizationType(configuration);
   if (@available(iOS 11.0, *)) {
     NSString* smartDashesType = configuration[@"smartDashesType"];
-    // This string comes from the SmartDashesType enum in the framework.
+    // This index comes from the SmartDashesType enum in the framework.
     bool smartDashesIsDisabled =
-        smartDashesType && [smartDashesType isEqualToString:@"SmartDashesType.disabled"];
+        smartDashesType && [smartDashesType isEqualToString:@"0"];
     _activeView.smartDashesType =
         smartDashesIsDisabled ? UITextSmartDashesTypeNo : UITextSmartDashesTypeYes;
     NSString* smartQuotesType = configuration[@"smartQuotesType"];
-    // This string comes from the SmartQuotesType enum in the framework.
+    // This index comes from the SmartQuotesType enum in the framework.
     bool smartQuotesIsDisabled =
-        smartQuotesType && [smartQuotesType isEqualToString:@"SmartQuotesType.disabled"];
+        smartQuotesType && [smartQuotesType isEqualToString:@"0"];
     _activeView.smartQuotesType =
         smartQuotesIsDisabled ? UITextSmartQuotesTypeNo : UITextSmartQuotesTypeYes;
   }
