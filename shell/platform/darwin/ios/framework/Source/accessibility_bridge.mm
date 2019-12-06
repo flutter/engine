@@ -97,9 +97,9 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 // When accessibility element got focus, it will be kept by __UIAccessibilityFocusedElements.
 // Consequently, accessibility bridge will fail to dealloc all the semantics object when
 // FlutterEngine need to reset its FlutterViewController and reset the platform view's accesssiblity
-// bridge. To fix it, we use focusedAccessibilityElements to keep those transiently focused elements,
-// and reset its bridge to the new one. As long as __UIAccessibilityFocusedElements release them,
-// they will be dealloced nicely.
+// bridge. To fix it, we use focusedAccessibilityElements to keep those transiently focused
+// elements, and reset its bridge to the new one. As long as __UIAccessibilityFocusedElements
+// release them, they will be dealloced nicely.
 static std::vector<SemanticsObject*> focusedAccessibilityElements;
 
 @implementation SemanticsObject {
