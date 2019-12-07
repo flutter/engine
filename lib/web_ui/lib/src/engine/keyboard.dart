@@ -69,12 +69,10 @@ class Keyboard {
   void _handleHtmlEvent(html.KeyboardEvent event) {
     print('event: ${event.type}');
     if (_shouldIgnoreEvent(event)) {
-      print('event:IGNORE');
       return;
     }
 
     if (_shouldPreventDefault(event)) {
-      print('event:PREVENT');
       event.preventDefault();
     }
 
@@ -124,6 +122,10 @@ const int _modifierNumLock = 0x10;
 const int _modifierCapsLock = 0x20;
 const int _modifierScrollLock = 0x40;
 
+const int _kNumLockKeyCode = 0;
+const int _kScroolLockKeyCode = 0;
+const int _kCapsLockKeyCode = 0;
+
 /// Creates a bitmask representing the meta state of the [event].
 int _getMetaState(html.KeyboardEvent event) {
   int metaState = _modifierNone;
@@ -139,13 +141,15 @@ int _getMetaState(html.KeyboardEvent event) {
   if (event.getModifierState('Meta')) {
     metaState |= _modifierMeta;
   }
-  if (event.getModifierState('NumLock')) {
+  if (event.keyCode == _kNumLockKeyCode && event.getModifierState('NumLock')) {
     metaState |= _modifierNumLock;
   }
-  if (event.getModifierState('CapsLock')) {
+  if (event.keyCode == _kCapsLockKeyCode &&
+      event.getModifierState('CapsLock')) {
     metaState |= _modifierCapsLock;
   }
-  if (event.getModifierState('ScrollLock')) {
+  if (event.keyCode == _kScroolLockKeyCode &&
+      event.getModifierState('ScrollLock')) {
     metaState |= _modifierScrollLock;
   }
   return metaState;
