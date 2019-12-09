@@ -115,7 +115,7 @@ void main() {
 
     final DomRenderer renderer = DomRenderer();
     renderer.reset();
-  });
+  }, skip: (browserEngine == BrowserEngine.firefox));
 
   test('accesibility placeholder is attached after creation', () {
     DomRenderer();

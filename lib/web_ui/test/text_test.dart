@@ -244,7 +244,7 @@ void main() async {
     expect(spans[0].style.fontFamily, 'Ahem, Arial, sans-serif');
     // The nested span here should not set it's family to default sans-serif.
     expect(spans[1].style.fontFamily, 'Ahem, Arial, sans-serif');
-  });
+  }, skip: (browserEngine == BrowserEngine.firefox));
 
   test('adds Arial and sans-serif as fallback fonts', () {
     // Set this to false so it doesn't default to 'Ahem' font.
@@ -261,7 +261,7 @@ void main() async {
     expect(paragraph.paragraphElement.style.fontFamily, 'SomeFont, Arial, sans-serif');
 
     debugEmulateFlutterTesterEnvironment = true;
-  });
+  }, skip: (browserEngine == BrowserEngine.firefox));
 
   test('does not add fallback fonts to generic families', () {
     // Set this to false so it doesn't default to 'Ahem' font.

@@ -806,7 +806,7 @@ void _testTextField() {
     expect(await logger.actionLog.first, ui.SemanticsAction.tap);
 
     semantics().semanticsEnabled = false;
-  });
+  }, skip: (browserEngine == BrowserEngine.firefox));
 }
 
 void _testCheckables() {

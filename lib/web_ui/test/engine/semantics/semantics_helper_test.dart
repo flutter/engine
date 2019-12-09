@@ -142,6 +142,6 @@ void main() {
           mobileSemanticsEnabler.tryEnableSemantics(event);
 
       expect(shouldForwardToFramework, true);
-    });
+    }, skip: (browserEngine == BrowserEngine.firefox));
   });
 }

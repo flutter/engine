@@ -173,7 +173,7 @@ void main() {
       expect(picture.buildCount, 1);
       expect(picture.updateCount, 0);
       expect(picture.applyPaintCount, 2);
-    });
+    }, skip: (browserEngine == BrowserEngine.firefox));
   });
 }
 
