@@ -158,16 +158,19 @@ void main() {
     expect(areEqual, true);
   });
 
+  Gradient makeGradient() {
+    return Gradient.linear(
+      Offset.zero,
+      const Offset(100, 100),
+      const <Color>[Color(0xFF4C4D52), Color(0xFF202124)],
+    );
+  }
+
   test('Simple gradient', () async {
     Paint.enableDithering = false;
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
-    final Paint paint = Paint()
-      ..shader = Gradient.linear(Offset.zero,
-        const Offset(100, 100), const <Color>[
-          Color(0xFF4C4D52),
-          Color(0xFF202124),
-        ]);
+    final Paint paint = Paint()..shader = makeGradient();
     canvas.drawPaint(paint);
     final Picture picture = recorder.endRecording();
     final Image image = await picture.toImage(100, 100);
@@ -183,12 +186,7 @@ void main() {
     Paint.enableDithering = true;
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
-    final Paint paint = Paint()
-      ..shader = Gradient.linear(Offset.zero,
-        const Offset(100, 100), const <Color>[
-          Color(0xFF4C4D52),
-          Color(0xFF202124),
-        ]);
+    final Paint paint = Paint()..shader = makeGradient();
     canvas.drawPaint(paint);
     final Picture picture = recorder.endRecording();
     final Image image = await picture.toImage(100, 100);
