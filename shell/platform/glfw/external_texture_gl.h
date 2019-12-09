@@ -18,7 +18,7 @@ typedef struct ExternalTextureGLState ExternalTextureGLState;
 // An adaptation class of flutter engine and external texture interface.
 class ExternalTextureGL {
  public:
-  ExternalTextureGL(FlutterTexutreCallback texture_callback, void* user_data);
+  ExternalTextureGL(FlutterTextureCallback texture_callback, void* user_data);
 
   virtual ~ExternalTextureGL();
 
@@ -41,7 +41,7 @@ class ExternalTextureGL {
 
  private:
   std::unique_ptr<ExternalTextureGLState> state_;
-  FlutterTexutreCallback texture_callback_ = nullptr;
+  FlutterTextureCallback texture_callback_ = nullptr;
   void* user_data_ = nullptr;
 };
 

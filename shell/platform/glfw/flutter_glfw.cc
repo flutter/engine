@@ -900,7 +900,7 @@ void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
 
 int64_t FlutterDesktopRegisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
-    FlutterTexutreCallback texture_callback,
+    FlutterTextureCallback texture_callback,
     void* user_data) {
   auto texture_gl =
       std::make_unique<flutter::ExternalTextureGL>(texture_callback, user_data);

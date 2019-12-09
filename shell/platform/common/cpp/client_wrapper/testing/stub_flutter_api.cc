@@ -51,7 +51,7 @@ FlutterDesktopTextureRegistrarRef FlutterDesktopGetTextureRegistrar(
 
 int64_t FlutterDesktopRegisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
-    FlutterTexutreCallback texture_callback,
+    FlutterTextureCallback texture_callback,
     void* user_data) {
   uint64_t result = -1;
   if (s_stub_implementation) {

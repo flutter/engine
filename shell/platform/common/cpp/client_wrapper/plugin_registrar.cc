@@ -153,7 +153,7 @@ class TextureRegistrarImpl : public TextureRegistrar {
   TextureRegistrarImpl& operator=(TextureRegistrarImpl const&) = delete;
 
   virtual int64_t RegisterTexture(Texture* texture) override {
-    FlutterTexutreCallback callback =
+    FlutterTextureCallback callback =
         [](size_t width, size_t height, void* user_data) -> const PixelBuffer* {
       return static_cast<Texture*>(user_data)->CopyPixelBuffer(width, height);
     };

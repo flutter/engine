@@ -66,7 +66,7 @@ class StubFlutterApi {
 
   // Called for FlutterDesktopRegisterExternalTexture.
   virtual int64_t RegisterExternalTexture(
-      FlutterTexutreCallback texture_callback,
+      FlutterTextureCallback texture_callback,
       void* user_data) {
     return -1;
   }

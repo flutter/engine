@@ -21,7 +21,7 @@ class TestApi : public testing::StubFlutterApi {
   struct FakeTexture {
     int64_t texture_id;
     int32_t mark_count;
-    FlutterTexutreCallback texture_callback;
+    FlutterTextureCallback texture_callback;
     void* user_data;
   };
 
@@ -44,7 +44,7 @@ class TestApi : public testing::StubFlutterApi {
 
   const uint8_t* last_data_sent() { return last_data_sent_; }
 
-  int64_t RegisterExternalTexture(FlutterTexutreCallback texture_callback,
+  int64_t RegisterExternalTexture(FlutterTextureCallback texture_callback,
                                   void* user_data) override {
     last_texture_id_++;
 

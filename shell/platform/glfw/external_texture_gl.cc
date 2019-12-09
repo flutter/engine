@@ -19,7 +19,7 @@ struct ExternalTextureGLState {
   GLuint gl_texture;
 };
 
-ExternalTextureGL::ExternalTextureGL(FlutterTexutreCallback texture_callback,
+ExternalTextureGL::ExternalTextureGL(FlutterTextureCallback texture_callback,
                                      void* user_data)
     : state_(std::make_unique<ExternalTextureGLState>()),
       texture_callback_(texture_callback),

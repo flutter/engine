@@ -251,7 +251,7 @@ FlutterDesktopTextureRegistrarRef FlutterDesktopGetTextureRegistrar(
 
 int64_t FlutterDesktopRegisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
-    FlutterTexutreCallback texture_callback,
+    FlutterTextureCallback texture_callback,
     void* user_data) {
   std::cout << "Texture support is not yet implemented." << std::endl;
   return -1;

@@ -31,7 +31,7 @@ typedef struct {
 
 // The pixel buffer copy callback definition is provided to
 // the Flutter engine to copy the texture.
-typedef const PixelBuffer* (*FlutterTexutreCallback)(size_t width,
+typedef const PixelBuffer* (*FlutterTextureCallback)(size_t width,
                                                      size_t height,
                                                      void* user_data);
 
@@ -40,7 +40,7 @@ typedef const PixelBuffer* (*FlutterTexutreCallback)(size_t width,
 // function to copy the pixel buffer from the plugin caller.
 FLUTTER_EXPORT int64_t FlutterDesktopRegisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
-    FlutterTexutreCallback texture_callback,
+    FlutterTextureCallback texture_callback,
     void* user_data);
 
 // Unregisters an existing texture from the Flutter engine for a |texture_id|.
