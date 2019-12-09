@@ -11,7 +11,7 @@ namespace flutter {
 
 SkiaUnrefQueue::SkiaUnrefQueue(fml::RefPtr<fml::TaskRunner> task_runner,
                                fml::TimeDelta delay,
-                               GrContext* context)
+                               fml::WeakPtr<GrContext> context)
     : task_runner_(std::move(task_runner)),
       drain_delay_(delay),
       drain_pending_(false),
@@ -44,7 +44,7 @@ void SkiaUnrefQueue::Drain() {
     skia_object->unref();
   }
 
-  if (context_ != nullptr) {
+  if (context_) {
     context_->performDeferredCleanup(std::chrono::milliseconds(0));
   }
 }

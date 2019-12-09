@@ -35,14 +35,14 @@ class SkiaUnrefQueue : public fml::RefCountedThreadSafe<SkiaUnrefQueue> {
   std::mutex mutex_;
   std::deque<SkRefCnt*> objects_;
   bool drain_pending_;
-  GrContext* context_;
+  fml::WeakPtr<GrContext> context_;
 
   // The `GrContext* context` is only used for signaling Skia to
   // performDeferredCleanup. It can be nullptr when such signaling is not needed
   // (e.g., in unit tests).
   SkiaUnrefQueue(fml::RefPtr<fml::TaskRunner> task_runner,
                  fml::TimeDelta delay,
-                 GrContext* context = nullptr);
+                 fml::WeakPtr<GrContext> context = {});
 
   ~SkiaUnrefQueue();
 
