@@ -123,8 +123,7 @@ class TestCommand extends Command<bool> {
           continue;
         }
 
-        if (isChrome &&
-            path.split(testFilePath.relativeToWebUi).contains('golden_tests')) {
+        if (path.split(testFilePath.relativeToWebUi).contains('golden_tests')) {
           screenshotTestFiles.add(testFilePath);
         } else {
           unitTestFiles.add(testFilePath);
