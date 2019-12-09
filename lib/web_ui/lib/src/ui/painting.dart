@@ -961,6 +961,8 @@ class PaintData {
 class Paint {
   PaintData _paintData = PaintData();
 
+  Paint();
+
   /// A blend mode to apply when a shape is drawn or a layer is composited.
   ///
   /// The source colors are from the shape being drawn (e.g. from
