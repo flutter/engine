@@ -44,7 +44,7 @@ void SkiaUnrefQueue::Drain() {
     skia_object->unref();
   }
 
-  if (context_) {
+  if (context_ && skia_objects.size() > 0) {
     context_->performDeferredCleanup(std::chrono::milliseconds(0));
   }
 }
