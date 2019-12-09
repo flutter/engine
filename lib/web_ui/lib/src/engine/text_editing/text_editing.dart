@@ -287,13 +287,13 @@ class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     _setStaticStyleAttributes(domElement);
     _style?.applyToDomElement(domElement);
+    initializeElementPosition();
     domRenderer.glassPaneElement.append(domElement);
 
     isEnabled = true;
     _inputConfiguration = inputConfig;
     _onChange = onChange;
     _onAction = onAction;
-    initializeElementPosition();
   }
 
   @override
@@ -319,6 +319,7 @@ class DefaultTextEditingStrategy implements TextEditingStrategy {
     }
   }
 
+  @mustCallSuper
   @override
   void updateElementStyle(_EditingStyle style) {
     _style = style;
@@ -344,6 +345,7 @@ class DefaultTextEditingStrategy implements TextEditingStrategy {
     domElement = null;
   }
 
+  @mustCallSuper
   @override
   void setTextEditingState(EditingState editingState) {
     if (_lastEditingState != null) {
@@ -438,7 +440,7 @@ class IOSTextEditingStrategy extends DefaultTextEditingStrategy {
   }) {
     super.initializeTextEditing(inputConfig,
         onChange: onChange, onAction: onAction);
-    inputConfig.inputType.configureDomElement(domElement);
+    inputConfig.inputType.configureInputMode(domElement);
   }
 
   @override
@@ -504,7 +506,7 @@ class AndroidTextEditingStrategy extends DefaultTextEditingStrategy {
   }) {
     super.initializeTextEditing(inputConfig,
         onChange: onChange, onAction: onAction);
-    inputConfig.inputType.configureDomElement(domElement);
+    inputConfig.inputType.configureInputMode(domElement);
   }
 
   @override
