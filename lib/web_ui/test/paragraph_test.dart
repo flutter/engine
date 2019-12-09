@@ -104,7 +104,8 @@ void main() async {
       expect(paragraph.minIntrinsicWidth, fontSize * 10.0);
       expect(paragraph.maxIntrinsicWidth, fontSize * 10.0);
     }
-  }, skip: (browserEngine == BrowserEngine.firefox));
+  }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+      skip: (browserEngine == BrowserEngine.firefox));
 
   testEachMeasurement('predictably lays out a multi-line rich paragraph', () {
     for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
@@ -126,7 +127,8 @@ void main() async {
       expect(paragraph.minIntrinsicWidth, fontSize * 5.0);
       expect(paragraph.maxIntrinsicWidth, fontSize * 16.0);
     }
-  }, skip: (browserEngine == BrowserEngine.firefox));
+  }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+      skip: (browserEngine == BrowserEngine.firefox));
 
   testEachMeasurement('getBoxesForRange returns a box', () {
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
