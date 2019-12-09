@@ -49,8 +49,8 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
   if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
     ios_surface_.reset();
-    if(accessibility_bridge_){
-      this->SetSemanticsEnabled(false);//Reset the bridge and need to notify DartVM to update
+    if (accessibility_bridge_) {
+      this->SetSemanticsEnabled(false);  // Reset the bridge and need to notify DartVM to update
       accessibilityResetted = true;
     }
   }
@@ -77,10 +77,10 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
       accessibility_bridge_.reset(
           new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
                                   [owner_controller.get() platformViewsController]));
-    }else if (accessibilityResetted){
+    } else if (accessibilityResetted) {
       accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
-                                  static_cast<FlutterView*>(owner_controller_.get().view), this,
-                                  [owner_controller_.get() platformViewsController]);
+          static_cast<FlutterView*>(owner_controller_.get().view), this,
+          [owner_controller_.get() platformViewsController]);
     }
     // Do not call `NotifyCreated()` here - let FlutterViewController take care
     // of that when its Viewport is sized.  If `NotifyCreated()` is called here,
