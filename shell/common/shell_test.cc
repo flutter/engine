@@ -19,9 +19,13 @@ namespace flutter {
 namespace testing {
 
 ShellTest::ShellTest()
-    : native_resolver_(std::make_shared<TestDartNativeResolver>()) {}
-
-ShellTest::~ShellTest() = default;
+    : native_resolver_(std::make_shared<TestDartNativeResolver>()),
+      thread_host_("io.flutter.test." + GetCurrentTestName() + ".",
+                   ThreadHost::Type::Platform | ThreadHost::Type::IO |
+                       ThreadHost::Type::UI | ThreadHost::Type::GPU),
+      assets_dir_(fml::OpenDirectory(GetFixturesPath(),
+                                     false,
+                                     fml::FilePermission::kRead)) {}
 
 void ShellTest::SendEnginePlatformMessage(
     Shell* shell,
@@ -139,14 +143,22 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              double width,
                              double height,
                              LayerTreeBuilder builder) {
+  PumpOneFrame(shell,
+               flutter::ViewportMetrics{1, width, height, flutter::kUnsetDepth,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+               std::move(builder));
+}
+
+void ShellTest::PumpOneFrame(Shell* shell,
+                             flutter::ViewportMetrics viewport_metrics,
+                             LayerTreeBuilder builder) {
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
   // tree pipeline nonempty. Without either of this, the layer tree below
   // won't be rasterized.
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, engine = shell->weak_engine_, width, height]() {
-        engine->SetViewportMetrics(
-            {1, width, height, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+      [&latch, engine = shell->weak_engine_, viewport_metrics]() {
+        engine->SetViewportMetrics(std::move(viewport_metrics));
         engine->animator_->BeginFrame(fml::TimePoint::Now(),
                                       fml::TimePoint::Now());
         latch.Signal();
@@ -157,8 +169,12 @@ void ShellTest::PumpOneFrame(Shell* shell,
   // Call |Render| to rasterize a layer tree and trigger |OnFrameRasterized|
   fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, runtime_delegate, &builder]() {
-        auto layer_tree = std::make_unique<LayerTree>();
+      [&latch, runtime_delegate, &builder, viewport_metrics]() {
+        auto layer_tree = std::make_unique<LayerTree>(
+            SkISize::Make(viewport_metrics.physical_width,
+                          viewport_metrics.physical_height),
+            static_cast<float>(viewport_metrics.physical_depth),
+            static_cast<float>(viewport_metrics.device_pixel_ratio));
         SkMatrix identity;
         identity.setIdentity();
         auto root_layer = std::make_shared<TransformLayer>(identity);
@@ -225,10 +241,10 @@ Settings ShellTest::CreateSettingsForFixture() {
 TaskRunners ShellTest::GetTaskRunnersForFixture() {
   return {
       "test",
-      thread_host_->platform_thread->GetTaskRunner(),  // platform
-      thread_host_->gpu_thread->GetTaskRunner(),       // gpu
-      thread_host_->ui_thread->GetTaskRunner(),        // ui
-      thread_host_->io_thread->GetTaskRunner()         // io
+      thread_host_.platform_thread->GetTaskRunner(),  // platform
+      thread_host_.gpu_thread->GetTaskRunner(),       // gpu
+      thread_host_.ui_thread->GetTaskRunner(),        // ui
+      thread_host_.io_thread->GetTaskRunner()         // io
   };
 }
 
@@ -265,24 +281,6 @@ void ShellTest::DestroyShell(std::unique_ptr<Shell> shell,
                                       latch.Signal();
                                     });
   latch.Wait();
-}
-
-// |testing::ThreadTest|
-void ShellTest::SetUp() {
-  ThreadTest::SetUp();
-  assets_dir_ =
-      fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
-  thread_host_ = std::make_unique<ThreadHost>(
-      "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::Platform | ThreadHost::Type::IO | ThreadHost::Type::UI |
-          ThreadHost::Type::GPU);
-}
-
-// |testing::ThreadTest|
-void ShellTest::TearDown() {
-  ThreadTest::TearDown();
-  assets_dir_.reset();
-  thread_host_.reset();
 }
 
 void ShellTest::AddNativeCallback(std::string name,

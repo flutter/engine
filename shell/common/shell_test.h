@@ -26,8 +26,6 @@ class ShellTest : public ThreadTest {
  public:
   ShellTest();
 
-  ~ShellTest();
-
   Settings CreateSettingsForFixture();
   std::unique_ptr<Shell> CreateShell(Settings settings,
                                      bool simulate_vsync = false);
@@ -60,7 +58,9 @@ class ShellTest : public ThreadTest {
                            double width = 1,
                            double height = 1,
                            LayerTreeBuilder = {});
-
+  static void PumpOneFrame(Shell* shell,
+                           flutter::ViewportMetrics viewport_metrics,
+                           LayerTreeBuilder = {});
   static void DispatchFakePointerData(Shell* shell);
   static void DispatchPointerData(Shell* shell,
                                   std::unique_ptr<PointerDataPacket> packet);
@@ -78,19 +78,14 @@ class ShellTest : public ThreadTest {
   // is unpredictive.
   static int UnreportedTimingsCount(Shell* shell);
 
- protected:
-  // |testing::ThreadTest|
-  void SetUp() override;
-
-  // |testing::ThreadTest|
-  void TearDown() override;
-
  private:
-  fml::UniqueFD assets_dir_;
-  std::shared_ptr<TestDartNativeResolver> native_resolver_;
-  std::unique_ptr<ThreadHost> thread_host_;
-
   void SetSnapshotsAndAssets(Settings& settings);
+
+  std::shared_ptr<TestDartNativeResolver> native_resolver_;
+  ThreadHost thread_host_;
+  fml::UniqueFD assets_dir_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(ShellTest);
 };
 
 class ShellTestVsyncClock {

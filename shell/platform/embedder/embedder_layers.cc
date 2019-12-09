@@ -184,16 +184,15 @@ void EmbedderLayers::PushPlatformViewLayer(
   layer.type = kFlutterLayerContentTypePlatformView;
   layer.platform_view = platform_views_referenced_.back().get();
 
-  const auto layer_bounds = SkRect::MakeXYWH(params.offsetPixels.x(),    //
-                                             params.offsetPixels.y(),    //
-                                             params.sizePoints.width(),  //
-                                             params.sizePoints.height()  //
-  );
+  const auto layer_bounds =
+      SkRect::MakeXYWH(params.offsetPixels.x(),                          //
+                       params.offsetPixels.y(),                          //
+                       params.sizePoints.width() * device_pixel_ratio_,  //
+                       params.sizePoints.height() * device_pixel_ratio_  //
+      );
 
   const auto transformed_layer_bounds =
-      SkMatrix::Concat(root_surface_transformation_,
-                       SkMatrix::MakeScale(device_pixel_ratio_))
-          .mapRect(layer_bounds);
+      root_surface_transformation_.mapRect(layer_bounds);
 
   layer.offset.x = transformed_layer_bounds.x();
   layer.offset.y = transformed_layer_bounds.y();
@@ -203,7 +202,9 @@ void EmbedderLayers::PushPlatformViewLayer(
   presented_layers_.push_back(layer);
 }  // namespace flutter
 
-void EmbedderLayers::InvokePresentCallback(PresentCallback callback) const {
+/// @note Procedure doesn't copy all closures.
+void EmbedderLayers::InvokePresentCallback(
+    const PresentCallback& callback) const {
   std::vector<const FlutterLayer*> presented_layers_pointers;
   presented_layers_pointers.reserve(presented_layers_.size());
   for (const auto& layer : presented_layers_) {

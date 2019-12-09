@@ -24,7 +24,11 @@ dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 fml_unittests_filter = '--gtest_filter=-*TimeSensitiveTest*:*GpuThreadMerger*'
 
 def RunCmd(cmd, **kwargs):
-  print(subprocess.check_output(cmd, **kwargs))
+  try:
+    print(subprocess.check_output(cmd, **kwargs))
+  except subprocess.CalledProcessError as cpe:
+    print(cpe.output)
+    raise cpe
 
 def IsMac():
   return sys.platform == 'darwin'
@@ -107,6 +111,8 @@ def RunCCTests(build_dir, filter):
     RunEngineExecutable(build_dir, 'shell_unittests', filter, shuffle_flags)
 
   RunEngineExecutable(build_dir, 'ui_unittests', filter, shuffle_flags)
+
+  RunEngineExecutable(build_dir, 'testing_unittests', filter, shuffle_flags)
 
   # These unit-tests are Objective-C and can only run on Darwin.
   if IsMac():
