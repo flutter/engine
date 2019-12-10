@@ -132,10 +132,10 @@ void ResetAnchor(CALayer* layer) {
 }
 
 - (void)clipPath:(const SkPath&)path {
-  CGMutablePathRef pathRef = CGPathCreateMutable();
   if (!path.isValid()) {
     return;
   }
+  CGMutablePathRef pathRef = CGPathCreateMutable();
   if (path.isEmpty()) {
     CAShapeLayer* clip = [[CAShapeLayer alloc] init];
     clip.path = pathRef;
