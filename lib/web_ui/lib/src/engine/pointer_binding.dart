@@ -261,19 +261,31 @@ abstract class BaseAdapter {
 const int _kPrimaryMouseButton = 0x1;
 const int _kSecondaryMouseButton = 0x2;
 
-int _pointerButtonFromHtmlEvent(html.Event event) {
+typedef _GetDeviceButton = int Function();
+
+int _pointerButtonFromHtmlEvent(html.Event event, {_GetDeviceButton getDefaultButton}) {
   if (event is html.PointerEvent) {
     final html.PointerEvent pointerEvent = event;
-    return pointerEvent.button == 2
-        ? _kSecondaryMouseButton
-        : _kPrimaryMouseButton;
+    switch (pointerEvent.button) {
+      case 1:
+        return _kPrimaryMouseButton;
+      case 2:
+        return _kSecondaryMouseButton;
+      default:
+        break;
+    }
   } else if (event is html.MouseEvent) {
     final html.MouseEvent mouseEvent = event;
-    return mouseEvent.button == 2
-        ? _kSecondaryMouseButton
-        : _kPrimaryMouseButton;
+    switch (mouseEvent.button) {
+      case 1:
+        return _kPrimaryMouseButton;
+      case 2:
+        return _kSecondaryMouseButton;
+      default:
+        break;
+    }
   }
-  return _kPrimaryMouseButton;
+  return getDefaultButton != null ? getDefaultButton() : _kPrimaryMouseButton;
 }
 
 int _deviceFromHtmlEvent(event) {
@@ -297,13 +309,18 @@ class PointerAdapter extends BaseAdapter {
     _addEventListener('pointerdown', (html.Event event) {
       final int pointerButton = _pointerButtonFromHtmlEvent(event);
       final int device = _deviceFromHtmlEvent(event);
+      final int pointerButton = _pointerButtonDefaultToLastButton(event, device);
       if (_isButtonDown(device, pointerButton)) {
         // TODO(flutter_web): Remove this temporary fix for right click
         // on web platform once context guesture is implemented.
         _callback(_convertEventToPointerData(ui.PointerChange.up, event));
       }
       _updateButtonDownState(device, pointerButton, true);
-      _callback(_convertEventToPointerData(ui.PointerChange.down, event));
+      _callback(_convertEventToPointerData(
+        ui.PointerChange.down,
+        event,
+        buttons: pointerButton,
+      ));
     });
 
     _addEventListener('pointermove', (html.Event event) {
@@ -314,20 +331,22 @@ class PointerAdapter extends BaseAdapter {
       final html.PointerEvent pointerEvent = event;
       final int pointerButton = _pointerButtonFromHtmlEvent(pointerEvent);
       final int device = _deviceFromHtmlEvent(event);
-      final List<ui.PointerData> data = _convertEventToPointerData(
-          _isButtonDown(device, pointerButton)
-              ? ui.PointerChange.move
-              : ui.PointerChange.hover,
-          pointerEvent);
-      _callback(data);
+      final int pointerButton = _pointerButtonDefaultToLastButton(event, device);
+      _callback(_convertEventToPointerData(
+        _isButtonDown(device, pointerButton)
+            ? ui.PointerChange.move
+            : ui.PointerChange.hover,
+        pointerEvent,
+        buttons: pointerButton,
+      ));
     });
 
     _addEventListener('pointerup', (html.Event event) {
       // The pointer could have been released by a `pointerout` event, in which
       // case `pointerup` should have no effect.
-      final int pointerButton = _pointerButtonFromHtmlEvent(event);
       final int device = _deviceFromHtmlEvent(event);
-      if (!_isButtonDown(device, pointerButton)) {
+      final int pointerButton = _pointerButtonDefaultToLastButton(event, device);
+      if (pointerButton == 0) {
         return;
       }
       _updateButtonDownState(device, pointerButton, false);
@@ -339,6 +358,7 @@ class PointerAdapter extends BaseAdapter {
     _addEventListener('pointercancel', (html.Event event) {
       final int pointerButton = _pointerButtonFromHtmlEvent(event);
       final int device = _deviceFromHtmlEvent(event);
+      final int pointerButton = _pointerButtonDefaultToLastButton(event, device);
       _updateButtonDownState(pointerButton, device, false);
       _callback(_convertEventToPointerData(ui.PointerChange.cancel, event));
     });
@@ -355,10 +375,25 @@ class PointerAdapter extends BaseAdapter {
     });
   }
 
+  int _pointerButtonDefaultToLastButton(html.PointerEvent pointerEvent, int device) {
+    return _pointerButtonFromHtmlEvent(
+      pointerEvent,
+      getDefaultButton: () {
+        int buttons = 0;
+        for (_PressedButton pressedButton in _pressedButtons) {
+          if (pressedButton.deviceId == device)
+            buttons |= pressedButton.button;
+        }
+        return buttons;
+      },
+    );
+  }
+
   List<ui.PointerData> _convertEventToPointerData(
     ui.PointerChange change,
-    html.PointerEvent evt,
-  ) {
+    html.PointerEvent evt, {
+    int buttons,
+  }) {
     final List<html.PointerEvent> allEvents = _expandEvents(evt);
     final List<ui.PointerData> data = <ui.PointerData>[];
     for (int i = 0; i < allEvents.length; i++) {
@@ -371,7 +406,7 @@ class PointerAdapter extends BaseAdapter {
         device: event.pointerId,
         physicalX: event.client.x * ui.window.devicePixelRatio,
         physicalY: event.client.y * ui.window.devicePixelRatio,
-        buttons: event.buttons,
+        buttons: buttons ?? event.buttons,
         pressure: event.pressure,
         pressureMin: 0.0,
         pressureMax: 1.0,
