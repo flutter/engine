@@ -10,6 +10,13 @@ const bool _debugLogPointerEvents = false;
 /// The signature of a callback that handles pointer events.
 typedef PointerDataCallback = void Function(List<ui.PointerData>);
 
+// The mask for the bitfield of event buttons. Buttons not contained in this
+// mask are cut off.
+//
+// In Flutter we used `kMaxUnsignedSMI`, but since that value is not available
+// here, we use an already very large number (30 bits).
+const int _kButtonsMask = 0x3FFFFFFF;
+
 class PointerBinding {
   /// The singleton instance of this object.
   static PointerBinding get instance => _instance;
@@ -97,24 +104,6 @@ class PointerSupportDetector {
       'pointers:$hasPointerEvents, touch:$hasTouchEvents, mouse:$hasMouseEvents';
 }
 
-class _PressedButton {
-  const _PressedButton(this.deviceId, this.button);
-
-  // The id of the device pressing the button.
-  final int deviceId;
-
-  // The id of the button being pressed.
-  final int button;
-
-  bool operator ==(other) {
-    if (other is! _PressedButton) return false;
-    final _PressedButton otherButton = other;
-    return deviceId == otherButton.deviceId && button == otherButton.button;
-  }
-
-  int get hashCode => ((13801 + deviceId) * 37) + button;
-}
-
 /// Common functionality that's shared among adapters.
 abstract class BaseAdapter {
   BaseAdapter(this._callback, this.domRenderer, this._pointerDataConverter) {
@@ -131,19 +120,26 @@ abstract class BaseAdapter {
   PointerDataCallback _callback;
   PointerDataConverter _pointerDataConverter;
 
-  // A set of the buttons that are currently being pressed.
-  Set<_PressedButton> _pressedButtons = Set<_PressedButton>();
+  // A map from devices to buttons that each device has pressed.
+  Map<int, int> _pressedButtons = <int, int>{};
+
+  int _deviceDownButtons(int device) {
+    return _pressedButtons[device] ?? 0;
+  }
 
   bool _isButtonDown(int device, int button) {
-    return _pressedButtons.contains(_PressedButton(device, button));
+    return _deviceDownButtons(device) & button != 0;
   }
 
   void _updateButtonDownState(int device, int button, bool value) {
+    final int oldButtons = _deviceDownButtons(device);
+    int newButtons;
     if (value) {
-      _pressedButtons.add(_PressedButton(device, button));
+      newButtons = oldButtons | button;
     } else {
-      _pressedButtons.remove(_PressedButton(device, button));
+      newButtons = oldButtons & ~button;
     }
+    _pressedButtons[device] = newButtons & _kButtonsMask;
   }
 
   /// Each subclass is expected to override this method to attach its own event
@@ -260,6 +256,7 @@ abstract class BaseAdapter {
 
 const int _kPrimaryMouseButton = 0x1;
 const int _kSecondaryMouseButton = 0x2;
+const int _kMiddleMouseButton = 0x4;
 
 typedef _GetDeviceButton = int Function();
 
@@ -307,9 +304,9 @@ class PointerAdapter extends BaseAdapter {
   @override
   void _setup() {
     _addEventListener('pointerdown', (html.Event event) {
-      final int pointerButton = _pointerButtonFromHtmlEvent(event);
       final int device = _deviceFromHtmlEvent(event);
-      final int pointerButton = _pointerButtonDefaultToLastButton(event, device);
+      final html.PointerEvent pointerEvent = event;
+      final int pointerButton = _downEventButtons(pointerEvent);
       if (_isButtonDown(device, pointerButton)) {
         // TODO(flutter_web): Remove this temporary fix for right click
         // on web platform once context guesture is implemented.
@@ -329,9 +326,8 @@ class PointerAdapter extends BaseAdapter {
       // This check is currently defaulting to primary button for now.
       // Change this when context gesture is implemented in flutter framework.
       final html.PointerEvent pointerEvent = event;
-      final int pointerButton = _pointerButtonFromHtmlEvent(pointerEvent);
       final int device = _deviceFromHtmlEvent(event);
-      final int pointerButton = _pointerButtonDefaultToLastButton(event, device);
+      final int pointerButton = _moveEventButtons(event, device);
       _callback(_convertEventToPointerData(
         _isButtonDown(device, pointerButton)
             ? ui.PointerChange.move
@@ -345,21 +341,20 @@ class PointerAdapter extends BaseAdapter {
       // The pointer could have been released by a `pointerout` event, in which
       // case `pointerup` should have no effect.
       final int device = _deviceFromHtmlEvent(event);
-      final int pointerButton = _pointerButtonDefaultToLastButton(event, device);
-      if (pointerButton == 0) {
+      final int currentPointerButton = _deviceDownButtons(device);
+      if (currentPointerButton == 0) {
         return;
       }
-      _updateButtonDownState(device, pointerButton, false);
+      _updateButtonDownState(device, currentPointerButton, false);
       _callback(_convertEventToPointerData(ui.PointerChange.up, event));
     });
 
     // A browser fires cancel event if it concludes the pointer will no longer
     // be able to generate events (example: device is deactivated)
     _addEventListener('pointercancel', (html.Event event) {
-      final int pointerButton = _pointerButtonFromHtmlEvent(event);
       final int device = _deviceFromHtmlEvent(event);
-      final int pointerButton = _pointerButtonDefaultToLastButton(event, device);
-      _updateButtonDownState(pointerButton, device, false);
+      final int currentPointerButton = _deviceDownButtons(device);
+      _updateButtonDownState(device, currentPointerButton, false);
       _callback(_convertEventToPointerData(ui.PointerChange.cancel, event));
     });
 
@@ -375,18 +370,24 @@ class PointerAdapter extends BaseAdapter {
     });
   }
 
-  int _pointerButtonDefaultToLastButton(html.PointerEvent pointerEvent, int device) {
-    return _pointerButtonFromHtmlEvent(
-      pointerEvent,
-      getDefaultButton: () {
-        int buttons = 0;
-        for (_PressedButton pressedButton in _pressedButtons) {
-          if (pressedButton.deviceId == device)
-            buttons |= pressedButton.button;
-        }
-        return buttons;
-      },
-    );
+  int _downEventButtons(html.PointerEvent pointerEvent) {
+    switch (pointerEvent.button) {
+      case 0:
+        return _kPrimaryMouseButton;
+      case 1:
+        return _kMiddleMouseButton;
+      case 2:
+        return _kSecondaryMouseButton;
+      default:
+        return pointerEvent.button;
+    }
+  }
+
+  int _moveEventButtons(html.PointerEvent pointerEvent, int device) {
+    if (pointerEvent.button == -1) {
+      return _deviceDownButtons(device);
+    }
+    return _downEventButtons(pointerEvent);
   }
 
   List<ui.PointerData> _convertEventToPointerData(
