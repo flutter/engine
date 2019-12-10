@@ -106,7 +106,7 @@ void main() {
 
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerId': 1,
-        'button': 1,
+        'button': -1,
       }));
 
       expect(packets, hasLength(1));
@@ -143,14 +143,14 @@ void main() {
 
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerId': 1,
-        'button': 1,
+        'button': -1,
         'clientX': 10.0,
         'clientY': 10.0,
       }));
 
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerId': 1,
-        'button': 1,
+        'button': -1,
         'clientX': 20.0,
         'clientY': 20.0,
       }));
@@ -164,7 +164,7 @@ void main() {
 
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerId': 1,
-        'button': 1,
+        'button': -1,
         'clientX': 40.0,
         'clientY': 30.0,
       }));
@@ -178,7 +178,7 @@ void main() {
 
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerId': 1,
-        'button': 1,
+        'button': -1,
         'clientX': 20.0,
         'clientY': 10.0,
       }));
@@ -372,7 +372,7 @@ void main() {
       expect(packets[3].data[1].physicalDeltaY, equals(0.0));
     });
 
-    test('correctly convert buttons of down, move and up events', () {
+    test('correctly converts buttons of down, move and up events', () {
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
@@ -535,6 +535,63 @@ void main() {
       expect(packets[0].data[0].synthesized, equals(false));
       expect(packets[0].data[0].physicalX, equals(40));
       expect(packets[0].data[0].physicalY, equals(41));
+      expect(packets[0].data[0].buttons, equals(0));
+      packets.clear();
+    });
+
+    test('correctly handles button changes during a down sequence', () {
+      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      // Press LMB.
+      glassPane.dispatchEvent(html.PointerEvent('pointerdown', {
+        'pointerType': 'mouse',
+        'button': 0,
+      }));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      expect(packets[0].data[0].synthesized, equals(true));
+
+      expect(packets[0].data[1].change, equals(ui.PointerChange.down));
+      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].buttons, equals(1));
+      packets.clear();
+
+      // Press MMB.
+      glassPane.dispatchEvent(html.PointerEvent('pointermove', {
+        'pointerType': 'mouse',
+        'button': 1,
+      }));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].buttons, equals(5));
+      packets.clear();
+
+      // Release LMB.
+      glassPane.dispatchEvent(html.PointerEvent('pointermove', {
+        'pointerType': 'mouse',
+        'button': 0,
+      }));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].buttons, equals(4));
+      packets.clear();
+
+      // Release MMB.
+      glassPane.dispatchEvent(html.PointerEvent('pointerup', {
+        'pointerType': 'mouse',
+      }));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.up));
+      expect(packets[0].data[0].synthesized, equals(false));
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
     });
