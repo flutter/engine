@@ -67,16 +67,16 @@ class HtmlViewEmbedder {
 
     switch (decoded.method) {
       case 'create':
-        create(decoded, callback);
+        _create(decoded, callback);
         return;
       case 'dispose':
-        dispose(decoded, callback);
+        _dispose(decoded, callback);
         return;
     }
     callback(null);
   }
 
-  void create(
+  void _create(
       MethodCall methodCall, ui.PlatformMessageResponseCallback callback) {
     final Map<dynamic, dynamic> args = methodCall.arguments;
     final int viewId = args['id'];
@@ -112,11 +112,11 @@ class HtmlViewEmbedder {
     callback(codec.encodeSuccessEnvelope(null));
   }
 
-  void dispose(
+  void _dispose(
       MethodCall methodCall, ui.PlatformMessageResponseCallback callback) {
     int viewId = methodCall.arguments;
     const MethodCodec codec = StandardMethodCodec();
-    if (_views[viewId] == null) {
+    if (!_views.containsKey(viewId)) {
       callback(codec.encodeErrorEnvelope(
         code: 'unknown_view',
         message: 'trying to dispose an unknown view',
@@ -253,10 +253,26 @@ class HtmlViewEmbedder {
           } else if (mutator.rrect != null) {
             final SkPath path = SkPath();
             path.addRRect(mutator.rrect);
-            clipView.style.clipPath = 'path(${path.toSvgString()})';
+            _ensureSvgPathDefs();
+            html.Element pathDefs = _svgPathDefs.querySelector('#sk_path_defs');
+            _clipPathCount += 1;
+            html.Element newClipPath =
+                html.Element.html('<clipPath id="svgClip$_clipPathCount">'
+                    '<path d="${path.toSvgString()}">'
+                    '</path></clipPath>');
+            pathDefs.append(newClipPath);
+            clipView.style.clipPath = 'url(#svgClip$_clipPathCount)';
           } else if (mutator.path != null) {
             final SkPath path = mutator.path;
-            clipView.style.clipPath = 'path(${path.toSvgString()})';
+            _ensureSvgPathDefs();
+            html.Element pathDefs = _svgPathDefs.querySelector('#sk_path_defs');
+            _clipPathCount += 1;
+            html.Element newClipPath =
+                html.Element.html('<clipPath id="svgClip$_clipPathCount">'
+                    '<path d="${path.toSvgString()}">'
+                    '</path></clipPath>');
+            pathDefs.append(newClipPath);
+            clipView.style.clipPath = 'url(#svgClip$_clipPathCount)';
           }
           _resetAnchor(clipView);
           head = clipView;
@@ -274,8 +290,9 @@ class HtmlViewEmbedder {
     // HTML elements use logical (CSS) pixels, but we have been using physical
     // pixels, so scale down the head element to match the logical resolution.
     final double scale = html.window.devicePixelRatio;
+    final double inverseScale = 1 / scale;
     final Matrix4 scaleMatrix =
-        Matrix4.diagonal3Values(1 / scale, 1 / scale, 1);
+        Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
     headTransform.multiply(scaleMatrix);
     head.style.transform = float64ListToCssTransform(headTransform.storage);
   }
@@ -287,6 +304,21 @@ class HtmlViewEmbedder {
   void _resetAnchor(html.Element element) {
     element.style.transformOrigin = '0 0 0';
     element.style.position = 'absolute';
+  }
+
+  int _clipPathCount = 0;
+
+  html.Element _svgPathDefs;
+
+  /// Ensures we add a container of SVG path defs to the DOM so they can
+  /// be referred to in clip-path: url(#blah).
+  void _ensureSvgPathDefs() {
+    if (_svgPathDefs != null) return;
+    _svgPathDefs = html.Element.html(
+      '<svg width="0" height="0"><defs id="sk_path_defs"></defs></svg>',
+      treeSanitizer: _NullTreeSanitizer(),
+    );
+    skiaSceneHost.append(_svgPathDefs);
   }
 
   void submitFrame() {
