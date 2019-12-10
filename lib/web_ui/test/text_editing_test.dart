@@ -26,6 +26,7 @@ final InputConfiguration singlelineConfig = InputConfiguration(
   inputType: EngineInputType.text,
   obscureText: false,
   inputAction: 'TextInputAction.done',
+  autocorrect: true,
 );
 final Map<String, dynamic> flutterSinglelineConfig =
     createFlutterConfig('text');
@@ -34,6 +35,7 @@ final InputConfiguration multilineConfig = InputConfiguration(
   inputType: EngineInputType.multiline,
   obscureText: false,
   inputAction: 'TextInputAction.newline',
+  autocorrect: true,
 );
 final Map<String, dynamic> flutterMultilineConfig =
     createFlutterConfig('multiline');
@@ -105,6 +107,7 @@ void main() {
         inputType: EngineInputType.text,
         inputAction: 'TextInputAction.done',
         obscureText: true,
+        autocorrect: true,
       );
       editingElement.enable(
         config,
@@ -115,6 +118,46 @@ void main() {
       final InputElement input = document.getElementsByTagName('input')[0];
       expect(editingElement.domElement, input);
       expect(input.getAttribute('type'), 'password');
+
+      editingElement.disable();
+    });
+
+    test('Knows to turn autocorrect off', () {
+      final InputConfiguration config = InputConfiguration(
+        inputType: EngineInputType.text,
+        inputAction: 'TextInputAction.done',
+        obscureText: false,
+        autocorrect: false,
+      );
+      editingElement.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+      expect(document.getElementsByTagName('input'), hasLength(1));
+      final InputElement input = document.getElementsByTagName('input')[0];
+      expect(editingElement.domElement, input);
+      expect(input.getAttribute('autocorrect'), 'off');
+
+      editingElement.disable();
+    });
+
+    test('Knows to turn autocorrect on', () {
+      final InputConfiguration config = InputConfiguration(
+        inputType: EngineInputType.text,
+        inputAction: 'TextInputAction.done',
+        obscureText: false,
+        autocorrect: true,
+      );
+      editingElement.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+      expect(document.getElementsByTagName('input'), hasLength(1));
+      final InputElement input = document.getElementsByTagName('input')[0];
+      expect(editingElement.domElement, input);
+      expect(input.getAttribute('autocorrect'), 'on');
 
       editingElement.disable();
     });
@@ -143,7 +186,8 @@ void main() {
 
       // There should be no input action.
       expect(lastInputAction, isNull);
-    });
+    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+        skip: (browserEngine == BrowserEngine.firefox));
 
     test('Can set editing state correctly', () {
       editingElement.enable(
@@ -174,7 +218,8 @@ void main() {
 
       // There should be no input action.
       expect(lastInputAction, isNull);
-    });
+    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+        skip: (browserEngine == BrowserEngine.firefox));
 
     test('Multi-line mode also works', () {
       // The textarea element is created lazily.
@@ -219,7 +264,8 @@ void main() {
 
       // There should be no input action.
       expect(lastInputAction, isNull);
-    });
+    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+        skip: (browserEngine == BrowserEngine.firefox));
 
     test('Same instance can be re-enabled with different config', () {
       // Make sure there's nothing in the DOM yet.
@@ -263,6 +309,7 @@ void main() {
         inputType: EngineInputType.text,
         obscureText: false,
         inputAction: 'TextInputAction.done',
+        autocorrect: true,
       );
       editingElement.enable(
         config,
@@ -286,6 +333,7 @@ void main() {
         inputType: EngineInputType.multiline,
         obscureText: false,
         inputAction: 'TextInputAction.done',
+        autocorrect: true,
       );
       editingElement.enable(
         config,
@@ -636,7 +684,7 @@ void main() {
     });
 
     test(
-        'setClient, setLocationSize, setStyle, setEditingState, show, clearClient',
+        'setClient, setEditableSizeAndTransform, setStyle, setEditingState, show, clearClient',
         () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
@@ -682,6 +730,64 @@ void main() {
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
     });
+
+    test(
+      'setClient, show, setEditableSizeAndTransform, setStyle, setEditingState, clearClient',
+      () {
+        final MethodCall setClient = MethodCall(
+            'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
+        textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+
+        const MethodCall show = MethodCall('TextInput.show');
+        textEditing.handleTextInput(codec.encodeMethodCall(show));
+
+        final MethodCall setSizeAndTransform =
+            configureSetSizeAndTransformMethodCall(
+                150,
+                50,
+                Matrix4.translationValues(
+                  10.0,
+                  20.0,
+                  30.0,
+                ).storage.toList());
+        textEditing
+            .handleTextInput(codec.encodeMethodCall(setSizeAndTransform));
+
+        final MethodCall setStyle =
+            configureSetStyleMethodCall(12, 'sans-serif', 4, 4, 1);
+        textEditing.handleTextInput(codec.encodeMethodCall(setStyle));
+
+        const MethodCall setEditingState =
+            MethodCall('TextInput.setEditingState', <String, dynamic>{
+          'text': 'abcd',
+          'selectionBase': 2,
+          'selectionExtent': 3,
+        });
+        textEditing.handleTextInput(codec.encodeMethodCall(setEditingState));
+
+        final HtmlElement domElement = textEditing.editingElement.domElement;
+
+        checkInputEditingState(domElement, 'abcd', 2, 3);
+
+        // Check if the position is correct.
+        expect(
+          domElement.getBoundingClientRect(),
+          Rectangle<double>.fromPoints(const Point<double>(10.0, 20.0),
+              const Point<double>(160.0, 70.0)),
+        );
+        expect(
+          domElement.style.transform,
+          'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 10, 20, 30, 1)',
+        );
+        expect(
+          textEditing.editingElement.domElement.style.font,
+          '500 12px sans-serif',
+        );
+
+        const MethodCall clearClient = MethodCall('TextInput.clearClient');
+        textEditing.handleTextInput(codec.encodeMethodCall(clearClient));
+      },
+    );
 
     test('input font set succesfully with null fontWeightIndex', () {
       final MethodCall setClient = MethodCall(
@@ -819,7 +925,8 @@ void main() {
       );
 
       hideKeyboard();
-    });
+    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+        skip: (browserEngine == BrowserEngine.firefox));
 
     test('Multi-line mode also works', () {
       final MethodCall setClient = MethodCall(
@@ -877,7 +984,8 @@ void main() {
 
       // Confirm that [HybridTextEditing] didn't send any more messages.
       expect(spy.messages, isEmpty);
-    });
+    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+        skip: (browserEngine == BrowserEngine.firefox));
 
     test('sets correct input type in Android', () {
       debugOperatingSystemOverride = OperatingSystem.android;
@@ -1129,6 +1237,7 @@ class PlatformMessagesSpy {
 Map<String, dynamic> createFlutterConfig(
   String inputType, {
   bool obscureText = false,
+  bool autocorrect = true,
   String inputAction,
 }) {
   return <String, dynamic>{
@@ -1136,6 +1245,7 @@ Map<String, dynamic> createFlutterConfig(
       'name': 'TextInputType.$inputType',
     },
     'obscureText': obscureText,
+    'autocorrect': autocorrect,
     'inputAction': inputAction ?? 'TextInputAction.done',
   };
 }

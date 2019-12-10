@@ -41,10 +41,11 @@ class SkPath implements ui.Path {
 
   @override
   void addArc(ui.Rect oval, double startAngle, double sweepAngle) {
+    const double toDegrees = 180.0 / math.pi;
     _skPath.callMethod('addArc', <dynamic>[
       makeSkRect(oval),
-      startAngle,
-      sweepAngle,
+      startAngle * toDegrees,
+      sweepAngle * toDegrees,
     ]);
   }
 
@@ -82,20 +83,9 @@ class SkPath implements ui.Path {
 
   @override
   void addPolygon(List<ui.Offset> points, bool close) {
-    // TODO(het): Use `addPoly` once CanvasKit makes it available.
     assert(points != null);
-    if (points.isEmpty) {
-      return;
-    }
-
-    moveTo(points.first.dx, points.first.dy);
-    for (int i = 1; i < points.length; i++) {
-      final ui.Offset point = points[i];
-      lineTo(point.dx, point.dy);
-    }
-    if (close) {
-      this.close();
-    }
+    final Float32List encodedPoints = encodePointList(points);
+    _skPath.callMethod('addPoly', <dynamic>[encodedPoints, close]);
   }
 
   @override
@@ -123,11 +113,11 @@ class SkPath implements ui.Path {
   @override
   void arcTo(
       ui.Rect rect, double startAngle, double sweepAngle, bool forceMoveTo) {
-    const double radsToDegrees = 180.0 / math.pi;
+    const double toDegrees = 180.0 / math.pi;
     _skPath.callMethod('arcTo', <dynamic>[
       makeSkRect(rect),
-      startAngle * radsToDegrees,
-      sweepAngle * radsToDegrees,
+      startAngle * toDegrees,
+      sweepAngle * toDegrees,
       forceMoveTo,
     ]);
   }
@@ -205,8 +195,7 @@ class SkPath implements ui.Path {
   @override
   ui.Rect getBounds() {
     final js.JsObject bounds = _skPath.callMethod('getBounds');
-    return ui.Rect.fromLTRB(
-        bounds['fLeft'], bounds['fTop'], bounds['fRight'], bounds['fBottom']);
+    return fromSkRect(bounds);
   }
 
   @override
@@ -230,33 +219,41 @@ class SkPath implements ui.Path {
       double rotation = 0.0,
       bool largeArc = false,
       bool clockwise = true}) {
-    throw 'relativeArcToPoint';
+    _skPath.callMethod('rArcTo', <dynamic>[
+      radius.x,
+      radius.y,
+      rotation,
+      !largeArc,
+      !clockwise,
+      arcEndDelta.dx,
+      arcEndDelta.dy,
+    ]);
   }
 
   @override
   void relativeConicTo(double x1, double y1, double x2, double y2, double w) {
-    throw 'relativeConicTo';
+    _skPath.callMethod('rConicTo', <double>[x1, y1, x2, y2, w]);
   }
 
   @override
   void relativeCubicTo(
       double x1, double y1, double x2, double y2, double x3, double y3) {
-    throw 'relativeCubicTo';
+    _skPath.callMethod('rCubicTo', <double>[x1, y1, x2, y2, x3, y3]);
   }
 
   @override
   void relativeLineTo(double dx, double dy) {
-    throw 'relativeLineTo';
+    _skPath.callMethod('rLineTo', <double>[dx, dy]);
   }
 
   @override
   void relativeMoveTo(double dx, double dy) {
-    throw 'relativeMoveTo';
+    _skPath.callMethod('rMoveTo', <double>[dx, dy]);
   }
 
   @override
   void relativeQuadraticBezierTo(double x1, double y1, double x2, double y2) {
-    throw 'relativeQuadraticBezierTo';
+    _skPath.callMethod('rQuadTo', <double>[x1, y1, x2, y2]);
   }
 
   @override
@@ -274,10 +271,46 @@ class SkPath implements ui.Path {
     return SkPath._fromSkPath(newPath);
   }
 
+  static SkPath combine(
+    ui.PathOperation operation,
+    ui.Path uiPath1,
+    ui.Path uiPath2,
+  ) {
+    final SkPath path1 = uiPath1;
+    final SkPath path2 = uiPath2;
+    js.JsObject pathOp;
+    switch (operation) {
+      case ui.PathOperation.difference:
+        pathOp = canvasKit['PathOp']['Difference'];
+        break;
+      case ui.PathOperation.intersect:
+        pathOp = canvasKit['PathOp']['Intersect'];
+        break;
+      case ui.PathOperation.union:
+        pathOp = canvasKit['PathOp']['Union'];
+        break;
+      case ui.PathOperation.xor:
+        pathOp = canvasKit['PathOp']['XOR'];
+        break;
+      case ui.PathOperation.reverseDifference:
+        pathOp = canvasKit['PathOp']['ReverseDifference'];
+        break;
+    }
+    final js.JsObject newPath = canvasKit.callMethod(
+      'MakePathFromOp',
+      <js.JsObject>[
+        path1._skPath,
+        path2._skPath,
+        pathOp,
+      ],
+    );
+    return SkPath._fromSkPath(newPath);
+  }
+
   @override
   List<Subpath> get subpaths {
     throw UnimplementedError(
-        'Path.subpaths is not supported in the CanvasKit backend.');
+        'Path.subpaths is not used in the CanvasKit backend.');
   }
 
   @override
@@ -309,5 +342,9 @@ class SkPath implements ui.Path {
   List<dynamic> webOnlySerializeToCssPaint() {
     throw new UnimplementedError(
         'webOnlySerializeToCssPaint is not used in the CanvasKit backend.');
+  }
+
+  String toSvgString() {
+    return _skPath.callMethod('toSVGString');
   }
 }

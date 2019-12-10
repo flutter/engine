@@ -481,7 +481,12 @@ void verify_b141980393() {
 void can_display_platform_view_with_pixel_ratio() {
   window.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
-    builder.pushOffset(0.0, 0.0); // base
+    builder.pushTransform(Float64List.fromList([
+      2.0, 0.0, 0.0, 0.0,
+      0.0, 2.0, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0
+    ])); // base
     builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
     builder.pushOffset(0.0, 20.0); // offset
     builder.addPlatformView(42, width: 400.0, height: 280.0);
@@ -549,6 +554,69 @@ void push_frames_over_and_over() {
     window.render(builder.build());
     signalNativeTest();
     window.scheduleFrame();
+  };
+  window.scheduleFrame();
+}
+
+
+@pragma('vm:entry-point')
+void platform_view_mutators() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0); // base
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(800.0, 600.0)));
+
+    builder.pushOpacity(128);
+    builder.pushClipRect(Rect.fromLTWH(10.0, 10.0, 800.0 - 20.0, 600.0 - 20.0));
+    builder.pushClipRRect(RRect.fromLTRBR(10.0, 10.0, 800.0 - 10.0, 600.0 - 10.0, Radius.circular(14.0)));
+    builder.addPlatformView(42, width: 800.0, height: 600.0);
+    builder.pop(); // clip rrect
+    builder.pop(); // clip rect
+    builder.pop(); // opacity
+
+    builder.pop(); // base
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void platform_view_mutators_with_pixel_ratio() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0); // base
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
+
+    builder.pushOpacity(128);
+    builder.pushClipRect(Rect.fromLTWH(5.0, 5.0, 400.0 - 10.0, 300.0 - 10.0));
+    builder.pushClipRRect(RRect.fromLTRBR(5.0, 5.0, 400.0 - 5.0, 300.0 - 5.0, Radius.circular(7.0)));
+    builder.addPlatformView(42, width: 400.0, height: 300.0);
+    builder.pop(); // clip rrect
+    builder.pop(); // clip rect
+    builder.pop(); // opacity
+
+    builder.pop(); // base
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void empty_scene() {
+  window.onBeginFrame = (Duration duration) {
+    window.render(SceneBuilder().build());
+    signalNativeTest();
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void scene_with_no_container() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
+    window.render(builder.build());
+    signalNativeTest();
   };
   window.scheduleFrame();
 }

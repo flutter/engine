@@ -4,6 +4,102 @@
 
 part of engine;
 
+class EngineLineMetrics implements ui.LineMetrics {
+  EngineLineMetrics({
+    this.hardBreak,
+    this.ascent,
+    this.descent,
+    this.unscaledAscent,
+    this.height,
+    this.width,
+    this.left,
+    this.baseline,
+    this.lineNumber,
+  }) : text = null;
+
+  EngineLineMetrics.withText(
+    this.text, {
+    @required this.hardBreak,
+    this.ascent,
+    this.descent,
+    this.unscaledAscent,
+    this.height,
+    @required this.width,
+    this.left,
+    this.baseline,
+    @required this.lineNumber,
+  })  : assert(text != null),
+        assert(hardBreak != null),
+        assert(width != null),
+        assert(lineNumber != null && lineNumber >= 0);
+
+  /// The textual content representing this line.
+  final String text;
+
+  @override
+  final bool hardBreak;
+
+  @override
+  final double ascent;
+
+  @override
+  final double descent;
+
+  @override
+  final double unscaledAscent;
+
+  @override
+  final double height;
+
+  @override
+  final double width;
+
+  @override
+  final double left;
+
+  @override
+  final double baseline;
+
+  @override
+  final int lineNumber;
+
+  @override
+  int get hashCode => ui.hashValues(
+        text,
+        hardBreak,
+        ascent,
+        descent,
+        unscaledAscent,
+        height,
+        width,
+        left,
+        baseline,
+        lineNumber,
+      );
+
+  @override
+  bool operator ==(dynamic other) {
+    if (identical(this, other)) {
+      return true;
+    }
+
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    final EngineLineMetrics typedOther = other;
+    return text == typedOther.text &&
+        hardBreak == typedOther.hardBreak &&
+        ascent == typedOther.ascent &&
+        descent == typedOther.descent &&
+        unscaledAscent == typedOther.unscaledAscent &&
+        height == typedOther.height &&
+        width == typedOther.width &&
+        left == typedOther.left &&
+        baseline == typedOther.baseline &&
+        lineNumber == typedOther.lineNumber;
+  }
+}
+
 /// The web implementation of [ui.Paragraph].
 class EngineParagraph implements ui.Paragraph {
   /// This class is created by the engine, and should not be instantiated
@@ -18,7 +114,6 @@ class EngineParagraph implements ui.Paragraph {
     @required ui.TextAlign textAlign,
     @required ui.TextDirection textDirection,
     @required ui.Paint background,
-    @required List<ui.Shadow> shadows,
   })  : assert((plainText == null && paint == null) ||
             (plainText != null && paint != null)),
         _paragraphElement = paragraphElement,
@@ -27,8 +122,7 @@ class EngineParagraph implements ui.Paragraph {
         _textAlign = textAlign,
         _textDirection = textDirection,
         _paint = paint,
-        _background = background,
-        _shadows = shadows;
+        _background = background;
 
   final html.HtmlElement _paragraphElement;
   final ParagraphGeometricStyle _geometricStyle;
@@ -37,7 +131,6 @@ class EngineParagraph implements ui.Paragraph {
   final ui.TextAlign _textAlign;
   final ui.TextDirection _textDirection;
   final ui.Paint _background;
-  final List<ui.Shadow> _shadows;
 
   @visibleForTesting
   String get plainText => _plainText;
@@ -75,9 +168,28 @@ class EngineParagraph implements ui.Paragraph {
   /// Valid only after [layout] has been called.
   double get _lineHeight => _measurementResult?.lineHeight ?? 0;
 
-  // TODO(flutter_web): see https://github.com/flutter/flutter/issues/33613.
   @override
-  double get longestLine => 0;
+  double get longestLine {
+    if (_measurementResult.lines != null) {
+      double maxWidth = 0.0;
+      for (ui.LineMetrics metrics in _measurementResult.lines) {
+        if (maxWidth < metrics.width) {
+          maxWidth = metrics.width;
+        }
+      }
+      return maxWidth;
+    }
+
+    // In the single-line case, the longest line is equal to the maximum
+    // intrinsic width of the paragraph.
+    if (_measurementResult.isSingleLine) {
+      return _measurementResult.maxIntrinsicWidth;
+    }
+
+    // If we don't have any line metrics information, there's no way to know the
+    // longest line in a multi-line paragraph.
+    return 0.0;
+  }
 
   @override
   double get minIntrinsicWidth => _measurementResult?.minIntrinsicWidth ?? 0;
@@ -104,7 +216,25 @@ class EngineParagraph implements ui.Paragraph {
 
   /// If not null, this list would contain the strings representing each line
   /// in the paragraph.
-  List<String> get _lines => _measurementResult?.lines;
+  ///
+  /// Avoid repetitively accessing this field as it generates a new list every
+  /// time.
+  List<String> get _lines {
+    if (_plainText == null) {
+      return null;
+    }
+
+    final List<EngineLineMetrics> metricsList = _measurementResult.lines;
+    if (metricsList == null) {
+      return null;
+    }
+
+    final List<String> lines = <String>[];
+    for (EngineLineMetrics metrics in metricsList) {
+      lines.add(metrics.text);
+    }
+    return lines;
+  }
 
   @override
   void layout(ui.ParagraphConstraints constraints) {
@@ -162,18 +292,21 @@ class EngineParagraph implements ui.Paragraph {
   /// - Paragraphs that have a non-null word-spacing.
   /// - Paragraphs with a background.
   bool get _drawOnCanvas {
+    if (_measurementResult.lines == null) {
+      return false;
+    }
+
     bool canDrawTextOnCanvas;
-    if (TextMeasurementService.enableExperimentalCanvasImplementation) {
-      canDrawTextOnCanvas = _lines != null;
+    if (_measurementService.isCanvas) {
+      canDrawTextOnCanvas = true;
     } else {
-      canDrawTextOnCanvas = _measurementResult.isSingleLine &&
-          _plainText != null &&
-          _geometricStyle.ellipsis == null;
+      canDrawTextOnCanvas = _geometricStyle.ellipsis == null;
     }
 
     return canDrawTextOnCanvas &&
         _geometricStyle.decoration == null &&
-        _geometricStyle.wordSpacing == null;
+        _geometricStyle.wordSpacing == null &&
+        _geometricStyle.shadows == null;
   }
 
   /// Whether this paragraph has been laid out.
@@ -305,8 +438,7 @@ class EngineParagraph implements ui.Paragraph {
 
   @override
   List<ui.LineMetrics> computeLineMetrics() {
-    // TODO(flutter_web): https://github.com/flutter/flutter/issues/39537
-    return null;
+    return _measurementResult.lines;
   }
 }
 
@@ -325,7 +457,6 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
     ui.StrutStyle strutStyle,
     String ellipsis,
     ui.Locale locale,
-    List<ui.Shadow> shadows,
   })  : _textAlign = textAlign,
         _textDirection = textDirection,
         _fontWeight = fontWeight,
@@ -337,8 +468,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
         // TODO(b/128317744): add support for strut style.
         _strutStyle = strutStyle,
         _ellipsis = ellipsis,
-        _locale = locale,
-        _shadows = shadows;
+        _locale = locale;
 
   final ui.TextAlign _textAlign;
   final ui.TextDirection _textDirection;
@@ -351,7 +481,6 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
   final EngineStrutStyle _strutStyle;
   final String _ellipsis;
   final ui.Locale _locale;
-  final List<ui.Shadow> _shadows;
 
   String get _effectiveFontFamily {
     if (assertionsEnabled) {
@@ -368,7 +497,11 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
   }
 
   double get _lineHeight {
-    if (_strutStyle == null || _strutStyle._height == null) {
+    // TODO(mdebbar): Implement proper support for strut styles.
+    // https://github.com/flutter/flutter/issues/32243
+    if (_strutStyle == null ||
+        _strutStyle._height == null ||
+        _strutStyle._height == 0) {
       // When there's no strut height, always use paragraph style height.
       return _height;
     }
@@ -419,8 +552,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
           'fontSize: ${_fontSize != null ? _fontSize.toStringAsFixed(1) : "unspecified"}, '
           'height: ${_height != null ? "${_height.toStringAsFixed(1)}x" : "unspecified"}, '
           'ellipsis: ${_ellipsis != null ? "\"$_ellipsis\"" : "unspecified"}, '
-          'locale: ${_locale ?? "unspecified"}, '
-          'shadows: ${_shadows ?? "unspecified"}'
+          'locale: ${_locale ?? "unspecified"}'
           ')';
     } else {
       return super.toString();
@@ -1011,7 +1143,6 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
         lineHeight: _paragraphStyle._height,
         maxLines: _paragraphStyle._maxLines,
         ellipsis: _paragraphStyle._ellipsis,
-        shadows: _paragraphStyle._shadows,
       ),
       plainText: null,
       paint: null,
@@ -1098,15 +1229,12 @@ void _applyParagraphStyleToElement({
     if (style._effectiveFontFamily != null) {
       cssStyle.fontFamily = canonicalizeFontFamily(style._effectiveFontFamily);
     }
-    if (style._shadows != null) {
-      cssStyle.textShadow = _shadowListToCss(style._shadows);
-    }
   } else {
     if (style._textAlign != previousStyle._textAlign) {
       cssStyle.textAlign = textAlignToCssValue(
           style._textAlign, style._textDirection ?? ui.TextDirection.ltr);
     }
-    if (style._lineHeight != style._lineHeight) {
+    if (style._lineHeight != previousStyle._lineHeight) {
       cssStyle.lineHeight = '${style._lineHeight}';
     }
     if (style._textDirection != previousStyle._textDirection) {
@@ -1126,9 +1254,6 @@ void _applyParagraphStyleToElement({
     }
     if (style._fontFamily != previousStyle._fontFamily) {
       cssStyle.fontFamily = canonicalizeFontFamily(style._fontFamily);
-    }
-    if (style._shadows != previousStyle._shadows) {
-      cssStyle.textShadow = _shadowListToCss(style._shadows);
     }
   }
 }

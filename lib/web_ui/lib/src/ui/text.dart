@@ -471,16 +471,53 @@ abstract class TextStyle {
     Paint foreground,
     List<Shadow> shadows,
     List<FontFeature> fontFeatures,
-  }) = engine.EngineTextStyle;
-
-  @override
-  int get hashCode;
-
-  @override
-  bool operator ==(dynamic other);
-
-  @override
-  String toString();
+  }) {
+    if (engine.experimentalUseSkia) {
+      return engine.SkTextStyle(
+          color: color,
+          decoration: decoration,
+          decorationColor: decorationColor,
+          decorationStyle: decorationStyle,
+          decorationThickness: decorationThickness,
+          fontWeight: fontWeight,
+          fontStyle: fontStyle,
+          textBaseline: textBaseline,
+          fontFamily: fontFamily,
+          fontFamilyFallback: fontFamilyFallback,
+          fontSize: fontSize,
+          letterSpacing: letterSpacing,
+          wordSpacing: wordSpacing,
+          height: height,
+          locale: locale,
+          background: background,
+          foreground: foreground,
+          shadows: shadows,
+          fontFeatures: fontFeatures,
+      );
+    } else {
+      return engine.EngineTextStyle(
+          color: color,
+          decoration: decoration,
+          decorationColor: decorationColor,
+          decorationStyle: decorationStyle,
+          decorationThickness: decorationThickness,
+          fontWeight: fontWeight,
+          fontStyle: fontStyle,
+          textBaseline: textBaseline,
+          fontFamily: fontFamily,
+          fontFamilyFallback: fontFamilyFallback,
+          fontSize: fontSize,
+          letterSpacing: letterSpacing,
+          wordSpacing: wordSpacing,
+          height: height,
+          locale: locale,
+          background: background,
+          foreground: foreground,
+          shadows: shadows,
+          fontFeatures: fontFeatures,
+      );
+    }
+  }
 }
 
 /// An opaque object that determines the configuration used by
@@ -552,16 +589,37 @@ abstract class ParagraphStyle {
     StrutStyle strutStyle,
     String ellipsis,
     Locale locale,
-  }) = engine.EngineParagraphStyle;
-
-  @override
-  bool operator ==(dynamic other);
-
-  @override
-  int get hashCode;
-
-  @override
-  String toString();
+  }) {
+    if (engine.experimentalUseSkia) {
+      return engine.SkParagraphStyle(
+        textAlign: textAlign,
+        textDirection: textDirection,
+        maxLines: maxLines,
+        fontFamily: fontFamily,
+        fontSize: fontSize,
+        height: height,
+        fontWeight: fontWeight,
+        fontStyle: fontStyle,
+        strutStyle: strutStyle,
+        ellipsis: ellipsis,
+        locale: locale,
+      );
+    } else {
+      return engine.EngineParagraphStyle(
+        textAlign: textAlign,
+        textDirection: textDirection,
+        maxLines: maxLines,
+        fontFamily: fontFamily,
+        fontSize: fontSize,
+        height: height,
+        fontWeight: fontWeight,
+        fontStyle: fontStyle,
+        strutStyle: strutStyle,
+        ellipsis: ellipsis,
+        locale: locale,
+      );
+    }
+  }
 }
 
 abstract class StrutStyle {
@@ -610,12 +668,6 @@ abstract class StrutStyle {
     FontStyle fontStyle,
     bool forceStrutHeight,
   }) = engine.EngineStrutStyle;
-
-  @override
-  int get hashCode;
-
-  @override
-  bool operator ==(dynamic other);
 }
 
 /// A direction in which text flows.
@@ -1097,48 +1149,101 @@ enum BoxWidthStyle {
   max,
 }
 
-class LineMetrics {
-  LineMetrics({
-    this.hardBreak,
-    this.ascent,
-    this.descent,
-    this.unscaledAscent,
-    this.height,
-    this.width,
-    this.left,
-    this.baseline,
-    this.lineNumber,
-  });
+abstract class LineMetrics {
+  factory LineMetrics({
+    bool hardBreak,
+    double ascent,
+    double descent,
+    double unscaledAscent,
+    double height,
+    double width,
+    double left,
+    double baseline,
+    int lineNumber,
+  }) = engine.EngineLineMetrics;
 
-  @pragma('vm:entry-point')
-  LineMetrics._(
-    this.hardBreak,
-    this.ascent,
-    this.descent,
-    this.unscaledAscent,
-    this.height,
-    this.width,
-    this.left,
-    this.baseline,
-    this.lineNumber,
-  );
-
+  /// {@template dart.ui.LineMetrics.hardBreak}
+  /// True if this line ends with an explicit line break (e.g. '\n') or is the end
+  /// of the paragraph. False otherwise.
+  /// {@endtemplate}
   final bool hardBreak;
 
+  /// {@template dart.ui.LineMetrics.ascent}
+  /// The rise from the [baseline] as calculated from the font and style for this line.
+  ///
+  /// This is the final computed ascent and can be impacted by the strut, height, scaling,
+  /// as well as outlying runs that are very tall.
+  ///
+  /// The [ascent] is provided as a positive value, even though it is typically defined
+  /// in fonts as negative. This is to ensure the signage of operations with these
+  /// metrics directly reflects the intended signage of the value. For example,
+  /// the y coordinate of the top edge of the line is `baseline - ascent`.
+  /// {@endtemplate}
   final double ascent;
 
+  /// {@template dart.ui.LineMetrics.descent}
+  /// The drop from the [baseline] as calculated from the font and style for this line.
+  ///
+  /// This is the final computed ascent and can be impacted by the strut, height, scaling,
+  /// as well as outlying runs that are very tall.
+  ///
+  /// The y coordinate of the bottom edge of the line is `baseline + descent`.
+  /// {@endtemplate}
   final double descent;
 
+  /// {@template dart.ui.LineMetrics.unscaledAscent}
+  /// The rise from the [baseline] as calculated from the font and style for this line
+  /// ignoring the [TextStyle.height].
+  ///
+  /// The [unscaledAscent] is provided as a positive value, even though it is typically
+  /// defined in fonts as negative. This is to ensure the signage of operations with
+  /// these metrics directly reflects the intended signage of the value.
+  /// {@endtemplate}
   final double unscaledAscent;
 
+  /// {@template dart.ui.LineMetrics.height}
+  /// Total height of the line from the top edge to the bottom edge.
+  ///
+  /// This is equivalent to `round(ascent + descent)`. This value is provided
+  /// separately due to rounding causing sub-pixel differences from the unrounded
+  /// values.
+  /// {@endtemplate}
   final double height;
 
+  /// {@template dart.ui.LineMetrics.width}
+  /// Width of the line from the left edge of the leftmost glyph to the right
+  /// edge of the rightmost glyph.
+  ///
+  /// This is not the same as the width of the pargraph.
+  ///
+  /// See also:
+  ///
+  ///  * [Paragraph.width], the max width passed in during layout.
+  ///  * [Paragraph.longestLine], the width of the longest line in the paragraph.
+  /// {@endtemplate}
   final double width;
 
+  /// {@template dart.ui.LineMetrics.left}
+  /// The x coordinate of left edge of the line.
+  ///
+  /// The right edge can be obtained with `left + width`.
+  /// {@endtemplate}
   final double left;
 
+  /// {@template dart.ui.LineMetrics.baseline}
+  /// The y coordinate of the baseline for this line from the top of the paragraph.
+  ///
+  /// The bottom edge of the paragraph up to and including this line may be obtained
+  /// through `baseline + descent`.
+  /// {@endtemplate}
   final double baseline;
 
+  /// {@template dart.ui.LineMetrics.lineNumber}
+  /// The number of this line in the overall paragraph, with the first line being
+  /// index zero.
+  ///
+  /// For example, the first line is line 0, second line is line 1.
+  /// {@endtemplate}
   final int lineNumber;
 }
 
@@ -1240,7 +1345,7 @@ abstract class Paragraph {
   /// have word breaks on both sides. In such cases, this method will return
   /// [offset, offset+1]. Word boundaries are defined more precisely in Unicode
   /// Standard Annex #29 http://www.unicode.org/reports/tr29/#Word_Boundaries
-  TextRange getWordBoundary(TextPosition  position);
+  TextRange getWordBoundary(TextPosition position);
 
   /// Returns the [TextRange] of the line at the given [TextPosition].
   ///
@@ -1287,8 +1392,13 @@ abstract class Paragraph {
 abstract class ParagraphBuilder {
   /// Creates a [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].
-  factory ParagraphBuilder(ParagraphStyle style) =>
-      engine.EngineParagraphBuilder(style);
+  factory ParagraphBuilder(ParagraphStyle style) {
+    if (engine.experimentalUseSkia) {
+      return engine.SkParagraphBuilder(style);
+    } else {
+      return engine.EngineParagraphBuilder(style);
+    }
+  }
 
   /// Applies the given style to the added text until [pop] is called.
   ///
@@ -1380,8 +1490,5 @@ abstract class ParagraphBuilder {
 /// * `fontFamily`: The family name used to identify the font in text styles.
 ///  If this is not provided, then the family name will be extracted from the font file.
 Future<void> loadFontFromList(Uint8List list, {String fontFamily}) {
-  if (engine.assertionsEnabled) {
-    throw UnsupportedError('loadFontFromList is not supported.');
-  }
-  return Future<void>.value(null);
+  return _fontCollection.loadFontFromList(list, fontFamily: fontFamily);
 }

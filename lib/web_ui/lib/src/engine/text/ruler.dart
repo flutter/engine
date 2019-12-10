@@ -111,8 +111,7 @@ class ParagraphGeometricStyle {
         letterSpacing == typedOther.letterSpacing &&
         wordSpacing == typedOther.wordSpacing &&
         decoration == typedOther.decoration &&
-        ellipsis == typedOther.ellipsis &&
-        shadows == typedOther.shadows;
+        ellipsis == typedOther.ellipsis;
   }
 
   @override
@@ -127,11 +126,7 @@ class ParagraphGeometricStyle {
         wordSpacing,
         decoration,
         ellipsis,
-        _hashShadows(shadows),
       );
-
-  int _hashShadows(List<ui.Shadow> shadows) =>
-      (shadows == null ? '' : _shadowListToCss(shadows)).hashCode;
 
   @override
   String toString() {
@@ -144,7 +139,6 @@ class ParagraphGeometricStyle {
           ' wordSpacing: $wordSpacing,'
           ' decoration: $decoration,'
           ' ellipsis: $ellipsis,'
-          ' shadows: $shadows,'
           ')';
     } else {
       return super.toString();
@@ -211,14 +205,30 @@ class TextDimensions {
       // Rich text: deeply copy contents. This is the slow case that should be
       // avoided if fast layout performance is desired.
       final html.Element copy = from._paragraphElement.clone(true);
-      _element.children.addAll(copy.children);
+      _element.nodes.addAll(copy.nodes);
     }
   }
 
   /// Updated element style width.
-  void updateWidth(String cssWidth) {
+  void updateConstraintWidth(double width, String ellipsis) {
     _invalidateBoundsCache();
-    _element.style.width = cssWidth;
+
+    if (width.isInfinite) {
+      _element.style
+        ..width = null
+        ..whiteSpace = 'pre';
+    } else if (ellipsis != null) {
+      // Width is finite, but we don't want to let the text soft-wrap when
+      // ellipsis overflow is enabled.
+      _element.style
+        ..width = '${width}px'
+        ..whiteSpace = 'pre';
+    } else {
+      // Width is finite and there's no ellipsis overflow.
+      _element.style
+        ..width = '${width}px'
+        ..whiteSpace = 'pre-wrap';
+    }
   }
 
   void _invalidateBoundsCache() {
@@ -248,10 +258,6 @@ class TextDimensions {
       ..textDecoration = style.decoration;
     if (style.lineHeight != null) {
       _element.style.lineHeight = style.lineHeight.toString();
-    }
-    final List<ui.Shadow> shadowList = style.shadows;
-    if (shadowList != null) {
-      _element.style.textShadow = _shadowListToCss(shadowList);
     }
     _invalidateBoundsCache();
   }
@@ -415,6 +421,10 @@ class ParagraphRuler {
       ..border = '0'
       ..padding = '0';
 
+    if (assertionsEnabled) {
+      _singleLineHost.setAttribute('data-ruler', 'single-line');
+    }
+
     singleLineDimensions.applyStyle(style);
 
     // Force single-line (even if wider than screen) and preserve whitespaces.
@@ -436,6 +446,10 @@ class ParagraphRuler {
       ..margin = '0'
       ..border = '0'
       ..padding = '0';
+
+    if (assertionsEnabled) {
+      _minIntrinsicHost.setAttribute('data-ruler', 'min-intrinsic');
+    }
 
     minIntrinsicDimensions.applyStyle(style);
 
@@ -466,6 +480,10 @@ class ParagraphRuler {
       ..border = '0'
       ..padding = '0';
 
+    if (assertionsEnabled) {
+      _constrainedHost.setAttribute('data-ruler', 'constrained');
+    }
+
     constrainedDimensions.applyStyle(style);
     final html.CssStyleDeclaration elementStyle =
         constrainedDimensions._element.style;
@@ -473,17 +491,8 @@ class ParagraphRuler {
       ..display = 'block'
       ..overflowWrap = 'break-word';
 
-    // TODO(flutter_web): Implement the ellipsis overflow for multi-line text
-    // too. As a pre-requisite, we need to be able to programmatically find
-    // line breaks.
-    if (style.ellipsis == null) {
-      elementStyle.whiteSpace = 'pre-wrap';
-    } else {
-      // The height measurement is affected by whether the text has the ellipsis
-      // overflow property or not. This is because when ellipsis is set, we may
-      // not render all the lines, but stop at the first line that overflows.
+    if (style.ellipsis != null) {
       elementStyle
-        ..whiteSpace = 'pre'
         ..overflow = 'hidden'
         ..textOverflow = 'ellipsis';
     }
@@ -504,6 +513,10 @@ class ParagraphRuler {
       ..margin = '0'
       ..border = '0'
       ..padding = '0';
+
+    if (assertionsEnabled) {
+      _lineHeightHost.setAttribute('data-ruler', 'line-height');
+    }
 
     lineHeightDimensions.applyStyle(style);
 
@@ -589,7 +602,10 @@ class ParagraphRuler {
     // The extra 0.5 is because sometimes the browser needs slightly more space
     // than the size it reports back. When that happens the text may be wrap
     // when we thought it didn't.
-    constrainedDimensions.updateWidth('${constraints.width + 0.5}px');
+    constrainedDimensions.updateConstraintWidth(
+      constraints.width + 0.5,
+      style.ellipsis,
+    );
   }
 
   /// Returns text position in a paragraph that contains multiple
@@ -695,7 +711,7 @@ class ParagraphRuler {
       ..appendText(before)
       ..append(rangeSpan)
       ..appendText(after);
-    constrainedDimensions.updateWidth('${constraints.width}px');
+    constrainedDimensions.updateConstraintWidth(constraints.width, null);
 
     // Measure the rects of [rangeSpan].
     final List<html.Rectangle<num>> clientRects = rangeSpan.getClientRects();
@@ -832,9 +848,9 @@ class MeasurementResult {
   /// {@macro dart.ui.paragraph.ideographicBaseline}
   final double ideographicBaseline;
 
-  /// Substrings that represent how the text should wrap into multiple lines to
-  /// satisfy [constraintWidth],
-  final List<String> lines;
+  /// The full list of [EngineLineMetrics] that describe in detail the various metrics
+  /// of each laid out line.
+  final List<EngineLineMetrics> lines;
 
   const MeasurementResult(
     this.constraintWidth, {

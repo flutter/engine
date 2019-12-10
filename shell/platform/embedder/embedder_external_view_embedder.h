@@ -49,8 +49,8 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   ///                                     embedder for presentation.
   ///
   EmbedderExternalViewEmbedder(
-      CreateRenderTargetCallback create_render_target_callback,
-      PresentCallback present_callback);
+      const CreateRenderTargetCallback& create_render_target_callback,
+      const PresentCallback& present_callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Collects the external view embedder.
@@ -143,6 +143,10 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   void Reset();
 
   SkMatrix GetSurfaceTransformation() const;
+
+  bool RenderPictureToRenderTarget(
+      sk_sp<SkPicture> picture,
+      const EmbedderRenderTarget* render_target) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderExternalViewEmbedder);
 };

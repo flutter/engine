@@ -16,6 +16,12 @@ enum BrowserEngine {
   /// The engine that powers Firefox.
   firefox,
 
+  /// The engine that powers Edge.
+  edge,
+
+  /// The engine that powers Internet Explorer 11.
+  ie11,
+
   /// We were unable to detect the current browser engine.
   unknown,
 }
@@ -30,11 +36,16 @@ BrowserEngine get browserEngine => _browserEngine ??= _detectBrowserEngine();
 
 BrowserEngine _detectBrowserEngine() {
   final String vendor = html.window.navigator.vendor;
+  final String agent = html.window.navigator.userAgent.toLowerCase();
   if (vendor == 'Google Inc.') {
     return BrowserEngine.blink;
   } else if (vendor == 'Apple Computer, Inc.') {
     return BrowserEngine.webkit;
-  } else if (vendor == '') {
+  } else if (agent.contains('edge/')) {
+    return BrowserEngine.edge;
+  } else if (agent.contains('trident/7.0')) {
+    return BrowserEngine.ie11;
+  } else if (vendor == '' && agent.contains('firefox')) {
     // An empty string means firefox:
     // https://developer.mozilla.org/en-US/docs/Web/API/Navigator/vendor
     return BrowserEngine.firefox;
@@ -42,7 +53,6 @@ BrowserEngine _detectBrowserEngine() {
 
   // Assume blink otherwise, but issue a warning.
   print('WARNING: failed to detect current browser engine.');
-
   return BrowserEngine.unknown;
 }
 
@@ -115,3 +125,19 @@ OperatingSystem _detectOperatingSystem() {
     return OperatingSystem.unknown;
   }
 }
+
+/// List of Operating Systems we know to be working on laptops/desktops.
+///
+/// These devices tend to behave differently on many core issues such as events,
+/// screen readers, input devices.
+const Set<OperatingSystem> _desktopOperatingSystems = {
+  OperatingSystem.macOs,
+  OperatingSystem.linux,
+  OperatingSystem.windows,
+};
+
+/// A flag to check if the current operating system is a laptop/desktop
+/// operating system.
+///
+/// See [_desktopOperatingSystems].
+bool get isDesktop => _desktopOperatingSystems.contains(operatingSystem);

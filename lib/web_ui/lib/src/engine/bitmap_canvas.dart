@@ -579,7 +579,9 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   void drawImage(ui.Image image, ui.Offset p, ui.PaintData paint) {
     _applyPaint(paint);
     final HtmlImage htmlImage = image;
-    final html.Element imgElement = htmlImage.cloneImageElement();
+    final html.ImageElement imgElement = htmlImage.cloneImageElement();
+    String blendMode = ctx.globalCompositeOperation;
+    imgElement.style.mixBlendMode = blendMode;
     _drawImage(imgElement, p);
     _childOverdraw = true;
   }
@@ -594,7 +596,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       }
     } else {
       final String cssTransform =
-          matrix4ToCssTransform(transformWithOffset(currentTransform, p));
+          matrix4ToCssTransform3d(transformWithOffset(currentTransform, p));
       imgElement.style
         ..transformOrigin = '0 0 0'
         ..transform = cssTransform;
@@ -618,6 +620,8 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     } else {
       _applyPaint(paint);
       final html.Element imgElement = htmlImage.cloneImageElement();
+      final ui.BlendMode blendMode = paint.blendMode;
+      imgElement.style.mixBlendMode = _stringForBlendMode(blendMode);
       if (requiresClipping) {
         save();
         clipRect(dst);
@@ -657,10 +661,14 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   }
 
   void _drawTextLine(
-      ParagraphGeometricStyle style, String line, double x, double y) {
+    ParagraphGeometricStyle style,
+    EngineLineMetrics line,
+    double x,
+    double y,
+  ) {
     final double letterSpacing = style.letterSpacing;
     if (letterSpacing == null || letterSpacing == 0.0) {
-      ctx.fillText(line, x, y);
+      ctx.fillText(line.text, x, y);
     } else {
       // When letter-spacing is set, we go through a more expensive code path
       // that renders each character separately with the correct spacing
@@ -672,9 +680,9 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       // would put 5px before each letter and 5px after it, but on the web, we
       // put no spacing before the letter and 10px after it. This is how the DOM
       // does it.
-      final int len = line.length;
+      final int len = line.text.length;
       for (int i = 0; i < len; i++) {
-        final String char = line[i];
+        final String char = line.text[i];
         ctx.fillText(char, x, y);
         x += letterSpacing + ctx.measureText(char).width;
       }
@@ -688,8 +696,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
 
     if (paragraph._drawOnCanvas && _childOverdraw == false) {
-      final List<String> lines =
-          paragraph._lines ?? <String>[paragraph._plainText];
+      final List<EngineLineMetrics> lines = paragraph._measurementResult.lines;
 
       final ui.PaintData backgroundPaint =
           paragraph._background?.webOnlyPaintData;
@@ -728,7 +735,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       }
     } else {
       final String cssTransform =
-          matrix4ToCssTransform(transformWithOffset(currentTransform, offset));
+          matrix4ToCssTransform3d(transformWithOffset(currentTransform, offset));
       paragraphElement.style
         ..transformOrigin = '0 0 0'
         ..transform = cssTransform;
@@ -739,7 +746,8 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   /// Paints the [picture] into this canvas.
   void drawPicture(ui.Picture picture) {
-    picture.recordingCanvas.apply(this);
+    final EnginePicture enginePicture = picture;
+    enginePicture.recordingCanvas.apply(this);
   }
 
   /// Draws vertices on a gl context.
@@ -962,7 +970,7 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
         ..translate(clipOffsetX, clipOffsetY);
       curElement.style
         ..overflow = 'hidden'
-        ..transform = matrix4ToCssTransform(newClipTransform)
+        ..transform = matrix4ToCssTransform3d(newClipTransform)
         ..transformOrigin = '0 0 0'
         ..width = '${rect.right - clipOffsetX}px'
         ..height = '${rect.bottom - clipOffsetY}px';
@@ -978,7 +986,7 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
       curElement.style
         ..borderRadius = borderRadius
         ..overflow = 'hidden'
-        ..transform = matrix4ToCssTransform(newClipTransform)
+        ..transform = matrix4ToCssTransform3d(newClipTransform)
         ..transformOrigin = '0 0 0'
         ..width = '${roundRect.right - clipOffsetX}px'
         ..height = '${roundRect.bottom - clipOffsetY}px';
@@ -1016,6 +1024,6 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
 
 String _cssTransformAtOffset(
     Matrix4 transform, double offsetX, double offsetY) {
-  return matrix4ToCssTransform(
+  return matrix4ToCssTransform3d(
       transformWithOffset(transform, ui.Offset(offsetX, offsetY)));
 }

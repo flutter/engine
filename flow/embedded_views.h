@@ -19,6 +19,7 @@
 
 namespace flutter {
 
+// TODO(chinmaygarde): Make these enum names match the style guide.
 enum MutatorType { clip_rect, clip_rrect, clip_path, transform, opacity };
 
 // Stores mutation information like clipping or transform.
@@ -142,6 +143,7 @@ class MutatorsStack {
   // Returns an iterator pointing to the bottom of the stack.
   const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator Bottom()
       const;
+  bool is_empty() const { return vector_.empty(); }
 
   bool operator==(const MutatorsStack& other) const {
     if (vector_.size() != other.vector_.size()) {
@@ -155,7 +157,23 @@ class MutatorsStack {
     return true;
   }
 
+  bool operator==(const std::vector<Mutator>& other) const {
+    if (vector_.size() != other.size()) {
+      return false;
+    }
+    for (size_t i = 0; i < vector_.size(); i++) {
+      if (*vector_[i] != other[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   bool operator!=(const MutatorsStack& other) const {
+    return !operator==(other);
+  }
+
+  bool operator!=(const std::vector<Mutator>& other) const {
     return !operator==(other);
   }
 

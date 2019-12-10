@@ -55,7 +55,8 @@ class EngineWindow extends ui.Window {
       double windowInnerHeight;
       if (html.window.visualViewport != null) {
         windowInnerWidth = html.window.visualViewport.width * devicePixelRatio;
-        windowInnerHeight = html.window.visualViewport.height * devicePixelRatio;
+        windowInnerHeight =
+            html.window.visualViewport.height * devicePixelRatio;
       } else {
         windowInnerWidth = html.window.innerWidth * devicePixelRatio;
         windowInnerHeight = html.window.innerHeight * devicePixelRatio;
@@ -158,7 +159,11 @@ class EngineWindow extends ui.Window {
         return;
 
       case 'flutter/platform_views':
-        handlePlatformViewCall(data, callback);
+        if (experimentalUseSkia) {
+          _rasterizer.viewEmbedder.handlePlatformViewCall(data, callback);
+        } else {
+          handlePlatformViewCall(data, callback);
+        }
         return;
 
       case 'flutter/accessibility':
@@ -281,12 +286,8 @@ class EngineWindow extends ui.Window {
     }
   }
 
-  final Rasterizer _rasterizer = experimentalUseSkia
-      ? Rasterizer(Surface((SkCanvas canvas) {
-          domRenderer.renderScene(canvas.htmlCanvas);
-          canvas.skSurface.callMethod('flush');
-        }))
-      : null;
+  final Rasterizer _rasterizer =
+      experimentalUseSkia ? Rasterizer(Surface()) : null;
 }
 
 /// The window singleton.
