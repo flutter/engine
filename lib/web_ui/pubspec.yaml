@@ -16,7 +16,7 @@ dev_dependencies:
   quiver: 2.0.5
   build_runner: 1.7.0
   build_test: 0.10.8
-  build_web_compilers: 2.1.5
+  build_web_compilers: 2.7.1
   yaml: 2.2.0
   watcher: 0.9.7+12
   web_engine_tester:
