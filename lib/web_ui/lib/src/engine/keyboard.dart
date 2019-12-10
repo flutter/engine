@@ -67,7 +67,6 @@ class Keyboard {
   static const JSONMessageCodec _messageCodec = JSONMessageCodec();
 
   void _handleHtmlEvent(html.KeyboardEvent event) {
-    print('event: ${event.type}');
     if (_shouldIgnoreEvent(event)) {
       return;
     }
@@ -134,7 +133,7 @@ int _getMetaState(html.KeyboardEvent event) {
   if (event.getModifierState('Meta')) {
     metaState |= _modifierMeta;
   }
-  // TODO: Reenable lock key modifiers one there is support on Flutter
+  // TODO: Re-enable lock key modifiers once there is support on Flutter
   // Framework. https://github.com/flutter/flutter/issues/46718
   return metaState;
 }
