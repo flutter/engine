@@ -73,8 +73,10 @@ void GLFWEventLoop::WaitForEvents(std::chrono::nanoseconds max_wait) {
     const auto duration_to_wait = std::chrono::duration_cast<Seconds>(
         std::min(next_wake - now, max_wait));
 
-    if (duration_to_wait.count() > 0.0) {
-      ::glfwWaitEventsTimeout(duration_to_wait.count());
+    double wait_count = std::min(duration_to_wait.count(), (double)LONG_MAX);
+
+    if (wait_count > 0.0) {
+      ::glfwWaitEventsTimeout(wait_count);
     } else {
       // Avoid engine task priority inversion by making sure GLFW events are
       // always processed even when there is no need to wait for pending engine
