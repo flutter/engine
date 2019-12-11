@@ -4,91 +4,119 @@
 
 part of engine;
 
-/// The implementatin of [ui.Paint] used by the CanvasKit backend.
+/// The implementation of [ui.Paint] used by the CanvasKit backend.
 class SkPaint implements ui.Paint {
   SkPaint();
 
   static const ui.Color _defaultPaintColor = ui.Color(0xFF000000);
 
+  @override
   ui.BlendMode get blendMode => _blendMode;
+  @override
   set blendMode(ui.BlendMode value) {
     _blendMode = value;
   }
   ui.BlendMode _blendMode = ui.BlendMode.srcOver;
 
+  @override
   ui.PaintingStyle get style => _style;
+  @override
   set style(ui.PaintingStyle value) {
     _style = value;
   }
   ui.PaintingStyle _style = ui.PaintingStyle.fill;
 
+  @override
   double get strokeWidth => _strokeWidth;
+  @override
   set strokeWidth(double value) {
     _strokeWidth = value;
   }
   double _strokeWidth = 0.0;
 
+  @override
   ui.StrokeCap get strokeCap => _strokeCap;
+  @override
   set strokeCap(ui.StrokeCap value) {
     _strokeCap = value;
   }
   ui.StrokeCap _strokeCap = ui.StrokeCap.butt;
 
+  @override
   ui.StrokeJoin get strokeJoin => _strokeJoin;
+  @override
   set strokeJoin(ui.StrokeJoin value) {
     _strokeJoin = value;
   }
   ui.StrokeJoin _strokeJoin = ui.StrokeJoin.miter;
 
+  @override
   bool get isAntiAlias => _isAntiAlias;
+  @override
   set isAntiAlias(bool value) {
     _isAntiAlias = value;
   }
   bool _isAntiAlias = true;
 
+  @override
   ui.Color get color => _color;
+  @override
   set color(ui.Color value) {
     _color = value;
   }
   ui.Color _color = _defaultPaintColor;
 
+  @override
   bool get invertColors => _invertColors;
+  @override
   set invertColors(bool value) {
     _invertColors = value;
   }
   bool _invertColors = false;
 
+  @override
   ui.Shader get shader => _shader;
+  @override
   set shader(ui.Shader value) {
     _shader = value;
   }
   ui.Shader _shader;
 
+  @override
   ui.MaskFilter get maskFilter => _maskFilter;
+  @override
   set maskFilter(ui.MaskFilter value) {
     _maskFilter = value;
   }
   ui.MaskFilter _maskFilter;
 
+  @override
   ui.FilterQuality get filterQuality => _filterQuality;
+  @override
   set filterQuality(ui.FilterQuality value) {
     _filterQuality = value;
   }
   ui.FilterQuality _filterQuality = ui.FilterQuality.none;
 
+  @override
   ui.ColorFilter get colorFilter => _colorFilter;
+  @override
   set colorFilter(ui.ColorFilter value) {
     _colorFilter = value;
   }
   ui.ColorFilter _colorFilter;
 
+  @override
   double get strokeMiterLimit => _strokeMiterLimit;
+  @override
   set strokeMiterLimit(double value) {
     _strokeMiterLimit = value;
   }
   double _strokeMiterLimit = 0.0;
 
+  @override
   ui.ImageFilter get imageFilter => _imageFilter;
+  @override
   set imageFilter(ui.ImageFilter value) {
     _imageFilter = value;
   }
@@ -125,7 +153,7 @@ class SkPaint implements ui.Paint {
 
     skPaint.callMethod('setAntiAlias', <bool>[isAntiAlias]);
 
-    if (strokeWidth != 0.0) {
+    if (strokeWidth > 0.0) {
       skPaint.callMethod('setStrokeWidth', <double>[strokeWidth]);
     }
 

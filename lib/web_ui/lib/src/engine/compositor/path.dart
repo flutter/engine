@@ -15,6 +15,7 @@ class SkPath implements ui.Path {
     fillType = ui.PathFillType.nonZero;
   }
 
+  // TODO(yjbanov): implement: https://github.com/flutter/flutter/issues/46812
   SkPath.from(SkPath other) {
     throw UnimplementedError('SkPath.from is not implemented in the CanvasKit backend');
   }
