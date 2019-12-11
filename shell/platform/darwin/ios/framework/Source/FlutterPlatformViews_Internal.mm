@@ -59,6 +59,7 @@ void ResetAnchor(CALayer* layer) {
   CAShapeLayer* clip = [[CAShapeLayer alloc] init];
   clip.path = pathRef;
   self.layer.mask = clip;
+  [clip release];
   CGPathRelease(pathRef);
 }
 
@@ -128,6 +129,7 @@ void ResetAnchor(CALayer* layer) {
   CAShapeLayer* clip = [[CAShapeLayer alloc] init];
   clip.path = pathRef;
   self.layer.mask = clip;
+  [clip release];
   CGPathRelease(pathRef);
 }
 
@@ -140,6 +142,7 @@ void ResetAnchor(CALayer* layer) {
     CAShapeLayer* clip = [[CAShapeLayer alloc] init];
     clip.path = pathRef;
     self.layer.mask = clip;
+    [clip release];
     CGPathRelease(pathRef);
     return;
   }
@@ -198,6 +201,7 @@ void ResetAnchor(CALayer* layer) {
   CAShapeLayer* clip = [[CAShapeLayer alloc] init];
   clip.path = pathRef;
   self.layer.mask = clip;
+  [clip release];
   CGPathRelease(pathRef);
 }
 
