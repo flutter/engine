@@ -1,4 +1,4 @@
-Signature: f4db1350a58dc05423f556cfae14d815
+Signature: 0b92a7630cab8f78eb7fa700e6f634c2
 
 UNUSED LICENSES:
 
@@ -1513,7 +1513,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/runtime_flag.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/transformer.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/txn_header.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/visitor.h
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/internal.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/internal.c
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/runtime_flag.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/transformer.cc
