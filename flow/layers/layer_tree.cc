@@ -56,7 +56,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       frame_device_pixel_ratio_};
 
   root_layer_->Preroll(&context, frame.root_surface_transformation());
-  return context.subtree_performs_readback_operation;
+  return context.surface_needs_readback;
 }
 
 #if defined(OS_FUCHSIA)

@@ -27,7 +27,7 @@ uint64_t Layer::NextUniqueID() {
 
 void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {}
 
-Layer::AutoPrerollSaveLayer::AutoPrerollSaveLayer(
+Layer::AutoPrerollSaveLayerState::AutoPrerollSaveLayerState(
     PrerollContext* preroll_context,
     bool save_layer_is_active,
     bool layer_itself_performs_readback)
@@ -35,25 +35,23 @@ Layer::AutoPrerollSaveLayer::AutoPrerollSaveLayer(
       save_layer_is_active_(save_layer_is_active),
       layer_itself_performs_readback_(layer_itself_performs_readback) {
   if (save_layer_is_active_) {
-    prev_subtree_performs_readback_operation_ =
-        preroll_context_->subtree_performs_readback_operation;
-    preroll_context_->subtree_performs_readback_operation = false;
+    prev_surface_needs_readback_ = preroll_context_->surface_needs_readback;
+    preroll_context_->surface_needs_readback = false;
   }
 }
 
-Layer::AutoPrerollSaveLayer Layer::AutoPrerollSaveLayer::Create(
+Layer::AutoPrerollSaveLayerState Layer::AutoPrerollSaveLayerState::Create(
     PrerollContext* preroll_context,
     bool save_layer_is_active,
     bool layer_itself_performs_readback) {
-  return Layer::AutoPrerollSaveLayer(preroll_context, save_layer_is_active,
-                                     layer_itself_performs_readback);
+  return Layer::AutoPrerollSaveLayerState(preroll_context, save_layer_is_active,
+                                          layer_itself_performs_readback);
 }
 
-Layer::AutoPrerollSaveLayer::~AutoPrerollSaveLayer() {
+Layer::AutoPrerollSaveLayerState::~AutoPrerollSaveLayerState() {
   if (save_layer_is_active_) {
-    preroll_context_->subtree_performs_readback_operation =
-        (prev_subtree_performs_readback_operation_ ||
-         layer_itself_performs_readback_);
+    preroll_context_->surface_needs_readback =
+        (prev_surface_needs_readback_ || layer_itself_performs_readback_);
   }
 }
 

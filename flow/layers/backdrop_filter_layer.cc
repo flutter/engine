@@ -11,8 +11,8 @@ BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter)
 
 void BackdropFilterLayer::Preroll(PrerollContext* context,
                                   const SkMatrix& matrix) {
-  Layer::AutoPrerollSaveLayer save =
-      Layer::AutoPrerollSaveLayer::Create(context, true, bool(filter_));
+  Layer::AutoPrerollSaveLayerState save =
+      Layer::AutoPrerollSaveLayerState::Create(context, true, bool(filter_));
   ContainerLayer::Preroll(context, matrix);
 }
 

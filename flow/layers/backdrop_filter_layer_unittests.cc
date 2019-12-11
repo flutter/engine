@@ -189,28 +189,28 @@ TEST_F(BackdropFilterLayerTest, Readback) {
 
   // BDF with filter always reads from surface
   auto layer1 = std::make_shared<BackdropFilterLayer>(layer_filter);
-  preroll_context()->subtree_performs_readback_operation = false;
+  preroll_context()->surface_needs_readback = false;
   layer1->Preroll(preroll_context(), initial_transform);
-  EXPECT_TRUE(preroll_context()->subtree_performs_readback_operation);
+  EXPECT_TRUE(preroll_context()->surface_needs_readback);
 
   // BDF with no filter does not read from surface itself
   auto layer2 = std::make_shared<BackdropFilterLayer>(no_filter);
-  preroll_context()->subtree_performs_readback_operation = false;
+  preroll_context()->surface_needs_readback = false;
   layer2->Preroll(preroll_context(), initial_transform);
-  EXPECT_FALSE(preroll_context()->subtree_performs_readback_operation);
+  EXPECT_FALSE(preroll_context()->surface_needs_readback);
 
   // BDF with no filter does not block prior readback value
-  preroll_context()->subtree_performs_readback_operation = true;
+  preroll_context()->surface_needs_readback = true;
   layer2->Preroll(preroll_context(), initial_transform);
-  EXPECT_TRUE(preroll_context()->subtree_performs_readback_operation);
+  EXPECT_TRUE(preroll_context()->surface_needs_readback);
 
   // BDF with no filter blocks child with readback
   auto mock_layer =
       std::make_shared<MockLayer>(SkPath(), SkPaint(), false, false, true);
   layer2->Add(mock_layer);
-  preroll_context()->subtree_performs_readback_operation = false;
+  preroll_context()->surface_needs_readback = false;
   layer2->Preroll(preroll_context(), initial_transform);
-  EXPECT_FALSE(preroll_context()->subtree_performs_readback_operation);
+  EXPECT_FALSE(preroll_context()->surface_needs_readback);
 }
 
 }  // namespace testing

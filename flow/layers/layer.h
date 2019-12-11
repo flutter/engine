@@ -49,7 +49,7 @@ struct PrerollContext {
   MutatorsStack& mutators_stack;
   SkColorSpace* dst_color_space;
   SkRect cull_rect;
-  bool subtree_performs_readback_operation;
+  bool surface_needs_readback;
 
   // These allow us to paint in the end of subtree Preroll.
   const Stopwatch& raster_time;
@@ -82,25 +82,25 @@ class Layer {
   // This object must be created before calling Preroll on the children to
   // set up the state for the children and then restore the state upon
   // destruction.
-  class AutoPrerollSaveLayer {
+  class AutoPrerollSaveLayerState {
    public:
-    FML_WARN_UNUSED_RESULT static AutoPrerollSaveLayer Create(
+    FML_WARN_UNUSED_RESULT static AutoPrerollSaveLayerState Create(
         PrerollContext* preroll_context,
         bool save_layer_is_active = true,
         bool layer_itself_performs_readback = false);
 
-    ~AutoPrerollSaveLayer();
+    ~AutoPrerollSaveLayerState();
 
    private:
-    AutoPrerollSaveLayer(PrerollContext* preroll_context,
-                         bool save_layer_is_active,
-                         bool layer_itself_performs_readback);
+    AutoPrerollSaveLayerState(PrerollContext* preroll_context,
+                              bool save_layer_is_active,
+                              bool layer_itself_performs_readback);
 
     PrerollContext* preroll_context_;
     bool save_layer_is_active_;
     bool layer_itself_performs_readback_;
 
-    bool prev_subtree_performs_readback_operation_;
+    bool prev_surface_needs_readback_;
   };
 
   struct PaintContext {

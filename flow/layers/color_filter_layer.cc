@@ -11,8 +11,8 @@ ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
 
 void ColorFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
-  Layer::AutoPrerollSaveLayer save =
-      Layer::AutoPrerollSaveLayer::Create(context);
+  Layer::AutoPrerollSaveLayerState save =
+      Layer::AutoPrerollSaveLayerState::Create(context);
   ContainerLayer::Preroll(context, matrix);
 }
 

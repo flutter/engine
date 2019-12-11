@@ -29,7 +29,7 @@ void MockLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(fake_paint_path_.getBounds());
   set_needs_system_composite(fake_needs_system_composite_);
   if (fake_reads_surface_) {
-    context->subtree_performs_readback_operation = true;
+    context->surface_needs_readback = true;
   }
 }
 

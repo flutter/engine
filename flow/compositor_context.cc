@@ -70,8 +70,8 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
 RasterStatus CompositorContext::ScopedFrame::Raster(
     flutter::LayerTree& layer_tree,
     bool ignore_raster_cache) {
-  bool tree_needs_readback = layer_tree.Preroll(*this, ignore_raster_cache);
-  bool needs_save_layer = tree_needs_readback && !surface_supports_readback();
+  bool root_needs_readback = layer_tree.Preroll(*this, ignore_raster_cache);
+  bool needs_save_layer = root_needs_readback && !surface_supports_readback();
   PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
   if (view_embedder_ && gpu_thread_merger_) {
     post_preroll_result = view_embedder_->PostPrerollAction(gpu_thread_merger_);

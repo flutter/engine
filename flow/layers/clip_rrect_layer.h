@@ -17,7 +17,7 @@ class ClipRRectLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
-  bool uses_save_layer() const {
+  bool UsesSaveLayer() const {
     return clip_behavior_ == Clip::antiAliasWithSaveLayer;
   }
 
