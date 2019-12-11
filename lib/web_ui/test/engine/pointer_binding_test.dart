@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:html' as html;
-import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
@@ -47,12 +46,14 @@ void main() {
 
       glassPane.dispatchEvent(html.PointerEvent('pointerdown', {
         'pointerId': 1,
-        'button': 1,
+        'button': 0,
+        'buttons': 1,
       }));
 
       glassPane.dispatchEvent(html.PointerEvent('pointerdown', {
         'pointerId': 1,
-        'button': 1,
+        'button': 0,
+        'buttons': 1,
       }));
 
       expect(packets, hasLength(3));
@@ -73,12 +74,14 @@ void main() {
 
       glassPane.dispatchEvent(html.PointerEvent('pointerdown', {
         'pointerId': 1,
-        'button': 1,
+        'button': 0,
+        'buttons': 1,
       }));
 
       glassPane.dispatchEvent(html.PointerEvent('pointerdown', {
         'pointerId': 2,
-        'button': 1,
+        'button': 0,
+        'buttons': 1,
       }));
 
       expect(packets, hasLength(2));
@@ -107,6 +110,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerId': 1,
         'button': -1,
+        'buttons': 0,
       }));
 
       expect(packets, hasLength(1));
@@ -125,7 +129,8 @@ void main() {
 
       glassPane.dispatchEvent(html.PointerEvent('pointerdown', {
         'pointerId': 1,
-        'button': 1,
+        'button': 0,
+        'buttons': 1,
       }));
 
       expect(packets, hasLength(1));
@@ -144,6 +149,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerId': 1,
         'button': -1,
+        'buttons': 0,
         'clientX': 10.0,
         'clientY': 10.0,
       }));
@@ -151,13 +157,15 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerId': 1,
         'button': -1,
+        'buttons': 0,
         'clientX': 20.0,
         'clientY': 20.0,
       }));
 
       glassPane.dispatchEvent(html.PointerEvent('pointerdown', {
         'pointerId': 1,
-        'button': 1,
+        'button': 0,
+        'buttons': 1,
         'clientX': 20.0,
         'clientY': 20.0,
       }));
@@ -165,13 +173,15 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerId': 1,
         'button': -1,
+        'buttons': 1,
         'clientX': 40.0,
         'clientY': 30.0,
       }));
 
       glassPane.dispatchEvent(html.PointerEvent('pointerup', {
         'pointerId': 1,
-        'button': 1,
+        'button': 0,
+        'buttons': 0,
         'clientX': 40.0,
         'clientY': 30.0,
       }));
@@ -179,13 +189,15 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerId': 1,
         'button': -1,
+        'buttons': 0,
         'clientX': 20.0,
         'clientY': 10.0,
       }));
 
       glassPane.dispatchEvent(html.PointerEvent('pointerdown', {
         'pointerId': 1,
-        'button': 1,
+        'button': 0,
+        'buttons': 1,
         'clientX': 20.0,
         'clientY': 10.0,
       }));
@@ -382,6 +394,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerType': 'mouse',
         'button': -1,
+        'buttons': 0,
         'clientX': 10,
         'clientY': 11,
       }));
@@ -404,6 +417,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointerdown', {
         'pointerType': 'mouse',
         'button': 0,
+        'buttons': 1,
         'clientX': 10.0,
         'clientY': 11.0,
       }));
@@ -419,6 +433,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerType': 'mouse',
         'button': -1,
+        'buttons': 1,
         'clientX': 20.0,
         'clientY': 21.0,
       }));
@@ -434,6 +449,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointerup', {
         'pointerType': 'mouse',
         'button': 0,
+        'buttons': 0,
         'clientX': 20.0,
         'clientY': 21.0,
       }));
@@ -450,6 +466,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointerdown', {
         'pointerType': 'mouse',
         'button': 2,
+        'buttons': 2,
         'clientX': 20.0,
         'clientY': 21.0,
       }));
@@ -465,6 +482,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerType': 'mouse',
         'button': -1,
+        'buttons': 2,
         'clientX': 30.0,
         'clientY': 31.0,
       }));
@@ -480,6 +498,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointerup', {
         'pointerType': 'mouse',
         'button': 2,
+        'buttons': 0,
         'clientX': 30.0,
         'clientY': 31.0,
       }));
@@ -496,6 +515,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointerdown', {
         'pointerType': 'mouse',
         'button': 1,
+        'buttons': 4,
         'clientX': 30.0,
         'clientY': 31.0,
       }));
@@ -511,6 +531,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerType': 'mouse',
         'button': -1,
+        'buttons': 4,
         'clientX': 40.0,
         'clientY': 41.0,
       }));
@@ -526,6 +547,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointerup', {
         'pointerType': 'mouse',
         'button': 1,
+        'buttons': 0,
         'clientX': 40.0,
         'clientY': 41.0,
       }));
@@ -549,6 +571,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointerdown', {
         'pointerType': 'mouse',
         'button': 0,
+        'buttons': 1,
       }));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
@@ -564,6 +587,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerType': 'mouse',
         'button': 1,
+        'buttons': 5,
       }));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
@@ -576,6 +600,7 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointermove', {
         'pointerType': 'mouse',
         'button': 0,
+        'buttons': 4,
       }));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
@@ -587,6 +612,8 @@ void main() {
       // Release MMB.
       glassPane.dispatchEvent(html.PointerEvent('pointerup', {
         'pointerType': 'mouse',
+        'button': 1,
+        'buttons': 0,
       }));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
@@ -617,6 +644,7 @@ void main() {
         'pointerId': 1,
         'pointerType': 'mouse',
         'button': 2,
+        'buttons': 2,
         'clientX': 10,
         'clientY': 11,
       }));
@@ -639,6 +667,7 @@ void main() {
         'pointerId': 1,
         'pointerType': 'mouse',
         'button': -1,
+        'buttons': 2,
         'clientX': 20.0,
         'clientY': 21.0,
       }));
@@ -656,6 +685,7 @@ void main() {
         'pointerId': 1,
         'pointerType': 'mouse',
         'button': -1,
+        'buttons': 2,
         'clientX': 20.0,
         'clientY': 21.0,
       }));
@@ -672,6 +702,8 @@ void main() {
       glassPane.dispatchEvent(html.PointerEvent('pointerup', {
         'pointerId': 1,
         'pointerType': 'mouse',
+        'button': 2,
+        'buttons': 0,
         'clientX': 20.0,
         'clientY': 21.0,
       }));

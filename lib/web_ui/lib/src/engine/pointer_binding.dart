@@ -156,6 +156,10 @@ abstract class BaseAdapter {
     _pressedButtons[device] = newButtons & _kButtonsMask;
   }
 
+  void _setButtonDownState(int device, int buttons) {
+    _pressedButtons[device] = buttons & _kButtonsMask;
+  }
+
   /// Each subclass is expected to override this method to attach its own event
   /// listeners and convert events into pointer events.
   void _setup();
@@ -270,7 +274,6 @@ abstract class BaseAdapter {
 
 const int _kPrimaryMouseButton = 0x1;
 const int _kSecondaryMouseButton = 0x2;
-const int _kMiddleMouseButton = 0x4;
 
 typedef _GetDeviceButton = int Function();
 
@@ -320,13 +323,15 @@ class PointerAdapter extends BaseAdapter {
     _addEventListener('pointerdown', (html.Event event) {
       final int device = _deviceFromHtmlEvent(event);
       final html.PointerEvent pointerEvent = event;
-      final int changedButton = _pointerButtonToFlutterButton(pointerEvent.button);
       // TODO(flutter_web): Remove this temporary fix for right click
       // on web platform once context guesture is implemented.
-      if (_isButtonDown(device, changedButton)) {
+      final int currentButtons = _deviceDownButtons(device);
+      if (currentButtons != 0) {
+        _setButtonDownState(device, 0);
         _callback(_convertEventToPointerData(ui.PointerChange.up, event));
       }
-      _updateButtonDownState(device, changedButton, pressed: true);
+      final int newButtons = _htmlButtonsToFlutterButtons(pointerEvent.buttons);
+      _setButtonDownState(device, newButtons);
       _callback(_convertEventToPointerData(ui.PointerChange.down, event));
     });
 
@@ -335,10 +340,8 @@ class PointerAdapter extends BaseAdapter {
       // button if there is a button change, or -1 otherwise (dragging).
       final html.PointerEvent pointerEvent = event;
       final int device = _deviceFromHtmlEvent(event);
-      final int changedButton = _pointerButtonToFlutterButton(pointerEvent.button);
-      if (changedButton != -1) {
-        _updateButtonDownState(device, changedButton, togglePressed: true);
-      }
+      final int newButtons = _htmlButtonsToFlutterButtons(pointerEvent.buttons);
+      _setButtonDownState(device, newButtons);
       _callback(_convertEventToPointerData(
         _deviceDownButtons(device) == 0
             ? ui.PointerChange.hover
@@ -349,13 +352,13 @@ class PointerAdapter extends BaseAdapter {
 
     _addEventListener('pointerup', (html.Event event) {
       final int device = _deviceFromHtmlEvent(event);
-      final int currentPointerButton = _deviceDownButtons(device);
+      final int currentButtons = _deviceDownButtons(device);
+      _setButtonDownState(device, 0);
       // The pointer could have been released by a `pointerout` event, in which
       // case `pointerup` should have no effect.
-      if (currentPointerButton == 0) {
+      if (currentButtons == 0) {
         return;
       }
-      _updateButtonDownState(device, currentPointerButton, pressed: false);
       _callback(_convertEventToPointerData(ui.PointerChange.up, event));
     });
 
@@ -363,8 +366,7 @@ class PointerAdapter extends BaseAdapter {
     // be able to generate events (example: device is deactivated)
     _addEventListener('pointercancel', (html.Event event) {
       final int device = _deviceFromHtmlEvent(event);
-      final int currentPointerButton = _deviceDownButtons(device);
-      _updateButtonDownState(device, currentPointerButton, pressed: false);
+      _setButtonDownState(device, 0);
       _callback(_convertEventToPointerData(ui.PointerChange.cancel, event));
     });
 
@@ -380,19 +382,12 @@ class PointerAdapter extends BaseAdapter {
     });
   }
 
-  int _pointerButtonToFlutterButton(int button) {
-    switch (button) {
-      case -1:
-        return -1;
-      case 0:
-        return _kPrimaryMouseButton;
-      case 1:
-        return _kMiddleMouseButton;
-      case 2:
-        return _kSecondaryMouseButton;
-      default:
-        return button;
-    }
+  // Transform html.PointerEvent.buttons to Flutter's PointerEvent buttons.
+  int _htmlButtonsToFlutterButtons(int buttons) {
+    // Flutter's button definition conveniently matches that of JavaScript
+    // from primary button (0x1) to forward button (0x10), which allows us to
+    // avoid transforming it bit by bit.
+    return buttons;
   }
 
   List<ui.PointerData> _convertEventToPointerData(
