@@ -704,6 +704,12 @@ class TextEditingElement {
 /// semantic tree. It also requires that the DOM element remains in the tree
 /// when the user isn't editing.
 class PersistentTextEditingElement extends TextEditingElement {
+
+  final DefaultTextEditingStrategy defaultEditingStrategy =
+        AccesibiltyModeTextEditingStrategy();
+
+  html.Element get domElement => this.defaultEditingStrategy.domElement;
+
   /// Creates a [PersistentTextEditingElement] that eagerly instantiates
   /// [domElement] so the caller can insert it before calling
   /// [PersistentTextEditingElement.enable].
@@ -714,9 +720,7 @@ class PersistentTextEditingElement extends TextEditingElement {
     // TODO(yjbanov): move into initializer list when https://github.com/dart-lang/sdk/issues/37881 is fixed.
     assert((domElement is html.InputElement) ||
         (domElement is html.TextAreaElement));
-    DefaultTextEditingStrategy defaultEditingStrategy =
-        AccesibiltyModeTextEditingStrategy();
-    defaultEditingStrategy.domElement = domElement;
+    this.defaultEditingStrategy.domElement = domElement;
     this.textEditingStrategy = defaultEditingStrategy;
   }
 }
