@@ -624,16 +624,8 @@ void main() {
     });
 
     test('synthesizes a pointerup event when pointermove comes before the up', () {
-      // This can happen when the user pops up the context menu by right clicking
-      // and dismisses it.
-      //
-      //  - When the user pops up the context menu, there will be an pointerdown
-      //    event with button 2.
-      //  - When the user moves with the context menu, there will be no events.
-      //  - When the user dismisses the context menu by clicking anywhere, there
-      //    will be 1 or a few pointermove event with button -1 at the final
-      //    location, and one pointerup event with the button clicked at the
-      //    final location.
+      // This can happen when the user pops up the context menu by right
+      // clicking, then dismisses it with a left click.
 
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
@@ -714,6 +706,76 @@ void main() {
       expect(packets[0].data[0].synthesized, equals(false));
       expect(packets[0].data[0].physicalX, equals(20));
       expect(packets[0].data[0].physicalY, equals(21));
+      expect(packets[0].data[0].buttons, equals(0));
+      packets.clear();
+    });
+
+    test('correctly handles uncontinuous button changes during a down sequence', () {
+      // This can happen with the following gesture sequence:
+      //
+      //  - Pops up the context menu by right clicking, but holds RMB;
+      //  - Clicks LMB;
+      //  - Releases RMB.
+
+      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      // Press RMB and hold, popping up the context menu.
+      glassPane.dispatchEvent(html.PointerEvent('pointerdown', {
+        'pointerType': 'mouse',
+        'button': 2,
+        'buttons': 2,
+      }));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      expect(packets[0].data[0].synthesized, equals(true));
+
+      expect(packets[0].data[1].change, equals(ui.PointerChange.down));
+      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].buttons, equals(2));
+      packets.clear();
+
+      // Press LMB. The event will have "button: -1" here, despite the change
+      // in "buttons", probably because the "press" gesture was absorbed by
+      // dismissing the context menu.
+      glassPane.dispatchEvent(html.PointerEvent('pointermove', {
+        'pointerType': 'mouse',
+        'button': -1,
+        'buttons': 3,
+      }));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].buttons, equals(3));
+      packets.clear();
+
+      // Release LMB.
+      glassPane.dispatchEvent(html.PointerEvent('pointermove', {
+        'pointerType': 'mouse',
+        'button': 0,
+        'buttons': 2,
+      }));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].buttons, equals(2));
+      packets.clear();
+
+      // Release RMB.
+      glassPane.dispatchEvent(html.PointerEvent('pointerup', {
+        'pointerType': 'mouse',
+        'button': 2,
+        'buttons': 0,
+      }));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.up));
+      expect(packets[0].data[0].synthesized, equals(false));
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
     });
