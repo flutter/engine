@@ -225,7 +225,7 @@ abstract class TextEditingStrategy {
     @required _OnActionCallback onAction,
   });
 
-  /// Set style to the native DOM element used for text editing.
+  /// Place the DOM element to its initial position.
   ///
   /// It will be located exactly in the same place with the editable widgets,
   /// however it's contents and cursor will be invisible.
@@ -234,12 +234,25 @@ abstract class TextEditingStrategy {
   /// right-click menu. Such as copy,paste, cut, select, translate...
   void initializeElementPosition();
 
+  /// Register event listeners to the DOM element.
+  ///
+  /// These event listener will be removed in [disableTextEditing].
   void addEventHandlers();
 
+  /// Update the element's position.
+  ///
+  /// The position will be updated everytime Flutter Framework sends
+  /// 'TextInput.setEditableSizeAndTransform' message.
   void updateElementPosition(_GeometricInfo geometricInfo);
 
+  /// Set editing state of the element.
+  ///
+  /// This includes text and selection relelated states. The editing state will
+  /// be updated everytime Flutter Framework sends 'TextInput.setEditingState'
+  /// message.
   void setTextEditingState(EditingState editingState);
 
+  /// Set style to the native DOM element used for text editing.
   void updateElementStyle(_EditingStyle style);
 
   /// Disables the element so it's no longer used for text editing.
@@ -248,7 +261,16 @@ abstract class TextEditingStrategy {
   void disableTextEditing();
 }
 
-/// Default behaviour for text editing.
+/// Class implementing the default editing strategies for text editing.
+///
+/// This class includes all the default behaviour for an editing element as
+/// well as the common properties such as [domElement].
+///
+/// Strategies written for different formfactor's/browser's should extend this
+/// class instead of extending the interface [TextEditingStrategy].
+///
+/// Unless a formfactor/browser requires specific implementation for a specific
+/// strategy the methods in this class should be used.
 class DefaultTextEditingStrategy implements TextEditingStrategy {
   @visibleForTesting
   bool isEnabled = false;
@@ -453,14 +475,12 @@ class IOSTextEditingStrategy extends DefaultTextEditingStrategy {
 
     _canPosition = false;
 
-    // TODO(mdebbar): Should we remove this listener after the first invocation?
     _subscriptions.add(domElement.onFocus.listen((_) {
       // Cancel previous timer if exists.
       _positionInputElementTimer?.cancel();
       _positionInputElementTimer = Timer(_delayBeforePositioning, () {
         _canPosition = true;
-        // Position element.
-        _geometricInfo?.applyToDomElement(domElement);
+        positionElement();
       });
 
       // When the virtual keyboard is closed on iOS, onBlur is triggered.
@@ -515,11 +535,6 @@ class AndroidTextEditingStrategy extends DefaultTextEditingStrategy {
     // Chrome on Android will hide the onscreen keyboard when you tap outside
     // the text box. Instead, we want the framework to tell us to hide the
     // keyboard via `TextInput.clearClient` or `TextInput.hide`.
-    //
-    // Safari on iOS does not hide the keyboard as a side-effect of tapping
-    // outside the editable box. Instead it provides an explicit "done" button,
-    // which is reported as "blur", so we must not reacquire focus when we see
-    // a "blur" event and let the keyboard disappear.
     if (browserEngine == BrowserEngine.blink ||
         browserEngine == BrowserEngine.unknown) {
       _subscriptions.add(domElement.onBlur.listen((_) {
@@ -555,8 +570,8 @@ class FirefoxTextEditingStrategy extends DefaultTextEditingStrategy {
     /// Decides if the selection has changed (cursor moved) compared to the
     /// previous values.
     ///
-    /// After each keyup, the start/end values of the selection is compared to the
-    /// previously saved editing state.
+    /// After each keyup, the start/end values of the selection is compared to
+    /// the previously saved editing state.
     _subscriptions.add(domElement.onKeyUp.listen((event) {
       _handleChange(event);
     }));
@@ -650,7 +665,8 @@ class TextEditingElement {
   }) {
     assert(!isEnabled);
 
-    _initDomElement(inputConfig, onChange: onChange, onAction: onAction);
+    textEditingStrategy.initializeTextEditing(inputConfig,
+        onChange: onChange, onAction: onAction);
 
     textEditingStrategy.addEventHandlers();
 
@@ -659,15 +675,6 @@ class TextEditingElement {
 
   void setEditingState(EditingState editingState) {
     textEditingStrategy.setTextEditingState(editingState);
-  }
-
-  void _initDomElement(
-    InputConfiguration inputConfig, {
-    @required _OnChangeCallback onChange,
-    @required _OnActionCallback onAction,
-  }) {
-    textEditingStrategy.initializeTextEditing(inputConfig,
-        onChange: onChange, onAction: onAction);
   }
 
   void disableTextEditing() {
