@@ -23,12 +23,66 @@ js.JsObject makeSkRRect(ui.RRect rrect) {
   });
 }
 
+ui.Rect fromSkRect(js.JsObject skRect) {
+  return ui.Rect.fromLTRB(
+    skRect['fLeft'],
+    skRect['fTop'],
+    skRect['fRight'],
+    skRect['fBottom'],
+  );
+}
+
+ui.TextPosition fromPositionWithAffinity(js.JsObject positionWithAffinity) {
+  if (positionWithAffinity['affinity'] == canvasKit['Affinity']['Upstream']) {
+    return ui.TextPosition(
+      offset: positionWithAffinity['pos'],
+      affinity: ui.TextAffinity.upstream,
+    );
+  } else {
+    assert(positionWithAffinity['affinity'] ==
+        canvasKit['Affinity']['Downstream']);
+    return ui.TextPosition(
+      offset: positionWithAffinity['pos'],
+      affinity: ui.TextAffinity.downstream,
+    );
+  }
+}
+
 js.JsArray<double> makeSkPoint(ui.Offset point) {
   final js.JsArray<double> skPoint = js.JsArray<double>();
   skPoint.length = 2;
   skPoint[0] = point.dx;
   skPoint[1] = point.dy;
   return skPoint;
+}
+
+/// Creates a point list using a typed buffer created by CanvasKit.Malloc.
+Float32List encodePointList(List<ui.Offset> points) {
+  assert(points != null);
+  final int pointCount = points.length;
+  final Float32List result = canvasKit.callMethod('Malloc', <dynamic>[js.context['Float32Array'], pointCount * 2]);
+  for (int i = 0; i < pointCount; ++i) {
+    final int xIndex = i * 2;
+    final int yIndex = xIndex + 1;
+    final ui.Offset point = points[i];
+    assert(_offsetIsValid(point));
+    result[xIndex] = point.dx;
+    result[yIndex] = point.dy;
+  }
+  return result;
+}
+
+js.JsObject makeSkPointMode(ui.PointMode pointMode) {
+  switch (pointMode) {
+    case ui.PointMode.points:
+      return canvasKit['PointMode']['Points'];
+    case ui.PointMode.lines:
+      return canvasKit['PointMode']['Lines'];
+    case ui.PointMode.polygon:
+      return canvasKit['PointMode']['Polygon'];
+    default:
+      throw StateError('Unrecognized point mode $pointMode');
+  }
 }
 
 js.JsObject makeSkBlendMode(ui.BlendMode blendMode) {
@@ -97,6 +151,8 @@ js.JsObject makeSkBlendMode(ui.BlendMode blendMode) {
 }
 
 js.JsObject makeSkPaint(ui.Paint paint) {
+  if (paint == null) return null;
+
   final dynamic skPaint = js.JsObject(canvasKit['SkPaint']);
 
   if (paint.shader != null) {

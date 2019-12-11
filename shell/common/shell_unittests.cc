@@ -10,8 +10,10 @@
 #include <memory>
 
 #include "flutter/flow/layers/layer_tree.h"
+#include "flutter/flow/layers/picture_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/fml/command_line.h"
+#include "flutter/fml/dart/dart_converter.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
@@ -600,6 +602,27 @@ TEST_F(ShellTest, WaitForFirstFrame) {
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
   ASSERT_TRUE(result.ok());
+
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get(), {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  fml::Status result =
+      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+  ASSERT_FALSE(result.ok());
+  ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
+
   DestroyShell(std::move(shell));
 }
 
@@ -616,7 +639,9 @@ TEST_F(ShellTest, WaitForFirstFrameTimeout) {
   RunEngine(shell.get(), std::move(configuration));
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(10));
+  ASSERT_FALSE(result.ok());
   ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
+
   DestroyShell(std::move(shell));
 }
 
@@ -639,6 +664,7 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
     result = shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1));
     ASSERT_TRUE(result.ok());
   }
+
   DestroyShell(std::move(shell));
 }
 
@@ -664,10 +690,12 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
   task_runner->PostTask([&shell, &event] {
     fml::Status result =
         shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+    ASSERT_FALSE(result.ok());
     ASSERT_EQ(result.code(), fml::StatusCode::kFailedPrecondition);
     event.Signal();
   });
   ASSERT_FALSE(event.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(1000)));
+
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
@@ -1013,6 +1041,205 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
       });
   latch->Wait();
   DestroyShell(std::move(shell), std::move(task_runners));
+}
+
+TEST_F(ShellTest, Screenshot) {
+  auto settings = CreateSettingsForFixture();
+  fml::AutoResetWaitableEvent firstFrameLatch;
+  settings.frame_rasterized_callback =
+      [&firstFrameLatch](const FrameTiming& t) { firstFrameLatch.Signal(); };
+
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+    SkPictureRecorder recorder;
+    SkCanvas* recording_canvas =
+        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
+    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
+                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
+    auto sk_picture = recorder.finishRecordingAsPicture();
+    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
+        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+    auto picture_layer = std::make_shared<PictureLayer>(
+        SkPoint::Make(10, 10),
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
+    root->Add(picture_layer);
+  };
+
+  PumpOneFrame(shell.get(), 100, 100, builder);
+  firstFrameLatch.Wait();
+
+  std::promise<Rasterizer::Screenshot> screenshot_promise;
+  auto screenshot_future = screenshot_promise.get_future();
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetGPUTaskRunner(),
+      [&screenshot_promise, &shell]() {
+        auto rasterizer = shell->GetRasterizer();
+        screenshot_promise.set_value(rasterizer->ScreenshotLastLayerTree(
+            Rasterizer::ScreenshotType::CompressedImage, false));
+      });
+
+  auto fixtures_dir =
+      fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
+
+  auto reference_png = fml::FileMapping::CreateReadOnly(
+      fixtures_dir, "shelltest_screenshot.png");
+
+  // Use MakeWithoutCopy instead of MakeWithCString because we don't want to
+  // encode the null sentinel
+  sk_sp<SkData> reference_data = SkData::MakeWithoutCopy(
+      reference_png->GetMapping(), reference_png->GetSize());
+
+  ASSERT_TRUE(reference_data->equals(screenshot_future.get().data.get()));
+
+  DestroyShell(std::move(shell));
+}
+
+enum class MemsetPatternOp {
+  kMemsetPatternOpSetBuffer,
+  kMemsetPatternOpCheckBuffer,
+};
+
+//------------------------------------------------------------------------------
+/// @brief      Depending on the operation, either scribbles a known pattern
+///             into the buffer or checks if that pattern is present in an
+///             existing buffer. This is a portable variant of the
+///             memset_pattern class of methods that also happen to do assert
+///             that the same pattern exists.
+///
+/// @param      buffer  The buffer
+/// @param[in]  size    The size
+/// @param[in]  op      The operation
+///
+/// @return     If the result of the operation was a success.
+///
+static bool MemsetPatternSetOrCheck(uint8_t* buffer,
+                                    size_t size,
+                                    MemsetPatternOp op) {
+  if (buffer == nullptr) {
+    return false;
+  }
+
+  auto pattern = reinterpret_cast<const uint8_t*>("dErP");
+  constexpr auto pattern_length = 4;
+
+  uint8_t* start = buffer;
+  uint8_t* p = buffer;
+
+  while ((start + size) - p >= pattern_length) {
+    switch (op) {
+      case MemsetPatternOp::kMemsetPatternOpSetBuffer:
+        memmove(p, pattern, pattern_length);
+        break;
+      case MemsetPatternOp::kMemsetPatternOpCheckBuffer:
+        if (memcmp(pattern, p, pattern_length) != 0) {
+          return false;
+        }
+        break;
+    };
+    p += pattern_length;
+  }
+
+  if ((start + size) - p != 0) {
+    switch (op) {
+      case MemsetPatternOp::kMemsetPatternOpSetBuffer:
+        memmove(p, pattern, (start + size) - p);
+        break;
+      case MemsetPatternOp::kMemsetPatternOpCheckBuffer:
+        if (memcmp(pattern, p, (start + size) - p) != 0) {
+          return false;
+        }
+        break;
+    }
+  }
+
+  return true;
+}
+
+TEST_F(ShellTest, CanConvertToAndFromMappings) {
+  const size_t buffer_size = 2 << 20;
+
+  uint8_t* buffer = static_cast<uint8_t*>(::malloc(buffer_size));
+  ASSERT_NE(buffer, nullptr);
+  ASSERT_TRUE(MemsetPatternSetOrCheck(
+      buffer, buffer_size, MemsetPatternOp::kMemsetPatternOpSetBuffer));
+
+  std::unique_ptr<fml::Mapping> mapping =
+      std::make_unique<fml::NonOwnedMapping>(
+          buffer, buffer_size, [](const uint8_t* buffer, size_t size) {
+            ::free(const_cast<uint8_t*>(buffer));
+          });
+
+  ASSERT_EQ(mapping->GetSize(), buffer_size);
+
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback(
+      "SendFixtureMapping", CREATE_NATIVE_ENTRY([&](auto args) {
+        auto mapping_from_dart =
+            tonic::DartConverter<std::unique_ptr<fml::Mapping>>::FromDart(
+                Dart_GetNativeArgument(args, 0));
+        ASSERT_NE(mapping_from_dart, nullptr);
+        ASSERT_EQ(mapping_from_dart->GetSize(), buffer_size);
+        ASSERT_TRUE(MemsetPatternSetOrCheck(
+            const_cast<uint8_t*>(mapping_from_dart->GetMapping()),  // buffer
+            mapping_from_dart->GetSize(),                           // size
+            MemsetPatternOp::kMemsetPatternOpCheckBuffer            // op
+            ));
+        latch.Signal();
+      }));
+
+  AddNativeCallback(
+      "GetFixtureMapping", CREATE_NATIVE_ENTRY([&](auto args) {
+        tonic::DartConverter<tonic::DartConverterMapping>::SetReturnValue(
+            args, mapping);
+      }));
+
+  auto settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("canConvertMappings");
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  ASSERT_NE(shell.get(), nullptr);
+  RunEngine(shell.get(), std::move(configuration));
+  latch.Wait();
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, CanDecompressImageFromAsset) {
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("NotifyWidthHeight", CREATE_NATIVE_ENTRY([&](auto args) {
+                      auto width = tonic::DartConverter<int>::FromDart(
+                          Dart_GetNativeArgument(args, 0));
+                      auto height = tonic::DartConverter<int>::FromDart(
+                          Dart_GetNativeArgument(args, 1));
+                      ASSERT_EQ(width, 100);
+                      ASSERT_EQ(height, 100);
+                      latch.Signal();
+                    }));
+
+  AddNativeCallback(
+      "GetFixtureImage", CREATE_NATIVE_ENTRY([](auto args) {
+        auto fixture = OpenFixtureAsMapping("shelltest_screenshot.png");
+        tonic::DartConverter<tonic::DartConverterMapping>::SetReturnValue(
+            args, fixture);
+      }));
+
+  auto settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("canDecompressImageFromAsset");
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  ASSERT_NE(shell.get(), nullptr);
+  RunEngine(shell.get(), std::move(configuration));
+  latch.Wait();
+  DestroyShell(std::move(shell));
 }
 
 }  // namespace testing

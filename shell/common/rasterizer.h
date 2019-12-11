@@ -354,7 +354,7 @@ class Rasterizer final : public SnapshotDelegate {
   /// @param[in]  callback  The callback to execute when the next layer tree is
   ///                       rendered on-screen.
   ///
-  void SetNextFrameCallback(fml::closure callback);
+  void SetNextFrameCallback(const fml::closure& callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Returns a pointer to the compositor context used by this
@@ -425,6 +425,13 @@ class Rasterizer final : public SnapshotDelegate {
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
                                     SkISize picture_size) override;
+
+  // |SnapshotDelegate|
+  sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) override;
+
+  sk_sp<SkImage> DoMakeRasterSnapshot(
+      SkISize size,
+      std::function<void(SkCanvas*)> draw_callback);
 
   RasterStatus DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree);
 

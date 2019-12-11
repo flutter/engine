@@ -28,6 +28,7 @@ Map<String, Scenario> _scenarios = <String, Scenario>{
   'poppable_screen': PoppableScreenScenario(window),
   'platform_view_eaglcontext': PlatformViewGLScenario(window, 'null', id:6),
   'image_scenario': ImageScenario(window),
+  'platform_view_rotate': PlatformViewScenario(window, 'Rotate Platform View', id: 10),
 };
 
 Scenario _currentScenario = _scenarios['animated_color_square'];

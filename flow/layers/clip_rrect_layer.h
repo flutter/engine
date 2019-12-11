@@ -12,7 +12,6 @@ namespace flutter {
 class ClipRRectLayer : public ContainerLayer {
  public:
   ClipRRectLayer(const SkRRect& clip_rrect, Clip clip_behavior);
-  ~ClipRRectLayer() override;
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
@@ -25,6 +24,7 @@ class ClipRRectLayer : public ContainerLayer {
  private:
   SkRRect clip_rrect_;
   Clip clip_behavior_;
+  bool children_inside_clip_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ClipRRectLayer);
 };

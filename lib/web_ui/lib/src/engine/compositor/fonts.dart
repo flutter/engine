@@ -4,14 +4,20 @@
 
 part of engine;
 
-class SkiaFontCollection {
-  final Map<String, Map<Map<String, String>, js.JsObject>>
-      _registeredTypefaces = <String, Map<Map<String, String>, js.JsObject>>{};
+const String _robotoUrl =
+    'https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf';
 
-  final List<Future<void>> _fontLoadingFutures = <Future<void>>[];
+class SkiaFontCollection {
+  final List<Future<ByteBuffer>> _loadingFontBuffers = <Future<ByteBuffer>>[];
+
+  final Set<String> registeredFamilies = <String>{};
 
   Future<void> ensureFontsLoaded() async {
-    await Future.wait(_fontLoadingFutures);
+    final List<Uint8List> fontBuffers =
+        (await Future.wait<ByteBuffer>(_loadingFontBuffers))
+            .map((ByteBuffer buffer) => buffer.asUint8List())
+            .toList();
+    skFontMgr = canvasKit['SkFontMgr'].callMethod('FromData', fontBuffers);
   }
 
   Future<void> registerFonts(AssetManager assetManager) async {
@@ -45,66 +51,27 @@ class SkiaFontCollection {
       final String family = fontFamily['family'];
       final List<dynamic> fontAssets = fontFamily['fonts'];
 
+      registeredFamilies.add(family);
+
       for (dynamic fontAssetItem in fontAssets) {
         final Map<String, dynamic> fontAsset = fontAssetItem;
         final String asset = fontAsset['asset'];
-        final Map<String, String> descriptors = <String, String>{};
-        for (String descriptor in fontAsset.keys) {
-          if (descriptor != 'asset') {
-            descriptors[descriptor] = '${fontAsset[descriptor]}';
-          }
-        }
-        _fontLoadingFutures.add(_registerFont(
-            family, assetManager.getAssetUrl(asset), descriptors));
-      }
-    }
-  }
-
-  Future<void> _registerFont(
-      String family, String url, Map<String, String> descriptors) async {
-    final dynamic fetchResult = await html.window.fetch(url);
-    final ByteBuffer resultBuffer = await fetchResult.arrayBuffer();
-    final js.JsObject skTypeFace = skFontMgr.callMethod(
-        'MakeTypefaceFromData', <Uint8List>[resultBuffer.asUint8List()]);
-    _registeredTypefaces.putIfAbsent(
-        family, () => <Map<String, String>, js.JsObject>{});
-    _registeredTypefaces[family][descriptors] = skTypeFace;
-  }
-
-  js.JsObject getFont(String family, double size) {
-    if (_registeredTypefaces[family] == null) {
-      if (assertionsEnabled) {
-        html.window.console.warn('Using unregistered font: $family');
-      }
-      return js.JsObject(canvasKit['SkFont'], <dynamic>[null, size]);
-    }
-
-    // We don't attempt to find a Typeface matching the text style. Instead, we
-    // try to find the "default" typeface. The default typeface either has no
-    // descriptors, or only has a descriptor of font-weight 400 (the default).
-    final Map<Map<String, String>, js.JsObject> typefaces =
-        _registeredTypefaces[family];
-    js.JsObject skTypeface;
-
-    for (MapEntry<Map<String, String>, js.JsObject> entry
-        in typefaces.entries) {
-      final Map<String, String> descriptors = entry.key;
-      if (descriptors.isEmpty ||
-          (descriptors.length == 1 && descriptors['weight'] == '400')) {
-        skTypeface = entry.value;
-        break;
+        _loadingFontBuffers.add(html.window
+            .fetch(assetManager.getAssetUrl(asset))
+            .then((dynamic fetchResult) => fetchResult.arrayBuffer()));
       }
     }
 
-    // If we couldn't find a suitable default, just use any typeface in the
-    // family.
-    if (skTypeface == null) {
-      skTypeface = typefaces.values.first;
+    /// We need a default fallback font for CanvasKit, in order to
+    /// avoid crashing while laying out text with an unregistered font. We chose
+    /// Roboto to match Android.
+    if (!registeredFamilies.contains('Roboto')) {
+      // Download Roboto and add it to the font buffers.
+      _loadingFontBuffers.add(html.window
+          .fetch(_robotoUrl)
+          .then((dynamic fetchResult) => fetchResult.arrayBuffer()));
     }
-
-    return js.JsObject(canvasKit['SkFont'], <dynamic>[skTypeface, size]);
   }
 
-  final js.JsObject skFontMgr =
-      js.JsObject(canvasKit['SkFontMgr']['RefDefault']);
+  js.JsObject skFontMgr;
 }

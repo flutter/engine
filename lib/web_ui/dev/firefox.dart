@@ -32,6 +32,8 @@ class Firefox extends Browser {
   /// Starts a new instance of Firefox open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Firefox(Uri url, {bool debug = false}) {
+    version = FirefoxArgParser.instance.version;
+
     assert(version != null);
     var remoteDebuggerCompleter = Completer<Uri>.sync();
     return Firefox._(() async {
@@ -46,18 +48,19 @@ class Firefox extends Browser {
       var dir = createTempDir();
       var args = [
         url.toString(),
-        if (!debug) '--headless',
-        '-width $kMaxScreenshotWidth'
+        '--headless',
+        '-width $kMaxScreenshotWidth',
         '-height $kMaxScreenshotHeight',
         '-new-window',
         '-new-instance',
         '--start-debugger-server $kDevtoolsPort',
       ];
 
-      final Process process = await Process.start(installation.executable, args);
+      final Process process =
+          await Process.start(installation.executable, args);
 
-      remoteDebuggerCompleter.complete(getRemoteDebuggerUrl(
-          Uri.parse('http://localhost:$kDevtoolsPort')));
+      remoteDebuggerCompleter.complete(
+          getRemoteDebuggerUrl(Uri.parse('http://localhost:$kDevtoolsPort')));
 
       unawaited(process.exitCode
           .then((_) => Directory(dir).deleteSync(recursive: true)));
