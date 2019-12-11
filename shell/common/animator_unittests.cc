@@ -17,6 +17,16 @@ namespace flutter {
 namespace testing {
 
 TEST_F(ShellTest, VSyncTargetTime) {
+  int64_t begin_frame;
+  auto nativeOnBeginFrame = [&begin_frame](Dart_NativeArguments args) {
+    Dart_Handle exception = nullptr;
+    begin_frame =
+        tonic::DartConverter<int64_t>::FromArguments(args, 0, exception);
+    std::cout << begin_frame << std::endl;
+  };
+  AddNativeCallback("NativeOnBeginFrame",
+                    CREATE_NATIVE_ENTRY(nativeOnBeginFrame));
+
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(
@@ -40,6 +50,9 @@ TEST_F(ShellTest, VSyncTargetTime) {
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
 
   // we have created a shell!!
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  ASSERT_TRUE(configuration.IsValid());
+  configuration.SetEntrypoint("onBeginFrameMain");
 
   DestroyShell(std::move(shell), std::move(task_runners));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
