@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "flutter/fml/platform/darwin/cf_utils.h"
 
 static int kMaxPointsInVerb = 4;
 
@@ -135,12 +136,11 @@ void ResetAnchor(CALayer* layer) {
   if (!path.isValid()) {
     return;
   }
-  CGMutablePathRef pathRef = CGPathCreateMutable();
+  fml::CFRef<CGMutablePathRef> pathRef(CGPathCreateMutable());
   if (path.isEmpty()) {
     CAShapeLayer* clip = [[CAShapeLayer alloc] init];
     clip.path = pathRef;
     self.layer.mask = clip;
-    CGPathRelease(pathRef);
     return;
   }
 
@@ -198,7 +198,6 @@ void ResetAnchor(CALayer* layer) {
   CAShapeLayer* clip = [[CAShapeLayer alloc] init];
   clip.path = pathRef;
   self.layer.mask = clip;
-  CGPathRelease(pathRef);
 }
 
 - (void)setClip:(flutter::MutatorType)type
