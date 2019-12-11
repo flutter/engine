@@ -4,6 +4,53 @@
 
 part of engine;
 
+/// An object backed by a [js.JsObject] mapped onto a Skia C++ object in the WebAssembly heap.
+///
+/// These objects are automatically deleted when no longer used.
+abstract class SkiaObject {
+  /// The JavaScript object that's mapped onto a Skia C++ object in the WebAssembly heap.
+  js.JsObject get skiaObject {
+    if (_skiaObject == null) {
+      _skiaObject = createDefault();
+    }
+    return _skiaObject;
+  }
+
+  /// Do not use this field outside this class. Use [skiaObject] instead.
+  js.JsObject _skiaObject;
+
+  /// Override this method to instantiate a new Skia-backed JavaScript object.
+  ///
+  /// The object is expected to represent Flutter's defaults. If Skia uses
+  /// different defaults from those used by Flutter, this method is expected
+  /// initialize the object to Flutter's defaults.
+  js.JsObject createDefault();
+
+  js.JsObject resurrect();
+}
+
+class SkiaObjects {
+  static final List<SkiaObject> _objects = () {
+    window._rasterizer.addPostFrameCallback(_postFrameCleanUp);
+    return <SkiaObject>[];
+  }();
+
+  static void _postFrameCleanUp() {
+    print('>>> Will clean up ${_objects.length} Skia objects.');
+    if (_objects.isEmpty) {
+      return;
+    }
+
+    for (int i = 0; i < _objects.length; i++) {
+      final SkiaObject object = _objects[i];
+      object._skiaObject.callMethod('delete');
+      object._skiaObject = null;
+    }
+
+    _objects.clear();
+  }
+}
+
 js.JsObject makeSkRect(ui.Rect rect) {
   return js.JsObject(canvasKit['LTRBRect'],
       <double>[rect.left, rect.top, rect.right, rect.bottom]);
