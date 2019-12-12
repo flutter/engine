@@ -201,23 +201,6 @@ void main() {
       expect(lastInputAction, isNull);
     });
 
-    test('Re-acquires focus', () async {
-      editingElement.enable(
-        singlelineConfig,
-        onChange: trackEditingState,
-        onAction: trackInputAction,
-      );
-      expect(document.activeElement, editingElement.domElement);
-
-      editingElement.domElement.blur();
-      // The focus remains on [editingElement.domElement].
-      expect(document.activeElement, editingElement.domElement);
-
-      // There should be no input action.
-      expect(lastInputAction, isNull);
-    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-        skip: (browserEngine == BrowserEngine.firefox));
-
     test('Multi-line mode also works', () {
       // The textarea element is created lazily.
       expect(document.getElementsByTagName('textarea'), hasLength(0));
