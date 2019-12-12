@@ -18,6 +18,9 @@ const int _kReturnKeyCode = 13;
 
 const MethodCodec codec = JSONMethodCodec();
 
+/// Add unit tests for [FirefoxTextEditingStrategy].
+/// TODO(nurhan): https://github.com/flutter/flutter/issues/46891
+
 DefaultTextEditingStrategy editingElement;
 EditingState lastEditingState;
 String lastInputAction;
@@ -995,7 +998,9 @@ void main() {
       hideKeyboard();
 
       debugOperatingSystemOverride = null;
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+        skip: (browserEngine == BrowserEngine.firefox));
 
     test('sets correct input type in iOS', () {
       debugOperatingSystemOverride = OperatingSystem.iOs;
@@ -1023,7 +1028,9 @@ void main() {
       hideKeyboard();
 
       debugOperatingSystemOverride = null;
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+        skip: (browserEngine == BrowserEngine.firefox));
 
     test('sends the correct input action as a platform message', () {
       final int clientId = showKeyboard(
