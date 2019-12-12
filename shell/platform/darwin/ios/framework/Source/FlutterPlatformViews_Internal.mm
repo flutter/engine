@@ -56,11 +56,10 @@ void ResetAnchor(CALayer* layer) {
 
 - (void)clipRect:(const SkRect&)clipSkRect {
   CGRect clipRect = [ChildClippingView getCGRectFromSkRect:clipSkRect];
-  CGPathRef pathRef = CGPathCreateWithRect(clipRect, nil);
+  fml::CFRef<CGPathRef> pathRef(CGPathCreateWithRect(clipRect, nil));
   CAShapeLayer* clip = [[[CAShapeLayer alloc] init] autorelease];
   clip.path = pathRef;
   self.layer.mask = clip;
-  CGPathRelease(pathRef);
 }
 
 - (void)clipRRect:(const SkRRect&)clipSkRRect {
