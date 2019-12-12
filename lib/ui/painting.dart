@@ -2633,6 +2633,7 @@ class ColorFilter {
 
   // The type of SkColorFilter class to create for Skia.
   // These constants must be kept in sync with ColorFilterType in paint.cc.
+  // ignore:unused_field
   static const int _TypeNone = 0; // null
   static const int _TypeMode = 1; // MakeModeFilter
   static const int _TypeMatrix = 2; // MakeMatrixFilterRowMajor255
