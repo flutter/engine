@@ -672,6 +672,8 @@ class PersistentTextEditingElement extends DefaultTextEditingStrategy {
     _inputConfiguration = inputConfig;
     _onChange = onChange;
     _onAction = onAction;
+
+    domElement.focus();
   }
 
   @override
