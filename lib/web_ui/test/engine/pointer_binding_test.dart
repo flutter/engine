@@ -782,16 +782,6 @@ void main() {
   });
 }
 
-void printPackets(List<ui.PointerDataPacket> packets) {
-  print('packets ${packets.length}');
-  for (ui.PointerDataPacket packet in packets) {
-    print('packet');
-    for (ui.PointerData data in packet.data) {
-      print('data ${data.change} ${data.device} ${data.buttons} (${data.physicalX}, ${data.physicalY}) ${data.synthesized}');
-    }
-  }
-}
-
 class TestPointerDetector extends PointerSupportDetector {
   @override
   final bool hasPointerEvents = true;
