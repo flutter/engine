@@ -8,7 +8,7 @@ part of engine;
 const bool _debugLogPointerEvents = false;
 
 /// The signature of a callback that handles pointer events.
-typedef PointerDataCallback = void Function(List<ui.PointerData>);
+typedef _PointerDataCallback = void Function(List<ui.PointerData>);
 
 // The mask for the bitfield of event buttons. Buttons not contained in this
 // mask are cut off.
@@ -27,26 +27,31 @@ class PointerBinding {
   static PointerBinding get instance => _instance;
   static PointerBinding _instance;
 
-  PointerBinding(this.glassPaneElement) {
+  static void initInstance(html.Element glassPaneElement) {
     if (_instance == null) {
-      _instance = this;
-      _pointerDataConverter = PointerDataConverter();
-      _detector = const PointerSupportDetector();
-      _adapter = _createAdapter();
+      _instance = PointerBinding._(glassPaneElement);
+      assert(() {
+        registerHotRestartListener(() {
+          _instance._adapter?.clearListeners();
+          _instance._pointerDataConverter?.clearPointerState();
+        });
+        return true;
+      }());
     }
-    assert(() {
-      registerHotRestartListener(() {
-        _adapter?.clearListeners();
-        _pointerDataConverter?.clearPointerState();
-      });
-      return true;
-    }());
+  }
+
+  PointerBinding._(this.glassPaneElement) {
+    _pointerDataConverter = PointerDataConverter();
+    _detector = const PointerSupportDetector();
+    _adapter = _createAdapter();
   }
 
   final html.Element glassPaneElement;
+
   PointerSupportDetector _detector;
   _BaseAdapter _adapter;
   PointerDataConverter _pointerDataConverter;
+
   /// Should be used in tests to define custom detection of pointer support.
   ///
   /// ```dart
@@ -77,13 +82,13 @@ class PointerBinding {
 
   _BaseAdapter _createAdapter() {
     if (_detector.hasPointerEvents) {
-      return PointerAdapter(_onPointerData, glassPaneElement, _pointerDataConverter);
+      return _PointerAdapter(_onPointerData, glassPaneElement, _pointerDataConverter);
     }
     if (_detector.hasTouchEvents) {
-      return TouchAdapter(_onPointerData, glassPaneElement, _pointerDataConverter);
+      return _TouchAdapter(_onPointerData, glassPaneElement, _pointerDataConverter);
     }
     if (_detector.hasMouseEvents) {
-      return MouseAdapter(_onPointerData, glassPaneElement, _pointerDataConverter);
+      return _MouseAdapter(_onPointerData, glassPaneElement, _pointerDataConverter);
     }
     return null;
   }
@@ -112,7 +117,7 @@ class PointerSupportDetector {
 /// Common functionality that's shared among adapters.
 abstract class _BaseAdapter {
   _BaseAdapter(this._callback, this.glassPaneElement, this._pointerDataConverter) {
-    _setup();
+    setup();
   }
 
   /// Listeners that are registered through dart to js api.
@@ -122,12 +127,12 @@ abstract class _BaseAdapter {
   static final Map<String, html.EventListener> _nativeListeners =
     <String, html.EventListener>{};
   final html.Element glassPaneElement;
-  PointerDataCallback _callback;
+  _PointerDataCallback _callback;
   PointerDataConverter _pointerDataConverter;
 
   /// Each subclass is expected to override this method to attach its own event
   /// listeners and convert events into pointer events.
-  void _setup();
+  void setup();
 
   /// Remove all active event listeners.
   void clearListeners() {
@@ -291,9 +296,9 @@ class _PointerStateManager {
 }
 
 /// Adapter class to be used with browsers that support native pointer events.
-class PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
-  PointerAdapter(
-    PointerDataCallback callback,
+class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
+  _PointerAdapter(
+    _PointerDataCallback callback,
     html.Element glassPaneElement,
     PointerDataConverter _pointerDataConverter
   ) : super(callback, glassPaneElement, _pointerDataConverter);
@@ -311,7 +316,7 @@ class PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   }
 
   @override
-  void _setup() {
+  void setup() {
     _addEventListener('pointerdown', (html.Event event) {
       final html.PointerEvent pointerEvent = event;
       final int device = pointerEvent.pointerId;
@@ -438,9 +443,9 @@ class PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 }
 
 /// Adapter to be used with browsers that support touch events.
-class TouchAdapter extends _BaseAdapter {
-  TouchAdapter(
-    PointerDataCallback callback,
+class _TouchAdapter extends _BaseAdapter {
+  _TouchAdapter(
+    _PointerDataCallback callback,
     html.Element glassPaneElement,
     PointerDataConverter _pointerDataConverter
   ) : super(callback, glassPaneElement, _pointerDataConverter);
@@ -448,7 +453,7 @@ class TouchAdapter extends _BaseAdapter {
   bool _pressed = false;
 
   @override
-  void _setup() {
+  void setup() {
     _addEventListener('touchstart', (html.Event event) {
       _pressed = true;
       _callback(_convertEventToPointerData(ui.PointerChange.down, event));
@@ -502,9 +507,9 @@ class TouchAdapter extends _BaseAdapter {
 }
 
 /// Adapter to be used with browsers that support mouse events.
-class MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
-  MouseAdapter(
-    PointerDataCallback callback,
+class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
+  _MouseAdapter(
+    _PointerDataCallback callback,
     html.Element glassPaneElement,
     PointerDataConverter _pointerDataConverter
   ) : super(callback, glassPaneElement, _pointerDataConverter);
@@ -512,7 +517,7 @@ class MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   final _PointerStateManager _pointerState = _PointerStateManager();
 
   @override
-  void _setup() {
+  void setup() {
     _addEventListener('mousedown', (html.Event event) {
       final html.MouseEvent mouseEvent = event;
       _pointerState.handleDown(
