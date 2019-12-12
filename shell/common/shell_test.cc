@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <cstdint>
 #include <future>
+#include "flutter/fml/time/time_delta.h"
+#include "flutter/fml/time/time_point.h"
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/shell/common/shell_test.h"
@@ -294,6 +297,7 @@ void ShellTestVsyncClock::SimulateVSync() {
     vsync_promised_.emplace_back();
   }
   FML_CHECK(vsync_issued_ < vsync_promised_.size());
+  FML_LOG(ERROR) << "simulating vsync: " << vsync_issued_;
   vsync_promised_[vsync_issued_].set_value(vsync_issued_);
   vsync_issued_ += 1;
 }
@@ -301,6 +305,7 @@ void ShellTestVsyncClock::SimulateVSync() {
 std::future<int> ShellTestVsyncClock::NextVSync() {
   std::scoped_lock lock(mutex_);
   vsync_promised_.emplace_back();
+  FML_LOG(ERROR) << "will wait for vsync: " << vsync_promised_.size() - 1;
   return vsync_promised_.back().get_future();
 }
 
@@ -310,6 +315,17 @@ void ShellTestVsyncWaiter::AwaitVSync() {
 
   auto async_wait = std::async([&vsync_future, this]() {
     vsync_future.wait();
+    const auto now = fml::TimePoint::Now();
+
+    const auto vsync_count_to_time = [now = now](bool end_time) {
+      // This has to be at sometime in the future for tests to
+      // not deadlock.
+      auto time_delta = fml::TimeDelta::FromSeconds(1);
+      if (end_time) {
+        time_delta = time_delta + fml::TimeDelta::FromSecondsF(1 / 60.0);
+      }
+      return now + time_delta;
+    };
 
     // Post the `FireCallback` to the Platform thread so earlier Platform tasks
     // (specifically, the `VSyncFlush` call) will be finished before
@@ -322,9 +338,10 @@ void ShellTestVsyncWaiter::AwaitVSync() {
     // `VSyncFlush` call (which resets the `will_draw_new_frame` bit).
     //
     // For example, HandlesActualIphoneXsInputEvents will fail without this.
-    task_runners_.GetPlatformTaskRunner()->PostTask([this]() {
-      FireCallback(fml::TimePoint::Now(), fml::TimePoint::Now());
-    });
+    task_runners_.GetPlatformTaskRunner()->PostTask(
+        [this, &vsync_count_to_time]() {
+          FireCallback(vsync_count_to_time(false), vsync_count_to_time(true));
+        });
   });
 }
 
