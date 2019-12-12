@@ -25,7 +25,6 @@ TEST_F(ShellTest, VSyncTargetTime) {
     Dart_Handle exception = nullptr;
     target_time =
         tonic::DartConverter<int64_t>::FromArguments(args, 0, exception);
-    std::cout << target_time << std::endl;
     on_target_time_latch.Signal();
   };
   AddNativeCallback("NativeOnBeginFrame",

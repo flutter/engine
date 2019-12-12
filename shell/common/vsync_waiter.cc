@@ -112,22 +112,14 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
 
     TRACE_FLOW_BEGIN("flutter", kVsyncFlowName, flow_identifier);
 
-    FML_LOG(ERROR) << "aa 1 now:"
-                   << fml::TimePoint::Now().ToEpochDelta().ToSeconds()
-                   << ", scheduled time: "
-                   << frame_start_time.ToEpochDelta().ToSeconds();
-
     task_runners_.GetUITaskRunner()->PostTaskForTime(
         [callback, flow_identifier, frame_start_time, frame_target_time]() {
-          FML_LOG(ERROR) << "alarm 1";
           FML_TRACE_EVENT("flutter", kVsyncTraceName, "StartTime",
                           frame_start_time, "TargetTime", frame_target_time);
           fml::tracing::TraceEventAsyncComplete(
               "flutter", "VsyncSchedulingOverhead", fml::TimePoint::Now(),
               frame_start_time);
-          FML_LOG(ERROR) << "alarm 2";
           callback(frame_start_time, frame_target_time);
-          FML_LOG(ERROR) << "alarm 3";
           TRACE_FLOW_END("flutter", kVsyncFlowName, flow_identifier);
         },
         frame_start_time);
@@ -137,8 +129,6 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
     task_runners_.GetUITaskRunner()->PostTaskForTime(
         std::move(secondary_callback), frame_start_time);
   }
-
-  FML_LOG(ERROR) << "baava";
 }
 
 float VsyncWaiter::GetDisplayRefreshRate() const {

@@ -60,7 +60,6 @@ void ShellTestVsyncWaiter::AwaitVSync() {
 void ConstantFiringVsyncWaiter::AwaitVSync() {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   auto async_wait = std::async([this]() {
-    FML_LOG(ERROR) << "askdjnaskjdkjasdkjaskjdakjsdn";
     task_runners_.GetPlatformTaskRunner()->PostTask(
         [this]() { FireCallback(frame_begin_time, frame_target_time); });
   });
