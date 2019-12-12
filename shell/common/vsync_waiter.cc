@@ -112,6 +112,8 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
 
     TRACE_FLOW_BEGIN("flutter", kVsyncFlowName, flow_identifier);
 
+    FML_LOG(ERROR) << "aa 1";
+
     task_runners_.GetUITaskRunner()->PostTaskForTime(
         [callback, flow_identifier, frame_start_time, frame_target_time]() {
           FML_TRACE_EVENT("flutter", kVsyncTraceName, "StartTime",
