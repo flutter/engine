@@ -236,7 +236,7 @@ abstract class TextEditingStrategy {
 
   /// Register event listeners to the DOM element.
   ///
-  /// These event listener will be removed in [disableTextEditing].
+  /// These event listener will be removed in [disable].
   void addEventHandlers();
 
   /// Update the element's position.
@@ -250,7 +250,7 @@ abstract class TextEditingStrategy {
   /// This includes text and selection relelated states. The editing state will
   /// be updated everytime Flutter Framework sends 'TextInput.setEditingState'
   /// message.
-  void setTextEditingState(EditingState editingState);
+  void setEditingState(EditingState editingState);
 
   /// Set style to the native DOM element used for text editing.
   void updateElementStyle(_EditingStyle style);
@@ -258,10 +258,18 @@ abstract class TextEditingStrategy {
   /// Disables the element so it's no longer used for text editing.
   ///
   /// Calling [disable] also removes any registered event listeners.
-  void disableTextEditing();
+  void disable();
 }
 
 /// Class implementing the default editing strategies for text editing.
+///
+/// This class uses a DOM element to provide text editing capabilities.
+///
+///  The backing DOM element could be one of:
+///
+/// 1. `<input>`.
+/// 2. `<textarea>`.
+/// 3. `<span contenteditable="true">`.
 ///
 /// This class includes all the default behaviour for an editing element as
 /// well as the common properties such as [domElement].
@@ -272,6 +280,10 @@ abstract class TextEditingStrategy {
 /// Unless a formfactor/browser requires specific implementation for a specific
 /// strategy the methods in this class should be used.
 class DefaultTextEditingStrategy implements TextEditingStrategy {
+  final HybridTextEditing owner;
+
+  DefaultTextEditingStrategy(this.owner);
+
   @visibleForTesting
   bool isEnabled = false;
 
@@ -351,7 +363,7 @@ class DefaultTextEditingStrategy implements TextEditingStrategy {
   }
 
   @override
-  void disableTextEditing() {
+  void disable() {
     assert(isEnabled);
 
     isEnabled = false;
@@ -369,22 +381,16 @@ class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   @mustCallSuper
   @override
-  void setTextEditingState(EditingState editingState) {
-    if (_lastEditingState != null) {
-      _lastEditingState = editingState;
-      if (!isEnabled || !editingState.isValid) {
-        return;
-      }
-
-      _lastEditingState.applyToDomElement(domElement);
-
-      // Re-focuses when setting editing state.
-      domElement.focus();
+  void setEditingState(EditingState editingState) {
+    _lastEditingState = editingState;
+    if (!isEnabled || !editingState.isValid) {
+      return;
     }
+    _lastEditingState.applyToDomElement(domElement);
   }
 
   void positionElement() {
-    _geometricInfo.applyToDomElement(domElement);
+    _geometricInfo?.applyToDomElement(domElement);
     domElement.focus();
   }
 
@@ -409,6 +415,33 @@ class DefaultTextEditingStrategy implements TextEditingStrategy {
       _onAction(_inputConfiguration.inputAction);
     }
   }
+
+  /// Enables the element so it can be used to edit text.
+  ///
+  /// Register [callback] so that it gets invoked whenever any change occurs in
+  /// the text editing element.
+  ///
+  /// Changes could be:
+  /// - Text changes, or
+  /// - Selection changes.
+  void enable(
+    InputConfiguration inputConfig, {
+    @required _OnChangeCallback onChange,
+    @required _OnActionCallback onAction,
+  }) {
+    assert(!isEnabled);
+
+    initializeTextEditing(inputConfig, onChange: onChange, onAction: onAction);
+
+    addEventHandlers();
+
+    if (_lastEditingState != null) {
+      setEditingState(this._lastEditingState);
+    }
+
+    // Re-focuses after setting editing state.
+    domElement.focus();
+  }
 }
 
 /// IOS/Safari behaviour for text editing.
@@ -419,12 +452,14 @@ class DefaultTextEditingStrategy implements TextEditingStrategy {
 /// Due to this [initializeElementPosition] and [updateElementPosition]
 /// strategies are different.
 ///
-/// [disableTextEditing] is also different since the [_positionInputElementTimer]
+/// [disable] is also different since the [_positionInputElementTimer]
 /// also needs to be cleaned.
 ///
 /// inputmodeAttribute needs to be set for mobile devices. Due to this
 /// [initializeTextEditing] is different.
 class IOSTextEditingStrategy extends DefaultTextEditingStrategy {
+  IOSTextEditingStrategy(HybridTextEditing owner) : super(owner);
+
   /// Timer that times when to set the location of the input text.
   ///
   /// This is only used for iOS. In iOS, virtual keyboard shifts the screen.
@@ -470,7 +505,6 @@ class IOSTextEditingStrategy extends DefaultTextEditingStrategy {
     /// Position the element outside of the page before focusing on it. This is
     /// useful for not triggering a scroll when iOS virtual keyboard is
     /// coming up.
-    /// See [TextEditingElement._delayBeforePositioning].
     domElement.style.transform = 'translate(-9999px, -9999px)';
 
     _canPosition = false;
@@ -503,8 +537,8 @@ class IOSTextEditingStrategy extends DefaultTextEditingStrategy {
   }
 
   @override
-  void disableTextEditing() {
-    super.disableTextEditing();
+  void disable() {
+    super.disable();
     _positionInputElementTimer?.cancel();
     _positionInputElementTimer = null;
   }
@@ -518,6 +552,8 @@ class IOSTextEditingStrategy extends DefaultTextEditingStrategy {
 /// Keyboard acts differently than other devices. [addEventHandlers] handles
 /// this case as an extra.
 class AndroidTextEditingStrategy extends DefaultTextEditingStrategy {
+  AndroidTextEditingStrategy(HybridTextEditing owner) : super(owner);
+
   @override
   void initializeTextEditing(
     InputConfiguration inputConfig, {
@@ -552,6 +588,8 @@ class AndroidTextEditingStrategy extends DefaultTextEditingStrategy {
 /// Selections are different in Firefox. [addEventHandlers] strategy is
 /// impelemented diefferently in Firefox.
 class FirefoxTextEditingStrategy extends DefaultTextEditingStrategy {
+  FirefoxTextEditingStrategy(HybridTextEditing owner) : super(owner);
+
   @override
   void addEventHandlers() {
     // Subscribe to text and selection changes.
@@ -585,13 +623,29 @@ class FirefoxTextEditingStrategy extends DefaultTextEditingStrategy {
 
 /// Text editing used by accesibilty mode.
 ///
-/// In accesibilty mode, the user of this class is supposed to insert and remove
-/// the [domElement] on their own. Due to this [initializeTextEditing],
-/// [initializeTextEditing] and [disableTextEditing] strategies are handled
-/// differently.
-class AccesibiltyModeTextEditingStrategy extends DefaultTextEditingStrategy {
+/// [PersistentTextEditingElement] assumes the caller will own the creation,
+/// insertion and disposal of the DOM element. Due to this
+/// [initializeElementPosition], [initializeTextEditing] and
+/// [disable] strategies are handled differently.
+///
+/// This class is still responsible for hooking up the DOM element with the
+/// [HybridTextEditing] instance so that changes are communicated to Flutter.
+class PersistentTextEditingElement extends DefaultTextEditingStrategy {
+  /// Creates a [PersistentTextEditingElement] that eagerly instantiates
+  /// [domElement] so the caller can insert it before calling
+  /// [PersistentTextEditingElement.enable].
+  PersistentTextEditingElement(
+      HybridTextEditing owner, html.HtmlElement domElement)
+      : super(owner) {
+    // Make sure the DOM element is of a type that we support for text editing.
+    // TODO(yjbanov): move into initializer list when https://github.com/dart-lang/sdk/issues/37881 is fixed.
+    assert((domElement is html.InputElement) ||
+        (domElement is html.TextAreaElement));
+    super.domElement = domElement;
+  }
+
   @override
-  void disableTextEditing() {
+  void disable() {
     // We don't want to remove the DOM element because the caller is responsible
     // for that.
     //
@@ -613,116 +667,21 @@ class AccesibiltyModeTextEditingStrategy extends DefaultTextEditingStrategy {
     // [domElement] on their own. Let's make sure they did.
     assert(domElement != null);
     assert(html.document.body.contains(domElement));
-  }
-}
 
-/// Wraps the DOM element used to provide text editing capabilities.
-///
-/// The backing DOM element could be one of:
-///
-/// 1. `<input>`.
-/// 2. `<textarea>`.
-/// 3. `<span contenteditable="true">`.
-class TextEditingElement {
-  /// Creates a non-persistent [TextEditingElement].
-  ///
-  /// See [TextEditingElement.persistent] to understand what persistent mode is.
-  TextEditingElement(this.owner) {
-    if (browserEngine == BrowserEngine.webkit &&
-        operatingSystem == OperatingSystem.iOs) {
-      this.textEditingStrategy = IOSTextEditingStrategy();
-    } else if (browserEngine == BrowserEngine.blink &&
-        operatingSystem == OperatingSystem.android) {
-      this.textEditingStrategy = AndroidTextEditingStrategy();
-    } else if (browserEngine == BrowserEngine.firefox) {
-      this.textEditingStrategy = FirefoxTextEditingStrategy();
-    } else {
-      this.textEditingStrategy = DefaultTextEditingStrategy();
-    }
+    isEnabled = true;
+    _inputConfiguration = inputConfig;
+    _onChange = onChange;
+    _onAction = onAction;
   }
 
-  TextEditingStrategy textEditingStrategy;
-
-  final HybridTextEditing owner;
-
-  @visibleForTesting
-  bool isEnabled = false;
-
-  EditingState _lastEditingState;
-
-  /// Enables the element so it can be used to edit text.
-  ///
-  /// Register [callback] so that it gets invoked whenever any change occurs in
-  /// the text editing element.
-  ///
-  /// Changes could be:
-  /// - Text changes, or
-  /// - Selection changes.
-  void enable(
-    InputConfiguration inputConfig, {
-    @required _OnChangeCallback onChange,
-    @required _OnActionCallback onAction,
-  }) {
-    assert(!isEnabled);
-
-    textEditingStrategy.initializeTextEditing(inputConfig,
-        onChange: onChange, onAction: onAction);
-
-    textEditingStrategy.addEventHandlers();
-
-    textEditingStrategy.setTextEditingState(this._lastEditingState);
-  }
-
+  @override
   void setEditingState(EditingState editingState) {
-    textEditingStrategy.setTextEditingState(editingState);
+    super.setEditingState(editingState);
+
+    // Refocus after setting editing state.
+    domElement.focus();
   }
 
-  void disableTextEditing() {
-    textEditingStrategy.disableTextEditing();
-  }
-
-  void setGeometricInfo(_GeometricInfo geometricInfo) {
-    textEditingStrategy.updateElementPosition(geometricInfo);
-  }
-
-  void setStyle(_EditingStyle style) {
-    textEditingStrategy.updateElementStyle(style);
-  }
-}
-
-/// The implementation of a persistent mode for [TextEditingElement].
-///
-/// Persistent mode assumes the caller will own the creation, insertion and
-/// disposal of the DOM element.
-///
-/// This class is still responsible for hooking up the DOM element with the
-/// [HybridTextEditing] instance so that changes are communicated to Flutter.
-///
-/// Persistent mode is useful for callers that want to have full control over
-/// the placement and lifecycle of the DOM element. An example of such a caller
-/// is Semantic's TextField that needs to put the DOM element inside the
-/// semantic tree. It also requires that the DOM element remains in the tree
-/// when the user isn't editing.
-class PersistentTextEditingElement extends TextEditingElement {
-
-  final DefaultTextEditingStrategy defaultEditingStrategy =
-        AccesibiltyModeTextEditingStrategy();
-
-  html.Element get domElement => this.defaultEditingStrategy.domElement;
-
-  /// Creates a [PersistentTextEditingElement] that eagerly instantiates
-  /// [domElement] so the caller can insert it before calling
-  /// [PersistentTextEditingElement.enable].
-  PersistentTextEditingElement(
-      HybridTextEditing owner, html.HtmlElement domElement)
-      : super(owner) {
-    // Make sure the DOM element is of a type that we support for text editing.
-    // TODO(yjbanov): move into initializer list when https://github.com/dart-lang/sdk/issues/37881 is fixed.
-    assert((domElement is html.InputElement) ||
-        (domElement is html.TextAreaElement));
-    this.defaultEditingStrategy.domElement = domElement;
-    this.textEditingStrategy = defaultEditingStrategy;
-  }
 }
 
 /// Text editing singleton.
@@ -737,22 +696,38 @@ final HybridTextEditing textEditing = HybridTextEditing();
 /// - HTML's contentEditable feature handles typing and text changes.
 /// - HTML's selection API handles selection changes and cursor movements.
 class HybridTextEditing {
-  /// The default HTML element used to manage editing state when a custom
-  /// element is not provided via [useCustomEditableElement].
-  TextEditingElement _defaultEditingElement;
+  /// The text editing stategy used. It can change depending on the
+  /// formfactor/browser.
+  ///
+  /// It uses an HTML element to manage editing state when a custom element is
+  /// not provided via [useCustomEditableElement]
+  DefaultTextEditingStrategy _defaultEditingElement;
 
   /// Private constructor so this class can be a singleton.
+  ///
+  /// The constructor also decides which text editing strategy to use depending
+  /// on the operating system and browser engine.
   HybridTextEditing() {
-    _defaultEditingElement = TextEditingElement(this);
+    if (browserEngine == BrowserEngine.webkit &&
+        operatingSystem == OperatingSystem.iOs) {
+      this._defaultEditingElement = IOSTextEditingStrategy(this);
+    } else if (browserEngine == BrowserEngine.blink &&
+        operatingSystem == OperatingSystem.android) {
+      this._defaultEditingElement = AndroidTextEditingStrategy(this);
+    } else if (browserEngine == BrowserEngine.firefox) {
+      this._defaultEditingElement = FirefoxTextEditingStrategy(this);
+    } else {
+      this._defaultEditingElement = DefaultTextEditingStrategy(this);
+    }
   }
 
   /// The HTML element used to manage editing state.
   ///
   /// This field is populated using [useCustomEditableElement]. If `null` the
-  /// [_defaultEditableElement] is used instead.
-  TextEditingElement _customEditingElement;
+  /// [_defaultEditingElement] is used instead.
+  DefaultTextEditingStrategy _customEditingElement;
 
-  TextEditingElement get editingElement {
+  DefaultTextEditingStrategy get editingElement {
     if (_customEditingElement != null) {
       return _customEditingElement;
     }
@@ -771,7 +746,8 @@ class HybridTextEditing {
   /// instead of the hidden default element.
   ///
   /// Use [stopUsingCustomEditableElement] to switch back to default element.
-  void useCustomEditableElement(TextEditingElement customEditingElement) {
+  void useCustomEditableElement(
+      DefaultTextEditingStrategy customEditingElement) {
     if (isEditing && customEditingElement != _customEditingElement) {
       stopEditing();
     }
@@ -821,11 +797,12 @@ class HybridTextEditing {
 
       case 'TextInput.setEditableSizeAndTransform':
         editingElement
-            .setGeometricInfo(_GeometricInfo.fromFlutter(call.arguments));
+            .updateElementPosition(_GeometricInfo.fromFlutter(call.arguments));
         break;
 
       case 'TextInput.setStyle':
-        editingElement.setStyle(_EditingStyle.fromFlutter(call.arguments));
+        editingElement
+            .updateElementStyle(_EditingStyle.fromFlutter(call.arguments));
         break;
 
       case 'TextInput.clearClient':
@@ -850,7 +827,7 @@ class HybridTextEditing {
   void stopEditing() {
     assert(isEditing);
     isEditing = false;
-    editingElement.disableTextEditing();
+    editingElement.disable();
   }
 
   void _syncEditingStateToFlutter(EditingState editingState) {
@@ -877,19 +854,6 @@ class HybridTextEditing {
       ),
       _emptyCallback,
     );
-  }
-
-  // TODO(flutter_web): After the browser closes and re-opens the virtual
-  // shifts the page in iOS. Call this method from visibility change listener
-  // attached to body.
-  /// Set the DOM element's location somewhere outside of the screen.
-  ///
-  /// This is useful for not triggering a scroll when iOS virtual keyboard is
-  /// coming up.
-  ///
-  /// See [TextEditingElement._delayBeforePositioning].
-  void setStyleOutsideOfScreen(html.HtmlElement domElement) {
-    domElement.style.transform = 'translate(-9999px, -9999px)';
   }
 }
 
