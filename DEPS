@@ -494,6 +494,16 @@ deps = {
      'dep_type': 'cipd',
    },
 
+   'src/third_party/dart/tools/sdks': {
+     'packages': [
+       {
+         'package': 'dart/dart-sdk/${{platform}}',
+         'version': 'version:2.6.0'
+       }
+     ],
+     'dep_type': 'cipd',
+   },
+
    'src/third_party/dart/pkg/analysis_server/language_model': {
      'packages': [
        {
