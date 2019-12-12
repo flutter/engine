@@ -232,11 +232,16 @@ void Animator::AwaitVSync() {
   waiter_->AsyncWaitForVsync(
       [self = weak_factory_.GetWeakPtr()](fml::TimePoint frame_start_time,
                                           fml::TimePoint frame_target_time) {
+        FML_LOG(ERROR) << "ammadu 1";
         if (self) {
+          FML_LOG(ERROR) << "ammadu 2";
           if (self->CanReuseLastLayerTree()) {
+            FML_LOG(ERROR) << "ammadu 3";
             self->DrawLastLayerTree();
           } else {
+            FML_LOG(ERROR) << "ammadu 4";
             self->BeginFrame(frame_start_time, frame_target_time);
+            FML_LOG(ERROR) << "ammadu 5";
           }
         }
       });
