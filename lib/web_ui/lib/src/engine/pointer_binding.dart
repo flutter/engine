@@ -417,6 +417,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       change: details.change,
       timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp),
       kind: _pointerTypeToDeviceKind(event.pointerType),
+      signalKind: ui.PointerSignalKind.none,
       device: event.pointerId,
       physicalX: event.client.x * ui.window.devicePixelRatio,
       physicalY: event.client.y * ui.window.devicePixelRatio,
@@ -582,19 +583,14 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         print(event.type);
       }
       _callback(_convertWheelEventToPointerData(event));
+      // Prevent default so mouse wheel event doesn't get converted to
+      // a scroll event that semantic nodes would process.
       event.preventDefault();
-
-      final html.MouseEvent mouseEvent = event;
-      final List<ui.PointerData> convertedData = <ui.PointerData>[];
-      for(_SanitizedDetails details in _sanitizer.sanitizeUpEvent()) {
-        convertedData.addAll(_convertEventToPointerData(event: mouseEvent, details: details));
-      }
-      _callback(convertedData);
     });
   }
 
   List<ui.PointerData> _convertEventToPointerData({
-    @required html.PointerEvent event,
+    @required html.MouseEvent event,
     @required _SanitizedDetails details,
   }) {
     assert(event != null);
