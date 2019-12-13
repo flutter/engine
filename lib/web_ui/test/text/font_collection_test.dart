@@ -106,7 +106,7 @@ void main() {
         expect(fontFamilyList, contains('Ahem!!ahem'));
       });
 
-      test('Register Asset twice with coma', () async {
+      test('Register Asset twice with comma', () async {
         final String _testFontFamily = 'Ahem ,ahem';
         final List<String> fontFamilyList = List<String>();
 
@@ -175,7 +175,7 @@ void main() {
         expect(fontFamilyList.first, '\"Ahem!!ahem\"');
       });
 
-      test('Register Asset with coma', () async {
+      test('Register Asset with comma', () async {
         final String _testFontFamily = 'Ahem ,ahem';
         final List<String> fontFamilyList = List<String>();
 
