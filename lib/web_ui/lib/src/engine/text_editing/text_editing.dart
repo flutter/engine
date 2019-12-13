@@ -857,6 +857,25 @@ class HybridTextEditing {
       _emptyCallback,
     );
   }
+
+  void sendTextConnectionClosedToFlutterIfAny() {
+    print('sendTextConnectionClosedToFlutter for client: $clientId');
+    if (isEditing) {
+      stopEditing();
+      ui.window.onPlatformMessage(
+        'flutter/textinput',
+        const JSONMethodCodec().encodeMethodCall(
+          MethodCall(
+            'TextInputClient.onConnectionClosed',
+            <dynamic>[
+              _clientId,
+            ],
+          ),
+        ),
+        _emptyCallback,
+      );
+    }
+  }
 }
 
 /// Information on the font and alignment of a text editing element.
