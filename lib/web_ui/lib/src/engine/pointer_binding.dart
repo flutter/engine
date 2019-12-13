@@ -154,7 +154,7 @@ abstract class _BaseAdapter {
     _nativeListeners.clear();
   }
 
-  void _addEventListener(String eventName, html.EventListener handler) {
+  void addEventListener(String eventName, html.EventListener handler) {
     final html.EventListener loggedHandler = (html.Event event) {
       if (_debugLogPointerEvents) {
         print(event.type);
@@ -318,6 +318,8 @@ class _PointerEventSanitizer {
   }
 }
 
+typedef _PointerEventListener = dynamic Function(html.PointerEvent event);
+
 /// Adapter class to be used with browsers that support native pointer events.
 class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   _PointerAdapter(
@@ -338,59 +340,59 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     return state;
   }
 
+  void _addPointerEventListener(String eventName, _PointerEventListener handler) {
+    addEventListener(eventName, (html.Event event) {
+      final html.PointerEvent pointerEvent = event;
+      return handler(pointerEvent);
+    });
+  }
+
   @override
   void setup() {
-    _addEventListener('pointerdown', (html.Event event) {
-      final html.PointerEvent pointerEvent = event;
-      final int device = pointerEvent.pointerId;
-      _callback(
-        _ensurePointerState(device)
-          .sanitizeDownEvent(buttons: pointerEvent.buttons)
-          .expand((_SanitizedDetails details) =>
-            _convertEventToPointerData(event: pointerEvent, details: details),
-          ),
-      );
+    _addPointerEventListener('pointerdown', (html.PointerEvent event) {
+      final int device = event.pointerId;
+      final Iterable<ui.PointerData> pointerData = _ensurePointerState(device)
+        .sanitizeDownEvent(buttons: event.buttons)
+        .expand((_SanitizedDetails details) =>
+          _convertEventToPointerData(event: event, details: details),
+        );
+      _callback(pointerData);
     });
 
-    _addEventListener('pointermove', (html.Event event) {
-      final html.PointerEvent pointerEvent = event;
-      final int device = pointerEvent.pointerId;
+    _addPointerEventListener('pointermove', (html.PointerEvent event) {
+      final int device = event.pointerId;
       final _PointerEventSanitizer state = _ensurePointerState(device);
-      _callback(
-        _expandEvents(pointerEvent)
-          .expand((html.PointerEvent expandedEvent) =>
-            state.sanitizeMoveEvent(buttons: expandedEvent.buttons),
-          )
-          .expand((_SanitizedDetails details) =>
-            _convertEventToPointerData(event: pointerEvent, details: details),
-          ),
-      );
+      final Iterable<ui.PointerData> pointerData = _expandEvents(event)
+        .expand((html.PointerEvent expandedEvent) {
+          return state
+            .sanitizeMoveEvent(buttons: expandedEvent.buttons)
+            .expand((_SanitizedDetails details) =>
+              _convertEventToPointerData(event: expandedEvent, details: details),
+            );
+        });
+      _callback(pointerData);
     });
 
-    _addEventListener('pointerup', (html.Event event) {
-      final html.PointerEvent pointerEvent = event;
-      final int device = pointerEvent.pointerId;
-      _callback(
-        _getPointerState(device)
-          .sanitizeUpEvent()
-          .expand((_SanitizedDetails details) =>
-            _convertEventToPointerData(event: pointerEvent, details: details),
-          ),
-      );
+    _addPointerEventListener('pointerup', (html.PointerEvent  event) {
+      final int device = event.pointerId;
+      final Iterable<ui.PointerData> pointerData = _getPointerState(device)
+        .sanitizeUpEvent()
+        .expand((_SanitizedDetails details) =>
+          _convertEventToPointerData(event: event, details: details),
+        );
+      _callback(pointerData);
     });
 
     // A browser fires cancel event if it concludes the pointer will no longer
     // be able to generate events (example: device is deactivated)
-    _addEventListener('pointercancel', (html.Event event) {
-      final html.PointerEvent pointerEvent = event;
-      final int device = pointerEvent.pointerId;
-      _callback(
-        _getPointerState(device)
-          .sanitizeCancelEvent()
-          .expand((_SanitizedDetails details) =>
-            _convertEventToPointerData(event: pointerEvent, details: details),
-          ),
-      );
+    _addPointerEventListener('pointercancel', (html.PointerEvent  event) {
+      final int device = event.pointerId;
+      final Iterable<ui.PointerData> pointerData = _getPointerState(device)
+        .sanitizeCancelEvent()
+        .expand((_SanitizedDetails details) =>
+          _convertEventToPointerData(event: event, details: details),
+        );
+      _callback(pointerData);
     });
 
     _addWheelEventListener((html.Event event) {
@@ -474,12 +476,12 @@ class _TouchAdapter extends _BaseAdapter {
 
   @override
   void setup() {
-    _addEventListener('touchstart', (html.Event event) {
+    addEventListener('touchstart', (html.Event event) {
       _pressed = true;
       _callback(_convertEventToPointerData(ui.PointerChange.down, event));
     });
 
-    _addEventListener('touchmove', (html.Event event) {
+    addEventListener('touchmove', (html.Event event) {
       event.preventDefault(); // Prevents standard overscroll on iOS/Webkit.
       if (!_pressed) {
         return;
@@ -487,7 +489,7 @@ class _TouchAdapter extends _BaseAdapter {
       _callback(_convertEventToPointerData(ui.PointerChange.move, event));
     });
 
-    _addEventListener('touchend', (html.Event event) {
+    addEventListener('touchend', (html.Event event) {
       // On Safari Mobile, the keyboard does not show unless this line is
       // added.
       event.preventDefault();
@@ -495,7 +497,7 @@ class _TouchAdapter extends _BaseAdapter {
       _callback(_convertEventToPointerData(ui.PointerChange.up, event));
     });
 
-    _addEventListener('touchcancel', (html.Event event) {
+    addEventListener('touchcancel', (html.Event event) {
       _pressed = false;
       _callback(_convertEventToPointerData(ui.PointerChange.cancel, event));
     });
@@ -526,6 +528,8 @@ class _TouchAdapter extends _BaseAdapter {
   }
 }
 
+typedef _MouseEventListener = dynamic Function(html.MouseEvent event);
+
 /// Adapter to be used with browsers that support mouse events.
 class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   _MouseAdapter(
@@ -536,39 +540,40 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
   final _PointerEventSanitizer _sanitizer = _PointerEventSanitizer();
 
+  void _addMouseEventListener(String eventName, _MouseEventListener handler) {
+    addEventListener(eventName, (html.Event event) {
+      final html.MouseEvent mouseEvent = event;
+      return handler(mouseEvent);
+    });
+  }
+
   @override
   void setup() {
-    _addEventListener('mousedown', (html.Event event) {
-      final html.MouseEvent mouseEvent = event;
-      _callback(
-        _sanitizer
-          .sanitizeDownEvent(buttons: mouseEvent.buttons)
-          .expand((_SanitizedDetails details) =>
-            _convertEventToPointerData(event: mouseEvent, details: details),
-          ),
-      );
+    _addMouseEventListener('mousedown', (html.MouseEvent event) {
+      final Iterable<ui.PointerData> pointerData = _sanitizer
+        .sanitizeDownEvent(buttons: event.buttons)
+        .expand((_SanitizedDetails details) =>
+          _convertEventToPointerData(event: event, details: details),
+        );
+      _callback(pointerData);
     });
 
-    _addEventListener('mousemove', (html.Event event) {
-      final html.MouseEvent mouseEvent = event;
-      _callback(
-        _sanitizer
-          .sanitizeMoveEvent(buttons: mouseEvent.buttons)
-          .expand((_SanitizedDetails details) =>
-            _convertEventToPointerData(event: mouseEvent, details: details),
-          ),
-      );
+    _addMouseEventListener('mousemove', (html.MouseEvent event) {
+      final Iterable<ui.PointerData> pointerData = _sanitizer
+        .sanitizeMoveEvent(buttons: event.buttons)
+        .expand((_SanitizedDetails details) =>
+          _convertEventToPointerData(event: event, details: details),
+        );
+      _callback(pointerData);
     });
 
-    _addEventListener('mouseup', (html.Event event) {
-      final html.MouseEvent mouseEvent = event;
-      _callback(
-        _sanitizer
-          .sanitizeUpEvent()
-          .expand((_SanitizedDetails details) =>
-            _convertEventToPointerData(event: mouseEvent, details: details),
-          ),
-      );
+    _addMouseEventListener('mouseup', (html.MouseEvent event) {
+      final Iterable<ui.PointerData> pointerData = _sanitizer
+        .sanitizeUpEvent()
+        .expand((_SanitizedDetails details) =>
+          _convertEventToPointerData(event: event, details: details),
+        );
+      _callback(pointerData);
     });
 
     _addWheelEventListener((html.Event event) {
