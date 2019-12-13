@@ -203,6 +203,7 @@ void main() async {
       expect(
         paragraph.getLineBoundary(TextPosition(offset: i)),
         TextRange(start: 0, end: 15),
+        reason: 'failed at offset $i',
       );
     }
   });
@@ -230,6 +231,7 @@ void main() async {
       expect(
         paragraph.getLineBoundary(TextPosition(offset: i)),
         TextRange(start: 0, end: 11),
+        reason: 'failed at offset $i',
       );
     }
 
@@ -238,6 +240,7 @@ void main() async {
       expect(
         paragraph.getLineBoundary(TextPosition(offset: i)),
         TextRange(start: 11, end: 23),
+        reason: 'failed at offset $i',
       );
     }
 
@@ -246,6 +249,7 @@ void main() async {
       expect(
         paragraph.getLineBoundary(TextPosition(offset: i)),
         TextRange(start: 23, end: 33),
+        reason: 'failed at offset $i',
       );
     }
 
