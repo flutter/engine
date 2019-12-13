@@ -10,6 +10,8 @@ const bool _debugVisibleTextEditing = false;
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
 
+const Duration _kFiveMiliseconds = Duration(milliseconds: 5);
+
 void _emptyCallback(dynamic _) {}
 
 /// These style attributes are constant throughout the life time of an input
@@ -287,6 +289,28 @@ class DefaultTextEditingStrategy implements TextEditingStrategy {
   @visibleForTesting
   bool isEnabled = false;
 
+  /// The behavior for blur in DOM elements changes depending on the reason of
+  /// blur:
+  ///
+  /// (1) If the blur is triggered due to tab change or browser minimize, same
+  /// element receives the focus as soon as the page reopens. Hence, text
+  /// editing connection doen not need to be closed.
+  ///
+  /// (2) On the other hand if the blur is triggered due to interaction with
+  /// another element on the page, the current text connection is obsolete so
+  /// connection close request is send to Flutter.
+  ///
+  /// See [HybridTextEditing.sendTextConnectionClosedToFlutterIfAny].
+  ///
+  /// In order to detect between these two cases, after a blur event is
+  /// triggered [pageVisibilityTimer] is started. If the body of the
+  /// document still has focus after [_delayBeforePageVisibilityTimer],
+  /// we know that case (2) happened.
+  ///
+  /// See [bodyHasFocus].
+  Timer pageVisibilityTimer;
+  final Duration _delayBeforePageVisibilityTimer = _kFiveMiliseconds;
+
   html.HtmlElement domElement;
   InputConfiguration _inputConfiguration;
   EditingState _lastEditingState;
@@ -343,6 +367,26 @@ class DefaultTextEditingStrategy implements TextEditingStrategy {
     _subscriptions.add(domElement.onKeyDown.listen(_maybeSendAction));
 
     _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
+
+    _subscriptions.add(domElement.onFocus.listen((_) {
+      bodyHasFocus = true;
+    }));
+
+    /// On default, do not blur the DOM element if the user goes to another
+    /// tab or minimizes the browser.
+    _subscriptions.add(domElement.onBlur.listen((_) {
+      // Cancel previous timer if exists.
+      pageVisibilityTimer?.cancel();
+      pageVisibilityTimer = Timer(_delayBeforePageVisibilityTimer, () {
+        if (bodyHasFocus) {
+          /// Focus is still on the body. Continue with blur.
+          owner.sendTextConnectionClosedToFlutterIfAny();
+        } else {
+          // Refocus.
+          domElement.focus();
+        }
+      });
+    }));
   }
 
   @override
@@ -370,6 +414,9 @@ class DefaultTextEditingStrategy implements TextEditingStrategy {
     _lastEditingState = null;
     _style = null;
     _geometricInfo = null;
+
+    pageVisibilityTimer?.cancel();
+    pageVisibilityTimer = null;
 
     for (int i = 0; i < _subscriptions.length; i++) {
       _subscriptions[i].cancel();
@@ -508,7 +555,18 @@ class IOSTextEditingStrategy extends DefaultTextEditingStrategy {
     domElement.style.transform = 'translate(-9999px, -9999px)';
 
     _canPosition = false;
+  }
 
+  @override
+  void addEventHandlers() {
+    // Subscribe to text and selection changes.
+    _subscriptions.add(domElement.onInput.listen(_handleChange));
+
+    _subscriptions.add(domElement.onKeyDown.listen(_maybeSendAction));
+
+    _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
+
+    /// Position the DOM element after it is focused.
     _subscriptions.add(domElement.onFocus.listen((_) {
       // Cancel previous timer if exists.
       _positionInputElementTimer?.cancel();
@@ -516,15 +574,16 @@ class IOSTextEditingStrategy extends DefaultTextEditingStrategy {
         _canPosition = true;
         positionElement();
       });
+    }));
 
-      // When the virtual keyboard is closed on iOS, onBlur is triggered.
-      _subscriptions.add(domElement.onBlur.listen((_) {
-        // Cancel the timer since there is no need to set the location of the
-        // input element anymore. It needs to be focused again to be editable
-        // by the user.
-        _positionInputElementTimer?.cancel();
-        _positionInputElementTimer = null;
-      }));
+    /// On IOS blur is trigerred if the virtual keyboard is closed or the
+    /// browser is sent to background or the browser tab is changed.
+    ///
+    /// Since in all these cases, the connection needs to be closed,
+    /// [bodyHasFocus] is not checked in [IOSTextEditingStrategy]. For the same
+    /// reason [pageVisibilityTimer] is also not used.
+    _subscriptions.add(domElement.onBlur.listen((_) {
+        owner.sendTextConnectionClosedToFlutterIfAny();
     }));
   }
 
@@ -567,19 +626,33 @@ class AndroidTextEditingStrategy extends DefaultTextEditingStrategy {
 
   @override
   void addEventHandlers() {
-    super.addEventHandlers();
-    // Chrome on Android will hide the onscreen keyboard when you tap outside
-    // the text box. Instead, we want the framework to tell us to hide the
-    // keyboard via `TextInput.clearClient` or `TextInput.hide`.
-    if (browserEngine == BrowserEngine.blink ||
-        browserEngine == BrowserEngine.unknown) {
-      _subscriptions.add(domElement.onBlur.listen((_) {
-        if (isEnabled) {
-          // Refocus.
-          domElement.focus();
-        }
-      }));
-    }
+    // Subscribe to text and selection changes.
+    _subscriptions.add(domElement.onInput.listen(_handleChange));
+
+    _subscriptions.add(domElement.onKeyDown.listen(_maybeSendAction));
+
+    _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
+
+    _subscriptions.add(domElement.onFocus.listen((_) {
+      bodyHasFocus = true;
+    }));
+
+    _subscriptions.add(domElement.onBlur.listen((_) {
+      if (bodyHasFocus) {
+        /// Chrome on Android will hide the onscreen keyboard when you tap outside
+        /// the text box. Instead, we want the framework to tell us to hide the
+        /// keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
+        /// refocus as long as [bodyHasFocus] is true.
+        domElement.focus();
+        pageVisibilityTimer?.cancel();
+        pageVisibilityTimer = Timer(_delayBeforePageVisibilityTimer, () {
+          if (!bodyHasFocus) {
+            domElement.blur();
+            owner.sendTextConnectionClosedToFlutterIfAny();
+          }
+        });
+      }
+    }));
   }
 }
 
@@ -618,6 +691,26 @@ class FirefoxTextEditingStrategy extends DefaultTextEditingStrategy {
     /// listening to onSelect. On the other browsers onSelectionChange is
     /// enough for covering "Select All" functionality.
     _subscriptions.add(domElement.onSelect.listen(_handleChange));
+
+    _subscriptions.add(domElement.onFocus.listen((_) {
+      bodyHasFocus = true;
+    }));
+
+    /// On default, do not blur the DOM element if the user goes to another
+    /// tab or minimizes the browser.
+    _subscriptions.add(domElement.onBlur.listen((_) {
+      // Cancel previous timer if exists.
+      pageVisibilityTimer?.cancel();
+      pageVisibilityTimer = Timer(_delayBeforePageVisibilityTimer, () {
+        if (bodyHasFocus) {
+          /// Focus is still on the body. Continue with blur.
+          owner.sendTextConnectionClosedToFlutterIfAny();
+        } else {
+          // Refocus.
+          domElement.focus();
+        }
+      });
+    }));
   }
 }
 
@@ -683,7 +776,6 @@ class PersistentTextEditingElement extends DefaultTextEditingStrategy {
     // Refocus after setting editing state.
     domElement.focus();
   }
-
 }
 
 /// Text editing singleton.
@@ -859,7 +951,6 @@ class HybridTextEditing {
   }
 
   void sendTextConnectionClosedToFlutterIfAny() {
-    print('sendTextConnectionClosedToFlutter for client: $clientId');
     if (isEditing) {
       stopEditing();
       ui.window.onPlatformMessage(
