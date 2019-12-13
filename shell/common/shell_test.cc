@@ -11,6 +11,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/common/vsync_waiter_fallback.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 #include "flutter/testing/testing.h"
 
@@ -258,11 +259,22 @@ std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
 std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
                                               TaskRunners task_runners,
                                               bool simulate_vsync) {
+  const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
+  CreateVsyncWaiter create_vsync_waiter = [&]() {
+    if (simulate_vsync) {
+      return static_cast<std::unique_ptr<VsyncWaiter>>(
+          std::make_unique<ShellTestVsyncWaiter>(task_runners, vsync_clock));
+    } else {
+      return static_cast<std::unique_ptr<VsyncWaiter>>(
+          std::make_unique<VsyncWaiterFallback>(task_runners));
+    }
+  };
   return Shell::Create(
       task_runners, settings,
-      [simulate_vsync](Shell& shell) {
+      [vsync_clock, &create_vsync_waiter](Shell& shell) {
         return std::make_unique<ShellTestPlatformView>(
-            shell, shell.GetTaskRunners(), simulate_vsync);
+            shell, shell.GetTaskRunners(), vsync_clock,
+            std::move(create_vsync_waiter));
       },
       [](Shell& shell) {
         return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
@@ -289,63 +301,24 @@ void ShellTest::AddNativeCallback(std::string name,
   native_resolver_->AddNativeCallback(std::move(name), callback);
 }
 
-void ShellTestVsyncClock::SimulateVSync() {
-  std::scoped_lock lock(mutex_);
-  if (vsync_issued_ >= vsync_promised_.size()) {
-    vsync_promised_.emplace_back();
-  }
-  FML_CHECK(vsync_issued_ < vsync_promised_.size());
-  vsync_promised_[vsync_issued_].set_value(vsync_issued_);
-  vsync_issued_ += 1;
-}
-
-std::future<int> ShellTestVsyncClock::NextVSync() {
-  std::scoped_lock lock(mutex_);
-  vsync_promised_.emplace_back();
-  return vsync_promised_.back().get_future();
-}
-
-void ShellTestVsyncWaiter::AwaitVSync() {
-  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
-  auto vsync_future = clock_.NextVSync();
-
-  auto async_wait = std::async([&vsync_future, this]() {
-    vsync_future.wait();
-
-    // Post the `FireCallback` to the Platform thread so earlier Platform tasks
-    // (specifically, the `VSyncFlush` call) will be finished before
-    // `FireCallback` is executed. This is only needed for our unit tests.
-    //
-    // Without this, the repeated VSYNC signals in `VSyncFlush` may start both
-    // the current frame in the UI thread and the next frame in the secondary
-    // callback (both of them are waiting for VSYNCs). That breaks the unit
-    // test's assumption that each frame's VSYNC must be issued by different
-    // `VSyncFlush` call (which resets the `will_draw_new_frame` bit).
-    //
-    // For example, HandlesActualIphoneXsInputEvents will fail without this.
-    task_runners_.GetPlatformTaskRunner()->PostTask([this]() {
-      FireCallback(fml::TimePoint::Now(), fml::TimePoint::Now());
-    });
-  });
-}
-
-ShellTestPlatformView::ShellTestPlatformView(PlatformView::Delegate& delegate,
-                                             TaskRunners task_runners,
-                                             bool simulate_vsync)
+ShellTestPlatformView::ShellTestPlatformView(
+    PlatformView::Delegate& delegate,
+    TaskRunners task_runners,
+    std::shared_ptr<ShellTestVsyncClock> vsync_clock,
+    CreateVsyncWaiter create_vsync_waiter)
     : PlatformView(delegate, std::move(task_runners)),
       gl_surface_(SkISize::Make(800, 600)),
-      simulate_vsync_(simulate_vsync) {}
+      create_vsync_waiter_(std::move(create_vsync_waiter)),
+      vsync_clock_(vsync_clock) {}
 
 ShellTestPlatformView::~ShellTestPlatformView() = default;
 
 std::unique_ptr<VsyncWaiter> ShellTestPlatformView::CreateVSyncWaiter() {
-  return simulate_vsync_ ? std::make_unique<ShellTestVsyncWaiter>(task_runners_,
-                                                                  vsync_clock_)
-                         : PlatformView::CreateVSyncWaiter();
+  return create_vsync_waiter_();
 }
 
 void ShellTestPlatformView::SimulateVSync() {
-  vsync_clock_.SimulateVSync();
+  vsync_clock_->SimulateVSync();
 }
 
 // |PlatformView|
