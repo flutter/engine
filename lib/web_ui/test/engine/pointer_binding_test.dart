@@ -56,14 +56,14 @@ void main() {
         'buttons': 1,
       }));
 
-      expect(packets, hasLength(3));
+      expect(packets, hasLength(2));
       // An add will be synthesized.
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
       expect(packets[0].data[0].synthesized, equals(true));
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
       expect(packets[1].data[0].change, equals(ui.PointerChange.up));
-      expect(packets[2].data[0].change, equals(ui.PointerChange.down));
+      expect(packets[1].data[1].change, equals(ui.PointerChange.down));
     });
 
     test('does not synthesize pointer up if from different device', () {
