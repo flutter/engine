@@ -40,10 +40,10 @@ class EngineLineMetrics implements ui.LineMetrics {
   /// The textual content representing this line.
   final String text;
 
-  /// The index in the text where this line begins.
+  /// The index (inclusive) in the text where this line begins.
   final int startIndex;
 
-  /// The index in the text where this line ends.
+  /// The index (exclusive) in the text where this line ends.
   ///
   /// When the line contains an overflow, then [endIndex] goes until the end of
   /// the text and doesn't stop at the overflow cutoff.
