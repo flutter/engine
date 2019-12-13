@@ -158,7 +158,8 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
 sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
     SkISize size,
     std::function<void(SkCanvas*)> draw_callback) {
-  TRACE_EVENT0("flutter", __FUNCTION__);;
+  TRACE_EVENT0("flutter", __FUNCTION__);
+  ;
   auto context_switch = SurfaceMakeContextCurrent();
   if (context_switch != nullptr && !context_switch->GetSwitchResult()) {
     return nullptr;
@@ -529,7 +530,8 @@ void Rasterizer::ScreenshotFlushCanvas(SkCanvas& canvas) {
   canvas.flush();
 }
 
-std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch> Rasterizer::SurfaceMakeContextCurrent() {
+std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+Rasterizer::SurfaceMakeContextCurrent() {
   if (surface_ == nullptr) {
     return nullptr;
   }

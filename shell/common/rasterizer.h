@@ -456,7 +456,8 @@ class Rasterizer final : public SnapshotDelegate {
       flutter::LayerTree& layer_tree);
   void ScreenshotFlushCanvas(SkCanvas& canvas);
   // Make the FLutter's gl context as current context on surface_
-  std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch> SurfaceMakeContextCurrent();
+  std::unique_ptr<RendererContextSwitchManager::RendererContextSwitch>
+  SurfaceMakeContextCurrent();
 
   FML_DISALLOW_COPY_AND_ASSIGN(Rasterizer);
 };
