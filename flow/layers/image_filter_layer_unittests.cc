@@ -217,13 +217,13 @@ TEST_F(ImageFilterLayerTest, Readback) {
       SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
   auto initial_transform = SkMatrix();
 
-  // ColorFilterLayer does not read from surface
+  // ImageFilterLayer does not read from surface
   auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
   preroll_context()->surface_needs_readback = false;
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 
-  // ColorFilterLayer blocks child with readback
+  // ImageFilterLayer blocks child with readback
   auto mock_layer =
       std::make_shared<MockLayer>(SkPath(), SkPaint(), false, false, true);
   layer->Add(mock_layer);
