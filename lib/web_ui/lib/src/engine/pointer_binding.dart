@@ -513,11 +513,8 @@ class _TouchAdapter extends _BaseAdapter {
     ui.PointerChange change,
     html.TouchEvent event,
   ) {
-    final html.TouchList touches = event.changedTouches;
     final List<ui.PointerData> data = List<ui.PointerData>();
-    final int len = touches.length;
-    for (int i = 0; i < len; i++) {
-      final html.Touch touch = touches[i];
+    for (html.Touch touch in event.changedTouches) {
       _pointerDataConverter.convert(
         data,
         change: change,
