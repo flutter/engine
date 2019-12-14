@@ -238,7 +238,7 @@ void main() async {
 
     /* Logical arrangement: Tree
 
-    Root TextSpan: 0 
+    Root TextSpan: 0
     */
     builder.pushStyle(style);
     {
@@ -291,10 +291,10 @@ void main() async {
 
     /* Display arrangement: Visible texts
 
-    Because `const fontSize = 20.0`, the width of each character is 20 and the 
-    height is 20. `Display arrangement` squashes `Logical arrangement` to the 
+    Because `const fontSize = 20.0`, the width of each character is 20 and the
+    height is 20. `Display arrangement` squashes `Logical arrangement` to the
     (x, y) plane. That means `Display arrangement` only shows the visible texts.
-    The order of texts is text00 --> text010 --> text02 --> text030 --> text04 
+    The order of texts is text00 --> text010 --> text02 --> text030 --> text04
     --> text050.
 
     The output is like that.
