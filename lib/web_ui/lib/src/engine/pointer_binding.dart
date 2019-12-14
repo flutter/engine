@@ -183,8 +183,8 @@ abstract class _BaseAdapter {
 
 mixin _WheelEventListenerMixin on _BaseAdapter {
   List<ui.PointerData> _convertWheelEventToPointerData(
-    html.WheelEvent event,
-   ) {
+    html.WheelEvent event
+  ) {
     const int domDeltaPixel = 0x00;
     const int domDeltaLine = 0x01;
     const int domDeltaPage = 0x02;
@@ -412,13 +412,18 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     @required _SanitizedDetails details,
   }) {
     final List<ui.PointerData> data = <ui.PointerData>[];
+    final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(event.pointerType);
+    // We force `device: _mouseDeviceId` on mouse pointers because Wheel events
+    // might come before any PointerEvents, and since wheel events don't contain
+    // pointerId we always assign `device: _mouseDeviceId` to them.
+    final int device = kind == ui.PointerDeviceKind.mouse ? _mouseDeviceId : event.pointerId;
     _pointerDataConverter.convert(
       data,
       change: details.change,
       timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp),
-      kind: _pointerTypeToDeviceKind(event.pointerType),
+      kind: kind,
       signalKind: ui.PointerSignalKind.none,
-      device: event.pointerId,
+      device: device,
       physicalX: event.client.x * ui.window.devicePixelRatio,
       physicalY: event.client.y * ui.window.devicePixelRatio,
       buttons: details.buttons,
