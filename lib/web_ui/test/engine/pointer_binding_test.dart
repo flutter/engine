@@ -22,7 +22,7 @@ void main() {
 
   // ALL ADAPTERS
 
-  [_PointerEventContext(), _MouseEventContext()].forEach((_BasicEventContext context) {
+  [_PointerEventContext(), _MouseEventContext(), _TouchEventContext()].forEach((_BasicEventContext context) {
     test('${context.name} can receive pointer events on the glass pane', () {
       PointerBinding.instance.debugOverrideDetector(context);
       ui.PointerDataPacket receivedPacket;
@@ -39,7 +39,48 @@ void main() {
     });
   });
 
-  [_PointerEventContext(), _MouseEventContext()].forEach((_BasicEventContext context) {
+  [_PointerEventContext(), _MouseEventContext(), _TouchEventContext()].forEach((_BasicEventContext context) {
+    test('${context.name} does create an add event if got a pointerdown', () {
+      PointerBinding.instance.debugOverrideDetector(context);
+      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      glassPane.dispatchEvent((context
+        ..down = true
+      ).downEvent());
+
+      expect(packets, hasLength(1));
+      expect(packets.single.data, hasLength(2));
+
+      expect(packets.single.data[0].change, equals(ui.PointerChange.add));
+      expect(packets.single.data[1].change, equals(ui.PointerChange.down));
+    });
+  });
+
+  // BUTTONED ADAPTERS
+
+  [_MouseEventContext(), _PointerEventContext()].forEach((_ButtonedEventContext context) {
+    test('${context.name} creates an add event if the first pointer activity is a hover', () {
+      PointerBinding.instance.debugOverrideDetector(context);
+      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      glassPane.dispatchEvent(context.moveEvent());
+
+      expect(packets, hasLength(1));
+      expect(packets.single.data, hasLength(2));
+
+      expect(packets.single.data[0].change, equals(ui.PointerChange.add));
+      expect(packets.single.data[0].synthesized, equals(true));
+      expect(packets.single.data[1].change, equals(ui.PointerChange.hover));
+    });
+  });
+
+  [_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventContext context) {
     test('${context.name} synthesizes a pointerup event on two pointerdowns in a row', () {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
@@ -63,162 +104,6 @@ void main() {
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
       expect(packets[1].data[0].change, equals(ui.PointerChange.up));
       expect(packets[1].data[1].change, equals(ui.PointerChange.down));
-    });
-  });
-
-  [_PointerEventContext(), _MouseEventContext()].forEach((_BasicEventContext context) {
-    test('${context.name} does create an add event if got a pointerdown', () {
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
-      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
-        packets.add(packet);
-      };
-
-      glassPane.dispatchEvent((context
-        ..down = true
-      ).downEvent());
-
-      expect(packets, hasLength(1));
-      expect(packets.single.data, hasLength(2));
-
-      expect(packets.single.data[0].change, equals(ui.PointerChange.add));
-      expect(packets.single.data[1].change, equals(ui.PointerChange.down));
-    });
-  });
-
-  [_PointerEventContext(), _MouseEventContext()].forEach((_BasicEventContext context) {
-    test('${context.name} does calculate delta and pointer identifier correctly', () {
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
-      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
-        packets.add(packet);
-      };
-
-      glassPane.dispatchEvent((context
-        ..clientX = 10.0
-        ..clientY = 10.0
-      ).moveEvent());
-
-      glassPane.dispatchEvent((context
-        ..clientX = 20.0
-        ..clientY = 20.0
-      ).moveEvent());
-
-      glassPane.dispatchEvent((context
-        ..down = true
-      ).downEvent());
-
-      glassPane.dispatchEvent((context
-        ..clientX = 40.0
-        ..clientY = 30.0
-      ).moveEvent());
-
-      glassPane.dispatchEvent((context
-        ..down = false
-      ).upEvent());
-
-      glassPane.dispatchEvent((context
-        ..clientX = 20.0
-        ..clientY = 10.0
-      ).moveEvent());
-
-      glassPane.dispatchEvent((context
-        ..down = true
-      ).downEvent());
-
-      expect(packets, hasLength(7));
-
-      expect(packets[0].data, hasLength(2));
-      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].pointerIdentifier, equals(0));
-      expect(packets[0].data[0].synthesized, equals(true));
-      expect(packets[0].data[0].physicalX, equals(10.0));
-      expect(packets[0].data[0].physicalY, equals(10.0));
-      expect(packets[0].data[0].physicalDeltaX, equals(0.0));
-      expect(packets[0].data[0].physicalDeltaY, equals(0.0));
-
-      expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
-      expect(packets[0].data[1].pointerIdentifier, equals(0));
-      expect(packets[0].data[1].synthesized, equals(false));
-      expect(packets[0].data[1].physicalX, equals(10.0));
-      expect(packets[0].data[1].physicalY, equals(10.0));
-      expect(packets[0].data[1].physicalDeltaX, equals(0.0));
-      expect(packets[0].data[1].physicalDeltaY, equals(0.0));
-
-      expect(packets[1].data, hasLength(1));
-      expect(packets[1].data[0].change, equals(ui.PointerChange.hover));
-      expect(packets[1].data[0].pointerIdentifier, equals(0));
-      expect(packets[1].data[0].synthesized, equals(false));
-      expect(packets[1].data[0].physicalX, equals(20.0));
-      expect(packets[1].data[0].physicalY, equals(20.0));
-      expect(packets[1].data[0].physicalDeltaX, equals(10.0));
-      expect(packets[1].data[0].physicalDeltaY, equals(10.0));
-
-      expect(packets[2].data, hasLength(1));
-      expect(packets[2].data[0].change, equals(ui.PointerChange.down));
-      expect(packets[2].data[0].pointerIdentifier, equals(1));
-      expect(packets[2].data[0].synthesized, equals(false));
-      expect(packets[2].data[0].physicalX, equals(20.0));
-      expect(packets[2].data[0].physicalY, equals(20.0));
-      expect(packets[2].data[0].physicalDeltaX, equals(0.0));
-      expect(packets[2].data[0].physicalDeltaY, equals(0.0));
-
-      expect(packets[3].data, hasLength(1));
-      expect(packets[3].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[3].data[0].pointerIdentifier, equals(1));
-      expect(packets[3].data[0].synthesized, equals(false));
-      expect(packets[3].data[0].physicalX, equals(40.0));
-      expect(packets[3].data[0].physicalY, equals(30.0));
-      expect(packets[3].data[0].physicalDeltaX, equals(20.0));
-      expect(packets[3].data[0].physicalDeltaY, equals(10.0));
-
-      expect(packets[4].data, hasLength(1));
-      expect(packets[4].data[0].change, equals(ui.PointerChange.up));
-      expect(packets[4].data[0].pointerIdentifier, equals(1));
-      expect(packets[4].data[0].synthesized, equals(false));
-      expect(packets[4].data[0].physicalX, equals(40.0));
-      expect(packets[4].data[0].physicalY, equals(30.0));
-      expect(packets[4].data[0].physicalDeltaX, equals(0.0));
-      expect(packets[4].data[0].physicalDeltaY, equals(0.0));
-
-      expect(packets[5].data, hasLength(1));
-      expect(packets[5].data[0].change, equals(ui.PointerChange.hover));
-      expect(packets[5].data[0].pointerIdentifier, equals(1));
-      expect(packets[5].data[0].synthesized, equals(false));
-      expect(packets[5].data[0].physicalX, equals(20.0));
-      expect(packets[5].data[0].physicalY, equals(10.0));
-      expect(packets[5].data[0].physicalDeltaX, equals(-20.0));
-      expect(packets[5].data[0].physicalDeltaY, equals(-20.0));
-
-      expect(packets[6].data, hasLength(1));
-      expect(packets[6].data[0].change, equals(ui.PointerChange.down));
-      expect(packets[6].data[0].pointerIdentifier, equals(2));
-      expect(packets[6].data[0].synthesized, equals(false));
-      expect(packets[6].data[0].physicalX, equals(20.0));
-      expect(packets[6].data[0].physicalY, equals(10.0));
-      expect(packets[6].data[0].physicalDeltaX, equals(0.0));
-      expect(packets[6].data[0].physicalDeltaY, equals(0.0));
-    });
-  });
-
-  // BUTTONED ADAPTERS
-
-  [_MouseEventContext(), _PointerEventContext()].forEach((_ButtonedEventContext context) {
-    test('${context.name} creates an add event if the first pointer activity is a hover', () {
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
-      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
-        packets.add(packet);
-      };
-
-      glassPane.dispatchEvent(context.moveEvent());
-
-      expect(packets, hasLength(1));
-      expect(packets.single.data, hasLength(2));
-
-      expect(packets.single.data[0].change, equals(ui.PointerChange.add));
-      expect(packets.single.data[0].synthesized, equals(true));
-      expect(packets.single.data[1].change, equals(ui.PointerChange.hover));
     });
   });
 
@@ -330,6 +215,122 @@ void main() {
       expect(packets[3].data[1].physicalY, equals(60.0));
       expect(packets[3].data[1].physicalDeltaX, equals(0.0));
       expect(packets[3].data[1].physicalDeltaY, equals(0.0));
+    });
+  });
+
+  [_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventContext context) {
+    // Touch is in another test since this test involves hovering
+    test('${context.name} does calculate delta and pointer identifier correctly', () {
+      PointerBinding.instance.debugOverrideDetector(context);
+      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      glassPane.dispatchEvent((context
+        ..clientX = 10.0
+        ..clientY = 10.0
+      ).moveEvent());
+
+      glassPane.dispatchEvent((context
+        ..clientX = 20.0
+        ..clientY = 20.0
+      ).moveEvent());
+
+      glassPane.dispatchEvent((context
+        ..down = true
+      ).downEvent());
+
+      glassPane.dispatchEvent((context
+        ..clientX = 40.0
+        ..clientY = 30.0
+      ).moveEvent());
+
+      glassPane.dispatchEvent((context
+        ..down = false
+      ).upEvent());
+
+      glassPane.dispatchEvent((context
+        ..clientX = 20.0
+        ..clientY = 10.0
+      ).moveEvent());
+
+      glassPane.dispatchEvent((context
+        ..down = true
+      ).downEvent());
+
+      expect(packets, hasLength(7));
+
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      expect(packets[0].data[0].pointerIdentifier, equals(0));
+      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].physicalX, equals(10.0));
+      expect(packets[0].data[0].physicalY, equals(10.0));
+      expect(packets[0].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[0].physicalDeltaY, equals(0.0));
+
+      expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
+      expect(packets[0].data[1].pointerIdentifier, equals(0));
+      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].physicalX, equals(10.0));
+      expect(packets[0].data[1].physicalY, equals(10.0));
+      expect(packets[0].data[1].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[1].physicalDeltaY, equals(0.0));
+
+      expect(packets[1].data, hasLength(1));
+      expect(packets[1].data[0].change, equals(ui.PointerChange.hover));
+      expect(packets[1].data[0].pointerIdentifier, equals(0));
+      expect(packets[1].data[0].synthesized, equals(false));
+      expect(packets[1].data[0].physicalX, equals(20.0));
+      expect(packets[1].data[0].physicalY, equals(20.0));
+      expect(packets[1].data[0].physicalDeltaX, equals(10.0));
+      expect(packets[1].data[0].physicalDeltaY, equals(10.0));
+
+      expect(packets[2].data, hasLength(1));
+      expect(packets[2].data[0].change, equals(ui.PointerChange.down));
+      expect(packets[2].data[0].pointerIdentifier, equals(1));
+      expect(packets[2].data[0].synthesized, equals(false));
+      expect(packets[2].data[0].physicalX, equals(20.0));
+      expect(packets[2].data[0].physicalY, equals(20.0));
+      expect(packets[2].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[2].data[0].physicalDeltaY, equals(0.0));
+
+      expect(packets[3].data, hasLength(1));
+      expect(packets[3].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[3].data[0].pointerIdentifier, equals(1));
+      expect(packets[3].data[0].synthesized, equals(false));
+      expect(packets[3].data[0].physicalX, equals(40.0));
+      expect(packets[3].data[0].physicalY, equals(30.0));
+      expect(packets[3].data[0].physicalDeltaX, equals(20.0));
+      expect(packets[3].data[0].physicalDeltaY, equals(10.0));
+
+      expect(packets[4].data, hasLength(1));
+      expect(packets[4].data[0].change, equals(ui.PointerChange.up));
+      expect(packets[4].data[0].pointerIdentifier, equals(1));
+      expect(packets[4].data[0].synthesized, equals(false));
+      expect(packets[4].data[0].physicalX, equals(40.0));
+      expect(packets[4].data[0].physicalY, equals(30.0));
+      expect(packets[4].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[4].data[0].physicalDeltaY, equals(0.0));
+
+      expect(packets[5].data, hasLength(1));
+      expect(packets[5].data[0].change, equals(ui.PointerChange.hover));
+      expect(packets[5].data[0].pointerIdentifier, equals(1));
+      expect(packets[5].data[0].synthesized, equals(false));
+      expect(packets[5].data[0].physicalX, equals(20.0));
+      expect(packets[5].data[0].physicalY, equals(10.0));
+      expect(packets[5].data[0].physicalDeltaX, equals(-20.0));
+      expect(packets[5].data[0].physicalDeltaY, equals(-20.0));
+
+      expect(packets[6].data, hasLength(1));
+      expect(packets[6].data[0].change, equals(ui.PointerChange.down));
+      expect(packets[6].data[0].pointerIdentifier, equals(2));
+      expect(packets[6].data[0].synthesized, equals(false));
+      expect(packets[6].data[0].physicalX, equals(20.0));
+      expect(packets[6].data[0].physicalY, equals(10.0));
+      expect(packets[6].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[6].data[0].physicalDeltaY, equals(0.0));
     });
   });
 
@@ -746,6 +747,98 @@ void main() {
       expect(packets[1].data[1].device, equals(2));
     });
   });
+
+  // TOUCH ADAPTER
+
+  [_TouchEventContext()].forEach((_TouchEventContext context) {
+    // Mouse and Pointer are in another test since these tests can involve hovering
+    test('${context.name} does calculate delta and pointer identifier correctly', () {
+      PointerBinding.instance.debugOverrideDetector(context);
+      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      glassPane.dispatchEvent((context
+        ..identifier = 1
+        ..down = true
+        ..clientX = 20.0
+        ..clientY = 20.0
+      ).downEvent());
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      expect(packets[0].data[0].pointerIdentifier, equals(1));
+      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].physicalX, equals(20.0));
+      expect(packets[0].data[0].physicalY, equals(20.0));
+      expect(packets[0].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[0].physicalDeltaY, equals(0.0));
+
+      expect(packets[0].data[1].change, equals(ui.PointerChange.down));
+      expect(packets[0].data[1].pointerIdentifier, equals(1));
+      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].physicalX, equals(20.0));
+      expect(packets[0].data[1].physicalY, equals(20.0));
+      expect(packets[0].data[1].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[1].physicalDeltaY, equals(0.0));
+      packets.clear();
+
+      glassPane.dispatchEvent((context
+        ..clientX = 40.0
+        ..clientY = 30.0
+      ).moveEvent());
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].pointerIdentifier, equals(1));
+      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].physicalX, equals(40.0));
+      expect(packets[0].data[0].physicalY, equals(30.0));
+      expect(packets[0].data[0].physicalDeltaX, equals(20.0));
+      expect(packets[0].data[0].physicalDeltaY, equals(10.0));
+      packets.clear();
+
+      glassPane.dispatchEvent((context
+        ..down = false
+      ).upEvent());
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.up));
+      expect(packets[0].data[0].pointerIdentifier, equals(1));
+      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].physicalX, equals(40.0));
+      expect(packets[0].data[0].physicalY, equals(30.0));
+      expect(packets[0].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[0].physicalDeltaY, equals(0.0));
+      packets.clear();
+
+      glassPane.dispatchEvent((context
+        ..identifier = 2
+        ..clientX = 20.0
+        ..clientY = 10.0
+        ..down = true
+      ).downEvent());
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      expect(packets[0].data[0].pointerIdentifier, equals(2));
+      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].physicalX, equals(20.0));
+      expect(packets[0].data[0].physicalY, equals(10.0));
+      expect(packets[0].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[0].physicalDeltaY, equals(0.0));
+
+      expect(packets[0].data[1].change, equals(ui.PointerChange.down));
+      expect(packets[0].data[1].pointerIdentifier, equals(2));
+      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].physicalX, equals(20.0));
+      expect(packets[0].data[1].physicalY, equals(10.0));
+      expect(packets[0].data[1].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[1].physicalDeltaY, equals(0.0));
+      packets.clear();
+    });
+  });
 }
 
 abstract class _BasicEventContext implements PointerSupportDetector {
@@ -759,6 +852,91 @@ abstract class _BasicEventContext implements PointerSupportDetector {
   html.Event downEvent();
   html.Event moveEvent();
   html.Event upEvent();
+}
+
+class _TouchEventContext extends _BasicEventContext implements PointerSupportDetector {
+  _TouchEventContext() {
+    _target = html.document.createElement('div');
+  }
+
+  @override
+  String get name => 'TouchAdapter';
+
+  @override
+  bool get hasPointerEvents => false;
+
+  @override
+  bool get hasTouchEvents => true;
+
+  @override
+  bool get hasMouseEvents => false;
+
+  @override
+  bool get down => _down;
+  set down(bool value) {
+    _down = value;
+  }
+  bool _down;
+
+  html.EventTarget _target;
+
+  int identifier = 1;
+
+  html.Touch _createTouch({
+    int identifier,
+    double clientX,
+    double clientY,
+  }) {
+    return html.Touch({
+      'identifier': identifier,
+      'clientX': clientX,
+      'clientY': clientY,
+      'target': _target,
+    });
+  }
+
+  html.TouchEvent _createTouchEvent(String eventType, {
+    int identifier,
+    double clientX,
+    double clientY,
+  }) {
+    return html.TouchEvent(eventType, {
+      'changedTouches': [
+        _createTouch(
+          identifier: identifier,
+          clientX: clientX,
+          clientY: clientY,
+        )
+      ],
+    });
+  }
+
+  html.Event downEvent() {
+    return _createTouchEvent(
+      'touchstart',
+      identifier: identifier,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  html.Event moveEvent() {
+    return _createTouchEvent(
+      'touchmove',
+      identifier: identifier,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  html.Event upEvent() {
+    return _createTouchEvent(
+      'touchend',
+      identifier: identifier,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
 }
 
 abstract class _ButtonedEventContext extends _BasicEventContext {

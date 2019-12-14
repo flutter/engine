@@ -333,10 +333,11 @@ class PointerDataConverter {
           final _PointerState state = _ensureStateForPointer(
             device, physicalX, physicalY);
           assert(!state.down);
+          state.startNewPointer();
           if (!alreadyAdded) {
             // Synthesizes an add pointer data.
             result.add(
-                _synthesizePointerData(
+              _synthesizePointerData(
                 timeStamp: timeStamp,
                 change: ui.PointerChange.add,
                 kind: kind,
@@ -364,7 +365,6 @@ class PointerDataConverter {
             );
           }
           assert(!_locationHasChanged(device, physicalX, physicalY));
-          state.startNewPointer();
           state.down = true;
           result.add(
             _generateCompletePointerData(
