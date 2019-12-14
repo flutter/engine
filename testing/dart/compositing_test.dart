@@ -368,7 +368,7 @@ void main() {
   });
   testNoSharing((SceneBuilder builder, EngineLayer oldLayer) {
     return builder.pushImageFilter(
-      ImageFilter.matrix(Float64List.fromList([
+      ImageFilter.matrix(Float64List.fromList(<double>[
         1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
