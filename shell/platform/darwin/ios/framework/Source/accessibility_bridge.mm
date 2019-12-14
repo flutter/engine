@@ -224,20 +224,21 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   return YES;
 }
 
-- (NSString*)routeName {
-  // Returns the first non-null and non-empty semantic label of a child
-  // with an NamesRoute flag. Otherwise returns nil.
+- (id)routeFocusObject {
+  // Returns the first SemanticObject in this branch that has
+  // the NamesRoute flag with a non-nil semantic label. Otherwise
+  // returns nil.
   if ([self node].HasFlag(flutter::SemanticsFlags::kNamesRoute)) {
-    NSString* newName = [self accessibilityLabel];
-    if (newName != nil && [newName length] > 0) {
-      return newName;
+    NSString *label = [self accessibilityLabel];
+    if (label != nil && [label length] > 0) {
+      return self;
     }
   }
   if ([self hasChildren]) {
     for (SemanticsObject* child in self.children) {
-      NSString* newName = [child routeName];
-      if (newName != nil && [newName length] > 0) {
-        return newName;
+      SemanticsObject* labelObject = [child routeFocusObject];
+      if (labelObject != nil) {
+        return labelObject;
       }
     }
   }
@@ -733,8 +734,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
 
   layoutChanged = layoutChanged || [doomed_uids count] > 0;
   if (routeChanged) {
-    NSString* routeName = [lastAdded routeName];
-    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, routeName);
+    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, [lastAdded routeFocusObject]);
   } else if (layoutChanged) {
     // TODO(goderbauer): figure out which node to focus next.
     UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, nil);
