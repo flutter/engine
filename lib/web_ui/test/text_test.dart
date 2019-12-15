@@ -299,16 +299,16 @@ void main() async {
 
     The output is like that.
 
-    |- 180 -| End of test030
-    |------ 380 ------| Begin of test010
-    |-------- 480 ---------| Begin of test050
-    |--------- 560 -----------| End of test010
-    |------------ 660 -------------| End of test050
-    test test test test test test test test 
-    test test test te00 test010 test test tes
-    t test test test test test test test te02
-     test030 test test test test test test 
-    test test test test te04 test050 
+     |- 180 -| End of test030
+     |------ 380 ------| Begin of test010
+     |-------- 480 ---------| Begin of test050
+     |--------- 560 -----------| End of test010
+     |------------ 660 -------------| End of test050
+    'test test test test test test test test '
+    'test test test te00 test010 test test tes'
+    't test test test test test test test te02'
+    ' test030 test test test test test test '
+    'test test test test te04 test050 '
     */
 
     final EngineParagraph paragraph = builder.build();
