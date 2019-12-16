@@ -37,10 +37,10 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
 
   if (context.raster_cache) {
     const SkMatrix& ctm = context.leaf_nodes_canvas->getTotalMatrix();
-    RasterCacheResult child_cache =
+    RasterCacheResult layer_cache =
         context.raster_cache->Get((Layer*)this, ctm);
-    if (child_cache.is_valid()) {
-      child_cache.draw(*context.leaf_nodes_canvas);
+    if (layer_cache.is_valid()) {
+      layer_cache.draw(*context.leaf_nodes_canvas);
       return;
     }
   }
