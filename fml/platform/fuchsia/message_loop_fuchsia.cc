@@ -30,9 +30,10 @@ void MessageLoopFuchsia::WakeUp(fml::TimePoint time_point) {
     due_time = zx::nsec((time_point - now).ToNanoseconds());
   }
 
-  FML_DCHECK(async::PostDelayedTask(
+  auto status = async::PostDelayedTask(
                  loop_.dispatcher(), [this]() { RunExpiredTasksNow(); },
-                 due_time) == ZX_OK);
+                 due_time);
+  FML_DCHECK(status == ZX_OK);
 }
 
 }  // namespace fml
