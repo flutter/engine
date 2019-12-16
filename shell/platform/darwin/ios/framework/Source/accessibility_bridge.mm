@@ -229,7 +229,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   // the NamesRoute flag with a non-nil semantic label. Otherwise
   // returns nil.
   if ([self node].HasFlag(flutter::SemanticsFlags::kNamesRoute)) {
-    NSString *label = [self accessibilityLabel];
+    NSString* label = [self accessibilityLabel];
     if (label != nil && [label length] > 0) {
       return self;
     }
@@ -734,7 +734,8 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
 
   layoutChanged = layoutChanged || [doomed_uids count] > 0;
   if (routeChanged) {
-    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, [lastAdded routeFocusObject]);
+    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification,
+                                    [lastAdded routeFocusObject]);
   } else if (layoutChanged) {
     // TODO(goderbauer): figure out which node to focus next.
     UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, nil);
