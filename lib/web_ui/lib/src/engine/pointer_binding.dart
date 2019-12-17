@@ -383,6 +383,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
     // A browser fires cancel event if it concludes the pointer will no longer
     // be able to generate events (example: device is deactivated)
+    // TODO(dkwingsmt): Add tests for cancel
     _addPointerEventListener('pointercancel', (html.PointerEvent  event) {
       final int device = event.pointerId;
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -551,6 +552,7 @@ class _TouchAdapter extends _BaseAdapter {
       _callback(pointerData);
     });
 
+    // TODO(dkwingsmt): Add tests for cancel
     _addTouchEventListener('touchcancel', (html.TouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
