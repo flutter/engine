@@ -7,7 +7,7 @@ import 'package:ui/ui.dart';
 
 import 'package:test/test.dart';
 
-void testEachMeasurement(String description, VoidCallback body) {
+void testEachMeasurement(String description, VoidCallback body, {bool skip}) {
   test(description, () async {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
@@ -15,7 +15,7 @@ void testEachMeasurement(String description, VoidCallback body) {
     } finally {
       TextMeasurementService.clearCache();
     }
-  });
+  }, skip: skip);
   test('$description (canvas measurement)', () async {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
@@ -25,7 +25,7 @@ void testEachMeasurement(String description, VoidCallback body) {
       TextMeasurementService.enableExperimentalCanvasImplementation = false;
       TextMeasurementService.clearCache();
     }
-  });
+  }, skip: skip);
 }
 
 void main() async {
@@ -104,7 +104,8 @@ void main() async {
       expect(paragraph.minIntrinsicWidth, fontSize * 10.0);
       expect(paragraph.maxIntrinsicWidth, fontSize * 10.0);
     }
-  });
+  }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+      skip: (browserEngine == BrowserEngine.firefox));
 
   testEachMeasurement('predictably lays out a multi-line rich paragraph', () {
     for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
@@ -126,7 +127,8 @@ void main() async {
       expect(paragraph.minIntrinsicWidth, fontSize * 5.0);
       expect(paragraph.maxIntrinsicWidth, fontSize * 16.0);
     }
-  });
+  }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+      skip: (browserEngine == BrowserEngine.firefox));
 
   testEachMeasurement('getBoxesForRange returns a box', () {
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -180,6 +182,76 @@ void main() async {
     final Paragraph paragraph = builder.build();
     paragraph.layout(const ParagraphConstraints(width: 80.0));
     expect(paragraph.longestLine, 50.0);
+
+    TextMeasurementService.clearCache();
+    TextMeasurementService.enableExperimentalCanvasImplementation = false;
+  });
+
+  testEachMeasurement('getLineBoundary (single-line)', () {
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: 10,
+    ));
+    builder.addText('One single line');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 400.0));
+
+    // "One single line".length == 15
+    for (int i = 0; i < 15; i++) {
+      expect(
+        paragraph.getLineBoundary(TextPosition(offset: i)),
+        TextRange(start: 0, end: 15),
+        reason: 'failed at offset $i',
+      );
+    }
+  });
+
+  test('getLineBoundary (multi-line)', () {
+    // [Paragraph.getLineBoundary] for multi-line paragraphs is only supported
+    // by canvas-based measurement.
+    TextMeasurementService.enableExperimentalCanvasImplementation = true;
+    TextMeasurementService.initialize(rulerCacheCapacity: 2);
+
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: 10,
+    ));
+    builder.addText('First line\n');
+    builder.addText('Second line\n');
+    builder.addText('Third line');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 400.0));
+
+    // "First line\n".length == 11
+    for (int i = 0; i < 11; i++) {
+      expect(
+        paragraph.getLineBoundary(TextPosition(offset: i)),
+        TextRange(start: 0, end: 11),
+        reason: 'failed at offset $i',
+      );
+    }
+
+    // "Second line\n".length == 12
+    for (int i = 11; i < 23; i++) {
+      expect(
+        paragraph.getLineBoundary(TextPosition(offset: i)),
+        TextRange(start: 11, end: 23),
+        reason: 'failed at offset $i',
+      );
+    }
+
+    // "Third line".length == 10
+    for (int i = 23; i < 33; i++) {
+      expect(
+        paragraph.getLineBoundary(TextPosition(offset: i)),
+        TextRange(start: 23, end: 33),
+        reason: 'failed at offset $i',
+      );
+    }
 
     TextMeasurementService.clearCache();
     TextMeasurementService.enableExperimentalCanvasImplementation = false;
