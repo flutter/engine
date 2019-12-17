@@ -623,8 +623,6 @@ void main() {
       // DOM element is blurred.
       textEditing.editingElement.domElement.blur();
 
-      await Future.delayed(const Duration(milliseconds: 100), (){});
-
       expect(spy.messages, hasLength(1));
       MethodCall call = spy.messages[0];
       spy.messages.clear();

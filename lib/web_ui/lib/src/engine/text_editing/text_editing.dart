@@ -10,8 +10,6 @@ const bool _debugVisibleTextEditing = false;
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
 
-const Duration _kFiveMiliseconds = Duration(milliseconds: 5);
-
 void _emptyCallback(dynamic _) {}
 
 /// These style attributes are constant throughout the life time of an input
@@ -346,27 +344,27 @@ class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
 
-    /// The behavior for blur in DOM elements changes depending on the reason of
-    /// blur:
-    ///
-    /// (1) If the blur is triggered due to tab change or browser minimize, same
-    /// element receives the focus as soon as the page reopens. Hence, text
-    /// editing connection does not need to be closed. In this case we dot blur
-    /// the DOM element.
-    ///
-    /// (2) On the other hand if the blur is triggered due to interaction with
-    /// another element on the page, the current text connection is obsolete so
-    /// connection close request is send to Flutter.
-    ///
-    /// See [HybridTextEditing.sendTextConnectionClosedToFlutterIfAny].
-    ///
-    /// In order to detect between these two cases, after a blur event is
-    /// triggered [domRenderer.windowHasFocus] method which checks the window
-    /// focus is called.
+    // The behavior for blur in DOM elements changes depending on the reason of
+    // blur:
+    //
+    // (1) If the blur is triggered due to tab change or browser minimize, same
+    // element receives the focus as soon as the page reopens. Hence, text
+    // editing connection does not need to be closed. In this case we dot blur
+    // the DOM element.
+    //
+    // (2) On the other hand if the blur is triggered due to interaction with
+    // another element on the page, the current text connection is obsolete so
+    // connection close request is send to Flutter.
+    //
+    // See [HybridTextEditing.sendTextConnectionClosedToFlutterIfAny].
+    //
+    // In order to detect between these two cases, after a blur event is
+    // triggered [domRenderer.windowHasFocus] method which checks the window
+    // focus is called.
     _subscriptions.add(domElement.onBlur.listen((_) {
       if (domRenderer.windowHasFocus) {
-        /// Focus is still on the body. Continue with blur.
-        owner.sendTextConnectionClosedToFlutterIfAny();
+        // Focus is still on the body. Continue with blur.
+        owner.sendTextConnectionClosedToFrameworkIfAny();
       } else {
         // Refocus.
         domElement.focus();
@@ -548,7 +546,7 @@ class IOSTextEditingStrategy extends DefaultTextEditingStrategy {
 
     _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
 
-    /// Position the DOM element after it is focused.
+    // Position the DOM element after it is focused.
     _subscriptions.add(domElement.onFocus.listen((_) {
       // Cancel previous timer if exists.
       _positionInputElementTimer?.cancel();
@@ -558,13 +556,13 @@ class IOSTextEditingStrategy extends DefaultTextEditingStrategy {
       });
     }));
 
-    /// On iOS, blur is trigerred if the virtual keyboard is closed or the
-    /// browser is sent to background or the browser tab is changed.
-    ///
-    /// Since in all these cases, the connection needs to be closed,
-    /// [domRenderer.windowHasFocus] is not checked in [IOSTextEditingStrategy].
+    // On iOS, blur is trigerred if the virtual keyboard is closed or the
+    // browser is sent to background or the browser tab is changed.
+    //
+    // Since in all these cases, the connection needs to be closed,
+    // [domRenderer.windowHasFocus] is not checked in [IOSTextEditingStrategy].
     _subscriptions.add(domElement.onBlur.listen((_) {
-      owner.sendTextConnectionClosedToFlutterIfAny();
+      owner.sendTextConnectionClosedToFrameworkIfAny();
     }));
   }
 
@@ -616,13 +614,13 @@ class AndroidTextEditingStrategy extends DefaultTextEditingStrategy {
 
     _subscriptions.add(domElement.onBlur.listen((_) {
       if (domRenderer.windowHasFocus) {
-        /// Chrome on Android will hide the onscreen keyboard when you tap outside
-        /// the text box. Instead, we want the framework to tell us to hide the
-        /// keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
-        /// refocus as long as [domRenderer.windowHasFocus] is true.
+        // Chrome on Android will hide the onscreen keyboard when you tap outside
+        // the text box. Instead, we want the framework to tell us to hide the
+        // keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
+        // refocus as long as [domRenderer.windowHasFocus] is true.
         domElement.focus();
       } else {
-        owner.sendTextConnectionClosedToFlutterIfAny();
+        owner.sendTextConnectionClosedToFrameworkIfAny();
       }
     }));
   }
@@ -642,49 +640,48 @@ class FirefoxTextEditingStrategy extends DefaultTextEditingStrategy {
 
     _subscriptions.add(domElement.onKeyDown.listen(_maybeSendAction));
 
-    /// Detects changes in text selection.
-    ///
-    /// In Firefox, when cursor moves, neither selectionChange nor onInput
-    /// events are triggered. We are listening to keyup event. Selection start,
-    /// end values are used to decide if the text cursor moved.
-    ///
-    /// Specific keycodes are not checked since users/applications can bind
-    /// their own keys to move the text cursor.
-    /// Decides if the selection has changed (cursor moved) compared to the
-    /// previous values.
-    ///
-    /// After each keyup, the start/end values of the selection is compared to
-    /// the previously saved editing state.
+    // Detects changes in text selection.
+    //
+    // In Firefox, when cursor moves, neither selectionChange nor onInput
+    // events are triggered. We are listening to keyup event. Selection start,
+    // end values are used to decide if the text cursor moved.
+    //
+    // Specific keycodes are not checked since users/applications can bind
+    // their own keys to move the text cursor.
+    // Decides if the selection has changed (cursor moved) compared to the
+    // previous values.
+    //
+    // After each keyup, the start/end values of the selection is compared to
+    // the previously saved editing state.
     _subscriptions.add(domElement.onKeyUp.listen((event) {
       _handleChange(event);
     }));
 
-    /// In Firefox the context menu item "Select All" does not work without
-    /// listening to onSelect. On the other browsers onSelectionChange is
-    /// enough for covering "Select All" functionality.
+    // In Firefox the context menu item "Select All" does not work without
+    // listening to onSelect. On the other browsers onSelectionChange is
+    // enough for covering "Select All" functionality.
     _subscriptions.add(domElement.onSelect.listen(_handleChange));
 
-    /// For Firefox, we also use the same approach as the parent class.
-    ///
-    /// Do not blur the DOM element if the user goes to another tab or minimizes
-    /// the browser. See [super.addEventHandlers] for more comments.
-    ///
-    /// The different part is, in Firefox, we are not able to get correct value
-    /// when we check the window focus like [domRendered.windowHasFocus].
-    ///
-    /// However [document.activeElement] always equals to [domElement] if the
-    /// user goes to another tab, minimizes the browser or opens the dev tools.
-    /// Hence [document.activeElement] is checked in this listener.
+    // For Firefox, we also use the same approach as the parent class.
+    //
+    // Do not blur the DOM element if the user goes to another tab or minimizes
+    // the browser. See [super.addEventHandlers] for more comments.
+    //
+    // The different part is, in Firefox, we are not able to get correct value
+    // when we check the window focus like [domRendered.windowHasFocus].
+    //
+    // However [document.activeElement] always equals to [domElement] if the
+    // user goes to another tab, minimizes the browser or opens the dev tools.
+    // Hence [document.activeElement] is checked in this listener.
     _subscriptions.add(domElement.onBlur.listen((_) {
       html.Element activeElement = html.document.activeElement;
       if (activeElement != domElement) {
-        /// Focus is still on the body. Continue with blur.
-        owner.sendTextConnectionClosedToFlutterIfAny();
+        // Focus is still on the body. Continue with blur.
+        owner.sendTextConnectionClosedToFrameworkIfAny();
       } else {
         // Refocus.
         domElement.focus();
       }
-      //});
     }));
   }
 }
@@ -925,7 +922,7 @@ class HybridTextEditing {
     );
   }
 
-  void sendTextConnectionClosedToFlutterIfAny() {
+  void sendTextConnectionClosedToFrameworkIfAny() {
     if (isEditing) {
       stopEditing();
       ui.window.onPlatformMessage(
