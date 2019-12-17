@@ -61,9 +61,9 @@ enum VertexMode {
 class Vertices {
   final VertexMode _mode;
   final Float32List _positions;
-  final Float32List _textureCoordinates;
+  final Float32List _textureCoordinates; // ignore: unused_field
   final Int32List _colors;
-  final Uint16List _indices;
+  final Uint16List _indices; // ignore: unused_field
 
   Vertices._(
     VertexMode mode,
@@ -1157,21 +1157,18 @@ class RawRecordingCanvas extends engine.BitmapCanvas
     clear();
   }
 
-  @override
   engine.RecordingCanvas beginRecording(Rect bounds) =>
       throw UnsupportedError('');
+
   @override
   Picture endRecording() => throw UnsupportedError('');
 
-  @override
-  engine.RecordingCanvas _canvas;
+  engine.RecordingCanvas _canvas; // ignore: unused_field
 
-  @override
-  bool _isRecording = true;
+  bool _isRecording = true; // ignore: unused_field
 
   @override
   bool get isRecording => true;
 
-  @override
   Rect cullRect;
 }

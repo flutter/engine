@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:html' as html;
-import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
