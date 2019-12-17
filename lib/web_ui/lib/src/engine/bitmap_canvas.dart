@@ -237,8 +237,11 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     );
   }
 
-  /// The `<canvas>` element used by this bitmap canvas.
-  html.CanvasElement get canvas => _canvas;
+  // Returns a data URI containing a representation of the image in this
+  // canvas.
+  String toDataUrl() {
+    return _canvas.toDataUrl();
+  }
 
   /// The 2D context of the `<canvas>` element used by this bitmap canvas.
   html.CanvasRenderingContext2D get ctx => _ctx;

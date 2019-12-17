@@ -126,11 +126,25 @@ void main() async {
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight), new Paint());
     await _checkScreenshot(rc, 'draw_image_rect_with_transform_source');
   });
+
+  // Regression test for https://github.com/flutter/flutter/issues/44845
+  test('Paints on top of image', () async {
+    final RecordingCanvas rc =
+    RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
+    rc.save();
+    Image testImage = createTestImage();
+    double testWidth = testImage.width.toDouble();
+    double testHeight = testImage.height.toDouble();
+    rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
+        Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight), new Paint());
+    rc.drawCircle(Offset(100, 100), 50.0, Paint()
+      ..strokeWidth = 3
+      ..color = Color.fromARGB(128, 0, 0, 0));
+    await _checkScreenshot(rc, 'draw_circle_on_image');
+  });
 }
 
-HtmlImage createTestImage() {
-  const int width = 100;
-  const int height = 50;
+HtmlImage createTestImage({int width = 100, int height = 50}) {
   html.CanvasElement canvas = new html.CanvasElement(width: width, height: height);
   html.CanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
@@ -146,4 +160,3 @@ HtmlImage createTestImage() {
   imageElement.src = js_util.callMethod(canvas, 'toDataURL', []);
   return HtmlImage(imageElement, width, height);
 }
-
