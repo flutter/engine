@@ -328,16 +328,16 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     PointerDataConverter _pointerDataConverter
   ) : super(callback, glassPaneElement, _pointerDataConverter);
 
-  final Map<int, _PointerEventSanitizer> _pointerStates = <int, _PointerEventSanitizer>{};
+  final Map<int, _PointerEventSanitizer> _sanitizers = <int, _PointerEventSanitizer>{};
 
-  _PointerEventSanitizer _ensurePointerState(int device) {
-    return _pointerStates.putIfAbsent(device, () => _PointerEventSanitizer());
+  _PointerEventSanitizer _ensureSanitizer(int device) {
+    return _sanitizers.putIfAbsent(device, () => _PointerEventSanitizer());
   }
 
-  _PointerEventSanitizer _getPointerState(int device) {
-    final _PointerEventSanitizer state = _pointerStates[device];
-    assert(state != null);
-    return state;
+  _PointerEventSanitizer _getSanitizer(int device) {
+    final _PointerEventSanitizer sanitizer = _sanitizers[device];
+    assert(sanitizer != null);
+    return sanitizer;
   }
 
   void _addPointerEventListener(String eventName, _PointerEventListener handler) {
@@ -352,8 +352,8 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     _addPointerEventListener('pointerdown', (html.PointerEvent event) {
       final int device = event.pointerId;
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _PointerEventSanitizer state = _ensurePointerState(device);
-      for (_SanitizedDetails details in state.sanitizeDownEvent(buttons: event.buttons)) {
+      final _PointerEventSanitizer sanitizer = _ensureSanitizer(device);
+      for (_SanitizedDetails details in sanitizer.sanitizeDownEvent(buttons: event.buttons)) {
         _convertEventToPointerData(data: pointerData, event: event, details: details);
       }
       _callback(pointerData);
@@ -361,10 +361,10 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
     _addPointerEventListener('pointermove', (html.PointerEvent event) {
       final int device = event.pointerId;
-      final _PointerEventSanitizer state = _ensurePointerState(device);
+      final _PointerEventSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       for (html.PointerEvent expandedEvent in _expandEvents(event)) {
-        for (_SanitizedDetails details in state.sanitizeMoveEvent(buttons: expandedEvent.buttons)) {
+        for (_SanitizedDetails details in sanitizer.sanitizeMoveEvent(buttons: expandedEvent.buttons)) {
           _convertEventToPointerData(data: pointerData, event: event, details: details);
         }
       }
@@ -374,8 +374,8 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     _addPointerEventListener('pointerup', (html.PointerEvent  event) {
       final int device = event.pointerId;
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _PointerEventSanitizer state = _getPointerState(device);
-      for (_SanitizedDetails details in state.sanitizeUpEvent()) {
+      final _PointerEventSanitizer sanitizer = _getSanitizer(device);
+      for (_SanitizedDetails details in sanitizer.sanitizeUpEvent()) {
         _convertEventToPointerData(data: pointerData, event: event, details: details);
       }
       _callback(pointerData);
@@ -386,8 +386,8 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     _addPointerEventListener('pointercancel', (html.PointerEvent  event) {
       final int device = event.pointerId;
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _PointerEventSanitizer state = _getPointerState(device);
-      for (_SanitizedDetails details in state.sanitizeCancelEvent()) {
+      final _PointerEventSanitizer sanitizer = _getSanitizer(device);
+      for (_SanitizedDetails details in sanitizer.sanitizeCancelEvent()) {
         _convertEventToPointerData(data: pointerData, event: event, details: details);
       }
       _callback(pointerData);
