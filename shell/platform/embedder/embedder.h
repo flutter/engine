@@ -1660,6 +1660,30 @@ FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineNotifyLowMemoryWarning(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
 
+//------------------------------------------------------------------------------
+/// @brief      Updates the timezone conversion routines used by the Flutter
+///             Engine.
+///
+/// @attention  On all platforms currently supported by Flutter, timezone
+///             information is read from /etc/timezone (and its various
+///             fall-backs). The engine has no mechanisms to watch for updates
+///             to these resources. If the embedder has access to such
+///             mechanisms, it must call this method to reinitialize process
+///             local locale specific data. Currently, the only argument to this
+///             method is ignored and may be nullptr. If, in the future, the
+///             engine decides to cache locale specific information per
+///             instance, it would need to invalidate these caches. For forward
+///             compatibility, it is recommended that a running engine instance
+///             be passed into this method.
+///
+/// @param[in]  engine  A running engine instance.
+///
+/// @return     If the timezone update was successfully applied.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineNotifyTimezoneUpdate(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine);
+
 #if defined(__cplusplus)
 }  // extern "C"
 #endif

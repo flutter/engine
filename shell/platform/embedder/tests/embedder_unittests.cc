@@ -3823,5 +3823,21 @@ TEST_F(EmbedderTest, CanSendLowMemoryNotification) {
   ASSERT_EQ(FlutterEngineNotifyLowMemoryWarning(engine.get()), kSuccess);
 }
 
+TEST_F(EmbedderTest, CanSendLocaleUpdateNotification) {
+  auto& context = GetEmbedderContext();
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+  auto engine = builder.LaunchEngine();
+
+  ASSERT_TRUE(engine.is_valid());
+
+  ASSERT_EQ(FlutterEngineNotifyTimezoneUpdate(engine.get()), kSuccess);
+
+  // The engine argument is currently ignored.
+  ASSERT_EQ(FlutterEngineNotifyTimezoneUpdate(nullptr), kSuccess);
+}
+
 }  // namespace testing
 }  // namespace flutter

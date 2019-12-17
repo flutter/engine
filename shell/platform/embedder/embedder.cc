@@ -7,6 +7,8 @@
 
 #include <iostream>
 
+#include <time.h>
+
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/make_copyable.h"
@@ -1723,7 +1725,6 @@ FlutterEngineResult FlutterEnginePostDartObject(
   return kSuccess;
 }
 
-FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineNotifyLowMemoryWarning(
     FLUTTER_API_SYMBOL(FlutterEngine) raw_engine) {
   auto engine = reinterpret_cast<flutter::EmbedderEngine*>(raw_engine);
@@ -1745,4 +1746,18 @@ FlutterEngineResult FlutterEngineNotifyLowMemoryWarning(
              : LOG_EMBEDDER_ERROR(
                    kInternalInconsistency,
                    "Could not dispatch the low memory notification message.");
+}
+
+FlutterEngineResult FlutterEngineNotifyTimezoneUpdate(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine) {
+  // Currently there is no shell specific timezone data since all we call is
+  // tzset. But we may want to store this information in the future and it would
+  // be too late then to change the API.
+#if OS_WIN
+  _tzset();
+#else
+  tzset();
+#endif
+
+  return kSuccess;
 }
