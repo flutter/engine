@@ -4,13 +4,15 @@
 
 assert(is_fuchsia)
 
+import("$flutter_root/common/config.gni")
 import("//build/fuchsia/sdk.gni")
 
 config("utils_config") {
   include_dirs = [ "../../.." ]
 }
 
-source_set("utils") {
+template("make_utils") {
+  source_set(target_name) {
   sources = [
     "files.cc",
     "files.h",
@@ -18,6 +20,8 @@ source_set("utils") {
     "handle_exception.h",
     "inlines.h",
     "logging.h",
+      "mapped_resource.cc",
+      "mapped_resource.h",
     "tempfs.cc",
     "tempfs.h",
     "vmo.cc",
@@ -26,7 +30,7 @@ source_set("utils") {
     "vmservice_object.h",
   ]
 
-  deps = [
+    deps = invoker.deps + [
     "$fuchsia_sdk_root/fidl:fuchsia.feedback",
     "$fuchsia_sdk_root/fidl:fuchsia.mem",
     "$fuchsia_sdk_root/pkg:async-loop",
@@ -36,10 +40,20 @@ source_set("utils") {
     "$fuchsia_sdk_root/pkg:memfs",
     "$fuchsia_sdk_root/pkg:sys_cpp",
     "$fuchsia_sdk_root/pkg:syslog",
+    "$fuchsia_sdk_root/pkg:trace",
     "$fuchsia_sdk_root/pkg:vfs_cpp",
     "$fuchsia_sdk_root/pkg:zx",
     "//third_party/tonic",
   ]
 
   public_configs = [ ":utils_config" ]
+}
+}
+
+make_utils("utils") {
+  deps = ["//third_party/dart/runtime/bin:elf_loader"]
+}
+
+make_utils("utils_product") {
+  deps = ["//third_party/dart/runtime/bin:elf_loader_product"]
 }
