@@ -57,7 +57,7 @@ void main() {
 
   // BUTTONED ADAPTERS
 
-  [_MouseEventContext(), _PointerEventContext()].forEach((_ButtonedEventContext context) {
+  <_ButtonedEventMixin>[_MouseEventContext(), _PointerEventContext()].forEach((_ButtonedEventMixin context) {
     test('${context.name} creates an add event if the first pointer activity is a hover', () {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
@@ -76,7 +76,7 @@ void main() {
     });
   });
 
-  [_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventContext context) {
+  <_ButtonedEventMixin>[_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventMixin context) {
     test('${context.name} synthesizes a pointerup event on two pointerdowns in a row', () {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
@@ -99,7 +99,7 @@ void main() {
     });
   });
 
-  [_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventContext context) {
+  <_ButtonedEventMixin>[_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventMixin context) {
     test('${context.name} does synthesize add or hover or more for scroll', () {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
@@ -210,7 +210,7 @@ void main() {
     });
   });
 
-  [_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventContext context) {
+  <_ButtonedEventMixin>[_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventMixin context) {
     // Touch is in another test since this test involves hovering
     test('${context.name} does calculate delta and pointer identifier correctly', () {
       PointerBinding.instance.debugOverrideDetector(context);
@@ -329,7 +329,7 @@ void main() {
     });
   });
 
-  [_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventContext context) {
+  <_ButtonedEventMixin>[_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventMixin context) {
     test('correctly converts buttons of down, move and up events', () {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
@@ -494,7 +494,7 @@ void main() {
     });
   });
 
-  [_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventContext context) {
+  <_ButtonedEventMixin>[_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventMixin context) {
     test('correctly handles button changes during a down sequence', () {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
@@ -554,7 +554,7 @@ void main() {
     });
   });
 
-  [_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventContext context) {
+  <_ButtonedEventMixin>[_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventMixin context) {
     test('synthesizes a pointerup event when pointermove comes before the up', () {
       PointerBinding.instance.debugOverrideDetector(context);
       // This can happen when the user pops up the context menu by right
@@ -634,7 +634,7 @@ void main() {
     });
   });
 
-  [_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventContext context) {
+  <_ButtonedEventMixin>[_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventMixin context) {
     test('correctly handles uncontinuous button changes during a down sequence', () {
       PointerBinding.instance.debugOverrideDetector(context);
       // This can happen with the following gesture sequence:
@@ -848,7 +848,85 @@ abstract class _BasicEventContext implements PointerSupportDetector {
   html.Event up({double clientX, double clientY});
 }
 
-class _TouchEventContext extends _BasicEventContext implements PointerSupportDetector {
+mixin _ButtonedEventMixin on _BasicEventContext {
+  html.Event downWithButton({double clientX, double clientY, int button, int buttons});
+  html.Event moveWithButton({double clientX, double clientY, int button, int buttons});
+  html.Event upWithButton({double clientX, double clientY, int button});
+
+  html.Event hoverEvent({double clientX, double clientY}) {
+    return moveWithButton(
+      buttons: 0,
+      button: -1,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  @override
+  html.Event down({double clientX, double clientY}) {
+    return downWithButton(
+      buttons: 1,
+      button: 0,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+
+  @override
+  html.Event move({double clientX, double clientY}) {
+    return moveWithButton(
+      buttons: 1,
+      button: -1,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  @override
+  html.Event up({double clientX, double clientY}) {
+    return upWithButton(
+      button: 1,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+}
+
+mixin _MultiPointerEventMixin on _BasicEventContext {
+  html.Event downWithPointer({double clientX, double clientY, int pointer});
+  html.Event moveWithPointer({double clientX, double clientY, int pointer});
+  html.Event upWithPointer({double clientX, double clientY, int pointer});
+
+  @override
+  html.Event down({double clientX, double clientY}) {
+    return downWithPointer(
+      pointer: 1,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  @override
+  html.Event move({double clientX, double clientY}) {
+    return moveWithPointer(
+      pointer: 1,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  @override
+  html.Event up({double clientX, double clientY}) {
+    return upWithPointer(
+      pointer: 1,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+}
+
+class _TouchEventContext extends _BasicEventContext with _MultiPointerEventMixin implements PointerSupportDetector {
   _TouchEventContext() {
     _target = html.document.createElement('div');
   }
@@ -896,15 +974,6 @@ class _TouchEventContext extends _BasicEventContext implements PointerSupportDet
     });
   }
 
-  @override
-  html.Event down({double clientX, double clientY}) {
-    return downWithPointer(
-      pointer: 1,
-      clientX: clientX,
-      clientY: clientY,
-    );
-  }
-
   html.Event downWithPointer({double clientX, double clientY, int pointer}) {
     return _createTouchEvent(
       'touchstart',
@@ -914,28 +983,10 @@ class _TouchEventContext extends _BasicEventContext implements PointerSupportDet
     );
   }
 
-  @override
-  html.Event move({double clientX, double clientY}) {
-    return moveWithPointer(
-      pointer: 1,
-      clientX: clientX,
-      clientY: clientY,
-    );
-  }
-
   html.Event moveWithPointer({double clientX, double clientY, int pointer}) {
     return _createTouchEvent(
       'touchmove',
       identifier: pointer,
-      clientX: clientX,
-      clientY: clientY,
-    );
-  }
-
-  @override
-  html.Event up({double clientX, double clientY}) {
-    return upWithPointer(
-      pointer: 1,
       clientX: clientX,
       clientY: clientY,
     );
@@ -951,52 +1002,7 @@ class _TouchEventContext extends _BasicEventContext implements PointerSupportDet
   }
 }
 
-abstract class _ButtonedEventContext extends _BasicEventContext {
-  html.Event downWithButton({double clientX, double clientY, int button, int buttons});
-  html.Event moveWithButton({double clientX, double clientY, int button, int buttons});
-  html.Event upWithButton({double clientX, double clientY, int button});
-
-  html.Event hoverEvent({double clientX, double clientY}) {
-    return moveWithButton(
-      buttons: 0,
-      button: -1,
-      clientX: clientX,
-      clientY: clientY,
-    );
-  }
-
-  @override
-  html.Event down({double clientX, double clientY}) {
-    return downWithButton(
-      buttons: 1,
-      button: 0,
-      clientX: clientX,
-      clientY: clientY,
-    );
-  }
-
-
-  @override
-  html.Event move({double clientX, double clientY}) {
-    return moveWithButton(
-      buttons: 1,
-      button: -1,
-      clientX: clientX,
-      clientY: clientY,
-    );
-  }
-
-  @override
-  html.Event up({double clientX, double clientY}) {
-    return upWithButton(
-      button: 1,
-      clientX: clientX,
-      clientY: clientY,
-    );
-  }
-}
-
-class _MouseEventContext extends _ButtonedEventContext implements PointerSupportDetector {
+class _MouseEventContext extends _BasicEventContext with _ButtonedEventMixin implements PointerSupportDetector {
   @override
   String get name => 'MouseAdapter';
 
@@ -1063,7 +1069,7 @@ class _MouseEventContext extends _ButtonedEventContext implements PointerSupport
   }
 }
 
-class _PointerEventContext extends _ButtonedEventContext implements PointerSupportDetector {
+class _PointerEventContext extends _BasicEventContext with _ButtonedEventMixin, _MultiPointerEventMixin implements PointerSupportDetector {
   @override
   String get name => 'PointerAdapter';
 
@@ -1077,6 +1083,17 @@ class _PointerEventContext extends _ButtonedEventContext implements PointerSuppo
   bool get hasMouseEvents => false;
 
   String pointerType = 'mouse';
+
+  @override
+  html.Event downWithPointer({double clientX, double clientY, int pointer}) {
+    return downWithButtonPointer(
+      pointer: 1,
+      buttons: 1,
+      button: 0,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
 
   @override
   html.Event downWithButton({double clientX, double clientY, int button, int buttons}) {
@@ -1101,6 +1118,17 @@ class _PointerEventContext extends _ButtonedEventContext implements PointerSuppo
   }
 
   @override
+  html.Event moveWithPointer({double clientX, double clientY, int pointer}) {
+    return moveWithButtonPointer(
+      pointer: 1,
+      buttons: 1,
+      button: -1,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  @override
   html.Event moveWithButton({double clientX, double clientY, int button, int buttons}) {
     return moveWithButtonPointer(
       pointer: 1,
@@ -1120,6 +1148,16 @@ class _PointerEventContext extends _ButtonedEventContext implements PointerSuppo
       'clientY': clientY,
       'pointerType': pointerType,
     });
+  }
+
+  @override
+  html.Event upWithPointer({double clientX, double clientY, int pointer}) {
+    return upWithButtonPointer(
+      pointer: 1,
+      button: 0,
+      clientX: clientX,
+      clientY: clientY,
+    );
   }
 
   @override
