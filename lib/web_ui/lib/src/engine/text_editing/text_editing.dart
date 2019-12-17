@@ -289,28 +289,6 @@ class DefaultTextEditingStrategy implements TextEditingStrategy {
   @visibleForTesting
   bool isEnabled = false;
 
-  /// The behavior for blur in DOM elements changes depending on the reason of
-  /// blur:
-  ///
-  /// (1) If the blur is triggered due to tab change or browser minimize, same
-  /// element receives the focus as soon as the page reopens. Hence, text
-  /// editing connection doen not need to be closed.
-  ///
-  /// (2) On the other hand if the blur is triggered due to interaction with
-  /// another element on the page, the current text connection is obsolete so
-  /// connection close request is send to Flutter.
-  ///
-  /// See [HybridTextEditing.sendTextConnectionClosedToFlutterIfAny].
-  ///
-  /// In order to detect between these two cases, after a blur event is
-  /// triggered [pageVisibilityTimer] is started. If the body of the
-  /// document still has focus after [_delayBeforePageVisibilityTimer],
-  /// we know that case (2) happened.
-  ///
-  /// See [bodyHasFocus].
-  Timer pageVisibilityTimer;
-  final Duration _delayBeforePageVisibilityTimer = _kFiveMiliseconds;
-
   html.HtmlElement domElement;
   InputConfiguration _inputConfiguration;
   EditingState _lastEditingState;
@@ -368,24 +346,31 @@ class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
 
-    _subscriptions.add(domElement.onFocus.listen((_) {
-      bodyHasFocus = true;
-    }));
-
-    /// On default, do not blur the DOM element if the user goes to another
-    /// tab or minimizes the browser.
+    /// The behavior for blur in DOM elements changes depending on the reason of
+    /// blur:
+    ///
+    /// (1) If the blur is triggered due to tab change or browser minimize, same
+    /// element receives the focus as soon as the page reopens. Hence, text
+    /// editing connection does not need to be closed. In this case we dot blur
+    /// the DOM element.
+    ///
+    /// (2) On the other hand if the blur is triggered due to interaction with
+    /// another element on the page, the current text connection is obsolete so
+    /// connection close request is send to Flutter.
+    ///
+    /// See [HybridTextEditing.sendTextConnectionClosedToFlutterIfAny].
+    ///
+    /// In order to detect between these two cases, after a blur event is
+    /// triggered [domRenderer.windowHasFocus] method which checks the window
+    /// focus is called.
     _subscriptions.add(domElement.onBlur.listen((_) {
-      // Cancel previous timer if exists.
-      pageVisibilityTimer?.cancel();
-      pageVisibilityTimer = Timer(_delayBeforePageVisibilityTimer, () {
-        if (bodyHasFocus) {
-          /// Focus is still on the body. Continue with blur.
-          owner.sendTextConnectionClosedToFlutterIfAny();
-        } else {
-          // Refocus.
-          domElement.focus();
-        }
-      });
+      if (domRenderer.windowHasFocus) {
+        /// Focus is still on the body. Continue with blur.
+        owner.sendTextConnectionClosedToFlutterIfAny();
+      } else {
+        // Refocus.
+        domElement.focus();
+      }
     }));
   }
 
@@ -414,9 +399,6 @@ class DefaultTextEditingStrategy implements TextEditingStrategy {
     _lastEditingState = null;
     _style = null;
     _geometricInfo = null;
-
-    pageVisibilityTimer?.cancel();
-    pageVisibilityTimer = null;
 
     for (int i = 0; i < _subscriptions.length; i++) {
       _subscriptions[i].cancel();
@@ -576,14 +558,13 @@ class IOSTextEditingStrategy extends DefaultTextEditingStrategy {
       });
     }));
 
-    /// On IOS blur is trigerred if the virtual keyboard is closed or the
+    /// On iOS, blur is trigerred if the virtual keyboard is closed or the
     /// browser is sent to background or the browser tab is changed.
     ///
     /// Since in all these cases, the connection needs to be closed,
-    /// [bodyHasFocus] is not checked in [IOSTextEditingStrategy]. For the same
-    /// reason [pageVisibilityTimer] is also not used.
+    /// [domRenderer.windowHasFocus] is not checked in [IOSTextEditingStrategy].
     _subscriptions.add(domElement.onBlur.listen((_) {
-        owner.sendTextConnectionClosedToFlutterIfAny();
+      owner.sendTextConnectionClosedToFlutterIfAny();
     }));
   }
 
@@ -633,24 +614,15 @@ class AndroidTextEditingStrategy extends DefaultTextEditingStrategy {
 
     _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
 
-    _subscriptions.add(domElement.onFocus.listen((_) {
-      bodyHasFocus = true;
-    }));
-
     _subscriptions.add(domElement.onBlur.listen((_) {
-      if (bodyHasFocus) {
+      if (domRenderer.windowHasFocus) {
         /// Chrome on Android will hide the onscreen keyboard when you tap outside
         /// the text box. Instead, we want the framework to tell us to hide the
         /// keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
-        /// refocus as long as [bodyHasFocus] is true.
+        /// refocus as long as [domRenderer.windowHasFocus] is true.
         domElement.focus();
-        pageVisibilityTimer?.cancel();
-        pageVisibilityTimer = Timer(_delayBeforePageVisibilityTimer, () {
-          if (!bodyHasFocus) {
-            domElement.blur();
-            owner.sendTextConnectionClosedToFlutterIfAny();
-          }
-        });
+      } else {
+        owner.sendTextConnectionClosedToFlutterIfAny();
       }
     }));
   }
@@ -692,24 +664,27 @@ class FirefoxTextEditingStrategy extends DefaultTextEditingStrategy {
     /// enough for covering "Select All" functionality.
     _subscriptions.add(domElement.onSelect.listen(_handleChange));
 
-    _subscriptions.add(domElement.onFocus.listen((_) {
-      bodyHasFocus = true;
-    }));
-
-    /// On default, do not blur the DOM element if the user goes to another
-    /// tab or minimizes the browser.
+    /// For Firefox, we also use the same approach as the parent class.
+    ///
+    /// Do not blur the DOM element if the user goes to another tab or minimizes
+    /// the browser. See [super.addEventHandlers] for more comments.
+    ///
+    /// The different part is, in Firefox, we are not able to get correct value
+    /// when we check the window focus like [domRendered.windowHasFocus].
+    ///
+    /// However [document.activeElement] always equals to [domElement] if the
+    /// user goes to another tab, minimizes the browser or opens the dev tools.
+    /// Hence [document.activeElement] is checked in this listener.
     _subscriptions.add(domElement.onBlur.listen((_) {
-      // Cancel previous timer if exists.
-      pageVisibilityTimer?.cancel();
-      pageVisibilityTimer = Timer(_delayBeforePageVisibilityTimer, () {
-        if (bodyHasFocus) {
-          /// Focus is still on the body. Continue with blur.
-          owner.sendTextConnectionClosedToFlutterIfAny();
-        } else {
-          // Refocus.
-          domElement.focus();
-        }
-      });
+      html.Element activeElement = html.document.activeElement;
+      if (activeElement != domElement) {
+        /// Focus is still on the body. Continue with blur.
+        owner.sendTextConnectionClosedToFlutterIfAny();
+      } else {
+        // Refocus.
+        domElement.focus();
+      }
+      //});
     }));
   }
 }

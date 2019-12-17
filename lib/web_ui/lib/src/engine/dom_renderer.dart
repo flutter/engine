@@ -4,23 +4,6 @@
 
 part of engine;
 
-/// Used to decide if the browser tab still has the focus.
-///
-/// This information is useful for deciding on the blur behavior.
-/// See [DefaultTextEditingStrategy.pageVisibilityTimer].
-///
-/// This flag is set to `true` on [DomRenderer] reset, and marked as `false`
-/// when the window receives a blur event. This flag is also marked as `true`
-/// when the DOM element used by [textEditing] receives focus.
-bool bodyHasFocus;
-
-/// Event handler method for [html.window] blur.
-///
-/// Sets [bodyHasFocus] to false.
-void blur(html.Event e) {
-    bodyHasFocus = false;
-}
-
 class DomRenderer {
   DomRenderer() {
     if (assertionsEnabled) {
@@ -79,6 +62,16 @@ class DomRenderer {
   static const String _staleHotRestartStore = '__flutter_state';
   List<html.Element> _staleHotRestartState;
 
+  /// Used to decide if the browser tab still has the focus.
+  ///
+  /// This information is useful for deciding on the blur behavior.
+  /// See [DefaultTextEditingStrategy].
+  ///
+  /// This getter calls the `hasFocus` method of the `Document` interface.
+  /// See for more details:
+  /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
+  bool get windowHasFocus => js_util.callMethod(html.document, 'hasFocus', []);
+
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
     _staleHotRestartState =
@@ -90,9 +83,7 @@ class DomRenderer {
     }
 
     registerHotRestartListener(() {
-      bodyHasFocus = false;
       _resizeSubscription?.cancel();
-      html.window.removeEventListener('blur', blur);
       _staleHotRestartState.addAll(<html.Element>[
         _glassPaneElement,
         _styleElement,
@@ -235,7 +226,6 @@ class DomRenderer {
       '$defaultFontStyle $defaultFontWeight $defaultFontSize $defaultFontFamily';
 
   void reset() {
-    bodyHasFocus = true;
     _styleElement?.remove();
     _styleElement = html.StyleElement();
     html.document.head.append(_styleElement);
@@ -477,8 +467,6 @@ flt-glass-pane * {
     } else {
       _resizeSubscription = html.window.onResize.listen(_metricsDidChange);
     }
-
-    html.window.addEventListener('blur', blur);
   }
 
   /// Called immediately after browser window metrics change.

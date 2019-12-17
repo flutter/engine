@@ -598,7 +598,7 @@ void main() {
       expect(spy.messages, isEmpty);
     });
 
-    test('closeconnection on blur', () async {
+    test('close connection on blur', () async {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
       textEditing.handleTextInput(codec.encodeMethodCall(setClient));
