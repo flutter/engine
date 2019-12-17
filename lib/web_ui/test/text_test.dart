@@ -228,13 +228,12 @@ void main() async {
       fontSize: fontSize,
     ));
 
-    const text00 =
-        'test test test test test test test test test test test te00';
-    const text010 = ' test010 ';
-    const text02 = 'test test test test test test test test test test te02';
-    const text030 = ' test030 ';
-    const text04 = 'test test test test test test test test test test te04';
-    const text050 = ' test050 ';
+    const text00 = 'test test test test test te00 ';
+    const text010 = 'test010 ';
+    const text02 = 'test test test test te02 ';
+    const text030 = 'test030 ';
+    const text04 = 'test test test test test test test test test test te04 ';
+    const text050 = 'test050 ';
 
     /* Logical arrangement: Tree
 
@@ -299,20 +298,20 @@ void main() async {
 
     The output is like that.
 
-     |- 180 -| End of test030
-     |------ 380 ------| Begin of test010
-     |-------- 480 ---------| Begin of test050
-     |--------- 560 -----------| End of test010
-     |------------ 660 -------------| End of test050
+     |------------ 600 ------------| Begin of test010
+     |--------------- 760 ----------------| End of test010
+     |---------- 500 ---------| Begin of test030
+     |------------- 660 -------------| End of test030
+     |-- 180 --| Begin of test050
+     |------ 360 -----| End of test050
+    'test test test test test te00 test010 '
+    'test test test test te02 test030 test '
     'test test test test test test test test '
-    'test test test te00 test010 test test tes'
-    't test test test test test test test te02'
-    ' test030 test test test test test test '
-    'test test test test te04 test050 '
+    'test te04 test050 '
     */
 
-    final EngineParagraph paragraph = builder.build();
-    paragraph.layout(ParagraphConstraints(width: 840));
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(ParagraphConstraints(width: 800));
 
     // Reference the offsets with the output of `Display arrangement`.
     const offset010 = text00.length;
@@ -320,22 +319,22 @@ void main() async {
     const offset04 = offset030 + text030.length;
     const offset050 = offset04 + text04.length;
     // Tap text010.
-    expect(paragraph.getPositionForOffset(Offset(400, 30)).offset, offset010);
+    expect(paragraph.getPositionForOffset(Offset(700, 10)).offset, offset010);
     // Tap text030
-    expect(paragraph.getPositionForOffset(Offset(100, 70)).offset, offset030);
+    expect(paragraph.getPositionForOffset(Offset(600, 30)).offset, offset030);
     // Tap text050
-    expect(paragraph.getPositionForOffset(Offset(500, 90)).offset, offset050);
+    expect(paragraph.getPositionForOffset(Offset(220, 70)).offset, offset050);
     // Tap the left neighbor of text050
-    expect(paragraph.getPositionForOffset(Offset(479, 90)).offset, offset04);
+    expect(paragraph.getPositionForOffset(Offset(199, 70)).offset, offset04);
     // Tap the right neighbor of text050. No matter who the right neighbor of
     // text0505 is, it must not be text050 itself.
-    expect(paragraph.getPositionForOffset(Offset(660, 90)).offset,
+    expect(paragraph.getPositionForOffset(Offset(360, 70)).offset,
         isNot(offset050));
     // Tap the neighbor above text050
-    expect(paragraph.getPositionForOffset(Offset(480, 79)).offset, offset04);
+    expect(paragraph.getPositionForOffset(Offset(220, 59)).offset, offset04);
     // Tap the neighbor below text050. No matter who the neighbor above text050,
     // it must not be text050 itself.
-    expect(paragraph.getPositionForOffset(Offset(480, 100)).offset,
+    expect(paragraph.getPositionForOffset(Offset(220, 80)).offset,
         isNot(offset050));
   });
 
