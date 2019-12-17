@@ -30,9 +30,7 @@ void main() {
         receivedPacket = packet;
       };
 
-      glassPane.dispatchEvent((context
-        ..down = true
-      ).downEvent());
+      glassPane.dispatchEvent(context.down());
 
       expect(receivedPacket, isNotNull);
       expect(receivedPacket.data[0].buttons, equals(1));
@@ -47,9 +45,7 @@ void main() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent((context
-        ..down = true
-      ).downEvent());
+      glassPane.dispatchEvent(context.down());
 
       expect(packets, hasLength(1));
       expect(packets.single.data, hasLength(2));
@@ -69,7 +65,7 @@ void main() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent(context.moveEvent());
+      glassPane.dispatchEvent(context.hoverEvent());
 
       expect(packets, hasLength(1));
       expect(packets.single.data, hasLength(2));
@@ -88,13 +84,9 @@ void main() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent((context
-        ..down = true
-      ).downEvent());
+      glassPane.dispatchEvent(context.down());
 
-      glassPane.dispatchEvent((context
-        ..down = true
-      ).downEvent());
+      glassPane.dispatchEvent(context.down());
 
       expect(packets, hasLength(2));
       // An add will be synthesized.
@@ -131,12 +123,12 @@ void main() {
         deltaY: 10,
       ));
 
-      glassPane.dispatchEvent((context
-        ..button = 0
-        ..buttons = 1
-        ..clientX = 20.0
-        ..clientY = 50.0
-      ).downEvent());
+      glassPane.dispatchEvent(context.downWithButton(
+        button: 0,
+        buttons: 1,
+        clientX: 20.0,
+        clientY: 50.0,
+      ));
 
       glassPane.dispatchEvent(html.WheelEvent('wheel',
         button: 1,
@@ -227,37 +219,40 @@ void main() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent((context
-        ..clientX = 10.0
-        ..clientY = 10.0
-      ).moveEvent());
+      glassPane.dispatchEvent(context.hoverEvent(
+        clientX: 10.0,
+        clientY: 10.0,
+      ));
 
-      glassPane.dispatchEvent((context
-        ..clientX = 20.0
-        ..clientY = 20.0
-      ).moveEvent());
+      glassPane.dispatchEvent(context.hoverEvent(
+        clientX: 20.0,
+        clientY: 20.0,
+      ));
 
-      glassPane.dispatchEvent((context
-        ..down = true
-      ).downEvent());
+      glassPane.dispatchEvent(context.down(
+        clientX: 20.0,
+        clientY: 20.0,
+      ));
 
-      glassPane.dispatchEvent((context
-        ..clientX = 40.0
-        ..clientY = 30.0
-      ).moveEvent());
+      glassPane.dispatchEvent(context.move(
+        clientX: 40.0,
+        clientY: 30.0,
+      ));
 
-      glassPane.dispatchEvent((context
-        ..down = false
-      ).upEvent());
+      glassPane.dispatchEvent(context.up(
+        clientX: 40.0,
+        clientY: 30.0,
+      ));
 
-      glassPane.dispatchEvent((context
-        ..clientX = 20.0
-        ..clientY = 10.0
-      ).moveEvent());
+      glassPane.dispatchEvent(context.hoverEvent(
+        clientX: 20.0,
+        clientY: 10.0,
+      ));
 
-      glassPane.dispatchEvent((context
-        ..down = true
-      ).downEvent());
+      glassPane.dispatchEvent(context.down(
+        clientX: 20.0,
+        clientY: 10.0,
+      ));
 
       expect(packets, hasLength(7));
 
@@ -344,10 +339,10 @@ void main() {
 
       // Add and hover
 
-      glassPane.dispatchEvent((context
-        ..clientX = 10
-        ..clientY = 11
-      ).moveEvent());
+      glassPane.dispatchEvent(context.hoverEvent(
+        clientX: 10,
+        clientY: 11,
+      ));
 
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
@@ -363,12 +358,12 @@ void main() {
       expect(packets[0].data[1].buttons, equals(0));
       packets.clear();
 
-      glassPane.dispatchEvent((context
-        ..button = 0
-        ..buttons = 1
-        ..clientX = 10.0
-        ..clientY = 11.0
-      ).downEvent());
+      glassPane.dispatchEvent(context.downWithButton(
+        button: 0,
+        buttons: 1,
+        clientX: 10.0,
+        clientY: 11.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.down));
@@ -378,10 +373,12 @@ void main() {
       expect(packets[0].data[0].buttons, equals(1));
       packets.clear();
 
-      glassPane.dispatchEvent((context
-        ..clientX = 20.0
-        ..clientY = 21.0
-      ).moveEvent());
+      glassPane.dispatchEvent(context.moveWithButton(
+        button: -1,
+        buttons: 1,
+        clientX: 20.0,
+        clientY: 21.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
@@ -391,10 +388,11 @@ void main() {
       expect(packets[0].data[0].buttons, equals(1));
       packets.clear();
 
-      glassPane.dispatchEvent((context
-        ..button = 0
-        ..buttons = 0
-      ).upEvent());
+      glassPane.dispatchEvent(context.upWithButton(
+        button: 0,
+        clientX: 20.0,
+        clientY: 21.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
@@ -405,12 +403,12 @@ void main() {
       packets.clear();
 
       // Drag with secondary button
-      glassPane.dispatchEvent((context
-        ..button = 2
-        ..buttons = 2
-        ..clientX = 20.0
-        ..clientY = 21.0
-      ).downEvent());
+      glassPane.dispatchEvent(context.downWithButton(
+        button: 2,
+        buttons: 2,
+        clientX: 20.0,
+        clientY: 21.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.down));
@@ -420,15 +418,12 @@ void main() {
       expect(packets[0].data[0].buttons, equals(2));
       packets.clear();
 
-      glassPane.dispatchEvent(html.PointerEvent('pointermove', {
-        'pointerType': 'mouse',
-      }));
-      glassPane.dispatchEvent((context
-        ..button = -1
-        ..buttons = 2
-        ..clientX = 30.0
-        ..clientY = 31.0
-      ).moveEvent());
+      glassPane.dispatchEvent(context.moveWithButton(
+        button: -1,
+        buttons: 2,
+        clientX: 30.0,
+        clientY: 31.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
@@ -438,10 +433,11 @@ void main() {
       expect(packets[0].data[0].buttons, equals(2));
       packets.clear();
 
-      glassPane.dispatchEvent((context
-        ..button = 2
-        ..buttons = 0
-      ).upEvent());
+      glassPane.dispatchEvent(context.upWithButton(
+        button: 2,
+        clientX: 30.0,
+        clientY: 31.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
@@ -452,12 +448,12 @@ void main() {
       packets.clear();
 
       // Drag with middle button
-      glassPane.dispatchEvent((context
-        ..button = 1
-        ..buttons = 4
-        ..clientX = 30.0
-        ..clientY = 31.0
-      ).downEvent());
+      glassPane.dispatchEvent(context.downWithButton(
+        button: 1,
+        buttons: 4,
+        clientX: 30.0,
+        clientY: 31.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.down));
@@ -467,10 +463,12 @@ void main() {
       expect(packets[0].data[0].buttons, equals(4));
       packets.clear();
 
-      glassPane.dispatchEvent((context
-        ..clientX = 40.0
-        ..clientY = 41.0
-      ).moveEvent());
+      glassPane.dispatchEvent(context.moveWithButton(
+        button: -1,
+        buttons: 4,
+        clientX: 40.0,
+        clientY: 41.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
@@ -480,10 +478,11 @@ void main() {
       expect(packets[0].data[0].buttons, equals(4));
       packets.clear();
 
-      glassPane.dispatchEvent((context
-        ..button = 1
-        ..buttons = 0
-      ).upEvent());
+      glassPane.dispatchEvent(context.upWithButton(
+        button: 1,
+        clientX: 40.0,
+        clientY: 41.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
@@ -504,10 +503,10 @@ void main() {
       };
 
       // Press LMB.
-      glassPane.dispatchEvent((context
-        ..button = 0
-        ..buttons = 1
-      ).downEvent());
+      glassPane.dispatchEvent(context.downWithButton(
+        button: 0,
+        buttons: 1,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
@@ -519,10 +518,10 @@ void main() {
       packets.clear();
 
       // Press MMB.
-      glassPane.dispatchEvent((context
-        ..button = 1
-        ..buttons = 5
-      ).moveEvent());
+      glassPane.dispatchEvent(context.moveWithButton(
+        button: 1,
+        buttons: 5,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
@@ -531,10 +530,10 @@ void main() {
       packets.clear();
 
       // Release LMB.
-      glassPane.dispatchEvent((context
-        ..button = 0
-        ..buttons = 4
-      ).moveEvent());
+      glassPane.dispatchEvent(context.moveWithButton(
+        button: 0,
+        buttons: 4,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
@@ -543,10 +542,9 @@ void main() {
       packets.clear();
 
       // Release MMB.
-      glassPane.dispatchEvent((context
-        ..button = 1
-        ..buttons = 0
-      ).upEvent());
+      glassPane.dispatchEvent(context.upWithButton(
+        button: 1,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
@@ -567,12 +565,12 @@ void main() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent((context
-        ..button = 2
-        ..buttons = 2
-        ..clientX = 10
-        ..clientY = 11
-      ).downEvent());
+      glassPane.dispatchEvent(context.downWithButton(
+        button: 2,
+        buttons: 2,
+        clientX: 10,
+        clientY: 11,
+      ));
 
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
@@ -588,12 +586,12 @@ void main() {
       expect(packets[0].data[1].buttons, equals(2));
       packets.clear();
 
-      glassPane.dispatchEvent((context
-        ..button = -1
-        ..buttons = 2
-        ..clientX = 20.0
-        ..clientY = 21.0
-      ).moveEvent());
+      glassPane.dispatchEvent(context.moveWithButton(
+        button: -1,
+        buttons: 2,
+        clientX: 20.0,
+        clientY: 21.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
@@ -604,12 +602,12 @@ void main() {
       packets.clear();
 
 
-      glassPane.dispatchEvent((context
-        ..button = -1
-        ..buttons = 2
-        ..clientX = 20.0
-        ..clientY = 21.0
-      ).moveEvent());
+      glassPane.dispatchEvent(context.moveWithButton(
+        button: -1,
+        buttons: 2,
+        clientX: 20.0,
+        clientY: 21.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
@@ -620,12 +618,11 @@ void main() {
       packets.clear();
 
 
-      glassPane.dispatchEvent((context
-        ..button = 2
-        ..buttons = 0
-        ..clientX = 20.0
-        ..clientY = 21.0
-      ).upEvent());
+      glassPane.dispatchEvent(context.upWithButton(
+        button: 2,
+        clientX: 20.0,
+        clientY: 21.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
@@ -652,10 +649,10 @@ void main() {
       };
 
       // Press RMB and hold, popping up the context menu.
-      glassPane.dispatchEvent((context
-        ..button = 2
-        ..buttons = 2
-      ).downEvent());
+      glassPane.dispatchEvent(context.downWithButton(
+        button: 2,
+        buttons: 2,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
@@ -669,10 +666,10 @@ void main() {
       // Press LMB. The event will have "button: -1" here, despite the change
       // in "buttons", probably because the "press" gesture was absorbed by
       // dismissing the context menu.
-      glassPane.dispatchEvent((context
-        ..button = -1
-        ..buttons = 3
-      ).moveEvent());
+      glassPane.dispatchEvent(context.moveWithButton(
+        button: -1,
+        buttons: 3,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
@@ -681,10 +678,10 @@ void main() {
       packets.clear();
 
       // Release LMB.
-      glassPane.dispatchEvent((context
-        ..button = 0
-        ..buttons = 2
-      ).moveEvent());
+      glassPane.dispatchEvent(context.moveWithButton(
+        button: 0,
+        buttons: 2,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
@@ -693,10 +690,9 @@ void main() {
       packets.clear();
 
       // Release RMB.
-      glassPane.dispatchEvent((context
-        ..button = 2
-        ..buttons = 0
-      ).upEvent());
+      glassPane.dispatchEvent(context.upWithButton(
+        button: 2,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
@@ -718,17 +714,19 @@ void main() {
 
       glassPane.dispatchEvent((context
         ..pointerType = 'touch'
-        ..pointerId = 1
-        ..button = 0
-        ..buttons = 1
-      ).downEvent());
+      ).downWithButtonPointer(
+        pointer: 1,
+        button: 0,
+        buttons: 1,
+      ));
 
       glassPane.dispatchEvent((context
         ..pointerType = 'touch'
-        ..pointerId = 2
-        ..button = 0
-        ..buttons = 1
-      ).downEvent());
+      ).downWithButtonPointer(
+        pointer: 2,
+        button: 0,
+        buttons: 1,
+      ));
 
       expect(packets, hasLength(2));
       // An add will be synthesized.
@@ -759,12 +757,11 @@ void main() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent((context
-        ..identifier = 1
-        ..down = true
-        ..clientX = 20.0
-        ..clientY = 20.0
-      ).downEvent());
+      glassPane.dispatchEvent(context.downWithPointer(
+        pointer: 1,
+        clientX: 20.0,
+        clientY: 20.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
@@ -784,10 +781,11 @@ void main() {
       expect(packets[0].data[1].physicalDeltaY, equals(0.0));
       packets.clear();
 
-      glassPane.dispatchEvent((context
-        ..clientX = 40.0
-        ..clientY = 30.0
-      ).moveEvent());
+      glassPane.dispatchEvent(context.moveWithPointer(
+        pointer: 1,
+        clientX: 40.0,
+        clientY: 30.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
@@ -799,9 +797,11 @@ void main() {
       expect(packets[0].data[0].physicalDeltaY, equals(10.0));
       packets.clear();
 
-      glassPane.dispatchEvent((context
-        ..down = false
-      ).upEvent());
+      glassPane.dispatchEvent(context.upWithPointer(
+        pointer: 1,
+        clientX: 40.0,
+        clientY: 30.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
@@ -813,12 +813,11 @@ void main() {
       expect(packets[0].data[0].physicalDeltaY, equals(0.0));
       packets.clear();
 
-      glassPane.dispatchEvent((context
-        ..identifier = 2
-        ..clientX = 20.0
-        ..clientY = 10.0
-        ..down = true
-      ).downEvent());
+      glassPane.dispatchEvent(context.downWithPointer(
+        pointer: 2,
+        clientX: 20.0,
+        clientY: 10.0,
+      ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
@@ -844,14 +843,9 @@ void main() {
 abstract class _BasicEventContext implements PointerSupportDetector {
   String get name;
 
-  double clientX = 0;
-  double clientY = 0;
-  bool get down;
-  set down(bool value);
-
-  html.Event downEvent();
-  html.Event moveEvent();
-  html.Event upEvent();
+  html.Event down({double clientX, double clientY});
+  html.Event move({double clientX, double clientY});
+  html.Event up({double clientX, double clientY});
 }
 
 class _TouchEventContext extends _BasicEventContext implements PointerSupportDetector {
@@ -871,16 +865,7 @@ class _TouchEventContext extends _BasicEventContext implements PointerSupportDet
   @override
   bool get hasMouseEvents => false;
 
-  @override
-  bool get down => _down;
-  set down(bool value) {
-    _down = value;
-  }
-  bool _down;
-
   html.EventTarget _target;
-
-  int identifier = 1;
 
   html.Touch _createTouch({
     int identifier,
@@ -911,28 +896,55 @@ class _TouchEventContext extends _BasicEventContext implements PointerSupportDet
     });
   }
 
-  html.Event downEvent() {
+  @override
+  html.Event down({double clientX, double clientY}) {
+    return downWithPointer(
+      pointer: 1,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  html.Event downWithPointer({double clientX, double clientY, int pointer}) {
     return _createTouchEvent(
       'touchstart',
-      identifier: identifier,
+      identifier: pointer,
       clientX: clientX,
       clientY: clientY,
     );
   }
 
-  html.Event moveEvent() {
+  @override
+  html.Event move({double clientX, double clientY}) {
+    return moveWithPointer(
+      pointer: 1,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  html.Event moveWithPointer({double clientX, double clientY, int pointer}) {
     return _createTouchEvent(
       'touchmove',
-      identifier: identifier,
+      identifier: pointer,
       clientX: clientX,
       clientY: clientY,
     );
   }
 
-  html.Event upEvent() {
+  @override
+  html.Event up({double clientX, double clientY}) {
+    return upWithPointer(
+      pointer: 1,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  html.Event upWithPointer({double clientX, double clientY, int pointer}) {
     return _createTouchEvent(
       'touchend',
-      identifier: identifier,
+      identifier: pointer,
       clientX: clientX,
       clientY: clientY,
     );
@@ -940,24 +952,47 @@ class _TouchEventContext extends _BasicEventContext implements PointerSupportDet
 }
 
 abstract class _ButtonedEventContext extends _BasicEventContext {
-  int button = 0;
-  int buttons = 0;
+  html.Event downWithButton({double clientX, double clientY, int button, int buttons});
+  html.Event moveWithButton({double clientX, double clientY, int button, int buttons});
+  html.Event upWithButton({double clientX, double clientY, int button});
 
-  @override
-  bool get down => buttons != 0;
-
-  @override
-  set down(bool value) {
-    if (value != down) {
-      button = 0;
-      buttons = value ? 1 : 0;
-    }
+  html.Event hoverEvent({double clientX, double clientY}) {
+    return moveWithButton(
+      buttons: 0,
+      button: -1,
+      clientX: clientX,
+      clientY: clientY,
+    );
   }
 
-  int getButtonAndReset() {
-    int result = button;
-    button = -1;
-    return result;
+  @override
+  html.Event down({double clientX, double clientY}) {
+    return downWithButton(
+      buttons: 1,
+      button: 0,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+
+  @override
+  html.Event move({double clientX, double clientY}) {
+    return moveWithButton(
+      buttons: 1,
+      button: -1,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  @override
+  html.Event up({double clientX, double clientY}) {
+    return upWithButton(
+      button: 1,
+      clientX: clientX,
+      clientY: clientY,
+    );
   }
 }
 
@@ -974,31 +1009,34 @@ class _MouseEventContext extends _ButtonedEventContext implements PointerSupport
   @override
   bool get hasMouseEvents => true;
 
-  html.Event downEvent() {
+  @override
+  html.Event downWithButton({double clientX, double clientY, int button, int buttons}) {
     return _createMouseEvent(
       'mousedown',
       buttons: buttons,
-      button: getButtonAndReset(),
+      button: button,
       clientX: clientX,
       clientY: clientY,
     );
   }
 
-  html.Event moveEvent() {
+  @override
+  html.Event moveWithButton({double clientX, double clientY, int button, int buttons}) {
     return _createMouseEvent(
       'mousemove',
       buttons: buttons,
-      button: getButtonAndReset(),
+      button: button,
       clientX: clientX,
       clientY: clientY,
     );
   }
 
-  html.Event upEvent() {
+  @override
+  html.Event upWithButton({double clientX, double clientY, int button}) {
     return _createMouseEvent(
       'mouseup',
-      buttons: buttons,
-      button: getButtonAndReset(),
+      buttons: 0,
+      button: button,
       clientX: clientX,
       clientY: clientY,
     );
@@ -1025,7 +1063,6 @@ class _MouseEventContext extends _ButtonedEventContext implements PointerSupport
   }
 }
 
-
 class _PointerEventContext extends _ButtonedEventContext implements PointerSupportDetector {
   @override
   String get name => 'PointerAdapter';
@@ -1039,13 +1076,23 @@ class _PointerEventContext extends _ButtonedEventContext implements PointerSuppo
   @override
   bool get hasMouseEvents => false;
 
-  int pointerId = 0;
   String pointerType = 'mouse';
 
-  html.Event downEvent() {
+  @override
+  html.Event downWithButton({double clientX, double clientY, int button, int buttons}) {
+    return downWithButtonPointer(
+      pointer: 1,
+      buttons: buttons,
+      button: button,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  html.Event downWithButtonPointer({double clientX, double clientY, int button, int buttons, int pointer}) {
     return html.PointerEvent('pointerdown', {
-      'pointerId': pointerId,
-      'button': getButtonAndReset(),
+      'pointerId': pointer,
+      'button': button,
       'buttons': buttons,
       'clientX': clientX,
       'clientY': clientY,
@@ -1053,10 +1100,21 @@ class _PointerEventContext extends _ButtonedEventContext implements PointerSuppo
     });
   }
 
-  html.Event moveEvent() {
+  @override
+  html.Event moveWithButton({double clientX, double clientY, int button, int buttons}) {
+    return moveWithButtonPointer(
+      pointer: 1,
+      buttons: buttons,
+      button: button,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  html.Event moveWithButtonPointer({double clientX, double clientY, int button, int buttons, int pointer}) {
     return html.PointerEvent('pointermove', {
-      'pointerId': pointerId,
-      'button': getButtonAndReset(),
+      'pointerId': pointer,
+      'button': button,
       'buttons': buttons,
       'clientX': clientX,
       'clientY': clientY,
@@ -1064,11 +1122,21 @@ class _PointerEventContext extends _ButtonedEventContext implements PointerSuppo
     });
   }
 
-  html.Event upEvent() {
+  @override
+  html.Event upWithButton({double clientX, double clientY, int button}) {
+    return upWithButtonPointer(
+      pointer: 1,
+      button: button,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  html.Event upWithButtonPointer({double clientX, double clientY, int button, int pointer}) {
     return html.PointerEvent('pointerup', {
-      'pointerId': pointerId,
-      'button': getButtonAndReset(),
-      'buttons': buttons,
+      'pointerId': pointer,
+      'button': button,
+      'buttons': 0,
       'clientX': clientX,
       'clientY': clientY,
       'pointerType': pointerType,
