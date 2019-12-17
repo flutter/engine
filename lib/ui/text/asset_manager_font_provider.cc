@@ -44,7 +44,8 @@ SkFontStyleSet* AssetManagerFontProvider::MatchFamily(
   if (found == registered_families_.end()) {
     return nullptr;
   }
-  return SkRef(&found->second);
+  sk_sp<SkFontStyleSet> font_style_set = found->second;
+  return font_style_set.release();
 }
 
 void AssetManagerFontProvider::RegisterAsset(std::string family_name,
@@ -54,19 +55,19 @@ void AssetManagerFontProvider::RegisterAsset(std::string family_name,
 
   if (family_it == registered_families_.end()) {
     family_names_.push_back(family_name);
-    family_it = registered_families_
-                    .emplace(std::piecewise_construct,
-                             std::forward_as_tuple(canonical_name),
-                             std::forward_as_tuple(asset_manager_))
-                    .first;
+    auto value = std::make_pair(
+        canonical_name,
+        sk_make_sp<AssetManagerFontStyleSet>(asset_manager_, family_name));
+    family_it = registered_families_.emplace(value).first;
   }
 
-  family_it->second.registerAsset(asset);
+  family_it->second->registerAsset(asset);
 }
 
 AssetManagerFontStyleSet::AssetManagerFontStyleSet(
-    std::shared_ptr<AssetManager> asset_manager)
-    : asset_manager_(asset_manager) {}
+    std::shared_ptr<AssetManager> asset_manager,
+    std::string family_name)
+    : asset_manager_(asset_manager), family_name_(family_name) {}
 
 AssetManagerFontStyleSet::~AssetManagerFontStyleSet() = default;
 
@@ -79,9 +80,18 @@ int AssetManagerFontStyleSet::count() {
 }
 
 void AssetManagerFontStyleSet::getStyle(int index,
-                                        SkFontStyle*,
-                                        SkString* style) {
-  FML_DCHECK(false);
+                                        SkFontStyle* style,
+                                        SkString* name) {
+  FML_DCHECK(index < static_cast<int>(assets_.size()));
+  if (style) {
+    sk_sp<SkTypeface> typeface(createTypeface(index));
+    if (typeface) {
+      *style = typeface->fontStyle();
+    }
+  }
+  if (name) {
+    *name = family_name_.c_str();
+  }
 }
 
 SkTypeface* AssetManagerFontStyleSet::createTypeface(int i) {
@@ -113,14 +123,7 @@ SkTypeface* AssetManagerFontStyleSet::createTypeface(int i) {
 }
 
 SkTypeface* AssetManagerFontStyleSet::matchStyle(const SkFontStyle& pattern) {
-  if (assets_.empty())
-    return nullptr;
-
-  for (const TypefaceAsset& asset : assets_)
-    if (asset.typeface && asset.typeface->fontStyle() == pattern)
-      return SkRef(asset.typeface.get());
-
-  return SkRef(assets_[0].typeface.get());
+  return matchStyleCSS3(pattern);
 }
 
 AssetManagerFontStyleSet::TypefaceAsset::TypefaceAsset(std::string a)

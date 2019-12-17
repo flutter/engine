@@ -32,7 +32,7 @@ namespace {
 
 static Dart_LibraryTagHandler g_embedder_tag_handler;
 static tonic::DartLibraryNatives* g_natives;
-static std::string observatory_uri_;
+static std::string g_observatory_uri;
 
 Dart_NativeFunction GetNativeFunction(Dart_Handle name,
                                       int argument_count,
@@ -50,7 +50,6 @@ const uint8_t* GetSymbol(Dart_NativeFunction native_function) {
 
 std::mutex DartServiceIsolate::callbacks_mutex_;
 
-FML_GUARDED_BY(DartServiceIsolate::callbacks_mutex_)
 std::set<std::unique_ptr<DartServiceIsolate::ObservatoryServerStateCallback>>
     DartServiceIsolate::callbacks_;
 
@@ -63,14 +62,14 @@ void DartServiceIsolate::NotifyServerState(Dart_NativeArguments args) {
     return;
   }
 
-  observatory_uri_ = uri;
+  g_observatory_uri = uri;
 
   // Collect callbacks to fire in a separate collection and invoke them outside
   // the lock.
   std::vector<DartServiceIsolate::ObservatoryServerStateCallback>
       callbacks_to_fire;
   {
-    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    std::scoped_lock lock(callbacks_mutex_);
     for (auto& callback : callbacks_) {
       callbacks_to_fire.push_back(*callback.get());
     }
@@ -81,12 +80,8 @@ void DartServiceIsolate::NotifyServerState(Dart_NativeArguments args) {
   }
 }
 
-std::string DartServiceIsolate::GetObservatoryUri() {
-  return observatory_uri_;
-}
-
 DartServiceIsolate::CallbackHandle DartServiceIsolate::AddServerStatusCallback(
-    DartServiceIsolate::ObservatoryServerStateCallback callback) {
+    const DartServiceIsolate::ObservatoryServerStateCallback& callback) {
   if (!callback) {
     return 0;
   }
@@ -98,12 +93,12 @@ DartServiceIsolate::CallbackHandle DartServiceIsolate::AddServerStatusCallback(
   auto handle = reinterpret_cast<CallbackHandle>(callback_pointer.get());
 
   {
-    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    std::scoped_lock lock(callbacks_mutex_);
     callbacks_.insert(std::move(callback_pointer));
   }
 
-  if (!observatory_uri_.empty()) {
-    callback(observatory_uri_);
+  if (!g_observatory_uri.empty()) {
+    callback(g_observatory_uri);
   }
 
   return handle;
@@ -111,7 +106,7 @@ DartServiceIsolate::CallbackHandle DartServiceIsolate::AddServerStatusCallback(
 
 bool DartServiceIsolate::RemoveServerStatusCallback(
     CallbackHandle callback_handle) {
-  std::lock_guard<std::mutex> lock(callbacks_mutex_);
+  std::scoped_lock lock(callbacks_mutex_);
   auto found = std::find_if(
       callbacks_.begin(), callbacks_.end(),
       [callback_handle](const auto& item) {

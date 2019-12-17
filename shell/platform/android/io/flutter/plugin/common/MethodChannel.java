@@ -120,6 +120,15 @@ public final class MethodChannel {
     }
 
     /**
+     * Adjusts the number of messages that will get buffered when sending messages to
+     * channels that aren't fully setup yet.  For example, the engine isn't running
+     * yet or the channel's message handler isn't setup on the Dart side yet.
+     */
+    public void resizeChannelBuffer(int newSize) {
+        BasicMessageChannel.resizeChannelBuffer(messenger, name, newSize);
+    }
+
+    /**
      * A handler of incoming method calls.
      */
     public interface MethodCallHandler {
@@ -142,7 +151,7 @@ public final class MethodChannel {
          * @param result A {@link Result} used for submitting the result of the call.
          */
         @UiThread
-        void onMethodCall(MethodCall call, Result result);
+        void onMethodCall(@NonNull MethodCall call, @NonNull Result result);
     }
 
     /**

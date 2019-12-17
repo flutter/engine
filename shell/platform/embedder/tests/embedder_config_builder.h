@@ -8,8 +8,9 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/unique_object.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/embedder/tests/embedder_context.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_compositor.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
 
 namespace flutter {
 namespace testing {
@@ -34,15 +35,17 @@ class EmbedderConfigBuilder {
     kNoInitialize,
   };
 
-  EmbedderConfigBuilder(EmbedderContext& context,
+  EmbedderConfigBuilder(EmbedderTestContext& context,
                         InitializationPreference preference =
                             InitializationPreference::kInitialize);
 
   ~EmbedderConfigBuilder();
 
-  void SetSoftwareRendererConfig();
+  FlutterProjectArgs& GetProjectArgs();
 
-  void SetOpenGLRendererConfig();
+  void SetSoftwareRendererConfig(SkISize surface_size = SkISize::Make(1, 1));
+
+  void SetOpenGLRendererConfig(SkISize surface_size);
 
   void SetAssetsPath();
 
@@ -58,17 +61,31 @@ class EmbedderConfigBuilder {
 
   void SetPlatformTaskRunner(const FlutterTaskRunnerDescription* runner);
 
-  UniqueEngine LaunchEngine();
+  void SetRenderTaskRunner(const FlutterTaskRunnerDescription* runner);
+
+  void SetPlatformMessageCallback(
+      const std::function<void(const FlutterPlatformMessage*)>& callback);
+
+  void SetCompositor();
+
+  FlutterCompositor& GetCompositor();
+
+  UniqueEngine LaunchEngine() const;
+
+  UniqueEngine InitializeEngine() const;
 
  private:
-  EmbedderContext& context_;
+  EmbedderTestContext& context_;
   FlutterProjectArgs project_args_ = {};
   FlutterRendererConfig renderer_config_ = {};
   FlutterSoftwareRendererConfig software_renderer_config_ = {};
   FlutterOpenGLRendererConfig opengl_renderer_config_ = {};
   std::string dart_entrypoint_;
   FlutterCustomTaskRunners custom_task_runners_ = {};
+  FlutterCompositor compositor_ = {};
   std::vector<std::string> command_line_arguments_;
+
+  UniqueEngine SetupEngine(bool run) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderConfigBuilder);
 };

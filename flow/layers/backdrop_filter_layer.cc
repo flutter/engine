@@ -9,7 +9,12 @@ namespace flutter {
 BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter)
     : filter_(std::move(filter)) {}
 
-BackdropFilterLayer::~BackdropFilterLayer() = default;
+void BackdropFilterLayer::Preroll(PrerollContext* context,
+                                  const SkMatrix& matrix) {
+  Layer::AutoPrerollSaveLayerState save =
+      Layer::AutoPrerollSaveLayerState::Create(context, true, bool(filter_));
+  ContainerLayer::Preroll(context, matrix);
+}
 
 void BackdropFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "BackdropFilterLayer::Paint");

@@ -9,6 +9,7 @@ import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.Surface;
 import android.view.View;
@@ -151,10 +152,46 @@ class VirtualDisplayController {
 
     public void dispose() {
         PlatformView view = presentation.getView();
+        // Fix rare crash on HuaWei device described in: https://github.com/flutter/engine/pull/9192
+        presentation.cancel();
         presentation.detachState();
         view.dispose();
         virtualDisplay.release();
         textureEntry.release();
+    }
+
+    /**
+     * See {@link PlatformView#onFlutterViewAttached(View)}
+     */
+    /*package*/ void onFlutterViewAttached(@NonNull View flutterView) {
+        if (presentation == null || presentation.getView() == null) {
+            return;
+        }
+        presentation.getView().onFlutterViewAttached(flutterView);
+    }
+
+    /**
+     * See {@link PlatformView#onFlutterViewDetached()}
+     */
+    /*package*/ void onFlutterViewDetached() {
+        if (presentation == null || presentation.getView() == null) {
+            return;
+        }
+        presentation.getView().onFlutterViewDetached();
+    }
+
+    /*package*/ void onInputConnectionLocked() {
+        if (presentation == null || presentation.getView() == null) {
+            return;
+        }
+        presentation.getView().onInputConnectionLocked();
+    }
+
+    /*package*/ void onInputConnectionUnlocked() {
+        if (presentation == null || presentation.getView() == null) {
+            return;
+        }
+        presentation.getView().onInputConnectionUnlocked();
     }
 
     public View getView() {

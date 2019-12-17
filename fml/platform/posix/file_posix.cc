@@ -4,6 +4,7 @@
 
 #include "flutter/fml/file.h"
 
+#include <dirent.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -13,7 +14,9 @@
 #include <sstream>
 
 #include "flutter/fml/eintr_wrapper.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/unique_fd.h"
 
 namespace fml {
 
@@ -132,6 +135,11 @@ bool IsDirectory(const fml::UniqueFD& directory) {
   return S_ISDIR(stat_result.st_mode);
 }
 
+bool IsDirectory(const fml::UniqueFD& base_directory, const char* path) {
+  UniqueFD file = OpenFileReadOnly(base_directory, path);
+  return (file.is_valid() && IsDirectory(file));
+}
+
 bool IsFile(const std::string& path) {
   struct stat buf;
   if (stat(path.c_str(), &buf) != 0) {
@@ -162,7 +170,11 @@ bool UnlinkFile(const char* path) {
 }
 
 bool UnlinkFile(const fml::UniqueFD& base_directory, const char* path) {
-  return ::unlinkat(base_directory.get(), path, 0) == 0;
+  int code = ::unlinkat(base_directory.get(), path, 0);
+  if (code != 0) {
+    FML_DLOG(ERROR) << strerror(errno);
+  }
+  return code == 0;
 }
 
 bool FileExists(const fml::UniqueFD& base_directory, const char* path) {
@@ -208,6 +220,38 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
 
   return ::renameat(base_directory.get(), temp_file_name.c_str(),
                     base_directory.get(), file_name) == 0;
+}
+
+bool VisitFiles(const fml::UniqueFD& directory, const FileVisitor& visitor) {
+  fml::UniqueFD dup_fd(dup(directory.get()));
+  if (!dup_fd.is_valid()) {
+    FML_DLOG(ERROR) << "Can't dup the directory fd. Error: " << strerror(errno);
+    return true;  // continue to visit other files
+  }
+
+  fml::UniqueDir dir(::fdopendir(dup_fd.get()));
+  if (!dir.is_valid()) {
+    FML_DLOG(ERROR) << "Can't open the directory. Error: " << strerror(errno);
+    return true;  // continue to visit other files
+  }
+
+  // The directory fd will be closed by `closedir`.
+  (void)dup_fd.release();
+
+  // Without `rewinddir`, `readir` will directly return NULL (end of dir is
+  // reached) after a previuos `VisitFiles` call for the same `const
+  // fml::UniqueFd& directory`.
+  rewinddir(dir.get());
+  while (dirent* ent = readdir(dir.get())) {
+    std::string filename = ent->d_name;
+    if (filename != "." && filename != "..") {
+      if (!visitor(directory, filename)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 }  // namespace fml

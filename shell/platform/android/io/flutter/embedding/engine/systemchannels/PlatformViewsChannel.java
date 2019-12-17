@@ -7,10 +7,13 @@ package io.flutter.embedding.engine.systemchannels;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
+import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -23,6 +26,8 @@ import io.flutter.plugin.common.StandardMethodCodec;
  * Register a {@link PlatformViewsHandler} to implement the Android side of this channel.
  */
 public class PlatformViewsChannel {
+  private static final String TAG = "PlatformViewsChannel";
+
   private final MethodChannel channel;
   private PlatformViewsHandler handler;
 
@@ -33,15 +38,23 @@ public class PlatformViewsChannel {
     channel.invokeMethod("viewFocused", viewId);
   }
 
+  private static String detailedExceptionString(Exception exception) {
+    StringWriter stringWriter = new StringWriter();
+    PrintWriter printWriter = new PrintWriter(stringWriter);
+    exception.printStackTrace(printWriter);
+    return stringWriter.toString();
+  }
+
   private final MethodChannel.MethodCallHandler parsingHandler = new MethodChannel.MethodCallHandler() {
     @Override
-    public void onMethodCall(MethodCall call, MethodChannel.Result result) {
+    public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
       // If there is no handler to respond to this message then we don't need to
       // parse it. Return.
       if (handler == null) {
         return;
       }
 
+      Log.v(TAG, "Received '" + call.method + "' message.");
       switch (call.method) {
         case "create":
           create(call, result);
@@ -66,7 +79,7 @@ public class PlatformViewsChannel {
       }
     }
 
-    private void create(MethodCall call, MethodChannel.Result result) {
+    private void create(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
       Map<String, Object> createArgs = call.arguments();
       PlatformViewCreationRequest request = new PlatformViewCreationRequest(
           (int) createArgs.get("id"),
@@ -85,7 +98,7 @@ public class PlatformViewsChannel {
       } catch (IllegalStateException exception) {
         result.error(
             "error",
-            exception.getMessage(),
+            detailedExceptionString(exception),
             null
         );
       }
@@ -99,7 +112,7 @@ public class PlatformViewsChannel {
       } catch (IllegalStateException exception) {
         result.error(
             "error",
-            exception.getMessage(),
+             detailedExceptionString(exception),
             null
         );
       }
@@ -125,7 +138,7 @@ public class PlatformViewsChannel {
       } catch (IllegalStateException exception) {
         result.error(
             "error",
-            exception.getMessage(),
+            detailedExceptionString(exception),
             null
         );
       }
@@ -157,7 +170,7 @@ public class PlatformViewsChannel {
       } catch (IllegalStateException exception) {
         result.error(
             "error",
-            exception.getMessage(),
+            detailedExceptionString(exception),
             null
         );
       }
@@ -177,13 +190,13 @@ public class PlatformViewsChannel {
       } catch (IllegalStateException exception) {
         result.error(
             "error",
-            exception.getMessage(),
+            detailedExceptionString(exception),
             null
         );
       }
     }
 
-    private void clearFocus(MethodCall call, MethodChannel.Result result) {
+    private void clearFocus(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
       int viewId = call.arguments();
       try {
         handler.clearFocus(viewId);
@@ -191,7 +204,7 @@ public class PlatformViewsChannel {
       } catch (IllegalStateException exception) {
         result.error(
                 "error",
-                exception.getMessage(),
+                detailedExceptionString(exception),
                 null
         );
       }

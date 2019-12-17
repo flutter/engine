@@ -317,10 +317,8 @@ int Layout::findFace(const FakedFont& face, LayoutContext* ctx) {
   // corresponding hb_font object.
   if (ctx != NULL) {
     hb_font_t* font = getHbFontLocked(face.font);
-    // Temporarily removed to fix advance integer rounding.
-    // This is likely due to very old versions of harfbuzz and ICU.
-    // hb_font_set_funcs(font, getHbFontFuncs(isColorBitmapFont(font)),
-    // &ctx->paint, 0);
+    hb_font_set_funcs(font, getHbFontFuncs(isColorBitmapFont(font)),
+                      &ctx->paint, 0);
     ctx->hbFonts.push_back(font);
   }
   return ix;
@@ -590,7 +588,7 @@ void Layout::doLayout(const uint16_t* buf,
                       const FontStyle& style,
                       const MinikinPaint& paint,
                       const std::shared_ptr<FontCollection>& collection) {
-  std::lock_guard<std::recursive_mutex> _l(gMinikinLock);
+  std::scoped_lock _l(gMinikinLock);
 
   LayoutContext ctx;
   ctx.style = style;
@@ -614,7 +612,7 @@ float Layout::measureText(const uint16_t* buf,
                           const MinikinPaint& paint,
                           const std::shared_ptr<FontCollection>& collection,
                           float* advances) {
-  std::lock_guard<std::recursive_mutex> _l(gMinikinLock);
+  std::scoped_lock _l(gMinikinLock);
 
   LayoutContext ctx;
   ctx.style = style;
@@ -1195,7 +1193,7 @@ void Layout::getBounds(MinikinRect* bounds) const {
 }
 
 void Layout::purgeCaches() {
-  std::lock_guard<std::recursive_mutex> _l(gMinikinLock);
+  std::scoped_lock _l(gMinikinLock);
   LayoutCache& layoutCache = LayoutEngine::getInstance().layoutCache;
   layoutCache.clear();
   purgeHbFontCacheLocked();

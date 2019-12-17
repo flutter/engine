@@ -25,7 +25,7 @@ using MessageReply = std::function<void(const T& reply)>;
 // to the message.
 template <typename T>
 using MessageHandler =
-    std::function<void(const T& message, MessageReply<T> reply)>;
+    std::function<void(const T& message, const MessageReply<T>& reply)>;
 
 // A channel for communicating with the Flutter engine by sending asynchronous
 // messages.
@@ -52,12 +52,16 @@ class BasicMessageChannel {
     messenger_->Send(name_, raw_message->data(), raw_message->size());
   }
 
-  // TODO: Add support for a version of Send expecting a reply once
-  // https://github.com/flutter/flutter/issues/18852 is fixed.
+  // Sends a message to the Flutter engine on this channel expecting a reply.
+  void Send(const T& message, BinaryReply reply) {
+    std::unique_ptr<std::vector<uint8_t>> raw_message =
+        codec_->EncodeMessage(message);
+    messenger_->Send(name_, raw_message->data(), raw_message->size(), reply);
+  }
 
   // Registers a handler that should be called any time a message is
   // received on this channel.
-  void SetMessageHandler(MessageHandler<T> handler) const {
+  void SetMessageHandler(const MessageHandler<T>& handler) const {
     const auto* codec = codec_;
     std::string channel_name = name_;
     BinaryMessageHandler binary_handler = [handler, codec, channel_name](

@@ -11,18 +11,13 @@
 #include <fuchsia/sys/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/sys/cpp/component_context.h>
-
-#if !defined(FUCHSIA_SDK)
-#include <trace-engine/instrumentation.h>
-#include <trace/observer.h>
-#endif  //  !defined(FUCHSIA_SDK)
+#include <lib/trace-engine/instrumentation.h>
+#include <lib/trace/observer.h>
 
 #include "component.h"
 #include "flutter/fml/macros.h"
 #include "lib/fidl/cpp/binding_set.h"
-#include "runner_context.h"
 #include "runtime/dart/utils/vmservice_object.h"
-#include "thread.h"
 
 namespace flutter_runner {
 
@@ -37,18 +32,7 @@ class Runner final : public fuchsia::sys::Runner {
  private:
   async::Loop* loop_;
 
-  struct ActiveApplication {
-    std::unique_ptr<Thread> thread;
-    std::unique_ptr<Application> application;
-
-    ActiveApplication(
-        std::pair<std::unique_ptr<Thread>, std::unique_ptr<Application>> pair)
-        : thread(std::move(pair.first)), application(std::move(pair.second)) {}
-
-    ActiveApplication() = default;
-  };
-
-  std::unique_ptr<RunnerContext> runner_context_;
+  std::unique_ptr<sys::ComponentContext> context_;
   fidl::BindingSet<fuchsia::sys::Runner> active_applications_bindings_;
   std::unordered_map<const Application*, ActiveApplication>
       active_applications_;
@@ -57,10 +41,8 @@ class Runner final : public fuchsia::sys::Runner {
   // The connection between the Dart VM service and The Hub.
   std::unique_ptr<dart_utils::VMServiceObject> vmservice_object_;
 
-#if !defined(FUCHSIA_SDK)
   std::unique_ptr<trace::TraceObserver> trace_observer_;
   trace_prolonged_context_t* prolonged_context_;
-#endif  //  !defined(FUCHSIA_SDK)
 #endif  // !defined(DART_PRODUCT)
 
   // |fuchsia::sys::Runner|
@@ -81,6 +63,15 @@ class Runner final : public fuchsia::sys::Runner {
 #if !defined(DART_PRODUCT)
   void SetupTraceObserver();
 #endif  // !defined(DART_PRODUCT)
+
+  // Called from SetupICU, for testing only.  Returns false on error.
+  static bool SetupICUInternal();
+  // Called from SetupICU, for testing only.  Returns false on error.
+  static bool SetupTZDataInternal();
+#if defined(FRIEND_TEST)
+  FRIEND_TEST(RunnerTest, TZData);
+  FRIEND_TEST(RunnerTZDataTest, LoadsWithoutTZDataPresent);
+#endif  // defined(FRIEND_TEST)
 
   FML_DISALLOW_COPY_AND_ASSIGN(Runner);
 };
