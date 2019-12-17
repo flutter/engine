@@ -469,7 +469,6 @@ class PointerDataConverter {
           final _PointerState state = _pointers[device];
           assert(!state.down);
           assert(!_locationHasChanged(device, physicalX, physicalY));
-          _pointers.remove(device);
           result.add(
             _generateCompletePointerData(
               timeStamp: timeStamp,
@@ -498,6 +497,7 @@ class PointerDataConverter {
               scrollDeltaY: scrollDeltaY,
             )
           );
+          _pointers.remove(device);
           break;
       }
     } else {
