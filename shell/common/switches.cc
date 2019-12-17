@@ -226,6 +226,12 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.trace_startup =
       command_line.HasOption(FlagForSwitch(Switch::TraceStartup));
 
+  settings.trace_skia =
+      command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
+
+  settings.trace_systrace =
+      command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));
+
   settings.skia_deterministic_rendering_on_cpu =
       command_line.HasOption(FlagForSwitch(Switch::SkiaDeterministicRendering));
 
@@ -311,11 +317,6 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       settings.dart_flags.push_back(flag);
     }
   }
-
-  settings.trace_skia =
-      command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
-  settings.trace_systrace =
-      command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));
 #endif
 
   settings.dump_skp_on_shader_compilation =
