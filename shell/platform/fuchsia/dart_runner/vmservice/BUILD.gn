@@ -53,7 +53,7 @@ template("aot_snapshot") {
     ]
 
     outputs = [
-      snapshot_path
+      snapshot_path,
     ]
 
     if (product) {
