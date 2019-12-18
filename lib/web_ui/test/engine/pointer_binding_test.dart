@@ -1325,6 +1325,8 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
   }
 }
 
+// A test context for `_TouchAdapter`, including its name, PointerSupportDetector
+// to override, and how to generate events.
 class _TouchEventContext extends _BasicEventContext with _MultiPointerEventMixin implements PointerSupportDetector {
   _TouchEventContext() {
     _target = html.document.createElement('div');
@@ -1401,6 +1403,10 @@ class _TouchEventContext extends _BasicEventContext with _MultiPointerEventMixin
   }
 }
 
+// A test context for `_MouseAdapter`, including its name, PointerSupportDetector
+// to override, and how to generate events.
+//
+// For the difference between MouseEvent and PointerEvent, see _MouseAdapter.
 class _MouseEventContext extends _BasicEventContext with _ButtonedEventMixin implements PointerSupportDetector {
   @override
   String get name => 'MouseAdapter';
@@ -1474,6 +1480,10 @@ class _MouseEventContext extends _BasicEventContext with _ButtonedEventMixin imp
   }
 }
 
+// A test context for `_PointerAdapter`, including its name, PointerSupportDetector
+// to override, and how to generate events.
+//
+// For the difference between MouseEvent and PointerEvent, see _MouseAdapter.
 class _PointerEventContext extends _BasicEventContext with _ButtonedEventMixin implements PointerSupportDetector, _MultiPointerEventMixin {
   @override
   String get name => 'PointerAdapter';

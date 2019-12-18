@@ -26,6 +26,16 @@ const int _kMiddleMouseButton =0x4;
 
 int _nthButton(int n) => 0x1 << n;
 
+/// Convert the `button` property of PointerEvent or MouseEvent to a bit mask of
+/// its `buttons` property.
+///
+/// The `button` property is a integer describing the button changed in an event,
+/// which is sequentially 0 for LMB, 1 for MMB, 2 for RMB, 3 for backward and
+/// 4 for forward, etc.
+///
+/// The `buttons` property is a bitfield describing the buttons pressed after an
+/// event, which is 0x1 for LMB, 0x4 for MMB, 0x2 for RMB, 0x8 for backward
+/// and 0x10 for forward, etc.
 @visibleForTesting
 int convertButtonToButtons(int button) {
   assert(button >= 0, 'Unexpected negative button $button.');
@@ -340,6 +350,8 @@ class _ButtonSanitizer {
 typedef _PointerEventListener = dynamic Function(html.PointerEvent event);
 
 /// Adapter class to be used with browsers that support native pointer events.
+///
+/// For the difference between MouseEvent and PointerEvent, see _MouseAdapter.
 class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   _PointerAdapter(
     _PointerDataCallback callback,
@@ -651,6 +663,23 @@ class _TouchAdapter extends _BaseAdapter {
 typedef _MouseEventListener = dynamic Function(html.MouseEvent event);
 
 /// Adapter to be used with browsers that support mouse events.
+///
+/// The difference between MouseEvent and PointerEvent can be illustrated using
+/// a scenario of changing buttons during a drag sequence: LMB down, RMB down,
+/// move, LMB up, RMB up, hover.
+///
+///                 LMB down    RMB down      move      LMB up      RMB up     hover
+/// PntEvt type | pointerdown pointermove pointermove pointermove pointerup pointermove
+///      button |      0           2           -1         0           2          -1
+///     buttons |     0x1         0x3         0x3        0x2         0x0        0x0
+/// MosEvt type |  mousedown   mousedown   mousemove   mouseup     mouseup   mousemove
+///      button |      0           2           0          0           2          0
+///     buttons |     0x1         0x3         0x3        0x2         0x0        0x0
+///
+/// The major differences are:
+///
+///  * The type of events for changing buttons during a drag sequence.
+///  * The `button` for draging or hovering.
 class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   _MouseAdapter(
     _PointerDataCallback callback,
