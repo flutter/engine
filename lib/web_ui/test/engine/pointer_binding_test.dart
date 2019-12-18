@@ -11,9 +11,26 @@ import 'package:ui/ui.dart' as ui;
 import 'package:test/test.dart';
 
 const int _kNoButtonChange = -1;
+const PointerSupportDetector _defaultSupportDetector = PointerSupportDetector();
 
 List<ui.PointerData> _allPointerData(List<ui.PointerDataPacket> packets) {
   return packets.expand((ui.PointerDataPacket packet) => packet.data).toList();
+}
+
+typedef _ContextTestBody<T> = void Function(T);
+
+void _testEach<T extends _BasicEventContext>(
+  Iterable<T> contexts,
+  String description,
+  _ContextTestBody<T> body,
+) {
+  for (T context in contexts) {
+    if (context.supported) {
+      test('${context.name} $description', () {
+        body(context);
+      });
+    }
+  }
 }
 
 void main() {
@@ -350,8 +367,10 @@ void main() {
 
   // ALL ADAPTERS
 
-  [_PointerEventContext(), _MouseEventContext(), _TouchEventContext()].forEach((_BasicEventContext context) {
-    test('${context.name} can receive pointer events on the glass pane', () {
+  _testEach(
+    [_PointerEventContext(), _MouseEventContext(), _TouchEventContext()],
+    'can receive pointer events on the glass pane',
+    (_BasicEventContext context) {
       PointerBinding.instance.debugOverrideDetector(context);
       ui.PointerDataPacket receivedPacket;
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
@@ -362,11 +381,13 @@ void main() {
 
       expect(receivedPacket, isNotNull);
       expect(receivedPacket.data[0].buttons, equals(1));
-    });
-  });
+    },
+  );
 
-  [_PointerEventContext(), _MouseEventContext(), _TouchEventContext()].forEach((_BasicEventContext context) {
-    test('${context.name} does create an add event if got a pointerdown', () {
+  _testEach(
+    [_PointerEventContext(), _MouseEventContext(), _TouchEventContext()],
+    'does create an add event if got a pointerdown',
+    (_BasicEventContext context) {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
@@ -380,13 +401,15 @@ void main() {
 
       expect(packets.single.data[0].change, equals(ui.PointerChange.add));
       expect(packets.single.data[1].change, equals(ui.PointerChange.down));
-    });
-  });
+    },
+  );
 
   // BUTTONED ADAPTERS
 
-  <_ButtonedEventMixin>[_MouseEventContext(), _PointerEventContext()].forEach((_ButtonedEventMixin context) {
-    test('${context.name} creates an add event if the first pointer activity is a hover', () {
+  _testEach<_ButtonedEventMixin>(
+    [_MouseEventContext(), _PointerEventContext()],
+    'creates an add event if the first pointer activity is a hover',
+    (_ButtonedEventMixin context) {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
@@ -401,11 +424,13 @@ void main() {
       expect(packets.single.data[0].change, equals(ui.PointerChange.add));
       expect(packets.single.data[0].synthesized, equals(true));
       expect(packets.single.data[1].change, equals(ui.PointerChange.hover));
-    });
-  });
+    },
+  );
 
-  <_ButtonedEventMixin>[_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventMixin context) {
-    test('${context.name} synthesizes a pointerup event on two pointerdowns in a row', () {
+  _testEach<_ButtonedEventMixin>(
+    [_PointerEventContext(), _MouseEventContext()],
+    'synthesizes a pointerup event on two pointerdowns in a row',
+    (_ButtonedEventMixin context) {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
@@ -424,11 +449,13 @@ void main() {
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
       expect(packets[1].data[0].change, equals(ui.PointerChange.up));
       expect(packets[1].data[1].change, equals(ui.PointerChange.down));
-    });
-  });
+    },
+  );
 
-  <_ButtonedEventMixin>[_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventMixin context) {
-    test('${context.name} does synthesize add or hover or more for scroll', () {
+  _testEach<_ButtonedEventMixin>(
+    [_PointerEventContext(), _MouseEventContext()],
+    'does synthesize add or hover or more for scroll',
+    (_ButtonedEventMixin context) {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
@@ -535,12 +562,13 @@ void main() {
       expect(packets[3].data[1].physicalY, equals(60.0));
       expect(packets[3].data[1].physicalDeltaX, equals(0.0));
       expect(packets[3].data[1].physicalDeltaY, equals(0.0));
-    });
-  });
+    },
+  );
 
-  <_ButtonedEventMixin>[_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventMixin context) {
-    // Touch is in another test since this test involves hovering
-    test('${context.name} does calculate delta and pointer identifier correctly', () {
+  _testEach<_ButtonedEventMixin>(
+    [_PointerEventContext(), _MouseEventContext()],
+    'does calculate delta and pointer identifier correctly',
+    (_ButtonedEventMixin context) {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
@@ -659,11 +687,13 @@ void main() {
       expect(packets[0].data[0].physicalDeltaX, equals(0.0));
       expect(packets[0].data[0].physicalDeltaY, equals(0.0));
       packets.clear();
-    });
-  });
+    },
+  );
 
-  <_ButtonedEventMixin>[_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventMixin context) {
-    test('correctly converts buttons of down, move and up events', () {
+  _testEach<_ButtonedEventMixin>(
+    [_PointerEventContext(), _MouseEventContext()],
+    'correctly converts buttons of down, move and up events',
+    (_ButtonedEventMixin context) {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
@@ -824,11 +854,13 @@ void main() {
       expect(packets[0].data[0].physicalY, equals(41));
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
-    });
-  });
+    },
+  );
 
-  <_ButtonedEventMixin>[_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventMixin context) {
-    test('correctly handles button changes during a down sequence', () {
+  _testEach<_ButtonedEventMixin>(
+    [_PointerEventContext(), _MouseEventContext()],
+    'correctly handles button changes during a down sequence',
+    (_ButtonedEventMixin context) {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
@@ -884,11 +916,13 @@ void main() {
       expect(packets[0].data[0].synthesized, equals(false));
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
-    });
-  });
+    },
+  );
 
-  <_ButtonedEventMixin>[_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventMixin context) {
-    test('synthesizes a pointerup event when pointermove comes before the up', () {
+  _testEach<_ButtonedEventMixin>(
+    [_PointerEventContext(), _MouseEventContext()],
+    'synthesizes a pointerup event when pointermove comes before the up',
+    (_ButtonedEventMixin context) {
       PointerBinding.instance.debugOverrideDetector(context);
       // This can happen when the user pops up the context menu by right
       // clicking, then dismisses it with a left click.
@@ -964,11 +998,13 @@ void main() {
       expect(packets[0].data[0].physicalY, equals(21));
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
-    });
-  });
+    },
+  );
 
-  <_ButtonedEventMixin>[_PointerEventContext(), _MouseEventContext()].forEach((_ButtonedEventMixin context) {
-    test('correctly handles uncontinuous button changes during a down sequence', () {
+  _testEach<_ButtonedEventMixin>(
+    [_PointerEventContext(), _MouseEventContext()],
+    'correctly handles uncontinuous button changes during a down sequence',
+    (_ButtonedEventMixin context) {
       PointerBinding.instance.debugOverrideDetector(context);
       // This can happen with the following gesture sequence:
       //
@@ -1032,13 +1068,15 @@ void main() {
       expect(packets[0].data[0].synthesized, equals(false));
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
-    });
-  });
+    },
+  );
 
   // MULTIPOINTER ADAPTERS
 
-  <_MultiPointerEventMixin>[_PointerEventContext(), _TouchEventContext()].forEach((_MultiPointerEventMixin context) {
-    test('${context.name} treats each pointer separately', () {
+  _testEach<_MultiPointerEventMixin>(
+    [_PointerEventContext(), _TouchEventContext()],
+    'treats each pointer separately',
+    (_MultiPointerEventMixin context) {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       List<ui.PointerData> data;
@@ -1220,14 +1258,15 @@ void main() {
       expect(data[3].physicalDeltaX, equals(0));
       expect(data[3].physicalDeltaY, equals(0));
       packets.clear();
-    });
-  });
+    },
+  );
 
-  <_MultiPointerEventMixin>[_PointerEventContext(), _TouchEventContext()].forEach((_MultiPointerEventMixin context) {
-    test('${context.name} correctly parses cancel event', () {
+  _testEach<_MultiPointerEventMixin>(
+    [_PointerEventContext(), _TouchEventContext()],
+    'correctly parses cancel event',
+    (_MultiPointerEventMixin context) {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
-      List<ui.PointerData> data;
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1261,13 +1300,15 @@ void main() {
       expect(packets[0].data[1].physicalDeltaX, equals(0));
       expect(packets[0].data[1].physicalDeltaY, equals(0));
       packets.clear();
-    });
-  });
+    },
+  );
 
   // POINTER ADAPTER
 
-  [_PointerEventContext()].forEach((_PointerEventContext context) {
-    test('${context.name} does not synthesize pointer up if from different device', () {
+  _testEach(
+    [_PointerEventContext()],
+    'does not synthesize pointer up if from different device',
+    (_PointerEventContext context) {
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
@@ -1299,14 +1340,16 @@ void main() {
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
       expect(packets[0].data[1].device, equals(2));
       packets.clear();
-    });
-  });
+    },
+  );
 
   // TOUCH ADAPTER
 
-  [_TouchEventContext()].forEach((_TouchEventContext context) {
-    // Mouse and Pointer are in another test since these tests can involve hovering
-    test('${context.name} does calculate delta and pointer identifier correctly', () {
+  _testEach(
+    [_TouchEventContext()],
+    'does calculate delta and pointer identifier correctly',
+    (_TouchEventContext context) {
+      // Mouse and Pointer are in another test since these tests can involve hovering
       PointerBinding.instance.debugOverrideDetector(context);
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
@@ -1392,12 +1435,14 @@ void main() {
       expect(packets[0].data[1].physicalDeltaX, equals(0.0));
       expect(packets[0].data[1].physicalDeltaY, equals(0.0));
       packets.clear();
-    });
-  });
+    },
+  );
 }
 
 abstract class _BasicEventContext implements PointerSupportDetector {
   String get name;
+
+  bool get supported;
 
   // Generate an event that is:
   //
@@ -1532,6 +1577,9 @@ class _TouchEventContext extends _BasicEventContext with _MultiPointerEventMixin
   String get name => 'TouchAdapter';
 
   @override
+  bool get supported => _defaultSupportDetector.hasTouchEvents;
+
+  @override
   bool get hasPointerEvents => false;
 
   @override
@@ -1597,6 +1645,9 @@ class _TouchEventContext extends _BasicEventContext with _MultiPointerEventMixin
 class _MouseEventContext extends _BasicEventContext with _ButtonedEventMixin implements PointerSupportDetector {
   @override
   String get name => 'MouseAdapter';
+
+  @override
+  bool get supported => _defaultSupportDetector.hasMouseEvents;
 
   @override
   bool get hasPointerEvents => false;
@@ -1674,6 +1725,9 @@ class _MouseEventContext extends _BasicEventContext with _ButtonedEventMixin imp
 class _PointerEventContext extends _BasicEventContext with _ButtonedEventMixin implements PointerSupportDetector, _MultiPointerEventMixin {
   @override
   String get name => 'PointerAdapter';
+
+  @override
+  bool get supported => _defaultSupportDetector.hasPointerEvents;
 
   @override
   bool get hasPointerEvents => true;
