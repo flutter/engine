@@ -25,7 +25,7 @@ void _testEach<T extends _BasicEventContext>(
   _ContextTestBody<T> body,
 ) {
   for (T context in contexts) {
-    if (context.supported) {
+    if (context.isSupported) {
       test('${context.name} $description', () {
         body(context);
       });
@@ -44,6 +44,9 @@ void main() {
   });
 
   test('_PointerEventContext generates expected events', () {
+    if (!_PointerEventContext().isSupported)
+      return;
+
     html.PointerEvent expectCorrectType(html.Event e) {
       expect(e.runtimeType, equals(html.PointerEvent));
       return e;
@@ -202,6 +205,9 @@ void main() {
   });
 
   test('_TouchEventContext generates expected events', () {
+    if (!_TouchEventContext().isSupported)
+      return;
+
     html.TouchEvent expectCorrectType(html.Event e) {
       expect(e.runtimeType, equals(html.TouchEvent));
       return e;
@@ -293,6 +299,9 @@ void main() {
   });
 
   test('_MouseEventContext generates expected events', () {
+    if (!_MouseEventContext().isSupported)
+      return;
+
     html.MouseEvent expectCorrectType(html.Event e) {
       expect(e.runtimeType, equals(html.MouseEvent));
       return e;
@@ -1442,7 +1451,7 @@ void main() {
 abstract class _BasicEventContext implements PointerSupportDetector {
   String get name;
 
-  bool get supported;
+  bool get isSupported;
 
   // Generate an event that is:
   //
@@ -1577,7 +1586,7 @@ class _TouchEventContext extends _BasicEventContext with _MultiPointerEventMixin
   String get name => 'TouchAdapter';
 
   @override
-  bool get supported => _defaultSupportDetector.hasTouchEvents;
+  bool get isSupported => _defaultSupportDetector.hasTouchEvents;
 
   @override
   bool get hasPointerEvents => false;
@@ -1647,7 +1656,7 @@ class _MouseEventContext extends _BasicEventContext with _ButtonedEventMixin imp
   String get name => 'MouseAdapter';
 
   @override
-  bool get supported => _defaultSupportDetector.hasMouseEvents;
+  bool get isSupported => _defaultSupportDetector.hasMouseEvents;
 
   @override
   bool get hasPointerEvents => false;
@@ -1727,7 +1736,7 @@ class _PointerEventContext extends _BasicEventContext with _ButtonedEventMixin i
   String get name => 'PointerAdapter';
 
   @override
-  bool get supported => _defaultSupportDetector.hasPointerEvents;
+  bool get isSupported => _defaultSupportDetector.hasPointerEvents;
 
   @override
   bool get hasPointerEvents => true;
