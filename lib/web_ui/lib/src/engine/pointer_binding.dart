@@ -374,17 +374,13 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     return sanitizer;
   }
 
-  void _removePointerIfUnhoverable(List<ui.PointerData> pointerData, html.PointerEvent event) {
+  void _removePointerIfUnhoverable(List<_SanitizedDetails> details, html.PointerEvent event) {
     if (event.pointerType == 'touch') {
       _sanitizers.remove(event.pointerId);
-      _convertEventToPointerData(
-        data: pointerData,
-        event: event,
-        details: _SanitizedDetails(
-          buttons: 0,
-          change: ui.PointerChange.remove,
-        ),
-      );
+      details.add(_SanitizedDetails(
+        buttons: 0,
+        change: ui.PointerChange.remove,
+      ));
     }
   }
 
@@ -400,10 +396,8 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     _addPointerEventListener('pointerdown', (html.PointerEvent event) {
       final int device = event.pointerId;
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
-      for (_SanitizedDetails details in sanitizer.sanitizeDownEvent(buttons: event.buttons)) {
-        _convertEventToPointerData(data: pointerData, event: event, details: details);
-      }
+      final List<_SanitizedDetails> detailsList = _ensureSanitizer(device).sanitizeDownEvent(buttons: event.buttons);
+      _convertEventsToPointerData(data: pointerData, event: event, detailsList: detailsList);
       _callback(pointerData);
     });
 
@@ -411,22 +405,19 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       final int device = event.pointerId;
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (html.PointerEvent expandedEvent in _expandEvents(event)) {
-        for (_SanitizedDetails details in sanitizer.sanitizeMoveEvent(buttons: expandedEvent.buttons)) {
-          _convertEventToPointerData(data: pointerData, event: event, details: details);
-        }
-      }
+      final Iterable<_SanitizedDetails> detailsList = _expandEvents(event).expand(
+        (html.PointerEvent expandedEvent) => sanitizer.sanitizeMoveEvent(buttons: expandedEvent.buttons),
+      );
+      _convertEventsToPointerData(data: pointerData, event: event, detailsList: detailsList);
       _callback(pointerData);
     });
 
     _addPointerEventListener('pointerup', (html.PointerEvent event) {
       final int device = event.pointerId;
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _ButtonSanitizer sanitizer = _getSanitizer(device);
-      for (_SanitizedDetails details in sanitizer.sanitizeUpEvent()) {
-        _convertEventToPointerData(data: pointerData, event: event, details: details);
-      }
-      _removePointerIfUnhoverable(pointerData, event);
+      final List<_SanitizedDetails> detailsList = _getSanitizer(device).sanitizeUpEvent();
+      _removePointerIfUnhoverable(detailsList, event);
+      _convertEventsToPointerData(data: pointerData, event: event, detailsList: detailsList);
       _callback(pointerData);
     });
 
@@ -435,11 +426,9 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     _addPointerEventListener('pointercancel', (html.PointerEvent event) {
       final int device = event.pointerId;
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _ButtonSanitizer sanitizer = _getSanitizer(device);
-      for (_SanitizedDetails details in sanitizer.sanitizeCancelEvent()) {
-        _convertEventToPointerData(data: pointerData, event: event, details: details);
-      }
-      _removePointerIfUnhoverable(pointerData, event);
+      final List<_SanitizedDetails> detailsList = _getSanitizer(device).sanitizeCancelEvent();
+      _removePointerIfUnhoverable(detailsList, event);
+      _convertEventsToPointerData(data: pointerData, event: event, detailsList: detailsList);
       _callback(pointerData);
     });
 
@@ -455,31 +444,40 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     });
   }
 
-  void _convertEventToPointerData({
+  // For each event that is de-coalesced from `event` and described in
+  // `detailsList`, convert it to pointer data and store in `data`.
+  void _convertEventsToPointerData({
     @required List<ui.PointerData> data,
     @required html.PointerEvent event,
-    @required _SanitizedDetails details,
+    @required Iterable<_SanitizedDetails> detailsList,
   }) {
+    assert(data != null);
+    assert(event != null);
+    assert(detailsList != null);
     final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(event.pointerType);
     // We force `device: _mouseDeviceId` on mouse pointers because Wheel events
     // might come before any PointerEvents, and since wheel events don't contain
     // pointerId we always assign `device: _mouseDeviceId` to them.
     final int device = kind == ui.PointerDeviceKind.mouse ? _mouseDeviceId : event.pointerId;
-    _pointerDataConverter.convert(
-      data,
-      change: details.change,
-      timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp),
-      kind: kind,
-      signalKind: ui.PointerSignalKind.none,
-      device: device,
-      physicalX: event.client.x * ui.window.devicePixelRatio,
-      physicalY: event.client.y * ui.window.devicePixelRatio,
-      buttons: details.buttons,
-      pressure: event.pressure,
-      pressureMin: 0.0,
-      pressureMax: 1.0,
-      tilt: _computeHighestTilt(event),
-    );
+    final double tilt = _computeHighestTilt(event);
+    final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp);
+    for (_SanitizedDetails details in detailsList) {
+      _pointerDataConverter.convert(
+        data,
+        change: details.change,
+        timeStamp: timeStamp,
+        kind: kind,
+        signalKind: ui.PointerSignalKind.none,
+        device: device,
+        physicalX: event.client.x * ui.window.devicePixelRatio,
+        physicalY: event.client.y * ui.window.devicePixelRatio,
+        buttons: details.buttons,
+        pressure: event.pressure,
+        pressureMin: 0.0,
+        pressureMax: 1.0,
+        tilt: tilt,
+      );
+    }
   }
 
   List<html.PointerEvent> _expandEvents(html.PointerEvent event) {
@@ -678,7 +676,7 @@ typedef _MouseEventListener = dynamic Function(html.MouseEvent event);
 /// The major differences are:
 ///
 ///  * The type of events for changing buttons during a drag sequence.
-///  * The `button` for draging or hovering.
+///  * The `button` for dragging or hovering.
 class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   _MouseAdapter(
     _PointerDataCallback callback,
@@ -703,17 +701,14 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       final List<_SanitizedDetails> sanitizedDetails = isStartOfDrag ?
         _sanitizer.sanitizeDownEvent(buttons: event.buttons) :
         _sanitizer.sanitizeMoveEvent(buttons: event.buttons);
-      for (_SanitizedDetails details in sanitizedDetails) {
-        _convertEventToPointerData(data: pointerData, event: event, details: details);
-      }
+      _convertEventsToPointerData(data: pointerData, event: event, detailsList: sanitizedDetails);
       _callback(pointerData);
     });
 
     _addMouseEventListener('mousemove', (html.MouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (_SanitizedDetails details in _sanitizer.sanitizeMoveEvent(buttons: event.buttons)) {
-        _convertEventToPointerData(data: pointerData, event: event, details: details);
-      }
+      final List<_SanitizedDetails> sanitizedDetails = _sanitizer.sanitizeMoveEvent(buttons: event.buttons);
+      _convertEventsToPointerData(data: pointerData, event: event, detailsList: sanitizedDetails);
       _callback(pointerData);
     });
 
@@ -723,9 +718,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       final List<_SanitizedDetails> sanitizedDetails = isEndOfDrag ?
         _sanitizer.sanitizeUpEvent() :
         _sanitizer.sanitizeMoveEvent(buttons: event.buttons);
-      for (_SanitizedDetails details in sanitizedDetails) {
-        _convertEventToPointerData(data: pointerData, event: event, details: details);
-      }
+      _convertEventsToPointerData(data: pointerData, event: event, detailsList: sanitizedDetails);
       _callback(pointerData);
     });
 
@@ -741,26 +734,31 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     });
   }
 
-  void _convertEventToPointerData({
+  // For each event that is de-coalesced from `event` and described in
+  // `detailsList`, convert it to pointer data and store in `data`.
+  void _convertEventsToPointerData({
     @required List<ui.PointerData> data,
     @required html.MouseEvent event,
-    @required _SanitizedDetails details,
+    @required Iterable<_SanitizedDetails> detailsList,
   }) {
+    assert(data != null);
     assert(event != null);
-    assert(details != null);
-    _pointerDataConverter.convert(
-      data,
-      change: details.change,
-      timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp),
-      kind: ui.PointerDeviceKind.mouse,
-      signalKind: ui.PointerSignalKind.none,
-      device: _mouseDeviceId,
-      physicalX: event.client.x * ui.window.devicePixelRatio,
-      physicalY: event.client.y * ui.window.devicePixelRatio,
-      buttons: details.buttons,
-      pressure: 1.0,
-      pressureMin: 0.0,
-      pressureMax: 1.0,
-    );
+    assert(detailsList != null);
+    for (_SanitizedDetails details in detailsList) {
+      _pointerDataConverter.convert(
+        data,
+        change: details.change,
+        timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp),
+        kind: ui.PointerDeviceKind.mouse,
+        signalKind: ui.PointerSignalKind.none,
+        device: _mouseDeviceId,
+        physicalX: event.client.x * ui.window.devicePixelRatio,
+        physicalY: event.client.y * ui.window.devicePixelRatio,
+        buttons: details.buttons,
+        pressure: 1.0,
+        pressureMin: 0.0,
+        pressureMax: 1.0,
+      );
+    }
   }
 }
