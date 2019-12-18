@@ -10,12 +10,6 @@ import 'package:ui/ui.dart' as ui;
 
 import 'package:test/test.dart';
 
-const int _kPrimaryMouseButton = 0x1;
-const int _kSecondaryMouseButton = 0x2;
-const int _kMiddleMouseButton =0x4;
-const int _kBackwardMouseButton = 0x8;
-const int _kForwardMouseButton = 0x10;
-
 const int _kNoButtonChange = -1;
 
 void main() {
@@ -1420,24 +1414,6 @@ class _MouseEventContext extends _BasicEventContext with _ButtonedEventMixin imp
   @override
   bool get hasMouseEvents => true;
 
-  static int _convertButtonToButtons(int button) {
-    switch(button) {
-      case 0:
-        return _kPrimaryMouseButton;
-      case 1:
-        return _kSecondaryMouseButton;
-      case 2:
-        return _kMiddleMouseButton;
-      case 3:
-        return _kBackwardMouseButton;
-      case 4:
-        return _kForwardMouseButton;
-      default:
-        assert(false, 'Unexpected button $button.');
-        return -1;
-    }
-  }
-
   @override
   html.Event mouseDown({double clientX, double clientY, int button, int buttons}) {
     return _createMouseEvent(
@@ -1452,7 +1428,7 @@ class _MouseEventContext extends _BasicEventContext with _ButtonedEventMixin imp
   @override
   html.Event mouseMove({double clientX, double clientY, int button, int buttons}) {
     final bool hasButtonChange = button != _kNoButtonChange;
-    final bool changeIsButtonDown = hasButtonChange && (buttons & _convertButtonToButtons(button)) != 0;
+    final bool changeIsButtonDown = hasButtonChange && (buttons & convertButtonToButtons(button)) != 0;
     final String adjustedType = !hasButtonChange ?   'mousemove' :
                                 changeIsButtonDown ? 'mousedown' :
                                                      'mouseup';

@@ -20,7 +20,26 @@ const int _kButtonsMask = 0x3FFFFFFF;
 // Intentionally set to -1 so it doesn't conflict with other device IDs.
 const int _mouseDeviceId = -1;
 
-const int _kPrimaryMouseButton = 1;
+const int _kPrimaryMouseButton = 0x1;
+const int _kSecondaryMouseButton = 0x2;
+const int _kMiddleMouseButton =0x4;
+
+int _nthButton(int n) => 0x1 << n;
+
+@visibleForTesting
+int convertButtonToButtons(int button) {
+  assert(button >= 0, 'Unexpected negative button $button.');
+  switch(button) {
+    case 0:
+      return _kPrimaryMouseButton;
+    case 1:
+      return _kMiddleMouseButton;
+    case 2:
+      return _kSecondaryMouseButton;
+    default:
+      return _nthButton(button);
+  }
+}
 
 class PointerBinding {
   /// The singleton instance of this object.
@@ -652,7 +671,11 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   void setup() {
     _addMouseEventListener('mousedown', (html.MouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (_SanitizedDetails details in _sanitizer.sanitizeDownEvent(buttons: event.buttons)) {
+      final bool isStartOfDrag = event.buttons == convertButtonToButtons(event.button);
+      final List<_SanitizedDetails> sanitizedDetails = isStartOfDrag ?
+        _sanitizer.sanitizeDownEvent(buttons: event.buttons) :
+        _sanitizer.sanitizeMoveEvent(buttons: event.buttons);
+      for (_SanitizedDetails details in sanitizedDetails) {
         _convertEventToPointerData(data: pointerData, event: event, details: details);
       }
       _callback(pointerData);
@@ -668,7 +691,11 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
     _addMouseEventListener('mouseup', (html.MouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (_SanitizedDetails details in _sanitizer.sanitizeUpEvent()) {
+      final bool isEndOfDrag = event.buttons == 0;
+      final List<_SanitizedDetails> sanitizedDetails = isEndOfDrag ?
+        _sanitizer.sanitizeUpEvent() :
+        _sanitizer.sanitizeMoveEvent(buttons: event.buttons);
+      for (_SanitizedDetails details in sanitizedDetails) {
         _convertEventToPointerData(data: pointerData, event: event, details: details);
       }
       _callback(pointerData);
