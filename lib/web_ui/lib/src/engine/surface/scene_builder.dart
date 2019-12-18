@@ -65,8 +65,9 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   @override
-  ui.OffsetEngineLayer pushOffset(double dx, double dy,
-      {ui.OffsetEngineLayer oldLayer}) {
+  ui.OffsetEngineLayer pushOffset(double dx, double dy, {
+    ui.OffsetEngineLayer oldLayer,
+  }) {
     return _pushSurface(PersistedOffset(oldLayer, dx, dy));
   }
 
@@ -76,8 +77,9 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   @override
-  ui.TransformEngineLayer pushTransform(Float64List matrix4,
-      {ui.TransformEngineLayer oldLayer}) {
+  ui.TransformEngineLayer pushTransform(Float64List matrix4, {
+    ui.TransformEngineLayer oldLayer,
+  }) {
     if (matrix4 == null) {
       throw ArgumentError('"matrix4" argument cannot be null');
     }
@@ -94,8 +96,10 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
   @override
-  ui.ClipRectEngineLayer pushClipRect(ui.Rect rect,
-      {ui.Clip clipBehavior = ui.Clip.antiAlias, ui.ClipRectEngineLayer oldLayer}) {
+  ui.ClipRectEngineLayer pushClipRect(ui.Rect rect, {
+    ui.Clip clipBehavior = ui.Clip.antiAlias,
+    ui.ClipRectEngineLayer oldLayer,
+  }) {
     assert(clipBehavior != null);
     assert(clipBehavior != ui.Clip.none);
     return _pushSurface(PersistedClipRect(oldLayer, rect));
@@ -107,10 +111,11 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   @override
-  ui.ClipRRectEngineLayer pushClipRRect(ui.RRect rrect,
-      {ui.Clip clipBehavior, ui.ClipRRectEngineLayer oldLayer}) {
-    return _pushSurface(
-        PersistedClipRRect(oldLayer, rrect, clipBehavior));
+  ui.ClipRRectEngineLayer pushClipRRect(ui.RRect rrect, {
+    ui.Clip clipBehavior,
+    ui.ClipRRectEngineLayer oldLayer,
+  }) {
+    return _pushSurface(PersistedClipRRect(oldLayer, rrect, clipBehavior));
   }
 
   /// Pushes a path clip operation onto the operation stack.
@@ -119,8 +124,10 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   @override
-  ui.ClipPathEngineLayer pushClipPath(ui.Path path,
-      {ui.Clip clipBehavior = ui.Clip.antiAlias, ui.ClipPathEngineLayer oldLayer}) {
+  ui.ClipPathEngineLayer pushClipPath(ui.Path path, {
+    ui.Clip clipBehavior = ui.Clip.antiAlias,
+    ui.ClipPathEngineLayer oldLayer,
+  }) {
     assert(clipBehavior != null);
     assert(clipBehavior != ui.Clip.none);
     return _pushSurface(PersistedClipPath(oldLayer, path, clipBehavior));
@@ -135,8 +142,10 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   @override
-  ui.OpacityEngineLayer pushOpacity(int alpha,
-      {ui.Offset offset = ui.Offset.zero, ui.OpacityEngineLayer oldLayer}) {
+  ui.OpacityEngineLayer pushOpacity(int alpha, {
+    ui.Offset offset = ui.Offset.zero,
+    ui.OpacityEngineLayer oldLayer,
+  }) {
     return _pushSurface(PersistedOpacity(oldLayer, alpha, offset));
   }
 
@@ -151,8 +160,9 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   @override
-  ui.ColorFilterEngineLayer pushColorFilter(ui.ColorFilter filter,
-      {ui.ColorFilterEngineLayer oldLayer}) {
+  ui.ColorFilterEngineLayer pushColorFilter(ui.ColorFilter filter, {
+    ui.ColorFilterEngineLayer oldLayer,
+  }) {
     assert(filter != null);
     throw UnimplementedError();
   }
@@ -164,8 +174,9 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   @override
-  ui.BackdropFilterEngineLayer pushBackdropFilter(ui.ImageFilter filter,
-      {ui.BackdropFilterEngineLayer oldLayer}) {
+  ui.BackdropFilterEngineLayer pushBackdropFilter(ui.ImageFilter filter, {
+    ui.BackdropFilterEngineLayer oldLayer,
+  }) {
     return _pushSurface(PersistedBackdropFilter(oldLayer, filter));
   }
 
@@ -177,8 +188,11 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// See [pop] for details about the operation stack.
   @override
   ui.ShaderMaskEngineLayer pushShaderMask(
-      ui.Shader shader, ui.Rect maskRect, ui.BlendMode blendMode,
-      {ui.ShaderMaskEngineLayer oldLayer}) {
+    ui.Shader shader,
+    ui.Rect maskRect,
+    ui.BlendMode blendMode, {
+    ui.ShaderMaskEngineLayer oldLayer,
+  }) {
     throw UnimplementedError();
   }
 

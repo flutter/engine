@@ -117,16 +117,18 @@ abstract class SceneBuilder {
   /// This is equivalent to [pushTransform] with a matrix with only translation.
   ///
   /// See [pop] for details about the operation stack.
-  OffsetEngineLayer pushOffset(double dx, double dy,
-      {OffsetEngineLayer oldLayer});
+  OffsetEngineLayer pushOffset(double dx, double dy, {
+    OffsetEngineLayer oldLayer,
+  });
 
   /// Pushes a transform operation onto the operation stack.
   ///
   /// The objects are transformed by the given matrix before rasterization.
   ///
   /// See [pop] for details about the operation stack.
-  TransformEngineLayer pushTransform(Float64List matrix4,
-      {TransformEngineLayer oldLayer});
+  TransformEngineLayer pushTransform(Float64List matrix4, {
+    TransformEngineLayer oldLayer,
+  });
 
   /// Pushes a rectangular clip operation onto the operation stack.
   ///
@@ -134,24 +136,30 @@ abstract class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  ClipRectEngineLayer pushClipRect(Rect rect,
-      {Clip clipBehavior = Clip.antiAlias, ClipRectEngineLayer oldLayer});
+  ClipRectEngineLayer pushClipRect(Rect rect, {
+    Clip clipBehavior = Clip.antiAlias,
+    ClipRectEngineLayer oldLayer,
+  });
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
   ///
   /// Rasterization outside the given rounded rectangle is discarded.
   ///
   /// See [pop] for details about the operation stack.
-  ClipRRectEngineLayer pushClipRRect(RRect rrect,
-      {Clip clipBehavior, ClipRRectEngineLayer oldLayer});
+  ClipRRectEngineLayer pushClipRRect(RRect rrect, {
+    Clip clipBehavior,
+    ClipRRectEngineLayer oldLayer,
+  });
 
   /// Pushes a path clip operation onto the operation stack.
   ///
   /// Rasterization outside the given path is discarded.
   ///
   /// See [pop] for details about the operation stack.
-  ClipPathEngineLayer pushClipPath(Path path,
-      {Clip clipBehavior = Clip.antiAlias, ClipPathEngineLayer oldLayer});
+  ClipPathEngineLayer pushClipPath(Path path, {
+    Clip clipBehavior = Clip.antiAlias,
+    ClipPathEngineLayer oldLayer,
+  });
 
   /// Pushes an opacity operation onto the operation stack.
   ///
@@ -161,8 +169,10 @@ abstract class SceneBuilder {
   /// opacity).
   ///
   /// See [pop] for details about the operation stack.
-  OpacityEngineLayer pushOpacity(int alpha,
-      {Offset offset = Offset.zero, OpacityEngineLayer oldLayer});
+  OpacityEngineLayer pushOpacity(int alpha, {
+    Offset offset = Offset.zero,
+    OpacityEngineLayer oldLayer,
+  });
 
   /// Pushes a color filter operation onto the operation stack.
   ///
@@ -174,8 +184,9 @@ abstract class SceneBuilder {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  ColorFilterEngineLayer pushColorFilter(ColorFilter filter,
-      {ColorFilterEngineLayer oldLayer});
+  ColorFilterEngineLayer pushColorFilter(ColorFilter filter, {
+    ColorFilterEngineLayer oldLayer,
+  });
 
   /// Pushes a backdrop filter operation onto the operation stack.
   ///
@@ -183,8 +194,9 @@ abstract class SceneBuilder {
   /// rasterizing the given objects.
   ///
   /// See [pop] for details about the operation stack.
-  BackdropFilterEngineLayer pushBackdropFilter(ImageFilter filter,
-      {BackdropFilterEngineLayer oldLayer});
+  BackdropFilterEngineLayer pushBackdropFilter(ImageFilter filter, {
+    BackdropFilterEngineLayer oldLayer,
+  });
 
   /// Pushes a shader mask operation onto the operation stack.
   ///
@@ -192,9 +204,9 @@ abstract class SceneBuilder {
   /// rectangle using the given blend mode.
   ///
   /// See [pop] for details about the operation stack.
-  ShaderMaskEngineLayer pushShaderMask(
-      Shader shader, Rect maskRect, BlendMode blendMode,
-      {ShaderMaskEngineLayer oldLayer});
+  ShaderMaskEngineLayer pushShaderMask(Shader shader, Rect maskRect, BlendMode blendMode, {
+    ShaderMaskEngineLayer oldLayer,
+  });
 
   /// Pushes a physical layer operation for an arbitrary shape onto the
   /// operation stack.
