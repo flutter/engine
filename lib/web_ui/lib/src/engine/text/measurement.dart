@@ -416,7 +416,7 @@ class DomTextMeasurementService extends TextMeasurementService {
     List<EngineLineMetrics> lines;
     if (text != null) {
       final double lineWidth = maxIntrinsicWidth;
-      final double alignOffset = calculateAlignOffsetForLine(
+      final double alignOffset = _calculateAlignOffsetForLine(
         paragraph: paragraph,
         lineWidth: lineWidth,
         maxWidth: width,
@@ -434,8 +434,7 @@ class DomTextMeasurementService extends TextMeasurementService {
       ];
     }
 
-    return MeasurementResult.forParagraph(
-      paragraph,
+    return MeasurementResult(
       constraints.width,
       isSingleLine: true,
       width: width,
@@ -447,6 +446,8 @@ class DomTextMeasurementService extends TextMeasurementService {
       alphabeticBaseline: alphabeticBaseline,
       ideographicBaseline: ideographicBaseline,
       lines: lines,
+      textAlign: paragraph._textAlign,
+      textDirection: paragraph._textDirection,
     );
   }
 
@@ -483,8 +484,7 @@ class DomTextMeasurementService extends TextMeasurementService {
         _applySubPixelRoundingHack(minIntrinsicWidth, maxIntrinsicWidth);
     assert(minIntrinsicWidth <= maxIntrinsicWidth);
     final double ideographicBaseline = alphabeticBaseline * _baselineRatioHack;
-    return MeasurementResult.forParagraph(
-      paragraph,
+    return MeasurementResult(
       constraints.width,
       isSingleLine: false,
       width: width,
@@ -496,6 +496,8 @@ class DomTextMeasurementService extends TextMeasurementService {
       alphabeticBaseline: alphabeticBaseline,
       ideographicBaseline: ideographicBaseline,
       lines: null,
+      textAlign: paragraph._textAlign,
+      textDirection: paragraph._textDirection,
     );
   }
 
@@ -589,8 +591,7 @@ class CanvasTextMeasurementService extends TextMeasurementService {
         ? naturalHeight
         : math.min(lineCount, style.maxLines) * lineHeight;
 
-    final MeasurementResult result = MeasurementResult.forParagraph(
-      paragraph,
+    final MeasurementResult result = MeasurementResult(
       constraints.width,
       isSingleLine: lineCount == 1,
       alphabeticBaseline: ruler.alphabeticBaseline,
@@ -606,6 +607,8 @@ class CanvasTextMeasurementService extends TextMeasurementService {
       maxIntrinsicWidth: maxIntrinsicCalculator.value,
       width: constraints.width,
       lines: linesCalculator.lines,
+      textAlign: paragraph._textAlign,
+      textDirection: paragraph._textDirection,
     );
     return result;
   }
@@ -711,8 +714,8 @@ int _excludeTrailing(String text, int start, int end, CharPredicate predicate) {
 /// During the text layout phase, this class splits the lines of text so that it
 /// ends up fitting into the given width constraint.
 ///
-/// It mimicks the Flutter engine's behavior when it comes to handling ellipsis
-/// and max lines.
+/// It implements the Flutter engine's behavior when it comes to handling
+/// ellipsis and max lines.
 class LinesCalculator {
   LinesCalculator(this._canvasContext, this._paragraph, this._maxWidth);
 
@@ -781,7 +784,7 @@ class LinesCalculator {
         );
         final double widthOfResultingLine =
             measureSubstring(_lineStart, breakingPoint) + _ellipsisWidth;
-        final double alignOffset = calculateAlignOffsetForLine(
+        final double alignOffset = _calculateAlignOffsetForLine(
           paragraph: _paragraph,
           lineWidth: widthOfResultingLine,
           maxWidth: _maxWidth,
@@ -846,7 +849,7 @@ class LinesCalculator {
     );
     final int lineNumber = lines.length;
     final double lineWidth = measureSubstring(_lineStart, endWithoutSpace);
-    final double alignOffset = calculateAlignOffsetForLine(
+    final double alignOffset = _calculateAlignOffsetForLine(
       paragraph: _paragraph,
       lineWidth: lineWidth,
       maxWidth: _maxWidth,
@@ -985,13 +988,15 @@ class MaxIntrinsicCalculator {
   }
 }
 
-double calculateAlignOffsetForLine({
+/// Calculates the offset necessary for the given line to be correctly aligned.
+double _calculateAlignOffsetForLine({
   @required EngineParagraph paragraph,
   @required double lineWidth,
   @required double maxWidth,
 }) {
   final double emptySpace = maxWidth - lineWidth;
-  // WARNING: the [paragraph] may not be laid out yet at this point.
+  // WARNING: the [paragraph] may not be laid out yet at this point. This
+  // function must not use layout metrics, such as [paragraph.height].
   switch (paragraph._textAlign) {
     case ui.TextAlign.center:
       return emptySpace / 2.0;

@@ -860,8 +860,7 @@ class MeasurementResult {
   /// The text direction of the paragraph.
   final ui.TextDirection textDirection;
 
-  MeasurementResult.forParagraph(
-    EngineParagraph paragraph,
+  MeasurementResult(
     this.constraintWidth, {
     @required this.isSingleLine,
     @required this.width,
@@ -873,6 +872,8 @@ class MeasurementResult {
     @required this.alphabeticBaseline,
     @required this.ideographicBaseline,
     @required this.lines,
+    @required this.textAlign,
+    @required this.textDirection,
   })  : assert(constraintWidth != null),
         assert(isSingleLine != null),
         assert(width != null),
@@ -882,6 +883,6 @@ class MeasurementResult {
         assert(maxIntrinsicWidth != null),
         assert(alphabeticBaseline != null),
         assert(ideographicBaseline != null),
-        textAlign = paragraph._textAlign,
-        textDirection = paragraph._textDirection;
+        assert(textAlign != null),
+        assert(textDirection != null);
 }
