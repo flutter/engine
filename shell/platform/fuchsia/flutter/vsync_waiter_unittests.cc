@@ -18,6 +18,8 @@
 #include "flutter/shell/platform/fuchsia/flutter/thread.h"
 #include "flutter/shell/platform/fuchsia/flutter/vsync_waiter.h"
 
+#include "flutter/shell/platform/fuchsia/flutter/session_connection.h"
+
 namespace flutter_runner_test {
 
 class VsyncWaiterTest : public testing::Test {
