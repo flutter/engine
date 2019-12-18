@@ -6,6 +6,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'environment.dart';
+
 import 'package:path/path.dart' as path;
 import 'package:pedantic/pedantic.dart';
 
@@ -41,20 +43,21 @@ class Safari extends Browser {
         infoLog: DevNull(),
       );
 
-      var dir = createTempDir();
-
       // Safari will only open files (not general URLs) via the command-line
       // API, so we create a dummy file to redirect it to the page we actually
       // want it to load.
-      var redirect = path.join(dir, 'redirect.html');
+      final Directory redirectDir = Directory(
+        path.join(environment.webUiDartToolDir.path),
+      );
+      final redirect = path.join(redirectDir.path, 'redirect.html');
       File(redirect).writeAsStringSync(
           '<script>location = ' + jsonEncode(url.toString()) + '</script>');
 
-      var process = await Process.start(
-          installation.executable, [redirect] /* args */);
+      var process =
+          await Process.start(installation.executable, [redirect] /* args */);
 
       unawaited(process.exitCode
-          .then((_) => Directory(dir).deleteSync(recursive: true)));
+          .then((_) => File(redirect).deleteSync(recursive: true)));
 
       return process;
     });
