@@ -2,12 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/fuchsia/sdk.gni")
-import("$flutter_root/testing/testing.gni")
-
 if (is_fuchsia) {
+  import("//build/fuchsia/sdk.gni")
   import("$flutter_root/tools/fuchsia/fuchsia_archive.gni")
 }
+import("$flutter_root/testing/testing.gni")
 
 source_set("fml") {
   sources = [
@@ -64,6 +63,8 @@ source_set("fml") {
     "synchronization/semaphore.cc",
     "synchronization/semaphore.h",
     "synchronization/shared_mutex.h",
+    "synchronization/sync_switch.cc",
+    "synchronization/sync_switch.h",
     "synchronization/waitable_event.cc",
     "synchronization/waitable_event.h",
     "task_runner.cc",
@@ -162,12 +163,28 @@ source_set("fml") {
   }
 
   if (is_fuchsia) {
-    sources += [ "platform/fuchsia/paths_fuchsia.cc" ]
+    sources += [
+      "platform/fuchsia/message_loop_fuchsia.cc",
+      "platform/fuchsia/message_loop_fuchsia.h",
+      "platform/fuchsia/paths_fuchsia.cc",
+    ]
 
     if (using_fuchsia_sdk) {
-      public_deps += [ "$fuchsia_sdk_root/pkg:trace" ]
+      public_deps += [
+        "$fuchsia_sdk_root/pkg:async-cpp",
+        "$fuchsia_sdk_root/pkg:async-loop-cpp",
+        "$fuchsia_sdk_root/pkg:async-loop-default",
+        "$fuchsia_sdk_root/pkg:trace",
+        "$fuchsia_sdk_root/pkg:zx",
+      ]
     } else {
-      public_deps += [ "//zircon/public/lib/trace" ]
+      public_deps += [
+        "//zircon/public/lib/async-cpp",
+        "//zircon/public/lib/async-loop-cpp",
+        "//zircon/public/lib/async-loop-default",
+        "//zircon/public/lib/trace",
+        "//zircon/public/lib/zx",
+      ]
     }
   }
 
@@ -203,15 +220,21 @@ executable("fml_unittests") {
   sources = [
     "base32_unittest.cc",
     "command_line_unittest.cc",
+    "gpu_thread_merger_unittests.cc",
     "memory/ref_counted_unittest.cc",
     "memory/weak_ptr_unittest.cc",
     "message_loop_task_queues_merge_unmerge_unittests.cc",
+    "message_loop_task_queues_unittests.cc",
+    "message_loop_unittests.cc",
     "message_unittests.cc",
     "paths_unittests.cc",
     "platform/darwin/string_range_sanitization_unittests.mm",
+    "synchronization/count_down_latch_unittests.cc",
     "synchronization/semaphore_unittest.cc",
+    "synchronization/sync_switch_unittest.cc",
     "synchronization/waitable_event_unittest.cc",
     "thread_local_unittests.cc",
+    "thread_unittests.cc",
     "time/time_delta_unittest.cc",
     "time/time_point_unittest.cc",
     "time/time_unittest.cc",
@@ -219,21 +242,15 @@ executable("fml_unittests") {
 
   # TODO(gw280): Figure out why these tests don't work currently on Fuchsia
   if (!is_fuchsia) {
-    sources += [
-      "file_unittest.cc",
-      "gpu_thread_merger_unittests.cc",
-      "message_loop_task_queues_unittests.cc",
-      "message_loop_unittests.cc",
-      "synchronization/count_down_latch_unittests.cc",
-      "thread_unittests.cc",
-    ]
+    sources += [ "file_unittest.cc" ]
   }
 
   deps = [
     ":fml_fixtures",
     "$flutter_root/fml",
+    "$flutter_root/fml/dart",
+    "$flutter_root/runtime:libdart",
     "$flutter_root/testing",
-    "//third_party/dart/runtime:libdart_jit",
   ]
 }
 

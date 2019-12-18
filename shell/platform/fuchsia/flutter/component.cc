@@ -8,6 +8,7 @@
 #include <fuchsia/mem/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/async/cpp/task.h>
+#include <lib/async/default.h>
 #include <lib/fdio/directory.h>
 #include <lib/fdio/namespace.h>
 #include <lib/ui/scenic/cpp/view_token_pair.h>
@@ -231,7 +232,7 @@ Application::Application(
                          << "): " << zx_status_get_string(status);
           return;
         }
-        const char* other_dirs[] = {"debug", "ctrl"};
+        const char* other_dirs[] = {"debug", "ctrl", "diagnostics"};
         // add other directories as RemoteDirs.
         for (auto& dir_str : other_dirs) {
           fidl::InterfaceHandle<fuchsia::io::Directory> dir;
@@ -315,9 +316,8 @@ Application::Application(
   settings_.observatory_host = "127.0.0.1";
 #endif
 
-  // Set this to true to enable category "skia" trace events.
-  // TODO(PT-145): Explore enabling this by default.
-  settings_.trace_skia = false;
+  // Controls whether category "skia" trace events are enabled.
+  settings_.trace_skia = true;
 
   settings_.icu_data_path = "";
 

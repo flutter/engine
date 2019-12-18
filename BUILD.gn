@@ -73,6 +73,7 @@ group("flutter") {
       "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_unittests",
       "$flutter_root/shell/platform/embedder:embedder_unittests",
       "$flutter_root/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
+      "$flutter_root/testing:testing_unittests",
       "$flutter_root/third_party/txt:txt_unittests",
     ]
 
@@ -90,11 +91,6 @@ group("flutter") {
         "$flutter_root/third_party/txt:txt_benchmarks",
       ]
     }
-  }
-
-  # Fuchsia currently only supports a subset of our unit tests
-  if (is_fuchsia) {
-    public_deps += [ "$flutter_root/fml:fml_tests" ]
   }
 }
 
@@ -122,4 +118,21 @@ group("dist") {
   deps = [
     "$flutter_root/sky/dist",
   ]
+}
+
+# Fuchsia currently only supports a subset of our unit tests
+# When adding a new dep here, please also ensure the dep is added to
+# testing/fuchsia/run_tests.sh and testing/fuchsia/test_fars
+if (is_fuchsia) {
+  group("fuchsia_tests") {
+    testonly = true
+
+    deps = [
+      "$flutter_root/flow:flow_tests",
+
+      # TODO(gw280): Re-enable fml_tests on Fuchsia (https://github.com/flutter/flutter/issues/46122)
+      #     "$flutter_root/fml:fml_tests",
+      "$flutter_root/shell/platform/fuchsia/flutter:flutter_runner_tests",
+    ]
+  }
 }

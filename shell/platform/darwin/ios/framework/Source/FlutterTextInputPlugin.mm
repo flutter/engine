@@ -169,6 +169,10 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     _keyboardType = UIKeyboardTypeDefault;
     _returnKeyType = UIReturnKeyDone;
     _secureTextEntry = NO;
+    if (@available(iOS 11.0, *)) {
+      _smartQuotesType = UITextSmartQuotesTypeYes;
+      _smartDashesType = UITextSmartDashesTypeYes;
+    }
   }
 
   return self;
@@ -750,6 +754,18 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   _activeView.keyboardType = ToUIKeyboardType(inputType);
   _activeView.returnKeyType = ToUIReturnKeyType(configuration[@"inputAction"]);
   _activeView.autocapitalizationType = ToUITextAutoCapitalizationType(configuration);
+  if (@available(iOS 11.0, *)) {
+    NSString* smartDashesType = configuration[@"smartDashesType"];
+    // This index comes from the SmartDashesType enum in the framework.
+    bool smartDashesIsDisabled = smartDashesType && [smartDashesType isEqualToString:@"0"];
+    _activeView.smartDashesType =
+        smartDashesIsDisabled ? UITextSmartDashesTypeNo : UITextSmartDashesTypeYes;
+    NSString* smartQuotesType = configuration[@"smartQuotesType"];
+    // This index comes from the SmartQuotesType enum in the framework.
+    bool smartQuotesIsDisabled = smartQuotesType && [smartQuotesType isEqualToString:@"0"];
+    _activeView.smartQuotesType =
+        smartQuotesIsDisabled ? UITextSmartQuotesTypeNo : UITextSmartQuotesTypeYes;
+  }
   if ([keyboardAppearance isEqualToString:@"Brightness.dark"]) {
     _activeView.keyboardAppearance = UIKeyboardAppearanceDark;
   } else if ([keyboardAppearance isEqualToString:@"Brightness.light"]) {

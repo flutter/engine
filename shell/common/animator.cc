@@ -137,7 +137,7 @@ void Animator::BeginFrame(fml::TimePoint frame_start_time,
   {
     TRACE_EVENT2("flutter", "Framework Workload", "mode", "basic", "frame",
                  FrameParity());
-    delegate_.OnAnimatorBeginFrame(last_begin_frame_time_);
+    delegate_.OnAnimatorBeginFrame(frame_target_time);
   }
 
   if (!frame_scheduled_) {
@@ -244,8 +244,8 @@ void Animator::AwaitVSync() {
   delegate_.OnAnimatorNotifyIdle(dart_frame_deadline_);
 }
 
-void Animator::ScheduleSecondaryVsyncCallback(fml::closure callback) {
-  waiter_->ScheduleSecondaryCallback(std::move(callback));
+void Animator::ScheduleSecondaryVsyncCallback(const fml::closure& callback) {
+  waiter_->ScheduleSecondaryCallback(callback);
 }
 
 }  // namespace flutter

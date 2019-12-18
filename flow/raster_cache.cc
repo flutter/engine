@@ -92,13 +92,14 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
   return picture->approximateOpCount() > 5;
 }
 
+/// @note Procedure doesn't copy all closures.
 static RasterCacheResult Rasterize(
     GrContext* context,
     const SkMatrix& ctm,
     SkColorSpace* dst_color_space,
     bool checkerboard,
     const SkRect& logical_rect,
-    std::function<void(SkCanvas*)> draw_function) {
+    const std::function<void(SkCanvas*)>& draw_function) {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
   SkIRect cache_rect = RasterCache::GetDeviceBounds(logical_rect, ctm);
 
@@ -219,8 +220,8 @@ bool RasterCache::Prepare(GrContext* context,
   if (!entry.image.is_valid()) {
     entry.image = RasterizePicture(picture, context, transformation_matrix,
                                    dst_color_space, checkerboard_images_);
+    picture_cached_this_frame_++;
   }
-  picture_cached_this_frame_++;
   return true;
 }
 

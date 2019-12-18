@@ -8,19 +8,54 @@ part of engine;
 class Rasterizer {
   final Surface surface;
   final CompositorContext context = CompositorContext();
+  final HtmlViewEmbedder viewEmbedder = HtmlViewEmbedder();
+  final List<ui.VoidCallback> _postFrameCallbacks = <ui.VoidCallback>[];
 
-  Rasterizer(this.surface);
+  Rasterizer(this.surface) {
+    surface.viewEmbedder = viewEmbedder;
+  }
 
   /// Creates a new frame from this rasterizer's surface, draws the given
   /// [LayerTree] into it, and then submits the frame.
   void draw(LayerTree layerTree) {
-    final SurfaceFrame frame = surface.acquireFrame(ui.window.physicalSize);
-    final SkCanvas canvas = frame.canvas;
-    final Frame compositorFrame = context.acquireFrame(canvas);
+    try {
+      if (layerTree == null) {
+        return;
+      }
 
-    canvas.clear();
+      final ui.Size physicalSize = ui.window.physicalSize;
+      final ui.Size frameSize = ui.Size(
+        physicalSize.width.truncate().toDouble(),
+        physicalSize.height.truncate().toDouble(),
+      );
 
-    compositorFrame.raster(layerTree, ignoreRasterCache: true);
-    frame.submit();
+      if (frameSize.isEmpty) {
+        return;
+      }
+      layerTree.frameSize = frameSize;
+
+      final SurfaceFrame frame = surface.acquireFrame(layerTree.frameSize);
+      surface.viewEmbedder.frameSize = layerTree.frameSize;
+      final SkCanvas canvas = frame.skiaCanvas;
+      final Frame compositorFrame = context.acquireFrame(canvas, surface.viewEmbedder);
+
+      compositorFrame.raster(layerTree, ignoreRasterCache: true);
+      surface.addToScene();
+      frame.submit();
+      surface.viewEmbedder.submitFrame();
+    } finally {
+      _runPostFrameCallbacks();
+    }
+  }
+
+  void addPostFrameCallback(ui.VoidCallback callback) {
+    _postFrameCallbacks.add(callback);
+  }
+
+  void _runPostFrameCallbacks() {
+    for (int i = 0; i < _postFrameCallbacks.length; i++) {
+      final ui.VoidCallback callback = _postFrameCallbacks[i];
+      callback();
+    }
   }
 }

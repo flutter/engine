@@ -11,8 +11,6 @@ namespace flutter {
 OpacityLayer::OpacityLayer(int alpha, const SkPoint& offset)
     : alpha_(alpha), offset_(offset) {}
 
-OpacityLayer::~OpacityLayer() = default;
-
 void OpacityLayer::EnsureSingleChild() {
   FML_DCHECK(layers().size() > 0);  // OpacityLayer should never be a leaf
 
@@ -41,6 +39,8 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->mutators_stack.PushTransform(
       SkMatrix::MakeTrans(offset_.fX, offset_.fY));
   context->mutators_stack.PushOpacity(alpha_);
+  Layer::AutoPrerollSaveLayerState save =
+      Layer::AutoPrerollSaveLayerState::Create(context);
   ContainerLayer::Preroll(context, child_matrix);
   context->mutators_stack.Pop();
   context->mutators_stack.Pop();

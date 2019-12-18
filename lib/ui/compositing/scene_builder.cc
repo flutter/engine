@@ -80,7 +80,12 @@ void SceneBuilder::RegisterNatives(tonic::DartLibraryNatives* natives) {
   });
 }
 
-SceneBuilder::SceneBuilder() = default;
+SceneBuilder::SceneBuilder() {
+  // Add a ContainerLayer as the root layer, so that AddLayer operations are
+  // always valid.
+  PushLayer(std::make_shared<flutter::ContainerLayer>());
+}
+
 SceneBuilder::~SceneBuilder() = default;
 
 fml::RefPtr<EngineLayer> SceneBuilder::pushTransform(

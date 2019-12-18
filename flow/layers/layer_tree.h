@@ -22,9 +22,14 @@ class LayerTree {
  public:
   LayerTree();
 
-  ~LayerTree();
-
-  void Preroll(CompositorContext::ScopedFrame& frame,
+  // Perform a preroll pass on the tree and return information about
+  // the tree that affects rendering this frame.
+  //
+  // Returns:
+  // - a boolean indicating whether or not the top level of the
+  //   layer tree performs any operations that require readback
+  //   from the root surface.
+  bool Preroll(CompositorContext::ScopedFrame& frame,
                bool ignore_raster_cache = false);
 
 #if defined(OS_FUCHSIA)

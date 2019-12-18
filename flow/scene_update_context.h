@@ -37,7 +37,7 @@ class SceneUpdateContext {
     virtual SkISize GetSize() const = 0;
 
     virtual void SignalWritesFinished(
-        std::function<void(void)> on_writes_committed) = 0;
+        const std::function<void(void)>& on_writes_committed) = 0;
 
     virtual scenic::Image* GetImage() = 0;
 
@@ -124,7 +124,7 @@ class SceneUpdateContext {
     void AddPaintLayer(Layer* layer);
 
    private:
-    const SkRRect& rrect_;
+    const SkRRect rrect_;
     SkColor const color_;
 
     std::vector<Layer*> paint_layers_;
