@@ -164,6 +164,24 @@ void main() {
     expect(event.buttons, equals(0));
     expect(event.client.x, equals(400));
     expect(event.client.y, equals(401));
+
+    events = expectCorrectTypes(context.multiTouchCancel(<_TouchDetails>[
+      _TouchDetails(pointer: 106, clientX: 500, clientY: 501),
+      _TouchDetails(pointer: 107, clientX: 502, clientY: 503),
+    ]));
+    expect(events.length, equals(2));
+    expect(events[0].type, equals('pointercancel'));
+    expect(events[0].pointerId, equals(106));
+    expect(events[0].button, equals(0));
+    expect(events[0].buttons, equals(0));
+    expect(events[0].client.x, equals(0));
+    expect(events[0].client.y, equals(0));
+    expect(events[1].type, equals('pointercancel'));
+    expect(events[1].pointerId, equals(107));
+    expect(events[1].button, equals(0));
+    expect(events[1].buttons, equals(0));
+    expect(events[1].client.x, equals(0));
+    expect(events[1].client.y, equals(0));
   });
 
   test('_TouchEventContext generates expected events', () {
@@ -234,6 +252,20 @@ void main() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchend'));
+    expect(events[0].changedTouches.length, equals(2));
+    expect(events[0].changedTouches[0].identifier, equals(104));
+    expect(events[0].changedTouches[0].client.x, equals(320));
+    expect(events[0].changedTouches[0].client.y, equals(321));
+    expect(events[0].changedTouches[1].identifier, equals(105));
+    expect(events[0].changedTouches[1].client.x, equals(322));
+    expect(events[0].changedTouches[1].client.y, equals(323));
+
+    events = expectCorrectTypes(context.multiTouchCancel(<_TouchDetails>[
+      _TouchDetails(pointer: 104, clientX: 320, clientY: 321),
+      _TouchDetails(pointer: 105, clientX: 322, clientY: 323),
+    ]));
+    expect(events.length, equals(1));
+    expect(events[0].type, equals('touchcancel'));
     expect(events[0].changedTouches.length, equals(2));
     expect(events[0].changedTouches[0].identifier, equals(104));
     expect(events[0].changedTouches[0].client.x, equals(320));
@@ -1014,6 +1046,7 @@ void main() {
         packets.add(packet);
       };
 
+      // Two pointers down
       context.multiTouchDown(<_TouchDetails>[
         _TouchDetails(pointer: 2, clientX: 100, clientY: 101),
         _TouchDetails(pointer: 3, clientX: 200, clientY: 201),
@@ -1060,6 +1093,7 @@ void main() {
       expect(data[3].physicalDeltaY, equals(0));
       packets.clear();
 
+      // Two pointers move
       context.multiTouchMove(<_TouchDetails>[
         _TouchDetails(pointer: 3, clientX: 300, clientY: 302),
         _TouchDetails(pointer: 2, clientX: 400, clientY: 402),
@@ -1094,6 +1128,7 @@ void main() {
       expect(data[1].physicalDeltaY, equals(301));
       packets.clear();
 
+      // One pointer up
       context.multiTouchUp(<_TouchDetails>[
         _TouchDetails(pointer: 3, clientX: 300, clientY: 302),
       ]).forEach(glassPane.dispatchEvent);
@@ -1116,6 +1151,7 @@ void main() {
       expect(packets[0].data[1].physicalDeltaY, equals(0));
       packets.clear();
 
+      // Another pointer up
       context.multiTouchUp(<_TouchDetails>[
         _TouchDetails(pointer: 2, clientX: 400, clientY: 402),
       ]).forEach(glassPane.dispatchEvent);
@@ -1134,6 +1170,94 @@ void main() {
       expect(packets[0].data[1].buttons, equals(0));
       expect(packets[0].data[1].physicalX, equals(400));
       expect(packets[0].data[1].physicalY, equals(402));
+      expect(packets[0].data[1].physicalDeltaX, equals(0));
+      expect(packets[0].data[1].physicalDeltaY, equals(0));
+      packets.clear();
+
+      // Again two pointers down (reuse pointer ID)
+      context.multiTouchDown(<_TouchDetails>[
+        _TouchDetails(pointer: 3, clientX: 500, clientY: 501),
+        _TouchDetails(pointer: 2, clientX: 600, clientY: 601),
+      ]).forEach(glassPane.dispatchEvent);
+      if (context.runtimeType == _PointerEventContext) {
+        expect(packets.length, 2);
+        expect(packets[0].data.length, 2);
+        expect(packets[1].data.length, 2);
+      } else if (context.runtimeType == _TouchEventContext) {
+        expect(packets.length, 1);
+        expect(packets[0].data.length, 4);
+      } else {
+        assert(false, 'Unexpected context type ${context.runtimeType}');
+      }
+
+      data = _allPointerData(packets);
+      expect(data, hasLength(4));
+      expect(data[0].change, equals(ui.PointerChange.add));
+      expect(data[0].synthesized, equals(true));
+      expect(data[0].device, equals(3));
+      expect(data[0].physicalX, equals(500));
+      expect(data[0].physicalY, equals(501));
+
+      expect(data[1].change, equals(ui.PointerChange.down));
+      expect(data[1].device, equals(3));
+      expect(data[1].buttons, equals(1));
+      expect(data[1].physicalX, equals(500));
+      expect(data[1].physicalY, equals(501));
+      expect(data[1].physicalDeltaX, equals(0));
+      expect(data[1].physicalDeltaY, equals(0));
+
+      expect(data[2].change, equals(ui.PointerChange.add));
+      expect(data[2].synthesized, equals(true));
+      expect(data[2].device, equals(2));
+      expect(data[2].physicalX, equals(600));
+      expect(data[2].physicalY, equals(601));
+
+      expect(data[3].change, equals(ui.PointerChange.down));
+      expect(data[3].device, equals(2));
+      expect(data[3].buttons, equals(1));
+      expect(data[3].physicalX, equals(600));
+      expect(data[3].physicalY, equals(601));
+      expect(data[3].physicalDeltaX, equals(0));
+      expect(data[3].physicalDeltaY, equals(0));
+      packets.clear();
+    });
+  });
+
+  <_MultiPointerEventMixin>[_PointerEventContext(), _TouchEventContext()].forEach((_MultiPointerEventMixin context) {
+    test('${context.name} correctly parses cancel event', () {
+      PointerBinding.instance.debugOverrideDetector(context);
+      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      List<ui.PointerData> data;
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      // Two pointers down
+      context.multiTouchDown(<_TouchDetails>[
+        _TouchDetails(pointer: 2, clientX: 100, clientY: 101),
+        _TouchDetails(pointer: 3, clientX: 200, clientY: 201),
+      ]).forEach(glassPane.dispatchEvent);
+      packets.clear(); // Down event is tested in other tests.
+
+      // One pointer cancel
+      context.multiTouchCancel(<_TouchDetails>[
+        _TouchDetails(pointer: 3, clientX: 300, clientY: 302),
+      ]).forEach(glassPane.dispatchEvent);
+      expect(packets.length, 1);
+      expect(packets[0].data.length, 2);
+      expect(packets[0].data[0].change, equals(ui.PointerChange.cancel));
+      expect(packets[0].data[0].device, equals(3));
+      expect(packets[0].data[0].buttons, equals(0));
+      expect(packets[0].data[0].physicalX, equals(200));
+      expect(packets[0].data[0].physicalY, equals(201));
+      expect(packets[0].data[0].physicalDeltaX, equals(0));
+      expect(packets[0].data[0].physicalDeltaY, equals(0));
+
+      expect(packets[0].data[1].change, equals(ui.PointerChange.remove));
+      expect(packets[0].data[1].device, equals(3));
+      expect(packets[0].data[1].buttons, equals(0));
+      expect(packets[0].data[1].physicalX, equals(200));
+      expect(packets[0].data[1].physicalY, equals(201));
       expect(packets[0].data[1].physicalDeltaX, equals(0));
       expect(packets[0].data[1].physicalDeltaY, equals(0));
       packets.clear();
@@ -1361,6 +1485,7 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
   List<html.Event> multiTouchDown(List<_TouchDetails> touches);
   List<html.Event> multiTouchMove(List<_TouchDetails> touches);
   List<html.Event> multiTouchUp(List<_TouchDetails> touches);
+  List<html.Event> multiTouchCancel(List<_TouchDetails> touches);
 
   @override
   html.Event primaryDown({double clientX, double clientY}) {
@@ -1457,6 +1582,11 @@ class _TouchEventContext extends _BasicEventContext with _MultiPointerEventMixin
   @override
   List<html.Event> multiTouchUp(List<_TouchDetails> touches) {
     return <html.Event>[_createTouchEvent('touchend', touches)];
+  }
+
+  @override
+  List<html.Event> multiTouchCancel(List<_TouchDetails> touches) {
+    return <html.Event>[_createTouchEvent('touchcancel', touches)];
   }
 }
 
@@ -1655,5 +1785,17 @@ class _PointerEventContext extends _BasicEventContext with _ButtonedEventMixin i
       'clientY': clientY,
       'pointerType': pointerType,
     });
+  }
+
+  @override
+  List<html.Event> multiTouchCancel(List<_TouchDetails> touches) {
+    return touches.map((_TouchDetails details) => html.PointerEvent('pointercancel', {
+      'pointerId': details.pointer,
+      'button': 0,
+      'buttons': 0,
+      'clientX': 0,
+      'clientY': 0,
+      'pointerType': 'touch',
+    })).toList();
   }
 }
