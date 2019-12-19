@@ -18,13 +18,37 @@
 #include "flutter/shell/platform/fuchsia/flutter/thread.h"
 #include "flutter/shell/platform/fuchsia/flutter/vsync_waiter.h"
 
+#include "flutter/shell/platform/fuchsia/flutter/runner.h"
 #include "flutter/shell/platform/fuchsia/flutter/session_connection.h"
 
 namespace flutter_runner_test {
 
 class VsyncWaiterTest : public testing::Test {
  public:
-  VsyncWaiterTest() {}
+  VsyncWaiterTest() {
+    auto component = sys::ComponentContext::Create();
+    auto scenic = component->svc()->Connect<fuchsia::ui::scenic::Scenic>();
+
+    fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session;
+    fidl::InterfaceHandle<fuchsia::ui::scenic::SessionListener>
+        session_listener;
+
+    scenic->CreateSession(session.NewRequest(), session_listener.Bind());
+
+    fuchsia::ui::views::ViewToken view_token;
+
+    zx_handle_t handle = (zx_handle_t)0u;
+
+    fml::closure on_session_error_callback = []() {};
+    (void)handle;
+    (void)view_token;
+    (void)on_session_error_callback;
+
+    flutter_runner::SessionConnection session_connection(
+        "debug label", std::move(view_token), std::move(session),
+        on_session_error_callback, handle);
+    (void)session_connection;
+  }
 
   ~VsyncWaiterTest() = default;
 
