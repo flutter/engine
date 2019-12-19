@@ -48,11 +48,8 @@ class SkVertices implements ui.Vertices {
     final Float32List encodedPositions = encodePointList(positions);
     final Int32List encodedColors =
         colors != null ? _encodeColorList(colors) : null;
-    final Uint16List encodedIndices =
-        ;
-
     if (!_init(mode, encodedPositions, _textureCoordinates, encodedColors,
-        encodedIndices))
+        _indices))
       throw ArgumentError('Invalid configuration for vertices.');
   }
 
