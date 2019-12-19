@@ -31,8 +31,7 @@ void MessageLoopFuchsia::WakeUp(fml::TimePoint time_point) {
   }
 
   auto status = async::PostDelayedTask(
-                 loop_.dispatcher(), [this]() { RunExpiredTasksNow(); },
-                 due_time);
+      loop_.dispatcher(), [this]() { RunExpiredTasksNow(); }, due_time);
   FML_DCHECK(status == ZX_OK);
 }
 

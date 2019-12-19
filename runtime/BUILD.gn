@@ -29,8 +29,7 @@ group("libdart") {
   public_deps = []
 
   if (flutter_runtime_mode == "profile" || flutter_runtime_mode == "release") {
-    public_deps +=
-        [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
+    public_deps += [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
   } else {
     public_deps += [
       "$flutter_root/lib/snapshot",
