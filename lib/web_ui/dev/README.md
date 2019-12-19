@@ -32,10 +32,12 @@ If you are a Google employee, you can use an internal instance of Goma to parall
 
 ## Running web engine tests
 To run all tests on Chrome:
+
 ```
 felt test
 ```
-To run tests on Firefox (this will work on a Linux device):
+
+To run tests on Firefox (this will work only on a Linux device):
 
 ```
 felt test --browser=firefox
