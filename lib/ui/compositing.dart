@@ -22,7 +22,9 @@ class Scene extends NativeFieldWrapperClass2 {
   /// Creates a raster image representation of the current state of the scene.
   /// This is a slow operation that is performed on a background thread.
   Future<Image> toImage(int width, int height) {
-    if (width <= 0 || height <= 0) throw Exception('Invalid image dimensions.');
+    if (width <= 0 || height <= 0) {
+      throw Exception('Invalid image dimensions.');
+    }
     return _futurize((_Callback<Image> callback) => _toImage(width, height, callback));
   }
 
@@ -615,9 +617,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     bool isComplexHint = false,
     bool willChangeHint = false,
   }) {
-    int hints = 0;
-    if (isComplexHint) hints |= 1;
-    if (willChangeHint) hints |= 2;
+    final int hints = (isComplexHint ? 1 : 0) | (willChangeHint ? 2 : 0);
     _addPicture(offset.dx, offset.dy, picture, hints);
   }
 
