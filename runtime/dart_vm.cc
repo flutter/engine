@@ -356,17 +356,17 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   if (settings_.trace_startup) {
     // If set trace_startup should be equivalent to FLAG_startup_timeline,
     // instead of using endless recorder. If needed, we can combine two
-    // parameters
+    // parameters.
     PushBackAll(&args, kDartStartupTraceBufferArgs,
-                arraysize(kDartStartupTraceBufferArgs));
+                fml::size(kDartStartupTraceBufferArgs));
     PushBackAll(&args, kDartTraceStartupStreamsArgs,
-                arraysize(kDartTraceStartupStreamsArgs));
+                fml::size(kDartTraceStartupStreamsArgs));
   }
 
   if (settings_.endless_trace_buffer) {
     // If we are tracing startup and endless_trace_buffer, using startup‘s
     // streams and endless buffer, so we don't lose early traces. example:
-    // flutter run --trace-startup --endless-trace-buffer
+    // flutter run --trace-startup --endless-trace-buffer.
     PushBackAll(&args, kDartEndlessTraceBufferArgs,
                 fml::size(kDartEndlessTraceBufferArgs));
   }
