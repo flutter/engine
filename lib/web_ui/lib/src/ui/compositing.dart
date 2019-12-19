@@ -117,7 +117,9 @@ abstract class SceneBuilder {
   /// This is equivalent to [pushTransform] with a matrix with only translation.
   ///
   /// See [pop] for details about the operation stack.
-  OffsetEngineLayer pushOffset(double dx, double dy, {
+  OffsetEngineLayer pushOffset(
+    double dx,
+    double dy, {
     OffsetEngineLayer oldLayer,
   });
 
@@ -126,7 +128,8 @@ abstract class SceneBuilder {
   /// The objects are transformed by the given matrix before rasterization.
   ///
   /// See [pop] for details about the operation stack.
-  TransformEngineLayer pushTransform(Float64List matrix4, {
+  TransformEngineLayer pushTransform(
+    Float64List matrix4, {
     TransformEngineLayer oldLayer,
   });
 
@@ -136,7 +139,8 @@ abstract class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  ClipRectEngineLayer pushClipRect(Rect rect, {
+  ClipRectEngineLayer pushClipRect(
+    Rect rect, {
     Clip clipBehavior = Clip.antiAlias,
     ClipRectEngineLayer oldLayer,
   });
@@ -146,7 +150,8 @@ abstract class SceneBuilder {
   /// Rasterization outside the given rounded rectangle is discarded.
   ///
   /// See [pop] for details about the operation stack.
-  ClipRRectEngineLayer pushClipRRect(RRect rrect, {
+  ClipRRectEngineLayer pushClipRRect(
+    RRect rrect, {
     Clip clipBehavior,
     ClipRRectEngineLayer oldLayer,
   });
@@ -156,7 +161,8 @@ abstract class SceneBuilder {
   /// Rasterization outside the given path is discarded.
   ///
   /// See [pop] for details about the operation stack.
-  ClipPathEngineLayer pushClipPath(Path path, {
+  ClipPathEngineLayer pushClipPath(
+    Path path, {
     Clip clipBehavior = Clip.antiAlias,
     ClipPathEngineLayer oldLayer,
   });
@@ -169,7 +175,8 @@ abstract class SceneBuilder {
   /// opacity).
   ///
   /// See [pop] for details about the operation stack.
-  OpacityEngineLayer pushOpacity(int alpha, {
+  OpacityEngineLayer pushOpacity(
+    int alpha, {
     Offset offset = Offset.zero,
     OpacityEngineLayer oldLayer,
   });
@@ -184,7 +191,8 @@ abstract class SceneBuilder {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  ColorFilterEngineLayer pushColorFilter(ColorFilter filter, {
+  ColorFilterEngineLayer pushColorFilter(
+    ColorFilter filter, {
     ColorFilterEngineLayer oldLayer,
   });
 
@@ -194,7 +202,8 @@ abstract class SceneBuilder {
   /// rasterizing the given objects.
   ///
   /// See [pop] for details about the operation stack.
-  BackdropFilterEngineLayer pushBackdropFilter(ImageFilter filter, {
+  BackdropFilterEngineLayer pushBackdropFilter(
+    ImageFilter filter, {
     BackdropFilterEngineLayer oldLayer,
   });
 
@@ -204,7 +213,10 @@ abstract class SceneBuilder {
   /// rectangle using the given blend mode.
   ///
   /// See [pop] for details about the operation stack.
-  ShaderMaskEngineLayer pushShaderMask(Shader shader, Rect maskRect, BlendMode blendMode, {
+  ShaderMaskEngineLayer pushShaderMask(
+    Shader shader,
+    Rect maskRect,
+    BlendMode blendMode, {
     ShaderMaskEngineLayer oldLayer,
   });
 
@@ -286,11 +298,13 @@ abstract class SceneBuilder {
   ///
   /// The texture is scaled to the given size and rasterized at the given
   /// offset.
-  void addTexture(int textureId,
-      {Offset offset = Offset.zero,
-      double width = 0.0,
-      double height = 0.0,
-      bool freeze = false});
+  void addTexture(
+    int textureId, {
+    Offset offset = Offset.zero,
+    double width = 0.0,
+    double height = 0.0,
+    bool freeze = false,
+  });
 
   /// Adds a platform view (e.g an iOS UIView) to the scene.
   ///
@@ -317,12 +331,13 @@ abstract class SceneBuilder {
 
   /// (Fuchsia-only) Adds a scene rendered by another application to the scene
   /// for this application.
-  void addChildScene(
-      {Offset offset = Offset.zero,
-      double width = 0.0,
-      double height = 0.0,
-      SceneHost sceneHost,
-      bool hitTestable = true});
+  void addChildScene({
+    Offset offset = Offset.zero,
+    double width = 0.0,
+    double height = 0.0,
+    SceneHost sceneHost,
+    bool hitTestable = true,
+  });
 
   /// Sets a threshold after which additional debugging information should be
   /// recorded.
@@ -369,8 +384,15 @@ abstract class SceneBuilder {
 
   /// Set properties on the linked scene.  These properties include its bounds,
   /// as well as whether it can be the target of focus events or not.
-  void setProperties(double width, double height, double insetTop,
-      double insetRight, double insetBottom, double insetLeft, bool focusable);
+  void setProperties(
+    double width,
+    double height,
+    double insetTop,
+    double insetRight,
+    double insetBottom,
+    double insetLeft,
+    bool focusable,
+  );
 }
 
 /// A handle for the framework to hold and retain an engine layer across frames.
@@ -390,10 +412,11 @@ class SceneHost {
   ///
   /// The SceneHost takes ownership of the provided ViewHolder token.
   SceneHost(
-      dynamic viewHolderToken,
-      void Function() viewConnectedCallback,
-      void Function() viewDisconnectedCallback,
-      void Function(bool) viewStateChangedCallback);
+    dynamic viewHolderToken,
+    void Function() viewConnectedCallback,
+    void Function() viewDisconnectedCallback,
+    void Function(bool) viewStateChangedCallback,
+  );
 
   /// Releases the resources associated with the SceneHost.
   ///
@@ -402,8 +425,15 @@ class SceneHost {
 
   /// Set properties on the linked scene.  These properties include its bounds,
   /// as well as whether it can be the target of focus events or not.
-  void setProperties(double width, double height, double insetTop,
-      double insetRight, double insetBottom, double insetLeft, bool focusable) {
+  void setProperties(
+    double width,
+    double height,
+    double insetTop,
+    double insetRight,
+    double insetBottom,
+    double insetLeft,
+    bool focusable,
+  ) {
     throw UnimplementedError();
   }
 }
