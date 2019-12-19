@@ -184,8 +184,10 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   @override
-  ui.ImageFilterEngineLayer pushImageFilter(ui.ImageFilter filter,
-                                            {ui.ImageFilterEngineLayer oldLayer}) {
+  ui.ImageFilterEngineLayer pushImageFilter(
+    ui.ImageFilter filter, {
+    ui.ImageFilterEngineLayer oldLayer,
+  }) {
     assert(filter != null);
     throw UnimplementedError();
   }

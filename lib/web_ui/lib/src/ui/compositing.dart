@@ -213,8 +213,10 @@ abstract class SceneBuilder {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  ImageFilterEngineLayer pushImageFilter(ImageFilter filter,
-                                         {ImageFilterEngineLayer oldLayer});
+  ImageFilterEngineLayer pushImageFilter(
+    ImageFilter filter, {
+    ImageFilterEngineLayer oldLayer,
+  });
 
   /// Pushes a backdrop filter operation onto the operation stack.
   ///
