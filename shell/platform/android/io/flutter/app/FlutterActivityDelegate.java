@@ -281,6 +281,9 @@ public final class FlutterActivityDelegate
         if (intent.getBooleanExtra("trace-startup", false)) {
             args.add("--trace-startup");
         }
+        if (intent.getBooleanExtra("endless-trace-buffer", false)) {
+            args.add("--endless-trace-buffer");
+        }
         if (intent.getBooleanExtra("start-paused", false)) {
             args.add("--start-paused");
         }

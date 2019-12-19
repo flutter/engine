@@ -91,8 +91,12 @@ static const char* kDartDisableServiceAuthCodesArgs[]{
     "--disable-service-auth-codes",
 };
 
-static const char* kDartTraceStartupArgs[]{
+static const char* kDartTraceStartupStreamsArgs[]{
     "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM,API",
+};
+
+static const char* kDartStartupTraceBufferArgs[]{
+    "--timeline_recorder=startup",
 };
 
 static const char* kDartEndlessTraceBufferArgs[]{
@@ -349,9 +353,20 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
                 fml::size(kDartDisableServiceAuthCodesArgs));
   }
 
-  if (settings_.endless_trace_buffer || settings_.trace_startup) {
-    // If we are tracing startup, make sure the trace buffer is endless so we
-    // don't lose early traces.
+  if (settings_.trace_startup) {
+    // If set trace_startup should be equivalent to FLAG_startup_timeline,
+    // instead of using endless recorder. If needed, we can combine two
+    // parameters
+    PushBackAll(&args, kDartStartupTraceBufferArgs,
+                arraysize(kDartStartupTraceBufferArgs));
+    PushBackAll(&args, kDartTraceStartupStreamsArgs,
+                arraysize(kDartTraceStartupStreamsArgs));
+  }
+
+  if (settings_.endless_trace_buffer) {
+    // If we are tracing startup and endless_trace_buffer, using startup‘s
+    // streams and endless buffer, so we don't lose early traces. example:
+    // flutter run --trace-startup --endless-trace-buffer
     PushBackAll(&args, kDartEndlessTraceBufferArgs,
                 fml::size(kDartEndlessTraceBufferArgs));
   }
@@ -360,10 +375,6 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     PushBackAll(&args, kDartSystraceTraceBufferArgs,
                 fml::size(kDartSystraceTraceBufferArgs));
     PushBackAll(&args, kDartTraceStreamsArgs, fml::size(kDartTraceStreamsArgs));
-  }
-
-  if (settings_.trace_startup) {
-    PushBackAll(&args, kDartTraceStartupArgs, fml::size(kDartTraceStartupArgs));
   }
 
 #if defined(OS_FUCHSIA)

@@ -22,6 +22,10 @@ import java.util.*;
 public class FlutterShellArgs {
   public static final String ARG_KEY_TRACE_STARTUP = "trace-startup";
   public static final String ARG_TRACE_STARTUP = "--trace-startup";
+  public static final String ARG_KEY_ENDLESS_TRACE_BUFFER = "endless-trace-buffer";
+  public static final String ARG_TRACE_ENDLESS_TRACE_BUFFER = "--endless-trace-buffer";
+  public static final String ARG_KEY_TRACE_SYSTRACE = "trace-systrace";
+  public static final String ARG_TRACE_SYSTRACE = "--trace-systrace";
   public static final String ARG_KEY_START_PAUSED = "start-paused";
   public static final String ARG_START_PAUSED = "--start-paused";
   public static final String ARG_KEY_DISABLE_SERVICE_AUTH_CODES = "disable-service-auth-codes";
@@ -57,6 +61,12 @@ public class FlutterShellArgs {
 
     if (intent.getBooleanExtra(ARG_KEY_TRACE_STARTUP, false)) {
       args.add(ARG_TRACE_STARTUP);
+    }
+    if (intent.getBooleanExtra(ARG_KEY_ENDLESS_TRACE_BUFFER, false)) {
+      args.add(ARG_TRACE_ENDLESS_TRACE_BUFFER);
+    }
+    if (intent.getBooleanExtra(ARG_KEY_TRACE_SYSTRACE, false)) {
+      args.add(ARG_TRACE_SYSTRACE);
     }
     if (intent.getBooleanExtra(ARG_KEY_START_PAUSED, false)) {
       args.add(ARG_START_PAUSED);
