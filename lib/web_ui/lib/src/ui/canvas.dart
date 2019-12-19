@@ -61,7 +61,7 @@ enum VertexMode {
 class Vertices {
   final VertexMode _mode;
   final Float32List _positions;
-  final Float32List _textureCoordinates; // ignore: unused_field
+  final Float32List _textureCoordinates;
   final Int32List _colors;
   final Uint16List _indices; // ignore: unused_field
 
@@ -159,6 +159,8 @@ class Vertices {
   VertexMode get mode => _mode;
   Int32List get colors => _colors;
   Float32List get positions => _positions;
+  Float32List get textureCoordinates => _textureCoordinates;
+  Uint16List get indices => _indices;
 }
 
 /// Records a [Picture] containing a sequence of graphical operations.
