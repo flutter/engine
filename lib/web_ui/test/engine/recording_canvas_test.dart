@@ -37,21 +37,21 @@ void main() {
       underTest.drawDRRect(rrect, rrect.inflate(1), somePaint);
       underTest.apply(mockCanvas);
       // Expect nothing to be called
-      expect(mockCanvas.methodCallLog.length, equals(0));
+      expect(mockCanvas.methodCallLog.length, equals(1));
     });
 
     test('Inner RRect not completely inside Outer RRect', () {
       underTest.drawDRRect(rrect, rrect.deflate(1).shift(const Offset(0.0, 10)), somePaint);
       underTest.apply(mockCanvas);
       // Expect nothing to be called
-      expect(mockCanvas.methodCallLog.length, equals(0));
+      expect(mockCanvas.methodCallLog.length, equals(1));
     });
 
     test('Inner RRect same as Outer RRect', () {
       underTest.drawDRRect(rrect, rrect, somePaint);
       underTest.apply(mockCanvas);
       // Expect nothing to be called
-      expect(mockCanvas.methodCallLog.length, equals(0));
+      expect(mockCanvas.methodCallLog.length, equals(1));
     });
 
     test('negative corners in inner RRect get passed through to draw', () {
@@ -93,7 +93,7 @@ void main() {
 
 // Expect a drawDRRect call to be registered in the mock call log, with the expectedArguments
 void _expectDrawCall(MockEngineCanvas mock, Map<String, dynamic> expectedArguments) {
-  expect(mock.methodCallLog.length, equals(1));
+  expect(mock.methodCallLog.length, equals(2));
   MockCanvasCall mockCall = mock.methodCallLog[0];
   expect(mockCall.methodName, equals('drawDRRect'));
   expect(mockCall.arguments, equals(expectedArguments));
