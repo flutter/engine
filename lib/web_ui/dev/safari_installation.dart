@@ -26,7 +26,7 @@ class SafariArgParser extends BrowserArgParser {
         'safari-version',
         defaultsTo: 'system',
         help: 'The Safari version to use while running tests. The Safari '
-            'browswer installed on the system is used as the only option now.'
+            'browser installed on the system is used as the only option now.'
             'Soon we will add support for using different versions using the '
             'tech previews.',
       );
@@ -58,7 +58,8 @@ Future<BrowserInstallation> getOrInstallSafari(
 
   // These tests are aimed to run only on MacOs machines local or on LUCI.
   if (!io.Platform.isMacOS) {
-    throw UnimplementedError();
+    throw UnimplementedError('Safari on ${io.Platform.operatingSystem} is'
+        ' not supported. Safari is only supported on MacOS.');
   }
 
   infoLog ??= io.stdout;
@@ -66,7 +67,7 @@ Future<BrowserInstallation> getOrInstallSafari(
   if (requestedVersion == 'system') {
     // Since Safari is included in MacOS, always assume there will be one on the
     // system.
-    infoLog.writeln('Using the system version is already installed.');
+    infoLog.writeln('Using the system version that is already installed.');
     return BrowserInstallation(
       version: 'system',
       executable: PlatformBinding.instance.getSafariSystemExecutablePath(),
