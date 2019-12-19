@@ -172,6 +172,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       }
       _canvasPool.initializeViewport(_widthInBitmapPixels, _heightInBitmapPixels);
       _setupInitialTransform();
+      _canvasPool.contextHandle.reset();
     }
     _canvasPool.resetTransform();
   }
@@ -213,6 +214,9 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       final String colorString = paint.color.toCssString();
       contextHandle.fillStyle = colorString;
       contextHandle.strokeStyle = colorString;
+    } else {
+      contextHandle.fillStyle = '';
+      contextHandle.strokeStyle = '';
     }
   }
 

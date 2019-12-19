@@ -8,7 +8,7 @@ class _CanvasPool {
   bool _contextSaved = false;
 
   html.CanvasRenderingContext2D get context {
-    if (_context == null) {
+    if (_contextHandle == null) {
       _context = _canvas.context2D;
       _contextHandle = ContextStateHandle(_context);
     }
@@ -363,6 +363,9 @@ class ContextStateHandle {
     if (!identical(colorOrGradient, _currentFillStyle)) {
       _currentFillStyle = colorOrGradient;
       context.fillStyle = colorOrGradient;
+      if (assertionsEnabled) {
+        _currentFillStyle = context.fillStyle;
+      }
     }
   }
 
@@ -391,21 +394,18 @@ class ContextStateHandle {
 
   void reset() {
     context.fillStyle = '';
+    _currentFillStyle = context.fillStyle;
     context.strokeStyle = '';
-    _currentFillStyle = null;
     _currentStrokeStyle = null;
-    //if (_secondaryAttributesDirty) {
-      context.filter = 'none';
-      context.globalCompositeOperation = 'source-over';
-      context.lineWidth = 1.0;
-      context.lineCap = 'butt';
-      context.lineJoin = 'miter';
-      _currentFilter = 'none';
-      _currentBlendMode = ui.BlendMode.srcOver;
-      _currentLineWidth = 1.0;
-      _currentStrokeCap = ui.StrokeCap.butt;
-      _currentStrokeJoin = ui.StrokeJoin.miter;
-      _secondaryAttributesDirty = false;
-    //}
+    context.filter = 'none';
+    _currentFilter = 'none';
+    context.globalCompositeOperation = 'source-over';
+    _currentBlendMode = ui.BlendMode.srcOver;
+    context.lineWidth = 1.0;
+    _currentLineWidth = 1.0;
+    context.lineCap = 'butt';
+    _currentStrokeCap = ui.StrokeCap.butt;
+    context.lineJoin = 'miter';
+    _currentStrokeJoin = ui.StrokeJoin.miter;
   }
 }
