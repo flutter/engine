@@ -5,7 +5,7 @@
 part of engine;
 
 /// Make the content editable span visible to facilitate debugging.
-const bool _debugVisibleTextEditing = false;
+const bool _debugVisibleTextEditing = true;
 
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
@@ -552,6 +552,20 @@ class IOSTextEditingStrategy extends DefaultTextEditingStrategy {
       _positionInputElementTimer?.cancel();
       _positionInputElementTimer = Timer(_delayBeforePositioning, () {
         _canPosition = true;
+
+        _subscriptions.add(domElement.onClick.listen((_) {
+          if (_canPosition) {
+            // this means already positioned.
+            domElement.style.transform = 'translate(-9999px, -9999px)';
+            _canPosition = false;
+
+            _positionInputElementTimer?.cancel();
+            _positionInputElementTimer = Timer(_delayBeforePositioning, () {
+              _canPosition = true;
+              positionElement();
+            });
+          }
+        }));
         positionElement();
       });
     }));
