@@ -680,12 +680,13 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
 
   /// (Fuchsia-only) Adds a scene rendered by another application to the scene
   /// for this application.
-  void addChildScene(
-      {Offset offset = Offset.zero,
-      double width = 0.0,
-      double height = 0.0,
-      SceneHost sceneHost,
-      bool hitTestable = true}) {
+  void addChildScene({
+    Offset offset = Offset.zero,
+    double width = 0.0,
+    double height = 0.0,
+    SceneHost sceneHost,
+    bool hitTestable = true,
+  }) {
     _addChildScene(offset.dx, offset.dy, width, height, sceneHost, hitTestable);
   }
 
