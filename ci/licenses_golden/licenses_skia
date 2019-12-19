@@ -1,4 +1,4 @@
-Signature: 906978426b3b0029447310d708640242
+Signature: 31b5f3029d0fe100a46adb2e89d271cf
 
 UNUSED LICENSES:
 
@@ -1475,7 +1475,6 @@ FILE: ../../../third_party/skia/specs/web-img-decode/proposed/impl/impl.js
 FILE: ../../../third_party/skia/specs/web-img-decode/proposed/index.html
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
 FILE: ../../../third_party/skia/src/sksl/lex/sksl.lex
-FILE: ../../../third_party/skia/src/sksl/sksl_blend.inc
 FILE: ../../../third_party/skia/src/sksl/sksl_fp.inc
 FILE: ../../../third_party/skia/src/sksl/sksl_frag.inc
 FILE: ../../../third_party/skia/src/sksl/sksl_geom.inc
@@ -4392,12 +4391,9 @@ FILE: ../../../third_party/skia/docs/examples/Matrix_SetAffineIdentity.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_TypeMask.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_array_operator.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_asAffine.cpp
-FILE: ../../../third_party/skia/docs/examples/Matrix_cheapEqualTo.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_decomposeScale.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_dirtyMatrixTypeCache.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_dump.cpp
-FILE: ../../../third_party/skia/docs/examples/Matrix_equal_operator.cpp
-FILE: ../../../third_party/skia/docs/examples/Matrix_fixedStepInX.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_get.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_get9.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_getMaxScale.cpp
@@ -4415,7 +4411,6 @@ FILE: ../../../third_party/skia/docs/examples/Matrix_getType.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_hasPerspective.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_invert.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_isFinite.cpp
-FILE: ../../../third_party/skia/docs/examples/Matrix_isFixedStepInX.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_isIdentity.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_isScaleTranslate.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_isSimilarity.cpp
@@ -4435,7 +4430,6 @@ FILE: ../../../third_party/skia/docs/examples/Matrix_mapVectors.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_mapVectors_2.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_mapXY.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_mapXY_2.cpp
-FILE: ../../../third_party/skia/docs/examples/Matrix_notequal_operator.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_postConcat.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_postRotate.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_postRotate_2.cpp
