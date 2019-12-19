@@ -237,10 +237,12 @@ Application::Application(
         for (auto& dir_str : other_dirs) {
           fidl::InterfaceHandle<fuchsia::io::Directory> dir;
           auto request = dir.NewRequest().TakeChannel();
-          fdio_service_connect_at(directory_ptr_.channel().get(), dir_str,
-                                  request.release());
-          outgoing_dir_->AddEntry(
-              dir_str, std::make_unique<vfs::RemoteDir>(dir.TakeChannel()));
+          auto status = fdio_service_connect_at(directory_ptr_.channel().get(),
+                                                dir_str, request.release());
+          if (status == ZX_OK) {
+            outgoing_dir_->AddEntry(
+                dir_str, std::make_unique<vfs::RemoteDir>(dir.TakeChannel()));
+          }
         }
       };
 
