@@ -68,6 +68,8 @@ abstract class EngineCanvas {
 
   void drawVertices(ui.Vertices vertices, ui.BlendMode blendMode,
       SurfacePaintData paint);
+
+  void endOfPaint();
 }
 
 /// Adds an [offset] transformation to a [transform] matrix and returns the

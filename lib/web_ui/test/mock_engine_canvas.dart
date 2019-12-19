@@ -228,4 +228,9 @@ class MockEngineCanvas implements EngineCanvas {
       'paint': paint,
     });
   }
+
+  @override
+  void endOfPaint() {
+    _called('endOfPaint', arguments: <String, dynamic>{});
+  }
 }
