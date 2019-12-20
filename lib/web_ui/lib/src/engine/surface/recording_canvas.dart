@@ -5,7 +5,7 @@
 part of engine;
 
 /// Enable this to print every command applied by a canvas.
-const bool _debugDumpPaintCommands = false;
+const bool _debugDumpPaintCommands = true;
 
 // Returns the squared length of the x, y (of a border radius)
 // It normalizes x, y values before working with them, by

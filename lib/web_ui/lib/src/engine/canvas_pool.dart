@@ -305,6 +305,10 @@ class _CanvasPool {
       _canvas.width = _canvas.height = 0;
     }
   }
+
+  void _debugCheck() {
+    contextHandle._debugCheck();
+  }
 }
 
 // Optimizes applying paint parameters to html canvas.
