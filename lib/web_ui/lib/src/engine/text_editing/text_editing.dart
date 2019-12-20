@@ -549,13 +549,10 @@ class IOSTextEditingStrategy extends DefaultTextEditingStrategy {
     // Position the DOM element after it is focused.
     _subscriptions.add(domElement.onFocus.listen((_) {
       // Cancel previous timer if exists.
-      _positionInputElementTimer?.cancel();
-      _positionInputElementTimer = Timer(_delayBeforePositioning, () {
-        _canPosition = true;
-        positionElement();
-        _addTapListener();
-      });
+      _schedulePositioning();
     }));
+
+     _addTapListener();
 
     // On iOS, blur is trigerred if the virtual keyboard is closed or the
     // browser is sent to background or the browser tab is changed.
@@ -606,17 +603,20 @@ class IOSTextEditingStrategy extends DefaultTextEditingStrategy {
       // via keyboard` journey.
       if (_canPosition) {
         // Re-place the element somewhere outside of the screen.
-        domElement.style.transform = 'translate(-9999px, -9999px)';
-        _canPosition = false;
+        initializeElementPosition();
 
         // Re-configure the timer to place the element.
-        _positionInputElementTimer?.cancel();
-        _positionInputElementTimer = Timer(_delayBeforePositioning, () {
-          _canPosition = true;
-          positionElement();
-        });
+        _schedulePositioning();
       }
     }));
+  }
+
+  void _schedulePositioning() {
+    _positionInputElementTimer?.cancel();
+    _positionInputElementTimer = Timer(_delayBeforePositioning, () {
+      _canPosition = true;
+      positionElement();
+    });
   }
 }
 
