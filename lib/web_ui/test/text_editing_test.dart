@@ -1036,15 +1036,12 @@ void main() {
 
       textarea.value = 'something\nelse';
 
+      textarea.dispatchEvent(Event.eventType('Event', 'input'));
+      textarea.setSelectionRange(2, 5);
       if (browserEngine == BrowserEngine.firefox) {
-        textarea.dispatchEvent(Event.eventType('Event', 'input'));
-        textarea.setSelectionRange(2, 5);
-        Event keyup = KeyboardEvent('keyup');
-        textEditing.editingElement.domElement.dispatchEvent(keyup);
-        document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
+        textEditing.editingElement.domElement
+            .dispatchEvent(KeyboardEvent('keyup'));
       } else {
-        textarea.dispatchEvent(Event.eventType('Event', 'input'));
-        textarea.setSelectionRange(2, 5);
         document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
       }
 
@@ -1337,7 +1334,7 @@ void clearBackUpDomElementIfExists() {
     domElementsToRemove..addAll(document.getElementsByTagName('input'));
   }
   if (document.getElementsByTagName('textarea').length > 0) {
-    domElementsToRemove..addAll(document.getElementsByTagName('input'));
+    domElementsToRemove..addAll(document.getElementsByTagName('textarea'));
   }
   domElementsToRemove.forEach((Node n) => n.remove());
 }
