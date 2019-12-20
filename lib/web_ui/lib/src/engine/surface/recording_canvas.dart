@@ -78,16 +78,7 @@ class RecordingCanvas {
           command.apply(engineCanvas);
           if (engineCanvas is BitmapCanvas) {
             BitmapCanvas bitmapCanvas = engineCanvas;
-            if (bitmapCanvas._canvasPool.contextHandle._currentFillStyle != null) {
-              if (bitmapCanvas._canvasPool.contextHandle._currentFillStyle !=
-                  bitmapCanvas._canvasPool.context.fillStyle) {
-                print('${bitmapCanvas._canvasPool.contextHandle
-                    ._currentFillStyle} != ${bitmapCanvas._canvasPool.context
-                    .fillStyle}');
-              }
-              assert(bitmapCanvas._canvasPool.contextHandle._currentFillStyle ==
-                  bitmapCanvas._canvasPool.context.fillStyle);
-            }
+            bitmapCanvas._canvasPool._debugCheck();
           }
         }
       } catch (e) {

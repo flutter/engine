@@ -396,7 +396,7 @@ class ContextStateHandle {
     context.fillStyle = '';
     _currentFillStyle = context.fillStyle;
     context.strokeStyle = '';
-    _currentStrokeStyle = null;
+    _currentStrokeStyle = context.strokeStyle;
     context.filter = 'none';
     _currentFilter = 'none';
     context.globalCompositeOperation = 'source-over';
@@ -407,5 +407,17 @@ class ContextStateHandle {
     _currentStrokeCap = ui.StrokeCap.butt;
     context.lineJoin = 'miter';
     _currentStrokeJoin = ui.StrokeJoin.miter;
+  }
+
+  void _debugCheck() {
+    if (_currentFillStyle != null && _currentFillStyle != context.fillStyle) {
+      print('Fill style out of sync: $_currentFillStyle != ${context.fillStyle}');
+    }
+    if (_currentStrokeStyle != null && _currentStrokeStyle != context.strokeStyle) {
+      print('Stroke style out of sync: $_currentStrokeStyle != ${context.strokeStyle}');
+    }
+    if (_currentFilter != null && _currentFilter != context.filter) {
+      print('Filter out of sync: $_currentFilter != ${context.filter}');
+    }
   }
 }

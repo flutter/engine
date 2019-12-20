@@ -614,6 +614,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   @override
   void endOfPaint() {
+    assert(_saveCount == 0);
   }
 }
 
