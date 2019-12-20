@@ -247,9 +247,8 @@ def to_gn_args(args):
       gn_args['dart_platform_sdk'] = not args.full_dart_sdk
     gn_args['full_dart_sdk'] = args.full_dart_sdk
 
-    if sys.platform == 'darwin':
-      if args.build_glfw_shell:
-        gn_args['build_glfw_shell'] = True
+    if args.build_glfw_shell:
+      gn_args['build_glfw_shell'] = True
 
     gn_args['stripped_symbols'] = args.stripped
 
