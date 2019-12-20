@@ -86,15 +86,6 @@ class AccessibilityBridge
   zx_status_t OnHoverMove(double x, double y);
 
  private:
-  struct SemanticsNode {
-    int32_t id;
-    int32_t flags;
-    SkRect rect;
-    SkRect screen_rect;
-    SkMatrix44 transform;
-    std::vector<int32_t> children_in_hit_test_order;
-  };
-
   AccessibilityBridge::Delegate& delegate_;
 
   static constexpr int32_t kRootNodeId = 0;
@@ -105,7 +96,7 @@ class AccessibilityBridge
   bool semantics_enabled_;
   // This is the cache of all nodes we've sent to Fuchsia's SemanticsManager.
   // Assists with pruning unreachable nodes.
-  std::unordered_map<int32_t, SemanticsNode> nodes_;
+  std::unordered_map<int32_t, std::vector<int32_t>> nodes_;
 
   // Derives the BoundingBox of a Flutter semantics node from its
   // rect and elevation.
@@ -135,16 +126,6 @@ class AccessibilityBridge
   //
   // May result in a call to FuchsiaAccessibility::Commit().
   void PruneUnreachableNodes();
-
-  // Updates the on-screen positions of accessibility elements.
-  //
-  // This should be called from Update
-  void UpdateScreenRects(int32_t node_id, SkMatrix44 parent_transform);
-
-  void GetHitNode(int32_t node_id,
-                  float x,
-                  float y,
-                  fuchsia::accessibility::semantics::Hit* hit);
 
   // |fuchsia::accessibility::semantics::SemanticListener|
   void OnAccessibilityActionRequested(

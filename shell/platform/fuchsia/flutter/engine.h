@@ -10,8 +10,8 @@
 #include <fuchsia/ui/gfx/cpp/fidl.h>
 #include <fuchsia/ui/views/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
-#include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <lib/sys/cpp/service_directory.h>
+#include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <lib/zx/event.h>
 
 #include "flutter/fml/macros.h"

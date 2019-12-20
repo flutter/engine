@@ -116,12 +116,11 @@ Engine::Engine(Delegate& delegate,
   fuchsia::ui::views::ViewRef view_ref;
   view_ref_pair.view_ref.Clone(&view_ref);
 
-
   // Setup the callback that will instantiate the platform view.
   flutter::Shell::CreateCallback<flutter::PlatformView>
       on_create_platform_view = fml::MakeCopyable(
-          [debug_label = thread_label_,
-           view_ref = std::move(view_ref), runner_services,
+          [debug_label = thread_label_, view_ref = std::move(view_ref),
+           runner_services,
            parent_environment_service_provider =
                std::move(parent_environment_service_provider),
            session_listener_request = std::move(session_listener_request),
@@ -135,10 +134,10 @@ Engine::Engine(Delegate& delegate,
                std::move(on_enable_wireframe_callback),
            vsync_handle = vsync_event_.get()](flutter::Shell& shell) mutable {
             return std::make_unique<flutter_runner::PlatformView>(
-                shell,                        // delegate
-                debug_label,                  // debug label
-                std::move(view_ref),          // view ref
-                shell.GetTaskRunners(),       // task runners
+                shell,                   // delegate
+                debug_label,             // debug label
+                std::move(view_ref),     // view ref
+                shell.GetTaskRunners(),  // task runners
                 std::move(runner_services),
                 std::move(parent_environment_service_provider),  // services
                 std::move(session_listener_request),  // session listener
@@ -178,12 +177,12 @@ Engine::Engine(Delegate& delegate,
 
   // Setup the callback that will instantiate the rasterizer.
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
-      fml::MakeCopyable([thread_label = thread_label_,        //
-                         view_token = std::move(view_token),  //
-                         view_ref_pair = std::move(view_ref_pair), //
-                         session = std::move(session),        //
-                         on_session_error_callback,           //
-                         vsync_event = vsync_event_.get()     //
+      fml::MakeCopyable([thread_label = thread_label_,              //
+                         view_token = std::move(view_token),        //
+                         view_ref_pair = std::move(view_ref_pair),  //
+                         session = std::move(session),              //
+                         on_session_error_callback,                 //
+                         vsync_event = vsync_event_.get()           //
   ](flutter::Shell& shell) mutable {
         std::unique_ptr<flutter_runner::CompositorContext> compositor_context;
         {
@@ -192,8 +191,8 @@ Engine::Engine(Delegate& delegate,
               std::make_unique<flutter_runner::CompositorContext>(
                   thread_label,           // debug label
                   std::move(view_token),  // scenic view we attach our tree to
-                  std::move(view_ref_pair), // scenic view ref/view ref control
-                  std::move(session),     // scenic session
+                  std::move(view_ref_pair),  // scenic view ref/view ref control
+                  std::move(session),        // scenic session
                   on_session_error_callback,  // session did encounter error
                   vsync_event                 // vsync event handle
               );
