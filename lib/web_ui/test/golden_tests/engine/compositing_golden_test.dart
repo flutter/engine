@@ -108,7 +108,7 @@ void main() async {
 
     html.document.body.append(builder.build().webOnlyRootElement);
 
-    await matchGoldenFile('compositing_image_filter.png', region: region, write: true);
+    await matchGoldenFile('compositing_image_filter.png', region: region);
   }, timeout: const Timeout(Duration(seconds: 10)));
 
   group('Cull rect computation', () {
