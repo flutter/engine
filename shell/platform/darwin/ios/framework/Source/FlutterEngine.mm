@@ -388,7 +388,7 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   static size_t shellCount = 1;
 
   auto settings = [_dartProject.get() settings];
-  auto windowData = [_dartProject.get() windowData];
+  auto windowData = [_dartProject.get() defaultWindowData];
 
   if (libraryURI) {
     FML_DCHECK(entrypoint) << "Must specify entrypoint if specifying library";

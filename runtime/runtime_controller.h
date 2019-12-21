@@ -17,6 +17,7 @@
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/window.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/runtime/window_data.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 
@@ -25,26 +26,6 @@ class Scene;
 class RuntimeDelegate;
 class View;
 class Window;
-
-struct WindowData {
-  WindowData();
-
-  WindowData(const WindowData& other);
-
-  ~WindowData();
-
-  ViewportMetrics viewport_metrics;
-  std::string language_code;
-  std::string country_code;
-  std::string script_code;
-  std::string variant_code;
-  std::vector<std::string> locale_data;
-  std::string user_settings_data = "{}";
-  std::string lifecycle_state;
-  bool semantics_enabled = false;
-  bool assistive_technology_enabled = false;
-  int32_t accessibility_feature_flags_ = 0;
-};
 
 class RuntimeController final : public WindowClient {
  public:
@@ -60,7 +41,7 @@ class RuntimeController final : public WindowClient {
       std::string advisory_script_uri,
       std::string advisory_script_entrypoint,
       const std::function<void(int64_t)>& idle_notification_callback,
-      WindowData data,
+      const WindowData data,
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
       std::shared_ptr<const fml::Mapping> persistent_isolate_data);

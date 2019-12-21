@@ -101,12 +101,9 @@ AndroidShellHolder::AndroidShellHolder(
                                     io_runner         // io
   );
 
-  flutter::WindowData window_data;
-  InitializesWindowData(window_data);
-
   shell_ =
       Shell::Create(task_runners,             // task runners
-                    window_data,              // window data
+                    getDefaultWindowData(),   // window data
                     settings_,                // settings
                     on_create_platform_view,  // platform view create callback
                     on_create_rasterizer      // rasterizer create callback
@@ -144,8 +141,10 @@ AndroidShellHolder::~AndroidShellHolder() {
   FML_CHECK(pthread_key_delete(thread_destruct_key_) == 0);
 }
 
-void AndroidShellHolder::InitializesWindowData(WindowData& window_data) {
+WindowData AndroidShellHolder::getDefaultWindowData() {
+  WindowData window_data;
   window_data.lifecycle_state = "AppLifecycleState.detached";
+  return window_data;
 }
 
 void AndroidShellHolder::ThreadDestructCallback(void* value) {

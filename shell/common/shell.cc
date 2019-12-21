@@ -42,7 +42,7 @@ constexpr char kFontChange[] = "fontsChange";
 std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     DartVMRef vm,
     TaskRunners task_runners,
-    WindowData window_data,
+    const WindowData window_data,
     Settings settings,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
@@ -238,7 +238,7 @@ std::unique_ptr<Shell> Shell::Create(
 
 std::unique_ptr<Shell> Shell::Create(
     TaskRunners task_runners,
-    WindowData window_data,
+    const WindowData window_data,
     Settings settings,
     Shell::CreateCallback<PlatformView> on_create_platform_view,
     Shell::CreateCallback<Rasterizer> on_create_rasterizer) {
@@ -264,7 +264,7 @@ std::unique_ptr<Shell> Shell::Create(
 
 std::unique_ptr<Shell> Shell::Create(
     TaskRunners task_runners,
-    WindowData window_data,
+    const WindowData window_data,
     Settings settings,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,

@@ -137,7 +137,8 @@ class Shell final : public PlatformView::Delegate,
   ///
   /// @param[in]  task_runners             The task runners
   /// @param[in]  window_data              The default data for setting up
-  ///                                      window.
+  ///                                      ui.Window that attached to this
+  ///                                      intance.
   /// @param[in]  settings                 The settings
   /// @param[in]  on_create_platform_view  The callback that must return a
   ///                                      platform view. This will be called on
@@ -158,7 +159,7 @@ class Shell final : public PlatformView::Delegate,
   ///
   static std::unique_ptr<Shell> Create(
       TaskRunners task_runners,
-      WindowData window_data,
+      const WindowData window_data,
       Settings settings,
       CreateCallback<PlatformView> on_create_platform_view,
       CreateCallback<Rasterizer> on_create_rasterizer);
@@ -174,7 +175,8 @@ class Shell final : public PlatformView::Delegate,
   ///
   /// @param[in]  task_runners             The task runners
   /// @param[in]  window_data              The default data for setting up
-  ///                                      window.
+  ///                                      ui.Window that attached to this
+  ///                                      intance.
   /// @param[in]  settings                 The settings
   /// @param[in]  isolate_snapshot         A custom isolate snapshot. Takes
   ///                                      precedence over any snapshots
@@ -199,7 +201,7 @@ class Shell final : public PlatformView::Delegate,
   ///
   static std::unique_ptr<Shell> Create(
       TaskRunners task_runners,
-      WindowData window_data,
+      const WindowData window_data,
       Settings settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       const CreateCallback<PlatformView>& on_create_platform_view,
@@ -411,7 +413,7 @@ class Shell final : public PlatformView::Delegate,
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(
       DartVMRef vm,
       TaskRunners task_runners,
-      WindowData windowd_data,
+      const WindowData window_data,
       Settings settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       const Shell::CreateCallback<PlatformView>& on_create_platform_view,

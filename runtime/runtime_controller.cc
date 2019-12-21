@@ -26,7 +26,7 @@ RuntimeController::RuntimeController(
     std::string p_advisory_script_uri,
     std::string p_advisory_script_entrypoint,
     const std::function<void(int64_t)>& idle_notification_callback,
-    WindowData p_window_data,
+    const WindowData p_window_data,
     const fml::closure& p_isolate_create_callback,
     const fml::closure& p_isolate_shutdown_callback,
     std::shared_ptr<const fml::Mapping> p_persistent_isolate_data)
@@ -368,11 +368,5 @@ RuntimeController::Locale::Locale(std::string language_code_,
       variant_code(variant_code_) {}
 
 RuntimeController::Locale::~Locale() = default;
-
-WindowData::WindowData() = default;
-
-WindowData::WindowData(const WindowData& other) = default;
-
-WindowData::~WindowData() = default;
 
 }  // namespace flutter
