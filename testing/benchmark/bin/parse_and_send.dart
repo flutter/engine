@@ -7,15 +7,7 @@ import 'dart:io';
 
 import 'package:git/git.dart';
 import 'package:metrics_center/flutter.dart';
-
-const String kNameKey = 'name';
-const String kTimeUnitKey = 'time_unit';
-const List<String> kNonNumericalValueSubResults = <String>[
-  kNameKey,
-  kTimeUnitKey,
-  'iterations',
-  'big_o',
-];
+import 'package:metrics_center/google_benchmark.dart';
 
 Future<String> _getGitRevision() async {
   final GitDir gitDir = await GitDir.fromExisting('../../');
@@ -29,56 +21,19 @@ Future<String> _getGitRevision() async {
   return logResult.stdout.toString();
 }
 
-void _parseAnItem(
-  Map<String, dynamic> item,
-  List<FlutterEngineMetricPoint> points,
-  Map<String, String> context,
-  String gitRevision,
-) {
-  final String name = item[kNameKey];
-  final Map<String, String> timeUnitMap = <String, String>{
-    kUnitKey: item[kTimeUnitKey]
-  };
-  for (String subResult in item.keys) {
-    if (!kNonNumericalValueSubResults.contains(subResult)) {
-      num rawValue;
-      try {
-        rawValue = item[subResult];
-      } catch (e) {
-        print('$subResult: ${item[subResult]} (${item[subResult].runtimeType}) '
-            'is not a number');
-        rethrow;
-      }
-
-      final double value = rawValue is int ? rawValue.toDouble() : rawValue;
-      points.add(
-        FlutterEngineMetricPoint(name, value, gitRevision,
-            moreTags: <String, String>{kSubResultKey: subResult}
-              ..addAll(context)
-              ..addAll(subResult.endsWith('time')
-                  ? timeUnitMap
-                  : <String, String>{})),
-      );
-    }
-  }
-}
-
 Future<List<FlutterEngineMetricPoint>> _parse(String jsonFileName) async {
   final String gitRevision = await _getGitRevision();
-
-  final Map<String, dynamic> jsonResult =
-      jsonDecode(File(jsonFileName).readAsStringSync());
-
-  final Map<String, dynamic> rawContext = jsonResult['context'];
-  final Map<String, String> context = rawContext.map<String, String>(
-    (String k, dynamic v) => MapEntry<String, String>(k, v.toString()),
-  );
+  final List<MetricPoint> rawPoints =
+      await GoogleBenchmarkParser.parse(jsonFileName);
   final List<FlutterEngineMetricPoint> points = <FlutterEngineMetricPoint>[];
-
-  for (Map<String, dynamic> item in jsonResult['benchmarks']) {
-    _parseAnItem(item, points, context, gitRevision);
+  for (MetricPoint rawPoint in rawPoints) {
+    points.add(FlutterEngineMetricPoint(
+      rawPoint.tags[kNameKey],
+      rawPoint.value,
+      gitRevision,
+      moreTags: rawPoint.tags,
+    ));
   }
-
   return points;
 }
 
