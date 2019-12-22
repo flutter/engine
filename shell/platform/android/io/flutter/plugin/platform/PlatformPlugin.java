@@ -13,6 +13,7 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
@@ -121,7 +122,8 @@ public class PlatformPlugin {
         }
     }
 
-    private void vibrateHapticFeedback(PlatformChannel.HapticFeedbackType feedbackType) {
+    @VisibleForTesting
+    /* package */ void vibrateHapticFeedback(PlatformChannel.HapticFeedbackType feedbackType) {
         View view = activity.getWindow().getDecorView();
         switch (feedbackType) {
             case STANDARD:

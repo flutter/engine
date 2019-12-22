@@ -20,6 +20,7 @@ import io.flutter.embedding.engine.renderer.FlutterRendererTest;
 import io.flutter.embedding.engine.systemchannels.PlatformChannelTest;
 import io.flutter.plugin.common.StandardMessageCodecTest;
 import io.flutter.plugin.editing.TextInputPluginTest;
+import io.flutter.plugin.platform.PlatformPluginTest;
 import io.flutter.plugin.platform.SingleViewPresentationTest;
 import io.flutter.util.PreconditionsTest;
 import test.io.flutter.embedding.engine.FlutterEngineTest;
@@ -41,6 +42,7 @@ import test.io.flutter.embedding.engine.dart.DartExecutorTest;
     FlutterRendererTest.class,
     FlutterViewTest.class,
     PlatformChannelTest.class,
+    PlatformPluginTest.class,
     PluginComponentTest.class,
     PreconditionsTest.class,
     RenderingComponentTest.class,
