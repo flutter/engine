@@ -225,10 +225,14 @@ std::unique_ptr<Shell> Shell::Create(
     Settings settings,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
     const Shell::CreateCallback<Rasterizer>& on_create_rasterizer) {
+  TRACE_EVENT0("flutter", "Shell::Create");
+
+  if (!task_runners.IsValid() || !on_create_platform_view ||
+      !on_create_rasterizer) {
+    return nullptr;
+  }
   PerformInitializationTasks(settings);
   PersistentCache::SetCacheSkSL(settings.cache_sksl);
-
-  TRACE_EVENT0("flutter", "Shell::Create");
 
   auto vm = DartVMRef::Create(settings);
   FML_CHECK(vm) << "Must be able to initialize the VM.";
@@ -251,15 +255,15 @@ std::unique_ptr<Shell> Shell::Create(
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
     const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
     DartVMRef vm) {
-  PerformInitializationTasks(settings);
-  PersistentCache::SetCacheSkSL(settings.cache_sksl);
-
   TRACE_EVENT0("flutter", "Shell::CreateWithSnapshots");
 
   if (!task_runners.IsValid() || !on_create_platform_view ||
       !on_create_rasterizer) {
     return nullptr;
   }
+
+  PerformInitializationTasks(settings);
+  PersistentCache::SetCacheSkSL(settings.cache_sksl);
 
   fml::AutoResetWaitableEvent latch;
   std::unique_ptr<Shell> shell;
