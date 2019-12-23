@@ -898,15 +898,16 @@ class SurfacePath implements ui.Path {
         }
       }
     }
-    final ui.Size size = window.physicalSize / window.devicePixelRatio;
-    _rawRecorder ??= ui.RawRecordingCanvas(size);
-    // Account for the shift due to padding.
-    _rawRecorder.translate(-BitmapCanvas.kPaddingPixels.toDouble(),
-        -BitmapCanvas.kPaddingPixels.toDouble());
-    _rawRecorder.drawPath(
-        this, (SurfacePaint()..color = const ui.Color(0xFF000000)).paintData);
-    final bool result = _rawRecorder._canvasPool.context.isPointInPath(pointX, pointY);
-    _rawRecorder.dispose();
+//    final ui.Size size = window.physicalSize / window.devicePixelRatio;
+//    _rawRecorder ??= ui.RawRecordingCanvas(size);
+//    // Account for the shift due to padding.
+//    _rawRecorder.translate(-BitmapCanvas.kPaddingPixels.toDouble(),
+//        -BitmapCanvas.kPaddingPixels.toDouble());
+//    _rawRecorder.drawPath(
+//        this, (SurfacePaint()..color = const ui.Color(0xFF000000)).paintData);
+//    final bool result = _rawRecorder._canvasPool.context.isPointInPath(pointX, pointY);
+//    _rawRecorder.dispose();
+    final bool result = true;
     return result;
   }
 

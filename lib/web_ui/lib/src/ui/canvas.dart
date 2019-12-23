@@ -1154,6 +1154,7 @@ class RawRecordingCanvas extends engine.BitmapCanvas
 
   @override
   void dispose() {
+    print('dispose calling clear');
     clear();
   }
 

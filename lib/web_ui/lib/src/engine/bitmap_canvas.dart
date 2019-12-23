@@ -107,7 +107,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     // The flooring of the value is to ensure that canvas' top-left corner
     // lands on the physical pixel.
     rootElement.style.transform =
-    'translate(${_canvasPositionX}px, ${_canvasPositionY}px)';
+      'translate(${_canvasPositionX}px, ${_canvasPositionY}px)';
     _canvasPool.allocateCanvas(rootElement, _widthInBitmapPixels,
         _heightInBitmapPixels, _bounds);
     _setupInitialTransform();
@@ -119,6 +119,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     final double canvasPositionCorrectionY =
         _bounds.top - BitmapCanvas.kPaddingPixels - _canvasPositionY.toDouble();
     // This compensates for the translate on the `rootElement`.
+    print('rootElm compensation ${bounds.left} ${bounds.top}');
     translate(
       -_bounds.left + canvasPositionCorrectionX + BitmapCanvas.kPaddingPixels,
       -_bounds.top + canvasPositionCorrectionY + BitmapCanvas.kPaddingPixels,
@@ -178,6 +179,8 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
           rethrow;
         }
       }
+      rootElement.style.transform =
+        'translate(${_canvasPositionX}px, ${_canvasPositionY}px)';
       _canvasPool.initializeViewport(_widthInBitmapPixels, _heightInBitmapPixels);
       _setupInitialTransform();
       _canvasPool.contextHandle.reset();
@@ -277,7 +280,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   @override
   void translate(double dx, double dy) {
     if (_debugBitmapCalls) {
-      print('BitmapCanvas:translate');
+      print('BitmapCanvas:translate $dx,$dy');
     }
     super.translate(dx, dy);
     _canvasPool.translate(dx, dy);
@@ -448,7 +451,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   @override
   void drawCircle(ui.Offset c, double radius, SurfacePaintData paint) {
     if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawCircle');
+      print('BitmapCanvas:drawCircle ${c.dx},${c.dy} , t=${_canvasPool.context.transform}');
     }
     _applyPaint(paint);
     _canvasPool.drawCircle(c, radius, paint.style);
