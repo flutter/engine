@@ -76,10 +76,6 @@ class RecordingCanvas {
         for (int i = 0, len = _commands.length; i < len; i++) {
           PaintCommand command = _commands[i];
           command.apply(engineCanvas);
-          if (engineCanvas is BitmapCanvas) {
-            BitmapCanvas bitmapCanvas = engineCanvas;
-            bitmapCanvas._canvasPool._debugCheck();
-          }
         }
       } catch (e) {
         // commands should never fail, but...

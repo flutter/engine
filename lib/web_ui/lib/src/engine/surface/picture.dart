@@ -232,7 +232,6 @@ class PersistedStandardPicture extends PersistedPicture {
       }
       oldCanvas.bounds = _optimalLocalCullRect;
       _canvas = oldCanvas;
-      print('reuse old');
       _canvas.clear();
       picture.recordingCanvas.apply(_canvas);
     } else {

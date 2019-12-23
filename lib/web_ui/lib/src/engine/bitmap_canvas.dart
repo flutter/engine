@@ -14,6 +14,14 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   set bounds(ui.Rect newValue) {
     assert(newValue != null);
     _bounds = newValue;
+    final int newCanvasPositionX = _bounds.left.floor() - kPaddingPixels;
+    final int newCanvasPositionY = _bounds.top.floor() - kPaddingPixels;
+    if (_canvasPositionX != newCanvasPositionX ||
+        _canvasPositionY != newCanvasPositionY) {
+      _canvasPositionX = newCanvasPositionX;
+      _canvasPositionY = newCanvasPositionY;
+      _updateRootElementTransform();
+    }
   }
 
   ui.Rect _bounds;
@@ -21,8 +29,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   /// The amount of padding to add around the edges of this canvas to
   /// ensure that anti-aliased arcs are not clipped.
   static const int kPaddingPixels = 1;
-
-  static const bool _debugBitmapCalls = true;
 
   @override
   final html.Element rootElement = html.Element.tag('flt-canvas');
@@ -67,7 +73,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   /// was created.
   final double _devicePixelRatio = html.window.devicePixelRatio;
 
-  final int _canvasPositionX, _canvasPositionY;
+  int _canvasPositionX, _canvasPositionY;
 
   // Indicates the instructions following drawImage or drawParagraph that
   // a child element was created to paint.
@@ -87,18 +93,22 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   /// as the [Rect.size] of the bounds fully fit within the size used to
   /// initialize this canvas.
   BitmapCanvas(this._bounds) :
-        _canvasPositionX = _bounds.left.floor() - kPaddingPixels,
-        _canvasPositionY = _bounds.top.floor() - kPaddingPixels,
         assert(_bounds != null) {
     rootElement.style.position = 'absolute';
-
+    _widthInBitmapPixels = _widthToPhysical(_bounds.width);
+    _heightInBitmapPixels = _heightToPhysical(_bounds.height);
     // Adds one extra pixel to the requested size. This is to compensate for
     // _initializeViewport() snapping canvas position to 1 pixel, causing
     // painting to overflow by at most 1 pixel.
+    _canvasPositionX = _bounds.left.floor() - kPaddingPixels;
+    _canvasPositionY = _bounds.top.floor() - kPaddingPixels;
+    _updateRootElementTransform();
+    _canvasPool.allocateCanvas(rootElement, _widthInBitmapPixels,
+        _heightInBitmapPixels, _bounds);
+    _setupInitialTransform();
+  }
 
-    _widthInBitmapPixels = _widthToPhysical(_bounds.width);
-    _heightInBitmapPixels = _heightToPhysical(_bounds.height);
-
+  void _updateRootElementTransform() {
     // Flutter emits paint operations positioned relative to the parent layer's
     // coordinate system. However, canvas' coordinate system's origin is always
     // in the top-left corner of the canvas. We therefore need to inject an
@@ -108,9 +118,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     // lands on the physical pixel.
     rootElement.style.transform =
       'translate(${_canvasPositionX}px, ${_canvasPositionY}px)';
-    _canvasPool.allocateCanvas(rootElement, _widthInBitmapPixels,
-        _heightInBitmapPixels, _bounds);
-    _setupInitialTransform();
   }
 
   void _setupInitialTransform() {
@@ -119,7 +126,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     final double canvasPositionCorrectionY =
         _bounds.top - BitmapCanvas.kPaddingPixels - _canvasPositionY.toDouble();
     // This compensates for the translate on the `rootElement`.
-    print('rootElm compensation ${bounds.left} ${bounds.top}');
     translate(
       -_bounds.left + canvasPositionCorrectionX + BitmapCanvas.kPaddingPixels,
       -_bounds.top + canvasPositionCorrectionY + BitmapCanvas.kPaddingPixels,
@@ -147,9 +153,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   @override
   void dispose() {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:dispose');
-    }
     super.dispose();
     _canvasPool.dispose();
   }
@@ -157,9 +160,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   /// Prepare to reuse this canvas by clearing it's current contents.
   @override
   void clear() {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:clear');
-    }
     super.clear();
     final int len = _children.length;
     for (int i = 0; i < len; i++) {
@@ -179,8 +179,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
           rethrow;
         }
       }
-      rootElement.style.transform =
-        'translate(${_canvasPositionX}px, ${_canvasPositionY}px)';
       _canvasPool.initializeViewport(_widthInBitmapPixels, _heightInBitmapPixels);
       _setupInitialTransform();
       _canvasPool.contextHandle.reset();
@@ -208,9 +206,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   /// Sets the global paint styles to correspond to [paint].
   void _applyPaint(SurfacePaintData paint) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:applyPaint');
-    }
     ContextStateHandle contextHandle = _canvasPool.contextHandle;
     contextHandle
       ..lineWidth = paint.strokeWidth ?? 1.0
@@ -237,25 +232,16 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   @override
   int save() {
     super.save();
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:save');
-    }
     _canvasPool.save();
     return _saveCount++;
   }
 
   void saveLayer(ui.Rect bounds, ui.Paint paint) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:saveLayer');
-    }
     save();
   }
 
   @override
   void restore() {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:restore ${_saveCount}');
-    }
     super.restore();
     _canvasPool.restore();
     _saveCount--;
@@ -266,9 +252,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   //                wrong because some clips and transforms are expressed using
   //                HTML DOM elements.
   void restoreToCount(int count) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:restoreToCount');
-    }
     assert(_saveCount >= count);
     final int restores = _saveCount - count;
     for (int i = 0; i < restores; i++) {
@@ -279,36 +262,24 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   @override
   void translate(double dx, double dy) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:translate $dx,$dy');
-    }
     super.translate(dx, dy);
     _canvasPool.translate(dx, dy);
   }
 
   @override
   void scale(double sx, double sy) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:scale');
-    }
     super.scale(sx, sy);
     _canvasPool.scale(sx, sy);
   }
 
   @override
   void rotate(double radians) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:rotate');
-    }
     super.rotate(radians);
     _canvasPool.rotate(radians);
   }
 
   @override
   void skew(double sx, double sy) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:skew');
-    }
     super.skew(sx, sy);
     _canvasPool.transform(1, sy, sx, 1, 0, 0);
     //            |  |   |   |  |  |
@@ -324,9 +295,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   @override
   void transform(Float64List matrix4) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:transform');
-    }
     super.transform(matrix4);
 
     // Canvas2D transform API:
@@ -361,107 +329,71 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   @override
   void clipRect(ui.Rect rect) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:clipRect');
-    }
     super.clipRect(rect);
     _canvasPool.clipRect(rect);
   }
 
   @override
   void clipRRect(ui.RRect rrect) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:clipRRect');
-    }
     super.clipRRect(rrect);
     _canvasPool.clipRRect(rrect);
   }
 
   @override
   void clipPath(ui.Path path) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:clipPath');
-    }
     super.clipPath(path);
     _canvasPool.clipPath(path);
   }
 
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawColor');
-    }
     _canvasPool.drawColor(color, blendMode);
   }
 
   @override
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaintData paint) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawLine');
-    }
     _applyPaint(paint);
     _canvasPool.strokeLine(p1, p2);
   }
 
   @override
   void drawPaint(SurfacePaintData paint) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawPaint');
-    }
     _applyPaint(paint);
     _canvasPool.fill();
   }
 
   @override
   void drawRect(ui.Rect rect, SurfacePaintData paint) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawRect');
-    }
     _applyPaint(paint);
     _canvasPool.drawRect(rect, paint.style);
   }
 
   @override
   void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawRRect');
-    }
     _applyPaint(paint);
     _canvasPool.drawRRect(rrect, paint.style);
   }
 
   @override
   void drawDRRect(ui.RRect outer, ui.RRect inner, SurfacePaintData paint) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawDRRect');
-    }
     _applyPaint(paint);
     _canvasPool.drawDRRect(outer, inner, paint.style);
   }
 
   @override
   void drawOval(ui.Rect rect, SurfacePaintData paint) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawOval');
-    }
     _applyPaint(paint);
     _canvasPool.drawOval(rect, paint.style);
   }
 
   @override
   void drawCircle(ui.Offset c, double radius, SurfacePaintData paint) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawCircle ${c.dx},${c.dy} , t=${_canvasPool.context.transform}');
-    }
     _applyPaint(paint);
     _canvasPool.drawCircle(c, radius, paint.style);
   }
 
   @override
   void drawPath(ui.Path path, SurfacePaintData paint) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawPath');
-    }
     _applyPaint(paint);
     _canvasPool.drawPath(path, paint.style);
   }
@@ -469,17 +401,11 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   @override
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawShadow');
-    }
     _canvasPool.drawShadow(path, color, elevation, transparentOccluder);
   }
 
   @override
   void drawImage(ui.Image image, ui.Offset p, SurfacePaintData paint) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawImage');
-    }
     _applyPaint(paint);
     final HtmlImage htmlImage = image;
     final html.ImageElement imgElement = htmlImage.cloneImageElement();
@@ -511,9 +437,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   @override
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaintData paint) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawImageRect');
-    }
     final HtmlImage htmlImage = image;
     final bool requiresClipping = src.left != 0 ||
         src.top != 0 ||
@@ -598,9 +521,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   @override
   void drawParagraph(EngineParagraph paragraph, ui.Offset offset) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawParagraph');
-    }
     assert(paragraph._isLaidOut);
     html.CanvasRenderingContext2D ctx = _canvasPool.context;
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
@@ -655,9 +575,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   /// Paints the [picture] into this canvas.
   void drawPicture(ui.Picture picture) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawPicture');
-    }
     final EnginePicture enginePicture = picture;
     enginePicture.recordingCanvas.apply(this);
   }
@@ -677,9 +594,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   @override
   void drawVertices(
       ui.Vertices vertices, ui.BlendMode blendMode, SurfacePaintData paint) {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:drawVertices');
-    }
     // TODO(flutter_web): Implement shaders for [Paint.shader] and
     // blendMode. https://github.com/flutter/flutter/issues/40096
     // Move rendering to OffscreenCanvas so that transform is preserved
@@ -709,9 +623,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   @override
   void endOfPaint() {
-    if (_debugBitmapCalls) {
-      print('BitmapCanvas:endPaint');
-    }
     assert(_saveCount == 0);
   }
 }

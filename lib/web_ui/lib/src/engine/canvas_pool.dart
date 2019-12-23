@@ -305,10 +305,6 @@ class _CanvasPool {
       _canvas.width = _canvas.height = 0;
     }
   }
-
-  void _debugCheck() {
-    contextHandle._debugCheck();
-  }
 }
 
 // Optimizes applying paint parameters to html canvas.
@@ -411,17 +407,5 @@ class ContextStateHandle {
     _currentStrokeCap = ui.StrokeCap.butt;
     context.lineJoin = 'miter';
     _currentStrokeJoin = ui.StrokeJoin.miter;
-  }
-
-  void _debugCheck() {
-    if (_currentFillStyle != null && _currentFillStyle != context.fillStyle) {
-      print('Fill style out of sync: $_currentFillStyle != ${context.fillStyle}');
-    }
-    if (_currentStrokeStyle != null && _currentStrokeStyle != context.strokeStyle) {
-      print('Stroke style out of sync: $_currentStrokeStyle != ${context.strokeStyle}');
-    }
-    if (_currentFilter != null && _currentFilter != context.filter) {
-      print('Filter out of sync: $_currentFilter != ${context.filter}');
-    }
   }
 }
