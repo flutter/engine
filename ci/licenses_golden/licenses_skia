@@ -1,4 +1,4 @@
-Signature: 31b5f3029d0fe100a46adb2e89d271cf
+Signature: c38e352bcab109a04a45413db2329d6a
 
 UNUSED LICENSES:
 
@@ -1459,9 +1459,20 @@ FILE: ../../../third_party/skia/site/dev/design/conical/lemma4.ggb!/geogebra.xml
 FILE: ../../../third_party/skia/site/dev/design/conical/lemma4.ggb!/geogebra_javascript.js
 FILE: ../../../third_party/skia/site/dev/design/conical/lemma4.ggb!/geogebra_thumbnail.png
 FILE: ../../../third_party/skia/site/dev/design/conical/lemma4.svg
+FILE: ../../../third_party/skia/site/dev/tools/buttons.png
+FILE: ../../../third_party/skia/site/dev/tools/calendar.mskp
+FILE: ../../../third_party/skia/site/dev/tools/crosshair.png
 FILE: ../../../third_party/skia/site/dev/tools/debugger.png
+FILE: ../../../third_party/skia/site/dev/tools/end.png
+FILE: ../../../third_party/skia/site/dev/tools/expand.png
+FILE: ../../../third_party/skia/site/dev/tools/frameplayback.png
+FILE: ../../../third_party/skia/site/dev/tools/gpuop.png
 FILE: ../../../third_party/skia/site/dev/tools/image.png
+FILE: ../../../third_party/skia/site/dev/tools/layers.png
 FILE: ../../../third_party/skia/site/dev/tools/onlinedebugger.png
+FILE: ../../../third_party/skia/site/dev/tools/playcommands.png
+FILE: ../../../third_party/skia/site/dev/tools/resources.png
+FILE: ../../../third_party/skia/site/dev/tools/settings.png
 FILE: ../../../third_party/skia/site/dev/tools/tracing.png
 FILE: ../../../third_party/skia/site/dev/tools/tracing_load.png
 FILE: ../../../third_party/skia/site/favicon.ico
@@ -1475,6 +1486,7 @@ FILE: ../../../third_party/skia/specs/web-img-decode/proposed/impl/impl.js
 FILE: ../../../third_party/skia/specs/web-img-decode/proposed/index.html
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
 FILE: ../../../third_party/skia/src/sksl/lex/sksl.lex
+FILE: ../../../third_party/skia/src/sksl/sksl_blend.inc
 FILE: ../../../third_party/skia/src/sksl/sksl_fp.inc
 FILE: ../../../third_party/skia/src/sksl/sksl_frag.inc
 FILE: ../../../third_party/skia/src/sksl/sksl_geom.inc
@@ -3224,6 +3236,8 @@ FILE: ../../../third_party/skia/src/sksl/SkSLDefines.h
 FILE: ../../../third_party/skia/src/sksl/SkSLOutputStream.cpp
 FILE: ../../../third_party/skia/src/utils/SkCharToGlyphCache.cpp
 FILE: ../../../third_party/skia/src/utils/SkCharToGlyphCache.h
+FILE: ../../../third_party/skia/src/utils/SkClipStackUtils.cpp
+FILE: ../../../third_party/skia/src/utils/SkClipStackUtils.h
 FILE: ../../../third_party/skia/src/utils/SkShaperJSONWriter.cpp
 FILE: ../../../third_party/skia/src/utils/SkShaperJSONWriter.h
 FILE: ../../../third_party/skia/src/utils/win/SkObjBase.h
@@ -3835,15 +3849,14 @@ FILE: ../../../third_party/skia/src/gpu/effects/GrAtlasedShaderHelpers.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrBlurredEdgeFragmentProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrCircleEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrEllipseEffect.fp
-FILE: ../../../third_party/skia/src/gpu/effects/GrSimpleTextureEffect.fp
+FILE: ../../../third_party/skia/src/gpu/effects/GrSimpleTextureEffect.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/GrSimpleTextureEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrBlurredEdgeFragmentProcessor.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrBlurredEdgeFragmentProcessor.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrCircleEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrCircleEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrEllipseEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrEllipseEffect.h
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrSimpleTextureEffect.cpp
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrSimpleTextureEffect.h
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLOpsRenderPass.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLSemaphore.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLSemaphore.h
