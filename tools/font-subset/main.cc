@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include <hb-subset.h>
-#include <cerrno>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -11,14 +10,6 @@
 #include <set>
 
 #include "hb_wrappers.h"
-
-void AddCodepoints(hb_subset_input_t* input,
-                   std::set<hb_codepoint_t> codepoints) {
-  hb_set_t* input_codepoints = hb_subset_input_unicode_set(input);
-  for (hb_codepoint_t codepoint : codepoints) {
-    hb_set_add(input_codepoints, codepoint);
-  }
-}
 
 hb_codepoint_t ParseCodepoint(const char* arg) {
   unsigned long value = 0;
@@ -66,14 +57,6 @@ int main(int argc, char** argv) {
   std::cout << "Using output file: " << output_file_path << std::endl;
   std::cout << "Using source file: " << input_file_path << std::endl;
 
-  std::set<hb_codepoint_t> codepoints;
-  for (int i = 3; i < argc; i++) {
-    auto codepoint = ParseCodepoint(argv[i]);
-    if (codepoint) {
-      codepoints.insert(codepoint);
-    }
-  }
-
   HarfbuzzWrappers::HbBlobPtr font_blob(
       hb_blob_create_from_file(input_file_path.c_str()));
   if (!hb_blob_get_length(font_blob.get())) {
@@ -90,7 +73,22 @@ int main(int argc, char** argv) {
   }
 
   HarfbuzzWrappers::HbSubsetInputPtr input(hb_subset_input_create_or_fail());
-  AddCodepoints(input.get(), std::move(codepoints));
+  {
+    hb_set_t* desired_codepoints = hb_subset_input_unicode_set(input.get());
+    HarfbuzzWrappers::HbSetPtr actual_codepoints(hb_set_create());
+    hb_face_collect_unicodes(font_face.get(), actual_codepoints.get());
+    for (int i = 3; i < argc; i++) {
+      auto codepoint = ParseCodepoint(argv[i]);
+      if (codepoint) {
+        if (!hb_set_has(actual_codepoints.get(), codepoint)) {
+          std::cerr << "Codepoint " << argv[i]
+                    << " not found in font, aborting." << std::endl;
+          return -1;
+        }
+        hb_set_add(desired_codepoints, codepoint);
+      }
+    }
+  }
   HarfbuzzWrappers::HbFacePtr new_face(hb_subset(font_face.get(), input.get()));
 
   if (new_face.get() == hb_face_get_empty()) {
