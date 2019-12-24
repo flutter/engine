@@ -62,6 +62,16 @@ class DomRenderer {
   static const String _staleHotRestartStore = '__flutter_state';
   List<html.Element> _staleHotRestartState;
 
+  /// Used to decide if the browser tab still has the focus.
+  ///
+  /// This information is useful for deciding on the blur behavior.
+  /// See [DefaultTextEditingStrategy].
+  ///
+  /// This getter calls the `hasFocus` method of the `Document` interface.
+  /// See for more details:
+  /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
+  bool get windowHasFocus => js_util.callMethod(html.document, 'hasFocus', []);
+
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
     _staleHotRestartState =
@@ -401,7 +411,7 @@ flt-glass-pane * {
     glassPaneElement
         .insertBefore(_accesibilityPlaceholder, _sceneHostElement);
 
-    PointerBinding(this);
+    PointerBinding.initInstance(_glassPaneElement);
 
     // Hide the DOM nodes used to render the scene from accessibility, because
     // the accessibility tree is built from the SemanticsNode tree as a parallel

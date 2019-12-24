@@ -14,6 +14,7 @@
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
+#include "flutter/shell/common/vsync_waiters_test.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/test_gl_surface.h"
@@ -88,37 +89,12 @@ class ShellTest : public ThreadTest {
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTest);
 };
 
-class ShellTestVsyncClock {
- public:
-  /// Simulate that a vsync signal is triggered.
-  void SimulateVSync();
-
-  /// A future that will return the index the next vsync signal.
-  std::future<int> NextVSync();
-
- private:
-  std::mutex mutex_;
-  std::vector<std::promise<int>> vsync_promised_;
-  size_t vsync_issued_ = 0;
-};
-
-class ShellTestVsyncWaiter : public VsyncWaiter {
- public:
-  ShellTestVsyncWaiter(TaskRunners task_runners, ShellTestVsyncClock& clock)
-      : VsyncWaiter(std::move(task_runners)), clock_(clock) {}
-
- protected:
-  void AwaitVSync() override;
-
- private:
-  ShellTestVsyncClock& clock_;
-};
-
 class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
  public:
   ShellTestPlatformView(PlatformView::Delegate& delegate,
                         TaskRunners task_runners,
-                        bool simulate_vsync = false);
+                        std::shared_ptr<ShellTestVsyncClock> vsync_clock,
+                        CreateVsyncWaiter create_vsync_waiter);
 
   ~ShellTestPlatformView() override;
 
@@ -127,8 +103,9 @@ class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
  private:
   TestGLSurface gl_surface_;
 
-  bool simulate_vsync_ = false;
-  ShellTestVsyncClock vsync_clock_;
+  CreateVsyncWaiter create_vsync_waiter_;
+
+  std::shared_ptr<ShellTestVsyncClock> vsync_clock_;
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;

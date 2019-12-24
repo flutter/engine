@@ -63,7 +63,7 @@ class Vertices {
   final Float32List _positions;
   final Float32List _textureCoordinates;
   final Int32List _colors;
-  final Uint16List _indices;
+  final Uint16List _indices; // ignore: unused_field
 
   Vertices._(
     VertexMode mode,
@@ -159,6 +159,8 @@ class Vertices {
   VertexMode get mode => _mode;
   Int32List get colors => _colors;
   Float32List get positions => _positions;
+  Float32List get textureCoordinates => _textureCoordinates;
+  Uint16List get indices => _indices;
 }
 
 /// Records a [Picture] containing a sequence of graphical operations.
@@ -1157,30 +1159,18 @@ class RawRecordingCanvas extends engine.BitmapCanvas
     clear();
   }
 
-  @override
   engine.RecordingCanvas beginRecording(Rect bounds) =>
       throw UnsupportedError('');
+
   @override
   Picture endRecording() => throw UnsupportedError('');
 
-  @override
-  engine.RecordingCanvas _canvas;
+  engine.RecordingCanvas _canvas; // ignore: unused_field
 
-  @override
-  bool _isRecording = true;
+  bool _isRecording = true; // ignore: unused_field
 
   @override
   bool get isRecording => true;
 
-  @override
   Rect cullRect;
-}
-
-// Returns true if point is inside ellipse.
-bool _ellipseContains(double px, double py, double centerX, double centerY,
-    double radiusX, double radiusY) {
-  final double dx = px - centerX;
-  final double dy = py - centerY;
-  return ((dx * dx) / (radiusX * radiusX)) + ((dy * dy) / (radiusY * radiusY)) <
-      1.0;
 }

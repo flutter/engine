@@ -58,15 +58,16 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   child_matrix.postTranslate(offset_.fX, offset_.fY);
   context->mutators_stack.PushTransform(
       SkMatrix::MakeTrans(offset_.fX, offset_.fY));
+  Layer::AutoPrerollSaveLayerState save =
+      Layer::AutoPrerollSaveLayerState::Create(context);
   OpacityLayerBase::Preroll(context, child_matrix);
   context->mutators_stack.Pop();
 
   // When using the system compositor, do not include the offset since we are
   // rendering as a separate piece of geometry and the offset will be baked into
   // that geometry's transform.
-  if (OpacityLayerBase::can_system_composite()) {
+  if (OpacityLayerBase::can_system_composite() && needs_system_composite()) {
     set_dimensions(SkRRect::MakeRect(paint_bounds()));
-    set_needs_system_composite(true);
   } else {
     set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
 

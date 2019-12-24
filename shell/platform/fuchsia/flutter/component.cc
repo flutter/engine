@@ -8,8 +8,10 @@
 #include <fuchsia/mem/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/async/cpp/task.h>
+#include <lib/async/default.h>
 #include <lib/fdio/directory.h>
 #include <lib/fdio/namespace.h>
+#include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <lib/ui/scenic/cpp/view_token_pair.h>
 #include <lib/vfs/cpp/composed_service_dir.h>
 #include <lib/vfs/cpp/remote_dir.h>
@@ -30,6 +32,7 @@
 #include "lib/fdio/io.h"
 #include "runtime/dart/utils/files.h"
 #include "runtime/dart/utils/handle_exception.h"
+#include "runtime/dart/utils/mapped_resource.h"
 #include "runtime/dart/utils/tempfs.h"
 #include "runtime/dart/utils/vmo.h"
 
@@ -315,9 +318,8 @@ Application::Application(
   settings_.observatory_host = "127.0.0.1";
 #endif
 
-  // Set this to true to enable category "skia" trace events.
-  // TODO(PT-145): Explore enabling this by default.
-  settings_.trace_skia = false;
+  // Controls whether category "skia" trace events are enabled.
+  settings_.trace_skia = true;
 
   settings_.icu_data_path = "";
 
@@ -498,23 +500,48 @@ void Application::AttemptVMLaunchWithCurrentSettings(
     return;
   }
 
-  // Compare flutter_aot_app in flutter_app.gni.
-  fml::RefPtr<flutter::DartSnapshot> vm_snapshot =
-      fml::MakeRefCounted<flutter::DartSnapshot>(
-          CreateWithContentsOfFile(
-              application_assets_directory_.get() /* /pkg/data */,
-              "vm_snapshot_data.bin", false),
-          CreateWithContentsOfFile(
-              application_assets_directory_.get() /* /pkg/data */,
-              "vm_snapshot_instructions.bin", true));
+  // Compare with flutter_aot_app in flutter_app.gni.
+  fml::RefPtr<flutter::DartSnapshot> vm_snapshot;
 
-  isolate_snapshot_ = fml::MakeRefCounted<flutter::DartSnapshot>(
-      CreateWithContentsOfFile(
-          application_assets_directory_.get() /* /pkg/data */,
-          "isolate_snapshot_data.bin", false),
-      CreateWithContentsOfFile(
-          application_assets_directory_.get() /* /pkg/data */,
-          "isolate_snapshot_instructions.bin", true));
+  std::shared_ptr<dart_utils::ElfSnapshot> snapshot =
+      std::make_shared<dart_utils::ElfSnapshot>();
+  if (snapshot->Load(application_assets_directory_.get(),
+                     "app_aot_snapshot.so")) {
+    const uint8_t* isolate_data = snapshot->IsolateData();
+    const uint8_t* isolate_instructions = snapshot->IsolateInstrs();
+    const uint8_t* vm_data = snapshot->VmData();
+    const uint8_t* vm_instructions = snapshot->VmInstrs();
+    if (isolate_data == nullptr || isolate_instructions == nullptr ||
+        vm_data == nullptr || vm_instructions == nullptr) {
+      FML_LOG(FATAL) << "ELF snapshot missing AOT symbols.";
+      return;
+    }
+    auto hold_snapshot = [snapshot](const uint8_t* _, size_t __) {};
+    vm_snapshot = fml::MakeRefCounted<flutter::DartSnapshot>(
+        std::make_shared<fml::NonOwnedMapping>(vm_data, 0, hold_snapshot),
+        std::make_shared<fml::NonOwnedMapping>(vm_instructions, 0,
+                                               hold_snapshot));
+    isolate_snapshot_ = fml::MakeRefCounted<flutter::DartSnapshot>(
+        std::make_shared<fml::NonOwnedMapping>(isolate_data, 0, hold_snapshot),
+        std::make_shared<fml::NonOwnedMapping>(isolate_instructions, 0,
+                                               hold_snapshot));
+  } else {
+    vm_snapshot = fml::MakeRefCounted<flutter::DartSnapshot>(
+        CreateWithContentsOfFile(
+            application_assets_directory_.get() /* /pkg/data */,
+            "vm_snapshot_data.bin", false),
+        CreateWithContentsOfFile(
+            application_assets_directory_.get() /* /pkg/data */,
+            "vm_snapshot_instructions.bin", true));
+
+    isolate_snapshot_ = fml::MakeRefCounted<flutter::DartSnapshot>(
+        CreateWithContentsOfFile(
+            application_assets_directory_.get() /* /pkg/data */,
+            "isolate_snapshot_data.bin", false),
+        CreateWithContentsOfFile(
+            application_assets_directory_.get() /* /pkg/data */,
+            "isolate_snapshot_instructions.bin", true));
+  }
 
   auto vm = flutter::DartVMRef::Create(settings_,               //
                                        std::move(vm_snapshot),  //
@@ -578,17 +605,6 @@ void Application::CreateView(
     return;
   }
 
-  // TODO(MI4-2490): remove once ViewRefControl and ViewRef come as a parameters
-  // to CreateView
-  fuchsia::ui::views::ViewRefControl view_ref_control;
-  fuchsia::ui::views::ViewRef view_ref;
-  zx_status_t status = zx::eventpair::create(
-      /*flags*/ 0u, &view_ref_control.reference, &view_ref.reference);
-  FML_DCHECK(status == ZX_OK);
-
-  status = view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
-  FML_DCHECK(status == ZX_OK);
-
   shell_holders_.emplace(std::make_unique<Engine>(
       *this,                         // delegate
       debug_label_,                  // thread label
@@ -597,8 +613,7 @@ void Application::CreateView(
       settings_,                     // settings
       std::move(isolate_snapshot_),  // isolate snapshot
       scenic::ToViewToken(std::move(view_token)),  // view token
-      std::move(view_ref_control),                 // view ref control
-      std::move(view_ref),                         // view ref
+      scenic::ViewRefPair::New(),                  // view ref pair
       std::move(fdio_ns_),                         // FDIO namespace
       std::move(directory_request_)                // outgoing request
       ));
