@@ -83,7 +83,8 @@ bool IOSGLRenderTarget::PresentRenderBuffer() const {
       GL_DEPTH_ATTACHMENT,
       GL_STENCIL_ATTACHMENT,
   };
-
+  
+  [EAGLContext setCurrentContext:context_];
   glDiscardFramebufferEXT(GL_FRAMEBUFFER, sizeof(discards) / sizeof(GLenum), discards);
 
   glBindRenderbuffer(GL_RENDERBUFFER, colorbuffer_);
