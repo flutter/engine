@@ -2125,7 +2125,7 @@ Future<void> loadFontFromList(Uint8List list, {String fontFamily}) {
     (_Callback<void> callback) => _loadFontFromList(list, callback, fontFamily)
   ).then((_) async {
     if (window.onPlatformMessage != null)
-      await window.onPlatformMessage(
+      window.onPlatformMessage(
         'flutter/system',
         utf8.encoder.convert(json.encode(<String, dynamic>{'type': 'fontsChange'})).buffer.asByteData(),
         (_) {},

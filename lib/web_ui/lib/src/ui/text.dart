@@ -1500,7 +1500,7 @@ abstract class ParagraphBuilder {
 Future<void> loadFontFromList(Uint8List list, {String fontFamily}) {
   return _fontCollection.loadFontFromList(list, fontFamily: fontFamily).then((_) async {
     if (window.onPlatformMessage != null)
-      await window.onPlatformMessage(
+      window.onPlatformMessage(
         'flutter/system',
         engine.JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'}),
         (_) {},
