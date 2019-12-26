@@ -2123,7 +2123,14 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
 Future<void> loadFontFromList(Uint8List list, {String fontFamily}) {
   return _futurize(
     (_Callback<void> callback) => _loadFontFromList(list, callback, fontFamily)
-  );
+  ).then((_) async {
+    if (window.onPlatformMessage != null)
+      await window.onPlatformMessage(
+        'flutter/system',
+        utf8.encoder.convert(json.encode(<String, dynamic>{'type': 'fontsChange'})).buffer.asByteData(),
+        (_) {},
+      );
+  });
 }
 
 String _loadFontFromList(Uint8List list, _Callback<void> callback, String fontFamily) native 'loadFontFromList';
