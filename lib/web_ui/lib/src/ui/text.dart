@@ -1498,12 +1498,14 @@ abstract class ParagraphBuilder {
 /// * `fontFamily`: The family name used to identify the font in text styles.
 ///  If this is not provided, then the family name will be extracted from the font file.
 Future<void> loadFontFromList(Uint8List list, {String fontFamily}) {
-  return _fontCollection.loadFontFromList(list, fontFamily: fontFamily).then((_) async {
-    if (window.onPlatformMessage != null)
-      window.onPlatformMessage(
-        'flutter/system',
-        engine.JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'}),
-        (_) {},
-      );
-  });;
+  return _fontCollection.loadFontFromList(list, fontFamily: fontFamily).then(_sendFontChangeMessage);
+}
+
+FutureOr<void> _sendFontChangeMessage(void result) async {
+  if (window.onPlatformMessage != null)
+    window.onPlatformMessage(
+      'flutter/system',
+      engine.JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'}),
+      (_) {},
+    );
 }
