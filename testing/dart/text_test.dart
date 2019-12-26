@@ -88,12 +88,11 @@ void main() {
       String message;
       window.onPlatformMessage = (String name, ByteData data, PlatformMessageResponseCallback callback) {
         actualName = name;
-        final buffer = data.buffer;
-        final Uint8List list = buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+        final Uint8List list = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
         message = utf8.decode(list);
       };
-      Uint8List list = Uint8List(0);
-      await loadFontFromList(list, fontFamily: 'fake');
+      final Uint8List fontData = Uint8List(0);
+      await loadFontFromList(fontData, fontFamily: 'fake');
       window.onPlatformMessage = oldHandler;
       expect(actualName, 'flutter/system');
       expect(message, '{"type":"fontsChange"}');
