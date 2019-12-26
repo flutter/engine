@@ -5,7 +5,7 @@
 part of engine;
 
 /// A raw HTML canvas that is directly written to.
-class BitmapCanvas extends EngineCanvas with SaveStackTracking {
+class BitmapCanvas extends EngineCanvas {
   /// The rectangle positioned relative to the parent layer's coordinate
   /// system's origin, within which this canvas paints.
   ///
@@ -153,14 +153,13 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   @override
   void dispose() {
-    super.dispose();
     _canvasPool.dispose();
   }
 
   /// Prepare to reuse this canvas by clearing it's current contents.
   @override
   void clear() {
-    super.clear();
+    _canvasPool.clear();
     final int len = _children.length;
     for (int i = 0; i < len; i++) {
       _children[i].remove();
@@ -231,7 +230,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   @override
   int save() {
-    super.save();
     _canvasPool.save();
     return _saveCount++;
   }
@@ -242,7 +240,6 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   @override
   void restore() {
-    super.restore();
     _canvasPool.restore();
     _saveCount--;
     _cachedLastStyle = null;
@@ -262,86 +259,41 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
 
   @override
   void translate(double dx, double dy) {
-    super.translate(dx, dy);
     _canvasPool.translate(dx, dy);
   }
 
   @override
   void scale(double sx, double sy) {
-    super.scale(sx, sy);
     _canvasPool.scale(sx, sy);
   }
 
   @override
   void rotate(double radians) {
-    super.rotate(radians);
     _canvasPool.rotate(radians);
   }
 
   @override
   void skew(double sx, double sy) {
-    super.skew(sx, sy);
-    _canvasPool.transform(1, sy, sx, 1, 0, 0);
-    //            |  |   |   |  |  |
-    //            |  |   |   |  |  f - vertical translation
-    //            |  |   |   |  e - horizontal translation
-    //            |  |   |   d - vertical scaling
-    //            |  |   c - horizontal skewing
-    //            |  b - vertical skewing
-    //            a - horizontal scaling
-    //
-    // Source: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/transform
+    _canvasPool.skew(sx, sy);
   }
 
   @override
   void transform(Float64List matrix4) {
-    super.transform(matrix4);
-
-    // Canvas2D transform API:
-    //
-    // ctx.transform(a, b, c, d, e, f);
-    //
-    // In 3x3 matrix form assuming vector representation of (x, y, 1):
-    //
-    // a c e
-    // b d f
-    // 0 0 1
-    //
-    // This translates to 4x4 matrix with vector representation of (x, y, z, 1)
-    // as:
-    //
-    // a c 0 e
-    // b d 0 f
-    // 0 0 1 0
-    // 0 0 0 1
-    //
-    // This matrix is sufficient to represent 2D rotates, translates, scales,
-    // and skews.
-    _canvasPool.transform(
-      matrix4[0],
-      matrix4[1],
-      matrix4[4],
-      matrix4[5],
-      matrix4[12],
-      matrix4[13],
-    );
+    _canvasPool.transform(matrix4);
   }
 
   @override
   void clipRect(ui.Rect rect) {
-    super.clipRect(rect);
     _canvasPool.clipRect(rect);
   }
 
   @override
   void clipRRect(ui.RRect rrect) {
-    super.clipRRect(rrect);
     _canvasPool.clipRRect(rrect);
   }
 
   @override
   void clipPath(ui.Path path) {
-    super.clipPath(path);
     _canvasPool.clipPath(path);
   }
 
@@ -416,16 +368,16 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
   }
 
   void _drawImage(html.ImageElement imgElement, ui.Offset p) {
-    if (isClipped) {
+    if (_canvasPool.isClipped) {
       final List<html.Element> clipElements =
-          _clipContent(_clipStack, imgElement, p, currentTransform);
+          _clipContent(_canvasPool._clipStack, imgElement, p, _canvasPool.currentTransform);
       for (html.Element clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
     } else {
       final String cssTransform =
-          matrix4ToCssTransform3d(transformWithOffset(currentTransform, p));
+          matrix4ToCssTransform3d(transformWithOffset(_canvasPool.currentTransform, p));
       imgElement.style
         ..transformOrigin = '0 0 0'
         ..transform = cssTransform;
@@ -555,16 +507,16 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
     final html.Element paragraphElement =
         _drawParagraphElement(paragraph, offset);
 
-    if (isClipped) {
+    if (_canvasPool.isClipped) {
       final List<html.Element> clipElements =
-          _clipContent(_clipStack, paragraphElement, offset, currentTransform);
+          _clipContent(_canvasPool._clipStack, paragraphElement, offset, _canvasPool.currentTransform);
       for (html.Element clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
     } else {
       final String cssTransform =
-          matrix4ToCssTransform3d(transformWithOffset(currentTransform, offset));
+          matrix4ToCssTransform3d(transformWithOffset(_canvasPool.currentTransform, offset));
       paragraphElement.style
         ..transformOrigin = '0 0 0'
         ..transform = cssTransform;
@@ -618,7 +570,7 @@ class BitmapCanvas extends EngineCanvas with SaveStackTracking {
       return;
     }
     _glRenderer.drawVertices(ctx, _widthInBitmapPixels, _heightInBitmapPixels,
-        currentTransform, vertices, blendMode, paint);
+        _canvasPool.currentTransform, vertices, blendMode, paint);
   }
 
   @override

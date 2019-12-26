@@ -1,11 +1,11 @@
 part of engine;
 
-class _CanvasPool {
+class _CanvasPool extends _SaveStackTracking {
   html.CanvasElement _canvas;
   html.CanvasRenderingContext2D _context;
   ContextStateHandle _contextHandle;
-  ui.Rect _bounds;
   bool _contextSaved = false;
+  int _widthInBitmapPixels, _heightInBitmapPixels;
 
   html.CanvasRenderingContext2D get context {
     if (_contextHandle == null) {
@@ -18,28 +18,29 @@ class _CanvasPool {
   ContextStateHandle get contextHandle => _contextHandle;
 
   void allocateCanvas(html.HtmlElement rootElement,
-      int _widthInBitmapPixels, int _heightInBitmapPixels,
+      int widthInBitmapPixels, int heightInBitmapPixels,
       ui.Rect bounds) {
-    _bounds = bounds;
+    _widthInBitmapPixels = widthInBitmapPixels;
+    _heightInBitmapPixels = heightInBitmapPixels;
     // Compute the final CSS canvas size given the actual pixel count we
     // allocated. This is done for the following reasons:
     //
     // * To satisfy the invariant: pixel size = css size * device pixel ratio.
     // * To make sure that when we scale the canvas by devicePixelRatio (see
     //   _initializeViewport below) the pixels line up.
-    final double cssWidth = _widthInBitmapPixels / html.window.devicePixelRatio;
+    final double cssWidth = widthInBitmapPixels / html.window.devicePixelRatio;
     final double cssHeight =
-        _heightInBitmapPixels / html.window.devicePixelRatio;
+        heightInBitmapPixels / html.window.devicePixelRatio;
     _canvas = html.CanvasElement(
-      width: _widthInBitmapPixels,
-      height: _heightInBitmapPixels,
+      width: widthInBitmapPixels,
+      height: heightInBitmapPixels,
     );
     _canvas.style
       ..position = 'absolute'
       ..width = '${cssWidth}px'
       ..height = '${cssHeight}px';
     rootElement.append(_canvas);
-    initializeViewport(_widthInBitmapPixels, _heightInBitmapPixels);
+    initializeViewport(widthInBitmapPixels, heightInBitmapPixels);
   }
 
   /// Configures the canvas such that its coordinate system follows the scene's
@@ -80,32 +81,82 @@ class _CanvasPool {
   // canvas.
   String toDataUrl() => _canvas.toDataUrl();
 
+  @override
   void save() {
+    super.save();
     context.save();
   }
 
+  @override
   void restore() {
+    super.restore();
     context.restore();
     contextHandle.reset();
   }
 
+  @override
   void translate(double dx, double dy) {
+    super.translate(dx, dy);
     context.translate(dx, dy);
   }
 
+  @override
   void scale(double sx, double sy) {
+    super.scale(sx, sy);
     context.scale(sx, sy);
   }
 
+  @override
   void rotate(double radians) {
+    super.rotate(radians);
     context.rotate(radians);
   }
 
-  void transform(double a, double b, double c, double d, double e, double f) {
-    context.transform(a, b, c, d, e, f);
+  @override
+  void skew(double sx, double sy) {
+    super.skew(sx, sy);
+    context.transform(1, sy, sx, 1, 0, 0);
+    //                |  |   |   |  |  |
+    //                |  |   |   |  |  f - vertical translation
+    //                |  |   |   |  e - horizontal translation
+    //                |  |   |   d - vertical scaling
+    //                |  |   c - horizontal skewing
+    //                |  b - vertical skewing
+    //                a - horizontal scaling
+    //
+    // Source: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/transform
+
+  }
+
+  @override
+  void transform(Float64List matrix4) {
+    super.transform(matrix4);
+    // Canvas2D transform API:
+    //
+    // ctx.transform(a, b, c, d, e, f);
+    //
+    // In 3x3 matrix form assuming vector representation of (x, y, 1):
+    //
+    // a c e
+    // b d f
+    // 0 0 1
+    //
+    // This translates to 4x4 matrix with vector representation of (x, y, z, 1)
+    // as:
+    //
+    // a c 0 e
+    // b d 0 f
+    // 0 0 1 0
+    // 0 0 0 1
+    //
+    // This matrix is sufficient to represent 2D rotates, translates, scales,
+    // and skews.
+    context.transform(matrix4[0], matrix4[1], matrix4[4], matrix4[5],
+        matrix4[12], matrix4[13]);
   }
 
   void clipRect(ui.Rect rect) {
+    super.clipRect(rect);
     html.CanvasRenderingContext2D ctx = context;
     ctx.beginPath();
     ctx.rect(rect.left, rect.top, rect.width, rect.height);
@@ -113,6 +164,7 @@ class _CanvasPool {
   }
 
   void clipRRect(ui.RRect rrect) {
+    super.clipRRect(rrect);
     html.CanvasRenderingContext2D ctx = context;
     final ui.Path path = ui.Path()..addRRect(rrect);
     _runPath(ctx, path);
@@ -120,6 +172,7 @@ class _CanvasPool {
   }
 
   void clipPath(ui.Path path) {
+    super.clipPath(path);
     html.CanvasRenderingContext2D ctx = context;
     _runPath(ctx, path);
     ctx.clip();
@@ -407,5 +460,120 @@ class ContextStateHandle {
     _currentStrokeCap = ui.StrokeCap.butt;
     context.lineJoin = 'miter';
     _currentStrokeJoin = ui.StrokeJoin.miter;
+  }
+}
+
+/// Provides save stack tracking functionality to implementations of
+/// [EngineCanvas].
+class _SaveStackTracking {
+  static final Vector3 _unitZ = Vector3(0.0, 0.0, 1.0);
+
+  final List<_SaveStackEntry> _saveStack = <_SaveStackEntry>[];
+
+  /// The stack that maintains clipping operations used when text is painted
+  /// onto bitmap canvas but is composited as separate element.
+  List<_SaveClipEntry> _clipStack;
+
+  /// Returns whether there are active clipping regions on the canvas.
+  bool get isClipped => _clipStack != null;
+
+  /// Empties the save stack and the element stack, and resets the transform
+  /// and clip parameters.
+  ///
+  /// Classes that override this method must call `super.clear()`.
+  void clear() {
+    _saveStack.clear();
+    _clipStack = null;
+    _currentTransform = Matrix4.identity();
+  }
+
+  /// The current transformation matrix.
+  Matrix4 get currentTransform => _currentTransform;
+  Matrix4 _currentTransform = Matrix4.identity();
+
+  /// Saves current clip and transform on the save stack.
+  ///
+  /// Classes that override this method must call `super.save()`.
+  void save() {
+    _saveStack.add(_SaveStackEntry(
+      transform: _currentTransform.clone(),
+      clipStack:
+          _clipStack == null ? null : List<_SaveClipEntry>.from(_clipStack),
+    ));
+  }
+
+  /// Restores current clip and transform from the save stack.
+  ///
+  /// Classes that override this method must call `super.restore()`.
+  void restore() {
+    if (_saveStack.isEmpty) {
+      return;
+    }
+    final _SaveStackEntry entry = _saveStack.removeLast();
+    _currentTransform = entry.transform;
+    _clipStack = entry.clipStack;
+  }
+
+  /// Multiplies the [currentTransform] matrix by a translation.
+  ///
+  /// Classes that override this method must call `super.translate()`.
+  void translate(double dx, double dy) {
+    _currentTransform.translate(dx, dy);
+  }
+
+  /// Scales the [currentTransform] matrix.
+  ///
+  /// Classes that override this method must call `super.scale()`.
+  void scale(double sx, double sy) {
+    _currentTransform.scale(sx, sy);
+  }
+
+  /// Rotates the [currentTransform] matrix.
+  ///
+  /// Classes that override this method must call `super.rotate()`.
+  void rotate(double radians) {
+    _currentTransform.rotate(_unitZ, radians);
+  }
+
+  /// Skews the [currentTransform] matrix.
+  ///
+  /// Classes that override this method must call `super.skew()`.
+  void skew(double sx, double sy) {
+    final Matrix4 skewMatrix = Matrix4.identity();
+    final Float64List storage = skewMatrix.storage;
+    storage[1] = sy;
+    storage[4] = sx;
+    _currentTransform.multiply(skewMatrix);
+  }
+
+  /// Multiplies the [currentTransform] matrix by another matrix.
+  ///
+  /// Classes that override this method must call `super.transform()`.
+  void transform(Float64List matrix4) {
+    _currentTransform.multiply(Matrix4.fromFloat64List(matrix4));
+  }
+
+  /// Adds a rectangle to clipping stack.
+  ///
+  /// Classes that override this method must call `super.clipRect()`.
+  void clipRect(ui.Rect rect) {
+    _clipStack ??= <_SaveClipEntry>[];
+    _clipStack.add(_SaveClipEntry.rect(rect, _currentTransform.clone()));
+  }
+
+  /// Adds a round rectangle to clipping stack.
+  ///
+  /// Classes that override this method must call `super.clipRRect()`.
+  void clipRRect(ui.RRect rrect) {
+    _clipStack ??= <_SaveClipEntry>[];
+    _clipStack.add(_SaveClipEntry.rrect(rrect, _currentTransform.clone()));
+  }
+
+  /// Adds a path to clipping stack.
+  ///
+  /// Classes that override this method must call `super.clipPath()`.
+  void clipPath(ui.Path path) {
+    _clipStack ??= <_SaveClipEntry>[];
+    _clipStack.add(_SaveClipEntry.path(path, _currentTransform.clone()));
   }
 }
