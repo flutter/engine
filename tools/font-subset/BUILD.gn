@@ -9,7 +9,7 @@ executable("font-subset") {
   ]
 
   deps = [
-    "//third_party/harfbuzz"
+    "//third_party/harfbuzz",
   ]
 
   libs = []

@@ -16,7 +16,8 @@ import sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR = os.path.join(SCRIPT_DIR, '..', '..', '..')
 MATERIAL_TTF = os.path.join(SCRIPT_DIR, 'fixtures', 'MaterialIcons-Regular.ttf')
-FONT_SUBSET = 'out/host_debug/font-subset'
+EXE = '' if not sys.platform.startswith(('cygwin', 'win')) else '.exe'
+FONT_SUBSET = 'out/host_debug/font-subset' + EXE
 
 COMPARE_TESTS = (
   (True,  '1.ttf', MATERIAL_TTF, [r'57347']),

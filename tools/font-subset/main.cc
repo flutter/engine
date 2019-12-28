@@ -8,6 +8,7 @@
 #include <iostream>
 #include <limits>
 #include <set>
+#include <string>
 
 #include "hb_wrappers.h"
 
