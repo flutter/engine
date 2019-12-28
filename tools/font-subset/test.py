@@ -16,7 +16,9 @@ import sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR = os.path.join(SCRIPT_DIR, '..', '..', '..')
 MATERIAL_TTF = os.path.join(SCRIPT_DIR, 'fixtures', 'MaterialIcons-Regular.ttf')
-EXE = '' if not sys.platform.startswith(('cygwin', 'win')) else '.exe'
+IS_WINDOWS = sys.platform.startswith(('cygwin', 'win'))
+EXE = '.exe' if IS_WINDOWS else ''
+BAT = '.bat' if IS_WINDOWS else ''
 FONT_SUBSET = 'out/host_debug/font-subset' + EXE
 
 COMPARE_TESTS = (
@@ -39,8 +41,8 @@ FAIL_TESTS = [
 
 
 def main():
-  subprocess.check_output(['flutter/tools/gn'], cwd=SRC_DIR)
-  subprocess.check_output(['autoninja', '-C', 'out/host_debug', 'font-subset'],
+  subprocess.check_output(['python', 'flutter/tools/gn'], cwd=SRC_DIR)
+  subprocess.check_output(['autoninja' + BAT, '-C', 'out/host_debug', 'font-subset'],
                           cwd=SRC_DIR)
   failures = 0
   for should_pass, golden_font, input_font, codepoints in COMPARE_TESTS:
