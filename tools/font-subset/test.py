@@ -47,10 +47,6 @@ def RunCmd(cmd, **kwargs):
 
 
 def main():
-  if os.environ['GOMA_DIR']:
-    RunCmd(['python', os.path.join(os.environ['GOMA_DIR'], 'goma_ctl.py'), 'start'])
-  RunCmd(['python', 'flutter/tools/gn'], cwd=SRC_DIR)
-  RunCmd(['autoninja' + BAT, '-C', 'out/host_debug', 'font-subset'], cwd=SRC_DIR)
   failures = 0
   for should_pass, golden_font, input_font, codepoints in COMPARE_TESTS:
     gen_ttf = os.path.join(SCRIPT_DIR, 'gen', golden_font)
