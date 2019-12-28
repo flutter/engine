@@ -19,7 +19,7 @@ MATERIAL_TTF = os.path.join(SCRIPT_DIR, 'fixtures', 'MaterialIcons-Regular.ttf')
 IS_WINDOWS = sys.platform.startswith(('cygwin', 'win'))
 EXE = '.exe' if IS_WINDOWS else ''
 BAT = '.bat' if IS_WINDOWS else ''
-FONT_SUBSET = 'out/host_debug/font-subset' + EXE
+FONT_SUBSET = os.path.join(SRC_DIR, 'out', 'host_debug', 'font-subset' + EXE)
 
 COMPARE_TESTS = (
   (True,  '1.ttf', MATERIAL_TTF, [r'57347']),
@@ -47,6 +47,8 @@ def RunCmd(cmd, **kwargs):
 
 
 def main():
+  if os.environ['GOMA_DIR']:
+    RunCmd(['python', os.path.join(os.environ['GOMA_DIR'], 'goma_ctl.py'), 'start'])
   RunCmd(['python', 'flutter/tools/gn'], cwd=SRC_DIR)
   RunCmd(['autoninja' + BAT, '-C', 'out/host_debug', 'font-subset'], cwd=SRC_DIR)
   failures = 0
