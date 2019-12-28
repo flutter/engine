@@ -111,6 +111,7 @@ int main(int argc, char** argv) {
   output_font_file.open(output_file_path,
                         std::ios::out | std::ios::trunc | std::ios::binary);
   output_font_file.write(data, data_length);
+  output_font_file.flush();
   output_font_file.close();
 
   std::cout << "Wrote " << data_length << " bytes to " << output_file_path
