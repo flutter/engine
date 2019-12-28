@@ -16,15 +16,16 @@ hb_codepoint_t ParseCodepoint(const char* arg) {
   // Check for \u123, u123, otherwise let strtoul work it out.
   if (arg[0] == 'u') {
     value = strtoul(arg + 1, nullptr, 16);
+  } else if (arg[0] == '\\' && arg[1] == 'u') {
+    value = strtoul(arg + 2, nullptr, 16);
   } else {
     value = strtoul(arg, nullptr, 0);
   }
-
   if (value == 0 || value > std::numeric_limits<hb_codepoint_t>::max()) {
-    std::cerr << "The value '" << arg
-              << "' could not be parsed as a valid unicode codepoint; ignoring."
+    std::cerr << "The value '" << arg << "' (" << value
+              << ") could not be parsed as a valid unicode codepoint; aborting."
               << std::endl;
-    return 0;
+    exit(-1);
   }
   return value;
 }
