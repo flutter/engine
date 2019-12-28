@@ -356,7 +356,7 @@ def main():
   if 'benchmarks' in types and not IsWindows():
     RunEngineBenchmarks(build_dir, engine_filter)
 
-  if 'font-subset' in types:
+  if 'engine' in types or 'font-subset' in types:
     RunCmd(['python', 'test.py'], cwd=font_subset_dir)
 
 
